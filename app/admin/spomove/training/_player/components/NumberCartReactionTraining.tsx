@@ -16,10 +16,10 @@ export function normalizeNumberCartRounds(value: number): number {
 
 /** 원본 HTML 순서: 빨(좌끝)·노·초·파(우끝) — 화면 좌우를 넓게 쓰도록 X·크기 확대 */
 const DOOR_COLORS = [
-  { hex: 0xff0000, css: '#ff0000', name: 'RED', x: -58 },
-  { hex: 0xffff00, css: '#ffff00', name: 'YELLOW', x: -22 },
-  { hex: 0x00ff00, css: '#00ff00', name: 'GREEN', x: 22 },
-  { hex: 0x0000ff, css: '#0000ff', name: 'BLUE', x: 58 },
+  { hex: 0xd92d2d, css: '#d92d2d', name: 'RED', x: -58 },
+  { hex: 0xe8cf2f, css: '#e8cf2f', name: 'YELLOW', x: -22 },
+  { hex: 0x22a84f, css: '#22a84f', name: 'GREEN', x: 22 },
+  { hex: 0x2f57c9, css: '#2f57c9', name: 'BLUE', x: 58 },
 ] as const;
 
 const DOOR_Z = -34;
@@ -275,10 +275,12 @@ function generateMetalTexture(): THREE.CanvasTexture {
 
 function createArchShape(width: number, straightHeight: number, radius: number): THREE.Shape {
   const half = width / 2;
+  const archHeight = Math.min(radius, half);
+  const springY = straightHeight / 2;
   const shape = new THREE.Shape();
   shape.moveTo(-half, -straightHeight / 2);
-  shape.lineTo(-half, straightHeight / 2);
-  shape.absarc(0, straightHeight / 2, radius, Math.PI, 0, true);
+  shape.lineTo(-half, springY);
+  shape.quadraticCurveTo(0, springY + archHeight * 1.28, half, springY);
   shape.lineTo(half, -straightHeight / 2);
   shape.lineTo(-half, -straightHeight / 2);
   return shape;
@@ -387,8 +389,8 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     gRef.current = g;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x55c6ff);
-    scene.fog = new THREE.Fog(0x8fe0ff, 120, 260);
+    scene.background = new THREE.Color(0x9fc7dc);
+    scene.fog = new THREE.Fog(0xc7d7de, 105, 245);
 
     const w0 = play.clientWidth || window.innerWidth;
     const h0 = play.clientHeight || window.innerHeight;
@@ -402,17 +404,17 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = 1.08;
 
     const disposeGeos: THREE.BufferGeometry[] = [];
     const disposeMats: THREE.Material[] = [];
     const disposeTex: THREE.Texture[] = [];
 
     // 조명: 어두운 터널 톤 유지 + 문·기차만 읽히게
-    const hemiLight = new THREE.HemisphereLight(0xe8fbff, 0x4d9f45, 3.5);
+    const hemiLight = new THREE.HemisphereLight(0xddebf0, 0x6b765d, 2.2);
     scene.add(hemiLight);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.15);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.72);
     scene.add(ambientLight);
 
     const cartLight = new THREE.PointLight(0xfff1c2, 2.8, 34);
@@ -421,7 +423,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     scene.add(cartLight);
 
     // 기차 대기 위치까지 닿도록 스포트 조준
-    const sunLight = new THREE.DirectionalLight(0xfff4d5, 3.6);
+    const sunLight = new THREE.DirectionalLight(0xffefd2, 2.2);
     sunLight.position.set(-42, 64, 46);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.set(2048, 2048);
@@ -454,7 +456,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     scene.add(cave);
 
     // 2. 바닥
-    const groundTex = generateNoiseTexture(512, 55, 153, 55, 36, true);
+    const groundTex = generateNoiseTexture(512, 92, 123, 72, 24, true);
     disposeTex.push(groundTex);
     const groundMaterial = new THREE.MeshStandardMaterial({
       map: groundTex,
@@ -472,9 +474,9 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     scene.add(ground);
 
     const mountainMats = [
-      new THREE.MeshStandardMaterial({ color: 0x5fa941, roughness: 1 }),
-      new THREE.MeshStandardMaterial({ color: 0x39894a, roughness: 1 }),
-      new THREE.MeshStandardMaterial({ color: 0x9abd4a, roughness: 1 }),
+      new THREE.MeshStandardMaterial({ color: 0x6f7f62, roughness: 1 }),
+      new THREE.MeshStandardMaterial({ color: 0x516f55, roughness: 1 }),
+      new THREE.MeshStandardMaterial({ color: 0x8a9065, roughness: 1 }),
     ];
     disposeMats.push(...mountainMats);
     [
@@ -493,7 +495,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     });
 
     const treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x7c4f2d, roughness: 0.9 });
-    const treeLeafMat = new THREE.MeshStandardMaterial({ color: 0x178f38, roughness: 0.85 });
+    const treeLeafMat = new THREE.MeshStandardMaterial({ color: 0x2f6f42, roughness: 0.9 });
     disposeMats.push(treeTrunkMat, treeLeafMat);
     const trunkGeo = new THREE.CylinderGeometry(0.25, 0.35, 2.2, 8);
     const leafGeo = new THREE.ConeGeometry(1.25, 3.2, 10);
@@ -595,65 +597,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       doorMesh.position.set(0, 1.8, 0.72);
       frameGroup.add(doorMesh);
 
-      const portalStoneMat = new THREE.MeshStandardMaterial({ color: 0xb8b1a4, roughness: 0.82, metalness: 0.02 });
-      const tunnelShadowMat = new THREE.MeshStandardMaterial({ color: 0x38434a, roughness: 0.95 });
-      const hillMat = new THREE.MeshStandardMaterial({ color: 0x6f9b54, roughness: 0.9 });
-      disposeMats.push(portalStoneMat, tunnelShadowMat, hillMat);
-      const hillGeo = new THREE.BoxGeometry(11.6, 10.4, 1.1);
-      const recessGeo = new THREE.ShapeGeometry(createArchShape(8.0, 7.0, 4.0));
-      const portalTopGeo = new THREE.ShapeGeometry(createArchShape(10.0, 7.7, 5.0));
-      const portalSideGeo = new THREE.BoxGeometry(1.05, 8.8, 1.3);
-      disposeGeos.push(hillGeo, recessGeo, portalTopGeo, portalSideGeo);
-
-      const hillFace = new THREE.Mesh(hillGeo, hillMat);
-      hillFace.position.set(0, 2.55, -0.42);
-      hillFace.castShadow = true;
-      hillFace.receiveShadow = true;
-      frameGroup.add(hillFace);
-
-      const recess = new THREE.Mesh(recessGeo, tunnelShadowMat);
-      recess.position.set(0, 2.0, 0.16);
-      frameGroup.add(recess);
-
-      const portalTop = new THREE.Mesh(portalTopGeo, portalStoneMat);
-      portalTop.position.set(0, 1.92, 0.04);
-      portalTop.castShadow = true;
-      frameGroup.add(portalTop);
-      [-4.15, 4.15].forEach((x) => {
-        const side = new THREE.Mesh(portalSideGeo, portalStoneMat);
-        side.position.set(x, 2.55, 0.28);
-        side.castShadow = true;
-        frameGroup.add(side);
-      });
-
       doorMesh.renderOrder = 2;
-
-      // 아주 얇은 문틀 — 검정 없이 같은 색·약간 더 밝게
-      const rimMat = new THREE.MeshStandardMaterial({
-        color: 0xd9d7cc,
-        roughness: 0.72,
-        metalness: 0.02,
-      });
-      disposeMats.push(rimMat);
-      const slimPillarGeo = new THREE.BoxGeometry(0.42, 7.4, 0.7);
-      disposeGeos.push(slimPillarGeo);
-      const leftRim = new THREE.Mesh(slimPillarGeo, rimMat);
-      leftRim.position.set(-3.45, 1.0, 0.95);
-      frameGroup.add(leftRim);
-      const rightRim = new THREE.Mesh(slimPillarGeo, rimMat);
-      rightRim.position.set(3.45, 1.0, 0.95);
-      frameGroup.add(rightRim);
-      const slimTopGeo = new THREE.TorusGeometry(3.32, 0.22, 8, 32, Math.PI);
-      disposeGeos.push(slimTopGeo);
-      const topRim = new THREE.Mesh(slimTopGeo, rimMat);
-      topRim.position.set(0, 5.02, 0.98);
-      topRim.rotation.z = Math.PI;
-      frameGroup.add(topRim);
-      const slimBotGeo = new THREE.BoxGeometry(7.25, 0.28, 0.7);
-      disposeGeos.push(slimBotGeo);
-      const botRim = new THREE.Mesh(slimBotGeo, rimMat);
-      botRim.position.set(0, -1.45, 0.95);
-      frameGroup.add(botRim);
 
       const doorLight = new THREE.PointLight(config.hex, 2.4, 22);
       doorLight.position.set(0, 5, 3);
@@ -678,10 +622,10 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
         toneMapped: false,
       });
       disposeMats.push(signMat);
-      const signGeo = new THREE.PlaneGeometry(5.7, 1.15);
+      const signGeo = new THREE.PlaneGeometry(7.6, 3.8);
       disposeGeos.push(signGeo);
       const signMesh = new THREE.Mesh(signGeo, signMat);
-      signMesh.position.set(0, 6.6, 1.55);
+      signMesh.position.set(0, 9.38, 1.62);
       signMesh.renderOrder = 5;
       frameGroup.add(signMesh);
 
@@ -706,62 +650,56 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       const ctx = door.signCtx;
       const parts = text.trim().split(/\s+/).filter(Boolean);
       const isPair = parts.length === 2 && parts.every((part) => part.length <= 2);
-      const compactForTopSign = text.replace(/\s+/g, '');
-      const topSignFontSize = isPair ? 132 : compactForTopSign.length <= 2 ? 166 : compactForTopSign.length <= 3 ? 140 : 112;
       ctx.clearRect(0, 0, 512, 256);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = `900 ${topSignFontSize}px "Arial", sans-serif`;
-      ctx.shadowColor = 'rgba(255,255,255,.9)';
-      ctx.shadowBlur = 4;
+      ctx.shadowColor = 'rgba(255,255,255,.82)';
+      ctx.shadowBlur = 2;
+      const fitText = (value: string, maxWidth: number, maxSize: number) => {
+        let fontSize = maxSize;
+        do {
+          ctx.font = `900 ${fontSize}px "Arial", sans-serif`;
+          if (ctx.measureText(value).width <= maxWidth) break;
+          fontSize -= 2;
+        } while (fontSize > 54);
+      };
       if (isPair) {
         parts.forEach((part, i) => {
           const x = i === 0 ? 166 : 346;
-          ctx.fillStyle = 'rgba(255,255,255,.94)';
+          const boxX = x - 88;
+          const boxY = 48;
+          const boxW = 176;
+          const boxH = 160;
+          ctx.fillStyle = 'rgba(255,255,255,.96)';
           ctx.beginPath();
-          ctx.roundRect(x - 76, 62, 152, 132, 18);
+          ctx.roundRect(boxX, boxY, boxW, boxH, 18);
           ctx.fill();
           ctx.strokeStyle = 'rgba(24,32,51,.22)';
-          ctx.lineWidth = 6;
+          ctx.lineWidth = 7;
           ctx.stroke();
+          fitText(part, boxW - 32, 146);
           ctx.fillStyle = '#111827';
-          ctx.fillText(part, x, 131);
+          ctx.fillText(part, x, boxY + boxH / 2);
         });
         ctx.fillStyle = 'rgba(17,24,39,.5)';
-        ctx.fillRect(253, 78, 6, 104);
+        ctx.fillRect(252, 72, 8, 112);
       } else {
-        ctx.fillStyle = 'rgba(255,255,255,.94)';
+        const boxX = 96;
+        const boxY = 42;
+        const boxW = 320;
+        const boxH = 172;
+        ctx.fillStyle = 'rgba(255,255,255,.96)';
         ctx.beginPath();
-        ctx.roundRect(146, 62, 220, 132, 18);
+        ctx.roundRect(boxX, boxY, boxW, boxH, 20);
         ctx.fill();
         ctx.strokeStyle = 'rgba(24,32,51,.22)';
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 8;
         ctx.stroke();
+        fitText(text, boxW - 42, 170);
         ctx.fillStyle = '#111827';
-        ctx.fillText(text, 256, 131);
+        ctx.fillText(text, boxX + boxW / 2, boxY + boxH / 2);
       }
       ctx.shadowBlur = 0;
-      door.signTex.needsUpdate = true;
-      door.label = text;
-      return;
-      const compact = text.replace(/\s+/g, '');
-      const fontSize = compact.length <= 2 ? 190 : compact.length <= 3 ? 162 : 132;
-      ctx.clearRect(0, 0, 512, 256);
-      // 어두운 박스 없이 — 순백 숫자만 (아주 밝게)
-      ctx.fillStyle = 'rgba(255,255,255,.88)';
-      ctx.beginPath();
-      ctx.roundRect(42, 32, 428, 192, 24);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(20,28,44,.18)';
-      ctx.lineWidth = 10;
-      ctx.stroke();
-      ctx.fillStyle = '#182033';
-      ctx.font = `900 ${fontSize}px "Arial", sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = 'rgba(255,255,255,.8)';
-      ctx.shadowBlur = 2;
-      ctx.fillText(text, 256, 128);
       door.signTex.needsUpdate = true;
       door.label = text;
     };
@@ -1180,13 +1118,14 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     renderer.render(scene, camera);
     g.raf = requestAnimationFrame(animate);
     startRound();
+    const flashEl = flashRef.current;
 
     return () => {
       unbindResize();
       g.running = false;
       if (g.roundTimer) clearTimeout(g.roundTimer);
       if (flashHideTimer) clearTimeout(flashHideTimer);
-      if (flashRef.current) flashRef.current.style.opacity = '0';
+      if (flashEl) flashEl.style.opacity = '0';
       if (g.raf != null) cancelAnimationFrame(g.raf);
 
       disposeGeos.forEach((geo) => geo.dispose());

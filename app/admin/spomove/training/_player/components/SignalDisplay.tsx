@@ -5,6 +5,8 @@ import { PAD_POSITIONS } from '@/app/lib/admin/constants/padGrid';
 import type { FruitSlide, VariantPanelContent } from '../lib/signals';
 import { BodyActionIcon, BODY_ACTION_LABELS, type BodyActionId } from './BodyActionIcons';
 
+const STROOP_WORD_FONT_FAMILY = '"Bagel Fat One", "Jua", "Nunito", "Noto Sans KR", sans-serif';
+
 function variantCells(panel: VariantPanelContent | null | undefined): FruitSlide[] {
   if (!panel) return [];
   return panel.cells ?? (panel.slide ? [panel.slide] : []);
@@ -538,15 +540,22 @@ export const SignalDisplay = React.memo(function SignalDisplay({
         })());
     return (
       <div key={animKey} className="signal-blink" style={C}>
+        <style>
+          {"@import url('https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Jua&family=Nunito:wght@900&display=swap');"}
+        </style>
         <div
           style={{
-            fontSize: 'clamp(80px,20vw,260px)',
-            fontWeight: 900,
+            fontFamily: STROOP_WORD_FONT_FAMILY,
+            fontSize: 'clamp(82px,19vw,250px)',
+            fontWeight: 400,
             color: content?.textHex as string,
-            lineHeight: 1,
-            letterSpacing: '-0.03em',
+            lineHeight: 0.95,
+            letterSpacing: '0.02em',
             textAlign: 'center',
-            textShadow: light ? '0 1px 3px rgba(0,0,0,0.18)' : '0 0 80px rgba(0,0,0,0.6)',
+            WebkitTextStroke: light ? '1px rgba(15,23,42,0.14)' : '1px rgba(255,255,255,0.08)',
+            textShadow: light
+              ? '0 3px 0 rgba(15,23,42,0.10), 0 8px 18px rgba(0,0,0,0.16)'
+              : '0 4px 0 rgba(0,0,0,0.28), 0 0 70px rgba(0,0,0,0.58)',
           }}
         >
           {content?.word as string}

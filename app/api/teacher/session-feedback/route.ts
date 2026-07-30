@@ -19,6 +19,22 @@ type Body = {
   fileUrls?: unknown;
 };
 
+function isAssistantTeacherUser(
+  userId: string,
+  session: { memo?: string | null; students_text?: string | null }
+): boolean {
+  const uid = String(userId || '').trim().toLowerCase();
+  if (!uid) return false;
+  for (const raw of [session.memo, session.students_text]) {
+    if (!raw?.includes('EXTRA_TEACHERS:')) continue;
+    const { extraTeachers } = parseExtraTeachers(raw);
+    if (extraTeachers.some((t) => String(t.id || '').trim().toLowerCase() === uid)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function alignCenterDocumentNamesForSave(
   fileUrls: string[],
   fromBody: unknown,
@@ -64,7 +80,7 @@ export async function POST(req: Request) {
     const svc = getServiceSupabase();
     const { data: row, error: fetchErr } = await svc
       .from('sessions')
-      .select('id, created_by, start_at, session_type, title, memo, status, feedback_fields')
+      .select('id, created_by, start_at, session_type, title, memo, students_text, status, feedback_fields')
       .eq('id', sessionId)
       .maybeSingle();
 
@@ -75,7 +91,9 @@ export async function POST(req: Request) {
     if (!row) {
       return NextResponse.json({ error: '세션을 찾을 수 없습니다.' }, { status: 404 });
     }
-    if (String(row.created_by || '') !== String(user.id)) {
+    const isMainTeacher = String(row.created_by || '') === String(user.id);
+    const isAssistantTeacher = isAssistantTeacherUser(String(user.id), row);
+    if (!isMainTeacher && !isAssistantTeacher) {
       return NextResponse.json({ error: '이 수업을 수정할 권한이 없습니다.' }, { status: 403 });
     }
 
@@ -169,7 +187,6 @@ export async function POST(req: Request) {
         file_url: centerFileUrls,
       })
       .eq('id', sessionId)
-      .eq('created_by', user.id)
       .select('id');
 
     if (upErr) {

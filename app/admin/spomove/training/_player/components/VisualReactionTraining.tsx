@@ -21,7 +21,7 @@ const RT_COLORS = [
 
 const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간 빠름', '빠름', '매우 빠름'];
 
-export type ReactTrainVariant = 'flow' | 'flash' | 'pattern';
+export type ReactTrainVariant = 'flow' | 'flash' | 'pattern' | 'balloonSimon';
 
 export type ReactTrainCompleteStats = {
   stims: number;
@@ -31,14 +31,14 @@ export type ReactTrainCompleteStats = {
 
 type GameState = {
   running: boolean;
-  mode: 'flow' | 'flash' | 'pattern';
+  mode: ReactTrainVariant;
   timeLeft: number;
   spd: number;
   lw: number;
   hitY: number;
   W: number;
   H: number;
-  objs: (FlowTile | FlashBubble)[];
+  objs: (FlowTile | FlashBubble | SimonBalloon)[];
   particles: Particle[];
   stims: number;
   combo: number;
@@ -47,6 +47,8 @@ type GameState = {
   baseSpd: number;
   spawnInt: number;
   lastSpawn: number;
+  /** balloonSimon: 신호 속도(ms) — 스폰·체류에 직결 */
+  cueMs: number;
   /** 연속 자극(히트 라인 통과) 사이 최소 시간(ms) — 스폰 간격과 별개로 터짐 간격 확보 */
   minStimGapMs: number;
   /** 마지막으로 실제 자극이 발생한 시각(ms) */
@@ -164,6 +166,7 @@ class FlowTile {
   }
 }
 
+/** 풍선 터뜨리기(FLASH): 위에서 낙하 → 하단 가시에 닿으면 터짐 */
 class FlashBubble {
   lane: number;
   color: (typeof RT_COLORS)[number];
@@ -175,8 +178,65 @@ class FlashBubble {
   dead: boolean;
   wobble: number;
   t: number;
+
+  constructor(g: GameState) {
+    this.lane = Math.floor(Math.random() * 4);
+    this.color = RT_COLORS[this.lane];
+    const r0 = Math.max(g.W * 0.07, 30);
+    this.r = r0 + Math.random() * r0 * 0.5;
+    this.x = this.r + Math.random() * Math.max(1, g.W - this.r * 2);
+    this.y = -this.r * 2;
+    this.speed = g.baseSpd * (0.75 + Math.random() * 0.5);
+    this.fired = false;
+    this.dead = false;
+    this.wobble = (Math.random() - 0.5) * 0.4;
+    this.t = 0;
+  }
+
+  update(
+    g: GameState,
+    _cv: HTMLCanvasElement,
+    nowMs: number,
+    deltaSec: number,
+    onBubbleStim: (lane: number, x: number, y: number) => void
+  ) {
+    this.t++;
+    if (!this.fired) {
+      this.y += this.speed * deltaSec;
+      this.x += Math.sin(this.t * 0.04 + this.wobble) * 0.8;
+      if (this.y + this.r >= g.hitY) {
+        this.y = g.hitY - this.r;
+        const ready = nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
+        if (ready) {
+          this.fired = true;
+          this.dead = true;
+          g.lastStimWallMs = nowMs;
+          g.stimConsumedThisFrame = true;
+          onBubbleStim(this.lane, this.x, this.y);
+        }
+      }
+    }
+  }
+
+  draw(ctx: CanvasRenderingContext2D, g: GameState) {
+    if (this.dead) return;
+    if (this.y - this.r > g.H) return;
+    drawBubbleBody(ctx, g, this.x, this.y, this.r, this.color.main);
+  }
+}
+
+/** 풍선 사이먼: 화면 임의 위치에 나타나 잠시 후 터짐(바늘 없음) */
+class SimonBalloon {
+  lane: number;
+  color: (typeof RT_COLORS)[number];
+  r: number;
+  x: number;
+  y: number;
+  fired: boolean;
+  dead: boolean;
+  wobble: number;
+  t: number;
   triggerMs: number;
-  needleScale: number;
 
   constructor(g: GameState) {
     this.lane = Math.floor(Math.random() * 4);
@@ -185,18 +245,18 @@ class FlashBubble {
     this.r = r0 * (0.78 + Math.random() * 1.25);
     this.x = this.r + Math.random() * Math.max(1, g.W - this.r * 2);
     this.y = this.r + Math.random() * Math.max(1, g.hitY - this.r * 2 - 12);
-    this.speed = 0;
     this.fired = false;
     this.dead = false;
     this.wobble = (Math.random() - 0.5) * 0.4;
     this.t = 0;
-    this.triggerMs = 360 + Math.random() * 280;
-    this.needleScale = 0.75 + Math.random() * 1.2;
+    // 신호 속도(cueMs)에 맞춰 체류 후 터짐 — 다음 풍선 스폰과 같은 주기
+    const cue = Math.max(800, g.cueMs);
+    this.triggerMs = cue * (0.82 + Math.random() * 0.12);
   }
 
   update(
     g: GameState,
-    cv: HTMLCanvasElement,
+    _cv: HTMLCanvasElement,
     nowMs: number,
     deltaSec: number,
     onBubbleStim: (lane: number, x: number, y: number) => void
@@ -220,55 +280,43 @@ class FlashBubble {
   draw(ctx: CanvasRenderingContext2D, g: GameState) {
     if (this.dead) return;
     if (this.y - this.r > g.H) return;
-    ctx.save();
-    ctx.shadowColor = this.color.main;
-    ctx.shadowBlur = g.isLow ? 6 : 30;
-    ctx.strokeStyle = this.color.main;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.shadowBlur = g.isLow ? 0 : 20;
-    const grd = ctx.createRadialGradient(
-      this.x - this.r * 0.25,
-      this.y - this.r * 0.25,
-      this.r * 0.05,
-      this.x,
-      this.y,
-      this.r
-    );
-    grd.addColorStop(0, 'rgba(255,255,255,.9)');
-    grd.addColorStop(0.2, `${this.color.main}cc`);
-    grd.addColorStop(1, `${this.color.main}55`);
-    ctx.fillStyle = grd;
-    ctx.globalAlpha = 0.85;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 0.5;
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.arc(this.x - this.r * 0.28, this.y - this.r * 0.28, this.r * 0.22, 0, Math.PI * 2);
-    ctx.fill();
-    const needleH = this.r * 1.25 * this.needleScale;
-    const needleW = this.r * 0.2 * this.needleScale;
-    const nx = this.x + this.r * (0.25 + this.wobble);
-    const ny = this.y + this.r * 0.75;
-    ctx.globalAlpha = 0.95;
-    ctx.fillStyle = '#f8fafc';
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = g.isLow ? 2 : 12;
-    ctx.beginPath();
-    ctx.moveTo(nx, ny - needleH);
-    ctx.lineTo(nx - needleW, ny);
-    ctx.lineTo(nx + needleW, ny);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillRect(nx - needleW * 0.32, ny, needleW * 0.64, needleH * 0.28);
-    ctx.restore();
+    drawBubbleBody(ctx, g, this.x, this.y, this.r, this.color.main);
   }
+}
+
+function drawBubbleBody(
+  ctx: CanvasRenderingContext2D,
+  g: GameState,
+  x: number,
+  y: number,
+  r: number,
+  colorMain: string
+) {
+  ctx.save();
+  ctx.shadowColor = colorMain;
+  ctx.shadowBlur = g.isLow ? 6 : 30;
+  ctx.strokeStyle = colorMain;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.shadowBlur = g.isLow ? 0 : 20;
+  const grd = ctx.createRadialGradient(x - r * 0.25, y - r * 0.25, r * 0.05, x, y, r);
+  grd.addColorStop(0, 'rgba(255,255,255,.9)');
+  grd.addColorStop(0.2, `${colorMain}cc`);
+  grd.addColorStop(1, `${colorMain}55`);
+  ctx.fillStyle = grd;
+  ctx.globalAlpha = 0.85;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.arc(x - r * 0.28, y - r * 0.28, r * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 class Particle {
@@ -281,30 +329,48 @@ class Particle {
   dec: number;
   r: number;
   grav: number;
-  constructor(x: number, y: number, color: string, burstScale = 1) {
+  soft: boolean;
+  constructor(x: number, y: number, color: string, burstScale = 1, soft = false) {
     this.x = x;
     this.y = y;
     this.color = color;
+    this.soft = soft;
     const a = Math.random() * Math.PI * 2;
-    const s = (Math.random() * 10 + 3) * burstScale;
-    this.vx = Math.cos(a) * s;
-    this.vy = Math.sin(a) * s - 2 * burstScale;
-    this.life = 1;
-    this.dec = (Math.random() * 0.022 + 0.012) / Math.sqrt(burstScale);
-    this.r = (Math.random() * 5 + 2) * Math.sqrt(burstScale);
-    this.grav = 0.2 * Math.sqrt(burstScale);
+    if (soft) {
+      // 풍선 팡: 느리게 크게 퍼지는 방울 (체감 ~5배 스케일)
+      const s = (Math.random() * 9 + 5) * burstScale;
+      this.vx = Math.cos(a) * s;
+      this.vy = Math.sin(a) * s - 1.5;
+      this.life = 1;
+      this.dec = 0.012 + Math.random() * 0.008;
+      this.r = (Math.random() * 55 + 48) * Math.sqrt(burstScale);
+      this.grav = 0.04;
+    } else {
+      const s = (Math.random() * 10 + 3) * burstScale;
+      this.vx = Math.cos(a) * s;
+      this.vy = Math.sin(a) * s - 2 * burstScale;
+      this.life = 1;
+      this.dec = (Math.random() * 0.03 + 0.02) / Math.sqrt(Math.max(1, burstScale));
+      this.r = (Math.random() * 5 + 2) * Math.sqrt(burstScale);
+      this.grav = 0.2 * Math.sqrt(burstScale);
+    }
   }
   update() {
     this.x += this.vx;
     this.y += this.vy;
     this.vy += this.grav;
+    if (this.soft) {
+      this.vx *= 0.955;
+      this.vy *= 0.955;
+      this.r *= 1.018;
+    }
     this.life -= this.dec;
   }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
-    ctx.globalAlpha = Math.max(0, this.life);
+    ctx.globalAlpha = Math.max(0, this.life) * (this.soft ? 0.72 : 1);
     ctx.shadowColor = this.color;
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = this.soft ? 28 : 12;
     ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
@@ -355,17 +421,10 @@ const css = `
 #vrt .vrt-pad[data-l="3"].lit{background:linear-gradient(to top,rgba(255,214,0,.18),transparent)}
 #vrt .vrt-pad.lit .vrt-pad-dot{opacity:1;box-shadow:0 0 18px 4px currentColor;transform:scale(1.5)}
 #vrt .vrt-pad.lit .vrt-pad-lbl{opacity:1}
-/* 풍선 터뜨리기: 하단 4색 패드 대신 가시 침대 */
-#vrt #vrt-spikes{height:var(--pad-h);flex-shrink:0;z-index:40;pointer-events:none;padding-bottom:max(0px,env(safe-area-inset-bottom));background:linear-gradient(to top,#080810 0%,#101018 100%);border-top:1px solid rgba(255,255,255,.08);display:flex;overflow:hidden}
-#vrt .vrt-spike-col{flex:1;display:flex;align-items:flex-end;justify-content:space-evenly;gap:2px;padding:0 clamp(2px,1vw,8px) 6px;border-right:1px solid rgba(255,255,255,.05);transition:background .08s}
-#vrt .vrt-spike-col:last-child{border-right:none}
-#vrt .vrt-spike-col[data-l="0"]{--spike-color:#FF1744}
-#vrt .vrt-spike-col[data-l="1"]{--spike-color:#2979FF}
-#vrt .vrt-spike-col[data-l="2"]{--spike-color:#00E676}
-#vrt .vrt-spike-col[data-l="3"]{--spike-color:#FFD600}
-#vrt .vrt-spike-up{width:0;height:0;border-left:clamp(5px,1.2vw,9px) solid transparent;border-right:clamp(5px,1.2vw,9px) solid transparent;border-bottom:clamp(28px,6vh,46px) solid var(--spike-color);filter:drop-shadow(0 -2px 6px rgba(255,255,255,.12));opacity:.85}
-#vrt .vrt-spike-col.lit{background:linear-gradient(to top,rgba(255,255,255,.06),transparent)}
-#vrt .vrt-spike-col.lit .vrt-spike-up{opacity:1;filter:drop-shadow(0 -4px 14px var(--spike-color))}
+/* 풍선 터뜨리기: 하단 날카로운 무채색 바늘 — 틀·선·띠 없음(플레이 영역 오버레이) */
+#vrt .vrt-spikes-overlay{position:absolute;left:0;right:0;bottom:0;height:clamp(56px,12vh,96px);z-index:35;pointer-events:none;overflow:visible}
+#vrt .vrt-spike-needle{position:absolute;bottom:0;transform-origin:50% 100%;pointer-events:none;overflow:visible}
+#vrt .vrt-spike-needle svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 -2px 3px rgba(0,0,0,.45))}
 #vrt #vrt-hud{height:var(--hud-h);flex-shrink:0;z-index:50;display:flex;align-items:stretch;background:rgba(7,7,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0}
 #vrt .vrt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 #vrt .vrt-hc.vrt-cen{flex:1;align-items:center;border-right:none}
@@ -392,6 +451,33 @@ const css = `
 }
 `;
 
+function buildFlashSpikeLayout(count = 26): {
+  id: number;
+  leftPct: number;
+  heightPx: number;
+  widthPx: number;
+  rotateDeg: number;
+  opacity: number;
+}[] {
+  const n = Math.max(16, count);
+  const slots = Array.from({ length: n }, (_, i) => (i + 0.2 + Math.random() * 0.55) / n);
+  for (let i = slots.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [slots[i], slots[j]] = [slots[j]!, slots[i]!];
+  }
+  return slots.map((t, id) => {
+    const tall = Math.random() > 0.45;
+    return {
+      id,
+      leftPct: 1.5 + t * 97 + (Math.random() - 0.5) * 0.8,
+      heightPx: tall ? 58 + Math.random() * 42 : 36 + Math.random() * 28,
+      widthPx: tall ? 3.5 + Math.random() * 2.8 : 4.5 + Math.random() * 3.5,
+      rotateDeg: -14 + Math.random() * 28,
+      opacity: 0.55 + Math.random() * 0.4,
+    };
+  });
+}
+
 type Props = {
   variant: ReactTrainVariant;
   durationSec: number;
@@ -417,6 +503,9 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
   const milestoneRootRef = useRef<HTMLDivElement>(null);
   const [hudTimeWarn, setHudTimeWarn] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [flashSpikes] = useState(() =>
+    variant === 'flash' ? buildFlashSpikeLayout(22 + Math.floor(Math.random() * 10)) : []
+  );
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -424,7 +513,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
 
   const fallTimeSec = Math.max(1, Math.min(6, Number.isFinite(speedSec) ? speedSec : 4));
   const lv = Math.max(1, Math.min(7, Math.round(7 - ((fallTimeSec - 1) * 6) / 5)));
-  const spName = SPD_NAMES[lv - 1] ?? '보통';
+  const spName =
+    variant === 'balloonSimon' ? `${Math.round(fallTimeSec)}초` : (SPD_NAMES[lv - 1] ?? '보통');
 
   const endGame = useCallback(() => {
     const g = gRef.current;
@@ -489,7 +579,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
 
       const el = laneExplRefs.current[lane];
-      if (el && g.mode !== 'flash') {
+      if (el && g.mode !== 'flash' && g.mode !== 'balloonSimon') {
         el.style.transition = 'none';
         el.style.opacity = '1';
         clearTimeout((el as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
@@ -499,17 +589,22 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         }, 110);
       }
       const pad = padRefs.current[lane];
-      if (pad && g.mode !== 'flash') {
+      if (pad && g.mode !== 'flash' && g.mode !== 'balloonSimon') {
         pad.classList.add('lit');
         clearTimeout((pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
         (pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => pad.classList.remove('lit'), 260);
       }
       const c = RT_COLORS[lane].main;
-      const burstScale = g.mode === 'flash' ? 2.8 : 1;
-      const colorParticles = g.mode === 'flash' ? 96 : 38;
-      const whiteParticles = g.mode === 'flash' ? 28 : 8;
-      for (let i = 0; i < colorParticles; i++) g.particles.push(new Particle(x, y, c, burstScale));
-      for (let i = 0; i < whiteParticles; i++) g.particles.push(new Particle(x, y, '#ffffff', burstScale * 0.85));
+      const isBalloonBurst = g.mode === 'flash' || g.mode === 'balloonSimon';
+      if (isBalloonBurst) {
+        // 팡: 큰 방울이 느리게 퍼짐 (화면을 훑지 않음)
+        const n = g.isLow ? 36 : 56;
+        for (let i = 0; i < n; i++) g.particles.push(new Particle(x, y, c, 2.6, true));
+        for (let i = 0; i < (g.isLow ? 12 : 20); i++) g.particles.push(new Particle(x, y, '#ffffff', 2.2, true));
+      } else {
+        for (let i = 0; i < 38; i++) g.particles.push(new Particle(x, y, c, 1));
+        for (let i = 0; i < 8; i++) g.particles.push(new Particle(x, y, '#ffffff', 1));
+      }
       if (g.combo >= 5 && g.combo % 5 === 0) {
         const pop = comboRef.current;
         const nEl = comboNRef.current;
@@ -590,6 +685,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       baseSpd: 0,
       spawnInt: 600,
       lastSpawn: 0,
+      cueMs: Math.round(fallTimeSec * 1000),
       minStimGapMs: 700,
       lastStimWallMs: -1e15,
       stimConsumedThisFrame: false,
@@ -627,7 +723,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
     if (hudStimsRef.current) hudStimsRef.current.textContent = '0';
 
     const drawGrid = (ctx: CanvasRenderingContext2D) => {
-      if (g.mode === 'flash') return;
+      if (g.mode === 'flash' || g.mode === 'balloonSimon') return;
       ctx.save();
       ctx.setLineDash([16, 16]);
       ctx.strokeStyle = 'rgba(255,255,255,0.04)';
@@ -644,19 +740,11 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
 
     const drawHitLine = (ctx: CanvasRenderingContext2D) => {
       const y = g.hitY;
-      if (g.mode === 'flash') return;
-      if (false) {
-        // 히트 라인만 — 가시 실루엣은 DOM #vrt-spikes
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255,255,255,.12)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(g.W, y);
-        ctx.stroke();
-        ctx.restore();
+      if (g.mode === 'flash') {
+        // 가시는 DOM 오버레이 — 캔버스 히트 라인/틀 선 없음
         return;
       }
+      if (g.mode === 'balloonSimon') return;
       ctx.save();
       ctx.shadowColor = '#fff';
       ctx.shadowBlur = 18;
@@ -734,10 +822,15 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
           g.objs.push(new FlowTile(g, cv, triple[2], true));
         }
       } else if (g.mode === 'flash') {
-        // FLASH(2번): 버블이 서로 겹치지 않게 동시 낙하를 1개로 제한.
+        // FLASH: 버블이 서로 겹치지 않게 동시 낙하를 1개로 제한.
         const activeFlash = g.objs.filter((o) => o instanceof FlashBubble && !o.dead).length;
         if (activeFlash < 1) {
           g.objs.push(new FlashBubble(g));
+        }
+      } else if (g.mode === 'balloonSimon') {
+        const active = g.objs.filter((o) => o instanceof SimonBalloon && !o.dead).length;
+        if (active < 1) {
+          g.objs.push(new SimonBalloon(g));
         }
       } else {
         const pair = randomPair();
@@ -754,6 +847,9 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
           o.update(g, cv, nowMs, deltaSec, onStim);
           o.draw(ctx, g);
         } else if (o instanceof FlashBubble) {
+          o.update(g, cv, nowMs, deltaSec, onStimBubble);
+          o.draw(ctx, g);
+        } else if (o instanceof SimonBalloon) {
           o.update(g, cv, nowMs, deltaSec, onStimBubble);
           o.draw(ctx, g);
         }
@@ -794,6 +890,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
     };
 
     const computeSpawnInt = () => {
+      /* 풍선 사이먼: 신호 속도(초) = A→B 스폰 간격 */
+      if (variant === 'balloonSimon') return Math.round(fallTimeSec * 1000);
       /* 초등 친화: 최소 간격 상향 + 단계별 간격 완화(동시 스폰 체감 완화) */
       const base = Math.max(560, 1780 - (lv - 1) * 130);
       /* FLOW: concurrent 수에 따라 스폰 간격 조정 */
@@ -802,15 +900,16 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         if (concurrent === 2) return Math.round(base * 2.3);
         return Math.round(base * 2.8); // 3개 동시: 여유 있게
       }
-      /* FLASH: 동시 1개는 유지하되, 앞 버블이 터질 즈음 다음 버블이 보이도록 중간값으로 조정 */
+      /* FLASH: 동시 1개, 앞 버블이 터질 즈음 다음이 보이도록 */
       if (variant === 'flash') return Math.round(base * 1.45);
-      /* PATTERN(3번): 페어 출현 간격을 FLOW·FLASH 대비 2배 */
+      /* PATTERN: 페어 출현 간격을 FLOW·FLASH 대비 2배 */
       if (variant === 'pattern') return Math.round(base * 2.3);
       return base;
     };
 
     /** 실제 히트 간격: 스폰보다 우선 체감되는 연속 자극 간 최소 시간 */
     const computeMinStimGapMs = () => {
+      if (variant === 'balloonSimon') return Math.round(fallTimeSec * 1000);
       if (variant === 'flow') return Math.max(560, 1020 - (lv - 1) * 64);
       if (variant === 'flash') return Math.max(460, 860 - (lv - 1) * 56);
       return Math.max(520, 980 - (lv - 1) * 62);
@@ -824,6 +923,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       const travelPx = Math.max(60, g.hitY + 4);
       const pps = travelPx / fallTimeSec;
       g.baseSpd = pps;
+      g.cueMs = Math.round(fallTimeSec * 1000);
       g.spawnInt = computeSpawnInt();
       g.minStimGapMs = computeMinStimGapMs();
     };
@@ -840,6 +940,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         const travelPx = Math.max(60, g.hitY + 4);
         const pps = travelPx / fallTimeSec;
         g.baseSpd = pps;
+        g.cueMs = Math.round(fallTimeSec * 1000);
         g.spawnInt = computeSpawnInt();
         g.minStimGapMs = computeMinStimGapMs();
       }
@@ -887,6 +988,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
   }, [concurrent, durationSec, endGame, fallTimeSec, lv, onStim, onStimBubble, variant]);
 
   const uid = useId();
+  const spikeUid = uid.replace(/:/g, '');
   return (
     <div className="vrt" id="vrt">
       <style
@@ -910,7 +1012,12 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         </div>
         <div className="vrt-hc vrt-cen">
           <div id="vrt-badge" className="vrt-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>
-            {variant === 'flow' && concurrent > 1 ? `FLOW ×${concurrent}` : variant.toUpperCase()} · {spName}
+            {variant === 'flow' && concurrent > 1
+              ? `FLOW ×${concurrent}`
+              : variant === 'balloonSimon'
+                ? 'BALLOON SIMON'
+                : variant.toUpperCase()}{' '}
+            · {spName}
           </div>
         </div>
         <div className="vrt-hc" style={{ borderRight: 'none', borderLeft: '1px solid rgba(255,255,255,.05)' }}>
@@ -926,16 +1033,18 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       <div ref={playAreaRef} style={{ position: 'relative', flex: 1, minHeight: 0, width: '100%' }}>
         <canvas id="vrt-cv" ref={cvRef} style={{ position: 'absolute', inset: 0 }} />
         <div id="vrt-lane" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={uid + 'l' + i}
-              className="vrt-laneExpl"
-              data-l={i}
-              ref={(el) => {
-                laneExplRefs.current[i] = el;
-              }}
-            />
-          ))}
+          {variant === 'balloonSimon'
+            ? null
+            : [0, 1, 2, 3].map((i) => (
+                <div
+                  key={uid + 'l' + i}
+                  className="vrt-laneExpl"
+                  data-l={i}
+                  ref={(el) => {
+                    laneExplRefs.current[i] = el;
+                  }}
+                />
+              ))}
         </div>
         <div ref={milestoneRootRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
         {countdown > 0 && (
@@ -978,8 +1087,39 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
           </div>
           <div className="vrt-cw">COMBO</div>
         </div>
+        {variant === 'flash' ? (
+          <div className="vrt-spikes-overlay" aria-hidden>
+            {flashSpikes.map((spike) => (
+              <div
+                key={uid + 'sp' + spike.id}
+                className="vrt-spike-needle"
+                style={{
+                  left: `${spike.leftPct}%`,
+                  width: `${spike.widthPx}px`,
+                  height: `${spike.heightPx}px`,
+                  opacity: spike.opacity,
+                  transform: `translateX(-50%) rotate(${spike.rotateDeg}deg)`,
+                }}
+              >
+                <svg viewBox="0 0 10 120" preserveAspectRatio="none" aria-hidden>
+                  <defs>
+                    <linearGradient id={`${spikeUid}-ng${spike.id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f1f5f9" />
+                      <stop offset="35%" stopColor="#94a3b8" />
+                      <stop offset="100%" stopColor="#475569" />
+                    </linearGradient>
+                  </defs>
+                  <polygon
+                    points="5,0 3.2,108 0,120 10,120 6.8,108"
+                    fill={`url(#${spikeUid}-ng${spike.id})`}
+                  />
+                </svg>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
-      {variant !== 'flash' ? (
+      {variant === 'flash' || variant === 'balloonSimon' ? null : (
         <div id="vrt-pads">
           {['RED', 'BLU', 'GRN', 'YEL'].map((label, i) => (
             <div
@@ -995,7 +1135,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
             </div>
           ))}
         </div>
-      ) : null}
+      )}
       <style>{`#vrt #vrt-mtime.warn{animation:vrtw .5s ease-in-out infinite}`}</style>
     </div>
   );

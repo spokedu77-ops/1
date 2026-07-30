@@ -610,7 +610,8 @@ function CardVisual({
           sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
           quality={75}
           className={fitClass}
-          onLoadingComplete={(img) => {
+          onLoad={(event) => {
+            const img = event.currentTarget;
             if (shouldStretchThumbnailToSquare(img.naturalWidth, img.naturalHeight, thumbnailUrl)) {
               setStretch(true);
             }

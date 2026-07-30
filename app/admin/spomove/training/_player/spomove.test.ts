@@ -794,8 +794,10 @@ describe('training result summary', () => {
     ]);
     // 화면 순번(1-based index) ≠ 엔진 id (예: 화면 4번 = 두더지 eng 6)
     expect(MODES.reactTrain.levels[3]?.id).toBe(6);
-    expect(MODES.simon.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4]);
+    expect(MODES.simon.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4, 5]);
     expect(MODES.simon.levels[3]?.enName).toBe('Camouflage');
+    expect(MODES.simon.levels[4]?.enName).toBe('Balloon Simon');
+    expect(MODES.simon.levels[4]?.name).toBe('풍선 사이먼');
     // 신 카탈로그 passthrough
     expect(resolveReactTrainUiLevel(1).engineLevel).toBe(1);
     expect(resolveReactTrainUiLevel(9).engineLevel).toBe(9);

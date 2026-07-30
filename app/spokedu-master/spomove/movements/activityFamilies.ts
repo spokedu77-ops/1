@@ -101,6 +101,9 @@ export const ACTIVITY_FAMILIES: Record<string, ActivityFamilyDefinition> = {
   'simon-mixed': family('simon-mixed', 'choiceReaction', 'choiceControl', {
     recommendedMovement: pick('handTouch', 'free'),
   }),
+  'simon-balloon': family('simon-balloon', 'choiceReaction', 'choiceControl', {
+    recommendedMovement: pick('handTouch', 'free'),
+  }),
   'flanker-uniform': family('flanker-uniform', 'choiceReaction', 'choiceControl', {
     recommendedMovement: pick('footTap', 'free'),
   }),
@@ -163,6 +166,7 @@ export const PRESET_FAMILY_MAP: Record<string, ActivityFamilyId> = {
   'simon-pole-shape-06': 'simon-pole',
   'simon-pole-arrows-41': 'simon-pole',
   'simon-mixed-gallery-exp': 'simon-mixed',
+  'simon-balloon-flash-05': 'simon-balloon',
   'flanker-uniform-07': 'flanker-uniform',
   'flanker-uniform-number-exp': 'flanker-uniform',
   'flanker-random-43': 'flanker-random',

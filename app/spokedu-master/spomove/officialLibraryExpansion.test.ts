@@ -88,7 +88,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(byGroup('visual-reaction')).toHaveLength(7);
 
-    expect(byGroup('simon')).toHaveLength(4);
+    expect(byGroup('simon')).toHaveLength(5);
 
     expect(byGroup('flanker')).toHaveLength(10);
 
@@ -240,10 +240,12 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(vr.map((p) => p.engine.level).sort((a, b) => a - b)).toEqual([1, 2, 3, 6, 8, 9, 10]);
   });
 
-  it('사이먼 그룹에 매직 아이(level 4)가 포함된다', () => {
+  it('사이먼 그룹에 매직 아이(level 4)·풍선 사이먼(level 5)이 포함된다', () => {
     const simon = byGroup('simon');
     expect(simon.some((preset) => preset.id === 'visual-reaction-blackout-37')).toBe(true);
     expect(simon.some((preset) => preset.engine.level === 4 && preset.engine.mode === 'simon')).toBe(true);
+    expect(simon.some((preset) => preset.id === 'simon-balloon-flash-05')).toBe(true);
+    expect(simon.some((preset) => preset.engine.level === 5 && preset.engine.mode === 'simon')).toBe(true);
   });
 
 

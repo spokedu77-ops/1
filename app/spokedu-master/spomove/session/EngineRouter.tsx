@@ -226,6 +226,22 @@ export function EngineRouter({
     );
   }
 
+  if (mode === 'simon' && level === 5) {
+    const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
+    const sp = speedSec ?? 3;
+    return (
+      <Suspense fallback={<LoadingOverlay />}>
+        <VisualReactionTraining
+          variant="balloonSimon"
+          durationSec={dur}
+          speedSec={sp}
+          onExit={onExit}
+          onComplete={handleReactTrainComplete}
+        />
+      </Suspense>
+    );
+  }
+
   if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
     const safeLevel = mode === 'basic' ? Math.min(Math.max(level, 1), 10) : Math.max(level, 1);
     return (

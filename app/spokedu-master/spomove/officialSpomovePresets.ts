@@ -100,7 +100,7 @@ export type OfficialSpomovePreset = {
   operationProfileId?: import('./operations/operationTypes').ActivityOperationProfileId;
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 41;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 42;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -526,18 +526,18 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 3 },
-    description: '풍선 터뜨리기처럼 순간적으로 나타나는 자극에 빠르게 반응하는 시지각 반응 활동',
+    description: '화면 어디서든 떨어지는 색 풍선이 하단 가시에 닿을 때 해당 색으로 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '순간 집중, 빠른 반응, 시각 각성',
+    recommendedUse: '낙하 추적, 가시 접촉 타이밍, 시각 각성',
     isReady: true,
     settingSummary: '3초 · 20회 · BGM 자동',
     settingChips: ['풍선 터뜨리기', '20회', 'BGM 자동'],
     executionFacts: [
       { label: '자극 방식', value: '풍선 터뜨리기' },
-      { label: '진행 방식', value: '순간 반응' },
+      { label: '진행 방식', value: '낙하 · 가시 접촉' },
       { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
@@ -737,6 +737,34 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '자극 방식', value: '매직 아이' },
       { label: '배치', value: '극단' },
       { label: '진행 방식', value: '위장 탐지' },
+      { label: 'BGM', value: '자동 재생' },
+    ],
+  },
+  // 사이먼 5번: 풍선 사이먼 (순간 등장 · 바늘 없음)
+  {
+    id: 'simon-balloon-flash-05',
+    sortOrder: 28,
+    title: '사이먼 효과 5번 · 풍선 사이먼',
+    en: 'Simon Effect',
+    axis: 'attention',
+    axisTitle: SPOMOVE_AXIS_META.attention.title,
+    programGroup: 'simon',
+    programTitle: '사이먼 효과',
+    salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
+    engine: { mode: 'simon', level: 5 },
+    description: '화면 어디에나 나타나는 색 풍선이 터질 때 해당 색 위치로 이동하는 선택 반응 활동',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '위치 간섭 조절, 순간 색 변별, 선택주의',
+    isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['풍선 사이먼', '20회', 'BGM 자동'],
+    executionFacts: [
+      { label: '자극 방식', value: '풍선 사이먼' },
+      { label: '진행 방식', value: '순간 등장 · 터짐' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },

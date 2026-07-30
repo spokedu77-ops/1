@@ -89,8 +89,8 @@ function CoverImage({
       sizes={sizes}
       className={fitClass}
       priority={priority}
-      onLoadingComplete={(img) => {
-        applyNaturalSize(img.naturalWidth, img.naturalHeight);
+      onLoad={(event) => {
+        applyNaturalSize(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
       }}
     />
   );
