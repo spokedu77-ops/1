@@ -10,6 +10,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Check,
   CheckCircle2,
@@ -36,12 +37,17 @@ import {
 import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
+  normalizeSpomoveContentMap,
   normalizeSpomoveGuideVideoMap,
   normalizeSpomoveThumbnailMap,
+  SPOMOVE_CONTENT_PACK_ID,
+  SPOMOVE_CONTENT_PACK_NAME,
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
   SPOMOVE_GUIDE_VIDEO_PACK_NAME,
   SPOMOVE_THUMBNAIL_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_NAME,
+  type SpomoveContentAssetsJson,
+  type SpomovePresetContentOverride,
   type SpomoveGuideVideoAssetsJson,
   type SpomoveThumbnailAssetsJson,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
@@ -77,7 +83,7 @@ import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'home-ready' | 'image-needed';
-type AdminTabKey = 'programs' | 'content-audit' | 'spomove-thumbnails' | 'spomove-guide-videos';
+type AdminTabKey = 'programs' | 'content-audit' | 'spomove-content' | 'spomove-thumbnails' | 'spomove-guide-videos';
 
 type SpomoveGuideVideoDraft = Record<string, string>;
 
@@ -200,9 +206,12 @@ const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
 /** 화면 표시용 — 긴 변 제한. 그 이하면 해상도 유지, WebP만 재인코딩 */
 const SETUP_IMAGE_OPTIMIZE = { maxW: 1600, maxH: 1600, quality: 0.85 } as const;
 const SPOMOVE_THUMBNAIL_OPTIMIZE = { maxW: 1200, maxH: 1200, quality: 0.82 } as const;
-const ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
+const LIBRARY_ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
   { key: 'programs', label: '수업 자료' },
   { key: 'content-audit', label: 'Phase E 감사' },
+];
+const SPOMOVE_ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
+  { key: 'spomove-content', label: 'SPOMOVE 설명' },
   { key: 'spomove-thumbnails', label: 'SPOMOVE 썸네일' },
   { key: 'spomove-guide-videos', label: 'SPOMOVE 가이드 영상' },
 ];
@@ -643,6 +652,271 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
   } catch {
     return '';
   }
+}
+
+function normalizeContentDraft(value: SpomovePresetContentOverride | undefined): SpomovePresetContentOverride {
+  return {
+    coreKeywords: value?.coreKeywords ?? [],
+    activityMethod: value?.activityMethod ?? '',
+    activityConcept: value?.activityConcept ?? '',
+  };
+}
+
+function contentDraftIsEmpty(value: SpomovePresetContentOverride | undefined) {
+  return (
+    !value?.activityMethod?.trim() &&
+    !value?.activityConcept?.trim() &&
+    !(value?.coreKeywords ?? []).some((item) => item.trim())
+  );
+}
+
+function SpomoveContentManager() {
+  const [contentMap, setContentMap] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const contentRef = useRef(contentMap);
+  contentRef.current = contentMap;
+  const [draftMap, setDraftMap] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const [loading, setLoading] = useState(true);
+  const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
+  const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error: loadError } = await supabase
+        .from('think_asset_packs')
+        .select('assets_json')
+        .eq('id', SPOMOVE_CONTENT_PACK_ID)
+        .maybeSingle();
+
+      if (loadError && loadError.code !== 'PGRST116') throw loadError;
+
+      const next = normalizeSpomoveContentMap(data?.assets_json);
+      setContentMap(next);
+      contentRef.current = next;
+      setDraftMap(next);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'SPOMOVE 설명을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const persist = useCallback(async (next: Record<string, SpomovePresetContentOverride>) => {
+    const res = await fetch('/api/admin/think-asset-pack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        id: SPOMOVE_CONTENT_PACK_ID,
+        name: SPOMOVE_CONTENT_PACK_NAME,
+        theme: 'spomove',
+        assets_json: { content: next } satisfies SpomoveContentAssetsJson,
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) throw new Error(body.error ?? 'SPOMOVE 설명 저장에 실패했습니다.');
+    setContentMap(next);
+    contentRef.current = next;
+    setDraftMap(next);
+  }, []);
+
+  const updateDraft = (presetId: string, patch: Partial<SpomovePresetContentOverride>) => {
+    setDraftMap((current) => ({
+      ...current,
+      [presetId]: {
+        ...normalizeContentDraft(current[presetId]),
+        ...patch,
+      },
+    }));
+  };
+
+  const saveContent = useCallback(async (presetId: string) => {
+    const draft = normalizeContentDraft(draftMap[presetId]);
+    const nextEntry: SpomovePresetContentOverride = {
+      coreKeywords: (draft.coreKeywords ?? []).map((item) => item.trim()).filter(Boolean).slice(0, 3),
+      activityMethod: draft.activityMethod?.trim() ?? '',
+      activityConcept: draft.activityConcept?.trim() ?? '',
+    };
+    const next = { ...contentRef.current };
+    if (contentDraftIsEmpty(nextEntry)) delete next[presetId];
+    else next[presetId] = nextEntry;
+
+    setSavingPresetId(presetId);
+    setError(null);
+    try {
+      await persist(next);
+      toast.success('SPOMOVE 설명을 저장했습니다.');
+    } catch (saveError) {
+      const message = saveError instanceof Error ? saveError.message : 'SPOMOVE 설명 저장에 실패했습니다.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSavingPresetId(null);
+    }
+  }, [draftMap, persist]);
+
+  const deleteContent = useCallback(async (presetId: string) => {
+    if (!contentRef.current[presetId]) return;
+    const next = { ...contentRef.current };
+    delete next[presetId];
+    setDeletingPresetId(presetId);
+    setError(null);
+    try {
+      await persist(next);
+      toast.success('SPOMOVE 설명을 삭제했습니다.');
+    } catch (deleteError) {
+      const message = deleteError instanceof Error ? deleteError.message : 'SPOMOVE 설명 삭제에 실패했습니다.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setDeletingPresetId(null);
+    }
+  }, [persist]);
+
+  const savedCount = Object.keys(contentMap).length;
+
+  return (
+    <main className="min-h-[calc(100dvh-73px)] bg-slate-50 p-4 sm:p-6">
+      <div className="mx-auto max-w-[1500px] space-y-5">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-indigo-600">SPOMOVE content</p>
+              <h2 className="mt-1 text-[18px] font-black text-slate-950">SPOMOVE 공식 설명</h2>
+              <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
+                가이드 모달의 핵심 키워드, 활동방법, 활동 개념을 프리셋별로 수기 수정합니다.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void load()}
+              disabled={loading}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-[12px] font-black text-slate-700 disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              새로고침
+            </button>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-[10px] font-black text-slate-500">공식 프리셋</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{OFFICIAL_SPOMOVE_LIBRARY.length}개</p>
+            </div>
+            <div className="rounded-lg bg-indigo-50 p-3">
+              <p className="text-[10px] font-black text-indigo-600">수기 수정</p>
+              <p className="mt-1 text-[18px] font-black text-indigo-900">{savedCount}개</p>
+            </div>
+            <div className="rounded-lg bg-emerald-50 p-3">
+              <p className="text-[10px] font-black text-emerald-700">저장 위치</p>
+              <p className="mt-1 text-[12px] font-black text-emerald-900">think_asset_packs</p>
+            </div>
+          </div>
+          {error ? (
+            <p className="mt-3 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-[12px] font-bold text-rose-700">
+              {error}
+            </p>
+          ) : null}
+        </section>
+
+        {loading ? (
+          <div className="flex justify-center rounded-xl border border-slate-200 bg-white py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+          </div>
+        ) : (
+          SPOMOVE_GROUP_OPTIONS.map((group) => {
+            const presets = OFFICIAL_SPOMOVE_LIBRARY
+              .filter((preset) => preset.programGroup === group.key)
+              .sort((a, b) => a.sortOrder - b.sortOrder);
+
+            return (
+              <section key={group.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-[15px] font-black text-slate-950">{group.label}</h3>
+                    <p className="mt-0.5 text-[11px] font-bold text-slate-500">{presets.length}개 프리셋</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  {presets.map((preset) => {
+                    const draft = normalizeContentDraft(draftMap[preset.id]);
+                    const saved = contentMap[preset.id];
+                    const savingThis = savingPresetId === preset.id;
+                    const deletingThis = deletingPresetId === preset.id;
+                    const dirty = JSON.stringify(normalizeContentDraft(saved)) !== JSON.stringify(draft);
+
+                    return (
+                      <article key={preset.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-[13px] font-black text-slate-950">{preset.title}</p>
+                        <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
+                        <label className="mt-3 block text-[11px] font-black text-slate-500">
+                          핵심 키워드
+                          <input
+                            value={(draft.coreKeywords ?? []).join(', ')}
+                            onChange={(event) => updateDraft(preset.id, { coreKeywords: csvToList(event.target.value).slice(0, 3) })}
+                            placeholder="매트 위, 개인, 어려움"
+                            disabled={savingThis || deletingThis}
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                          />
+                        </label>
+                        <label className="mt-3 block text-[11px] font-black text-slate-500">
+                          활동방법
+                          <textarea
+                            value={draft.activityMethod ?? ''}
+                            onChange={(event) => updateDraft(preset.id, { activityMethod: event.target.value })}
+                            placeholder="화면에 나온 색을 발로 짧게 터치합니다."
+                            disabled={savingThis || deletingThis}
+                            className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                          />
+                        </label>
+                        <label className="mt-3 block text-[11px] font-black text-slate-500">
+                          활동 개념
+                          <textarea
+                            value={draft.activityConcept ?? ''}
+                            onChange={(event) => updateDraft(preset.id, { activityConcept: event.target.value })}
+                            placeholder="수업자가 이해해야 할 활동 개념을 입력하세요."
+                            disabled={savingThis || deletingThis}
+                            className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                          />
+                        </label>
+                        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => void saveContent(preset.id)}
+                            disabled={!dirty || savingThis || deletingThis}
+                            className="inline-flex h-8 items-center justify-center rounded-lg bg-indigo-600 px-3 text-[11px] font-black text-white disabled:opacity-40"
+                          >
+                            {savingThis ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}
+                            저장
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteContent(preset.id)}
+                            disabled={!saved || savingThis || deletingThis}
+                            className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-rose-600 disabled:opacity-40"
+                          >
+                            {deletingThis ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}
+                            삭제
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })
+        )}
+      </div>
+    </main>
+  );
 }
 
 function SpomoveThumbnailManager() {
@@ -1742,13 +2016,16 @@ function WeeklyRecommendationManager({
 }
 
 export default function AdminSmProgramsPage() {
+  const pathname = usePathname();
+  const isSpomoveAdmin = pathname.startsWith('/admin/spokedu-master/spomove');
+  const tabOptions = isSpomoveAdmin ? SPOMOVE_ADMIN_TAB_OPTIONS : LIBRARY_ADMIN_TAB_OPTIONS;
   const [items, setItems] = useState<ProgramItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<AdminTabKey>('programs');
+  const [activeTab, setActiveTab] = useState<AdminTabKey>(isSpomoveAdmin ? 'spomove-content' : 'programs');
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState<EditForm | null>(null);
@@ -1763,6 +2040,13 @@ export default function AdminSmProgramsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    if (isSpomoveAdmin) {
+      setItems([]);
+      setSelectedId(null);
+      setForm(null);
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch('/api/admin/spokedu-master/programs', { cache: 'no-store' });
       const json = await readAdminJsonSafe<ProgramsResponse & { error?: string }>(
@@ -1789,7 +2073,7 @@ export default function AdminSmProgramsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSpomoveAdmin]);
 
   useEffect(() => {
     void load();
@@ -1798,6 +2082,12 @@ export default function AdminSmProgramsPage() {
   useEffect(() => {
     selectedIdRef.current = selectedId;
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!tabOptions.some((tab) => tab.key === activeTab)) {
+      setActiveTab(tabOptions[0].key);
+    }
+  }, [activeTab, tabOptions]);
 
   const selected = useMemo(() => items.find((item) => item.curriculum.id === selectedId) ?? null, [items, selectedId]);
 
@@ -2066,11 +2356,15 @@ export default function AdminSmProgramsPage() {
             <ChevronLeft size={17} />
           </Link>
           <div>
-            <h1 className="text-[18px] font-black">MASTER 수업 자료 편집기</h1>
-            <p className="mt-0.5 text-[12px] font-semibold text-slate-500">curriculum 원본은 보존하고 MASTER 메타와 운영 자료만 편집합니다.</p>
+            <h1 className="text-[18px] font-black">{isSpomoveAdmin ? '마스터 스포무브' : '마스터 라이브러리'}</h1>
+            <p className="mt-0.5 text-[12px] font-semibold text-slate-500">
+              {isSpomoveAdmin
+                ? 'SPOMOVE 썸네일과 가이드 영상을 직접 관리합니다.'
+                : 'curriculum 원본은 보존하고 MASTER 라이브러리 메타와 운영 자료만 편집합니다.'}
+            </p>
           </div>
           <div className="ml-auto inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
-            {ADMIN_TAB_OPTIONS.map((tab) => (
+            {tabOptions.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
@@ -2128,16 +2422,19 @@ export default function AdminSmProgramsPage() {
         </div>
       </header>
 
-      <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
-        <StorageRecompressPanel />
-      </div>
+      {!isSpomoveAdmin ? (
+        <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+          <StorageRecompressPanel />
+        </div>
+      ) : null}
 
       {activeTab === 'programs' ? (
         <>
           <WeeklyRecommendationManager items={items} onSaved={load} />
-          <SpomoveHomeFeaturedManager />
         </>
       ) : null}
+
+      {isSpomoveAdmin ? <SpomoveHomeFeaturedManager /> : null}
 
       {createOpen ? (
         <CreateProgramModal
@@ -2151,6 +2448,8 @@ export default function AdminSmProgramsPage() {
 
       {activeTab === 'content-audit' ? (
         <ContentAuditPanel onOpenProgram={openProgramFromAudit} />
+      ) : activeTab === 'spomove-content' ? (
+        <SpomoveContentManager />
       ) : activeTab === 'spomove-thumbnails' ? (
         <SpomoveThumbnailManager />
       ) : activeTab === 'spomove-guide-videos' ? (

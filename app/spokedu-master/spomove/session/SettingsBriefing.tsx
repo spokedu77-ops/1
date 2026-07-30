@@ -3,13 +3,10 @@
 import { Play } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { BuiltInMovementNotice, FixedMovementSummary } from '../movements/MovementConfigurator';
-import type { ActivityFamilyDefinition, MovementPick, MovementProfile } from '../movements/movementTypes';
-import { compactMovementInstruction, getMovementPresentation } from '../movements/movementPresentation';
+import type { ActivityFamilyDefinition } from '../movements/movementTypes';
 import {
   SPOMOVE_CUE_SPEED_OPTIONS,
   getCueSpeedGuide,
-  recommendedCueSecondsForPreset,
   supportsCueSpeedOverride,
   type SpomoveCueSpeedSec,
 } from '../spomoveCueSpeed';
@@ -18,11 +15,12 @@ import {
   type SpomoveDifficultyKind,
 } from '../spomoveDifficulty';
 import type { OfficialSpomovePreset } from '../officialSpomovePresets';
-import { resolveSessionConfiguration } from '../movements/movementResolve';
 import type { ResolvedMovementConfiguration } from '../movements/movementTypes';
 import { resolveRequiredMatGuidance } from '../operations/operationConstraints';
 import { operationSummaryLine } from '../operations/OperationConfigurator';
 import type { ActivityOperationConfig } from '../operations/operationTypes';
+import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
+import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 
 /**
  * 일반 Session Settings — 완성된 Preset 대표값 고정 + 자극 속도·난이도만 조절.
@@ -38,8 +36,6 @@ export function SettingsBriefing({
   onDifficultyChange,
   onStart,
   movement,
-  movementPick,
-  movementProfile,
   movementFamily,
   cueFloorNotice,
   operationConfig,
@@ -53,18 +49,12 @@ export function SettingsBriefing({
   onDifficultyChange: (value: string) => void;
   onStart: () => void;
   movement?: ResolvedMovementConfiguration | null;
-  movementPick?: MovementPick | null;
-  movementProfile?: MovementProfile | null;
   movementFamily?: ActivityFamilyDefinition | null;
   cueFloorNotice?: string | null;
   operationConfig?: ActivityOperationConfig | null;
 }) {
   const showCueSpeed = supportsCueSpeedOverride(preset);
   const difficultyOptions = difficultyKind ? getSpomoveDifficultyOptions(difficultyKind) : [];
-  const recommendedSec = recommendedCueSecondsForPreset(preset);
-  const minCue = movement
-    ? resolveSessionConfiguration({ movement, cueSeconds: 1 }).minimumCueSeconds
-    : 1;
 
   const operationLine = operationConfig ? operationSummaryLine(operationConfig) : null;
   const intervalLine =
@@ -91,39 +81,13 @@ export function SettingsBriefing({
     return parts.join(' · ');
   }, [movementFamily, operationConfig]);
 
-  const movementLabel = movementPick ? getMovementPresentation(movementPick).label : null;
-  const movementHint = movementPick ? compactMovementInstruction(movementPick) : null;
+  const padLayoutVariant = getSpomovePadLayoutVariant(preset);
 
   return (
     <div className="space-y-4">
-      {movementProfile?.selectionMode === 'disabled' ? (
-        <BuiltInMovementNotice profile={movementProfile} />
-      ) : null}
+      <SpomovePadLayoutView variant={padLayoutVariant} compact dark />
 
-      {movementProfile?.selectionMode === 'fixed' && movementPick ? (
-        <FixedMovementSummary variant="compact" value={movementPick} />
-      ) : null}
-
-      {movementProfile &&
-      movementProfile.selectionMode === 'selectable' &&
-      movementPick &&
-      movementLabel ? (
-        <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-          <p className="text-[20px] font-black text-white">{movementLabel}</p>
-          {movementHint ? (
-            <p className="mt-1 text-[13px] font-semibold leading-5 text-white/70">{movementHint}</p>
-          ) : null}
-          {intervalLine ? (
-            <p className="mt-2 text-[13px] font-bold text-white/80">{intervalLine}</p>
-          ) : prepLine ? (
-            <p className="mt-2 text-[12px] font-medium text-white/45">{prepLine}</p>
-          ) : operationLine ? (
-            <p className="mt-2 text-[12px] font-medium text-white/45">{operationLine}</p>
-          ) : null}
-        </section>
-      ) : null}
-
-      {!movementProfile && operationConfig ? (
+      {operationConfig ? (
         <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
           {intervalLine ? (
             <p className="text-[14px] font-bold text-white/85">{intervalLine}</p>
@@ -136,34 +100,27 @@ export function SettingsBriefing({
       {showCueSpeed ? (
         <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5">
           <p className="text-[12px] font-black tracking-[0.08em] text-white/55">자극 속도</p>
-          <div className="mt-3 grid grid-cols-5 gap-2">
+          <div className="mt-3 grid grid-cols-6 gap-2">
             {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
               const active = cueSeconds === sec;
-              const recommended = sec === recommendedSec;
-              const disabled = sec < minCue;
+              const recommended = sec === 3;
               return (
                 <button
                   key={sec}
                   type="button"
-                  disabled={disabled}
                   onClick={() => onCueSecondsChange(sec)}
-                  title={disabled ? `${minCue}초 이상` : `${sec}초 · ${getCueSpeedGuide(sec).tempoLabel}`}
+                  title={`${sec}초 · ${getCueSpeedGuide(sec).tempoLabel}`}
                   className={`relative inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-black transition ${
-                    disabled
-                      ? 'cursor-not-allowed border border-white/5 bg-black/20 text-white/25'
-                      : active
+                    active
                         ? 'bg-[var(--spm-acc)] text-white'
                         : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'
                   }`}
                 >
                   {sec}
-                  {recommended && !disabled ? (
-                    <span
-                      className={`absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${
-                        active ? 'bg-white' : 'bg-[var(--spm-acc)]'
-                      }`}
-                      aria-hidden
-                    />
+                  {recommended ? (
+                    <span className="absolute -top-2 right-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-black text-[var(--spm-acc)] shadow-sm">
+                      추천
+                    </span>
                   ) : null}
                 </button>
               );

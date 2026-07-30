@@ -5,12 +5,10 @@ import type { ReactNode } from 'react';
 export function SessionSetupShell({
   programLabel,
   displayTitle,
-  launchModeLabel,
   children,
 }: {
   programLabel: string;
   displayTitle: string;
-  launchModeLabel: string;
   children: ReactNode;
 }) {
   return (
@@ -20,9 +18,6 @@ export function SessionSetupShell({
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/70">
               {programLabel}
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-black text-white/55">
-              {launchModeLabel}
             </span>
           </div>
           <h1 className="mt-3 text-[26px] font-black leading-tight text-white sm:text-[32px]">{displayTitle}</h1>

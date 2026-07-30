@@ -6,7 +6,7 @@ import {
   SPOMOVE_THINKING_LEVEL_LABELS,
   type SpomoveTargetGroup,
 } from './officialSpomovePresetGuides';
-import type { OfficialSpomovePreset } from './officialSpomovePresets';
+import type { OfficialSpomovePreset, OfficialSpomoveProgramGroup } from './officialSpomovePresets';
 import { getSpomovePadLayoutVariant } from './spomovePadLayout';
 
 export type SpomovePresetDisplayModel = {
@@ -146,6 +146,43 @@ export function sortSpomovePresetsByDisplayTitle(presets: readonly OfficialSpomo
       'ko',
     ),
   );
+}
+
+export const SPOMOVE_PROGRAM_GROUP_SECTION_ORDER = [
+  'reaction-cognition',
+  'visual-reaction',
+  'simon',
+  'flanker',
+  'stroop',
+  'sequential-memory',
+  'dive',
+] as const;
+
+export type SpomoveProgramGroupSectionId = (typeof SPOMOVE_PROGRAM_GROUP_SECTION_ORDER)[number];
+
+export function resolveSpomoveProgramGroupSection(
+  programGroup: OfficialSpomoveProgramGroup,
+): SpomoveProgramGroupSectionId {
+  return programGroup === 'bonus' ? 'dive' : programGroup;
+}
+
+export function sortSpomovePresetsByCatalogOrder(
+  presets: readonly OfficialSpomovePreset[],
+): OfficialSpomovePreset[] {
+  return [...presets].sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export function buildSpomoveProgramGroupSections(presets: readonly OfficialSpomovePreset[]): Array<{
+  programGroup: SpomoveProgramGroupSectionId;
+  presets: OfficialSpomovePreset[];
+}> {
+  const sorted = sortSpomovePresetsByCatalogOrder(presets);
+  return SPOMOVE_PROGRAM_GROUP_SECTION_ORDER.map((programGroup) => ({
+    programGroup,
+    presets: sorted.filter(
+      (preset) => resolveSpomoveProgramGroupSection(preset.programGroup) === programGroup,
+    ),
+  })).filter((section) => section.presets.length > 0);
 }
 
 export type SpomoveCardTag = {

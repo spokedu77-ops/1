@@ -23,6 +23,11 @@ describe('public SPOMOVE session links', () => {
     expect(href).not.toContain('autostart=');
   });
 
+  it('즐겨찾기 맥락에서 시작하면 hubView를 유지한다', () => {
+    const href = publicOfficialPresetSessionHref(preset, { entry: 'start', hubView: 'favorites' });
+    expect(href).toContain('hubView=favorites');
+  });
+
   it('legacy officialPresetSessionHref는 autostart를 붙일 수 있다', () => {
     const href = officialPresetSessionHref(preset, { autostart: true });
     expect(href).toContain('autostart=1');

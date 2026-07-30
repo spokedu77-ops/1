@@ -10,6 +10,11 @@ const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 const session = read('app/spokedu-master/spomove/session/page.tsx');
 const guidelineSheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
 const recordDraft = read('app/spokedu-master/spomove/session/spomoveRecordDraft.ts');
+const startBriefing = read('app/spokedu-master/spomove/session/StartBriefing.tsx');
+const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefing.tsx');
+const setupShell = read('app/spokedu-master/spomove/session/SessionSetupShell.tsx');
+const cueSpeed = read('app/spokedu-master/spomove/spomoveCueSpeed.ts');
+const padLayoutView = read('app/spokedu-master/spomove/SpomovePadLayoutView.tsx');
 
 describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and start/settings actions on hub cards', () => {
@@ -49,15 +54,29 @@ describe('SPOMOVE pilot flow contract', () => {
 
   it('loads launch-confirm preview without pad layout clutter', () => {
     expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
+    expect(hub).toContain('SPOMOVE_CONTENT_PACK_ID');
+    expect(hub).toContain('normalizeSpomoveContentMap');
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
+    expect(hub).toContain('parseSpomoveHubView');
+    expect(hub).toContain('hubView={hubView}');
+    expect(hub).toContain('showFavoritesProgramGroupSections');
+    expect(hub).toContain('buildSpomoveProgramGroupSections');
     expect(guidelineSheet).not.toContain('SpomovePadLayoutView');
     expect(guidelineSheet).toContain('SpomoveScreenPreview');
-    expect(guidelineSheet).toContain('시작 준비');
-    expect(guidelineSheet).toContain('지도법');
+    expect(guidelineSheet).toContain('size="preview"');
+    expect(guidelineSheet).toContain('data-preview-column="media"');
+    expect(guidelineSheet).toContain('핵심 키워드');
+    expect(guidelineSheet).toContain('contentOverride');
+    expect(guidelineSheet).toContain('시작 위치');
+    expect(guidelineSheet).toContain('참여 인원');
+    expect(guidelineSheet).toContain('난이도');
+    expect(guidelineSheet).toContain('활동방법');
+    expect(guidelineSheet).toContain('활동 개념');
+    expect(guidelineSheet).not.toContain('{activityMethod.title}');
     expect(guidelineSheet).toContain('이 설정으로 시작');
     expect(guidelineSheet).not.toContain('바로 시작');
     expect(guidelineSheet).not.toContain('바로 실행');
-    expect(guidelineSheet).toContain('안내 더보기');
+    expect(guidelineSheet).not.toContain('안내 더보기');
     expect(guidelineSheet).not.toContain('상세보기');
     expect(guidelineSheet).not.toContain('설정 변경');
   });
@@ -86,11 +105,11 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain('resolveSessionCueSeconds');
     expect(session).toContain('parseCueSecondsQuery');
     expect(session).toContain('leaveSession');
+    expect(session).toContain('getSpomoveHubReturnHref');
     expect(session).toContain('router.back()');
   });
 
   it('exposes cue speed on StartBriefing', () => {
-    const startBriefing = read('app/spokedu-master/spomove/session/StartBriefing.tsx');
     expect(hub).toContain('publicOfficialPresetSessionHref');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(startBriefing).toContain('supportsCueSpeedOverride');
@@ -100,6 +119,27 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(startBriefing).toContain('수업 시작');
     expect(startBriefing).not.toContain('바로 시작');
     expect(startBriefing).not.toContain('바로 실행');
+  });
+
+  it('uses mat layout briefing and 1-6 second recommended speed instead of current-setting movement copy', () => {
+    expect(startBriefing).toContain('SpomovePadLayoutView');
+    expect(settingsBriefing).toContain('SpomovePadLayoutView');
+    expect(startBriefing).not.toContain('현재 설정');
+    expect(settingsBriefing).not.toContain('현재 설정');
+    expect(setupShell).not.toContain('launchModeLabel');
+    expect(setupShell).not.toContain('큰 화면');
+    expect(cueSpeed).toContain('SPOMOVE_CUE_SPEED_OPTIONS = [1, 2, 3, 4, 5, 6]');
+    expect(cueSpeed).toContain("if (value >= 5) return '쉬움'");
+    expect(cueSpeed).toContain("if (value >= 3) return '보통'");
+    expect(cueSpeed).toContain("return '어려움'");
+    expect(startBriefing).not.toContain('난이도 {cueDifficulty}');
+    expect(settingsBriefing).not.toContain('난이도 {cueDifficulty}');
+    expect(startBriefing).toContain('sec === 3');
+    expect(settingsBriefing).toContain('sec === 3');
+    expect(startBriefing).toContain('추천');
+    expect(settingsBriefing).toContain('추천');
+    expect(padLayoutView).toContain('정사각형: 빨강 · 노랑 · 초록 · 파랑');
+    expect(padLayoutView).toContain('다이아몬드: 빨강(위) · 노랑(왼) · 초록(오) · 파랑(아래)');
   });
 
   it('reproduces recent same-settings or downgrades the label', () => {
@@ -127,7 +167,8 @@ describe('SPOMOVE pilot flow contract', () => {
   });
 
   it('separates completed and early-ended sessions', () => {
-    expect(session).toContain("type SessionState = 'idle' | 'movementIntro' | 'running' | 'done' | 'ended'");
+    expect(session).toContain("type SessionState = 'idle' | 'running' | 'done' | 'ended'");
+    expect(session).not.toContain('오늘의 동작');
     expect(session).toContain("finishSession('ended')");
     expect(session).toContain("finishSession('done', payload)");
     expect(session).toContain('TrainingResultScreen');

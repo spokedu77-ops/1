@@ -1337,6 +1337,8 @@ export function officialPresetSessionHref(
     difficulty?: string;
     /** O3 Operation Layer — ActivityOperationConfig 전체 또는 Patch */
     operation?: ActivityOperationConfig | ActivityOperationPatch | null;
+    /** 세션 종료 시 SPOMOVE 허브 복귀 맥락 */
+    hubView?: 'favorites';
   },
 ) {
   const params = new URLSearchParams({
@@ -1346,6 +1348,7 @@ export function officialPresetSessionHref(
     mode: options?.mode ?? 'projector',
   });
   if (options?.entry) params.set('entry', options.entry);
+  if (options?.hubView === 'favorites') params.set('hubView', 'favorites');
   if (options?.cueSeconds != null) params.set('cueSeconds', String(options.cueSeconds));
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');

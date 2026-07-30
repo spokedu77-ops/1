@@ -4,6 +4,8 @@ export const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbn
 export const SPOMOVE_THUMBNAIL_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 프리셋 썸네일';
 export const SPOMOVE_GUIDE_VIDEO_PACK_ID = 'spokedu_master_official_spomove_guide_videos';
 export const SPOMOVE_GUIDE_VIDEO_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 가이드 영상';
+export const SPOMOVE_CONTENT_PACK_ID = 'spokedu_master_official_spomove_content';
+export const SPOMOVE_CONTENT_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 설명';
 export const SPOMOVE_HOME_FEATURED_PACK_ID = 'spokedu_master_home_spomove_featured';
 export const SPOMOVE_HOME_FEATURED_PACK_NAME = 'SPOKEDU MASTER 홈 SPOMOVE 추천 슬롯';
 export const SPOMOVE_HOME_FEATURED_SLOT_COUNT = 4;
@@ -18,6 +20,16 @@ export type SpomoveGuideVideoAssetsJson = {
 
 export type SpomoveHomeFeaturedAssetsJson = {
   slots?: Array<string | null | undefined>;
+};
+
+export type SpomovePresetContentOverride = {
+  coreKeywords?: string[];
+  activityMethod?: string;
+  activityConcept?: string;
+};
+
+export type SpomoveContentAssetsJson = {
+  content?: Record<string, SpomovePresetContentOverride | null | undefined>;
 };
 
 function normalizePresetStringMap(
@@ -41,6 +53,45 @@ export function normalizeSpomoveThumbnailMap(raw: unknown): Record<string, strin
 
 export function normalizeSpomoveGuideVideoMap(raw: unknown): Record<string, string> {
   return normalizePresetStringMap(raw, 'guideVideos');
+}
+
+function normalizeStringList(value: unknown, maxItems: number): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter(Boolean)
+      .slice(0, maxItems);
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(/\r?\n|,/u)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, maxItems);
+  }
+  return [];
+}
+
+export function normalizeSpomoveContentMap(raw: unknown): Record<string, SpomovePresetContentOverride> {
+  const source = (raw as SpomoveContentAssetsJson | null)?.content;
+  if (!source || typeof source !== 'object') return {};
+  const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
+  const next: Record<string, SpomovePresetContentOverride> = {};
+
+  for (const [presetId, value] of Object.entries(source)) {
+    if (!validPresetIds.has(presetId) || !value || typeof value !== 'object') continue;
+    const entry = value as Record<string, unknown>;
+    const coreKeywords = normalizeStringList(entry.coreKeywords, 3);
+    const activityMethod = typeof entry.activityMethod === 'string' ? entry.activityMethod.trim() : '';
+    const activityConcept = typeof entry.activityConcept === 'string' ? entry.activityConcept.trim() : '';
+    const normalized: SpomovePresetContentOverride = {};
+    if (coreKeywords.length > 0) normalized.coreKeywords = coreKeywords;
+    if (activityMethod) normalized.activityMethod = activityMethod;
+    if (activityConcept) normalized.activityConcept = activityConcept;
+    if (Object.keys(normalized).length > 0) next[presetId] = normalized;
+  }
+
+  return next;
 }
 
 export function normalizeSpomoveHomeFeaturedSlots(raw: unknown): Array<string | null> {

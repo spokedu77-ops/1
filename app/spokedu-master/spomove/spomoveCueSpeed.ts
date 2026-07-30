@@ -6,7 +6,7 @@ import {
 } from './officialSpomovePresetGuides';
 
 /** 브리핑에서 선택 가능한 자극 속도(초) — 정수만 */
-export const SPOMOVE_CUE_SPEED_OPTIONS = [2, 3, 4, 5, 6] as const;
+export const SPOMOVE_CUE_SPEED_OPTIONS = [1, 2, 3, 4, 5, 6] as const;
 export type SpomoveCueSpeedSec = (typeof SPOMOVE_CUE_SPEED_OPTIONS)[number];
 
 export type SpomoveCueSpeedGuide = {
@@ -20,37 +20,44 @@ export type SpomoveCueSpeedGuide = {
 
 /** 초별 템포·추천 대상·논거 (수업용 가이드) */
 export const SPOMOVE_CUE_SPEED_GUIDES: Record<SpomoveCueSpeedSec, SpomoveCueSpeedGuide> = {
+  1: {
+    sec: 1,
+    tempoLabel: '어려움',
+    summary: '가장 빠른 반응 속도입니다.',
+    reason: '신호 전환 간격이 매우 짧아 즉각적인 판단이 필요합니다.',
+    recommendTargets: ['elementaryUpper'],
+  },
   2: {
     sec: 2,
-    tempoLabel: '매우 빠름',
+    tempoLabel: '어려움',
     summary: '연속 반응·심화. 이미 익숙한 반에 적합합니다.',
     reason: '간격이 짧아 신호를 보고 바로 움직여야 합니다.',
     recommendTargets: ['elementaryUpper'],
   },
   3: {
     sec: 3,
-    tempoLabel: '기본',
+    tempoLabel: '보통',
     summary: '대부분의 수업 기본값. 초등 저학년·고학년 일반 수업에 맞습니다.',
     reason: '보고 판단한 뒤 이동하기에 가장 무난한 템포입니다.',
     recommendTargets: ['elementaryLower', 'elementaryUpper'],
   },
   4: {
     sec: 4,
-    tempoLabel: '여유',
+    tempoLabel: '보통',
     summary: '판단 시간을 조금 더 줍니다. 초등 저학년·도입에 무난합니다.',
     reason: '여유 1초가 생겨 실수가 줄고 따라오기 쉽습니다.',
     recommendTargets: ['elementaryLower', 'specialSupport'],
   },
   5: {
     sec: 5,
-    tempoLabel: '천천히',
+    tempoLabel: '쉬움',
     summary: '처음 배우는 반·미취학에 추천합니다.',
     reason: '처음 익히는 동작도 여유 있게 맞출 수 있습니다.',
     recommendTargets: ['preschool', 'elementaryLower', 'specialSupport'],
   },
   6: {
     sec: 6,
-    tempoLabel: '아주 천천히',
+    tempoLabel: '쉬움',
     summary: '처음 경험·특수 지원·여유 있는 안내에 적합합니다.',
     reason: '시범·안내를 곁들여도 움직일 시간이 충분합니다.',
     recommendTargets: ['preschool', 'specialSupport'],
@@ -83,7 +90,7 @@ export function clampCueSpeedSec(value: number): SpomoveCueSpeedSec {
   if ((SPOMOVE_CUE_SPEED_OPTIONS as readonly number[]).includes(rounded)) {
     return rounded as SpomoveCueSpeedSec;
   }
-  if (rounded < 2) return 2;
+  if (rounded < 1) return 1;
   if (rounded > 6) return 6;
   return 3;
 }
@@ -114,13 +121,13 @@ export function writeLastCueSeconds(value: number): SpomoveCueSpeedSec {
 
 export function resolveInitialCueSeconds(preset: OfficialSpomovePreset): SpomoveCueSpeedSec {
   if (!supportsCueSpeedOverride(preset)) return clampCueSpeedSec(preset.cueSeconds);
-  return readLastCueSeconds(preset.cueSeconds);
+  return readLastCueSeconds(3);
 }
 
 /**
  * Wave 2 cue 우선순위:
  * 유효 URL cueSeconds → 마지막 저장 → 프리셋 기본
- * (동작 minimumCue floor는 Session의 resolveSessionConfiguration에서 적용)
+ * 세션 브리핑에서는 동작과 무관하게 1~6초를 직접 선택한다.
  */
 export function resolveSessionCueSeconds(
   preset: OfficialSpomovePreset,
@@ -140,6 +147,13 @@ export function parseCueSecondsQuery(raw: string | null | undefined): number | n
 
 export function getCueSpeedGuide(sec: number): SpomoveCueSpeedGuide {
   return SPOMOVE_CUE_SPEED_GUIDES[clampCueSpeedSec(sec)];
+}
+
+export function getCueSpeedDifficultyLabel(sec: number): '쉬움' | '보통' | '어려움' {
+  const value = clampCueSpeedSec(sec);
+  if (value >= 5) return '쉬움';
+  if (value >= 3) return '보통';
+  return '어려움';
 }
 
 export function formatCueSpeedTargetLabel(targets: readonly SpomoveTargetGroup[]): string {

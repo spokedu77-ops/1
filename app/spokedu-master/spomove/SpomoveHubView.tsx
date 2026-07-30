@@ -3,7 +3,7 @@
 import { Bookmark, Lock, MonitorPlay, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -13,10 +13,13 @@ import {
 } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
+  normalizeSpomoveContentMap,
   normalizeSpomoveGuideVideoMap,
   normalizeSpomoveThumbnailMap,
+  SPOMOVE_CONTENT_PACK_ID,
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
+  type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER } from '@/app/lib/spomove/spomoveAxisMeta';
 import { useMasterStore, useProfile } from '../store';
@@ -27,9 +30,12 @@ import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomove
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import type { MovementPick, MovementQuickFilter } from './movements/movementTypes';
 import {
+  isAllowedByFamily,
+  movementPicksEqual,
   resolveMovementConfiguration,
   resolveSessionConfiguration,
 } from './movements/movementResolve';
+import { readFamilyMovement } from './movements/movementStorage';
 import { clampCueSpeedSec, resolveSessionCueSeconds, supportsCueSpeedOverride } from './spomoveCueSpeed';
 import { getSpomoveDifficultyKind } from './spomoveDifficulty';
 
@@ -44,9 +50,19 @@ import {
   getOfficialSpomovePresetGuide,
   type SpomoveThinkingLevel,
 } from './officialSpomovePresetGuides';
-import { getSpomovePresetDisplayModel, sortSpomovePresetsByDisplayTitle } from './spomovePresetDisplayModel';
+import {
+  buildSpomoveProgramGroupSections,
+  getSpomovePresetDisplayModel,
+  sortSpomovePresetsByCatalogOrder,
+  sortSpomovePresetsByDisplayTitle,
+} from './spomovePresetDisplayModel';
 import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet } from './SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
+import {
+  getSpomoveHubHref,
+  parseSpomoveHubView,
+  type SpomoveHubViewMode,
+} from './spomoveHubNavigation';
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
@@ -56,6 +72,7 @@ type SpomoveThumbnailPackQueryResult = {
 };
 
 type SpomoveGuideVideoPackQueryResult = SpomoveThumbnailPackQueryResult;
+type SpomoveContentPackQueryResult = SpomoveThumbnailPackQueryResult;
 
 const THINKING_LEVEL_TABS: ThinkingLevelTab[] = ['all', 'easy', 'normal', 'hard'];
 
@@ -93,13 +110,6 @@ const AXIS_ACCENT: Record<OfficialSpomovePreset['axis'], string> = {
   response: 'bg-orange-400',
   attention: 'bg-blue-400',
   executive: 'bg-violet-500',
-};
-
-// 축별 태그 색상 — accent bar가 색상 신호를 담당하므로 badge는 중립
-const AXIS_BADGE: Record<OfficialSpomovePreset['axis'], string> = {
-  response: 'bg-slate-100 text-slate-600',
-  attention: 'bg-slate-100 text-slate-600',
-  executive: 'bg-slate-100 text-slate-600',
 };
 
 // SPOMOVE 4색은 padGrid.ts 단일 출처
@@ -643,11 +653,13 @@ function CardInfo({
   preset,
   isReady,
   movementLayerEnabled,
+  hubView,
   onGuide,
 }: {
   preset: OfficialSpomovePreset;
   isReady: boolean;
   movementLayerEnabled: boolean;
+  hubView: SpomoveHubViewMode;
   onGuide: () => void;
 }) {
   const router = useRouter();
@@ -655,8 +667,27 @@ function CardInfo({
   const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
   const profile = movementSummary?.profile ?? null;
   const officialPick = movementSummary?.officialRecommended ?? null;
+  const [savedMovement, setSavedMovement] = useState<MovementPick | null>(null);
   const showSettings =
     supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
+
+  useEffect(() => {
+    if (!movementSummary?.family || !profile) {
+      setSavedMovement(null);
+      return;
+    }
+    const saved = readFamilyMovement(movementSummary.family.id);
+    setSavedMovement(
+      saved && isAllowedByFamily(saved, movementSummary.family, profile) ? saved : null,
+    );
+  }, [movementSummary?.family.id, profile?.id]);
+
+  const effectivePick =
+    savedMovement && officialPick && !movementPicksEqual(savedMovement, officialPick)
+      ? savedMovement
+      : officialPick;
+  const effectivePickIsSaved =
+    Boolean(savedMovement && officialPick && !movementPicksEqual(savedMovement, officialPick));
 
   const cueForPick = (pick: MovementPick) => {
     if (!profile) return resolveSessionCueSeconds(preset, null);
@@ -668,39 +699,34 @@ function CardInfo({
   };
 
   const hrefForSettings = () => {
-    if (!officialPick) {
-      return publicOfficialPresetSessionHref(preset, { entry: 'settings' });
+    const hubViewOption = hubView === 'favorites' ? { hubView: 'favorites' as const } : {};
+    if (!effectivePick) {
+      return publicOfficialPresetSessionHref(preset, { entry: 'settings', ...hubViewOption });
     }
     return publicOfficialPresetSessionHref(preset, {
       entry: 'settings',
-      movement: officialPick.baseMovement,
-      limb: officialPick.limbRule,
-      cueSeconds: cueForPick(officialPick),
+      movement: effectivePick.baseMovement,
+      limb: effectivePick.limbRule,
+      cueSeconds: cueForPick(effectivePick),
+      ...hubViewOption,
     });
   };
 
+  const recommendedMovementLabel =
+    movementSummary && effectivePickIsSaved && savedMovement
+      ? resolveMovementConfiguration(savedMovement, movementSummary.profile).displayLabel
+      : movementSummary?.recommendedLabel ?? '-';
+
   return (
     <div className="flex shrink-0 flex-col gap-2 p-3 text-left">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black tracking-wide text-slate-600">
-          {display.programLabel}
-        </span>
-        {display.variantLabel &&
-        display.variantLabel !== display.programLabel &&
-        display.variantLabel !== display.displayTitle &&
-        !display.displayTitle.endsWith(display.variantLabel) ? (
-          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
-            {display.variantLabel}
-          </span>
-        ) : null}
-      </div>
-
-      {movementSummary ? (
-        <p className="line-clamp-1 text-[12px] font-bold text-slate-700">
-          추천 <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
-          <span className="font-semibold text-slate-400"> · 매트 {movementSummary.minMats}장</span>
-        </p>
-      ) : null}
+      <p className="line-clamp-1 text-[12px] font-bold text-slate-700">
+        <span className="font-black text-slate-900">추천</span>{' '}
+        <span className="text-slate-500">동작</span>{' '}
+        <span className="text-[var(--spm-acc)]">{recommendedMovementLabel}</span>
+        <span className="px-1.5 text-slate-300">/</span>
+        <span className="text-slate-500">난이도</span>{' '}
+        <span className="text-slate-800">{display.difficultyLabel || '-'}</span>
+      </p>
 
       {isReady ? (
         <div className="flex gap-2">
@@ -744,6 +770,7 @@ function PresetCard({
   favorite,
   favoriteEnabled,
   movementLayerEnabled,
+  hubView,
   onPreview,
   onFavorite,
 }: {
@@ -752,6 +779,7 @@ function PresetCard({
   favorite: boolean;
   favoriteEnabled: boolean;
   movementLayerEnabled: boolean;
+  hubView: SpomoveHubViewMode;
   onPreview: () => void;
   onFavorite: () => void;
 }) {
@@ -806,6 +834,7 @@ function PresetCard({
         preset={preset}
         isReady={preset.isReady}
         movementLayerEnabled={movementLayerEnabled}
+        hubView={hubView}
         onGuide={onPreview}
       />
     </>
@@ -829,13 +858,17 @@ function PresetCard({
 // ── 메인 뷰 ──
 
 export default function SpomoveHubView() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
   const [activeThinkingLevel, setActiveThinkingLevel] = useState<ThinkingLevelTab>('all');
-  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const hubView = parseSpomoveHubView(searchParams.get('view'));
+  const showSavedOnly = hubView === 'favorites';
   const [movementFilter, setMovementFilter] = useState<MovementQuickFilter | 'all'>('all');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
+  const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
   const profile = useProfile();
   const ownerId = getRecentActivityOwnerId(profile);
@@ -872,7 +905,12 @@ export default function SpomoveHubView() {
         .select('assets_json')
         .eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID)
         .maybeSingle(),
-    ]).then(([thumbnailResult, guideVideoResult]) => {
+      supabase
+        .from('think_asset_packs')
+        .select('assets_json')
+        .eq('id', SPOMOVE_CONTENT_PACK_ID)
+        .maybeSingle(),
+    ]).then(([thumbnailResult, guideVideoResult, contentResult]) => {
       if (!alive) return;
 
       const { data: thumbnailData, error: thumbnailError } = thumbnailResult as SpomoveThumbnailPackQueryResult;
@@ -893,11 +931,19 @@ export default function SpomoveHubView() {
       } else {
         setGuideVideoUrls(normalizeSpomoveGuideVideoMap(guideVideoData?.assets_json));
       }
+
+      const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
+      if (contentError && contentError.code !== 'PGRST116') {
+        setContentOverrides({});
+      } else {
+        setContentOverrides(normalizeSpomoveContentMap(contentData?.assets_json));
+      }
     }).catch(() => {
       if (!alive) return;
       setThumbnailPaths({});
       setThumbnailCacheBust(undefined);
       setGuideVideoUrls({});
+      setContentOverrides({});
     });
     return () => {
       alive = false;
@@ -914,6 +960,31 @@ export default function SpomoveHubView() {
     [profile?.id, profile?.isAdmin],
   );
 
+  const replaceHubParams = (mutate: (params: URLSearchParams) => void) => {
+    const params = new URLSearchParams(searchParams.toString());
+    mutate(params);
+    const qs = params.toString();
+    router.push(qs ? `/spokedu-master/spomove?${qs}` : getSpomoveHubHref('all'), { scroll: false });
+  };
+
+  const toggleSavedOnly = () => {
+    replaceHubParams((params) => {
+      if (parseSpomoveHubView(params.get('view')) === 'favorites') {
+        params.delete('view');
+      } else {
+        params.set('view', 'favorites');
+      }
+    });
+  };
+
+  const clearHubFilters = () => {
+    setActiveProgramGroup('all');
+    setActiveThinkingLevel('all');
+    replaceHubParams((params) => {
+      params.delete('view');
+    });
+  };
+
   const filteredPresets = useMemo(() => {
     let presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
     if (showSavedOnly) presets = presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
@@ -929,7 +1000,9 @@ export default function SpomoveHubView() {
         return true;
       });
     }
-    return sortSpomovePresetsByDisplayTitle(presets);
+    return showSavedOnly
+      ? sortSpomovePresetsByCatalogOrder(presets)
+      : sortSpomovePresetsByDisplayTitle(presets);
   }, [
     activeProgramGroup,
     activeThinkingLevel,
@@ -938,7 +1011,14 @@ export default function SpomoveHubView() {
     movementLayerEnabled,
     showSavedOnly,
   ]);
-  const showAxisSections = activeProgramGroup === 'all' && activeThinkingLevel === 'all';
+  const showFavoritesProgramGroupSections =
+    showSavedOnly && activeProgramGroup === 'all' && activeThinkingLevel === 'all';
+  const showAxisSections =
+    activeProgramGroup === 'all' && activeThinkingLevel === 'all' && !showSavedOnly;
+  const programGroupSections = useMemo(() => {
+    if (!showFavoritesProgramGroupSections) return [];
+    return buildSpomoveProgramGroupSections(filteredPresets);
+  }, [filteredPresets, showFavoritesProgramGroupSections]);
   const axisSections = useMemo(() => {
     if (!showAxisSections) return [];
     return SPOMOVE_AXIS_ORDER.map((axis) => ({
@@ -961,6 +1041,7 @@ export default function SpomoveHubView() {
           favorite={isFavoriteProgram(ownerId, preset.id)}
           favoriteEnabled={ownerId != null && preset.isReady}
           movementLayerEnabled={movementLayerEnabled}
+          hubView={hubView}
           onPreview={() => setPreviewPreset(preset)}
           onFavorite={() => toggleFavoriteProgram(ownerId, preset.id)}
         />
@@ -1054,7 +1135,7 @@ export default function SpomoveHubView() {
           <p className="text-[11px] font-black text-slate-950">활동 필터</p>
           <button
             type="button"
-            onClick={() => setShowSavedOnly((current) => !current)}
+            onClick={toggleSavedOnly}
             aria-pressed={showSavedOnly}
             className={`inline-flex h-8 items-center gap-2 rounded-full px-3 text-[12px] font-black transition ${
               showSavedOnly
@@ -1161,7 +1242,28 @@ export default function SpomoveHubView() {
         </p>
         {/* 카드 그리드 */}
         {filteredPresets.length > 0 ? (
-          showAxisSections ? (
+          showFavoritesProgramGroupSections ? (
+            <div id="spomove-program-list" className="mt-4 space-y-8">
+              {programGroupSections.map((section) => (
+                <section key={section.programGroup}>
+                  <header className="flex flex-col gap-1 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <h2 className="text-xl font-black text-slate-950">
+                        {PROGRAM_GROUP_LABELS[section.programGroup]}
+                      </h2>
+                      <p className="mt-1 text-[13px] font-medium text-slate-500">
+                        {section.presets[0]?.programTitle ?? PROGRAM_GROUP_LABELS[section.programGroup]}
+                      </p>
+                    </div>
+                    <p className="text-[12px] font-bold text-slate-400">{section.presets.length}개 활동</p>
+                  </header>
+                  <div className="mt-5">
+                    {renderPresetGrid(section.presets)}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : showAxisSections ? (
             <div id="spomove-program-list" className="mt-4 space-y-8">
               {axisSections.map((section) => (
                 <section key={section.axis}>
@@ -1191,11 +1293,7 @@ export default function SpomoveHubView() {
             </p>
             <button
               type="button"
-              onClick={() => {
-                setActiveProgramGroup('all');
-                setActiveThinkingLevel('all');
-                setShowSavedOnly(false);
-              }}
+              onClick={clearHubFilters}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-600 hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:text-[var(--spm-acc)]"
             >
               전체 보기
@@ -1205,6 +1303,8 @@ export default function SpomoveHubView() {
         <SharedSpomoveGuidelineSheet
           preset={previewPreset}
           guideVideoUrl={previewPreset ? guideVideoUrls[previewPreset.id] ?? '' : ''}
+          contentOverride={previewPreset ? contentOverrides[previewPreset.id] : undefined}
+          hubView={hubView}
           onClose={() => setPreviewPreset(null)}
         />
       </div>

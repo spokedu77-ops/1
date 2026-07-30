@@ -26,7 +26,8 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(session).not.toContain('hud_collapsed');
     expect(session).toContain("state === 'running'");
     expect(session).toContain('<EngineRouter');
-    expect(session).toContain("state === 'movementIntro'");
+    expect(session).not.toContain("state === 'movementIntro'");
+    expect(session).not.toContain('오늘의 동작');
   });
 
   it('2) Hub CTA는 확인 모달·설정 · Public autostart 없음 · description 미노출', () => {
@@ -55,7 +56,8 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(session).toContain('isInteractiveKeyTarget');
     expect(session).toContain("event.code === 'Space' && state === 'idle' && showBriefing");
     expect(session).not.toContain("event.code === 'Space' && state === 'done'");
-    expect(settingsBriefing).toContain('variant="compact"');
+    expect(settingsBriefing).toContain('SpomovePadLayoutView');
+    expect(settingsBriefing).toContain('getSpomovePadLayoutVariant');
   });
 
   it('2c) Hub 시작·썸네일은 같은 확인 모달 루트', () => {

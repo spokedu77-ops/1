@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
-import { buildSpomoveCardTags, getSpomovePresetDisplayModel, sortSpomovePresetsByDisplayTitle } from './spomovePresetDisplayModel';
+import {
+  buildSpomoveCardTags,
+  buildSpomoveProgramGroupSections,
+  getSpomovePresetDisplayModel,
+  sortSpomovePresetsByCatalogOrder,
+  sortSpomovePresetsByDisplayTitle,
+} from './spomovePresetDisplayModel';
 
 describe('spomove preset display model', () => {
   it('uses unique program+displayTitle pairs and runtime-aware duration labels without BGM copy', () => {
@@ -25,6 +31,30 @@ describe('spomove preset display model', () => {
       expect(settingTag?.value).not.toMatch(/BGM/i);
       expect((bodyFunctionTag?.value.split(' · ') ?? []).filter(Boolean).length).toBeLessThanOrEqual(2);
     }
+  });
+
+  it('sortSpomovePresetsByCatalogOrder keeps official catalog order', () => {
+    const sample = OFFICIAL_SPOMOVE_LIBRARY.slice(0, 12);
+    const shuffled = [...sample].reverse();
+    const sorted = sortSpomovePresetsByCatalogOrder(shuffled);
+    const orders = sorted.map((preset) => preset.sortOrder);
+    expect([...orders].sort((a, b) => a - b)).toEqual(orders);
+  });
+
+  it('buildSpomoveProgramGroupSections groups favorites by activity category', () => {
+    const reaction = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.programGroup === 'reaction-cognition');
+    const visual = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.programGroup === 'visual-reaction');
+    const dive = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.programGroup === 'dive');
+    expect(reaction && visual && dive).toBeTruthy();
+
+    const sections = buildSpomoveProgramGroupSections([dive!, reaction!, visual!, reaction!]);
+    expect(sections.map((section) => section.programGroup)).toEqual([
+      'reaction-cognition',
+      'visual-reaction',
+      'dive',
+    ]);
+    expect(sections[0]?.presets.every((preset) => preset.programGroup === 'reaction-cognition')).toBe(true);
+    expect(sections[1]?.presets.every((preset) => preset.programGroup === 'visual-reaction')).toBe(true);
   });
 
   it('sortSpomovePresetsByDisplayTitle sorts by Korean display title', () => {

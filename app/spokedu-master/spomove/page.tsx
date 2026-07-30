@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import SpomoveHubView from './SpomoveHubView';
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function SpokeduMasterSpomovePage() {
-  return <SpomoveHubView />;
+  return (
+    <Suspense fallback={null}>
+      <SpomoveHubView />
+    </Suspense>
+  );
 }

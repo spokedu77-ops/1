@@ -39,25 +39,26 @@ describe('MovementConfigurator contract', () => {
     expect(configurator).toContain("variant === 'compact'");
   });
 
-  it('SettingsBriefing은 selectionMode 3분기를 사용한다', () => {
-    expect(settingsBriefing).toContain("selectionMode === 'selectable'");
-    expect(settingsBriefing).toContain("selectionMode === 'fixed'");
-    expect(settingsBriefing).toContain("selectionMode === 'disabled'");
-    expect(settingsBriefing).toContain('<MovementConfigurator');
-    expect(settingsBriefing).toContain('<FixedMovementSummary');
-    expect(settingsBriefing).toContain('<BuiltInMovementNotice');
+  it('SettingsBriefing은 움직임 자리에서 매트 배치를 안내한다', () => {
+    expect(settingsBriefing).not.toContain('<MovementConfigurator');
+    expect(settingsBriefing).toContain('<SpomovePadLayoutView');
+    expect(settingsBriefing).toContain('getSpomovePadLayoutVariant');
+    expect(settingsBriefing).not.toContain('<FixedMovementSummary');
+    expect(settingsBriefing).not.toContain('<BuiltInMovementNotice');
   });
 
-  it('pick 변경은 session state + Family 저장이며 URL replace가 아니다', () => {
+  it('설정 화면은 movement pick 변경 UI를 노출하지 않는다', () => {
     const session = read('app/spokedu-master/spomove/session/page.tsx');
-    expect(session).toContain('setMovementPick(pick)');
     expect(session).toContain('writeFamilyMovement');
-    expect(session).not.toMatch(/onMovementPickChange[\s\S]{0,400}router\.replace/);
+    expect(session).not.toContain('setMovementPick(pick)');
+    expect(session).not.toContain('onMovementPickChange');
   });
 
-  it('Hub는 Effective≠Official일 때 최근 설정 라벨을 쓴다', () => {
-    expect(hub).toContain('최근 설정');
-    expect(hub).toContain('movementPicksEqual');
+  it('Hub 카드 하단은 추천 동작과 난이도만 노출한다', () => {
+    expect(hub).toContain('추천');
+    expect(hub).toContain('동작');
+    expect(hub).toContain('난이도');
+    expect(hub).not.toContain('최근 설정');
     expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('설정');
   });

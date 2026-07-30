@@ -13,22 +13,24 @@ export function SpomovePadLayoutView({ variant, compact = false, dark = false }:
   const titleClass = dark ? 'text-white' : 'text-slate-950';
 
   if (variant === 'compass') {
-    const size = compact ? 'h-20 w-20' : 'h-28 w-28';
+    const size = compact ? 'h-32 w-32' : 'h-40 w-40';
+    const padClass = compact ? 'h-14 w-14 text-xs' : 'h-16 w-16 text-sm';
 
     return (
       <div className={`rounded-2xl border p-4 ${borderClass}`}>
-        <p className={`text-sm font-black ${titleClass}`}>다이아 패드 배치</p>
+        <p className={`text-sm font-black ${titleClass}`}>스포무브 매트 배치 방법</p>
+        <p className={`mt-1 text-xs font-semibold ${dark ? 'text-white/55' : 'text-slate-500'}`}>
+          다이아몬드: 빨강(위) · 노랑(왼) · 초록(오) · 파랑(아래)
+        </p>
         <div className="mt-4 flex justify-center">
           <div
-            className={`${size} rotate-45 overflow-hidden rounded-md shadow-sm`}
-            aria-label="패드 배치: 상 빨강, 좌 초록, 우 노랑, 하 파랑"
+            className={`relative ${size}`}
+            aria-label="다이아몬드 패드 배치: 빨강 위, 노랑 왼쪽, 초록 오른쪽, 파랑 아래"
           >
-            <div className="grid h-full w-full grid-cols-2 grid-rows-2">
-              <div style={{ background: red }} />
-              <div style={{ background: yellow }} />
-              <div style={{ background: green }} />
-              <div style={{ background: blue }} />
-            </div>
+            <div className={`absolute left-1/2 top-0 -translate-x-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: red }}>빨</div>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: yellow }}>노</div>
+            <div className={`absolute right-0 top-1/2 -translate-y-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: green }}>초</div>
+            <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: blue }}>파</div>
           </div>
         </div>
       </div>
@@ -39,7 +41,10 @@ export function SpomovePadLayoutView({ variant, compact = false, dark = false }:
 
   return (
     <div className={`rounded-2xl border p-3 ${borderClass}`}>
-      <p className={`text-sm font-black ${titleClass}`}>기본 2×2 패드 배치</p>
+      <p className={`text-sm font-black ${titleClass}`}>스포무브 매트 배치 방법</p>
+        <p className={`mt-1 text-xs font-semibold ${dark ? 'text-white/55' : 'text-slate-500'}`}>
+          정사각형: 빨강 · 노랑 · 초록 · 파랑
+      </p>
       <div className="mt-3 grid grid-cols-2 gap-2" aria-label="패드 배치: 빨강, 노랑, 초록, 파랑">
         {SPOMOVE_PAD_LAYOUT_LABELS.map((label, index) => (
           <div

@@ -147,7 +147,8 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     {
       group: '구독 서비스',
       items: [
-        { name: '스포키듀 구독 NEW', href: '/admin/spokedu-master/programs', icon: Sparkles },
+        { name: '마스터 라이브러리', href: '/admin/spokedu-master/programs', icon: BookOpen },
+        { name: '마스터 스포무브', href: '/admin/spokedu-master/spomove', icon: Sparkles },
         { name: 'SPOKEDU MASTER', href: '/spokedu-master/dashboard', icon: LayoutDashboard },
       ],
     },
@@ -175,7 +176,10 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
   const isActiveItem = (href: string) => {
     if (href === '/admin/spokedu-master/programs') {
-      return pathname.startsWith('/admin/spokedu-master');
+      return pathname === href || pathname.startsWith('/admin/spokedu-master/library');
+    }
+    if (href === '/admin/spokedu-master/spomove') {
+      return pathname.startsWith('/admin/spokedu-master/spomove');
     }
     if (href === '/spokedu-master/dashboard') {
       return pathname.startsWith('/spokedu-master');

@@ -23,6 +23,7 @@ import {
   standardSpomoveDurationSec,
 } from '../officialSpomovePresets';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
+import { getSpomoveHubReturnHref } from '../spomoveHubNavigation';
 import {
   applySpomoveDifficulty,
   getSpomoveDifficultyKind,
@@ -45,11 +46,9 @@ import {
   parseMovementQuery,
   resolveEffectiveMovement,
   resolveMovementConfiguration,
-  resolveSessionConfiguration,
 } from '../movements/movementResolve';
 import {
-  hasSeenMovementIntro,
-  markMovementIntroSeen,
+  readFamilyMovement,
   writeFamilyMovement,
 } from '../movements/movementStorage';
 import {
@@ -69,7 +68,6 @@ import {
   parseSessionEntryMode,
   resolveLegacyAutostart,
 } from './sessionEntryMode';
-import { resolveStartMovementSummary } from './startMovementSummary';
 import {
   buildSpomoveSessionSnapshotV2,
   operationConfigToPatch,
@@ -82,20 +80,13 @@ import {
   writePresetConfigPreference,
   type ActivityOperationConfig,
 } from '../operations';
-type SessionState = 'idle' | 'movementIntro' | 'running' | 'done' | 'ended';
+type SessionState = 'idle' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile';
-
-const MOVEMENT_INTRO_MS = 1800;
 
 function normalizeMode(mode: string | null): LaunchMode {
   if (mode === 'projector' || mode === 'mobile') return mode;
   if (mode === 'class') return 'mobile';
   return 'projector';
-}
-
-function getModeLabel(mode: LaunchMode) {
-  if (mode === 'projector') return '큰 화면 모드';
-  return '모바일 모드';
 }
 
 function TopBar({
@@ -120,8 +111,7 @@ function TopBar({
       style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
     >
       <div className="min-w-0">
-        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/42">{getModeLabel(mode)}</p>
-        <p className="mt-1 line-clamp-1 text-sm font-semibold text-white/70">{drillName}</p>
+        <p className="line-clamp-1 text-sm font-semibold text-white/70">{drillName}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {!isMobile ? (
@@ -252,7 +242,6 @@ function SpomoveSessionContent() {
   const [movementResolutionStatus, setMovementResolutionStatus] =
     useState<MovementResolutionStatus>('pending');
   const movementSessionIdRef = useRef(createMovementSessionId());
-  const introTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!movementLayerEnabled) {
@@ -280,12 +269,12 @@ function SpomoveSessionContent() {
       setMovementResolutionStatus('disabled');
       return;
     }
+    const savedMovement = readFamilyMovement(movementFamily.id);
     const resolved = resolveEffectiveMovement({
       profile: movementProfile,
       family: movementFamily,
       urlMovement,
-      // 일반 실행: Preset 대표 움직임 고정 (Preference/Family 저장 미사용)
-      savedMovement: null,
+      savedMovement,
       presetRecommendedMovement: officialPreset.recommendedMovement,
     });
     setMovementPick(resolved);
@@ -297,6 +286,13 @@ function SpomoveSessionContent() {
       urlMovement.limbRule === resolved.limbRule
     ) {
       setMovementSource('url');
+    } else if (
+      resolved &&
+      savedMovement &&
+      savedMovement.baseMovement === resolved.baseMovement &&
+      savedMovement.limbRule === resolved.limbRule
+    ) {
+      setMovementSource('saved');
     } else {
       setMovementSource('recommended');
     }
@@ -435,20 +431,11 @@ function SpomoveSessionContent() {
 
   const handleCueSecondsChange = useCallback(
     (value: SpomoveCueSpeedSec) => {
-      let next = value;
-      if (movementPick && movementProfile) {
-        const session = resolveSessionConfiguration({
-          movement: resolveMovementConfiguration(movementPick, movementProfile),
-          cueSeconds: value,
-        });
-        if (session.cueAdjusted) {
-          next = clampCueSpeedSec(session.cueSeconds) as SpomoveCueSpeedSec;
-        }
-      }
+      const next = value;
       setCueSeconds(writeLastCueSeconds(next));
       persistPresetPreference({ cue: next });
     },
-    [movementPick, movementProfile, persistPresetPreference],
+    [persistPresetPreference],
   );
 
   const effectiveCueSeconds = useMemo(() => {
@@ -456,22 +443,12 @@ function SpomoveSessionContent() {
     let next = !supportsCueSpeedOverride(officialPreset)
       ? clampCueSpeedSec(officialPreset.cueSeconds)
       : cueSeconds;
-    if (resolvedMovement) {
-      const session = resolveSessionConfiguration({ movement: resolvedMovement, cueSeconds: next });
-      next = clampCueSpeedSec(session.cueSeconds);
-    }
     return next;
-  }, [cueSeconds, officialPreset, resolvedMovement]);
+  }, [cueSeconds, officialPreset]);
 
   const cueFloorNotice = useMemo(() => {
-    if (!resolvedMovement || !officialPreset || !supportsCueSpeedOverride(officialPreset)) return null;
-    const session = resolveSessionConfiguration({
-      movement: resolvedMovement,
-      cueSeconds: cueSeconds,
-    });
-    if (!session.cueAdjusted) return null;
-    return `${resolvedMovement.displayLabel}는 안전한 수행을 위해 ${session.minimumCueSeconds}초 이상으로 진행합니다.`;
-  }, [cueSeconds, officialPreset, resolvedMovement]);
+    return null;
+  }, []);
 
   const recordProgramHref = program && officialPreset && sessionResult
     ? buildSpomoveRecordHref(
@@ -638,22 +615,7 @@ function SpomoveSessionContent() {
       void document.documentElement.requestFullscreen?.().catch(() => undefined);
     }
 
-    const needsIntro =
-      movementResolutionStatus === 'ready' &&
-      Boolean(resolvedMovement && movementPick && officialPreset.activityFamilyId) &&
-      !hasSeenMovementIntro(officialPreset.activityFamilyId!, movementPick!);
-
-    if (needsIntro && resolvedMovement && movementPick && officialPreset.activityFamilyId) {
-      markMovementIntroSeen(officialPreset.activityFamilyId, movementPick);
-      setState('movementIntro');
-      if (introTimerRef.current) window.clearTimeout(introTimerRef.current);
-      introTimerRef.current = window.setTimeout(() => {
-        introTimerRef.current = null;
-        enterRunning();
-      }, MOVEMENT_INTRO_MS);
-    } else {
-      enterRunning();
-    }
+    enterRunning();
 
     window.setTimeout(() => {
       startLockedRef.current = false;
@@ -663,24 +625,11 @@ function SpomoveSessionContent() {
     canStartSession,
     enterRunning,
     launchMode,
-    movementPick,
-    movementResolutionStatus,
     officialPreset,
-    resolvedMovement,
   ]);
-
-  useEffect(() => {
-    return () => {
-      if (introTimerRef.current) window.clearTimeout(introTimerRef.current);
-    };
-  }, []);
 
   const finishSession = useCallback((nextState: Extract<SessionState, 'done' | 'ended'>, payload?: EngineCompletePayload) => {
     if (!officialPreset) return;
-    if (introTimerRef.current) {
-      window.clearTimeout(introTimerRef.current);
-      introTimerRef.current = null;
-    }
     stopBgm();
     exitFullscreenAfterSession();
     const startedAt = sessionStartedAtRef.current;
@@ -741,12 +690,17 @@ function SpomoveSessionContent() {
   const leaveSession = useCallback(() => {
     stopBgm();
     exitFullscreenAfterSession();
+    const hubReturnHref = getSpomoveHubReturnHref(searchParams.get('hubView'));
+    if (searchParams.get('hubView') === 'favorites') {
+      router.push(hubReturnHref);
+      return;
+    }
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
       return;
     }
-    router.push('/spokedu-master/spomove');
-  }, [exitFullscreenAfterSession, router, stopBgm]);
+    router.push(hubReturnHref);
+  }, [exitFullscreenAfterSession, router, searchParams, stopBgm]);
 
   /** Result 재실행 → Start 확인 화면 (즉시 Engine 금지) */
   const reopenStartConfirmation = useCallback(() => {
@@ -767,6 +721,7 @@ function SpomoveSessionContent() {
         operationLayerStatus !== 'legacyDisabled' && operationCandidate
           ? operationCandidate
           : null,
+      hubView: searchParams.get('hubView') === 'favorites' ? 'favorites' : undefined,
     });
     router.replace(href);
   }, [
@@ -780,24 +735,14 @@ function SpomoveSessionContent() {
     operationCandidate,
     operationLayerStatus,
     router,
+    searchParams,
     stopBgm,
   ]);
-
-  const movementSummaryLine = useMemo(
-    () => resolveStartMovementSummary(movementProfile, movementPick),
-    [movementPick, movementProfile],
-  );
 
   const operationSummary =
     operationLayerStatus !== 'legacyDisabled' && effectiveOperation
       ? operationSummaryLine(effectiveOperation)
       : null;
-
-  const difficultySummaryLine = useMemo(() => {
-    if (!difficultyKind) return null;
-    const opt = getSpomoveDifficultyOptions(difficultyKind).find((item) => item.value === difficultyValue);
-    return opt ? `${opt.label} 난이도` : null;
-  }, [difficultyKind, difficultyValue]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -817,36 +762,6 @@ function SpomoveSessionContent() {
   }, [beginConfiguredSession, showBriefing, state]);
 
   if (!officialPreset) return <UnsupportedPreset />;
-
-  if (state === 'movementIntro' && resolvedMovement) {
-    return (
-      <div className="relative flex h-dvh items-center justify-center overflow-hidden bg-black px-6 text-white">
-        <button
-          type="button"
-          onClick={() => {
-            if (introTimerRef.current) {
-              window.clearTimeout(introTimerRef.current);
-              introTimerRef.current = null;
-            }
-            startLockedRef.current = false;
-            leaveSession();
-          }}
-          className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white"
-          aria-label="나가기"
-          style={{ top: 'max(1rem, env(safe-area-inset-top))' }}
-        >
-          <X size={16} />
-        </button>
-        <div className="max-w-lg text-center">
-          <p className="text-[13px] font-black uppercase tracking-[0.16em] text-white/45">오늘의 동작</p>
-          <p className="mt-4 text-[40px] font-black leading-tight sm:text-[48px]">{resolvedMovement.displayLabel}</p>
-          <p className="mt-4 text-[18px] font-semibold leading-relaxed text-white/75 sm:text-[20px]">
-            {resolvedMovement.hudLabel}
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   if (state === 'running') {
     return (
@@ -941,7 +856,6 @@ function SpomoveSessionContent() {
         <SessionSetupShell
           programLabel={displayModel?.programLabel ?? officialPreset.title}
           displayTitle={displayModel?.displayTitle ?? officialPreset.title}
-          launchModeLabel={launchMode === 'mobile' ? '이 기기' : '큰 화면'}
         >
           {entryMode === 'settings' ? (
             <SettingsBriefing
@@ -957,8 +871,6 @@ function SpomoveSessionContent() {
               }}
               onStart={beginConfiguredSession}
               movement={resolvedMovement}
-              movementPick={movementPick}
-              movementProfile={movementProfile}
               movementFamily={movementFamily}
               cueFloorNotice={cueFloorNotice}
               operationConfig={operationCandidate}
@@ -966,18 +878,8 @@ function SpomoveSessionContent() {
           ) : (
             <StartBriefing
               preset={officialPreset}
-              movementSummaryLine={movementSummaryLine}
-              difficultySummaryLine={difficultySummaryLine}
-              operationSummaryLine={
-                operationSummary
-                  ? matGuidance && matGuidance.recommended > matGuidance.minimum
-                    ? `${operationSummary} · 매트 권장 ${matGuidance.recommended}장`
-                    : operationSummary
-                  : null
-              }
               cueSeconds={effectiveCueSeconds}
               onCueSecondsChange={handleCueSecondsChange}
-              resolvedMovement={resolvedMovement}
               cueFloorNotice={cueFloorNotice}
               startDisabled={bgmLoading || !canStartSession}
               onStart={beginConfiguredSession}
@@ -1022,7 +924,7 @@ function SpomoveSessionContent() {
                     기록
                   </Link>
                 ) : null}
-                <Link href="/spokedu-master/spomove" className="flex h-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-xs font-bold text-[#1E293B]">
+                <Link href={getSpomoveHubReturnHref(searchParams.get('hubView'))} className="flex h-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-xs font-bold text-[#1E293B]">
                   다른 프로그램
                 </Link>
                 <Link href="/spokedu-master/activity" className="flex h-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-xs font-bold text-[#1E293B]">
