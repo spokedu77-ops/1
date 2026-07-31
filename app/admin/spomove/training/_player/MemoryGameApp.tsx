@@ -27,6 +27,7 @@ import { WormholeReactionTraining } from './components/WormholeReactionTraining'
 import { NumberCartReactionTraining, normalizeNumberCartRounds } from './components/NumberCartReactionTraining';
 import { ColorTrackerReactionTraining, normalizeColorTrackerRounds } from './components/ColorTrackerReactionTraining';
 import { GoalkeeperReactionTraining } from './components/GoalkeeperReactionTraining';
+import { ColorMemoryGridReactionTraining } from './components/ColorMemoryGridReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
@@ -2154,6 +2155,14 @@ export default function MemoryGameApp({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
+        ) : reactEngineLevel === 12 ? (
+          <ColorMemoryGridReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
         ) : reactEngineLevel === 10 ? (
           <GoalkeeperReactionTraining
             durationSec={Math.max(1, settings.duration ?? 120)}

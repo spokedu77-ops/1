@@ -619,6 +619,9 @@ export function NoteEditor({
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
+        // TipTap 3 StarterKit includes link/underline — disable so custom configs below aren't duplicated
+        link: false,
+        underline: false,
         undoRedo: { depth: 100, newGroupDelay: 300 },
       }),
       HeadingWithShortcuts,

@@ -99,6 +99,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 8, name: '숫자 연산 기차', enName: 'Number Train', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 기차가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
       { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '흰 공을 끝까지 추적한 뒤 멈춘 구역을 맞춥니다. 단계(1/2/3)는 아래에서 고릅니다.' },
       { id: 10, name: '골키퍼 모드', enName: 'Goalkeeper', desc: '4코너로 날아오는 슛·커브·더블을 눈으로 보고 도착 위치에 맞춰 반응합니다. 가운데 위치 구령 없음.' },
+      { id: 12, name: '색 기억 그리드', enName: 'Color Memory Grid', desc: '잠깐 보이는 색 배열을 기억한 뒤 바뀐 타일의 원래 색을 찾아 반응합니다.' },
     ],
   },
   basic: {
