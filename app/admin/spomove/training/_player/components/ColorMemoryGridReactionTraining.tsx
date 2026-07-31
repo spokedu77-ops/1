@@ -1,24 +1,33 @@
 'use client';
 
+/**
+ * 시지각 반응 · 색 기억 그리드 (Visual Reaction 8 / engine 12)
+ * 원본 「도플갱어의 방」변화맹 테스트 메커니즘을 SPOMOVE HUD·톤에 맞게 이식.
+ * — MEMORIZE 3s → SEARCH 7s(단 1칸만 색 변경 · FLICKER|ONESHOT) → REVEAL 3.5s
+ * — 정답 색 = 바뀐(새) 색 (패드 반응 기준)
+ */
+
 import React, { useCallback, useEffect, useRef } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { setupCanvas } from '../lib/canvasUtils';
+import { getAudioCtx } from '../lib/audio';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
 const COLORS = [
-  { name: 'RED', hex: '#ff3333' },
-  { name: 'YELLOW', hex: '#ffcc00' },
-  { name: 'BLUE', hex: '#3366ff' },
-  { name: 'GREEN', hex: '#33cc33' },
+  { name: '빨강', hex: '#ff3333', glow: '#ff9999' },
+  { name: '노랑', hex: '#ffcc00', glow: '#ffee99' },
+  { name: '파랑', hex: '#3366ff', glow: '#99b3ff' },
+  { name: '초록', hex: '#33cc33', glow: '#99ff99' },
 ] as const;
 
-const GRID_SIZE = 4;
 const MEMORIZE_MS = 3000;
-const SEARCH_MS = 5000;
-const REVEAL_MS = 1200;
-const INTRO_FLASH_MS = 150;
-const REVEAL_FLASH_MS = 220;
+const SEARCH_MS = 7000;
+const REVEAL_MS = 3500;
+const FLICKER_CYCLE_MS = 1000;
+
+export type ColorMemoryGridSize = 3 | 4 | 5;
+export type ColorMemoryGridMode = 'flicker' | 'oneshot';
 
 type Phase = 'MEMORIZE' | 'SEARCH' | 'REVEAL';
 
@@ -27,9 +36,9 @@ type Tile = {
   y: number;
   size: number;
   colorIdx: number;
-  hiddenColorIdx: number;
+  newColorIdx: number | null;
   isTarget: boolean;
-  pulse: number;
+  scale: number;
 };
 
 type Game = {
@@ -38,25 +47,28 @@ type Game = {
   phaseStartMs: number;
   round: number;
   durationLeft: number;
-  gridSize: number;
+  gridSize: ColorMemoryGridSize;
+  gameMode: ColorMemoryGridMode;
   targetIdx: number;
   tiles: Tile[];
   laneCount: [number, number, number, number];
+  lastTickSec: number;
   raf: number | null;
   timer: ReturnType<typeof setInterval> | null;
-  roundTimer: ReturnType<typeof setTimeout> | null;
 };
 
 type Props = {
   durationSec: number;
   speedLevel: number;
   speedSec: number;
+  gridSize?: ColorMemoryGridSize;
+  gameMode?: ColorMemoryGridMode;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
 const css = `
-.cmgrid{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#0a0a0f;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.cmgrid{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#0a0a0f;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden;user-select:none;touch-action:none}
 .cmgrid,.cmgrid *{box-sizing:border-box}
 .cmgrid-hud{height:72px;display:flex;align-items:stretch;background:rgba(10,10,15,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.1);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .cmgrid-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.1)}
@@ -66,22 +78,79 @@ const css = `
 .cmgrid-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(248,113,113,.45);background:rgba(220,38,38,.16);color:rgba(255,255,255,.82);font-size:13px;font-weight:800;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
 .cmgrid-play{position:relative;flex:1;min-height:0}
 .cmgrid-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.cmgrid-vignette{position:absolute;inset:0;z-index:15;pointer-events:none;background:radial-gradient(circle at 50% 24%,rgba(236,72,153,.18),transparent 34%),linear-gradient(180deg,rgba(10,10,15,.1),rgba(10,10,15,.42))}
-.cmgrid-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:#fff;opacity:0;transition:opacity .15s ease-out;mix-blend-mode:screen}
-.cmgrid-center{position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .18s ease,transform .22s cubic-bezier(.34,1.56,.64,1);text-align:center;white-space:nowrap;font-size:clamp(44px,8vw,104px);line-height:.9;font-weight:1000;color:#fff;text-shadow:0 0 34px rgba(0,0,0,.95),0 0 20px rgba(255,255,255,.72),0 0 44px rgba(236,72,153,.8)}
+.cmgrid-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:#fff;opacity:0;transition:opacity .15s ease-out}
+.cmgrid-flash.on{opacity:1;transition:none}
+.cmgrid-center{position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .18s ease,transform .22s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(44px,8vw,104px);line-height:.9;font-weight:1000;color:#fff;text-shadow:0 0 34px rgba(0,0,0,.95),0 0 20px rgba(255,255,255,.72)}
 .cmgrid-center.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.cmgrid-center.num{font-size:clamp(72px,20vw,180px);text-shadow:0 0 40px rgba(255,255,255,.8)}
+.cmgrid-center.pill{font-size:clamp(22px,5vw,48px);background:rgba(0,0,0,.5);padding:.35em .9em;border-radius:999px;backdrop-filter:blur(10px);text-shadow:0 0 20px rgba(0,0,0,1)}
 .cmgrid-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:6px 16px;border-radius:999px;background:rgba(10,10,15,.68);border:1px solid rgba(255,255,255,.16);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#f9a8d4;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.24);backdrop-filter:blur(10px)}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
-  ctx.closePath();
+function normalizeGridSize(v: unknown): ColorMemoryGridSize {
+  if (v === 3 || v === 5) return v;
+  return 4;
+}
+
+function normalizeGameMode(v: unknown): ColorMemoryGridMode {
+  return v === 'oneshot' ? 'oneshot' : 'flicker';
+}
+
+function playSfx(type: 'tick' | 'flash' | 'reveal') {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  if (type === 'tick') {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, t);
+    gain.gain.setValueAtTime(0.05, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.05);
+    return;
+  }
+  if (type === 'flash') {
+    const bufferSize = Math.floor(ctx.sampleRate * 0.2);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1000;
+    const gain = ctx.createGain();
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.45, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    noise.start(t);
+    return;
+  }
+  [523.25, 659.25, 1046.5].forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f, t + i * 0.1);
+    gain.gain.setValueAtTime(0.18, t + i * 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.1 + 0.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t + i * 0.1);
+    osc.stop(t + i * 0.1 + 0.5);
+  });
 }
 
 export function ColorMemoryGridReactionTraining({
   durationSec,
+  gridSize: gridSizeProp = 4,
+  gameMode: gameModeProp = 'flicker',
   onComplete,
 }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
@@ -93,6 +162,7 @@ export function ColorMemoryGridReactionTraining({
   const flashRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<Game | null>(null);
   const onCompleteRef = useRef(onComplete);
+  const centerTextRef = useRef('');
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -104,7 +174,7 @@ export function ColorMemoryGridReactionTraining({
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.timer) clearInterval(g.timer);
-    if (g.roundTimer) clearTimeout(g.roundTimer);
+    if (flashRef.current) flashRef.current.classList.remove('on');
     onCompleteRef.current({
       stims: Math.max(0, g.round - 1),
       maxCombo: Math.max(0, g.round - 1),
@@ -125,13 +195,14 @@ export function ColorMemoryGridReactionTraining({
       phaseStartMs: performance.now(),
       round: 1,
       durationLeft: Math.max(5, Math.round(durationSec)),
-      gridSize: GRID_SIZE,
+      gridSize: normalizeGridSize(gridSizeProp),
+      gameMode: normalizeGameMode(gameModeProp),
       targetIdx: 0,
       tiles: [],
       laneCount: [0, 0, 0, 0],
+      lastTickSec: -1,
       raf: null,
       timer: null,
-      roundTimer: null,
     };
     gRef.current = g;
 
@@ -140,126 +211,217 @@ export function ColorMemoryGridReactionTraining({
       statusRef.current.textContent = text;
       statusRef.current.style.color = color;
     };
-    const cue = (text: string, ms = 680) => {
+
+    const showMessage = (text: string, kind: 'num' | 'pill' | 'plain' = 'plain') => {
       const el = centerRef.current;
       if (!el) return;
+      if (centerTextRef.current === text) {
+        el.classList.add('show');
+        return;
+      }
+      centerTextRef.current = text;
       el.textContent = text;
+      el.classList.remove('show', 'num', 'pill');
+      if (kind === 'num') el.classList.add('num');
+      if (kind === 'pill') el.classList.add('pill');
+      void el.offsetWidth;
       el.classList.add('show');
-      window.setTimeout(() => el.classList.remove('show'), ms);
-    };
-    const flash = (color = '#ffffff', opacity = '0.78', ms = 140) => {
-      const el = flashRef.current;
-      if (!el) return;
-      el.style.background = color;
-      el.style.opacity = opacity;
-      window.setTimeout(() => {
-        if (flashRef.current) flashRef.current.style.opacity = '0';
-      }, ms);
     };
 
-    const layoutTiles = () => {
+    const hideMessage = () => {
+      centerTextRef.current = '';
+      centerRef.current?.classList.remove('show', 'num', 'pill');
+      if (centerRef.current) centerRef.current.style.color = '#fff';
+    };
+
+    const setFlash = (on: boolean) => {
+      flashRef.current?.classList.toggle('on', on);
+    };
+
+    const layoutTiles = (keepColors: boolean) => {
       const W = play.clientWidth || window.innerWidth;
       const H = play.clientHeight || window.innerHeight;
       const n = g.gridSize;
-      const usable = Math.min(W * 0.78, H * 0.72);
-      const gap = Math.max(8, usable * 0.025);
-      const size = (usable - gap * (n - 1)) / n;
-      const startX = (W - usable) / 2;
-      const startY = (H - usable) / 2 + H * 0.02;
-      g.tiles = Array.from({ length: n * n }, (_, idx) => {
-        const colorIdx = Math.floor(Math.random() * COLORS.length);
-        return {
-          x: startX + (idx % n) * (size + gap),
-          y: startY + Math.floor(idx / n) * (size + gap),
-          size,
-          colorIdx,
-          hiddenColorIdx: Math.floor(Math.random() * COLORS.length),
-          isTarget: false,
-          pulse: Math.random() * Math.PI * 2,
-        };
-      });
+      const maxGrid = Math.min(W, H) * 0.85;
+      const cell = maxGrid / n;
+      const gap = cell * 0.1;
+      const size = cell - gap;
+      const offsetX = (W - maxGrid) / 2 + gap / 2;
+      const offsetY = (H - maxGrid) / 2 + gap / 2 + 12;
+
+      if (keepColors && g.tiles.length === n * n) {
+        g.tiles.forEach((tile, idx) => {
+          const c = idx % n;
+          const r = Math.floor(idx / n);
+          tile.x = offsetX + c * cell;
+          tile.y = offsetY + r * cell;
+          tile.size = size;
+        });
+        return;
+      }
+
+      g.tiles = [];
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          g.tiles.push({
+            x: offsetX + c * cell,
+            y: offsetY + r * cell,
+            size,
+            colorIdx: Math.floor(Math.random() * COLORS.length),
+            newColorIdx: null,
+            isTarget: false,
+            scale: 0,
+          });
+        }
+      }
       g.targetIdx = Math.floor(Math.random() * g.tiles.length);
       const target = g.tiles[g.targetIdx]!;
       target.isTarget = true;
-      target.hiddenColorIdx = target.colorIdx;
+      let next = Math.floor(Math.random() * (COLORS.length - 1));
+      if (next >= target.colorIdx) next += 1;
+      target.newColorIdx = next;
     };
 
     const startRound = () => {
       if (!g.running) return;
       setupCanvas(cv, play.clientWidth || window.innerWidth, play.clientHeight || window.innerHeight);
-      layoutTiles();
+      layoutTiles(false);
       g.phase = 'MEMORIZE';
       g.phaseStartMs = performance.now();
+      g.lastTickSec = -1;
+      hideMessage();
+      setFlash(false);
       if (roundRef.current) roundRef.current.textContent = String(g.round);
-      setStatus(`색을 기억하세요 · ${g.gridSize}x${g.gridSize}`, '#f9a8d4');
-      flash('#ffffff', '0.78', INTRO_FLASH_MS);
-      cue('기억하세요');
-      g.roundTimer = setTimeout(() => {
-        if (!g.running) return;
-        g.phase = 'SEARCH';
-        g.phaseStartMs = performance.now();
-        setStatus('색이 바뀐 타일을 찾으세요', '#86efac');
-        cue('찾아보세요', 620);
-        g.roundTimer = setTimeout(() => {
-          if (!g.running) return;
-          g.phase = 'REVEAL';
-          g.phaseStartMs = performance.now();
-          const tile = g.tiles[g.targetIdx]!;
-          g.laneCount[tile.colorIdx]++;
-          flash(COLORS[tile.colorIdx]!.hex, '0.86', REVEAL_FLASH_MS);
-          cue('정답!', 760);
-          setStatus(`${COLORS[tile.colorIdx]!.name} · 원래 색`, '#e5e7eb');
-          g.round += 1;
-          g.roundTimer = setTimeout(startRound, REVEAL_MS);
-        }, SEARCH_MS);
-      }, MEMORIZE_MS);
+      setStatus(`기억 · ${g.gridSize}×${g.gridSize} · ${g.gameMode === 'flicker' ? '깜빡이' : '원샷'}`, '#f9a8d4');
     };
 
-    const draw = () => {
+    const draw = (now: number) => {
       if (!g.running) return;
       g.raf = requestAnimationFrame(draw);
+      const elapsed = now - g.phaseStartMs;
       const { cssW: W, cssH: H } = setupCanvas(cv, play.clientWidth || window.innerWidth, play.clientHeight || window.innerHeight);
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = '#0a0a0f';
       ctx.fillRect(0, 0, W, H);
 
-      const bg = ctx.createRadialGradient(W / 2, H * 0.32, 0, W / 2, H * 0.32, Math.max(W, H) * 0.72);
-      bg.addColorStop(0, 'rgba(190,24,93,.26)');
-      bg.addColorStop(0.42, 'rgba(76,29,149,.16)');
-      bg.addColorStop(1, 'rgba(10,10,15,0)');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, W, H);
-
-      const now = performance.now();
       g.tiles.forEach((tile) => {
-        const showOriginal = g.phase === 'MEMORIZE' || g.phase === 'REVEAL';
-        const colorIdx = showOriginal ? tile.colorIdx : tile.hiddenColorIdx;
-        const color = COLORS[colorIdx]!.hex;
-        const pulse = tile.isTarget && g.phase === 'REVEAL' ? 1 + Math.sin(now * 0.018) * 0.06 : 1;
-        const s = tile.size * pulse;
-        const x = tile.x + (tile.size - s) / 2;
-        const y = tile.y + (tile.size - s) / 2;
+        if (g.phase === 'MEMORIZE' && tile.scale < 1) {
+          tile.scale += (1 - tile.scale) * 0.2;
+        }
+
+        let currentScale = tile.scale;
+        let opacity = 1;
+        let renderIdx = tile.colorIdx;
+
+        if (g.phase === 'SEARCH' && tile.isTarget && tile.newColorIdx != null) {
+          if (g.gameMode === 'flicker') {
+            if ((elapsed % FLICKER_CYCLE_MS) > FLICKER_CYCLE_MS / 2) {
+              renderIdx = tile.newColorIdx;
+            }
+          } else {
+            renderIdx = tile.newColorIdx;
+          }
+        } else if (g.phase === 'REVEAL') {
+          if (!tile.isTarget) {
+            currentScale *= 0.8;
+            opacity = 0.2;
+          } else if (tile.newColorIdx != null) {
+            renderIdx = tile.newColorIdx;
+            currentScale = 1 + Math.sin(now * 0.01) * 0.1;
+          }
+        }
+
+        const color = COLORS[renderIdx]!;
+        const s = tile.size * currentScale;
         ctx.save();
-        ctx.shadowColor = color;
-        ctx.shadowBlur = tile.isTarget && g.phase === 'REVEAL' ? 34 : 16;
-        ctx.fillStyle = color;
-        roundRect(ctx, x, y, s, s, Math.max(10, s * 0.12));
+        ctx.translate(tile.x + tile.size / 2, tile.y + tile.size / 2);
+        ctx.globalAlpha = opacity;
+        if (g.phase === 'REVEAL' && tile.isTarget) {
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = color.glow;
+        }
+        ctx.fillStyle = color.hex;
+        ctx.beginPath();
+        ctx.roundRect(-s / 2, -s / 2, s, s, 10);
         ctx.fill();
-        ctx.globalAlpha = 0.22;
-        ctx.fillStyle = '#fff';
-        roundRect(ctx, x + s * 0.12, y + s * 0.1, s * 0.28, s * 0.2, s * 0.08);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.beginPath();
+        ctx.roundRect(-s / 2 + 2, -s / 2 + 2, s - 4, s * 0.3, 8);
         ctx.fill();
         ctx.restore();
       });
+
+      // ── 상태 머신 (원본 타이밍) ──
+      if (g.phase === 'MEMORIZE') {
+        const timeLeft = Math.ceil(3 - elapsed / 1000);
+        if (elapsed > 500 && timeLeft > 0) {
+          showMessage(String(timeLeft), 'num');
+          const sec = Math.floor(elapsed / 1000);
+          if (sec !== g.lastTickSec) {
+            g.lastTickSec = sec;
+            playSfx('tick');
+          }
+        }
+        if (elapsed >= MEMORIZE_MS) {
+          g.phase = 'SEARCH';
+          g.phaseStartMs = now;
+          g.lastTickSec = -1;
+          hideMessage();
+          playSfx('flash');
+          setStatus('바뀐 색깔은? · 해당 색 패드로', '#86efac');
+        }
+      } else if (g.phase === 'SEARCH') {
+        if (g.gameMode === 'flicker') {
+          const cycle = elapsed % FLICKER_CYCLE_MS;
+          setFlash((cycle > 400 && cycle < 500) || (cycle > 900 && cycle < 1000));
+        } else {
+          setFlash(elapsed < 150);
+        }
+
+        const timeLeft = Math.ceil((SEARCH_MS - elapsed) / 1000);
+        if (elapsed < 1000) {
+          showMessage('바뀐 색깔은?', 'pill');
+        } else if (timeLeft > 0) {
+          showMessage(String(timeLeft), 'num');
+          if (timeLeft <= 3) {
+            const sec = Math.floor(elapsed / 1000);
+            if (sec !== g.lastTickSec) {
+              g.lastTickSec = sec;
+              playSfx('tick');
+            }
+          }
+        }
+
+        if (elapsed >= SEARCH_MS) {
+          g.phase = 'REVEAL';
+          g.phaseStartMs = now;
+          setFlash(false);
+          playSfx('reveal');
+          const target = g.tiles[g.targetIdx]!;
+          const newIdx = target.newColorIdx ?? target.colorIdx;
+          g.laneCount[newIdx]++;
+          const ans = COLORS[newIdx]!;
+          showMessage(`정답: ${ans.name}`, 'pill');
+          if (centerRef.current) centerRef.current.style.color = ans.glow;
+          setStatus(`${ans.name} · 바뀐 색`, '#e5e7eb');
+        }
+      } else if (g.phase === 'REVEAL') {
+        if (elapsed >= REVEAL_MS) {
+          g.round += 1;
+          startRound();
+        }
+      }
     };
 
     const resize = () => {
       setupCanvas(cv, play.clientWidth || window.innerWidth, play.clientHeight || window.innerHeight);
-      layoutTiles();
+      layoutTiles(g.phase === 'MEMORIZE' ? false : true);
     };
     const unbind = bindViewportResize(play, resize);
+    getAudioCtx();
     startRound();
-    draw();
+    g.raf = requestAnimationFrame(draw);
     g.timer = setInterval(() => {
       if (!g.running) return;
       g.durationLeft -= 1;
@@ -273,9 +435,9 @@ export function ColorMemoryGridReactionTraining({
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
       if (g.timer) clearInterval(g.timer);
-      if (g.roundTimer) clearTimeout(g.roundTimer);
+      setFlash(false);
     };
-  }, [complete, durationSec]);
+  }, [complete, durationSec, gameModeProp, gridSizeProp]);
 
   return (
     <div className="cmgrid">
@@ -299,7 +461,6 @@ export function ColorMemoryGridReactionTraining({
       </div>
       <div ref={playRef} className="cmgrid-play">
         <canvas className="cmgrid-canvas" ref={cvRef} />
-        <div className="cmgrid-vignette" />
         <div className="cmgrid-flash" ref={flashRef} aria-hidden />
         <div className="cmgrid-center" ref={centerRef} aria-hidden />
         <div className="cmgrid-status" ref={statusRef} />

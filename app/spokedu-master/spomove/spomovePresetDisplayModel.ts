@@ -1,12 +1,16 @@
 import {
   getOfficialSpomovePresetGuide,
   SPOMOVE_BODY_FUNCTION_LABELS,
+  SPOMOVE_RESPONSE_TYPE_LABELS,
   SPOMOVE_KEY_ACTION_LABELS,
   SPOMOVE_TARGET_GROUP_LABELS,
   SPOMOVE_THINKING_LEVEL_LABELS,
   type SpomoveTargetGroup,
 } from './officialSpomovePresetGuides';
+import type { SpomoveFocusTag, SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
 import type { OfficialSpomovePreset, OfficialSpomoveProgramGroup } from './officialSpomovePresets';
+import { getPresetMovementSummary } from './movements/presetMovementSummary';
+import { MOVEMENT_REGISTRY } from './movements/movementRegistry';
 import { getSpomovePadLayoutVariant } from './spomovePadLayout';
 
 export type SpomovePresetDisplayModel = {
@@ -21,6 +25,54 @@ export type SpomovePresetDisplayModel = {
   durationLabel: string;
   padLayoutVariant: ReturnType<typeof getSpomovePadLayoutVariant>;
   isAvailable: boolean;
+};
+
+export type SpomoveGuideContentReadiness =
+  | 'incomplete'
+  | 'needs-improvement'
+  | 'ready'
+  | 'home-ready';
+
+export type SpomoveGuideDisplayModel = {
+  title: string;
+  programGroupLabel: string;
+  recommendedMovementLabel: string | null;
+  instruction: string;
+  coachScript: string;
+  focusTags: string[];
+  easier: string;
+  harder: string;
+  successCriteria?: string;
+  commonMistake?: string;
+  movementVariation?: string;
+  ruleVariation?: string;
+  operationVariation?: string;
+  matCount: number;
+  cueSeconds: number;
+  rounds: number;
+  contentReadiness: SpomoveGuideContentReadiness;
+};
+
+export const SPOMOVE_FOCUS_TAG_LABELS: Record<SpomoveFocusTag, string> = {
+  simpleReaction: '단순반응',
+  choiceReaction: '선택반응',
+  responseInhibition: '반응 억제',
+  attentionShift: '주의 전환',
+  visualSearch: '시각 탐색',
+  sequenceMemory: '순차 기억',
+  ruleSwitching: '규칙 전환',
+  movementCoordination: '이동 협응',
+  lowerBodyCoordination: '하체 협응',
+  upperLowerCoordination: '상·하지 협응',
+  balanceControl: '균형 조절',
+  landingControl: '착지 조절',
+  postureControl: '자세 유지',
+  directionControl: '방향 조절',
+  individual: '개인 수행',
+  simultaneous: '동시 수행',
+  turnTaking: '교대 활동',
+  cooperative: '협동 활동',
+  competitive: '경쟁 활동',
 };
 
 function buildTargetLabel(groups: SpomoveTargetGroup[]): string {
@@ -199,6 +251,108 @@ export function buildSpomoveCardTags(preset: OfficialSpomovePreset): SpomoveCard
     { key: 'setting', label: '설정', value: display.settingLabel || '-' },
     { key: 'bodyFunction', label: '신체기능', value: display.bodyFunctionLabel || '-' },
   ];
+}
+
+function fallbackFocusTags(preset: OfficialSpomovePreset): string[] {
+  const guide = getOfficialSpomovePresetGuide(preset);
+  const response = SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType];
+  const body = guide.bodyFunctions
+    .slice(0, 2)
+    .map((fn) => SPOMOVE_BODY_FUNCTION_LABELS[fn]);
+  return [response, ...body].filter(Boolean).slice(0, 3);
+}
+
+function fallbackInstruction(preset: OfficialSpomovePreset): string {
+  const movementSummary = getPresetMovementSummary(preset);
+  const movement = movementSummary?.officialRecommended
+    ? MOVEMENT_REGISTRY[movementSummary.officialRecommended.baseMovement]
+    : null;
+  if (movement) {
+    return movement.instruction;
+  }
+  if (preset.movementProfileId === 'bodyCueBuiltIn' || preset.movementProfileId === 'diveBuiltIn') {
+    return '화면이 안내하는 신체 지시를 확인한 뒤 바로 수행합니다.';
+  }
+  return '화면 지시를 확인한 뒤 정해진 위치와 규칙에 맞춰 반응합니다.';
+}
+
+function fallbackCoachScript(preset: OfficialSpomovePreset): string {
+  const movementSummary = getPresetMovementSummary(preset);
+  const movement = movementSummary?.officialRecommended
+    ? MOVEMENT_REGISTRY[movementSummary.officialRecommended.baseMovement]
+    : null;
+  return movement?.teacherCue ?? '화면을 먼저 보고, 신호에 맞춰 움직이세요.';
+}
+
+function fallbackEasier(preset: OfficialSpomovePreset): string {
+  const movementSummary = getPresetMovementSummary(preset);
+  const movement = movementSummary?.officialRecommended
+    ? MOVEMENT_REGISTRY[movementSummary.officialRecommended.baseMovement]
+    : null;
+  return movement?.easyVariation ?? '자극 시간을 늘리고 한 가지 규칙부터 천천히 진행합니다.';
+}
+
+function fallbackHarder(preset: OfficialSpomovePreset): string {
+  const movementSummary = getPresetMovementSummary(preset);
+  const movement = movementSummary?.officialRecommended
+    ? MOVEMENT_REGISTRY[movementSummary.officialRecommended.baseMovement]
+    : null;
+  return movement?.hardVariation ?? '자극 시간을 줄이고 연속 반응이나 추가 조건을 더해 진행합니다.';
+}
+
+function resolveContentReadiness(contentOverride?: SpomovePresetContentOverride): SpomoveGuideContentReadiness {
+  const guide = contentOverride?.movementGuide;
+  if (guide) {
+    return guide.successCriteria || guide.commonMistake || guide.remix ? 'home-ready' : 'ready';
+  }
+  if (contentOverride?.activityMethod?.trim() || contentOverride?.activityConcept?.trim()) {
+    return 'needs-improvement';
+  }
+  return 'incomplete';
+}
+
+export function buildSpomoveGuideDisplayModel({
+  preset,
+  contentOverride,
+  matCount,
+  cueSeconds,
+}: {
+  preset: OfficialSpomovePreset;
+  contentOverride?: SpomovePresetContentOverride;
+  matCount?: number;
+  cueSeconds?: number;
+}): SpomoveGuideDisplayModel {
+  const display = getSpomovePresetDisplayModel(preset);
+  const movementSummary = getPresetMovementSummary(preset);
+  const guide = contentOverride?.movementGuide;
+  const movementLabel =
+    guide?.movement === null
+      ? null
+      : guide?.movement
+        ? MOVEMENT_REGISTRY[guide.movement.baseMovement]?.label ?? movementSummary?.recommendedLabel ?? null
+        : movementSummary?.recommendedLabel ?? null;
+
+  return {
+    title: display.displayTitle,
+    programGroupLabel: display.programLabel,
+    recommendedMovementLabel: movementLabel,
+    instruction: guide?.instruction || contentOverride?.activityMethod?.trim() || fallbackInstruction(preset),
+    coachScript: guide?.teacherCue || fallbackCoachScript(preset),
+    focusTags: guide?.focusTags?.length
+      ? guide.focusTags.map((tag) => SPOMOVE_FOCUS_TAG_LABELS[tag])
+      : fallbackFocusTags(preset),
+    easier: guide?.easier || fallbackEasier(preset),
+    harder: guide?.harder || fallbackHarder(preset),
+    successCriteria: guide?.successCriteria,
+    commonMistake: guide?.commonMistake,
+    movementVariation: guide?.remix?.movement,
+    ruleVariation: guide?.remix?.rule,
+    operationVariation: guide?.remix?.operation,
+    matCount: matCount ?? movementSummary?.minMats ?? 1,
+    cueSeconds: cueSeconds ?? preset.cueSeconds,
+    rounds: preset.rounds,
+    contentReadiness: resolveContentReadiness(contentOverride),
+  };
 }
 
 export function buildSpomoveGuidelineNarrative(preset: OfficialSpomovePreset): string {

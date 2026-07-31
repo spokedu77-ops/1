@@ -283,6 +283,10 @@ type LaunchSettings = {
   camouflagePlacement: 'center' | 'variant';
   /** 시지각반응(reactTrain) 골키퍼(10번) 전용: 1=항상 1개 · 2=1~2개(더블) */
   goalkeeperTier: 1 | 2;
+  /** 시지각반응(reactTrain) 색 기억 그리드(12) 전용: 3×3 / 4×4 / 5×5 */
+  colorMemoryGridSize: 3 | 4 | 5;
+  /** 시지각반응(reactTrain) 색 기억 그리드(12) 전용: flicker=깜빡이 · oneshot=원샷 */
+  colorMemoryGridMode: 'flicker' | 'oneshot';
   /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
   simonPoleCount: 1 | 2;
   /** 변형 사분할(7·8·9) — easy 고정(레거시 필드) */
@@ -318,6 +322,8 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   moleLookMode: 'classic',
   camouflagePlacement: 'variant',
   goalkeeperTier: 2,
+  colorMemoryGridSize: 4,
+  colorMemoryGridMode: 'flicker',
   simonPoleCount: 1,
   bodyLabelMode: 'easy',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
@@ -351,6 +357,11 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     moleLookMode: auto.moleLookMode === 'variant' ? 'variant' : fallback.moleLookMode,
     camouflagePlacement: 'variant',
     goalkeeperTier: auto.goalkeeperTier === 1 ? 1 : fallback.goalkeeperTier,
+    colorMemoryGridSize:
+      auto.colorMemoryGridSize === 3 || auto.colorMemoryGridSize === 5
+        ? auto.colorMemoryGridSize
+        : fallback.colorMemoryGridSize,
+    colorMemoryGridMode: auto.colorMemoryGridMode === 'oneshot' ? 'oneshot' : fallback.colorMemoryGridMode,
     simonPoleCount: auto.simonPoleCount === 2 ? 2 : fallback.simonPoleCount,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
@@ -457,6 +468,8 @@ function TrainingPortal({
     moleLookMode: launch.moleLookMode,
     camouflagePlacement: launch.camouflagePlacement,
     goalkeeperTier: launch.goalkeeperTier,
+    colorMemoryGridSize: launch.colorMemoryGridSize,
+    colorMemoryGridMode: launch.colorMemoryGridMode,
     simonPoleCount: launch.simonPoleCount,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
@@ -469,7 +482,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -1451,6 +1464,95 @@ function SettingsScreen({
                 })}
               </div>
             </section>
+          ) : null}
+
+          {/* 시지각반응 색 기억 그리드(12): 타일 수 · 진행 방식 */}
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 12 ? (
+            <>
+              <section style={{ marginBottom: 22 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>타일 개수</label>
+                  <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                    기억 후 단 한 칸만 색이 바뀝니다. 그리드가 클수록 찾기 어렵습니다.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {([
+                    { id: 3 as const, label: '3×3', sub: '입문' },
+                    { id: 4 as const, label: '4×4', sub: '보통' },
+                    { id: 5 as const, label: '5×5', sub: '어려움' },
+                  ]).map((opt) => {
+                    const active = launch.colorMemoryGridSize === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setLaunch((s) => ({ ...s, colorMemoryGridSize: opt.id }))}
+                        style={{
+                          flex: 1,
+                          padding: '11px 8px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${active ? accent : T.border}`,
+                          background: active ? `${accent}16` : T.card,
+                          color: active ? accent : T.textDim,
+                          fontFamily: 'inherit',
+                          fontSize: 15,
+                          fontWeight: active ? 900 : 700,
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {opt.label}
+                        <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                          {opt.sub}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+              <section style={{ marginBottom: 22 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>진행 방식</label>
+                  <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                    깜빡이는 원본·변경 색을 번갈아 보여 주고, 원샷은 한 번만 바꾼 뒤 유지합니다.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {([
+                    { id: 'flicker' as const, label: '깜빡이', sub: '추천' },
+                    { id: 'oneshot' as const, label: '원샷', sub: '하드코어' },
+                  ]).map((opt) => {
+                    const active = launch.colorMemoryGridMode === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setLaunch((s) => ({ ...s, colorMemoryGridMode: opt.id }))}
+                        style={{
+                          flex: 1,
+                          padding: '11px 8px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${active ? accent : T.border}`,
+                          background: active ? `${accent}16` : T.card,
+                          color: active ? accent : T.textDim,
+                          fontFamily: 'inherit',
+                          fontSize: 15,
+                          fontWeight: active ? 900 : 700,
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {opt.label}
+                        <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                          {opt.sub}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            </>
           ) : null}
 
           {/* 사이먼 폴 도형(1)·화살표(2): 기본 1개 / 응용 2개 */}

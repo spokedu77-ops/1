@@ -5,14 +5,34 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
 import type { MasterCapability } from './masterRouteAccess';
+import { MASTER_NAV_ITEMS } from './masterNavLabels';
 
-const PRIMARY_TABS = [
-  { key: 'dashboard', label: '홈', shortLabel: '홈', Icon: Home, capability: 'authenticated' },
-  { key: 'library', label: '수업자료', shortLabel: '자료', Icon: BookOpen, capability: 'library' },
-  { key: 'class-tools', label: '수업 도구', shortLabel: '도구', Icon: Wrench, capability: 'classTools' },
-  { key: 'activity', label: '수업 기록', shortLabel: '기록', Icon: FileText, capability: 'records' },
-  { key: 'spomove', label: 'SPOMOVE', shortLabel: '무브', Icon: Tv, capability: 'spomove' },
-] as const;
+const TAB_ICONS = {
+  dashboard: Home,
+  library: BookOpen,
+  'class-tools': Wrench,
+  activity: FileText,
+  spomove: Tv,
+} as const;
+
+const TAB_CAPABILITIES = {
+  dashboard: 'authenticated',
+  library: 'library',
+  'class-tools': 'classTools',
+  activity: 'records',
+  spomove: 'spomove',
+} as const satisfies Record<keyof typeof TAB_ICONS, MasterCapability>;
+
+const PRIMARY_TABS = MASTER_NAV_ITEMS.filter(
+  (item): item is (typeof MASTER_NAV_ITEMS)[number] & { key: keyof typeof TAB_ICONS } =>
+    item.key in TAB_ICONS,
+).map((item) => ({
+  key: item.key,
+  label: item.label,
+  shortLabel: item.shortLabel,
+  Icon: TAB_ICONS[item.key],
+  capability: TAB_CAPABILITIES[item.key],
+}));
 
 function withHref<T extends { key: string }>(tabs: readonly T[], basePath: string) {
   return tabs.map((tab) => ({ ...tab, href: `${basePath}/${tab.key}` }));
@@ -63,7 +83,9 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
           }}
         >
           {primaryTabs.map(({ href, label, shortLabel, Icon, capability }) => {
-            const active = isActivePath(pathname, href) || (href.endsWith('/activity') && isActivePath(pathname, `${basePath}/class-record`));
+            const active =
+              isActivePath(pathname, href) ||
+              (href.endsWith('/activity') && isActivePath(pathname, `${basePath}/class-record`));
             const locked = !canUseTab(accessContext?.snapshot, capability);
             return (
               <button
@@ -74,7 +96,10 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
                 aria-current={active ? 'page' : undefined}
                 aria-label={label}
               >
-                <span className="relative grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: active ? 'var(--spm-acc)' : 'transparent' }}>
+                <span
+                  className="relative grid h-7 w-7 place-items-center rounded-[9px]"
+                  style={{ background: active ? 'var(--spm-acc)' : 'transparent' }}
+                >
                   <Icon size={17} strokeWidth={1.9} color={active ? '#ffffff' : '#64748b'} />
                   {locked ? (
                     <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-[var(--spm-acc)]">
@@ -82,7 +107,10 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
                     </span>
                   ) : null}
                 </span>
-                <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: active ? 'var(--spm-acc)' : '#64748b' }}>
+                <span
+                  className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap"
+                  style={{ color: active ? 'var(--spm-acc)' : '#64748b' }}
+                >
                   {shortLabel}
                 </span>
               </button>

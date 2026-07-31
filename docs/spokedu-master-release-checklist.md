@@ -98,3 +98,25 @@ Do not write actual secret values in this checklist.
 - [ ] `payment-reconcile --apply` remains exit 2 with `allowedRecoveryActions` plan only
 - [ ] risk-audit amendment: billing/issue + cancel · `strictCommercialScore ≠ D 8+`
 - [ ] **Blocked until secrets:** Toss sandbox `--complete-billing` log, restore DB `qa:spokedu-master:data-integrity` run, vault cron apply
+
+## H4 launch evidence (D 8+ / E 출시 클로즈)
+
+증거 없이 점수 선언 금지. mock / 구두 완료는 반영하지 않는다.
+
+### Toss sandbox 실결제 (D 8+)
+
+1. Staging + Toss **test** keys만 사용.
+2. Preflight (결제 없이): `npm run qa:spokedu-master:payment-no-toss -- http://localhost:3000`
+3. 브라우저에서 `/spokedu-master/payment?plan=premium` → 테스트 결제 완료.
+4. success URL의 `authKey` / `customerKey`로:
+   - `SPOKEDU_MASTER_PAYMENT_E2E_AUTH_KEY=…`
+   - `SPOKEDU_MASTER_PAYMENT_E2E_CUSTOMER_KEY=…`
+   - `npm run qa:spokedu-master:staging-payment -- http://localhost:3000 --complete-billing`
+5. 산출물: 터미널 JSON/`ok: true` 로그 또는 success URL 스크린샷을 증거로 보관.
+
+### 임시 DB restore rehearsal (E 출시 클로즈)
+
+1. Follow `docs/spokedu-master-backup-restore-runbook.md` (stop criteria · named owner).
+2. Restore into a **temporary** database (never production).
+3. `SPOKEDU_MASTER_DATABASE_URL=<temp>` → `npm run qa:spokedu-master:data-integrity`
+4. 산출물: restore 시각 · owner · integrity 로그 경로.

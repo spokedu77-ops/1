@@ -128,10 +128,10 @@ export default function LandingPage() {
           <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/login?next=/spokedu-master/dashboard" className="flex min-h-11 items-center rounded-full px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+          <Link href="/login?next=/spokedu-master/dashboard" className="flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
             로그인
           </Link>
-          <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex min-h-11 items-center rounded-full px-4 text-[12px] font-black focus-visible:outline-none">
+          <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none">
             시작하기
           </Link>
         </div>

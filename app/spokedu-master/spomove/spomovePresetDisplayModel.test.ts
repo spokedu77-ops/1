@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
 import {
+  buildSpomoveGuideDisplayModel,
   buildSpomoveCardTags,
   buildSpomoveProgramGroupSections,
   getSpomovePresetDisplayModel,
@@ -84,5 +85,34 @@ describe('spomove preset display model', () => {
       expect(getSpomovePresetDisplayModel(preset).displayTitle).not.toMatch(/^\d+번\b/);
       expect(getSpomovePresetDisplayModel(preset).displayTitle).not.toMatch(/\d+번\s*[·:]/);
     }
+  });
+
+  it('buildSpomoveGuideDisplayModel uses master content movement guide as the display source', () => {
+    const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === 'reaction-cognition-space-direction-01');
+    expect(preset).toBeTruthy();
+
+    const model = buildSpomoveGuideDisplayModel({
+      preset: preset!,
+      contentOverride: {
+        movementGuide: {
+          movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
+          instruction: '화면 색상을 확인한 뒤 같은 색상 매트로 양발 점프합니다.',
+          teacherCue: '색상을 먼저 보고, 두 발로 함께 이동하세요.',
+          focusTags: ['choiceReaction', 'lowerBodyCoordination', 'landingControl'],
+          easier: '점프 대신 한 발씩 이동하고 자극 시간을 늘립니다.',
+          harder: '자극 시간을 줄이고 같은 색상이 연속되면 제자리 점프를 추가합니다.',
+          remix: {
+            movement: '발 터치 또는 런지로 바꾸어 진행할 수 있습니다.',
+          },
+        },
+      },
+    });
+
+    expect(model.recommendedMovementLabel).toBe('양발 홉');
+    expect(model.instruction).toBe('화면 색상을 확인한 뒤 같은 색상 매트로 양발 점프합니다.');
+    expect(model.coachScript).toBe('색상을 먼저 보고, 두 발로 함께 이동하세요.');
+    expect(model.focusTags).toEqual(['선택반응', '하체 협응', '착지 조절']);
+    expect(model.movementVariation).toBe('발 터치 또는 런지로 바꾸어 진행할 수 있습니다.');
+    expect(model.contentReadiness).toBe('home-ready');
   });
 });

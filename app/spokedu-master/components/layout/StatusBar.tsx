@@ -4,15 +4,22 @@ import { BookOpen, CircleUserRound, FileText, Home, Search, Tv, Wifi, WifiOff, W
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
+import { MASTER_NAV_ITEMS } from './masterNavLabels';
 
-const APP_LINKS = [
-  { href: '/spokedu-master/dashboard', label: '홈', Icon: Home },
-  { href: '/spokedu-master/library', label: '수업자료', Icon: BookOpen },
-  { href: '/spokedu-master/spomove', label: 'SPOMOVE', Icon: Tv },
-  { href: '/spokedu-master/class-tools', label: '수업도구', Icon: Wrench },
-  { href: '/spokedu-master/activity', label: '기록', Icon: FileText },
-  { href: '/spokedu-master/profile', label: '프로필', Icon: CircleUserRound },
-] as const;
+const NAV_ICONS = {
+  dashboard: Home,
+  library: BookOpen,
+  spomove: Tv,
+  'class-tools': Wrench,
+  activity: FileText,
+  profile: CircleUserRound,
+} as const;
+
+const APP_LINKS = MASTER_NAV_ITEMS.map((item) => ({
+  href: item.href,
+  label: item.label,
+  Icon: NAV_ICONS[item.key],
+}));
 
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);

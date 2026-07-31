@@ -84,7 +84,10 @@ export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGate
             {primaryLabel}
           </Link>
           {!subscriptionBlockedFeature ? (
-            <Link href="/spokedu-master/dashboard" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] text-[13px] font-black text-slate-500">
+            <Link
+              href="/spokedu-master/dashboard"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white text-[13px] font-black text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+            >
               <ArrowLeft size={15} />
               홈으로
             </Link>

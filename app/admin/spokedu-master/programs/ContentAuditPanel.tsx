@@ -160,7 +160,7 @@ export function ContentAuditPanel({
               type="button"
               onClick={() => void load()}
               disabled={loading}
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-indigo-600 px-3 text-[12px] font-black text-white disabled:opacity-50"
+              className="spm-btn-primary inline-flex h-9 items-center gap-2 rounded-[10px] px-3 text-[12px] font-black focus-visible:outline-none disabled:opacity-50"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
               새로고침

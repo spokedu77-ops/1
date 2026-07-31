@@ -665,6 +665,7 @@ function normalizeContentDraft(value: SpomovePresetContentOverride | undefined):
     coreKeywords: normalizeSpomoveCoreKeywordsList(value?.coreKeywords ?? []),
     activityMethod: value?.activityMethod ?? '',
     activityConcept: value?.activityConcept ?? '',
+    movementGuide: value?.movementGuide,
   };
 }
 
@@ -672,6 +673,7 @@ function contentDraftIsEmpty(value: SpomovePresetContentOverride | undefined) {
   return (
     !value?.activityMethod?.trim() &&
     !value?.activityConcept?.trim() &&
+    !value?.movementGuide &&
     normalizeSpomoveCoreKeywordsList(value?.coreKeywords ?? []).length === 0
   );
 }
@@ -780,6 +782,7 @@ function SpomoveContentManager() {
       coreKeywords: normalizeSpomoveCoreKeywordsList(draft.coreKeywords ?? []),
       activityMethod: draft.activityMethod?.trim() ?? '',
       activityConcept: draft.activityConcept?.trim() ?? '',
+      movementGuide: draft.movementGuide,
     };
     const next = { ...contentRef.current };
     if (contentDraftIsEmpty(nextEntry)) delete next[presetId];
@@ -942,7 +945,7 @@ function SpomoveContentManager() {
                             type="button"
                             onClick={() => void saveContent(preset.id)}
                             disabled={!dirty || savingThis || deletingThis}
-                            className="inline-flex h-8 items-center justify-center rounded-lg bg-indigo-600 px-3 text-[11px] font-black text-white disabled:opacity-40"
+                            className="spm-btn-primary inline-flex h-8 items-center justify-center rounded-[10px] px-3 text-[11px] font-black focus-visible:outline-none disabled:opacity-40"
                           >
                             {savingThis ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}
                             저장
@@ -1195,7 +1198,7 @@ function SpomoveThumbnailManager() {
                           )}
 
                           <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                            <label className="inline-flex h-8 flex-1 cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-2 text-[11px] font-black text-white has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+                            <label className="spm-btn-primary inline-flex h-8 flex-1 cursor-pointer items-center justify-center rounded-[10px] px-2 text-[11px] font-black focus-visible:outline-none has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
                               {savingThis ? (
                                 <Loader2 size={13} className="mr-1 animate-spin" />
                               ) : null}
@@ -1427,7 +1430,7 @@ function SpomoveGuideVideoManager() {
                             type="button"
                             onClick={() => void saveGuideVideo(preset.id)}
                             disabled={!dirty || savingThis || deletingThis}
-                            className="inline-flex h-8 items-center justify-center rounded-lg bg-indigo-600 px-3 text-[11px] font-black text-white disabled:opacity-40"
+                            className="spm-btn-primary inline-flex h-8 items-center justify-center rounded-[10px] px-3 text-[11px] font-black focus-visible:outline-none disabled:opacity-40"
                           >
                             {savingThis ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}
                             저장
@@ -1621,7 +1624,7 @@ function CreateProgramModal({
             type="button"
             onClick={onSubmit}
             disabled={creating || !form.title.trim()}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-[12px] font-black text-white disabled:opacity-50"
+            className="spm-btn-primary inline-flex h-10 items-center gap-2 rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none disabled:opacity-50"
           >
             {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             추가
@@ -2016,7 +2019,7 @@ function WeeklyRecommendationManager({
             type="button"
             onClick={() => void saveSlots()}
             disabled={loadingSlots || savingSlots}
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-[12px] font-black text-white disabled:opacity-50"
+            className="spm-btn-primary inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none disabled:opacity-50"
           >
             <Save size={14} />
             {savingSlots ? '추천 저장 중' : '추천 슬롯 저장'}
@@ -2463,7 +2466,7 @@ export default function AdminSmProgramsPage() {
             type="button"
             onClick={() => void save()}
             disabled={!selected || !form || saving}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-[12px] font-black text-white disabled:opacity-50"
+            className="spm-btn-primary inline-flex h-9 items-center gap-2 rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none disabled:opacity-50"
           >
             <Save size={14} />
             {saving ? '저장 중' : '저장'}

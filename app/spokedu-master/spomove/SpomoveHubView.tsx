@@ -28,15 +28,8 @@ import { spmChipClass } from '../lib/masterUiClasses';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomoveSameSettings';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
-import type { MovementPick, MovementQuickFilter } from './movements/movementTypes';
-import {
-  isAllowedByFamily,
-  movementPicksEqual,
-  resolveMovementConfiguration,
-  resolveSessionConfiguration,
-} from './movements/movementResolve';
-import { readFamilyMovement } from './movements/movementStorage';
-import { clampCueSpeedSec, resolveSessionCueSeconds, supportsCueSpeedOverride } from './spomoveCueSpeed';
+import type { MovementQuickFilter } from './movements/movementTypes';
+import { supportsCueSpeedOverride } from './spomoveCueSpeed';
 import { getSpomoveDifficultyKind } from './spomoveDifficulty';
 
 import {
@@ -52,6 +45,7 @@ import {
 } from './officialSpomovePresetGuides';
 import {
   buildSpomoveProgramGroupSections,
+  buildSpomoveGuideDisplayModel,
   getSpomovePresetDisplayModel,
   sortSpomovePresetsByCatalogOrder,
   sortSpomovePresetsByDisplayTitle,
@@ -653,83 +647,35 @@ function CardVisual({
 function CardInfo({
   preset,
   isReady,
-  movementLayerEnabled,
   hubView,
+  contentOverride,
   onGuide,
 }: {
   preset: OfficialSpomovePreset;
   isReady: boolean;
-  movementLayerEnabled: boolean;
   hubView: SpomoveHubViewMode;
+  contentOverride?: SpomovePresetContentOverride;
   onGuide: () => void;
 }) {
   const router = useRouter();
-  const display = getSpomovePresetDisplayModel(preset);
-  const movementSummary = useMemo(
-    () => (movementLayerEnabled ? getPresetMovementSummary(preset) : null),
-    [movementLayerEnabled, preset],
-  );
-  const profile = movementSummary?.profile ?? null;
-  const officialPick = movementSummary?.officialRecommended ?? null;
-  const [savedMovement, setSavedMovement] = useState<MovementPick | null>(null);
+  const guideDisplay = buildSpomoveGuideDisplayModel({ preset, contentOverride });
   const showSettings =
     supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
 
-  useEffect(() => {
-    if (!movementSummary?.family || !profile) {
-      setSavedMovement(null);
-      return;
-    }
-    const saved = readFamilyMovement(movementSummary.family.id);
-    setSavedMovement(
-      saved && isAllowedByFamily(saved, movementSummary.family, profile) ? saved : null,
-    );
-  }, [movementSummary?.family, profile]);
-
-  const effectivePick =
-    savedMovement && officialPick && !movementPicksEqual(savedMovement, officialPick)
-      ? savedMovement
-      : officialPick;
-  const effectivePickIsSaved =
-    Boolean(savedMovement && officialPick && !movementPicksEqual(savedMovement, officialPick));
-
-  const cueForPick = (pick: MovementPick) => {
-    if (!profile) return resolveSessionCueSeconds(preset, null);
-    const configured = resolveSessionConfiguration({
-      movement: resolveMovementConfiguration(pick, profile),
-      cueSeconds: resolveSessionCueSeconds(preset, null),
-    });
-    return clampCueSpeedSec(configured.cueSeconds);
-  };
-
   const hrefForSettings = () => {
     const hubViewOption = hubView === 'favorites' ? { hubView: 'favorites' as const } : {};
-    if (!effectivePick) {
-      return publicOfficialPresetSessionHref(preset, { entry: 'settings', ...hubViewOption });
-    }
-    return publicOfficialPresetSessionHref(preset, {
-      entry: 'settings',
-      movement: effectivePick.baseMovement,
-      limb: effectivePick.limbRule,
-      cueSeconds: cueForPick(effectivePick),
-      ...hubViewOption,
-    });
+    return publicOfficialPresetSessionHref(preset, { entry: 'settings', ...hubViewOption });
   };
-
-  const recommendedMovementLabel =
-    movementSummary && effectivePickIsSaved && savedMovement
-      ? resolveMovementConfiguration(savedMovement, movementSummary.profile).displayLabel
-      : movementSummary?.recommendedLabel ?? '-';
 
   return (
     <div className="flex shrink-0 flex-col gap-2 p-3 text-left">
       <p className="line-clamp-1 text-[12px] font-bold text-slate-700">
         <span className="font-black text-slate-900">추천</span>{' '}
         <span className="text-slate-500">동작</span>{' '}
-        <span className="text-[var(--spm-acc)]">{recommendedMovementLabel}</span>
+        <span className="text-[var(--spm-acc)]">{guideDisplay.recommendedMovementLabel ?? '화면 지시'}</span>
         <span className="px-1.5 text-slate-300">/</span>
-        <span className="text-slate-500">난이도</span>{' '}
-        <span className="text-slate-800">{display.difficultyLabel || '-'}</span>
+        <span className="text-slate-500">활용 요소</span>{' '}
+        <span className="text-slate-800">{guideDisplay.focusTags.slice(0, 2).join(' · ') || '-'}</span>
       </p>
 
       {isReady ? (
@@ -773,8 +719,8 @@ function PresetCard({
   thumbnailUrl,
   favorite,
   favoriteEnabled,
-  movementLayerEnabled,
   hubView,
+  contentOverride,
   onPreview,
   onFavorite,
 }: {
@@ -782,8 +728,8 @@ function PresetCard({
   thumbnailUrl: string;
   favorite: boolean;
   favoriteEnabled: boolean;
-  movementLayerEnabled: boolean;
   hubView: SpomoveHubViewMode;
+  contentOverride?: SpomovePresetContentOverride;
   onPreview: () => void;
   onFavorite: () => void;
 }) {
@@ -837,8 +783,8 @@ function PresetCard({
       <CardInfo
         preset={preset}
         isReady={preset.isReady}
-        movementLayerEnabled={movementLayerEnabled}
         hubView={hubView}
+        contentOverride={contentOverride}
         onGuide={onPreview}
       />
     </>
@@ -1044,8 +990,8 @@ export default function SpomoveHubView() {
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
           favorite={isFavoriteProgram(ownerId, preset.id)}
           favoriteEnabled={ownerId != null && preset.isReady}
-          movementLayerEnabled={movementLayerEnabled}
           hubView={hubView}
+          contentOverride={contentOverrides[preset.id]}
           onPreview={() => setPreviewPreset(preset)}
           onFavorite={() => toggleFavoriteProgram(ownerId, preset.id)}
         />

@@ -8,35 +8,39 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
   it('keeps the desktop top navigation focused on the six pilot roles', () => {
     const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
 
-    expect(statusBar).toContain("href: '/spokedu-master/dashboard', label: '홈'");
-    expect(statusBar).toContain("href: '/spokedu-master/library', label: '수업자료'");
-    expect(statusBar).toContain("href: '/spokedu-master/spomove', label: 'SPOMOVE'");
-    expect(statusBar).toContain("href: '/spokedu-master/class-tools', label: '수업도구'");
-    expect(statusBar).toContain("href: '/spokedu-master/activity', label: '기록'");
-    expect(statusBar).toContain("href: '/spokedu-master/profile', label: '프로필'");
+    expect(statusBar).toContain('MASTER_NAV_ITEMS');
     expect(statusBar).toContain('whitespace-nowrap');
     expect(statusBar).not.toContain("href: '/spokedu-master/plan'");
     expect(statusBar).not.toContain("href: '/spokedu-master/director'");
     expect(statusBar).not.toContain("href: '/spokedu-master/shop'");
+
+    const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
+    expect(navLabels).toContain("key: 'dashboard'");
+    expect(navLabels).toContain("href: '/spokedu-master/library', label: '수업자료'");
+    expect(navLabels).toContain("href: '/spokedu-master/spomove', label: 'SPOMOVE'");
+    expect(navLabels).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
+    expect(navLabels).toContain("href: '/spokedu-master/activity', label: '수업 기록'");
+    expect(navLabels).toContain("href: '/spokedu-master/profile', label: '프로필'");
   });
 
   it('keeps the mobile navigation aligned with the pilot entry structure', () => {
     const tabBar = read('app/spokedu-master/components/layout/TabBar.tsx');
     const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
+    const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
 
-    expect(tabBar).toContain("key: 'dashboard'");
-    expect(tabBar).toContain("key: 'library'");
-    expect(tabBar).toContain("label: '수업자료'");
-    expect(tabBar).toContain("key: 'spomove'");
-    expect(tabBar).toContain("key: 'class-tools'");
-    expect(tabBar).toContain("key: 'activity'");
-    expect(tabBar).toContain("label: '수업 기록'");
+    expect(tabBar).toContain('MASTER_NAV_ITEMS');
     expect(tabBar).toContain('href: `${basePath}/${tab.key}`');
     expect(tabBar).toContain("capability: 'records'");
     expect(statusBar).toContain('href="/spokedu-master/profile"');
-    expect(tabBar).not.toContain('plan');
-    expect(tabBar).not.toContain('director');
-    expect(tabBar).not.toContain('shop');
+    expect(navLabels).toContain("key: 'library'");
+    expect(navLabels).toContain("label: '수업자료'");
+    expect(navLabels).toContain("key: 'spomove'");
+    expect(navLabels).toContain("key: 'class-tools'");
+    expect(navLabels).toContain("key: 'activity'");
+    expect(navLabels).toContain("label: '수업 기록'");
+    expect(tabBar).not.toContain("key: 'plan'");
+    expect(tabBar).not.toContain("key: 'director'");
+    expect(tabBar).not.toContain("key: 'shop'");
   });
 
   it('removes auxiliary routes from profile and home primary entry points', () => {
