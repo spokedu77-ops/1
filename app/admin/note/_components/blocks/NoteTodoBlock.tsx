@@ -19,8 +19,8 @@ type NoteTodoBlockProps = {
   parentBlockType?: NoteBlock['type'] | null;
   /** applyBlockContentChange 단일 진입점 (syncBlockContent) */
   onContentPatch: (content: Record<string, unknown>) => void;
-  onEnter: () => void;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onEnter: () => unknown;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
   onChangeType: (type: NoteBlock['type']) => void;
   onSlashChange?: NoteBlockFormattedFieldProps['onSlashChange'];
   slashHostRef?: React.RefObject<HTMLDivElement | null>;

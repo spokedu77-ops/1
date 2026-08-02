@@ -69,9 +69,13 @@ describe('spomoveGuideContract', () => {
   });
 
   it('returns validation issues until all publish-required fields exist', () => {
+    const preset = findOfficialSpomovePreset('reaction-cognition-space-direction-01')!;
     const issues = validateSpomoveMovementGuideDraft({
-      movement: { baseMovement: 'footTap', limbRule: 'free' },
-      instruction: 'Move to the matching color.',
+      preset,
+      draft: {
+        movement: { baseMovement: 'footTap', limbRule: 'free' },
+        instruction: 'Move to the matching color.',
+      },
     });
 
     expect(issues.map((issue) => issue.field)).toEqual([

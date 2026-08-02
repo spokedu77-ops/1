@@ -83,6 +83,30 @@ describe('resolveInlineBlockEnterAction (todo·text)', () => {
       enterCtx: { isEmpty: true },
     })).toEqual({ kind: 'add-below', followType: 'text' });
   });
+
+  it('C2 mid-split keeps marks html on add-below content', () => {
+    expect(resolveInlineBlockEnterAction({
+      followType: 'text',
+      text: 'hello bold',
+      parentBlockId: null,
+      enterCtx: {
+        isEmpty: false,
+        split: {
+          beforeText: 'hello ',
+          beforeHtml: '<p>hello </p>',
+          afterText: 'bold',
+          afterHtml: '<p><strong>bold</strong></p>',
+        },
+      },
+    })).toEqual({
+      kind: 'add-below',
+      followType: 'text',
+      content: {
+        text: 'bold',
+        html: '<p><strong>bold</strong></p>',
+      },
+    });
+  });
 });
 
 describe('resolveToggleTitleEnterAction', () => {

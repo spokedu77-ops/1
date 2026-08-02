@@ -60,12 +60,12 @@ export type NoteBlockRendererDeps = {
   syncBlockContent: (blockId: string, content: NoteBlock['content']) => void;
   handleDeleteBlock: (block: NoteBlock, fromEmptyBackspace?: boolean) => void | Promise<void>;
   handleChangeBlockType: (block: NoteBlock, type: NoteBlock['type']) => void;
-  handleInsertBlockAfter: (block: NoteBlock, type?: NoteBlock['type'], content?: NoteBlock['content']) => void;
+  handleInsertBlockAfter: (block: NoteBlock, type?: NoteBlock['type'], content?: NoteBlock['content']) => Promise<NoteBlock | null>;
   handleSplitListBlockAfterWithChildren: (
     block: NoteBlock,
     type?: NoteBlock['type'],
     content?: NoteBlock['content'],
-  ) => void;
+  ) => Promise<NoteBlock | null>;
   handleInsertBlockInParent: (parentId: string, type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   handleOpenDocumentById: (documentId: string) => void;
   showFormatToolbar: (
@@ -153,8 +153,8 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onDelete={() => deps.handleDeleteBlock(block)}
         onChangeType={(type) => deps.handleChangeBlockType(block, type)}
         onEnter={() => deps.handleInsertBlockAfter(block, 'text')}
-        onAddBelow={(type, content) => { void deps.handleInsertBlockAfter(block, type ?? block.type, content); }}
-        onSplitWithChildren={(type, content) => { void deps.handleSplitListBlockAfterWithChildren(block, type ?? block.type, content); }}
+        onAddBelow={(type, content) => deps.handleInsertBlockAfter(block, type ?? block.type, content)}
+        onSplitWithChildren={(type, content) => deps.handleSplitListBlockAfterWithChildren(block, type ?? block.type, content)}
         onOpenDocument={deps.handleOpenDocumentById}
         onShowFormatToolbar={deps.showFormatToolbar}
         onHideFormatToolbar={deps.hideFormatToolbar}
@@ -222,8 +222,8 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onDelete={() => deps.handleDeleteBlock(block)}
         onChangeType={(type) => deps.handleChangeBlockType(block, type)}
         onEnter={() => deps.handleInsertBlockAfter(block, 'text')}
-        onAddBelow={(type, content) => { void deps.handleInsertBlockAfter(block, type ?? block.type, content); }}
-        onSplitWithChildren={(type, content) => { void deps.handleSplitListBlockAfterWithChildren(block, type ?? block.type, content); }}
+        onAddBelow={(type, content) => deps.handleInsertBlockAfter(block, type ?? block.type, content)}
+        onSplitWithChildren={(type, content) => deps.handleSplitListBlockAfterWithChildren(block, type ?? block.type, content)}
         onOpenDocument={deps.handleOpenDocumentById}
         onShowFormatToolbar={deps.showFormatToolbar}
         onHideFormatToolbar={deps.hideFormatToolbar}

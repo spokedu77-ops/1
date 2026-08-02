@@ -78,4 +78,17 @@ describe('spomoveOfficialAssets', () => {
       },
     });
   });
+
+  it('drops movement guide status when no guide draft remains', () => {
+    const map = normalizeSpomoveContentMap({
+      schemaVersion: 2,
+      content: {
+        'reaction-cognition-space-direction-01': {
+          movementGuideStatus: 'published',
+        },
+      },
+    });
+
+    expect(map['reaction-cognition-space-direction-01']).toBeUndefined();
+  });
 });

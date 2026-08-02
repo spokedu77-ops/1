@@ -658,7 +658,7 @@ function CardInfo({
   onGuide: () => void;
 }) {
   const router = useRouter();
-  const guideDisplay = buildSpomoveGuideDisplayModel({ preset, contentOverride });
+  const guideDisplay = buildSpomoveGuideDisplayModel({ preset, contentOverride, audience: 'public' });
   const showSettings =
     supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
 

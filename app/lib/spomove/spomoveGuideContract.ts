@@ -176,15 +176,18 @@ function isBuiltInMovementPreset(preset: OfficialSpomovePreset): boolean {
   return preset.movementProfileId === 'bodyCueBuiltIn' || preset.movementProfileId === 'diveBuiltIn';
 }
 
-export function validateSpomoveMovementGuideDraft(
-  draft: SpomoveMovementGuideDraft | undefined,
-  preset?: OfficialSpomovePreset,
-): SpomoveGuideValidationIssue[] {
+export function validateSpomoveMovementGuideDraft({
+  draft,
+  preset,
+}: {
+  draft: SpomoveMovementGuideDraft | undefined;
+  preset: OfficialSpomovePreset;
+}): SpomoveGuideValidationIssue[] {
   const issues: SpomoveGuideValidationIssue[] = [];
 
   if (!draft || draft.movement === undefined) {
     issues.push({ field: 'movement', message: 'Choose a recommended movement.' });
-  } else if (draft.movement === null && preset && !isBuiltInMovementPreset(preset)) {
+  } else if (draft.movement === null && !isBuiltInMovementPreset(preset)) {
     issues.push({ field: 'movement', message: 'Built-in movement is only valid for built-in cue presets.' });
   }
 
@@ -202,7 +205,7 @@ export function publishSpomoveMovementGuide(
   preset: OfficialSpomovePreset,
 ): SpomoveMovementGuide | null {
   const normalized = normalizeSpomoveMovementGuideDraft(draft);
-  if (validateSpomoveMovementGuideDraft(normalized, preset).length > 0 || !normalized) return null;
+  if (validateSpomoveMovementGuideDraft({ draft: normalized, preset }).length > 0 || !normalized) return null;
   if (normalized.movement === undefined) return null;
   if (
     !normalized.instruction ||

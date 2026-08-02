@@ -16,10 +16,7 @@ import { buildSpomoveGuideDisplayModel, getSpomovePresetDisplayModel } from './s
 import type { SpomoveHubViewMode } from './spomoveHubNavigation';
 import { getActivityFamily } from './movements/activityFamilies';
 import { resolveSessionCueSeconds } from './spomoveCueSpeed';
-import {
-  buildDeclaredOperation,
-  resolveRequiredMatGuidance,
-} from './operations';
+import { buildDeclaredOperation, resolveRequiredMatGuidance } from './operations';
 
 function usePreferredLaunchMode(): 'projector' | 'mobile' {
   const [mode, setMode] = useState<'projector' | 'mobile'>('projector');
@@ -74,10 +71,133 @@ function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
   );
 }
 
-/**
- * 홈/허브 공용 — 재생 직전 확인 모달.
- * 닫기(X)는 항상 onClose만 호출 (페이지 이동 없음).
- */
+function PublishedGuideContent({
+  guideDisplay,
+  prepLine,
+  intervalLine,
+}: {
+  guideDisplay: ReturnType<typeof buildSpomoveGuideDisplayModel>;
+  prepLine: string;
+  intervalLine: string | null;
+}) {
+  const variationRows = [
+    ['다른 움직임', guideDisplay.movementVariation],
+    ['규칙 변형', guideDisplay.ruleVariation],
+    ['운영 변형', guideDisplay.operationVariation],
+  ].filter((row): row is [string, string] => Boolean(row[1]));
+
+  return (
+    <>
+      <section>
+        <p className="sr-only">SPOMOVE 수업 핵심</p>
+        <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">수업 핵심</h3>
+        <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-3">
+          <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
+            <p className="font-black text-slate-400">추천동작</p>
+            <p className="mt-0.5 font-black text-slate-900">{guideDisplay.recommendedMovementLabel ?? '화면 지시'}</p>
+          </div>
+          <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
+            <p className="font-black text-slate-400">활용 요소</p>
+            <p className="mt-0.5 font-black text-slate-900">{guideDisplay.focusTags.slice(0, 2).join(' · ') || '-'}</p>
+          </div>
+          <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
+            <p className="font-black text-slate-400">기본 설정</p>
+            <p className="mt-0.5 font-black text-slate-900">자극 {guideDisplay.cueSeconds}초 · {guideDisplay.rounds}회</p>
+          </div>
+        </div>
+        <p className="mt-2 text-[12px] font-medium text-slate-400">{prepLine}</p>
+        {intervalLine ? <p className="mt-1 text-[12px] font-medium text-slate-400">{intervalLine}</p> : null}
+      </section>
+
+      <section className="rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-3">
+        <p className="sr-only">SPOMOVE 진행 방법</p>
+        <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-[var(--spm-acc)]">
+          <MessageSquareQuote className="h-3.5 w-3.5" />
+          진행 방법
+        </h3>
+        <p className="mt-2 text-[13.5px] font-semibold leading-[1.6] text-slate-700">{guideDisplay.instruction}</p>
+      </section>
+
+      <section className="border-t border-slate-100 pt-4">
+        <p className="sr-only">SPOMOVE 코치 스크립트</p>
+        <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">코치 스크립트</h3>
+        <blockquote className="mt-2 rounded-[12px] border-l-4 border-[var(--spm-acc)] bg-slate-50 px-3 py-2 text-[13px] font-black leading-6 text-slate-800">
+          {guideDisplay.coachScript}
+        </blockquote>
+      </section>
+
+      <section className="border-t border-slate-100 pt-4">
+        <p className="sr-only">SPOMOVE 난이도 조절</p>
+        <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">난이도 조절</h3>
+        <div className="mt-2 grid gap-2">
+          <div className="rounded-[12px] border border-slate-100 bg-white px-3 py-2">
+            <p className="text-[12px] font-black text-slate-500">쉬운 변형</p>
+            <p className="mt-1 text-[13px] font-semibold leading-6 text-slate-700">{guideDisplay.easier}</p>
+          </div>
+          <div className="rounded-[12px] border border-slate-100 bg-white px-3 py-2">
+            <p className="text-[12px] font-black text-slate-500">도전 변형</p>
+            <p className="mt-1 text-[13px] font-semibold leading-6 text-slate-700">{guideDisplay.harder}</p>
+          </div>
+        </div>
+      </section>
+
+      {variationRows.length > 0 ? (
+        <section className="border-t border-slate-100 pt-4">
+          <p className="sr-only">SPOMOVE 변형 방법</p>
+          <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">변형 방법</h3>
+          <div className="mt-2 space-y-2">
+            {variationRows.map(([label, value]) => (
+              <div key={label} className="rounded-[12px] border border-slate-100 bg-white px-3 py-2">
+                <p className="text-[12px] font-black text-slate-500">{label}</p>
+                <p className="mt-1 text-[13px] font-semibold leading-6 text-slate-700">{value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </>
+  );
+}
+
+function LegacyGuideContent({
+  legacyManual,
+}: {
+  legacyManual: NonNullable<ReturnType<typeof buildSpomoveGuideDisplayModel>['legacyManual']>;
+}) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">활동방법</h3>
+        <p className="mt-2 text-[13.5px] font-semibold leading-[1.6] text-slate-700">
+          {legacyManual.activityMethod ?? '활동방법을 준비 중입니다.'}
+        </p>
+      </div>
+      {legacyManual.activityConcept ? (
+        <div className="border-t border-slate-100 pt-3">
+          <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">활동 개념</h3>
+          <p className="mt-2 text-[13.5px] font-semibold leading-[1.6] text-slate-700">{legacyManual.activityConcept}</p>
+        </div>
+      ) : null}
+      <p className="rounded-[12px] border border-slate-100 bg-slate-50 px-3 py-2 text-[12px] font-bold leading-5 text-slate-500">
+        상세 수업 가이드는 준비 중입니다.
+      </p>
+    </section>
+  );
+}
+
+function PreparingGuideContent({ prepLine, intervalLine }: { prepLine: string; intervalLine: string | null }) {
+  return (
+    <section className="rounded-[12px] border border-slate-100 bg-slate-50 p-4">
+      <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">가이드 준비 중</h3>
+      <p className="mt-2 text-[13.5px] font-semibold leading-[1.6] text-slate-700">
+        상세 수업 가이드를 준비 중입니다. 활동은 정상적으로 실행할 수 있습니다.
+      </p>
+      <p className="mt-2 text-[12px] font-medium text-slate-400">{prepLine}</p>
+      {intervalLine ? <p className="mt-1 text-[12px] font-medium text-slate-400">{intervalLine}</p> : null}
+    </section>
+  );
+}
+
 export function SpomoveGuidelineSheet({
   preset,
   guideVideoUrl = '',
@@ -129,14 +249,10 @@ export function SpomoveGuidelineSheet({
   const guideDisplay = buildSpomoveGuideDisplayModel({
     preset,
     contentOverride,
+    audience: 'public',
     matCount,
     cueSeconds,
   });
-  const variationRows = [
-    ['다른 움직임', guideDisplay.movementVariation],
-    ['규칙 변형', guideDisplay.ruleVariation],
-    ['운영 변형', guideDisplay.operationVariation],
-  ].filter((row): row is [string, string] => Boolean(row[1]));
 
   return (
     <BottomSheet open title={display.displayTitle} onClose={onClose} size="preview">
@@ -153,75 +269,13 @@ export function SpomoveGuidelineSheet({
             tabIndex={0}
           >
             <div className="space-y-5">
-              <section>
-                <p className="sr-only">SPOMOVE 수업 핵심</p>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">수업 핵심</h3>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-3">
-                  <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
-                    <p className="font-black text-slate-400">추천동작</p>
-                    <p className="mt-0.5 font-black text-slate-900">{guideDisplay.recommendedMovementLabel ?? '화면 지시'}</p>
-                  </div>
-                  <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
-                    <p className="font-black text-slate-400">활용 요소</p>
-                    <p className="mt-0.5 font-black text-slate-900">{guideDisplay.focusTags.slice(0, 2).join(' · ') || '-'}</p>
-                  </div>
-                  <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
-                    <p className="font-black text-slate-400">기본 설정</p>
-                    <p className="mt-0.5 font-black text-slate-900">자극 {guideDisplay.cueSeconds}초 · {guideDisplay.rounds}회</p>
-                  </div>
-                </div>
-                <p className="mt-2 text-[12px] font-medium text-slate-400">{prepLine}</p>
-                {intervalLine ? (
-                  <p className="mt-1 text-[12px] font-medium text-slate-400">{intervalLine}</p>
-                ) : null}
-              </section>
-
-              <section className="rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-3">
-                <p className="sr-only">SPOMOVE 진행 방법</p>
-                <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-[var(--spm-acc)]">
-                  <MessageSquareQuote className="h-3.5 w-3.5" />
-                  진행 방법
-                </h3>
-                <p className="mt-2 text-[13.5px] font-semibold leading-[1.6] text-slate-700">{guideDisplay.instruction}</p>
-              </section>
-
-              <section className="border-t border-slate-100 pt-4">
-                <p className="sr-only">SPOMOVE 코치 스크립트</p>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">코치 스크립트</h3>
-                <blockquote className="mt-2 rounded-[12px] border-l-4 border-[var(--spm-acc)] bg-slate-50 px-3 py-2 text-[13px] font-black leading-6 text-slate-800">
-                  {guideDisplay.coachScript}
-                </blockquote>
-              </section>
-
-              <section className="border-t border-slate-100 pt-4">
-                <p className="sr-only">SPOMOVE 난이도 조절</p>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">난이도 조절</h3>
-                <div className="mt-2 grid gap-2">
-                  <div className="rounded-[12px] border border-slate-100 bg-white px-3 py-2">
-                    <p className="text-[12px] font-black text-slate-500">쉬운 변형</p>
-                    <p className="mt-1 text-[13px] font-semibold leading-6 text-slate-700">{guideDisplay.easier}</p>
-                  </div>
-                  <div className="rounded-[12px] border border-slate-100 bg-white px-3 py-2">
-                    <p className="text-[12px] font-black text-slate-500">도전 변형</p>
-                    <p className="mt-1 text-[13px] font-semibold leading-6 text-slate-700">{guideDisplay.harder}</p>
-                  </div>
-                </div>
-              </section>
-
-              {variationRows.length > 0 ? (
-                <section className="border-t border-slate-100 pt-4">
-                  <p className="sr-only">SPOMOVE 변형 방법</p>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">변형 방법</h3>
-                  <div className="mt-2 space-y-2">
-                    {variationRows.map(([label, value]) => (
-                      <div key={label} className="rounded-[12px] border border-slate-100 bg-white px-3 py-2">
-                        <p className="text-[12px] font-black text-slate-500">{label}</p>
-                        <p className="mt-1 text-[13px] font-semibold leading-6 text-slate-700">{value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+              {guideDisplay.guideMode === 'published' ? (
+                <PublishedGuideContent guideDisplay={guideDisplay} prepLine={prepLine} intervalLine={intervalLine} />
+              ) : guideDisplay.guideMode === 'legacy' && guideDisplay.legacyManual ? (
+                <LegacyGuideContent legacyManual={guideDisplay.legacyManual} />
+              ) : (
+                <PreparingGuideContent prepLine={prepLine} intervalLine={intervalLine} />
+              )}
             </div>
           </aside>
         </div>

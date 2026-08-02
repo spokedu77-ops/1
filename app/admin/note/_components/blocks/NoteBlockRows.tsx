@@ -128,8 +128,8 @@ function BlockContent({
   onContentPatch: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
-  onEnter: () => void;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onEnter: () => unknown;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
   onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;
@@ -971,8 +971,8 @@ function SortableBlockRow({
   onContentPatch: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
-  onEnter: () => void;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onEnter: () => unknown;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
   onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;
@@ -1241,8 +1241,8 @@ function ToggleInlineRow({
   onContentPatch: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
-  onEnter: () => void;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onEnter: () => unknown;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
   onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;

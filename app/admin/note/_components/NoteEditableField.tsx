@@ -53,7 +53,7 @@ type NoteEditableFieldProps = {
   enterCreatesBlock?: boolean;
   enterSplitOnMidBlock?: boolean;
   tabBehavior?: 'block-indent' | 'insert-text-indent' | 'table-cell-nav';
-  onEditorEnter?: (ctx?: NoteEditorEnterContext) => void;
+  onEditorEnter?: (ctx?: NoteEditorEnterContext) => unknown;
   onEditorBackspace?: (() => void) | false;
   onEditorBackspaceAtBlockStart?: () => boolean;
   onEditorMergeWithPrevious?: () => void;

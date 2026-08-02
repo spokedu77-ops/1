@@ -78,4 +78,24 @@ describe('note persist op guard', () => {
     expect(() => assertPersistOpIsSafe(op, [block('a', 0)]))
       .toThrow(/empty bulletList transaction create/);
   });
+
+  it('allows create when optimistic block already has unique sibling orders', () => {
+    const op: NotePersistOp = {
+      type: 'createBlock',
+      id: 'new',
+      documentId: 'doc-1',
+      blockType: 'todo',
+      content: { text: '', html: '<p></p>', checked: false },
+      // stale insert index that would collide if live order were ignored
+      order_index: 0,
+      parent_block_id: null,
+      normalizeOrders: [{ id: 'b', order_index: 1 }],
+      allowEmptyVisibleCreate: true,
+    };
+
+    expect(() => assertPersistOpIsSafe(op, [
+      block('new', 0),
+      block('b', 1),
+    ])).not.toThrow();
+  });
 });

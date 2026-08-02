@@ -121,12 +121,16 @@ export function resolveInlineBlockEnterAction(options: {
       enterCtx?.isEmpty ?? rawText.trim().length === 0);
 
   if (options.enterCtx?.split) {
+    // C2: mid-split create content는 afterHtml 필수 (plain text만으로 재생산 금지)
+    const afterHtml = typeof options.enterCtx.split.afterHtml === 'string'
+      ? options.enterCtx.split.afterHtml
+      : '';
     return {
       kind: 'add-below',
       followType: options.followType,
       content: {
         text: options.enterCtx.split.afterText,
-        html: options.enterCtx.split.afterHtml,
+        html: afterHtml,
       },
     };
   }

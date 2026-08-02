@@ -12,6 +12,7 @@ import Typography from '@tiptap/extension-typography';
 import Image from '@tiptap/extension-image';
 import CharacterCount from '@tiptap/extension-character-count';
 import type { EditorView } from '@tiptap/pm/view';
+import { DOMSerializer } from '@tiptap/pm/model';
 import { parseInlineMarkupToHtml, type InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   adjustBulletIndent,
@@ -46,7 +47,16 @@ import { parseClipboardHtmlToBlocks, shouldSplitHtmlPaste } from '../_lib/notePa
 import { parseMarkdownPlainToBlocks, shouldSplitMarkdownPaste } from '../_lib/notePasteMarkdown';
 import { pastedBlocksFromPlainLines, type PastedBlockSpec, isStructuralHtmlPasteSpec } from '../_lib/notePasteBlocks';
 import type { TableCellNavigateDirection } from '../_lib/noteTableBlock';
-import { clearTipTapHistory } from '../_lib/noteEditorHistory';
+import {
+  armStructuralPasteUndo,
+  clearTipTapHistory,
+  consumeStructuralPasteUndoArmed,
+  isStructuralPasteUndoArmed,
+  readTipTapRedoDepth,
+  readTipTapUndoDepth,
+  resolveNoteUndoTarget,
+} from '../_lib/noteEditorHistory';
+import { settleEnterSplitCreate } from '../_lib/noteEnterSplitAtomic';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
 import { NoteHighlight, NoteTextColor } from './noteEditorMarks';
@@ -110,12 +120,19 @@ export type NoteEditorEnterSplit = {
   beforeHtml: string;
   afterText: string;
   afterHtml: string;
+  /** C4: below create 실패 시 되돌릴 분할 전 전체 본문 */
+  restoreText: string;
+  restoreHtml: string;
+  splitCaretOffset: number;
 };
 
 export type NoteEditorEnterContext = {
   isEmpty: boolean;
   split?: NoteEditorEnterSplit;
 };
+
+/** onEnter — mid-split 시 Promise로 create 성공 여부(또는 생성 블록)를 돌려 C4 restore에 쓴다 */
+export type NoteEditorEnterResult = void | boolean | null | { id?: string } | Promise<unknown>;
 
 type ToolbarPosition = {
   top: number;
@@ -162,6 +179,22 @@ const NoteBlockEnterExtension = Extension.create({
   },
 });
 
+/** 커서 뒤 구간 HTML — marks(굵게/색 등) 보존. plain text 재파싱 금지 */
+function editorHtmlBetween(editor: Editor, from: number, to: number): string {
+  if (from >= to) return '<p></p>';
+  try {
+    const slice = editor.state.doc.slice(from, to);
+    const serializer = DOMSerializer.fromSchema(editor.schema);
+    const fragment = serializer.serializeFragment(slice.content);
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(fragment);
+    const html = wrapper.innerHTML.trim();
+    return html.length > 0 ? html : '<p></p>';
+  } catch {
+    return '<p></p>';
+  }
+}
+
 /** 글머리 항목 중간에서 Enter — 커서 뒤 내용을 새 항목으로 분리 */
 function resolveListEnterSplit(editor: Editor): NoteEditorEnterSplit | null {
   const { state } = editor;
@@ -173,7 +206,13 @@ function resolveListEnterSplit(editor: Editor): NoteEditorEnterSplit | null {
   const afterText = state.doc.textBetween(from, docEnd, '\n', '\n').replace(/^\n+/, '');
   if (!afterText) return null;
 
+  const restoreText = state.doc.textBetween(0, docEnd, '\n', '\n');
+  const restoreHtml = editor.getHTML();
   const beforeText = state.doc.textBetween(0, from, '\n', '\n');
+  const afterHtmlRaw = editorHtmlBetween(editor, from, docEnd);
+  const afterHtml = afterHtmlRaw !== '<p></p>'
+    ? afterHtmlRaw
+    : legacyTextToEditorHtml(afterText);
   const deleted = editor.chain().focus().deleteRange({ from, to: docEnd }).run();
   if (!deleted) return null;
 
@@ -181,7 +220,10 @@ function resolveListEnterSplit(editor: Editor): NoteEditorEnterSplit | null {
     beforeText,
     beforeHtml: editor.getHTML(),
     afterText,
-    afterHtml: legacyTextToEditorHtml(afterText),
+    afterHtml,
+    restoreText,
+    restoreHtml,
+    splitCaretOffset: beforeText.length,
   };
 }
 
@@ -364,7 +406,7 @@ export function NoteEditor({
   placeholder: string;
   className: string;
   onChange: (change: NoteEditorChange) => void;
-  onEnter: (ctx?: NoteEditorEnterContext) => void;
+  onEnter: (ctx?: NoteEditorEnterContext) => NoteEditorEnterResult;
   onSlashChange?: (show: boolean, query: string) => void;
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
@@ -405,7 +447,6 @@ export function NoteEditor({
 }) {
   const pendingChangeRef = useRef<NoteEditorChange | null>(null);
   const changeTimerRef = useRef<number | null>(null);
-  const structuralPasteUndoArmedRef = useRef(false);
   const lastResetKeyRef = useRef<string | undefined>(resetKey);
   const isComposingRef = useRef(false);
   const compositionFlushRafRef = useRef<number | null>(null);
@@ -705,11 +746,34 @@ export function NoteEditor({
         },
         keydown: (view, event) => {
           if (event.isComposing || isComposingRef.current) return false;
-          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !event.shiftKey && structuralPasteUndoArmedRef.current) {
-            event.preventDefault();
-            structuralPasteUndoArmedRef.current = false;
-            window.dispatchEvent(new CustomEvent('admin-note:undo-request'));
-            return true;
+          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+            const ed = editorRef.current;
+            const targetKind = resolveNoteUndoTarget({
+              tipTapUndoDepth: readTipTapUndoDepth(ed),
+              tipTapRedoDepth: readTipTapRedoDepth(ed),
+              structuralPasteArmed: isStructuralPasteUndoArmed(),
+              hasStructuralUndo: isStructuralPasteUndoArmed(),
+              hasStructuralRedo: false,
+              shiftKey: event.shiftKey,
+            });
+            if (targetKind === 'structural-undo') {
+              event.preventDefault();
+              consumeStructuralPasteUndoArmed();
+              window.dispatchEvent(new CustomEvent('admin-note:undo-request'));
+              return true;
+            }
+            if (targetKind === 'tiptap-undo' && ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
+              event.preventDefault();
+              ed.chain().focus().undo().run();
+              return true;
+            }
+            if (targetKind === 'tiptap-redo' && ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
+              event.preventDefault();
+              ed.chain().focus().redo().run();
+              return true;
+            }
+            // structural (non-paste)는 window capture(useNoteBlockKeyboard)가 처리
+            return false;
           }
           if (handleMarkdownShortcut(
             view,
@@ -817,24 +881,30 @@ export function NoteEditor({
           return false;
         }
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
-          if (!event.shiftKey && structuralPasteUndoArmedRef.current) {
+          const ed = editorRef.current;
+          const targetKind = resolveNoteUndoTarget({
+            tipTapUndoDepth: readTipTapUndoDepth(ed),
+            tipTapRedoDepth: readTipTapRedoDepth(ed),
+            structuralPasteArmed: isStructuralPasteUndoArmed(),
+            hasStructuralUndo: isStructuralPasteUndoArmed(),
+            hasStructuralRedo: false,
+            shiftKey: event.shiftKey,
+          });
+          if (targetKind === 'structural-undo') {
             event.preventDefault();
-            structuralPasteUndoArmedRef.current = false;
+            consumeStructuralPasteUndoArmed();
             window.dispatchEvent(new CustomEvent('admin-note:undo-request'));
             return true;
           }
-          const ed = editorRef.current;
-          if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
-            if (event.shiftKey && ed.can().redo()) {
-              event.preventDefault();
-              ed.chain().focus().redo().run();
-              return true;
-            }
-            if (!event.shiftKey && ed.can().undo()) {
-              event.preventDefault();
-              ed.chain().focus().undo().run();
-              return true;
-            }
+          if (targetKind === 'tiptap-undo' && ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
+            event.preventDefault();
+            ed.chain().focus().undo().run();
+            return true;
+          }
+          if (targetKind === 'tiptap-redo' && ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
+            event.preventDefault();
+            ed.chain().focus().redo().run();
+            return true;
           }
           return false;
         }
@@ -1063,7 +1133,7 @@ export function NoteEditor({
               editorRef.current?.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
             }
             onMultilinePaste(mdSpecs);
-            structuralPasteUndoArmedRef.current = true;
+            armStructuralPasteUndo();
             if (editorRef.current) clearTipTapHistory(editorRef.current);
             return true;
           }
@@ -1082,7 +1152,7 @@ export function NoteEditor({
               editorRef.current?.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
             }
             onMultilinePaste(htmlSpecs);
-            structuralPasteUndoArmedRef.current = true;
+            armStructuralPasteUndo();
             if (editorRef.current) clearTipTapHistory(editorRef.current);
             return true;
           }
@@ -1100,7 +1170,7 @@ export function NoteEditor({
               ?? 'text';
             const specs = pastedBlocksFromPlainLines(currentBlockType, lines);
             onMultilinePaste(specs);
-            structuralPasteUndoArmedRef.current = true;
+            armStructuralPasteUndo();
             if (editorRef.current) clearTipTapHistory(editorRef.current);
             return true;
           }
@@ -1123,7 +1193,7 @@ export function NoteEditor({
       },
     },
     onUpdate: ({ editor: currentEditor }) => {
-      structuralPasteUndoArmedRef.current = false;
+      consumeStructuralPasteUndoArmed();
       const nextText = currentEditor.getText();
       const slashMatch = nextText.match(/^\/([^\n]*)$/);
       callbacksRef.current.onSlashChange?.(!!slashMatch, slashMatch?.[1] ?? '');
@@ -1209,10 +1279,33 @@ export function NoteEditor({
       } else {
         flushPendingChange();
       }
-      cbs.onEnter({
+      const enterResult = cbs.onEnter({
         isEmpty: currentEditor.isEmpty,
         split,
       });
+      // C4: below create 실패 시 분할 전 본문 복구 (앞부분만 남은 채 뒷글자 소실 금지)
+      if (split) {
+        void settleEnterSplitCreate(enterResult).then((ok) => {
+          if (ok) return;
+          const ed = editorRef.current;
+          if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
+            ed.chain()
+              .command(({ tr }) => {
+                tr.setMeta('addToHistory', false);
+                return true;
+              })
+              .setContent(split.restoreHtml, { emitUpdate: false })
+              .run();
+            const pos = Math.min(split.splitCaretOffset + 1, ed.state.doc.content.size);
+            ed.commands.setTextSelection({ from: pos, to: pos });
+            clearTipTapHistory(ed);
+          }
+          contentFlushTargetRef.current.onChange({
+            text: split.restoreText,
+            html: split.restoreHtml,
+          });
+        });
+      }
       return true;
     };
     return () => {

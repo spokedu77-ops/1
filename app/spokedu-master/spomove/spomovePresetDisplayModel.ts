@@ -8,6 +8,11 @@ import {
   type SpomoveTargetGroup,
 } from './officialSpomovePresetGuides';
 import type { SpomoveFocusTag, SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
+import {
+  resolveSpomoveGuideContentState,
+  type SpomoveGuideLegacyManual,
+} from '@/app/lib/spomove/spomoveGuideContentState';
+import type { SpomoveGuideValidationIssue } from '@/app/lib/spomove/spomoveGuideContract';
 import type { OfficialSpomovePreset, OfficialSpomoveProgramGroup } from './officialSpomovePresets';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import { MOVEMENT_REGISTRY } from './movements/movementRegistry';
@@ -33,15 +38,35 @@ export type SpomoveGuideContentReadiness =
   | 'ready'
   | 'home-ready';
 
-export type SpomoveGuideDisplayModel = {
-  title: string;
-  programGroupLabel: string;
-  recommendedMovementLabel: string | null;
+export type SpomoveGuideAudience = 'public' | 'adminPreview';
+
+export type SpomoveGuideDisplayMode =
+  | 'published'
+  | 'legacy'
+  | 'preparing'
+  | 'draftPreview'
+  | 'invalidPreview';
+
+export type SpomoveGuideFallbackReference = {
   instruction: string;
   coachScript: string;
   focusTags: string[];
   easier: string;
   harder: string;
+};
+
+type SpomoveGuideDisplayModelBase = {
+  title: string;
+  programGroupLabel: string;
+  guideMode: SpomoveGuideDisplayMode;
+  isOfficialGuide: boolean;
+  recommendedMovementLabel: string | null;
+  instruction: string | null;
+  legacyManual: SpomoveGuideLegacyManual | null;
+  coachScript: string | null;
+  focusTags: string[];
+  easier: string | null;
+  harder: string | null;
   successCriteria?: string;
   commonMistake?: string;
   movementVariation?: string;
@@ -52,6 +77,24 @@ export type SpomoveGuideDisplayModel = {
   rounds: number;
   contentReadiness: SpomoveGuideContentReadiness;
 };
+
+export type PublicSpomoveGuideDisplayModel = SpomoveGuideDisplayModelBase & {
+  audience: 'public';
+  guideMode: 'published' | 'legacy' | 'preparing';
+  validationIssues?: never;
+  fallbackReference?: never;
+};
+
+export type AdminSpomoveGuideDisplayModel = SpomoveGuideDisplayModelBase & {
+  audience: 'adminPreview';
+  guideMode: SpomoveGuideDisplayMode;
+  validationIssues: SpomoveGuideValidationIssue[];
+  fallbackReference?: SpomoveGuideFallbackReference;
+};
+
+export type SpomoveGuideDisplayModel =
+  | PublicSpomoveGuideDisplayModel
+  | AdminSpomoveGuideDisplayModel;
 
 export const SPOMOVE_FOCUS_TAG_LABELS: Record<SpomoveFocusTag, string> = {
   simpleReaction: '단순반응',
@@ -314,44 +357,86 @@ function resolveContentReadiness(contentOverride?: SpomovePresetContentOverride)
 export function buildSpomoveGuideDisplayModel({
   preset,
   contentOverride,
+  audience,
   matCount,
   cueSeconds,
 }: {
   preset: OfficialSpomovePreset;
   contentOverride?: SpomovePresetContentOverride;
+  audience: SpomoveGuideAudience;
   matCount?: number;
   cueSeconds?: number;
 }): SpomoveGuideDisplayModel {
   const display = getSpomovePresetDisplayModel(preset);
   const movementSummary = getPresetMovementSummary(preset);
-  const guide = contentOverride?.movementGuide;
+  const state = resolveSpomoveGuideContentState({ preset, contentOverride });
+  const guide =
+    state.publishedGuide ??
+    (audience === 'adminPreview' ? state.draftGuide : null);
+  const guideMode: SpomoveGuideDisplayMode =
+    state.structured === 'publishedValid'
+      ? 'published'
+      : audience === 'adminPreview' && state.structured === 'draft'
+        ? 'draftPreview'
+        : audience === 'adminPreview' && state.structured === 'publishedInvalid'
+          ? 'invalidPreview'
+          : state.legacyManual
+            ? 'legacy'
+            : 'preparing';
+  const officialGuide = state.structured === 'publishedValid';
   const movementLabel =
-    guide?.movement === null
+    !officialGuide || !state.publishedGuide
       ? null
-      : guide?.movement
-        ? MOVEMENT_REGISTRY[guide.movement.baseMovement]?.label ?? movementSummary?.recommendedLabel ?? null
-        : movementSummary?.recommendedLabel ?? null;
-
-  return {
+      : state.publishedGuide.movement === null
+        ? null
+        : MOVEMENT_REGISTRY[state.publishedGuide.movement.baseMovement]?.label ?? movementSummary?.recommendedLabel ?? null;
+  const fallbackReference =
+    audience === 'adminPreview'
+      ? {
+          instruction: fallbackInstruction(preset),
+          coachScript: fallbackCoachScript(preset),
+          focusTags: fallbackFocusTags(preset),
+          easier: fallbackEasier(preset),
+          harder: fallbackHarder(preset),
+        }
+      : undefined;
+  const base = {
     title: display.displayTitle,
     programGroupLabel: display.programLabel,
+    guideMode,
+    isOfficialGuide: officialGuide,
     recommendedMovementLabel: movementLabel,
-    instruction: guide?.instruction || contentOverride?.activityMethod?.trim() || fallbackInstruction(preset),
-    coachScript: guide?.coachScript || fallbackCoachScript(preset),
-    focusTags: guide?.focusTags?.length
+    instruction: officialGuide || audience === 'adminPreview' ? (guide?.instruction ?? null) : null,
+    legacyManual: state.legacyManual,
+    coachScript: officialGuide || audience === 'adminPreview' ? (guide?.coachScript ?? null) : null,
+    focusTags: (officialGuide || audience === 'adminPreview') && guide?.focusTags?.length
       ? guide.focusTags.map((tag) => SPOMOVE_FOCUS_TAG_LABELS[tag])
-      : fallbackFocusTags(preset),
-    easier: guide?.easier || fallbackEasier(preset),
-    harder: guide?.harder || fallbackHarder(preset),
-    successCriteria: guide?.successCriteria,
-    commonMistake: guide?.commonMistake,
-    movementVariation: guide?.variations?.movement,
-    ruleVariation: guide?.variations?.rule,
-    operationVariation: guide?.variations?.operation,
+      : [],
+    easier: officialGuide || audience === 'adminPreview' ? (guide?.easier ?? null) : null,
+    harder: officialGuide || audience === 'adminPreview' ? (guide?.harder ?? null) : null,
+    successCriteria: officialGuide || audience === 'adminPreview' ? guide?.successCriteria : undefined,
+    commonMistake: officialGuide || audience === 'adminPreview' ? guide?.commonMistake : undefined,
+    movementVariation: officialGuide || audience === 'adminPreview' ? guide?.variations?.movement : undefined,
+    ruleVariation: officialGuide || audience === 'adminPreview' ? guide?.variations?.rule : undefined,
+    operationVariation: officialGuide || audience === 'adminPreview' ? guide?.variations?.operation : undefined,
     matCount: matCount ?? movementSummary?.minMats ?? 1,
     cueSeconds: cueSeconds ?? preset.cueSeconds,
     rounds: preset.rounds,
     contentReadiness: resolveContentReadiness(contentOverride),
+  };
+  if (audience === 'adminPreview') {
+    return {
+      ...base,
+      audience,
+      validationIssues: state.validationIssues,
+      fallbackReference,
+    };
+  }
+
+  return {
+    ...base,
+    audience,
+    guideMode: guideMode === 'draftPreview' || guideMode === 'invalidPreview' ? 'preparing' : guideMode,
   };
 }
 

@@ -34,8 +34,8 @@ export type NoteBlockContentLayout = {
 
 export type NoteBlockContentCallbacks = {
   onContentPatch: (content: Record<string, unknown>) => void;
-  onEnter: () => void;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onEnter: () => unknown;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
   onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onSlashChange?: NoteBlockFormattedFieldProps['onSlashChange'];
   slashHostRef?: React.RefObject<HTMLDivElement | null>;

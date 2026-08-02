@@ -6,7 +6,13 @@ import {
   clearAllNoteTextSelections,
   getActiveCrossRanges,
 } from '../_components/noteCrossSelect';
-import { tipTapHasRedoDepth, tipTapHasUndoDepth } from '../_lib/noteEditorHistory';
+import {
+  consumeStructuralPasteUndoArmed,
+  isStructuralPasteUndoArmed,
+  readTipTapRedoDepth,
+  readTipTapUndoDepth,
+  resolveNoteUndoTarget,
+} from '../_lib/noteEditorHistory';
 import { getActiveListCrossRanges } from '../_components/noteListCrossSelect';
 import { extractActiveCrossSelectClipboardText } from '../_components/noteListCrossHighlight';
 import { parseBlockClipboardText } from '../_lib/noteBlockClipboard';
@@ -70,11 +76,32 @@ export function useNoteBlockKeyboard(options: {
 
       if (inDocTitle) return;
 
-      const topNoteUndo = isUndo ? noteUndo.peekUndo() : null;
-      const preferTransactionUndo = topNoteUndo?.kind === 'block-transaction';
-      const preferBlockUndo = topNoteUndo?.kind === 'create-block'
-        || topNoteUndo?.kind === 'delete-block'
-        || topNoteUndo?.kind === 'restore-blocks';
+      const editor = inProseMirror
+        ? getActiveNoteEditor(focusedEditorBlockIdRef.current)
+        : null;
+      const targetKind = resolveNoteUndoTarget({
+        tipTapUndoDepth: inProseMirror ? readTipTapUndoDepth(editor) : 0,
+        tipTapRedoDepth: inProseMirror ? readTipTapRedoDepth(editor) : 0,
+        structuralPasteArmed: isStructuralPasteUndoArmed(),
+        hasStructuralUndo: noteUndo.hasUndo(),
+        hasStructuralRedo: noteUndo.hasRedo(),
+        shiftKey: !!e.shiftKey,
+      });
+
+      if (targetKind === 'tiptap-undo' && editor) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        clearAllNoteTextSelections();
+        editor.chain().focus().undo().run();
+        return;
+      }
+      if (targetKind === 'tiptap-redo' && editor) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        clearAllNoteTextSelections();
+        editor.chain().focus().redo().run();
+        return;
+      }
 
       if (inToggleTitle) {
         if (isUndo && noteUndo.hasUndo()) {
@@ -94,50 +121,15 @@ export function useNoteBlockKeyboard(options: {
         return;
       }
 
-      if (isUndo && preferTransactionUndo && noteUndo.hasUndo()) {
+      if (targetKind === 'structural-undo') {
         e.preventDefault();
         e.stopImmediatePropagation();
         clearAllNoteTextSelections();
+        consumeStructuralPasteUndoArmed();
         void runNoteUndo();
         return;
       }
-
-      if (inProseMirror) {
-        const editor = getActiveNoteEditor(focusedEditorBlockIdRef.current);
-        if (editor) {
-          if (isRedo && tipTapHasRedoDepth(editor) && editor.can().redo()) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            clearAllNoteTextSelections();
-            editor.chain().focus().redo().run();
-            return;
-          }
-          if (isUndo && tipTapHasUndoDepth(editor) && editor.can().undo()) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            clearAllNoteTextSelections();
-            editor.chain().focus().undo().run();
-            return;
-          }
-        }
-      }
-
-      if (isUndo && preferBlockUndo && noteUndo.hasUndo()) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        clearAllNoteTextSelections();
-        void runNoteUndo();
-        return;
-      }
-
-      if (isUndo && noteUndo.hasUndo()) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        clearAllNoteTextSelections();
-        void runNoteUndo();
-        return;
-      }
-      if (isRedo && noteUndo.hasRedo()) {
+      if (targetKind === 'structural-redo') {
         e.preventDefault();
         e.stopImmediatePropagation();
         clearAllNoteTextSelections();

@@ -29,6 +29,7 @@ alwaysApply: false
 2. `scripts/admin-note-regression-qa.mjs` 전체 통과
 3. `npm run verify:admin-note` 통과
 4. 수동: 하위페이지 todo 체크, DnD 삽입선, 2인 타이핑 되돌림 없음, 삭제 좀비 없음, 문서 전환 깜빡임 없음
+5. 수동(문서 종류 무관·`note-editing-contracts`): 루트·하위페이지 각각 `+`체크리스트 / mid-Enter 서식 유지·실패 시 본문 복구 / Ctrl+Z 타이핑 되돌림
 
 ## 수정 순서 (고정)
 

@@ -53,6 +53,22 @@ function assertNoDuplicateSiblingOrders(blocks: NoteBlock[]): void {
   }
 }
 
+/** create가 이미 store에 있으면 live order를 우선 — optimistic+stale op.order_index 충돌 완화 */
+function resolveCreateBlockForGuard(
+  op: Extract<NotePersistOp, { type: 'createBlock' }>,
+  currentBlocks: NoteBlock[],
+): NoteBlock {
+  const created = blockFromCreate(op);
+  const existing = currentBlocks.find((block) => block.id === op.id);
+  if (!existing) return created;
+  return {
+    ...created,
+    order_index: existing.order_index,
+    parent_block_id: existing.parent_block_id,
+    document_id: existing.document_id,
+  };
+}
+
 function blockFromCreate(op: Extract<NotePersistOp, { type: 'createBlock' }>): NoteBlock {
   const now = new Date().toISOString();
   return {
@@ -88,7 +104,7 @@ export function assertPersistOpIsSafe(op: NotePersistOp, currentBlocks: NoteBloc
   if (op.type === 'createBlock') {
     assertCreateIsAllowed(op);
     const existing = currentBlocks.some((block) => block.id === op.id);
-    const createBlock = blockFromCreate(op);
+    const createBlock = resolveCreateBlockForGuard(op, currentBlocks);
     const blocksWithCreate = existing
       ? currentBlocks.map((block) => (block.id === op.id ? { ...block, ...createBlock } : block))
       : [...currentBlocks, createBlock];

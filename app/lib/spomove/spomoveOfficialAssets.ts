@@ -94,8 +94,10 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
     if (coreKeywords.length > 0) normalized.coreKeywords = coreKeywords;
     if (activityMethod) normalized.activityMethod = activityMethod;
     if (activityConcept) normalized.activityConcept = activityConcept;
-    if (movementGuide) normalized.movementGuide = movementGuide;
-    if (movementGuideStatus) normalized.movementGuideStatus = movementGuideStatus;
+    if (movementGuide) {
+      normalized.movementGuide = movementGuide;
+      if (movementGuideStatus) normalized.movementGuideStatus = movementGuideStatus;
+    }
     if (Object.keys(normalized).length > 0) next[presetId] = normalized;
   }
 

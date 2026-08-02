@@ -18,7 +18,7 @@ export type NoteBlockFormattedFieldProps = {
   enterSplitOnMidBlock?: boolean;
   autoFocusSignal?: number;
   mergeFocusCaretOffset?: number;
-  onEditorEnter?: (ctx?: NoteEditorEnterContext) => void;
+  onEditorEnter?: (ctx?: NoteEditorEnterContext) => unknown;
   onEditorBackspace?: (() => void) | false;
   onEditorBackspaceAtBlockStart?: () => boolean;
   onEditorMergeWithPrevious?: () => void;

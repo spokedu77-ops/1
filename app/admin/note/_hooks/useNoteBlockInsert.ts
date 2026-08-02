@@ -155,6 +155,7 @@ export function useNoteBlockInsert(options: {
         );
       }
 
+      // C1 sibling order는 pipeline.persistCreateBlock이 강제 (hook normalize는 힌트)
       const createdBlock = await documentEngine.persistCreateBlock({
         id: createdBlockId,
         documentId: selectedId,
@@ -167,11 +168,14 @@ export function useNoteBlockInsert(options: {
           || insertReason === 'enter'
           || insertReason === 'duplicate',
       });
+      const persistIndex = typeof createdBlock.order_index === 'number'
+        ? createdBlock.order_index
+        : clampedIndex;
       const persistedCommand = buildInsertBlockCommand(
         previousBlocks,
         createdBlock,
         parentId,
-        clampedIndex,
+        persistIndex,
         { focus: insertOptions?.focus !== false },
       );
       let nextBlocks = persistedCommand.nextBlocks;
@@ -276,19 +280,19 @@ export function useNoteBlockInsert(options: {
     afterBlock: NoteBlock,
     type: NoteBlock['type'] = 'text',
     content?: Record<string, unknown>,
-  ) => {
+  ): Promise<NoteBlock | null> => {
     if (type === 'page') {
-      if (!selectedId) return;
+      if (!selectedId) return null;
       await handleCreateSubPage(selectedId, {
         insertAfterBlockId: afterBlock.id,
         parentBlockId: afterBlock.parent_block_id ?? null,
         navigateToChild: false,
       });
-      return;
+      return null;
     }
     const parentId = afterBlock.parent_block_id ?? null;
     const { insertIndex } = resolveInsertIndexAfterBlock(blocksRef.current, afterBlock);
-    await insertBlockAmongSiblings(parentId, type, insertIndex, {
+    return insertBlockAmongSiblings(parentId, type, insertIndex, {
       ...(content ? { content } : {}),
       reason: 'enter',
     });
@@ -333,16 +337,14 @@ export function useNoteBlockInsert(options: {
     afterBlock: NoteBlock,
     type: NoteBlock['type'] = afterBlock.type,
     content?: Record<string, unknown>,
-  ) => {
+  ): Promise<NoteBlock | null> => {
     if (!selectedId || (afterBlock.type !== 'bulletList' && afterBlock.type !== 'numberedList')) {
-      await handleInsertBlockAfter(afterBlock, type, content);
-      return;
+      return handleInsertBlockAfter(afterBlock, type, content);
     }
     const previousBlocks = blocksRef.current;
     const directChildren = getBlocksInParent(previousBlocks, afterBlock.id);
     if (directChildren.length === 0) {
-      await handleInsertBlockAfter(afterBlock, type, content);
-      return;
+      return handleInsertBlockAfter(afterBlock, type, content);
     }
 
     const parentId = afterBlock.parent_block_id ?? null;
@@ -395,18 +397,20 @@ export function useNoteBlockInsert(options: {
         insertIndex,
         directChildren.map((child) => child.id),
       );
-      await runPostCreateStructuralCommand(previousBlocks, command, {
+      const ok = await runPostCreateStructuralCommand(previousBlocks, command, {
         focusBlockId: createdBlock.id,
         focusPart: type === 'toggle' ? 'title' : 'editor',
         logLabel: '[Note] splitListBlockAfterWithChildren',
         errorMessage: '리스트 분할 저장 실패',
         persistFieldPatches: false,
       });
+      return ok ? createdBlock : null;
     } catch (e) {
       devLogger.error('[Note] splitListBlockAfterWithChildren', e);
       setBlocks(previousBlocks);
       setError(e instanceof Error ? e.message : '리스트 분할 저장 실패');
       setLoadingState('idle');
+      return null;
     }
   }, [
     blocksRef,

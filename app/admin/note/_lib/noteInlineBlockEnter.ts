@@ -14,7 +14,10 @@ type InlineEnterHandlerOptions = {
   text: string;
   parentBlockType?: NoteBlock['type'] | null;
   isEmpty?: (rawText: string, enterCtx?: NoteEditorEnterContext) => boolean;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onAddBelow: (
+    type?: NoteBlock['type'],
+    content?: Record<string, unknown>,
+  ) => unknown;
   onChangeType?: (type: NoteBlock['type']) => void;
   onIndentChange?: (direction: 'in' | 'out') => void;
 };
@@ -22,7 +25,10 @@ type InlineEnterHandlerOptions = {
 type HeadingEnterHandlerOptions = {
   block: NoteBlock;
   text: string;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onAddBelow: (
+    type?: NoteBlock['type'],
+    content?: Record<string, unknown>,
+  ) => unknown;
   onChangeType?: (type: NoteBlock['type']) => void;
   onIndentChange?: (direction: 'in' | 'out') => void;
 };
@@ -35,11 +41,10 @@ function liveTextForBlock(block: NoteBlock, fallbackText: string): string {
 function runInlineEnterAction(
   action: ReturnType<typeof resolveInlineBlockEnterAction>,
   options: Pick<InlineEnterHandlerOptions, 'onAddBelow' | 'onChangeType' | 'onIndentChange'>,
-) {
+): unknown {
   switch (action.kind) {
   case 'add-below':
-    options.onAddBelow(action.followType, action.content);
-    return;
+    return options.onAddBelow(action.followType, action.content);
   case 'outdent':
     options.onIndentChange?.('out');
     return;
@@ -64,11 +69,10 @@ export function createInlineBlockEnterHandler(options: InlineEnterHandlerOptions
         enterCtx.split.beforeText.length,
       );
       if (hint) {
-        options.onAddBelow(hint.blockType, {
+        return options.onAddBelow(hint.blockType, {
           text: enterCtx.split.afterText,
           html: enterCtx.split.afterHtml,
         });
-        return;
       }
     }
 
@@ -84,7 +88,7 @@ export function createInlineBlockEnterHandler(options: InlineEnterHandlerOptions
       isEmpty: options.isEmpty,
     });
 
-    runInlineEnterAction(action, options);
+    return runInlineEnterAction(action, options);
   };
 }
 
@@ -96,6 +100,6 @@ export function createHeadingEnterHandler(options: HeadingEnterHandlerOptions) {
       enterCtx,
     });
 
-    runInlineEnterAction(action, options);
+    return runInlineEnterAction(action, options);
   };
 }

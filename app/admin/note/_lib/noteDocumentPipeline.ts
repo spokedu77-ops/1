@@ -34,6 +34,7 @@ import {
 } from './noteEmergencyDrafts';
 
 import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
+import { resolveCreateBlockPersistOrders } from './noteCreatePersistOrders';
 import type { NoteBlock } from './types';
 
 export type NoteDocumentPipelineCallbacks = {
@@ -328,15 +329,58 @@ export class NoteDocumentPipeline {
 
   async persistCreateBlock(args: CreateBlockPersistArgs): Promise<NoteBlock> {
     const id = args.id ?? newNoteBlockClientId();
+    const parentId = args.parent_block_id;
+    const fallbackInsertIndex = args.order_index ?? 0;
+    const now = new Date().toISOString();
+    const createdStub: NoteBlock = {
+      id,
+      document_id: args.documentId,
+      parent_block_id: parentId,
+      type: args.blockType,
+      order_index: fallbackInsertIndex,
+      content: args.content,
+      created_at: now,
+      updated_at: now,
+      version: 1,
+    };
+
+    // C1: create order는 pipeline에서만 확정 — hook normalizeOrders는 힌트일 뿐
+    const currentBlocks = blocksForDocument(
+      useNoteBlockStore.getState().getBlocksArray(),
+      args.documentId,
+    );
+    const persistOrders = resolveCreateBlockPersistOrders({
+      blocks: currentBlocks,
+      documentId: args.documentId,
+      createdId: id,
+      parentId,
+      fallbackInsertIndex,
+      createdBlock: createdStub,
+    });
+    if (persistOrders.repairedSiblings) {
+      const repairedById = new Map(
+        persistOrders.repairedSiblings.map((block) => [block.id, block]),
+      );
+      const allBlocks = useNoteBlockStore.getState().getBlocksArray();
+      const next = allBlocks.map((block) => repairedById.get(block.id) ?? block);
+      const missing = persistOrders.repairedSiblings.filter(
+        (block) => !allBlocks.some((item) => item.id === block.id),
+      );
+      this.dispatch({
+        type: 'replaceBlocks',
+        blocks: missing.length > 0 ? [...next, ...missing] : next,
+      });
+    }
+
     const op = {
       type: 'createBlock' as const,
       id,
       documentId: args.documentId,
       blockType: args.blockType,
       content: args.content,
-      order_index: args.order_index,
-      parent_block_id: args.parent_block_id,
-      normalizeOrders: args.normalizeOrders,
+      order_index: persistOrders.order_index,
+      parent_block_id: parentId,
+      normalizeOrders: persistOrders.normalizeOrders,
       transactionUpdates: args.transactionUpdates,
       allowEmptyVisibleCreate: args.allowEmptyVisibleCreate,
     };

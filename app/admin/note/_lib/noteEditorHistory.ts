@@ -41,3 +41,57 @@ export function tipTapHasRedoDepth(editor: Editor): boolean {
   if ((editor as { isDestroyed?: boolean }).isDestroyed) return false;
   return redoDepth(editor.state) > 0;
 }
+
+export function readTipTapUndoDepth(editor: Editor | null | undefined): number {
+  if (!editor || (editor as { isDestroyed?: boolean }).isDestroyed) return 0;
+  return undoDepth(editor.state);
+}
+
+export function readTipTapRedoDepth(editor: Editor | null | undefined): number {
+  if (!editor || (editor as { isDestroyed?: boolean }).isDestroyed) return 0;
+  return redoDepth(editor.state);
+}
+
+/** C3 — 구조 붙여넣기 직후 첫 Ctrl+Z는 structural (TipTap history 비움과 짝) */
+let structuralPasteUndoArmed = false;
+
+export function armStructuralPasteUndo(): void {
+  structuralPasteUndoArmed = true;
+}
+
+export function isStructuralPasteUndoArmed(): boolean {
+  return structuralPasteUndoArmed;
+}
+
+export function consumeStructuralPasteUndoArmed(): boolean {
+  if (!structuralPasteUndoArmed) return false;
+  structuralPasteUndoArmed = false;
+  return true;
+}
+
+/** C3 Ctrl+Z 단일 해석 — Keyboard·NoteEditor 동일 */
+export type NoteUndoTarget =
+  | 'tiptap-undo'
+  | 'tiptap-redo'
+  | 'structural-undo'
+  | 'structural-redo'
+  | 'none';
+
+export function resolveNoteUndoTarget(options: {
+  tipTapUndoDepth: number;
+  tipTapRedoDepth: number;
+  structuralPasteArmed: boolean;
+  hasStructuralUndo: boolean;
+  hasStructuralRedo: boolean;
+  shiftKey: boolean;
+}): NoteUndoTarget {
+  if (!options.shiftKey) {
+    if (options.structuralPasteArmed && options.hasStructuralUndo) return 'structural-undo';
+    if (options.tipTapUndoDepth > 0) return 'tiptap-undo';
+    if (options.hasStructuralUndo) return 'structural-undo';
+    return 'none';
+  }
+  if (options.tipTapRedoDepth > 0) return 'tiptap-redo';
+  if (options.hasStructuralRedo) return 'structural-redo';
+  return 'none';
+}

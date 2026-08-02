@@ -83,7 +83,9 @@ describe('spomove preset display model', () => {
 
     const model = buildSpomoveGuideDisplayModel({
       preset: preset!,
+      audience: 'public',
       contentOverride: {
+        movementGuideStatus: 'published',
         movementGuide: {
           movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
           instruction: 'Move to the matching color.',
@@ -98,11 +100,91 @@ describe('spomove preset display model', () => {
       },
     });
 
+    expect(model.guideMode).toBe('published');
+    expect(model.isOfficialGuide).toBe(true);
     expect(model.recommendedMovementLabel).toBeTruthy();
     expect(model.instruction).toBe('Move to the matching color.');
     expect(model.coachScript).toBe('Look first, then jump together.');
     expect(model.focusTags).toHaveLength(3);
     expect(model.movementVariation).toBe('Use foot tap or lunge reach instead.');
     expect(model.contentReadiness).toBe('home-ready');
+  });
+
+  it('keeps draft structured guide fields out of public official guide output', () => {
+    const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === 'reaction-cognition-space-direction-01');
+    expect(preset).toBeTruthy();
+
+    const model = buildSpomoveGuideDisplayModel({
+      preset: preset!,
+      audience: 'public',
+      contentOverride: {
+        movementGuideStatus: 'draft',
+        movementGuide: {
+          movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
+          instruction: 'Draft instruction.',
+          coachScript: 'Draft coach script.',
+          focusTags: ['choiceReaction'],
+          easier: 'Draft easier.',
+          harder: 'Draft harder.',
+        },
+      },
+    });
+
+    expect(model.guideMode).toBe('preparing');
+    expect(model.isOfficialGuide).toBe(false);
+    expect(model.recommendedMovementLabel).toBeNull();
+    expect(model.instruction).toBeNull();
+    expect(model.coachScript).toBeNull();
+    expect(model.focusTags).toEqual([]);
+    expect(model.easier).toBeNull();
+    expect(model.harder).toBeNull();
+    expect('fallbackReference' in model).toBe(false);
+  });
+
+  it('shows only legacy manual content publicly when structured guide is draft', () => {
+    const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === 'reaction-cognition-space-direction-01');
+    expect(preset).toBeTruthy();
+
+    const model = buildSpomoveGuideDisplayModel({
+      preset: preset!,
+      audience: 'public',
+      contentOverride: {
+        activityMethod: 'Legacy method.',
+        activityConcept: 'Legacy concept.',
+        movementGuide: {
+          instruction: 'Draft instruction.',
+        },
+      },
+    });
+
+    expect(model.guideMode).toBe('legacy');
+    expect(model.isOfficialGuide).toBe(false);
+    expect(model.instruction).toBeNull();
+    expect(model.legacyManual).toEqual({
+      activityMethod: 'Legacy method.',
+      activityConcept: 'Legacy concept.',
+    });
+  });
+
+  it('returns admin preview issues and fallback reference without publishing invalid draft fields', () => {
+    const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === 'reaction-cognition-space-direction-01');
+    expect(preset).toBeTruthy();
+
+    const model = buildSpomoveGuideDisplayModel({
+      preset: preset!,
+      audience: 'adminPreview',
+      contentOverride: {
+        movementGuideStatus: 'published',
+        movementGuide: {
+          instruction: 'Incomplete published guide.',
+        },
+      },
+    });
+
+    expect(model.guideMode).toBe('invalidPreview');
+    expect(model.instruction).toBe('Incomplete published guide.');
+    if (model.audience !== 'adminPreview') throw new Error('Expected admin preview model');
+    expect(model.validationIssues.length).toBeGreaterThan(0);
+    expect(model.fallbackReference?.instruction).toBeTruthy();
   });
 });

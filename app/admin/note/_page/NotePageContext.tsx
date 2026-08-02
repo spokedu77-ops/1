@@ -204,12 +204,12 @@ export interface NotePageContextValue {
   syncBlockContent: (blockId: string, content: unknown) => void;
   handleIndentBlock: (block: NoteBlock, direction: 'in' | 'out') => void;
   handleNavigateBlock: (block: NoteBlock, direction: 'previous' | 'next') => void;
-  handleInsertBlockAfter: (afterBlock: NoteBlock, type?: NoteBlock['type'], content?: Record<string, unknown>) => Promise<void>;
+  handleInsertBlockAfter: (afterBlock: NoteBlock, type?: NoteBlock['type'], content?: Record<string, unknown>) => Promise<NoteBlock | null>;
   handleSplitListBlockAfterWithChildren: (
     afterBlock: NoteBlock,
     type?: NoteBlock['type'],
     content?: Record<string, unknown>,
-  ) => Promise<void>;
+  ) => Promise<NoteBlock | null>;
   handleInsertBlockInParent: (
     parentBlockId: string,
     type?: NoteBlock['type'],
