@@ -1,6 +1,12 @@
 import { OFFICIAL_SPOMOVE_LIBRARY } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-import type { MovementPick } from '@/app/spokedu-master/spomove/movements/movementTypes';
 import { normalizeSpomoveCoreKeywordsList } from '@/app/spokedu-master/spomove/spomoveCoreKeywords';
+import {
+  normalizeSpomoveMovementGuideDraft,
+  type SpomoveFocusTag,
+  type SpomoveMovementGuide,
+  type SpomoveMovementGuideDraft,
+  type SpomoveMovementGuideStatus,
+} from './spomoveGuideContract';
 
 export const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
 export const SPOMOVE_THUMBNAIL_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 프리셋 썸네일';
@@ -28,47 +34,18 @@ export type SpomovePresetContentOverride = {
   coreKeywords?: string[];
   activityMethod?: string;
   activityConcept?: string;
-  movementGuide?: SpomoveMovementGuide;
+  movementGuide?: SpomoveMovementGuideDraft;
+  movementGuideStatus?: SpomoveMovementGuideStatus;
 };
-
-export type SpomoveFocusTag =
-  | 'simpleReaction'
-  | 'choiceReaction'
-  | 'responseInhibition'
-  | 'attentionShift'
-  | 'visualSearch'
-  | 'sequenceMemory'
-  | 'ruleSwitching'
-  | 'movementCoordination'
-  | 'lowerBodyCoordination'
-  | 'upperLowerCoordination'
-  | 'balanceControl'
-  | 'landingControl'
-  | 'postureControl'
-  | 'directionControl'
-  | 'individual'
-  | 'simultaneous'
-  | 'turnTaking'
-  | 'cooperative'
-  | 'competitive';
-
-export type SpomoveMovementGuide = {
-  movement: MovementPick | null;
-  instruction: string;
-  teacherCue: string;
-  focusTags: SpomoveFocusTag[];
-  easier: string;
-  harder: string;
-  successCriteria?: string;
-  commonMistake?: string;
-  remix?: {
-    movement?: string;
-    rule?: string;
-    operation?: string;
-  };
+export type {
+  SpomoveFocusTag,
+  SpomoveMovementGuide,
+  SpomoveMovementGuideDraft,
+  SpomoveMovementGuideStatus,
 };
 
 export type SpomoveContentAssetsJson = {
+  schemaVersion?: 1 | 2;
   content?: Record<string, SpomovePresetContentOverride | null | undefined>;
 };
 
@@ -108,112 +85,21 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
     const coreKeywords = normalizeSpomoveCoreKeywordsList(entry.coreKeywords);
     const activityMethod = typeof entry.activityMethod === 'string' ? entry.activityMethod.trim() : '';
     const activityConcept = typeof entry.activityConcept === 'string' ? entry.activityConcept.trim() : '';
-    const movementGuide = normalizeSpomoveMovementGuide(entry.movementGuide);
+    const movementGuide = normalizeSpomoveMovementGuideDraft(entry.movementGuide);
+    const movementGuideStatus =
+      entry.movementGuideStatus === 'published' || entry.movementGuideStatus === 'draft'
+        ? entry.movementGuideStatus
+        : undefined;
     const normalized: SpomovePresetContentOverride = {};
     if (coreKeywords.length > 0) normalized.coreKeywords = coreKeywords;
     if (activityMethod) normalized.activityMethod = activityMethod;
     if (activityConcept) normalized.activityConcept = activityConcept;
     if (movementGuide) normalized.movementGuide = movementGuide;
+    if (movementGuideStatus) normalized.movementGuideStatus = movementGuideStatus;
     if (Object.keys(normalized).length > 0) next[presetId] = normalized;
   }
 
   return next;
-}
-
-const SPOMOVE_FOCUS_TAGS: readonly SpomoveFocusTag[] = [
-  'simpleReaction',
-  'choiceReaction',
-  'responseInhibition',
-  'attentionShift',
-  'visualSearch',
-  'sequenceMemory',
-  'ruleSwitching',
-  'movementCoordination',
-  'lowerBodyCoordination',
-  'upperLowerCoordination',
-  'balanceControl',
-  'landingControl',
-  'postureControl',
-  'directionControl',
-  'individual',
-  'simultaneous',
-  'turnTaking',
-  'cooperative',
-  'competitive',
-];
-
-const SPOMOVE_FOCUS_TAG_SET = new Set<string>(SPOMOVE_FOCUS_TAGS);
-const SPOMOVE_BASE_MOVEMENT_IDS = new Set<string>([
-  'footTap',
-  'handTouch',
-  'stepHold',
-  'squatTouch',
-  'lungeReach',
-  'twoLegJump',
-  'singleLegHop',
-  'boundingStep',
-  'plankTouch',
-  'quickStep',
-]);
-const SPOMOVE_LIMB_RULES = new Set<string>(['free', 'sameSide', 'oppositeSide']);
-
-function normalizeString(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function normalizeMovementPick(value: unknown): MovementPick | null | undefined {
-  if (value === null) return null;
-  if (!value || typeof value !== 'object') return undefined;
-  const pick = value as Record<string, unknown>;
-  const baseMovement = normalizeString(pick.baseMovement);
-  const limbRule = normalizeString(pick.limbRule);
-  if (!SPOMOVE_BASE_MOVEMENT_IDS.has(baseMovement) || !SPOMOVE_LIMB_RULES.has(limbRule)) return undefined;
-  return {
-    baseMovement: baseMovement as MovementPick['baseMovement'],
-    limbRule: limbRule as MovementPick['limbRule'],
-  };
-}
-
-function normalizeSpomoveMovementGuide(value: unknown): SpomoveMovementGuide | undefined {
-  if (!value || typeof value !== 'object') return undefined;
-  const source = value as Record<string, unknown>;
-  const movement = normalizeMovementPick(source.movement);
-  const instruction = normalizeString(source.instruction);
-  const teacherCue = normalizeString(source.teacherCue);
-  const focusTags = Array.isArray(source.focusTags)
-    ? source.focusTags
-        .filter((tag): tag is SpomoveFocusTag => typeof tag === 'string' && SPOMOVE_FOCUS_TAG_SET.has(tag))
-        .slice(0, 3)
-    : [];
-  const easier = normalizeString(source.easier);
-  const harder = normalizeString(source.harder);
-
-  if (movement === undefined || !instruction || !teacherCue || focusTags.length === 0 || !easier || !harder) {
-    return undefined;
-  }
-
-  const remixSource = source.remix && typeof source.remix === 'object'
-    ? (source.remix as Record<string, unknown>)
-    : null;
-  const remix = remixSource
-    ? {
-        movement: normalizeString(remixSource.movement) || undefined,
-        rule: normalizeString(remixSource.rule) || undefined,
-        operation: normalizeString(remixSource.operation) || undefined,
-      }
-    : undefined;
-
-  return {
-    movement,
-    instruction,
-    teacherCue,
-    focusTags,
-    easier,
-    harder,
-    successCriteria: normalizeString(source.successCriteria) || undefined,
-    commonMistake: normalizeString(source.commonMistake) || undefined,
-    remix: remix && Object.values(remix).some(Boolean) ? remix : undefined,
-  };
 }
 
 export function normalizeSpomoveHomeFeaturedSlots(raw: unknown): Array<string | null> {

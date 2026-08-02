@@ -303,7 +303,7 @@ function fallbackHarder(preset: OfficialSpomovePreset): string {
 function resolveContentReadiness(contentOverride?: SpomovePresetContentOverride): SpomoveGuideContentReadiness {
   const guide = contentOverride?.movementGuide;
   if (guide) {
-    return guide.successCriteria || guide.commonMistake || guide.remix ? 'home-ready' : 'ready';
+    return guide.successCriteria || guide.commonMistake || guide.variations ? 'home-ready' : 'ready';
   }
   if (contentOverride?.activityMethod?.trim() || contentOverride?.activityConcept?.trim()) {
     return 'needs-improvement';
@@ -337,7 +337,7 @@ export function buildSpomoveGuideDisplayModel({
     programGroupLabel: display.programLabel,
     recommendedMovementLabel: movementLabel,
     instruction: guide?.instruction || contentOverride?.activityMethod?.trim() || fallbackInstruction(preset),
-    coachScript: guide?.teacherCue || fallbackCoachScript(preset),
+    coachScript: guide?.coachScript || fallbackCoachScript(preset),
     focusTags: guide?.focusTags?.length
       ? guide.focusTags.map((tag) => SPOMOVE_FOCUS_TAG_LABELS[tag])
       : fallbackFocusTags(preset),
@@ -345,9 +345,9 @@ export function buildSpomoveGuideDisplayModel({
     harder: guide?.harder || fallbackHarder(preset),
     successCriteria: guide?.successCriteria,
     commonMistake: guide?.commonMistake,
-    movementVariation: guide?.remix?.movement,
-    ruleVariation: guide?.remix?.rule,
-    operationVariation: guide?.remix?.operation,
+    movementVariation: guide?.variations?.movement,
+    ruleVariation: guide?.variations?.rule,
+    operationVariation: guide?.variations?.operation,
     matCount: matCount ?? movementSummary?.minMats ?? 1,
     cueSeconds: cueSeconds ?? preset.cueSeconds,
     rounds: preset.rounds,

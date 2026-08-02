@@ -14,12 +14,16 @@ import {
 } from '../data/site';
 import { BrandLogo } from './brand-logo';
 import { isExternalHref, externalLinkProps } from '../lib/external-link';
-import { scrollSpokeduToTop } from '../lib/scroll';
+import { lockSpokeduScroll, getSpokeduScrollRoot, getSpokeduScrollY, scrollSpokeduToTop, unlockSpokeduScroll } from '../lib/scroll';
 import { inferTrackFromHref } from '../lib/tracking';
 import { brandBlue, brandNavy, koreanText, siteContainer } from '../lib/ui-classes';
 
 const ATHLETIC_BLUE = brandBlue;
 const NAVY = brandNavy;
+
+function stripQueryAndHash(href: string): string {
+  return href.split('#')[0]?.split('?')[0] ?? href;
+}
 
 function normalizePath(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith('/')) {
@@ -30,19 +34,17 @@ function normalizePath(pathname: string): string {
 
 function isLinkActive(pathname: string, href: string, matchPrefix?: string): boolean {
   const current = normalizePath(pathname);
-  if (href.includes('#')) {
-    const base = href.split('#')[0];
-    return current === base || current.startsWith(`${base}/`);
-  }
+  const hrefPath = normalizePath(stripQueryAndHash(href));
   if (matchPrefix) {
-    return current === `${SPOKEDU_BASE_PATH}${matchPrefix}` || current.startsWith(`${SPOKEDU_BASE_PATH}${matchPrefix}/`);
+    const prefixPath = matchPrefix.includes('?') ? stripQueryAndHash(matchPrefix) : matchPrefix;
+    return current === `${SPOKEDU_BASE_PATH}${prefixPath}` || current.startsWith(`${SPOKEDU_BASE_PATH}${prefixPath}/`);
   }
-  return current === href;
+  return current === hrefPath || current.startsWith(`${hrefPath}/`);
 }
 
 function isGroupActive(pathname: string, children: SiteNavLink[]): boolean {
   return children.some((child) => {
-    const base = child.href.split('#')[0];
+    const base = stripQueryAndHash(child.href);
     const prefix = base.replace(SPOKEDU_BASE_PATH, '');
     return isLinkActive(pathname, child.href, prefix || undefined);
   });
@@ -55,6 +57,7 @@ function NavAnchor({
   style,
   children,
   onNavigate,
+  role,
 }: {
   href: string;
   trackLabel: string;
@@ -62,6 +65,7 @@ function NavAnchor({
   style?: CSSProperties;
   children: ReactNode;
   onNavigate?: () => void;
+  role?: string;
 }) {
   const external = isExternalHref(href);
   const props = {
@@ -69,6 +73,7 @@ function NavAnchor({
     'data-track-label': trackLabel,
     className,
     style,
+    role,
     onClick: () => {
       // 해시 앵커가 아니면 네비 클릭 시 항상 맨 위부터 (fullscreen 스크롤 잔여 방지)
       if (!href.includes('#')) {
@@ -98,17 +103,19 @@ export function SiteHeader() {
   const isHome = pathname === '/spokedu';
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [programsOpen, setProgramsOpen] = useState(false);
-  const [mobileProgramsOpen, setMobileProgramsOpen] = useState(false);
-  const programsButtonRef = useRef<HTMLButtonElement>(null);
-  const programsPanelRef = useRef<HTMLDivElement>(null);
+  const [openDesktopGroup, setOpenDesktopGroup] = useState<string | null>(null);
+  const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
+  const desktopGroupButtonRef = useRef<HTMLButtonElement>(null);
+  const desktopGroupPanelRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
   const mobileProgramsId = useId();
 
   const onHero = isHome && !scrolled;
   const closeMenus = useCallback(() => {
     setMenuOpen(false);
-    setProgramsOpen(false);
-    setMobileProgramsOpen(false);
+    setOpenDesktopGroup(null);
+    setOpenMobileGroup(null);
   }, []);
 
   useEffect(() => {
@@ -116,10 +123,15 @@ export function SiteHeader() {
       setScrolled(false);
       return;
     }
-    const onScroll = () => setScrolled(window.scrollY > 56);
+    const onScroll = () => setScrolled(getSpokeduScrollY() > 56);
     onScroll();
+    const root = getSpokeduScrollRoot();
+    root?.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      root?.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, [isHome]);
 
   useEffect(() => {
@@ -127,32 +139,57 @@ export function SiteHeader() {
   }, [pathname, closeMenus]);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen) {
+      unlockSpokeduScroll();
+      return;
+    }
+    lockSpokeduScroll();
+    const panel = mobilePanelRef.current;
+    const focusables = panel?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    focusables?.[0]?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeMenus();
+      if (e.key === 'Escape') {
+        closeMenus();
+        menuButtonRef.current?.focus();
+        return;
+      }
+      if (e.key !== 'Tab' || !focusables?.length) return;
+      const list = Array.from(focusables);
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (!first || !last) return;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
+      unlockSpokeduScroll();
     };
   }, [menuOpen, closeMenus]);
 
   useEffect(() => {
-    if (!programsOpen) return;
+    if (!openDesktopGroup) return;
     const onPointerDown = (e: MouseEvent) => {
       const target = e.target as Node;
       if (
-        programsPanelRef.current?.contains(target) ||
-        programsButtonRef.current?.contains(target)
+        desktopGroupPanelRef.current?.contains(target) ||
+        desktopGroupButtonRef.current?.contains(target)
       ) {
         return;
       }
-      setProgramsOpen(false);
+      setOpenDesktopGroup(null);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setProgramsOpen(false);
+      if (e.key === 'Escape') setOpenDesktopGroup(null);
     };
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('keydown', onKey);
@@ -160,7 +197,7 @@ export function SiteHeader() {
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [programsOpen]);
+  }, [openDesktopGroup]);
 
   const linkClass = (active: boolean) =>
     `inline-flex h-9 items-center text-[13px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
@@ -188,17 +225,19 @@ export function SiteHeader() {
       );
     }
 
+    const groupOpen = openDesktopGroup === entry.label;
     const groupActive = isGroupActive(pathname, entry.children);
+    const menuId = `desktop-nav-group-${entry.trackLabel}`;
     return (
       <div key={entry.label} className="relative flex h-9 items-center">
         <button
-          ref={programsButtonRef}
+          ref={groupOpen ? desktopGroupButtonRef : undefined}
           type="button"
-          className={`inline-flex h-9 items-center gap-1 ${linkClass(groupActive || programsOpen)}`}
-          aria-expanded={programsOpen}
-          aria-controls="desktop-programs-menu"
+          className={`inline-flex h-9 items-center gap-1 ${linkClass(groupActive || groupOpen)}`}
+          aria-expanded={groupOpen}
+          aria-controls={menuId}
           aria-haspopup="true"
-          onClick={() => setProgramsOpen((open) => !open)}
+          onClick={() => setOpenDesktopGroup((current) => (current === entry.label ? null : entry.label))}
         >
           {entry.label}
           <svg
@@ -207,15 +246,15 @@ export function SiteHeader() {
             viewBox="0 0 12 12"
             fill="none"
             aria-hidden
-            className={`shrink-0 transition-transform ${programsOpen ? 'rotate-180' : ''}`}
+            className={`shrink-0 transition-transform ${groupOpen ? 'rotate-180' : ''}`}
           >
             <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>
-        {programsOpen ? (
+        {groupOpen ? (
           <div
-            id="desktop-programs-menu"
-            ref={programsPanelRef}
+            id={menuId}
+            ref={desktopGroupPanelRef}
             role="menu"
             className="absolute left-0 top-[calc(100%+0.5rem)] z-50 min-w-[13.5rem] border border-slate-200 bg-white py-1.5 shadow-sm"
           >
@@ -224,8 +263,9 @@ export function SiteHeader() {
                 key={child.href}
                 href={child.href}
                 trackLabel={child.trackLabel}
+                role="menuitem"
                 className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#245DFF]"
-                onNavigate={() => setProgramsOpen(false)}
+                onNavigate={() => setOpenDesktopGroup(null)}
               >
                 {child.label}
               </NavAnchor>
@@ -254,22 +294,24 @@ export function SiteHeader() {
       );
     }
 
+    const groupOpen = openMobileGroup === entry.label;
+    const panelId = `${mobileProgramsId}-${entry.trackLabel}`;
     return (
       <div key={entry.label} className="border-b border-white/10">
         <button
           type="button"
           className="flex min-h-12 w-full items-center justify-between text-base font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          aria-expanded={mobileProgramsOpen}
-          aria-controls={mobileProgramsId}
-          onClick={() => setMobileProgramsOpen((open) => !open)}
+          aria-expanded={groupOpen}
+          aria-controls={panelId}
+          onClick={() => setOpenMobileGroup((current) => (current === entry.label ? null : entry.label))}
         >
           {entry.label}
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className={mobileProgramsOpen ? 'rotate-180' : ''}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className={groupOpen ? 'rotate-180' : ''}>
             <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>
-        {mobileProgramsOpen ? (
-          <div id={mobileProgramsId} className="pb-2 pl-3">
+        {groupOpen ? (
+          <div id={panelId} className="pb-2 pl-3">
             {entry.children.map((child) => (
               <NavAnchor
                 key={child.href}
@@ -290,7 +332,7 @@ export function SiteHeader() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
+        className={`fixed inset-x-0 top-0 z-40 pt-[env(safe-area-inset-top,0px)] transition-all duration-300 ${
           onHero
             ? 'border-b border-white/10 bg-[#0B1F46]/40 backdrop-blur-md'
             : 'border-b border-[#DCE3EE]/90 bg-white/92 shadow-[0_1px_0_rgba(15,33,70,0.04)] backdrop-blur-xl'
@@ -320,6 +362,7 @@ export function SiteHeader() {
             </NavAnchor>
 
             <button
+              ref={menuButtonRef}
               type="button"
               className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 lg:hidden ${
                 onHero
@@ -349,31 +392,34 @@ export function SiteHeader() {
         헤더에 backdrop-blur가 있으면 fixed 자손이 헤더 박스에 묶여
         오버레이 높이가 0에 가깝게 깨진다. 패널은 헤더 밖으로 둔다.
       */}
-      {menuOpen ? (
-        <div
-          id="mobile-nav-panel"
-          className="fixed inset-0 top-14 z-50 sm:top-[3.75rem] lg:hidden"
-          style={{ backgroundColor: `${NAVY}f2` }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="모바일 메뉴"
-        >
-          <nav className="flex h-full flex-col overflow-y-auto px-5 py-4 backdrop-blur-md">
-            {siteNav.map(renderMobileEntry)}
-            <div className="mt-4 grid gap-2">
-              <NavAnchor
-                href={`${SPOKEDU_BASE_PATH}/contact`}
-                trackLabel="mobile-header-contact"
-                className="inline-flex min-h-12 items-center justify-center rounded-md px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                style={{ backgroundColor: ATHLETIC_BLUE }}
-                onNavigate={closeMenus}
-              >
-                상담하기
-              </NavAnchor>
-            </div>
-          </nav>
-        </div>
-      ) : null}
+      <div
+        id="mobile-nav-panel"
+        ref={mobilePanelRef}
+        className={`fixed inset-x-0 bottom-0 top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-50 sm:top-[calc(3.75rem+env(safe-area-inset-top,0px))] lg:hidden ${
+          menuOpen ? '' : 'pointer-events-none invisible'
+        }`}
+        style={{ backgroundColor: menuOpen ? `${NAVY}f2` : undefined }}
+        role="dialog"
+        aria-modal={menuOpen}
+        aria-label="모바일 메뉴"
+        aria-hidden={!menuOpen}
+        hidden={!menuOpen}
+      >
+        <nav className="flex h-full flex-col overflow-y-auto px-5 py-4 backdrop-blur-md sm:pt-1">
+          {siteNav.map(renderMobileEntry)}
+          <div className="mt-4 grid gap-2">
+            <NavAnchor
+              href={`${SPOKEDU_BASE_PATH}/contact`}
+              trackLabel="mobile-header-contact"
+              className="inline-flex min-h-12 items-center justify-center rounded-md px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              style={{ backgroundColor: ATHLETIC_BLUE }}
+              onNavigate={closeMenus}
+            >
+              상담하기
+            </NavAnchor>
+          </div>
+        </nav>
+      </div>
     </>
   );
 }
@@ -381,12 +427,14 @@ export function SiteHeader() {
 export function SiteFooter() {
   const socialLinks = getSocialLinks();
   const blogLink = socialLinks.find((c) => c.key === 'naver-blog');
+  const kakaoLink = socialLinks.find((c) => c.key === 'kakao-channel');
 
   const programLinks = [
     { label: '개인·소그룹 수업', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'footer-program-private' },
     { label: '기관 프로그램', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'footer-program-dispatch' },
     { label: '커리큘럼·지도자 교육', href: `${SPOKEDU_BASE_PATH}/curriculum`, trackLabel: 'footer-program-curriculum' },
     { label: 'SPOMOVE', href: `${SPOKEDU_BASE_PATH}/programs/spomove`, trackLabel: 'footer-program-spomove' },
+    { label: '한눈에 보기', href: `${SPOKEDU_BASE_PATH}/programs/spomove?tab=catalog`, trackLabel: 'footer-program-spomove-catalog' },
   ];
 
   const infoLinks = [
@@ -396,8 +444,8 @@ export function SiteFooter() {
   ];
 
   const footerLinkClass =
-    `inline-flex min-h-8 items-center text-[14px] font-medium leading-none tracking-[-0.01em] text-white/75 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${koreanText}`;
-  const footerHeadingClass = `text-[12px] font-semibold uppercase tracking-[0.12em] text-white/45 ${koreanText}`;
+    `inline-flex min-h-8 items-center text-[14px] font-medium leading-none tracking-[-0.01em] text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${koreanText}`;
+  const footerHeadingClass = `text-[12px] font-semibold uppercase tracking-[0.12em] text-white/60 ${koreanText}`;
 
   return (
     <footer style={{ backgroundColor: NAVY }} className="text-white">
@@ -464,6 +512,20 @@ export function SiteFooter() {
                     className={footerLinkClass}
                   >
                     네이버 블로그
+                  </a>
+                </li>
+              ) : null}
+              {kakaoLink ? (
+                <li className="flex">
+                  <a
+                    href={kakaoLink.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-track="external-kakao-channel"
+                    data-track-label="footer-kakao-channel"
+                    className={footerLinkClass}
+                  >
+                    카카오채널
                   </a>
                 </li>
               ) : null}

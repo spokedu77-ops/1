@@ -294,8 +294,8 @@ const tabs: TabContent[] = [
   },
   {
     id: 'catalog',
-    label: '공식 카탈로그',
-    description: '도입 검토에 필요한 프로그램 구조, 난이도, DIVE, 스포매트, 구독과 가격 정보를 카탈로그 형식으로 정리합니다.',
+    label: '한눈에 보기',
+    description: '도입 검토에 필요한 프로그램 구조, 난이도, DIVE, 스포매트, 구독과 가격 정보를 한눈에 정리합니다.',
     sections: [
       {
         eyebrow: 'WHAT IS SPOMOVE',

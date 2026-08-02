@@ -118,3 +118,8 @@ export const aboutHistory = {
     },
   ] satisfies AboutHistoryPeriod[],
 } as const;
+
+/** 연혁에 기록된 주요 현장·협업 건수 — 홈 신뢰 지표용 (추측 수치 금지) */
+export function countAboutHistoryMilestones(): number {
+  return aboutHistory.periods.reduce((sum, period) => sum + period.milestones.length, 0);
+}

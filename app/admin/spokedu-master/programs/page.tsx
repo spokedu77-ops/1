@@ -666,6 +666,7 @@ function normalizeContentDraft(value: SpomovePresetContentOverride | undefined):
     activityMethod: value?.activityMethod ?? '',
     activityConcept: value?.activityConcept ?? '',
     movementGuide: value?.movementGuide,
+    movementGuideStatus: value?.movementGuideStatus,
   };
 }
 
@@ -756,7 +757,7 @@ function SpomoveContentManager() {
         id: SPOMOVE_CONTENT_PACK_ID,
         name: SPOMOVE_CONTENT_PACK_NAME,
         theme: 'spomove',
-        assets_json: { content: next } satisfies SpomoveContentAssetsJson,
+        assets_json: { schemaVersion: 2, content: next } satisfies SpomoveContentAssetsJson,
       }),
     });
     const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -783,6 +784,7 @@ function SpomoveContentManager() {
       activityMethod: draft.activityMethod?.trim() ?? '',
       activityConcept: draft.activityConcept?.trim() ?? '',
       movementGuide: draft.movementGuide,
+      movementGuideStatus: draft.movementGuideStatus,
     };
     const next = { ...contentRef.current };
     if (contentDraftIsEmpty(nextEntry)) delete next[presetId];

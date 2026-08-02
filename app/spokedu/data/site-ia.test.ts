@@ -19,6 +19,19 @@ describe('spokedu site IA', () => {
     ]);
   });
 
+  it('exposes SPOMOVE glance and full catalog destinations', () => {
+    const spomove = siteNav.find((entry) => entry.type === 'group' && entry.label === 'SPOMOVE');
+    expect(spomove?.type).toBe('group');
+    if (spomove?.type !== 'group') return;
+    expect(spomove.children.map((child) => child.label)).toEqual([
+      '소개',
+      '한눈에 보기',
+      '전체 카탈로그',
+    ]);
+    expect(spomove.children[1]?.href).toContain('tab=catalog');
+    expect(spomove.children[2]?.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove/catalog`);
+  });
+
   it('keeps program children as page-level destinations only', () => {
     const programs = siteNav.find((entry) => entry.type === 'group' && entry.label === '프로그램');
     expect(programs?.type).toBe('group');
@@ -45,8 +58,14 @@ describe('spokedu site IA', () => {
     expect(homePage.proofStrip.title).toBe('왜 스포키듀인가');
     expect(homePage.trustStrip.items).toHaveLength(4);
     expect(homePage.trustStrip.items[0]?.value).toMatch(/년\+$/);
-    expect(homePage.trustStrip.items[2]?.value).toMatch(/건$/);
+    expect(homePage.trustStrip.items[0]?.label).toContain('2020');
+    expect(homePage.trustStrip.items[1]?.value).toMatch(/유형$/);
+    expect(homePage.trustStrip.items[2]?.value).toBe('기관·개인');
+    expect(homePage.trustStrip.items[3]?.value).toBe('다층 운영');
+    expect(homePage.trustStrip.items.some((item) => /\d+건/.test(item.value))).toBe(false);
     expect(homePage.trustStrip.items.some((item) => item.value.includes('120'))).toBe(false);
+    expect(homePage.trustStrip.items.some((item) => /만/.test(item.value))).toBe(false);
+    expect(homePage.trustStrip.eyebrow).toBe('운영 경험');
     expect(homePage.audienceGate.items).toHaveLength(3);
     expect(homePage.audienceGate.items.map((item) => item.fit)).toHaveLength(3);
     expect(homePage.audienceGate.items[2]?.id).toBe('curriculum');

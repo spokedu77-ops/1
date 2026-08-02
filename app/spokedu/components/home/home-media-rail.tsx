@@ -204,7 +204,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
             <p className={`text-sm text-white/50 ${koreanText}`} aria-live="polite">
               {index + 1} / {count}
             </p>
-            <div className="flex items-center gap-2" aria-label="사례 슬라이드 선택">
+            <div className="flex items-center gap-1" aria-label="사례 슬라이드 선택">
               {items.map((item, i) => (
                 <button
                   key={item.slug}
@@ -212,10 +212,15 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
                   aria-label={`${item.programName} 보기`}
                   aria-current={i === index}
                   onClick={() => setIndex(i)}
-                  className={`h-2 rounded-full transition ${
-                    i === index ? 'w-6 bg-white' : 'w-2 bg-white/35 hover:bg-white/55'
-                  }`}
-                />
+                  className={`inline-flex h-11 min-w-11 items-center justify-center rounded-full ${homeFocusRing}`}
+                >
+                  <span
+                    className={`block h-2 rounded-full transition ${
+                      i === index ? 'w-6 bg-white' : 'w-2 bg-white/35'
+                    }`}
+                    aria-hidden
+                  />
+                </button>
               ))}
             </div>
           </div>

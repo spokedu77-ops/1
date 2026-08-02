@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { brandContactLinks, brandProfile } from '../data/brand';
+import { getSpokeduScrollRoot, getSpokeduScrollY } from '../lib/scroll';
 import { siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
 
 type LandingFloatingCtaProps = {
@@ -26,11 +27,16 @@ export function LandingFloatingCta({
     const onScroll = () => {
       const hero = document.getElementById(showAfterId);
       const threshold = hero ? hero.offsetHeight * 0.55 : 420;
-      setVisible(window.scrollY > threshold);
+      setVisible(getSpokeduScrollY() > threshold);
     };
     onScroll();
+    const root = getSpokeduScrollRoot();
+    root?.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      root?.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, [showAfterId]);
 
   if (!visible) return null;

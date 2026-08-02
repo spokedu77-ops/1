@@ -74,11 +74,26 @@ export const siteNav: SiteNavEntry[] = [
     ],
   },
   {
-    type: 'link',
+    type: 'group',
     label: 'SPOMOVE',
-    href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
     trackLabel: 'nav-spomove',
-    matchPrefix: '/programs/spomove',
+    children: [
+      {
+        label: '소개',
+        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+        trackLabel: 'nav-spomove-hub',
+      },
+      {
+        label: '한눈에 보기',
+        href: `${SPOKEDU_BASE_PATH}/programs/spomove?tab=catalog`,
+        trackLabel: 'nav-spomove-catalog',
+      },
+      {
+        label: '전체 카탈로그',
+        href: `${SPOKEDU_BASE_PATH}/programs/spomove/catalog`,
+        trackLabel: 'nav-spomove-catalog-full',
+      },
+    ],
   },
   {
     type: 'link',

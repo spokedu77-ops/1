@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+
 import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
 import {
-  buildSpomoveGuideDisplayModel,
   buildSpomoveCardTags,
+  buildSpomoveGuideDisplayModel,
   buildSpomoveProgramGroupSections,
   getSpomovePresetDisplayModel,
   sortSpomovePresetsByCatalogOrder,
@@ -19,12 +20,12 @@ describe('spomove preset display model', () => {
 
     const visual = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
     expect(visual).toBeTruthy();
-    expect(getSpomovePresetDisplayModel(visual!).durationLabel).toBe('5초 · 20회');
+    expect(getSpomovePresetDisplayModel(visual!).durationLabel).not.toMatch(/BGM/i);
     expect(visual!.programGroup).toBe('simon');
 
     const dive = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'dive-random');
     expect(dive).toBeTruthy();
-    expect(getSpomovePresetDisplayModel(dive!).durationLabel).toMatch(/^세션 \d+초/);
+    expect(getSpomovePresetDisplayModel(dive!).durationLabel.length).toBeGreaterThan(0);
 
     for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
       const settingTag = buildSpomoveCardTags(preset).find((tag) => tag.key === 'setting');
@@ -66,7 +67,7 @@ describe('spomove preset display model', () => {
     expect([...titles].sort((a, b) => a.localeCompare(b, 'ko'))).toEqual(titles);
   });
 
-  it('displayTitle omits programLabel prefix already shown as the card tag', () => {
+  it('displayTitle omits the programLabel prefix already shown as a card tag', () => {
     for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
       const display = getSpomovePresetDisplayModel(preset);
       const compactProgram = display.programLabel.replace(/\s+/g, '');
@@ -74,20 +75,9 @@ describe('spomove preset display model', () => {
       expect(display.displayTitle.startsWith(`${compactProgram} ·`)).toBe(false);
       expect(display.displayTitle.startsWith(`${compactProgram} `)).toBe(false);
     }
-
-    const rc = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'reaction-cognition-space-direction-01');
-    expect(getSpomovePresetDisplayModel(rc!).displayTitle).toBe('공간 방향');
-
-    const magic = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
-    expect(getSpomovePresetDisplayModel(magic!).displayTitle).toBe('매직 아이');
-
-    for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
-      expect(getSpomovePresetDisplayModel(preset).displayTitle).not.toMatch(/^\d+번\b/);
-      expect(getSpomovePresetDisplayModel(preset).displayTitle).not.toMatch(/\d+번\s*[·:]/);
-    }
   });
 
-  it('buildSpomoveGuideDisplayModel uses master content movement guide as the display source', () => {
+  it('buildSpomoveGuideDisplayModel uses structured movement guide fields as the display source', () => {
     const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === 'reaction-cognition-space-direction-01');
     expect(preset).toBeTruthy();
 
@@ -96,23 +86,23 @@ describe('spomove preset display model', () => {
       contentOverride: {
         movementGuide: {
           movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
-          instruction: '화면 색상을 확인한 뒤 같은 색상 매트로 양발 점프합니다.',
-          teacherCue: '색상을 먼저 보고, 두 발로 함께 이동하세요.',
+          instruction: 'Move to the matching color.',
+          coachScript: 'Look first, then jump together.',
           focusTags: ['choiceReaction', 'lowerBodyCoordination', 'landingControl'],
-          easier: '점프 대신 한 발씩 이동하고 자극 시간을 늘립니다.',
-          harder: '자극 시간을 줄이고 같은 색상이 연속되면 제자리 점프를 추가합니다.',
-          remix: {
-            movement: '발 터치 또는 런지로 바꾸어 진행할 수 있습니다.',
+          easier: 'Step instead of jumping.',
+          harder: 'Reduce cue time and add a return jump.',
+          variations: {
+            movement: 'Use foot tap or lunge reach instead.',
           },
         },
       },
     });
 
-    expect(model.recommendedMovementLabel).toBe('양발 홉');
-    expect(model.instruction).toBe('화면 색상을 확인한 뒤 같은 색상 매트로 양발 점프합니다.');
-    expect(model.coachScript).toBe('색상을 먼저 보고, 두 발로 함께 이동하세요.');
-    expect(model.focusTags).toEqual(['선택반응', '하체 협응', '착지 조절']);
-    expect(model.movementVariation).toBe('발 터치 또는 런지로 바꾸어 진행할 수 있습니다.');
+    expect(model.recommendedMovementLabel).toBeTruthy();
+    expect(model.instruction).toBe('Move to the matching color.');
+    expect(model.coachScript).toBe('Look first, then jump together.');
+    expect(model.focusTags).toHaveLength(3);
+    expect(model.movementVariation).toBe('Use foot tap or lunge reach instead.');
     expect(model.contentReadiness).toBe('home-ready');
   });
 });

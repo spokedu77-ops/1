@@ -64,15 +64,18 @@ export type HomeTrustStat = {
   label: string;
 };
 
-/** 공개 카탈로그·설립연도 기준 — 추측 수치(120+ 등) 금지 */
+/**
+ * 경험은 ‘총 수업 횟수’로 세지 않는다(미검증 만 단위 금지).
+ * 연차·기관 스펙트럼·사업 축·운영 층위로 깊이를 보이게 한다.
+ */
 function buildHomeTrustStripItems(): readonly HomeTrustStat[] {
   const summary = buildRecordsHeroSummary();
   const yearsOperating = Math.max(1, new Date().getFullYear() - SPOKEDU_FOUNDED_YEAR);
   return [
-    { value: `${yearsOperating}년+`, label: '현장 수업·프로그램 운영' },
-    { value: `${summary.venueTypeCount}유형`, label: '키움·학교·보건소 등 기관' },
-    { value: `${summary.caseCount}건`, label: '공개 운영 사례' },
-    { value: '정규·행사', label: '학기형부터 원데이까지' },
+    { value: `${yearsOperating}년+`, label: '2020부터 현장 수업을 이어온 기간' },
+    { value: `${summary.venueTypeCount}유형`, label: '키움·학교·보건·복지 등 기관' },
+    { value: '기관·개인', label: '출강 운영과 1:1·소그룹 병행' },
+    { value: '다층 운영', label: '정규·특수체육·SPOMOVE' },
   ];
 }
 
@@ -148,15 +151,15 @@ export const homePage = {
   },
   trustStrip: {
     id: 'trust',
-    eyebrow: '현장 기준',
+    eyebrow: '운영 경험',
     items: buildHomeTrustStripItems(),
   },
   proofStrip: {
     id: 'proof',
     title: '왜 스포키듀인가',
-    lead: '수업을 직접 운영한 기준으로 프로그램을 설계하고, 그 기준을 지도자 교육까지 확장합니다.',
+    lead: '키움·학교·복지·보건 현장에서 직접 운영한 기준으로 프로그램을 설계하고, 그 기준을 지도자 교육까지 확장합니다.',
     items: [
-      '직접 수업 운영',
+      '6년+ 현장 수업 운영',
       '기관 맞춤 프로그램 설계',
       'SPOMOVE 자체 개발',
       '지도자 세미나·커리큘럼 제공',
@@ -240,20 +243,20 @@ export const homePage = {
     ] as const satisfies readonly HomeSpomoveUseCase[],
     mediaKey: 'homeHeroWide' as HomeMediaKey,
     primaryCta: {
-      label: 'SPOMOVE 자세히',
-      href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
-      trackLabel: 'cta-home-spomove-section',
+      label: '한눈에 보기',
+      href: `${SPOKEDU_BASE_PATH}/programs/spomove?tab=catalog`,
+      trackLabel: 'cta-home-spomove-catalog',
     },
     secondaryCta: {
       label: '도입 문의',
       href: `${SPOKEDU_BASE_PATH}/contact?type=spomove`,
-      trackLabel: 'cta-home-spomove-dispatch',
+      trackLabel: 'cta-home-spomove-contact',
     },
   },
   cases: {
     id: 'cases',
     title: '실제 기관 운영 사례',
-    lead: '공간, 대상, 운영 목적에 맞춰 실제로 구성하고 진행한 수업 기록입니다.',
+    lead: '현장에서 쌓은 운영 경험 중, 목적·대상·구성이 분명한 대표 기록을 골랐습니다.',
     recordsCta: {
       label: '사례 전체 보기',
       href: `${SPOKEDU_BASE_PATH}/records`,
@@ -265,9 +268,9 @@ export const homePage = {
       trackLabel: 'cta-home-cases-consult',
     },
     proofStats: [
-      { value: '정규수업', label: '키움센터·학교 연계 운영' },
-      { value: '원데이', label: '행사·특별활동 구성' },
-      { value: 'SPOMOVE', label: '스크린 반응활동 현장 적용' },
+      { value: '정규·늘봄', label: '키움센터·학교 연계 운영' },
+      { value: '원데이·행사', label: '축제·특별활동 구성' },
+      { value: '특수·SPOMOVE', label: '통합반·에듀테크 현장 적용' },
     ] as const,
     cards: HOME_MAIN_CASE_SLUGS.map(buildHomeCaseCard),
   },

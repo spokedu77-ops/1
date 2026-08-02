@@ -91,6 +91,9 @@ export function HomeAudienceGates() {
                     <p className={`mt-2 line-clamp-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>
                       {item.description}
                     </p>
+                    <p className={`mt-2 text-[13px] leading-relaxed text-[#6D7B90] ${koreanText}`}>
+                      {item.fit}
+                    </p>
                     <ul className="mt-3.5 flex flex-wrap gap-1.5" aria-label="포함 내용">
                       {item.bullets.map((bullet) => (
                         <li
