@@ -33,7 +33,7 @@ export function SettingsBriefing({
   difficultyValue,
   onDifficultyChange,
   onStart,
-  movementFamily,
+  activityFamily,
   cueFloorNotice,
   operationConfig,
 }: {
@@ -45,7 +45,7 @@ export function SettingsBriefing({
   difficultyValue: string;
   onDifficultyChange: (value: string) => void;
   onStart: () => void;
-  movementFamily?: ActivityFamilyDefinition | null;
+  activityFamily?: ActivityFamilyDefinition | null;
   cueFloorNotice?: string | null;
   operationConfig?: ActivityOperationConfig | null;
 }) {
@@ -58,9 +58,9 @@ export function SettingsBriefing({
       : null;
 
   const prepLine = useMemo(() => {
-    const mats = movementFamily
+    const mats = activityFamily
       ? resolveRequiredMatGuidance({
-          minMats: movementFamily.matRequirement.minMats,
+          minMats: activityFamily.matRequirement.minMats,
           participantScale: operationConfig?.participantScale ?? 'individual',
         }).recommended
       : 1;
@@ -74,7 +74,7 @@ export function SettingsBriefing({
             : null;
     const parts = [timingLabel, `매트 ${mats}장`].filter(Boolean);
     return parts.join(' · ');
-  }, [movementFamily, operationConfig]);
+  }, [activityFamily, operationConfig]);
 
   const padLayoutVariant = getSpomovePadLayoutVariant(preset);
 

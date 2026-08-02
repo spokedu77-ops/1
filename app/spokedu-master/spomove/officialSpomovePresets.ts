@@ -1353,14 +1353,10 @@ export function officialPresetSessionHref(
   preset: OfficialSpomovePreset,
   options?: {
     bgmPath?: string;
-    /** Public UI는 생성 금지. Legacy URL·테스트용으로만 사용 */
     autostart?: boolean;
     mode?: 'projector' | 'mobile';
     /** start | settings. 미지정 시 Session은 start로 해석 */
     entry?: 'start' | 'settings';
-    /** 명시 시에만 URL에 부착 */
-    movement?: string;
-    limb?: string;
     /** 미지정 시 프리셋 기본값. Session이 URL cue를 읽음 */
     cueSeconds?: number;
     /** 난이도 오버라이드 (numberCart/colorTracker/mole/goalkeeper 값) */
@@ -1382,8 +1378,6 @@ export function officialPresetSessionHref(
   if (options?.cueSeconds != null) params.set('cueSeconds', String(options.cueSeconds));
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');
-  if (options?.movement) params.set('movement', options.movement);
-  if (options?.limb) params.set('limb', options.limb);
   if (options?.difficulty) params.set('difficulty', options.difficulty);
   if (options?.operation) {
     const base: ActivityOperationConfig = {
@@ -1401,9 +1395,18 @@ export function officialPresetSessionHref(
 /** Public 생성기 — autostart·runtime movement를 절대 붙이지 않음 */
 export function publicOfficialPresetSessionHref(
   preset: OfficialSpomovePreset,
-  options?: Omit<NonNullable<Parameters<typeof officialPresetSessionHref>[1]>, 'autostart' | 'movement' | 'limb'>,
+  options?: Omit<NonNullable<Parameters<typeof officialPresetSessionHref>[1]>, 'autostart'>,
 ) {
-  return officialPresetSessionHref(preset, { ...options, autostart: false });
+  return officialPresetSessionHref(preset, {
+    entry: options?.entry,
+    mode: options?.mode,
+    cueSeconds: options?.cueSeconds,
+    difficulty: options?.difficulty,
+    operation: options?.operation,
+    hubView: options?.hubView,
+    bgmPath: options?.bgmPath,
+    autostart: false,
+  });
 }
 
 export function bgmDisplayName(path: string) {

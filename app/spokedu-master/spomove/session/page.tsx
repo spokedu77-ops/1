@@ -715,7 +715,7 @@ function SpomoveSessionContent() {
                 persistPresetPreference({ difficulty: value });
               }}
               onStart={beginConfiguredSession}
-              movementFamily={activityFamily}
+              activityFamily={activityFamily}
               cueFloorNotice={cueFloorNotice}
               operationConfig={operationCandidate}
             />

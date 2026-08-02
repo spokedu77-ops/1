@@ -14,15 +14,12 @@ import type { OfficialSpomovePreset } from './officialSpomovePresets';
 import { publicOfficialPresetSessionHref } from './officialSpomovePresets';
 import { buildSpomoveGuideDisplayModel, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 import type { SpomoveHubViewMode } from './spomoveHubNavigation';
-import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import { getActivityFamily } from './movements/activityFamilies';
-import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
-import { clampCueSpeedSec, resolveSessionCueSeconds } from './spomoveCueSpeed';
+import { resolveSessionCueSeconds } from './spomoveCueSpeed';
 import {
   buildDeclaredOperation,
   resolveRequiredMatGuidance,
 } from './operations';
-import { useProfile } from '../store';
 
 function usePreferredLaunchMode(): 'projector' | 'mobile' {
   const [mode, setMode] = useState<'projector' | 'mobile'>('projector');
@@ -95,20 +92,10 @@ export function SpomoveGuidelineSheet({
   onClose: () => void;
 }) {
   const launchMode = usePreferredLaunchMode();
-  const userProfile = useProfile();
-
-  const movementLayerEnabled = isSpomoveMovementLayerEnabled({
-    isAdmin: userProfile?.isAdmin,
-    userId: userProfile?.id,
-    userRole: userProfile?.isAdmin ? 'admin' : undefined,
-  });
 
   if (!preset) return null;
 
   const display = getSpomovePresetDisplayModel(preset);
-  const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
-
-  const officialRecommended = movementSummary?.officialRecommended ?? null;
 
   const family = preset.activityFamilyId ? getActivityFamily(preset.activityFamilyId) : null;
   const operationProfileId = preset.operationProfileId ?? family?.operationProfileId;
@@ -124,19 +111,16 @@ export function SpomoveGuidelineSheet({
         })
       : null;
 
-  const cueSeconds = officialRecommended
-    ? clampCueSpeedSec(resolveSessionCueSeconds(preset, null))
-    : resolveSessionCueSeconds(preset, null);
+  const cueSeconds = resolveSessionCueSeconds(preset, null);
 
   const startHref = publicOfficialPresetSessionHref(preset, {
     mode: launchMode,
     entry: 'start',
-    cueSeconds: officialRecommended ? cueSeconds : undefined,
     operation: declaredOperation,
     hubView: hubView === 'favorites' ? 'favorites' : undefined,
   });
 
-  const matCount = matGuidance?.recommended ?? movementSummary?.minMats ?? 1;
+  const matCount = matGuidance?.recommended ?? family?.matRequirement.minMats ?? 1;
   const prepLine = `매트 ${matCount}장 · 자극 ${cueSeconds}초`;
   const intervalLine =
     declaredOperation?.timing.pattern === 'interval'

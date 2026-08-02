@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
-import { officialPresetSessionHref, publicOfficialPresetSessionHref } from './officialSpomovePresets';
+import {
+  OFFICIAL_SPOMOVE_LIBRARY,
+  officialPresetSessionHref,
+  publicOfficialPresetSessionHref,
+} from './officialSpomovePresets';
 
 describe('public SPOMOVE session links', () => {
   const preset = OFFICIAL_SPOMOVE_LIBRARY.find((p) => p.isReady) ?? OFFICIAL_SPOMOVE_LIBRARY[0]!;
 
-  it('공개 실행 링크는 autostart와 runtime movement를 생성하지 않는다', () => {
+  it('creates public start links without autostart or runtime movement', () => {
     const href = publicOfficialPresetSessionHref(preset, {
       entry: 'start',
       cueSeconds: 3,
@@ -17,18 +20,29 @@ describe('public SPOMOVE session links', () => {
     expect(href).not.toContain('limb=');
   });
 
-  it('settings entry도 autostart 없음', () => {
+  it('ignores runtime movement options even when passed dynamically', () => {
+    const href = publicOfficialPresetSessionHref(preset, {
+      entry: 'start',
+      movement: 'handTouch',
+      limb: 'free',
+    } as never);
+    expect(href).toContain('entry=start');
+    expect(href).not.toContain('movement=');
+    expect(href).not.toContain('limb=');
+  });
+
+  it('keeps settings entry without autostart', () => {
     const href = publicOfficialPresetSessionHref(preset, { entry: 'settings' });
     expect(href).toContain('entry=settings');
     expect(href).not.toContain('autostart=');
   });
 
-  it('즐겨찾기 맥락에서 시작하면 hubView를 유지한다', () => {
+  it('preserves favorites hub return context', () => {
     const href = publicOfficialPresetSessionHref(preset, { entry: 'start', hubView: 'favorites' });
     expect(href).toContain('hubView=favorites');
   });
 
-  it('legacy officialPresetSessionHref는 autostart를 붙일 수 있다', () => {
+  it('keeps legacy official href autostart support', () => {
     const href = officialPresetSessionHref(preset, { autostart: true });
     expect(href).toContain('autostart=1');
   });

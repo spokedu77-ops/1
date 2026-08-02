@@ -13,8 +13,8 @@ import {
 import { officialPresetSessionHref } from './officialSpomovePresets';
 
 describe('spomoveCueSpeed', () => {
-  it('clamps to integer 2~6', () => {
-    expect(clampCueSpeedSec(1)).toBe(2);
+  it('clamps to integer 1~6', () => {
+    expect(clampCueSpeedSec(1)).toBe(1);
     expect(clampCueSpeedSec(3)).toBe(3);
     expect(clampCueSpeedSec(7)).toBe(6);
     expect(clampCueSpeedSec(4.4)).toBe(4);
@@ -70,23 +70,20 @@ describe('spomoveCueSpeed', () => {
     expect(parseCueSecondsQuery('nope')).toBeNull();
   });
 
-  it('session href can attach movement, cue, autostart, and difficulty', () => {
+  it('session href can attach cue, autostart, and difficulty but not runtime movement', () => {
     const preset = findOfficialSpomovePreset('reaction-cognition-space-direction-01')!;
     const href = officialPresetSessionHref(preset, {
       autostart: true,
-      movement: 'handTouch',
-      limb: 'free',
       cueSeconds: 4,
       difficulty: '2',
     });
     expect(href).toContain('autostart=1');
-    expect(href).toContain('movement=handTouch');
-    expect(href).toContain('limb=free');
+    expect(href).not.toContain('movement=');
+    expect(href).not.toContain('limb=');
     expect(href).toContain('cueSeconds=4');
     expect(href).toContain('difficulty=2');
     const settingsHref = officialPresetSessionHref(preset, {
-      movement: 'footTap',
-      limb: 'free',
+      entry: 'settings',
     });
     expect(settingsHref).not.toContain('autostart=');
     expect(settingsHref).not.toContain('cueSeconds=');

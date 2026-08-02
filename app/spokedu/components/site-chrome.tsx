@@ -288,69 +288,77 @@ export function SiteHeader() {
   };
 
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
-        onHero
-          ? 'border-b border-white/10 bg-[#0B1F46]/40 backdrop-blur-md'
-          : 'border-b border-[#DCE3EE]/90 bg-white/92 shadow-[0_1px_0_rgba(15,33,70,0.04)] backdrop-blur-xl'
-      }`}
-    >
-      <div className={`${siteContainer} flex h-14 items-center justify-between gap-3 sm:h-[3.75rem]`}>
-        <BrandLogo onDark={onHero} scrollHomeOnClick size="sm" />
+    <>
+      <header
+        className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
+          onHero
+            ? 'border-b border-white/10 bg-[#0B1F46]/40 backdrop-blur-md'
+            : 'border-b border-[#DCE3EE]/90 bg-white/92 shadow-[0_1px_0_rgba(15,33,70,0.04)] backdrop-blur-xl'
+        }`}
+      >
+        <div className={`${siteContainer} flex h-14 items-center justify-between gap-3 sm:h-[3.75rem]`}>
+          <BrandLogo onDark={onHero} scrollHomeOnClick size="sm" />
 
-        <nav className="hidden h-9 items-center gap-7 lg:flex" aria-label="주 메뉴">
-          {siteNav.map(renderDesktopEntry)}
-        </nav>
+          <nav className="hidden h-9 items-center gap-7 lg:flex" aria-label="주 메뉴">
+            {siteNav.map(renderDesktopEntry)}
+          </nav>
 
-        <div className="flex h-9 items-center gap-2">
-          <NavAnchor
-            href={`${SPOKEDU_BASE_PATH}/contact`}
-            trackLabel="header-contact"
-            className={`hidden h-9 items-center justify-center rounded-full px-5 text-[13px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
-              onHero
-                ? 'border border-white/35 bg-white text-[#0B1F46] hover:bg-white/90 focus-visible:outline-white'
-                : 'text-white focus-visible:outline-[#245DFF]'
-            }`}
-            style={onHero ? undefined : { backgroundColor: ATHLETIC_BLUE }}
-          >
-            상담하기
-          </NavAnchor>
+          <div className="flex h-9 items-center gap-2">
+            <NavAnchor
+              href={`${SPOKEDU_BASE_PATH}/contact`}
+              trackLabel="header-contact"
+              className={`hidden h-9 items-center justify-center rounded-full px-5 text-[13px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+                menuOpen
+                  ? 'pointer-events-none invisible'
+                  : onHero
+                    ? 'border border-white/35 bg-white text-[#0B1F46] hover:bg-white/90 focus-visible:outline-white'
+                    : 'text-white focus-visible:outline-[#245DFF]'
+              }`}
+              style={onHero || menuOpen ? undefined : { backgroundColor: ATHLETIC_BLUE }}
+            >
+              상담하기
+            </NavAnchor>
 
-          <button
-            type="button"
-            className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 lg:hidden ${
-              onHero
-                ? 'border-white/35 text-white focus-visible:outline-white'
-                : 'border-slate-300 text-[#0B1F46] focus-visible:outline-[#245DFF]'
-            } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-nav-panel"
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            <span className="sr-only">{menuOpen ? '메뉴 닫기' : '메뉴 열기'}</span>
-            {menuOpen ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
-            )}
-          </button>
+            <button
+              type="button"
+              className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 lg:hidden ${
+                onHero
+                  ? 'border-white/35 text-white focus-visible:outline-white'
+                  : 'border-slate-300 text-[#0B1F46] focus-visible:outline-[#245DFF]'
+              } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-nav-panel"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <span className="sr-only">{menuOpen ? '메뉴 닫기' : '메뉴 열기'}</span>
+              {menuOpen ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
+      {/*
+        헤더에 backdrop-blur가 있으면 fixed 자손이 헤더 박스에 묶여
+        오버레이 높이가 0에 가깝게 깨진다. 패널은 헤더 밖으로 둔다.
+      */}
       {menuOpen ? (
         <div
           id="mobile-nav-panel"
-          className="fixed inset-0 top-[57px] z-50 lg:hidden"
+          className="fixed inset-0 top-14 z-50 sm:top-[3.75rem] lg:hidden"
           style={{ backgroundColor: `${NAVY}f2` }}
           role="dialog"
           aria-modal="true"
           aria-label="모바일 메뉴"
         >
-          <nav className="flex flex-col px-5 py-4 backdrop-blur-md">
+          <nav className="flex h-full flex-col overflow-y-auto px-5 py-4 backdrop-blur-md">
             {siteNav.map(renderMobileEntry)}
             <div className="mt-4 grid gap-2">
               <NavAnchor
@@ -366,7 +374,7 @@ export function SiteHeader() {
           </nav>
         </div>
       ) : null}
-    </header>
+    </>
   );
 }
 
