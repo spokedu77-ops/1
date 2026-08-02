@@ -16,21 +16,18 @@ describe('canReproduceSpomoveSameSettings', () => {
       programTitle: 'color',
       action: 'spomove_started',
       occurredAt: new Date().toISOString(),
-      baseMovement: 'twoLegJump',
-      limbRule: 'free',
       cueSeconds: 3,
     };
     expect(canReproduceSpomoveSameSettings(activity, preset)).toBe(false);
   });
 
-  it('accepts Snapshot V2 with valid operation', () => {
+  it('accepts Snapshot V2 with valid operation without runtime movement', () => {
     const operation = buildDeclaredOperation(
       'immediateResponse',
       preset.recommendedOperation,
     );
     const snapshot = buildSpomoveSessionSnapshotV2({
       presetId: preset.id,
-      movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
       operationLayerStatus: 'ready',
       operation,
       cueSeconds: 3,

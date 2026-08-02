@@ -1,6 +1,4 @@
 import { getActivityFamily } from './activityFamilies';
-import { getMovementProfile } from './movementProfiles';
-import { isAllowedByFamily } from './movementResolve';
 import { clampCueSpeedSec } from '../spomoveCueSpeed';
 import {
   getSpomoveDifficultyKind,
@@ -36,14 +34,8 @@ export function canReproduceSpomoveSameSettings(
   const cue = clampCueSpeedSec(cueRaw);
   if (cue !== Math.round(cueRaw) && cueRaw < 2) return false;
 
-  const movement = snapshot.movement;
-  if (!movement) return false;
-
   const family = preset.activityFamilyId ? getActivityFamily(preset.activityFamilyId) : null;
-  const profile = preset.movementProfileId ? getMovementProfile(preset.movementProfileId) : null;
-  if (!family || !profile) return false;
-  if (profile.selectionMode === 'disabled') return false;
-  if (!isAllowedByFamily(movement, family, profile)) return false;
+  if (!family) return false;
 
   const difficultyKind = getSpomoveDifficultyKind(preset);
   if (difficultyKind) {

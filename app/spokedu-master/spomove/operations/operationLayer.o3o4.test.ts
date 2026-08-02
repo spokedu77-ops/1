@@ -111,24 +111,24 @@ describe('O3 Snapshot V2 discriminated union', () => {
   it('omits operation when legacyDisabled', () => {
     const snap = buildSpomoveSessionSnapshotV2({
       presetId: 'x',
-      movement: null,
       operationLayerStatus: 'legacyDisabled',
       cueSeconds: 3,
     });
     expect(snap.operationLayerStatus).toBe('legacyDisabled');
     expect('operation' in snap && (snap as { operation?: unknown }).operation).toBeFalsy();
+    expect('movement' in snap).toBe(false);
   });
 
   it('requires operation when ready', () => {
     const op = buildDeclaredOperation('immediateResponse');
     const snap = buildSpomoveSessionSnapshotV2({
       presetId: 'x',
-      movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
       operationLayerStatus: 'ready',
       operation: op,
       cueSeconds: 3,
     });
     expect(snap.operationLayerStatus).toBe('ready');
+    expect('movement' in snap).toBe(false);
     if (snap.operationLayerStatus !== 'legacyDisabled') {
       expect(snap.operation.timing.pattern).toBeTruthy();
     }

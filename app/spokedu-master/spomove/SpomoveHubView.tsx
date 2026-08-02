@@ -1037,8 +1037,6 @@ export default function SpomoveHubView() {
                   ? canReproduce
                     ? publicOfficialPresetSessionHref(preset, {
                         entry: 'start',
-                        movement: snapshot?.movement?.baseMovement ?? activity.baseMovement,
-                        limb: snapshot?.movement?.limbRule ?? activity.limbRule,
                         cueSeconds: snapshot?.cueSeconds ?? activity.cueSeconds,
                         difficulty: snapshot?.difficultyValue ?? activity.difficultyValue,
                         operation:
@@ -1051,10 +1049,9 @@ export default function SpomoveHubView() {
                 return (
                   <article key={`${activity.ownerId}-${activity.programId}-${activity.occurredAt}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="line-clamp-2 text-sm font-black text-slate-950">{title}</p>
-                    {activity.movementLabel ? (
+                    {activity.cueSeconds ? (
                       <p className="mt-1 text-[11px] font-semibold text-slate-500">
-                        {activity.movementLabel}
-                        {activity.cueSeconds ? ` · ${activity.cueSeconds}초` : ''}
+                        자극 {activity.cueSeconds}초
                       </p>
                     ) : null}
                     <div className="mt-3 grid gap-2">

@@ -18,10 +18,13 @@ describe('SPOKEDU MASTER class tools placement', () => {
   it('adds class tools to primary navigation', () => {
     const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
     const tabBar = read('app/spokedu-master/components/layout/TabBar.tsx');
+    const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
     const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 
-    expect(statusBar).toContain('/spokedu-master/class-tools');
-    expect(tabBar).toContain("key: 'class-tools'");
+    expect(statusBar).toContain('MASTER_NAV_ITEMS');
+    expect(navLabels).toContain('/spokedu-master/class-tools');
+    expect(tabBar).toContain("'class-tools': Wrench");
+    expect(tabBar).toContain("'class-tools': 'classTools'");
     expect(detail).not.toContain('/spokedu-master/class-tools');
   });
 

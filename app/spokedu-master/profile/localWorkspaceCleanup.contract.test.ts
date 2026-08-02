@@ -41,9 +41,12 @@ describe('profile local workspace cleanup contract', () => {
 });
 
 describe('local workspace persistence boundary', () => {
-  it('persists the workspace owner with store version 15', () => {
-    expect(storeSource).toContain('version: 15');
+  it('persists owner-scoped workspace fields with store version 16', () => {
+    expect(storeSource).toContain('version: 16');
     expect(storeSource).toContain('localWorkspaceOwnerId: state.localWorkspaceOwnerId');
+    expect(storeSource).toContain('classTimerMs: state.classTimerMs');
+    expect(storeSource).toContain('classTimerRunning: state.classTimerRunning');
+    expect(storeSource).toContain('classTimerStartedAt: state.classTimerStartedAt');
   });
 
   it('does not block protected routes when subscription sync fails', () => {

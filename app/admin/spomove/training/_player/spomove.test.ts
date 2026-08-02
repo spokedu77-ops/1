@@ -783,6 +783,7 @@ describe('training result summary', () => {
       'Color Tracker',
       'Goalkeeper',
       'Color Memory Grid',
+      'Virus Outbreak',
     ]);
     expect(MODES.reactTrain.levels.map((lv) => lv.name)).toEqual([
       '파도 피하기',
@@ -793,6 +794,7 @@ describe('training result summary', () => {
       '흰 공 찾기',
       '골키퍼 모드',
       '색 기억 그리드',
+      '바이러스 폭증',
     ]);
     // 화면 순번(1-based index) ≠ 엔진 id (예: 화면 4번 = 두더지 eng 6)
     expect(MODES.reactTrain.levels[3]?.id).toBe(6);

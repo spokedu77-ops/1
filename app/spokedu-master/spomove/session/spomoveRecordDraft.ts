@@ -4,7 +4,6 @@ type SpomoveRecordDraftInput = {
   elapsedMs?: number | null;
   preset: OfficialSpomovePreset;
   status: 'done' | 'ended';
-  movementLabel?: string | null;
 };
 
 export const SPOMOVE_DRAFT_STORAGE_PREFIX = 'spokedu-master:spomove-draft:';
@@ -21,12 +20,11 @@ function estimateCalories(minutes: number) {
   return `${min}-${max}kcal`;
 }
 
-export function buildSpomoveRecordDraft({ elapsedMs, preset, status, movementLabel }: SpomoveRecordDraftInput) {
+export function buildSpomoveRecordDraft({ elapsedMs, preset, status }: SpomoveRecordDraftInput) {
   const minutes = minutesFromElapsed(elapsedMs);
   const completionLabel = status === 'done' ? '완료' : '중도 종료';
   return [
     `[SPOMOVE 활동 기록 초안] ${preset.title} ${completionLabel}`,
-    movementLabel ? `사용한 동작: ${movementLabel}` : null,
     `실제 움직인 시간: 약 ${minutes}분`,
     `예상 활동량: 가벼운-중간 강도의 전신 움직임, 예상 소모 열량 ${estimateCalories(minutes)}`,
     `활동 효과: ${preset.axisTitle}을 중심으로 반응, 방향 전환, 신체 조절, 집중 유지 경험을 제공합니다.`,

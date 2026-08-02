@@ -60,6 +60,17 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(settingsBriefing).toContain('getSpomovePadLayoutVariant');
   });
 
+  it('2e) 일반 Session은 runtime movement를 저장·기록·URL 재생성하지 않는다', () => {
+    expect(session).not.toContain('readFamilyMovement');
+    expect(session).not.toContain('writeFamilyMovement');
+    expect(session).not.toContain('appendMovementUsageEvent');
+    expect(session).not.toContain('createMovementSessionId');
+    expect(session).not.toContain('parseMovementQuery');
+    expect(session).not.toContain('movementSource');
+    expect(session).not.toContain('movementLabel');
+    expect(session).not.toContain('사용한 동작');
+  });
+
   it('2c) Hub 시작·썸네일은 같은 확인 모달 루트', () => {
     expect(hub).toContain('<span>시작</span>');
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');

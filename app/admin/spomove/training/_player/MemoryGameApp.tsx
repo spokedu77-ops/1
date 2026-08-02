@@ -28,6 +28,7 @@ import { NumberCartReactionTraining, normalizeNumberCartRounds } from './compone
 import { ColorTrackerReactionTraining, normalizeColorTrackerRounds } from './components/ColorTrackerReactionTraining';
 import { GoalkeeperReactionTraining } from './components/GoalkeeperReactionTraining';
 import { ColorMemoryGridReactionTraining } from './components/ColorMemoryGridReactionTraining';
+import { VirusOutbreakReactionTraining } from './components/VirusOutbreakReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
@@ -171,6 +172,8 @@ type Settings = {
   colorMemoryGridSize: 3 | 4 | 5;
   /** reactTrain level 12 (색 기억 그리드): flicker=깜빡이 · oneshot=원샷 */
   colorMemoryGridMode: 'flicker' | 'oneshot';
+  /** reactTrain level 13 (바이러스 폭증): easy/normal/hard */
+  virusOutbreakDifficulty: 'easy' | 'normal' | 'hard';
   /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
   simonPoleCount: 1 | 2;
   /** ???????????????????????????????6???????????? 1~10??????????????????????????????????????????????ㅻ깹??????????????????????????????????????????*/
@@ -216,6 +219,7 @@ const defaultSettings: Settings = {
   goalkeeperTier: 2,
   colorMemoryGridSize: 4,
   colorMemoryGridMode: 'flicker',
+  virusOutbreakDifficulty: 'normal',
   simonPoleCount: 1,
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -286,6 +290,8 @@ export type MemoryGameAutoLaunch = {
   colorMemoryGridSize?: 3 | 4 | 5;
   /** reactTrain level 12 (색 기억 그리드): flicker=깜빡이 · oneshot=원샷 */
   colorMemoryGridMode?: 'flicker' | 'oneshot';
+  /** reactTrain level 13 (바이러스 폭증): easy/normal/hard */
+  virusOutbreakDifficulty?: 'easy' | 'normal' | 'hard';
   /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
   simonPoleCount?: 1 | 2;
   /** ???????????????????????????????ㅻ깹????????????????7??????0) ?????????????????????????????????산뭐??????????????????????????????????????????*/
@@ -337,6 +343,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       goalkeeperTier: s.goalkeeperTier,
       colorMemoryGridSize: s.colorMemoryGridSize,
       colorMemoryGridMode: s.colorMemoryGridMode,
+      virusOutbreakDifficulty: s.virusOutbreakDifficulty,
       simonPoleCount: s.simonPoleCount,
       memoryColorSlots: [...s.memoryColorSlots],
     },
@@ -2167,6 +2174,19 @@ export default function MemoryGameApp({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
+        ) : reactEngineLevel === 13 ? (
+          <VirusOutbreakReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
+            difficulty={
+              settings.virusOutbreakDifficulty === 'easy' || settings.virusOutbreakDifficulty === 'hard'
+                ? settings.virusOutbreakDifficulty
+                : 'normal'
+            }
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
         ) : reactEngineLevel === 12 ? (
           <ColorMemoryGridReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}

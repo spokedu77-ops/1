@@ -6,15 +6,15 @@ import { officialPresetSessionHref, publicOfficialPresetSessionHref } from './of
 describe('public SPOMOVE session links', () => {
   const preset = OFFICIAL_SPOMOVE_LIBRARY.find((p) => p.isReady) ?? OFFICIAL_SPOMOVE_LIBRARY[0]!;
 
-  it('공개 실행 링크는 autostart를 생성하지 않는다', () => {
+  it('공개 실행 링크는 autostart와 runtime movement를 생성하지 않는다', () => {
     const href = publicOfficialPresetSessionHref(preset, {
       entry: 'start',
-      movement: 'footTap',
-      limb: 'free',
       cueSeconds: 3,
     });
     expect(href).toContain('entry=start');
     expect(href).not.toContain('autostart=');
+    expect(href).not.toContain('movement=');
+    expect(href).not.toContain('limb=');
   });
 
   it('settings entry도 autostart 없음', () => {

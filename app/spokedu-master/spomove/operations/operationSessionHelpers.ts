@@ -1,7 +1,6 @@
 /**
  * Session/Recent helpers for Operation Layer (O3).
  */
-import type { MovementPick } from '../movements/movementTypes';
 import type {
   ActivityOperationConfig,
   ActivityOperationPatch,
@@ -35,7 +34,6 @@ export function timingPatternsForCapabilities(
 
 export function buildSpomoveSessionSnapshotV2(args: {
   presetId: string;
-  movement: MovementPick | null;
   operationLayerStatus: SpomoveSessionSnapshotV2['operationLayerStatus'];
   /** Candidate (pre-sanitize) — Recent 재현용. legacyDisabled면 omit */
   operation?: ActivityOperationConfig;
@@ -47,7 +45,6 @@ export function buildSpomoveSessionSnapshotV2(args: {
     return {
       schemaVersion: 2,
       presetId: args.presetId,
-      movement: args.movement,
       operationLayerStatus: 'legacyDisabled',
       cueSeconds: args.cueSeconds,
       difficultyKind: args.difficultyKind,
@@ -60,7 +57,6 @@ export function buildSpomoveSessionSnapshotV2(args: {
   return {
     schemaVersion: 2,
     presetId: args.presetId,
-    movement: args.movement,
     operationLayerStatus: args.operationLayerStatus,
     operation: args.operation,
     cueSeconds: args.cueSeconds,

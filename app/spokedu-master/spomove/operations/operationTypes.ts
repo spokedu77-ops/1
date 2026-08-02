@@ -129,7 +129,8 @@ export type SpomoveSessionSnapshotV2 =
   | {
       schemaVersion: 2;
       presetId: string;
-      movement: MovementPick | null;
+      /** @deprecated Runtime movement is no longer reproduced or displayed from session snapshots. */
+      movement?: MovementPick | null;
       operationLayerStatus: 'legacyDisabled';
       operation?: never;
       cueSeconds: number;
@@ -139,7 +140,8 @@ export type SpomoveSessionSnapshotV2 =
   | {
       schemaVersion: 2;
       presetId: string;
-      movement: MovementPick | null;
+      /** @deprecated Runtime movement is no longer reproduced or displayed from session snapshots. */
+      movement?: MovementPick | null;
       operationLayerStatus: 'ready' | 'sanitized' | 'fallback';
       operation: ActivityOperationConfig;
       cueSeconds: number;

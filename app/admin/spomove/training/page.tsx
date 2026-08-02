@@ -287,6 +287,8 @@ type LaunchSettings = {
   colorMemoryGridSize: 3 | 4 | 5;
   /** 시지각반응(reactTrain) 색 기억 그리드(12) 전용: flicker=깜빡이 · oneshot=원샷 */
   colorMemoryGridMode: 'flicker' | 'oneshot';
+  /** 시지각반응(reactTrain) 바이러스 폭증(13) 전용: easy/normal/hard */
+  virusOutbreakDifficulty: 'easy' | 'normal' | 'hard';
   /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
   simonPoleCount: 1 | 2;
   /** 변형 사분할(7·8·9) — easy 고정(레거시 필드) */
@@ -324,6 +326,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   goalkeeperTier: 2,
   colorMemoryGridSize: 4,
   colorMemoryGridMode: 'flicker',
+  virusOutbreakDifficulty: 'normal',
   simonPoleCount: 1,
   bodyLabelMode: 'easy',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
@@ -362,6 +365,10 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
         ? auto.colorMemoryGridSize
         : fallback.colorMemoryGridSize,
     colorMemoryGridMode: auto.colorMemoryGridMode === 'oneshot' ? 'oneshot' : fallback.colorMemoryGridMode,
+    virusOutbreakDifficulty:
+      auto.virusOutbreakDifficulty === 'easy' || auto.virusOutbreakDifficulty === 'hard'
+        ? auto.virusOutbreakDifficulty
+        : fallback.virusOutbreakDifficulty,
     simonPoleCount: auto.simonPoleCount === 2 ? 2 : fallback.simonPoleCount,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
@@ -470,6 +477,7 @@ function TrainingPortal({
     goalkeeperTier: launch.goalkeeperTier,
     colorMemoryGridSize: launch.colorMemoryGridSize,
     colorMemoryGridMode: launch.colorMemoryGridMode,
+    virusOutbreakDifficulty: launch.virusOutbreakDifficulty,
     simonPoleCount: launch.simonPoleCount,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
@@ -482,7 +490,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -1553,6 +1561,52 @@ function SettingsScreen({
                 </div>
               </section>
             </>
+          ) : null}
+
+          {/* 시지각반응 바이러스 폭증(13 / UI 9): 난이도 */}
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 13 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>배양 난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  개체 수·비율 차이·크기 착시·회색 돌연변이 방해가 단계별로 올라갑니다. 숫자는 세지 말고 양감으로 판단합니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 'easy' as const, label: '1', sub: '쉬움' },
+                  { id: 'normal' as const, label: '2', sub: '보통' },
+                  { id: 'hard' as const, label: '3', sub: '지옥' },
+                ]).map((opt) => {
+                  const active = launch.virusOutbreakDifficulty === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, virusOutbreakDifficulty: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
           ) : null}
 
           {/* 사이먼 폴 도형(1)·화살표(2): 기본 1개 / 응용 2개 */}

@@ -10,10 +10,13 @@ export type RecentProgramActivity = {
   occurredAt: string;
   /** Persist v10 compatibility only. New navigation paths are derived from action. */
   resumeHref?: string;
-  /** SPOMOVE 신체동작 레이어 (optional — 구 데이터 폴백) */
+  /** SPOMOVE activity family context for operation/mat guidance. */
   activityFamilyId?: string;
+  /** @deprecated Runtime movement is no longer stored for new SPOMOVE sessions. */
   baseMovement?: string;
+  /** @deprecated Runtime movement is no longer stored for new SPOMOVE sessions. */
   limbRule?: string;
+  /** @deprecated Runtime movement is no longer stored for new SPOMOVE sessions. */
   movementLabel?: string;
   cueSeconds?: number;
   /** 난이도 재현용 (optional) */

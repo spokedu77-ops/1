@@ -202,11 +202,10 @@ describe('local workspace migration', () => {
     expect(second.lessons).toEqual([lesson]);
   });
 
-  it('preserves spomoveSnapshot on recent activities', () => {
+  it('preserves operation spomoveSnapshot on recent activities without runtime movement', () => {
     const snapshot = {
       schemaVersion: 2 as const,
       presetId: 'reaction-cognition-full-color-03',
-      movement: { baseMovement: 'twoLegJump' as const, limbRule: 'free' as const },
       operationLayerStatus: 'ready' as const,
       operation: {
         startZone: 'onMat' as const,

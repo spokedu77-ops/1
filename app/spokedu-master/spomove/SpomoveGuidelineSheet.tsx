@@ -131,8 +131,6 @@ export function SpomoveGuidelineSheet({
   const startHref = publicOfficialPresetSessionHref(preset, {
     mode: launchMode,
     entry: 'start',
-    movement: officialRecommended?.baseMovement,
-    limb: officialRecommended?.limbRule,
     cueSeconds: officialRecommended ? cueSeconds : undefined,
     operation: declaredOperation,
     hubView: hubView === 'favorites' ? 'favorites' : undefined,

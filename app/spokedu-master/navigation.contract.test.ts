@@ -30,7 +30,8 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
 
     expect(tabBar).toContain('MASTER_NAV_ITEMS');
     expect(tabBar).toContain('href: `${basePath}/${tab.key}`');
-    expect(tabBar).toContain("capability: 'records'");
+    expect(tabBar).toContain('TAB_CAPABILITIES[item.key]');
+    expect(tabBar).toContain("activity: 'records'");
     expect(statusBar).toContain('href="/spokedu-master/profile"');
     expect(navLabels).toContain("key: 'library'");
     expect(navLabels).toContain("label: '수업자료'");

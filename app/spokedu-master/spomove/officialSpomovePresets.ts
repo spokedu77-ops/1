@@ -1398,10 +1398,10 @@ export function officialPresetSessionHref(
   return `/spokedu-master/spomove/session?${params.toString()}`;
 }
 
-/** Public 생성기 — autostart를 절대 붙이지 않음 */
+/** Public 생성기 — autostart·runtime movement를 절대 붙이지 않음 */
 export function publicOfficialPresetSessionHref(
   preset: OfficialSpomovePreset,
-  options?: Omit<NonNullable<Parameters<typeof officialPresetSessionHref>[1]>, 'autostart'>,
+  options?: Omit<NonNullable<Parameters<typeof officialPresetSessionHref>[1]>, 'autostart' | 'movement' | 'limb'>,
 ) {
   return officialPresetSessionHref(preset, { ...options, autostart: false });
 }

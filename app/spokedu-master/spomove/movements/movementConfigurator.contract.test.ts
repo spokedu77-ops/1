@@ -49,15 +49,17 @@ describe('MovementConfigurator contract', () => {
 
   it('설정 화면은 movement pick 변경 UI를 노출하지 않는다', () => {
     const session = read('app/spokedu-master/spomove/session/page.tsx');
-    expect(session).toContain('writeFamilyMovement');
+    expect(session).not.toContain('writeFamilyMovement');
+    expect(session).not.toContain('readFamilyMovement');
+    expect(session).not.toContain('appendMovementUsageEvent');
     expect(session).not.toContain('setMovementPick(pick)');
     expect(session).not.toContain('onMovementPickChange');
   });
 
-  it('Hub 카드 하단은 추천 동작과 난이도만 노출한다', () => {
+  it('Hub 카드 하단은 추천 동작과 활용 요소만 노출한다', () => {
     expect(hub).toContain('추천');
     expect(hub).toContain('동작');
-    expect(hub).toContain('난이도');
+    expect(hub).toContain('활용 요소');
     expect(hub).not.toContain('최근 설정');
     expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('설정');

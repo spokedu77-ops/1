@@ -12,7 +12,7 @@ import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 
-import { useMasterStore, useProfile } from '../../store';
+import { useMasterStore } from '../../store';
 import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import { EngineRouter, type EngineCompletePayload } from './EngineRouter';
 import { lockViewportScroll } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
@@ -40,26 +40,6 @@ import {
 } from '../spomoveCueSpeed';
 import { buildSpomoveRecordDraft, buildSpomoveRecordHref } from './spomoveRecordDraft';
 import { getActivityFamily } from '../movements/activityFamilies';
-import { isSpomoveMovementLayerEnabled } from '../movements/movementFlag';
-import { getMovementProfile } from '../movements/movementProfiles';
-import {
-  parseMovementQuery,
-  resolveEffectiveMovement,
-  resolveMovementConfiguration,
-} from '../movements/movementResolve';
-import {
-  readFamilyMovement,
-  writeFamilyMovement,
-} from '../movements/movementStorage';
-import {
-  appendMovementUsageEvent,
-  createMovementSessionId,
-} from '../movements/movementUsage';
-import type {
-  MovementPick,
-  MovementResolutionStatus,
-  ResolvedMovementConfiguration,
-} from '../movements/movementTypes';
 import { SessionSetupShell } from './SessionSetupShell';
 import { StartBriefing } from './StartBriefing';
 import { SettingsBriefing } from './SettingsBriefing';
@@ -145,16 +125,6 @@ function UnsupportedPreset() {
 function SpomoveSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userProfile = useProfile();
-  const movementLayerEnabled = useMemo(
-    () =>
-      isSpomoveMovementLayerEnabled({
-        isAdmin: userProfile?.isAdmin,
-        userId: userProfile?.id,
-        userRole: userProfile?.isAdmin ? 'admin' : undefined,
-      }),
-    [userProfile?.id, userProfile?.isAdmin],
-  );
   const presetId = searchParams.get('preset') ?? '';
   const baseOfficialPreset = useMemo(() => findOfficialSpomovePreset(presetId), [presetId]);
   const difficultyKind = useMemo(
@@ -220,88 +190,10 @@ function SpomoveSessionContent() {
     return '';
   }, [bgmList, officialPreset, requestedBgmPath]);
 
-  const movementFamily = useMemo(() => {
-    if (!movementLayerEnabled || !officialPreset?.activityFamilyId) return null;
+  const activityFamily = useMemo(() => {
+    if (!officialPreset?.activityFamilyId) return null;
     return getActivityFamily(officialPreset.activityFamilyId);
-  }, [movementLayerEnabled, officialPreset?.activityFamilyId]);
-
-  const movementProfile = useMemo(() => {
-    if (!movementLayerEnabled || !officialPreset?.movementProfileId) return null;
-    return getMovementProfile(officialPreset.movementProfileId);
-  }, [movementLayerEnabled, officialPreset]);
-
-  const urlMovement = useMemo(
-    () => parseMovementQuery(searchParams.get('movement'), searchParams.get('limb')),
-    [searchParams],
-  );
-
-  const [movementPick, setMovementPick] = useState<MovementPick | null>(null);
-  const [movementSource, setMovementSource] = useState<'recommended' | 'saved' | 'url' | 'changed'>(
-    'recommended',
-  );
-  const [movementResolutionStatus, setMovementResolutionStatus] =
-    useState<MovementResolutionStatus>('pending');
-  const movementSessionIdRef = useRef(createMovementSessionId());
-
-  useEffect(() => {
-    if (!movementLayerEnabled) {
-      setMovementPick(null);
-      setMovementResolutionStatus('disabled');
-      return;
-    }
-    if (!officialPreset) {
-      setMovementPick(null);
-      setMovementResolutionStatus('pending');
-      return;
-    }
-    if (!movementFamily || !movementProfile) {
-      setMovementPick(null);
-      setMovementResolutionStatus('legacyFallback');
-      if (typeof console !== 'undefined') {
-        console.warn(
-          `[spomove-movement] legacyFallback session: preset=${officialPreset.id} missing family/profile`,
-        );
-      }
-      return;
-    }
-    if (movementProfile.selectionMode === 'disabled') {
-      setMovementPick(null);
-      setMovementResolutionStatus('disabled');
-      return;
-    }
-    const savedMovement = readFamilyMovement(movementFamily.id);
-    const resolved = resolveEffectiveMovement({
-      profile: movementProfile,
-      family: movementFamily,
-      urlMovement,
-      savedMovement,
-      presetRecommendedMovement: officialPreset.recommendedMovement,
-    });
-    setMovementPick(resolved);
-    setMovementResolutionStatus('ready');
-    if (
-      urlMovement &&
-      resolved &&
-      urlMovement.baseMovement === resolved.baseMovement &&
-      urlMovement.limbRule === resolved.limbRule
-    ) {
-      setMovementSource('url');
-    } else if (
-      resolved &&
-      savedMovement &&
-      savedMovement.baseMovement === resolved.baseMovement &&
-      savedMovement.limbRule === resolved.limbRule
-    ) {
-      setMovementSource('saved');
-    } else {
-      setMovementSource('recommended');
-    }
-  }, [movementFamily, movementLayerEnabled, movementProfile, officialPreset, urlMovement]);
-
-  const resolvedMovement: ResolvedMovementConfiguration | null = useMemo(() => {
-    if (movementResolutionStatus !== 'ready' || !movementProfile || !movementPick) return null;
-    return resolveMovementConfiguration(movementPick, movementProfile);
-  }, [movementPick, movementProfile, movementResolutionStatus]);
+  }, [officialPreset?.activityFamilyId]);
 
   const operationCapabilities = useMemo(() => {
     if (!officialPreset) return { interval: false, shuttle: false };
@@ -316,13 +208,13 @@ function SpomoveSessionContent() {
   >('pending');
 
   useEffect(() => {
-    if (!movementLayerEnabled || !officialPreset || !movementFamily) {
+    if (!officialPreset || !activityFamily) {
       setOperationCandidate(null);
       setOperationLayerStatus('legacyDisabled');
       return;
     }
     const resolved = resolveOperationLayer({
-      familyOperationProfileId: movementFamily.operationProfileId,
+      familyOperationProfileId: activityFamily.operationProfileId,
       presetOperationProfileId: officialPreset.operationProfileId,
       recommendedOperation: officialPreset.recommendedOperation,
       // 일반 실행: Preference operationPatch 미적용 (URL/Recent 재현만 incoming)
@@ -334,17 +226,16 @@ function SpomoveSessionContent() {
     setOperationCandidate(resolved.candidate);
     setOperationLayerStatus(resolved.status);
   }, [
-    movementFamily,
-    movementLayerEnabled,
+    activityFamily,
     officialPreset,
     operationCapabilities,
     urlOperation,
   ]);
 
   const resolvedOperationLayer = useMemo(() => {
-    if (!movementFamily || !officialPreset || !operationCandidate) return null;
+    if (!activityFamily || !officialPreset || !operationCandidate) return null;
     return resolveOperationLayer({
-      familyOperationProfileId: movementFamily.operationProfileId,
+      familyOperationProfileId: activityFamily.operationProfileId,
       presetOperationProfileId: officialPreset.operationProfileId,
       recommendedOperation: officialPreset.recommendedOperation,
       preference: {
@@ -355,17 +246,17 @@ function SpomoveSessionContent() {
       capabilities: operationCapabilities,
       activityFamilyId: officialPreset.activityFamilyId,
     });
-  }, [movementFamily, officialPreset, operationCandidate, operationCapabilities]);
+  }, [activityFamily, officialPreset, operationCandidate, operationCapabilities]);
 
   const effectiveOperation = resolvedOperationLayer?.effective ?? null;
 
   const matGuidance = useMemo(() => {
-    if (!movementFamily || !operationCandidate || operationLayerStatus === 'legacyDisabled') return null;
+    if (!activityFamily || !operationCandidate || operationLayerStatus === 'legacyDisabled') return null;
     return resolveRequiredMatGuidance({
-      minMats: movementFamily.matRequirement.minMats,
+      minMats: activityFamily.matRequirement.minMats,
       participantScale: operationCandidate.participantScale,
     });
-  }, [movementFamily, operationCandidate, operationLayerStatus]);
+  }, [activityFamily, operationCandidate, operationLayerStatus]);
 
   const persistPresetPreference = useCallback(
     (next: { cue?: number; difficulty?: string }) => {
@@ -383,9 +274,6 @@ function SpomoveSessionContent() {
   );
 
   const canStartSession =
-    (movementResolutionStatus === 'ready' ||
-      movementResolutionStatus === 'disabled' ||
-      movementResolutionStatus === 'legacyFallback') &&
     difficultyReady &&
     operationLayerStatus !== 'pending';
 
@@ -457,7 +345,6 @@ function SpomoveSessionContent() {
           elapsedMs: sessionResult.elapsedMs,
           preset: officialPreset,
           status: state === 'done' ? 'done' : 'ended',
-          movementLabel: resolvedMovement?.displayLabel,
         }),
       )
     : program
@@ -512,20 +399,6 @@ function SpomoveSessionContent() {
       setActivationBlocked(fsBlocked ? 'fullscreenBlocked' : null);
     }
 
-    if (movementResolutionStatus === 'ready' && movementPick && officialPreset.activityFamilyId) {
-      writeFamilyMovement(officialPreset.activityFamilyId, movementPick);
-      appendMovementUsageEvent({
-        eventType: 'session_started',
-        sessionId: movementSessionIdRef.current,
-        presetId: officialPreset.id,
-        activityFamilyId: officialPreset.activityFamilyId,
-        baseMovement: movementPick.baseMovement,
-        limbRule: movementPick.limbRule,
-        source: movementSource,
-        cueSeconds: effectiveCueSeconds,
-      });
-    }
-
     sessionStartedAtRef.current = Date.now();
     setState('running');
     const display = getSpomovePresetDisplayModel(officialPreset);
@@ -533,7 +406,6 @@ function SpomoveSessionContent() {
       operationLayerStatus === 'legacyDisabled' || !operationCandidate
         ? buildSpomoveSessionSnapshotV2({
             presetId: officialPreset.id,
-            movement: movementPick,
             operationLayerStatus: 'legacyDisabled',
             cueSeconds: effectiveCueSeconds,
             difficultyKind: difficultyKind ?? undefined,
@@ -541,7 +413,6 @@ function SpomoveSessionContent() {
           })
         : buildSpomoveSessionSnapshotV2({
             presetId: officialPreset.id,
-            movement: movementPick,
             operationLayerStatus:
               operationLayerStatus === 'pending' ? 'ready' : operationLayerStatus,
             operation: operationCandidate,
@@ -555,9 +426,6 @@ function SpomoveSessionContent() {
       action: 'spomove_started',
       occurredAt: new Date().toISOString(),
       activityFamilyId: officialPreset.activityFamilyId,
-      baseMovement: movementPick?.baseMovement,
-      limbRule: movementPick?.limbRule,
-      movementLabel: resolvedMovement?.displayLabel,
       cueSeconds: effectiveCueSeconds,
       difficultyKind: difficultyKind ?? undefined,
       difficultyValue: difficultyKind ? difficultyValue : undefined,
@@ -568,14 +436,10 @@ function SpomoveSessionContent() {
     difficultyValue,
     effectiveCueSeconds,
     launchMode,
-    movementPick,
-    movementResolutionStatus,
-    movementSource,
     officialPreset,
     operationCandidate,
     operationLayerStatus,
     recordRecentProgramActivity,
-    resolvedMovement,
     selectedBgmPath,
     soundEnabled,
     stopBgm,
@@ -608,7 +472,6 @@ function SpomoveSessionContent() {
     lockViewportScroll();
     startLockedRef.current = true;
     setSessionResult(null);
-    movementSessionIdRef.current = createMovementSessionId();
     sessionStartedAtRef.current = null;
 
     if (launchMode === 'projector' && !document.fullscreenElement) {
@@ -634,19 +497,6 @@ function SpomoveSessionContent() {
     exitFullscreenAfterSession();
     const startedAt = sessionStartedAtRef.current;
     const fallbackElapsedMs = startedAt ? Math.max(1, Date.now() - startedAt) : 0;
-    // Intro 중 이탈: session_started가 없으므로 completed/exited도 남기지 않음
-    if (startedAt && movementPick && officialPreset.activityFamilyId) {
-      appendMovementUsageEvent({
-        eventType: nextState === 'done' ? 'session_completed' : 'session_exited',
-        sessionId: movementSessionIdRef.current,
-        presetId: officialPreset.id,
-        activityFamilyId: officialPreset.activityFamilyId,
-        baseMovement: movementPick.baseMovement,
-        limbRule: movementPick.limbRule,
-        source: movementSource,
-        cueSeconds: effectiveCueSeconds,
-      });
-    }
     setSessionResult({
       engineMode: payload?.engineMode ?? officialPreset.engine.mode,
       engineLevel: payload?.engineLevel ?? officialPreset.engine.level,
@@ -657,10 +507,7 @@ function SpomoveSessionContent() {
     });
     setState(nextState);
   }, [
-    effectiveCueSeconds,
     exitFullscreenAfterSession,
-    movementPick,
-    movementSource,
     officialPreset,
     stopBgm,
   ]);
@@ -713,8 +560,6 @@ function SpomoveSessionContent() {
     const href = publicOfficialPresetSessionHref(officialPreset, {
       entry: 'start',
       mode: launchMode,
-      movement: movementPick?.baseMovement,
-      limb: movementPick?.limbRule,
       cueSeconds: effectiveCueSeconds,
       difficulty: difficultyKind ? difficultyValue : undefined,
       operation:
@@ -730,7 +575,6 @@ function SpomoveSessionContent() {
     effectiveCueSeconds,
     exitFullscreenAfterSession,
     launchMode,
-    movementPick,
     officialPreset,
     operationCandidate,
     operationLayerStatus,
@@ -871,7 +715,7 @@ function SpomoveSessionContent() {
                 persistPresetPreference({ difficulty: value });
               }}
               onStart={beginConfiguredSession}
-              movementFamily={movementFamily}
+              movementFamily={activityFamily}
               cueFloorNotice={cueFloorNotice}
               operationConfig={operationCandidate}
             />
@@ -902,19 +746,16 @@ function SpomoveSessionContent() {
             onBack={leaveSession}
             onRetry={reopenStartConfirmation}
             sessionSettings={
-              resolvedMovement
-                ? {
-                    title: '사용한 동작',
-                    primary: resolvedMovement.displayLabel,
-                    secondary: [
-                      matGuidance ? `매트 ${matGuidance.recommended}장` : '매트 1장',
-                      `자극 ${effectiveCueSeconds}초`,
-                      operationSummary,
-                    ]
-                      .filter(Boolean)
-                      .join(' · '),
-                  }
-                : null
+              {
+                title: '수업 설정',
+                primary: operationSummary ?? displayModel?.durationLabel ?? `자극 ${effectiveCueSeconds}초`,
+                secondary: [
+                  matGuidance ? `매트 ${matGuidance.recommended}장` : '매트 1장',
+                  `자극 ${effectiveCueSeconds}초`,
+                ]
+                  .filter(Boolean)
+                  .join(' · '),
+              }
             }
             footer={(
               <div className="grid grid-cols-1 gap-1.5 min-[420px]:grid-cols-3">
