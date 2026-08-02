@@ -38,6 +38,7 @@ type TabContent = {
 };
 
 const CONTACT_HREF = '/spokedu/contact?type=dispatch';
+const CATALOG_HREF = '/spokedu/programs/spomove/catalog';
 
 const responseStages: InfoCard[] = [
   {
@@ -556,7 +557,17 @@ export default function SpomoveCatalogTabs() {
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SELECTED MATERIAL</p>
             <h2 className={`mt-2 text-2xl font-black leading-tight tracking-[-0.035em] text-[#14213A] sm:text-3xl ${koreanText}`}>{active.label}</h2>
           </div>
-          <p className={`max-w-3xl text-sm leading-[1.75] text-[#536279] sm:text-base ${koreanText}`}>{active.description}</p>
+          <div className="flex flex-col gap-4 lg:items-start">
+            <p className={`max-w-3xl text-sm leading-[1.75] text-[#536279] sm:text-base ${koreanText}`}>{active.description}</p>
+            {active.id === 'catalog' ? (
+              <Link
+                href={CATALOG_HREF}
+                className={`${brandFocusRing} inline-flex min-h-12 items-center justify-center rounded-full bg-[#245DFF] px-6 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(36,93,255,0.22)] transition hover:bg-[#174BE6]`}
+              >
+                전체 프로그램 카탈로그 보기
+              </Link>
+            ) : null}
+          </div>
         </div>
 
         {active.sections.map((section) => (

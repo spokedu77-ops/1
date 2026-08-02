@@ -42,3 +42,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## SPOMOVE Notion Catalog
+
+`/spokedu/programs/spomove/catalog` displays the public Notion catalog URL from `SPOMOVE_NOTION_CATALOG_URL`.
+
+1. Notion 페이지에서 공유 → 게시를 실행합니다.
+2. “이 페이지 임베드하기”에서 공개 주소를 확인합니다.
+3. Vercel Project Settings → Environment Variables로 이동합니다.
+4. `SPOMOVE_NOTION_CATALOG_URL`을 등록합니다.
+5. Production, Preview, Development에 필요한 범위로 적용합니다.
+6. 재배포합니다.
+
+이 값은 비밀값은 아니지만 소스코드에 URL을 직접 하드코딩하지 않습니다.

@@ -10,8 +10,9 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isContactPage = pathname === '/spokedu/contact';
   const isHomePage = pathname === '/spokedu';
-  /** Home만 full-bleed. SPOMOVE 탭 페이지는 일반 컨테이너(헤더 여백·패딩) 유지 */
-  const isFullBleedPage = isHomePage;
+  const isSpomoveCatalogPage = pathname === '/spokedu/programs/spomove/catalog';
+  /** Full-bleed pages own their header spacing and horizontal padding. */
+  const isFullBleedPage = isHomePage || isSpomoveCatalogPage;
 
   useEffect(() => {
     const run = () => scrollSpokeduToTopOrHash();
@@ -39,7 +40,7 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
       >
         {children}
       </main>
-      {isContactPage ? null : <SiteFooter />}
+      {isContactPage || isSpomoveCatalogPage ? null : <SiteFooter />}
     </>
   );
 }
