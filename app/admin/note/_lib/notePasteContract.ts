@@ -76,12 +76,20 @@ export function resolveCrossSelectClipboardPlain(options: {
   return options.plainFallback;
 }
 
-/** TipTap/문서 핸들러가 구조 paste로 넘겨야 하는지 */
-export function shouldApplyStructuralPasteSpecs(specs: ReadonlyArray<PastedBlockSpec>): boolean {
+/** TipTap이 구조 paste로 claim해야 하는지 — applyPastedBlockSpecs 게이트와 동일 축 */
+export function shouldClaimStructuralPasteSpecs(specs: ReadonlyArray<PastedBlockSpec>): boolean {
   if (specs.length === 0) return false;
   if (specs.length > 1) return true;
   const only = specs[0];
   if (!only) return false;
   if (isStructuralHtmlPasteSpec(only)) return true;
-  return only.type !== 'text' || Boolean(only.html?.trim());
+  if ((only.listNestLevel ?? 0) > 0) return true;
+  if ((only.children?.length ?? 0) > 0) return true;
+  // 단일 text(+inline html)는 TipTap 인라인 paste. 그 외 타입은 구조 적용.
+  return only.type !== 'text';
+}
+
+/** TipTap/문서 핸들러가 구조 paste로 넘겨야 하는지 */
+export function shouldApplyStructuralPasteSpecs(specs: ReadonlyArray<PastedBlockSpec>): boolean {
+  return shouldClaimStructuralPasteSpecs(specs);
 }

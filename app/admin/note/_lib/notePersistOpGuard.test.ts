@@ -119,6 +119,20 @@ describe('note persist op guard', () => {
     expect(() => assertPersistOpIsSafe(op, [parent])).toThrow(/cannot nest under todo/);
   });
 
+  it('blocks same-document create when parent id is missing from snapshot', () => {
+    const op: NotePersistOp = {
+      type: 'createBlock',
+      id: 'orphan',
+      documentId: 'doc-1',
+      blockType: 'todo',
+      content: { text: 'x', checked: false },
+      order_index: 0,
+      parent_block_id: 'missing-parent',
+    };
+
+    expect(() => assertPersistOpIsSafe(op, [block('a', 0)])).toThrow(/missing parent/);
+  });
+
   it('allows todo nested under todo create', () => {
     const parent: NoteBlock = {
       ...block('todo-parent', 0),

@@ -1,5 +1,7 @@
 import { getBlocksInParent } from '@/app/lib/note/noteBlockTree';
-import { contentForPastedBlock, type PastedBlockSpec } from './notePasteBlocks';
+import { canPlaceBlockTypeInParent } from '@/app/lib/note/noteBlockPolicy';
+import { contentForPastedBlock, isStructuralHtmlPasteSpec, type PastedBlockSpec } from './notePasteBlocks';
+import { textLikeContentIsBlank } from './noteInputContract';
 import { mergeBlockContentWithStore } from './noteContentPatch';
 import { resolveInsertIndexAfterBlock } from './noteInsertPosition';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
@@ -34,6 +36,12 @@ function isNestablePasteSpec(spec: PastedBlockSpec): boolean {
     || spec.type === 'todo';
 }
 
+function isBlankPasteSpec(spec: PastedBlockSpec): boolean {
+  if (isStructuralHtmlPasteSpec(spec)) return false;
+  if ((spec.children?.length ?? 0) > 0) return false;
+  return textLikeContentIsBlank(contentForPastedBlock(spec, {}));
+}
+
 function parentInsertKey(parentId: string | null): string {
   return parentId ?? '__root__';
 }
@@ -44,6 +52,32 @@ export function resolvePasteSourceContent(block: NoteBlock): Record<string, unkn
     | Record<string, unknown>
     | undefined;
   return (mergeBlockContentWithStore(base, storeContent) ?? base) as Record<string, unknown>;
+}
+
+/**
+ * nest stack이 가리키는 부모가 정책상 불가면 허용 조상(또는 root)으로 승격.
+ */
+export function resolvePasteNestParentId(
+  blocks: ReadonlyArray<Pick<NoteBlock, 'id' | 'type' | 'parent_block_id'>>,
+  preferredParentId: string | null,
+  movingType: string,
+  fallbackParentId: string | null,
+): string | null {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  let candidate: string | null = preferredParentId;
+  const seen = new Set<string>();
+  while (true) {
+    if (candidate && seen.has(candidate)) return fallbackParentId;
+    if (candidate) seen.add(candidate);
+    const parentType = candidate ? (byId.get(candidate)?.type ?? null) : null;
+    if (candidate == null || parentType != null) {
+      if (canPlaceBlockTypeInParent(movingType, parentType)) return candidate;
+    }
+    if (!candidate) {
+      return canPlaceBlockTypeInParent(movingType, null) ? null : fallbackParentId;
+    }
+    candidate = byId.get(candidate)?.parent_block_id ?? null;
+  }
 }
 
 export async function insertPastedBlockSpecsAfterAnchor(
@@ -144,11 +178,20 @@ async function insertSpecsAmongSiblings(
   const stack = [...listParentStack];
 
   for (const spec of specs) {
-    let targetParentId = parentId;
+    if (isBlankPasteSpec(spec)) continue;
+
+    let preferredParentId = parentId;
     if (isNestablePasteSpec(spec)) {
       const level = spec.listNestLevel ?? 0;
-      targetParentId = level === 0 ? parentId : (stack[level - 1] ?? parentId);
+      preferredParentId = level === 0 ? parentId : (stack[level - 1] ?? parentId);
     }
+
+    const targetParentId = resolvePasteNestParentId(
+      ctx.blocksRef.current,
+      preferredParentId,
+      spec.type,
+      parentId,
+    );
 
     const parentKey = parentInsertKey(targetParentId);
     if (!insertIndexByParent.has(parentKey)) {
@@ -165,7 +208,9 @@ async function insertSpecsAmongSiblings(
       clampedIndex,
       { content, focus: false, registerUndo: false, reason: 'paste' },
     );
-    if (!created) continue;
+    if (!created) {
+      throw new Error(`[Note] paste create failed: ${spec.type} under ${targetParentId ?? 'root'}`);
+    }
 
     lastFocusId = created.id;
     lastFocusPart = created.type === 'toggle' ? 'title' : 'editor';

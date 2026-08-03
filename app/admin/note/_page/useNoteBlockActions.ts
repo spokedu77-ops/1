@@ -41,6 +41,8 @@ import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
 import { notePointerTargetElement } from '../_lib/notePointerTarget';
 import { noteWhitespaceClickMayCreateBlocks } from '../_lib/noteWhitespaceContract';
 import { buildContentForTypeChange, getBlockedTypeChangeReason } from '../_lib/noteBlockTypeChange';
+import { canPlaceBlockTypeInParent } from '@/app/lib/note/noteBlockPolicy';
+import { getBlocksInParent } from '@/app/lib/note/noteBlockTree';
 import {
   canSplitMultilinePasteToBlocks,
   normalizeMultilinePasteSpecsForAnchor,
@@ -379,20 +381,47 @@ export function useNoteBlockActions(options: {
         : block.type === 'toggle' ? 'editor'
           : (focusedEditorPartRef.current ?? 'editor');
 
+    const reparentParentId = latestBlock.parent_block_id ?? null;
+    const illegalChildren = blocksRef.current.filter((item) => (
+      item.parent_block_id === block.id
+      && !canPlaceBlockTypeInParent(item.type, type)
+    ));
+    const parentSiblings = getBlocksInParent(blocksRef.current, reparentParentId);
+    const maxParentOrder = parentSiblings.reduce(
+      (max, item) => Math.max(max, item.order_index),
+      -1,
+    );
+    const childReparentPatches = illegalChildren.map((child, index) => ({
+      id: child.id,
+      parent_block_id: reparentParentId,
+      order_index: maxParentOrder + 1 + index,
+    }));
+    const reparentById = new Map(childReparentPatches.map((patch) => [patch.id, patch]));
+
     try {
       const nextBlocks = await documentEngine.applyStructureCommand({
-        nextBlocks: blocksRef.current.map((item) => (
-          item.id === block.id
-            ? { ...item, type, content: nextContent }
-            : item
-        )),
-        affectedIds: [block.id],
+        nextBlocks: blocksRef.current.map((item) => {
+          if (item.id === block.id) {
+            return { ...item, type, content: nextContent };
+          }
+          const reparent = reparentById.get(item.id);
+          if (!reparent) return item;
+          return {
+            ...item,
+            parent_block_id: reparent.parent_block_id,
+            order_index: reparent.order_index,
+          };
+        }),
+        affectedIds: [block.id, ...illegalChildren.map((child) => child.id)],
         orders: [],
-        fieldPatches: [{
-          id: block.id,
-          type,
-          content: nextContent,
-        }],
+        fieldPatches: [
+          {
+            id: block.id,
+            type,
+            content: nextContent,
+          },
+          ...childReparentPatches,
+        ],
         createdBlocks: [],
         removedBlocks: [],
       });
@@ -498,9 +527,19 @@ export function useNoteBlockActions(options: {
         clearTipTapHistory(editor);
       },
     };
-    const { lastFocusId, lastFocusPart } = mode === 'fill-anchor'
-      ? await insertPastedBlockSpecsAfterAnchor(pasteCtx, block, normalizedSpecs, sourceContent)
-      : await insertPastedBlockSpecsAfterBlock(pasteCtx, block, normalizedSpecs, sourceContent);
+    let lastFocusId: string;
+    let lastFocusPart: 'title' | 'editor';
+    try {
+      const inserted = mode === 'fill-anchor'
+        ? await insertPastedBlockSpecsAfterAnchor(pasteCtx, block, normalizedSpecs, sourceContent)
+        : await insertPastedBlockSpecsAfterBlock(pasteCtx, block, normalizedSpecs, sourceContent);
+      lastFocusId = inserted.lastFocusId;
+      lastFocusPart = inserted.lastFocusPart;
+    } catch (error) {
+      devLogger.error('[Note] applyPastedBlockSpecs', error);
+      setError(error instanceof Error ? error.message : '붙여넣기 실패');
+      return;
+    }
     // flush는 저장 신뢰용 — UI 포커스 후 백그라운드로 (붙여넣기 체감 지연 완화)
     if (documentEngine.hasPendingContent()) {
       void documentEngine.flushContentPatches();
@@ -525,6 +564,7 @@ export function useNoteBlockActions(options: {
     focusBlockEditor,
     blocksRef,
     documentEngine,
+    setError,
   ]);
 
   const handleMultilinePaste = useCallback(async (block: NoteBlock, specs: PastedBlockSpec[]) => {

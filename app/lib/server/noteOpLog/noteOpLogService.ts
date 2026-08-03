@@ -200,12 +200,32 @@ function softDeleteMetaMatches(
 ): boolean {
   const id = String(row.id);
   const meta = deleteMeta?.find((item) => item.id === id);
+  // meta 없음/updated_at null: 빈 블록만 삭제 (실수 wipe 방지)
   if (!meta) {
     return !hasStructuredContent(row.content);
   }
   const expectedUpdatedAt = meta.updated_at == null ? null : String(meta.updated_at);
   if (!expectedUpdatedAt) return !hasStructuredContent(row.content);
-  return String(row.updated_at ?? '') === expectedUpdatedAt;
+  // Intent delete: updated_at이 있으면 OCC mismatch여도 삭제한다.
+  // (mismatch 시 skip+ack하면 leave exclude가 풀리며 좀비가 부활함)
+  return true;
+}
+
+/**
+ * 아직 살아있는 요청 id만 고른다. meta로 막힌 structured+null-meta id는 제외.
+ * 이미 삭제된 id는 멱등 성공으로 취급(목록에 넣지 않음).
+ */
+export function resolveIntentSoftDeleteIds(options: {
+  requestedIds: ReadonlyArray<string>;
+  rows: ReadonlyArray<Record<string, unknown>>;
+  deleteMeta?: Array<{ id: string; updated_at?: string | null }>;
+}): string[] {
+  const requested = new Set(options.requestedIds.map(String));
+  return options.rows
+    .filter((row) => requested.has(String(row.id)))
+    .filter((row) => !row.deleted_at)
+    .filter((row) => softDeleteMetaMatches(row, options.deleteMeta))
+    .map((row) => String(row.id));
 }
 
 async function filterSoftDeleteIdsByMeta(
@@ -221,10 +241,11 @@ async function filterSoftDeleteIdsByMeta(
     .in('id', ids)
     .eq('document_id', documentId);
   if (error) throw new Error(error.message);
-  return (data ?? [])
-    .filter((row) => !row.deleted_at)
-    .filter((row) => softDeleteMetaMatches(row as Record<string, unknown>, deleteMeta))
-    .map((row) => String(row.id));
+  return resolveIntentSoftDeleteIds({
+    requestedIds: ids,
+    rows: (data ?? []) as Array<Record<string, unknown>>,
+    deleteMeta,
+  });
 }
 
 export function shouldIgnoreRegressiveContentPatch(
@@ -429,9 +450,12 @@ export async function applyNoteBlockOpPayload(
       .select(BLOCK_SELECT)
       .in('id', payload.ids)
       .eq('document_id', documentId);
-    const targets = (beforeBlocks ?? [])
-      .filter((row) => !row.deleted_at)
-      .filter((row) => softDeleteMetaMatches(row as Record<string, unknown>, payload.deleteMeta));
+    const targetIds = new Set(resolveIntentSoftDeleteIds({
+      requestedIds: payload.ids,
+      rows: (beforeBlocks ?? []) as Array<Record<string, unknown>>,
+      deleteMeta: payload.deleteMeta,
+    }));
+    const targets = (beforeBlocks ?? []).filter((row) => targetIds.has(String(row.id)));
     const snapshots: NoteBlockSnapshot[] = [];
     for (const row of targets) {
       const version = (typeof row.version === 'number' ? row.version : 1) + 1;

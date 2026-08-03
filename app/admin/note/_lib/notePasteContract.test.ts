@@ -90,8 +90,9 @@ describe('resolveStructuredBlocksClipboardPlain', () => {
 });
 
 describe('shouldApplyStructuralPasteSpecs', () => {
-  it('treats multi and non-plain text as structural', () => {
+  it('treats multi and non-text as structural; single text(+html) stays TipTap', () => {
     expect(shouldApplyStructuralPasteSpecs([{ type: 'text', text: 'a' }])).toBe(false);
+    expect(shouldApplyStructuralPasteSpecs([{ type: 'text', text: 'a', html: '<p>a</p>' }])).toBe(false);
     expect(shouldApplyStructuralPasteSpecs([
       { type: 'text', text: 'a' },
       { type: 'text', text: 'b' },

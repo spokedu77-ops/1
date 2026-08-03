@@ -8,6 +8,7 @@ import {
 import {
   insertPastedBlockSpecsAfterAnchor,
   insertPastedBlockSpecsAfterBlock,
+  resolvePasteNestParentId,
   resolvePasteSourceContent,
   type PasteInsertContext,
 } from './notePasteInsert';
@@ -458,5 +459,20 @@ describe('insertPastedBlockSpecsAfterBlock nested lists', () => {
     expect(new Set(collectBlockTransactionIds(before, blocksRef.current))).toEqual(
       new Set(['anchor', 'pasted-1', 'pasted-2']),
     );
+  });
+});
+
+describe('resolvePasteNestParentId', () => {
+  it('promotes todo nest off a bullet parent onto an allowed ancestor', () => {
+    const blocks = [
+      block('root-todo', 'todo', 0),
+      { ...block('bullet', 'bulletList', 0, 'root-todo') },
+    ];
+    expect(resolvePasteNestParentId(blocks, 'bullet', 'todo', null)).toBe('root-todo');
+  });
+
+  it('keeps todo under todo', () => {
+    const blocks = [block('parent', 'todo', 0)];
+    expect(resolvePasteNestParentId(blocks, 'parent', 'todo', null)).toBe('parent');
   });
 });

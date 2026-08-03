@@ -70,8 +70,16 @@ function assertPlacementForTouched(
       continue;
     }
     const parent = byId.get(parentId);
-    // 타깃 문서 부모 미로드(transfer)는 RPC/sanitize가 최종 수리
-    if (!parent) continue;
+    if (!parent) {
+      // 동일 문서 스냅샷에 부모 없음 = 불완전 write. 교차 문서 transfer만 skip.
+      const documentIds = new Set(blocks.map((item) => item.document_id));
+      if (documentIds.size <= 1) {
+        throw new Error(
+          `[Note] blocked invalid write: missing parent ${parentId} for ${block.id}`,
+        );
+      }
+      continue;
+    }
     if (!canPlaceBlockTypeInParent(block.type, parent.type)) {
       throw new Error(
         `[Note] blocked invalid write: ${block.type} cannot nest under ${parent.type}`,

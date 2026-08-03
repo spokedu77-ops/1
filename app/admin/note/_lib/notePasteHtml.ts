@@ -7,6 +7,7 @@ import {
   parseNotionToggleElement,
   unwrapGoogleDocsElement,
 } from './notePasteHtmlNotion';
+import { shouldClaimStructuralPasteSpecs } from './notePasteContract';
 import type { NoteTableCell } from './noteTableBlock';
 
 const BLOCK_TAGS = new Set([
@@ -353,11 +354,5 @@ export function parseClipboardHtmlToBlocks(html: string): PastedBlockSpec[] | nu
 }
 
 export function shouldSplitHtmlPaste(specs: PastedBlockSpec[]): boolean {
-  if (specs.length > 1) return true;
-  const only = specs[0];
-  if (!only) return false;
-  if (only.type === 'image' || only.type === 'table' || only.type === 'divider') return true;
-  if (only.type === 'toggle' && (only.children?.length ?? 0) > 0) return true;
-  if (only.listNestLevel != null && only.listNestLevel > 0) return true;
-  return only.type !== 'text' || !!only.html?.includes('<');
+  return shouldClaimStructuralPasteSpecs(specs);
 }

@@ -40,9 +40,9 @@ describe('shouldSplitHtmlPaste', () => {
     ])).toBe(true);
   });
 
-  it('splits single non-text or rich text block', () => {
+  it('splits single non-text; leaves single text(+html) to TipTap', () => {
     expect(shouldSplitHtmlPaste([{ type: 'heading', text: 'A' }])).toBe(true);
-    expect(shouldSplitHtmlPaste([{ type: 'text', text: 'A', html: '<p><b>A</b></p>' }])).toBe(true);
+    expect(shouldSplitHtmlPaste([{ type: 'text', text: 'A', html: '<p><b>A</b></p>' }])).toBe(false);
     expect(shouldSplitHtmlPaste([{ type: 'text', text: 'A' }])).toBe(false);
   });
 });

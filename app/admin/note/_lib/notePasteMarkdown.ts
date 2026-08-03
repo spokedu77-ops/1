@@ -1,5 +1,6 @@
 import type { NoteBlock } from './types';
 import type { PastedBlockSpec } from './notePasteBlocks';
+import { shouldClaimStructuralPasteSpecs } from './notePasteContract';
 
 const HEADING_RE = /^(#{1,3})\s+(.+)$/;
 const BULLET_RE = /^(\s*)([-*+•.]|\u2022|\u25E6|\u25AA|\u25AB)\s+(.+)$/;
@@ -130,8 +131,5 @@ export function parseMarkdownPlainToBlocks(text: string): PastedBlockSpec[] | nu
 }
 
 export function shouldSplitMarkdownPaste(specs: PastedBlockSpec[]): boolean {
-  if (specs.length > 1) return true;
-  const only = specs[0];
-  if (!only) return false;
-  return only.type !== 'text';
+  return shouldClaimStructuralPasteSpecs(specs);
 }

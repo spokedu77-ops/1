@@ -330,3 +330,33 @@ describe('noteOpLogService transaction patch filtering', () => {
     expect(calls).not.toContain('note_blocks.update');
   });
 });
+
+describe('resolveIntentSoftDeleteIds', () => {
+  it('deletes even when updated_at OCC mismatches (intent wins)', async () => {
+    const { resolveIntentSoftDeleteIds } = await import('./noteOpLogService');
+    expect(resolveIntentSoftDeleteIds({
+      requestedIds: ['a'],
+      rows: [{
+        id: 'a',
+        deleted_at: null,
+        updated_at: '2026-08-04T01:00:00.000Z',
+        content: { text: 'live', html: '<p>live</p>' },
+      }],
+      deleteMeta: [{ id: 'a', updated_at: '2026-08-04T00:00:00.000Z' }],
+    })).toEqual(['a']);
+  });
+
+  it('still blocks structured content when deleteMeta updated_at is null', async () => {
+    const { resolveIntentSoftDeleteIds } = await import('./noteOpLogService');
+    expect(resolveIntentSoftDeleteIds({
+      requestedIds: ['a'],
+      rows: [{
+        id: 'a',
+        deleted_at: null,
+        updated_at: '2026-08-04T01:00:00.000Z',
+        content: { text: 'live', html: '<p>live</p>' },
+      }],
+      deleteMeta: [{ id: 'a', updated_at: null }],
+    })).toEqual([]);
+  });
+});
