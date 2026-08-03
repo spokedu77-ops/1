@@ -234,6 +234,11 @@ export default function LibraryView() {
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
+  const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
+  const clearTodayLesson = useMasterStore((state) => state.clearTodayLesson);
+  const todayLesson = useMasterStore((state) =>
+    ownerId ? state.getTodayLesson(ownerId) : null,
+  );
   const { classRecords: serverClassRecords } = useOperationalData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const isPremium = useIsPremium();
@@ -780,6 +785,14 @@ export default function LibraryView() {
           isPremium={isPremium}
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
           onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
+          isTodayLesson={todayLesson?.programId === selected.program.id}
+          onToggleTodayLesson={ownerId ? () => {
+            if (todayLesson?.programId === selected.program.id) {
+              clearTodayLesson(ownerId);
+              return;
+            }
+            setTodayLesson(ownerId, { id: selected.program.id, title: selected.program.title });
+          } : undefined}
           sourceLibraryView={view}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({

@@ -1112,8 +1112,8 @@ export default function SpomoveHubView() {
             SPOMOVE
           </h1>
           <p className="mt-2 max-w-2xl text-[14px] font-semibold leading-6 text-slate-600">
-            수업 도입·집중 전환·마무리에 바로 쓸 수 있는 화면 반응 활동입니다. 활동 종류와 인지 난이도로
-            골라보세요.
+            수업 도입·집중 전환·마무리에 큰 화면으로 바로 쓸 수 있는 화면 반응 활동입니다. 활동 종류와
+            인지 난이도로 골라보세요.
           </p>
         </header>
 

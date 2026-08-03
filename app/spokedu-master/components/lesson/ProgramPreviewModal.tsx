@@ -1,6 +1,6 @@
 'use client';
 
-import { Bookmark, BookOpen, Lock } from 'lucide-react';
+import { Bookmark, BookOpen, CheckCircle2, Lock } from 'lucide-react';
 import Link from 'next/link';
 
 import { getSupportedOfficialSpomovePresets } from '../../lib/program-meta';
@@ -21,6 +21,8 @@ export function ProgramPreviewModal({
   isPremium = true,
   favorite,
   onFavorite,
+  isTodayLesson = false,
+  onToggleTodayLesson,
   sourceLibraryView,
   onPlaybackStarted,
   onClose,
@@ -30,6 +32,8 @@ export function ProgramPreviewModal({
   isPremium?: boolean;
   favorite?: boolean;
   onFavorite?: () => void;
+  isTodayLesson?: boolean;
+  onToggleTodayLesson?: () => void;
   sourceLibraryView?: LibraryViewMode;
   onPlaybackStarted?: () => void;
   onClose: () => void;
@@ -66,6 +70,21 @@ export function ProgramPreviewModal({
         onPlaybackStarted={onPlaybackStarted}
         badges={
           <>
+            {onToggleTodayLesson && !locked ? (
+              <button
+                type="button"
+                onClick={onToggleTodayLesson}
+                className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border px-4 text-[13px] font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 sm:h-10 sm:w-[152px] ${
+                  isTodayLesson
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-slate-200 bg-white text-slate-700'
+                }`}
+                aria-pressed={isTodayLesson}
+              >
+                <CheckCircle2 className={`h-4 w-4 ${isTodayLesson ? 'fill-emerald-100' : ''}`} />
+                {isTodayLesson ? '오늘 수업 지정됨' : '오늘 수업으로 지정'}
+              </button>
+            ) : null}
             {locked ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">
                 <Lock className="h-3 w-3" />

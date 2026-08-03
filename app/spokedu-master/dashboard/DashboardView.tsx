@@ -847,6 +847,7 @@ function EntitledDashboardView() {
   const todayLessonAssignment = useMasterStore((state) =>
     recentActivityOwnerId ? state.getTodayLesson(recentActivityOwnerId) : null,
   );
+  const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
   const clearTodayLesson = useMasterStore((state) => state.clearTodayLesson);
   const programsById = useMemo(() => new Map(programs.map((program) => [program.id, program])), [programs]);
   const homeAnchor = useMemo(
@@ -1118,6 +1119,14 @@ function EntitledDashboardView() {
           program={selectedProgram}
           autoplayVideo={previewAutoplay}
           isPremium={isPremium}
+          isTodayLesson={todayLessonAssignment?.programId === selectedProgram.id}
+          onToggleTodayLesson={recentActivityOwnerId ? () => {
+            if (todayLessonAssignment?.programId === selectedProgram.id) {
+              clearTodayLesson(recentActivityOwnerId);
+              return;
+            }
+            setTodayLesson(recentActivityOwnerId, { id: selectedProgram.id, title: selectedProgram.title });
+          } : undefined}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({
               programId: selectedProgram.id,
