@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { newNoteBlockClientId } from '../_lib/noteSyncGuards';
+import { canPlaceBlockTypeInParent } from '@/app/lib/note/noteBlockPolicy';
 import { getBlocksInParent } from '@/app/lib/note/noteBlockTree';
 import { defaultBlockContent } from '../_lib/constants';
 import {
@@ -102,12 +103,16 @@ export function useNoteBlockInsert(options: {
     if (!selectedId) return null;
     const previousBlocks = blocksRef.current;
     try {
+      const parentBlock = parentId ? previousBlocks.find((b) => b.id === parentId) : null;
+      if (!canPlaceBlockTypeInParent(type, parentBlock?.type ?? null)) {
+        setError(`이 위치에는 ${type} 블록을 넣을 수 없습니다.`);
+        return null;
+      }
       setLoadingState('saving');
       const siblings = previousBlocks
         .filter((b) => (b.parent_block_id ?? null) === parentId)
         .sort((a, b) => a.order_index - b.order_index);
       const clampedIndex = Math.max(0, Math.min(insertIndex, siblings.length));
-      const parentBlock = parentId ? previousBlocks.find((b) => b.id === parentId) : null;
       const insideToggle = parentBlock?.type === 'toggle';
       const baseContent = insertOptions?.content ?? defaultBlockContent(type, { insideToggle });
       const baseContentMap = baseContent as Record<string, unknown>;
@@ -514,19 +519,32 @@ export function useNoteBlockInsert(options: {
         return;
       }
       if (type === 'page') {
-        const parentBlockId = focusedToggleId ?? null;
+        // 토글 안 page 금지 (noteBlockPolicy) — 문서 루트에만 생성
+        const rawParentId = focusedToggleId ?? null;
+        const parentBlock = rawParentId
+          ? blocksRef.current.find((block) => block.id === rawParentId)
+          : null;
+        const parentBlockId = canPlaceBlockTypeInParent('page', parentBlock?.type ?? null)
+          ? rawParentId
+          : null;
         const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
         const focusedTarget = resolveAddBlockInsertTarget(blocksRef.current, focusedId, parentBlockId);
         if (focusedTarget) {
+          const targetParent = focusedTarget.parentId
+            ? blocksRef.current.find((block) => block.id === focusedTarget.parentId)
+            : null;
+          const safeParentId = canPlaceBlockTypeInParent('page', targetParent?.type ?? null)
+            ? focusedTarget.parentId
+            : null;
           await handleCreateSubPage(selectedId, {
-            parentBlockId: focusedTarget.parentId,
-            insertIndex: focusedTarget.insertIndex,
+            parentBlockId: safeParentId,
+            insertIndex: safeParentId === focusedTarget.parentId ? focusedTarget.insertIndex : undefined,
             navigateToChild: false,
           });
           return;
         }
         await handleCreateSubPage(selectedId, {
-          parentBlockId: focusedToggleId ?? null,
+          parentBlockId,
           navigateToChild: false,
         });
         return;

@@ -75,6 +75,7 @@ import {
   noteBlockRowMouseEnter,
   noteBlockRowMouseLeave,
   readBlockColor,
+  resolveNoteBlockHandleMenuPosition,
 } from '../../_lib/noteBlockRowUi';
 import { DocIconGlyph } from '../../_lib/noteDocumentUi';
 import type { NoteBlock } from '../../_lib/types';
@@ -1145,8 +1146,10 @@ function SortableBlockRow({
             return;
           }
           if (handleMenuAnchor) { setHandleMenuAnchor(null); return; }
+          // Del 숏컷: 메뉴 연 블록을 선택 집합에 넣어 창/메뉴 Delete가 동작하게
+          onBlockSelect?.(block.id, e);
           const rect = gripBtnRef.current!.getBoundingClientRect();
-          setHandleMenuAnchor({ top: rect.bottom + 4, left: rect.left });
+          setHandleMenuAnchor(resolveNoteBlockHandleMenuPosition({ anchorRect: rect }));
         }}
       />
 
@@ -1423,10 +1426,15 @@ function ToggleInlineRow({
             return;
           }
           if (inlineHandleMenuAnchor) { setInlineHandleMenuAnchor(null); return; }
+          onBlockSelect?.(block.id, e);
           const rect = inlineGripBtnRef.current!.getBoundingClientRect();
+          const pos = resolveNoteBlockHandleMenuPosition({
+            anchorRect: rect,
+            gap: 8,
+          });
           setInlineHandleMenuAnchor({
-            top: rect.bottom + 8,
-            left: rect.left - menuShiftLeft,
+            top: pos.top,
+            left: Math.max(8, pos.left - menuShiftLeft),
           });
         }}
       />

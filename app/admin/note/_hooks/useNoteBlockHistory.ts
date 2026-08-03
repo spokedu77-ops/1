@@ -21,6 +21,7 @@ import {
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteBlock } from '../_lib/types';
+import { markPendingBlockDeletes } from '../_lib/noteReconcileIdle';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
 
@@ -106,12 +107,20 @@ export function useNoteBlockHistory(options: {
           restoredById,
         });
         const currentById = new Map(current.map((block) => [block.id, block]));
+        const removedBlocks = plan.deleteIds
+          .map((id) => currentById.get(id))
+          .filter((block): block is NoteBlock => Boolean(block));
+        // product delete와 동일: apply 전 leave-exclude — enqueue 전 pull 부활 차단
+        if (removedBlocks.length > 0 && current[0]?.document_id) {
+          markPendingBlockDeletes(
+            current[0].document_id,
+            removedBlocks.map((block) => block.id),
+          );
+        }
         await documentEngine.applyStructureCommand(historyCommandFromSnapshots({
           next,
           patches: plan.fieldPatches,
-          removedBlocks: plan.deleteIds
-            .map((id) => currentById.get(id))
-            .filter((block): block is NoteBlock => Boolean(block)),
+          removedBlocks,
           affectedIds: [...plan.scopeIds],
         }));
       } catch (e) {

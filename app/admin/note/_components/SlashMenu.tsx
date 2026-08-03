@@ -12,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { filterTurnIntoCommands } from '../_lib/noteBlockTypeChange';
+import { resolveNoteBlockHandleFlyoutPosition } from '../_lib/noteBlockRowUi';
 
 export type SlashCommand<T extends string = string> = {
   type: T;
@@ -350,7 +351,7 @@ function HandleMenuHoverItem({
     const el = rowRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    setFlyoutPos({ top: rect.top, left: rect.right });
+    setFlyoutPos(resolveNoteBlockHandleFlyoutPosition({ rowRect: rect }));
   }, []);
 
   const handleActivate = useCallback(() => {
@@ -476,11 +477,20 @@ export function BlockHandleMenu<T extends string>({
       if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
+        return;
+      }
+      // 점6개 메뉴 연 상태에서 Del/Backspace = 삭제 (숏컷 라벨과 동일)
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onDelete();
+        onClose();
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [onClose, onDelete]);
 
   return (
     <div

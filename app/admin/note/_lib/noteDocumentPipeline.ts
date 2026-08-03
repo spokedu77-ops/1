@@ -349,6 +349,7 @@ export class NoteDocumentPipeline {
 
   async persistSoftDelete(args: SoftDeletePersistArgs): Promise<void> {
     clearNoteEmergencyDrafts(this.documentId, args.ids);
+    markPendingBlockDeletes(this.documentId, args.ids);
     await this.queue?.enqueue({ type: 'softDelete', ids: args.ids, blocks: args.blocks });
   }
 
