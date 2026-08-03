@@ -99,4 +99,13 @@ describe('shouldApplyStructuralPasteSpecs', () => {
     ])).toBe(true);
     expect(shouldApplyStructuralPasteSpecs([{ type: 'heading', text: 'H' }])).toBe(true);
   });
+
+  it('claims single same-type nest so apply does not silent-drop', () => {
+    expect(shouldApplyStructuralPasteSpecs([
+      { type: 'bulletList', text: 'child', listNestLevel: 1 },
+    ])).toBe(true);
+    expect(shouldApplyStructuralPasteSpecs([
+      { type: 'todo', text: 'parent', children: [{ type: 'todo', text: 'child' }] },
+    ])).toBe(true);
+  });
 });

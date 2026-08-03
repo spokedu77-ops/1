@@ -47,10 +47,7 @@ import {
   canSplitMultilinePasteToBlocks,
   normalizeMultilinePasteSpecsForAnchor,
 } from '../_lib/noteMultilinePaste';
-import {
-  isStructuralHtmlPasteSpec,
-  type PastedBlockSpec,
-} from '../_lib/notePasteBlocks';
+import { type PastedBlockSpec } from '../_lib/notePasteBlocks';
 import {
   buildBlockClipboardPayload,
   clipboardPayloadToPasteSpecs,
@@ -62,7 +59,10 @@ import {
   insertPastedBlockSpecsAfterBlock,
   resolvePasteSourceContent,
 } from '../_lib/notePasteInsert';
-import { resolvePasteInsertMode } from '../_lib/notePasteContract';
+import {
+  resolvePasteInsertMode,
+  shouldApplyStructuralPasteSpecs,
+} from '../_lib/notePasteContract';
 import { plainMultilineToInsertHtml } from '../_lib/notePaste';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
@@ -490,12 +490,9 @@ export function useNoteBlockActions(options: {
     const normalizedSpecs = normalizeMultilinePasteSpecsForAnchor(block.type, specs);
     const requireSplitGate = options?.requireSplitGate !== false;
     if (requireSplitGate) {
-      const singleSpecialPaste = normalizedSpecs.length === 1 && (
-        isStructuralHtmlPasteSpec(normalizedSpecs[0])
-        || normalizedSpecs[0].type !== block.type
-      );
+      // C6: TipTap claim(shouldClaimStructuralPasteSpecs)과 동일 축
+      if (!shouldApplyStructuralPasteSpecs(normalizedSpecs)) return;
       if (normalizedSpecs.length > 1 && !canSplitMultilinePasteToBlocks(block.type)) return;
-      if (normalizedSpecs.length === 1 && !singleSpecialPaste) return;
     }
 
     const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);

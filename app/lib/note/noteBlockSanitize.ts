@@ -50,7 +50,8 @@ function nearestAllowedParentId<T extends SanitizableNoteBlock>(
     if (canPlaceBlockInParent(block, parent)) return parent.id;
     parentId = parent.parent_block_id ?? null;
   }
-  return canPlaceBlockInParent(block, null) ? null : null;
+  // 허용 조상 없음 → root로 승격(수리). root도 불가면 그래도 null(후속 guard/RPC가 최종 판단).
+  return null;
 }
 
 export function sanitizeNoteBlockTree<T extends SanitizableNoteBlock>(blocks: T[]): T[] {

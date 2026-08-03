@@ -200,19 +200,17 @@ function softDeleteMetaMatches(
 ): boolean {
   const id = String(row.id);
   const meta = deleteMeta?.find((item) => item.id === id);
-  // meta 없음/updated_at null: 빈 블록만 삭제 (실수 wipe 방지)
+  // meta 행이 없으면(레거시/실수 wipe) 빈 블록만 삭제
   if (!meta) {
     return !hasStructuredContent(row.content);
   }
-  const expectedUpdatedAt = meta.updated_at == null ? null : String(meta.updated_at);
-  if (!expectedUpdatedAt) return !hasStructuredContent(row.content);
-  // Intent delete: updated_at이 있으면 OCC mismatch여도 삭제한다.
-  // (mismatch 시 skip+ack하면 leave exclude가 풀리며 좀비가 부활함)
+  // deleteMeta에 id가 있으면 intentional soft-delete.
+  // updated_at null/''여도 skip+ack로 좀비를 만들지 않는다.
   return true;
 }
 
 /**
- * 아직 살아있는 요청 id만 고른다. meta로 막힌 structured+null-meta id는 제외.
+ * 아직 살아있는 요청 id만 고른다. meta 없는 structured는 제외.
  * 이미 삭제된 id는 멱등 성공으로 취급(목록에 넣지 않음).
  */
 export function resolveIntentSoftDeleteIds(options: {
@@ -226,6 +224,30 @@ export function resolveIntentSoftDeleteIds(options: {
     .filter((row) => !row.deleted_at)
     .filter((row) => softDeleteMetaMatches(row, options.deleteMeta))
     .map((row) => String(row.id));
+}
+
+/** 요청 id 중 살아 있는데 삭제 대상에서 빠진 것이 있으면 ack 금지 */
+export function assertSoftDeleteFullyApplied(options: {
+  requestedIds: ReadonlyArray<string>;
+  rows: ReadonlyArray<Record<string, unknown>>;
+  appliedIds: ReadonlyArray<string>;
+}): void {
+  const requested = new Set(options.requestedIds.map(String));
+  const applied = new Set(options.appliedIds.map(String));
+  const blocked = options.rows
+    .filter((row) => requested.has(String(row.id)))
+    .filter((row) => !row.deleted_at)
+    .map((row) => String(row.id))
+    .filter((id) => !applied.has(id));
+  if (blocked.length > 0) {
+    throw new Error(`soft_delete_not_applied:${blocked.join(',')}`);
+  }
+}
+
+function isLeaveMaterializePayload(payload: NoteBlockOpPayload): boolean {
+  if (payload.opType === 'soft_delete' || payload.opType === 'purge_block') return true;
+  if (payload.opType === 'block_transaction') return payload.deleteIds.length > 0;
+  return false;
 }
 
 async function filterSoftDeleteIdsByMeta(
@@ -450,12 +472,19 @@ export async function applyNoteBlockOpPayload(
       .select(BLOCK_SELECT)
       .in('id', payload.ids)
       .eq('document_id', documentId);
-    const targetIds = new Set(resolveIntentSoftDeleteIds({
+    const rows = (beforeBlocks ?? []) as Array<Record<string, unknown>>;
+    const targetIds = resolveIntentSoftDeleteIds({
       requestedIds: payload.ids,
-      rows: (beforeBlocks ?? []) as Array<Record<string, unknown>>,
+      rows,
       deleteMeta: payload.deleteMeta,
-    }));
-    const targets = (beforeBlocks ?? []).filter((row) => targetIds.has(String(row.id)));
+    });
+    assertSoftDeleteFullyApplied({
+      requestedIds: payload.ids,
+      rows,
+      appliedIds: targetIds,
+    });
+    const targetIdSet = new Set(targetIds);
+    const targets = (beforeBlocks ?? []).filter((row) => targetIdSet.has(String(row.id)));
     const snapshots: NoteBlockSnapshot[] = [];
     for (const row of targets) {
       const version = (typeof row.version === 'number' ? row.version : 1) + 1;
@@ -517,6 +546,19 @@ export async function applyNoteBlockOpPayload(
     const deleteIds = payload.deleteIds.length > 0
       ? await filterSoftDeleteIdsByMeta(supabase, documentId, payload.deleteIds, payload.deleteMeta)
       : [];
+    if (payload.deleteIds.length > 0) {
+      const { data: beforeDeleteRows, error: beforeDeleteError } = await supabase
+        .from('note_blocks')
+        .select(BLOCK_SELECT)
+        .in('id', payload.deleteIds)
+        .eq('document_id', documentId);
+      if (beforeDeleteError) throw new Error(beforeDeleteError.message);
+      assertSoftDeleteFullyApplied({
+        requestedIds: payload.deleteIds,
+        rows: (beforeDeleteRows ?? []) as Array<Record<string, unknown>>,
+        appliedIds: deleteIds,
+      });
+    }
     const normalized = await normalizeRpcTransactionPayload(
       supabase,
       documentId,
@@ -588,12 +630,17 @@ export async function pushNoteBlockOps(
   const newOps = ops.filter((op) => !existingSet.has(op.clientOpId));
 
   if (newOps.length === 0) {
-    // 전부 이미 적용됨(순수 재시도) — 충돌 아님.
+    // 전부 이미 commit됨 — leave materialize만 재시도(ack만 하고 삭제가 안 된 좀비 방지)
+    const blocks: NoteBlockSnapshot[] = [];
+    for (const op of ops) {
+      if (!isLeaveMaterializePayload(op.payload)) continue;
+      blocks.push(...await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId));
+    }
     const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);
-    return { ok: true, lastSeq, appliedClientOpIds: clientOpIds, blocks: [] };
+    return { ok: true, lastSeq, appliedClientOpIds: clientOpIds, blocks };
   }
 
-  // op마다: materialize(apply) → DB 원자 commit(insert+sync). insert 실패 시 sync drift 없음.
+  // op마다: commit → materialize. leave는 duplicate여도 materialize를 다시 시도.
   const appliedClientOpIds: string[] = [...existingSet];
   const blocks: NoteBlockSnapshot[] = [];
   let runningBaseSeq = baseSeq;
@@ -618,6 +665,9 @@ export async function pushNoteBlockOps(
     }
 
     if (commit.status === 'duplicate') {
+      if (isLeaveMaterializePayload(op.payload)) {
+        blocks.push(...await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId));
+      }
       appliedClientOpIds.push(op.clientOpId);
       runningBaseSeq = commit.assignedSeq;
       continue;

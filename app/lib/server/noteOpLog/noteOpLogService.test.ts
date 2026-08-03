@@ -346,7 +346,7 @@ describe('resolveIntentSoftDeleteIds', () => {
     })).toEqual(['a']);
   });
 
-  it('still blocks structured content when deleteMeta updated_at is null', async () => {
+  it('deletes when deleteMeta lists the id even if updated_at is null', async () => {
     const { resolveIntentSoftDeleteIds } = await import('./noteOpLogService');
     expect(resolveIntentSoftDeleteIds({
       requestedIds: ['a'],
@@ -357,6 +357,26 @@ describe('resolveIntentSoftDeleteIds', () => {
         content: { text: 'live', html: '<p>live</p>' },
       }],
       deleteMeta: [{ id: 'a', updated_at: null }],
+    })).toEqual(['a']);
+  });
+
+  it('blocks structured content only when deleteMeta omits the id', async () => {
+    const { resolveIntentSoftDeleteIds, assertSoftDeleteFullyApplied } = await import('./noteOpLogService');
+    const rows = [{
+      id: 'a',
+      deleted_at: null,
+      updated_at: '2026-08-04T01:00:00.000Z',
+      content: { text: 'live', html: '<p>live</p>' },
+    }];
+    expect(resolveIntentSoftDeleteIds({
+      requestedIds: ['a'],
+      rows,
+      deleteMeta: undefined,
     })).toEqual([]);
+    expect(() => assertSoftDeleteFullyApplied({
+      requestedIds: ['a'],
+      rows,
+      appliedIds: [],
+    })).toThrow(/soft_delete_not_applied:a/);
   });
 });
