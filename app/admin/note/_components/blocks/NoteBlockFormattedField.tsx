@@ -2,7 +2,7 @@
 
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import { NoteEditableField } from '../NoteEditableField';
-import type { NoteEditorEnterContext } from '../NoteEditor';
+import type { NoteEditorEnterContext, NoteEditorEnterResult } from '../NoteEditor';
 import { resolveInlineBackspaceAtStartAction } from '../../_lib/noteNotionBlockBehavior';
 import type { PastedBlockSpec } from '../../_lib/notePasteBlocks';
 import type { NoteBlock } from '../../_lib/types';
@@ -18,7 +18,7 @@ export type NoteBlockFormattedFieldProps = {
   enterSplitOnMidBlock?: boolean;
   autoFocusSignal?: number;
   mergeFocusCaretOffset?: number;
-  onEditorEnter?: (ctx?: NoteEditorEnterContext) => unknown;
+  onEditorEnter?: (ctx?: NoteEditorEnterContext) => NoteEditorEnterResult;
   onEditorBackspace?: (() => void) | false;
   onEditorBackspaceAtBlockStart?: () => boolean;
   onEditorMergeWithPrevious?: () => void;

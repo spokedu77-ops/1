@@ -132,7 +132,12 @@ export type NoteEditorEnterContext = {
 };
 
 /** onEnter — mid-split 시 Promise로 create 성공 여부(또는 생성 블록)를 돌려 C4 restore에 쓴다 */
-export type NoteEditorEnterResult = void | boolean | null | { id?: string } | Promise<unknown>;
+export type NoteEditorEnterResult =
+  | void
+  | boolean
+  | null
+  | { id?: string }
+  | Promise<void | boolean | null | { id?: string }>;
 
 type ToolbarPosition = {
   top: number;

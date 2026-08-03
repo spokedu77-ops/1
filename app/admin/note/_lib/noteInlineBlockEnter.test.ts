@@ -27,7 +27,9 @@ describe('createInlineBlockEnterHandler', () => {
       block: block('a'),
       followType: 'text',
       text: 'hello world',
-      onAddBelow: (type, content) => added.push({ type, content }),
+      onAddBelow: (type, content) => {
+        added.push({ type, content });
+      },
     });
 
     handler({
@@ -37,6 +39,9 @@ describe('createInlineBlockEnterHandler', () => {
         beforeHtml: '<p>hello </p>',
         afterText: 'world',
         afterHtml: '<p>world</p>',
+        restoreText: 'hello world',
+        restoreHtml: '<p>hello world</p>',
+        splitCaretOffset: 6,
       },
     });
 

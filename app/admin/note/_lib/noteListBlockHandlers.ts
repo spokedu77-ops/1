@@ -1,6 +1,6 @@
 import { stripListItemMarkerPrefix } from '../_components/noteBulletInput';
+import type { NoteEditorEnterContext, NoteEditorEnterResult } from '../_components/NoteEditor';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
-import type { NoteEditorEnterContext } from '../_components/NoteEditor';
 import {
   resolveInlineBlockEnterAction,
   resolveListBackspaceAtStartAction,
@@ -13,8 +13,8 @@ export type NoteListBlockHandlerContext = {
   onIndentChange?: (direction: 'in' | 'out') => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onRequestCaretOffset?: (offset: number) => void;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
-  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => NoteEditorEnterResult;
+  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => NoteEditorEnterResult;
   canMergeWithPrevious?: () => boolean;
   onMergeWithPrevious?: () => void;
 };
@@ -70,7 +70,7 @@ export function createNoteListBlockHandlers(ctx: NoteListBlockHandlerContext) {
   const handleListItemEnter = (
     listType: 'bulletList' | 'numberedList',
     enterCtx?: NoteEditorEnterContext,
-  ) => {
+  ): NoteEditorEnterResult => {
     const action = resolveInlineBlockEnterAction({
       followType: listType,
       text: listItemText(),

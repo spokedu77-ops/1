@@ -31,7 +31,15 @@ describe('resolveInlineBlockEnterAction (todo·text)', () => {
       parentBlockId: null,
       enterCtx: {
         isEmpty: false,
-        split: { beforeText: 'hello', beforeHtml: '<p>hello</p>', afterText: ' world', afterHtml: '<p> world</p>' },
+        split: {
+          beforeText: 'hello',
+          beforeHtml: '<p>hello</p>',
+          afterText: ' world',
+          afterHtml: '<p> world</p>',
+          restoreText: 'hello world',
+          restoreHtml: '<p>hello world</p>',
+          splitCaretOffset: 5,
+        },
       },
     })).toEqual({
       kind: 'add-below',
@@ -96,6 +104,9 @@ describe('resolveInlineBlockEnterAction (todo·text)', () => {
           beforeHtml: '<p>hello </p>',
           afterText: 'bold',
           afterHtml: '<p><strong>bold</strong></p>',
+          restoreText: 'hello bold',
+          restoreHtml: '<p>hello <strong>bold</strong></p>',
+          splitCaretOffset: 6,
         },
       },
     })).toEqual({

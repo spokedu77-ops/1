@@ -1,5 +1,6 @@
 import type { NoteBlock } from '../../_lib/types';
 import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
+import type { NoteEditorEnterResult } from '../NoteEditor';
 
 /** TipTap 필드에 넘기는 공통 바인딩 — 블록 타입별 컴포넌트가 동일하게 확장 */
 export type NoteBlockFieldBindings = Pick<
@@ -34,9 +35,9 @@ export type NoteBlockContentLayout = {
 
 export type NoteBlockContentCallbacks = {
   onContentPatch: (content: Record<string, unknown>) => void;
-  onEnter: () => unknown;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
-  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onEnter: () => NoteEditorEnterResult;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => NoteEditorEnterResult;
+  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => NoteEditorEnterResult;
   onSlashChange?: NoteBlockFormattedFieldProps['onSlashChange'];
   slashHostRef?: React.RefObject<HTMLDivElement | null>;
 };

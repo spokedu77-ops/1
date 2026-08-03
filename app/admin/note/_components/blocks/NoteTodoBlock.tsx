@@ -8,6 +8,7 @@ import { NoteBlockFormattedField } from './NoteBlockFormattedField';
 import { useBlockContentPatch } from './useBlockContentPatch';
 import type { NoteBlock } from '../../_lib/types';
 import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
+import type { NoteEditorEnterResult } from '../NoteEditor';
 
 type NoteTodoBlockProps = {
   block: NoteBlock;
@@ -19,8 +20,8 @@ type NoteTodoBlockProps = {
   parentBlockType?: NoteBlock['type'] | null;
   /** applyBlockContentChange 단일 진입점 (syncBlockContent) */
   onContentPatch: (content: Record<string, unknown>) => void;
-  onEnter: () => unknown;
-  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => unknown;
+  onEnter: () => NoteEditorEnterResult;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => NoteEditorEnterResult;
   onChangeType: (type: NoteBlock['type']) => void;
   onSlashChange?: NoteBlockFormattedFieldProps['onSlashChange'];
   slashHostRef?: React.RefObject<HTMLDivElement | null>;

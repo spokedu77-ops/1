@@ -21,7 +21,7 @@ import {
 import { isInlineRichTextBlockType } from '../_lib/noteBlockTypes';
 import { BlockTextPreview } from './blocks/BlockTextPreview';
 import type { NoteEditor } from './NoteEditor';
-import type { NoteEditorEnterContext } from './NoteEditor';
+import type { NoteEditorEnterContext, NoteEditorEnterResult } from './NoteEditor';
 import type { NoteBlock } from '../_lib/types';
 import {
   stripListItemMarkerFromHtml,
@@ -53,7 +53,7 @@ type NoteEditableFieldProps = {
   enterCreatesBlock?: boolean;
   enterSplitOnMidBlock?: boolean;
   tabBehavior?: 'block-indent' | 'insert-text-indent' | 'table-cell-nav';
-  onEditorEnter?: (ctx?: NoteEditorEnterContext) => unknown;
+  onEditorEnter?: (ctx?: NoteEditorEnterContext) => NoteEditorEnterResult;
   onEditorBackspace?: (() => void) | false;
   onEditorBackspaceAtBlockStart?: () => boolean;
   onEditorMergeWithPrevious?: () => void;

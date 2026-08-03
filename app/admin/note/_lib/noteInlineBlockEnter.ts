@@ -1,4 +1,5 @@
 import type { NoteEditorEnterContext } from '../_components/NoteEditor';
+import type { NoteEditorEnterResult } from '../_components/NoteEditor';
 import { getMergedBlockContentBase } from './noteBlockContentResolve';
 import { readTodoListNestLevel } from './noteTodoContent';
 import {
@@ -17,7 +18,7 @@ type InlineEnterHandlerOptions = {
   onAddBelow: (
     type?: NoteBlock['type'],
     content?: Record<string, unknown>,
-  ) => unknown;
+  ) => NoteEditorEnterResult;
   onChangeType?: (type: NoteBlock['type']) => void;
   onIndentChange?: (direction: 'in' | 'out') => void;
 };
@@ -28,7 +29,7 @@ type HeadingEnterHandlerOptions = {
   onAddBelow: (
     type?: NoteBlock['type'],
     content?: Record<string, unknown>,
-  ) => unknown;
+  ) => NoteEditorEnterResult;
   onChangeType?: (type: NoteBlock['type']) => void;
   onIndentChange?: (direction: 'in' | 'out') => void;
 };
@@ -41,7 +42,7 @@ function liveTextForBlock(block: NoteBlock, fallbackText: string): string {
 function runInlineEnterAction(
   action: ReturnType<typeof resolveInlineBlockEnterAction>,
   options: Pick<InlineEnterHandlerOptions, 'onAddBelow' | 'onChangeType' | 'onIndentChange'>,
-): unknown {
+): NoteEditorEnterResult {
   switch (action.kind) {
   case 'add-below':
     return options.onAddBelow(action.followType, action.content);
@@ -59,7 +60,7 @@ function runInlineEnterAction(
 }
 
 export function createInlineBlockEnterHandler(options: InlineEnterHandlerOptions) {
-  return (enterCtx?: NoteEditorEnterContext) => {
+  return (enterCtx?: NoteEditorEnterContext): NoteEditorEnterResult => {
     if (
       options.followType === 'text'
       && enterCtx?.split
@@ -93,7 +94,7 @@ export function createInlineBlockEnterHandler(options: InlineEnterHandlerOptions
 }
 
 export function createHeadingEnterHandler(options: HeadingEnterHandlerOptions) {
-  return (enterCtx?: NoteEditorEnterContext) => {
+  return (enterCtx?: NoteEditorEnterContext): NoteEditorEnterResult => {
     const action = resolveHeadingEnterAction({
       text: liveTextForBlock(options.block, options.text ?? ''),
       parentBlockId: options.block.parent_block_id ?? null,
