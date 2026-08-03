@@ -55,6 +55,7 @@ open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Autho
 | `mergePassiveIncomingContent` | empty/짧은/동일길이·비확장 rewrite 거부; checked·page_id 보호 |
 | `sealPassiveIncomingBlock(s)` | incoming 골격·버전 유지 + 위 content 봉인 |
 | `reportNoteDurableSave` | UI saved 유일 게이트 (content/outbound pending 차단) |
+| **Intentional delete** | soft-delete/purge/leave는 Intent. IDB·merge가 삭제 id를 되살리면 계약 위반 |
 
 ### Passive 봉인 의무 (우회 금지)
 
@@ -64,7 +65,7 @@ open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Autho
 | 구멍 | 파일 |
 |------|------|
 | hydrate / syncSnapshot / mergeSnapshots / applyRemoteOps | `noteCommandReducer` → `mergeReconciledBlocks` |
-| IDB↔server open merge | `mergeServerBlocksIntoLocalSnapshot` |
+| IDB↔server open merge | `mergeServerBlocksIntoLocalSnapshot` (**pending-delete는 local에서도 drop**; outbound 비면 server-absent local prune) |
 | push ack snapshot merge | `mergeSnapshotPatches` |
 | remote op replay | `applyRemoteOpRecords` (`patch_content` / content `patch_fields`) |
 | legacy engine sync | `syncBlocksFromServer` |
@@ -73,8 +74,11 @@ open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Autho
 | tree sanitize densify | `sanitizeNoteBlockTree` (중복 order만) |
 | coordinator → UI Project | `onBlocksUpdated` → `dispatchSnapshotIfChanged` → `syncSnapshot` |
 | realtime/idle pull | `pipeline.schedulePull` → `coordinator.schedulePull` |
+| soft-delete | `persistSoftDelete` → emergency draft clear + leave exclude; IDB merge가 삭제 id 재삽입 금지 |
 
 reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 호출한다. **새 passive 경로를 추가할 때 seal을 빼면 계약 위반이다. hook에 Authority/Integrity 분기를 새로 넣지 않는다.
+
+**주의:** “본문 침묵 wipe 금지”와 “의도된 삭제 유지”는 충돌하면 **삭제 Intent가 이긴다**. empty race wipe 거부로 soft-deleted id를 되살리는 땜빵 금지.
 
 ## 절대 규칙
 

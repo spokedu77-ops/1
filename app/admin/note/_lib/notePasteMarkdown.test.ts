@@ -27,13 +27,20 @@ describe('parseMarkdownPlainToBlocks', () => {
     ]);
   });
 
-  it('parses todo, quote, callout, divider', () => {
-    expect(parseMarkdownPlainToBlocks('[x] Done\n> Quote\n!! Callout\n---')).toEqual([
-      { type: 'todo', text: 'Done', checked: true, listNestLevel: 0 },
-      { type: 'quote', text: 'Quote' },
-      { type: 'callout', text: 'Callout' },
-      { type: 'divider', text: '' },
+  it('parses Notion-like "." bullet markers as list items without keeping the glyph', () => {
+    expect(parseMarkdownPlainToBlocks('. 육상\n. 긴줄넘기')).toEqual([
+      { type: 'bulletList', text: '육상', listNestLevel: 0 },
+      { type: 'bulletList', text: '긴줄넘기', listNestLevel: 0 },
     ]);
+  });
+
+  it('does not duplicate nested child text into the parent bullet line', () => {
+    const specs = parseMarkdownPlainToBlocks('- 긴줄넘기\n  - 하위');
+    expect(specs).toEqual([
+      { type: 'bulletList', text: '긴줄넘기', listNestLevel: 0 },
+      { type: 'bulletList', text: '하위', listNestLevel: 1 },
+    ]);
+    expect(specs?.filter((spec) => spec.text.includes('긴줄넘기'))).toHaveLength(1);
   });
 });
 

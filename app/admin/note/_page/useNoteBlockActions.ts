@@ -35,6 +35,7 @@ import { readToggleTitleText } from '../_lib/noteNotionBlockBehavior';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
 import { notePointerTargetElement } from '../_lib/notePointerTarget';
+import { noteWhitespaceClickMayCreateBlocks } from '../_lib/noteWhitespaceContract';
 import { buildContentForTypeChange, getBlockedTypeChangeReason } from '../_lib/noteBlockTypeChange';
 import {
   canSplitMultilinePasteToBlocks,
@@ -314,6 +315,10 @@ export function useNoteBlockActions(options: {
   }, [blocksRef, focusBlockEditor]);
 
   const handleClickEditorWhitespace = useCallback(() => {
+    // Load 계약: whitespace는 블록 create 금지 (selection clear only)
+    if (noteWhitespaceClickMayCreateBlocks()) {
+      throw new Error('[Note] whitespace create is contract-forbidden');
+    }
     clearAllNoteTextSelections();
     setSelectedBlockIds(new Set());
   }, [setSelectedBlockIds]);

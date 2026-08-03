@@ -331,6 +331,7 @@ export class NoteDocumentPipeline {
   }
 
   async persistSoftDelete(args: SoftDeletePersistArgs): Promise<void> {
+    clearNoteEmergencyDrafts(this.documentId, args.ids);
     await this.queue?.enqueue({ type: 'softDelete', ids: args.ids, blocks: args.blocks });
   }
 
@@ -417,6 +418,10 @@ export class NoteDocumentPipeline {
   ): Promise<void> {
     if (!this.queue) {
       throw new Error('[Note] 문서 파이프라인이 준비되지 않았습니다');
+    }
+    // 제품 삭제는 softDelete API가 아니라 blockTransaction(deleteIds) — draft clear는 여기가 choke
+    if (deleteIds.length > 0) {
+      clearNoteEmergencyDrafts(this.documentId, deleteIds);
     }
     await this.queue.enqueue({
       type: 'blockTransaction',

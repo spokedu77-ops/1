@@ -57,6 +57,7 @@ import {
   resolveNoteUndoTarget,
 } from '../_lib/noteEditorHistory';
 import { settleEnterSplitCreate } from '../_lib/noteEnterSplitAtomic';
+import { resolveEnterAfterHtml } from '../_lib/noteEnterSplitHtml';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
 import { NoteHighlight, NoteTextColor } from './noteEditorMarks';
@@ -215,9 +216,11 @@ function resolveListEnterSplit(editor: Editor): NoteEditorEnterSplit | null {
   const restoreHtml = editor.getHTML();
   const beforeText = state.doc.textBetween(0, from, '\n', '\n');
   const afterHtmlRaw = editorHtmlBetween(editor, from, docEnd);
-  const afterHtml = afterHtmlRaw !== '<p></p>'
-    ? afterHtmlRaw
-    : legacyTextToEditorHtml(afterText);
+  const afterHtml = resolveEnterAfterHtml({
+    afterHtmlFromEditor: afterHtmlRaw,
+    afterText,
+    plainRebuild: legacyTextToEditorHtml,
+  });
   const deleted = editor.chain().focus().deleteRange({ from, to: docEnd }).run();
   if (!deleted) return null;
 

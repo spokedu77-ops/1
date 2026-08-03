@@ -67,6 +67,7 @@ jobs:
           # 저장소 시크릿이 설정되면 자동으로 다시 활성화되어 실제 E2E가 돈다.
           if [ "${#missing[@]}" -gt 0 ]; then
             echo "::warning::Admin Note E2E skipped; secrets not configured: ${missing[*]}"
+            echo "::notice::Contract honesty: unit verify:admin-note always runs; foundation/regression E2E only when secrets exist."
             echo "e2e_enabled=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -103,7 +104,7 @@ jobs:
         if: steps.gate.outputs.e2e_enabled == 'true'
         run: node scripts/admin-note-foundation-qa.mjs http://127.0.0.1:3099
       - name: Regression editing QA
-        if: steps.gate.outputs.e2e_enabled == 'true' && github.event_name != 'pull_request'
+        if: steps.gate.outputs.e2e_enabled == 'true'
         run: node scripts/admin-note-regression-qa.mjs http://127.0.0.1:3099
       - name: Data integrity audit
         if: steps.gate.outputs.e2e_enabled == 'true'

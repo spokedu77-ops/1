@@ -2,7 +2,7 @@ import type { NoteBlock } from './types';
 import type { PastedBlockSpec } from './notePasteBlocks';
 
 const HEADING_RE = /^(#{1,3})\s+(.+)$/;
-const BULLET_RE = /^(\s*)([-*+•])\s+(.+)$/;
+const BULLET_RE = /^(\s*)([-*+•.]|\u2022|\u25E6|\u25AA|\u25AB)\s+(.+)$/;
 const ORDERED_RE = /^(\s*)(\d+)[.)]\s+(.+)$/;
 const TODO_RE = /^(\s*)\[( |x|X)\]\s+(.+)$/;
 const QUOTE_RE = /^>\s+(.+)$/;

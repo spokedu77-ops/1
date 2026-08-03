@@ -6,17 +6,29 @@ import {
 } from './noteEnterSplitAtomic';
 
 describe('noteEnterSplitAtomic (C4)', () => {
-  it('treats null and false as create failure', () => {
+  it('treats null, false, and undefined/void as create failure', () => {
     expect(enterSplitCreateFailed(null)).toBe(true);
     expect(enterSplitCreateFailed(false)).toBe(true);
+    expect(enterSplitCreateFailed(undefined)).toBe(true);
     expect(enterSplitCreateFailed({ id: 'x' })).toBe(false);
-    expect(enterSplitCreateFailed(undefined)).toBe(false);
   });
 
   it('settleEnterSplitCreate resolves promises and catches throws', async () => {
     expect(await settleEnterSplitCreate(Promise.resolve({ id: 'a' }))).toBe(true);
     expect(await settleEnterSplitCreate(Promise.resolve(null))).toBe(false);
+    expect(await settleEnterSplitCreate(Promise.resolve(undefined))).toBe(false);
     expect(await settleEnterSplitCreate(Promise.reject(new Error('fail')))).toBe(false);
+  });
+
+  it('runAtomicEnterSplitCreate restores when create returns void/undefined', async () => {
+    const restore = vi.fn();
+    const ok = await runAtomicEnterSplitCreate({
+      createBelow: () => undefined,
+      restore,
+      restoreContent: { text: 'full', html: '<p>full</p>' },
+    });
+    expect(ok).toBe(false);
+    expect(restore).toHaveBeenCalledWith({ text: 'full', html: '<p>full</p>' });
   });
 
   it('runAtomicEnterSplitCreate restores full content when below create fails', async () => {

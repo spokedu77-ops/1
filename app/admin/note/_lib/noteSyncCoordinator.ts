@@ -375,10 +375,12 @@ export class NoteSyncCoordinator {
       }
     } else if (local && local.blocks.length > 0) {
       // outbound 없어도 IDB에 보호 본문이 있으면 서버 raw 교체 금지
+      // 단, 서버에 없는 stale local(이미 삭제된 블록)은 prune — 지워도 되살아나는 경로
       this.blocks = mergeServerBlocksIntoLocalSnapshot(
         local.blocks,
         serverBlocks,
         excludedIds,
+        { pruneLocalOnlyNotOnServer: true },
       );
     } else {
       this.blocks = serverBlocks;

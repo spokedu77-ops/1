@@ -400,6 +400,32 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
     expect(merged).toHaveLength(0);
   });
 
+  it('drops pending soft-delete ids from local IDB so deletes do not resurrect', () => {
+    const local = [serverBlock('child-1', 'should stay deleted')];
+    const server = [serverBlock('keep', 'ok')];
+    const merged = mergeServerBlocksIntoLocalSnapshot(
+      local,
+      server,
+      new Set(['child-1']),
+    );
+    expect(merged.map((block) => block.id)).toEqual(['keep']);
+  });
+
+  it('prunes stale local-only blocks absent from server when outbound is empty', () => {
+    const staleLocal: NoteBlock = {
+      ...serverBlock('deleted-long-ago', 'zombie'),
+      created_at: '2020-01-01T00:00:00.000Z',
+    };
+    const onServer = serverBlock('keep', 'ok');
+    const merged = mergeServerBlocksIntoLocalSnapshot(
+      [staleLocal, onServer],
+      [onServer],
+      new Set(),
+      { pruneLocalOnlyNotOnServer: true },
+    );
+    expect(merged.map((block) => block.id)).toEqual(['keep']);
+  });
+
   it('filterStalePendingSoftDeletes keeps pending ids while server still has blocks (pre-push)', () => {
     const server = [serverBlock('child-1', '복구 본문')];
     const pending = new Set(['child-1', 'gone-forever']);

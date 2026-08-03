@@ -4,6 +4,7 @@ import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 import { noteBlockOpTypeFromPayload } from '@/app/lib/note/noteBlockOpTypes';
 import type { NoteLocalOutboundOp } from './noteLocalDb';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
+import { LOCAL_ONLY_BLOCK_GRACE_MS } from './noteBlockStateMerge';
 import { sealPassiveIncomingBlock } from './noteDataIntegrity';
 import type { NoteBlock } from './types';
 
@@ -217,9 +218,14 @@ export function mergeServerBlocksIntoLocalSnapshot(
   localBlocks: NoteBlock[],
   serverBlocks: NoteBlock[],
   pendingDeleteIds: Set<string>,
+  options?: {
+    /** outbound 비었을 때: 서버에 없는 로컬 id는 grace 밖이면 폐기 (삭제 후 IDB 부활 차단) */
+    pruneLocalOnlyNotOnServer?: boolean;
+  },
 ): NoteBlock[] {
-  const localById = new Map(localBlocks.map((block) => [block.id, block]));
-  let merged = [...localBlocks];
+  // soft-delete 대기 id는 로컬 스냅샷에서도 즉시 제거 — 서버 skip만으로는 IDB 부활을 못 막음
+  let merged = localBlocks.filter((block) => !pendingDeleteIds.has(block.id));
+  const localById = new Map(merged.map((block) => [block.id, block]));
 
   for (const serverBlock of serverBlocks) {
     if (pendingDeleteIds.has(serverBlock.id)) continue;
@@ -231,6 +237,18 @@ export function mergeServerBlocksIntoLocalSnapshot(
     const nextBlock = mergeServerBlockIntoLocal(local, serverBlock);
     if (nextBlock === local) continue;
     merged = merged.map((block) => (block.id === serverBlock.id ? nextBlock : block));
+  }
+
+  if (options?.pruneLocalOnlyNotOnServer) {
+    const serverIds = new Set(serverBlocks.map((block) => block.id));
+    const now = Date.now();
+    merged = merged.filter((block) => {
+      if (serverIds.has(block.id)) return true;
+      if (!block.created_at) return false;
+      const createdAt = new Date(block.created_at).getTime();
+      if (!Number.isFinite(createdAt)) return false;
+      return now - createdAt <= LOCAL_ONLY_BLOCK_GRACE_MS;
+    });
   }
 
   return dedupeNoteBlocksById(merged);

@@ -45,4 +45,35 @@ describe('notePasteHtmlNotion', () => {
     expect(specs?.[0]).toMatchObject({ type: 'callout', text: 'Important' });
     expect(specs?.[1]).toMatchObject({ type: 'text', text: 'Next' });
   });
+
+  it('does not duplicate nested list item text into the parent LI', () => {
+    const specs = parseClipboardHtmlToBlocks(
+      '<ul><li>긴줄넘기<ul><li>하위</li></ul></li><li>다른항목</li></ul>',
+    );
+    expect(specs).toEqual([
+      expect.objectContaining({ type: 'bulletList', text: '긴줄넘기', listNestLevel: 0 }),
+      expect.objectContaining({ type: 'bulletList', text: '하위', listNestLevel: 1 }),
+      expect.objectContaining({ type: 'bulletList', text: '다른항목', listNestLevel: 0 }),
+    ]);
+    const texts = specs?.map((spec) => spec.text) ?? [];
+    expect(texts.filter((text) => text.includes('긴줄넘기'))).toHaveLength(1);
+    expect(texts.filter((text) => text.includes('하위'))).toHaveLength(1);
+  });
+
+  it('strips Notion bullet glyph DIVs and lone "." markers from list paste', () => {
+    const specs = parseClipboardHtmlToBlocks(
+      '<ul><li><div>.</div><div>육상 (릴레이)</div></li></ul>',
+    );
+    expect(specs).toHaveLength(1);
+    expect(specs?.[0]).toMatchObject({ type: 'bulletList', text: '육상 (릴레이)' });
+    expect(specs?.[0]?.text).not.toMatch(/^\./);
+  });
+
+  it('does not create a text block from a lone Notion bullet glyph DIV', () => {
+    const specs = parseClipboardHtmlToBlocks(
+      '<div>.</div><div>본문만</div>',
+    );
+    expect(specs?.some((spec) => spec.text === '.')).toBe(false);
+    expect(specs?.some((spec) => spec.text === '본문만')).toBe(true);
+  });
 });

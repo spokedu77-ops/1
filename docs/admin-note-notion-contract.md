@@ -55,6 +55,11 @@ The supported Notion-like surface is intentionally small:
 - **Placement (all documents):** inbound roots from DnD `inside` or cross-document transfer land at the **top** of the target sibling group (newest on top). Existing siblings shift down. The full sibling group is renumbered to unique `order_index` values `0..n-1`. Transfer must load the target document's current root siblings before assigning orders so inbound indexes do not collide with existing roots.
 - Enter / `+` insert still place the new block **after** the focused block (cursor-below). That is a different gesture from inbound DnD/transfer placement.
 - **Paste (all documents):** multi-block copy from block chrome selection or cross-select writes the same `NOTE_BLOCKS_JSON` clipboard. Structural paste uses one insert mode helper: block-clipboard paste always **inserts after** the anchor (never overwrites). TipTap HTML/MD/plain multi-block paste fills only a truly blank live anchor; otherwise inserts after. Live store content (not stale props) decides blankness.
+- **Paste fidelity (foundation, not cosmetic):** HTML/MD clipboard → block specs must be lossless for the supported surface and must not invent duplicates or glyph junk.
+  - Nested `UL`/`OL` under an `LI` must become **separate child specs only**. Parent LI `text`/`html` must be extracted **after removing nested lists** so the same phrase is not stored twice.
+  - Notion-like bullet glyph nodes (lone `.` / `•` / `aria-hidden` markers, glyph-only DIVs) must be stripped. They must never become their own text blocks or prefixes on list body text.
+  - List-type paste content must run through the same list marker normalize path as loaded list blocks (`normalizeListBlockContentRecord` / marker strip).
+  - Regression tests must fail on nested-LI duplication and glyph-only DIV paste. Fixing paste only in `NoteEditor` UI without the HTML/MD parser choke is a contract violation.
 
 ## Sync Contract
 
@@ -62,6 +67,11 @@ The supported Notion-like surface is intentionally small:
 - Remote snapshots must not wipe local unpublished structural intent.
 - When local structure is authoritative, `type`, `parent_block_id`, `order_index`, and `document_id` stay local; incoming snapshots may update content, version, and timestamps for the same block id.
 - **Data integrity (foundation):** Passive paths must not change user-authored payload without an explicit Intent. Clearing, truncating, equal-length replacement, or non-extension rewrite of non-empty local text is forbidden. Passive may only fill empty local text or apply a **strict extension** (incoming starts with local and is longer). `checked` must not flip off while text is unchanged. `page_document_id` / media ids must not clear while local still holds them. Every passive hole uses `mergePassiveIncomingContent` / `sealPassiveIncomingBlock`. **Adding a new passive merge that assigns `content` from server/remote without seal is a contract violation.**
+- **Intentional delete is Intent, not passive wipe:** Soft-delete / purge / leave-exclude is an explicit user (or system leave) Intent. Integrity must not resurrect deleted block ids.
+  - Any soft-delete enqueue path must clear emergency drafts for those ids. Product UI delete uses persistBlockTransaction(deleteIds) (not the unused persistSoftDelete helper alone); draft clear must live on that choke.
+  - `mergeServerBlocksIntoLocalSnapshot` must **drop** pending-delete / leave-exclude ids from the **local** side, not only skip re-adding them from the server.
+  - When outbound is empty, local-only ids absent from the authoritative server snapshot must be pruned after create grace (`LOCAL_ONLY_BLOCK_GRACE_MS`). Stale IDB rows for already-deleted blocks must not reappear on open/sync.
+  - Empty-snapshot race protection (`reject_race_wipe`) still applies to **unconfirmed** empty loads. It must not be used as a reason to keep soft-deleted ids that leave-exclude or server absence already confirmed.
 - Sibling `order_index` compaction is allowed only when duplicates exist. Sanitize must not rewrite unique orders solely to densify 0..n-1.
 - Outbound coalescing may collapse repeated `patch_content` operations, but it must preserve structural operations and their order. Explicit `parent_block_id: null` is a meaningful root move and must not be stripped.
 - Op replay and the `note_apply_block_transaction` RPC must apply `block_transaction` deterministically as field patches, soft deletes, then creates. Local replay and server materialization must share the same payload meaning.
@@ -75,7 +85,7 @@ The supported Notion-like surface is intentionally small:
 - Performance fixes must not bypass `syncWithServer`, toggle migration cleanup, child-document reconciliation, or structural-authority merge rules.
 - Bootstrap snapshots are allowed to reduce duplicate network calls only when they flow through the same document-open path as an ordinary block load.
 - First paint must not apply remembered/session/IndexedDB block snapshots as authoritative document content. A stale local snapshot may be useful for diagnostics or recovery, but the visible document tree must be established by the server/bootstrap open path. Document switch must clear the store projection and keep the editor skeleton until `openNoteDocument` settles (`loadSettledDocId`).
-- During document load, body whitespace clicks must not create blocks. A block may be created from whitespace only after `loadingBlocks` is false and the selected document's load has settled.
+- Body whitespace clicks must not create blocks. Current product behavior is selection-clear only (`handleClickEditorWhitespace`). Re-introducing whitespace create without a `loadSettledDocId` gate and regression test is a contract violation.
 - Database reads for active block trees, active page links, and active document lists must be supported by explicit indexes instead of relying on broad scans as note volume grows.
 - Idle note screens must not poll note APIs unless a feature explicitly requires live refresh. Realtime or user-triggered refresh should be preferred over timer-based reloads.
 - Temporary QA/smoke documents must be deleted or soft-deleted at the end of the script that created them.
@@ -96,7 +106,7 @@ The supported Notion-like surface is intentionally small:
 - `npm run test:admin-note` is the unit-level contract for block trees, paste, undo, sync, cleanup, and shared note helpers.
 - `npm run qa:admin-note` is the fast always-on browser contract. It must include the real regression case for the Choi Jihoon work note: repeated reloads must keep the `7월 업무 히스토리` page block visible and must not create stored blank root input blocks from load-time body clicks.
 - `npm run qa:admin-note-regression` is the deeper browser editing contract. It covers document switching, hard refresh, toggle child body display, deleted block non-resurrection, legacy toggle-body cleanup, Backspace focus behavior, and idle typing persistence.
-- CI must run foundation QA before data/content integrity audits. Regression QA runs on main/manual flows where runtime cost is acceptable.
+- CI **always** runs `verify:admin-note` (vitest + ops materialization + tsc). Foundation / regression Playwright E2E and DB audits run **only when** repository secrets are configured; when secrets are missing the E2E job skips with an explicit honesty notice (do not claim "CI always runs foundation"). When secrets exist, regression editing QA runs on pull_request as well as main/manual.
 - QA scripts must clean only their own temporary document title families. Foundation cleanup must not delete Regression/Toggle QA documents, and regression cleanup must not delete Foundation QA documents.
 - QA auth helpers should tolerate transient Supabase magic-link invalidation with bounded retry. Authentication flake must not be confused with product data loss.
 - Load profiling uses `node scripts/admin-note-load-profile.mjs`. The default profile document should remain a stable, real-world admin note with child-page links, currently Choi Jihoon's work note.

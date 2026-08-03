@@ -1,3 +1,4 @@
+import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
 import { defaultBlockContent } from './constants';
 import {
   canSplitMultilinePasteToBlocks,
@@ -8,6 +9,8 @@ import { defaultImageBlockContent } from './noteImageBlock';
 import { normalizeTableContent, type NoteTableContent } from './noteTableBlock';
 import { isPageLinkBlock, isTodoBlock, isToggleBlock } from './noteBlockSemantics';
 import type { NoteBlock } from './types';
+
+const LIST_PASTE_TYPES = new Set<NoteBlock['type']>(['bulletList', 'numberedList']);
 
 export type PastedBlockSpec = {
   type: NoteBlock['type'];
@@ -73,6 +76,9 @@ export function contentForPastedBlock(
     next.checked = spec.checked ?? false;
   }
   if (spec.type === 'code' && spec.language) next.language = spec.language;
+  if (LIST_PASTE_TYPES.has(spec.type)) {
+    return normalizeListBlockContentRecord(next);
+  }
   return next;
 }
 

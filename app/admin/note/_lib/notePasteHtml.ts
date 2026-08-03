@@ -196,15 +196,40 @@ function parseTodoDiv(el: Element): PastedBlockSpec | null {
   };
 }
 
+/** Notion 등에서 LI 안 글머리 DIV(`.`/`•`)·중첩 UL/OL 제거 후 본문만 추출 */
+function listItemBodyClone(li: Element): Element {
+  const clone = li.cloneNode(true) as Element;
+  clone.querySelectorAll('ul, ol').forEach((node) => node.remove());
+  clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+  for (const child of [...clone.children]) {
+    const text = (child.textContent ?? '').replace(/\u00a0/g, ' ').trim();
+    if (/^[.\u2022\u25E6\u25AA\u25AB\u00B7•◦▪▫]\s*$/.test(text)) {
+      child.remove();
+    }
+  }
+  return clone;
+}
+
+function stripLeadingBulletGlyph(text: string): string {
+  return text
+    .replace(/^[.\u2022\u25E6\u25AA\u25AB\u00B7•◦▪▫]\s+/, '')
+    .replace(/^\.\s*/, '')
+    .trim();
+}
+
 function parseListItems(listEl: Element, ordered: boolean, depth = 0): PastedBlockSpec[] {
   const out: PastedBlockSpec[] = [];
   const type: NoteBlock['type'] = ordered ? 'numberedList' : 'bulletList';
   for (const child of listEl.children) {
     if (child.tagName !== 'LI') continue;
-    const text = elementText(child);
-    const html = elementInnerHtml(child);
-    if (!text && !html) continue;
-    out.push({ type, text, html, listNestLevel: depth });
+    const body = listItemBodyClone(child);
+    const text = stripLeadingBulletGlyph(elementText(body));
+    const html = elementInnerHtml(body);
+    if (!text && !html) {
+      // 본문 없는 LI라도 중첩 리스트는 펼친다
+    } else {
+      out.push({ type, text, html, listNestLevel: depth });
+    }
     for (const nested of child.children) {
       if (nested.tagName === 'UL') out.push(...parseListItems(nested, false, depth + 1));
       if (nested.tagName === 'OL') out.push(...parseListItems(nested, true, depth + 1));
@@ -283,6 +308,11 @@ function walkElements(nodes: Iterable<Node>, out: PastedBlockSpec[], htmlSource:
       const callout = parseNotionCalloutElement(el);
       if (callout) {
         out.push(callout);
+        continue;
+      }
+      // Notion 글머리 전용 DIV (`.` / `•`) — 단독 text 블록으로 만들지 않음
+      const glyphOnly = elementText(el);
+      if (/^[.\u2022\u25E6\u25AA\u25AB\u00B7•◦▪▫]\s*$/.test(glyphOnly)) {
         continue;
       }
       const hasBlockChild = [...el.children].some((child) => BLOCK_TAGS.has(child.tagName));

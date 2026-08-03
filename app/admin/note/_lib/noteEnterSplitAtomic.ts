@@ -5,7 +5,9 @@ import type { NoteBlock } from './types';
  * create 실패(null/false/throw) 시 호출측이 restore로 분할 전 본문을 되돌린다.
  */
 export function enterSplitCreateFailed(result: unknown): boolean {
-  return result === null || result === false;
+  // C4: mid-split create는 NoteBlock | null | false | Promise만 성공 신호.
+  // void/undefined는 “아래 블록 생성 안 함” → 실패로 보고 restore.
+  return result === null || result === false || result === undefined;
 }
 
 export async function settleEnterSplitCreate(

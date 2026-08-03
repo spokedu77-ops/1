@@ -61,14 +61,16 @@ export function bulletMarkerForLevel(level: number): string {
   return BULLET_MARKERS[Math.max(0, level) % BULLET_MARKERS.length];
 }
 
-/** 목록 블록 content.text에 섞인 마커(-, •, 1. 등) 제거 — UI 글리프와 중복 방지 */
+/** 목록 블록 content.text에 섞인 마커(-, •, ., 1. 등) 제거 — UI 글리프와 중복 방지 */
 export function stripListItemMarkerPrefix(text: string): string {
   const parsed = parseTextBlockLine(text);
   if (parsed.hasBullet) return parsed.body;
   let body = parsed.body;
-  if (body === '-' || body === '*') return '';
+  if (body === '-' || body === '*' || body === '.') return '';
   body = body.replace(/^[-*]\s+/, '');
   body = body.replace(/^\d+\.\s+/, '');
+  // Notion 등에서 글머리만 `.` / `•` 로 들어오는 경우
+  body = body.replace(/^[.\u2022\u25E6\u25AA\u25AB\u00B7•◦▪▫]\s+/, '');
   for (const marker of BULLET_MARKERS) {
     if (body.startsWith(marker)) {
       body = body.slice(marker.length);
@@ -82,7 +84,7 @@ export function stripListItemMarkerPrefix(text: string): string {
 export function stripListItemMarkerFromHtml(html: string): string {
   if (!html.trim()) return html;
   return html.replace(
-    /^(<p[^>]*>)(\s*(?:&nbsp;|&#160;|\u00a0)*)((?:[-*•◦▪▫]\s+|\d+\.\s+))/i,
+    /^(<p[^>]*>)(\s*(?:&nbsp;|&#160;|\u00a0)*)((?:[-*.•◦▪▫\u2022\u25E6\u25AA\u25AB\u00B7]\s+|\d+\.\s+))/i,
     '$1$2',
   );
 }
