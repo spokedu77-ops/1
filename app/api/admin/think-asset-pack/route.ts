@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { SPOMOVE_CONTENT_PACK_ID } from '@/app/lib/spomove/spomoveOfficialAssets';
+import { validateSpomovePublishedGuidesForSave } from '@/app/lib/spomove/validateSpomovePublishedGuidesForSave';
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin();
@@ -20,6 +22,19 @@ export async function POST(request: NextRequest) {
     const assets_json = body?.assets_json;
     if (!id || !name || assets_json === undefined || assets_json === null) {
       return NextResponse.json({ error: 'id, name, assets_json 필수' }, { status: 400 });
+    }
+
+    if (id === SPOMOVE_CONTENT_PACK_ID) {
+      const issues = validateSpomovePublishedGuidesForSave(assets_json);
+      if (issues.length > 0) {
+        return NextResponse.json(
+          {
+            error: '게시할 수 없는 SPOMOVE 공식 가이드가 있습니다.',
+            issues,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const supabase = getServiceSupabase();

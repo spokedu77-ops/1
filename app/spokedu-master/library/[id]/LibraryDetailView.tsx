@@ -8,6 +8,7 @@ import {
   Copy,
   ExternalLink,
   FileText,
+  MonitorPlay,
   Play,
   Printer,
 } from 'lucide-react';
@@ -49,6 +50,11 @@ import {
   type SaveActionFeedback,
 } from '../../lib/saveActionFeedback';
 import {
+  getSpomoveSessionHref,
+  getSupportedOfficialSpomovePresets,
+} from '../../lib/program-meta';
+import { getSpomovePresetDisplayModel } from '../../spomove/spomovePresetDisplayModel';
+import {
   QUICK_RECORD_DRAFT_KEY,
   clearOwnerSaveDraft,
   readOwnerSaveDraft,
@@ -57,7 +63,7 @@ import {
 import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore } from '../../store';
-import type { ClassRecord } from '../../types';
+import type { ClassRecord, Program } from '../../types';
 import { getLibraryReturnHref } from '../libraryNavigation';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
@@ -117,6 +123,63 @@ function BookOpenFallback() {
     <div className="inline-flex h-16 w-16 items-center justify-center rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] text-[color:var(--spm-t2)]">
       <FileText className="h-7 w-7" />
     </div>
+  );
+}
+
+function RelatedSpomoveSection({
+  program,
+}: {
+  program: Program;
+}) {
+  const presets = getSupportedOfficialSpomovePresets(program);
+  if (presets.length === 0) return null;
+
+  return (
+    <section className="rounded-[14px] border border-slate-200 bg-white p-4 sm:p-5">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-[var(--spm-acc)]">
+            <MonitorPlay className="h-3.5 w-3.5" />
+            SPOMOVE 연계
+          </p>
+          <h2 className="mt-1 text-[16px] font-black text-[color:var(--spm-t)]">
+            이 수업에 바로 붙여 쓰는 화면 활동
+          </h2>
+          <p className="mt-1 text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
+            도입, 집중 전환, 마무리에 짧게 연결할 수 있는 활동입니다.
+          </p>
+        </div>
+        <Link
+          href="/spokedu-master/spomove"
+          className="inline-flex min-h-9 items-center text-[12px] font-black text-[color:var(--spm-t2)]"
+        >
+          SPOMOVE 목록
+        </Link>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {presets.slice(0, 3).map((preset) => {
+          const display = getSpomovePresetDisplayModel(preset);
+          return (
+            <Link
+              key={preset.id}
+              href={getSpomoveSessionHref(program, preset)}
+              className="group rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-3 transition-colors hover:border-slate-300 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+            >
+              <p className="text-[11px] font-black text-[var(--spm-acc)]">{display.programLabel}</p>
+              <p className="mt-1 line-clamp-2 text-[14px] font-black leading-5 text-[color:var(--spm-t)]">
+                {display.displayTitle}
+              </p>
+              <p className="mt-1 truncate text-[12px] font-semibold text-[color:var(--spm-t2)]">
+                {display.difficultyLabel} · {display.durationLabel}
+              </p>
+              <span className="mt-3 inline-flex h-8 items-center gap-1 rounded-[9px] bg-white px-2.5 text-[11px] font-black text-slate-700 ring-1 ring-slate-200 group-hover:text-[var(--spm-acc)]">
+                화면 활동 시작
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -467,6 +530,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
             </aside>
           </div>
         </section>
+
+        <RelatedSpomoveSection program={program} />
 
         {setupImage || hasPreActivityChecklist ? (
           <div className="grid gap-5 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] lg:items-start">

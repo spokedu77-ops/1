@@ -47,16 +47,28 @@ import {
   SPOMOVE_THUMBNAIL_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_NAME,
   type SpomoveContentAssetsJson,
+  type SpomoveFocusTag,
+  type SpomoveMovementGuideDraft,
   type SpomovePresetContentOverride,
   type SpomoveGuideVideoAssetsJson,
   type SpomoveThumbnailAssetsJson,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
+import {
+  SPOMOVE_FOCUS_TAGS,
+  validateSpomoveMovementGuideDraft,
+} from '@/app/lib/spomove/spomoveGuideContract';
+import type { SpomovePublishedGuideSaveIssue } from '@/app/lib/spomove/validateSpomovePublishedGuidesForSave';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
+  type OfficialSpomovePreset,
   type OfficialSpomoveProgramGroup,
 } from '@/app/spokedu-master/spomove/officialSpomovePresets';
+import { SPOMOVE_FOCUS_TAG_LABELS } from '@/app/spokedu-master/spomove/spomovePresetDisplayModel';
+import { getPresetMovementSummary } from '@/app/spokedu-master/spomove/movements/presetMovementSummary';
+import { movementDisplayLabel } from '@/app/spokedu-master/spomove/movements/movementLabels';
+import { MOVEMENT_REGISTRY } from '@/app/spokedu-master/spomove/movements/movementRegistry';
 import {
   SPOMOVE_CORE_KEYWORD_AXIS,
   normalizeSpomoveCoreKeywordsList,
@@ -679,6 +691,128 @@ function contentDraftIsEmpty(value: SpomovePresetContentOverride | undefined) {
   );
 }
 
+function isBuiltInGuidePreset(preset: OfficialSpomovePreset) {
+  return preset.movementProfileId === 'bodyCueBuiltIn' || preset.movementProfileId === 'diveBuiltIn';
+}
+
+function resolvePresetGuideMovement(preset: OfficialSpomovePreset): SpomoveMovementGuideDraft['movement'] {
+  if (isBuiltInGuidePreset(preset)) return null;
+  return getPresetMovementSummary(preset)?.officialRecommended ?? preset.recommendedMovement;
+}
+
+function getMovementGuideLabel(movement: SpomoveMovementGuideDraft['movement']) {
+  if (movement === null) return '화면 지시';
+  if (!movement) return '미설정';
+  return movementDisplayLabel(movement);
+}
+
+function withPresetGuideMovement(
+  preset: OfficialSpomovePreset,
+  guide: SpomoveMovementGuideDraft | undefined,
+): SpomoveMovementGuideDraft {
+  return {
+    ...guide,
+    movement: guide?.movement ?? resolvePresetGuideMovement(preset),
+  };
+}
+
+function buildMovementGuideStarterDraft(
+  preset: OfficialSpomovePreset,
+  guide: SpomoveMovementGuideDraft | undefined,
+): SpomoveMovementGuideDraft {
+  const movement = guide?.movement ?? resolvePresetGuideMovement(preset);
+  const movementDefinition =
+    movement && movement !== null ? MOVEMENT_REGISTRY[movement.baseMovement] : null;
+  const defaultTag: SpomoveFocusTag =
+    preset.axis === 'executive'
+      ? 'ruleSwitching'
+      : preset.axis === 'attention'
+        ? 'visualSearch'
+        : 'choiceReaction';
+
+  return {
+    ...guide,
+    movement,
+    instruction:
+      guide?.instruction ??
+      movementDefinition?.instruction ??
+      `${preset.description} 화면 신호를 확인하고 정해진 규칙에 맞춰 반응합니다.`,
+    coachScript:
+      guide?.coachScript ??
+      movementDefinition?.teacherCue ??
+      '화면을 먼저 보고, 맞는 신호에만 빠르게 반응해요.',
+    focusTags: guide?.focusTags?.length ? guide.focusTags : [defaultTag],
+    easier:
+      guide?.easier ??
+      movementDefinition?.easyVariation ??
+      '자극 시간을 늘리고 한 가지 규칙만 사용해 천천히 진행합니다.',
+    harder:
+      guide?.harder ??
+      movementDefinition?.hardVariation ??
+      '자극 시간을 줄이고 추가 규칙이나 연속 반응을 더해 진행합니다.',
+  };
+}
+
+function getMovementGuideCompletion(
+  preset: OfficialSpomovePreset,
+  guide: SpomoveMovementGuideDraft | undefined,
+) {
+  const requiredFields = ['movement', 'instruction', 'coachScript', 'focusTags', 'easier', 'harder'] as const;
+  const issues = validateSpomoveMovementGuideDraft({ draft: guide, preset });
+  const missingFields = new Set(issues.map((issue) => issue.field));
+  const completeCount = requiredFields.length - missingFields.size;
+  const percent = Math.round((completeCount / requiredFields.length) * 100);
+
+  return {
+    percent,
+    issues,
+    completeCount,
+    requiredCount: requiredFields.length,
+  };
+}
+
+type ThinkAssetPackSaveResponse = {
+  error?: string;
+  issues?: SpomovePublishedGuideSaveIssue[];
+};
+
+type SpomoveContentWorkFilter = 'all' | 'missingGuide' | 'draft' | 'published' | 'hasIssue';
+
+const SPOMOVE_CONTENT_WORK_FILTERS: Array<{ id: SpomoveContentWorkFilter; label: string }> = [
+  { id: 'all', label: '전체' },
+  { id: 'missingGuide', label: '공식 가이드 없음' },
+  { id: 'draft', label: 'Draft' },
+  { id: 'published', label: 'Published' },
+  { id: 'hasIssue', label: '오류' },
+];
+
+function isSpomoveGuideSaveIssue(value: unknown): value is SpomovePublishedGuideSaveIssue {
+  if (!value || typeof value !== 'object') return false;
+  const issue = value as Record<string, unknown>;
+  return (
+    typeof issue.presetId === 'string' &&
+    typeof issue.field === 'string' &&
+    typeof issue.code === 'string' &&
+    Array.isArray(issue.path) &&
+    typeof issue.message === 'string'
+  );
+}
+
+function normalizeSpomoveGuideSaveIssues(value: unknown): SpomovePublishedGuideSaveIssue[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isSpomoveGuideSaveIssue);
+}
+
+class SpomoveContentSaveError extends Error {
+  readonly issues: SpomovePublishedGuideSaveIssue[];
+
+  constructor(message: string, issues: SpomovePublishedGuideSaveIssue[]) {
+    super(message);
+    this.name = 'SpomoveContentSaveError';
+    this.issues = issues;
+  }
+}
+
 function patchCoreKeywordAxis(
   current: string[] | undefined,
   key: keyof SpomoveCoreKeywords,
@@ -719,6 +853,8 @@ function SpomoveContentManager() {
   const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
   const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saveIssues, setSaveIssues] = useState<SpomovePublishedGuideSaveIssue[]>([]);
+  const [workFilter, setWorkFilter] = useState<SpomoveContentWorkFilter>('all');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -760,11 +896,15 @@ function SpomoveContentManager() {
         assets_json: { schemaVersion: 2, content: next } satisfies SpomoveContentAssetsJson,
       }),
     });
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    if (!res.ok) throw new Error(body.error ?? 'SPOMOVE 설명 저장에 실패했습니다.');
+    const body = (await res.json().catch(() => ({}))) as ThinkAssetPackSaveResponse;
+    if (!res.ok) {
+      const issues = normalizeSpomoveGuideSaveIssues(body.issues);
+      throw new SpomoveContentSaveError(body.error ?? 'SPOMOVE 설명 저장에 실패했습니다.', issues);
+    }
     setContentMap(next);
     contentRef.current = next;
     setDraftMap(next);
+    setSaveIssues([]);
   }, []);
 
   const updateDraft = (presetId: string, patch: Partial<SpomovePresetContentOverride>) => {
@@ -775,6 +915,25 @@ function SpomoveContentManager() {
         ...patch,
       },
     }));
+  };
+
+  const updateMovementGuide = (
+    presetId: string,
+    patch: Partial<SpomoveMovementGuideDraft>,
+  ) => {
+    setDraftMap((current) => {
+      const currentDraft = normalizeContentDraft(current[presetId]);
+      return {
+        ...current,
+        [presetId]: {
+          ...currentDraft,
+          movementGuide: {
+            ...currentDraft.movementGuide,
+            ...patch,
+          },
+        },
+      };
+    });
   };
 
   const saveContent = useCallback(async (presetId: string) => {
@@ -792,12 +951,14 @@ function SpomoveContentManager() {
 
     setSavingPresetId(presetId);
     setError(null);
+    setSaveIssues([]);
     try {
       await persist(next);
       toast.success('SPOMOVE 설명을 저장했습니다.');
     } catch (saveError) {
       const message = saveError instanceof Error ? saveError.message : 'SPOMOVE 설명 저장에 실패했습니다.';
       setError(message);
+      setSaveIssues(saveError instanceof SpomoveContentSaveError ? saveError.issues : []);
       toast.error(message);
     } finally {
       setSavingPresetId(null);
@@ -810,12 +971,14 @@ function SpomoveContentManager() {
     delete next[presetId];
     setDeletingPresetId(presetId);
     setError(null);
+    setSaveIssues([]);
     try {
       await persist(next);
       toast.success('SPOMOVE 설명을 삭제했습니다.');
     } catch (deleteError) {
       const message = deleteError instanceof Error ? deleteError.message : 'SPOMOVE 설명 삭제에 실패했습니다.';
       setError(message);
+      setSaveIssues(deleteError instanceof SpomoveContentSaveError ? deleteError.issues : []);
       toast.error(message);
     } finally {
       setDeletingPresetId(null);
@@ -823,6 +986,85 @@ function SpomoveContentManager() {
   }, [persist]);
 
   const savedCount = Object.keys(contentMap).length;
+  const issuePresetCount = new Set(saveIssues.map((issue) => issue.presetId)).size;
+  const issuePresetIds = useMemo(
+    () => new Set(saveIssues.map((issue) => issue.presetId)),
+    [saveIssues],
+  );
+  const matchesWorkFilter = useCallback(
+    (presetId: string) => {
+      const draft = normalizeContentDraft(draftMap[presetId]);
+      if (workFilter === 'all') return true;
+      if (workFilter === 'hasIssue') return issuePresetIds.has(presetId);
+      if (workFilter === 'missingGuide') return !draft.movementGuide;
+      return draft.movementGuideStatus === workFilter;
+    },
+    [draftMap, issuePresetIds, workFilter],
+  );
+  const visibleContentPresets = useMemo(
+    () => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => matchesWorkFilter(preset.id)),
+    [matchesWorkFilter],
+  );
+  const workFilterCounts = useMemo(
+    () =>
+      SPOMOVE_CONTENT_WORK_FILTERS.reduce<Record<SpomoveContentWorkFilter, number>>(
+        (counts, filter) => {
+          counts[filter.id] = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => {
+            const draft = normalizeContentDraft(draftMap[preset.id]);
+            if (filter.id === 'all') return true;
+            if (filter.id === 'hasIssue') return issuePresetIds.has(preset.id);
+            if (filter.id === 'missingGuide') return !draft.movementGuide;
+            return draft.movementGuideStatus === filter.id;
+          }).length;
+          return counts;
+        },
+        {
+          all: 0,
+          missingGuide: 0,
+          draft: 0,
+          published: 0,
+          hasIssue: 0,
+        },
+      ),
+    [draftMap, issuePresetIds],
+  );
+  const guideCompletionSummary = useMemo(() => {
+    let readyForReview = 0;
+    let published = 0;
+    let needsWork = 0;
+
+    OFFICIAL_SPOMOVE_LIBRARY.forEach((preset) => {
+      const draft = normalizeContentDraft(draftMap[preset.id]);
+      const completion = getMovementGuideCompletion(preset, draft.movementGuide);
+      if (draft.movementGuideStatus === 'published') published += 1;
+      if (completion.issues.length === 0 && draft.movementGuideStatus !== 'published') readyForReview += 1;
+      if (completion.issues.length > 0) needsWork += 1;
+    });
+
+    return { readyForReview, published, needsWork };
+  }, [draftMap]);
+  const visiblePresetCount = workFilterCounts[workFilter];
+  const fillVisibleStarterDrafts = useCallback(() => {
+    if (visibleContentPresets.length === 0) {
+      toast.error('현재 필터에 초안을 채울 프리셋이 없습니다.');
+      return;
+    }
+
+    setDraftMap((current) => {
+      const next = { ...current };
+      visibleContentPresets.forEach((preset) => {
+        const currentDraft = normalizeContentDraft(next[preset.id]);
+        next[preset.id] = {
+          ...currentDraft,
+          movementGuide: buildMovementGuideStarterDraft(preset, currentDraft.movementGuide),
+          movementGuideStatus: currentDraft.movementGuideStatus ?? 'draft',
+        };
+      });
+      return next;
+    });
+    setSaveIssues([]);
+    toast.success(`${visibleContentPresets.length}개 프리셋의 가이드 초안을 채웠습니다. 검토 후 저장하세요.`);
+  }, [visibleContentPresets]);
 
   return (
     <main className="min-h-[calc(100dvh-73px)] bg-slate-50 p-4 sm:p-6">
@@ -860,10 +1102,73 @@ function SpomoveContentManager() {
               <p className="mt-1 text-[12px] font-black text-emerald-900">think_asset_packs</p>
             </div>
           </div>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+              <p className="text-[10px] font-black text-emerald-700">Published</p>
+              <p className="mt-1 text-[18px] font-black text-emerald-950">{guideCompletionSummary.published}개</p>
+            </div>
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
+              <p className="text-[10px] font-black text-indigo-700">검토 후 게시 가능</p>
+              <p className="mt-1 text-[18px] font-black text-indigo-950">{guideCompletionSummary.readyForReview}개</p>
+            </div>
+            <div className="rounded-lg border border-amber-100 bg-amber-50 p-3">
+              <p className="text-[10px] font-black text-amber-700">필수값 보완 필요</p>
+              <p className="mt-1 text-[18px] font-black text-amber-950">{guideCompletionSummary.needsWork}개</p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[11px] font-black text-slate-600">작업 필터</p>
+              <p className="text-[11px] font-bold text-slate-500">현재 {visiblePresetCount}개 프리셋 표시</p>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SPOMOVE_CONTENT_WORK_FILTERS.map((filter) => {
+                const active = workFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setWorkFilter(filter.id)}
+                    className={`h-8 rounded-full border px-3 text-[11px] font-black ${
+                      active
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                        : 'border-slate-200 bg-white text-slate-500'
+                    }`}
+                  >
+                    {filter.label}
+                    <span className="ml-1 text-[10px] opacity-60">{workFilterCounts[filter.id]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-3 flex flex-col gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[11px] font-bold leading-4 text-slate-500">
+                현재 필터에 보이는 항목만 초안을 채웁니다. 기존 입력값은 덮어쓰지 않고 빈 필드만 보완합니다.
+              </p>
+              <button
+                type="button"
+                onClick={fillVisibleStarterDrafts}
+                disabled={visiblePresetCount === 0 || loading}
+                className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-3 text-[12px] font-black text-white shadow-sm hover:bg-indigo-700 disabled:opacity-40"
+              >
+                보이는 항목 초안 채우기
+              </button>
+            </div>
+          </div>
           {error ? (
             <p className="mt-3 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-[12px] font-bold text-rose-700">
               {error}
             </p>
+          ) : null}
+          {saveIssues.length > 0 ? (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-[12px] text-amber-950">
+              <p className="font-black">
+                공식 가이드 게시 조건을 통과하지 못한 프리셋 {issuePresetCount}개, 오류 {saveIssues.length}개가 있습니다.
+              </p>
+              <p className="mt-1 font-semibold leading-5 text-amber-800">
+                임시 작성 중인 draft는 저장할 수 있지만, published 상태는 수업에 바로 쓸 수 있는 필수 항목을 모두 채워야 합니다.
+              </p>
+            </div>
           ) : null}
         </section>
 
@@ -871,11 +1176,27 @@ function SpomoveContentManager() {
           <div className="flex justify-center rounded-xl border border-slate-200 bg-white py-16">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
           </div>
+        ) : visiblePresetCount === 0 ? (
+          <section className="rounded-xl border border-dashed border-slate-200 bg-white px-5 py-10 text-center">
+            <p className="text-[15px] font-black text-slate-800">현재 작업 필터에 해당하는 프리셋이 없습니다.</p>
+            <p className="mt-2 text-[13px] font-semibold text-slate-500">
+              다른 작업 상태를 선택하거나 전체 목록으로 돌아가세요.
+            </p>
+            <button
+              type="button"
+              onClick={() => setWorkFilter('all')}
+              className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-2 text-[12px] font-black text-slate-600 hover:text-indigo-700"
+            >
+              전체 보기
+            </button>
+          </section>
         ) : (
           SPOMOVE_GROUP_OPTIONS.map((group) => {
             const presets = OFFICIAL_SPOMOVE_LIBRARY
               .filter((preset) => preset.programGroup === group.key)
+              .filter((preset) => matchesWorkFilter(preset.id))
               .sort((a, b) => a.sortOrder - b.sortOrder);
+            if (presets.length === 0) return null;
 
             return (
               <section key={group.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -893,11 +1214,54 @@ function SpomoveContentManager() {
                     const savingThis = savingPresetId === preset.id;
                     const deletingThis = deletingPresetId === preset.id;
                     const dirty = JSON.stringify(normalizeContentDraft(saved)) !== JSON.stringify(draft);
+                    const presetIssues = saveIssues.filter((issue) => issue.presetId === preset.id);
+                    const guideCompletion = getMovementGuideCompletion(preset, draft.movementGuide);
 
                     return (
                       <article key={preset.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                         <p className="text-[13px] font-black text-slate-950">{preset.title}</p>
                         <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
+                        <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-[11px] font-black text-slate-700">
+                              공식 가이드 완성도 {guideCompletion.completeCount}/{guideCompletion.requiredCount}
+                            </p>
+                            <span
+                              className={`rounded-full px-2 py-1 text-[10px] font-black ${
+                                guideCompletion.issues.length === 0
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-amber-50 text-amber-700'
+                              }`}
+                            >
+                              {guideCompletion.issues.length === 0 ? '게시 조건 충족' : `${guideCompletion.issues.length}개 보완`}
+                            </span>
+                          </div>
+                          <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className={`h-full rounded-full ${
+                                guideCompletion.issues.length === 0 ? 'bg-emerald-500' : 'bg-amber-400'
+                              }`}
+                              style={{ width: `${guideCompletion.percent}%` }}
+                            />
+                          </div>
+                          {guideCompletion.issues.length > 0 ? (
+                            <p className="mt-2 text-[11px] font-semibold leading-4 text-slate-500">
+                              빠진 항목: {guideCompletion.issues.map((issue) => issue.field).join(', ')}
+                            </p>
+                          ) : null}
+                        </div>
+                        {presetIssues.length > 0 ? (
+                          <div className="mt-3 rounded-lg border border-amber-200 bg-white px-3 py-2">
+                            <p className="text-[11px] font-black text-amber-900">공식 가이드 게시 전 보완 필요</p>
+                            <ul className="mt-1 space-y-1">
+                              {presetIssues.map((issue) => (
+                                <li key={`${issue.presetId}-${issue.field}-${issue.code}`} className="text-[11px] font-semibold leading-4 text-amber-800">
+                                  {issue.field}: {issue.message}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
                         <div className="mt-3 space-y-2">
                           <p className="text-[11px] font-black text-slate-500">핵심 키워드</p>
                           {SPOMOVE_CORE_KEYWORD_AXIS.map((axis) => {
@@ -942,6 +1306,122 @@ function SpomoveContentManager() {
                             className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
                           />
                         </label>
+                        <section className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <p className="text-[11px] font-black text-slate-700">공식 수업 가이드</p>
+                              <p className="mt-0.5 text-[10px] font-semibold leading-4 text-slate-400">
+                                Published는 구독자에게 바로 보이는 완성 가이드입니다.
+                              </p>
+                            </div>
+                            <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+                              {(['draft', 'published'] as const).map((status) => {
+                                const active = (draft.movementGuideStatus ?? 'draft') === status;
+                                return (
+                                  <button
+                                    key={status}
+                                    type="button"
+                                    onClick={() => updateDraft(preset.id, { movementGuideStatus: status })}
+                                    className={`h-7 rounded-md px-2 text-[11px] font-black ${
+                                      active ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'
+                                    }`}
+                                  >
+                                    {status === 'draft' ? 'Draft' : 'Published'}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-[11px] font-bold text-slate-500">
+                                추천 동작: <span className="font-black text-slate-900">{getMovementGuideLabel(draft.movementGuide?.movement)}</span>
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => updateDraft(preset.id, { movementGuide: withPresetGuideMovement(preset, draft.movementGuide) })}
+                                className="h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 hover:text-indigo-700"
+                              >
+                                추천 동작 적용
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateDraft(preset.id, { movementGuide: buildMovementGuideStarterDraft(preset, draft.movementGuide) })}
+                                className="h-7 rounded-md border border-indigo-200 bg-indigo-50 px-2 text-[11px] font-black text-indigo-700 hover:bg-indigo-100"
+                              >
+                                초안 자동 채우기
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-3 grid gap-2">
+                            <label className="block text-[10px] font-black text-slate-400">
+                              진행 방법
+                              <textarea
+                                value={draft.movementGuide?.instruction ?? ''}
+                                onChange={(event) => updateMovementGuide(preset.id, { instruction: event.target.value })}
+                                disabled={savingThis || deletingThis}
+                                className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                              />
+                            </label>
+                            <label className="block text-[10px] font-black text-slate-400">
+                              교사 멘트
+                              <textarea
+                                value={draft.movementGuide?.coachScript ?? ''}
+                                onChange={(event) => updateMovementGuide(preset.id, { coachScript: event.target.value })}
+                                disabled={savingThis || deletingThis}
+                                className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                              />
+                            </label>
+                            <div>
+                              <p className="text-[10px] font-black text-slate-400">Focus tag</p>
+                              <div className="mt-1 flex flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-white p-2">
+                                {SPOMOVE_FOCUS_TAGS.map((tag) => {
+                                  const selected = draft.movementGuide?.focusTags?.includes(tag) ?? false;
+                                  return (
+                                    <button
+                                      key={tag}
+                                      type="button"
+                                      onClick={() => {
+                                        const current = [...(draft.movementGuide?.focusTags ?? [])] as SpomoveFocusTag[];
+                                        const next = selected
+                                          ? current.filter((item) => item !== tag)
+                                          : [...current, tag].slice(0, 3);
+                                        updateMovementGuide(preset.id, { focusTags: next });
+                                      }}
+                                      className={`h-8 rounded-full border px-3 text-[11px] font-black ${
+                                        selected
+                                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                                          : 'border-slate-200 bg-slate-50 text-slate-500'
+                                      }`}
+                                    >
+                                      {SPOMOVE_FOCUS_TAG_LABELS[tag]}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="block text-[10px] font-black text-slate-400">
+                                쉬운 변형
+                                <textarea
+                                  value={draft.movementGuide?.easier ?? ''}
+                                  onChange={(event) => updateMovementGuide(preset.id, { easier: event.target.value })}
+                                  disabled={savingThis || deletingThis}
+                                  className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                                />
+                              </label>
+                              <label className="block text-[10px] font-black text-slate-400">
+                                어려운 변형
+                                <textarea
+                                  value={draft.movementGuide?.harder ?? ''}
+                                  onChange={(event) => updateMovementGuide(preset.id, { harder: event.target.value })}
+                                  disabled={savingThis || deletingThis}
+                                  className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </section>
                         <div className="mt-3 flex flex-wrap items-center gap-1.5">
                           <button
                             type="button"

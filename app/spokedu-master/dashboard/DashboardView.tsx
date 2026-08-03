@@ -40,6 +40,7 @@ import {
 import { formatLibraryCardEquipmentName } from '../library/libraryViewModel';
 import { spmChipClass } from '../lib/masterUiClasses';
 import {
+  getSupportedOfficialSpomovePresets,
   getProgramHomeReadiness,
   isProgramHomeRecommendationEligible,
 } from '../lib/program-meta';
@@ -343,6 +344,7 @@ function WeeklyProgramCard({
   const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
   const selectionMeta = formatProgramSelectionReasons(program);
   const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
+  const linkedSpomoveCount = getSupportedOfficialSpomovePresets(program).length;
 
   return (
     <LessonCatalogCard
@@ -355,6 +357,7 @@ function WeeklyProgramCard({
       detailHref={`/spokedu-master/library/${program.id}`}
       decisionMeta={model.theme || '체육 수업'}
       supportMeta={supportMeta}
+      cornerLabel={linkedSpomoveCount > 0 ? 'SPOMOVE 연계' : undefined}
       priority={priority}
       dataAttrs={{
         'data-weekly-program': program.id,
@@ -1017,7 +1020,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="spomove"
         aria-labelledby="spomove-heading"
-        className="relative overflow-hidden rounded-[16px] border border-slate-800 bg-slate-950 p-3 sm:p-3.5"
+        className="relative overflow-hidden rounded-[16px] border border-slate-200/90 bg-white p-3 sm:p-3.5"
       >
         <SectionHeader
           eyebrow="화면 활동"
@@ -1025,8 +1028,8 @@ function EntitledDashboardView() {
           title="SPOMOVE"
           titleId="spomove-heading"
           size="lg"
-          tone="dark"
-          description="교실 스크린을 수업으로 바꿉니다."
+          tone="feature"
+          description="수업 앞뒤에 붙이는 화면 반응 활동입니다."
           href="/spokedu-master/spomove"
           action="활동 더 보기"
         />

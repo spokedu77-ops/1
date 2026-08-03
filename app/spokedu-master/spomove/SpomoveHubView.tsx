@@ -60,6 +60,7 @@ import {
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
+type GuideStatusFilter = 'all' | 'published' | 'legacy' | 'preparing';
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
   error: { code?: string } | null;
@@ -67,6 +68,50 @@ type SpomoveThumbnailPackQueryResult = {
 
 type SpomoveGuideVideoPackQueryResult = SpomoveThumbnailPackQueryResult;
 type SpomoveContentPackQueryResult = SpomoveThumbnailPackQueryResult;
+
+function getGuideStatusBadge(guideMode: string) {
+  if (guideMode === 'published') {
+    return {
+      label: '공식 가이드',
+      helper: '바로 수업 가능',
+      className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    };
+  }
+  if (guideMode === 'legacy') {
+    return {
+      label: '기본 안내',
+      helper: '간단 실행안 제공',
+      className: 'border-sky-200 bg-sky-50 text-sky-700',
+    };
+  }
+  return {
+    label: '가이드 준비 중',
+    helper: '화면 활동 가능',
+    className: 'border-slate-200 bg-slate-50 text-slate-500',
+  };
+}
+
+function resolveGuideStatusFilter(
+  preset: OfficialSpomovePreset,
+  contentOverride?: SpomovePresetContentOverride,
+): Exclude<GuideStatusFilter, 'all'> {
+  const guideDisplay = buildSpomoveGuideDisplayModel({
+    preset,
+    contentOverride,
+    audience: 'public',
+  });
+  if (guideDisplay.guideMode === 'published' || guideDisplay.guideMode === 'legacy') {
+    return guideDisplay.guideMode;
+  }
+  return 'preparing';
+}
+
+const GUIDE_STATUS_FILTERS: Array<{ id: GuideStatusFilter; label: string }> = [
+  { id: 'all', label: '전체' },
+  { id: 'published', label: '공식 가이드' },
+  { id: 'legacy', label: '기본 안내' },
+  { id: 'preparing', label: '준비 중' },
+];
 
 const THINKING_LEVEL_TABS: ThinkingLevelTab[] = ['all', 'easy', 'normal', 'hard'];
 
@@ -659,6 +704,9 @@ function CardInfo({
 }) {
   const router = useRouter();
   const guideDisplay = buildSpomoveGuideDisplayModel({ preset, contentOverride, audience: 'public' });
+  const guideStatusBadge = getGuideStatusBadge(guideDisplay.guideMode);
+  const movementLabel = guideDisplay.recommendedMovementLabel ?? (guideDisplay.guideMode === 'published' ? '화면 지시' : '시트에서 확인');
+  const focusLabel = guideDisplay.focusTags.slice(0, 2).join(' · ') || (guideDisplay.guideMode === 'published' ? '-' : '기본 실행 안내');
   const showSettings =
     supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
 
@@ -669,13 +717,19 @@ function CardInfo({
 
   return (
     <div className="flex shrink-0 flex-col gap-2 p-3 text-left">
+      <div className="flex items-center justify-between gap-2">
+        <span className={`inline-flex h-6 max-w-full items-center rounded-full border px-2 text-[11px] font-black ${guideStatusBadge.className}`}>
+          {guideStatusBadge.label}
+        </span>
+        <span className="shrink-0 text-[10px] font-bold text-slate-400">{guideStatusBadge.helper}</span>
+      </div>
       <p className="line-clamp-1 text-[12px] font-bold text-slate-700">
         <span className="font-black text-slate-900">추천</span>{' '}
         <span className="text-slate-500">동작</span>{' '}
-        <span className="text-[var(--spm-acc)]">{guideDisplay.recommendedMovementLabel ?? '화면 지시'}</span>
+        <span className="text-[var(--spm-acc)]">{movementLabel}</span>
         <span className="px-1.5 text-slate-300">/</span>
         <span className="text-slate-500">활용 요소</span>{' '}
-        <span className="text-slate-800">{guideDisplay.focusTags.slice(0, 2).join(' · ') || '-'}</span>
+        <span className="text-slate-800">{focusLabel}</span>
       </p>
 
       {isReady ? (
@@ -815,6 +869,7 @@ export default function SpomoveHubView() {
   const hubView = parseSpomoveHubView(searchParams.get('view'));
   const showSavedOnly = hubView === 'favorites';
   const [movementFilter, setMovementFilter] = useState<MovementQuickFilter | 'all'>('all');
+  const [guideStatusFilter, setGuideStatusFilter] = useState<GuideStatusFilter>('all');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
@@ -930,6 +985,7 @@ export default function SpomoveHubView() {
   const clearHubFilters = () => {
     setActiveProgramGroup('all');
     setActiveThinkingLevel('all');
+    setGuideStatusFilter('all');
     replaceHubParams((params) => {
       params.delete('view');
     });
@@ -938,6 +994,11 @@ export default function SpomoveHubView() {
   const filteredPresets = useMemo(() => {
     let presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
     if (showSavedOnly) presets = presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
+    if (guideStatusFilter !== 'all') {
+      presets = presets.filter(
+        (preset) => resolveGuideStatusFilter(preset, contentOverrides[preset.id]) === guideStatusFilter,
+      );
+    }
     if (movementLayerEnabled && movementFilter !== 'all') {
       presets = presets.filter((preset) => {
         const summary = getPresetMovementSummary(preset);
@@ -956,7 +1017,9 @@ export default function SpomoveHubView() {
   }, [
     activeProgramGroup,
     activeThinkingLevel,
+    contentOverrides,
     favoriteSpomoveIds,
+    guideStatusFilter,
     movementFilter,
     movementLayerEnabled,
     showSavedOnly,
@@ -965,6 +1028,43 @@ export default function SpomoveHubView() {
     showSavedOnly && activeProgramGroup === 'all' && activeThinkingLevel === 'all';
   const showAxisSections =
     activeProgramGroup === 'all' && activeThinkingLevel === 'all' && !showSavedOnly;
+  const guideStatusCounts = useMemo(() => {
+    let presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
+    if (showSavedOnly) presets = presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
+    return GUIDE_STATUS_FILTERS.reduce<Record<GuideStatusFilter, number>>(
+      (counts, filter) => {
+        counts[filter.id] =
+          filter.id === 'all'
+            ? presets.length
+            : presets.filter(
+                (preset) => resolveGuideStatusFilter(preset, contentOverrides[preset.id]) === filter.id,
+              ).length;
+        return counts;
+      },
+      {
+        all: 0,
+        published: 0,
+        legacy: 0,
+        preparing: 0,
+      },
+    );
+  }, [
+    activeProgramGroup,
+    activeThinkingLevel,
+    contentOverrides,
+    favoriteSpomoveIds,
+    showSavedOnly,
+  ]);
+  const guideSummaryText =
+    guideStatusCounts.published > 0
+      ? `공식 가이드 ${guideStatusCounts.published}개, 기본 안내 ${guideStatusCounts.legacy}개, 준비 중 ${guideStatusCounts.preparing}개`
+      : `공식 가이드는 준비 중입니다. 기본 안내 ${guideStatusCounts.legacy}개와 실행 가능한 활동 ${guideStatusCounts.preparing}개를 먼저 사용할 수 있습니다.`;
+  const guideSummaryActionText =
+    guideStatusCounts.published > 0
+      ? '공식 가이드는 준비·진행·교사 멘트까지 정리된 수업안입니다. 기본 안내는 수업을 바로 시작할 수 있는 최소 실행안입니다.'
+      : '아직 공식 수업안이 없는 활동도 시작할 수 있습니다. 기본 안내에서 준비물과 진행 흐름을 확인하고 바로 실행하세요.';
+  const activeGuideLabel =
+    GUIDE_STATUS_FILTERS.find((filter) => filter.id === guideStatusFilter)?.label ?? '전체';
   const programGroupSections = useMemo(() => {
     if (!showFavoritesProgramGroupSections) return [];
     return buildSpomoveProgramGroupSections(filteredPresets);
@@ -1147,6 +1247,29 @@ export default function SpomoveHubView() {
             </div>
           </div>
         </div>
+        <div className="mt-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+            <span className="shrink-0 pt-[6px] text-[10px] font-black tracking-[0.08em] text-slate-500 sm:w-[4.5rem]">
+              가이드
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {GUIDE_STATUS_FILTERS.map((filter) => {
+                const active = guideStatusFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setGuideStatusFilter(filter.id)}
+                    className={spmChipClass(active, 'gap-1.5 font-bold')}
+                  >
+                    {filter.label}
+                    <span className="text-[10px] font-semibold opacity-60">{guideStatusCounts[filter.id]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
         {movementLayerEnabled ? (
           <div className="mt-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
@@ -1180,13 +1303,32 @@ export default function SpomoveHubView() {
             </div>
           </div>
         ) : null}
-        </section>
-        <p className="mt-3 rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-semibold leading-relaxed text-slate-600">
-          <span className="font-black text-slate-800">시작</span>
-          을 누르면 실행 조건과 안내를 확인한 뒤 수업 화면에 들어갑니다.{' '}
-          <span className="font-black text-slate-800">설정</span>
-          에서는 난이도·속도를 바꾼 뒤 시작할 수 있습니다.
+        <p className="mt-3 border-t border-slate-100 pt-2 text-[12px] font-bold text-slate-500">
+          현재 조건: <span className="text-slate-800">{activeGuideLabel}</span>{' '}
+          <span className="text-slate-300">/</span>{' '}
+          <span className="text-slate-800">{filteredPresets.length}개 활동</span>
         </p>
+        </section>
+        <div className="mt-3 rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-semibold leading-relaxed text-slate-600">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              <span className="font-black text-slate-800">가이드 현황</span>{' '}
+              {guideSummaryText}
+            </p>
+            {guideStatusCounts.published === 0 && guideStatusCounts.legacy > 0 ? (
+              <button
+                type="button"
+                onClick={() => setGuideStatusFilter('legacy')}
+                className="inline-flex h-8 shrink-0 items-center justify-center rounded-full border border-sky-200 bg-white px-3 text-[11px] font-black text-sky-700 hover:bg-sky-50"
+              >
+                기본 안내 보기
+              </button>
+            ) : null}
+          </div>
+          <p className="mt-1 text-slate-500">
+            {guideSummaryActionText}
+          </p>
+        </div>
         {/* 카드 그리드 */}
         {filteredPresets.length > 0 ? (
           showFavoritesProgramGroupSections ? (
@@ -1234,17 +1376,37 @@ export default function SpomoveHubView() {
             <div className="mt-4">{renderPresetGrid(filteredPresets, 'spomove-program-list')}</div>
           )
         ) : (
-          <div className="mt-12 flex flex-col items-center gap-4 text-center">
-            <p className="text-[14px] font-semibold text-slate-500">
-              {showSavedOnly ? '즐겨찾기한 조건에 해당하는 활동이 없습니다.' : '선택한 조건에 해당하는 활동이 없습니다.'}
+          <div id="spomove-program-list" className="mt-10 rounded-[18px] border border-dashed border-slate-200 bg-white/72 px-4 py-8 text-center">
+            <p className="text-[15px] font-black text-slate-800">
+              {guideStatusFilter === 'published'
+                ? '아직 이 조건에 맞는 공식 가이드가 없습니다.'
+                : showSavedOnly
+                  ? '즐겨찾기한 조건에 해당하는 활동이 없습니다.'
+                  : `${activeGuideLabel} 조건에 해당하는 활동이 없습니다.`}
             </p>
-            <button
-              type="button"
-              onClick={clearHubFilters}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-600 hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:text-[var(--spm-acc)]"
-            >
-              전체 보기
-            </button>
+            <p className="mx-auto mt-2 max-w-xl text-[13px] font-semibold leading-6 text-slate-500">
+              {guideStatusFilter === 'published'
+                ? '공식 가이드가 준비되기 전에도 기본 안내와 준비 중 활동은 바로 실행할 수 있습니다. 수업을 바로 해야 한다면 기본 안내 또는 전체 목록으로 전환하세요.'
+                : '활동 종류, 인지 난이도, 가이드 상태 조건을 넓히면 더 많은 SPOMOVE 활동을 볼 수 있습니다.'}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {guideStatusFilter === 'published' && guideStatusCounts.legacy > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setGuideStatusFilter('legacy')}
+                  className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-[13px] font-black text-sky-700 hover:bg-sky-100"
+                >
+                  기본 안내 보기
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={clearHubFilters}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-600 hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:text-[var(--spm-acc)]"
+              >
+                전체 보기
+              </button>
+            </div>
           </div>
         )}
         <SharedSpomoveGuidelineSheet
