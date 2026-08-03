@@ -85,7 +85,7 @@ function getGuideStatusBadge(guideMode: string) {
     };
   }
   return {
-    label: '가이드 준비 중',
+    label: '세부 안내 예정',
     helper: '화면 활동 가능',
     className: 'border-slate-200 bg-slate-50 text-slate-500',
   };
@@ -110,7 +110,7 @@ const GUIDE_STATUS_FILTERS: Array<{ id: GuideStatusFilter; label: string }> = [
   { id: 'all', label: '전체' },
   { id: 'published', label: '공식 가이드' },
   { id: 'legacy', label: '기본 안내' },
-  { id: 'preparing', label: '준비 중' },
+  { id: 'preparing', label: '세부 안내 예정' },
 ];
 
 const THINKING_LEVEL_TABS: ThinkingLevelTab[] = ['all', 'easy', 'normal', 'hard'];
@@ -1057,8 +1057,8 @@ export default function SpomoveHubView() {
   ]);
   const guideSummaryText =
     guideStatusCounts.published > 0
-      ? `공식 가이드 ${guideStatusCounts.published}개, 기본 안내 ${guideStatusCounts.legacy}개, 준비 중 ${guideStatusCounts.preparing}개`
-      : `공식 가이드는 준비 중입니다. 기본 안내 ${guideStatusCounts.legacy}개와 실행 가능한 활동 ${guideStatusCounts.preparing}개를 먼저 사용할 수 있습니다.`;
+      ? `공식 가이드 ${guideStatusCounts.published}개, 기본 안내 ${guideStatusCounts.legacy}개, 세부 안내 예정 ${guideStatusCounts.preparing}개`
+      : `공식 가이드는 순차 작성 중입니다. 기본 안내 ${guideStatusCounts.legacy}개와 실행 가능한 활동 ${guideStatusCounts.preparing}개를 먼저 사용할 수 있습니다.`;
   const guideSummaryActionText =
     guideStatusCounts.published > 0
       ? '공식 가이드는 준비·진행·교사 멘트까지 정리된 수업안입니다. 기본 안내는 수업을 바로 시작할 수 있는 최소 실행안입니다.'
@@ -1386,7 +1386,7 @@ export default function SpomoveHubView() {
             </p>
             <p className="mx-auto mt-2 max-w-xl text-[13px] font-semibold leading-6 text-slate-500">
               {guideStatusFilter === 'published'
-                ? '공식 가이드가 준비되기 전에도 기본 안내와 준비 중 활동은 바로 실행할 수 있습니다. 수업을 바로 해야 한다면 기본 안내 또는 전체 목록으로 전환하세요.'
+                ? '공식 가이드가 작성되기 전에도 기본 안내와 화면 활동은 바로 실행할 수 있습니다. 수업을 바로 해야 한다면 기본 안내 또는 전체 목록으로 전환하세요.'
                 : '활동 종류, 인지 난이도, 가이드 상태 조건을 넓히면 더 많은 SPOMOVE 활동을 볼 수 있습니다.'}
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">

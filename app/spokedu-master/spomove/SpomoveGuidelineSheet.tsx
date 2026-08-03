@@ -237,7 +237,7 @@ function LegacyGuideContent({
       <div>
         <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">활동방법</h3>
         <p className="mt-2 text-[13.5px] font-semibold leading-[1.6] text-slate-700">
-          {legacyManual.activityMethod ?? '활동방법을 준비 중입니다.'}
+          {legacyManual.activityMethod ?? '활동방법은 순차 작성 중입니다.'}
         </p>
       </div>
       {legacyManual.activityConcept ? (
@@ -247,7 +247,7 @@ function LegacyGuideContent({
         </div>
       ) : null}
       <p className="rounded-[12px] border border-slate-100 bg-slate-50 px-3 py-2 text-[12px] font-bold leading-5 text-slate-500">
-        상세 수업 가이드는 준비 중입니다.
+        상세 수업 가이드는 순차 작성 중입니다.
       </p>
     </section>
   );
@@ -256,9 +256,9 @@ function LegacyGuideContent({
 function PreparingGuideContent({ prepLine, intervalLine }: { prepLine: string; intervalLine: string | null }) {
   return (
     <section className="rounded-[12px] border border-slate-100 bg-slate-50 p-4">
-      <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">가이드 준비 중</h3>
+      <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">세부 안내 예정</h3>
       <p className="mt-2 text-[13.5px] font-semibold leading-[1.6] text-slate-700">
-        상세 수업 가이드를 준비 중입니다. 활동은 정상적으로 실행할 수 있습니다.
+        상세 수업 가이드를 순차 작성하고 있습니다. 활동은 정상적으로 실행할 수 있습니다.
       </p>
       <div className="mt-3 grid gap-2">
         <div className="rounded-[12px] bg-white px-3 py-2">
@@ -298,7 +298,7 @@ function GuideModeNotice({
       <div className="rounded-[12px] border border-sky-100 bg-sky-50 px-3 py-2">
         <p className="text-[12px] font-black text-sky-800">기본 실행안</p>
         <p className="mt-1 text-[12px] font-semibold leading-5 text-sky-900">
-          세부 수업안은 준비 중이지만, 화면 활동과 기본 진행 흐름은 바로 사용할 수 있습니다.
+          세부 수업안은 순차 작성 중이지만, 화면 활동과 기본 진행 흐름은 바로 사용할 수 있습니다.
         </p>
       </div>
     );
@@ -306,7 +306,7 @@ function GuideModeNotice({
 
   return (
     <div className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2">
-      <p className="text-[12px] font-black text-slate-700">가이드 준비 중</p>
+      <p className="text-[12px] font-black text-slate-700">세부 안내 예정</p>
       <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-600">
         화면 활동은 실행할 수 있습니다. 수업 전에는 매트 수와 자극 시간을 먼저 확인하세요.
       </p>

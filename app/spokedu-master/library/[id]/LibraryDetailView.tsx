@@ -50,9 +50,9 @@ import {
   type SaveActionFeedback,
 } from '../../lib/saveActionFeedback';
 import {
-  getSpomoveSessionHref,
   getSupportedOfficialSpomovePresets,
 } from '../../lib/program-meta';
+import { publicOfficialPresetSessionHref } from '../../spomove/officialSpomovePresets';
 import { getSpomovePresetDisplayModel } from '../../spomove/spomovePresetDisplayModel';
 import {
   QUICK_RECORD_DRAFT_KEY,
@@ -162,7 +162,7 @@ function RelatedSpomoveSection({
           return (
             <Link
               key={preset.id}
-              href={getSpomoveSessionHref(program, preset)}
+              href={`${publicOfficialPresetSessionHref(preset)}&program=${encodeURIComponent(program.id)}`}
               className="group rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-3 transition-colors hover:border-slate-300 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
             >
               <p className="text-[11px] font-black text-[var(--spm-acc)]">{display.programLabel}</p>
