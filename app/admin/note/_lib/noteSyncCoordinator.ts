@@ -24,6 +24,7 @@ import {
   excludeBlocksPendingSoftDelete,
   persistOpToPushItems,
 } from './notePersistOpToBlockOps';
+import { sealPassiveIncomingBlocks } from './noteDataIntegrity';
 import {
   contentHasMediaPresence,
   decideRegressiveContentOp,
@@ -372,6 +373,13 @@ export class NoteSyncCoordinator {
       } else {
         this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
       }
+    } else if (local && local.blocks.length > 0) {
+      // outbound 없어도 IDB에 보호 본문이 있으면 서버 raw 교체 금지
+      this.blocks = mergeServerBlocksIntoLocalSnapshot(
+        local.blocks,
+        serverBlocks,
+        excludedIds,
+      );
     } else {
       this.blocks = serverBlocks;
     }
@@ -412,16 +420,15 @@ export class NoteSyncCoordinator {
     return this.hasTopologyIntent() || this.cachedOutboundHasTopology;
   }
 
-  async enqueuePersistOp(op: NotePersistOp, options?: { immediate?: boolean }): Promise<void> {
+  async enqueuePersistOp(op: NotePersistOp, options?: { immediate?: boolean }): Promise<boolean> {
     if (this.disposed) {
       const live = getNoteSyncCoordinator(this.documentId, this.callbacks);
       if (live !== this) {
-        await live.enqueuePersistOp(op, options);
-        return;
+        return live.enqueuePersistOp(op, options);
       }
     }
     const items = persistOpToPushItems(op);
-    if (items.length === 0) return;
+    if (items.length === 0) return !(await this.hasPendingOutbound());
     await appendOutboundOps(this.documentId, items);
     const outbound = await listOutboundOps(this.documentId);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
@@ -439,11 +446,12 @@ export class NoteSyncCoordinator {
         clearTimeout(this.pushTimer);
         this.pushTimer = null;
       }
-      await this.flushPush();
-      return;
+      return this.flushPush();
     }
     this.schedulePush(delay);
     this.scheduleOutboundFlushWatchdog(delay);
+    // debounce 경로는 아직 서버 ack 전 — saved 표시 금지
+    return false;
   }
 
   isDisposedPublic(): boolean {
@@ -544,27 +552,30 @@ export class NoteSyncCoordinator {
     }, delayMs);
   }
 
-  private async flushPush(): Promise<void> {
+  private async flushPush(): Promise<boolean> {
     if (this.disposed) {
       const live = coordinators.get(this.documentId);
       if (live && live !== this && !live.disposed) {
-        await live.flushPush();
+        return live.flushPush();
       }
-      return;
+      return !(await this.hasPendingOutbound());
     }
     if (!this.isLeader) {
       this.isLeader = true;
     }
     if (this.isPushing) {
       this.pushRequested = true;
-      return;
+      // 진행 중 flush가 끝날 때까지 기다리지 않으면 호출측이 조기 saved를 찍을 수 있음
+      while (this.isPushing && !this.disposed) {
+        await new Promise((resolve) => setTimeout(resolve, 16));
+      }
+      return !(await this.hasPendingOutbound());
     }
     this.isPushing = true;
     try {
       do {
         this.pushRequested = false;
         try {
-           
           while (await this.pushBatchOnce()) {
             if (this.disposed) break;
           }
@@ -584,6 +595,7 @@ export class NoteSyncCoordinator {
     } finally {
       this.isPushing = false;
     }
+    return !(await this.hasPendingOutbound());
   }
 
   private async pushBatchOnce(): Promise<boolean> {
@@ -827,7 +839,7 @@ export class NoteSyncCoordinator {
         if (data.tabId === getTabInstanceId()) return;
 
         if (data.type === 'state' && Array.isArray(data.blocks)) {
-          this.blocks = data.blocks;
+          this.blocks = sealPassiveIncomingBlocks(this.blocks, data.blocks as NoteBlock[]);
           this.lastAppliedSeq = typeof data.lastSeq === 'number'
             ? data.lastSeq
             : this.lastAppliedSeq;

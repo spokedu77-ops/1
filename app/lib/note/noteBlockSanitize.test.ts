@@ -52,7 +52,7 @@ describe('sanitizeNoteBlockTree', () => {
     expect(sanitized.find((item) => item.id === 'page-under-toggle')?.parent_block_id).toBeNull();
   });
 
-  it('breaks cycles and normalizes sibling order', () => {
+  it('breaks cycles and preserves unique sibling order_index', () => {
     const sanitized = sanitizeNoteBlockTree([
       block('page-a', 'page', 'page-b', 10),
       block('page-b', 'page', 'page-a', 4),
@@ -61,6 +61,17 @@ describe('sanitizeNoteBlockTree', () => {
 
     expect(sanitized.map((item) => item.id).sort()).toEqual(['page-a', 'page-b', 'root']);
     expect(sanitized.every((item) => item.parent_block_id !== item.id)).toBe(true);
+    const roots = sanitized.filter((item) => !item.parent_block_id);
+    // unique orders must not densify to 0..n-1 (integrity)
+    expect(roots.map((item) => item.order_index).sort((a, b) => a - b)).toEqual([4, 9, 10]);
+  });
+
+  it('compacts sibling order_index only when duplicates exist', () => {
+    const sanitized = sanitizeNoteBlockTree([
+      block('a', 'text', null, 2),
+      block('b', 'text', null, 2),
+      block('c', 'text', null, 5),
+    ]);
     const roots = sanitized.filter((item) => !item.parent_block_id);
     expect(roots.map((item) => item.order_index)).toEqual([0, 1, 2]);
   });

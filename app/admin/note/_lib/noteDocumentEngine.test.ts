@@ -77,7 +77,8 @@ describe('noteDocumentEngine', () => {
 
     expect(getEngineBlock(next, 'a')?.content?.text).toBe('local');
     expect(getEngineBlock(next, 'a')?.version).toBe(5);
-    expect(getEngineBlock(next, 'b')?.content?.text).toBe('server-b');
+    // non-extension rewrite of inactive filled text must not wipe
+    expect(getEngineBlock(next, 'b')?.content?.text).toBe('other');
     expect(getEngineBlock(next, 'b')?.version).toBe(3);
   });
 

@@ -140,7 +140,7 @@ export function resolveInlineBlockEnterAction(options: {
     return { kind: 'add-below', followType: options.followType };
   }
 
-  if (options.followType === 'todo' && (options.listNestLevel ?? 0) > 0) {
+  if (options.followType === 'todo' && options.parentBlockType === 'todo') {
     return { kind: 'outdent' };
   }
 

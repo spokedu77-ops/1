@@ -29,7 +29,19 @@ const opRecord = (
 });
 
 describe('applyRemoteOpRecords', () => {
-  it('applies patch_content to matching block', () => {
+  it('applies patch_content extension to matching block', () => {
+    const blocks = [baseBlock('a', 'hello')];
+    const next = applyRemoteOpRecords(blocks, [
+      opRecord(1, {
+        opType: 'patch_content',
+        blockId: 'a',
+        content: { text: 'hello world' },
+      }),
+    ]);
+    expect((next[0].content as { text?: string }).text).toBe('hello world');
+  });
+
+  it('does not apply non-extension remote patch_content over filled local text', () => {
     const blocks = [baseBlock('a', 'hello')];
     const next = applyRemoteOpRecords(blocks, [
       opRecord(1, {
@@ -38,7 +50,19 @@ describe('applyRemoteOpRecords', () => {
         content: { text: 'world' },
       }),
     ]);
-    expect((next[0].content as { text?: string }).text).toBe('world');
+    expect((next[0].content as { text?: string }).text).toBe('hello');
+  });
+
+  it('does not apply empty remote patch_content over longer local text', () => {
+    const blocks = [baseBlock('a', 'keep local')];
+    const next = applyRemoteOpRecords(blocks, [
+      opRecord(1, {
+        opType: 'patch_content',
+        blockId: 'a',
+        content: { text: '' },
+      }),
+    ]);
+    expect((next[0].content as { text?: string }).text).toBe('keep local');
   });
 
   it('soft deletes blocks by removing them from the active set', () => {

@@ -26,8 +26,10 @@ export type PasteInsertContext = {
   ) => void;
 };
 
-function isListSpec(spec: PastedBlockSpec): boolean {
-  return spec.type === 'bulletList' || spec.type === 'numberedList';
+function isNestablePasteSpec(spec: PastedBlockSpec): boolean {
+  return spec.type === 'bulletList'
+    || spec.type === 'numberedList'
+    || spec.type === 'todo';
 }
 
 function parentInsertKey(parentId: string | null): string {
@@ -139,7 +141,7 @@ async function insertSpecsAmongSiblings(
 
   for (const spec of specs) {
     let targetParentId = parentId;
-    if (isListSpec(spec)) {
+    if (isNestablePasteSpec(spec)) {
       const level = spec.listNestLevel ?? 0;
       targetParentId = level === 0 ? parentId : (stack[level - 1] ?? parentId);
     }
@@ -165,7 +167,7 @@ async function insertSpecsAmongSiblings(
     lastFocusPart = created.type === 'toggle' ? 'title' : 'editor';
     insertIndexByParent.set(parentKey, clampedIndex + 1);
 
-    if (isListSpec(spec)) {
+    if (isNestablePasteSpec(spec)) {
       const level = spec.listNestLevel ?? 0;
       stack[level] = created.id;
       stack.length = level + 1;
@@ -178,7 +180,7 @@ async function insertSpecsAmongSiblings(
         0,
         spec.children,
         sourceContent,
-        isListSpec(spec) ? stack : [],
+        isNestablePasteSpec(spec) ? stack : [],
       );
       if (nested) {
         lastFocusId = nested.lastFocusId;

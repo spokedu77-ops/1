@@ -1,6 +1,9 @@
-/** 노션 todo: text + checked(boolean) + listNestLevel(형제 체크리스트 들여쓰기) */
+/** 노션 계약: todo 본문은 text + checked. 중첩은 parent_block_id만. */
+
+/** @deprecated listNestLevel은 로드 migration 입력 전용 — 신규 write 금지 */
 export const MAX_TODO_LIST_NEST_LEVEL = 8;
 
+/** @deprecated migration 입력 전용 */
 export function readTodoListNestLevel(
   content: Record<string, unknown> | null | undefined,
 ): number {
@@ -9,15 +12,17 @@ export function readTodoListNestLevel(
   return Math.max(0, Math.min(MAX_TODO_LIST_NEST_LEVEL, Math.floor(raw)));
 }
 
-export function normalizeTodoBlockContentRecord(  content: Record<string, unknown>,
+export function normalizeTodoBlockContentRecord(
+  content: Record<string, unknown>,
 ): Record<string, unknown> {
-  const listNestLevel = readTodoListNestLevel(content);
-  return {
+  const next: Record<string, unknown> = {
     ...content,
     text: typeof content.text === 'string' ? content.text : '',
     checked: content.checked === true,
-    ...(listNestLevel > 0 ? { listNestLevel } : {}),
   };
+  // 계약: nesting ≠ content.listNestLevel
+  delete next.listNestLevel;
+  return next;
 }
 
 export function resolveTodoChecked(

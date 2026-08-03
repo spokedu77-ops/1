@@ -14,6 +14,7 @@ alwaysApply: false
 
 - 기존 기능 버그 수정 (최소 diff)
 - `note-sync-invariants.mdc` 불변식 준수 수정 (reducer/pipeline/open)
+- `note-editing-contracts.mdc` C1–C6 준수 수정 (Enter/undo/placement/marquee/paste)
 - 단위·스모크·회귀 테스트 추가
 - CI `verify:admin-note` + `build` 통과
 
@@ -29,7 +30,7 @@ alwaysApply: false
 2. `scripts/admin-note-regression-qa.mjs` 전체 통과
 3. `npm run verify:admin-note` 통과
 4. 수동: 하위페이지 todo 체크, DnD 삽입선, 2인 타이핑 되돌림 없음, 삭제 좀비 없음, 문서 전환 깜빡임 없음
-5. 수동(문서 종류 무관·`note-editing-contracts`): 루트·하위페이지 각각 `+`체크리스트 / mid-Enter 서식 유지·실패 시 본문 복구 / Ctrl+Z 타이핑 되돌림
+5. 수동(문서 종류 무관·`note-editing-contracts`): 루트·하위페이지 각각 `+`체크리스트 / mid-Enter 서식 유지·실패 시 본문 복구 / Ctrl+Z 타이핑 되돌림 / DnD·page transfer 맨 위 배치·마퀴 zone 스코프 / 멀티블록 복사→구조 붙여넣기
 
 ## 수정 순서 (고정)
 

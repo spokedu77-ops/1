@@ -2,7 +2,7 @@ import type { NoteBlock } from './types';
 import type { NoteBlockOpRecord, NoteBlockSnapshot } from '@/app/lib/note/noteBlockOpTypes';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
-import { documentHasProtectablePresence } from './noteAuthority';
+import { sealPassiveIncomingBlock } from './noteDataIntegrity';
 
 export function snapshotToNoteBlock(snapshot: NoteBlockSnapshot): NoteBlock {
   return ensureNoteBlockVersion({
@@ -40,11 +40,12 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
   case 'patch_content': {
     return blocks.map((block) => {
       if (block.id !== payload.blockId) return block;
-      return ensureNoteBlockVersion({
+      const incoming = ensureNoteBlockVersion({
         ...block,
         content: payload.content,
         updated_at: op.createdAt,
       });
+      return sealPassiveIncomingBlock(block, incoming);
     });
   }
   case 'patch_fields': {
@@ -52,7 +53,7 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
     return blocks.map((block) => {
       const patch = patchMap.get(block.id);
       if (!patch) return block;
-      return ensureNoteBlockVersion({
+      const incoming = ensureNoteBlockVersion({
         ...block,
         ...(patch.type !== undefined ? { type: patch.type } : {}),
         ...(patch.order_index !== undefined ? { order_index: patch.order_index } : {}),
@@ -61,6 +62,9 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
         ...(patch.content !== undefined ? { content: patch.content } : {}),
         updated_at: op.createdAt,
       });
+      return patch.content !== undefined
+        ? sealPassiveIncomingBlock(block, incoming)
+        : incoming;
     });
   }
   case 'soft_delete': {
@@ -157,12 +161,7 @@ export function mergeSnapshotPatches(
       continue;
     }
     const serverBlock = snapshotToNoteBlock(snapshot);
-    const keepLocalContent = documentHasProtectablePresence([block])
-      || !documentHasProtectablePresence([serverBlock]);
-    next.push(ensureNoteBlockVersion({
-      ...serverBlock,
-      content: keepLocalContent ? (block.content ?? serverBlock.content ?? {}) : (serverBlock.content ?? {}),
-    }));
+    next.push(sealPassiveIncomingBlock(block, serverBlock));
   }
   for (const snapshot of snapshots) {
     if (seen.has(snapshot.id)) continue;

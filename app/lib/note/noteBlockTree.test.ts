@@ -124,8 +124,8 @@ describe('planBlockDropAt', () => {
     expect(plan?.targetParentId).toBe('toggle');
     expect(plan?.placedInToggle).toBe(true);
     expect(plan?.targetSiblings.map((item) => [item.id, item.order_index])).toEqual([
-      ['child', 0],
-      ['root', 1],
+      ['root', 0],
+      ['child', 1],
     ]);
   });
 

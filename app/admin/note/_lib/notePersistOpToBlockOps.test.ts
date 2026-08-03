@@ -377,6 +377,22 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
     expect(merged[0].version).toBe(3);
   });
 
+  it('does not wipe longer local text when newer server snapshot is empty', () => {
+    const local: NoteBlock[] = [{
+      ...serverBlock('child-1', 'do not wipe'),
+      version: 1,
+      updated_at: '2026-07-18T06:31:00.000Z',
+    }];
+    const server: NoteBlock[] = [{
+      ...serverBlock('child-1', ''),
+      version: 5,
+      updated_at: '2026-07-18T06:40:00.000Z',
+    }];
+    const merged = mergeServerBlocksIntoLocalSnapshot(local, server, new Set());
+    expect(merged[0].content?.text).toBe('do not wipe');
+    expect(merged[0].version).toBe(5);
+  });
+
   it('skips ids pending soft delete', () => {
     const local: NoteBlock[] = [];
     const server = [serverBlock('child-1', 'gone')];

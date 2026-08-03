@@ -1,5 +1,5 @@
 ---
-description: admin/note 편집 UX 전역 계약 — sibling order / Enter marks / Ctrl+Z
+description: admin/note 편집 UX 전역 계약 — sibling order / Enter marks / Ctrl+Z / Placement
 globs: app/admin/note/**/*
 alwaysApply: false
 ---
@@ -8,7 +8,7 @@ alwaysApply: false
 
 `note-sync-invariants.mdc`와 **직교**. sync는 OpKind·pipeline 수명주기, **편집 UX는 이 rule**.
 
-문서 종류(루트·하위페이지)·UI 경로(+ / Enter / paste / 분할)와 무관하게 **같은 계약만** 탄다.  
+문서 종류(루트·하위페이지·중첩 하위)·UI 경로(+ / Enter / paste / DnD / 마퀴)와 무관하게 **같은 계약만** 탄다.  
 “이 페이지만 / 이 훅만” 예외·경로별 땜빵 **금지**.
 
 ## 계약
@@ -19,6 +19,9 @@ alwaysApply: false
 | **C2 EnterMarks** | mid-block Enter로 내려가는 본문은 marks 포함 HTML | `resolveListEnterSplit` + `editorHtmlBetween`만 split HTML 생산 → `resolveInlineBlockEnterAction`만 create content 조립 | `legacyTextToEditorHtml(afterText)`로 새 블록 HTML 재생산 (폴백은 split 내부만) |
 | **C3 UndoPriority** | TipTap depth 있으면 텍스트 undo 우선; paste-arm만 structural 강제 | `resolveNoteUndoTarget` (`noteEditorHistory.ts`) 하나 | `useNoteBlockKeyboard` vs `NoteEditor` keydown이 다른 우선순위 |
 | **C4 EnterSplitAtomic** | mid-block Enter는 before 패치 + below create가 한 트랜잭션; create 실패 시 **분할 전 본문 복구** | `settleEnterSplitCreate` (`noteEnterSplitAtomic.ts`) ← `NoteEditor` Enter + `onAddBelow`/`handleInsertBlockAfter` 반환값 | before만 남기고 after 소실; 경로별 restore 누락 |
+| **C5 Placement** | 컨테이너·문서 안으로 **넣는** DnD/transfer는 inbound가 **맨 위**(최신), 기존 형제 전체와 병합해 0..n-1 | `resolveInboundTopPlacementOrders` → `planBlockDropAt`/`planBlockForestDropAt` inside + `buildBlockForestTransferCommand`(+타깃 루트 fetch) | 타깃 기존 order 무시하고 inbound만 0..n-1; inside append; 문서 depth별 다른 삽입 방향 |
+| **C5b Marquee** | 마퀴 hit는 현재 `[data-note-marquee-zone]` + 현재 문서 visual order만 | `getMarqueeSelectedBlockIds(scope)` → `flattenVisualBlockIds` 필터 | 전역 DOM row 스캔으로 다른 패널/유령 row 혼입 |
+| **C6 Paste** | 멀티 블록 복사(블록선택·cross-select)는 같은 `NOTE_BLOCKS_JSON`; 블록 클립보드 paste는 **항상 insert-after**(현 칸 wipe 금지); TipTap 멀티는 live content 기준 빈 칸만 fill | `notePasteContract` → `applyPastedBlockSpecs` 하나 | props stale blank으로 fill; 블록 MIME을 AfterAnchor로 덮어쓰기 |
 
 ## Choke 파일
 
@@ -28,9 +31,12 @@ alwaysApply: false
 | C2 | `_components/NoteEditor.tsx` (`resolveListEnterSplit`), `_lib/noteNotionBlockBehavior.ts` (`resolveInlineBlockEnterAction`) |
 | C3 | `_lib/noteEditorHistory.ts` (`resolveNoteUndoTarget`) → `_hooks/useNoteBlockKeyboard.ts` + `_components/NoteEditor.tsx` |
 | C4 | `_lib/noteEnterSplitAtomic.ts` → `_components/NoteEditor.tsx` Enter handler; create는 `handleInsertBlockAfter` 등이 `NoteBlock \| null` 반환 |
+| C5 | `_lib/notePlacementOrders.ts`, `app/lib/note/noteBlockTree.ts` (inside), `_lib/noteBlockTransfer.ts`, `_page/useNoteDragDrop.ts` |
+| C5b | `_lib/noteMarquee.ts`, `_page/useNoteBlockSelection.ts` |
+| C6 | `_lib/notePasteContract.ts` → `_page/useNoteBlockActions.ts` (`applyPastedBlockSpecs`); copy: `_hooks/useNoteBlockKeyboard.ts` + `_components/noteCrossSelect.ts` |
 
 ## 버그 수정 시
 
-1. 어느 계약(C1/C2/C3)이 깨졌는지 특정
-2. **choke point**에만 고친다 (hook별 ad-hoc repair 추가 금지 — C1은 pipeline)
+1. 어느 계약(C1–C6)이 깨졌는지 특정 — **본문·데이터가 침묵으로 바뀌면** 편집 C가 아니라 **Sync/Save Trust + `noteDataIntegrity`** (새 C번호 만들지 말 것)
+2. **choke point**에만 고친다 (hook별 ad-hoc repair 추가 금지 — C1은 pipeline, C5는 placement/transfer, 무결은 `mergeReconciledBlocks`/`sanitizeNoteBlockTree`)
 3. 계약 테스트에 재현 케이스 추가

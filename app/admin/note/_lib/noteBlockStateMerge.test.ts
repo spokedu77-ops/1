@@ -151,14 +151,37 @@ describe('mergeReconciledBlocks', () => {
     expect(merged[0].content?.text).toBe('typing');
   });
 
-  it('uses server text for non-active blocks even when store differs', () => {
+  it('keeps non-empty local text when inactive block gets empty incoming reconcile', () => {
+    const current = [block('todo-1', 'keep this checklist')];
+    useNoteBlockStore.getState().hydrate(current);
+    const reconciled = [block('todo-1', '')];
+    const merged = mergeReconciledBlocks(current, reconciled);
+    expect(merged[0].content?.text).toBe('keep this checklist');
+  });
+
+  it('keeps local text when incoming is a stale prefix truncation', () => {
+    const current = [block('a', 'hello world')];
+    useNoteBlockStore.getState().hydrate(current);
+    const reconciled = [block('a', 'hello')];
+    const merged = mergeReconciledBlocks(current, reconciled);
+    expect(merged[0].content?.text).toBe('hello world');
+  });
+
+  it('keeps local text when incoming is a non-extension rewrite', () => {
     const current = [block('a', 'old')];
-    useNoteBlockStore.getState().setActiveDocumentId('doc');
     useNoteBlockStore.getState().hydrate(current);
     useNoteBlockStore.getState().patchContent('a', { text: 'stale store' });
     const reconciled = [block('a', 'from server')];
     const merged = mergeReconciledBlocks(current, reconciled);
-    expect(merged[0].content?.text).toBe('from server');
+    expect(merged[0].content?.text).toBe('old');
+  });
+
+  it('accepts strict extension of local text for inactive blocks', () => {
+    const current = [block('a', 'hello')];
+    useNoteBlockStore.getState().hydrate(current);
+    const reconciled = [block('a', 'hello world')];
+    const merged = mergeReconciledBlocks(current, reconciled);
+    expect(merged[0].content?.text).toBe('hello world');
   });
 
   it('strips list markers from server-only reconcile rows', () => {
@@ -177,7 +200,8 @@ describe('mergeReconciledBlocks', () => {
       content: { text: '- from server' },
     }];
     const merged = mergeReconciledBlocks(current, reconciled);
-    expect(merged[0].content?.text).toBe('from server');
+    // non-extension rewrite: keep local body; list marker strip still applies to accepted text
+    expect(merged[0].content?.text).toBe('item');
   });
 
   it('does not resurrect deleted toggle children from legacyBody during reconcile', () => {

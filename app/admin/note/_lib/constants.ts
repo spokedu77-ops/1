@@ -57,7 +57,6 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
     return {
       text: '',
       checked: false,
-      listNestLevel: 0,
     };
   }
   if (type === 'toggle') {

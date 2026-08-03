@@ -209,7 +209,7 @@ describe('1) 구조 변경 insert/delete/DnD → reducer', () => {
       id: 'todo',
       type: 'todo',
       version: 2,
-      content: { text: 'server content' },
+      content: { text: 'local', checked: false },
     });
   });
 });
@@ -416,5 +416,54 @@ describe('5) legacy reconcile → syncSnapshot', () => {
       ctx('a'),
     );
     expect((blocks[0].content as { text: string }).text).toContain('typed content');
+  });
+
+  it('integrity: inactive checklist text survives empty syncSnapshot', () => {
+    const local = [
+      block('todo-1', {
+        type: 'todo',
+        order_index: 0,
+        content: { text: 'do not wipe me', checked: true },
+      }),
+      block('todo-2', {
+        type: 'todo',
+        order_index: 1,
+        content: { text: 'also keep', checked: false },
+      }),
+    ];
+    useNoteBlockStore.getState().hydrate(local);
+    useNoteBlockStore.getState().setActiveEditor(null);
+    const stale = [
+      block('todo-1', {
+        type: 'todo',
+        order_index: 0,
+        content: { text: '', checked: true },
+      }),
+      block('todo-2', {
+        type: 'todo',
+        order_index: 1,
+        content: { text: 'also keep', checked: false },
+      }),
+    ];
+    const { blocks } = applyNoteCommand(
+      local,
+      { type: 'syncSnapshot', blocks: stale },
+      ctx(null),
+    );
+    expect(blocks.find((b) => b.id === 'todo-1')?.content).toMatchObject({
+      text: 'do not wipe me',
+      checked: true,
+    });
+  });
+
+  it('integrity: stale prefix truncation does not rewrite inactive block', () => {
+    const local = [block('a', { content: { text: 'hello world' } })];
+    useNoteBlockStore.getState().hydrate(local);
+    const { blocks } = applyNoteCommand(
+      local,
+      { type: 'syncSnapshot', blocks: [block('a', { content: { text: 'hello' } })] },
+      ctx(null),
+    );
+    expect((blocks[0].content as { text: string }).text).toBe('hello world');
   });
 });

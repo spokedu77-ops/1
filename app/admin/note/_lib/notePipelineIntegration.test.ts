@@ -97,6 +97,31 @@ describe('syncSnapshot during active typing', () => {
     );
     expect((blocks[0].content as { text: string }).text).toBe('typing');
   });
+
+  it('projects inactive content seal from coordinator-like syncSnapshot', () => {
+    useNoteBlockStore.getState().setActiveEditor(null);
+    useNoteBlockStore.getState().hydrate([
+      block('a', { order_index: 0, content: { text: 'keep' } }),
+      block('b', { order_index: 1, content: { text: 'old' } }),
+    ]);
+    const previous = useNoteBlockStore.getState().getBlocksArray();
+    const { blocks } = applyNoteCommand(
+      previous,
+      {
+        type: 'syncSnapshot',
+        blocks: [
+          block('b', { order_index: 0, content: { text: 'from other tab' } }),
+          block('a', { order_index: 1, content: { text: 'keep' } }),
+        ],
+      },
+      { documentId: 'doc-1', activeBlockId: null, storeContentById: {} },
+    );
+    // syncSnapshot은 기존 위치를 유지한다 (미ack reorder 보호). 본문만 passive seal.
+    expect(blocks.map((item) => item.id)).toEqual(['a', 'b']);
+    // non-extension rewrite kept local
+    expect(blocks.find((item) => item.id === 'b')?.content?.text).toBe('old');
+    expect(blocks.find((item) => item.id === 'a')?.content?.text).toBe('keep');
+  });
 });
 
 describe('document switch store replace', () => {

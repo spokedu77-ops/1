@@ -6,9 +6,10 @@ describe('blockExternalizesChildren', () => {
     expect(blockExternalizesChildren('toggle')).toBe(false);
   });
 
-  it('keeps list children as external sibling rows', () => {
+  it('keeps list and checklist children as external sibling rows', () => {
     expect(blockExternalizesChildren('bulletList')).toBe(true);
     expect(blockExternalizesChildren('numberedList')).toBe(true);
+    expect(blockExternalizesChildren('todo')).toBe(true);
   });
 
   it('renders column containers inline', () => {

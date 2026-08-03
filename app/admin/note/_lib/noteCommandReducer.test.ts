@@ -86,7 +86,8 @@ describe('applyNoteCommand', () => {
 
     expect(blocks.map((item) => item.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
     expect(blocks.map((item) => item.order_index)).toEqual([0, 1, 2]);
-    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A' });
+    // Passive strict-extension may accept longer incoming that starts with local text
+    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A server' });
   });
 
   it('syncSnapshot keeps a just-created child-page todo missing from stale server snapshot', () => {
@@ -392,7 +393,8 @@ describe('applyNoteCommand', () => {
     );
 
     expect(blocks.map((item) => item.id)).toEqual(['heading', 'todo-c', 'todo-a', 'todo-b']);
-    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A server' });
+    // non-extension remote rewrite must not wipe local edited text
+    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A edited' });
   });
 
   it('syncSnapshot preserves local page-link identity over empty incoming content', () => {

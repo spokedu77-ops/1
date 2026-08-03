@@ -39,6 +39,7 @@ import {
   replaceNoteDocumentStoreView,
 } from '../_lib/noteDocumentPipeline';
 import { readRememberedNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
+import { registerNoteSaveTrustGate } from '../_lib/noteSaveTrust';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import {
   traceLoadingState,
@@ -145,6 +146,16 @@ export function useNoteBlockData(options: {
 
   const documentEngineRef = useRef(documentEngine);
   documentEngineRef.current = documentEngine;
+
+  useEffect(() => {
+    registerNoteSaveTrustGate({
+      hasPendingContent: () => documentEngineRef.current.hasPendingContent(),
+      hasPendingOutbound: () => documentEngineRef.current.hasPendingOutbound(),
+    });
+    return () => {
+      registerNoteSaveTrustGate(null);
+    };
+  }, []);
 
   const shouldDeferRemoteSync = useCallback(async () => {
     if (isActiveNoteEditorFocused()) return true;
@@ -293,6 +304,13 @@ export function useNoteBlockData(options: {
     }
   }, []);
 
+  const persistTodoNestMigration = useCallback(async (
+    patches: ReturnType<typeof prepareLoadedNoteBlocks>['todoMigrationPatches'],
+  ) => {
+    if (patches.length === 0) return;
+    await documentEngineRef.current.persistBlockTransaction(patches);
+  }, []);
+
   useEffect(() => {
     return () => {
       void commitNoteDocumentBeforeLeave();
@@ -321,18 +339,16 @@ export function useNoteBlockData(options: {
     previousDocumentIdRef.current = selectedId;
 
     const documentId = selectedId;
-    // UI만 비움 — engine.replaceBlocks([])는 coordinator.persistLocal([])로
-    // IndexedDB 스냅샷을 지워 미푸시 드래그 순서를 날린다.
-    const rememberedBlocks = readRememberedNoteDocumentBlocks(documentId);
-    replaceNoteDocumentStoreView(documentId, rememberedBlocks ?? []);
+    // Load 계약: remembered는 authoritative 트리가 아님 — 빈 투영 + 스켈레톤, open 경로만 확정
+    replaceNoteDocumentStoreView(documentId, []);
     void ensureNoteLocalCacheVersion().catch((e) => {
       devLogger.warn('[Note] ensureNoteLocalCacheVersion failed', e);
     });
 
     setLoadSettledDocId(null, 'open:start');
-    setLoadingBlocks(rememberedBlocks ? false : true, 'open:start');
+    setLoadingBlocks(true, 'open:start');
     setBlocksEmptyConfirmed(false, 'open:start');
-    setBlocksSyncing(rememberedBlocks ? true : false, 'open:start');
+    setBlocksSyncing(true, 'open:start');
   }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);
 
   useEffect(() => {
@@ -407,6 +423,11 @@ export function useNoteBlockData(options: {
             devLogger.error('[Note] persistToggleBodyMigration', e);
           });
         }
+        if (result.todoMigrationPatches.length > 0) {
+          void persistTodoNestMigration(result.todoMigrationPatches).catch((e) => {
+            devLogger.error('[Note] persistTodoNestMigration', e);
+          });
+        }
         markLoadSettled();
         setError(null);
       } catch (e) {
@@ -429,6 +450,7 @@ export function useNoteBlockData(options: {
     selectedId,
     setError,
     persistToggleBodyMigration,
+    persistTodoNestMigration,
     setBlocksEmptyConfirmed,
     setBlocksSyncing,
     setLoadSettledDocId,

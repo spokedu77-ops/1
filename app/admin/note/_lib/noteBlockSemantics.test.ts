@@ -22,9 +22,9 @@ describe('note block semantics', () => {
     expect(allowsLocalChildBlocks({ type: 'bulletList' })).toBe(true);
   });
 
-  it('identifies checklist blocks as text blocks with checked state', () => {
+  it('nests checklist via parent_block_id tree (Notion contract)', () => {
     expect(isTodoBlock({ type: 'todo' })).toBe(true);
-    expect(supportsInsideDropTarget('todo')).toBe(false);
-    expect(allowsLocalChildBlocks({ type: 'todo' })).toBe(false);
+    expect(supportsInsideDropTarget('todo')).toBe(true);
+    expect(allowsLocalChildBlocks({ type: 'todo' })).toBe(true);
   });
 });

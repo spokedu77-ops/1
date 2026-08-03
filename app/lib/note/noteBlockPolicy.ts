@@ -46,6 +46,7 @@ const TOGGLE_CHILD_TYPES = new Set([
 export function canBlockTypeHaveChildren(type: string): boolean {
   return type === 'page'
     || type === 'toggle'
+    || type === 'todo'
     || type === 'bulletList'
     || type === 'numberedList'
     || type === 'columnList'
@@ -59,6 +60,8 @@ export function canPlaceBlockTypeInParent(
   if (parentType == null) return ROOT_CHILD_TYPES.has(movingType);
   if (parentType === 'page') return PAGE_CHILD_TYPES.has(movingType);
   if (parentType === 'toggle') return TOGGLE_CHILD_TYPES.has(movingType);
+  // 노션 계약: checklist nesting = parent_block_id only (listNestLevel 금지)
+  if (parentType === 'todo') return movingType === 'todo';
   if (parentType === 'bulletList' || parentType === 'numberedList') {
     return movingType === 'bulletList' || movingType === 'numberedList';
   }

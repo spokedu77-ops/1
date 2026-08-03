@@ -4,6 +4,7 @@ import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 import { noteBlockOpTypeFromPayload } from '@/app/lib/note/noteBlockOpTypes';
 import type { NoteLocalOutboundOp } from './noteLocalDb';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
+import { sealPassiveIncomingBlock } from './noteDataIntegrity';
 import type { NoteBlock } from './types';
 
 function readBlockText(block: NoteBlock): string {
@@ -85,7 +86,8 @@ function mergeServerMetadata(local: NoteBlock, server: NoteBlock): NoteBlock {
 
 function mergeServerBlockIntoLocal(local: NoteBlock, server: NoteBlock): NoteBlock {
   if (shouldPreferServerBlockOverLocal(local, server)) {
-    return server;
+    // Integrity: 서버 골격·버전은 수용하되 사용자 본문 wipe/truncate는 봉인
+    return sealPassiveIncomingBlock(local, server);
   }
   if (
     local.type !== server.type

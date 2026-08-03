@@ -12,9 +12,17 @@ export function rowSubstantiallyInMarquee(row: DOMRect, marquee: MarqueeRect): b
   return cx >= marquee.left && cx <= marquee.right && cy >= marquee.top && cy <= marquee.bottom;
 }
 
-export function getMarqueeSelectedBlockIds(marquee: MarqueeRect): string[] {
+/**
+ * 마퀴 hit — 현재 편집 패널 zone 안에서만 (전역 DOM 스캔 금지).
+ * zone 미지정이면 document (테스트·폴백).
+ */
+export function getMarqueeSelectedBlockIds(
+  marquee: MarqueeRect,
+  scopeRoot?: ParentNode | null,
+): string[] {
   const ids: string[] = [];
-  document.querySelectorAll<HTMLElement>('[data-note-block-row]').forEach((row) => {
+  const root = scopeRoot ?? document;
+  root.querySelectorAll<HTMLElement>('[data-note-block-row]').forEach((row) => {
     if (!rowSubstantiallyInMarquee(row.getBoundingClientRect(), marquee)) return;
     const id = row.getAttribute('data-block-id');
     if (id) ids.push(id);

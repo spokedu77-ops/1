@@ -9,6 +9,15 @@ export type SanitizableNoteBlock = {
   content?: Record<string, unknown> | null;
 };
 
+function hasDuplicateOrdersInGroup<T extends SanitizableNoteBlock>(siblings: T[]): boolean {
+  const seen = new Set<number>();
+  for (const block of siblings) {
+    if (seen.has(block.order_index)) return true;
+    seen.add(block.order_index);
+  }
+  return false;
+}
+
 function hasAncestor<T extends SanitizableNoteBlock>(
   blocksById: Map<string, T>,
   blockId: string,
@@ -67,8 +76,12 @@ export function sanitizeNoteBlockTree<T extends SanitizableNoteBlock>(blocks: T[
   const ordered: T[] = [];
   const pushSiblings = (parentId: string | null) => {
     const siblings = parentId === null ? sortRootBlocks(reparented) : (childrenByParent.get(parentId) ?? []);
+    // Integrity: unique order면 absolute index를 다시 쓰지 않음 (상대 순서 유지, 침묵 compaction 금지)
+    const compact = hasDuplicateOrdersInGroup(siblings);
     siblings.forEach((block, index) => {
-      const normalized = block.order_index === index ? block : { ...block, order_index: index };
+      const normalized = compact && block.order_index !== index
+        ? { ...block, order_index: index }
+        : block;
       ordered.push(normalized);
       pushSiblings(block.id);
     });

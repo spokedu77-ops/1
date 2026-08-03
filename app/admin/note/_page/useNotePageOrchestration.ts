@@ -25,6 +25,7 @@ import {
 } from '../_lib/noteDocumentParentClient';
 import { setNoteToggleBackspaceRuntime } from '../_lib/noteToggleBackspaceRuntime';
 import { commitNoteDocumentBeforeLeave } from '../_lib/noteBlockStateMerge';
+import { reportNoteDurableSave } from '../_lib/noteSaveTrust';
 
 /** NotePageContext value 조립 — 문서·블록·선택·DnD 훅 wiring */
 export function useNotePageOrchestration(): NotePageContextValue {
@@ -256,10 +257,17 @@ export function useNotePageOrchestration(): NotePageContextValue {
   } = editorFocus;
 
   const triggerSave = useCallback(() => {
-    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    setLoadingState('saved');
-    setLastSavedAt(new Date());
-    savedTimerRef.current = window.setTimeout(() => setLoadingState('idle'), 3000);
+    void reportNoteDurableSave({
+      onSaved: () => {
+        if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+        setLoadingState('saved');
+        setLastSavedAt(new Date());
+        savedTimerRef.current = window.setTimeout(() => setLoadingState('idle'), 3000);
+      },
+      onPending: () => {
+        setLoadingState('saving');
+      },
+    });
   }, []);
 
   useEffect(() => {

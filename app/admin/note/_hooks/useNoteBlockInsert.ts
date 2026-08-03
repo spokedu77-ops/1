@@ -145,7 +145,6 @@ export function useNoteBlockInsert(options: {
       if (command.affectedIds.length === 0) return null;
       const normalizedExistingOrders = command.orders.filter((patch) => patch.id !== createdBlockId);
 
-      blocksRef.current = command.nextBlocks;
       setBlocks(command.nextBlocks);
       if (insertOptions?.focus !== false && command.focusTarget) {
         focusBlockEditor(
@@ -200,7 +199,6 @@ export function useNoteBlockInsert(options: {
           affectedIds = [...new Set([...affectedIds, ...columnCommand.affectedIds])];
         }
       }
-      blocksRef.current = nextBlocks;
       setBlocks(nextBlocks);
       if (insertOptions?.focus !== false && type === COLUMN_LIST_TYPE) {
         if (type === COLUMN_LIST_TYPE) {
@@ -220,7 +218,6 @@ export function useNoteBlockInsert(options: {
       return createdBlock;
     } catch (e) {
       devLogger.error('[Note] insertBlockAmongSiblings', e);
-      blocksRef.current = previousBlocks;
       setBlocks(previousBlocks);
       setError(e instanceof Error ? e.message : '블록 추가 실패');
       setLoadingState('idle');

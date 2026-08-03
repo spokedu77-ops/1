@@ -301,8 +301,9 @@ export function planBlockDropAt<T extends BlockWithMeta>(
 
   if (position === 'inside') {
     if (!canPlaceBlockInParent(moving, target)) return null;
+    // C5 Placement: inbound at top (newest on top) — same for root/subpage containers
     const children = withoutMoving(target.id);
-    return finish(target.id, [...children, moving]);
+    return finish(target.id, [moving, ...children]);
   }
 
   const parentId = target.parent_block_id ?? null;
@@ -356,8 +357,7 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
     const descendantIds = collectDescendantBlockIds(moving.id, blocks);
     if (descendantIds.has(prev.id)) return null;
 
-    // 체크리스트는 parent_block_id 중첩 대신 listNestLevel — planTodoListNestTab이 처리
-    if (moving.type === 'todo' && (prev.type === 'todo' || prev.type === 'text')) return null;
+    // 체크리스트도 bullet과 같이 parent_block_id 트리로 중첩 (노션 계약)
     if (!canPlaceBlockInParent(moving, prev)) return null;
 
     const children = getBlocksInParent(blocks, prev.id).filter((block) => block.id !== moving.id);
@@ -575,9 +575,10 @@ export function planBlockForestDropAt<T extends BlockWithMeta>(
   }
 
   const rootIds = new Set(roots.map((block) => block.id));
+  // C5 Placement: inbound forest at top (newest on top)
   const targetSiblings = [
-    ...getBlocksInParent(blocks, target.id).filter((block) => !rootIds.has(block.id)),
     ...roots,
+    ...getBlocksInParent(blocks, target.id).filter((block) => !rootIds.has(block.id)),
   ].map((block, index) => ({ ...block, order_index: index }));
 
   return {

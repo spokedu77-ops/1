@@ -24,7 +24,10 @@ import { isDocumentDescendantOf } from '@/app/lib/note/orphanSubPageBlocks';
 import { getChildDocumentIdFromPageContent } from '@/app/lib/note/documentParentSync';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
-import { buildBlockForestTransferCommand } from '../_lib/noteBlockTransfer';
+import {
+  buildBlockForestTransferCommand,
+  fetchDocumentRootBlocksForPlacement,
+} from '../_lib/noteBlockTransfer';
 import { markPendingBlockDeletes } from '../_lib/noteReconcileIdle';
 import { removeStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import { reparentDocumentTree } from '../_lib/noteDocumentTreeApi';
@@ -324,14 +327,20 @@ export function useNoteDragDrop(options: {
     if (selectedId) {
       markPendingBlockDeletes(selectedId, command.movedIds);
     }
+    const affectedIds = [...new Set([
+      ...command.movedIds,
+      ...command.patches.map((patch) => patch.id),
+    ])];
     try {
       const nextBlocks = await documentEngine.applyStructureCommand({
         nextBlocks: command.nextBlocks,
-        affectedIds: command.movedIds,
-        orders: command.patches.map((patch) => ({
-          id: patch.id,
-          order_index: patch.order_index ?? 0,
-        })),
+        affectedIds,
+        orders: command.patches
+          .filter((patch) => typeof patch.order_index === 'number')
+          .map((patch) => ({
+            id: patch.id,
+            order_index: patch.order_index as number,
+          })),
         fieldPatches: command.patches,
         createdBlocks: [],
         removedBlocks: [],
@@ -348,6 +357,27 @@ export function useNoteDragDrop(options: {
       return false;
     }
   }, [documentEngine, noteUndo, onAfterBlocksChanged, selectedId, setBlocks, setError]);
+
+  const buildTransferCommand = useCallback(async (
+    sourceBlocks: NoteBlock[],
+    movingBlockIds: string[],
+    targetDocumentId: string,
+  ) => {
+    let targetRootBlocks: NoteBlock[] = [];
+    try {
+      targetRootBlocks = await fetchDocumentRootBlocksForPlacement(targetDocumentId);
+    } catch (e) {
+      devLogger.error('[Note] fetchTargetRootsForPlacement', e);
+      // C5: 타깃 루트를 못 읽으면 transfer를 강행하지 않음 — 중복 order/랜덤 배치 방지
+      throw e;
+    }
+    return buildBlockForestTransferCommand(
+      sourceBlocks,
+      movingBlockIds,
+      targetDocumentId,
+      { targetRootBlocks },
+    );
+  }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveBlockId(null);
@@ -452,11 +482,13 @@ export function useNoteDragDrop(options: {
 
       // Move the whole subtree across documents so toggle children are not orphaned.
       const previousBlocks = blocksRef.current;
-      const command = buildBlockForestTransferCommand(
-        previousBlocks,
-        movingBlockIds,
-        targetDocumentId,
-      );
+      let command: ReturnType<typeof buildBlockForestTransferCommand>;
+      try {
+        command = await buildTransferCommand(previousBlocks, movingBlockIds, targetDocumentId);
+      } catch {
+        setError('하위 페이지 블록을 불러오지 못해 이동하지 못했습니다.');
+        return;
+      }
       if (command.movedIds.length === 0) {
         setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
         return;
@@ -494,11 +526,13 @@ export function useNoteDragDrop(options: {
             .filter((block): block is NoteBlock => Boolean(block));
           const pageInside = resolvePageInsideDropAction(container, movingRoots, selectedId);
           if (pageInside?.kind === 'transfer') {
-            const command = buildBlockForestTransferCommand(
-              prevBlocks,
-              ordered,
-              pageInside.targetDocumentId,
-            );
+            let command: ReturnType<typeof buildBlockForestTransferCommand>;
+            try {
+              command = await buildTransferCommand(prevBlocks, ordered, pageInside.targetDocumentId);
+            } catch {
+              setError('하위 페이지 블록을 불러오지 못해 이동하지 못했습니다.');
+              return;
+            }
             if (command.movedIds.length === 0) {
               setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
               return;
@@ -568,11 +602,13 @@ export function useNoteDragDrop(options: {
       const container = prevBlocks.find((block) => block.id === dropBlockId);
       const pageInside = resolvePageInsideDropAction(container, [moving], selectedId);
       if (pageInside?.kind === 'transfer') {
-        const command = buildBlockForestTransferCommand(
-          prevBlocks,
-          [moving.id],
-          pageInside.targetDocumentId,
-        );
+        let command: ReturnType<typeof buildBlockForestTransferCommand>;
+        try {
+          command = await buildTransferCommand(prevBlocks, [moving.id], pageInside.targetDocumentId);
+        } catch {
+          setError('하위 페이지 블록을 불러오지 못해 이동하지 못했습니다.');
+          return;
+        }
         if (command.movedIds.length === 0) {
           setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
           return;
@@ -607,6 +643,7 @@ export function useNoteDragDrop(options: {
     });
   }, [
     blocksRef,
+    buildTransferCommand,
     documents,
     handleReparentDocument,
     runOptimisticBlockCommand,

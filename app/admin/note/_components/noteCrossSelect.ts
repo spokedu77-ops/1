@@ -44,12 +44,13 @@ import {
   rowHasToggleTitle,
 } from './noteToggleTitleCrossSelect';
 import { noteBlockMarqueeGuard } from '../_lib/noteBlockMarqueeGuard';
+import { resolveCrossSelectClipboardPlain } from '../_lib/notePasteContract';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { clearActiveListCrossSelectState } from './noteListCrossSelect';
 import {
   getOrderedBlockRowIds,
   resolveNoteBlockIdFromPoint,
 } from './noteBlockIdFromPoint';
-
 export { getOrderedBlockRowIds, getOrderedSelectableBlockIds } from './noteBlockIdFromPoint';
 
 export type { CrossSelectRange };
@@ -346,7 +347,14 @@ export function finalizeCrossSelection(
 }
 
 function onCopy(e: ClipboardEvent) {
-  const text = extractActiveCrossSelectClipboardText();
+  const ranges = getUnifiedCrossSelectRanges();
+  const plainFallback = extractActiveCrossSelectClipboardText();
+  const blockIds = ranges.map((range) => range.blockId);
+  const text = resolveCrossSelectClipboardPlain({
+    blocks: useNoteBlockStore.getState().getBlocksArray(),
+    blockIds,
+    plainFallback,
+  });
   if (!text) return;
   e.preventDefault();
   e.stopImmediatePropagation();

@@ -16,6 +16,7 @@ import {
 import { getActiveListCrossRanges } from '../_components/noteListCrossSelect';
 import { extractActiveCrossSelectClipboardText } from '../_components/noteListCrossHighlight';
 import { parseBlockClipboardText } from '../_lib/noteBlockClipboard';
+import { resolveCrossSelectClipboardPlain } from '../_lib/notePasteContract';
 import type { useNoteBlockUndo } from './useNoteBlockUndo';
 import type { NoteBlock } from '../_lib/types';
 
@@ -150,11 +151,25 @@ export function useNoteBlockKeyboard(options: {
       if (!meta || e.shiftKey || e.altKey) return;
       if (e.key.toLowerCase() !== 'c') return;
 
-      const crossLen = getActiveCrossRanges().length;
-      const listLen = getActiveListCrossRanges().length;
-      const text = extractActiveCrossSelectClipboardText();
+      const crossRanges = getActiveCrossRanges();
+      const listRanges = getActiveListCrossRanges();
+      const crossLen = crossRanges.length;
+      const listLen = listRanges.length;
+      const plainFallback = extractActiveCrossSelectClipboardText();
+      const blockIds = [
+        ...crossRanges.map((range) => range.blockId),
+        ...listRanges.map((range) => range.blockId),
+      ];
+      // C6: 멀티 블록 cross-select는 블록 선택 복사와 같은 NOTE_BLOCKS_JSON
+      const text = resolveCrossSelectClipboardPlain({
+        blocks: blocksRef.current,
+        blockIds,
+        plainFallback,
+      });
       if (!text) return;
-      if (crossLen <= 1 && listLen <= 1 && !text.includes('\n')) return;
+      if (crossLen <= 1 && listLen <= 1 && !text.includes('\n') && !parseBlockClipboardText(text)) {
+        return;
+      }
 
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -173,7 +188,7 @@ export function useNoteBlockKeyboard(options: {
     };
     window.addEventListener('keydown', onCopyKey, true);
     return () => window.removeEventListener('keydown', onCopyKey, true);
-  }, []);
+  }, [blocksRef]);
 
   useEffect(() => {
     const shouldUseBlockClipboard = () => {

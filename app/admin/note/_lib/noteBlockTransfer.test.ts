@@ -172,4 +172,31 @@ describe('buildBlockForestTransferCommand', () => {
       { id: 'toggle-child', document_id: 'target' },
     ]);
   });
+
+  it('C5: prepends transferred roots and shifts existing target roots', () => {
+    const blocks = [
+      block('incoming', null, 0),
+      block('incoming-child', 'incoming', 0),
+      block('other', null, 1),
+    ];
+    const command = buildBlockForestTransferCommand(
+      blocks,
+      ['incoming'],
+      'target',
+      {
+        targetRootBlocks: [
+          { id: 'old-a', order_index: 0, parent_block_id: null },
+          { id: 'old-b', order_index: 1, parent_block_id: null },
+        ],
+      },
+    );
+
+    expect(command.rootIds).toEqual(['incoming']);
+    expect(command.patches).toEqual([
+      { id: 'incoming', document_id: 'target', parent_block_id: null, order_index: 0 },
+      { id: 'incoming-child', document_id: 'target' },
+      { id: 'old-a', order_index: 1 },
+      { id: 'old-b', order_index: 2 },
+    ]);
+  });
 });

@@ -13,8 +13,6 @@ import { useNoteBlockHistory } from '../_hooks/useNoteBlockHistory';
 import { useNoteBlockKeyboard } from '../_hooks/useNoteBlockKeyboard';
 import { useNoteBlockInsert } from '../_hooks/useNoteBlockInsert';
 import { useNoteBlockDelete } from '../_hooks/useNoteBlockDelete';
-import { planTodoListNestTab } from '../_lib/noteTodoNest';
-import { normalizeTodoBlockContentRecord } from '../_lib/noteTodoContent';
 import {
   planBlockTabIndent,
   resolveVisualNavigateTarget,
@@ -57,6 +55,7 @@ import {
   insertPastedBlockSpecsAfterBlock,
   resolvePasteSourceContent,
 } from '../_lib/notePasteInsert';
+import { resolvePasteInsertMode } from '../_lib/notePasteContract';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
@@ -289,19 +288,7 @@ export function useNoteBlockActions(options: {
 
   const handleIndentBlock = useCallback((block: NoteBlock, direction: 'in' | 'out') => {
     const prevBlocks = blocksRef.current;
-    const todoNest = planTodoListNestTab(prevBlocks, block.id, direction);
-    if (todoNest) {
-      const base = (block.content ?? {}) as Record<string, unknown>;
-      const nextContent = normalizeTodoBlockContentRecord({
-        ...base,
-        listNestLevel: todoNest.listNestLevel,
-      });
-      recordContentUndoBeforeChange(block.id);
-      syncBlockContent(block.id, nextContent);
-      bumpNoteReconcileIdle(selectedId);
-      return;
-    }
-
+    // 노션 계약: todo 중첩도 planBlockTabIndent → parent_block_id (listNestLevel 금지)
     const tabPlan = planBlockTabIndent(prevBlocks, block.id, direction);
     if (tabPlan) {
       applyBlockReparentPlan(block, tabPlan);
@@ -309,9 +296,6 @@ export function useNoteBlockActions(options: {
   }, [
     applyBlockReparentPlan,
     blocksRef,
-    recordContentUndoBeforeChange,
-    selectedId,
-    syncBlockContent,
   ]);
   const handleNavigateBlock = useCallback((block: NoteBlock, direction: 'previous' | 'next') => {
     const snapshot = blocksRef.current;
@@ -458,32 +442,42 @@ export function useNoteBlockActions(options: {
     formatToolbarApiRef.current.hide();
   }, [formatToolbarApiRef]);
 
-  const handleMultilinePaste = useCallback(async (block: NoteBlock, specs: PastedBlockSpec[]) => {
+  const applyPastedBlockSpecs = useCallback(async (
+    block: NoteBlock,
+    specs: PastedBlockSpec[],
+    options?: { requireSplitGate?: boolean },
+  ) => {
     if (!selectedId || specs.length === 0) return;
     const normalizedSpecs = normalizeMultilinePasteSpecsForAnchor(block.type, specs);
-    const singleSpecialPaste = normalizedSpecs.length === 1 && (
-      isStructuralHtmlPasteSpec(normalizedSpecs[0])
-      || normalizedSpecs[0].type !== block.type
-    );
-    if (normalizedSpecs.length > 1 && !canSplitMultilinePasteToBlocks(block.type)) return;
-    if (normalizedSpecs.length === 1 && !singleSpecialPaste) return;
+    const requireSplitGate = options?.requireSplitGate !== false;
+    if (requireSplitGate) {
+      const singleSpecialPaste = normalizedSpecs.length === 1 && (
+        isStructuralHtmlPasteSpec(normalizedSpecs[0])
+        || normalizedSpecs[0].type !== block.type
+      );
+      if (normalizedSpecs.length > 1 && !canSplitMultilinePasteToBlocks(block.type)) return;
+      if (normalizedSpecs.length === 1 && !singleSpecialPaste) return;
+    }
 
     const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
     const sourceContent = resolvePasteSourceContent(block);
-
-    const { lastFocusId, lastFocusPart } = await insertPastedBlockSpecsAfterAnchor(
-      {
-        blocksRef,
-        insertBlockAmongSiblings,
-        changeBlockType: handleChangeBlockType,
-        syncBlockContent,
-      },
-      block,
-      normalizedSpecs,
-      sourceContent,
-    );
+    // C6: 블록 MIME은 절대 현재 칸 wipe 금지. TipTap 멀티라인은 live content로 blank 판정.
+    const mode = resolvePasteInsertMode(block, normalizedSpecs, {
+      liveContent: sourceContent,
+      forceInsertAfter: options?.requireSplitGate === false,
+    });
+    const pasteCtx = {
+      blocksRef,
+      insertBlockAmongSiblings,
+      changeBlockType: handleChangeBlockType,
+      syncBlockContent,
+    };
+    const { lastFocusId, lastFocusPart } = mode === 'fill-anchor'
+      ? await insertPastedBlockSpecsAfterAnchor(pasteCtx, block, normalizedSpecs, sourceContent)
+      : await insertPastedBlockSpecsAfterBlock(pasteCtx, block, normalizedSpecs, sourceContent);
+    // flush는 저장 신뢰용 — UI 포커스 후 백그라운드로 (붙여넣기 체감 지연 완화)
     if (documentEngine.hasPendingContent()) {
-      await documentEngine.flushContentPatches();
+      void documentEngine.flushContentPatches();
     }
 
     const nextBlocks = mergeBlocksWithStoreContent(blocksRef.current);
@@ -507,6 +501,10 @@ export function useNoteBlockActions(options: {
     documentEngine,
   ]);
 
+  const handleMultilinePaste = useCallback(async (block: NoteBlock, specs: PastedBlockSpec[]) => {
+    await applyPastedBlockSpecs(block, specs, { requireSplitGate: true });
+  }, [applyPastedBlockSpecs]);
+
   const handlePasteBlockClipboard = useCallback(async (payloadText: string) => {
     if (!selectedId) return;
     const payload = parseBlockClipboardText(payloadText);
@@ -515,42 +513,18 @@ export function useNoteBlockActions(options: {
     if (specs.length === 0) return;
 
     const anchor = (focusedEditorBlockIdRef.current
-        ? blocksRef.current.find((block) => block.id === focusedEditorBlockIdRef.current) ?? null
+        ? blocksRef.current.find((item) => item.id === focusedEditorBlockIdRef.current) ?? null
         : null)
       ?? sortRootBlocks(blocksRef.current).at(-1)
       ?? null;
     if (!anchor) return;
 
-    const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
-    const sourceContent = resolvePasteSourceContent(anchor);
-    const { lastFocusId, lastFocusPart } = await insertPastedBlockSpecsAfterBlock(
-      {
-        blocksRef,
-        insertBlockAmongSiblings,
-        changeBlockType: handleChangeBlockType,
-        syncBlockContent,
-      },
-      anchor,
-      specs,
-      sourceContent,
-    );
-
-    const nextBlocks = mergeBlocksWithStoreContent(blocksRef.current);
-    recordBlockTransactionUndo(
-      previousBlocks,
-      nextBlocks,
-      collectBlockTransactionIds(previousBlocks, nextBlocks),
-    );
-    focusBlockEditor(lastFocusId, lastFocusPart);
+    await applyPastedBlockSpecs(anchor, specs, { requireSplitGate: false });
   }, [
     selectedId,
     focusedEditorBlockIdRef,
     blocksRef,
-    insertBlockAmongSiblings,
-    handleChangeBlockType,
-    syncBlockContent,
-    recordBlockTransactionUndo,
-    focusBlockEditor,
+    applyPastedBlockSpecs,
   ]);
 
   const handleCopySelectedBlocks = useCallback(async () => {

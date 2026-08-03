@@ -9,6 +9,7 @@ import {
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { mergeBlockContentWithStore } from './noteContentPatch';
 import { hasRecentBlockDeletes } from './noteReconcileIdle';
+import { mergePassiveIncomingContent } from './noteDataIntegrity';
 
 /** 서버 reconcile에 아직 없는 로컬 블록을 유지하는 최대 시간 (생성 직후만) */
 export const LOCAL_ONLY_BLOCK_GRACE_MS = 5000;
@@ -108,6 +109,7 @@ export function mergeReconciledBlocks(
     : reconciledBlocks;
   const structuralBase = structureAuthority === 'local' ? localBlocks : filteredReconciled;
   const incomingById = new Map(filteredReconciled.map((block) => [block.id, block]));
+  const localById = new Map(localBlocks.map((block) => [block.id, block]));
   const store = useNoteBlockStore.getState();
   const activeId = store.activeEditor?.blockId;
   const activeDocumentId = store.activeDocumentId;
@@ -116,15 +118,30 @@ export function mergeReconciledBlocks(
     if (excludedIds?.has(block.id)) return block;
     if (activeDocumentId && block.document_id !== activeDocumentId) return block;
     const incoming = incomingById.get(block.id);
+    const localBlock = localById.get(block.id);
     const fromStore = store.byId[block.id];
+    // Integrity: compare true local payload vs incoming — never treat incoming base as "local"
+    const localContent = (localBlock?.content ?? block.content ?? {}) as Record<string, unknown>;
+    const incomingContent = (incoming?.content ?? block.content ?? {}) as
+      | Record<string, unknown>
+      | null
+      | undefined;
+
+    // Integrity: passive merge never clears/truncates local user text with stale incoming
+    const protectedContent = incoming
+      ? mergePassiveIncomingContent(localContent, incomingContent ?? {})
+      : localContent;
+
     const nextBlock = structureAuthority === 'local'
       ? {
         ...block,
-        ...(incoming?.content !== undefined ? { content: incoming.content } : {}),
+        content: protectedContent,
         ...(incoming?.version !== undefined ? { version: incoming.version } : {}),
         ...(incoming?.updated_at !== undefined ? { updated_at: incoming.updated_at } : {}),
       }
-      : (incoming ?? block);
+      : (incoming
+        ? { ...incoming, content: protectedContent }
+        : block);
 
     if (!fromStore?.content) {
       return nextBlock;

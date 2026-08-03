@@ -186,7 +186,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onFocusBlock={() => deps.focusBlockEditor(block.id)}
         onFocusBlockById={(id: string, part?: 'title' | 'editor', offset?: number) => deps.focusBlockEditor(id, part, offset)}
         onAddChildBelow={
-          block.type === 'toggle' || block.type === 'column'
+          block.type === 'toggle' || block.type === 'column' || block.type === 'todo'
             ? (type, content) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text', content); }
             : undefined
         }

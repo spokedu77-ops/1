@@ -25,7 +25,7 @@ describe('NoteDocumentOpQueue', () => {
 
   it('routes content patch through op-log persist', async () => {
     const blocks = new Map([['a', baseBlock('a', 'hello', 3)]]);
-    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
     const triggerSave = vi.fn();
 
     const queue = new NoteDocumentOpQueue({
@@ -53,7 +53,7 @@ describe('NoteDocumentOpQueue', () => {
   it('keeps pending content visible until debounce flush is drained', async () => {
     vi.useFakeTimers();
     const blocks = new Map([['a', baseBlock('a', 'draft', 3)]]);
-    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
     const triggerSave = vi.fn();
 
     const queue = new NoteDocumentOpQueue({
@@ -94,7 +94,7 @@ describe('NoteDocumentOpQueue', () => {
         },
       }],
     ]);
-    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
 
     const queue = new NoteDocumentOpQueue({
       getBlock: (id) => blocks.get(id),
@@ -119,7 +119,7 @@ describe('NoteDocumentOpQueue', () => {
     const blocks = new Map([
       ['a', { ...baseBlock('a', '', 3), content: { text: '', html: '' } }],
     ]);
-    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
 
     const queue = new NoteDocumentOpQueue({
       getBlock: (id) => blocks.get(id),
@@ -152,16 +152,16 @@ describe('NoteDocumentOpQueue', () => {
   });
 
   it.each([
-    ['todo', { text: '7.20 월요일 11시 강승현 면접', checked: false }],
-    ['toggle', { title: 'P0 핵심 과제', collapsed: false }],
-    ['page', { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' }],
+    ['todo', { text: '7.20 ?�요??11??강승??면접', checked: false }],
+    ['toggle', { title: 'P0 ?�심 과제', collapsed: false }],
+    ['page', { title: '최�????�무?�트 ?�위?�이지', page_document_id: 'child-doc-1' }],
   ] satisfies Array<[NoteBlock['type'], Record<string, unknown>]>)(
     'drops stale empty body patches over %s contract fields',
     async (type, content) => {
       const blocks = new Map([
         ['a', { ...baseBlock('a', '', 3, type), content }],
       ]);
-      const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+      const persistViaOpLog = vi.fn().mockResolvedValue(true);
 
       const queue = new NoteDocumentOpQueue({
         getBlock: (id) => blocks.get(id),
@@ -181,7 +181,7 @@ describe('NoteDocumentOpQueue', () => {
     const blocks = new Map([
       ['a', { ...baseBlock('a', '', 3), content: { text: '', html: '<p></p>' } }],
     ]);
-    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
 
     const queue = new NoteDocumentOpQueue({
       getBlock: (id) => blocks.get(id),
@@ -198,7 +198,7 @@ describe('NoteDocumentOpQueue', () => {
 
   it('routes createBlock through op-log persist with immediate flush', async () => {
     const blocks = new Map<string, NoteBlock>();
-    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
     const triggerSave = vi.fn();
 
     const queue = new NoteDocumentOpQueue({
@@ -236,7 +236,7 @@ describe('NoteDocumentOpQueue', () => {
       ['root', { ...baseBlock('root', 'a', 2), parent_block_id: null }],
       ['child', { ...baseBlock('child', 'b', 5), parent_block_id: 'root' }],
     ]);
-    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
 
     const queue = new NoteDocumentOpQueue({
       getBlock: (id) => blocks.get(id),
@@ -317,7 +317,7 @@ describe('NoteDocumentOpQueue', () => {
   });
 
   it('purges block from trash via op-log', async () => {
-    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
     const triggerSave = vi.fn();
     const queue = new NoteDocumentOpQueue({
       getBlock: () => undefined,

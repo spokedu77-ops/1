@@ -14,7 +14,7 @@ describe('noteTodoContent', () => {
     expect(normalizeTodoBlockContentRecord({ checked: true }).checked).toBe(true);
   });
 
-  it('preserves listNestLevel when nested', () => {
+  it('strips legacy listNestLevel (nesting is parent_block_id)', () => {
     expect(normalizeTodoBlockContentRecord({
       text: 'nested',
       checked: false,
@@ -22,7 +22,6 @@ describe('noteTodoContent', () => {
     })).toEqual({
       text: 'nested',
       checked: false,
-      listNestLevel: 2,
     });
   });
 

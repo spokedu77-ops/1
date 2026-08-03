@@ -171,14 +171,33 @@ export class NoteDocumentPipeline {
     });
   }
 
+  private bindCoordinatorProjection(): void {
+    if (!this.coordinator) return;
+    this.coordinator.updateCallbacks({
+      onBlocksUpdated: (blocks, _lastSeq, origin) => {
+        if (this.disposed) return;
+        this.dispatchSnapshotIfChanged(
+          blocks.filter((block) => block.document_id === this.documentId),
+          origin,
+        );
+        // Save Trust: debounce/deferred push가 나중에 비워졌을 때도 saved 가능
+        if (origin === 'coordinator:push') {
+          void this.coordinator?.hasPendingOutbound().then((pending) => {
+            if (!pending && !this.disposed) this.callbacks.triggerSave();
+          });
+        }
+      },
+      onError: (error) => this.callbacks.onError?.(error),
+    });
+  }
+
   private initQueue(): void {
     if (this.oplogEnabled) {
       this.coordinator = getNoteSyncCoordinator(this.documentId, {
-        onBlocksUpdated: (_blocks, _lastSeq, origin) => {
-          traceSnapshotDecision(origin, 'skip', 'equivalent', this.documentId);
-        },
+        onBlocksUpdated: () => {},
         onError: (error) => this.callbacks.onError?.(error),
       });
+      this.bindCoordinatorProjection();
     }
 
     this.queue = new NoteDocumentOpQueue({
@@ -197,14 +216,7 @@ export class NoteDocumentPipeline {
 
   updateCallbacks(callbacks: NoteDocumentPipelineCallbacks): void {
     this.callbacks = callbacks;
-    if (this.coordinator) {
-      this.coordinator.updateCallbacks({
-        onBlocksUpdated: (_blocks, _lastSeq, origin) => {
-          traceSnapshotDecision(origin, 'skip', 'equivalent', this.documentId);
-        },
-        onError: (error) => callbacks.onError?.(error),
-      });
-    }
+    this.bindCoordinatorProjection();
   }
 
   /** 모든 로컬·remote 블록 상태 변경의 유일한 입구 */
@@ -315,7 +327,7 @@ export class NoteDocumentPipeline {
   }
 
   schedulePull(): void {
-    traceSnapshotDecision('coordinator:pull', 'skip', 'equivalent', this.documentId);
+    this.coordinator?.schedulePull();
   }
 
   async persistSoftDelete(args: SoftDeletePersistArgs): Promise<void> {

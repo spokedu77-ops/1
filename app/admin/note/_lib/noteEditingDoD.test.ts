@@ -99,7 +99,7 @@ describe('Admin Note editing DoD — Phase A paste & clipboard', () => {
   it('todo and toggle have named minimum block semantics', () => {
     expect(isTodoBlock(block('todo', 'todo'))).toBe(true);
     expect(isToggleBlock(block('toggle', 'toggle'))).toBe(true);
-    expect(supportsInsideDropTarget('todo')).toBe(false);
+    expect(supportsInsideDropTarget('todo')).toBe(true);
     expect(supportsInsideDropTarget('toggle')).toBe(true);
   });
 });

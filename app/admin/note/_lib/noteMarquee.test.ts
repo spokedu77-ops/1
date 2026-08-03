@@ -25,8 +25,11 @@ describe('rowSubstantiallyInMarquee', () => {
 describe('getMarqueeSelectedBlockIds', () => {
   beforeEach(() => {
     document.body.innerHTML = `
-      <div data-note-block-row data-block-id="a" style="position:absolute;top:0;left:0;width:200px;height:40px"></div>
-      <div data-note-block-row data-block-id="b" style="position:absolute;top:50px;left:0;width:200px;height:40px"></div>
+      <div data-note-marquee-zone id="zone">
+        <div data-note-block-row data-block-id="a" style="position:absolute;top:0;left:0;width:200px;height:40px"></div>
+        <div data-note-block-row data-block-id="b" style="position:absolute;top:50px;left:0;width:200px;height:40px"></div>
+      </div>
+      <div data-note-block-row data-block-id="outside" style="position:absolute;top:0;left:0;width:200px;height:40px"></div>
       <div data-note-block-row data-block-id="c" style="position:absolute;top:200px;left:0;width:200px;height:40px"></div>
     `;
     for (const row of document.querySelectorAll<HTMLElement>('[data-note-block-row]')) {
@@ -48,6 +51,12 @@ describe('getMarqueeSelectedBlockIds', () => {
 
   it('selects rows whose center falls in marquee', () => {
     const ids = getMarqueeSelectedBlockIds({ left: 0, top: 0, right: 300, bottom: 80 });
+    expect(ids.sort()).toEqual(['a', 'b', 'outside']);
+  });
+
+  it('scopes hits to the editing marquee zone when provided', () => {
+    const zone = document.getElementById('zone');
+    const ids = getMarqueeSelectedBlockIds({ left: 0, top: 0, right: 300, bottom: 80 }, zone);
     expect(ids.sort()).toEqual(['a', 'b']);
   });
 });

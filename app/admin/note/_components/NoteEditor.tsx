@@ -1130,12 +1130,17 @@ export function NoteEditor({
           if (splitEnabled && onMultilinePaste) {
             event.preventDefault();
             callbacksRef.current.flushPendingChange();
+            // 빈 칸 fill일 때만 첫 줄 즉시 반영 — 내용 있는 칸 wipe/지연 체감 방지
             const first = mdSpecs[0];
-            if (!isStructuralHtmlPasteSpec(first)) {
+            if (
+              editorRef.current?.isEmpty
+              && first
+              && !isStructuralHtmlPasteSpec(first)
+            ) {
               const firstHtml = first.html?.trim()
                 ? first.html
                 : legacyTextToEditorHtml(first.text);
-              editorRef.current?.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
+              editorRef.current.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
             }
             onMultilinePaste(mdSpecs);
             armStructuralPasteUndo();
@@ -1150,11 +1155,15 @@ export function NoteEditor({
             event.preventDefault();
             callbacksRef.current.flushPendingChange();
             const first = htmlSpecs[0];
-            if (!isStructuralHtmlPasteSpec(first)) {
+            if (
+              editorRef.current?.isEmpty
+              && first
+              && !isStructuralHtmlPasteSpec(first)
+            ) {
               const firstHtml = first.html?.trim()
                 ? first.html
                 : legacyTextToEditorHtml(first.text);
-              editorRef.current?.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
+              editorRef.current.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
             }
             onMultilinePaste(htmlSpecs);
             armStructuralPasteUndo();

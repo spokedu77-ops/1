@@ -41,17 +41,40 @@ UI → Intent → NoteDocumentPipeline
 
 exclude 레지스트리는 outbound leave/relocation의 **투영**일 뿐 SSOT가 아니다. hook에 exclude/TTL/merge 가드를 추가하지 않는다.
 
-## Authority (`noteAuthority.ts`)
+## Authority (`noteAuthority.ts`) + Integrity (`noteDataIntegrity.ts`)
 
-open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 한 모듈이다 (OpKind 표에 `authority` kind 없음).
+open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Authority 모듈이다 (OpKind 표에 `authority` kind 없음).
+사용자 본문·체크의 **침묵 회귀 금지**는 Sync/Save Trust 계약이며, `sealPassiveIncomingBlock` /
+`mergePassiveIncomingContent`가 **모든 passive merge 구멍**에서 강제한다. hook에 무결 가드를 새로 넣지 않는다.
 
 | 판정 | 의미 |
 |------|------|
 | `decideEmptySnapshotApply` | 빈 스냅샷 수용 vs race wipe 거부 (`emptyConfirmed` · leave 투영 · 보호 본문) |
 | `decideRegressiveContentOp` | 본문 clear intent push vs stale empty drop |
 | `shouldKeepLocalOverEmptyServerAuthority` | open이 빈 서버보다 local 본문을 지킬지 |
+| `mergePassiveIncomingContent` | empty/짧은/동일길이·비확장 rewrite 거부; checked·page_id 보호 |
+| `sealPassiveIncomingBlock(s)` | incoming 골격·버전 유지 + 위 content 봉인 |
+| `reportNoteDurableSave` | UI saved 유일 게이트 (content/outbound pending 차단) |
 
-reducer hydrate/syncSnapshot · cache remember · coordinator push · open이 위 헬퍼만 호출한다. hook에 Authority 분기를 새로 넣지 않는다.
+### Passive 봉인 의무 (우회 금지)
+
+아래 경로는 **반드시** `sealPassiveIncomingBlock` / `mergePassiveIncomingContent` /
+`mergeReconciledBlocks`(내부 seal) 중 하나를 탄다. raw `content: server.content` 대입 금지.
+
+| 구멍 | 파일 |
+|------|------|
+| hydrate / syncSnapshot / mergeSnapshots / applyRemoteOps | `noteCommandReducer` → `mergeReconciledBlocks` |
+| IDB↔server open merge | `mergeServerBlocksIntoLocalSnapshot` |
+| push ack snapshot merge | `mergeSnapshotPatches` |
+| remote op replay | `applyRemoteOpRecords` (`patch_content` / content `patch_fields`) |
+| legacy engine sync | `syncBlocksFromServer` |
+| leader BroadcastChannel state | `noteSyncCoordinator` leader `state` |
+| non-oplog open replace | `applyOpenServerSnapshot` |
+| tree sanitize densify | `sanitizeNoteBlockTree` (중복 order만) |
+| coordinator → UI Project | `onBlocksUpdated` → `dispatchSnapshotIfChanged` → `syncSnapshot` |
+| realtime/idle pull | `pipeline.schedulePull` → `coordinator.schedulePull` |
+
+reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 호출한다. **새 passive 경로를 추가할 때 seal을 빼면 계약 위반이다. hook에 Authority/Integrity 분기를 새로 넣지 않는다.
 
 ## 절대 규칙
 
@@ -66,6 +89,8 @@ reducer hydrate/syncSnapshot · cache remember · coordinator push · open이 �
 9. **증상별 hook 가드 금지** — OpKind/Lifecycle이 깨진 곳만 고친다
 10. **Content LocalApply** — `applyBlockContentChange` → `scheduleContentPatch` → `dispatch(patchContent)`. `store.patchContent` 직호출 금지
 11. **exclude Project** — 활성 집합 투영은 store write. pipeline dispatch에서 재필터하지 않음. coordinator는 transport merge에만 leave 투영
+12. **Project** — coordinator `onBlocksUpdated`는 `dispatchSnapshotIfChanged`→`syncSnapshot`만. skip no-op·store 직쓰기 금지
+13. **Pull** — `pipeline.schedulePull` → `coordinator.schedulePull` (idle/realtime)
 
 ## 파일 역할
 
@@ -80,6 +105,8 @@ reducer hydrate/syncSnapshot · cache remember · coordinator push · open이 �
 | `noteBlockStore.ts` | UI SSOT |
 | `noteOpReplay.ts` | remote → 활성 집합 |
 | `noteAuthority.ts` | empty / content Authority 판정 |
+| `noteDataIntegrity.ts` | Sync/Save Trust — passive merge 본문·상대순서 무결 (C번호 아님) |
+| `noteSaveTrust.ts` | UI saved 유일 게이트 |
 | `noteStructuralExcludeRegistry.ts` | outbound leave 투영 |
 
 ## 버그 수정 시

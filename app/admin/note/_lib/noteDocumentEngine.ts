@@ -1,6 +1,7 @@
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
+import { sealPassiveIncomingBlock } from './noteDataIntegrity';
 import type { NoteDocumentEngineState, NoteDocumentOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
 
@@ -60,11 +61,12 @@ function syncBlocksFromServer(
         updated_at: server.updated_at,
       });
     }
-    return ensureNoteBlockVersion({
+    const incoming = ensureNoteBlockVersion({
       ...block,
       ...server,
       content: server.content ?? block.content,
     });
+    return sealPassiveIncomingBlock(block, incoming);
   });
 }
 

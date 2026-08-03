@@ -119,7 +119,9 @@ export function useNoteBlockSelection(options: {
   }, [applyBlockSelectRange, setSelectedBlockIds]);
 
   const applyMarqueeSelection = useCallback((marquee: MarqueeRect, options: { additive: boolean; shiftAnchor: boolean }) => {
-    const hitIds = getMarqueeSelectedBlockIds(marquee);
+    // C5/마퀴: 현재 편집 zone만 hit — 사이드바·다른 패널 row와 섞이지 않음 (모든 문서 동일)
+    const zone = document.querySelector('[data-note-marquee-zone]');
+    const hitIds = getMarqueeSelectedBlockIds(marquee, zone);
     const visualIds = flattenVisualBlockIds(blocksRef.current);
     const ids = visualIds.filter((id) => hitIds.includes(id));
     if (ids.length === 0) {

@@ -71,9 +71,6 @@ export function contentForPastedBlock(
   if (spec.html?.trim()) next.html = spec.html;
   if (isTodoBlock(spec)) {
     next.checked = spec.checked ?? false;
-    if ((spec.listNestLevel ?? 0) > 0) {
-      next.listNestLevel = spec.listNestLevel;
-    }
   }
   if (spec.type === 'code' && spec.language) next.language = spec.language;
   return next;

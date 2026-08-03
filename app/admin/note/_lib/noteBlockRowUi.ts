@@ -64,9 +64,9 @@ export function noteBlockRowMouseLeave(e: React.MouseEvent<HTMLDivElement>) {
   e.currentTarget.removeAttribute('data-row-hovered');
 }
 
-/** list — 자식을 sibling BlockRow로 렌더. toggle/columnList/column은 인라인 컨테이너 */
+/** list/todo — 자식을 sibling BlockRow로 렌더. toggle/columnList/column은 인라인 컨테이너 */
 export function blockExternalizesChildren(type: string): boolean {
   if (isColumnContainerBlock(type)) return false;
   if (type === 'toggle') return false;
-  return type === 'bulletList' || type === 'numberedList';
+  return type === 'bulletList' || type === 'numberedList' || type === 'todo';
 }

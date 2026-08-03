@@ -12,6 +12,7 @@ import {
 import {
   mergeBlocksWithStoreContent,
 } from './noteBlockStateMerge';
+import { sealPassiveIncomingBlocks } from './noteDataIntegrity';
 import { shouldKeepLocalOverEmptyServerAuthority } from './noteAuthority';
 import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
 import { readLocalDocumentMemory } from './noteLocalDb';
@@ -33,6 +34,7 @@ export type OpenNoteDocumentResult = {
   blocks: NoteBlock[];
   emptyConfirmed: boolean;
   toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'];
+  todoMigrationPatches: ReturnType<typeof prepareLoadedNoteBlocks>['todoMigrationPatches'];
 };
 
 /** bootstrap → prefetch → network 순으로 서버 스냅샷 확보 */
@@ -91,6 +93,8 @@ function finishOpenWithLocalBlocks(
     blocks: localBlocks,
     emptyConfirmed: false,
     toggleMigration,
+    // 로컬 권위 유지 경로 — 서버 스냅샷 마이그레이션을 영속화하지 않음
+    todoMigrationPatches: [],
   };
 }
 
@@ -103,7 +107,11 @@ export async function applyOpenServerSnapshot(
   serverBlocks: NoteBlock[],
   engine: NoteDocumentOpenEngine,
 ): Promise<OpenNoteDocumentResult> {
-  const { blocks: prepared, toggleMigration } = prepareLoadedNoteBlocks(serverBlocks);
+  const {
+    blocks: prepared,
+    toggleMigration,
+    todoMigrationPatches,
+  } = prepareLoadedNoteBlocks(serverBlocks);
   const normalized = dedupeNoteBlocksById(prepared);
   const serverForDoc = normalized.filter((block) => block.document_id === documentId);
 
@@ -123,7 +131,12 @@ export async function applyOpenServerSnapshot(
   if (engine.isOplogSyncEnabled()) {
     await engine.syncWithServer(normalized, { emptyConfirmed });
   } else {
-    engine.replaceBlocks(normalized);
+    // non-oplog도 raw replace 금지 — 로컬 보호 본문을 서버 스냅샷에 봉인
+    const localBefore = readLocalBlocksForOpen(documentId);
+    const sealed = localBefore.length > 0
+      ? sealPassiveIncomingBlocks(localBefore, normalized)
+      : normalized;
+    engine.replaceBlocks(sealed);
   }
 
   if (serverForDoc.length === 0 && shouldKeepLocalOverEmptyServer(readLocalBlocksForOpen(documentId), serverForDoc, documentId)) {
@@ -150,6 +163,7 @@ export async function applyOpenServerSnapshot(
     blocks: current,
     emptyConfirmed: confirmedEmpty,
     toggleMigration,
+    todoMigrationPatches,
   };
 }
 
@@ -199,6 +213,7 @@ export async function openNoteDocument(
       blocks: [],
       emptyConfirmed: false,
       toggleMigration,
+      todoMigrationPatches: [],
     };
   }
 

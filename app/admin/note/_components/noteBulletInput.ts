@@ -2,6 +2,11 @@ import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { ensureNoteBlockVersion } from '../_lib/noteBlockVersion';
 import { migrateToggleBodyToChildBlocks } from '../_lib/noteToggleContent';
+import type { NoteBlockFieldPatch } from '../_lib/noteBlocksApi';
+import {
+  buildTodoNestMigrationPatches,
+  migrateTodoListNestLevelsToTree,
+} from '../_lib/noteTodoNestMigrate';
 import type { NoteBlock } from '../_lib/types';
 
 export const TEXT_INDENT_UNIT = '\u00A0\u00A0\u00A0\u00A0';
@@ -187,10 +192,20 @@ export function normalizeListBlocksOnly(blocks: NoteBlock[]): NoteBlock[] {
 export function prepareLoadedNoteBlocks(blocks: NoteBlock[]): {
   blocks: NoteBlock[];
   toggleMigration: ReturnType<typeof migrateToggleBodyToChildBlocks>;
+  /** listNestLevel→tree 변환을 서버에 고정할 패치 (로컬만 쓰면 push-ack에 다시 평탄화됨) */
+  todoMigrationPatches: NoteBlockFieldPatch[];
 } {
   const listNormalized = normalizeListBlocksOnly(blocks);
-  const toggleMigration = migrateToggleBodyToChildBlocks(listNormalized);
-  return { blocks: toggleMigration.blocks, toggleMigration };
+  const todoMigration = migrateTodoListNestLevelsToTree(listNormalized);
+  const todoMigrationPatches = todoMigration.changed
+    ? buildTodoNestMigrationPatches(listNormalized, todoMigration.blocks)
+    : [];
+  const toggleMigration = migrateToggleBodyToChildBlocks(todoMigration.blocks);
+  return {
+    blocks: toggleMigration.blocks,
+    toggleMigration,
+    todoMigrationPatches,
+  };
 }
 
 export function normalizeLoadedNoteBlocks(blocks: NoteBlock[]): NoteBlock[] {

@@ -52,11 +52,11 @@ export type NoteDocumentOpQueueDeps = {
   onServerPatches?: (blocks: PatchedNoteBlock[]) => void;
   onServerConflicts?: (blocks: NoteBlock[]) => void;
   onContentPersisted?: (blockIds: string[]) => void;
-  /** op-log sync 활성 시 HTTP persist 대신 coordinator에 위임 */
+  /** op-log sync 활성 시 HTTP persist 대신 coordinator에 위임. true = outbound 소진(서버 반영) */
   persistViaOpLog?: (
     op: NotePersistOp,
     options?: { immediate?: boolean },
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 };
 
 /** 서버 반영 큐 — 연산을 순차 실행해 race를 줄인다 */
@@ -170,7 +170,7 @@ export class NoteDocumentOpQueue {
     if (updates.length === 0) return;
 
     await this.enqueue({ type: 'patchContent', updates });
-    this.deps.onContentPersisted?.(updates.map((update) => update.id));
+    // Save Trust: draft 제거는 enqueue→push 성공 후에만 (runPersistOp가 성공 시에만 onContentPersisted)
   }
 
   enqueue(op: NotePersistOp): Promise<void> {
@@ -264,10 +264,12 @@ export class NoteDocumentOpQueue {
     assertPersistOpIsSafe(op, this.readCurrentDocumentBlocks(op.documentId));
     const blockId = op.id || newNoteBlockClientId();
     const opWithId = op.id ? op : { ...op, id: blockId };
-    await this.deps.persistViaOpLog(opWithId, { immediate: true });
+    const pushed = await this.deps.persistViaOpLog(opWithId, { immediate: true });
     const existing = this.deps.getBlock(blockId);
-    if (existing) {
+    if (pushed) {
       this.deps.triggerSave();
+    }
+    if (existing) {
       return existing;
     }
     const fallback: NoteBlock = {
@@ -281,7 +283,6 @@ export class NoteDocumentOpQueue {
       updated_at: new Date().toISOString(),
       version: 1,
     };
-    this.deps.triggerSave();
     return fallback;
   }
 
@@ -292,8 +293,13 @@ export class NoteDocumentOpQueue {
         throw new Error('[Note] op-log persist is required; legacy HTTP persist is disabled');
       }
       assertPersistOpIsSafe(op, this.readCurrentDocumentBlocksForOp(op));
-      await this.deps.persistViaOpLog(op, { immediate: true });
+      const pushed = await this.deps.persistViaOpLog(op, { immediate: true });
+      // Save Trust: outbound 잔여/push 실패면 saved·draft clear 금지
+      if (!pushed) return;
       this.deps.triggerSave();
+      if (op.type === 'patchContent') {
+        this.deps.onContentPersisted?.(op.updates.map((update) => update.id));
+      }
     } finally {
       this.persistInFlight = false;
     }
