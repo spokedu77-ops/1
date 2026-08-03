@@ -98,7 +98,7 @@ describe('syncSnapshot during active typing', () => {
     expect((blocks[0].content as { text: string }).text).toBe('typing');
   });
 
-  it('projects inactive content seal from coordinator-like syncSnapshot', () => {
+  it('projects inactive structure from coordinator-like syncSnapshot when idle', () => {
     useNoteBlockStore.getState().setActiveEditor(null);
     useNoteBlockStore.getState().hydrate([
       block('a', { order_index: 0, content: { text: 'keep' } }),
@@ -116,9 +116,8 @@ describe('syncSnapshot during active typing', () => {
       },
       { documentId: 'doc-1', activeBlockId: null, storeContentById: {} },
     );
-    // syncSnapshot은 기존 위치를 유지한다 (미ack reorder 보호). 본문만 passive seal.
-    expect(blocks.map((item) => item.id)).toEqual(['a', 'b']);
-    // non-extension rewrite kept local
+    // idle → incoming order; non-extension rewrite still sealed
+    expect(blocks.map((item) => item.id)).toEqual(['b', 'a']);
     expect(blocks.find((item) => item.id === 'b')?.content?.text).toBe('old');
     expect(blocks.find((item) => item.id === 'a')?.content?.text).toBe('keep');
   });

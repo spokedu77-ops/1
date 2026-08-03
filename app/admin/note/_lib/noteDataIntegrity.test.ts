@@ -53,6 +53,19 @@ describe('noteDataIntegrity', () => {
     expect(next.text).toBe('old and more');
   });
 
+  it('mergePassiveIncomingContent rejects short-prefix false extensions like A → A server', () => {
+    const next = mergePassiveIncomingContent({ text: 'A' }, { text: 'A server' });
+    expect(next.text).toBe('A');
+  });
+
+  it('mergePassiveIncomingContent rejects newline paste residue as extension', () => {
+    const next = mergePassiveIncomingContent(
+      { text: '긴줄넘기' },
+      { text: '긴줄넘기\n플로어 컬링' },
+    );
+    expect(next.text).toBe('긴줄넘기');
+  });
+
   it('mergePassiveIncomingContent rejects equal-length different text', () => {
     const next = mergePassiveIncomingContent({ text: 'typing!!' }, { text: 'previous' });
     expect(next.text).toBe('typing!!');

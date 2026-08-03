@@ -13,8 +13,11 @@ import {
   type SoftDeletePersistArgs,
 } from './noteDocumentOpQueue';
 import { setNoteContentSavePending } from './notePendingSave';
-import { markNoteLocalSave } from './noteReconcileIdle';
-import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
+import { markNoteLocalSave, markPendingBlockDeletes } from './noteReconcileIdle';
+import {
+  getStructuralExcludeIds,
+  removeStructuralExcludeIds,
+} from './noteStructuralExcludeRegistry';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import {
   disposeNoteSyncCoordinatorInstance,
@@ -29,6 +32,7 @@ import {
 } from './noteFlickerTrace';
 import {
   applyNoteEmergencyDrafts,
+  clearNoteEmergencyDraft,
   clearNoteEmergencyDrafts,
   saveNoteEmergencyDraft,
 } from './noteEmergencyDrafts';
@@ -243,7 +247,20 @@ export class NoteDocumentPipeline {
     content: Record<string, unknown>,
     baseContent?: Record<string, unknown>,
   ): void {
+    // 삭제 Intent 중인 id — TipTap late flush가 draft/본문을 되살리지 못하게 차단
+    if (getStructuralExcludeIds(this.documentId).has(blockId)) {
+      clearNoteEmergencyDraft(this.documentId, blockId);
+      this.queue?.clearContentPatch(blockId);
+      this.syncPendingFlag();
+      return;
+    }
     const storeBlock = useNoteBlockStore.getState().byId[blockId];
+    if (!storeBlock || storeBlock.document_id !== this.documentId) {
+      clearNoteEmergencyDraft(this.documentId, blockId);
+      this.queue?.clearContentPatch(blockId);
+      this.syncPendingFlag();
+      return;
+    }
     const prevContent = (baseContent
       ?? (storeBlock?.content as Record<string, unknown> | null | undefined)
       ?? {}) as Record<string, unknown>;
@@ -419,9 +436,13 @@ export class NoteDocumentPipeline {
     if (!this.queue) {
       throw new Error('[Note] 문서 파이프라인이 준비되지 않았습니다');
     }
-    // 제품 삭제는 softDelete API가 아니라 blockTransaction(deleteIds) — draft clear는 여기가 choke
+    // 제품 삭제는 softDelete API가 아니라 blockTransaction(deleteIds)
     if (deleteIds.length > 0) {
       clearNoteEmergencyDrafts(this.documentId, deleteIds);
+      for (const id of deleteIds) {
+        this.queue.clearContentPatch(id);
+      }
+      this.syncPendingFlag();
     }
     await this.queue.enqueue({
       type: 'blockTransaction',
@@ -429,6 +450,10 @@ export class NoteDocumentPipeline {
       deleteIds,
       deletedBlocks,
     });
+    // enqueue 성공 후에만 leave-exclude — persist 실패 롤백과 충돌 방지
+    if (deleteIds.length > 0) {
+      markPendingBlockDeletes(this.documentId, deleteIds);
+    }
   }
 
   async applyStructureCommand(
@@ -454,6 +479,10 @@ export class NoteDocumentPipeline {
       }
       return useNoteBlockStore.getState().getBlocksArray();
     } catch (error) {
+      const deleteIds = command.removedBlocks.map((block) => block.id);
+      if (deleteIds.length > 0) {
+        removeStructuralExcludeIds(this.documentId, deleteIds);
+      }
       this.dispatch({ type: 'replaceBlocks', blocks: previous });
       throw error;
     }
@@ -510,15 +539,29 @@ export class NoteDocumentPipeline {
   }
 
   private applyEmergencyDrafts(blocks: NoteBlock[]): NoteBlock[] {
-    const { blocks: recoveredBlocks, recovered } = applyNoteEmergencyDrafts(this.documentId, blocks);
+    const excluded = getStructuralExcludeIds(this.documentId);
+    if (excluded.size > 0) {
+      clearNoteEmergencyDrafts(this.documentId, excluded);
+    }
+    const eligible = excluded.size > 0
+      ? blocks.filter((block) => !excluded.has(block.id))
+      : blocks;
+    const { blocks: recoveredBlocks, recovered } = applyNoteEmergencyDrafts(
+      this.documentId,
+      eligible,
+    );
+    // excluded 블록은 복구 대상에서 빠졌으므로 전체 목록에 다시 합친다
+    const recoveredById = new Map(recoveredBlocks.map((block) => [block.id, block]));
+    const merged = blocks.map((block) => recoveredById.get(block.id) ?? block);
     for (const draft of recovered) {
+      if (excluded.has(draft.blockId)) continue;
       this.queue?.scheduleContentPatch(draft.blockId, draft.content);
     }
     if (recovered.length > 0) {
       this.syncPendingFlag();
-      this.coordinator?.setBlocks(recoveredBlocks);
+      this.coordinator?.setBlocks(merged);
     }
-    return recoveredBlocks;
+    return merged;
   }
 
   async dispose(): Promise<void> {

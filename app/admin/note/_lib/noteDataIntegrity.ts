@@ -81,6 +81,20 @@ function copyLocalUserFieldsOnto(
 }
 
 /**
+ * Passive strict extension: 로컬 접두 + 더 긴 incoming만.
+ * 짧은 로컬(≤2자) 접두 오인("A"→"A server")과 줄바꿈 paste 잔여 확장은 거부.
+ */
+export function isStrictPassiveTextExtension(localText: string, incomingText: string): boolean {
+  if (!incomingText.startsWith(localText) || incomingText.length <= localText.length) {
+    return false;
+  }
+  if (localText.trim().length <= 2) return false;
+  const suffix = incomingText.slice(localText.length);
+  if (/\n/.test(suffix) && suffix.trim().length > 0) return false;
+  return true;
+}
+
+/**
  * Passive merge: incoming이 로컬 사용자 본문을 비우거나 짧게/동등길이로 바꾸면 local 필드를 지킨다.
  * (active editor / storeAhead와 독립 — 비활성 체크리스트도 보호)
  * 허용: 로컬이 비었을 때 incoming 채움, 로컬의 **엄격한 확장**(prefix + 더 김).
@@ -112,9 +126,7 @@ export function mergePassiveIncomingContent(
 
   // 짧은 비어 있지 않은: empty/짧은/동일길이 다른 본문/비확장 rewrite 전부 거부
   if (localText.length > 0 && incomingText !== localText) {
-    const isStrictExtension = incomingText.startsWith(localText)
-      && incomingText.length > localText.length;
-    if (!isStrictExtension) {
+    if (!isStrictPassiveTextExtension(localText, incomingText)) {
       return copyLocalUserFieldsOnto(incoming, local);
     }
   }

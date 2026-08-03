@@ -86,8 +86,8 @@ describe('applyNoteCommand', () => {
 
     expect(blocks.map((item) => item.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
     expect(blocks.map((item) => item.order_index)).toEqual([0, 1, 2]);
-    // Passive strict-extension may accept longer incoming that starts with local text
-    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A server' });
+    // 짧은 로컬("A") strict-extension 오인 거부 — "A server"로 덮지 않음
+    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A' });
   });
 
   it('syncSnapshot keeps a just-created child-page todo missing from stale server snapshot', () => {
@@ -372,7 +372,7 @@ describe('applyNoteCommand', () => {
     expect(blocks.map((item) => item.order_index)).toEqual([0, 1, 2]);
   });
 
-  it('preserves existing block positions from syncSnapshot even when no editor is active', () => {
+  it('projects incoming block positions from syncSnapshot when idle (no unpublished topology)', () => {
     const local = [
       block('heading', { type: 'heading3', order_index: 0, content: { text: '총괄' } }),
       block('todo-c', { type: 'todo', order_index: 1, content: { text: 'C', checked: false } }),
@@ -392,7 +392,8 @@ describe('applyNoteCommand', () => {
       ctx,
     );
 
-    expect(blocks.map((item) => item.id)).toEqual(['heading', 'todo-c', 'todo-a', 'todo-b']);
+    // idle → incoming order 투영
+    expect(blocks.map((item) => item.id)).toEqual(['heading', 'todo-a', 'todo-b', 'todo-c']);
     // non-extension remote rewrite must not wipe local edited text
     expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A edited' });
   });

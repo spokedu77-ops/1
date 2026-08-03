@@ -300,12 +300,14 @@ export function applyNoteCommand(
   case 'mergeSnapshots': {
     const docBlocks = filterDocumentBlocks(previous, ctx.documentId);
     let incoming = normalizeCommandBlocks(mergeSnapshotPatches(docBlocks, command.snapshots), ctx);
-    incoming = sortBlocksForVisualOrder(preserveExistingLocalPositions(docBlocks, incoming));
-    let next = mergeReconciledBlocks(
-      docBlocks,
-      incoming,
-      mergeAuthorityOptions(docBlocks, incoming, ctx),
+    const authority = mergeAuthorityOptions(docBlocks, incoming, ctx);
+    // Sync 계약: local structure authority일 때만 order/parent 고정. idle면 incoming 투영.
+    incoming = sortBlocksForVisualOrder(
+      authority.structureAuthority === 'local'
+        ? preserveExistingLocalPositions(docBlocks, incoming)
+        : incoming,
     );
+    let next = mergeReconciledBlocks(docBlocks, incoming, authority);
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };
@@ -325,12 +327,13 @@ export function applyNoteCommand(
       }
       return { blocks: [], structural: true };
     }
-    incoming = sortBlocksForVisualOrder(preserveExistingLocalPositions(docBlocks, incoming));
-    let next = mergeReconciledBlocks(
-      docBlocks,
-      incoming,
-      mergeAuthorityOptions(docBlocks, incoming, ctx),
+    const authority = mergeAuthorityOptions(docBlocks, incoming, ctx);
+    incoming = sortBlocksForVisualOrder(
+      authority.structureAuthority === 'local'
+        ? preserveExistingLocalPositions(docBlocks, incoming)
+        : incoming,
     );
+    let next = mergeReconciledBlocks(docBlocks, incoming, authority);
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };
