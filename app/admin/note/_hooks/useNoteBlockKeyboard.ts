@@ -16,6 +16,7 @@ import {
 import { getActiveListCrossRanges } from '../_components/noteListCrossSelect';
 import { extractActiveCrossSelectClipboardText } from '../_components/noteListCrossHighlight';
 import { parseBlockClipboardText } from '../_lib/noteBlockClipboard';
+import { resolveBlockIdsForSelectionDelete } from '../_lib/noteBlockSelectionKeyboard';
 import { resolveCrossSelectClipboardPlain } from '../_lib/notePasteContract';
 import type { useNoteBlockUndo } from './useNoteBlockUndo';
 import type { NoteBlock } from '../_lib/types';
@@ -193,13 +194,22 @@ export function useNoteBlockKeyboard(options: {
   useEffect(() => {
     const shouldUseBlockClipboard = () => {
       if (docTab !== 'active' || !selectedId) return false;
-      if (getActiveCrossRanges().length > 0 || getActiveListCrossRanges().length > 0) return false;
-      if (selectedBlockIdsRef.current.size === 0) return false;
-      const active = document.activeElement as HTMLElement | null;
-      if (active?.closest('.ProseMirror')) {
-        const editor = getActiveNoteEditor(focusedEditorBlockIdRef.current);
-        if (editor && !editor.state.selection.empty) return false;
+      const deleteIds = resolveBlockIdsForSelectionDelete({
+        selectedBlockIds: selectedBlockIdsRef.current,
+        crossBlockIds: [
+          ...getActiveCrossRanges().map((range) => range.blockId),
+          ...getActiveListCrossRanges().map((range) => range.blockId),
+        ],
+      });
+      if (deleteIds.length === 0) return false;
+      // 단일 블록 안 텍스트 선택만 있으면 브라우저/TipTap cut
+      if (
+        selectedBlockIdsRef.current.size === 0
+        && deleteIds.length <= 1
+      ) {
+        return false;
       }
+      // 마퀴·멀티 cross-select는 TipTap 부분 선택보다 블록 Cut 우선
       return true;
     };
 
@@ -211,7 +221,7 @@ export function useNoteBlockKeyboard(options: {
       if (!meta || e.shiftKey || e.altKey) return;
       const key = e.key.toLowerCase();
 
-      if (key === 'c' && shouldUseBlockClipboard()) {
+      if (key === 'c' && shouldUseBlockClipboard() && selectedBlockIdsRef.current.size > 0) {
         e.preventDefault();
         e.stopImmediatePropagation();
         void handleCopySelectedBlocks();

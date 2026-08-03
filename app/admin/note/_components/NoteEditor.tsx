@@ -45,7 +45,7 @@ import {
 } from '../_lib/notePaste';
 import { parseClipboardHtmlToBlocks, shouldSplitHtmlPaste } from '../_lib/notePasteHtml';
 import { parseMarkdownPlainToBlocks, shouldSplitMarkdownPaste } from '../_lib/notePasteMarkdown';
-import { pastedBlocksFromPlainLines, type PastedBlockSpec, isStructuralHtmlPasteSpec } from '../_lib/notePasteBlocks';
+import { pastedBlocksFromPlainLines, type PastedBlockSpec } from '../_lib/notePasteBlocks';
 import type { TableCellNavigateDirection } from '../_lib/noteTableBlock';
 import {
   armStructuralPasteUndo,
@@ -1133,18 +1133,7 @@ export function NoteEditor({
           if (splitEnabled && onMultilinePaste) {
             event.preventDefault();
             callbacksRef.current.flushPendingChange();
-            // 빈 칸 fill일 때만 첫 줄 즉시 반영 — 내용 있는 칸 wipe/지연 체감 방지
-            const first = mdSpecs[0];
-            if (
-              editorRef.current?.isEmpty
-              && first
-              && !isStructuralHtmlPasteSpec(first)
-            ) {
-              const firstHtml = first.html?.trim()
-                ? first.html
-                : legacyTextToEditorHtml(first.text);
-              editorRef.current.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
-            }
+            // C6: applyPastedBlockSpecs만 쓴다. first setContent는 type-change remount와 레이스.
             onMultilinePaste(mdSpecs);
             armStructuralPasteUndo();
             if (editorRef.current) clearTipTapHistory(editorRef.current);
@@ -1157,17 +1146,6 @@ export function NoteEditor({
           if (splitEnabled && onMultilinePaste) {
             event.preventDefault();
             callbacksRef.current.flushPendingChange();
-            const first = htmlSpecs[0];
-            if (
-              editorRef.current?.isEmpty
-              && first
-              && !isStructuralHtmlPasteSpec(first)
-            ) {
-              const firstHtml = first.html?.trim()
-                ? first.html
-                : legacyTextToEditorHtml(first.text);
-              editorRef.current.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
-            }
             onMultilinePaste(htmlSpecs);
             armStructuralPasteUndo();
             if (editorRef.current) clearTipTapHistory(editorRef.current);

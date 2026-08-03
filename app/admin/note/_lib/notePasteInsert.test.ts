@@ -222,6 +222,7 @@ describe('insertPastedBlockSpecsAfterBlock nested lists', () => {
           (item.id === blockId ? { ...item, content } : item),
         );
       }),
+      hydrateEditorContent: vi.fn(),
     };
 
     await insertPastedBlockSpecsAfterAnchor(
@@ -234,6 +235,10 @@ describe('insertPastedBlockSpecsAfterBlock nested lists', () => {
       anchor.content,
     );
 
+    expect(ctx.hydrateEditorContent).toHaveBeenCalledWith(
+      'anchor',
+      expect.objectContaining({ text: 'first', html: '<p>first</p>' }),
+    );
     expect(blocksRef.current[0].content).toMatchObject({
       text: 'first',
       html: '<p>first</p>',

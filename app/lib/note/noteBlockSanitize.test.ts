@@ -52,6 +52,15 @@ describe('sanitizeNoteBlockTree', () => {
     expect(sanitized.find((item) => item.id === 'page-under-toggle')?.parent_block_id).toBeNull();
   });
 
+  it('preserves nested todo checklist under todo parent', () => {
+    const sanitized = sanitizeNoteBlockTree([
+      block('todo-parent', 'todo', null, 0),
+      block('todo-child', 'todo', 'todo-parent', 0),
+    ]);
+
+    expect(sanitized.find((item) => item.id === 'todo-child')?.parent_block_id).toBe('todo-parent');
+  });
+
   it('breaks cycles and preserves unique sibling order_index', () => {
     const sanitized = sanitizeNoteBlockTree([
       block('page-a', 'page', 'page-b', 10),

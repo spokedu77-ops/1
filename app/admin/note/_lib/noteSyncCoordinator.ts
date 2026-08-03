@@ -841,7 +841,11 @@ export class NoteSyncCoordinator {
         if (data.tabId === getTabInstanceId()) return;
 
         if (data.type === 'state' && Array.isArray(data.blocks)) {
-          this.blocks = sealPassiveIncomingBlocks(this.blocks, data.blocks as NoteBlock[]);
+          const sealed = sealPassiveIncomingBlocks(this.blocks, data.blocks as NoteBlock[]);
+          this.blocks = excludeBlocksPendingSoftDelete(
+            sealed,
+            getStructuralExcludeIds(this.documentId),
+          );
           this.lastAppliedSeq = typeof data.lastSeq === 'number'
             ? data.lastSeq
             : this.lastAppliedSeq;

@@ -98,4 +98,43 @@ describe('note persist op guard', () => {
       block('b', 1),
     ])).not.toThrow();
   });
+
+  it('blocks create that nests forbidden type under parent', () => {
+    const parent: NoteBlock = {
+      ...block('todo-parent', 0),
+      type: 'todo',
+      content: { text: 'parent', checked: false },
+    };
+    const op: NotePersistOp = {
+      type: 'createBlock',
+      id: 'bad',
+      documentId: 'doc-1',
+      blockType: 'text',
+      content: { text: 'nope', html: '<p>nope</p>' },
+      order_index: 0,
+      parent_block_id: 'todo-parent',
+      allowEmptyVisibleCreate: true,
+    };
+
+    expect(() => assertPersistOpIsSafe(op, [parent])).toThrow(/cannot nest under todo/);
+  });
+
+  it('allows todo nested under todo create', () => {
+    const parent: NoteBlock = {
+      ...block('todo-parent', 0),
+      type: 'todo',
+      content: { text: 'parent', checked: false },
+    };
+    const op: NotePersistOp = {
+      type: 'createBlock',
+      id: 'child',
+      documentId: 'doc-1',
+      blockType: 'todo',
+      content: { text: 'child', html: '<p>child</p>', checked: false },
+      order_index: 0,
+      parent_block_id: 'todo-parent',
+    };
+
+    expect(() => assertPersistOpIsSafe(op, [parent])).not.toThrow();
+  });
 });

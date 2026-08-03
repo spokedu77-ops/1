@@ -1,6 +1,7 @@
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
+import { canPlaceBlockTypeInParent } from '@/app/lib/note/noteBlockPolicy';
 
 const BLANK_VISIBLE_TYPES = new Set<NoteBlock['type']>([
   'text',
@@ -51,6 +52,40 @@ function assertNoDuplicateSiblingOrders(blocks: NoteBlock[]): void {
       }
     }
   }
+}
+
+function assertPlacementForTouched(
+  blocks: NoteBlock[],
+  touchedIds: Iterable<string>,
+): void {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  for (const id of touchedIds) {
+    const block = byId.get(id);
+    if (!block) continue;
+    const parentId = block.parent_block_id ?? null;
+    if (!parentId) {
+      if (!canPlaceBlockTypeInParent(block.type, null)) {
+        throw new Error(`[Note] blocked invalid write: ${block.type} cannot be root`);
+      }
+      continue;
+    }
+    const parent = byId.get(parentId);
+    // 타깃 문서 부모 미로드(transfer)는 RPC/sanitize가 최종 수리
+    if (!parent) continue;
+    if (!canPlaceBlockTypeInParent(block.type, parent.type)) {
+      throw new Error(
+        `[Note] blocked invalid write: ${block.type} cannot nest under ${parent.type}`,
+      );
+    }
+  }
+}
+
+function touchedIdsFromPatches(
+  patches: Array<{ id: string; parent_block_id?: string | null; type?: string }>,
+): string[] {
+  return patches
+    .filter((patch) => patch.parent_block_id !== undefined || patch.type !== undefined)
+    .map((patch) => patch.id);
 }
 
 /** create가 이미 store에 있으면 live order를 우선 — optimistic+stale op.order_index 충돌 완화 */
@@ -112,12 +147,16 @@ export function assertPersistOpIsSafe(op: NotePersistOp, currentBlocks: NoteBloc
       ...(op.normalizeOrders ?? []).map((patch) => ({ id: patch.id, order_index: patch.order_index })),
       ...(op.transactionUpdates ?? []),
     ];
-    assertNoDuplicateSiblingOrders(applyPatchesById(blocksWithCreate, patches));
+    const next = applyPatchesById(blocksWithCreate, patches);
+    assertPlacementForTouched(next, [createBlock.id, ...touchedIdsFromPatches(patches)]);
+    assertNoDuplicateSiblingOrders(next);
     return;
   }
 
   if (op.type === 'patchFields') {
-    assertNoDuplicateSiblingOrders(applyPatchesById(currentBlocks, op.patches));
+    const next = applyPatchesById(currentBlocks, op.patches);
+    assertPlacementForTouched(next, touchedIdsFromPatches(op.patches));
+    assertNoDuplicateSiblingOrders(next);
     return;
   }
 
@@ -125,11 +164,13 @@ export function assertPersistOpIsSafe(op: NotePersistOp, currentBlocks: NoteBloc
     const deleteIds = new Set(op.deleteIds);
     let next = currentBlocks.filter((block) => !deleteIds.has(block.id));
     next = applyPatchesById(next, op.patches);
+    const createdIds: string[] = [];
     if (op.creates) {
       for (const create of op.creates) {
         if (BLANK_VISIBLE_TYPES.has(create.type) && textLikeContentIsBlank(create.content)) {
           throw new Error(`[Note] blocked invalid write: empty ${create.type} transaction create`);
         }
+        createdIds.push(create.id);
         next.push({
           id: create.id,
           document_id: create.document_id,
@@ -143,6 +184,10 @@ export function assertPersistOpIsSafe(op: NotePersistOp, currentBlocks: NoteBloc
         });
       }
     }
+    assertPlacementForTouched(next, [
+      ...createdIds,
+      ...touchedIdsFromPatches(op.patches),
+    ]);
     assertNoDuplicateSiblingOrders(next);
   }
 }

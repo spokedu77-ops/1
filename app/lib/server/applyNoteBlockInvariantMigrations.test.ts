@@ -88,6 +88,20 @@ describe('applyNoteBlockInvariantMigrations', () => {
     expect(supabase.updates).toEqual([]);
   });
 
+  it('preserves todo nested under todo (checklist contract)', async () => {
+    const supabase = supabaseMock();
+    const result = await applyNoteBlockInvariantMigrations(
+      supabase.client as never,
+      [
+        block('parent', 'todo', null, 0),
+        block('child', 'todo', 'parent', 0),
+      ],
+    );
+
+    expect(result.find((item) => item.id === 'child')?.parent_block_id).toBe('parent');
+    expect(supabase.updates).toEqual([]);
+  });
+
   it('breaks cycles conservatively by promoting affected blocks to roots', async () => {
     const supabase = supabaseMock();
     const result = await applyNoteBlockInvariantMigrations(

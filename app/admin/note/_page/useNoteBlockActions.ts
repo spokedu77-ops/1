@@ -32,7 +32,11 @@ import {
   resolveBlockTextCaretOffset,
 } from '../_lib/noteBlockStateMerge';
 import { readToggleTitleText } from '../_lib/noteNotionBlockBehavior';
-import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
+import { clearAllNoteTextSelections, getActiveCrossRanges } from '../_components/noteCrossSelect';
+import { getActiveNoteEditor } from '../_components/noteEditorRegistry';
+import { getActiveListCrossRanges } from '../_components/noteListCrossSelect';
+import { resolveBlockIdsForSelectionDelete } from '../_lib/noteBlockSelectionKeyboard';
+import { clearTipTapHistory } from '../_lib/noteEditorHistory';
 import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
 import { notePointerTargetElement } from '../_lib/notePointerTarget';
 import { noteWhitespaceClickMayCreateBlocks } from '../_lib/noteWhitespaceContract';
@@ -57,6 +61,7 @@ import {
   resolvePasteSourceContent,
 } from '../_lib/notePasteInsert';
 import { resolvePasteInsertMode } from '../_lib/notePasteContract';
+import { plainMultilineToInsertHtml } from '../_lib/notePaste';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
@@ -476,6 +481,22 @@ export function useNoteBlockActions(options: {
       insertBlockAmongSiblings,
       changeBlockType: handleChangeBlockType,
       syncBlockContent,
+      hydrateEditorContent: (blockId: string, content: Record<string, unknown>) => {
+        const editor = getActiveNoteEditor(blockId);
+        if (!editor || (editor as { isDestroyed?: boolean }).isDestroyed) return;
+        const html = typeof content.html === 'string' && content.html.trim()
+          ? content.html
+          : plainMultilineToInsertHtml([String(content.text ?? '')]);
+        editor
+          .chain()
+          .command(({ tr }) => {
+            tr.setMeta('addToHistory', false);
+            return true;
+          })
+          .setContent(html, { emitUpdate: false })
+          .run();
+        clearTipTapHistory(editor);
+      },
     };
     const { lastFocusId, lastFocusPart } = mode === 'fill-anchor'
       ? await insertPastedBlockSpecsAfterAnchor(pasteCtx, block, normalizedSpecs, sourceContent)
@@ -532,8 +553,8 @@ export function useNoteBlockActions(options: {
     applyPastedBlockSpecs,
   ]);
 
-  const handleCopySelectedBlocks = useCallback(async () => {
-    const selected = [...selectedBlockIdsRef.current];
+  const handleCopySelectedBlocks = useCallback(async (overrideIds?: string[]) => {
+    const selected = overrideIds ?? [...selectedBlockIdsRef.current];
     const payload = buildBlockClipboardPayload(blocksRef.current, selected);
     if (!payload) return false;
     const serialized = serializeBlockClipboardPayload(payload);
@@ -546,10 +567,17 @@ export function useNoteBlockActions(options: {
   }, [blocksRef, selectedBlockIdsRef]);
 
   const handleCutSelectedBlocks = useCallback(async () => {
-    const selected = [...selectedBlockIdsRef.current];
+    const selected = resolveBlockIdsForSelectionDelete({
+      selectedBlockIds: selectedBlockIdsRef.current,
+      crossBlockIds: [
+        ...getActiveCrossRanges().map((range) => range.blockId),
+        ...getActiveListCrossRanges().map((range) => range.blockId),
+      ],
+    });
     if (selected.length === 0) return;
-    const copied = await handleCopySelectedBlocks();
-    if (!copied) return;
+    // 클립보드 실패해도 삭제는 진행 (Cut no-op 방지)
+    await handleCopySelectedBlocks(selected);
+    clearAllNoteTextSelections();
     const blocksToDelete = blocksRef.current.filter((block) => selected.includes(block.id));
     await handleDeleteBlocks(blocksToDelete);
   }, [blocksRef, handleCopySelectedBlocks, handleDeleteBlocks, selectedBlockIdsRef]);

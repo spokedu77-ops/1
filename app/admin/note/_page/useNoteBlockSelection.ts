@@ -2,9 +2,17 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { collapseAllNoteEditorSelections, selectAllDocumentBlocksRef } from '../_components/noteEditorRegistry';
-import { clearAllCrossSelectState, clearAllNoteTextSelections } from '../_components/noteCrossSelect';
+import {
+  clearAllCrossSelectState,
+  clearAllNoteTextSelections,
+  getActiveCrossRanges,
+} from '../_components/noteCrossSelect';
+import { getActiveListCrossRanges } from '../_components/noteListCrossSelect';
 import { noteBlockMarqueeGuard, noteTextDragGuard } from '../_lib/noteBlockMarqueeGuard';
-import { shouldDeleteSelectedNoteBlocks } from '../_lib/noteBlockSelectionKeyboard';
+import {
+  resolveBlockIdsForSelectionDelete,
+  shouldDeleteSelectedNoteBlocks,
+} from '../_lib/noteBlockSelectionKeyboard';
 import {
   getMarqueeSelectedBlockIds,
   isMarqueeSelectStartBlocked,
@@ -365,8 +373,15 @@ export function useNoteBlockSelection(options: {
     };
   }, [paintMarqueeOverlay, setBlockMarqueeActive]);
 
-  const deleteSelectedBlocks = useCallback(() => {
-    const ids = [...selectedBlockIdsRef.current];
+  const deleteSelectedBlocks = useCallback((overrideIds?: string[]) => {
+    const ids = overrideIds
+      ?? resolveBlockIdsForSelectionDelete({
+        selectedBlockIds: selectedBlockIdsRef.current,
+        crossBlockIds: [
+          ...getActiveCrossRanges().map((range) => range.blockId),
+          ...getActiveListCrossRanges().map((range) => range.blockId),
+        ],
+      });
     if (ids.length === 0) return;
     setSelectedBlockIds(new Set());
     clearAllNoteTextSelections();
@@ -377,17 +392,24 @@ export function useNoteBlockSelection(options: {
     void handleDeleteBlocksRef.current?.(blocks, { focusPrevious: true });
   }, [blocksRef, selectedBlockIdsRef, setSelectedBlockIds]);
 
-  // 멀티 블록 선택: Ctrl+A / Escape / Delete / Backspace
+  // 멀티 블록 선택·cross-select: Ctrl+A / Escape / Delete / Backspace
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const meta = e.ctrlKey || e.metaKey;
       const target = e.target as HTMLElement | null;
+      const deleteIds = resolveBlockIdsForSelectionDelete({
+        selectedBlockIds: selectedBlockIdsRef.current,
+        crossBlockIds: [
+          ...getActiveCrossRanges().map((range) => range.blockId),
+          ...getActiveListCrossRanges().map((range) => range.blockId),
+        ],
+      });
       const hasSelectedBlocks = selectedBlockIdsRef.current.size > 0;
 
-      if (hasSelectedBlocks && shouldDeleteSelectedNoteBlocks(e)) {
+      if (deleteIds.length > 0 && shouldDeleteSelectedNoteBlocks(e)) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        deleteSelectedBlocks();
+        deleteSelectedBlocks(deleteIds);
         return;
       }
 

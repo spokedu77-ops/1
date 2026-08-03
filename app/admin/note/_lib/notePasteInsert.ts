@@ -24,6 +24,8 @@ export type PasteInsertContext = {
     content: Record<string, unknown>,
     options?: { skipUndo?: boolean },
   ) => void;
+  /** fill-anchor 후 TipTap이 store와 어긋나지 않게 본문 주입 */
+  hydrateEditorContent?: (blockId: string, content: Record<string, unknown>) => void;
 };
 
 function isNestablePasteSpec(spec: PastedBlockSpec): boolean {
@@ -58,7 +60,9 @@ export async function insertPastedBlockSpecsAfterAnchor(
   if (first.type !== anchor.type) {
     await ctx.changeBlockType(anchor, first.type);
   }
-  ctx.syncBlockContent(anchor.id, contentForPastedBlock(first, sourceContent), { skipUndo: true });
+  const filled = contentForPastedBlock(first, sourceContent);
+  ctx.syncBlockContent(anchor.id, filled, { skipUndo: true });
+  ctx.hydrateEditorContent?.(anchor.id, filled);
 
   let lastFocusId = anchor.id;
   let lastFocusPart: 'title' | 'editor' = first.type === 'toggle' ? 'title' : 'editor';
