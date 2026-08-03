@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, FileText, Home, Lock, Tv, Wrench } from 'lucide-react';
+import { BookOpen, CircleUserRound, FileText, Home, Lock, Tv, Wrench } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
@@ -13,6 +13,7 @@ const TAB_ICONS = {
   'class-tools': Wrench,
   activity: FileText,
   spomove: Tv,
+  profile: CircleUserRound,
 } as const;
 
 const TAB_CAPABILITIES = {
@@ -21,6 +22,7 @@ const TAB_CAPABILITIES = {
   'class-tools': 'classTools',
   activity: 'records',
   spomove: 'spomove',
+  profile: 'authenticated',
 } as const satisfies Record<keyof typeof TAB_ICONS, MasterCapability>;
 
 const PRIMARY_TABS = MASTER_NAV_ITEMS.filter(
@@ -75,7 +77,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
         aria-label="SPOKEDU MASTER 주요 메뉴"
       >
         <div
-          className="mx-auto grid h-[62px] w-full max-w-[620px] grid-cols-5 rounded-[18px] border"
+          className="mx-auto grid h-[62px] w-full max-w-[620px] grid-cols-6 rounded-[18px] border"
           style={{
             background: 'rgba(255,255,255,0.97)',
             borderColor: '#e2e8f0',
