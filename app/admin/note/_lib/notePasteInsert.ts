@@ -20,7 +20,11 @@ export type PasteInsertContext = {
       reason?: 'explicit' | 'enter' | 'paste' | 'duplicate' | 'system';
     },
   ) => Promise<NoteBlock | null>;
-  changeBlockType: (block: NoteBlock, type: NoteBlock['type']) => Promise<void>;
+  changeBlockType: (
+    block: NoteBlock,
+    type: NoteBlock['type'],
+    options?: { contentOverride?: Record<string, unknown> },
+  ) => Promise<void>;
   syncBlockContent: (
     blockId: string,
     content: Record<string, unknown>,
@@ -91,10 +95,11 @@ export async function insertPastedBlockSpecsAfterAnchor(
   }
 
   const [first, ...rest] = specs;
-  if (first.type !== anchor.type) {
-    await ctx.changeBlockType(anchor, first.type);
-  }
   const filled = contentForPastedBlock(first, sourceContent);
+  if (first.type !== anchor.type) {
+    // type-change에 paste 본문을 같이 넣어 remount flush wipe 방지
+    await ctx.changeBlockType(anchor, first.type, { contentOverride: filled });
+  }
   ctx.syncBlockContent(anchor.id, filled, { skipUndo: true });
   ctx.hydrateEditorContent?.(anchor.id, filled);
 

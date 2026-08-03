@@ -56,12 +56,16 @@ export function removeStructuralExcludeIds(documentId: string, ids: string[]): v
   if (!documentId || ids.length === 0) return;
   const extra = extraUntilOutboundSynced.get(documentId);
   const current = structuralExcludeByDocument.get(documentId);
+  const grace = leaveConfirmUntilByDocument.get(documentId);
   for (const id of ids) {
     extra?.delete(id);
     current?.delete(id);
+    // intentional restore/undo — ack grace도 같이 풀어 되살림 재삭제 방지
+    grace?.delete(id);
   }
   if (extra?.size === 0) extraUntilOutboundSynced.delete(documentId);
   if (current?.size === 0) structuralExcludeByDocument.delete(documentId);
+  if (grace?.size === 0) leaveConfirmUntilByDocument.delete(documentId);
 }
 
 export function clearStructuralExcludeForDocument(documentId: string): void {

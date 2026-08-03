@@ -1187,7 +1187,9 @@ export function NoteEditor({
         return true;
       },
     },
-    onUpdate: ({ editor: currentEditor }) => {
+    onUpdate: ({ editor: currentEditor, transaction }) => {
+      // hydrate/setContent(addToHistory:false)는 paste-arm·store를 건드리지 않음
+      if (transaction.getMeta('addToHistory') === false) return;
       consumeStructuralPasteUndoArmed();
       const nextText = currentEditor.getText();
       const slashMatch = nextText.match(/^\/([^\n]*)$/);

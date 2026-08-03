@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { canPlaceBlockTypeInParent } from '@/app/lib/note/noteBlockPolicy';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
 type NoteBlock = {
@@ -35,6 +36,28 @@ export function collectRestoreSubtreeIds(rootId: string, rows: NoteBlock[]): str
   return [...restoreIds];
 }
 
+/**
+ * root가 될 수 없는 타입(column 등)은 삭제된 조상 컨테이너까지 복구 집합에 넣는다.
+ */
+export function expandRestoreAncestorIds(
+  restoreIds: Iterable<string>,
+  documentRows: NoteBlock[],
+): string[] {
+  const byId = new Map(documentRows.map((row) => [row.id, row]));
+  const result = new Set(restoreIds);
+  for (const id of [...result]) {
+    let cursor = byId.get(id);
+    while (cursor?.parent_block_id) {
+      if (canPlaceBlockTypeInParent(cursor.type, null)) break;
+      const parent = byId.get(cursor.parent_block_id);
+      if (!parent?.deleted_at) break;
+      result.add(parent.id);
+      cursor = parent;
+    }
+  }
+  return [...result];
+}
+
 export function collectRestoreParentDetachIds(restoreIds: Iterable<string>, documentRows: NoteBlock[]): string[] {
   const restoreSet = new Set(restoreIds);
   const liveOrRestoringIds = new Set(
@@ -45,6 +68,8 @@ export function collectRestoreParentDetachIds(restoreIds: Iterable<string>, docu
   return documentRows
     .filter((row) => restoreSet.has(row.id))
     .filter((row) => row.parent_block_id && !liveOrRestoringIds.has(row.parent_block_id))
+    // root 불가 타입은 detach 금지 — expandRestoreAncestorIds가 조상을 넣었어야 함
+    .filter((row) => canPlaceBlockTypeInParent(row.type, null))
     .map((row) => row.id);
 }
 
@@ -88,8 +113,32 @@ export async function POST(request: NextRequest) {
 
     const rows = (documentRows ?? []) as NoteBlock[];
     const deletedBatch = rows.filter((row) => row.deleted_at === root.deleted_at);
-    const restoreIds = collectRestoreSubtreeIds(id, deletedBatch);
+    const restoreIdSet = new Set(collectRestoreSubtreeIds(id, deletedBatch));
+    for (const ancestorId of expandRestoreAncestorIds(restoreIdSet, rows)) {
+      restoreIdSet.add(ancestorId);
+      for (const childId of collectRestoreSubtreeIds(ancestorId, deletedBatch)) {
+        restoreIdSet.add(childId);
+      }
+    }
+    const restoreIds = [...restoreIdSet];
     const detachIds = collectRestoreParentDetachIds(restoreIds, rows);
+    const illegalRootDetach = rows
+      .filter((row) => restoreIdSet.has(row.id))
+      .filter((row) => {
+        if (!row.parent_block_id) return false;
+        const parentLive = rows.some((candidate) => (
+          candidate.id === row.parent_block_id
+          && (!candidate.deleted_at || restoreIdSet.has(candidate.id))
+        ));
+        return !parentLive && !canPlaceBlockTypeInParent(row.type, null);
+      })
+      .map((row) => row.id);
+    if (illegalRootDetach.length > 0) {
+      return NextResponse.json(
+        { error: '부모 컨테이너가 없어 이 블록을 복구할 수 없습니다. 상위 블록을 먼저 복구하세요.' },
+        { status: 400 },
+      );
+    }
 
     if (detachIds.length > 0) {
       const { error: detachError } = await supabase
@@ -138,4 +187,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

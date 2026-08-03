@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   collectRestoreParentDetachIds,
   collectRestoreSubtreeIds,
+  expandRestoreAncestorIds,
 } from './route';
 
 describe('block trash restore planning', () => {
@@ -28,6 +29,20 @@ describe('block trash restore planning', () => {
       block('child-a', { parent_block_id: 'deleted-parent', deleted_at: 'same' }),
       block('child-b', { parent_block_id: 'missing-parent', deleted_at: 'same' }),
     ])).toEqual(['child-a', 'child-b']);
+  });
+
+  it('expands column restore to deleted columnList ancestor', () => {
+    expect(expandRestoreAncestorIds(['col'], [
+      block('list', { type: 'columnList', deleted_at: 'same' }),
+      block('col', { type: 'column', parent_block_id: 'list', deleted_at: 'same' }),
+    ])).toEqual(['col', 'list']);
+  });
+
+  it('does not detach column to illegal root when parent still deleted', () => {
+    expect(collectRestoreParentDetachIds(['col'], [
+      block('list', { type: 'columnList', deleted_at: 'older' }),
+      block('col', { type: 'column', parent_block_id: 'list', deleted_at: 'same' }),
+    ])).toEqual([]);
   });
 });
 

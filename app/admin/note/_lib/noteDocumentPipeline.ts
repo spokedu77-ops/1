@@ -493,7 +493,13 @@ export class NoteDocumentPipeline {
     if (!this.queue) {
       throw new Error('[Note] 문서 파이프라인이 준비되지 않았습니다');
     }
-    return this.queue.enqueueRestoreBlock({ id: blockId });
+    const restored = await this.queue.enqueueRestoreBlock({ id: blockId });
+    // trash/history restore는 leave-exclude grace까지 해제해야 재삭제되지 않는다
+    removeStructuralExcludeIds(
+      this.documentId,
+      restored.map((block) => block.id),
+    );
+    return restored;
   }
 
   async persistPurgeBlock(blockId: string): Promise<void> {

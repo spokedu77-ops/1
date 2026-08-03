@@ -67,9 +67,10 @@ describe('noteStructuralExcludeRegistry', () => {
     expect([...getStructuralExcludeIds('doc-source')]).toEqual(['todo-1']);
   });
 
-  it('rolls back exclude on explicit remove', () => {
+  it('rolls back exclude on explicit remove including ack grace', () => {
     clearStructuralExcludeForDocument('doc-1');
     addStructuralExcludeIds('doc-1', ['a', 'b']);
+    retainLeaveExcludeAfterAck('doc-1', ['a', 'b']);
     removeStructuralExcludeIds('doc-1', ['a']);
     expect([...getStructuralExcludeIds('doc-1')]).toEqual(['b']);
   });

@@ -74,7 +74,7 @@ open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Autho
 | tree sanitize densify | `sanitizeNoteBlockTree` (중복 order만) |
 | coordinator → UI Project | `onBlocksUpdated` → `dispatchSnapshotIfChanged` → `syncSnapshot` |
 | realtime/idle pull | `pipeline.schedulePull` → `coordinator.schedulePull` |
-| soft-delete | `persistSoftDelete` → emergency draft clear + leave exclude; IDB merge가 삭제 id 재삽입 금지; `deleteMeta`에 id가 있으면 **intent delete**(`resolveIntentSoftDeleteIds`); 살아 있는 요청 id가 skip되면 `soft_delete_not_applied`로 ack 금지; leave op는 commit duplicate여도 materialize 재시도 |
+| soft-delete | `persistSoftDelete` → emergency draft clear + leave exclude; IDB merge가 삭제 id 재삽입 금지; `deleteMeta`에 id가 있으면 **intent delete**; 살아 있는 요청 id skip 시 `soft_delete_not_applied`; leave duplicate materialize; **restore/undo는 `removeStructuralExcludeIds`가 ack grace까지 해제** |
 
 reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 호출한다. **새 passive 경로를 추가할 때 seal을 빼면 계약 위반이다. hook에 Authority/Integrity 분기를 새로 넣지 않는다.
 
