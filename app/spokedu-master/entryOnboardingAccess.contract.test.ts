@@ -57,8 +57,10 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
     expect(accessRoute).not.toContain('requireSpokeduMasterAccess');
     expect(shell).toContain('getMasterRouteRequirement');
     expect(shell).toContain('hasRouteCapability');
-    expect(shell).toContain('<SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} />');
+    expect(shell).toContain('<SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} model={gateDisplayModel} />');
     expect(shell).toContain('getSafeMasterReturnPath');
+    expect(shell).toContain('buildMasterGateContext');
+    expect(shell).toContain('buildMasterGateDisplayModel');
     expect(shell).toContain('accessGuard.snapshot?.onboardingDone');
     expect(shell).not.toContain('isTrialExpired');
     expect(shell).not.toContain('MASTER_CENTER_INQUIRY_HREF');

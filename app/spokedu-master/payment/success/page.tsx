@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Loader2, Mail } from 'lucide-react';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MASTER_CUSTOMER_SERVICE_HREF, MASTER_PRODUCT_CATALOG } from '../../lib/productCatalog';
 import { hasMasterEntitlement, type MasterAccessSnapshot } from '../../lib/masterAccessModel';
 import { useMasterStore } from '../../store';
+import { getFallbackForMasterIntent, getSafeMasterPostPaymentPath } from '../../lib/masterPaymentReturn';
+import { readMasterGateContextFromSearchParams } from '../../lib/masterGateIntent';
 
 type PaidPlanId = 'lite' | 'premium';
 type ConfirmationStatus =
@@ -71,6 +73,22 @@ function PaymentStatusShell({ children }: { children: React.ReactNode }) {
 
 function SuccessContent() {
   const params = useSearchParams();
+  const router = useRouter();
+  const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
+  const safeNext = useMemo(
+    () => getSafeMasterPostPaymentPath(params.get('next'), getFallbackForMasterIntent(gateContext.intent)),
+    [gateContext.intent, params],
+  );
+  const retryHref = useMemo(() => {
+    const retryParams = new URLSearchParams({
+      plan: isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : gateContext.minimumPlan,
+      intent: gateContext.intent,
+      next: safeNext,
+      journeyId: gateContext.journeyId,
+    });
+    if (gateContext.gateSurface) retryParams.set('gateSurface', gateContext.gateSurface);
+    return `/spokedu-master/payment?${retryParams.toString()}`;
+  }, [gateContext, params, safeNext]);
   const plan = params.get('plan');
   const authKey = params.get('authKey')?.trim() ?? '';
   const customerKey = params.get('customerKey')?.trim() ?? '';
@@ -79,6 +97,7 @@ function SuccessContent() {
   const syncMasterProfile = useMasterStore((state) => state.syncMasterProfile);
   const profile = useMasterStore((state) => state.profile);
   const confirmationStarted = useRef(false);
+  const resumed = useRef(false);
   const [status, setStatus] = useState<ConfirmationStatus>(hasValidParams ? 'checking' : 'invalid');
   const [accessAttempt, setAccessAttempt] = useState(0);
   const [result, setResult] = useState<BillingIssueResponse | null>(null);
@@ -172,6 +191,13 @@ function SuccessContent() {
     void issueBilling();
   }, [authKey, checkAccessActivation, customerKey, hasValidParams, plan]);
 
+  useEffect(() => {
+    if (status !== 'success' || resumed.current) return;
+    resumed.current = true;
+    const id = window.setTimeout(() => router.replace(safeNext), 900);
+    return () => window.clearTimeout(id);
+  }, [router, safeNext, status]);
+
   if (status === 'checking' || status === 'checking-access') {
     return (
       <PaymentStatusShell>
@@ -221,7 +247,7 @@ function SuccessContent() {
           </div>
         </dl>
         <div className="grid gap-3">
-          <Link href="/spokedu-master/library" className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none">
+          <Link href={safeNext} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none">
             첫 수업 고르기
           </Link>
           <Link href="/spokedu-master/subscription" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
@@ -270,7 +296,7 @@ function SuccessContent() {
         </p>
       </div>
       <div className="grid gap-3">
-        <Link href={`/spokedu-master/payment?plan=${isPaidPlanId(plan) ? plan : 'premium'}`} className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black focus-visible:outline-none">
+        <Link href={retryHref} className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black focus-visible:outline-none">
           다시 시도
         </Link>
         <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>

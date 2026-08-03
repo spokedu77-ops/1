@@ -25,6 +25,7 @@ import {
   normalizeSubscriptionSummary,
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
+import { readMasterGateContextFromSearchParams, type MasterGateContext } from '../lib/masterGateIntent';
 
 declare global {
   interface Window {
@@ -46,6 +47,13 @@ const BILLING_NOTICE = [
 
 function isPaidPlanId(value: string | null): value is PaidPlanId {
   return value === 'lite' || value === 'premium';
+}
+
+function appendGateContext(params: URLSearchParams, context: MasterGateContext) {
+  params.set('intent', context.intent);
+  params.set('next', context.next);
+  params.set('journeyId', context.journeyId);
+  if (context.gateSurface) params.set('gateSurface', context.gateSurface);
 }
 
 function formatKrw(value: number | null) {
@@ -133,7 +141,9 @@ function PlanCard({
 
 function PaymentContent() {
   const params = useSearchParams();
-  const initialPlan = isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : 'premium';
+  const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
+  const requestedPlan = isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : gateContext.minimumPlan;
+  const initialPlan = gateContext.allowedPlans.includes(requestedPlan) ? requestedPlan : gateContext.minimumPlan;
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanId>(initialPlan);
   const masterOtp = useMasterEmailOtp();
   const [isAuthed, setIsAuthed] = useState(false);
@@ -212,6 +222,10 @@ function PaymentContent() {
       setError('결제를 시작하려면 먼저 로그인해 주세요.');
       return;
     }
+    if (!gateContext.allowedPlans.includes(plan)) {
+      setError(`${gateContext.minimumPlan === 'premium' ? 'Premium' : 'Lite'} 이상이 필요한 작업입니다.`);
+      return;
+    }
     if (!canStartPaidPlanCheckout(subscription, plan)) {
       if (paymentPageMode === 'liteUpgrade' && plan === 'lite') {
         setError('라이트 이용 중에는 프리미엄으로 업그레이드할 수 있습니다.');
@@ -228,8 +242,10 @@ function PaymentContent() {
     const customerKey = buildCustomerKey(userId);
     const successUrl = new URL('/spokedu-master/payment/success', window.location.origin);
     successUrl.searchParams.set('plan', plan);
+    appendGateContext(successUrl.searchParams, gateContext);
     const failUrl = new URL('/spokedu-master/payment/cancel', window.location.origin);
     failUrl.searchParams.set('plan', plan);
+    appendGateContext(failUrl.searchParams, gateContext);
 
     setWorkingPlan(plan);
     window.TossPayments(clientKey).requestBillingAuth('카드', {
@@ -294,7 +310,8 @@ function PaymentContent() {
             <div className="grid gap-4 md:grid-cols-2">
               {directProducts.map((product) => {
                 const planId = product.serverPlanKey as PaidPlanId;
-                const canCheckout = canStartPaidPlanCheckout(subscription, planId);
+                const planAllowedForIntent = gateContext.allowedPlans.includes(planId);
+                const canCheckout = planAllowedForIntent && canStartPaidPlanCheckout(subscription, planId);
                 return (
                   <PlanCard
                     key={product.id}

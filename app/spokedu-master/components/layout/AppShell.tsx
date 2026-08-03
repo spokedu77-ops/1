@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { TabBar } from './TabBar';
@@ -15,6 +15,7 @@ import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvi
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../../store';
 import { getMasterRouteRequirement, getSafeMasterReturnPath, isProtectedMasterRoute, type MasterCapability } from './masterRouteAccess';
+import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 type MasterAccessGuardStatus = 'checking' | 'allowed' | 'redirecting' | 'denied' | 'error';
@@ -189,6 +190,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     spomatShopAvailable: false,
   });
   const [accessRetryKey, setAccessRetryKey] = useState(0);
+  const [currentPathWithQuery, setCurrentPathWithQuery] = useState(pathname);
 
   const isAdmin = basePath.startsWith('/admin');
   const isSession = pathname.startsWith(`${basePath}/spomove/session`);
@@ -216,6 +218,33 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     accessGuard.pathname === pathname &&
     accessGuard.status === 'allowed' &&
     !hasRouteCapability(accessGuard.snapshot, routeRequirement.capability);
+  const [gateJourneyId, setGateJourneyId] = useState('');
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setCurrentPathWithQuery(buildCurrentMasterPath(pathname, params));
+  }, [pathname]);
+  const gateContext = useMemo(() => {
+    if (routeRequirement.capability === 'authenticated' || routeRequirement.capability === 'classTools') return null;
+    return buildMasterGateContext({
+      capability: routeRequirement.capability,
+      pathname,
+      currentPath: currentPathWithQuery,
+      journeyId: gateJourneyId || undefined,
+    });
+  }, [currentPathWithQuery, gateJourneyId, pathname, routeRequirement.capability]);
+  const gateDisplayModel = useMemo(
+    () => (gateContext ? buildMasterGateDisplayModel(gateContext) : null),
+    [gateContext],
+  );
+
+  useEffect(() => {
+    if (!routeGateDenied || gateJourneyId) return;
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      setGateJourneyId(crypto.randomUUID());
+      return;
+    }
+    setGateJourneyId(`journey_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`);
+  }, [gateJourneyId, routeGateDenied]);
   useEffect(() => {
     if (isLanding || isPublicDocument) {
       setSubscriptionSynced(true);
@@ -433,7 +462,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         {isAccessGuardPending ? (
           <MasterAccessCheckingState />
         ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && accessGuard.snapshot ? (
-          <SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} />
+          <SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} model={gateDisplayModel} />
         ) : isAccessGuardDenied ? (
           <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />
         ) : isAccessGuardError ? (
@@ -465,7 +494,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
             {isAccessGuardPending ? (
               <MasterAccessCheckingState />
             ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && accessGuard.snapshot ? (
-              <SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} />
+              <SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} model={gateDisplayModel} />
             ) : isAccessGuardDenied ? (
               <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />
             ) : isAccessGuardError ? (

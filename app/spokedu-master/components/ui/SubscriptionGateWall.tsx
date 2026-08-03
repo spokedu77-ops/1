@@ -4,46 +4,52 @@ import Link from 'next/link';
 import { ArrowLeft, BookOpen, ClipboardList, FileText, Lock, MonitorPlay, Timer } from 'lucide-react';
 import type { MasterCapability } from '../layout/masterRouteAccess';
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
+import type { MasterGateDisplayModel } from '../../lib/masterGateIntent';
 
 export type { MasterAccessSnapshot };
 
 type SubscriptionGateWallProps = {
   requirement: Exclude<MasterCapability, 'authenticated'>;
   snapshot: MasterAccessSnapshot;
+  model?: MasterGateDisplayModel | null;
 };
 
 const FEATURE_COPY = {
   library: {
     icon: BookOpen,
-    title: '이 기능을 사용하려면 이용권이 필요합니다',
-    desc: '라이브러리와 전체 수업 자료는 활성 이용권에서 사용할 수 있습니다.',
+    title: '수업 자료를 열려면 이용권이 필요합니다.',
+    desc: '라이브러리의 전체 수업 자료는 활성 이용권에서 사용할 수 있습니다.',
+    access: '라이브러리 및 전체 수업 자료',
   },
   classTools: {
     icon: Timer,
-    title: '수업 도구를 다시 쓰려면 이용권이 필요합니다',
-    desc: '로그인 직후 무료로 써 볼 수 있는 수업 도구는, 이용 기간이 끝나면 다시 활성 이용권이 필요합니다.',
+    title: '수업 도구를 다시 열려면 이용권이 필요합니다.',
+    desc: '로그인 직후 무료로 써볼 수 있는 수업 도구는 이용 기간이 끝나면 활성 이용권이 필요합니다.',
+    access: '수업 도구',
   },
   records: {
     icon: FileText,
-    title: '기록 누적은 프리미엄에서 이용할 수 있습니다',
-    desc: '라이트에서는 출석부까지만 사용할 수 있고, 수업 기록 저장·학생 히스토리·안내문은 프리미엄에서 열립니다.',
+    title: '기록 누적은 Premium에서 이용할 수 있습니다.',
+    desc: 'Lite에서는 출석부까지만 사용할 수 있고, 수업 기록 저장과 안내문은 Premium에서 열립니다.',
+    access: '수업 기록 및 안내문',
   },
   spomove: {
     icon: MonitorPlay,
-    title: 'SPOMOVE는 프리미엄에서 이용할 수 있습니다',
-    desc: '수업 중 프로젝터·TV·태블릿에 연결해 SPOMOVE 공식 활동을 큰 화면으로 시작하려면 프리미엄이 필요합니다.',
+    title: 'SPOMOVE는 Premium에서 이용할 수 있습니다.',
+    desc: '수업 중 프로젝터, TV, 태블릿에 연결해 SPOMOVE 공식 활동을 전체 화면으로 시작하려면 Premium이 필요합니다.',
+    access: 'SPOMOVE 공식 활동 및 전체 화면 실행',
   },
 } as const;
 
-export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGateWallProps) {
+export function SubscriptionGateWall({ requirement, snapshot, model }: SubscriptionGateWallProps) {
   const copy = FEATURE_COPY[requirement];
   const Icon = copy.icon;
   const hasBaseSubscriptionAccess = snapshot.canUseLibrary || snapshot.canUseClassTools || snapshot.canUseRecords;
   const subscriptionBlockedFeature =
     (requirement === 'spomove' && hasBaseSubscriptionAccess && !snapshot.canUseSpomove) ||
     (requirement === 'records' && snapshot.subscriptionStatus === 'active' && !snapshot.canUseRecords);
-  const primaryHref = subscriptionBlockedFeature ? '/spokedu-master/subscription' : '/spokedu-master/payment';
-  const primaryLabel = subscriptionBlockedFeature ? '구독 관리' : '구독 선택';
+  const primaryHref = model?.paymentHref ?? (subscriptionBlockedFeature ? '/spokedu-master/subscription' : '/spokedu-master/payment');
+  const primaryLabel = model?.ctaLabel ?? (subscriptionBlockedFeature ? '구독 관리' : '구독 선택');
 
   return (
     <div className="grid h-full place-items-center overflow-y-auto p-6" style={{ background: 'var(--spm-bg)' }}>
@@ -52,30 +58,35 @@ export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGate
           <Lock size={24} className="text-red-600" />
         </div>
         <p className="text-[11px] font-black uppercase tracking-[0.16em] text-red-600">
-          {subscriptionBlockedFeature ? '프리미엄 필요' : '이용권 필요'}
+          {model?.eyebrow ?? (subscriptionBlockedFeature ? 'Premium 필요' : '이용권 필요')}
         </p>
         <h2 className="mt-2 text-[27px] font-black leading-tight text-slate-950">
-          {copy.title}
+          {model?.title ?? copy.title}
         </h2>
         <p className="mt-3 text-[14px] font-medium leading-6 text-slate-500">
-          {copy.desc}
+          {model?.description ?? copy.desc}
         </p>
         <div className="mt-5 rounded-[13px] border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-start gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--spm-acc-glow)]">
               <Icon size={16} className="text-[var(--spm-acc)]" />
             </span>
-            <div>
-              <p className="text-[13px] font-black text-slate-900">필요한 접근 권한</p>
-              <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-                {requirement === 'records'
-                  ? '수업 기록 · 안내문'
-                  : requirement === 'classTools'
-                    ? '수업 도구'
-                    : requirement === 'library'
-                      ? '라이브러리 · 전체 수업 자료'
-                      : 'SPOMOVE 공식 활동 · 큰 화면 실행'}
+            <div className="min-w-0">
+              <p className="text-[13px] font-black text-slate-900">
+                {model ? '결제 후 이어지는 작업' : '필요한 접근 권한'}
               </p>
+              {model ? (
+                <div className="mt-2 grid gap-1.5">
+                  {model.evidence.map((item) => (
+                    <p key={`${item.label}:${item.value}`} className="flex gap-2 text-[12px] font-semibold leading-5 text-slate-500">
+                      <span className="shrink-0 text-slate-400">{item.label}</span>
+                      <span className="min-w-0 text-slate-700">{item.value}</span>
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">{copy.access}</p>
+              )}
             </div>
           </div>
         </div>

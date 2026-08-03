@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest';
+import { getFallbackForMasterIntent, getSafeMasterPostPaymentPath } from './masterPaymentReturn';
+
+describe('master post-payment return path', () => {
+  it('preserves SPOMOVE execution state query keys', () => {
+    expect(
+      getSafeMasterPostPaymentPath(
+        '/spokedu-master/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start&program=funstick-fencing&paymentKey=x',
+      ),
+    ).toBe('/spokedu-master/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start&program=funstick-fencing');
+  });
+
+  it('keeps route-specific lesson and record query keys only', () => {
+    expect(getSafeMasterPostPaymentPath('/spokedu-master/class-record?program=p1&record=r1&plan=premium')).toBe(
+      '/spokedu-master/class-record?program=p1&record=r1',
+    );
+    expect(getSafeMasterPostPaymentPath('/spokedu-master/library/p1?from=dashboard&intent=open_library')).toBe(
+      '/spokedu-master/library/p1?from=dashboard',
+    );
+  });
+
+  it('blocks external, protocol-relative, script, legacy, and payment loop targets', () => {
+    for (const input of [
+      'https://evil.test/spokedu-master/spomove',
+      '//evil.test/spokedu-master/spomove',
+      'javascript:alert(1)',
+      'data:text/html,hi',
+      '/spokedu-master/class-mode/session',
+      '/spokedu-master/payment?plan=premium',
+      '/spokedu-master/payment/success?next=/spokedu-master/spomove',
+    ]) {
+      expect(getSafeMasterPostPaymentPath(input, '/spokedu-master/spomove')).toBe('/spokedu-master/spomove');
+    }
+  });
+
+  it('provides intent-specific fallbacks', () => {
+    expect(getFallbackForMasterIntent('open_library')).toBe('/spokedu-master/library');
+    expect(getFallbackForMasterIntent('start_spomove')).toBe('/spokedu-master/spomove');
+    expect(getFallbackForMasterIntent('continue_record')).toBe('/spokedu-master/class-record');
+  });
+});
+

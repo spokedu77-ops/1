@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CreditCard, Mail, XCircle } from 'lucide-react';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { MASTER_CUSTOMER_SERVICE_HREF } from '../../lib/productCatalog';
+import { readMasterGateContextFromSearchParams } from '../../lib/masterGateIntent';
 
 function normalizePlan(value: string | null) {
   return value === 'lite' || value === 'premium' ? value : 'premium';
@@ -12,7 +13,18 @@ function normalizePlan(value: string | null) {
 
 function CancelContent() {
   const params = useSearchParams();
+  const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
   const retryPlan = normalizePlan(params.get('plan'));
+  const retryHref = useMemo(() => {
+    const retryParams = new URLSearchParams({
+      plan: retryPlan,
+      intent: gateContext.intent,
+      next: gateContext.next,
+      journeyId: gateContext.journeyId,
+    });
+    if (gateContext.gateSurface) retryParams.set('gateSurface', gateContext.gateSurface);
+    return `/spokedu-master/payment?${retryParams.toString()}`;
+  }, [gateContext, retryPlan]);
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center px-5" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
@@ -28,7 +40,7 @@ function CancelContent() {
           </p>
         </div>
         <div className="space-y-3">
-          <Link href={`/spokedu-master/payment?plan=${retryPlan}`} className="spm-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black focus-visible:outline-none">
+          <Link href={retryHref} className="spm-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black focus-visible:outline-none">
             <CreditCard size={16} />
             다시 시도
           </Link>
