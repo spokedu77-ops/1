@@ -22,6 +22,8 @@ export type DispatchExampleItem = {
   audience: string;
   operation: string;
   activity: string;
+  fitReason: string;
+  review: string;
   mediaKey: HomeMediaKey;
   href: string;
 };
@@ -36,8 +38,14 @@ export type DispatchReview = {
 
 export type DispatchCompareRow = {
   label: string;
+  check: string;
   spokedu: string;
-  basic: string;
+};
+
+export type DispatchOperationSolution = {
+  title: string;
+  description: string;
+  itemIds: readonly string[];
 };
 
 export type DispatchLineupItem = {
@@ -88,6 +96,7 @@ export const dispatchPage = {
       },
     ] as const,
   },
+  pageFlow: ['hero', 'trust', 'fit', 'programs', 'standards', 'evidence', 'process', 'contact'] as const,
   hero: {
     kicker: '기관·단체 프로그램',
     lines: ['기관 조건에 맞게', '체육수업 운영안을 설계합니다'] as const,
@@ -144,38 +153,32 @@ export const dispatchPage = {
   },
   comparison: {
     id: 'comparison',
-    eyebrow: '차별성',
-    title: '일반 프리랜서, 다른 업체와 스포키듀가 다른 이유',
-    lead: '기관 운영자가 현장에서 체감하는 기준으로 비교했습니다. 운영 안정성과 수업 설계 품질을 함께 확인해 보세요.',
+    eyebrow: '운영 기준',
+    title: '기관이 확인해야 할 운영 기준',
+    lead: '가격이나 종목 수보다 먼저 봐야 하는 것은 설계, 강사, 현장 조정, 운영 후 공유 범위입니다.',
     rows: [
       {
-        label: '핵심 커리큘럼',
-        spokedu: '연세대학교 체육전공자들의 전문성과 실제 현장 데이터가 적용된 연간 커리큘럼',
-        basic: '강사 개인의 경험 및 재량에 의존',
+        label: '설계',
+        check: '대상·공간·운영 목적이 실제 수업안에 반영되는가',
+        spokedu: '기관 조건을 확인한 뒤 프로그램, 동선, 회차를 맞춘 운영안을 제안합니다.',
       },
       {
-        label: '강사 파견 기준',
-        spokedu: '체육 전공자 출신으로 스포키듀 교육과정을 이수한 전문 강사',
-        basic: '검증 이력 없는 단기 프리랜서 혼용',
+        label: '강사',
+        check: '사전 기준과 결강·대체 대응 방식이 있는가',
+        spokedu: '스포키듀 수업 기준을 공유한 강사를 배정하고 대체 운영 상황을 함께 봅니다.',
       },
       {
-        label: '결근·펑크 리스크',
-        spokedu: '부재 시 즉시 공유 후 운영진 투입으로 공백 최소화',
-        basic: '대부분 수업 진행 불가 및 휴강 처리',
+        label: '현장',
+        check: '공간, 인원, 연령 차이에 맞게 난이도와 동선을 조정하는가',
+        spokedu: '인원 규모, 대기 동선, 수행 속도에 맞춰 수업 구조를 현장에서 조정합니다.',
       },
       {
-        label: '수업 진행 방식',
-        spokedu: '아이의 반응과 움직임을 설계하면서 몰입과 성장의 흐름을 만드는 프로그램',
-        basic: '단순 기구 놀이 및 시간 채우기식 체육',
-      },
-      {
-        label: '기관 제공 데이터',
-        spokedu: '필요 시 활동 기록·관찰 내용을 정리해 기관과 공유',
-        basic: '전무함 (구두 전달 수준)',
+        label: '공유',
+        check: '운영 후 기관에 무엇이 전달되는가',
+        spokedu: '필요 시 관찰 내용, 운영 피드백, 다음 회차 조정점을 정리해 공유합니다.',
       },
     ] satisfies DispatchCompareRow[],
-  },
-  whoFits: {
+  },  whoFits: {
     eyebrow: '대상 기관',
     title: '이런 기관에 적합합니다',
     items: [
@@ -343,6 +346,28 @@ export const dispatchPage = {
       },
     ] satisfies DispatchLineupItem[],
   },
+  operationSolutions: {
+    eyebrow: '조건별 운영 해법',
+    title: '운영 목적에 맞춰 프로그램을 조합합니다',
+    lead: '모든 프로그램을 같은 크기로 고르는 방식이 아니라, 기관이 필요한 운영 목적 아래에서 선택지를 좁힙니다.',
+    groups: [
+      {
+        title: '지속적인 변화가 필요할 때',
+        description: '반복 수업 안에서 움직임 습관, 참여 밀도, 신체 기능을 꾸준히 끌어올립니다.',
+        itemIds: ['spomove', 'monthly-sports', 'slow-sports'],
+      },
+      {
+        title: '짧고 강한 경험이 필요할 때',
+        description: '행사, 축제, 방학 일정처럼 짧은 시간 안에 참여감이 필요한 상황에 맞춥니다.',
+        itemIds: ['mini-olympics', 'sports-booth'],
+      },
+      {
+        title: '기관 고유 조건이 있을 때',
+        description: '대상, 공간, 목적이 뚜렷한 기관은 기존 프로그램을 조합해 맞춤 운영안으로 설계합니다.',
+        itemIds: ['custom'],
+      },
+    ] satisfies DispatchOperationSolution[],
+  },
   operationTypes: {
     eyebrow: '운영 형태',
     title: '운영 형태를 선택하세요',
@@ -362,73 +387,34 @@ export const dispatchPage = {
     ],
     mediaKey: 'programOneday' as HomeMediaKey,
   },
-  /** 담당자 공유·내부 결재용 한 장 요약 (세부 5단계는 processSteps) */
+  /** 담당자 공유·내부 결재용 한 장 요약 */
   processOnePager: {
-    eyebrow: '도입 한 장',
-    title: '문의부터 운영까지, 한 장으로 정리',
-    lead: '담당자 공유·내부 결재용으로 바로 전달할 수 있는 요약입니다. 가격은 조건 확인 후 안내합니다.',
+    eyebrow: '도입 절차',
+    title: '조건 확인부터 수업 운영까지 3단계로 정리합니다',
+    lead: '기관 내부 공유와 결재가 쉽도록 필요한 조건, 제안 내용, 운영 범위를 짧게 정리합니다.',
     flow: [
-      { label: '문의', detail: '웹 폼·전화·카카오로 파견 문의를 접수합니다.' },
-      { label: '조건 확인', detail: '연령·인원·공간·기간을 맞춰 운영 가능 여부를 봅니다.' },
-      { label: '제안·시연', detail: '맞춤 운영안을 제안하고, 필요 시 시연·오리엔테이션을 진행합니다.' },
-      { label: '운영', detail: '검증 강사 배정 후 첫 수업을 시작합니다.' },
+      { label: '조건 확인', detail: '연령·인원·공간·일정을 확인하고 운영 가능 범위를 봅니다.' },
+      { label: '운영안 제안', detail: '프로그램, 동선, 강사, 준비물 범위를 묶어 제안합니다.' },
+      { label: '수업 운영', detail: '사전 조율 후 현장 진행과 필요한 피드백을 이어갑니다.' },
     ] as const,
     checklist: {
       title: '상담 전에 알려주시면 빠른 제안',
       items: [
         '대상 연령과 참여 인원',
         '수업 공간과 이동 동선',
-        '희망 기간·횟수 (정규 / 원데이 / 행사)',
-        '특수 아동·통합 운영 여부',
+        '운영 기간·횟수와 일정',
+        '특수·통합 운영 필요 여부',
       ] as const,
     },
     formats: {
-      title: '가능한 운영 형태',
-      items: ['정규수업', '원데이 행사', '방학캠프'] as const,
+      title: '제안에 포함되는 내용',
+      items: ['프로그램 구성', '현장 동선', '강사·준비물 범위'] as const,
     },
     cta: {
-      label: '기관 운영 상담',
+      label: '기관 조건으로 운영안 요청하기',
       href: '#contact',
     },
-  },
-  processSteps: {
-    eyebrow: '도입 절차',
-    title: '가장 빠르고 확실한 도입 프로세스',
-    lead: '일정·공간·강사 조건을 확인한 뒤, 가능한 운영 시작 일정을 안내합니다.',
-    steps: [
-      {
-        num: '01',
-        label: '상담 및 접수',
-        detail: '웹사이트 폼, 전화 또는 카카오 채널로 파견 문의를 접수합니다.',
-        duration: '당일~24시간',
-      },
-      {
-        num: '02',
-        label: '기관 환경 분석',
-        detail: '대상 연령, 인원, 특이사항을 파악해 기관에 맞는 운영안을 안내합니다.',
-        duration: '1~2일',
-      },
-      {
-        num: '03',
-        label: '일정·조건 협의',
-        detail: '파견 일정과 수업 구성 등을 협의하고 진행 방식을 확정합니다.',
-        duration: '1~3일',
-      },
-      {
-        num: '04',
-        label: '전담 강사 배정',
-        detail: '기관의 성향과 목표에 맞는 검증된 강사를 매칭합니다.',
-        duration: '3~5일',
-      },
-      {
-        num: '05',
-        label: '첫 수업 개시',
-        detail: '기관 담당자와 사전 오리엔테이션 후, 첫 수업을 시작합니다.',
-        duration: '조건 확인 후',
-      },
-    ] as const,
-  },
-  examples: {
+  },  examples: {
     eyebrow: '사례',
     title: '실제 운영 사례',
     href: `${SPOKEDU_BASE_PATH}/records`,
@@ -439,6 +425,8 @@ export const dispatchPage = {
         audience: '초등 저학년',
         operation: 'SPOMOVE 정규수업',
         activity: '시각 자극 반응형 에듀테크 체육',
+        fitReason: '초등 저학년이 반복 참여하는 정규 운영이라 화면 신호와 패드 반응을 안정적으로 누적했습니다.',
+        review: '한 명도 소외되지 않는 진짜 교육이라는 평가를 받았습니다.',
         mediaKey: 'proofClass' as HomeMediaKey,
         href: `${SPOKEDU_BASE_PATH}/records`,
       },
@@ -447,6 +435,8 @@ export const dispatchPage = {
         audience: '초등 방학',
         operation: '방학 원데이 캠프',
         activity: '체육·예체능 결합 몰입 프로그램',
+        fitReason: '방학 기간의 짧은 집중 일정에 맞춰 체육과 놀이형 몰입 활동을 결합했습니다.',
+        review: '짧은 일정 안에서도 참여 흐름이 분명했습니다.',
         mediaKey: 'proofLounge' as HomeMediaKey,
         href: `${SPOKEDU_BASE_PATH}/records`,
       },
@@ -455,6 +445,8 @@ export const dispatchPage = {
         audience: '거점센터 연계',
         operation: '에듀테크 체육수업',
         activity: '리듬·타이밍 반응형 수업 운영',
+        fitReason: '거점센터 연계 수업에서 리듬과 반응 과제를 반복 운영해 참여 밀도를 유지했습니다.',
+        review: '사진에만 머무르지 않고 성장 흐름이 보이는 수업이었습니다.',
         mediaKey: 'proofCenter' as HomeMediaKey,
         href: `${SPOKEDU_BASE_PATH}/records`,
       },

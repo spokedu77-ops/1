@@ -17,18 +17,6 @@ function CheckIcon() {
   );
 }
 
-function XIcon() {
-  return (
-    <svg className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-      <path
-        fillRule="evenodd"
-        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-}
-
 export function DispatchComparisonSection() {
   const section = dispatchPage.comparison;
 
@@ -56,10 +44,9 @@ export function DispatchComparisonSection() {
                 </div>
               </div>
               <div className="flex gap-3 px-4 py-3">
-                <XIcon />
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">일반 업체</p>
-                  <p className={`mt-1 text-sm leading-relaxed text-slate-500 ${koreanLineBreak}`}>{row.basic}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">확인할 내용</p>
+                  <p className={`mt-1 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{row.check}</p>
                 </div>
               </div>
             </div>
@@ -76,7 +63,7 @@ export function DispatchComparisonSection() {
               PREMIUM
             </span>
           </div>
-          <div className="border-l border-stone-100 px-5 py-3 text-xs font-bold text-stone-500">일반 업체</div>
+          <div className="border-l border-stone-100 px-5 py-3 text-xs font-bold text-stone-500">확인할 내용</div>
         </div>
         {section.rows.map((row, index) => (
           <div
@@ -91,8 +78,7 @@ export function DispatchComparisonSection() {
               <p className={`text-sm leading-relaxed text-slate-700 ${koreanLineBreak}`}>{row.spokedu}</p>
             </div>
             <div className="flex gap-2.5 border-l border-stone-100 px-5 py-3.5">
-              <XIcon />
-              <p className={`text-sm leading-relaxed text-slate-500 ${koreanLineBreak}`}>{row.basic}</p>
+              <p className={`text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{row.check}</p>
             </div>
           </div>
         ))}

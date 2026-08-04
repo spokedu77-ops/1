@@ -206,8 +206,13 @@ describe('spokedu site IA', () => {
     expect(dispatchPage.heroCtas.primary.label).toContain('기관 조건');
     expect(dispatchPage.heroCtas.secondary.href).toBe('#evidence');
     expect(dispatchPage.decisionFit.items.map((item) => item.label)).toEqual(['공간', '인원', '연령', '운영']);
+    expect(dispatchPage.pageFlow.length).toBeLessThanOrEqual(8);
+    expect(dispatchPage.operationSolutions.groups).toHaveLength(3);
+    expect(dispatchPage.comparison.title).toContain('운영 기준');
+    expect(JSON.stringify(dispatchPage.comparison)).not.toMatch(/프리랜서|다른 업체|기본 업체|시간 채우기|전무함/);
     expect(dispatchPage.examples.items.length).toBeGreaterThanOrEqual(2);
-    expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual(['문의', '조건 확인', '제안·시연', '운영']);
+    expect(dispatchPage.examples.items.every((item) => item.fitReason && item.review)).toBe(true);
+    expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual(['조건 확인', '운영안 제안', '수업 운영']);
   });
 
   it('keeps SPOMOVE activity media aligned with task contracts', () => {
@@ -250,14 +255,9 @@ describe('spokedu site IA', () => {
 
 describe('spokedu dispatch process one-pager', () => {
   it('exposes a 4-step flow and consult checklist', () => {
-    expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual([
-      '문의',
-      '조건 확인',
-      '제안·시연',
-      '운영',
-    ]);
+    expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual(['조건 확인', '운영안 제안', '수업 운영']);
     expect(dispatchPage.processOnePager.checklist.items.length).toBeGreaterThanOrEqual(4);
-    expect(dispatchPage.processOnePager.formats.items).toEqual(['정규수업', '원데이 행사', '방학캠프']);
+    expect(dispatchPage.processOnePager.formats.items).toEqual(['프로그램 구성', '현장 동선', '강사·준비물 범위']);
     expect(dispatchPage.processOnePager.cta.href).toBe('#contact');
   });
 
