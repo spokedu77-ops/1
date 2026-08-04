@@ -192,10 +192,13 @@ export const SPOKEDU_IMAGES = {
       '체육수업 수업안·커리큘럼 문서 장면',
       { kind: 'document', programs: ['curriculum'], allowedPages: ['home', 'curriculum'] },
     ),
-    toolSetup: defineImage('curriculum', 'curriculum-tools', 'curriculum-tool-setup.jpg', '체육 교구 세팅 및 활용 안내 장면', {
-      kind: 'product',
+    toolSetup: defineImage('curriculum', 'curriculum-tools', 'curriculum-tool-setup.jpg', '미검수 이미지 — 공개 페이지 사용 금지', {
+      assetStatus: 'placeholder-copy',
+      placeholderNote: '천장 조명 사진으로 확인되어 커리큘럼·지도자 교육 증거 이미지에서 제외합니다.',
+      kind: 'field-photo',
       programs: ['curriculum'],
-      allowedPages: ['home', 'curriculum'],
+      allowedPages: [],
+      verified: false,
     }),
     instructorTraining: defineImage(
       'curriculum',

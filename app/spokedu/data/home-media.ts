@@ -99,12 +99,12 @@ export const HOME_MEDIA = {
     fallbackGradient: 'from-emerald-500 via-teal-700 to-slate-900',
     tone: 'lime',
   }),
-  curriculumTools: fromPhoto(SPOKEDU_IMAGES.curriculum.toolSetup, {
+  curriculumTools: fromPhoto(SPOKEDU_IMAGES.curriculum.instructorTraining, {
     id: 'curriculum-tools',
-    label: '교구·운영',
+    label: '지도자 교육',
     fallbackGradient: 'from-teal-500 via-emerald-700 to-slate-900',
     tone: 'lime',
-    objectPosition: '50% 45%',
+    objectPosition: '50% 38%',
   }),
   proofLab: fromPhoto(SPOKEDU_IMAGES.home.labScene, {
     id: 'proof-lab',

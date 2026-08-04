@@ -201,7 +201,7 @@ export const homePage = {
         ctaLabel: '교육·콘텐츠 보기',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-gate-curriculum',
-        mediaKey: 'curriculumTools',
+        mediaKey: 'gateCurriculum',
       },
     ] satisfies HomeAudienceGateItem[],
   },
