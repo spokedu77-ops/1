@@ -52,52 +52,61 @@ export const siteNav: SiteNavEntry[] = [
     matchPrefix: '/about',
   },
   {
+    type: 'link',
+    label: '개인수업',
+    href: `${SPOKEDU_BASE_PATH}/private`,
+    trackLabel: 'nav-private',
+    matchPrefix: '/private',
+  },
+  {
+    type: 'link',
+    label: '기관수업',
+    href: `${SPOKEDU_BASE_PATH}/dispatch`,
+    trackLabel: 'nav-dispatch',
+    matchPrefix: '/dispatch',
+  },
+  {
     type: 'group',
     label: '프로그램',
     trackLabel: 'nav-programs',
     children: [
       {
-        label: '개인·소그룹 수업',
-        href: `${SPOKEDU_BASE_PATH}/private`,
-        trackLabel: 'nav-private',
-      },
-      {
-        label: '기관 프로그램',
-        href: `${SPOKEDU_BASE_PATH}/dispatch`,
-        trackLabel: 'nav-dispatch',
-      },
-      {
-        label: '커리큘럼·지도자 교육',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
-        trackLabel: 'nav-curriculum',
-      },
-    ],
-  },
-  {
-    type: 'group',
-    label: 'SPOMOVE',
-    trackLabel: 'nav-spomove',
-    children: [
-      {
-        label: '소개',
+        label: 'SPOMOVE',
         href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
         trackLabel: 'nav-spomove-hub',
       },
       {
-        label: '한눈에 보기',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove?tab=catalog`,
-        trackLabel: 'nav-spomove-catalog',
+        label: 'PAPS',
+        href: `${SPOKEDU_BASE_PATH}/programs/paps`,
+        trackLabel: 'nav-program-paps',
       },
       {
-        label: '전체 카탈로그',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove/catalog`,
-        trackLabel: 'nav-spomove-catalog-full',
+        label: '월간 뉴스포츠',
+        href: `${SPOKEDU_BASE_PATH}/programs/monthly-newsports`,
+        trackLabel: 'nav-program-monthly-newsports',
+      },
+      {
+        label: '원데이',
+        href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
+        trackLabel: 'nav-program-oneday',
+      },
+      {
+        label: '방학캠프',
+        href: `${SPOKEDU_BASE_PATH}/programs/camp`,
+        trackLabel: 'nav-program-camp',
       },
     ],
   },
   {
     type: 'link',
-    label: '수업 사례',
+    label: '커리큘럼',
+    href: `${SPOKEDU_BASE_PATH}/curriculum`,
+    trackLabel: 'nav-curriculum',
+    matchPrefix: '/curriculum',
+  },
+  {
+    type: 'link',
+    label: '사례',
     href: `${SPOKEDU_BASE_PATH}/records`,
     trackLabel: 'nav-records',
     matchPrefix: '/records',
@@ -136,20 +145,21 @@ export const AUDIENCE_TRACK_PATHS: Record<AudienceTrackId, string> = {
 /** @deprecated — `siteNav` 사용 */
 export const siteNavItems: SiteNavItem[] = [
   { label: '스포키듀', path: '/about', href: `${SPOKEDU_BASE_PATH}/about` },
-  { label: '기관 프로그램', path: AUDIENCE_TRACK_PATHS.dispatch, href: `${SPOKEDU_BASE_PATH}/dispatch` },
-  { label: '개인·소그룹 수업', path: AUDIENCE_TRACK_PATHS.private, href: `${SPOKEDU_BASE_PATH}/private` },
-  { label: '커리큘럼·지도자 교육', path: AUDIENCE_TRACK_PATHS.curriculum, href: `${SPOKEDU_BASE_PATH}/curriculum` },
-  { label: '수업 사례', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
+  { label: '개인수업', path: AUDIENCE_TRACK_PATHS.private, href: `${SPOKEDU_BASE_PATH}/private` },
+  { label: '기관수업', path: AUDIENCE_TRACK_PATHS.dispatch, href: `${SPOKEDU_BASE_PATH}/dispatch` },
+  { label: '프로그램', path: '/programs', href: `${SPOKEDU_BASE_PATH}/programs` },
+  { label: '커리큘럼', path: AUDIENCE_TRACK_PATHS.curriculum, href: `${SPOKEDU_BASE_PATH}/curriculum` },
+  { label: '사례', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
   { label: '문의', path: '/contact', href: `${SPOKEDU_BASE_PATH}/contact` },
 ];
 
 export const footerNavLinks: SiteNavLink[] = [
   { label: '스포키듀', href: `${SPOKEDU_BASE_PATH}/about`, trackLabel: 'footer-about' },
-  { label: '개인·소그룹 수업', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'footer-private' },
-  { label: '기관 프로그램', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'footer-dispatch' },
-  { label: 'SPOMOVE', href: `${SPOKEDU_BASE_PATH}/programs/spomove`, trackLabel: 'footer-spomove' },
-  { label: '커리큘럼·지도자 교육', href: `${SPOKEDU_BASE_PATH}/curriculum`, trackLabel: 'footer-curriculum' },
-  { label: '수업 사례', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'footer-records' },
+  { label: '개인수업', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'footer-private' },
+  { label: '기관수업', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'footer-dispatch' },
+  { label: '프로그램', href: `${SPOKEDU_BASE_PATH}/programs`, trackLabel: 'footer-programs' },
+  { label: '커리큘럼', href: `${SPOKEDU_BASE_PATH}/curriculum`, trackLabel: 'footer-curriculum' },
+  { label: '사례', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'footer-records' },
   { label: '문의', href: `${SPOKEDU_BASE_PATH}/contact`, trackLabel: 'footer-contact' },
 ];
 

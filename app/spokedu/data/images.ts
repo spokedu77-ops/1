@@ -18,6 +18,19 @@ export type SpokeduImageCategory =
 
 /** `placeholder-copy`: 다른 슬롯 사진 임시 복사 — 전용 실사로 교체 예정 */
 export type SpokeduImageAssetStatus = 'production' | 'placeholder-copy';
+export type SpokeduImageKind = 'field-photo' | 'screen' | 'document' | 'product' | 'diagram' | 'brand';
+export type SpokeduImageProgram =
+  | 'private'
+  | 'dispatch'
+  | 'spomove'
+  | 'paps'
+  | 'monthly-newsports'
+  | 'oneday'
+  | 'camp'
+  | 'curriculum'
+  | 'brand'
+  | 'records'
+  | 'general';
 
 export type SpokeduImageDef = {
   id: string;
@@ -29,6 +42,11 @@ export type SpokeduImageDef = {
   assetStatus: SpokeduImageAssetStatus;
   /** assetStatus가 placeholder-copy일 때 교체 안내 */
   placeholderNote?: string;
+  /** 이미지 오매칭 방지용 의미 메타데이터 */
+  kind: SpokeduImageKind;
+  programs: readonly SpokeduImageProgram[];
+  allowedPages: readonly string[];
+  verified: boolean;
 };
 
 type DefineImageOptions = {
@@ -36,7 +54,20 @@ type DefineImageOptions = {
   placeholderNote?: string;
   /** postimg 등 외부 CDN — 로컬 `public/images/spokedu` 대신 직접 URL */
   externalSrc?: string;
+  kind?: SpokeduImageKind;
+  programs?: readonly SpokeduImageProgram[];
+  allowedPages?: readonly string[];
+  verified?: boolean;
 };
+
+function defaultImagePrograms(category: SpokeduImageCategory): readonly SpokeduImageProgram[] {
+  if (category === 'private') return ['private'];
+  if (category === 'dispatch') return ['dispatch'];
+  if (category === 'curriculum') return ['curriculum'];
+  if (category === 'records') return ['records'];
+  if (category === 'brand') return ['brand'];
+  return ['general'];
+}
 
 function defineImage(
   category: SpokeduImageCategory,
@@ -54,6 +85,10 @@ function defineImage(
     src: options?.externalSrc ?? `${SPOKEDU_IMAGE_ROOT}/${category}/${file}`,
     fallback: `${SPOKEDU_IMAGE_ROOT}/_fallback/${category}.svg`,
     assetStatus,
+    kind: options?.kind ?? (category === 'brand' ? 'brand' : 'field-photo'),
+    programs: options?.programs ?? defaultImagePrograms(category),
+    allowedPages: options?.allowedPages ?? [category],
+    verified: options?.verified ?? assetStatus === 'production',
     ...(assetStatus === 'placeholder-copy' && options?.placeholderNote
       ? { placeholderNote: options.placeholderNote }
       : {}),
@@ -72,6 +107,7 @@ export const SPOKEDU_IMAGES = {
       'spomat',
       'spomat.png',
       '스포매트 — SPOMOVE 4색 반응 패드 (초록·빨강·파랑·노랑)',
+      { kind: 'product', programs: ['spomove'], allowedPages: ['home', 'programs', 'curriculum'] },
     ),
   },
   home: {
@@ -154,15 +190,25 @@ export const SPOKEDU_IMAGES = {
       'curriculum-plan',
       'curriculum-planning.jpg',
       '체육수업 수업안·커리큘럼 문서 장면',
+      { kind: 'document', programs: ['curriculum'], allowedPages: ['home', 'curriculum'] },
     ),
-    toolSetup: defineImage('curriculum', 'curriculum-tools', 'curriculum-tool-setup.jpg', '체육 교구 세팅 및 활용 안내 장면'),
+    toolSetup: defineImage('curriculum', 'curriculum-tools', 'curriculum-tool-setup.jpg', '체육 교구 세팅 및 활용 안내 장면', {
+      kind: 'product',
+      programs: ['curriculum'],
+      allowedPages: ['home', 'curriculum'],
+    }),
     instructorTraining: defineImage(
       'curriculum',
       'curriculum-training',
       'curriculum-instructor-training.jpg',
       '스포키듀 강사 교육·워크숍 장면',
+      { kind: 'field-photo', programs: ['curriculum'], allowedPages: ['home', 'curriculum'] },
     ),
-    programMaterials: defineImage('curriculum', 'curriculum-materials', 'curriculum-materials.jpg', '프로그램 운영 자료·콘텐츠 패키지 장면'),
+    programMaterials: defineImage('curriculum', 'curriculum-materials', 'curriculum-materials.jpg', '프로그램 운영 자료·콘텐츠 패키지 장면', {
+      kind: 'document',
+      programs: ['curriculum'],
+      allowedPages: ['curriculum', 'programs'],
+    }),
   },
   programs: {
     spomove: defineImage(
@@ -170,18 +216,21 @@ export const SPOKEDU_IMAGES = {
       'program-spomove',
       'program-spomove.jpg',
       'SPOMOVE 빔 기반 에듀테크 놀이체육 수업',
+      { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home', 'programs', 'records'] },
     ),
     paps: defineImage(
       'programs',
       'program-paps',
       'program-paps-running.jpg',
       'PAPS 연계 놀이체육 프로그램 수업',
+      { programs: ['paps'], allowedPages: ['programs', 'dispatch', 'records'] },
     ),
     newsportsMonthly: defineImage(
       'programs',
       'program-monthly-newsports',
       'program-monthly-newsports.png',
       '월간 뉴스포츠 메타 테마 — 협동·교구 기반 수업 장면',
+      { kind: 'diagram', programs: ['monthly-newsports'], allowedPages: ['programs', 'dispatch'] },
     ),
     playClass: defineImage('programs', 'program-play-class', 'program-play-pe.jpg', '놀이체육 정규수업 장면'),
     oneDay: defineImage(
@@ -383,3 +432,11 @@ export const recordsCaseImageBySlug: Record<string, SpokeduImageDef> = {
   'playz-camp': SPOKEDU_IMAGES.records.playz,
   'seodaemun-event-booth': SPOKEDU_IMAGES.records.seodaemun,
 };
+
+export function canUseSpokeduImageOnPage(asset: SpokeduImageDef, page: string): boolean {
+  return asset.allowedPages.includes(page);
+}
+
+export function isSpokeduImageProgramMatch(asset: SpokeduImageDef, program: SpokeduImageProgram): boolean {
+  return asset.programs.includes(program) || asset.programs.includes('general');
+}

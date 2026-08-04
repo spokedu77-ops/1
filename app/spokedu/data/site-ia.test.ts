@@ -6,56 +6,47 @@ import { HOME_MAIN_CASE_SLUGS, homePage } from './home-page';
 import { privatePage } from './private-page';
 import { programDetailBlocks } from './program-details';
 import { seoMeta } from './seo';
+import { canUseSpokeduImageOnPage, isSpokeduImageProgramMatch, SPOKEDU_IMAGES } from './images';
 import { HOME_PROGRAM_SYSTEM_HREF, siteNav, SPOKEDU_BASE_PATH } from './site';
 
 describe('spokedu site IA', () => {
   it('exposes primary siteNav entries in expected order', () => {
     expect(siteNav.map((entry) => entry.label)).toEqual([
       '스포키듀',
+      '개인수업',
+      '기관수업',
       '프로그램',
-      'SPOMOVE',
-      '수업 사례',
+      '커리큘럼',
+      '사례',
       '문의',
     ]);
   });
 
-  it('exposes SPOMOVE glance and full catalog destinations', () => {
-    const spomove = siteNav.find((entry) => entry.type === 'group' && entry.label === 'SPOMOVE');
-    expect(spomove?.type).toBe('group');
-    if (spomove?.type !== 'group') return;
-    expect(spomove.children.map((child) => child.label)).toEqual([
-      '소개',
-      '한눈에 보기',
-      '전체 카탈로그',
-    ]);
-    expect(spomove.children[1]?.href).toContain('tab=catalog');
-    expect(spomove.children[2]?.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove/catalog`);
-  });
-
-  it('keeps program children as page-level destinations only', () => {
+  it('keeps SPOMOVE as the featured program, not an audience type', () => {
     const programs = siteNav.find((entry) => entry.type === 'group' && entry.label === '프로그램');
     expect(programs?.type).toBe('group');
     if (programs?.type !== 'group') return;
     expect(programs.children.map((child) => child.label)).toEqual([
-      '개인·소그룹 수업',
-      '기관 프로그램',
-      '커리큘럼·지도자 교육',
+      'SPOMOVE',
+      'PAPS',
+      '월간 뉴스포츠',
+      '원데이',
+      '방학캠프',
     ]);
-    // 특수체육은 전용 페이지가 아니라 기관 프로그램 라인업 하위 항목
-    expect(programs.children.some((child) => child.href.includes('#special'))).toBe(false);
+    expect(programs.children[0]?.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove`);
   });
 
   it('defines six home sections with proof strip and audience gate', () => {
-    expect(homePage.hero.lines[0]).toContain('기관과 아이');
+    expect(homePage.hero.lines[0]).toContain('아이와 현장');
     expect(homePage.hero.quickLinks.map((link) => link.label)).toEqual([
       '기관 담당자',
       '학부모',
-      '커리큘럼·지도자 교육',
+      '지도자·파트너',
     ]);
     expect(homePage.proofStrip.items).toHaveLength(4);
-    expect(homePage.proofStrip.processLine).toContain('현장 수업');
+    expect(homePage.proofStrip.processLine).toContain('현장');
     expect(homePage.audienceGate.title).toBe('어떤 수업이 필요하신가요?');
-    expect(homePage.proofStrip.title).toBe('왜 스포키듀인가');
+    expect(homePage.proofStrip.title).toContain('교육의 기준');
     expect(homePage.trustStrip.items).toHaveLength(4);
     expect(homePage.trustStrip.items[0]?.value).toMatch(/년\+$/);
     expect(homePage.trustStrip.items[0]?.label).toContain('2020');
@@ -67,6 +58,9 @@ describe('spokedu site IA', () => {
     expect(homePage.trustStrip.items.some((item) => /만/.test(item.value))).toBe(false);
     expect(homePage.trustStrip.eyebrow).toBe('운영 경험');
     expect(homePage.audienceGate.items).toHaveLength(3);
+    expect(homePage.audienceGate.items.map((item) => item.id)).toEqual(['dispatch', 'private', 'curriculum']);
+    expect(homePage.audienceGate.items.map((item) => item.id)).not.toContain('spomove');
+    expect(homePage.audienceGate.items[0]?.bullets).toContain('SPOMOVE 도입');
     expect(homePage.audienceGate.items.map((item) => item.fit)).toHaveLength(3);
     expect(homePage.audienceGate.items[2]?.id).toBe('curriculum');
     expect(homePage.spomove.flowSteps).toHaveLength(4);
@@ -100,6 +94,15 @@ describe('spokedu site IA', () => {
 
   it('keeps program index href valid (no self-redirect target)', () => {
     expect(HOME_PROGRAM_SYSTEM_HREF).toBe(`${SPOKEDU_BASE_PATH}/programs`);
+  });
+
+  it('records image usage metadata for proof-sensitive assets', () => {
+    expect(SPOKEDU_IMAGES.programs.spomove.kind).toBe('field-photo');
+    expect(isSpokeduImageProgramMatch(SPOKEDU_IMAGES.programs.spomove, 'spomove')).toBe(true);
+    expect(isSpokeduImageProgramMatch(SPOKEDU_IMAGES.programs.spomove, 'camp')).toBe(false);
+    expect(SPOKEDU_IMAGES.curriculum.lessonPlan.kind).toBe('document');
+    expect(canUseSpokeduImageOnPage(SPOKEDU_IMAGES.curriculum.lessonPlan, 'curriculum')).toBe(true);
+    expect(canUseSpokeduImageOnPage(SPOKEDU_IMAGES.curriculum.lessonPlan, 'dispatch')).toBe(false);
   });
 });
 

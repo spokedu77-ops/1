@@ -15,7 +15,7 @@ import {
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
 
-/** “왜 SPOKEDU인가” — navy 밴드 · LAB 현장 사진 + 번호형 프로세스 */
+/** SPOKEDU System — 현장 경험이 교육 기준으로 확장되는 과정 */
 export function HomeProofStrip() {
   const { title, lead, items, processLabel, processLine } = homePage.proofStrip;
   const processSteps = processLine.split(/\s*→\s*/).filter(Boolean);
@@ -48,12 +48,12 @@ export function HomeProofStrip() {
               aria-hidden
             />
             <p className="absolute bottom-4 left-4 text-[11px] font-bold uppercase tracking-[0.14em] text-[#9FC0FF]">
-              LAB · 현장 기준
+              FIELD → SYSTEM
             </p>
           </div>
 
           <div className="flex min-w-0 flex-col justify-center">
-            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#9FC0FF]">왜 스포키듀인가</p>
+            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#9FC0FF]">SPOKEDU SYSTEM</p>
             <h2 id="home-proof-heading" className={`${homeSectionH2} mt-3 text-white`}>
               {title}
             </h2>
@@ -68,7 +68,16 @@ export function HomeProofStrip() {
                   <span className="mb-2 block text-[11px] font-bold tracking-[0.14em] text-[#9FC0FF]">
                     {String(index + 1).padStart(2, '0')}
                   </span>
-                  {item}
+                  <span className="block text-base font-bold text-white">{item}</span>
+                  <span className="mt-1 block text-xs font-medium leading-relaxed text-[#B8C8E0]">
+                    {index === 0
+                      ? '아이와 기관을 만나는 실제 수업'
+                      : index === 1
+                        ? '대상·공간·목적에 맞춘 과정'
+                        : index === 2
+                          ? '정규·개인·행사 현장 운영'
+                          : 'SPOMOVE·수업안·지도자 교육'}
+                  </span>
                 </li>
               ))}
             </ul>

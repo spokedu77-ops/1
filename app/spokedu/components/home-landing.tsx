@@ -20,7 +20,7 @@ type SpokeduHomeLandingProps = {
 
 /**
  * 홈 흐름
- * 히어로 → 신뢰 → 사례 갤러리 → 경로 → SPOMOVE → 왜 → 후기 → 상담 CTA
+ * 히어로 → 대상 분기 → 증거 → 시스템 → SPOMOVE → 사례 → 후기 → 상담 CTA
  */
 export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingProps) {
   const caseCards = mergeHomeCaseCards(proofCards);
@@ -35,11 +35,11 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
       </a>
 
       <HomeHero />
-      <HomeTrustStrip />
-      <HomeMediaRail caseCards={caseCards} />
       <HomeAudienceGates />
-      <HomeSpomoveSpotlight />
+      <HomeTrustStrip />
       <HomeProofStrip />
+      <HomeSpomoveSpotlight />
+      <HomeMediaRail caseCards={caseCards} />
       <HomePartnerReviews />
       <HomeFinalCta />
     </div>

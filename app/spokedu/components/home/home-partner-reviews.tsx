@@ -15,7 +15,7 @@ import {
 } from '../../lib/ui-classes';
 import { TrackedLink } from './tracked-link';
 
-const HOME_REVIEW_ITEMS = dispatchPage.partnerReviews.items;
+const HOME_REVIEW_ITEMS = dispatchPage.partnerReviews.items.slice(0, 1);
 
 export function HomePartnerReviews() {
   const reducedMotion = useReducedMotion();
@@ -44,11 +44,11 @@ export function HomePartnerReviews() {
           </h2>
         </motion.div>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+        <div className="mt-10 max-w-3xl">
           {HOME_REVIEW_ITEMS.map((item, index) => (
             <motion.article
               key={item.quote}
-              className="relative min-w-0 overflow-hidden rounded-[1.5rem] border border-[#DCE3EE] bg-white px-5 py-6 shadow-[0_12px_32px_rgba(15,33,70,0.04)] sm:px-6 sm:py-7"
+              className="relative min-w-0 overflow-hidden rounded-[1.5rem] border border-[#DCE3EE] bg-white px-5 py-6 shadow-[0_12px_32px_rgba(15,33,70,0.04)] sm:px-7 sm:py-8"
               initial={reducedMotion ? false : { opacity: 0, y: 14 }}
               whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
