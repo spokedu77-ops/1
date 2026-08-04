@@ -10,6 +10,13 @@ type DispatchMediaRequirement = {
   allowVisualFallback?: boolean;
 };
 
+export type ConversionPageIntent = {
+  decisionQuestion: string;
+  primaryAudience: string;
+  mustProve: readonly string[];
+  primaryCtaIntent: string;
+};
+
 export type DispatchExampleItem = {
   venue: string;
   audience: string;
@@ -48,23 +55,56 @@ export type DispatchLineupItem = {
 };
 
 export const dispatchPage = {
+  intent: {
+    decisionQuestion: '우리 기관 조건에서 안정적으로 운영 가능한가?',
+    primaryAudience: '기관 담당자',
+    mustProve: ['공간 대응', '인원 대응', '연령 대응', '운영 방식', '실제 사례'],
+    primaryCtaIntent: '기관 조건 기반 운영안 요청',
+  } satisfies ConversionPageIntent,
+  decisionFit: {
+    eyebrow: '운영 가능성 판단',
+    title: '먼저 기관 조건을 확인하고, 그 조건에 맞는 운영안을 만듭니다',
+    lead: '프로그램을 먼저 고르는 방식이 아니라 공간·인원·연령·일정의 제약을 확인한 뒤 수업 구성과 운영 방식을 맞춥니다.',
+    items: [
+      {
+        label: '공간',
+        condition: '교실 · 활동실 · 강당 · 체육관',
+        response: '이동 범위, 대기 동선, 소음, 안전 범위를 먼저 조정합니다.',
+      },
+      {
+        label: '인원',
+        condition: '소규모 · 반 단위 · 다인원 행사',
+        response: '팀 구성, 순환형 스테이션, 강사 배치 기준을 정합니다.',
+      },
+      {
+        label: '연령',
+        condition: '유아 · 초등 · 청소년 · 특수·통합',
+        response: '규칙 이해도와 수행 속도에 맞춰 과제 난이도를 나눕니다.',
+      },
+      {
+        label: '운영',
+        condition: '정규수업 · 단기 특강 · 행사 · 방학 프로그램',
+        response: '회차, 준비물, 기록 공유, 현장 피드백 범위를 정합니다.',
+      },
+    ] as const,
+  },
   hero: {
     kicker: '기관·단체 프로그램',
-    lines: ['움직이고 싶게 만드는', '체육수업을 설계합니다'] as const,
+    lines: ['기관 조건에 맞게', '체육수업 운영안을 설계합니다'] as const,
     subtitle:
       '키움센터·아동시설·학교·복지관에 맞춘 맞춤 프로그램. 공간·인원·목표에 따라 정규·원데이·방학 운영과 SPOMOVE를 제안합니다.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
   },
   heroCtas: {
     primary: {
-      label: '기관 운영 상담',
+      label: '기관 조건으로 운영안 요청하기',
       href: '#contact',
       trackLabel: 'dispatch-cta-program',
     },
     secondary: {
-      label: '프로그램 라인업 보기',
-      href: '#programs',
-      trackLabel: 'dispatch-cta-programs',
+      label: '실제 운영 사례 보기',
+      href: '#evidence',
+      trackLabel: 'dispatch-cta-evidence',
     },
   },
   trustMetrics: {
@@ -330,7 +370,7 @@ export const dispatchPage = {
     flow: [
       { label: '문의', detail: '웹 폼·전화·카카오로 파견 문의를 접수합니다.' },
       { label: '조건 확인', detail: '연령·인원·공간·기간을 맞춰 운영 가능 여부를 봅니다.' },
-      { label: '시안·시연', detail: '맞춤 운영안을 제안하고, 필요 시 시연·오리엔테이션을 진행합니다.' },
+      { label: '제안·시연', detail: '맞춤 운영안을 제안하고, 필요 시 시연·오리엔테이션을 진행합니다.' },
       { label: '운영', detail: '검증 강사 배정 후 첫 수업을 시작합니다.' },
     ] as const,
     checklist: {

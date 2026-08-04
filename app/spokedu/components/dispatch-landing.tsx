@@ -34,10 +34,11 @@ const reviewCardShell = `flex h-full flex-col border-l-[3px] border-l-teal-700 p
 
 const dispatchHeroChecks = ['공간·인원 확인', '운영 목적 설계', '강사·교구 투입'] as const;
 const dispatchAnchorItems = [
+  { href: '#fit', label: '조건 판단' },
+  { href: '#evidence', label: '운영 사례' },
   { href: '#comparison', label: '차별성' },
   { href: '#programs', label: '프로그램' },
   { href: '#process', label: '도입 절차' },
-  { href: '#faq', label: '자주 묻는 질문' },
 ] as const;
 const dispatchPromiseCards = [
   {
@@ -60,6 +61,29 @@ const dispatchDecisionChecks = [
   '특수 아동 포함 여부',
 ] as const;
 
+function DispatchDecisionFitSection() {
+  const section = dispatchPage.decisionFit;
+
+  return (
+    <div className={`${premiumPanel} space-y-5 px-5 py-5 sm:px-6 sm:py-6`}>
+      <LandingSectionHeading eyebrow={section.eyebrow} title={section.title} lead={section.lead} accent="teal" />
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+        {section.items.map((item) => (
+          <article
+            key={item.label}
+            className="flex h-full flex-col rounded-2xl border border-stone-200/80 bg-stone-50/80 p-4"
+          >
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-teal-800">{item.label}</p>
+            <h3 className={`mt-2 text-[15px] font-bold leading-snug text-slate-950 ${koreanLineBreak}`}>
+              {item.condition}
+            </h3>
+            <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.response}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
 function Section({
   children,
   className = '',
@@ -127,6 +151,10 @@ export default function DispatchLanding() {
           eyebrow={dispatchPage.trustMetrics.eyebrow}
           items={dispatchPage.trustMetrics.items}
         />
+      </Section>
+
+      <Section id="fit" className="scroll-mt-36">
+        <DispatchDecisionFitSection />
       </Section>
 
       <Section className={`${premiumPanelDark} px-5 py-6 sm:px-7 sm:py-7`}>
@@ -255,7 +283,7 @@ export default function DispatchLanding() {
         <DispatchProgramLineup />
       </Section>
 
-      <Section className="space-y-4">
+      <Section id="evidence" className="scroll-mt-36 space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <LandingSectionHeading
             eyebrow={dispatchPage.operationTypes.eyebrow}
@@ -355,3 +383,4 @@ export default function DispatchLanding() {
     </div>
   );
 }
+

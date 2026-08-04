@@ -103,12 +103,12 @@ export default function MasterQCPage() {
   }, [supabase]);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12 text-left">
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 md:p-12 text-left">
       <div className="max-w-6xl mx-auto">
-        <header className="mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">Spokedu QC</h1>
-            <p className="text-slate-500 font-bold mt-2">체육 교육의 기준점, 스포키듀 리포트 마스터 검수</p>
+        <header className="mb-6 sm:mb-8 flex flex-col md:flex-row justify-between items-stretch md:items-end gap-4 md:gap-6">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter italic uppercase">Spokedu QC</h1>
+            <p className="text-slate-500 text-sm sm:text-base font-bold mt-2">체육 교육의 기준점, 스포키듀 리포트 마스터 검수</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <SessionPhotosCleanupButton days={7} />
@@ -117,10 +117,10 @@ export default function MasterQCPage() {
         </header>
 
         {/* 탭 */}
-        <div className="flex gap-2 mb-8 bg-white p-1 rounded-2xl shadow-sm border">
+        <div className="flex gap-2 mb-6 sm:mb-8 bg-white p-1 rounded-2xl shadow-sm border">
           <button 
             onClick={() => setActiveTab('feedback')}
-            className={`flex-1 px-6 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'feedback' 
                 ? 'bg-slate-900 text-white' 
                 : 'text-slate-400 hover:text-slate-600'
@@ -130,7 +130,7 @@ export default function MasterQCPage() {
           </button>
           <button 
             onClick={() => setActiveTab('lessonplan')}
-            className={`flex-1 px-6 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            className={`flex-1 min-w-0 px-3 sm:px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               activeTab === 'lessonplan' 
                 ? 'bg-slate-900 text-white' 
                 : 'text-slate-400 hover:text-slate-600'
@@ -952,12 +952,12 @@ function FeedbackReviewTab({
       {!loading && !error && (
         <>
           <div className="mb-8 space-y-4">
-            <div className="flex gap-2 bg-white p-1 rounded-2xl shadow-sm border flex-wrap">
+            <div className="flex gap-2 bg-white p-1 rounded-2xl shadow-sm border overflow-x-auto no-scrollbar">
               {['all', 'empty', 'done', 'verified'].map(filter => (
                 <button 
                   key={filter}
                   onClick={() => setStatusFilter(filter as 'all' | 'empty' | 'done' | 'verified')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`shrink-0 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     statusFilter === filter ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
@@ -1115,33 +1115,49 @@ function FeedbackReviewTab({
       )}
 
       {selectedSessions.size > 0 && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-6 z-50">
-          <span className="font-bold">{selectedSessions.size}개 선택됨</span>
-          <span className="text-[11px] text-slate-300">승인 전 대상 카드(날짜/강사/중복 경고)를 확인하세요</span>
-          <button onClick={handleBulkApprove} disabled={bulkActionLoading} className="px-6 py-2 bg-blue-600 rounded-full font-black hover:bg-blue-500 cursor-pointer disabled:opacity-50">
-            {bulkActionLoading ? '처리 중...' : '일괄 승인'}
-          </button>
-          <button onClick={clearSelection} className="text-slate-400 hover:text-white cursor-pointer">취소</button>
+        <div className="fixed bottom-4 left-3 right-3 z-50 flex flex-col gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-2xl sm:bottom-8 sm:left-1/2 sm:right-auto sm:w-auto sm:-translate-x-1/2 sm:flex-row sm:items-center sm:gap-6 sm:rounded-full sm:px-8 sm:py-4">
+          <div className="min-w-0">
+            <span className="font-bold">{selectedSessions.size}개 선택됨</span>
+            <p className="mt-0.5 text-[11px] leading-snug text-slate-300 sm:mt-0 sm:inline sm:ml-3">
+              승인 전 대상 카드(날짜/강사/중복 경고)를 확인하세요
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={handleBulkApprove} disabled={bulkActionLoading} className="flex-1 sm:flex-none px-5 py-2.5 bg-blue-600 rounded-full font-black hover:bg-blue-500 cursor-pointer disabled:opacity-50">
+              {bulkActionLoading ? '처리 중...' : '일괄 승인'}
+            </button>
+            <button onClick={clearSelection} className="shrink-0 text-slate-400 hover:text-white cursor-pointer px-2 py-2">취소</button>
+          </div>
         </div>
       )}
 
       {/* 모달 */}
       {isModalOpen && selectedEvent && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[999] flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white w-full max-w-3xl rounded-[48px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="p-8 border-b flex justify-between items-start gap-4 shrink-0">
+        <div
+          className="fixed inset-0 z-[999] flex items-end justify-center bg-slate-900/40 p-0 backdrop-blur-md sm:items-center sm:p-4"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-[48px]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b p-4 sm:gap-4 sm:p-8">
               <div className="min-w-0 flex-1">
-                <h2 className="text-2xl font-black text-slate-900">{selectedEvent.title}</h2>
-                <div className="flex flex-wrap items-center gap-2 mt-2">
+                <h2 className="truncate text-lg font-black text-slate-900 sm:text-2xl" title={selectedEvent.title}>
+                  {selectedEvent.title}
+                </h2>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <button type="button" onClick={() => window.open(`/report/${selectedEvent.id}`, '_blank')} className="text-indigo-500 text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer">
                     <ExternalLink size={12} /> 미리보기
                   </button>
                 </div>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-slate-900 cursor-pointer shrink-0"><X size={32} /></button>
+              <button type="button" onClick={() => setIsModalOpen(false)} className="shrink-0 rounded-lg p-1 text-slate-300 hover:bg-slate-100 hover:text-slate-900 cursor-pointer" aria-label="닫기">
+                <X size={28} className="sm:h-8 sm:w-8" />
+              </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/30">
+            <div className="flex-1 space-y-6 overflow-y-auto bg-slate-50/30 p-4 sm:space-y-8 sm:p-8">
               <div className="flex gap-2">
                 <span className={`text-[9px] font-black px-3 py-1.5 rounded-full uppercase ${isCenterSessionType(selectedEvent.session_type) ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>
                   {getSessionTypeBadgeLabel(selectedEvent.session_type)}
@@ -1211,9 +1227,9 @@ function FeedbackReviewTab({
                 <div className="space-y-3">
                   <p className="text-[10px] font-black text-slate-400 uppercase">사진</p>
                   {photoUrls.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
                       {photoUrls.map((url, i) => (
-                        <div key={i} className="relative aspect-square rounded-[24px] overflow-hidden border-2 border-white shadow-sm hover:scale-105 cursor-zoom-in" onClick={() => setZoomedImg(url)}>
+                        <div key={i} className="relative aspect-square rounded-2xl sm:rounded-[24px] overflow-hidden border-2 border-white shadow-sm hover:scale-105 cursor-zoom-in" onClick={() => setZoomedImg(url)}>
                           <img src={url} className="w-full h-full object-cover" alt="수업 사진" />
                           <div className="absolute inset-0 bg-black/10 opacity-0 hover:opacity-100 flex items-center justify-center"><Maximize2 size={20} className="text-white" /></div>
                         </div>
@@ -1262,11 +1278,11 @@ function FeedbackReviewTab({
               })()}
             </div>
 
-            <div className="p-8 border-t flex gap-4 shrink-0">
-              <button onClick={() => handleSave('finished')} className="flex-1 py-5 bg-slate-50 border rounded-3xl font-bold text-rose-500 hover:bg-rose-50 cursor-pointer">
+            <div className="flex shrink-0 flex-col gap-2 border-t p-4 sm:flex-row sm:gap-4 sm:p-8">
+              <button onClick={() => handleSave('finished')} className="w-full py-3.5 sm:py-5 bg-slate-50 border rounded-2xl sm:rounded-3xl font-bold text-rose-500 hover:bg-rose-50 cursor-pointer sm:flex-1">
                 <RotateCcw size={18} className="inline mr-1" /> 수정 요청으로 저장
               </button>
-              <button onClick={() => handleSave('verified')} className="flex-[2] py-5 bg-slate-900 rounded-3xl font-black text-white shadow-xl hover:bg-indigo-600 cursor-pointer">
+              <button onClick={() => handleSave('verified')} className="w-full py-3.5 sm:py-5 bg-slate-900 rounded-2xl sm:rounded-3xl font-black text-white shadow-xl hover:bg-indigo-600 cursor-pointer sm:flex-[2]">
                 검수 승인(학부모 공유용) 저장
               </button>
             </div>
@@ -1386,8 +1402,8 @@ function LessonPlanTab({
       ) : (
         <div className="space-y-6">
           {Object.entries(groupedByTeacher).map(([teacher, teacherSessions]) => (
-            <div key={teacher} className="bg-white rounded-2xl p-6 border-2 border-slate-200 hover:border-blue-200 transition-all">
-              <h3 className="text-xl font-black text-slate-900 mb-4">{teacher} 선생님</h3>
+            <div key={teacher} className="bg-white rounded-2xl border-2 border-slate-200 p-4 transition-all hover:border-blue-200 sm:p-6">
+              <h3 className="mb-4 truncate text-lg font-black text-slate-900 sm:text-xl">{teacher} 선생님</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {teacherSessions.map((session: LessonPlanSession) => {
                   const hasLessonPlan = !!getLessonPlanContent(session);
@@ -1425,19 +1441,34 @@ function LessonPlanTab({
 
       {/* 수업안 보기 모달 */}
       {isModalOpen && selectedSession && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="px-8 py-6 border-b flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-black text-slate-900">{String(selectedSession.title ?? '')}</h2>
-                <p className="text-[10px] font-bold text-slate-400 mt-1">
+        <div
+          className="fixed inset-0 z-[9999] flex items-end justify-center bg-slate-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-[40px]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b px-4 py-4 sm:items-center sm:px-8 sm:py-6">
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-lg font-black text-slate-900 sm:text-xl" title={String(selectedSession.title ?? '')}>
+                  {String(selectedSession.title ?? '')}
+                </h2>
+                <p className="mt-1 text-[10px] font-bold text-slate-400">
                   {new Date((selectedSession.start_at as string) ?? 0).toLocaleDateString('ko-KR')} 수업안
                 </p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900 cursor-pointer"><X size={24} /></button>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="shrink-0 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+                aria-label="닫기"
+              >
+                <X size={24} />
+              </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30">
-              <div className="bg-white rounded-2xl p-6 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap min-h-[400px]">
+            <div className="flex-1 overflow-y-auto bg-slate-50/30 p-4 sm:p-8">
+              <div className="min-h-[240px] whitespace-pre-wrap break-words rounded-2xl bg-white p-4 text-sm leading-relaxed text-slate-700 sm:min-h-[400px] sm:p-6">
                 {getLessonPlanContent(selectedSession) ?? '내용이 없습니다.'}
               </div>
             </div>

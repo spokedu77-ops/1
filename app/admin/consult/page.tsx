@@ -351,11 +351,12 @@ export default function AdminConsultPage() {
 
         <div className="hidden overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-2xl shadow-black/40 md:block">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-800 text-left text-sm">
+            {/* min-w: 좁은 폭에서 이름 열이 1글자로 붕괴되지 않게 가로 스크롤 강제 */}
+            <table className="min-w-[960px] w-full divide-y divide-slate-800 text-left text-sm">
               <thead className="bg-slate-900/90">
                 <tr>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">접수일시</th>
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">이름</th>
+                  <th className="min-w-[7.5rem] whitespace-nowrap px-4 py-3 font-semibold text-slate-300">이름</th>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">연락처</th>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">자녀 나이</th>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">타입</th>
@@ -385,16 +386,20 @@ export default function AdminConsultPage() {
                       <td className="whitespace-nowrap px-4 py-3 text-slate-400">
                         {formatDate(row.created_at)}
                       </td>
-                      <td className="px-4 py-3 font-medium text-white">{row.parent_name}</td>
+                      <td className="min-w-[7.5rem] max-w-[14rem] px-4 py-3 font-medium text-white">
+                        <span className="block truncate" title={row.parent_name}>
+                          {row.parent_name}
+                        </span>
+                      </td>
                       <td className="whitespace-nowrap px-4 py-3 text-slate-300">{row.phone ?? '—'}</td>
-                      <td className="px-4 py-3 text-slate-300">{row.child_age ?? '—'}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-300">{row.child_age ?? '—'}</td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <span className="inline-flex rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-200">
                           {TYPE_LABEL[row.consult_type] ?? row.consult_type}
                         </span>
                       </td>
-                      <td className="max-w-md px-4 py-3 text-slate-300">
-                        <span className="line-clamp-3 whitespace-pre-wrap">{row.content}</span>
+                      <td className="min-w-[200px] max-w-md px-4 py-3 text-slate-300">
+                        <span className="line-clamp-3 whitespace-pre-wrap break-words">{row.content}</span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <button

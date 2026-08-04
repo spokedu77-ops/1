@@ -290,16 +290,16 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
             <div className="py-12 text-center text-slate-500">조건에 맞는 센터가 없습니다.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100">
+              <table className="min-w-[880px] w-full divide-y divide-slate-100">
                 <thead className="bg-white border-b border-slate-200 sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">센터명</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">지역</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">상태</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-36">메인 강사</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">담당자</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">시간표</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">삭제</th>
+                    <th className="min-w-[10rem] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">센터명</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">지역</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">상태</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-36">메인 강사</th>
+                    <th className="min-w-[8rem] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">담당자</th>
+                    <th className="min-w-[10rem] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">시간표</th>
+                    <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">삭제</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
@@ -310,11 +310,12 @@ export default function CentersClient({ initialCenters, embedded = false }: Cent
                         key={c.id}
                         className="border-l-2 border-l-transparent hover:bg-indigo-50/40 hover:border-l-indigo-500 transition-colors"
                       >
-                        <td className="px-4 py-3">
+                        <td className="min-w-[10rem] max-w-[16rem] px-4 py-3">
                           <div className="flex flex-col gap-0.5">
                             <Link
                               href={`/admin/centers/${c.id}`}
-                              className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
+                              className="truncate font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
+                              title={c.name}
                             >
                               {c.name}
                             </Link>

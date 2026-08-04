@@ -218,11 +218,11 @@ export function ContentAuditPanel({
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-left">
+          <table className="min-w-[920px] w-full border-collapse text-left">
             <thead className="bg-slate-50 text-[11px] font-black uppercase tracking-[0.08em] text-slate-500">
               <tr>
-                <th className="px-3 py-3">#</th>
-                <th className="px-3 py-3">수업</th>
+                <th className="whitespace-nowrap px-3 py-3">#</th>
+                <th className="min-w-[10rem] px-3 py-3">수업</th>
                 {CHECK_LABELS.map((check) => (
                   <th key={check.key} className="px-3 py-3">
                     {check.label}
@@ -250,9 +250,11 @@ export function ContentAuditPanel({
               ) : (
                 visible.map((item, index) => (
                   <tr key={item.curriculumId} className="border-t border-slate-100 hover:bg-slate-50/80">
-                    <td className="px-3 py-3 text-[12px] font-black text-slate-400">E{index + 1}</td>
-                    <td className="px-3 py-3">
-                      <p className="max-w-[280px] text-[13px] font-black text-slate-950">{item.title}</p>
+                    <td className="whitespace-nowrap px-3 py-3 text-[12px] font-black text-slate-400">E{index + 1}</td>
+                    <td className="min-w-[10rem] max-w-[280px] px-3 py-3">
+                      <p className="truncate text-[13px] font-black text-slate-950" title={item.title}>
+                        {item.title}
+                      </p>
                       <p className="mt-0.5 text-[11px] font-bold text-slate-400">
                         #{item.curriculumId}
                         {item.isHot ? ' · HOT' : ''}
@@ -274,14 +276,14 @@ export function ContentAuditPanel({
                         {item.pass ? 'pass' : 'fail'} · {item.score}/{CHECK_TOTAL}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-[11px] font-bold text-slate-500">
+                    <td className="min-w-[7rem] max-w-[14rem] px-3 py-3 text-[11px] font-bold text-slate-500">
                       {item.missing.length
                         ? item.missing
                             .map((key) => CHECK_LABELS.find((check) => check.key === key)?.label ?? key)
                             .join(', ')
                         : '—'}
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="whitespace-nowrap px-3 py-3">
                       <button
                         type="button"
                         onClick={() => onOpenProgram(item.curriculumId)}

@@ -192,6 +192,24 @@ describe('spokedu site IA', () => {
     expect(byId.custom?.mediaKey).not.toBe('trackDispatch');
   });
 
+  it('frames dispatch as an institution operation decision flow', () => {
+    expect(dispatchPage.intent.decisionQuestion).toContain('기관 조건');
+    expect(dispatchPage.intent.primaryAudience).toBe('기관 담당자');
+    expect(dispatchPage.intent.primaryCtaIntent).toContain('운영안');
+    expect(dispatchPage.intent.mustProve).toEqual([
+      '공간 대응',
+      '인원 대응',
+      '연령 대응',
+      '운영 방식',
+      '실제 사례',
+    ]);
+    expect(dispatchPage.heroCtas.primary.label).toContain('기관 조건');
+    expect(dispatchPage.heroCtas.secondary.href).toBe('#evidence');
+    expect(dispatchPage.decisionFit.items.map((item) => item.label)).toEqual(['공간', '인원', '연령', '운영']);
+    expect(dispatchPage.examples.items.length).toBeGreaterThanOrEqual(2);
+    expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual(['문의', '조건 확인', '제안·시연', '운영']);
+  });
+
   it('keeps SPOMOVE activity media aligned with task contracts', () => {
     const slots = [
       spomoveProgramPage.hero,
@@ -235,7 +253,7 @@ describe('spokedu dispatch process one-pager', () => {
     expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual([
       '문의',
       '조건 확인',
-      '시안·시연',
+      '제안·시연',
       '운영',
     ]);
     expect(dispatchPage.processOnePager.checklist.items.length).toBeGreaterThanOrEqual(4);
