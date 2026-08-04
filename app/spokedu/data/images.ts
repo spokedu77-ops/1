@@ -219,7 +219,7 @@ export const SPOKEDU_IMAGES = {
       'program-spomove',
       'program-spomove.jpg',
       'SPOMOVE 빔 기반 에듀테크 놀이체육 수업',
-      { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home', 'programs', 'records'] },
+      { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home', 'programs', 'dispatch', 'records'] },
     ),
     paps: defineImage(
       'programs',

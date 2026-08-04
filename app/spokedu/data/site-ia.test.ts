@@ -146,6 +146,43 @@ describe('spokedu site IA', () => {
       expect(media.asset.assetStatus, `${slot.mediaKey} should not be placeholder-copy`).not.toBe('placeholder-copy');
     }
   });
+
+  it('keeps dispatch lineup media aligned with program contracts', () => {
+    const items = dispatchPage.programLineup.items;
+    expect(items.map((item) => item.mediaKey)).toEqual([
+      'dispatchSpomove',
+      'dispatchMonthlySports',
+      'dispatchSpecialPe',
+      'dispatchMiniOlympics',
+      'dispatchSportsBooth',
+      'dispatchCustomDesign',
+    ]);
+
+    for (const item of items) {
+      expect('image' in item, `${item.id} should not keep a raw image path`).toBe(false);
+      expect('imageAlt' in item, `${item.id} should not keep a raw image alt`).toBe(false);
+      const media = HOME_MEDIA[item.mediaKey];
+      const requirement = item.mediaRequirement;
+      if (media.type === 'visual') {
+        expect(requirement.allowVisualFallback, `${item.id} visual fallback must be intentional`).toBe(true);
+        expect(media.asset, `${item.id} visual fallback must not hide a mismatched photo`).toBeUndefined();
+        continue;
+      }
+
+      expect(media.asset, `${item.id} must expose its backing image asset`).toBeDefined();
+      if (!media.asset) continue;
+      expect(getSpokeduImageUsageErrors(media.asset, requirement), item.id).toEqual([]);
+    }
+  });
+
+  it('does not reintroduce known dispatch lineup image mismatches', () => {
+    const byId = Object.fromEntries(dispatchPage.programLineup.items.map((item) => [item.id, item]));
+    expect(byId['monthly-sports']?.mediaKey).not.toBe('programOneday');
+    expect(byId['mini-olympics']?.mediaKey).not.toBe('programCamp');
+    expect(byId['slow-sports']?.mediaKey).not.toBe('proofCenter');
+    expect(byId['sports-booth']?.mediaKey).not.toBe('programOneday');
+    expect(byId.custom?.mediaKey).not.toBe('trackDispatch');
+  });
 });
 
 describe('spokedu dispatch process one-pager', () => {

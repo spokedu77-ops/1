@@ -5,7 +5,6 @@ import { HOME_MEDIA } from '../data/home-media';
 import { dispatchPage } from '../data/dispatch-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import { cardInteractive, koreanLineBreak } from '../lib/ui-classes';
-import { ExternalPhoto } from './external-photo';
 import { LandingSectionHeading } from './landing-section-heading';
 import { MediaPanel } from './visual';
 
@@ -31,8 +30,6 @@ export function DispatchProgramLineup() {
           const {
             id,
             name,
-            image,
-            imageAlt,
             audience,
             subtitle,
             paragraphs,
@@ -50,21 +47,11 @@ export function DispatchProgramLineup() {
           const row = (
             <div className={premiumRow}>
               <div className="relative h-[9.5rem] w-full shrink-0 overflow-hidden bg-stone-100 sm:h-auto sm:min-h-[8.5rem] sm:w-[32%] lg:w-[30%]">
-                {image ? (
-                  <ExternalPhoto
-                    src={image}
-                    alt={imageAlt ?? name}
-                    className="absolute inset-0 h-full w-full"
-                    fit="cover"
-                    priority={index === 0}
-                  />
-                ) : mediaKey ? (
-                  <MediaPanel
-                    media={HOME_MEDIA[mediaKey]}
-                    className="absolute inset-0 h-full w-full rounded-none border-0"
-                    photoPriority={index === 0}
-                  />
-                ) : null}
+                <MediaPanel
+                  media={HOME_MEDIA[mediaKey]}
+                  className="absolute inset-0 h-full w-full rounded-none border-0"
+                  photoPriority={index === 0 && HOME_MEDIA[mediaKey].type === 'image'}
+                />
               </div>
               <div className="flex min-w-0 flex-1 flex-col border-t border-stone-100 p-3.5 sm:border-l sm:border-t-0 sm:p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-teal-800">{audience}</p>

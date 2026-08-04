@@ -1,5 +1,14 @@
 import type { HomeMediaKey } from './home-media';
+import type { SpokeduImageKind, SpokeduImageProgram } from './images';
 import { SPOKEDU_BASE_PATH } from './site';
+
+type DispatchMediaRequirement = {
+  page: 'dispatch';
+  program: SpokeduImageProgram;
+  kind: SpokeduImageKind;
+  /** 정확한 실물 이미지가 없어서 의도적으로 다이어그램/구조 카드로 대체하는 슬롯 */
+  allowVisualFallback?: boolean;
+};
 
 export type DispatchExampleItem = {
   venue: string;
@@ -26,15 +35,14 @@ export type DispatchCompareRow = {
 
 export type DispatchLineupItem = {
   id: string;
-  image?: string;
-  imageAlt?: string;
   audience: string;
   name: string;
   subtitle: string;
   paragraphs: readonly string[];
   tags: readonly string[];
   example: string;
-  mediaKey?: HomeMediaKey;
+  mediaKey: HomeMediaKey;
+  mediaRequirement: DispatchMediaRequirement;
   href?: string;
   trackLabel?: string;
 };
@@ -180,8 +188,6 @@ export const dispatchPage = {
     items: [
       {
         id: 'spomove',
-        image: '/images/spokedu/programs/program-spomove.jpg',
-        imageAlt: '스포무브 시지각 브레인 놀이체육',
         audience: '초중고 방과후 · 지역아동센터 · 기관 클래스',
         name: '스포무브',
         subtitle: '시지각 브레인 놀이체육',
@@ -192,12 +198,15 @@ export const dispatchPage = {
         example: '예시: 반응 인지, 이중 과제 등',
         href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
         trackLabel: 'dispatch-lineup-spomove',
-        mediaKey: 'programSpomove' as HomeMediaKey,
+        mediaKey: 'dispatchSpomove' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'dispatch',
+          program: 'spomove',
+          kind: 'field-photo',
+        } satisfies DispatchMediaRequirement,
       },
       {
         id: 'monthly-sports',
-        image: '/images/spokedu/programs/program-monthly-newsports.png',
-        imageAlt: '월간 스포츠 매달 바뀌는 종목·뉴스포츠 체험',
         audience: '초중고 방과후 · 지역아동센터 · 기관 클래스',
         name: '월간 스포츠',
         subtitle: '매달 바뀌는 종목·뉴스포츠 체험',
@@ -208,12 +217,16 @@ export const dispatchPage = {
         example: '예시: 플로어볼, 플래그풋볼 등',
         href: `${SPOKEDU_BASE_PATH}/monthly`,
         trackLabel: 'dispatch-lineup-monthly',
-        mediaKey: 'programOneday' as HomeMediaKey,
+        mediaKey: 'dispatchMonthlySports' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'dispatch',
+          program: 'monthly-newsports',
+          kind: 'diagram',
+          allowVisualFallback: true,
+        } satisfies DispatchMediaRequirement,
       },
       {
         id: 'slow-sports',
-        image: '/images/spokedu/dispatch/dispatch-institution-class.jpg',
-        imageAlt: '특수체육 — 속도·수준에 맞춘 기관 수업',
         audience: '복지관 · 발달센터 · 통합반 · 기관 클래스',
         name: '특수체육',
         subtitle: '슬로우 스포츠 · 속도·수준에 맞춘 기관 수업',
@@ -224,12 +237,16 @@ export const dispatchPage = {
         example: '예시: 단계별 이동운동, 규칙 단순화 게임 등',
         href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
         trackLabel: 'dispatch-lineup-special',
-        mediaKey: 'proofCenter' as HomeMediaKey,
+        mediaKey: 'dispatchSpecialPe' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'dispatch',
+          program: 'dispatch',
+          kind: 'diagram',
+          allowVisualFallback: true,
+        } satisfies DispatchMediaRequirement,
       },
       {
         id: 'mini-olympics',
-        image: '/images/spokedu/programs/program-camp.jpg',
-        imageAlt: '미니 올림픽 팀 활동 스페셜 클래스',
         audience: '유치원 · 학교 · 복지관 · 기관 클래스',
         name: '미니 올림픽',
         subtitle: '협동과 참여로 완성하는 스포츠 스페셜 클래스',
@@ -238,12 +255,16 @@ export const dispatchPage = {
         ],
         tags: ['팀 기반 활동', '협동·응원 중심', '스페셜 클래스'],
         example: '예시: 스포츠 경기, 줄다리기 등',
-        mediaKey: 'programCamp' as HomeMediaKey,
+        mediaKey: 'dispatchMiniOlympics' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'dispatch',
+          program: 'oneday',
+          kind: 'diagram',
+          allowVisualFallback: true,
+        } satisfies DispatchMediaRequirement,
       },
       {
         id: 'sports-booth',
-        image: '/images/spokedu/dispatch/dispatch-oneday-event.jpg',
-        imageAlt: '체험형 스포츠 부스 현장 체험',
         audience: '학교 · 축제 · 박람회 · 기관 행사',
         name: '체험형 스포츠 부스',
         subtitle: '다양한 종목을 경험하는 스포츠 체험 부스',
@@ -254,7 +275,13 @@ export const dispatchPage = {
         example: '예시: 자이언트 체스, 에듀테크 등',
         href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
         trackLabel: 'dispatch-lineup-oneday',
-        mediaKey: 'programOneday' as HomeMediaKey,
+        mediaKey: 'dispatchSportsBooth' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'dispatch',
+          program: 'oneday',
+          kind: 'diagram',
+          allowVisualFallback: true,
+        } satisfies DispatchMediaRequirement,
       },
       {
         id: 'custom',
@@ -266,7 +293,13 @@ export const dispatchPage = {
         ],
         tags: ['맞춤형 설계', '유연한 구성 운영', '현장 중심 제안'],
         example: '예시: 자유로운 테마 융복합 등',
-        mediaKey: 'trackDispatch' as HomeMediaKey,
+        mediaKey: 'dispatchCustomDesign' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'dispatch',
+          program: 'dispatch',
+          kind: 'diagram',
+          allowVisualFallback: true,
+        } satisfies DispatchMediaRequirement,
       },
     ] satisfies DispatchLineupItem[],
   },
