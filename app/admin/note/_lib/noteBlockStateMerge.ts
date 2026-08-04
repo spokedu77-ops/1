@@ -154,7 +154,7 @@ export function mergeReconciledBlocks(
     const storeContent = fromStore.content as Record<string, unknown>;
     const serverText = typeof serverContent?.text === 'string' ? serverContent.text : '';
     const storeText = typeof storeContent.text === 'string' ? storeContent.text : '';
-    const storeAhead = storeText.length > serverText.length;
+    const storeAhead = storeText.length > serverText.length && storeText.startsWith(serverText);
     const isActive = block.id === activeId;
 
     if (!storeAhead && !isActive) return nextBlock;
