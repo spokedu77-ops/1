@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { CaseProofCard } from './case-proof-card';
 import { LandingFinalCta } from './landing-final-cta';
@@ -8,8 +7,7 @@ import { LandingHero } from './landing-hero';
 import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
 import { getCaseBySlug } from '../data/cases';
-import { HOME_MEDIA } from '../data/home-media';
-import { SPOKEDU_IMAGES } from '../data/images';
+import { HOME_MEDIA, type HomeMediaKey } from '../data/home-media';
 import { programDetailBlocks } from '../data/program-details';
 import { spomoveProgramPage } from '../data/spomove-program-page';
 import {
@@ -29,6 +27,84 @@ const PAD_CELLS = [
   { name: 'BLUE', ko: '파랑', hex: '#3B82F6' },
   { name: 'YELLOW', ko: '노랑', hex: '#EAB308' },
 ] as const;
+
+export const spomoveActivityVisuals: Partial<
+  Record<
+    HomeMediaKey,
+    {
+      eyebrow: string;
+      title: string;
+      cues: readonly string[];
+      answer: string;
+      tone: string;
+    }
+  >
+> = {
+  spomoveSimonScreen: {
+    eyebrow: 'SIMON',
+    title: '위치 충돌',
+    cues: ['자극 위치', '정답 색', '반응 억제', '패드 선택'],
+    answer: '보이는 위치가 아니라 규칙에 맞는 색 패드로 이동',
+    tone: 'from-red-500 via-violet-700 to-slate-950',
+  },
+  spomoveFlankerScreen: {
+    eyebrow: 'FLANKER',
+    title: '방해 자극 분리',
+    cues: ['주변 화살표', '가운데 목표', '선택 주의', '정확도'],
+    answer: '주변 정보는 버리고 가운데 목표 방향만 선택',
+    tone: 'from-blue-500 via-indigo-700 to-slate-950',
+  },
+  spomoveStroopScreen: {
+    eyebrow: 'STROOP',
+    title: '의미와 색 충돌',
+    cues: ['글자 의미', '표시 색', '규칙 전환', '반응 통제'],
+    answer: '읽히는 단어가 아니라 현재 규칙의 색 정보를 선택',
+    tone: 'from-emerald-500 via-teal-700 to-slate-950',
+  },
+  spomoveDiveScreen: {
+    eyebrow: 'DIVE',
+    title: '가상 공간 반응',
+    cues: ['색 게이트', '장애물', '점프·회피', '전신 반응'],
+    answer: '화면 속 신호를 보고 4색 패드와 몸 동작으로 수행',
+    tone: 'from-cyan-500 via-blue-800 to-slate-950',
+  },
+};
+
+function SpomoveActivityVisualPanel({ mediaKey }: { mediaKey: HomeMediaKey }) {
+  const visual = spomoveActivityVisuals[mediaKey];
+  if (!visual) return null;
+
+  return (
+    <div
+      className={`absolute inset-0 flex h-full w-full flex-col justify-between overflow-hidden bg-gradient-to-br ${visual.tone} p-4 text-white`}
+      data-spomove-activity-visual={mediaKey}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.08]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
+          backgroundSize: '26px 26px',
+        }}
+      />
+      <div className="relative">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/65">{visual.eyebrow}</p>
+        <p className={`mt-1 text-lg font-black leading-tight ${koreanText}`}>{visual.title}</p>
+      </div>
+      <div className="relative grid grid-cols-2 gap-2">
+        {visual.cues.map((cue, index) => (
+          <div key={cue} className="rounded-xl border border-white/20 bg-white/12 px-2.5 py-2 backdrop-blur-sm">
+            <span className="block text-[10px] font-black text-white/55">{String(index + 1).padStart(2, '0')}</span>
+            <span className={`mt-0.5 block text-[12px] font-bold leading-tight ${koreanText}`}>{cue}</span>
+          </div>
+        ))}
+      </div>
+      <p className={`relative text-[11px] font-medium leading-relaxed text-white/72 ${koreanText}`}>
+        {visual.answer}
+      </p>
+    </div>
+  );
+}
 
 /**
  * SPOMOVE 프로그램 페이지
@@ -129,12 +205,10 @@ export default function SpomoveProgramLanding() {
           <div className="mx-auto w-full max-w-[18rem] lg:mx-0 lg:max-w-none">
             <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-[#F5F7FB] p-2.5 shadow-sm shadow-slate-900/5">
               <div className="relative aspect-square overflow-hidden rounded-[1.15rem] bg-slate-200">
-                <Image
-                  src={SPOKEDU_IMAGES.brand.spomat.src}
-                  alt={SPOKEDU_IMAGES.brand.spomat.alt}
-                  fill
-                  sizes="(max-width: 1024px) 18rem, 20rem"
-                  className="object-cover"
+                <MediaPanel
+                  media={HOME_MEDIA[page.padSystem.mediaKey]}
+                  className="absolute inset-0 h-full w-full rounded-none border-0"
+                  objectFit="contain"
                 />
               </div>
             </div>
@@ -192,21 +266,30 @@ export default function SpomoveProgramLanding() {
           </div>
         </div>
         <ul className="grid gap-3 sm:grid-cols-2">
-          {page.activities.items.slice(0, 4).map((item, index) => (
+          {page.activities.items.map((item, index) => {
+            const media = HOME_MEDIA[item.mediaKey];
+            const isStructuredVisual = media.type === 'visual';
+
+            return (
             <li key={item.title} className={`overflow-hidden ${landingCardFrame}`}>
               <div className="relative aspect-[16/10]">
-                <MediaPanel
-                  media={HOME_MEDIA[item.mediaKey]}
-                  className="absolute inset-0 h-full w-full rounded-none border-0"
-                  photoPriority={index === 0}
-                />
+                {isStructuredVisual ? (
+                  <SpomoveActivityVisualPanel mediaKey={item.mediaKey} />
+                ) : (
+                  <MediaPanel
+                    media={media}
+                    className="absolute inset-0 h-full w-full rounded-none border-0"
+                    photoPriority={index === 0}
+                  />
+                )}
               </div>
               <div className={landingCardPanelPad}>
                 <h3 className={`font-bold text-slate-950 ${koreanText}`}>{item.title}</h3>
                 <p className={`mt-1 text-sm text-slate-600 ${koreanText}`}>{item.description}</p>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </section>
 

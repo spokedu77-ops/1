@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { contactPageContent } from '../contact/contact-page-data';
 import { dispatchEvidenceVisuals } from '../components/dispatch-program-lineup';
+import { spomoveActivityVisuals } from '../components/spomove-program-landing';
 import { curriculumPage } from './curriculum-page';
 import { HOME_MEDIA } from './home-media';
 import { dispatchPage } from './dispatch-page';
@@ -15,6 +16,11 @@ import {
   SPOKEDU_IMAGES,
 } from './images';
 import { HOME_PROGRAM_SYSTEM_HREF, siteNav, SPOKEDU_BASE_PATH } from './site';
+import { spomoveProgramPage } from './spomove-program-page';
+
+function allowsVisualFallback(requirement: object): boolean {
+  return 'allowVisualFallback' in requirement && requirement.allowVisualFallback === true;
+}
 
 describe('spokedu site IA', () => {
   it('exposes primary siteNav entries in expected order', () => {
@@ -122,7 +128,7 @@ describe('spokedu site IA', () => {
       const media = HOME_MEDIA[slot.mediaKey];
       const requirement = slot.mediaRequirement;
       if (media.type === 'visual') {
-        expect(requirement.allowVisualFallback, `${slot.title} visual fallback must be intentional`).toBe(true);
+        expect(allowsVisualFallback(requirement), `${slot.title} visual fallback must be intentional`).toBe(true);
         expect(media.asset, `${slot.title} visual fallback must not hide a mismatched photo`).toBeUndefined();
         continue;
       }
@@ -165,7 +171,7 @@ describe('spokedu site IA', () => {
       const media = HOME_MEDIA[item.mediaKey];
       const requirement = item.mediaRequirement;
       if (media.type === 'visual') {
-        expect(requirement.allowVisualFallback, `${item.id} visual fallback must be intentional`).toBe(true);
+        expect(allowsVisualFallback(requirement), `${item.id} visual fallback must be intentional`).toBe(true);
         expect(media.asset, `${item.id} visual fallback must not hide a mismatched photo`).toBeUndefined();
         expect(dispatchEvidenceVisuals[item.id], `${item.id} must render a structured evidence panel`).toBeDefined();
         continue;
@@ -184,6 +190,43 @@ describe('spokedu site IA', () => {
     expect(byId['slow-sports']?.mediaKey).not.toBe('proofCenter');
     expect(byId['sports-booth']?.mediaKey).not.toBe('programOneday');
     expect(byId.custom?.mediaKey).not.toBe('trackDispatch');
+  });
+
+  it('keeps SPOMOVE activity media aligned with task contracts', () => {
+    const slots = [
+      spomoveProgramPage.hero,
+      spomoveProgramPage.padSystem,
+      ...spomoveProgramPage.activities.items,
+    ];
+    const activityMediaKeys = spomoveProgramPage.activities.items.map((item) => item.mediaKey);
+
+    expect(activityMediaKeys).toContain('spomoveRhythmField');
+    expect(activityMediaKeys).toContain('spomoveSimonScreen');
+    expect(activityMediaKeys).toContain('spomoveFlankerScreen');
+    expect(activityMediaKeys).toContain('spomoveStroopScreen');
+    expect(activityMediaKeys).toContain('spomoveColorReactionField');
+    expect(activityMediaKeys).not.toContain('proofCenter');
+    expect(activityMediaKeys).not.toContain('proofClass');
+    expect(activityMediaKeys).not.toContain('trackDispatch');
+
+    for (const slot of slots) {
+      const media = HOME_MEDIA[slot.mediaKey];
+      const requirement = slot.mediaRequirement;
+
+      if (media.type === 'visual') {
+        expect(allowsVisualFallback(requirement), `${slot.mediaKey} visual fallback must be intentional`).toBe(true);
+        expect(requirement.kind, `${slot.mediaKey} visual fallback should only stand in for screens or diagrams`).toMatch(
+          /^(screen|diagram)$/,
+        );
+        expect(media.asset, `${slot.mediaKey} visual fallback must not hide a mismatched photo`).toBeUndefined();
+        expect(spomoveActivityVisuals[slot.mediaKey], `${slot.mediaKey} must render a structured task panel`).toBeDefined();
+        continue;
+      }
+
+      expect(media.asset, `${slot.mediaKey} must expose its backing image asset`).toBeDefined();
+      if (!media.asset) continue;
+      expect(getSpokeduImageUsageErrors(media.asset, requirement), slot.mediaKey).toEqual([]);
+    }
   });
 });
 

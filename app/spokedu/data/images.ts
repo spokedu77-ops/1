@@ -107,7 +107,7 @@ export const SPOKEDU_IMAGES = {
       'spomat',
       'spomat.png',
       '스포매트 — SPOMOVE 4색 반응 패드 (초록·빨강·파랑·노랑)',
-      { kind: 'product', programs: ['spomove'], allowedPages: ['home', 'programs', 'curriculum'] },
+      { kind: 'product', programs: ['spomove'], allowedPages: ['home', 'programs', 'programs/spomove', 'curriculum'] },
     ),
   },
   home: {
@@ -219,7 +219,43 @@ export const SPOKEDU_IMAGES = {
       'program-spomove',
       'program-spomove.jpg',
       'SPOMOVE 빔 기반 에듀테크 놀이체육 수업',
-      { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home', 'programs', 'dispatch', 'records'] },
+      { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home', 'programs', 'programs/spomove', 'dispatch', 'records'] },
+    ),
+    spomoveHeroField: defineImage(
+      'programs',
+      'program-spomove-hero-field',
+      'program-spomove.jpg',
+      'SPOMOVE 대표 현장 — 아이들이 4색 패드 위에서 화면 신호에 맞춰 움직이는 장면',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['home', 'programs', 'programs/spomove', 'dispatch'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-01.webp',
+      },
+    ),
+    spomoveRhythmField: defineImage(
+      'programs',
+      'program-spomove-rhythm-field',
+      'program-spomove.jpg',
+      'SPOMOVE DIVE·리듬 현장 — 화면과 4색 패드를 함께 보며 움직이는 수업 장면',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-05.webp',
+      },
+    ),
+    spomoveColorReactionField: defineImage(
+      'programs',
+      'program-spomove-color-reaction-field',
+      'program-spomove.jpg',
+      'SPOMOVE 컬러 반응 현장 — 화면 색 신호와 4색 패드를 연결해 움직이는 장면',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/spe/spe-06.webp',
+      },
     ),
     paps: defineImage(
       'programs',

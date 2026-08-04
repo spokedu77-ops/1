@@ -1,12 +1,31 @@
 import type { HomeMediaKey } from './home-media';
+import type { SpokeduImageKind, SpokeduImageProgram } from './images';
 import { SPOKEDU_BASE_PATH } from './site';
+
+type SpomoveMediaRequirement = {
+  page: 'programs/spomove';
+  program: SpokeduImageProgram;
+  kind: SpokeduImageKind;
+  allowVisualFallback?: boolean;
+};
+
+const spomoveMediaRequirement = (
+  kind: SpokeduImageKind,
+  options?: { allowVisualFallback?: boolean },
+): SpomoveMediaRequirement => ({
+  page: 'programs/spomove',
+  program: 'spomove',
+  kind,
+  ...(options?.allowVisualFallback ? { allowVisualFallback: true } : {}),
+});
 
 export const spomoveProgramPage = {
   hero: {
     kicker: '프로그램',
     lines: ['보고 판단하고 움직이는', '에듀테크 체육'] as const,
     subtitle: '빔 신호를 읽고 4색 패드 위에서 반응하는 SPOMOVE. 기관 정규수업·행사·통합반에 맞춰 운영합니다.',
-    mediaKey: 'programSpomove' as HomeMediaKey,
+    mediaKey: 'spomoveHeroField' as HomeMediaKey,
+    mediaRequirement: spomoveMediaRequirement('field-photo'),
   },
   heroCta: {
     label: '도입 문의',
@@ -22,6 +41,8 @@ export const spomoveProgramPage = {
     eyebrow: '핵심 구조',
     title: '4색 패드가 움직임의 기준이 됩니다',
     body: '화면 신호가 발 위치(빨강·노랑·초록·파랑)로 이어집니다. 이 한 장이 SPOMOVE의 중심입니다.',
+    mediaKey: 'spomovePadSystem' as HomeMediaKey,
+    mediaRequirement: spomoveMediaRequirement('product'),
     points: [
       { title: '인지', body: '색·위치·방향 변화를 읽습니다.' },
       { title: '선택', body: '규칙에 맞는 반응을 고릅니다.' },
@@ -118,22 +139,38 @@ export const spomoveProgramPage = {
       {
         title: '리듬챌린지',
         description: '화면 신호에 맞춰 리듬과 타이밍을 유지하며 움직입니다.',
-        mediaKey: 'proofCenter' as HomeMediaKey,
+        mediaKey: 'spomoveRhythmField' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('field-photo'),
       },
       {
         title: '사이먼 효과 활동',
         description: '자극이 나타난 위치가 아니라 정해진 규칙에 따라 반응합니다.',
-        mediaKey: 'programSpomove' as HomeMediaKey,
+        mediaKey: 'spomoveSimonScreen' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('screen', { allowVisualFallback: true }),
       },
       {
         title: '플랭커 활동',
         description: '주변 자극을 무시하고 중심 자극에 집중해 움직입니다.',
-        mediaKey: 'proofClass' as HomeMediaKey,
+        mediaKey: 'spomoveFlankerScreen' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('screen', { allowVisualFallback: true }),
+      },
+      {
+        title: '스트룹 과제 활동',
+        description: '글자 의미와 색 정보가 충돌하는 상황에서 규칙을 선택합니다.',
+        mediaKey: 'spomoveStroopScreen' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('screen', { allowVisualFallback: true }),
       },
       {
         title: '컬러 반응 점프',
         description: '색과 방향 신호를 보고 빠르게 선택해 이동합니다.',
-        mediaKey: 'trackDispatch' as HomeMediaKey,
+        mediaKey: 'spomoveColorReactionField' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('field-photo'),
+      },
+      {
+        title: 'DIVE 몰입 활동',
+        description: '가상 공간의 게임형 장애물을 보고 전신으로 반응합니다.',
+        mediaKey: 'spomoveDiveScreen' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('screen', { allowVisualFallback: true }),
       },
     ],
   },
