@@ -84,4 +84,23 @@ describe('sanitizeNoteBlockTree', () => {
     const roots = sanitized.filter((item) => !item.parent_block_id);
     expect(roots.map((item) => item.order_index)).toEqual([0, 1, 2]);
   });
+
+  it('sanitizes root siblings per document_id so transfer projections do not compact across docs', () => {
+    type DocBlock = Block & { document_id: string };
+    const withDoc = (
+      id: string,
+      document_id: string,
+      order_index: number,
+    ): DocBlock => ({ ...block(id, 'text', null, order_index), document_id });
+
+    const sanitized = sanitizeNoteBlockTree([
+      withDoc('source-a', 'doc-1', 0),
+      withDoc('source-b', 'doc-1', 1),
+      withDoc('incoming', 'doc-2', 0),
+      withDoc('target-old', 'doc-2', 1),
+    ]);
+
+    expect(sanitized.find((item) => item.id === 'source-b')?.order_index).toBe(1);
+    expect(sanitized.find((item) => item.id === 'target-old')?.order_index).toBe(1);
+  });
 });

@@ -22,6 +22,7 @@ import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteBlock } from '../_lib/types';
 import { markPendingBlockDeletes } from '../_lib/noteReconcileIdle';
+import { removeStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
 
@@ -29,9 +30,9 @@ type DeleteBlockHandler = (
   block: NoteBlock,
   focusPrevious?: boolean,
   skipDeleteUndo?: boolean,
-) => Promise<void>;
+) => Promise<boolean>;
 
-type RestoreBlockHandler = (block: NoteBlock) => Promise<void>;
+type RestoreBlockHandler = (block: NoteBlock) => Promise<boolean>;
 
 function historyCommandFromSnapshots(input: {
   next: NoteBlock[];
@@ -87,8 +88,8 @@ export function useNoteBlockHistory(options: {
     restoreBlockRef.current = handlers.handleRestoreBlockFromTrash;
   }, []);
 
-  const applyNoteHistoryEntry = useCallback(async (entry: NoteHistoryEntry | null) => {
-    if (!entry) return;
+  const applyNoteHistoryEntry = useCallback(async (entry: NoteHistoryEntry | null): Promise<boolean> => {
+    if (!entry) return false;
     if (entry.kind === 'block-transaction') {
       const current = mergeBlocksWithStoreContent(blocksRef.current);
       const plan = buildHistoryTransactionPlan(current, entry.after);
@@ -123,48 +124,82 @@ export function useNoteBlockHistory(options: {
           removedBlocks,
           affectedIds: [...plan.scopeIds],
         }));
+        return true;
       } catch (e) {
         devLogger.error('[Note] history block-transaction', e);
         setError(e instanceof Error ? e.message : '실행 취소에 실패했습니다.');
+        return false;
       }
-      return;
     }
     if (entry.kind === 'restore-blocks') {
       const current = mergeBlocksWithStoreContent(blocksRef.current);
-      const next = applyRestoreBlockSnapshots(current, entry.snapshots);
+      const activeDocumentId = current[0]?.document_id
+        ?? useNoteBlockStore.getState().activeDocumentId
+        ?? null;
+      const restoreIds = entry.snapshots.map((snapshot) => snapshot.id);
+      const isLeave = Boolean(
+        activeDocumentId
+        && entry.snapshots.some(
+          (snapshot) => snapshot.document_id !== activeDocumentId,
+        ),
+      );
+      const next = isLeave
+        ? current.filter((block) => !restoreIds.includes(block.id))
+        : applyRestoreBlockSnapshots(current, entry.snapshots);
+      if (isLeave) {
+        if (activeDocumentId) markPendingBlockDeletes(activeDocumentId, restoreIds);
+      } else if (activeDocumentId) {
+        removeStructuralExcludeIds(activeDocumentId, restoreIds);
+      }
       try {
+        const leaveCompanionPatches = isLeave ? (entry.companionPatches ?? []) : [];
         await documentEngine.applyStructureCommand(historyCommandFromSnapshots({
           next,
-          patches: buildRestoreBlocksFieldPatches(entry.snapshots),
-          affectedIds: entry.snapshots.map((snapshot) => snapshot.id),
+          patches: [
+            ...buildRestoreBlocksFieldPatches(entry.snapshots),
+            ...leaveCompanionPatches,
+          ],
+          affectedIds: [
+            ...restoreIds,
+            ...leaveCompanionPatches.map((patch) => patch.id),
+          ],
         }));
-        const active = useNoteBlockStore.getState().activeEditor;
-        if (active && entry.snapshots.some((snapshot) => snapshot.id === active.blockId)) {
-          const restore = active;
-          useNoteBlockStore.getState().setActiveEditor(null);
-          requestAnimationFrame(() => {
-            useNoteBlockStore.getState().setActiveEditor(restore);
-          });
+        if (!isLeave) {
+          const active = useNoteBlockStore.getState().activeEditor;
+          if (active && entry.snapshots.some((snapshot) => snapshot.id === active.blockId)) {
+            const restore = active;
+            useNoteBlockStore.getState().setActiveEditor(null);
+            requestAnimationFrame(() => {
+              useNoteBlockStore.getState().setActiveEditor(restore);
+            });
+          }
         }
+        return true;
       } catch (e) {
+        if (activeDocumentId) {
+          if (isLeave) removeStructuralExcludeIds(activeDocumentId, restoreIds);
+          else markPendingBlockDeletes(activeDocumentId, restoreIds);
+        }
         devLogger.error('[Note] history restore-blocks', e);
         setError(e instanceof Error ? e.message : '실행 취소 실패');
+        return false;
       }
-      return;
     }
     if (entry.kind === 'delete-block') {
       const live = blocksRef.current.find((b) => b.id === entry.snapshot.id);
       if (live && deleteBlockRef.current) {
-        await deleteBlockRef.current(live, false, true);
+        return deleteBlockRef.current(live, false, true);
       }
-      return;
+      return false;
     }
     if (entry.kind === 'create-block') {
       setPendingDeleteUndo(null);
       if (restoreBlockRef.current) {
-        await restoreBlockRef.current(entry.snapshot);
+        return restoreBlockRef.current(entry.snapshot);
       }
+      return false;
     }
+    return false;
   }, [blocksRef, documentEngine, setError, setPendingDeleteUndo]);
 
   const runNoteUndo = useCallback(async () => {
@@ -173,7 +208,11 @@ export function useNoteBlockHistory(options: {
     if (!entry) return;
     clearContentUndoSession();
     const inverse = buildNoteHistoryInverse(entry, mergeBlocksWithStoreContent(blocksRef.current));
-    await applyNoteHistoryEntry(entry);
+    const ok = await applyNoteHistoryEntry(entry);
+    if (!ok) {
+      noteUndo.pushUndoNoClear(entry);
+      return;
+    }
     if (inverse) noteUndo.pushRedo(inverse);
   }, [applyNoteHistoryEntry, blocksRef, clearContentUndoSession, noteUndo]);
 
@@ -183,7 +222,11 @@ export function useNoteBlockHistory(options: {
     if (!entry) return;
     clearContentUndoSession();
     const inverse = buildNoteHistoryInverse(entry, mergeBlocksWithStoreContent(blocksRef.current));
-    await applyNoteHistoryEntry(entry);
+    const ok = await applyNoteHistoryEntry(entry);
+    if (!ok) {
+      noteUndo.pushRedo(entry);
+      return;
+    }
     if (inverse) noteUndo.pushUndoNoClear(inverse);
   }, [applyNoteHistoryEntry, blocksRef, clearContentUndoSession, noteUndo]);
 

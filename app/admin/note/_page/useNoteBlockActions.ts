@@ -269,10 +269,10 @@ export function useNoteBlockActions(options: {
     const prevBlocks = blocksRef.current;
     const command = buildMoveBlockCommand(prevBlocks, moving.id, plan);
     if (command.affectedIds.length === 0) return;
-    recordBlockCommandUndo(prevBlocks, command);
     void (async () => {
       try {
         const nextBlocks = await documentEngine.applyStructureCommand(command);
+        recordBlockCommandUndo(prevBlocks, command);
         setBlocks(nextBlocks);
         onAfterBlocksChanged?.(nextBlocks);
         syncFocusedToggleFromBlock(moving.id);
@@ -280,7 +280,7 @@ export function useNoteBlockActions(options: {
       } catch (e) {
         devLogger.error('[Note] indentBlock', e);
         setBlocks(prevBlocks);
-        setError(e instanceof Error ? e.message : '釉붾줉 ?대룞 ????ㅽ뙣');
+        setError(e instanceof Error ? e.message : '블록 이동 저장 실패');
       }
     })();
   }, [
@@ -366,7 +366,6 @@ export function useNoteBlockActions(options: {
       ?? storeSnapshot?.content
       ?? latestBlock.content
       ?? {}) as Record<string, unknown>;
-    recordBlockUndo([block.id]);
     let nextContent = options?.contentOverride
       ? { ...options.contentOverride }
       : buildContentForTypeChange(sourceContent, latestBlock.type, type);
@@ -425,6 +424,7 @@ export function useNoteBlockActions(options: {
         createdBlocks: [],
         removedBlocks: [],
       });
+      recordBlockUndo([block.id]);
       setBlocks(nextBlocks);
       onAfterBlocksChanged?.(nextBlocks);
       bumpNoteReconcileIdle(selectedId);

@@ -117,3 +117,32 @@ export function buildBlockForestTransferCommand(
     nextBlocks: blocks.filter((block) => !movedSet.has(block.id)),
   };
 }
+
+/** transfer undo inverse(redo leave)용 — patch 적용된 moved forest 스냅샷 */
+export function buildTransferLeaveSnapshots(
+  blocks: NoteBlock[],
+  movedIds: ReadonlyArray<string>,
+  patches: ReadonlyArray<NoteBlockFieldPatch>,
+): NoteBlock[] {
+  const movedSet = new Set(movedIds);
+  const patchById = new Map(patches.map((patch) => [patch.id, patch]));
+  return blocks
+    .filter((block) => movedSet.has(block.id))
+    .map((block) => {
+      const patch = patchById.get(block.id);
+      const cloned = JSON.parse(JSON.stringify(block)) as NoteBlock;
+      if (!patch) return cloned;
+      return {
+        ...cloned,
+        ...(patch.document_id !== undefined ? { document_id: patch.document_id } : {}),
+        ...(patch.parent_block_id !== undefined
+          ? { parent_block_id: patch.parent_block_id }
+          : {}),
+        ...(typeof patch.order_index === 'number' ? { order_index: patch.order_index } : {}),
+        ...(patch.type !== undefined ? { type: patch.type } : {}),
+        ...(patch.content !== undefined
+          ? { content: patch.content as NoteBlock['content'] }
+          : {}),
+      };
+    });
+}

@@ -3,7 +3,19 @@ import type { NoteBlock } from '../_lib/types';
 
 export type NoteHistoryEntry =
   | { kind: 'block-transaction'; before: NoteBlock[]; after: NoteBlock[] }
-  | { kind: 'restore-blocks'; snapshots: NoteBlock[] }
+  | {
+    kind: 'restore-blocks';
+    snapshots: NoteBlock[];
+    /** transfer 등 — live store에 없는 leave 쪽 스냅샷(redo용). 있으면 inverse에 사용 */
+    inverseSnapshots?: NoteBlock[];
+    /** leave redo 시 타깃 companion order shift (moved id 제외) */
+    companionPatches?: Array<{
+      id: string;
+      order_index?: number;
+      parent_block_id?: string | null;
+      document_id?: string;
+    }>;
+  }
   | { kind: 'delete-block'; snapshot: NoteBlock }
   | { kind: 'create-block'; snapshot: NoteBlock };
 
@@ -46,12 +58,27 @@ export function buildNoteHistoryInverse(
   if (entry.kind === 'create-block') {
     return { kind: 'delete-block', snapshot: cloneBlock(entry.snapshot) };
   }
-  const ids = new Set(entry.snapshots.map((snapshot) => snapshot.id));
-  const current = blocks
-    .filter((block) => ids.has(block.id))
-    .map(cloneBlock);
-  if (current.length === 0) return null;
-  return { kind: 'restore-blocks', snapshots: current };
+  if (entry.kind === 'restore-blocks') {
+    if (entry.inverseSnapshots && entry.inverseSnapshots.length > 0) {
+      return {
+        kind: 'restore-blocks',
+        snapshots: entry.inverseSnapshots.map(cloneBlock),
+        inverseSnapshots: entry.snapshots.map(cloneBlock),
+        ...(entry.companionPatches && entry.companionPatches.length > 0
+          ? {
+            companionPatches: entry.companionPatches.map((patch) => ({ ...patch })),
+          }
+          : {}),
+      };
+    }
+    const ids = new Set(entry.snapshots.map((snapshot) => snapshot.id));
+    const current = blocks
+      .filter((block) => ids.has(block.id))
+      .map(cloneBlock);
+    if (current.length === 0) return null;
+    return { kind: 'restore-blocks', snapshots: current };
+  }
+  return null;
 }
 
 export function useNoteBlockUndo() {
@@ -68,12 +95,31 @@ export function useNoteBlockUndo() {
     redoStackRef.current = [];
   }, []);
 
-  const pushRestoreBlocksUndo = useCallback((blocks: NoteBlock[], ids: string[]) => {
+  const pushRestoreBlocksUndo = useCallback((
+    blocks: NoteBlock[],
+    ids: string[],
+    inverseSnapshots?: NoteBlock[],
+    companionPatches?: Array<{
+      id: string;
+      order_index?: number;
+      parent_block_id?: string | null;
+      document_id?: string;
+    }>,
+  ) => {
     const snapshots = blocks
       .filter((block) => ids.includes(block.id))
       .map(cloneBlock);
     if (snapshots.length === 0) return;
-    pushUndo({ kind: 'restore-blocks', snapshots });
+    pushUndo({
+      kind: 'restore-blocks',
+      snapshots,
+      ...(inverseSnapshots && inverseSnapshots.length > 0
+        ? { inverseSnapshots: inverseSnapshots.map(cloneBlock) }
+        : {}),
+      ...(companionPatches && companionPatches.length > 0
+        ? { companionPatches: companionPatches.map((patch) => ({ ...patch })) }
+        : {}),
+    });
   }, [pushUndo]);
 
   const pushBlockTransactionUndo = useCallback((

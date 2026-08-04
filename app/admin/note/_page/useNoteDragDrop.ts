@@ -26,6 +26,7 @@ import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import {
   buildBlockForestTransferCommand,
+  buildTransferLeaveSnapshots,
   fetchDocumentRootBlocksForPlacement,
 } from '../_lib/noteBlockTransfer';
 import { markPendingBlockDeletes } from '../_lib/noteReconcileIdle';
@@ -285,13 +286,13 @@ export function useNoteDragDrop(options: {
     },
   ): Promise<boolean> => {
     if (command.affectedIds.length === 0) return false;
-    noteUndo.pushBlockTransactionUndo(
-      prevBlocks,
-      command.nextBlocks,
-      command.affectedIds,
-    );
     try {
       const nextBlocks = await documentEngine.applyStructureCommand(command);
+      noteUndo.pushBlockTransactionUndo(
+        prevBlocks,
+        command.nextBlocks,
+        command.affectedIds,
+      );
       setBlocks(nextBlocks);
       onAfterBlocksChanged?.(nextBlocks);
       options.afterPersist?.();
@@ -320,10 +321,6 @@ export function useNoteDragDrop(options: {
       afterPersist?: () => void;
     },
   ): Promise<boolean> => {
-    noteUndo.pushRestoreBlocksUndo(
-      mergeBlocksWithStoreContent(prevBlocks),
-      command.movedIds,
-    );
     if (selectedId) {
       markPendingBlockDeletes(selectedId, command.movedIds);
     }
@@ -345,6 +342,23 @@ export function useNoteDragDrop(options: {
         createdBlocks: [],
         removedBlocks: [],
       });
+      const movedSet = new Set(command.movedIds);
+      noteUndo.pushRestoreBlocksUndo(
+        mergeBlocksWithStoreContent(prevBlocks),
+        command.movedIds,
+        buildTransferLeaveSnapshots(prevBlocks, command.movedIds, command.patches),
+        command.patches
+          .filter((patch) => !movedSet.has(patch.id))
+          .map((patch) => ({
+            id: patch.id,
+            ...(typeof patch.order_index === 'number'
+              ? { order_index: patch.order_index }
+              : {}),
+            ...(patch.parent_block_id !== undefined
+              ? { parent_block_id: patch.parent_block_id }
+              : {}),
+          })),
+      );
       setBlocks(nextBlocks);
       onAfterBlocksChanged?.(nextBlocks);
       options.afterPersist?.();

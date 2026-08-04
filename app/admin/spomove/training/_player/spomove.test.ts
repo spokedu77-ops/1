@@ -163,6 +163,27 @@ describe('getAssetRequirement', () => {
 
 // ── 3. Readiness (evaluateAssetReadiness) ────────────────────────────────────
 
+describe('modified quadrant body actions', () => {
+  test('stage 2 three-cell body actions stay anatomically possible', () => {
+    for (let i = 0; i < 800; i++) {
+      const sig = generateSignal('basic', 8, Object.values(COLORS_META));
+      expect(sig?.type).toBe('think_quad_body');
+      const cells = (sig?.content as { cells?: { bodyActionId?: string }[] } | undefined)?.cells ?? [];
+      if (cells.length !== 3) continue;
+
+      const actionIds = cells.map((cell) => cell.bodyActionId);
+      if (actionIds.includes('bothHands')) {
+        expect(actionIds).toEqual(expect.arrayContaining(['rightFoot', 'leftFoot']));
+        expect(actionIds).not.toContain('bothFeet');
+      }
+      if (actionIds.includes('bothFeet')) {
+        expect(actionIds).toEqual(expect.arrayContaining(['rightHand', 'leftHand']));
+        expect(actionIds).not.toContain('bothHands');
+      }
+    }
+  });
+});
+
 describe('evaluateAssetReadiness', () => {
   // 6. 1개 필요, 0개 → insufficient
   test('6. level 5: 1개 필요, 0개 → insufficient', () => {
@@ -773,7 +794,7 @@ describe('training result summary', () => {
   test('resolveReactTrainUiLevel: 화면 카탈로그 엔진 id + 구 id 폴백', async () => {
     const { resolveReactTrainUiLevel, MODES } = await import('./constants');
     const ids = MODES.reactTrain.levels.map((lv) => lv.id);
-    expect(ids).toEqual([1, 2, 3, 6, 8, 9, 10, 12]);
+    expect(ids).toEqual([1, 2, 3, 6, 8, 9, 10, 12, 13]);
     expect(MODES.reactTrain.levels.map((lv) => lv.enName)).toEqual([
       'Rush',
       'FLOW',

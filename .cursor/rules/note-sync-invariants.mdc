@@ -35,7 +35,7 @@ UI → Intent → NoteDocumentPipeline
 | topology | same-doc patch_fields | known 필수; exclude 대상 아님 |
 | identityLeave | soft_delete / purge | 로컬 목록에 id 없어도 push; 미ack create 위 defer만 |
 | relocation | document_id patch | identityLeave와 동일 drain 계약 |
-| mixed | leave+topology 등 복합 | known 규칙은 포함 kind 합집합; **inactive drain은 pure leave만** |
+| mixed | leave+topology 등 복합 | known 규칙은 포함 kind 합집합; **C5 transfer companion**(타 문서 order-only)은 source known 불요; **inactive drain은 pure leave만** |
 
 `activeDocumentId`는 **store Project**에만 쓴다. inactive 문서도 **pure** identityLeave·relocation outbound drain은 막지 않는다 (mixed/content는 deferred).
 
@@ -73,8 +73,8 @@ open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Autho
 | non-oplog open replace | `applyOpenServerSnapshot` |
 | tree sanitize densify | `sanitizeNoteBlockTree` (중복 order만) |
 | coordinator → UI Project | `onBlocksUpdated` → `dispatchSnapshotIfChanged` → `syncSnapshot` |
-| realtime/idle pull | `pipeline.schedulePull` → `coordinator.schedulePull` |
-| soft-delete | `persistSoftDelete` → emergency draft clear + leave exclude; IDB merge가 삭제 id 재삽입 금지; `deleteMeta`에 id가 있으면 **intent delete**; 살아 있는 요청 id skip 시 `soft_delete_not_applied`; leave duplicate materialize; **restore/undo는 `removeStructuralExcludeIds`가 ack grace까지 해제** |
+| realtime/idle pull | `pipeline.schedulePull` → `coordinator.schedulePull` → **`shouldPublishPullAfterRebase`** (await 중 LocalApply면 stale publish 금지) |
+| soft-delete | `persistSoftDelete` → emergency draft clear + leave exclude; IDB merge가 삭제 id 재삽입 금지; `deleteMeta`에 id가 있으면 **intent delete**; 살아 있는 요청 id skip 시 `soft_delete_not_applied`; leave duplicate materialize; **trash restore·`restore-blocks` undo는 apply 전 `removeStructuralExcludeIds`(grace 포함)**; push ack grace는 **outbound leave만** (`collectLeaveIdsFromPushItems`, reclaim `document_id===stream` 제외); **구조 undo 기록은 persist 성공 후**; history apply 실패 시 스택 복구·inverse 금지 |
 
 reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 호출한다. **새 passive 경로를 추가할 때 seal을 빼면 계약 위반이다. hook에 Authority/Integrity 분기를 새로 넣지 않는다.
 
@@ -86,7 +86,7 @@ reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 
 2. **`blocksRef.current =` 직접 쓰기 금지** — store 구독 미러만
 3. **`setBlocks`는 pipeline `replaceBlocks` 경유** (useNoteBlockData)
 4. **create는 항상 client UUID** (`newNoteBlockClientId`)
-5. **outbound pending 중 pull 금지** (coordinator)
+5. **outbound pending 중 pull 금지** (coordinator). **rebase await 뒤**에도 outbound/topology·**store 구조 fingerprint 변경**(transfer LocalApply 등)이면 `onBlocksUpdated` publish 금지. skip 시 store로 remote를 **덮어쓰지 말고** `mergeReconciledBlocks(local structure + rebased remote)`. pull은 `isPulling` 직렬화. push ack·leader state는 `document_id===stream`만 유지
 6. **새 merge/union/regression guard 추가 금지** — reducer `syncSnapshot`/`applyRemoteOps`로 흡수
 7. **legacy HTTP PATCH 새 분기 추가 금지** — op-log만 (블록 휴지통 restore HTTP는 예외·신규 추가 금지)
 8. **문서 open은 `noteDocumentOpen.ts`만** — hook 레벨 merge/load 분기 금지
@@ -94,7 +94,7 @@ reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 
 10. **Content LocalApply** — `applyBlockContentChange` → `scheduleContentPatch` → `dispatch(patchContent)`. `store.patchContent` 직호출 금지
 11. **exclude Project** — 활성 집합 투영은 store write. pipeline dispatch에서 재필터하지 않음. coordinator는 transport merge에만 leave 투영
 12. **Project** — coordinator `onBlocksUpdated`는 `dispatchSnapshotIfChanged`→`syncSnapshot`만. skip no-op·store 직쓰기 금지
-13. **Pull** — `pipeline.schedulePull` → `coordinator.schedulePull` (idle/realtime)
+13. **Pull** — `pipeline.schedulePull` → `coordinator.schedulePull` (idle/realtime); publish 게이트는 `shouldPublishPullAfterRebase`
 
 ## 파일 역할
 

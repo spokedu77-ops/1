@@ -7,6 +7,8 @@ export type SanitizableNoteBlock = {
   parent_block_id?: string | null;
   order_index: number;
   content?: Record<string, unknown> | null;
+  /** 있으면 document별로 분리 sanitize — transfer projection이 root sibling으로 섞이지 않음 */
+  document_id?: string | null;
 };
 
 function hasDuplicateOrdersInGroup<T extends SanitizableNoteBlock>(siblings: T[]): boolean {
@@ -56,8 +58,30 @@ function nearestAllowedParentId<T extends SanitizableNoteBlock>(
 
 export function sanitizeNoteBlockTree<T extends SanitizableNoteBlock>(blocks: T[]): T[] {
   const deduped = dedupeNoteBlocksById(blocks);
-  const byId = new Map(deduped.map((block) => [block.id, block]));
-  const reparented = deduped.map((block) => {
+  const hasDocumentBoundary = deduped.some(
+    (block) => typeof block.document_id === 'string' && block.document_id.length > 0,
+  );
+  if (!hasDocumentBoundary) {
+    return sanitizeNoteBlockTreeWithinDocument(deduped);
+  }
+
+  const byDocument = new Map<string, T[]>();
+  for (const block of deduped) {
+    const key = block.document_id ?? '__none__';
+    const group = byDocument.get(key) ?? [];
+    group.push(block);
+    byDocument.set(key, group);
+  }
+  const ordered: T[] = [];
+  for (const group of byDocument.values()) {
+    ordered.push(...sanitizeNoteBlockTreeWithinDocument(group));
+  }
+  return ordered;
+}
+
+function sanitizeNoteBlockTreeWithinDocument<T extends SanitizableNoteBlock>(blocks: T[]): T[] {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const reparented = blocks.map((block) => {
     const requestedParentId = block.parent_block_id ?? null;
     const parent = requestedParentId ? byId.get(requestedParentId) : null;
     const validParent =

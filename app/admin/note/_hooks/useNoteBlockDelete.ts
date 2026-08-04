@@ -136,7 +136,6 @@ export function useNoteBlockDelete(options: {
       logLabel,
     } = params;
 
-    if (!skipDeleteUndo) recordBlockCommandUndo(prevBlocks, command);
     const toggleCleanupPatches = buildToggleLegacyCleanupPatches(
       command.removedBlocks,
       command.nextBlocks,
@@ -166,17 +165,20 @@ export function useNoteBlockDelete(options: {
 
     try {
       nextBlocks = await documentEngine.applyStructureCommand(commandWithCleanup);
+      if (!skipDeleteUndo) recordBlockCommandUndo(prevBlocks, command);
       await finalizeBlockDelete({
         skipDeleteUndo,
         deletedBlock,
       });
       focusToggleTitleIfChildForestEmptied(prevBlocks, nextBlocks, command.removedBlocks);
       onAfterBlocksRemoved?.(command.removedBlocks, nextBlocks);
+      return true;
     } catch (e) {
       devLogger.error(logLabel, e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
       if (documentId) removeStructuralExcludeIds(documentId, command.affectedIds);
       setBlocks(prevBlocks);
+      return false;
     }
   }, [
     documentEngine,
@@ -192,7 +194,6 @@ export function useNoteBlockDelete(options: {
     prevBlocks: NoteBlock[],
     command: MergeWithPreviousCommand,
   ) => {
-    recordBlockCommandUndo(prevBlocks, command);
     const removedIds = deletedIdsForBlockCommand(command);
     const documentId = command.removedBlocks[0]?.document_id
       ?? command.nextBlocks.find((block) => block.document_id)?.document_id
@@ -211,6 +212,7 @@ export function useNoteBlockDelete(options: {
 
     try {
       const nextBlocks = await documentEngine.applyStructureCommand(command);
+      recordBlockCommandUndo(prevBlocks, command);
       setBlocks(nextBlocks);
     } catch (e) {
       devLogger.error('[Note] mergeWithPrevious', e);
@@ -233,14 +235,14 @@ export function useNoteBlockDelete(options: {
     block: NoteBlock,
     focusPrevious = false,
     skipDeleteUndo = false,
-  ) => {
+  ): Promise<boolean> => {
     const storeBlocks = useNoteBlockStore.getState().getBlocksArray()
       .filter((item) => item.document_id === block.document_id);
     const prevBlocks = mergeBlocksWithStoreContent(
       storeBlocks.length > 0 ? storeBlocks : blocksRef.current,
     );
     const command = buildDeleteBlockForestCommand(prevBlocks, [block.id]);
-    if (command.affectedIds.length === 0) return;
+    if (command.affectedIds.length === 0) return false;
     if (focusPrevious) {
       const siblings = filterSiblingBlocks(prevBlocks, block);
       const sibIdx = siblings.findIndex((b) => b.id === block.id);
@@ -248,7 +250,7 @@ export function useNoteBlockDelete(options: {
       if (nextFocus) focusBlockEditor(nextFocus);
     }
 
-    await runDeleteForestCommand({
+    return runDeleteForestCommand({
       prevBlocks,
       command,
       skipDeleteUndo,
@@ -316,7 +318,7 @@ export function useNoteBlockDelete(options: {
     runMergeWithPreviousCommand,
   ]);
 
-  const handleRestoreBlockFromTrash = useCallback(async (block: NoteBlock) => {
+  const handleRestoreBlockFromTrash = useCallback(async (block: NoteBlock): Promise<boolean> => {
     try {
       setRestoringBlockId(block.id);
       await documentEngine.flushPersistQueue();
@@ -334,9 +336,11 @@ export function useNoteBlockDelete(options: {
       });
       focusBlockEditor(restoredBlock.id);
       triggerSave();
+      return true;
     } catch (e) {
       devLogger.error('[Note] restoreBlockFromTrash', e);
       setError(e instanceof Error ? e.message : '블록 복구 실패');
+      return false;
     } finally {
       setRestoringBlockId(null);
     }

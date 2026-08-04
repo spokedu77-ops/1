@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback, useMemo, useRef, type MouseEventHandler } from 'react';
 import { ADMIN_NAMES } from '@/app/admin/classes-shared/constants/admins';
+import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { copyTextToClipboardSync } from '@/app/lib/client/copyToClipboard';
@@ -150,7 +151,6 @@ export default function MasterQCPage() {
           <LessonPlanTab
             coaches={qcCoaches}
             excludedAdminCoachIds={excludedAdminCoachIds}
-            supabase={supabase}
           />
         )}
       </div>
@@ -204,6 +204,29 @@ function addDaysToYmd(ymd: string, deltaDays: number): string {
 }
 
 /** 피드백 검수 탭: 카드·필터용 empty | done | verified (fetchListData보다 위에 두어 클로저 순서 명확) */
+function formatKstSessionDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
+function hasExtraTeacher(session: Pick<Session, 'memo' | 'students_text'>): boolean {
+  for (const raw of [session.memo, session.students_text]) {
+    if (!raw?.includes('EXTRA_TEACHERS:')) continue;
+    const { extraTeachers } = parseExtraTeachers(raw);
+    if (extraTeachers.some((t) => String(t.id || '').trim())) return true;
+  }
+  return false;
+}
+
 function getSessionStatusForFeedbackReview(session: Session): 'empty' | 'done' | 'verified' {
   return getSessionDisplayStatus({
     ...session,
@@ -524,7 +547,7 @@ function FeedbackReviewTab({
       if (data) {
         let rows = data as unknown as Session[];
         if (feedbackScope === 'center' && excludedAdminCoachIds.length > 0) {
-          rows = rows.filter((s) => !excludedAdminCoachIds.includes(s.created_by));
+          rows = rows.filter((s) => !excludedAdminCoachIds.includes(s.created_by) || hasExtraTeacher(s));
         }
 
         // 검수완료 카드의 링크 복사: iPad/iOS는 클릭 직후 await fetch가 끼면 clipboard가 막히는 경우가 많아,
@@ -757,9 +780,8 @@ function FeedbackReviewTab({
         center_document_names: alignCenterDocumentNamesWithUrls(urls, fields.center_document_names),
       };
     } else if (!isCenter) {
-      const { center_document_names: _cd, ...rest } = fields as FeedbackFields & {
-        center_document_names?: string[];
-      };
+      const rest = { ...fields };
+      delete rest.center_document_names;
       fields = rest;
     }
     setFeedbackFields(fields);
@@ -991,7 +1013,9 @@ function FeedbackReviewTab({
               rawStatus !== 'cancelled';
             const isVerified = sessionStatus === 'verified';
             const isDone = sessionStatus === 'done';
-            const time = new Date(s.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const time = feedbackScope === 'center'
+              ? formatKstSessionDateTime(s.start_at)
+              : new Date(s.start_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
             const coachName = s.users?.name || coaches.find(c => c.id === s.created_by)?.name || '강사';
 
             const cardBadge = (() => {
@@ -1264,11 +1288,9 @@ function getLessonPlanContent(session: LessonPlanSession): string | null {
 function LessonPlanTab({
   coaches,
   excludedAdminCoachIds,
-  supabase,
 }: {
   coaches: Coach[];
   excludedAdminCoachIds: string[];
-  supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
 }) {
   const [lessonPlanScope, setLessonPlanScope] = useState<'private' | 'center'>('private');
   const [sessions, setSessions] = useState<LessonPlanSession[]>([]);

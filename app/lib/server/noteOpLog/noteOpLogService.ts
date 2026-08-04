@@ -131,6 +131,23 @@ async function normalizeRpcTransactionPayload(
   deleteIds: string[],
 ): Promise<{ updates: TransactionLikePatch[]; creates: TransactionLikeCreate[] }> {
   const rows = await fetchActiveDocumentBlocks(supabase, documentId);
+  const knownIds = new Set(rows.map((row) => row.id));
+  const companionIds = [
+    ...new Set(
+      updates
+        .map((patch) => patch.id)
+        .filter((id) => Boolean(id) && !knownIds.has(id)),
+    ),
+  ];
+  if (companionIds.length > 0) {
+    const { data, error } = await supabase
+      .from('note_blocks')
+      .select(BLOCK_SELECT)
+      .in('id', companionIds)
+      .is('deleted_at', null);
+    if (error) throw new Error(error.message);
+    rows.push(...((data ?? []) as OpSanitizableBlock[]));
+  }
   return normalizeOpTransactionPayloadForInvariants({
     existingBlocks: rows,
     updates,
@@ -305,12 +322,45 @@ export function filterTransactionPatchesByExistingIds<T extends { id: string }>(
   return patches.filter((patch) => existingIds.has(patch.id));
 }
 
-export function filterTransactionPatchesByDocument<T extends { id: string; document_id?: string }>(
+export function filterTransactionPatchesByDocument<T extends {
+  id: string;
+  document_id?: string;
+  order_index?: number;
+}>(
   patches: T[],
   blockDocumentById: ReadonlyMap<string, string>,
   documentId: string,
 ): T[] {
-  return patches.filter((patch) => blockDocumentById.get(patch.id) === documentId);
+  // 이 stream에서 나가는 transfer의 타깃 document_id 집합
+  const outboundTargets = new Set<string>();
+  for (const patch of patches) {
+    const current = blockDocumentById.get(patch.id);
+    if (
+      current === documentId
+      && typeof patch.document_id === 'string'
+      && patch.document_id !== documentId
+    ) {
+      outboundTargets.add(patch.document_id);
+    }
+  }
+
+  return patches.filter((patch) => {
+    const current = blockDocumentById.get(patch.id);
+    // 현재 이 stream 소유
+    if (current === documentId) return true;
+    // reclaim: 다른 문서 → 이 stream으로 document_id 복귀
+    if (patch.document_id === documentId) return true;
+    // C5 companion: transfer 타깃의 기존 root order shift (document_id 필드 없음)
+    if (
+      current
+      && outboundTargets.has(current)
+      && patch.document_id === undefined
+      && typeof patch.order_index === 'number'
+    ) {
+      return true;
+    }
+    return false;
+  });
 }
 
 async function filterExistingTransactionPatches<T extends { id: string; document_id?: string }>(

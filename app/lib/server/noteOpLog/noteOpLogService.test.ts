@@ -58,6 +58,65 @@ describe('noteOpLogService transaction patch filtering', () => {
     ]);
   });
 
+  it('keeps C5 transfer companion order shifts on the outbound target', () => {
+    const patches = [
+      { id: 'moving', document_id: 'doc-2', parent_block_id: null, order_index: 0 },
+      { id: 'target-root', order_index: 1 },
+      { id: 'unrelated', order_index: 0 },
+    ];
+    const ownerById = new Map([
+      ['moving', 'doc-1'],
+      ['target-root', 'doc-2'],
+      ['unrelated', 'doc-3'],
+    ]);
+
+    expect(filterTransactionPatchesByDocument(patches, ownerById, 'doc-1')).toEqual([
+      { id: 'moving', document_id: 'doc-2', parent_block_id: null, order_index: 0 },
+      { id: 'target-root', order_index: 1 },
+    ]);
+  });
+
+  it('keeps reclaim patches that return blocks to this stream document_id', () => {
+    const patches = [
+      { id: 'returning', document_id: 'doc-1', parent_block_id: null, order_index: 0 },
+      { id: 'still-other', order_index: 2 },
+    ];
+    const ownerById = new Map([
+      ['returning', 'doc-2'],
+      ['still-other', 'doc-2'],
+    ]);
+
+    expect(filterTransactionPatchesByDocument(patches, ownerById, 'doc-1')).toEqual([
+      { id: 'returning', document_id: 'doc-1', parent_block_id: null, order_index: 0 },
+    ]);
+  });
+
+  it('does not densify root orders across document boundaries during transfer projection', () => {
+    const result = normalizeOpTransactionPayloadForInvariants({
+      documentId: 'doc-1',
+      existingBlocks: [
+        block('source-a', { document_id: 'doc-1', order_index: 0 }),
+        block('source-b', { document_id: 'doc-1', order_index: 1 }),
+        block('target-root', { document_id: 'doc-2', order_index: 0 }),
+      ],
+      updates: [
+        { id: 'source-a', document_id: 'doc-2', parent_block_id: null, order_index: 0 },
+        { id: 'target-root', order_index: 1 },
+      ],
+      creates: [],
+      deleteIds: [],
+    });
+
+    expect(result.updates.find((patch) => patch.id === 'source-a')).toMatchObject({
+      document_id: 'doc-2',
+      order_index: 0,
+    });
+    expect(result.updates.find((patch) => patch.id === 'target-root')).toMatchObject({
+      order_index: 1,
+    });
+    expect(result.updates.find((patch) => patch.id === 'source-b')).toBeUndefined();
+  });
+
   it('normalizes op-log transaction payloads before RPC persistence', () => {
     const result = normalizeOpTransactionPayloadForInvariants({
       documentId: 'doc-1',

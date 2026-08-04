@@ -311,12 +311,12 @@ export function useNoteBlockInsert(options: {
       persistFieldPatches?: boolean;
     },
   ): Promise<boolean> => {
-    recordBlockTransactionUndo(previousBlocks, command.nextBlocks, command.affectedIds);
     focusBlockEditor(options.focusBlockId, options.focusPart);
     try {
       const nextBlocks = options.persistFieldPatches === false
         ? command.nextBlocks
         : await documentEngine.applyStructureCommand(command);
+      recordBlockTransactionUndo(previousBlocks, command.nextBlocks, command.affectedIds);
       setBlocks(nextBlocks);
       return true;
     } catch (e) {

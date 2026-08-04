@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildKnownBlockIdsForPush,
   classifyPushItem,
+  collectLeaveIdsFromPushItems,
   isPureIdentityLeaveOrRelocationPush,
   newNoteBlockClientId,
   outboundHasIdentityLeaveOrRelocation,
@@ -33,6 +34,29 @@ describe('noteSyncGuards', () => {
     expect(outboundHasUnpublishedTopology([topology])).toBe(true);
     expect(outboundHasUnpublishedTopology([relocation])).toBe(true);
     expect(outboundHasUnpublishedTopology([softDelete])).toBe(false);
+  });
+
+  it('collectLeaveIdsFromPushItems keeps outbound leave but skips reclaim to this stream', () => {
+    const outboundLeave = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [
+        { id: 'moving', document_id: 'doc-2', parent_block_id: null, order_index: 0 },
+        { id: 'target-root', order_index: 1 },
+      ],
+      deleteIds: [],
+    })[0]!;
+    const reclaim = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [
+        { id: 'returning', document_id: 'doc-1', parent_block_id: null, order_index: 0 },
+      ],
+      deleteIds: [],
+    })[0]!;
+    const softDelete = persistOpToPushItems({ type: 'softDelete', ids: ['gone'] })[0]!;
+
+    expect(collectLeaveIdsFromPushItems([outboundLeave], 'doc-1')).toEqual(['moving']);
+    expect(collectLeaveIdsFromPushItems([reclaim], 'doc-1')).toEqual([]);
+    expect(collectLeaveIdsFromPushItems([softDelete], 'doc-1')).toEqual(['gone']);
   });
 
   it('blocks remote pull before pushing pending same-document order changes', () => {
@@ -147,5 +171,36 @@ describe('noteSyncGuards', () => {
     const { ready, deferred } = partitionOutboundForSafePush(relocation, new Set());
     expect(deferred).toHaveLength(0);
     expect(ready).toHaveLength(1);
+  });
+
+  it('C5 transfer companion order patches do not defer the relocation transaction', () => {
+    const transfer = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [
+        { id: 'moving', document_id: 'doc-2', parent_block_id: null, order_index: 0 },
+        { id: 'target-root', order_index: 1 },
+      ],
+      deleteIds: [],
+    });
+    const { ready, deferred } = partitionOutboundForSafePush(
+      transfer,
+      new Set(['moving', 'source-sibling']),
+    );
+    expect(deferred).toHaveLength(0);
+    expect(ready).toHaveLength(1);
+  });
+
+  it('same-doc topology without relocation still requires known ids', () => {
+    const reorder = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [
+        { id: 'a', order_index: 0 },
+        { id: 'ghost', order_index: 1 },
+      ],
+      deleteIds: [],
+    });
+    const { ready, deferred } = partitionOutboundForSafePush(reorder, new Set(['a']));
+    expect(ready).toHaveLength(0);
+    expect(deferred).toHaveLength(1);
   });
 });

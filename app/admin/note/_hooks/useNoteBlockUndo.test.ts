@@ -167,4 +167,36 @@ describe('block transaction history', () => {
       after,
     });
   });
+
+  it('keeps transfer leave snapshots so redo works after source Project drop', () => {
+    const reclaim = [
+      { ...block('root', 0), document_id: 'source' },
+      { ...block('child', 0, 'root'), document_id: 'source' },
+    ];
+    const leave = reclaim.map((item) => ({
+      ...item,
+      document_id: 'target',
+      parent_block_id: item.id === 'root' ? null : item.parent_block_id,
+      order_index: item.id === 'root' ? 0 : item.order_index,
+    }));
+    const undo = {
+      kind: 'restore-blocks' as const,
+      snapshots: reclaim,
+      inverseSnapshots: leave,
+    };
+    // after transfer, moved ids are gone from live store
+    const afterLeave = [block('other', 1)];
+    const redo = buildNoteHistoryInverse(undo, afterLeave);
+    expect(redo).toEqual({
+      kind: 'restore-blocks',
+      snapshots: leave,
+      inverseSnapshots: reclaim,
+    });
+    const undoAgain = buildNoteHistoryInverse(redo!, leave);
+    expect(undoAgain).toEqual({
+      kind: 'restore-blocks',
+      snapshots: reclaim,
+      inverseSnapshots: leave,
+    });
+  });
 });

@@ -530,12 +530,10 @@ export function generateSignal(
         ColorItem,
         ColorItem,
       ];
-      const pairBoth: BodyActionId = Math.random() < 0.5 ? 'bothFeet' : 'bothHands';
-      const [a1, a2, a3] = fisherYates<BodyActionId>([
-        randomSingleFoot(),
-        randomSingleHand(),
-        pairBoth,
-      ]) as [BodyActionId, BodyActionId, BodyActionId];
+      const actions = Math.random() < 0.5
+        ? fisherYates<BodyActionId>(['bothHands', 'rightFoot', 'leftFoot'])
+        : fisherYates<BodyActionId>(['bothFeet', 'rightHand', 'leftHand']);
+      const [a1, a2, a3] = actions as [BodyActionId, BodyActionId, BodyActionId];
       return {
         type: 'think_quad_body',
         bg: '#0F172A',

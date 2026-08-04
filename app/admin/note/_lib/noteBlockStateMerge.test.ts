@@ -13,6 +13,8 @@ import {
   serverSnapshotRecoversMissingBlocks,
   unionReconciledWithLocalBlocks,
   wouldReconcileRegressActiveText,
+  noteDocumentStructureFingerprint,
+  shouldPublishPullAfterRebase,
 } from './noteBlockStateMerge';
 import { markPendingBlockDeletes } from './noteReconcileIdle';
 import type { NoteBlock } from './types';
@@ -299,5 +301,74 @@ describe('serverSnapshotRecoversMissingBlocks', () => {
     ];
     markPendingBlockDeletes('doc-1', ['b', 'c']);
     expect(serverSnapshotRecoversMissingBlocks(local, server, 'doc-1')).toBe(false);
+  });
+});
+
+describe('shouldPublishPullAfterRebase', () => {
+  it('blocks publish when store structure changed during rebase await (transfer race)', () => {
+    const before = noteDocumentStructureFingerprint([
+      block('a', 'a', { order_index: 0 }),
+      block('todo', 't', { order_index: 1, type: 'todo' }),
+    ]);
+    const after = noteDocumentStructureFingerprint([
+      block('a', 'a', { order_index: 0 }),
+    ]);
+    expect(shouldPublishPullAfterRebase({
+      storeFingerprintBefore: before,
+      storeFingerprintAfter: after,
+      isPushing: false,
+      hasPendingOutbound: false,
+      hasTopologyIntent: false,
+    })).toBe(false);
+  });
+
+  it('allows publish when store structure is unchanged and outbound is clear', () => {
+    const fp = noteDocumentStructureFingerprint([block('a', 'a')]);
+    expect(shouldPublishPullAfterRebase({
+      storeFingerprintBefore: fp,
+      storeFingerprintAfter: fp,
+      isPushing: false,
+      hasPendingOutbound: false,
+      hasTopologyIntent: false,
+    })).toBe(true);
+  });
+
+  it('blocks publish when outbound or topology is still pending after await', () => {
+    const fp = noteDocumentStructureFingerprint([block('a', 'a')]);
+    expect(shouldPublishPullAfterRebase({
+      storeFingerprintBefore: fp,
+      storeFingerprintAfter: fp,
+      isPushing: false,
+      hasPendingOutbound: true,
+      hasTopologyIntent: false,
+    })).toBe(false);
+    expect(shouldPublishPullAfterRebase({
+      storeFingerprintBefore: fp,
+      storeFingerprintAfter: fp,
+      isPushing: false,
+      hasPendingOutbound: false,
+      hasTopologyIntent: true,
+    })).toBe(false);
+  });
+});
+
+describe('mergeReconciledBlocks keeps remote-only ids under local structure authority', () => {
+  it('does not drop rebased remote creates when local structure wins after transfer race', () => {
+    useNoteBlockStore.getState().hydrate([]);
+    const localAfterLeave = [
+      block('kept', 'local', { order_index: 0 }),
+    ];
+    const rebasedWithRemoteCreate = [
+      block('kept', 'stale-order', { order_index: 9 }),
+      block('remote-new', 'from other tab', { order_index: 1 }),
+      block('left', 'should exclude', { order_index: 2, type: 'todo' }),
+    ];
+    const merged = mergeReconciledBlocks(localAfterLeave, rebasedWithRemoteCreate, {
+      structureAuthority: 'local',
+      excludedIds: new Set(['left']),
+    });
+    expect(merged.map((item) => item.id).sort()).toEqual(['kept', 'remote-new']);
+    expect(merged.find((item) => item.id === 'kept')?.order_index).toBe(0);
+    expect(merged.find((item) => item.id === 'kept')?.content).toEqual({ text: 'local' });
   });
 });

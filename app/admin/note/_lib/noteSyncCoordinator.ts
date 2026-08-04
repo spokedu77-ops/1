@@ -30,8 +30,14 @@ import {
   decideRegressiveContentOp,
   readAuthorityBlockText,
 } from './noteAuthority';
+import {
+  mergeBlocksWithStoreContent,
+  mergeReconciledBlocks,
+  noteDocumentStructureFingerprint,
+  shouldPublishPullAfterRebase,
+} from './noteBlockStateMerge';
 import { buildKnownBlockIdsForPush,
-  isIdentityLeaveOrRelocationPush,
+  collectLeaveIdsFromPushItems,
   isPureIdentityLeaveOrRelocationPush,
   outboundHasPureIdentityLeaveOrRelocation,
   outboundHasUnpublishedTopology,
@@ -40,7 +46,6 @@ import { buildKnownBlockIdsForPush,
 } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
-import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { traceApiEgress, type SnapshotTraceOrigin } from './noteFlickerTrace';
 import {
@@ -54,34 +59,6 @@ import {
   syncStructuralExcludeFromOutbound,
 } from './noteStructuralExcludeRegistry';
 
-function collectLeaveIdsFromPushItems(items: ReadonlyArray<NoteBlockOpPushItem>): string[] {
-  const ids = new Set<string>();
-  for (const item of items) {
-    if (!isIdentityLeaveOrRelocationPush(item)) continue;
-    const payload = item.payload;
-    if (payload.opType === 'soft_delete') {
-      for (const id of payload.ids) ids.add(id);
-      continue;
-    }
-    if (payload.opType === 'purge_block') {
-      ids.add(payload.id);
-      continue;
-    }
-    if (payload.opType === 'patch_fields') {
-      for (const patch of payload.patches) {
-        if (typeof patch.document_id === 'string') ids.add(patch.id);
-      }
-      continue;
-    }
-    if (payload.opType === 'block_transaction') {
-      for (const id of payload.deleteIds) ids.add(id);
-      for (const patch of payload.patches) {
-        if (typeof patch.document_id === 'string') ids.add(patch.id);
-      }
-    }
-  }
-  return [...ids];
-}
 const CONTENT_PUSH_DEBOUNCE_MS = 1500;
 const STRUCTURE_PUSH_DEBOUNCE_MS = 0;
 /** outbound가 있어 push를 미룰 때 — 0이면 ops/state 폭주 */
@@ -277,6 +254,10 @@ export class NoteSyncCoordinator {
   private isPushing = false;
 
   private pushRequested = false;
+
+  private isPulling = false;
+
+  private pullRequested = false;
 
   private disposed = false;
 
@@ -492,6 +473,10 @@ export class NoteSyncCoordinator {
 
   schedulePull(): void {
     if (!this.isLeader) return;
+    if (this.isPulling) {
+      this.pullRequested = true;
+      return;
+    }
     void this.pullRemote();
   }
 
@@ -692,14 +677,16 @@ export class NoteSyncCoordinator {
           excludeBlockIds: pendingExcluded,
         }),
         pendingExcluded,
-      );
+      )
+        // C5: ack materialize에 섞인 타깃 companion/leave 스냅샷이 source IDB·known을 오염시키지 않게
+        .filter((block) => block.document_id === this.documentId);
       this.lastAppliedSeq = result.lastSeq;
       syncStateCache.set(this.documentId, {
         seq: result.lastSeq,
         fetchedAt: Date.now(),
       });
       await removeOutboundOps(consumedClientOpIds);
-      const consumedLeaveIds = collectLeaveIdsFromPushItems(safeReady);
+      const consumedLeaveIds = collectLeaveIdsFromPushItems(safeReady, this.documentId);
       if (consumedLeaveIds.length > 0) {
         retainLeaveExcludeAfterAck(this.documentId, consumedLeaveIds);
       }
@@ -708,6 +695,25 @@ export class NoteSyncCoordinator {
       this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(remainingOutbound);
       await this.persistLocal();
       markNoteLocalSave(this.documentId);
+      const storeAfterPush = useNoteBlockStore.getState().getBlocksArray()
+        .filter((block) => block.document_id === this.documentId);
+      if (
+        storeAfterPush.length > 0
+        && noteDocumentStructureFingerprint(storeAfterPush)
+          !== noteDocumentStructureFingerprint(this.blocks)
+      ) {
+        // push await 중 LocalApply(transfer/DnD) — ack 스냅샷으로 구조 덮지 않음
+        this.blocks = mergeReconciledBlocks(
+          dedupeNoteBlocksById(mergeBlocksWithStoreContent(storeAfterPush)),
+          this.blocks,
+          {
+            structureAuthority: 'local',
+            excludedIds: getStructuralExcludeIds(this.documentId),
+          },
+        ).filter((block) => block.document_id === this.documentId);
+        await this.persistLocal();
+        return false;
+      }
       this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:push');
       this.broadcastState();
       // deferred 잔여가 있어도 while 즉시 재진입 금지
@@ -747,6 +753,11 @@ export class NoteSyncCoordinator {
   }
 
   private async pullRemote(): Promise<void> {
+    if (this.isPulling) {
+      this.pullRequested = true;
+      return;
+    }
+    this.isPulling = true;
     try {
       if (useNoteBlockStore.getState().activeDocumentId !== this.documentId) {
         return;
@@ -762,7 +773,47 @@ export class NoteSyncCoordinator {
         this.schedulePush(PENDING_OUTBOUND_RETRY_MS);
         return;
       }
+      const storeFingerprintBefore = noteDocumentStructureFingerprint(
+        useNoteBlockStore.getState().getBlocksArray()
+          .filter((block) => block.document_id === this.documentId),
+      );
       await this.rebaseFromServer();
+      if (this.disposed) return;
+      if (useNoteBlockStore.getState().activeDocumentId !== this.documentId) {
+        return;
+      }
+      const storeAfter = useNoteBlockStore.getState().getBlocksArray()
+        .filter((block) => block.document_id === this.documentId);
+      const storeFingerprintAfter = noteDocumentStructureFingerprint(storeAfter);
+      const pendingOutbound = await this.hasPendingOutbound();
+      if (!shouldPublishPullAfterRebase({
+        storeFingerprintBefore,
+        storeFingerprintAfter,
+        isPushing: this.isPushing,
+        hasPendingOutbound: pendingOutbound,
+        hasTopologyIntent: this.hasTopologyIntent(),
+      })) {
+        // await 중 LocalApply가 있으면 UI에 stale publish 금지.
+        // 단 rebase로 이미 올린 lastAppliedSeq·remote 적용분은 store로 덮어 버리지 않는다.
+        const excluded = getStructuralExcludeIds(this.documentId);
+        const storeLocal = dedupeNoteBlocksById(mergeBlocksWithStoreContent(storeAfter));
+        this.blocks = mergeReconciledBlocks(storeLocal, this.blocks, {
+          structureAuthority: 'local',
+          excludedIds: excluded,
+        })
+          .filter((block) => block.document_id === this.documentId);
+        this.blocks = excludeBlocksPendingSoftDelete(this.blocks, excluded);
+        await this.persistLocal();
+        if (this.isPushing || pendingOutbound || this.hasTopologyIntent()) {
+          this.schedulePush(PENDING_OUTBOUND_RETRY_MS);
+        } else if (storeFingerprintBefore !== storeFingerprintAfter) {
+          window.setTimeout(() => {
+            if (!this.disposed) this.schedulePull();
+          }, PENDING_OUTBOUND_RETRY_MS);
+        }
+        return;
+      }
+      this.blocks = this.blocks.filter((block) => block.document_id === this.documentId);
       this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:pull');
       this.broadcastState();
     } catch (error) {
@@ -773,6 +824,14 @@ export class NoteSyncCoordinator {
         return;
       }
       devLogger.error('[NoteSyncCoordinator] pull failed', error);
+    } finally {
+      this.isPulling = false;
+      if (this.pullRequested && !this.disposed) {
+        this.pullRequested = false;
+        window.setTimeout(() => {
+          if (!this.disposed) this.schedulePull();
+        }, PENDING_OUTBOUND_RETRY_MS);
+      }
     }
   }
 
@@ -791,11 +850,33 @@ export class NoteSyncCoordinator {
     if (pendingExcluded.size > 0) {
       this.blocks = excludeBlocksPendingSoftDelete(this.blocks, pendingExcluded);
     }
+    this.blocks = this.blocks.filter((block) => block.document_id === this.documentId);
     this.lastAppliedSeq = lastSeq;
     await this.persistLocal();
-    if (options?.notify !== false) {
-      this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:applyRemote');
+    if (options?.notify === false) return;
+    // push conflict·remote apply 중 LocalApply/outbound가 있으면 UI publish 금지
+    if (this.isPushing || this.hasTopologyIntent() || outbound.length > 0) {
+      return;
     }
+    const storeBlocks = useNoteBlockStore.getState().getBlocksArray()
+      .filter((block) => block.document_id === this.documentId);
+    if (storeBlocks.length > 0) {
+      const storeFp = noteDocumentStructureFingerprint(storeBlocks);
+      const remoteFp = noteDocumentStructureFingerprint(this.blocks);
+      if (storeFp !== remoteFp) {
+        this.blocks = mergeReconciledBlocks(
+          dedupeNoteBlocksById(mergeBlocksWithStoreContent(storeBlocks)),
+          this.blocks,
+          {
+            structureAuthority: 'local',
+            excludedIds: pendingExcluded,
+          },
+        ).filter((block) => block.document_id === this.documentId);
+        await this.persistLocal();
+        return;
+      }
+    }
+    this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:applyRemote');
   }
 
   private async persistLocal(): Promise<void> {
@@ -841,11 +922,37 @@ export class NoteSyncCoordinator {
         if (data.tabId === getTabInstanceId()) return;
 
         if (data.type === 'state' && Array.isArray(data.blocks)) {
-          const sealed = sealPassiveIncomingBlocks(this.blocks, data.blocks as NoteBlock[]);
-          this.blocks = excludeBlocksPendingSoftDelete(
-            sealed,
-            getStructuralExcludeIds(this.documentId),
-          );
+          // 팔로워 LocalApply/outbound 중 leader stale·오염 스냅샷으로 UI 덮지 않음
+          if (this.hasTopologyIntent() || this.isPushing) return;
+          const excluded = getStructuralExcludeIds(this.documentId);
+          const incoming = (data.blocks as NoteBlock[])
+            .filter((block) => block.document_id === this.documentId);
+          const sealed = sealPassiveIncomingBlocks(this.blocks, incoming);
+          let next = excludeBlocksPendingSoftDelete(sealed, excluded)
+            .filter((block) => block.document_id === this.documentId);
+          const storeBlocks = useNoteBlockStore.getState().getBlocksArray()
+            .filter((block) => block.document_id === this.documentId);
+          if (
+            storeBlocks.length > 0
+            && noteDocumentStructureFingerprint(storeBlocks)
+              !== noteDocumentStructureFingerprint(next)
+          ) {
+            next = mergeReconciledBlocks(
+              dedupeNoteBlocksById(mergeBlocksWithStoreContent(storeBlocks)),
+              next,
+              {
+                structureAuthority: 'local',
+                excludedIds: excluded,
+              },
+            ).filter((block) => block.document_id === this.documentId);
+            this.blocks = next;
+            this.lastAppliedSeq = typeof data.lastSeq === 'number'
+              ? data.lastSeq
+              : this.lastAppliedSeq;
+            void this.persistLocal();
+            return;
+          }
+          this.blocks = next;
           this.lastAppliedSeq = typeof data.lastSeq === 'number'
             ? data.lastSeq
             : this.lastAppliedSeq;

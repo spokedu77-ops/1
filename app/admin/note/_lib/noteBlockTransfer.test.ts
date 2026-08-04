@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildBlockForestTransferCommand,
+  buildTransferLeaveSnapshots,
 } from './noteBlockTransfer';
 import type { NoteBlock } from './types';
 
@@ -197,6 +198,37 @@ describe('buildBlockForestTransferCommand', () => {
       { id: 'incoming-child', document_id: 'target' },
       { id: 'old-a', order_index: 1 },
       { id: 'old-b', order_index: 2 },
+    ]);
+  });
+
+  it('buildTransferLeaveSnapshots applies document/order patches for redo', () => {
+    const blocks = [
+      block('incoming', null, 0),
+      block('incoming-child', 'incoming', 0),
+      block('other', null, 1),
+    ];
+    const command = buildBlockForestTransferCommand(
+      blocks,
+      ['incoming'],
+      'target',
+      {
+        targetRootBlocks: [
+          { id: 'old-a', order_index: 0, parent_block_id: null },
+        ],
+      },
+    );
+    const leave = buildTransferLeaveSnapshots(blocks, command.movedIds, command.patches);
+    expect(leave).toEqual([
+      {
+        ...blocks[0],
+        document_id: 'target',
+        parent_block_id: null,
+        order_index: 0,
+      },
+      {
+        ...blocks[1],
+        document_id: 'target',
+      },
     ]);
   });
 });

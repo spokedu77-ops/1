@@ -83,6 +83,46 @@ export function outboundHasPureIdentityLeaveOrRelocation(
   return items.some(isPureIdentityLeaveOrRelocationPush);
 }
 
+/**
+ * push ack 후 leave-exclude grace 대상 id.
+ * soft_delete/purge + **outbound** document_id(≠ stream)만 — reclaim은 제외.
+ */
+export function collectLeaveIdsFromPushItems(
+  items: ReadonlyArray<NoteBlockOpPushItem>,
+  documentId: string,
+): string[] {
+  const ids = new Set<string>();
+  for (const item of items) {
+    if (!isIdentityLeaveOrRelocationPush(item)) continue;
+    const payload = item.payload;
+    if (payload.opType === 'soft_delete') {
+      for (const id of payload.ids) ids.add(id);
+      continue;
+    }
+    if (payload.opType === 'purge_block') {
+      ids.add(payload.id);
+      continue;
+    }
+    if (payload.opType === 'patch_fields') {
+      for (const patch of payload.patches) {
+        if (typeof patch.document_id === 'string' && patch.document_id !== documentId) {
+          ids.add(patch.id);
+        }
+      }
+      continue;
+    }
+    if (payload.opType === 'block_transaction') {
+      for (const id of payload.deleteIds) ids.add(id);
+      for (const patch of payload.patches) {
+        if (typeof patch.document_id === 'string' && patch.document_id !== documentId) {
+          ids.add(patch.id);
+        }
+      }
+    }
+  }
+  return [...ids];
+}
+
 /** 미ack outbound에 구조 변경(presence/topology/relocation/mixed)이 있는지 */
 export function outboundHasUnpublishedTopology(
   items: ReadonlyArray<NoteBlockOpPushItem>,
@@ -144,15 +184,21 @@ function requiredKnownIdsForPush(
     return createIdsInOutbound.has(payload.id) && !known.has(payload.id)
       ? [payload.id]
       : [];
-  case 'patch_fields':
+  case 'patch_fields': {
     // relocation(document_id)은 leave — known 불요. same-doc topology만 요구.
+    // C5: transfer txn에 섞인 타깃 companion order는 source known에 없음 → 요구에서 제외
+    const hasRelocation = payload.patches.some(patchLeavesDocument);
     return payload.patches
       .filter((patch) => !patchLeavesDocument(patch))
-      .map((patch) => patch.id);
+      .map((patch) => patch.id)
+      .filter((id) => !hasRelocation || known.has(id) || createIdsInOutbound.has(id));
+  }
   case 'block_transaction': {
+    const hasRelocation = payload.patches.some(patchLeavesDocument);
     const topologyIds = payload.patches
       .filter((patch) => !patchLeavesDocument(patch))
-      .map((patch) => patch.id);
+      .map((patch) => patch.id)
+      .filter((id) => !hasRelocation || known.has(id) || createIdsInOutbound.has(id));
     const leaveWaitingCreate = payload.deleteIds.filter(
       (id) => createIdsInOutbound.has(id) && !known.has(id),
     );

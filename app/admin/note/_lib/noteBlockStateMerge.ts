@@ -207,6 +207,34 @@ export function wouldReconcileRegressLocalStructure(
   });
 }
 
+/** pull await 중 LocalApply(transfer leave 등) 감지용 — 본문 제외 */
+export function noteDocumentStructureFingerprint(
+  blocks: ReadonlyArray<Pick<NoteBlock, 'id' | 'document_id' | 'parent_block_id' | 'order_index' | 'type'>>,
+): string {
+  return blocks
+    .map((block) => (
+      `${block.id}:${block.document_id}:${block.parent_block_id ?? ''}:${block.order_index}:${block.type}`
+    ))
+    .sort()
+    .join('|');
+}
+
+/**
+ * rebase await 뒤 pull 결과를 UI에 올릴지.
+ * await 중 transfer 등으로 store 구조가 바뀌면 stale coordinator 스냅샷 publish 금지.
+ */
+export function shouldPublishPullAfterRebase(input: {
+  storeFingerprintBefore: string;
+  storeFingerprintAfter: string;
+  isPushing: boolean;
+  hasPendingOutbound: boolean;
+  hasTopologyIntent: boolean;
+}): boolean {
+  if (input.isPushing || input.hasPendingOutbound || input.hasTopologyIntent) return false;
+  if (input.storeFingerprintBefore !== input.storeFingerprintAfter) return false;
+  return true;
+}
+
 function readBlockBodyText(block: NoteBlock): string {
   const text = (block.content as Record<string, unknown> | null | undefined)?.text;
   return typeof text === 'string' ? text : '';
@@ -267,6 +295,7 @@ export function applyRestoreBlockSnapshots(
       content: snapshot.content,
       parent_block_id: snapshot.parent_block_id,
       order_index: snapshot.order_index,
+      document_id: snapshot.document_id,
     };
   });
   for (const snapshot of snapshots) {
