@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contactPageContent } from '../contact/contact-page-data';
+import { dispatchEvidenceVisuals } from '../components/dispatch-program-lineup';
 import { curriculumPage } from './curriculum-page';
 import { HOME_MEDIA } from './home-media';
 import { dispatchPage } from './dispatch-page';
@@ -166,6 +167,7 @@ describe('spokedu site IA', () => {
       if (media.type === 'visual') {
         expect(requirement.allowVisualFallback, `${item.id} visual fallback must be intentional`).toBe(true);
         expect(media.asset, `${item.id} visual fallback must not hide a mismatched photo`).toBeUndefined();
+        expect(dispatchEvidenceVisuals[item.id], `${item.id} must render a structured evidence panel`).toBeDefined();
         continue;
       }
 
