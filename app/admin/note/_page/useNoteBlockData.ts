@@ -38,6 +38,7 @@ import {
   dispatchNoteCommandToStore,
   replaceNoteDocumentStoreView,
 } from '../_lib/noteDocumentPipeline';
+import { sanitizeNoteBlockTree } from '@/app/lib/note/noteBlockSanitize';
 import { readRememberedNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
 import { getStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import { registerNoteSaveTrustGate } from '../_lib/noteSaveTrust';
@@ -343,8 +344,10 @@ export function useNoteBlockData(options: {
     // remembered는 authoritative가 아님 — leave-exclude로만 걸러 provisional paint
     const remembered = readRememberedNoteDocumentBlocks(documentId);
     const excluded = getStructuralExcludeIds(documentId);
-    const provisional = (remembered ?? []).filter(
-      (block) => block.document_id === documentId && !excluded.has(block.id),
+    const provisional = sanitizeNoteBlockTree(
+      (remembered ?? []).filter(
+        (block) => block.document_id === documentId && !excluded.has(block.id),
+      ),
     );
     replaceNoteDocumentStoreView(documentId, provisional);
     void ensureNoteLocalCacheVersion().catch((e) => {

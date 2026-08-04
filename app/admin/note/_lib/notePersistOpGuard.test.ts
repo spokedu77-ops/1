@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { assertPersistOpIsSafe } from './notePersistOpGuard';
+import {
+  assertPersistOpIsSafe,
+  coalescePersistOpWithSiblingOrderRepair,
+} from './notePersistOpGuard';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
 
@@ -50,14 +53,36 @@ describe('note persist op guard', () => {
       .toThrow(/non-user empty todo create/);
   });
 
-  it('blocks writes that leave duplicate sibling order indexes', () => {
+  it('coalesce repairs writes that would leave duplicate sibling orders', () => {
     const op: NotePersistOp = {
       type: 'patchFields',
       patches: [{ id: 'b', order_index: 0 }],
     };
+    const current = [block('a', 0), block('b', 1)];
+    expect(() => assertPersistOpIsSafe(op, current)).toThrow(/duplicate sibling order/);
 
-    expect(() => assertPersistOpIsSafe(op, [block('a', 0), block('b', 1)]))
-      .toThrow(/duplicate sibling order/);
+    const safeOp = coalescePersistOpWithSiblingOrderRepair(op, current);
+    expect(() => assertPersistOpIsSafe(safeOp, current)).not.toThrow();
+  });
+
+  it('coalesce heals pre-existing duplicate sibling orders on open-like migration write', () => {
+    const current = [block('a', 13), block('b', 13), block('c', 14)];
+    const op: NotePersistOp = {
+      type: 'blockTransaction',
+      patches: [{
+        id: 'a',
+        content: { text: 'a', html: '<p>a</p>' },
+      }],
+      deleteIds: [],
+    };
+    expect(() => assertPersistOpIsSafe(op, current)).toThrow(/duplicate sibling order/);
+
+    const safeOp = coalescePersistOpWithSiblingOrderRepair(op, current);
+    expect(safeOp.type).toBe('blockTransaction');
+    if (safeOp.type === 'blockTransaction') {
+      expect(safeOp.patches.some((patch) => patch.order_index !== undefined)).toBe(true);
+    }
+    expect(() => assertPersistOpIsSafe(safeOp, current)).not.toThrow();
   });
 
   it('blocks empty transaction creates', () => {

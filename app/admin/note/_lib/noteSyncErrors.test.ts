@@ -26,4 +26,10 @@ describe('noteSyncErrors', () => {
   it('surfaces non-sync errors', () => {
     expect(toNoteSyncUserMessage(new Error('permission denied'))).toBe('permission denied');
   });
+
+  it('does not surface duplicate sibling order after coalesce path', () => {
+    expect(toNoteSyncUserMessage(new Error(
+      '[Note] blocked invalid write: duplicate sibling order doc::__root__ order=13 ids=a,b',
+    ))).toBeNull();
+  });
 });

@@ -6,7 +6,10 @@ import {
   type PatchedNoteBlock,
 } from './noteBlocksApi';
 import { newNoteBlockClientId } from './noteSyncGuards';
-import { assertPersistOpIsSafe } from './notePersistOpGuard';
+import {
+  assertPersistOpIsSafe,
+  coalescePersistOpWithSiblingOrderRepair,
+} from './notePersistOpGuard';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
 
@@ -261,10 +264,12 @@ export class NoteDocumentOpQueue {
     if (!this.deps.persistViaOpLog) {
       throw new Error('[Note] op-log persist is required; legacy HTTP create is disabled');
     }
-    assertPersistOpIsSafe(op, this.readCurrentDocumentBlocks(op.documentId));
     const blockId = op.id || newNoteBlockClientId();
     const opWithId = op.id ? op : { ...op, id: blockId };
-    const pushed = await this.deps.persistViaOpLog(opWithId, { immediate: true });
+    const current = this.readCurrentDocumentBlocks(opWithId.documentId);
+    const safeOp = coalescePersistOpWithSiblingOrderRepair(opWithId, current);
+    assertPersistOpIsSafe(safeOp, current);
+    const pushed = await this.deps.persistViaOpLog(safeOp, { immediate: true });
     const existing = this.deps.getBlock(blockId);
     if (pushed) {
       this.deps.triggerSave();
@@ -292,13 +297,15 @@ export class NoteDocumentOpQueue {
       if (!this.deps.persistViaOpLog) {
         throw new Error('[Note] op-log persist is required; legacy HTTP persist is disabled');
       }
-      assertPersistOpIsSafe(op, this.readCurrentDocumentBlocksForOp(op));
-      const pushed = await this.deps.persistViaOpLog(op, { immediate: true });
+      const current = this.readCurrentDocumentBlocksForOp(op);
+      const safeOp = coalescePersistOpWithSiblingOrderRepair(op, current);
+      assertPersistOpIsSafe(safeOp, current);
+      const pushed = await this.deps.persistViaOpLog(safeOp, { immediate: true });
       // Save Trust: outbound 잔여/push 실패면 saved·draft clear 금지
       if (!pushed) return;
       this.deps.triggerSave();
-      if (op.type === 'patchContent') {
-        this.deps.onContentPersisted?.(op.updates.map((update) => update.id));
+      if (safeOp.type === 'patchContent') {
+        this.deps.onContentPersisted?.(safeOp.updates.map((update) => update.id));
       }
     } finally {
       this.persistInFlight = false;

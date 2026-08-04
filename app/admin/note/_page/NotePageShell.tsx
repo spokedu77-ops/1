@@ -11,6 +11,7 @@ import {
 } from '../_components/noteContexts';
 import { noteBlockCollisionDetection } from '../_lib/noteDropResolver';
 import { NOTE_EDITOR_STABILITY } from '../_lib/noteEditorStability';
+import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
 import { bindNoteCrossSelectCopy, getActiveCrossRanges } from '../_components/noteCrossSelect';
 import { bindNoteListCrossTextSelect, getActiveListCrossRanges } from '../_components/noteListCrossSelect';
 import { bindCrossSelectClipboardSources } from '../_components/noteListCrossHighlight';
@@ -201,6 +202,9 @@ export function NotePageShell() {
     void handleReorderBoardGroup(group, orderedIds);
   }, [handleReorderBoardGroup]);
 
+  // hook이 raw guard 메시지를 setError해도 배너 choke는 여기 하나
+  const visibleError = error ? toNoteSyncUserMessage(new Error(error)) : null;
+
   return (
     <NoteImageLightboxProvider>
       <div className="flex h-[var(--viewport-height-px,100dvh)] max-w-full flex-col overflow-x-hidden bg-white">
@@ -211,9 +215,9 @@ export function NotePageShell() {
           handleCreateDocument={handleCreateDocument}
           loadingState={loadingState}
         />
-        {error && (
+        {visibleError && (
           <div className="shrink-0 border-b border-rose-200 bg-rose-50 px-4 py-2 text-[12px] font-medium text-rose-700">
-            {error}
+            {visibleError}
             <button type="button" className="ml-2 underline" onClick={() => setError(null)}>닫기</button>
           </div>
         )}

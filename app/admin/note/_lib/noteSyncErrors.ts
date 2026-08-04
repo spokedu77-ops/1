@@ -16,7 +16,9 @@ export function isNoteSyncRecoverableError(message: string): boolean {
     || normalized.includes('networkerror')
     || normalized.includes('load failed')
     || normalized.includes('aborted')
-    || normalized.includes('the operation was aborted');
+    || normalized.includes('the operation was aborted')
+    // sibling order는 coalesce로 수리 — 잔여 throw도 배너로 올리지 않음
+    || normalized.includes('duplicate sibling order');
 }
 
 /** Abort / Failed to fetch 등 — 네트워크 레이어 일시 실패 */
