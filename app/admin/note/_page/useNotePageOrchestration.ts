@@ -452,11 +452,24 @@ export function useNotePageOrchestration(): NotePageContextValue {
     uploadNoteImage,
   } = blockActions;
 
+  const handleDeleteBlockForUi = useCallback(
+    async (block: NoteBlock, focusPrevious?: boolean): Promise<void> => {
+      await handleDeleteBlock(block, focusPrevious);
+    },
+    [handleDeleteBlock],
+  );
+  const handleRestoreBlockFromTrashForUi = useCallback(
+    async (block: NoteBlock): Promise<void> => {
+      await handleRestoreBlockFromTrash(block);
+    },
+    [handleRestoreBlockFromTrash],
+  );
+
   useLayoutEffect(() => {
     setNoteToggleBackspaceRuntime({
       blocksRef,
       focusBlockEditor,
-      handleDeleteBlock,
+      handleDeleteBlock: handleDeleteBlockForUi,
       handleMergeWithPreviousBlock,
       handleChangeBlockType,
     });
@@ -491,7 +504,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     resolvePageIcon,
     handleUpdateBlock,
     syncBlockContent,
-    handleDeleteBlock,
+    handleDeleteBlock: handleDeleteBlockForUi,
     handleChangeBlockType,
     handleInsertBlockAfter,
     handleSplitListBlockAfterWithChildren,
@@ -670,12 +683,12 @@ export function useNotePageOrchestration(): NotePageContextValue {
     handleClickEditorWhitespace,
     handleDocumentBodyMouseDown,
     handleChangeBlockType,
-    handleDeleteBlock,
+    handleDeleteBlock: handleDeleteBlockForUi,
     handleDeleteBlocks,
     handleMergeWithPreviousBlock,
     handleDuplicateBlock,
     handleMultilinePaste,
-    handleRestoreBlockFromTrash,
+    handleRestoreBlockFromTrash: handleRestoreBlockFromTrashForUi,
     handlePurgeBlockFromTrash,
     recordBlockUndo,
     renderDocumentTree,
