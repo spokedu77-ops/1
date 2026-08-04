@@ -24,6 +24,8 @@ export type HomeMediaItem = {
   tone: HomeMediaTone;
   /** object-cover 앵커 (예: Hero KBS 로고 좌상단) */
   objectPosition?: string;
+  /** 실제 사진 자산일 때만 이미지 사용 계약 검증에 사용 */
+  asset?: SpokeduImageDef;
 };
 
 function fromPhoto(
@@ -37,6 +39,17 @@ function fromPhoto(
     fallbackSrc: SPOKEDU_FALLBACK_FIELD,
     poster: null,
     alt: item.alt ?? asset.alt,
+    asset,
+    ...item,
+  };
+}
+
+function visualMedia(item: Omit<HomeMediaItem, 'type' | 'src' | 'poster' | 'fallbackSrc'>): HomeMediaItem {
+  return {
+    type: 'visual',
+    src: null,
+    fallbackSrc: null,
+    poster: null,
     ...item,
   };
 }
@@ -93,18 +106,47 @@ export const HOME_MEDIA = {
     tone: 'sky',
     objectPosition: '50% 42%',
   }),
-  trackCurriculum: fromPhoto(SPOKEDU_IMAGES.curriculum.lessonPlan, {
+  trackCurriculum: fromPhoto(SPOKEDU_IMAGES.curriculum.instructorTraining, {
     id: 'track-curriculum',
-    label: '커리큘럼',
+    label: '지도자 교육',
     fallbackGradient: 'from-emerald-500 via-teal-700 to-slate-900',
     tone: 'lime',
+    objectPosition: '50% 38%',
   }),
-  curriculumTools: fromPhoto(SPOKEDU_IMAGES.curriculum.instructorTraining, {
-    id: 'curriculum-tools',
+  curriculumTraining: fromPhoto(SPOKEDU_IMAGES.curriculum.instructorTraining, {
+    id: 'curriculum-training',
     label: '지도자 교육',
     fallbackGradient: 'from-teal-500 via-emerald-700 to-slate-900',
     tone: 'lime',
     objectPosition: '50% 38%',
+  }),
+  curriculumPlan: visualMedia({
+    id: 'curriculum-plan',
+    alt: '수업안 문서 구조 카드 — 목표, 진행 순서, 변형, 안전 기준',
+    label: '수업안',
+    fallbackGradient: 'from-emerald-400 via-teal-700 to-slate-950',
+    tone: 'lime',
+  }),
+  curriculumManual: visualMedia({
+    id: 'curriculum-manual',
+    alt: '운영 매뉴얼 구조 카드 — 준비물, 동선, 안전, 진행 기준',
+    label: '운영 매뉴얼',
+    fallbackGradient: 'from-sky-400 via-cyan-700 to-slate-950',
+    tone: 'sky',
+  }),
+  curriculumPackage: visualMedia({
+    id: 'curriculum-package',
+    alt: '커리큘럼 패키지 구조 카드 — 수업안, 교육, 라이선싱 구성',
+    label: '라이선싱 패키지',
+    fallbackGradient: 'from-indigo-400 via-blue-700 to-slate-950',
+    tone: 'indigo',
+  }),
+  curriculumMaster: visualMedia({
+    id: 'curriculum-master',
+    alt: 'SPOKEDU MASTER 화면 구조 카드 — 프로그램 라이브러리와 수업 운영 도구',
+    label: 'SPOKEDU MASTER',
+    fallbackGradient: 'from-violet-500 via-indigo-700 to-slate-950',
+    tone: 'violet',
   }),
   proofLab: fromPhoto(SPOKEDU_IMAGES.home.labScene, {
     id: 'proof-lab',

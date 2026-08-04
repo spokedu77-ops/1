@@ -443,3 +443,35 @@ export function canUseSpokeduImageOnPage(asset: SpokeduImageDef, page: string): 
 export function isSpokeduImageProgramMatch(asset: SpokeduImageDef, program: SpokeduImageProgram): boolean {
   return asset.programs.includes(program) || asset.programs.includes('general');
 }
+
+export type SpokeduImageUsageRequirement = {
+  page: string;
+  program: SpokeduImageProgram;
+  kind: SpokeduImageKind;
+};
+
+export function getSpokeduImageUsageErrors(
+  asset: SpokeduImageDef,
+  requirement: SpokeduImageUsageRequirement,
+): string[] {
+  const errors: string[] = [];
+  if (!asset.verified) errors.push(`${asset.id} is not verified`);
+  if (asset.assetStatus === 'placeholder-copy') errors.push(`${asset.id} is a placeholder-copy asset`);
+  if (!canUseSpokeduImageOnPage(asset, requirement.page)) {
+    errors.push(`${asset.id} is not allowed on ${requirement.page}`);
+  }
+  if (!isSpokeduImageProgramMatch(asset, requirement.program)) {
+    errors.push(`${asset.id} is not tagged for ${requirement.program}`);
+  }
+  if (asset.kind !== requirement.kind) {
+    errors.push(`${asset.id} kind ${asset.kind} does not match ${requirement.kind}`);
+  }
+  return errors;
+}
+
+export function assertSpokeduImageUsage(asset: SpokeduImageDef, requirement: SpokeduImageUsageRequirement): void {
+  const errors = getSpokeduImageUsageErrors(asset, requirement);
+  if (errors.length > 0) {
+    throw new Error(errors.join('; '));
+  }
+}

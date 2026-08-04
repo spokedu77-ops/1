@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { contactPageContent } from '../contact/contact-page-data';
 import { curriculumPage } from './curriculum-page';
+import { HOME_MEDIA } from './home-media';
 import { dispatchPage } from './dispatch-page';
 import { HOME_MAIN_CASE_SLUGS, homePage } from './home-page';
 import { privatePage } from './private-page';
 import { programDetailBlocks } from './program-details';
 import { seoMeta } from './seo';
-import { canUseSpokeduImageOnPage, isSpokeduImageProgramMatch, SPOKEDU_IMAGES } from './images';
+import {
+  canUseSpokeduImageOnPage,
+  getSpokeduImageUsageErrors,
+  isSpokeduImageProgramMatch,
+  SPOKEDU_IMAGES,
+} from './images';
 import { HOME_PROGRAM_SYSTEM_HREF, siteNav, SPOKEDU_BASE_PATH } from './site';
 
 describe('spokedu site IA', () => {
@@ -103,6 +109,42 @@ describe('spokedu site IA', () => {
     expect(SPOKEDU_IMAGES.curriculum.lessonPlan.kind).toBe('document');
     expect(canUseSpokeduImageOnPage(SPOKEDU_IMAGES.curriculum.lessonPlan, 'curriculum')).toBe(true);
     expect(canUseSpokeduImageOnPage(SPOKEDU_IMAGES.curriculum.lessonPlan, 'dispatch')).toBe(false);
+  });
+
+  it('keeps public curriculum media slots aligned with image evidence contracts', () => {
+    const slots = [
+      ...curriculumPage.contentProducts.items,
+      ...curriculumPage.serviceExamples.items,
+    ];
+
+    for (const slot of slots) {
+      const media = HOME_MEDIA[slot.mediaKey];
+      const requirement = slot.mediaRequirement;
+      if (media.type === 'visual') {
+        expect(requirement.allowVisualFallback, `${slot.title} visual fallback must be intentional`).toBe(true);
+        expect(media.asset, `${slot.title} visual fallback must not hide a mismatched photo`).toBeUndefined();
+        continue;
+      }
+
+      expect(media.asset, `${slot.title} must expose its backing image asset`).toBeDefined();
+      if (!media.asset) continue;
+      expect(getSpokeduImageUsageErrors(media.asset, requirement), slot.title).toEqual([]);
+    }
+  });
+
+  it('does not expose unverified or placeholder curriculum photos through public slots', () => {
+    const slots = [
+      curriculumPage.hero,
+      ...curriculumPage.contentProducts.items,
+      ...curriculumPage.serviceExamples.items,
+    ];
+
+    for (const slot of slots) {
+      const media = HOME_MEDIA[slot.mediaKey];
+      if (!media.asset) continue;
+      expect(media.asset.verified, `${slot.mediaKey} should be verified`).toBe(true);
+      expect(media.asset.assetStatus, `${slot.mediaKey} should not be placeholder-copy`).not.toBe('placeholder-copy');
+    }
   });
 });
 

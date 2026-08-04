@@ -1,4 +1,13 @@
 import type { HomeMediaKey } from './home-media';
+import type { SpokeduImageKind, SpokeduImageProgram } from './images';
+
+type CurriculumMediaRequirement = {
+  page: 'curriculum';
+  program: SpokeduImageProgram;
+  kind: SpokeduImageKind;
+  /** 정확한 실물 이미지가 없어서 의도적으로 다이어그램/구조 카드로 대체하는 슬롯 */
+  allowVisualFallback?: boolean;
+};
 
 export const curriculumPage = {
   hero: {
@@ -60,22 +69,45 @@ export const curriculumPage = {
       {
         title: '수업안',
         description: '활동 목표, 진행 순서, 변형 방법을 정리해 바로 수업에 적용합니다.',
-        mediaKey: 'curriculumTools' as HomeMediaKey,
+        mediaKey: 'curriculumPlan' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'curriculum',
+          program: 'curriculum',
+          kind: 'document',
+          allowVisualFallback: true,
+        } satisfies CurriculumMediaRequirement,
       },
       {
         title: '운영 매뉴얼',
         description: '준비물, 동선, 안전, 진행 기준을 기관·강사가 같은 기준으로 씁니다.',
-        mediaKey: 'proofLab' as HomeMediaKey,
+        mediaKey: 'curriculumManual' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'curriculum',
+          program: 'curriculum',
+          kind: 'document',
+          allowVisualFallback: true,
+        } satisfies CurriculumMediaRequirement,
       },
       {
         title: '강사 교육',
         description: '프로그램 의도·진행 방식·현장 대응 기준을 이해하고 적용하도록 교육합니다.',
-        mediaKey: 'programPlay' as HomeMediaKey,
+        mediaKey: 'curriculumTraining' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'curriculum',
+          program: 'curriculum',
+          kind: 'field-photo',
+        } satisfies CurriculumMediaRequirement,
       },
       {
         title: '프로그램 라이선싱',
         description: '기관·파트너가 스포키듀 프로그램을 일정 기준으로 운영할 수 있게 제공합니다.',
-        mediaKey: 'trackDispatch' as HomeMediaKey,
+        mediaKey: 'curriculumPackage' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'curriculum',
+          program: 'curriculum',
+          kind: 'document',
+          allowVisualFallback: true,
+        } satisfies CurriculumMediaRequirement,
       },
     ],
   },
@@ -102,7 +134,12 @@ export const curriculumPage = {
         venue: '스포키듀 / 스포키듀LAB',
         description: '광주광역시 체육 지도자를 대상으로 수업 설계·현장 운영 기준을 공유한 교육 세미나입니다.',
         status: '운영 완료',
-        mediaKey: 'gateCurriculum' as HomeMediaKey,
+        mediaKey: 'curriculumTraining' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'curriculum',
+          program: 'curriculum',
+          kind: 'field-photo',
+        } satisfies CurriculumMediaRequirement,
       },
       {
         title: '강사 세미나',
@@ -110,7 +147,12 @@ export const curriculumPage = {
         venue: '서초여성가족플라자',
         description: '아동체육 인큐베이팅 강의 — 파트너 강사 대상 수업 설계·현장 운영 기준을 공유했습니다.',
         status: '운영 완료',
-        mediaKey: 'programSpomove' as HomeMediaKey,
+        mediaKey: 'curriculumTraining' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'curriculum',
+          program: 'curriculum',
+          kind: 'field-photo',
+        } satisfies CurriculumMediaRequirement,
       },
       {
         title: '커리큘럼 판매',
@@ -118,7 +160,13 @@ export const curriculumPage = {
         venue: '이마트 문화센터',
         description: '미니올림픽 특강 수업안·운영 패키지 — 서울·경기·대전 문화센터에 맞춘 구성을 제공했습니다.',
         status: '판매·적용',
-        mediaKey: 'programCamp' as HomeMediaKey,
+        mediaKey: 'curriculumPackage' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'curriculum',
+          program: 'curriculum',
+          kind: 'document',
+          allowVisualFallback: true,
+        } satisfies CurriculumMediaRequirement,
       },
       {
         title: '구독 서비스',
@@ -126,7 +174,13 @@ export const curriculumPage = {
         venue: 'SPOKEDU MASTER',
         description: '강사용 수업 운영 플랫폼 — 프로그램 라이브러리, 스크린 실행, 수업 기록을 한곳에서 제공합니다.',
         status: '서비스 중',
-        mediaKey: 'programOneday' as HomeMediaKey,
+        mediaKey: 'curriculumMaster' as HomeMediaKey,
+        mediaRequirement: {
+          page: 'curriculum',
+          program: 'curriculum',
+          kind: 'screen',
+          allowVisualFallback: true,
+        } satisfies CurriculumMediaRequirement,
         href: '/spokedu-master/landing',
       },
     ],
@@ -152,7 +206,7 @@ export const curriculumPage = {
     title: '커리큘럼·지도자 교육을 함께 만들고 싶다면',
     description:
       '수업안, 운영 매뉴얼, 강사교육, SPOMOVE 도입, 라이선싱 등 필요한 범위에 맞춰 안내드립니다.',
-    mediaKey: 'programCurriculum' as HomeMediaKey,
+    mediaKey: 'curriculumPackage' as HomeMediaKey,
     primary: {
       label: '커리큘럼·교육 문의하기',
       href: '#inquiry',
