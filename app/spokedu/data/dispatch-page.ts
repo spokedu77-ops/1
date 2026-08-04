@@ -1,5 +1,6 @@
 import type { HomeMediaKey } from './home-media';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
+import type { ConversionPageIntent } from './conversion-page-intent';
 import { SPOKEDU_BASE_PATH } from './site';
 
 type DispatchMediaRequirement = {
@@ -8,13 +9,6 @@ type DispatchMediaRequirement = {
   kind: SpokeduImageKind;
   /** 정확한 실물 이미지가 없어서 의도적으로 다이어그램/구조 카드로 대체하는 슬롯 */
   allowVisualFallback?: boolean;
-};
-
-export type ConversionPageIntent = {
-  decisionQuestion: string;
-  primaryAudience: string;
-  mustProve: readonly string[];
-  primaryCtaIntent: string;
 };
 
 export type DispatchExampleItem = {
@@ -68,6 +62,7 @@ export const dispatchPage = {
     primaryAudience: '기관 담당자',
     mustProve: ['공간 대응', '인원 대응', '연령 대응', '운영 방식', '실제 사례'],
     primaryCtaIntent: '기관 조건 기반 운영안 요청',
+    pageFlow: ['hero', 'trust', 'fit', 'programs', 'standards', 'evidence', 'process', 'contact'],
   } satisfies ConversionPageIntent,
   decisionFit: {
     eyebrow: '운영 가능성 판단',
@@ -96,7 +91,6 @@ export const dispatchPage = {
       },
     ] as const,
   },
-  pageFlow: ['hero', 'trust', 'fit', 'programs', 'standards', 'evidence', 'process', 'contact'] as const,
   hero: {
     kicker: '기관·단체 프로그램',
     lines: ['기관 조건에 맞게', '체육수업 운영안을 설계합니다'] as const,

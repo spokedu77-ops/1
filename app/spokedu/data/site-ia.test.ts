@@ -206,13 +206,35 @@ describe('spokedu site IA', () => {
     expect(dispatchPage.heroCtas.primary.label).toContain('기관 조건');
     expect(dispatchPage.heroCtas.secondary.href).toBe('#evidence');
     expect(dispatchPage.decisionFit.items.map((item) => item.label)).toEqual(['공간', '인원', '연령', '운영']);
-    expect(dispatchPage.pageFlow.length).toBeLessThanOrEqual(8);
+    expect(dispatchPage.intent.pageFlow.length).toBeLessThanOrEqual(8);
     expect(dispatchPage.operationSolutions.groups).toHaveLength(3);
     expect(dispatchPage.comparison.title).toContain('운영 기준');
     expect(JSON.stringify(dispatchPage.comparison)).not.toMatch(/프리랜서|다른 업체|기본 업체|시간 채우기|전무함/);
     expect(dispatchPage.examples.items.length).toBeGreaterThanOrEqual(2);
     expect(dispatchPage.examples.items.every((item) => item.fitReason && item.review)).toBe(true);
     expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual(['조건 확인', '운영안 제안', '수업 운영']);
+  });
+
+  it('frames private as a child-fit consultation decision flow', () => {
+    expect(privatePage.intent.decisionQuestion).toContain('우리 아이');
+    expect(privatePage.intent.primaryAudience).toContain('학부모');
+    expect(privatePage.intent.primaryCtaIntent).toContain('아이 조건');
+    expect(privatePage.intent.mustProve).toEqual([
+      '아이 적합성',
+      '수업 방식',
+      '지도자 신뢰',
+      '실제 수업',
+      '상담 가능 조건',
+    ]);
+    expect(privatePage.intent.pageFlow.length).toBeLessThanOrEqual(8);
+    expect(privatePage.goalPaths.items.map((item) => item.title)).toEqual([
+      '운동 자신감',
+      '기초체력·움직임',
+      '종목 준비',
+      '또래 협동',
+    ]);
+    expect(privatePage.heroCtas.primary.label).toContain('아이 조건');
+    expect(privatePage.reviews.items[0]?.text).not.toContain('학원에내면');
   });
 
   it('keeps SPOMOVE activity media aligned with task contracts', () => {

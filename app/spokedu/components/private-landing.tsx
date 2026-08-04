@@ -5,14 +5,12 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { privatePage } from '../data/private-page';
 import { koreanLineBreak, landingCardFrame } from '../lib/ui-classes';
-import { ExternalPhoto } from './external-photo';
 import { LandingFaqList } from './landing-faq-list';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingSectionHeading } from './landing-section-heading';
 import { LandingHero } from './landing-hero';
 import { PrivateApplyForm } from './private-apply-form';
 import { PrivateClassFlowGallery } from './private-class-flow-gallery';
-import { PrivateCurriculumSection } from './private-curriculum-section';
 import { PrivateTrustMetrics } from './private-trust-metrics';
 import { LandingAnchorNav } from './landing-anchor-nav';
 import { LandingFloatingCta } from './landing-floating-cta';
@@ -27,13 +25,99 @@ const whoCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${premiumPa
 const reviewCardShell = `flex h-full flex-col border-l-[3px] border-l-teal-700 px-5 py-5 sm:px-6 sm:py-6 ${premiumPanel}`;
 const privateHeroNeeds = ['운동 자신감', '기초체력', '종목 준비'] as const;
 const privateAnchorItems = [
-  { href: '#class-flow', label: '수업 현장' },
-  { href: '#curriculum', label: '종목' },
-  { href: '#process', label: '상담 절차' },
-  { href: '#reviews', label: '후기' },
+  { href: '#fit', label: '아이 적합성' },
+  { href: '#format', label: '수업 방식' },
+  { href: '#class-flow', label: '실제 수업' },
+  { href: '#reviews', label: '학부모 사례' },
   { href: '#apply', label: '상담' },
 ] as const;
 
+function PrivateGoalFitSection() {
+  const section = privatePage.goalPaths;
+
+  return (
+    <div className="space-y-4">
+      <LandingSectionHeading eyebrow={section.eyebrow} title={section.title} lead={section.lead} accent="teal" />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {section.items.map((item) => (
+          <article key={item.title} className={whoCardShell}>
+            <h3 className={`text-[15px] font-bold text-slate-950 ${koreanLineBreak}`}>{item.title}</h3>
+            <p className={`mt-2 text-xs font-semibold leading-relaxed text-teal-800 ${koreanLineBreak}`}>
+              {item.childSignal}
+            </p>
+            <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.classDirection}</p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {item.programs.map((program) => (
+                <span key={program} className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-semibold text-stone-600">
+                  {program}
+                </span>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PrivateConsultConditionsSection() {
+  return (
+    <div className={`${premiumPanel} space-y-4 px-5 py-5 sm:px-6 sm:py-6`}>
+      <LandingSectionHeading
+        eyebrow="상담 가능 조건"
+        title="수업 장소와 주기는 상담에서 함께 맞춥니다"
+        lead="처음부터 장소·횟수·형태를 모두 정하고 오실 필요는 없습니다. 아이 상태와 가능한 조건을 함께 보고 시작점을 정합니다."
+        accent="teal"
+      />
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div>
+          <p className="text-sm font-bold text-slate-950">가능한 장소</p>
+          <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+            {privatePage.classFormat.locations.slice(0, 4).map((loc) => (
+              <li key={loc.title} className="rounded-xl border border-stone-200/80 bg-stone-50/80 p-3">
+                <p className="text-sm font-semibold text-slate-900">{loc.title}</p>
+                <p className={`mt-1 text-xs leading-relaxed text-slate-600 ${koreanLineBreak}`}>{loc.description}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-slate-950">가능한 수업 단위</p>
+          <ul className="mt-2 grid gap-2">
+            {privatePage.sessionCycles.items.map((item) => (
+              <li key={item.label} className="rounded-xl border border-teal-100 bg-teal-50/60 p-3">
+                <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                <p className={`mt-1 text-xs leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.description}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PrivateInstructorTrustSection() {
+  return (
+    <div className={`${premiumPanelDark} px-5 py-6 text-white sm:px-7 sm:py-7`}>
+      <LandingSectionHeading
+        eyebrow={privatePage.instructors.eyebrow}
+        title="지도자 신뢰는 프로필보다 수업 기준으로 확인합니다"
+        lead="체육교육 전공 운영진이 수업 구조와 강사 기준을 함께 봅니다. 화면에는 핵심 기준만 남기고, 세부 배정은 상담에서 확인합니다."
+        accent="teal"
+      />
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+        {privatePage.instructors.items.map((item) => (
+          <article key={item.name} className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+            <h3 className="text-sm font-bold text-white">{item.name}</h3>
+            <p className="mt-1 text-xs font-semibold text-[#A8C0FF]">{item.degree}</p>
+            <p className={`mt-2 text-xs leading-relaxed text-white/70 ${koreanLineBreak}`}>{item.badges[0]}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
 function Section({
   children,
   className = '',
@@ -102,27 +186,11 @@ export default function PrivateLanding() {
         <PrivateTrustMetrics />
       </Section>
 
-      <Section className="space-y-4">
-        <LandingSectionHeading
-          eyebrow={privatePage.whoNeeds.eyebrow}
-          title={privatePage.whoNeeds.title}
-          accent="teal"
-        />
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-          {privatePage.whoNeeds.items.map((item) => (
-            <article key={item.title} className={whoCardShell}>
-              <h3 className={`text-sm font-semibold text-slate-900 sm:text-[15px] ${koreanLineBreak}`}>
-                {item.title}
-              </h3>
-              <p className={`mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm ${koreanLineBreak}`}>
-                {item.description}
-              </p>
-            </article>
-          ))}
-        </div>
+      <Section id="fit" className="scroll-mt-36">
+        <PrivateGoalFitSection />
       </Section>
 
-      <Section className="space-y-4">
+      <Section id="format" className="scroll-mt-36 space-y-4">
         <LandingSectionHeading
           eyebrow={privatePage.classCompare.eyebrow}
           title={privatePage.classCompare.title}
@@ -139,7 +207,7 @@ export default function PrivateLanding() {
                 className="aspect-[16/10] min-h-[120px] shrink-0 rounded-none border-0 sm:min-h-0"
                 photoPriority={index === 0}
               />
-              <div className={`flex flex-1 flex-col border-t border-slate-100 px-4 py-3.5 sm:px-5 sm:py-4`}>
+              <div className="flex flex-1 flex-col border-t border-slate-100 px-4 py-3.5 sm:px-5 sm:py-4">
                 <h3 className="text-[15px] font-semibold text-slate-950 sm:text-base">{item.title}</h3>
                 <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.description}</p>
               </div>
@@ -184,105 +252,12 @@ export default function PrivateLanding() {
         </div>
       </Section>
 
-      <Section
-        id="curriculum"
-        className="scroll-mt-36 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-5 sm:px-5 sm:py-6"
-      >
-        <PrivateCurriculumSection />
+      <Section>
+        <PrivateConsultConditionsSection />
       </Section>
 
-      <Section className="space-y-6">
-        <LandingSectionHeading
-          eyebrow="운영"
-          title="장소와 수업 단위"
-          lead="익숙한 공간에서, 아이에게 맞는 주기로 시작합니다."
-          accent="teal"
-        />
-        <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6">
-          <div className={`${premiumPanel} px-6 py-7 sm:px-8 sm:py-8`}>
-            <div className="flex items-end justify-between gap-3 border-b border-stone-200/80 pb-4">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-800">수업 장소</p>
-                <h3 className="mt-1 text-lg font-semibold tracking-tight text-slate-950">수업 장소</h3>
-              </div>
-              <p className="text-xs font-medium text-stone-400">상담 후 조율</p>
-            </div>
-            <ul className="mt-1 divide-y divide-stone-100">
-              {privatePage.classFormat.locations.map((loc, index) => (
-                <li key={loc.title} className="flex gap-4 py-4 first:pt-5 last:pb-0">
-                  <span className="mt-0.5 w-7 shrink-0 text-[11px] font-bold tracking-[0.12em] text-stone-300">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[15px] font-semibold text-slate-950">{loc.title}</p>
-                    <p className={`mt-1 text-sm leading-relaxed text-stone-500 ${koreanLineBreak}`}>
-                      {loc.description}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className={`${premiumPanelDark} px-6 py-7 sm:px-8 sm:py-8`}>
-            <div className="border-b border-white/10 pb-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#A8C0FF]">수업 사이클</p>
-              <h3 className="mt-1 text-lg font-semibold tracking-tight text-white">수업 단위</h3>
-            </div>
-            <ul className="mt-5 space-y-4">
-              {privatePage.sessionCycles.items.map((item) => (
-                <li key={item.label} className="rounded-2xl bg-white/10 px-4 py-4 ring-1 ring-white/15">
-                  <p className="text-[15px] font-semibold text-white">{item.label}</p>
-                  <p className={`mt-1.5 text-sm leading-relaxed text-white/70 ${koreanLineBreak}`}>
-                    {item.description}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </Section>
-
-      <Section id="instructors" className="scroll-mt-36 space-y-6">
-        <LandingSectionHeading
-          eyebrow={privatePage.instructors.eyebrow}
-          title={privatePage.instructors.title}
-          lead="체육교육 전공 기반 운영진이 수업 설계와 강사 기준을 함께 봅니다."
-          accent="teal"
-        />
-        <div className="grid gap-5 sm:grid-cols-3 sm:gap-5">
-          {privatePage.instructors.items.map((item) => (
-            <article key={item.name} className={premiumPanel}>
-              <div className="relative aspect-[4/5] w-full overflow-hidden bg-stone-100">
-                <ExternalPhoto
-                  src={item.photo}
-                  alt={item.name}
-                  className="absolute inset-0"
-                  fit="cover"
-                  sizes="(max-width: 640px) 100vw, 33vw"
-                />
-                <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0B1F46]/55 to-transparent"
-                  aria-hidden
-                />
-              </div>
-              <div className="px-5 py-5 sm:px-6 sm:py-6">
-                <h3 className="text-lg font-semibold tracking-tight text-slate-950">{item.name}</h3>
-                <p className="mt-1 text-sm font-medium text-teal-800">{item.degree}</p>
-                <ul className="mt-4 flex flex-wrap gap-1.5">
-                  {item.badges.map((badge) => (
-                    <li
-                      key={badge}
-                      className={`rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-stone-600 ${koreanLineBreak}`}
-                    >
-                      {badge}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </article>
-          ))}
-        </div>
+      <Section id="instructors" className="scroll-mt-36">
+        <PrivateInstructorTrustSection />
       </Section>
 
       <Section id="reviews" className="scroll-mt-36 space-y-4">
@@ -291,13 +266,10 @@ export default function PrivateLanding() {
           title={privatePage.reviews.title}
           accent="teal"
         />
-        <div className="grid gap-3 lg:grid-cols-3">
-          {privatePage.reviews.items.map((item) => (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {privatePage.reviews.items.slice(0, 2).map((item) => (
             <article key={item.who + item.course} className={reviewCardShell}>
-              <p className="text-sm tracking-wide text-amber-500" aria-label="별점 5점">
-                ★★★★★
-              </p>
-              <p className={`mt-2.5 flex-1 text-sm leading-relaxed text-slate-700 ${koreanLineBreak}`}>
+              <p className={`flex-1 text-sm leading-relaxed text-slate-700 ${koreanLineBreak}`}>
                 &ldquo;{item.text}&rdquo;
               </p>
               <div className="mt-3 border-t border-slate-100 pt-2.5">
@@ -308,7 +280,6 @@ export default function PrivateLanding() {
           ))}
         </div>
       </Section>
-
       <Section id="process" className="scroll-mt-36">
         <LandingProcessOnePager data={privatePage.processOnePager} />
       </Section>

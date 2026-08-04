@@ -1,4 +1,5 @@
 import type { HomeMediaKey } from './home-media';
+import type { ConversionPageIntent } from './conversion-page-intent';
 
 export type PrivateLocationItem = {
   title: string;
@@ -37,6 +38,13 @@ export type PrivateReview = {
   course: string;
 };
 
+export type PrivateGoalPath = {
+  title: string;
+  childSignal: string;
+  classDirection: string;
+  programs: readonly string[];
+};
+
 /** 실시간 카운팅 시뮬레이션 — 근거 검증 전까지 랜딩에서는 미사용 */
 export const PRIVATE_COUNTER_BASE_DATE = '2024-01-01';
 export const PRIVATE_COUNTER_BASE_STUDENTS = 1200;
@@ -45,6 +53,13 @@ export const PRIVATE_COUNTER_DAILY_STUDENTS = 3;
 export const PRIVATE_COUNTER_DAILY_SESSIONS = 5;
 
 export const privatePage = {
+  intent: {
+    decisionQuestion: '우리 아이가 부담 없이 시작하고, 필요한 움직임 경험을 쌓을 수 있는가?',
+    primaryAudience: '개인·소그룹 체육수업을 찾는 학부모',
+    mustProve: ['아이 적합성', '수업 방식', '지도자 신뢰', '실제 수업', '상담 가능 조건'],
+    primaryCtaIntent: '아이 조건 기반 수업 방향 상담',
+    pageFlow: ['hero', 'trust', 'fit', 'format', 'class-flow', 'instructors', 'reviews', 'apply'],
+  } satisfies ConversionPageIntent,
   hero: {
     kicker: '학부모 · 개인수업',
     trustBadge: '연세대 체육교육학과 출신 운영진',
@@ -63,12 +78,12 @@ export const privatePage = {
   },
   heroCtas: {
     primary: {
-      label: '개인수업 상담',
+      label: '아이 조건으로 수업 방향 상담하기',
       href: '#apply',
       trackLabel: 'private-cta-consult',
     },
     secondary: {
-      label: '수업 현장 보기',
+      label: '실제 수업 방식 보기',
       href: '#class-flow',
       trackLabel: 'private-cta-class-flow',
     },
@@ -98,6 +113,37 @@ export const privatePage = {
           '줄넘기·자전거·구기 등 목표 활동 전, 기초 신체 기능과 움직임 습관을 함께 잡습니다.',
       },
     ],
+  },
+  goalPaths: {
+    eyebrow: '아이 적합성 판단',
+    title: '종목보다 먼저, 아이에게 필요한 시작 방향을 봅니다',
+    lead: '줄넘기·축구·농구 같은 종목은 목표를 위한 수단입니다. 먼저 아이가 어떤 경험을 쌓아야 하는지부터 정합니다.',
+    items: [
+      {
+        title: '운동 자신감',
+        childSignal: '움직임을 피하거나 실패를 무서워하는 아이',
+        classDirection: '작은 성공 경험을 반복해 참여감과 자기효능감을 먼저 만듭니다.',
+        programs: ['기초 움직임', '구기 자신감', '놀이형 체육'],
+      },
+      {
+        title: '기초체력·움직임',
+        childSignal: '자세, 균형, 달리기, 점프 같은 기본기가 필요한 아이',
+        classDirection: '균형·민첩성·협응성을 수업 루틴 안에서 차근차근 쌓습니다.',
+        programs: ['달리기', '줄넘기', 'PAPS 기초'],
+      },
+      {
+        title: '종목 준비',
+        childSignal: '특정 종목을 시작했지만 기본 기술에서 막히는 아이',
+        classDirection: '종목 기술보다 먼저 필요한 자세, 리듬, 공 감각을 분리해 연습합니다.',
+        programs: ['축구', '농구', '자전거·인라인'],
+      },
+      {
+        title: '또래 협동',
+        childSignal: '함께 움직이는 경험과 규칙 이해가 필요한 아이',
+        classDirection: '소그룹 안에서 순서, 협동, 기다림, 역할 수행을 자연스럽게 익힙니다.',
+        programs: ['소그룹 체육', '팀 미션', '협동 게임'],
+      },
+    ] satisfies PrivateGoalPath[],
   },
   instructors: {
     eyebrow: '운영진',
@@ -268,7 +314,7 @@ export const privatePage = {
     lead: '스포키듀의 체계적인 교육 시스템을 먼저 경험하신 학부모님들의 솔직한 피드백입니다.',
     items: [
       {
-        text: '동네 학원에내면 아이가 뒤처질까 봐 걱정이었는데, 1:1로 아이 성향에 완벽하게 맞춰서 지도해주시니 아이가 매주 체육 시간만 기다려요.',
+        text: '동네 학원에 내면 아이가 뒤처질까 봐 걱정이었는데, 1:1로 아이 성향에 완벽하게 맞춰서 지도해주시니 아이가 매주 체육 시간만 기다려요.',
         who: '초등 2학년 학부모',
         course: '기초체력 및 달리기 코스',
       },
@@ -308,19 +354,9 @@ export const privatePage = {
       items: ['원데이', '단기', '정기 (8회차)'] as const,
     },
     cta: {
-      label: '개인수업 상담',
+      label: '아이 조건으로 수업 방향 상담하기',
       href: '#apply',
     },
-  },
-  consultFlow: {
-    eyebrow: '상담',
-    title: '상담은 이렇게 진행돼요',
-    steps: [
-      { label: '운동 경험 확인', detail: '아이의 운동 경험과 지금 관심 있는 활동을 함께 이야기합니다.' },
-      { label: '수업 형태 정하기', detail: '1:1·소그룹 중 아이에게 맞는 방향을 함께 정합니다.' },
-      { label: '장소·일정 조율', detail: '가능한 장소와 시간을 편하게 맞춥니다.' },
-      { label: '첫 수업 후 점검', detail: '첫 수업 후 흐름을 보고, 다음 방향을 다시 맞춥니다.' },
-    ] as const,
   },
   faq: {
     eyebrow: 'FAQ',
@@ -354,7 +390,7 @@ export const privatePage = {
       '운동 경험, 수업 형태, 가능한 장소를 확인한 뒤 아이에게 맞는 방향으로 안내드립니다.',
     mediaKey: 'trackPrivate' as HomeMediaKey,
     primary: {
-      label: '개인수업 상담',
+      label: '아이 조건으로 수업 방향 상담하기',
       href: '#apply',
       trackLabel: 'private-final-consult',
     },
