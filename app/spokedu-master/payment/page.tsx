@@ -50,6 +50,7 @@ function isPaidPlanId(value: string | null): value is PaidPlanId {
 }
 
 function appendGateContext(params: URLSearchParams, context: MasterGateContext) {
+  if (context.mode !== 'gated' || !context.intent) return;
   params.set('intent', context.intent);
   params.set('next', context.next);
   params.set('journeyId', context.journeyId);
@@ -142,7 +143,7 @@ function PlanCard({
 function PaymentContent() {
   const params = useSearchParams();
   const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
-  const requestedPlan = isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : gateContext.minimumPlan;
+  const requestedPlan = isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : 'lite';
   const initialPlan = gateContext.allowedPlans.includes(requestedPlan) ? requestedPlan : gateContext.minimumPlan;
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanId>(initialPlan);
   const masterOtp = useMasterEmailOtp();

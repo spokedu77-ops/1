@@ -74,7 +74,7 @@ open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Autho
 | tree sanitize densify | `sanitizeNoteBlockTree` (중복 order만) |
 | coordinator → UI Project | `onBlocksUpdated` → `dispatchSnapshotIfChanged` → `syncSnapshot` |
 | realtime/idle pull | `pipeline.schedulePull` → `coordinator.schedulePull` → **`shouldPublishPullAfterRebase`** (await 중 LocalApply면 stale publish 금지) |
-| soft-delete | `persistSoftDelete` → emergency draft clear + leave exclude; IDB merge가 삭제 id 재삽입 금지; `deleteMeta`에 id가 있으면 **intent delete**; 살아 있는 요청 id skip 시 `soft_delete_not_applied`; leave duplicate materialize; **trash restore·`restore-blocks` undo는 apply 전 `removeStructuralExcludeIds`(grace 포함)**; push ack grace는 **outbound leave만** (`collectLeaveIdsFromPushItems`, reclaim `document_id===stream` 제외); **구조 undo 기록은 persist 성공 후**; history apply 실패 시 스택 복구·inverse 금지 |
+| soft-delete | `persistSoftDelete` → emergency draft clear + leave exclude; IDB merge가 삭제 id 재삽입 금지; `deleteMeta`에 id가 있으면 **intent delete**; 살아 있는 요청 id skip 시 `soft_delete_not_applied`; leave duplicate materialize; **trash restore·`restore-blocks` undo는 apply 전 `removeStructuralExcludeIds`(grace 포함)**; push ack grace는 **outbound leave만** (`collectLeaveIdsFromPushItems`, reclaim `document_id===stream` 제외); **구조 undo 기록은 persist 성공 후**; history apply 실패 시 스택 복구·inverse 금지; **restore 전 미ack leave는 id strip**(`planStripOutboundLeavesForRestoredIds` — 멀티 leave 통삭제 금지); **open hydrate는 coordinator merge 결과** (raw `initialBlocks` 덮어쓰기 금지); leave Intent 시 remember id prune; **intentional empty는 `persistLocal({ allowEmpty })`로 IDB 기록** (setBlocks `[]` race wipe 가드와 구분) |
 
 reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 호출한다. **새 passive 경로를 추가할 때 seal을 빼면 계약 위반이다. hook에 Authority/Integrity 분기를 새로 넣지 않는다.
 
@@ -86,7 +86,7 @@ reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 
 2. **`blocksRef.current =` 직접 쓰기 금지** — store 구독 미러만
 3. **`setBlocks`는 pipeline `replaceBlocks` 경유** (useNoteBlockData)
 4. **create는 항상 client UUID** (`newNoteBlockClientId`)
-5. **outbound pending 중 pull 금지** (coordinator). **rebase await 뒤**에도 outbound/topology·**store 구조 fingerprint 변경**(transfer LocalApply 등)이면 `onBlocksUpdated` publish 금지. skip 시 store로 remote를 **덮어쓰지 말고** `mergeReconciledBlocks(local structure + rebased remote)`. pull은 `isPulling` 직렬화. push ack·leader state는 `document_id===stream`만 유지
+5. **outbound pending 중 pull 금지** (coordinator). **rebase await 뒤**에도 outbound/topology·**store 구조 fingerprint 변경**(transfer LocalApply 등)이면 `onBlocksUpdated` publish 금지. skip 시 store로 remote를 **덮어쓰지 말고** `mergeReconciledBlocks(local structure + rebased remote)`. pull은 `isPulling` 직렬화. push ack·leader state는 `document_id===stream`만 유지. **open first-paint는 blocks 스냅샷 hydrate 이후** — `syncWithServer`의 outbound `flushPush` await로 settle을 막지 않음; bootstrap은 Raw(`loadNoteDocumentBlocksRaw`)
 6. **새 merge/union/regression guard 추가 금지** — reducer `syncSnapshot`/`applyRemoteOps`로 흡수
 7. **legacy HTTP PATCH 새 분기 추가 금지** — op-log만 (블록 휴지통 restore HTTP는 예외·신규 추가 금지)
 8. **문서 open은 `noteDocumentOpen.ts`만** — hook 레벨 merge/load 분기 금지

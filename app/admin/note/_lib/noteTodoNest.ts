@@ -3,9 +3,8 @@
  * listNestLevel 경로는 제거됨. 로드 시 migrateTodoListNestLevelsToTree 사용.
  */
 export function planTodoListNestTab(
-  _blocks: unknown,
-  _blockId: string,
-  _direction: 'in' | 'out',
+  ..._args: [unknown, string, 'in' | 'out']
 ): null {
+  void _args;
   return null;
 }

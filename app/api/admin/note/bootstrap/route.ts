@@ -5,7 +5,7 @@ import {
   getChildDocumentIdFromPageContent,
   reconcileDocumentParents,
 } from '@/app/lib/note/documentParentSync';
-import { loadNoteDocumentBlocks } from '@/app/lib/server/loadNoteDocumentBlocks';
+import { loadNoteDocumentBlocksRaw } from '@/app/lib/server/loadNoteDocumentBlocksRaw';
 
 const DOCUMENT_SELECT =
   'id, title, is_archived, is_favorite, is_pinned, is_public, share_token, parent_id, slug, properties, created_at, updated_at';
@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
 
     const [documentsResult, blocks] = await Promise.all([
       documentsQuery,
-      documentId ? loadNoteDocumentBlocks(documentId, auth.userId) : Promise.resolve(null),
+      // oplog 경로: blocks/load(skipReconcile)과 동일 — cold open에서 서버 N+1 migrate 금지
+      documentId ? loadNoteDocumentBlocksRaw(documentId, auth.userId) : Promise.resolve(null),
     ]);
 
     if (documentsResult.error) {

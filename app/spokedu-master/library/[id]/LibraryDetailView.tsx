@@ -43,6 +43,7 @@ import {
 } from '../../lib/program-media';
 import { classRecordToCreateInput, toClassRecord, toStudentProfile } from '../../lib/operationalDataAdapter';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
+import { buildProgramResumeHref } from '../../lib/recentProgramActivity';
 import {
   canAttemptOnlineSave,
   getOfflineSaveFeedback,
@@ -60,6 +61,10 @@ import {
   readOwnerSaveDraft,
   writeOwnerSaveDraft,
 } from '../../lib/saveDraftStorage';
+import {
+  resolveTodayLessonNextAction,
+  type TodayLessonNextActionRecommendation,
+} from '../../lib/todayLessonNextAction';
 import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore } from '../../store';
@@ -183,6 +188,99 @@ function RelatedSpomoveSection({
   );
 }
 
+function buildDetailTodayLessonActionView(
+  recommendation: TodayLessonNextActionRecommendation,
+  program: Program,
+) {
+  const recordHref = `/spokedu-master/class-record?program=${encodeURIComponent(program.id)}`;
+  const detailHref = `/spokedu-master/library/${encodeURIComponent(program.id)}`;
+
+  if (recommendation.primary.kind === 'continue_record') {
+    return {
+      title: '작성 중인 수업 기록이 있습니다.',
+      description: '오늘 수업과 연결된 기록 초안을 먼저 마무리하세요.',
+      primary: {
+        label: '기록 계속하기',
+        href: recommendation.primary.targetId
+          ? `/spokedu-master/class-record?record=${encodeURIComponent(recommendation.primary.targetId)}&program=${encodeURIComponent(program.id)}`
+          : recordHref,
+      },
+      secondary: null,
+    };
+  }
+
+  if (recommendation.primary.kind === 'create_record') {
+    const spomove = recommendation.secondary.find((item) => item.kind === 'view_spomove');
+    return {
+      title: '오늘 수업 이어가기',
+      description: '화면 활동을 실행했습니다. 아직 이 수업의 기록은 남지 않았습니다.',
+      primary: { label: '수업 기록 남기기', href: recordHref },
+      secondary: spomove?.kind === 'view_spomove' && spomove.presetId
+        ? { label: 'SPOMOVE 다시 실행', href: buildProgramResumeHref(spomove.presetId, 'spomove_started') }
+        : null,
+    };
+  }
+
+  if (recommendation.primary.kind === 'view_record') {
+    const report = recommendation.secondary.find((item) => item.kind === 'create_report');
+    return {
+      title: '오늘 수업 기록 완료',
+      description: '저장된 기록을 확인하거나 필요한 경우 안내문으로 이어갈 수 있습니다.',
+      primary: {
+        label: '기록 보기',
+        href: recommendation.primary.targetId
+          ? `/spokedu-master/class-record?record=${encodeURIComponent(recommendation.primary.targetId)}&program=${encodeURIComponent(program.id)}`
+          : recordHref,
+      },
+      secondary: report?.kind === 'create_report'
+        ? { label: '안내문 만들기', href: `/spokedu-master/report?record=${encodeURIComponent(report.recordId)}&program=${encodeURIComponent(program.id)}` }
+        : null,
+    };
+  }
+
+  if (recommendation.primary.kind === 'select_lesson') {
+    return {
+      title: '오늘 사용할 수업을 정하세요.',
+      description: '오늘 수업으로 지정하면 준비와 기록으로 바로 이어갈 수 있습니다.',
+      primary: { label: '오늘 수업으로 지정', href: detailHref },
+      secondary: null,
+    };
+  }
+
+  return {
+    title: '오늘 수업으로 지정됨',
+    description: '준비물과 진행 순서를 확인하고 바로 사용할 수 있습니다.',
+    primary: { label: '준비 확인', href: '#lesson-preparation' },
+    secondary: null,
+  };
+}
+
+function TodayLessonActionPanel({
+  recommendation,
+  program,
+}: {
+  recommendation: TodayLessonNextActionRecommendation;
+  program: Program;
+}) {
+  const view = buildDetailTodayLessonActionView(recommendation, program);
+  return (
+    <div className="rounded-[12px] border border-emerald-200 bg-emerald-50 p-3">
+      <p className="text-[12px] font-black text-emerald-800">{view.title}</p>
+      <p className="mt-1 text-[12px] font-semibold leading-5 text-emerald-900">{view.description}</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <a href={view.primary.href} className="spm-btn-primary inline-flex h-10 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
+          {view.primary.label}
+        </a>
+        {view.secondary ? (
+          <Link href={view.secondary.href} className="inline-flex h-10 items-center justify-center rounded-[9px] border border-emerald-200 bg-white px-3 text-[12px] font-black text-emerald-800">
+            {view.secondary.label}
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function LibraryDetailView({ id }: { id: string }) {
   const programs = useMasterStore((state) => state.programs);
   const isPremium = useIsPremium();
@@ -198,6 +296,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const todayLesson = useMasterStore((state) =>
     ownerId ? state.getTodayLesson(ownerId) : null,
   );
+  const recentProgramActivities = useMasterStore((state) => state.recentProgramActivities);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const operationalData = useOperationalData();
   const classRecords = operationalData.classRecords.map(toClassRecord);
@@ -226,6 +325,17 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const isTodayLesson = Boolean(program && todayLesson?.programId === program.id);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
+  const quickRecordDraft = readOwnerSaveDraft<QuickRecordDraft>(QUICK_RECORD_DRAFT_KEY, ownerId);
+  const recentSpomoveForProgram = useMemo(
+    () => recentProgramActivities
+      .filter((activity) =>
+        activity.ownerId === ownerId &&
+        activity.action === 'spomove_started' &&
+        activity.programId === id
+      )
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0] ?? null,
+    [id, ownerId, recentProgramActivities],
+  );
   const section = searchParams.get('section');
   const shouldAutoplayVideo = section === 'video' && searchParams.get('autoplay') === '1';
   const libraryReturnHref = getLibraryReturnHref(searchParams.get('libraryView'));
@@ -326,6 +436,18 @@ export default function LibraryDetailView({ id }: { id: string }) {
         .toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
     : null;
   const recentEvidenceRecords = sortedUsageRecords.slice(0, 3);
+  const todayLessonRecommendation = resolveTodayLessonNextAction({
+    todayLesson: isTodayLesson && program ? { programId: program.id, title: program.title } : null,
+    recordDraft: quickRecordDraft?.programId === program.id
+      ? { programId: quickRecordDraft.programId }
+      : null,
+    savedRecord: sortedUsageRecords[0]
+      ? { id: sortedUsageRecords[0].id, programId: sortedUsageRecords[0].programId }
+      : null,
+    recentSpomove: recentSpomoveForProgram
+      ? { presetId: recentSpomoveForProgram.programId, programId: recentSpomoveForProgram.programId }
+      : null,
+  });
 
   const openQuickModal = () => {
     const draft = readOwnerSaveDraft<QuickRecordDraft>(QUICK_RECORD_DRAFT_KEY, ownerId);
@@ -481,6 +603,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 오늘 관찰을 남기면 학생 이력과 안내문 초안으로 이어집니다.
               </p>
               <div className="mt-4 grid gap-2">
+                {isTodayLesson ? (
+                  <TodayLessonActionPanel recommendation={todayLessonRecommendation} program={program} />
+                ) : null}
                 <Link href={`/spokedu-master/class-record?program=${program.id}`} className="spm-btn-primary inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none">
                   <Clipboard className="h-4 w-4" />
                   수업 기록 시작
@@ -534,7 +659,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <RelatedSpomoveSection program={program} />
 
         {setupImage || hasPreActivityChecklist ? (
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] lg:items-start">
+          <div id="lesson-preparation" className="grid scroll-mt-20 gap-5 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] lg:items-start">
             {setupImage ? (
               <LessonFullSection title="초기 교구 세팅">
                 <div className="overflow-hidden rounded-[12px] border border-[color:var(--spm-br2)] bg-[var(--spm-s3)] p-2">

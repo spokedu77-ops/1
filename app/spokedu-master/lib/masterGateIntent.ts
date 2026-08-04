@@ -31,7 +31,8 @@ export type MasterGateResource = {
 };
 
 export type MasterGateContext = {
-  intent: MasterGateIntentKind;
+  mode: 'direct' | 'gated';
+  intent: MasterGateIntentKind | null;
   minimumPlan: MasterPaidPlanId;
   allowedPlans: readonly MasterPaidPlanId[];
   next: string;
@@ -146,6 +147,7 @@ export function buildMasterGateContext(args: {
   const next = getSafeMasterPostPaymentPath(args.currentPath, getFallbackForMasterIntent(intent));
   const accessPlan = resolveMasterIntentAccessPlan(intent);
   return {
+    mode: 'gated',
     intent,
     ...accessPlan,
     next,
@@ -156,6 +158,9 @@ export function buildMasterGateContext(args: {
 }
 
 export function buildMasterPaymentHref(context: Pick<MasterGateContext, 'intent' | 'minimumPlan' | 'next' | 'journeyId' | 'gateSurface'>) {
+  if (!context.intent) {
+    return `/spokedu-master/payment?plan=${context.minimumPlan}`;
+  }
   const params = new URLSearchParams({
     plan: context.minimumPlan,
     intent: context.intent,
@@ -167,6 +172,9 @@ export function buildMasterPaymentHref(context: Pick<MasterGateContext, 'intent'
 }
 
 export function buildMasterGateDisplayModel(context: MasterGateContext): MasterGateDisplayModel {
+  if (!context.intent) {
+    throw new Error('Master gate display requires a gated intent.');
+  }
   const paymentHref = buildMasterPaymentHref(context);
   const resourceTitle = context.resource.title;
 
@@ -224,11 +232,23 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
 }
 
 export function readMasterGateContextFromSearchParams(searchParams: URLSearchParams): MasterGateContext {
-  const intent = normalizeMasterGateIntent(searchParams.get('intent')) ?? 'start_spomove';
+  const intent = normalizeMasterGateIntent(searchParams.get('intent'));
+  if (!intent) {
+    return {
+      mode: 'direct',
+      intent: null,
+      minimumPlan: 'lite',
+      allowedPlans: ['lite', 'premium'],
+      next: '/spokedu-master/dashboard',
+      journeyId: searchParams.get('journeyId')?.trim() || createJourneyId(),
+      resource: { kind: 'generic' },
+    };
+  }
   const accessPlan = resolveMasterIntentAccessPlan(intent);
   const next = getSafeMasterPostPaymentPath(searchParams.get('next'), getFallbackForMasterIntent(intent));
   const journeyId = searchParams.get('journeyId')?.trim() || createJourneyId();
   return {
+    mode: 'gated',
     intent,
     ...accessPlan,
     next,

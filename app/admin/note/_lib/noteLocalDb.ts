@@ -238,6 +238,20 @@ export async function removeOutboundOps(clientOpIds: string[]): Promise<void> {
   });
 }
 
+/** leave strip rewrite — clientOpId 유지한 채 payload만 갱신 */
+export async function putOutboundOps(ops: NoteLocalOutboundOp[]): Promise<void> {
+  if (ops.length === 0) return;
+  await runTx<void>('readwrite', 'outbound', async (stores) => {
+    for (const op of ops) {
+      await new Promise<void>((resolve, reject) => {
+        const request = stores.outbound.put(op);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+  });
+}
+
 export async function clearDocumentLocal(documentId: string): Promise<void> {
   forgetLocalDocumentMemory(documentId);
   await runTx<void>('readwrite', ['documents', 'outbound'], async (stores) => {

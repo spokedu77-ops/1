@@ -82,11 +82,13 @@ function SuccessContent() {
   const retryHref = useMemo(() => {
     const retryParams = new URLSearchParams({
       plan: isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : gateContext.minimumPlan,
-      intent: gateContext.intent,
-      next: safeNext,
-      journeyId: gateContext.journeyId,
     });
-    if (gateContext.gateSurface) retryParams.set('gateSurface', gateContext.gateSurface);
+    if (gateContext.mode === 'gated' && gateContext.intent) {
+      retryParams.set('intent', gateContext.intent);
+      retryParams.set('next', safeNext);
+      retryParams.set('journeyId', gateContext.journeyId);
+      if (gateContext.gateSurface) retryParams.set('gateSurface', gateContext.gateSurface);
+    }
     return `/spokedu-master/payment?${retryParams.toString()}`;
   }, [gateContext, params, safeNext]);
   const plan = params.get('plan');
@@ -194,9 +196,9 @@ function SuccessContent() {
   useEffect(() => {
     if (status !== 'success' || resumed.current) return;
     resumed.current = true;
-    const id = window.setTimeout(() => router.replace(safeNext), 900);
+    const id = window.setTimeout(() => router.replace(gateContext.mode === 'gated' ? safeNext : '/spokedu-master/dashboard'), 900);
     return () => window.clearTimeout(id);
-  }, [router, safeNext, status]);
+  }, [gateContext.mode, router, safeNext, status]);
 
   if (status === 'checking' || status === 'checking-access') {
     return (

@@ -16,14 +16,17 @@ function CancelContent() {
   const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
   const retryPlan = normalizePlan(params.get('plan'));
   const retryHref = useMemo(() => {
+    const directRetryHref = `/spokedu-master/payment?plan=${retryPlan}`;
     const retryParams = new URLSearchParams({
       plan: retryPlan,
-      intent: gateContext.intent,
-      next: gateContext.next,
-      journeyId: gateContext.journeyId,
     });
-    if (gateContext.gateSurface) retryParams.set('gateSurface', gateContext.gateSurface);
-    return `/spokedu-master/payment?${retryParams.toString()}`;
+    if (gateContext.mode === 'gated' && gateContext.intent) {
+      retryParams.set('intent', gateContext.intent);
+      retryParams.set('next', gateContext.next);
+      retryParams.set('journeyId', gateContext.journeyId);
+      if (gateContext.gateSurface) retryParams.set('gateSurface', gateContext.gateSurface);
+    }
+    return gateContext.mode === 'gated' ? `/spokedu-master/payment?${retryParams.toString()}` : directRetryHref;
   }, [gateContext, retryPlan]);
 
   return (

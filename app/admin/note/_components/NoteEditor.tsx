@@ -1283,7 +1283,13 @@ export function NoteEditor({
       // C4: below create 실패 시 분할 전 본문 복구 (앞부분만 남은 채 뒷글자 소실 금지)
       if (split) {
         void settleEnterSplitCreate(enterResult).then((ok) => {
-          if (ok) return;
+          if (ok) {
+            const ed = editorRef.current;
+            if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
+              clearTipTapHistory(ed);
+            }
+            return;
+          }
           const ed = editorRef.current;
           if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
             ed.chain()

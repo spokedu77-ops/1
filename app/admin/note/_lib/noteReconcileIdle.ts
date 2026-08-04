@@ -16,10 +16,12 @@ import {
   getStructuralExcludeIds,
   hasStructuralExcludeIds,
 } from './noteStructuralExcludeRegistry';
+import { forgetRememberedBlockIds } from './noteDocumentBlocksCache';
 
 /** soft delete·이동 직후 — outbound push ack 전까지 되살림 방지 */
 export function markPendingBlockDeletes(documentId: string, ids: string[]): void {
   addStructuralExcludeIds(documentId, ids);
+  forgetRememberedBlockIds(documentId, ids);
 }
 
 export function hasRecentBlockDeletes(documentId: string): boolean {

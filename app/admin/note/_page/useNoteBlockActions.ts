@@ -36,7 +36,7 @@ import { clearAllNoteTextSelections, getActiveCrossRanges } from '../_components
 import { getActiveNoteEditor } from '../_components/noteEditorRegistry';
 import { getActiveListCrossRanges } from '../_components/noteListCrossSelect';
 import { resolveBlockIdsForSelectionDelete } from '../_lib/noteBlockSelectionKeyboard';
-import { clearTipTapHistory } from '../_lib/noteEditorHistory';
+import { clearTipTapHistory, armStructuralPasteUndo } from '../_lib/noteEditorHistory';
 import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
 import { notePointerTargetElement } from '../_lib/notePointerTarget';
 import { noteWhitespaceClickMayCreateBlocks } from '../_lib/noteWhitespaceContract';
@@ -496,6 +496,7 @@ export function useNoteBlockActions(options: {
     }
 
     const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
+    const outboundBefore = new Set(await documentEngine.listOutboundClientOpIds());
     const sourceContent = resolvePasteSourceContent(block);
     // C6: 블록 MIME은 절대 현재 칸 wipe 금지. TipTap 멀티라인은 live content로 blank 판정.
     const mode = resolvePasteInsertMode(block, normalizedSpecs, {
@@ -533,6 +534,13 @@ export function useNoteBlockActions(options: {
       lastFocusId = inserted.lastFocusId;
       lastFocusPart = inserted.lastFocusPart;
     } catch (error) {
+      // C6: 부분 create 실패 시 previousBlocks + paste 구간 outbound 롤백 (C4 Enter와 대칭)
+      try {
+        await documentEngine.rollbackMutationToBlocks(previousBlocks, outboundBefore);
+        setBlocks(previousBlocks);
+      } catch (rollbackError) {
+        devLogger.error('[Note] applyPastedBlockSpecs rollback', rollbackError);
+      }
       devLogger.error('[Note] applyPastedBlockSpecs', error);
       setError(error instanceof Error ? error.message : '붙여넣기 실패');
       return;
@@ -548,6 +556,10 @@ export function useNoteBlockActions(options: {
       nextBlocks,
       collectBlockTransactionIds(previousBlocks, nextBlocks),
     );
+    // C3: 블록 MIME paste도 TipTap depth가 structural undo를 가로채지 않게
+    armStructuralPasteUndo();
+    const activeEditor = getActiveNoteEditor(block.id) ?? getActiveNoteEditor(lastFocusId);
+    if (activeEditor) clearTipTapHistory(activeEditor);
     if (normalizedSpecs[0]?.type === 'image' || normalizedSpecs[0]?.type === 'table' || normalizedSpecs[0]?.type === 'divider') {
       return;
     }
@@ -561,6 +573,7 @@ export function useNoteBlockActions(options: {
     focusBlockEditor,
     blocksRef,
     documentEngine,
+    setBlocks,
     setError,
   ]);
 

@@ -57,10 +57,27 @@ describe('master gate intent model', () => {
       journeyId: 'j3',
     });
     expect(readMasterGateContextFromSearchParams(params)).toMatchObject({
+      mode: 'gated',
       intent: 'continue_record',
       next: '/spokedu-master/class-record',
       journeyId: 'j3',
     });
   });
-});
 
+  it('treats payment without an intent as direct checkout', () => {
+    expect(readMasterGateContextFromSearchParams(new URLSearchParams())).toMatchObject({
+      mode: 'direct',
+      intent: null,
+      minimumPlan: 'lite',
+      allowedPlans: ['lite', 'premium'],
+      next: '/spokedu-master/dashboard',
+    });
+
+    expect(readMasterGateContextFromSearchParams(new URLSearchParams('plan=lite'))).toMatchObject({
+      mode: 'direct',
+      intent: null,
+      minimumPlan: 'lite',
+      allowedPlans: ['lite', 'premium'],
+    });
+  });
+});

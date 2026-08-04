@@ -1,6 +1,5 @@
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
-import { hasRecentBlockDeletes } from './noteReconcileIdle';
-import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
+import { getStructuralExcludeIds, hasStructuralExcludeIds } from './noteStructuralExcludeRegistry';
 import { decideEmptySnapshotApply } from './noteAuthority';
 import type { NoteBlock } from './types';
 
@@ -177,7 +176,7 @@ export function rememberNoteDocumentBlocks(
     } else {
       emptyConfirmed = options?.serverConfirmedEmpty === true;
     }
-  } else if (!hasRecentBlockDeletes(documentId)) {
+  } else if (!hasStructuralExcludeIds(documentId)) {
     const existing = readEntry(documentId);
     if (existing && shouldSkipSuspiciousCacheShrink(existing.blocks, incoming)) {
       return;
@@ -203,6 +202,19 @@ export function readRememberedNoteDocumentBlocks(documentId: string): NoteBlock[
   if (!entry) return null;
   if (entry.blocks.length === 0 && !entry.emptyConfirmed) return null;
   return cloneBlocks(entry.blocks);
+}
+
+/** leave/delete Intent 시 provisional remember에서 id 제거 — 좀비 first-paint 방지 */
+export function forgetRememberedBlockIds(documentId: string, ids: ReadonlyArray<string>): void {
+  if (!documentId || ids.length === 0) return;
+  const entry = readEntry(documentId);
+  if (!entry || entry.blocks.length === 0) return;
+  const drop = new Set(ids);
+  const next = entry.blocks.filter((block) => !drop.has(block.id));
+  if (next.length === entry.blocks.length) return;
+  rememberNoteDocumentBlocks(documentId, next, {
+    serverConfirmedEmpty: next.length === 0 ? entry.emptyConfirmed : false,
+  });
 }
 
 export function invalidateRememberedNoteDocumentBlocks(documentId?: string): void {

@@ -267,12 +267,20 @@ export function useNoteBlockDelete(options: {
     blocksToDelete: NoteBlock[],
     deleteOptions?: { skipDeleteUndo?: boolean; focusPrevious?: boolean },
   ) => {
+    commitActiveNoteEditorToStore();
     const targets = blocksToDelete.filter((block) =>
       blocksRef.current.some((item) => item.id === block.id),
     );
     if (targets.length === 0) return;
 
-    const prevBlocks = blocksRef.current;
+    const documentId = targets[0]?.document_id
+      ?? blocksRef.current.find((block) => block.document_id)?.document_id
+      ?? null;
+    const storeBlocks = useNoteBlockStore.getState().getBlocksArray()
+      .filter((item) => !documentId || item.document_id === documentId);
+    const prevBlocks = mergeBlocksWithStoreContent(
+      storeBlocks.length > 0 ? storeBlocks : blocksRef.current,
+    );
     const command = buildDeleteBlockForestCommand(
       prevBlocks,
       targets.map((item) => item.id),

@@ -13,7 +13,7 @@ import {
   isSpokeduMasterBillingProviderConfigured,
   paySpokeduMasterBillingKey,
 } from '@/app/lib/server/spokeduMasterBillingProvider';
-import { storeSpokeduMasterBillingKey } from '@/app/lib/server/spokeduMasterBillingKeyVault';
+import { deleteSpokeduMasterBillingKey, storeSpokeduMasterBillingKey } from '@/app/lib/server/spokeduMasterBillingKeyVault';
 import { applySpokeduMasterPayment } from '@/app/lib/server/spokeduMasterPaymentApply';
 import {
   SPOKEDU_MASTER_PLAN_CONFIG,
@@ -51,6 +51,21 @@ function normalizePaidPlan(plan: string | null | undefined): SpokeduMasterPaidPl
   if (plan === 'lite' || plan === 'premium') return plan;
   if (plan === 'pro') return 'premium';
   return null;
+}
+
+async function cleanupPendingBillingAttempt(input: {
+  service: ReturnType<typeof getServiceSupabase>;
+  userId: string;
+  secretId: string | null;
+}) {
+  if (!input.secretId) return;
+  await input.service
+    .from('spokedu_master_subscriptions')
+    .update({ provider_billing_key_secret_id: null })
+    .eq('user_id', input.userId)
+    .eq('status', 'pending')
+    .eq('provider_billing_key_secret_id', input.secretId);
+  await deleteSpokeduMasterBillingKey({ userId: input.userId, secretId: input.secretId });
 }
 
 export async function POST(request: Request) {
@@ -448,6 +463,7 @@ export async function POST(request: Request) {
       paymentKey: payment.paymentKey,
       recoverable: true,
     });
+    await cleanupPendingBillingAttempt({ service, userId: user.id, secretId: billingKeySecretId });
     await reportError(new Error(applyResult.code), {
       context: 'spokedu_master.billing.issue',
       tags: {

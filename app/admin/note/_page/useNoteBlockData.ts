@@ -39,6 +39,7 @@ import {
   replaceNoteDocumentStoreView,
 } from '../_lib/noteDocumentPipeline';
 import { readRememberedNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
+import { getStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import { registerNoteSaveTrustGate } from '../_lib/noteSaveTrust';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import {
@@ -339,14 +340,20 @@ export function useNoteBlockData(options: {
     previousDocumentIdRef.current = selectedId;
 
     const documentId = selectedId;
-    // Load 계약: remembered는 authoritative 트리가 아님 — 빈 투영 + 스켈레톤, open 경로만 확정
-    replaceNoteDocumentStoreView(documentId, []);
+    // remembered는 authoritative가 아님 — leave-exclude로만 걸러 provisional paint
+    const remembered = readRememberedNoteDocumentBlocks(documentId);
+    const excluded = getStructuralExcludeIds(documentId);
+    const provisional = (remembered ?? []).filter(
+      (block) => block.document_id === documentId && !excluded.has(block.id),
+    );
+    replaceNoteDocumentStoreView(documentId, provisional);
     void ensureNoteLocalCacheVersion().catch((e) => {
       devLogger.warn('[Note] ensureNoteLocalCacheVersion failed', e);
     });
 
     setLoadSettledDocId(null, 'open:start');
-    setLoadingBlocks(true, 'open:start');
+    // provisional이 있으면 빈 스켈레톤 대신 바로 보여 주고, open이 authoritative로 확정
+    setLoadingBlocks(provisional.length === 0, 'open:start');
     setBlocksEmptyConfirmed(false, 'open:start');
     setBlocksSyncing(true, 'open:start');
   }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);
@@ -382,15 +389,13 @@ export function useNoteBlockData(options: {
         bootstrapAppliedDocIdRef.current = documentId;
         bootstrapForOpen = bootstrapPayload.blocks;
       } else if (!hasInstantBlocks && bootstrapAppliedDocIdRef.current !== documentId) {
-        for (let attempt = 0; attempt < 4; attempt += 1) {
-          if (cancelled || blockLoadGenRef.current !== loadGen) return;
-          const lateBootstrap = bootstrapBlocksRef.current;
-          if (lateBootstrap?.documentId === documentId) {
-            bootstrapAppliedDocIdRef.current = documentId;
-            bootstrapForOpen = lateBootstrap.blocks;
-            break;
-          }
-          await new Promise((resolve) => setTimeout(resolve, 50));
+        // bootstrap 레이스만 짧게 1회 대기 — 200ms 폴링은 cold open을 고의로 늦춤
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        if (cancelled || blockLoadGenRef.current !== loadGen) return;
+        const lateBootstrap = bootstrapBlocksRef.current;
+        if (lateBootstrap?.documentId === documentId) {
+          bootstrapAppliedDocIdRef.current = documentId;
+          bootstrapForOpen = lateBootstrap.blocks;
         }
       }
 

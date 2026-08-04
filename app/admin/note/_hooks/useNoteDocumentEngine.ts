@@ -51,6 +51,12 @@ export type NoteDocumentEngineApi = {
     command: NoteBlockCommandResult,
     options?: { flush?: boolean },
   ) => Promise<NoteBlock[]>;
+  cancelPendingOutboundLeavesForBlockIds: (blockIds: readonly string[]) => Promise<void>;
+  listOutboundClientOpIds: () => Promise<string[]>;
+  rollbackMutationToBlocks: (
+    previousBlocks: NoteBlock[],
+    outboundClientOpIdsBefore: ReadonlySet<string>,
+  ) => Promise<void>;
   persistRestoreBlock: (blockId: string) => Promise<NoteBlock[]>;
   persistPurgeBlock: (blockId: string) => Promise<void>;
   getBlocks: () => NoteBlock[];
@@ -264,6 +270,28 @@ export function useNoteDocumentEngine(options: {
     return pipeline.applyStructureCommand(command, options);
   }, [waitForLivePipeline]);
 
+  const cancelPendingOutboundLeavesForBlockIds = useCallback(async (
+    blockIds: readonly string[],
+  ) => {
+    if (blockIds.length === 0) return;
+    const pipeline = await waitForLivePipeline();
+    await pipeline.cancelPendingOutboundLeavesForBlockIds(blockIds);
+  }, [waitForLivePipeline]);
+
+  const listOutboundClientOpIds = useCallback(async () => {
+    const pipeline = getLivePipeline();
+    if (!pipeline) return [];
+    return pipeline.listOutboundClientOpIds();
+  }, [getLivePipeline]);
+
+  const rollbackMutationToBlocks = useCallback(async (
+    previousBlocks: NoteBlock[],
+    outboundClientOpIdsBefore: ReadonlySet<string>,
+  ) => {
+    const pipeline = await waitForLivePipeline();
+    await pipeline.rollbackMutationToBlocks(previousBlocks, outboundClientOpIdsBefore);
+  }, [waitForLivePipeline]);
+
   const persistRestoreBlock = useCallback(async (blockId: string) => {
     const pipeline = await waitForLivePipeline();
     return pipeline.persistRestoreBlock(blockId);
@@ -321,6 +349,9 @@ export function useNoteDocumentEngine(options: {
     persistCreateBlock,
     persistBlockTransaction,
     applyStructureCommand,
+    cancelPendingOutboundLeavesForBlockIds,
+    listOutboundClientOpIds,
+    rollbackMutationToBlocks,
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,
@@ -346,6 +377,9 @@ export function useNoteDocumentEngine(options: {
     persistCreateBlock,
     persistBlockTransaction,
     applyStructureCommand,
+    cancelPendingOutboundLeavesForBlockIds,
+    listOutboundClientOpIds,
+    rollbackMutationToBlocks,
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,

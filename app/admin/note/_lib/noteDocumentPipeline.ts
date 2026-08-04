@@ -17,7 +17,10 @@ import { markNoteLocalSave, markPendingBlockDeletes } from './noteReconcileIdle'
 import {
   getStructuralExcludeIds,
   removeStructuralExcludeIds,
+  syncStructuralExcludeFromOutbound,
 } from './noteStructuralExcludeRegistry';
+import { listOutboundOps, putOutboundOps, removeOutboundOps } from './noteLocalDb';
+import { planStripOutboundLeavesForRestoredIds } from './notePersistOpToBlockOps';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import {
   disposeNoteSyncCoordinatorInstance,
@@ -319,9 +322,10 @@ export class NoteDocumentPipeline {
     }
     const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
       .filter((block) => block.document_id === this.documentId);
-    const blocks = this.applyEmergencyDrafts(this.blocksWithStoreContent(
-      initialBlocks.filter((block) => block.document_id === this.documentId),
-    ));
+    // IDB+outbound+exclude merge 결과 — raw initialBlocks로 덮어쓰지 않음
+    const merged = coordinator.getBlocks()
+      .filter((block) => block.document_id === this.documentId);
+    const blocks = this.applyEmergencyDrafts(this.blocksWithStoreContent(merged));
     if (storeForDoc.length === 0 || options?.emptyConfirmed) {
       const reason = describeSnapshotDiff(
         options?.emptyConfirmed ? storeForDoc : [],
@@ -489,10 +493,58 @@ export class NoteDocumentPipeline {
     }
   }
 
+  /**
+   * intentional restore — 미ack leave에서 해당 id만 strip (형제 leave·txn patch 보존).
+   * trash restore · history restore-blocks reclaim 공통 choke.
+   */
+  async cancelPendingOutboundLeavesForBlockIds(blockIds: readonly string[]): Promise<void> {
+    if (blockIds.length === 0) return;
+    await this.flushPersistQueue();
+    const outbound = await listOutboundOps(this.documentId);
+    const plan = planStripOutboundLeavesForRestoredIds(outbound, new Set(blockIds));
+    if (plan.removeClientOpIds.length === 0 && plan.rewriteOps.length === 0) return;
+    if (plan.removeClientOpIds.length > 0) {
+      await removeOutboundOps(plan.removeClientOpIds);
+    }
+    if (plan.rewriteOps.length > 0) {
+      await putOutboundOps(plan.rewriteOps);
+    }
+    const remaining = await listOutboundOps(this.documentId);
+    syncStructuralExcludeFromOutbound(this.documentId, remaining);
+  }
+
+  /**
+   * paste 부분 실패 롤백 — LocalApply를 previous로 되돌리고 paste 구간 outbound만 제거.
+   */
+  async rollbackMutationToBlocks(
+    previousBlocks: NoteBlock[],
+    outboundClientOpIdsBefore: ReadonlySet<string>,
+  ): Promise<void> {
+    this.dispatch({ type: 'replaceBlocks', blocks: previousBlocks });
+    const outbound = await listOutboundOps(this.documentId);
+    const spawned = outbound
+      .filter((op) => !outboundClientOpIdsBefore.has(op.clientOpId))
+      .map((op) => op.clientOpId);
+    if (spawned.length === 0) return;
+    await removeOutboundOps(spawned);
+    syncStructuralExcludeFromOutbound(
+      this.documentId,
+      await listOutboundOps(this.documentId),
+    );
+  }
+
+  async listOutboundClientOpIds(): Promise<string[]> {
+    const outbound = await listOutboundOps(this.documentId);
+    return outbound.map((op) => op.clientOpId);
+  }
+
   async persistRestoreBlock(blockId: string): Promise<NoteBlock[]> {
     if (!this.queue) {
       throw new Error('[Note] 문서 파이프라인이 준비되지 않았습니다');
     }
+    // intentional restore: 미ack leave가 남아 있으면 HTTP 실패·재삭제·exclude 재투영
+    await this.cancelPendingOutboundLeavesForBlockIds([blockId]);
+    removeStructuralExcludeIds(this.documentId, [blockId]);
     const restored = await this.queue.enqueueRestoreBlock({ id: blockId });
     // trash/history restore는 leave-exclude grace까지 해제해야 재삭제되지 않는다
     removeStructuralExcludeIds(
@@ -514,7 +566,7 @@ export class NoteDocumentPipeline {
   }
 
   getCoordinatorBlocks(): NoteBlock[] {
-    return [];
+    return this.coordinator?.getBlocks() ?? [];
   }
 
   hasPendingContent(): boolean {

@@ -146,12 +146,14 @@ export function useNoteBlockHistory(options: {
       const next = isLeave
         ? current.filter((block) => !restoreIds.includes(block.id))
         : applyRestoreBlockSnapshots(current, entry.snapshots);
-      if (isLeave) {
-        if (activeDocumentId) markPendingBlockDeletes(activeDocumentId, restoreIds);
-      } else if (activeDocumentId) {
-        removeStructuralExcludeIds(activeDocumentId, restoreIds);
-      }
       try {
+        if (isLeave) {
+          if (activeDocumentId) markPendingBlockDeletes(activeDocumentId, restoreIds);
+        } else if (activeDocumentId) {
+          // reclaim: 미ack leave에서 해당 id만 strip — 형제 leave outbound 통삭제 금지
+          await documentEngine.cancelPendingOutboundLeavesForBlockIds(restoreIds);
+          removeStructuralExcludeIds(activeDocumentId, restoreIds);
+        }
         const leaveCompanionPatches = isLeave ? (entry.companionPatches ?? []) : [];
         await documentEngine.applyStructureCommand(historyCommandFromSnapshots({
           next,

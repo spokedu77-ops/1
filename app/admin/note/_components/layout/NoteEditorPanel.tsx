@@ -231,7 +231,9 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
   activeDragDocId,
 }: NoteEditorPanelProps) {
   const blockSnapshotReady = Boolean(selectedId) && loadSettledDocId === selectedId;
-  const shouldShowBlockSkeleton = loadingBlocks || !blockSnapshotReady;
+  // provisional(remembered+exclude) 블록이 있으면 open settle 전에도 빈 스켈레톤으로 막지 않음
+  const shouldShowBlockSkeleton =
+    (loadingBlocks || !blockSnapshotReady) && blocks.length === 0;
 
   return (
     <div className={`min-w-0 flex-1 flex-col overflow-hidden bg-white ${

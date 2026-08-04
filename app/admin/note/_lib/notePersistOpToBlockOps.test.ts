@@ -7,6 +7,7 @@ import {
   excludeBlocksPendingSoftDelete,
   filterStalePendingSoftDeletes,
   findOutboundOpsSupersededByServerRestore,
+  planStripOutboundLeavesForRestoredIds,
   mergeServerBlocksIntoLocalSnapshot,
   persistOpToPushItems,
   serverSnapshotHasBlocksMissingFrom,
@@ -445,6 +446,49 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
       [serverBlock('child-1', 'still on server')],
     );
     expect(superseded).toEqual([]);
+  });
+
+  it('planStripOutboundLeavesForRestoredIds strips one id and keeps sibling leave', () => {
+    const softItems = persistOpToPushItems({ type: 'softDelete', ids: ['a', 'b'] });
+    const txnItems = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [{ id: 'keep-order', order_index: 0 }],
+      deleteIds: ['c', 'd'],
+    });
+    const topoItems = persistOpToPushItems({
+      type: 'patchFields',
+      patches: [{ id: 'x', order_index: 0 }],
+    });
+    const outbound = [
+      { ...softItems[0]!, documentId: 'doc', createdAt: 1 },
+      { ...txnItems[0]!, documentId: 'doc', createdAt: 2 },
+      { ...topoItems[0]!, documentId: 'doc', createdAt: 3 },
+    ];
+    const softPlan = planStripOutboundLeavesForRestoredIds(outbound, new Set(['a']));
+    expect(softPlan.removeClientOpIds).toEqual([]);
+    expect(softPlan.rewriteOps).toHaveLength(1);
+    expect(softPlan.rewriteOps[0]?.payload).toMatchObject({
+      opType: 'soft_delete',
+      ids: ['b'],
+    });
+
+    const txnPlan = planStripOutboundLeavesForRestoredIds(outbound, new Set(['c']));
+    expect(txnPlan.removeClientOpIds).toEqual([]);
+    expect(txnPlan.rewriteOps).toHaveLength(1);
+    expect(txnPlan.rewriteOps[0]?.payload).toMatchObject({
+      opType: 'block_transaction',
+      deleteIds: ['d'],
+      patches: [{ id: 'keep-order', order_index: 0 }],
+    });
+
+    const dropAll = planStripOutboundLeavesForRestoredIds(outbound, new Set(['a', 'b']));
+    expect(dropAll.removeClientOpIds).toEqual([softItems[0]!.clientOpId]);
+    expect(dropAll.rewriteOps).toEqual([]);
+
+    expect(planStripOutboundLeavesForRestoredIds(outbound, new Set(['x']))).toEqual({
+      removeClientOpIds: [],
+      rewriteOps: [],
+    });
   });
 
   it('collectPendingTransferAwayIds excludes moved blocks from source doc merge', () => {

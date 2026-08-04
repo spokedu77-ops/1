@@ -325,11 +325,14 @@ export class NoteSyncCoordinator {
       await clearDocumentLocal(this.documentId);
       markForcedLocalDocumentReset(this.documentId);
     }
-    const local = await readLocalDocument(this.documentId);
-    const outbound = await listOutboundOps(this.documentId);
+    // open first-paint: IDB·outbound·ops/state를 직렬로 막지 않음
+    const [local, outbound, lastSeq] = await Promise.all([
+      readLocalDocument(this.documentId),
+      listOutboundOps(this.documentId),
+      fetchSyncState(this.documentId),
+    ]);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
     this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(outbound);
-    const lastSeq = await fetchSyncState(this.documentId);
     syncStateCache.set(this.documentId, { seq: lastSeq, fetchedAt: Date.now() });
 
     const serverBlocks = dedupeNoteBlocksById(initialBlocks);
@@ -367,16 +370,19 @@ export class NoteSyncCoordinator {
       this.blocks = serverBlocks;
     }
 
-    await this.persistLocal();
+    // outbound 없고 병합 결과가 빈면 confirmed empty를 durable에 기록 — stale IDB 재오픈 좀비 차단
+    await this.persistLocal({ allowEmpty: outbound.length === 0 && this.blocks.length === 0 });
     this.startLeaderElection();
-    if (outbound.length > 0 || await this.hasPendingOutbound()) {
-      await this.flushPush();
+    // leave drain은 계속하되 open settle(first paint)를 flush로 막지 않음
+    if (outbound.length > 0) {
+      this.schedulePush(STRUCTURE_PUSH_DEBOUNCE_MS);
     }
   }
 
   setBlocks(blocks: NoteBlock[]): void {
     this.blocks = dedupeNoteBlocksById(blocks);
     // 빈 스냅샷으로는 durable IDB를 덮지 않는다 — open wipe가 미ack reorder를 지우는 경로.
+    // 의도적 empty(leave ack 등)는 persistLocal({ allowEmpty: true })로만 durable 반영.
     if (this.blocks.length === 0) return;
     void this.persistLocal();
   }
@@ -693,7 +699,8 @@ export class NoteSyncCoordinator {
       const remainingOutbound = await listOutboundOps(this.documentId);
       syncStructuralExcludeFromOutbound(this.documentId, remainingOutbound);
       this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(remainingOutbound);
-      await this.persistLocal();
+      // leave ack로 문서가 비면 intentional empty를 IDB에 기록 (setBlocks 가드와 구분)
+      await this.persistLocal({ allowEmpty: this.blocks.length === 0 });
       markNoteLocalSave(this.documentId);
       const storeAfterPush = useNoteBlockStore.getState().getBlocksArray()
         .filter((block) => block.document_id === this.documentId);
@@ -879,7 +886,10 @@ export class NoteSyncCoordinator {
     this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:applyRemote');
   }
 
-  private async persistLocal(): Promise<void> {
+  private async persistLocal(options?: { allowEmpty?: boolean }): Promise<void> {
+    // setBlocks와 동일 — 빈 스냅샷으로 durable IDB non-empty를 wipe하지 않음
+    // 단 leave ack·confirmed empty open은 allowEmpty로 intentional [] 기록
+    if (this.blocks.length === 0 && !options?.allowEmpty) return;
     await writeLocalDocument({
       documentId: this.documentId,
       lastAppliedSeq: this.lastAppliedSeq,

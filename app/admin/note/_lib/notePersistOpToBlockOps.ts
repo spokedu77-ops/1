@@ -200,6 +200,80 @@ export function findOutboundOpsSupersededByServerRestore(
   return [];
 }
 
+export type OutboundLeaveStripPlan = {
+  /** leave id가 비어 통째로 지울 op */
+  removeClientOpIds: string[];
+  /** 형제 leave·companion patch를 남기고 restored id만 뺀 op */
+  rewriteOps: NoteLocalOutboundOp[];
+};
+
+/**
+ * intentional restore 전 — 미ack leave에서 restored id만 strip.
+ * 멀티 soft_delete/txn deleteIds를 통삭제하면 형제 leave·order patch까지 소멸한다.
+ */
+export function planStripOutboundLeavesForRestoredIds(
+  outbound: ReadonlyArray<NoteLocalOutboundOp>,
+  blockIds: ReadonlySet<string>,
+): OutboundLeaveStripPlan {
+  const removeClientOpIds: string[] = [];
+  const rewriteOps: NoteLocalOutboundOp[] = [];
+  if (blockIds.size === 0) return { removeClientOpIds, rewriteOps };
+
+  for (const op of outbound) {
+    const payload = op.payload;
+    if (payload.opType === 'soft_delete') {
+      if (!payload.ids.some((id) => blockIds.has(id))) continue;
+      const ids = payload.ids.filter((id) => !blockIds.has(id));
+      if (ids.length === 0) {
+        removeClientOpIds.push(op.clientOpId);
+        continue;
+      }
+      const deleteMeta = payload.deleteMeta?.filter((meta) => !blockIds.has(meta.id));
+      rewriteOps.push({
+        ...op,
+        payload: {
+          opType: 'soft_delete',
+          ids,
+          ...(deleteMeta && deleteMeta.length > 0 ? { deleteMeta } : {}),
+        },
+      });
+      continue;
+    }
+    if (payload.opType === 'block_transaction') {
+      if (!payload.deleteIds.some((id) => blockIds.has(id))) continue;
+      const deleteIds = payload.deleteIds.filter((id) => !blockIds.has(id));
+      const deleteMeta = payload.deleteMeta?.filter((meta) => !blockIds.has(meta.id));
+      const creates = payload.creates ?? [];
+      const emptyTxn = deleteIds.length === 0
+        && payload.patches.length === 0
+        && creates.length === 0;
+      if (emptyTxn) {
+        removeClientOpIds.push(op.clientOpId);
+        continue;
+      }
+      rewriteOps.push({
+        ...op,
+        payload: {
+          opType: 'block_transaction',
+          patches: payload.patches,
+          deleteIds,
+          ...(deleteMeta && deleteMeta.length > 0 ? { deleteMeta } : {}),
+          ...(creates.length > 0 ? { creates } : {}),
+        },
+      });
+    }
+  }
+  return { removeClientOpIds, rewriteOps };
+}
+
+/** @deprecated use planStripOutboundLeavesForRestoredIds — 통삭제 id만 필요할 때 */
+export function collectOutboundLeaveClientOpIdsForBlockIds(
+  outbound: ReadonlyArray<NoteLocalOutboundOp>,
+  blockIds: ReadonlySet<string>,
+): string[] {
+  return planStripOutboundLeavesForRestoredIds(outbound, blockIds).removeClientOpIds;
+}
+
 /**
  * IndexedDB local.blocks가 []일 때 outbound만으로 빈 로컬을 신뢰할지.
  * pending soft delete가 서버 블록 전부를 설명할 때만 true — 그 외는 오염된 로컬로 보고 서버 rebase.
@@ -224,20 +298,26 @@ export function mergeServerBlocksIntoLocalSnapshot(
   },
 ): NoteBlock[] {
   // soft-delete 대기 id는 로컬 스냅샷에서도 즉시 제거 — 서버 skip만으로는 IDB 부활을 못 막음
-  let merged = localBlocks.filter((block) => !pendingDeleteIds.has(block.id));
-  const localById = new Map(merged.map((block) => [block.id, block]));
+  const keptLocal = localBlocks.filter((block) => !pendingDeleteIds.has(block.id));
+  const byId = new Map(keptLocal.map((block) => [block.id, block]));
+  const order = keptLocal.map((block) => block.id);
 
   for (const serverBlock of serverBlocks) {
     if (pendingDeleteIds.has(serverBlock.id)) continue;
-    const local = localById.get(serverBlock.id);
+    const local = byId.get(serverBlock.id);
     if (!local) {
-      merged.push(serverBlock);
+      byId.set(serverBlock.id, serverBlock);
+      order.push(serverBlock.id);
       continue;
     }
     const nextBlock = mergeServerBlockIntoLocal(local, serverBlock);
     if (nextBlock === local) continue;
-    merged = merged.map((block) => (block.id === serverBlock.id ? nextBlock : block));
+    byId.set(serverBlock.id, nextBlock);
   }
+
+  let merged = order
+    .map((id) => byId.get(id))
+    .filter((block): block is NoteBlock => Boolean(block));
 
   if (options?.pruneLocalOnlyNotOnServer) {
     const serverIds = new Set(serverBlocks.map((block) => block.id));
