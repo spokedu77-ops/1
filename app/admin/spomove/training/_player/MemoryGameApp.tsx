@@ -2198,6 +2198,7 @@ export default function MemoryGameApp({
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
+            onExit={stop}
             onComplete={handleReactTrainComplete}
           />
         ) : reactEngineLevel === 6 ? (
@@ -2231,7 +2232,6 @@ export default function MemoryGameApp({
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
-            onExit={stop}
             onComplete={handleReactTrainComplete}
           />
         ) : (

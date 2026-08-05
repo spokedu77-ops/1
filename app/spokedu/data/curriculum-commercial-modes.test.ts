@@ -32,7 +32,7 @@ describe('curriculum commercial modes', () => {
   });
 
   it('pairs only strong history evidence ids that exist on curriculumPage', () => {
-    const historyIds = new Set(curriculumPage.serviceExamples.items.map((item) => item.id));
+    const historyIds = new Set<string>(curriculumPage.serviceExamples.items.map((item) => item.id));
     for (const mode of curriculumModeList) {
       for (const evidence of mode.evidence) {
         if (evidence.type === 'history') {

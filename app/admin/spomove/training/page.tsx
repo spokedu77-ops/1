@@ -803,12 +803,12 @@ function SettingsScreen({
     return {
       ...initial,
       ...(mapped.moleLookMode ? { moleLookMode: mapped.moleLookMode } : {}),
-      ...(typeof launch.moleBonusTimeEnabled === 'boolean' ? { moleBonusTimeEnabled: launch.moleBonusTimeEnabled } : {}),
+      ...(typeof initial.moleBonusTimeEnabled === 'boolean' ? { moleBonusTimeEnabled: initial.moleBonusTimeEnabled } : {}),
       ...(mapped.numberCartTier ? { numberCartTier: mapped.numberCartTier } : {}),
       ...(mapped.colorTrackerTier ? { colorTrackerTier: mapped.colorTrackerTier } : {}),
       ...(mapped.goalkeeperTier ? { goalkeeperTier: mapped.goalkeeperTier } : {}),
-      ...(typeof launch.goalkeeperBonusTimeEnabled === 'boolean' ? { goalkeeperBonusTimeEnabled: launch.goalkeeperBonusTimeEnabled } : {}),
-      ...(launch.handFootDifficulty ? { handFootDifficulty: launch.handFootDifficulty } : {}),
+      ...(typeof initial.goalkeeperBonusTimeEnabled === 'boolean' ? { goalkeeperBonusTimeEnabled: initial.goalkeeperBonusTimeEnabled } : {}),
+      ...(initial.handFootDifficulty ? { handFootDifficulty: initial.handFootDifficulty } : {}),
       ...(mapped.camouflagePlacement ? { camouflagePlacement: mapped.camouflagePlacement } : {}),
     };
   });
@@ -1218,7 +1218,7 @@ function SettingsScreen({
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>이미지 테마</label>
                 <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                  {SPOMOVE_COLOR_THEME_LABELS[launch.variantColorTheme]}
+                  {SPOMOVE_COLOR_THEME_LABELS[launch.variantColorTheme as SpomoveColorThemeId]}
                 </div>
               </div>
               <p style={{ margin: '0 0 10px', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
