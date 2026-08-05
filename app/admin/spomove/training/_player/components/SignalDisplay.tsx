@@ -421,7 +421,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       boxSizing: 'border-box',
     };
 
-    /* 1단계: 3패널 모두 과일. 2단계: 3패널 중 1~3칸만 과일(나머지 흰 빈 칸). 3단계: 2패널 각 1장. 패널당 이미지 1장만, 스택 없음 */
+    /* 2분할/3분할/랜덤분할 공용: 패널당 이미지 1장만, 스택 없음 */
     return (
       <div key={animKey} className="signal-blink" style={outer}>
         {panels.map((panel, idx) => {

@@ -9,9 +9,9 @@ import {
 } from '../lib/spomoveVariantThemeConfig';
 import { VARIANT_FRUIT_SLOT_LABELS } from '../lib/variantFruitAssets';
 
-type AppendixTheme = Exclude<SpomoveColorThemeId, 'color'>;
+type AppendixTheme = Exclude<SpomoveColorThemeId, 'color' | 'mix'>;
 
-const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'vehicle', 'emotion', 'animal', 'nature', 'food'];
+const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'animal', 'food', 'nature', 'vehicle'];
 
 function getSlotLabels(theme: AppendixTheme): readonly string[] {
   if (theme === 'fruit') return VARIANT_FRUIT_SLOT_LABELS;
@@ -164,7 +164,7 @@ export function VariantImageAppendix() {
           textAlign: 'left',
         }}
       >
-        <span>📎 부록 · 변형 색지각 이미지 소개</span>
+        <span>📎 부록 · 연상 색지각 이미지 소개</span>
         <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}>
           {open ? '▲ 닫기' : '▼ 열기'}
         </span>

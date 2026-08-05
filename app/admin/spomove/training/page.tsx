@@ -134,19 +134,26 @@ function modeLabelKoEn(modeId: string): string {
 }
 
 const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
-  'Quad Color': '사분할 자극',
-  'Modified Quadrant': '변형 사분할 자극',
-  'Modified Quadrant L1': '변형 사분할 자극',
-  'Modified Quadrant L2': '변형 사분할 자극',
-  'Modified Quadrant L3': '변형 사분할 자극',
-  'Modified Quadrant L4': '변형 사분할 자극',
-  'Full-Screen Color': '전면 자극',
-  'Variant Color (1)': '전면 2패널 자극',
-  'Variant Color 1': '전면 2패널 자극',
-  'Variant Color (2)': '전면 3패널 자극',
-  'Variant Color 2': '전면 3패널 자극',
-  'Variant Color 2/3': '전면 3패널 자극',
-  'Variant 3': '전면 3패널 자극',
+  'Arrow / Color Arrow': '공간방향 자극',
+  '4-Quadrant Stimulus': '4분할 자극',
+  'Full-Screen Single Stimulus': '전면단일 자극',
+  '2-Split Stimulus': '2분할 자극',
+  '3-Split Stimulus': '3분할 자극',
+  'Random-Split Stimulus': '랜덤분할 자극',
+  '(On Hold) Hand and Foot Separate Migration': '(보류) 손 따로, 발 따로 이관 예정',
+  'Quad Color': '4분할 자극',
+  'Modified Quadrant': '(보류) 손 따로, 발 따로 이관 예정',
+  'Modified Quadrant L1': '(보류) 손 따로, 발 따로 이관 예정',
+  'Modified Quadrant L2': '(보류) 손 따로, 발 따로 이관 예정',
+  'Modified Quadrant L3': '(보류) 손 따로, 발 따로 이관 예정',
+  'Modified Quadrant L4': '(보류) 손 따로, 발 따로 이관 예정',
+  'Full-Screen Color': '전면단일 자극',
+  'Variant Color (1)': '2분할 자극',
+  'Variant Color 1': '2분할 자극',
+  'Variant Color (2)': '3분할 자극',
+  'Variant Color 2': '3분할 자극',
+  'Variant Color 2/3': '3분할 자극',
+  'Variant 3': '랜덤분할 자극',
   'Spatial Orientation': '공간방향 자극',
   'Spatial Orientation (Color)': '공간방향 자극',
   'Arrow Stroop / Reverse': '공간 방향 · 색상',
@@ -209,6 +216,20 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   Goalkeeper: '골키퍼 모드',
 };
 
+function levelNameEnDisplay(enName: string): string {
+  return enName
+    .replace('Spatial Orientation', 'Arrow / Color Arrow')
+    .replace('Quad Color', '4-Quadrant Stimulus')
+    .replace('Full-Screen Color', 'Full-Screen Single Stimulus')
+    .replace('Variant Color (1)', '2-Split Stimulus')
+    .replace('Variant Color 1', '2-Split Stimulus')
+    .replace('Variant Color (2)', '3-Split Stimulus')
+    .replace('Variant Color 2/3', '3-Split Stimulus')
+    .replace('Variant Color 2', '3-Split Stimulus')
+    .replace('Variant 3', 'Random-Split Stimulus')
+    .replace('Modified Quadrant', '(On Hold) Hand and Foot Separate Migration');
+}
+
 function levelNameKo(modeId: string, levelId: number): string {
   const m = MODES[modeId];
   const catalogId =
@@ -235,10 +256,7 @@ function levelLabelKoEn(modeId: string, levelId: number): string {
         : levelId;
   const lv = m?.levels.find((x) => x.id === catalogId);
   if (!lv) return levelLabel(modeId, levelId);
-  const enDisplay = lv.enName
-    .replace('Variant Color (1)', 'Variant Color 1')
-    .replace('Variant Color (2)', 'Variant Color 2')
-    .replace('Variant Color 2/3', '3-Panel');
+  const enDisplay = levelNameEnDisplay(lv.enName);
   return `${levelLabel(modeId, levelId)} : ${levelNameKo(modeId, levelId)} (${enDisplay})`;
 }
 
@@ -738,7 +756,7 @@ function SettingsScreen({
       if (m?.levels?.some((lv) => lv.id === normalized)) return normalized;
     }
     if (modeId === 'basic') {
-      // 변형사분할·전면3패널은 엔진 level을 유지하고 카탈로그만 묶음
+      // 변형사분할·3분할은 엔진 level을 유지하고 카탈로그만 묶음
       if (isModifiedQuadrantLevel(candidate) || isFront3PanelLevel(candidate)) return candidate;
       const normalized = catalogBasicUiLevel(candidate);
       if (m?.levels?.some((lv) => lv.id === normalized)) return normalized;
@@ -1004,7 +1022,7 @@ function SettingsScreen({
                     }}
                   >
                     <span style={{ fontSize: 13, fontWeight: 900, color: active ? accent : T.text }}>
-                      {levelLabel(modeId, lv.id)} : {levelNameKo(modeId, lv.id)} ({lv.enName.replace('Variant Color (1)', 'Variant Color 1').replace('Variant Color (2)', 'Variant Color 2').replace('Variant Color 2/3', '3-Panel')})
+                      {levelLabel(modeId, lv.id)} : {levelNameKo(modeId, lv.id)} ({levelNameEnDisplay(lv.enName)})
                     </span>
                   </button>
                 );
@@ -1028,7 +1046,7 @@ function SettingsScreen({
                   }}
                 >
                   <span style={{ fontSize: 13, fontWeight: 900, color: showVariantAppendix ? accent : T.text }}>
-                    (부록) 변형 색지각 이미지 소개
+                    (부록) 연상 색지각 이미지 소개
                   </span>
                 </button>
               )}
@@ -1162,7 +1180,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 플랭커 6번 · 이미지 테마 (변형 색지각과 동일 7종) */}
+          {/* 플랭커 6번 · 이미지 테마 (연상 색지각과 동일 7종) */}
           {modeId === 'flanker' && levelId === 6 ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -1172,15 +1190,10 @@ function SettingsScreen({
                 </div>
               </div>
               <p style={{ margin: '0 0 10px', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
-                변형 색지각과 동일한 7가지입니다. 선택한 테마 이미지가 다섯 원 안에 나오고, 가운데 원 색으로 반응합니다. 「색상」은 이미지 없이 원만 사용합니다.
+                연상 색지각과 동일한 7가지입니다. 선택한 테마 이미지가 다섯 원 안에 나오고, 가운데 원 색으로 반응합니다. 「색상」은 이미지 없이 원만 사용합니다.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {SPOMOVE_COLOR_THEME_ORDER
-                  .slice()
-                  .sort((a, b) =>
-                    SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')
-                  )
-                  .map((tid) => {
+                {SPOMOVE_COLOR_THEME_ORDER.map((tid) => {
                   const active = launch.variantColorTheme === tid;
                   return (
                     <button
@@ -1219,16 +1232,17 @@ function SettingsScreen({
           {modeId === 'basic' && levelId === 1 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>시작 옵션</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                  {launch.spatialArrowColorMode === 'color' ? '색상 모드' : '기본'}
+                  {launch.spatialArrowColorMode === 'color' ? '보통 · 색상 화살표' : '쉬움 · 화살표'}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {([
-                  ['basic', '기본'],
-                  ['color', '색상 모드'],
-                ] as const).map(([value, label]) => {
+                  { value: 'basic' as const, label: '쉬움', sub: '화살표' },
+                  { value: 'color' as const, label: '보통', sub: '색상 화살표' },
+                ]).map((option) => {
+                  const { value, label, sub } = option;
                   const active = launch.spatialArrowColorMode === value;
                   return (
                     <button
@@ -1249,13 +1263,18 @@ function SettingsScreen({
                         textAlign: 'center',
                       }}
                     >
-                      {active ? '✓ ' : ''}{label}
+                      <span style={{ display: 'block', fontSize: 13, fontWeight: 900 }}>
+                        {active ? '✓ ' : ''}{label}
+                      </span>
+                      <span style={{ display: 'block', marginTop: 3, fontSize: 11, color: active ? accent : T.muted, fontWeight: 800 }}>
+                        {sub}
+                      </span>
                     </button>
                   );
                 })}
               </div>
               <p style={{ margin: '8px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.55 }}>
-                색상 모드를 고르면 화살표 안이 방향별로 고정됩니다. 위 빨·좌 초·우 노·아래 파. 반응은 여전히 화살표 방향 기준입니다.
+                쉬움은 흰 화살표, 보통은 방향별 색이 채워진 색상 화살표입니다. 위 빨·좌 초·우 노·아래 파. 반응은 여전히 화살표 방향 기준입니다.
               </p>
             </section>
           ) : null}
@@ -2231,47 +2250,16 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 전면 3패널: 같은 색 / 서로 다른 색 */}
+          {/* 3분할/랜덤분할: 고정 색 구성 안내 */}
           {modeId === 'basic' && isFront3PanelLevel(levelId) ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>색 구성</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  같은 색은 세 패널이 동일하고, 서로 다른 색은 패널마다 다른 신호가 나옵니다.
+                  {levelId === 5
+                    ? '3분할 자극은 세 패널에 서로 다른 신호가 항상 표시됩니다.'
+                    : '랜덤분할 자극은 1개=전면, 2개=2패널, 3개=3패널이 20%/30%/50% 확률로 나옵니다.'}
                 </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {([
-                  { id: 5, label: '같은 색', sub: '동일 신호' },
-                  { id: 6, label: '서로 다른 색', sub: '패널별 신호' },
-                ] as const).map((opt) => {
-                  const active = levelId === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setLevelId(opt.id)}
-                      style={{
-                        flex: 1,
-                        padding: '11px 8px',
-                        borderRadius: 12,
-                        border: `1.5px solid ${active ? accent : T.border}`,
-                        background: active ? `${accent}16` : T.card,
-                        color: active ? accent : T.textDim,
-                        fontFamily: 'inherit',
-                        fontSize: 14,
-                        fontWeight: active ? 900 : 700,
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {opt.label}
-                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
-                        {opt.sub}
-                      </div>
-                    </button>
-                  );
-                })}
               </div>
             </section>
           ) : null}
@@ -2283,24 +2271,19 @@ function SettingsScreen({
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>믹스 갤러리</label>
               </div>
               <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
-                Asset Hub에 업로드된 <strong style={{ color: T.text }}>과일·탈 것·감정·동물·자연물·음식</strong> 변형 색상 이미지가 전부 섞여 나옵니다. 테마를 따로 고를 필요는 없습니다.
+                Asset Hub에 업로드된 <strong style={{ color: T.text }}>과일·동물·음식·자연·탈 것</strong> 이미지가 전부 섞여 나옵니다. 테마를 따로 고를 필요는 없습니다.
               </p>
             </section>
           ) : null}
 
-          {/* 변형 색지각 테마 */}
+          {/* 연상 색지각 테마 */}
           {modeId === 'basic' && (levelId === 2 || levelId === 3 || levelId === 4 || isFront3PanelLevel(levelId)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>변형 색지각 이미지 테마</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>연상 색지각 이미지 테마</label>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {SPOMOVE_COLOR_THEME_ORDER
-                  .slice()
-                  .sort((a, b) =>
-                    SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')
-                  )
-                  .map((tid) => {
+                {SPOMOVE_COLOR_THEME_ORDER.map((tid) => {
                   const active = launch.variantColorTheme === tid;
                   return (
                     <button

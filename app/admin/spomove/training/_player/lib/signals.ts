@@ -226,26 +226,7 @@ function colorSlidesFromPalette(colors: ColorItem[]): FruitSlide[] {
   }));
 }
 
-function fruitPoolExcluding(excludeImageUrl: string | null, slides: FruitSlide[]): FruitSlide[] {
-  if (!excludeImageUrl) return slides;
-  const filtered = slides.filter((s) => s.imageUrl !== excludeImageUrl);
-  return filtered.length > 0 ? filtered : slides;
-}
-
-/**
- * 2단계: 가로 3패널만(추가 열·패널 안 스택 없음).
- * 매 신호마다 1·2·3 중 **몇 개 패널에 과일을 둘지** 정하고, 그만큼 칸을 골라 **패널당 과일 1장**만 둠(전부 같은 과일).
- * 과일 없는 패널은 cells 비움 → 화면에선 흰 빈 칸.
- */
-function buildVariantTier2(excludeImageUrl: string | null, slides: FruitSlide[]): VariantPanelContent[] {
-  const s = r(fruitPoolExcluding(excludeImageUrl, slides));
-  const k = r([1, 2, 3]);
-  const chosen = fisherYates([0, 1, 2]).slice(0, k);
-  const active = new Set(chosen);
-  return [0, 1, 2].map((i) => (active.has(i) ? { cells: [s] } : { cells: [] }));
-}
-
-/** 3단계: 서로 다른 과일 2패널만 */
+/** 서로 다른 과일 2패널만 */
 function buildVariantTier3(excludePairKey: string | null, slides: FruitSlide[]): VariantPanelContent[] {
   for (let attempt = 0; attempt < 200; attempt++) {
     const [a, b] = pair(slides);
@@ -268,7 +249,7 @@ function buildVariantTier3(excludePairKey: string | null, slides: FruitSlide[]):
   return byColor.map((s) => ({ cells: [s] }));
 }
 
-/** 4단계: 서로 다른 과일 3패널, 직전과 같은 "칸+이미지" 연속 금지 */
+/** 서로 다른 과일 3패널, 직전과 같은 "칸+이미지" 연속 금지 */
 function buildVariantTier4(excludePanelImageUrls: (string | null)[] | null, slides: FruitSlide[]): VariantPanelContent[] {
   if (slides.length < 3) return [];
   const blocked: (string | null)[] = (excludePanelImageUrls ?? []).slice(0, 3);
@@ -311,6 +292,13 @@ function buildVariantTier4(excludePanelImageUrls: (string | null)[] | null, slid
   return byColor.map((s) => ({ cells: [s] }));
 }
 
+function pickRandomSplitPanelCount(): 1 | 2 | 3 {
+  const n = Math.random();
+  if (n < 0.2) return 1;
+  if (n < 0.5) return 2;
+  return 3;
+}
+
 export function uniqueSlidesByImageUrl(slides: FruitSlide[]): FruitSlide[] {
   const seen = new Set<string>();
   const out: FruitSlide[] = [];
@@ -344,7 +332,7 @@ export type GenerateSignalOptions = {
   flankerNestedCircleCount?: 3 | 5;
   /** flanker 5번: 기본 좌우 | 응용 상하좌우 */
   flankerArrowMode?: 'lr' | 'udlr';
-  /** basic 1번 · 공간 방향: 좌→우→상→하 극단 기둥 순환 (0~3) */
+  /** Simon pole placement only. basic level 1 renders a centered arrow and does not use this. */
   poleEdgeIndex?: number;
   /** basic 1번 · 공간 방향: 기본(흰 화살표) | 색상(방향별 고정 색: 위 빨·좌 초·우 노·아래 파) */
   spatialArrowColorMode?: 'basic' | 'color';
@@ -454,17 +442,17 @@ export function generateSignal(
       const rawSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
       const pool = uniqueSlidesByImageUrl(rawSlides.filter((s) => (s.imageUrl ?? '').trim()));
       const vSlides =
-        pool.length >= 1
+        pool.length >= 3 && hasDistinctSlideColors(pool, 3)
           ? pool
           : usesImageTheme
             ? []
             : colorSlidesFromPalette(activeColors);
-      if (vSlides.length < 1) return null;
-      const panels = buildVariantTier2(opts?.excludeVariantImageUrl ?? null, vSlides);
+      if (vSlides.length < 3 || !hasDistinctSlideColors(vSlides, 3)) return null;
+      const panels = buildVariantTier4(opts?.excludeVariantPanelImageUrls ?? null, vSlides);
       return {
         type: 'basic_variant_color',
         bg: '#000000',
-        content: { variantTier: 2, panels },
+        content: { variantTier: 4, panels },
         voice: null,
       };
     }
@@ -478,11 +466,31 @@ export function generateSignal(
             ? []
             : colorSlidesFromPalette(activeColors);
       if (vSlides.length < 3 || !hasDistinctSlideColors(vSlides, 3)) return null;
-      const panels = buildVariantTier4(opts?.excludeVariantPanelImageUrls ?? null, vSlides);
+      const panelCount = pickRandomSplitPanelCount();
+      if (panelCount === 1) {
+        const slide = r(vSlides);
+        return {
+          type: 'full_color',
+          bg: slide.color.bg,
+          content: {
+            colorId: slide.color.id,
+            symbol: slide.color.symbol,
+            textColor: slide.color.text,
+            name: slide.color.name,
+            imageUrl: slide.imageUrl || null,
+          },
+          voice: null,
+        };
+      }
+      const panels =
+        panelCount === 2
+          ? buildVariantTier3(opts?.excludeVariantPairKey ?? null, vSlides)
+          : buildVariantTier4(opts?.excludeVariantPanelImageUrls ?? null, vSlides);
+      if (panels.length < panelCount) return null;
       return {
         type: 'basic_variant_color',
         bg: '#000000',
-        content: { variantTier: 4, panels },
+        content: { variantTier: panelCount === 2 ? 3 : 4, panels },
         voice: null,
       };
     }
@@ -1019,7 +1027,7 @@ export function pickSimonPolePosition(edge: number, margin = 0.125): { posX: num
   }
 }
 
-/** 반응 인지 1번·사이먼 2번 공통: 화면 극단 거대 기둥+화살표 */
+/** Simon arrow: large arrow placed near the screen edge. */
 export function buildPoleArrowSignal(
   arrow: (typeof ARROWS)[number],
   edge: number,
@@ -1460,7 +1468,7 @@ export function createBasicSignalGenerator(
   let lastVariantPairKey: string | null = null;
   /** 5단계: 직전 3패널의 슬롯별 이미지 URL */
   let lastVariantPanelImageUrls: (string | null)[] = [null, null, null];
-  /** 1번 · 공간 방향: 좌→우→상→하 극단 기둥 순환 */
+  /** Simon pole sequence index. basic level 1 remains centered. */
   let poleEdgeIdx = 0;
 
   const genOpts = (): GenerateSignalOptions => {
@@ -1475,9 +1483,9 @@ export function createBasicSignalGenerator(
       // 색상 모드에서는 항상 compass 고정 매핑
       o.spatialArrowColorMapping = spatialArrowColorMode === 'color' ? 'compass' : spatialArrowColorMapping;
     }
-    if (level === 3 || level === 5) o.excludeVariantImageUrl = lastVariantImageUrl;
+    if (level === 3) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 4) o.excludeVariantPairKey = lastVariantPairKey;
-    else if (level === 6) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;
+    else if (level === 5 || level === 6) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;
     return o;
   };
 

@@ -209,7 +209,7 @@ function buildPhaseName(mode: string, level: number): string {
     return `변형 사분할 자극 · ${modifiedQuadrantStage(level)}단계`;
   }
   if (mode === 'basic' && isFront3PanelLevel(level)) {
-    return level === 6 ? '전면 3패널 자극 · 서로 다른 색' : '전면 3패널 자극 · 같은 색';
+    return level === 6 ? '랜덤분할 자극 · 확률 분할' : '3분할 자극 · 서로 다른 신호';
   }
   if (phase?.name) return phase.name;
   const mo = MODES[mode];
@@ -226,10 +226,10 @@ function buildProgramSummary(mode: string, level: number): string {
     return '3색에 손·발이 섞인 가장 어려운 단계예요.';
   }
   if (mode === 'basic' && level === 5) {
-    return '세 칸이 같은 색 신호로 채워져요. 그 색 패드로 바로 이동해요.';
+    return '세 패널에 서로 다른 색 신호가 나와요. 목표 색 패드로 이동해요.';
   }
   if (mode === 'basic' && level === 6) {
-    return '세 칸이 서로 다른 색 신호로 채워져요. 목표 색 패드로 이동해요.';
+    return '전면·2패널·3패널이 랜덤으로 바뀌어요. 보이는 색 패드로 이동해요.';
   }
   if (mode === 'basic' && level === 3) {
     return '화면 전체가 한 색(또는 이미지 색)으로 채워져요. 그 색 패드로 바로 이동해요.';
@@ -251,8 +251,8 @@ function buildBenefitLine(mode: string, level: number): string {
   if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
     return '색과 부위를 함께 읽고 바로 반응해요';
   }
-  if (mode === 'basic' && level === 5) return '같은 색 세 칸을 보고 그 패드로 바로 이동해요';
-  if (mode === 'basic' && level === 6) return '서로 다른 색 세 칸에서 목표 색만 골라 이동해요';
+  if (mode === 'basic' && level === 5) return '서로 다른 세 패널에서 목표 색만 골라 이동해요';
+  if (mode === 'basic' && level === 6) return '화면 형태가 바뀌어도 색을 보고 바로 이동해요';
 
   const phase = findGuidePhase(mode, level);
   const fallbacks: Record<string, string> = {
@@ -274,10 +274,10 @@ function buildCoachTip(mode: string, level: number): string {
     return '색만 보지 말고 발·손 아이콘까지 같이 읽어요.';
   }
   if (mode === 'basic' && level === 5) {
-    return '세 칸이 같아도 색만 잡으면 돼요. 칸 개수를 세지 마세요.';
+    return '세 칸이 모두 달라도 목표 색 하나만 잡으면 돼요.';
   }
   if (mode === 'basic' && level === 6) {
-    return '서로 다른 색이 나와도 목표 색 하나만 보고 바로 이동해요.';
+    return '전면인지 패널형인지보다 색을 먼저 읽고 움직여요.';
   }
   if (mode === 'basic' && level === 3) {
     return '이미지가 나와도 그림 내용보다 대표 색만 바로 읽어요.';

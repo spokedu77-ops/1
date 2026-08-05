@@ -115,12 +115,13 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '화면 신호 · 지각 훈련',
     desc: '화면 신호를 보는 순간 판단하고 즉시 움직이는 기본 반응 훈련입니다.',
     levels: [
-      { id: 1, name: '공간방향 자극', enName: 'Spatial Orientation', desc: '화면 극단의 기둥+화살표 방향을 보고 해당 방향 패드로 이동합니다. 옵션: 기본/색상.' },
-      { id: 2, name: '사분할 자극', enName: 'Quad Color', desc: '4분할 색·이미지 신호를 보고 해당 위치로 이동합니다. 옵션: 이미지 테마.' },
-      { id: 7, name: '변형 사분할 자극', enName: 'Modified Quadrant', desc: '색과 신체 부위가 함께 나타납니다. 옵션: 1~3단계.' },
-      { id: 3, name: '전면 자극', enName: 'Full-Screen Color', desc: '화면 전체 색 신호를 보고 해당 위치로 이동합니다. 옵션: 이미지 테마.' },
-      { id: 4, name: '전면 2패널 자극', enName: 'Variant Color 1', desc: '전면 2패널에 서로 다른 색 신호가 나타납니다. 옵션: 이미지 테마.' },
-      { id: 5, name: '전면 3패널 자극', enName: 'Variant Color 2/3', desc: '전면 3패널 자극입니다. 옵션: 이미지 테마 · 같은 색/서로 다른 색.' },
+      { id: 1, name: '공간방향 자극', enName: 'Arrow / Color Arrow', desc: '전체형 화면 중앙의 화살표 방향을 보고 해당 방향 패드로 이동합니다. 난이도: 화살표/색상 화살표.' },
+      { id: 2, name: '4분할 자극', enName: '4-Quadrant Stimulus', desc: '2×2 그리드형 화면의 한 칸에 뜨는 색·테마 이미지 신호를 보고 해당 색 패드 위치로 이동합니다. 옵션: 7개 테마.' },
+      { id: 3, name: '전면단일 자극', enName: 'Full-Screen Single Stimulus', desc: '전체형 화면 하나를 채우는 색·테마 이미지 신호를 보고 해당 색 패드 위치로 이동합니다. 옵션: 7개 테마.' },
+      { id: 4, name: '2분할 자극', enName: '2-Split Stimulus', desc: '2분할 패널형 화면의 좌우 두 패널에 서로 다른 색·테마 이미지 신호가 나타납니다. 옵션: 7개 테마.' },
+      { id: 5, name: '3분할 자극', enName: '3-Split Stimulus', desc: '3분할 패널형 화면의 세 패널에 서로 다른 색·테마 이미지 신호가 나타납니다. 옵션: 7개 테마.' },
+      { id: 6, name: '랜덤분할 자극', enName: 'Random-Split Stimulus', desc: '전면 1개·2패널·3패널이 20%·30%·50% 확률로 랜덤 제시됩니다. 옵션: 7개 테마.' },
+      { id: 7, name: '(보류) 손 따로, 발 따로 이관 예정', enName: '(On Hold) Hand and Foot Separate Migration', desc: '기존 변형 사분할 프로그램입니다. 삭제하지 않고 보류하며, 시지각 반응의 손 따로, 발 따로 쉬움·보통·어려움 3개로 이관 예정입니다.' },
     ],
   },
 
@@ -161,7 +162,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 3, name: '5원 극단 크기', enName: '5-Circle Extreme Sizes', desc: '매우 큰 원과 매우 작은 원이 섞입니다. 가운데 색에 반응합니다.' },
       { id: 4, name: '원 속의 원', enName: 'Nested Circles', desc: '동심으로 겹친 원 중 가장 안쪽 목표 원을 보고 반응합니다.' },
       { id: 5, name: '화살표 플랭커', enName: 'Arrow Flanker', desc: '다섯 화살표 중 가운데 방향만 보고 해당 방향으로 이동합니다. 상하좌우 방향이 다양하게 제시됩니다.' },
-      { id: 6, name: '테마 플랭커', enName: 'Theme Flanker', desc: '변형 색지각과 동일한 7가지 이미지 테마를 고릅니다. 가운데 원(이미지) 색에 반응합니다.' },
+      { id: 6, name: '테마 플랭커', enName: 'Theme Flanker', desc: '연상 색지각과 동일한 7가지 이미지 테마를 고릅니다. 가운데 원(이미지) 색에 반응합니다.' },
     ],
   },
 
@@ -326,10 +327,9 @@ export function isFront3PanelLevel(level: number): boolean {
   return level === 5 || level === 6;
 }
 
-/** basic 엔진 level → 카탈로그 대표 id (변형사분할=7, 전면3패널=5) */
+/** basic 엔진 level → 카탈로그 대표 id (변형사분할=7) */
 export function catalogBasicUiLevel(level: number): number {
   if (isModifiedQuadrantLevel(level)) return 7;
-  if (level === 6) return 5;
   return level;
 }
 
@@ -451,7 +451,7 @@ export function normalizeLegacyTrainingMode(mode: string | undefined, level: num
 
 /**
  * 카탈로그 대표 id뿐 아니라 엔진 서브레벨도 허용한다.
- * basic: 변형사분할 8·9(·레거시10), 전면3패널 서로다른색 6
+ * basic: 변형사분할 8·9(·레거시10), 랜덤분할 서로다른색 6
  * spatial: 색순서 2·3, 색·번호 5
  */
 export function isKnownTrainingLevel(mode: string, level: number): boolean {

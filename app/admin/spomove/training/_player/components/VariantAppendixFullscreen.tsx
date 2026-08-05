@@ -18,8 +18,8 @@ const TEXT = 'rgba(255,255,255,0.88)';
 const MUTED = 'rgba(255,255,255,0.38)';
 const ACCENT = '#3B82F6';
 
-type AppendixTheme = Exclude<SpomoveColorThemeId, 'color'>;
-const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'vehicle', 'emotion', 'animal', 'nature', 'food'];
+type AppendixTheme = Exclude<SpomoveColorThemeId, 'color' | 'mix'>;
+const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'animal', 'food', 'nature', 'vehicle'];
 
 function getDefaultLabels(theme: AppendixTheme): string[] {
   if (theme === 'fruit') return [...VARIANT_FRUIT_SLOT_LABELS];
@@ -32,7 +32,7 @@ function getPackId(theme: AppendixTheme): string {
 }
 
 function getPackName(theme: AppendixTheme): string {
-  if (theme === 'fruit') return 'SPOMOVE 변형 색지각 과일';
+  if (theme === 'fruit') return 'SPOMOVE 연상 색지각 과일';
   return SPOMOVE_THEMED_PACK_BY_THEME[theme].packName;
 }
 
@@ -115,9 +115,20 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
   };
 
   const handleSave = async () => {
+    const nextLabels =
+      editingIdx === null
+        ? labels
+        : labels.map((label, i) =>
+            i === editingIdx ? editValue.trim() || (getDefaultLabels(theme)[i] ?? label) : label,
+          );
+    if (editingIdx !== null) {
+      userEditedRef.current = true;
+      setLabels(nextLabels);
+      setEditingIdx(null);
+    }
     setSaving(true);
     setSaveMsg(null);
-    const err = await saveStoredLabels(theme, labels);
+    const err = await saveStoredLabels(theme, nextLabels);
     setSaving(false);
     setSaveMsg(err ? `오류: ${err}` : '저장됨 ✓');
     setTimeout(() => setSaveMsg(null), 2500);
@@ -348,7 +359,7 @@ export function VariantAppendixFullscreen({ onClose }: { onClose: () => void }) 
         }}
       >
         <div style={{ fontSize: '1.05rem', fontWeight: 900, color: TEXT, letterSpacing: '-0.01em' }}>
-          변형 색지각 이미지 소개
+          연상 색지각 이미지 소개
         </div>
         <button
           type="button"

@@ -11,7 +11,7 @@ export function SpomoveVariantFruitPanel() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-neutral-400">
-        변형 색지각 과일 <strong className="text-neutral-200">8슬롯</strong> — 1~4=각 패드(빨·노·초·파), 5~8=같은 패드 두 번째. 업로드된 칸만 반영됩니다.
+        SPOMOVE 연상 색지각 과일 <strong className="text-neutral-200">8슬롯</strong> — 1~4=각 패드(빨·노·초·파), 5~8=같은 패드 두 번째. 업로드된 칸만 반영됩니다.
       </p>
       {error && <div className="rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-400">{error}</div>}
       {loading ? (

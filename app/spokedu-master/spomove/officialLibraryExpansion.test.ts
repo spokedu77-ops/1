@@ -84,7 +84,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
   it('그룹별 개수가 확장 목표와 일치한다', () => {
 
-    expect(byGroup('reaction-cognition')).toHaveLength(35);
+    expect(byGroup('reaction-cognition')).toHaveLength(40);
 
     expect(byGroup('visual-reaction')).toHaveLength(7);
 
@@ -152,7 +152,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
 
 
-  it('반응 인지 L2~L6 테마 조합이 color/fruit/vehicle/animal/nature/food 6종을 모두 포함한다', () => {
+  it('반응 인지 L2~L6 테마 조합이 fruit/animal/color/food/nature/vehicle/mix 7종을 모두 포함한다', () => {
 
     const themed = byGroup('reaction-cognition').filter(
 
@@ -160,17 +160,23 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     );
 
-    expect(themed).toHaveLength(30);
+    expect(themed).toHaveLength(35);
 
     for (const level of [2, 3, 4, 5, 6]) {
 
       const levelPresets = themed.filter((preset) => preset.engine.level === level);
 
-      expect(levelPresets).toHaveLength(6);
+      expect(levelPresets).toHaveLength(7);
 
     }
 
     expect(themed.some((preset) => preset.engine.variantColorTheme === 'emotion')).toBe(false);
+    for (const level of [2, 3, 4, 5, 6]) {
+      const themes = themed
+        .filter((preset) => preset.engine.level === level)
+        .map((preset) => preset.engine.variantColorTheme);
+      expect(themes).toEqual(expect.arrayContaining(['fruit', 'animal', 'color', 'food', 'nature', 'vehicle', 'mix']));
+    }
 
   });
 

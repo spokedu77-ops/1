@@ -47,7 +47,7 @@ export function getAssetRequirement(params: {
   // color 테마: 이미지 없이 색상 신호만 사용
   if (theme === 'color') return NO_REQUIREMENT;
 
-  // 플랭커 6번 테마: 변형 색지각과 동일 — 선택한 테마 이미지 1장 이상
+  // 플랭커 6번 테마: 연상 색지각과 동일 — 선택한 테마 이미지 1장 이상
   if (mode === 'flanker' && level === 6) {
     return { minimumCount: 1, requiresDistinctImages: false, requiresDistinctColors: false };
   }
@@ -73,13 +73,13 @@ export function getAssetRequirement(params: {
     return { minimumCount: 2, requiresDistinctImages: true, requiresDistinctColors: true };
   }
 
-  // level 5 (tier2): uniqueSlidesByImageUrl 후 1장
-  // signals.ts: pool.length >= 1
+  // level 5 (tier4): uniqueSlidesByImageUrl 후 3장 + distinctColors(3)
+  // signals.ts: pool.length >= 3 && hasDistinctSlideColors(pool, 3)
   if (level === 5) {
-    return { minimumCount: 1, requiresDistinctImages: false, requiresDistinctColors: false };
+    return { minimumCount: 3, requiresDistinctImages: true, requiresDistinctColors: true };
   }
 
-  // level 6 (tier4): uniqueSlidesByImageUrl 후 3장 + distinctColors(3)
+  // level 6 (random split): 3패널 확률(50%) 때문에 3장 + distinctColors(3)
   // signals.ts: pool.length >= 3 && hasDistinctSlideColors(pool, 3)
   if (level === 6) {
     return { minimumCount: 3, requiresDistinctImages: true, requiresDistinctColors: true };

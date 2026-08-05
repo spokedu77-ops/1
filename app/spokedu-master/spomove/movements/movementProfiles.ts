@@ -54,7 +54,7 @@ export const MOVEMENT_PROFILES: Record<MovementProfileId, MovementProfile> = {
     alternatives: SIMPLE_ALTERNATIVES,
     minimumMovementCount: 4,
   },
-  /** 전면(reaction-full) 전용 — 테마별 대표 움직임 5종 포함 */
+  /** 전면단일(reaction-full) 전용 — 테마별 대표 움직임 포함 */
   themedFullResponse: {
     id: 'themedFullResponse',
     selectionMode: 'selectable',

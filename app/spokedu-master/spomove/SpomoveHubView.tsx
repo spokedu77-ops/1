@@ -26,6 +26,7 @@ import { useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 import { spmChipClass } from '../lib/masterUiClasses';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
+import { isHubListedPreset } from './movements/isHubVisiblePreset';
 import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomoveSameSettings';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import type { MovementQuickFilter } from './movements/movementTypes';
@@ -352,7 +353,7 @@ function ThreePanelVisual({ theme }: { theme?: string }) {
   );
 }
 
-/** 반응인지 1번·공간 방향 — 플레이어 simon_arrow와 동일한 기둥+화살표 루트 거리 */
+/** 반응인지 1번·공간 방향 — 플레이어 arrow와 동일한 중앙 화살표 */
 function SpatialDirectionVisual({ colorMode = false }: { colorMode?: boolean }) {
   const [red] = SPOMOVE_PAD_GRID_HEX;
   const arrowFill = colorMode ? red : '#FFFFFF';
@@ -361,9 +362,9 @@ function SpatialDirectionVisual({ colorMode = false }: { colorMode?: boolean }) 
       <div
         className="absolute flex items-center justify-center"
         style={{
-          left: '78%',
+          left: '50%',
           top: '50%',
-          width: 'min(52%, 88%)',
+          width: 'min(58%, 88%)',
           height: 'min(78%, 92%)',
           transform: 'translate(-50%, -50%)',
         }}
@@ -388,7 +389,7 @@ function SpatialDirectionVisual({ colorMode = false }: { colorMode?: boolean }) 
       </div>
       <div className="absolute bottom-3 left-3">
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-white/60">
-          {colorMode ? '공간 방향 · 색상' : '공간 방향'}
+          {colorMode ? '색상 화살표' : '화살표'}
         </span>
       </div>
       <div className="absolute bottom-3 right-3">
@@ -589,19 +590,19 @@ function matchesThinkingLevel(preset: OfficialSpomovePreset, tab: ThinkingLevelT
 
 function programGroupCount(tab: ProgramGroupTab, thinkingLevel: ThinkingLevelTab = 'all') {
   return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => matchesProgramGroup(preset, tab) && matchesThinkingLevel(preset, thinkingLevel),
+    (preset) => isHubListedPreset(preset) && matchesProgramGroup(preset, tab) && matchesThinkingLevel(preset, thinkingLevel),
   ).length;
 }
 
 function thinkingLevelCount(tab: ThinkingLevelTab, programGroup: ProgramGroupTab = 'all') {
   return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => matchesThinkingLevel(preset, tab) && matchesProgramGroup(preset, programGroup),
+    (preset) => isHubListedPreset(preset) && matchesThinkingLevel(preset, tab) && matchesProgramGroup(preset, programGroup),
   ).length;
 }
 
 function filterOfficialPresets(programGroup: ProgramGroupTab, thinkingLevel: ThinkingLevelTab) {
   return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => matchesProgramGroup(preset, programGroup) && matchesThinkingLevel(preset, thinkingLevel),
+    (preset) => isHubListedPreset(preset) && matchesProgramGroup(preset, programGroup) && matchesThinkingLevel(preset, thinkingLevel),
   );
 }
 
@@ -884,12 +885,12 @@ export default function SpomoveHubView() {
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const favoriteSpomoveIds = useMemo(
-    () => new Set((storedFavoriteIds ?? []).filter((id) => OFFICIAL_SPOMOVE_LIBRARY.some((preset) => preset.id === id))),
+    () => new Set((storedFavoriteIds ?? []).filter((id) => OFFICIAL_SPOMOVE_LIBRARY.some((preset) => preset.id === id && isHubListedPreset(preset)))),
     [storedFavoriteIds],
   );
   const recentSpomoveActivities = useMemo(() => {
     if (!ownerId) return [];
-    const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
+    const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.filter(isHubListedPreset).map((preset) => preset.id));
     return recentProgramActivities
       .filter((activity) => activity.ownerId === ownerId && activity.action === 'spomove_started' && validPresetIds.has(activity.programId))
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
@@ -1061,8 +1062,8 @@ export default function SpomoveHubView() {
       : `공식 가이드는 순차 작성 중입니다. 기본 안내 ${guideStatusCounts.legacy}개와 실행 가능한 활동 ${guideStatusCounts.preparing}개를 먼저 사용할 수 있습니다.`;
   const guideSummaryActionText =
     guideStatusCounts.published > 0
-      ? '공식 가이드는 준비·진행·교사 멘트까지 정리된 수업안입니다. 기본 안내는 수업을 바로 시작할 수 있는 최소 실행안입니다.'
-      : '아직 공식 수업안이 없는 활동도 시작할 수 있습니다. 기본 안내에서 준비물과 진행 흐름을 확인하고 바로 실행하세요.';
+      ? '공식 가이드는 준비·진행·교사 멘트까지 정리된 수업안입니다. 기본 안내는 수업 준비에 필요한 최소 실행안입니다.'
+      : '아직 공식 수업안이 없는 활동도 시작할 수 있습니다. 기본 안내에서 준비물과 진행 흐름을 확인하고 활동을 시작하세요.';
   const activeGuideLabel =
     GUIDE_STATUS_FILTERS.find((filter) => filter.id === guideStatusFilter)?.label ?? '전체';
   const programGroupSections = useMemo(() => {
@@ -1129,7 +1130,7 @@ export default function SpomoveHubView() {
           {recentSpomoveActivities.length ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {recentSpomoveActivities.map((activity) => {
-                const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId);
+                const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId && isHubListedPreset(item));
                 const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : activity.programTitle;
                 const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
                 const snapshot = activity.spomoveSnapshot;
@@ -1386,7 +1387,7 @@ export default function SpomoveHubView() {
             </p>
             <p className="mx-auto mt-2 max-w-xl text-[13px] font-semibold leading-6 text-slate-500">
               {guideStatusFilter === 'published'
-                ? '공식 가이드가 작성되기 전에도 기본 안내와 화면 활동은 바로 실행할 수 있습니다. 수업을 바로 해야 한다면 기본 안내 또는 전체 목록으로 전환하세요.'
+                ? '공식 가이드가 작성되기 전에도 기본 안내와 화면 활동은 진행할 수 있습니다. 수업을 곧 해야 한다면 기본 안내 또는 전체 목록으로 전환하세요.'
                 : '활동 종류, 인지 난이도, 가이드 상태 조건을 넓히면 더 많은 SPOMOVE 활동을 볼 수 있습니다.'}
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">

@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Asset Hub `think_asset_packs` — SPOMOVE 변형 색지각 과일과 SPOMOVE 트레이닝 연동
+ * Asset Hub `think_asset_packs` — SPOMOVE 연상 색지각 과일과 SPOMOVE 트레이닝 연동
  */
 
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';

@@ -110,7 +110,7 @@ export function resultLevelLabel(mode: string | undefined, level: number): strin
       return `3번 · ${modifiedQuadrantStage(level)}단계`;
     }
     if (isFront3PanelLevel(level)) {
-      return level === 6 ? '6번 · 서로 다른 색' : '6번 · 같은 색';
+      return level === 6 ? '6번 · 랜덤분할' : '5번 · 3분할';
     }
     const catalogId = catalogBasicUiLevel(level);
     const idx = MODES.basic?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;

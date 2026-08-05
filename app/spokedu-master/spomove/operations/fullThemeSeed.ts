@@ -1,5 +1,5 @@
 /**
- * O2 — 전면(reaction-full) 6 Theme 공식 대표값.
+ * O2 — 전면단일(reaction-full) theme 공식 대표값.
  * Physical Contract: docs/SPOMOVE_MOVEMENT_PHYSICAL_CONTRACT.md
  */
 import type { ActivityOperationPatch } from '../operations/operationTypes';
@@ -85,6 +85,17 @@ export const FULL_THEME_SEEDS: Record<
     },
     cueSeconds: 5,
   },
+  mix: {
+    recommendedMovement: { baseMovement: 'quickStep', limbRule: 'free' },
+    recommendedOperation: {
+      startZone: 'onMat',
+      participantScale: 'individual',
+      equipment: { mode: 'none' },
+      timing: { pattern: 'responseWindow' },
+      participationFormat: 'independent',
+    },
+    cueSeconds: 4,
+  },
 };
 
 /** O2 Seed 대상 Preset ID (Core + Expansion) */
@@ -95,6 +106,7 @@ export const FULL_THEME_SEED_PRESET_IDS = [
   'reaction-cognition-full-nature-19',
   'reaction-cognition-l3-food-exp',
   'reaction-cognition-l3-vehicle-exp',
+  'reaction-cognition-l3-mix-exp',
 ] as const;
 
 export type FullThemeSeedPresetId = (typeof FULL_THEME_SEED_PRESET_IDS)[number];
@@ -106,6 +118,7 @@ const PRESET_THEME: Record<FullThemeSeedPresetId, Exclude<SpomoveColorThemeId, '
   'reaction-cognition-full-nature-19': 'nature',
   'reaction-cognition-l3-food-exp': 'food',
   'reaction-cognition-l3-vehicle-exp': 'vehicle',
+  'reaction-cognition-l3-mix-exp': 'mix',
 };
 
 export function applyFullThemeSeedFields(

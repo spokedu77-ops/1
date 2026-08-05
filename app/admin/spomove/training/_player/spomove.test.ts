@@ -93,15 +93,15 @@ describe('getAssetRequirement', () => {
     expect(r.requiresDistinctColors).toBe(true);
   });
 
-  // 4. basic level 5 — signals.ts: pool.length>=1
-  test('4. basic level 5: minimumCount=1, distinct 불필요', () => {
+  // 4. basic level 5 — signals.ts: pool.length>=3 && hasDistinctSlideColors(pool,3)
+  test('4. basic level 5: minimumCount=3, distinctImages·Colors=true', () => {
     const r = getAssetRequirement({ mode: 'basic', level: 5, theme: 'animal' });
-    expect(r.minimumCount).toBe(1);
-    expect(r.requiresDistinctImages).toBe(false);
-    expect(r.requiresDistinctColors).toBe(false);
+    expect(r.minimumCount).toBe(3);
+    expect(r.requiresDistinctImages).toBe(true);
+    expect(r.requiresDistinctColors).toBe(true);
   });
 
-  // 5. basic level 6 — signals.ts: pool.length>=3 && hasDistinctSlideColors(pool,3)
+  // 5. basic level 6 — random split 3패널 확률 때문에 pool.length>=3 && hasDistinctSlideColors(pool,3)
   test('5. basic level 6: minimumCount=3, distinctImages·Colors=true', () => {
     const r = getAssetRequirement({ mode: 'basic', level: 6, theme: 'fruit' });
     expect(r.minimumCount).toBe(3);
@@ -185,21 +185,25 @@ describe('modified quadrant body actions', () => {
 });
 
 describe('evaluateAssetReadiness', () => {
-  // 6. 1개 필요, 0개 → insufficient
-  test('6. level 5: 1개 필요, 0개 → insufficient', () => {
+  // 6. 3개 필요, 0개 → insufficient
+  test('6. level 5: 3개 필요, 0개 → insufficient', () => {
     const r = evaluateAssetReadiness({ mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY, slides: [] });
     expect(r.status).toBe('insufficient');
-    if (r.status === 'insufficient') expect(r.missingCount).toBe(1);
+    if (r.status === 'insufficient') expect(r.missingCount).toBe(3);
   });
 
-  // 7. 1개 필요, 1개 → ready
-  test('7. level 5: 1개, 유효 URL → ready', () => {
+  // 7. 3개 필요, 3개(다른 색) → ready
+  test('7. level 5: 3개, 다른 색 3가지 → ready', () => {
     const r = evaluateAssetReadiness({
       mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
-      slides: [makeSlide('https://a.com/img1.png')],
+      slides: [
+        makeSlide('https://a.com/img1.png', 'red'),
+        makeSlide('https://a.com/img2.png', 'yellow'),
+        makeSlide('https://a.com/img3.png', 'blue'),
+      ],
     });
     expect(r.status).toBe('ready');
-    expect(r.usableAssets).toHaveLength(1);
+    expect(r.usableAssets).toHaveLength(3);
   });
 
   // 8. 2개 필요, 1개 → insufficient
@@ -266,7 +270,7 @@ describe('evaluateAssetReadiness', () => {
       slides: [makeSlide(''), makeSlide('  '), makeSlide('https://a.com/img.png')],
     });
     expect(r.usableAssets).toHaveLength(1);
-    expect(r.status).toBe('ready');
+    expect(r.status).toBe('insufficient');
   });
 
   // 14. distinct color 부족 → insufficient
@@ -366,10 +370,14 @@ describe('Snapshot deep copy', () => {
     const ref = { current: undefined as FruitSlide[] | undefined };
     const readiness = evaluateAssetReadiness({
       mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
-      slides: [makeSlide('https://a.com/img1.png')],
+      slides: [
+        makeSlide('https://a.com/img1.png', 'red'),
+        makeSlide('https://a.com/img2.png', 'yellow'),
+        makeSlide('https://a.com/img3.png', 'blue'),
+      ],
     });
     simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness });
-    expect(ref.current).toHaveLength(1);
+    expect(ref.current).toHaveLength(3);
     expect(ref.current![0]?.imageUrl).toBe('https://a.com/img1.png');
   });
 
@@ -378,14 +386,22 @@ describe('Snapshot deep copy', () => {
     const ref = { current: undefined as FruitSlide[] | undefined };
     const r1 = evaluateAssetReadiness({
       mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
-      slides: [makeSlide('https://a.com/img1.png')],
+      slides: [
+        makeSlide('https://a.com/img1.png', 'red'),
+        makeSlide('https://a.com/img2.png', 'yellow'),
+        makeSlide('https://a.com/img3.png', 'blue'),
+      ],
     });
     simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness: r1 });
     const snapshotBefore = ref.current;
 
     const r2 = evaluateAssetReadiness({
       mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
-      slides: [makeSlide('https://b.com/new-img.png')],
+      slides: [
+        makeSlide('https://b.com/new-img1.png', 'red'),
+        makeSlide('https://b.com/new-img2.png', 'yellow'),
+        makeSlide('https://b.com/new-img3.png', 'blue'),
+      ],
     });
     simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness: r2 });
     expect(ref.current).toBe(snapshotBefore); // 동일 참조 — 변경되지 않음
@@ -396,7 +412,11 @@ describe('Snapshot deep copy', () => {
     const ref = { current: undefined as FruitSlide[] | undefined };
     const r1 = evaluateAssetReadiness({
       mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
-      slides: [makeSlide('https://a.com/img1.png')],
+      slides: [
+        makeSlide('https://a.com/img1.png', 'red'),
+        makeSlide('https://a.com/img2.png', 'yellow'),
+        makeSlide('https://a.com/img3.png', 'blue'),
+      ],
     });
     simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness: r1 });
     expect(ref.current![0]?.imageUrl).toBe('https://a.com/img1.png');
@@ -406,10 +426,14 @@ describe('Snapshot deep copy', () => {
 
     const r2 = evaluateAssetReadiness({
       mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
-      slides: [makeSlide('https://b.com/img2.png')],
+      slides: [
+        makeSlide('https://b.com/img1.png', 'red'),
+        makeSlide('https://b.com/img2.png', 'yellow'),
+        makeSlide('https://b.com/img3.png', 'blue'),
+      ],
     });
     simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness: r2 });
-    expect(ref.current![0]?.imageUrl).toBe('https://b.com/img2.png');
+    expect(ref.current![0]?.imageUrl).toBe('https://b.com/img1.png');
   });
 
   test('color 테마(minimumCount=0): snapshot 미설정', () => {
@@ -557,7 +581,7 @@ describe('테마 이미지 런타임 슬라이드', () => {
   });
 });
 
-describe('사이먼 3번 · 변형 색지각 이미지', () => {
+describe('사이먼 3번 · 연상 색지각 이미지', () => {
   const COLORS_ARR = Object.values(THEME_COLORS);
 
   test('level 3 + 이미지 슬라이드 → simon_shape content에 imageUrl 포함', () => {

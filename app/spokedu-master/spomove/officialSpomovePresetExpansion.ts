@@ -7,7 +7,7 @@ import {
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 
 const THEMED_BASIC_LEVELS = [2, 3, 4, 5, 6] as const;
-const ALL_THEMES: SpomoveColorThemeId[] = ['color', 'fruit', 'vehicle', 'animal', 'nature', 'food'];
+const ALL_THEMES: SpomoveColorThemeId[] = ['fruit', 'animal', 'color', 'food', 'nature', 'vehicle', 'mix'];
 
 const EXISTING_BASIC_THEME_KEYS = new Set([
   '2:color',
@@ -30,39 +30,39 @@ type BasicLevelMeta = {
 
 const BASIC_LEVEL_META: Record<(typeof THEMED_BASIC_LEVELS)[number], BasicLevelMeta> = {
   2: {
-    signalLabel: '사분할 이미지',
-    titleStem: '사분할',
-    description: '네 영역에 제시되는 {theme} 이미지 신호를 보고 정해진 위치에 맞춰 반응하는 활동',
-    salesCopy: '{theme} 이미지로 즐기는 사분할 반응',
-    recommendedUse: '색상 인지, 위치 선택, 준비운동',
+    signalLabel: '4분할 그리드형',
+    titleStem: '4분할 자극',
+    description: '2×2 그리드형 화면에서 한 칸에 표시되는 {theme} 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동',
+    salesCopy: '{theme} 테마로 색·위치 지각을 연결하는 4분할 반응',
+    recommendedUse: '색상 지각, 위치 선택, 반응-실행 연결',
   },
   3: {
-    signalLabel: '전면 이미지',
-    titleStem: '전면',
-    description: '전면에 제시되는 {theme} 이미지 신호를 보고 빠르게 판단하고 움직이는 활동',
-    salesCopy: '{theme} 이미지로 즐기는 전면 반응',
-    recommendedUse: '전신 반응, 이미지 판단, 집중 전환',
+    signalLabel: '전면단일 전체형',
+    titleStem: '전면단일 자극',
+    description: '전체형 화면 하나에 크게 표시되는 {theme} 신호를 보고 해당 색 패드 위치로 즉시 이동하는 전면단일 자극 활동',
+    salesCopy: '{theme} 테마로 색·이미지 지각을 연결하는 전면단일 반응',
+    recommendedUse: '전신 반응, 색·이미지 판단, 반응-실행 연결',
   },
   4: {
-    signalLabel: '2분할 이미지',
-    titleStem: '2분할',
-    description: '좌우 또는 상하로 나뉜 두 영역의 {theme} 신호를 보고 빠르게 선택 반응하는 활동',
-    salesCopy: '{theme} 이미지로 구분하는 2분할 반응',
-    recommendedUse: '선택 반응, 양측 이동, 난이도 확장',
+    signalLabel: '2분할 패널형',
+    titleStem: '2분할 자극',
+    description: '2분할 패널형 화면의 좌우 두 패널에 표시되는 {theme} 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동',
+    salesCopy: '{theme} 테마로 두 패널의 색·이미지 지각을 연결하는 2분할 반응',
+    recommendedUse: '선택 반응, 양측 이동, 색·이미지 판단, 반응-실행 연결',
   },
   5: {
-    signalLabel: '3패널 이미지',
-    titleStem: '3패널',
-    description: '세 패널에 제시되는 {theme} 신호를 보고 빠르게 선택 반응하는 활동',
-    salesCopy: '{theme} 이미지 3패널 선택 반응',
-    recommendedUse: '고급 선택 반응, 집중력 강화, 심화 훈련',
+    signalLabel: '3분할 패널형',
+    titleStem: '3분할 자극',
+    description: '3분할 패널형 화면의 세 패널에 표시되는 서로 다른 {theme} 신호 중 목표 색을 골라 해당 색 패드 위치로 즉시 이동하는 활동',
+    salesCopy: '{theme} 테마로 서로 다른 세 신호를 빠르게 고르는 3분할 반응',
+    recommendedUse: '선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결',
   },
   6: {
-    signalLabel: '3패널 이미지',
-    titleStem: '3패널 다른색',
-    description: '세 패널에 서로 다른 {theme} 신호가 제시될 때 빠르게 선택 반응하는 활동',
-    salesCopy: '{theme} 이미지 3패널 서로 다른 색 반응',
-    recommendedUse: '심화 반응, 집중력, 선택 반응',
+    signalLabel: '랜덤분할 전체/패널형',
+    titleStem: '랜덤분할 자극',
+    description: '전면 1개·2분할·3분할이 20%·30%·50% 확률로 바뀌며 제시되는 {theme} 신호를 보고 해당 색 패드 위치로 즉시 이동하는 활동',
+    salesCopy: '{theme} 테마로 전체형과 패널형 전환에 반응하는 랜덤분할 반응',
+    recommendedUse: '심화 선택 반응, 시선 분산, 색·이미지 판단, 반응-실행 연결',
   },
 };
 
@@ -72,10 +72,10 @@ function fillThemeCopy(template: string, themeLabel: string) {
 
 function defaultExecutionFacts(signalLabel: string, themeLabel: string): OfficialSpomovePreset['executionFacts'] {
   return [
-    { label: '신호 방식', value: signalLabel },
+    { label: '화면 형태', value: signalLabel },
+    { label: '신호 방식', value: themeLabel === '색상' ? '색상 신호' : '테마 이미지' },
     { label: '테마', value: themeLabel },
     { label: '반복', value: '20회' },
-    { label: 'BGM', value: '자동 재생' },
   ];
 }
 
@@ -91,9 +91,17 @@ function buildReactionCognitionThemePresets(startSortOrder: number): OfficialSpo
 
       const themeLabel = SPOMOVE_COLOR_THEME_LABELS[theme];
       const title =
-        level === 6
-          ? `반응인지 · ${meta.titleStem} · ${themeLabel}`
-          : `반응인지 · ${meta.titleStem} · ${themeLabel}`;
+        level === 2
+          ? themeLabel
+          : level === 3
+            ? `전면단일 · ${themeLabel}`
+            : level === 4
+              ? `2분할 · ${themeLabel}`
+              : level === 5
+              ? `3분할 · ${themeLabel}`
+              : level === 6
+                ? `랜덤분할 · ${themeLabel}`
+            : `반응인지 · ${meta.titleStem} · ${themeLabel}`;
 
       presets.push({
         id: `reaction-cognition-l${level}-${theme}-exp`,
@@ -112,8 +120,30 @@ function buildReactionCognitionThemePresets(startSortOrder: number): OfficialSpo
         bgmCategory: 'spomove-training',
         recommendedUse: meta.recommendedUse,
         isReady: true,
-        settingSummary: `3초 · 20회 · ${themeLabel} 테마 · BGM 자동`,
-        settingChips: ['3초', '20회', `${themeLabel} 테마`, 'BGM 자동'],
+        settingSummary:
+          level === 2
+            ? `4분할 그리드형 · ${themeLabel} · 3초 · 20회`
+            : level === 3
+              ? `전면단일 전체형 · ${themeLabel} · 3초 · 20회`
+              : level === 4
+                ? `2분할 패널형 · ${themeLabel} · 3초 · 20회`
+                : level === 5
+                  ? `3분할 패널형 · ${themeLabel} · 3초 · 20회`
+                  : level === 6
+                    ? `랜덤분할 전체/패널형 · ${themeLabel} · 3초 · 20회`
+              : `3초 · 20회 · ${themeLabel} 테마 · BGM 자동`,
+        settingChips:
+          level === 2
+            ? ['4분할', '그리드형', themeLabel, '3초', '20회']
+            : level === 3
+              ? ['전면단일', '전체형', themeLabel, '3초', '20회']
+              : level === 4
+                ? ['2분할', '패널형', themeLabel, '3초', '20회']
+                : level === 5
+                  ? ['3분할', '패널형', themeLabel, '3초', '20회']
+                  : level === 6
+                    ? ['랜덤분할', '패널형', themeLabel, '3초', '20회']
+              : ['3초', '20회', `${themeLabel} 테마`, 'BGM 자동'],
         executionFacts: defaultExecutionFacts(meta.signalLabel, themeLabel),
       });
     }
@@ -322,4 +352,4 @@ export function buildOfficialSpomoveExpansionPresets(startSortOrder: number): Of
   return [...themePresets, ...engineGapPresets];
 }
 
-export const OFFICIAL_SPOMOVE_EXPANSION_COUNT = 29;
+export const OFFICIAL_SPOMOVE_EXPANSION_COUNT = 34;

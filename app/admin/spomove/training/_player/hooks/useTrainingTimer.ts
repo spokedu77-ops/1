@@ -50,7 +50,7 @@ export function useTrainingTimer({
   level: number;
   audioMode: string;
   colors: ColorItem[];
-  /** basic 변형 색지각(3~5번) 슬롯; 미전달 시 signals 기본값 */
+  /** basic 연상 색지각(3~5번) 슬롯; 미전달 시 signals 기본값 */
   fruitSlides?: FruitSlide[];
   basicNumberOverlay?: 'none' | '2' | '3';
   spatialArrowColorMode?: 'basic' | 'color';

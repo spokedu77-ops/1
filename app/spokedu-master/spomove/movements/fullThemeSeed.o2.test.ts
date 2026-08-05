@@ -48,6 +48,7 @@ describe('O2 full theme seed', () => {
       'reaction-cognition-full-nature-19': 'lungeReach',
       'reaction-cognition-l3-food-exp': 'quickStep',
       'reaction-cognition-l3-vehicle-exp': 'plankTouch',
+      'reaction-cognition-l3-mix-exp': 'quickStep',
     };
     for (const id of FULL_THEME_SEED_PRESET_IDS) {
       const preset = findOfficialSpomovePreset(id);

@@ -20,7 +20,7 @@ async function preloadOne(href: string, maxRetries = 2): Promise<void> {
   }
 }
 
-/** 변형 색지각: 이미지 URL 목록을 브라우저 캐시에 올립니다 (순차·재시도). */
+/** 연상 색지각: 이미지 URL 목록을 브라우저 캐시에 올립니다 (순차·재시도). */
 export function preloadVariantFruitImages(urls: readonly string[] = []): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
   const unique = [...new Set(urls.filter((href) => typeof href === 'string' && href.trim()))];

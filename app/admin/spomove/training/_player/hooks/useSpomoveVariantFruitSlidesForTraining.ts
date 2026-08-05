@@ -82,6 +82,35 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
         return;
       }
 
+      if (variantColorTheme === 'mix') {
+        const supabase = getSupabaseBrowserClient();
+        const { data } = await supabase
+          .from('think_asset_packs')
+          .select('id, assets_json, updated_at')
+          .in('id', [...ALL_VARIANT_PACK_IDS]);
+        if (reqIdRef.current !== thisId) return;
+
+        const merged: FruitSlide[] = [];
+        for (const packId of ALL_VARIANT_PACK_IDS) {
+          const row = (data ?? []).find(
+            (r: { id: string; assets_json: unknown; updated_at?: string | null }) => r.id === packId,
+          );
+          if (!row) continue;
+          merged.push(
+            ...slidesFromPackRow(
+              packId,
+              row.assets_json,
+              row.updated_at as string | undefined,
+            ),
+          );
+        }
+
+        setSlides(uniqueSlidesByImageUrl(merged));
+        setLoadedTheme(variantColorTheme);
+        setStatus('ready');
+        return;
+      }
+
       const def = SPOMOVE_THEMED_PACK_BY_THEME[variantColorTheme];
       const supabase = getSupabaseBrowserClient();
       const { data } = await supabase
@@ -129,7 +158,10 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
 
 const ALL_VARIANT_PACK_IDS = [
   SPOMOVE_VARIANT_PACK_ID,
-  ...Object.values(SPOMOVE_THEMED_PACK_BY_THEME).map((def) => def.packId),
+  SPOMOVE_THEMED_PACK_BY_THEME.animal.packId,
+  SPOMOVE_THEMED_PACK_BY_THEME.food.packId,
+  SPOMOVE_THEMED_PACK_BY_THEME.nature.packId,
+  SPOMOVE_THEMED_PACK_BY_THEME.vehicle.packId,
 ] as const;
 
 function slidesFromPackRow(
@@ -161,7 +193,7 @@ function slidesFromPackRow(
 }
 
 /**
- * 사이먼 3번(Mixed Gallery): 과일 + 탈것·감정·동물·자연물·음식 등 업로드된 전체 변형 색상 이미지를 한 풀로 합칩니다.
+ * Simon mixed gallery and the virtual mix theme combine fruit, animal, food, nature, and vehicle images.
  */
 export function useSpomoveAllVariantSlidesForTraining(enabled: boolean) {
   const [slides, setSlides] = useState<FruitSlide[]>([]);

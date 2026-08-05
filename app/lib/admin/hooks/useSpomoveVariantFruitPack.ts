@@ -14,7 +14,7 @@ import {
 } from '@/app/admin/spomove/training/_player/lib/variantFruitAssets';
 import type { FruitSlide } from '@/app/admin/spomove/training/_player/lib/signals';
 
-const PACK_NAME = 'SPOMOVE 변형 색지각 과일';
+const PACK_NAME = 'SPOMOVE 연상 색지각 과일';
 
 export function useSpomoveVariantFruitPack() {
   const [paths, setPaths] = useState<(string | null)[]>(() =>

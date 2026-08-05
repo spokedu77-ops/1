@@ -10,7 +10,7 @@ export interface AssetHubTabsProps {
 const TAB_ORDER: AssetHubTabId[] = ['spomove', 'bgm', 'dive'];
 
 const TAB_LABELS: Record<AssetHubTabId, string> = {
-  spomove: 'SPOMOVE · 색지각',
+  spomove: 'SPOMOVE · 연상 색지각',
   bgm: 'BGM',
   dive: 'DIVE 환경',
 };

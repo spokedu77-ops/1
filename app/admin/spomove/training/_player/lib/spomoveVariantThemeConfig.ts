@@ -1,12 +1,12 @@
 /**
- * SPOMOVE 변형 색지각 — 테마·팩 ID·Hub 섹션 (트레이닝·Asset Hub 공용)
+ * SPOMOVE 연상 색지각 — 테마·팩 ID·Hub 섹션 (트레이닝·Asset Hub 공용)
  */
 
 export const SPOMOVE_VARIANT_THEME_LS_KEY = 'spomove_variant_training_theme';
 
-export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal' | 'nature' | 'food';
+export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal' | 'nature' | 'food' | 'mix';
 
-export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['emotion', 'fruit', 'animal', 'nature', 'food', 'color', 'vehicle'];
+export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['fruit', 'animal', 'color', 'food', 'nature', 'vehicle', 'mix'];
 
 export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   color: '색상',
@@ -14,8 +14,9 @@ export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   vehicle: '탈 것',
   emotion: '감정',
   animal: '동물',
-  nature: '자연물',
+  nature: '자연',
   food: '음식',
+  mix: '믹스',
 };
 
 export const SPOMOVE_VARIANT_VEHICLE_PACK_ID = 'spomove_variant_vehicles';
@@ -42,12 +43,12 @@ export type SpomoveThemedPackDef = {
 };
 
 export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
-  Exclude<SpomoveColorThemeId, 'color' | 'fruit'>,
+  Exclude<SpomoveColorThemeId, 'color' | 'fruit' | 'mix'>,
   SpomoveThemedPackDef
 > = {
   vehicle: {
     packId: SPOMOVE_VARIANT_VEHICLE_PACK_ID,
-    packName: 'SPOMOVE 색지각 탈 것',
+    packName: 'SPOMOVE 연상 색지각 탈 것',
     subfolder: 'spomove_variant_vehicles',
     slotLabels: [
       '1. 자전거 (빨강)',
@@ -64,7 +65,7 @@ export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
   },
   emotion: {
     packId: SPOMOVE_VARIANT_EMOTION_PACK_ID,
-    packName: 'SPOMOVE 색지각 감정',
+    packName: 'SPOMOVE 연상 색지각 감정',
     subfolder: 'spomove_variant_emotions',
     slotLabels: [
       '1. 화남 (빨강)',
@@ -80,7 +81,7 @@ export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
   },
   animal: {
     packId: SPOMOVE_VARIANT_ANIMAL_PACK_ID,
-    packName: 'SPOMOVE 색지각 동물',
+    packName: 'SPOMOVE 연상 색지각 동물',
     subfolder: 'spomove_variant_animals',
     slotLabels: [
       '1. 강아지 (빨강)',
@@ -96,7 +97,7 @@ export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
   },
   nature: {
     packId: SPOMOVE_VARIANT_NATURE_PACK_ID,
-    packName: 'SPOMOVE 색지각 자연물',
+    packName: 'SPOMOVE 연상 색지각 자연',
     subfolder: 'spomove_variant_nature',
     slotLabels: [
       '1. 꽃 (빨강)',
@@ -112,7 +113,7 @@ export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
   },
   food: {
     packId: SPOMOVE_VARIANT_FOOD_PACK_ID,
-    packName: 'SPOMOVE 색지각 음식',
+    packName: 'SPOMOVE 연상 색지각 음식',
     subfolder: 'spomove_variant_food',
     slotLabels: [
       '1. 사과 (빨강)',
@@ -128,21 +129,20 @@ export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
   },
 };
 
-/** Asset Hub 색지각 — 6개 섹션 (1: 테마·미리보기, 2~6: 자산 편집) */
+/** Asset Hub 연상 색지각 — 색상과 믹스는 가상 테마라 업로드 슬롯이 없다. */
 export const SPOMOVE_COLOR_HUB_SECTIONS: {
   id: 'theme' | SpomoveColorThemeId;
   tabLabel: string;
 }[] = [
   { id: 'theme', tabLabel: '1. 테마' },
   { id: 'fruit', tabLabel: '2. 과일' },
-  { id: 'vehicle', tabLabel: '3. 탈 것' },
-  { id: 'emotion', tabLabel: '4. 감정' },
-  { id: 'animal', tabLabel: '5. 동물' },
-  { id: 'nature', tabLabel: '6. 자연물' },
-  { id: 'food', tabLabel: '7. 음식' },
+  { id: 'animal', tabLabel: '3. 동물' },
+  { id: 'food', tabLabel: '4. 음식' },
+  { id: 'nature', tabLabel: '5. 자연' },
+  { id: 'vehicle', tabLabel: '6. 탈 것' },
 ];
 
 export function parseStoredVariantTheme(raw: string | null): SpomoveColorThemeId {
-  if (raw === 'color' || raw === 'fruit' || raw === 'vehicle' || raw === 'emotion' || raw === 'animal' || raw === 'nature' || raw === 'food') return raw;
+  if (raw === 'color' || raw === 'fruit' || raw === 'vehicle' || raw === 'animal' || raw === 'nature' || raw === 'food' || raw === 'mix') return raw;
   return 'color';
 }

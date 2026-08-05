@@ -39,7 +39,7 @@ export const PAD_POSITIONS: PADColor[][] = [
   [PAD_GRID.BOTTOM_LEFT, PAD_GRID.BOTTOM_RIGHT],
 ];
 
-/** SPOMOVE 변형 색지각 Asset Hub 슬롯 수 (패드색당 2칸) */
+/** SPOMOVE 연상 색지각 Asset Hub 슬롯 수 (패드색당 2칸) */
 export const SPOMOVE_VARIANT_SLOT_COUNT = 8 as const;
 
 /**

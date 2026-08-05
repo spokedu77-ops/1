@@ -224,20 +224,6 @@ const defaultSettings: Settings = {
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
 
-const BASIC_DISPLAY_LEVELS = [
-  { displayNo: 1, levelId: 1, label: 'Spatial Orientation' },
-  { displayNo: 2, levelId: 2, label: 'Quad Color' },
-  { displayNo: 3, levelId: 7, label: 'Modified Quadrant' },
-  { displayNo: 4, levelId: 3, label: 'Full-Screen Color' },
-  { displayNo: 5, levelId: 4, label: 'Variant Color 1' },
-  { displayNo: 6, levelId: 5, label: 'Variant Color 2/3' },
-] as const;
-function getBasicDisplayNo(levelId: number): number | undefined {
-  if (levelId >= 7 && levelId <= 10) return 3;
-  if (levelId === 6) return 6;
-  return BASIC_DISPLAY_LEVELS.find((item) => item.levelId === levelId)?.displayNo;
-}
-
 export type MemoryGameAutoLaunch = {
   speed?: number;
   timeMode?: 'time' | 'reps';
@@ -561,12 +547,6 @@ export default function MemoryGameApp({
     void preloadVariantFruitImages(variantFruitUrls);
   }, [variantFruitUrls]);
 
-  /** ???????????????????????????????ㅻ깹????????????????basic 2~6??: ??????????????????????????????????????????????????????????????????? ?????????????????????????????熬곣뫖利당춯??쎾퐲???????????????????꿔꺂?㏘틠??怨몄젦????????????????????????????????????????????????곕춴???????????????*/
-  const basicDisplayNo = useMemo(
-    () => (settings.mode === 'basic' ? getBasicDisplayNo(settings.level) : undefined),
-    [settings.mode, settings.level]
-  );
-
   const basicVariantLevel = useMemo(
     () =>
       settings.mode === 'basic' &&
@@ -609,14 +589,7 @@ export default function MemoryGameApp({
     [settings.mode, settings.level],
   );
 
-  const fullScreenColorDisplayLevel = settings.mode === 'basic' && basicDisplayNo === 7;
-
-  const sortedColorThemeIds = useMemo(
-    () => SPOMOVE_COLOR_THEME_ORDER
-      .slice()
-      .sort((a, b) => SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')),
-    []
-  );
+  const sortedColorThemeIds = useMemo(() => [...SPOMOVE_COLOR_THEME_ORDER], []);
 
   const reloadVariantAssets = useCallback(() => {
     if (simonMixedVariantLevel) void reloadAllAssets();
@@ -714,11 +687,6 @@ export default function MemoryGameApp({
       return next;
     });
   }, []);
-
-  const switchVariantColorTheme = useCallback((themeId: SpomoveColorThemeId) => {
-    sessionSlidesRef.current = undefined;
-    set('variantColorTheme', themeId);
-  }, [set]);
 
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
@@ -1470,34 +1438,10 @@ export default function MemoryGameApp({
               {settings.mode === 'basic' && isFront3PanelLevel(settings.level) ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>색 구성</div>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    {([
-                      { id: 5, label: '같은 색' },
-                      { id: 6, label: '서로 다른 색' },
-                    ] as const).map((opt) => {
-                      const active = settings.level === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => set('level', opt.id)}
-                          style={{
-                            flex: 1,
-                            padding: '0.55rem 0.75rem',
-                            borderRadius: '0.75rem',
-                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                            background: active ? `${M.accent}12` : 'var(--card)',
-                            color: active ? M.accent : 'var(--text)',
-                            fontWeight: active ? 800 : 600,
-                            fontSize: '0.88rem',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                    {settings.level === 5
+                      ? '3분할 자극은 세 패널에 서로 다른 신호가 항상 표시됩니다.'
+                      : '랜덤분할 자극은 전면 20%, 2패널 30%, 3패널 50% 확률로 표시됩니다.'}
                   </div>
                 </div>
               ) : null}
@@ -1626,8 +1570,8 @@ export default function MemoryGameApp({
                   </div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
                     {flankerThemeLevel
-                      ? '변형 색지각과 동일한 7가지 테마를 고릅니다. 색상은 이미지 없이 원만 사용합니다.'
-                      : 'Select the Asset Hub theme used for variant color signals.'}
+                      ? '연상 색지각과 동일한 7가지 테마를 고릅니다. 색상은 이미지 없이 원만 사용합니다.'
+                      : 'Select the Asset Hub theme used for associative color-perception signals.'}
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
                     {sortedColorThemeIds.map((tid) => (
@@ -1656,15 +1600,15 @@ export default function MemoryGameApp({
               ) : null}
               {settings.mode === 'basic' && settings.level === 1 ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>시작 옵션</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>난이도</div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    기본은 흰 화살표, 색상 모드는 위 빨·좌 초·우 노·아래 파로 고정 채워집니다.
+                    쉬움은 흰 화살표, 보통은 위 빨·좌 초·우 노·아래 파로 채워진 색상 화살표입니다.
                   </p>
                   <div style={{ display: 'flex', gap: '0.45rem' }}>
                     {([
-                      ['basic', '기본'],
-                      ['color', '색상 모드'],
-                    ] as const).map(([value, label]) => (
+                      { value: 'basic' as const, label: '쉬움', sub: '화살표' },
+                      { value: 'color' as const, label: '보통', sub: '색상 화살표' },
+                    ]).map(({ value, label, sub }) => (
                       <button
                         key={value}
                         type="button"
@@ -1682,7 +1626,12 @@ export default function MemoryGameApp({
                           fontFamily: 'inherit',
                         }}
                       >
-                        {settings.spatialArrowColorMode === value ? '✓ ' : ''}{label}
+                        <span style={{ display: 'block', fontWeight: 900 }}>
+                          {settings.spatialArrowColorMode === value ? '✓ ' : ''}{label}
+                        </span>
+                        <span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: settings.spatialArrowColorMode === value ? M.accent : 'var(--text-muted)', fontWeight: 800 }}>
+                          {sub}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -2450,81 +2399,6 @@ export default function MemoryGameApp({
             >
               믹스 갤러리 · 이미지 색(패드) 위치로 이동
             </div>
-          </div>
-        )}
-        {!embed && basicVariantLevel && !fullScreenColorDisplayLevel && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: EMBED_SAFE_BOTTOM,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '0.45rem',
-              maxWidth: 'min(92vw, 28rem)',
-            }}
-          >
-            <div
-              style={{
-                textAlign: 'center',
-                background: 'rgba(0,0,0,0.55)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '2rem',
-                padding: '0.45rem 1rem',
-                color: 'rgba(255,255,255,0.85)',
-                fontSize: 'clamp(0.72rem,2vw,0.9rem)',
-                fontWeight: 600,
-                border: '1px solid rgba(255,255,255,0.12)',
-              }}
-            >
-              변형 사분할 · {SPOMOVE_COLOR_THEME_LABELS[settings.variantColorTheme]}
-            </div>
-          </div>
-        )}
-        {!embed && fullScreenColorDisplayLevel && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: EMBED_SAFE_BOTTOM,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 20,
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: '0.45rem',
-              width: 'min(92vw, 42rem)',
-            }}
-          >
-            {sortedColorThemeIds.map((tid) => {
-              const active = settings.variantColorTheme === tid;
-              return (
-                <button
-                  key={tid}
-                  type="button"
-                  onClick={() => switchVariantColorTheme(tid)}
-                  style={{
-                    padding: '0.42rem 0.82rem',
-                    minHeight: '2.1rem',
-                    borderRadius: '2rem',
-                    border: `2px solid ${active ? '#fff' : 'rgba(255,255,255,0.28)'}`,
-                    background: active ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.48)',
-                    backdropFilter: 'blur(10px)',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.72)',
-                    fontWeight: active ? 850 : 650,
-                    fontSize: 'clamp(0.72rem,2vw,0.88rem)',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {SPOMOVE_COLOR_THEME_LABELS[tid]}
-                </button>
-              );
-            })}
           </div>
         )}
         <div style={{ position: 'absolute', top: EMBED_SAFE_TOP, left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
