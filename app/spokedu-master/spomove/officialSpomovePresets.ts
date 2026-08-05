@@ -64,6 +64,7 @@ export type OfficialSpomovePreset = {
     moleLookMode?: 'classic' | 'variant';
     numberCartTier?: 1 | 2 | 3;
     colorTrackerTier?: 1 | 2 | 3;
+    handFootDifficulty?: 'easy' | 'normal' | 'hard';
     /** 골키퍼(10): 1=항상 1개 · 2=1~2개(더블) */
     goalkeeperTier?: 1 | 2;
     /** 사이먼 폴 도형(1)·폴 화살표(2): 1=기본 1개 · 2=응용 2개 */
@@ -595,6 +596,8 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
   // NUMBER CART (level 8)
   {
     id: 'visual-reaction-number-cart-l2',
+    catalogStatus: 'hold',
+    holdReason: '보류: 숫자 연산 기차는 스포키듀 마스터 공개 목록에서 숨김',
     sortOrder: 25,
     title: '시지각 반응 · 숫자 연산 기차',
     en: 'Visual Reaction',
@@ -1073,6 +1076,8 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
   // sortOrder 49: Missing Color (level 4 · 누락 옵션)
   {
     id: 'stroop-missing-color-50',
+    catalogStatus: 'hold',
+    holdReason: '보류: 스트룹 3/4번 정리로 마스터 공개 목록에서 숨김',
     sortOrder: 37,
     title: '스트룹 이펙트 · 누락 색상 찾기',
     en: 'Stroop Effect',
@@ -1249,6 +1254,8 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
   },
   {
     id: 'dive-random',
+    catalogStatus: 'hold',
+    holdReason: '보류: 다이브는 액션 무브/모션 게이트 2개만 공개',
     sortOrder: 43,
     title: 'DIVE · 랜덤',
     en: 'Dive Random',
@@ -1283,8 +1290,8 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
   {
     id: 'dive-color-gate-61',
     sortOrder: 44,
-    title: 'DIVE · Color Gate',
-    en: 'Dive Color Gate',
+    title: 'DIVE · 모션 게이트',
+    en: 'Dive Motion Gate',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'dive',
@@ -1296,18 +1303,18 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       flowDuration: 60,
       flowLayout: 'sequential',
     },
-    description: 'DIVE 2단계: 빨·노·초·파 색 관문과 5가지 포즈(jump·kick·side-squat·lunge-reach·star)를 수행하는 활동',
-    salesCopy: '색상 판단과 전신 포즈 전환을 함께 훈련하는 DIVE 2단계',
+    description: '모션 게이트: 빨·노·초·파 색 관문과 5가지 포즈(jump·kick·side-squat·lunge-reach·star)를 수행하는 활동',
+    salesCopy: '색상 판단과 전신 포즈 전환을 함께 훈련하는 모션 게이트',
     cueSeconds: 3,
     rounds: 1,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '색상 반응, 포즈 전환, DIVE 2단계',
+    recommendedUse: '색상 반응, 포즈 전환, 모션 게이트',
     isReady: true,
-    settingSummary: 'Color Gate · 60초 · BGM 자동',
-    settingChips: ['2단계', 'Color Gate', '60초', 'BGM 자동'],
+    settingSummary: '모션 게이트 · 60초 · BGM 자동',
+    settingChips: ['모션 게이트', '60초', 'BGM 자동'],
     executionFacts: [
-      { label: '단계', value: 'DIVE 2단계' },
+      { label: '항목', value: '모션 게이트' },
       { label: '관문 색', value: '빨·노·초·파' },
       { label: '포즈', value: 'jump·kick·side-squat·lunge-reach·star' },
       { label: 'BGM', value: '자동 재생' },

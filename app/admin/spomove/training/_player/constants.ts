@@ -193,9 +193,8 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
-      { id: 1, name: '순서 기억', enName: 'Order Memory', desc: '난이도 쉬움은 3개, 보통은 5개, 어려움은 추가 항목으로 진행합니다.' },
-      { id: 4, name: '색·번호 기억', enName: 'Color-Number', desc: '번호에 매칭된 색을 기억합니다. 퀴즈/전체 공개는 아래에서 고릅니다.' },
-      { id: 6, name: '직접 지정 10색', enName: 'Custom 10-Color Sequence', desc: '1~10번 슬롯에 빨·노·초·파를 직접 지정해 순서를 기억합니다.' },
+      { id: 1, name: '순서 기억', enName: 'Order Memory', desc: '난이도 쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개 점증, 어려움은 직접 지정 10색으로 진행합니다.' },
+      { id: 2, name: '랜덤 기억', enName: 'Random Memory', desc: '난이도 어려움에서 퀴즈 또는 전체 공개 방식으로 색과 번호를 기억합니다.' },
     ],
   },
 
@@ -210,8 +209,8 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '몰입 러닝 · 반응 전환',
     desc: '3D 몰입 환경에서 달리고, 점프하고, 동작을 수행하는 DIVE 트레이닝입니다.',
     levels: [
-      { id: 1, name: '1단계', enName: 'Dive Program', desc: 'DIVE 전체 시퀀스를 진행합니다.' },
-      { id: 2, name: '2단계', enName: 'Color Gate', desc: '브릿지 없이 공유 배경에서 색 포즈 관문만 진행합니다.' },
+      { id: 1, name: '액션 무브', enName: 'Action Move', desc: 'DIVE 전체 시퀀스를 진행합니다.' },
+      { id: 2, name: '모션 게이트', enName: 'Motion Gate', desc: '브릿지 없이 공유 배경에서 색 포즈 관문만 진행합니다.' },
     ],
   },
 };
@@ -343,7 +342,7 @@ export function modifiedQuadrantLevelFromStage(stage: 1 | 2 | 3): number {
 }
 
 export function isColorSequenceLevel(level: number): boolean {
-  return level === 1 || level === 2 || level === 3;
+  return level === 1 || level === 2 || level === 3 || level === 6;
 }
 
 export function isColorNumberLevel(level: number): boolean {
@@ -366,18 +365,19 @@ export function catalogStroopUiLevel(level: number): number {
   return level === 5 ? 4 : level;
 }
 
-/** spatial 엔진 level → 카탈로그 대표 id (순서 기억=1, 색·번호=4) */
+/** spatial 엔진 level → 카탈로그 대표 id (순서 기억=1, 랜덤 기억=2) */
 export function catalogSpatialUiLevel(level: number): number {
   if (isColorSequenceLevel(level)) return 1;
-  if (isColorNumberLevel(level)) return 4;
+  if (isColorNumberLevel(level)) return 2;
   return level;
 }
 
-export type ColorSequenceOption = 3 | 5 | 'ramp';
+export type ColorSequenceOption = 3 | 5 | 'ramp' | 'custom10';
 
 export function colorSequenceOption(level: number): ColorSequenceOption {
   if (level === 2) return 5;
   if (level === 3) return 'ramp';
+  if (level === 6) return 'custom10';
   return 3;
 }
 
@@ -388,6 +388,7 @@ export const COLOR_SEQUENCE_RAMP_ROUNDS = COLOR_SEQUENCE_RAMP_LENGTHS.length;
 export function colorSequenceLevelFromOption(option: ColorSequenceOption): number {
   if (option === 5) return 2;
   if (option === 'ramp') return 3;
+  if (option === 'custom10') return 6;
   return 1;
 }
 
@@ -470,7 +471,7 @@ export function isKnownTrainingLevel(mode: string, level: number): boolean {
     return level >= 1 && level <= 6;
   }
   if (mode === 'spatial') {
-    return isColorSequenceLevel(level) || isColorNumberLevel(level) || level === 6;
+    return isColorSequenceLevel(level) || isColorNumberLevel(level);
   }
   if (mode === 'reactTrain') {
     if (level >= 1 && level <= 10) return true;

@@ -1420,7 +1420,7 @@ export default function MemoryGameApp({
                         set('level', isColorSequenceLevel(settings.level) ? settings.level : 1);
                         return;
                       }
-                      if (settings.mode === 'spatial' && lv.id === 4) {
+                      if (settings.mode === 'spatial' && lv.id === 2) {
                         set('level', isColorNumberLevel(settings.level) ? settings.level : 4);
                         return;
                       }
@@ -1574,13 +1574,14 @@ export default function MemoryGameApp({
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>난이도</div>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.5 }}>
-                    쉬움은 3개, 보통은 5개, 어려움은 라운드마다 항목이 추가됩니다.
+                    쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개, 어려움은 직접 지정 10색입니다.
                   </p>
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.4rem' }}>
                     {([
                       { id: 3 as const, label: '쉬움', detail: '3개' },
                       { id: 5 as const, label: '보통', detail: '5개' },
-                      { id: 'ramp' as const, label: '어려움', detail: '추가' },
+                      { id: 'ramp' as const, label: '쉬움→보통→어려움', detail: '3~7개' },
+                      { id: 'custom10' as const, label: '어려움', detail: '직접 지정 10색' },
                     ] satisfies { id: ColorSequenceOption; label: string; detail: string }[]).map((opt) => {
                       const active = colorSequenceOption(settings.level) === opt.id;
                       return (
@@ -1611,11 +1612,11 @@ export default function MemoryGameApp({
               ) : null}
               {settings.mode === 'spatial' && isColorNumberLevel(settings.level) ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>진행 방식</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>난이도</div>
                   <div style={{ display: 'flex', gap: '0.4rem' }}>
                     {([
-                      { id: 4, label: '퀴즈' },
-                      { id: 5, label: '전체 공개' },
+                      { id: 4, label: '어려움 · 퀴즈' },
+                      { id: 5, label: '어려움 · 전체 공개' },
                     ] as const).map((opt) => {
                       const active = settings.level === opt.id;
                       return (
@@ -1775,9 +1776,9 @@ export default function MemoryGameApp({
                     {SELECTABLE_MODULE_KEYS.map((key) => {
                       const mod = FLOW_MODULES[key];
                       const icon = mod.icon;
-                      const label = key === 'colorGate' ? 'Color Gate (Stage 2)' : mod.label;
+                      const label = key === 'colorGate' ? '모션 게이트' : mod.label;
                       const desc = key === 'colorGate'
-                        ? 'Runs as a separate Stage 2 GATE with no bridge floor: follow the blue gate and pose.'
+                        ? '모션 게이트는 액션 무브와 분리되어 색 포즈 관문만 진행합니다.'
                         : mod.shortInstruction;
                       const active = settings.flowFeatures.has(key as FlowFeatureKey);
                       return (
@@ -1819,9 +1820,9 @@ export default function MemoryGameApp({
                   </div>
                 </div>
                 <div style={S.sec}>
-                  {stepNum(5, 'Stage 2 Color Gate')}
+                  {stepNum(5, '모션 게이트')}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
-                    Color Gate is a separate Stage 2 mode with the shared background and no bridge floor.
+                    모션 게이트는 브릿지 없이 공유 배경에서 색 포즈 관문만 진행합니다.
                   </p>
                   <button
                     type="button"
@@ -1850,10 +1851,10 @@ export default function MemoryGameApp({
                     <span style={{ fontSize: '1.3rem', lineHeight: 1, marginTop: '0.05rem' }}>🎯</span>
                     <div>
                       <div style={{ fontWeight: 800, fontSize: '0.9rem', color: settings.flowFeatures.has('colorGate') ? '#38BDF8' : 'var(--text)', marginBottom: '0.15rem' }}>
-                        {settings.flowFeatures.has('colorGate') ? '✓ ' : ''}Color Gate
+                        {settings.flowFeatures.has('colorGate') ? '✓ ' : ''}모션 게이트
                       </div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                        Runs as Stage 2 only: blue gate, pose cue, no bridge floor.
+                        모션 게이트 전용: 색 게이트, 포즈 신호, 브릿지 없음.
                       </div>
                     </div>
                   </button>

@@ -182,16 +182,16 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   '3항 기억': '순서 기억',
   '5항 기억': '순서 기억',
   '10항 기억': '순서 기억',
-  '색깔-번호 기억': '색·번호 기억',
-  '색깔-번호 전체 공개': '색·번호 기억',
+  '색깔-번호 기억': '랜덤 기억',
+  '색깔-번호 전체 공개': '랜덤 기억',
   '3-Color Sequence': '순서 기억',
   '5-Color Sequence': '순서 기억',
   '10-Color Sequence': '순서 기억',
   'Color Sequence': '순서 기억',
-  'Color-Number Quiz': '색·번호 기억',
-  'Color-Number Full Board': '색·번호 기억',
-  'Color-Number': '색·번호 기억',
-  'Custom 10-Color Sequence': '직접 지정 10색',
+  'Color-Number Quiz': '랜덤 기억',
+  'Color-Number Full Board': '랜덤 기억',
+  'Color-Number': '랜덤 기억',
+  'Custom 10-Color Sequence': '순서 기억',
   'Color-Number Integration': '색상-숫자 통합',
   'Color & Arrow': '색상 & 화살표',
   'Flow Program': '플로우 프로그램',
@@ -808,7 +808,7 @@ function SettingsScreen({
       if (m?.levels?.some((lv) => lv.id === normalized)) return normalized;
     }
     if (modeId === 'spatial') {
-      if (isColorSequenceLevel(candidate) || isColorNumberLevel(candidate) || candidate === 6) {
+      if (isColorSequenceLevel(candidate) || isColorNumberLevel(candidate)) {
         return candidate;
       }
       const normalized = catalogSpatialUiLevel(candidate);
@@ -1012,7 +1012,7 @@ function SettingsScreen({
                         if (modeId === 'spatial' && lv.id === 1) {
                           return isColorSequenceLevel(current) ? current : 1;
                         }
-                        if (modeId === 'spatial' && lv.id === 4) {
+                        if (modeId === 'spatial' && lv.id === 2) {
                           return isColorNumberLevel(current) ? current : 4;
                         }
                         return lv.id;
@@ -1918,14 +1918,15 @@ function SettingsScreen({
                 <div style={{ marginBottom: 8 }}>
                   <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                   <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                    쉬움은 3개, 보통은 5개, 어려움은 라운드마다 항목이 추가됩니다.
+                    쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개, 어려움은 직접 지정 10색입니다.
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
                   {([
                     { id: 3 as const, label: '쉬움', detail: '3개' },
                     { id: 5 as const, label: '보통', detail: '5개' },
-                    { id: 'ramp' as const, label: '어려움', detail: '추가' },
+                    { id: 'ramp' as const, label: '쉬움→보통→어려움', detail: '3~7개' },
+                    { id: 'custom10' as const, label: '어려움', detail: '직접 지정 10색' },
                   ] satisfies { id: ColorSequenceOption; label: string; detail: string }[]).map((opt) => {
                     const active = colorSequenceOption(levelId) === opt.id;
                     return (
@@ -1968,15 +1969,15 @@ function SettingsScreen({
           {isSpatial && isColorNumberLevel(levelId) ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>진행 방식</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  퀴즈는 질문으로 확인하고, 전체 공개는 번호별 정답을 한 화면에 펼칩니다.
+                  퀴즈와 전체 공개 모두 어려움 난이도로 진행합니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 4, label: '퀴즈', sub: '질문 확인' },
-                  { id: 5, label: '전체 공개', sub: '한 화면 복습' },
+                  { id: 4, label: '어려움', sub: '퀴즈' },
+                  { id: 5, label: '어려움', sub: '전체 공개' },
                 ] as const).map((opt) => {
                   const active = levelId === opt.id;
                   return (
@@ -2147,8 +2148,8 @@ function SettingsScreen({
                 <div style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${T.border}`, background: 'rgba(255,255,255,0.035)' }}>
                   <div style={{ fontSize: 11, fontWeight: 900, color: T.text, marginBottom: 6 }}>선택한 단계 구성</div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: T.textDim, lineHeight: 1.7 }}>
-                    1단계 · DIVE Program
-                    {launch.flowFeatures.includes('colorGate') ? <><br />2단계 · 색 포즈 관문 (GATE)</> : null}
+                    1. 액션 무브
+                    {launch.flowFeatures.includes('colorGate') ? <><br />2. 모션 게이트</> : null}
                   </div>
                 </div>
                 {(
@@ -2162,9 +2163,9 @@ function SettingsScreen({
                 ).filter(({ key }) => key !== 'colorGate').map(({ key, icon, label, desc }) => {
                   const active = launch.flowFeatures.includes(key);
                   const displayIcon = key === 'colorGate' ? '🎯' : icon;
-                  const displayLabel = key === 'colorGate' ? '색 포즈 관문 (GATE · 2단계)' : label;
+                  const displayLabel = key === 'colorGate' ? '모션 게이트' : label;
                   const displayDesc = key === 'colorGate'
-                    ? '1단계에 섞이지 않고 별도 2단계에서 실행됩니다. 브릿지 없이 파란 게이트를 보고 런지 펀치 자세를 취합니다.'
+                    ? '액션 무브에 섞이지 않고 별도 모션 게이트로 실행됩니다. 브릿지 없이 색 포즈 관문만 진행합니다.'
                     : desc;
                   return (
                     <button

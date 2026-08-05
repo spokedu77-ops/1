@@ -66,10 +66,23 @@ describe('sequential memory catalog', () => {
     expect(colorSequenceOption(1)).toBe(3);
     expect(colorSequenceOption(2)).toBe(5);
     expect(colorSequenceOption(3)).toBe('ramp');
+    expect(colorSequenceOption(6)).toBe('custom10');
     expect(colorSequenceLevelFromOption(3)).toBe(1);
     expect(colorSequenceLevelFromOption(5)).toBe(2);
     expect(colorSequenceLevelFromOption('ramp')).toBe(3);
-    expect([1, 2, 3].map(catalogSpatialUiLevel)).toEqual([1, 1, 1]);
+    expect(colorSequenceLevelFromOption('custom10')).toBe(6);
+    expect([1, 2, 3, 6].map(catalogSpatialUiLevel)).toEqual([1, 1, 1, 1]);
+    expect(MODES.spatial.levels.map((level) => level.id)).not.toContain(6);
+  });
+
+  test('groups random memory engine levels under catalog item 2', () => {
+    expect(MODES.spatial.levels[1]).toMatchObject({
+      id: 2,
+      name: '랜덤 기억',
+      enName: 'Random Memory',
+    });
+
+    expect([4, 5].map(catalogSpatialUiLevel)).toEqual([2, 2]);
   });
 });
 

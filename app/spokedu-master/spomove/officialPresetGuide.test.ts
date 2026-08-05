@@ -69,6 +69,8 @@ describe('official SPOMOVE preset guide contract', () => {
   it('renders thumbnail fallback, card display metadata, and briefing guide labels', () => {
     const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
     const session = read('app/spokedu-master/spomove/session/page.tsx');
+    const startBriefing = read('app/spokedu-master/spomove/session/StartBriefing.tsx');
+    const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefing.tsx');
 
     expect(hub).toContain('SPOMOVE_THUMBNAIL_PACK_ID');
     expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
@@ -76,10 +78,10 @@ describe('official SPOMOVE preset guide contract', () => {
     expect(hub).toContain('onImageError={() => setImageFailed(true)}');
     expect(hub).toContain('onError={onImageError}');
     expect(hub).toContain('getSpomovePresetDisplayModel');
-    expect(hub).toContain('buildSpomoveCardTags');
-    expect(session).toContain('추천 대상');
-    expect(session).toContain('주요 동작');
-    expect(session).toContain('자세히 보기');
-    expect(session).toContain('속도만 고르고 시작하세요');
+    expect(hub).toContain('buildSpomoveGuideDisplayModel');
+    expect(`${startBriefing}\n${settingsBriefing}`).toContain('자극 속도');
+    expect(`${startBriefing}\n${settingsBriefing}`).toContain('난이도');
+    expect(`${startBriefing}\n${settingsBriefing}`).toContain('수업 시작');
+    expect(session).toContain('StartBriefing');
   });
 });

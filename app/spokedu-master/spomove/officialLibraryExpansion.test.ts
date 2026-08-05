@@ -78,25 +78,30 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
 
 
-  const byGroup = (group: string) => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === group);
+  const activeLibrary = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.catalogStatus !== 'hold');
+
+  const byGroup = (group: string) => activeLibrary.filter((preset) => preset.programGroup === group);
+  const allByGroup = (group: string) => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === group);
 
 
 
   it('그룹별 개수가 확장 목표와 일치한다', () => {
 
-    expect(byGroup('reaction-cognition')).toHaveLength(40);
+    expect(activeLibrary).toHaveLength(88);
 
-    expect(byGroup('visual-reaction')).toHaveLength(7);
+    expect(byGroup('reaction-cognition')).toHaveLength(37);
 
-    expect(byGroup('simon')).toHaveLength(5);
+    expect(byGroup('visual-reaction')).toHaveLength(12);
 
-    expect(byGroup('flanker')).toHaveLength(10);
+    expect(byGroup('simon')).toHaveLength(10);
 
-    expect(byGroup('stroop')).toHaveLength(5);
+    expect(byGroup('flanker')).toHaveLength(17);
+
+    expect(byGroup('stroop')).toHaveLength(4);
 
     expect(byGroup('sequential-memory')).toHaveLength(6);
 
-    expect(byGroup('dive')).toHaveLength(3);
+    expect(byGroup('dive')).toHaveLength(2);
 
     expect(byGroup('bonus')).toHaveLength(0);
 
@@ -106,7 +111,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
   it('DIVE 공식 프리셋 3종 — 기본·랜덤·Color Gate', () => {
 
-    const dive = byGroup('dive');
+    const dive = allByGroup('dive');
 
     expect(dive.map((p) => p.id).sort()).toEqual([
 
@@ -213,13 +218,13 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
   });
 
   it('숫자 연산 기차·흰 공·두더지는 기본 1개만 카탈로그에 두고 난이도는 세션에서 고른다', () => {
-    expect(vr.filter((preset) => preset.engine.level === 8 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
-    expect(vr.filter((preset) => preset.engine.level === 9 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
-    expect(vr.filter((preset) => preset.engine.level === 10 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
-    expect(vr.filter((preset) => preset.engine.level === 6 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
+    expect(vr.filter((preset) => preset.engine.level === 8 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
+    expect(vr.filter((preset) => preset.engine.level === 9 && preset.engine.mode === 'reactTrain')).toHaveLength(2);
+    expect(vr.filter((preset) => preset.engine.level === 10 && preset.engine.mode === 'reactTrain')).toHaveLength(2);
+    expect(vr.filter((preset) => preset.engine.level === 6 && preset.engine.mode === 'reactTrain')).toHaveLength(2);
     expect(vr.filter((preset) => preset.engine.level === 5 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
     expect(vr.filter((preset) => preset.engine.level === 4 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
-    expect(vr.filter((preset) => preset.engine.level === 7 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
+    expect(vr.filter((preset) => preset.engine.level === 7 && preset.engine.mode === 'reactTrain')).toHaveLength(3);
 
     expect(findOfficialSpomovePreset('visual-reaction-number-cart-l2')?.engine.numberCartTier).toBe(1);
     expect(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')?.engine.colorTrackerTier).toBe(1);
@@ -242,8 +247,8 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
   });
 
   it('시지각 반응 카탈로그는 엔진 7종(파도·벽돌·풍선·두더지·기차·흰공·골키퍼)', () => {
-    expect(vr).toHaveLength(7);
-    expect(vr.map((p) => p.engine.level).sort((a, b) => a - b)).toEqual([1, 2, 3, 6, 8, 9, 10]);
+    expect(vr).toHaveLength(12);
+    expect(vr.map((p) => p.engine.level).sort((a, b) => a - b)).toEqual([1, 2, 3, 6, 6, 7, 7, 7, 9, 9, 10, 10]);
   });
 
   it('사이먼 그룹에 카모플라쥬(level 5)·풍선(level 3)이 포함된다', () => {
@@ -262,7 +267,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(flanker.filter((preset) => preset.engine.flankerStimulusType === 'number')).toHaveLength(3);
 
-    expect(flanker.filter((preset) => !preset.engine.flankerStimulusType || preset.engine.flankerStimulusType === 'color')).toHaveLength(7);
+    expect(flanker.filter((preset) => !preset.engine.flankerStimulusType || preset.engine.flankerStimulusType === 'color')).toHaveLength(14);
     expect(flanker.some((preset) => preset.id === 'flanker-nested-circles-04')).toBe(true);
     expect(flanker.some((preset) => preset.id === 'flanker-arrow-05')).toBe(true);
     expect(flanker.some((preset) => preset.id === 'flanker-theme-06')).toBe(true);
