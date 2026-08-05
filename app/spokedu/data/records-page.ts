@@ -1,10 +1,10 @@
 import type { HomeMediaKey } from './home-media';
+import { dispatchInquiryHref } from './commercial-routes';
 import {
   buildRecordsHeroSummary,
   buildRecordsPageFieldRecords,
   type RecordFilterId,
 } from './field-records-catalog';
-import { SPOKEDU_BASE_PATH } from './site';
 
 export type { FieldRecordItem, RecordFilterId } from './field-records-catalog';
 
@@ -39,7 +39,7 @@ export const recordsPage = {
     description:
       '대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.',
     label: '기관 프로그램 제안받기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({}),
     trackLabel: 'records-dispatch-cta',
   },
 } as const;

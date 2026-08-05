@@ -1,6 +1,7 @@
 import type { HomeMediaKey } from './home-media';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
 import type { ConversionPageIntent } from './conversion-page-intent';
+import { dispatchInquiryHref } from './commercial-routes';
 import {
   getFieldRecordCatalogItem,
   getFieldRecordOnsitePath,
@@ -286,7 +287,7 @@ export const dispatchPage = {
         ],
         tags: ['수준별 과제 조절', '단계형 커리큘럼', '정규·특강 운영'],
         example: '예시: 단계별 이동운동, 규칙 단순화 게임 등',
-        href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+        href: dispatchInquiryHref({ program: 'special-pe' }),
         trackLabel: 'dispatch-lineup-special',
         mediaKey: 'dispatchSpecialPe' as HomeMediaKey,
         mediaRequirement: {

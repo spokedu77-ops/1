@@ -1,6 +1,6 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
-import { SPOKEDU_BASE_PATH } from './site';
 
 type SpomoveMediaRequirement = {
   page: 'programs/spomove';
@@ -29,7 +29,7 @@ export const spomoveProgramPage = {
   },
   heroCta: {
     label: '도입 문의',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'spomove' }),
     trackLabel: 'program-spomove-dispatch-hero',
   },
   overview: {
@@ -207,17 +207,12 @@ export const spomoveProgramPage = {
     operations:
       '정규수업, 원데이 체험, 기관 행사, 방학 프로그램 안에서 공간과 인원에 맞춰 구성합니다.',
   },
-  cases: {
-    title: '실제 운영 예시',
-    slugs: ['yangcheon-spomove', 'dongjak-rhythm'] as const,
-    recordsHref: `${SPOKEDU_BASE_PATH}/records`,
-  },
   finalCta: {
     title: 'SPOMOVE를 우리 기관에 맞게 운영하고 싶다면',
     description:
       '공간, 인원, 대상 연령, 운영 일정을 확인한 뒤 적합한 수업 형태로 안내드립니다.',
     label: 'SPOMOVE 도입 문의하기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'spomove' }),
     trackLabel: 'program-spomove-dispatch-final',
   },
 } as const;

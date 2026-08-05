@@ -1,12 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-import { CaseProofCard } from './case-proof-card';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
-import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA, type HomeMediaKey } from '../data/home-media';
 import { programDetailBlocks } from '../data/program-details';
 import { spomoveProgramPage } from '../data/spomove-program-page';
@@ -16,9 +13,7 @@ import {
   landingCardFrame,
   landingCardPanelPad,
   landingSectionTitle,
-  linkMuted,
 } from '../lib/ui-classes';
-import { inferTrackFromHref } from '../lib/tracking';
 
 /** 스포매트 실물 배치 — 좌상 초록 · 우상 빨강 · 좌하 파랑 · 우하 노랑 */
 const PAD_CELLS = [
@@ -113,9 +108,6 @@ function SpomoveActivityVisualPanel({ mediaKey }: { mediaKey: HomeMediaKey }) {
  */
 export default function SpomoveProgramLanding() {
   const page = spomoveProgramPage;
-  const relatedCases = page.cases.slugs
-    .map((slug) => getCaseBySlug(slug))
-    .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   return (
     <div className={audienceLandingStack}>
@@ -292,33 +284,6 @@ export default function SpomoveProgramLanding() {
           })}
         </ul>
       </section>
-
-      {relatedCases.length > 0 ? (
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-2">
-            <h2 className={landingSectionTitle}>{page.cases.title}</h2>
-            <Link
-              href={page.cases.recordsHref}
-              data-track={inferTrackFromHref(page.cases.recordsHref)}
-              data-track-label="program-spomove-records"
-              className={`text-sm ${linkMuted}`}
-            >
-              현장기록 →
-            </Link>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {relatedCases.map((item, index) => (
-              <CaseProofCard
-                key={item.slug}
-                item={item}
-                variant="compact"
-                cardVariant={index % 2 === 0 ? 'image' : 'glass'}
-                trackPrefix="program-spomove"
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       {/* 도입 */}
       <section className={`space-y-3 ${landingCardPanelPad} ${landingCardFrame}`}>

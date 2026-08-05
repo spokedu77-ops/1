@@ -225,9 +225,10 @@ class FlashBubble {
   }
 }
 
-/** 풍선 사이먼: 화면 임의 위치에 나타나 ~50% 커진 뒤 터짐(바늘 없음) */
+/** 풍선 사이먼: 사이먼 극단 위치에 나타나 신호 속도에 맞춰 동시 터짐(바늘 없음) */
 class SimonBalloon {
   lane: number;
+  edge: number;
   color: (typeof RT_COLORS)[number];
   /** 스폰 반경 */
   baseR: number;
@@ -240,23 +241,46 @@ class SimonBalloon {
   t: number;
   triggerMs: number;
 
-  constructor(g: GameState) {
+  constructor(g: GameState, index = 0, total = 1) {
     this.lane = Math.floor(Math.random() * 4);
     this.color = RT_COLORS[this.lane];
     const r0 = Math.max(Math.min(g.W, g.H) * 0.055, 34);
-    this.baseR = r0 * (0.78 + Math.random() * 1.25);
+    this.baseR = r0 * (total > 1 ? 1.05 : 1.25);
     this.r = this.baseR;
-    // 최종 크기(1.5×) 기준으로 여유 두고 배치
     const maxR = this.baseR * 1.5;
-    this.x = maxR + Math.random() * Math.max(1, g.W - maxR * 2);
-    this.y = maxR + Math.random() * Math.max(1, g.hitY - maxR * 2 - 12);
+    const edge = total > 1
+      ? (index === 0 ? Math.floor(Math.random() * 4) : -1)
+      : Math.floor(Math.random() * 4);
+    const primaryEdge = edge >= 0 ? edge : 0;
+    const opposite = [1, 0, 3, 2] as const;
+    const resolvedEdge = total > 1 && index === 1 ? opposite[(g.objs.find((o) => o instanceof SimonBalloon && !o.dead) as SimonBalloon | undefined)?.edge ?? 0] : primaryEdge;
+    this.edge = resolvedEdge;
+    const midX = g.W / 2;
+    const midY = Math.max(maxR, Math.min(g.hitY - maxR, g.hitY * 0.48));
+    const leftX = maxR + g.W * 0.05;
+    const rightX = g.W - maxR - g.W * 0.05;
+    const topY = maxR + g.H * 0.08;
+    const bottomY = Math.max(maxR, Math.min(g.hitY - maxR - 12, g.hitY - maxR - g.H * 0.05));
+    if (resolvedEdge === 0) {
+      this.x = leftX;
+      this.y = midY;
+    } else if (resolvedEdge === 1) {
+      this.x = rightX;
+      this.y = midY;
+    } else if (resolvedEdge === 2) {
+      this.x = midX;
+      this.y = topY;
+    } else {
+      this.x = midX;
+      this.y = bottomY;
+    }
     this.fired = false;
     this.dead = false;
     this.wobble = (Math.random() - 0.5) * 0.4;
     this.t = 0;
     // 신호 속도(cueMs)에 맞춰 성장 후 터짐 — 다음 풍선 스폰과 같은 주기
     const cue = Math.max(800, g.cueMs);
-    this.triggerMs = cue * (0.82 + Math.random() * 0.12);
+    this.triggerMs = cue;
   }
 
   update(
@@ -273,12 +297,16 @@ class SimonBalloon {
       this.r = this.baseR * (1 + 0.5 * eased);
       this.x += Math.sin(this.t * 0.01 + this.wobble) * 0.5;
       if (this.t >= this.triggerMs) {
-        const ready = nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
+        const ready = g.mode === 'balloonSimon'
+          ? true
+          : nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
         if (ready) {
           this.fired = true;
           this.dead = true;
-          g.lastStimWallMs = nowMs;
-          g.stimConsumedThisFrame = true;
+          if (g.mode !== 'balloonSimon') {
+            g.lastStimWallMs = nowMs;
+            g.stimConsumedThisFrame = true;
+          }
           onBubbleStim(this.lane, this.x, this.y);
         }
       }
@@ -521,7 +549,7 @@ type Props = {
   durationSec: number;
   /** 시지각 전용: 블록/버블이 히트 라인까지 도달하는 목표 시간(초) */
   speedSec: number;
-  /** flow 전용: 동시 낙하 신호 수 (1=기본, 2=패턴, 3=트리플). 기본값 1 */
+  /** flow/balloonSimon 전용: 동시 신호 수. 기본값 1 */
   concurrent?: 1 | 2 | 3;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
@@ -873,8 +901,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         }
       } else if (g.mode === 'balloonSimon') {
         const active = g.objs.filter((o) => o instanceof SimonBalloon && !o.dead).length;
-        if (active < 1) {
-          g.objs.push(new SimonBalloon(g));
+        for (let i = active; i < concurrent; i++) {
+          g.objs.push(new SimonBalloon(g, i, concurrent));
         }
       } else {
         const pair = randomPair();

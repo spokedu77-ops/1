@@ -6,6 +6,7 @@ import {
   LeadEnvelopeValidationError,
   parseAcquisitionFromBody,
 } from '@/app/lib/server/leadEnvelope';
+import { parseConversionEvidenceSlug } from '@/app/spokedu/data/commercial-routes';
 import {
   curriculumModeLabel,
   isCurriculumCommercialMode,
@@ -74,7 +75,8 @@ export async function POST(req: NextRequest) {
     const teacherTraining = normalize(body.teacher_training);
     const partnershipType = normalize(body.partnership_type);
     const extra = normalize(body.extra);
-    const conversionEvidenceSlug = normalize(body.conversion_evidence_slug) || undefined;
+    const conversionEvidenceSlug =
+      parseConversionEvidenceSlug(normalize(body.conversion_evidence_slug)) ?? undefined;
     const ctaIntentId = normalize(body.cta_intent_id) || defaultCtaForMode(leadMode);
 
     if (!nameOrOrg || !phone || !contentType || !targetAge || !purpose || !teacherTraining || !partnershipType) {

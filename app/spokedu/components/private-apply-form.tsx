@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
+import { parseConversionEvidenceSlug } from '../data/commercial-routes';
+import type { FieldRecordSlug } from '../data/field-records-catalog';
 import {
   isPrivatePreferredFormat,
   isPrivateStartDirection,
@@ -82,6 +84,7 @@ export function PrivateApplyForm() {
   const [region, setRegion] = useState('');
   const [schedule, setSchedule] = useState('');
   const [note, setNote] = useState('');
+  const [conversionEvidenceSlug, setConversionEvidenceSlug] = useState<FieldRecordSlug | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const submittingRef = useRef(false);
@@ -106,6 +109,8 @@ export function PrivateApplyForm() {
     if (format && isPrivatePreferredFormat(format)) {
       setPreferredFormat(format);
     }
+    const evidence = parseConversionEvidenceSlug(searchParams.get('conversionEvidence'));
+    if (evidence) setConversionEvidenceSlug(evidence);
   }, [searchParams]);
 
   const syncDirectionToUrl = useCallback(
@@ -226,12 +231,6 @@ export function PrivateApplyForm() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
-      trackCommercialEvent({
-        name: 'primary_cta_clicked',
-        route: 'private',
-        ctaIntentId: 'private_fit_consult',
-        selectionId: startDirection,
-      });
       const response = await fetch('/api/private/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -247,6 +246,7 @@ export function PrivateApplyForm() {
           schedule: schedule.trim(),
           acquisition: getAcquisitionContext(),
           cta_intent_id: 'private_fit_consult',
+          conversion_evidence_slug: conversionEvidenceSlug ?? undefined,
         }),
       });
       const result = (await response.json().catch(() => null)) as
@@ -291,6 +291,7 @@ export function PrivateApplyForm() {
     schedule,
     previewText,
     submitted,
+    conversionEvidenceSlug,
   ]);
 
   return (

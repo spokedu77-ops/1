@@ -98,4 +98,12 @@ describe('field-records-catalog', () => {
       expect.arrayContaining(['키움센터', '학교', '보건소', '주민센터']),
     );
   });
+
+  it('declares evidence meta for every catalog item', () => {
+    for (const item of FIELD_RECORD_CATALOG) {
+      expect(item.proves.length).toBeGreaterThan(0);
+      expect(item.relevantRoutes.length).toBeGreaterThan(0);
+      expect(item.strength === 'primary' || item.strength === 'supporting').toBe(true);
+    }
+  });
 });

@@ -24,7 +24,13 @@ import { getNextIntervalState } from './lib/intervalTimer';
 import { generateSignal, createBasicSignalGenerator, createSimonSignalGenerator, type FruitSlide } from './lib/signals';
 import { generateObstacleSchedule } from './flow-lab/engine/modules/flowObstacleSchedule';
 import type { FlowModuleKey } from './flow-lab/engine/modules/flowModules';
-import { spatialArrowFillForDirection } from './constants';
+import {
+  MODES,
+  catalogSpatialUiLevel,
+  colorSequenceLevelFromOption,
+  colorSequenceOption,
+  spatialArrowFillForDirection,
+} from './constants';
 
 // ── localStorage mock ──────────────────────────────────────────────────────────
 
@@ -47,6 +53,24 @@ beforeEach(() => {
   globalThis.window = { localStorage: lsMock };
   // @ts-expect-error -- localStorage does not exist in node global, override for tests
   globalThis.localStorage = lsMock;
+});
+
+describe('sequential memory catalog', () => {
+  test('groups order memory engine levels under one difficulty selector', () => {
+    expect(MODES.spatial.levels[0]).toMatchObject({
+      id: 1,
+      name: '순서 기억',
+      enName: 'Order Memory',
+    });
+
+    expect(colorSequenceOption(1)).toBe(3);
+    expect(colorSequenceOption(2)).toBe(5);
+    expect(colorSequenceOption(3)).toBe('ramp');
+    expect(colorSequenceLevelFromOption(3)).toBe(1);
+    expect(colorSequenceLevelFromOption(5)).toBe(2);
+    expect(colorSequenceLevelFromOption('ramp')).toBe(3);
+    expect([1, 2, 3].map(catalogSpatialUiLevel)).toEqual([1, 1, 1]);
+  });
 });
 
 // ── 슬라이드 헬퍼 ──────────────────────────────────────────────────────────────
@@ -137,7 +161,7 @@ describe('getAssetRequirement', () => {
         targetArrowId: string;
         flankerArrowMode: string;
       };
-      expect(content.flankerArrowMode).toBe('udlr');
+      expect(content.flankerArrowMode).toBe('lr');
       content.arrows.forEach((arrow) => seen.add(arrow.id));
       content.arrows.forEach((arrow, idx) => {
         if (idx === content.centerIndex) return;
@@ -145,7 +169,7 @@ describe('getAssetRequirement', () => {
         if (arrow.id === content.targetArrowId) sameFlankerCount += 1;
       });
     }
-    expect(seen).toEqual(new Set(['up', 'right', 'down', 'left']));
+    expect(seen).toEqual(new Set(['right', 'left']));
     expect(sameFlankerCount / totalFlankers).toBeLessThan(0.35);
   });
 
@@ -172,28 +196,42 @@ describe('modified quadrant body actions', () => {
       const sig = generateSignal('basic', 7, Object.values(COLORS_META), { handFootDifficulty: 'easy' });
       expect(sig?.type).toBe('think_quad_body');
       const cells = (sig?.content as { cells?: { bodyActionId?: string }[] } | undefined)?.cells ?? [];
-      expect(cells.length).toBeGreaterThanOrEqual(1);
-      expect(cells.length).toBeLessThanOrEqual(2);
+      expect(cells).toHaveLength(1);
       expect(cells.every((cell) => isFoot(cell.bodyActionId))).toBe(true);
     }
 
+    let normalOne = 0;
+    let normalTwo = 0;
     for (let i = 0; i < 300; i++) {
       const sig = generateSignal('basic', 7, Object.values(COLORS_META), { handFootDifficulty: 'normal' });
       expect(sig?.type).toBe('think_quad_body');
       const cells = (sig?.content as { cells?: { bodyActionId?: string }[] } | undefined)?.cells ?? [];
-      expect(cells).toHaveLength(2);
+      if (cells.length === 1) normalOne += 1;
+      if (cells.length === 2) normalTwo += 1;
+      expect([1, 2]).toContain(cells.length);
       expect(cells.some((cell) => isFoot(cell.bodyActionId))).toBe(true);
-      expect(cells.some((cell) => isHand(cell.bodyActionId))).toBe(true);
+      if (cells.length === 2) expect(cells.some((cell) => isHand(cell.bodyActionId))).toBe(true);
     }
+    expect(normalOne).toBeGreaterThan(80);
+    expect(normalTwo).toBeGreaterThan(80);
 
+    let hardOne = 0;
+    let hardTwo = 0;
+    let hardThree = 0;
     for (let i = 0; i < 300; i++) {
       const sig = generateSignal('basic', 7, Object.values(COLORS_META), { handFootDifficulty: 'hard' });
       expect(sig?.type).toBe('think_quad_body');
       const cells = (sig?.content as { cells?: { bodyActionId?: string }[] } | undefined)?.cells ?? [];
-      expect(cells).toHaveLength(2);
+      if (cells.length === 1) hardOne += 1;
+      if (cells.length === 2) hardTwo += 1;
+      if (cells.length === 3) hardThree += 1;
+      expect([1, 2, 3]).toContain(cells.length);
       expect(cells.some((cell) => isFoot(cell.bodyActionId))).toBe(true);
-      expect(cells.some((cell) => isHand(cell.bodyActionId))).toBe(true);
+      if (cells.length >= 2) expect(cells.some((cell) => isHand(cell.bodyActionId))).toBe(true);
     }
+    expect(hardOne).toBeGreaterThan(30);
+    expect(hardTwo).toBeGreaterThan(100);
+    expect(hardThree).toBeGreaterThan(50);
   });
 });
 
@@ -598,7 +636,7 @@ describe('사이먼 3번 · 연상 색지각 이미지', () => {
   const COLORS_ARR = Object.values(THEME_COLORS);
 
   test('level 3 + 이미지 슬라이드 → simon_shape content에 imageUrl 포함', () => {
-    const gen = createSimonSignalGenerator(3, COLORS_ARR, SAMPLE_SLIDES);
+    const gen = createSimonSignalGenerator(4, COLORS_ARR, SAMPLE_SLIDES);
     const sig = gen.next();
     expect(sig).not.toBeNull();
     expect(sig?.type).toBe('simon_shape');
@@ -608,7 +646,7 @@ describe('사이먼 3번 · 연상 색지각 이미지', () => {
   });
 
   test('level 3 + slides 미전달(color 모드) → simon_shape imageUrl=null · 도형 폴백', () => {
-    const gen = createSimonSignalGenerator(3, COLORS_ARR, undefined);
+    const gen = createSimonSignalGenerator(4, COLORS_ARR, undefined);
     const sig = gen.next();
     expect(sig).not.toBeNull();
     expect(sig?.type).toBe('simon_shape');
@@ -616,8 +654,8 @@ describe('사이먼 3번 · 연상 색지각 이미지', () => {
     expect((sig?.content as Record<string, unknown>)?.shape).toBeTruthy();
   });
 
-  test('simon level 3 → asset minimumCount 1 (전체 이미지 풀)', () => {
-    expect(getAssetRequirement({ mode: 'simon', level: 3, theme: 'color' }).minimumCount).toBe(1);
+  test('simon level 4 → asset minimumCount 1 (전체 이미지 풀)', () => {
+    expect(getAssetRequirement({ mode: 'simon', level: 4, theme: 'color' }).minimumCount).toBe(1);
   });
 });
 
@@ -858,6 +896,7 @@ describe('training result summary', () => {
     ]);
     // 화면 순번(1-based index) ≠ 엔진 id (예: 화면 4번 = 두더지 eng 6)
     expect(MODES.reactTrain.levels[3]?.id).toBe(6);
+    expect(MODES.basic.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(MODES.simon.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4, 5]);
     expect(MODES.simon.levels[3]?.enName).toBe('Camouflage');
     expect(MODES.simon.levels[4]?.enName).toBe('Balloon Simon');
@@ -872,6 +911,40 @@ describe('training result summary', () => {
     expect(resolveReactTrainUiLevel(71)).toEqual({ engineLevel: 6, moleLookMode: 'variant' });
     expect(resolveReactTrainUiLevel(91)).toEqual({ engineLevel: 8, numberCartTier: 1 });
     expect(resolveReactTrainUiLevel(103)).toEqual({ engineLevel: 9, colorTrackerTier: 3 });
+  });
+
+  test('stroop 1번은 랜덤 색상화살표, 2번은 단어다', async () => {
+    const { MODES, resolveTrainingEngine } = await import('./constants');
+    expect(MODES.stroop.levels[0]?.name).toBe('색상화살표');
+    expect(MODES.stroop.levels[1]?.name).toBe('단어');
+    expect(MODES.stroop.levels.map((lv) => lv.id)).toEqual([1, 2]);
+    expect(resolveTrainingEngine('stroop', 1)).toEqual({ engineMode: 'stroop', engineLevel: 1 });
+
+    const arrowFills = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      const sig = generateSignal('stroop', 1, Object.values(COLORS_META));
+      expect(sig?.type).toBe('stroop_arrow');
+      expect(sig?.bg).toBe('#000000');
+      arrowFills.add(String((sig?.content as { fillHex?: string } | undefined)?.fillHex ?? ''));
+    }
+    expect(arrowFills.size).toBeGreaterThan(1);
+
+    const hardSig = generateSignal('stroop', 1, Object.values(COLORS_META), { stroopArrowMode: 'bg' });
+    expect(hardSig?.type).toBe('stroop_arrow');
+    const hardContent = hardSig?.content as { fillHex?: string } | undefined;
+    expect(hardSig?.bg).not.toBe('#000000');
+    expect(hardSig?.bg).not.toBe(hardContent?.fillHex);
+
+    const wordSig = generateSignal('stroop', 2, Object.values(COLORS_META));
+    expect(wordSig?.type).toBe('stroop');
+    expect(wordSig?.bg).toBe('#000000');
+
+    const hardWordSig = generateSignal('stroop', 2, Object.values(COLORS_META), { stroopWordDifficulty: 'bg' });
+    expect(hardWordSig?.type).toBe('stroop');
+    const hardWordContent = hardWordSig?.content as { textHex?: string; stroopKind?: string } | undefined;
+    expect(hardWordSig?.bg).not.toBe('#000000');
+    expect(hardWordSig?.bg).not.toBe(hardWordContent?.textHex);
+    expect(hardWordContent?.stroopKind).toBe('bg_interference');
   });
 
   test('resolveTrainingResultRichContent builds positive copy and self-check items', async () => {

@@ -27,13 +27,17 @@ const HOLD_MS = 2000;
 
 type Phase = 'NOISE' | 'REVEAL' | 'HOLD';
 
+type CamoTarget = {
+  colorIdx: number;
+  shapePath: Path2D;
+};
+
 type CamoGame = {
   running: boolean;
   timeLeft: number;
   phase: Phase;
   phaseStartMs: number;
-  targetColorIdx: number;
-  shapePath: Path2D | null;
+  targets: CamoTarget[];
   rounds: number;
   laneCount: [number, number, number, number];
   W: number;
@@ -49,6 +53,7 @@ type Props = {
   speedLevel: number;
   speedSec: number;
   placementMode?: CamouflagePlacementMode;
+  concurrent?: 1 | 2;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
@@ -75,8 +80,9 @@ ${REACT_TRAIN_VIEWPORT_CSS}
 export function CamouflageReactionTraining({
   durationSec,
   speedLevel: _speedLevel,
-  speedSec: _speedSec,
+  speedSec,
   placementMode = 'center',
+  concurrent = 1,
   onExit,
   onComplete,
 }: Props) {
@@ -100,8 +106,8 @@ export function CamouflageReactionTraining({
     onExitRef.current = onExit;
   }, [onExit]);
 
-  /** 위장 해제(REVEAL) 소요 시간 — 5초 고정 (신호 속도 설정 없음) */
-  const fallTimeSec = 5;
+  /** 위장 해제(REVEAL) 소요 시간 — 신호 속도 설정과 직접 연결 */
+  const fallTimeSec = Math.max(1, Math.min(6, Number.isFinite(speedSec) ? speedSec : 5));
   const revealMs = fallTimeSec * 1000;
   const lv = Math.max(1, Math.min(7, Math.round(7 - ((fallTimeSec - 1) * 6) / 5)));
   const spName = SPD_NAMES[lv - 1] ?? '보통';
@@ -144,8 +150,7 @@ export function CamouflageReactionTraining({
       timeLeft: durationSec,
       phase: 'NOISE',
       phaseStartMs: 0,
-      targetColorIdx: 0,
-      shapePath: null,
+      targets: [],
       rounds: 0,
       laneCount: [0, 0, 0, 0],
       W: 0,
@@ -178,25 +183,31 @@ export function CamouflageReactionTraining({
     updateHudTime();
     if (hudRoundsRef.current) hudRoundsRef.current.textContent = '0';
 
-    const newShapePath = () => {
+    const newTargets = () => {
       const size = camoShapeSize(g.W, g.H);
-      const { cx, cy } = resolveCamouflagePosition(
-        placementModeRef.current,
-        g.W,
-        g.H,
-        g.edgeIdx,
-        size,
-      );
-      g.shapePath = pickCamoShapePath(cx, cy, size);
-      g.targetColorIdx = Math.floor(Math.random() * 4);
+      const count = concurrent === 2 ? 2 : 1;
+      g.targets = Array.from({ length: count }, (_, idx) => {
+        const edge = g.edgeIdx + idx;
+        const { cx, cy } = resolveCamouflagePosition(
+          placementModeRef.current,
+          g.W,
+          g.H,
+          edge,
+          size,
+        );
+        return {
+          colorIdx: Math.floor(Math.random() * 4),
+          shapePath: pickCamoShapePath(cx, cy, size),
+        };
+      });
       if (placementModeRef.current === 'variant') {
-        g.edgeIdx = (g.edgeIdx + 1) % 4;
+        g.edgeIdx = (g.edgeIdx + count) % 4;
       }
     };
 
     const startRound = () => {
       calcLayout();
-      newShapePath();
+      newTargets();
       g.phase = 'NOISE';
       g.phaseStartMs = performance.now();
       if (msgRef.current) {
@@ -217,8 +228,10 @@ export function CamouflageReactionTraining({
       } else if (g.phase === 'REVEAL' && elapsed >= revealMs) {
         g.phase = 'HOLD';
         g.phaseStartMs = now;
-        g.rounds++;
-        g.laneCount[g.targetColorIdx]++;
+        g.rounds += g.targets.length;
+        for (const target of g.targets) {
+          g.laneCount[target.colorIdx]++;
+        }
         if (hudRoundsRef.current) hudRoundsRef.current.textContent = String(g.rounds);
         if (msgRef.current) msgRef.current.textContent = '정답 확인!';
       } else if (g.phase === 'HOLD' && elapsed >= HOLD_MS) {
@@ -238,12 +251,17 @@ export function CamouflageReactionTraining({
           const y = row * bs;
           const cx = x + bs / 2;
           const cy = y + bs / 2;
-          let isInside = false;
-          if (g.shapePath && g.phase !== 'NOISE') {
-            isInside = ctx.isPointInPath(g.shapePath, cx, cy);
+          let targetColorIdx: number | null = null;
+          if (g.phase !== 'NOISE') {
+            for (const target of g.targets) {
+              if (ctx.isPointInPath(target.shapePath, cx, cy)) {
+                targetColorIdx = target.colorIdx;
+                break;
+              }
+            }
           }
           let cellColor: string = CAMO_COLORS[Math.floor(Math.random() * 4)].main;
-          if (isInside && Math.random() < progress) cellColor = CAMO_COLORS[g.targetColorIdx].main;
+          if (targetColorIdx !== null && Math.random() < progress) cellColor = CAMO_COLORS[targetColorIdx].main;
           ctx.fillStyle = cellColor;
           ctx.fillRect(x, y, bs, bs);
         }
@@ -280,7 +298,7 @@ export function CamouflageReactionTraining({
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, noiseMs, revealMs]);
+  }, [concurrent, durationSec, endGame, noiseMs, revealMs]);
 
   return (
     <div className="camo">

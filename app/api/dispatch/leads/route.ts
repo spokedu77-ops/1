@@ -6,6 +6,7 @@ import {
   LeadEnvelopeValidationError,
   parseAcquisitionFromBody,
 } from '@/app/lib/server/leadEnvelope';
+import { parseConversionEvidenceSlug } from '@/app/spokedu/data/commercial-routes';
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -44,7 +45,9 @@ export async function POST(req: NextRequest) {
       ? body.targetAge.filter((v): v is string => typeof v === 'string')
       : [];
     const conversionEvidenceSlug =
-      typeof body.conversion_evidence_slug === 'string' ? body.conversion_evidence_slug.trim() : '';
+      parseConversionEvidenceSlug(
+        typeof body.conversion_evidence_slug === 'string' ? body.conversion_evidence_slug : '',
+      ) ?? undefined;
     const ctaIntentId =
       typeof body.cta_intent_id === 'string' && body.cta_intent_id.trim()
         ? body.cta_intent_id.trim()
@@ -78,7 +81,7 @@ export async function POST(req: NextRequest) {
           location: location || undefined,
           organizationName: organization,
         },
-        conversionEvidenceSlug: conversionEvidenceSlug || undefined,
+        conversionEvidenceSlug,
         ctaIntentId,
       });
     } catch (e) {

@@ -10,9 +10,12 @@ import {
   type CurriculumCommercialMode,
   type CurriculumFormDefaults,
 } from '../data/curriculum-commercial-modes';
+import { parseConversionEvidenceSlug } from '../data/commercial-routes';
+import type { FieldRecordSlug } from '../data/field-records-catalog';
 import { captureAcquisitionFromLocation, getAcquisitionContext } from '../lib/acquisition';
 import { trackCommercialEvent } from '../lib/commercial-events';
 import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
+import { useSearchParams } from 'next/navigation';
 
 const CONTENT_OPTIONS = [
   '수업안',
@@ -75,6 +78,7 @@ type Props = {
 
 /** 커리큘럼·지도자 교육 온페이지 문의 — /api/curriculum/leads */
 export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange }: Props) {
+  const searchParams = useSearchParams();
   const [nameOrOrg, setNameOrOrg] = useState('');
   const [phone, setPhone] = useState('');
   const [contentType, setContentType] = useState('');
@@ -83,12 +87,15 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
   const [teacherTraining, setTeacherTraining] = useState('');
   const [partnershipType, setPartnershipType] = useState('');
   const [extra, setExtra] = useState('');
+  const [conversionEvidenceSlug, setConversionEvidenceSlug] = useState<FieldRecordSlug | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<Status>({ tone: 'idle', message: '' });
 
   useEffect(() => {
     captureAcquisitionFromLocation();
-  }, []);
+    const evidence = parseConversionEvidenceSlug(searchParams.get('conversionEvidence'));
+    if (evidence) setConversionEvidenceSlug(evidence);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!formDefaults) return;
@@ -142,12 +149,6 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
           ? 'master_org_inquiry'
           : curriculumCommercialModes[leadMode].primaryAction.intentId;
       try {
-        trackCommercialEvent({
-          name: 'primary_cta_clicked',
-          route: 'curriculum',
-          ctaIntentId,
-          selectionId: leadMode,
-        });
         const response = await fetch('/api/curriculum/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -164,6 +165,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
             extra: extra.trim(),
             acquisition: getAcquisitionContext(),
             cta_intent_id: ctaIntentId,
+            conversion_evidence_slug: conversionEvidenceSlug ?? undefined,
           }),
         });
         const result = (await response.json().catch(() => null)) as
@@ -207,6 +209,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
       teacherTraining,
       partnershipType,
       extra,
+      conversionEvidenceSlug,
       reset,
     ],
   );

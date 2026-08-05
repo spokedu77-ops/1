@@ -1,3 +1,4 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH } from './site';
 
@@ -11,7 +12,7 @@ export const onedayEventProgramPage = {
   },
   heroCta: {
     label: '원데이 이벤트 문의하기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'oneday-event' }),
     trackLabel: 'program-oneday-dispatch-hero',
   },
   overview: {
@@ -111,7 +112,7 @@ export const onedayEventProgramPage = {
     title: '기관 행사에 맞는 원데이 체육 이벤트가 필요하다면',
     description: '일정, 인원, 공간, 행사 목적을 확인한 뒤 적합한 활동 구성으로 제안드립니다.',
     label: '원데이 이벤트 문의하기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'oneday-event' }),
     trackLabel: 'program-oneday-dispatch-final',
   },
 } as const;

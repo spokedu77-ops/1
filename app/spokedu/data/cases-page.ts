@@ -1,3 +1,4 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH } from './site';
 
@@ -34,7 +35,7 @@ export const casesPage = {
     description:
       '기관의 공간, 대상, 일정, 운영 목적을 확인한 뒤 적합한 수업 형태를 제안드립니다.',
     label: '기관 프로그램 제안받기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({}),
     trackLabel: 'cases-dispatch-cta',
   },
 } as const;

@@ -7,6 +7,7 @@ import {
 } from '../data/field-records-catalog';
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import { externalLinkProps, isExternalHref } from '../lib/external-link';
+import { trackCommercialEvent } from '../lib/commercial-events';
 import { fineHover, koreanLineBreak, landingSectionTitle } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 import { ExternalPhoto } from './external-photo';
@@ -53,6 +54,13 @@ export function ProgramRelatedProof({
       <ul className="grid gap-3 sm:grid-cols-2">
         {items.map((item) => {
           const className = `group flex h-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ${fineHover}hover:border-[#9FC0FF] ${focusRing}`;
+          const onOpen = () => {
+            trackCommercialEvent({
+              name: 'evidence_opened',
+              route: item.relevantRoutes[0] ?? 'dispatch',
+              evidenceSlug: item.slug,
+            });
+          };
           const body = (
             <>
               {item.thumbnailSrc ? (
@@ -92,6 +100,7 @@ export function ProgramRelatedProof({
                   data-track="external-naver-blog"
                   data-track-label={`${trackPrefix}-${item.slug}`}
                   className={className}
+                  onClick={onOpen}
                 >
                   {body}
                 </a>
@@ -106,6 +115,7 @@ export function ProgramRelatedProof({
                 data-track={inferTrackFromHref(item.href)}
                 data-track-label={`${trackPrefix}-${item.slug}`}
                 className={className}
+                onClick={onOpen}
               >
                 {body}
               </Link>

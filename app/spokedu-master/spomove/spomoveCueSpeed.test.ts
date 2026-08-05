@@ -39,12 +39,12 @@ describe('spomoveCueSpeed', () => {
     expect(recommendedCueSecondsForPreset(easy!)).toBeGreaterThanOrEqual(4);
   });
 
-  it('excludes dive, sequential memory, number cart, color tracker, magic eye (simon L4)', () => {
+  it('excludes dive, sequential memory, number cart, color tracker, and legacy visual-only programs', () => {
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('dive-standard')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('sequential-memory-3color-09')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-number-cart-l2')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')!)).toBe(false);
-    expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-blackout-37')!)).toBe(false);
+    expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-blackout-37')!)).toBe(true);
   });
 
   it('includes reaction cognition / flanker / typical visual reaction / goalkeeper flight time', () => {

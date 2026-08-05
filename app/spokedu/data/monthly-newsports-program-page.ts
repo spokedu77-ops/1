@@ -1,3 +1,4 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH } from './site';
 
@@ -73,7 +74,7 @@ export const monthlyNewsportsProgramPage = {
     description:
       '수업 대상, 공간, 인원, 운영 목적에 따라 12개 테마를 조합해 정규수업·방과후·캠프·원데이 프로그램으로 구성할 수 있습니다.',
     label: '월간 뉴스포츠 문의하기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'monthly-newsports' }),
     trackLabel: 'program-monthly-newsports-dispatch-final',
   },
   relatedMonthlyHref: `${SPOKEDU_BASE_PATH}/monthly`,

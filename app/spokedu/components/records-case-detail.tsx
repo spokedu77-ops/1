@@ -1,7 +1,12 @@
+'use client';
+
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { getRecordConversionHref } from '../data/commercial-routes';
 import type { FieldRecordCatalogItem, FieldRecordOnsiteSummary } from '../data/field-records-catalog';
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import { externalLinkProps } from '../lib/external-link';
+import { trackCommercialEvent } from '../lib/commercial-events';
 import { fineHover, koreanLineBreak } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 
@@ -18,6 +23,15 @@ type RecordsCaseDetailProps = {
 /** 상위 사례 온사이트 요약 — 목적·대상·구성·결과 + 블로그 원문 링크 */
 export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
   const { onsite } = item;
+  const conversionHref = getRecordConversionHref(item.slug);
+
+  useEffect(() => {
+    trackCommercialEvent({
+      name: 'evidence_opened',
+      route: 'dispatch',
+      evidenceSlug: item.slug,
+    });
+  }, [item.slug]);
 
   return (
     <article className="flex w-full flex-col gap-8 pb-8 sm:gap-10 sm:pb-10 lg:pb-12">
@@ -51,7 +65,7 @@ export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
         <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 sm:aspect-[2/1]">
           <ExternalPhoto
             src={item.thumbnailSrc}
-            alt={`${item.venue} 수업 사례`}
+            alt={`${item.venue} 수업 현장`}
             className="absolute inset-0 h-full w-full"
             priority
             sizes="(max-width: 1024px) 100vw, 960px"
@@ -100,14 +114,24 @@ export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
           있습니다.
         </p>
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-          <Link
-            href={`${SPOKEDU_BASE_PATH}/contact?type=dispatch`}
-            data-track="nav"
-            data-track-label={`records-detail-consult-${item.slug}`}
-            className={`inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white ${fineHover}hover:bg-slate-800 ${focusRing}`}
-          >
-            기관 운영 상담
-          </Link>
+          {conversionHref ? (
+            <Link
+              href={conversionHref}
+              data-track="nav"
+              data-track-label={`records-detail-consult-${item.slug}`}
+              className={`inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white ${fineHover}hover:bg-slate-800 ${focusRing}`}
+              onClick={() => {
+                trackCommercialEvent({
+                  name: 'primary_cta_clicked',
+                  route: 'dispatch',
+                  ctaIntentId: `records-detail-consult-${item.slug}`,
+                  evidenceSlug: item.slug,
+                });
+              }}
+            >
+              기관 운영 상담
+            </Link>
+          ) : null}
           <a
             href={item.blogHref}
             {...externalLinkProps}

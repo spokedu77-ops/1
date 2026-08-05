@@ -122,14 +122,13 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 4, name: '2분할 자극', enName: '2-Split Stimulus', desc: '2분할 패널형 화면의 좌우 두 패널에 서로 다른 색·테마 이미지 신호가 나타납니다. 옵션: 7개 테마.' },
       { id: 5, name: '3분할 자극', enName: '3-Split Stimulus', desc: '3분할 패널형 화면의 세 패널에 서로 다른 색·테마 이미지 신호가 나타납니다. 옵션: 7개 테마.' },
       { id: 6, name: '랜덤분할 자극', enName: 'Random-Split Stimulus', desc: '전면 1개·2패널·3패널이 20%·30%·50% 확률로 랜덤 제시됩니다. 옵션: 7개 테마.' },
-      { id: 7, name: '(보류) 손 따로, 발 따로 이관 예정', enName: '(On Hold) Hand and Foot Separate Migration', desc: '기존 변형 사분할 프로그램입니다. 삭제하지 않고 보류하며, 시지각 반응의 손 따로, 발 따로 쉬움·보통·어려움 3개로 이관 예정입니다.' },
     ],
   },
 
   // ── 선택 반응 Choice Reaction ──────────────────────────────────────────────
   simon: {
     id: 'simon',
-    title: '사이먼 효과',
+    title: '사이먼 이펙트',
     en: 'Simon Effect',
     icon: '◈',
     accent: '#EC4899',
@@ -148,8 +147,8 @@ export const MODES: Record<string, SpomoveMode> = {
   },
   flanker: {
     id: 'flanker',
-    title: '플랭커',
-    en: 'Flanker',
+    title: '플랭커 이펙트',
+    en: 'Flanker Effect',
     icon: '◎',
     accent: '#6366F1',
     coreCode: 'IC',
@@ -158,20 +157,18 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '방해 자극 · 목표 선택',
     desc: '가로로 나란히 다섯 개의 원이 보이거나, 동심 원·화살표 자극이 나타납니다. 가운데(또는 가장 안쪽) 목표만 보고 반응합니다.',
     levels: [
-      { id: 1, name: '동일 플랭커', enName: 'Uniform Flankers', desc: '다섯 원이 같은 색입니다. 가운데 색에 반응합니다.' },
-      { id: 2, name: '랜덤 플랭커', enName: 'Random Flankers', desc: '무작위 색 원 중 가운데 색만 보고 판단합니다.' },
-      { id: 3, name: '5원 극단 크기', enName: '5-Circle Extreme Sizes', desc: '매우 큰 원과 매우 작은 원이 섞입니다. 가운데 색에 반응합니다.' },
-      { id: 4, name: '원 속의 원', enName: 'Nested Circles', desc: '동심으로 겹친 원 중 가장 안쪽 목표 원을 보고 반응합니다.' },
-      { id: 5, name: '화살표 플랭커', enName: 'Arrow Flanker', desc: '다섯 화살표 중 가운데 방향만 보고 해당 방향으로 이동합니다. 상하좌우 방향이 다양하게 제시됩니다.' },
-      { id: 6, name: '테마 플랭커', enName: 'Theme Flanker', desc: '연상 색지각과 동일한 7가지 이미지 테마를 고릅니다. 가운데 원(이미지) 색에 반응합니다.' },
+      { id: 1, name: '화살표', enName: 'Arrow', desc: '난이도 보통은 좌우 화살표, 어려움은 상하좌우 화살표입니다. 가운데 방향만 보고 이동합니다.' },
+      { id: 2, name: '랜덤 자극', enName: 'Random Stimulus', desc: '색상이 기본이며, 반응 인지와 동일한 7가지 테마(색상·과일·동물·음식·자연·탈 것·믹스)를 고릅니다. 가운데 원 색에 반응합니다.' },
+      { id: 3, name: '극단', enName: 'Extreme', desc: '난이도 보통은 7개 테마의 극단 크기 원, 어려움은 극단 크기 화살표입니다. 가운데 목표에 반응합니다.' },
+      { id: 4, name: '(보류) 원 속의 원', enName: '(On Hold) Nested Circles', desc: '동심 원 플랭커는 현재 보류합니다. 삭제하지 않고 관리자에서만 확인합니다.' },
     ],
   },
 
   // ── 복합 반응 Complex Reaction ─────────────────────────────────────────────
   stroop: {
     id: 'stroop',
-    title: '스트룹 과제',
-    en: 'Stroop Task',
+    title: '스트룹 이펙트',
+    en: 'Stroop Effect',
     icon: '🧠',
     accent: '#A855F7',
     coreCode: 'IC',
@@ -180,10 +177,8 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '통제 제어 · 인지 지연',
     desc: '배경은 기본 검정입니다. 화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 말합니다.',
     levels: [
-      { id: 1, name: '1단계', enName: 'Spatial Orientation (Color)', desc: '방향별 색이 채워진 화살표를 보고 해당 방향 패드로 이동합니다.' },
-      { id: 2, name: '2단계', enName: 'Arrow + BG Interference', desc: '화살표와 배경 간섭을 함께 처리합니다.' },
-      { id: 3, name: '3단계', enName: 'Word Stroop / Reverse', desc: '글자 의미와 반대 규칙을 처리합니다.' },
-      { id: 4, name: '4단계', enName: 'Word + BG / Missing', desc: '단어+배경(기본) 또는 누락 색상 찾기. 옵션은 아래에서 고릅니다.' },
+      { id: 1, name: '색상화살표', enName: 'Color Arrow', desc: '화살표 방향과 랜덤 색상을 분리해 처리합니다. 반응인지 색상화살표처럼 방향별 고정색을 쓰지 않습니다.' },
+      { id: 2, name: '단어', enName: 'Word', desc: '단어 의미와 글자색 규칙을 처리합니다.' },
     ],
   },
   spatial: {
@@ -198,7 +193,7 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
-      { id: 1, name: '색 순서 기억', enName: 'Color Sequence', desc: '색이 순서대로 나타납니다. 항 수(3/5/추가)는 아래에서 고릅니다.' },
+      { id: 1, name: '순서 기억', enName: 'Order Memory', desc: '난이도 쉬움은 3개, 보통은 5개, 어려움은 추가 항목으로 진행합니다.' },
       { id: 4, name: '색·번호 기억', enName: 'Color-Number', desc: '번호에 매칭된 색을 기억합니다. 퀴즈/전체 공개는 아래에서 고릅니다.' },
       { id: 6, name: '직접 지정 10색', enName: 'Custom 10-Color Sequence', desc: '1~10번 슬롯에 빨·노·초·파를 직접 지정해 순서를 기억합니다.' },
     ],
@@ -225,15 +220,15 @@ export const MODES: Record<string, SpomoveMode> = {
  * SPOMOVE 3대 축 × 2개 핵심 프로그램 카탈로그 (단순 → 선택 → 복합 반응 순)
  *
  * 단순 반응: 시지각 반응 / 반응 인지
- * 선택 반응: 사이먼 효과 / 플랭커
- * 복합 반응: 스트룹 과제 / 순차 기억
+ * 선택 반응: 사이먼 이펙트 / 플랭커
+ * 복합 반응: 스트룹 이펙트 / 순차 기억
  */
 export const SPOMOVE_CATALOG_SLOT_IDS = [
   'basic',      // 단순 1 — 반응 인지 / Reactive Cognition
   'reactTrain', // 단순 2 — 시지각 반응 / Visual Reaction
-  'simon',      // 선택 1 — 사이먼 효과 / Simon Effect
+  'simon',      // 선택 1 — 사이먼 이펙트 / Simon Effect
   'flanker',    // 선택 2 — 플랭커 / Flanker
-  'stroop',     // 복합 1 — 스트룹 과제 / Stroop Task
+  'stroop',     // 복합 1 — 스트룹 이펙트 / Stroop Task
   'spatial',    // 복합 2 — 순차 기억 / Sequential Memory
 ] as const;
 
@@ -371,7 +366,7 @@ export function catalogStroopUiLevel(level: number): number {
   return level === 5 ? 4 : level;
 }
 
-/** spatial 엔진 level → 카탈로그 대표 id (색순서=1, 색·번호=4) */
+/** spatial 엔진 level → 카탈로그 대표 id (순서 기억=1, 색·번호=4) */
 export function catalogSpatialUiLevel(level: number): number {
   if (isColorSequenceLevel(level)) return 1;
   if (isColorNumberLevel(level)) return 4;
@@ -386,7 +381,7 @@ export function colorSequenceOption(level: number): ColorSequenceOption {
   return 3;
 }
 
-/** 색 순서 「추가」: 5라운드 · 항 수 3→7 점증 */
+/** 순서 기억 「어려움」: 5라운드 · 항 수 3→7 점증 */
 export const COLOR_SEQUENCE_RAMP_LENGTHS = [3, 4, 5, 6, 7] as const;
 export const COLOR_SEQUENCE_RAMP_ROUNDS = COLOR_SEQUENCE_RAMP_LENGTHS.length;
 
@@ -427,12 +422,12 @@ export function resolveTrainingEngine(mode: string, level: number): { engineMode
     const lv = Math.min(3, Math.max(1, Math.floor(level)));
     return { engineMode: 'taskswitch', engineLevel: lv };
   }
-  if (mode === 'stroop' && level === 1) {
-    return { engineMode: 'basic', engineLevel: 1 };
-  }
   if (mode === 'stroop' && level === 5) {
     // 레거시 5단계 → 4단계 + 누락 모드
     return { engineMode: 'stroop', engineLevel: 4 };
+  }
+  if (mode === 'flanker' && level === 1) {
+    return { engineMode: 'flanker', engineLevel: 5 };
   }
   if (mode === 'reactTrain') {
     const resolved = resolveReactTrainUiLevel(level);

@@ -138,9 +138,9 @@ const PROGRAM_GROUP_LABELS: Record<ProgramGroupTab, string> = {
   all: '전체',
   'reaction-cognition': '반응 인지',
   'visual-reaction': '시각 반응',
-  simon: '사이먼 효과',
-  flanker: '플랭커',
-  stroop: '스트룹 과제',
+  simon: '사이먼 이펙트',
+  flanker: '플랭커 이펙트',
+  stroop: '스트룹 이펙트',
   'sequential-memory': '순차 기억',
   dive: 'DIVE',
 };

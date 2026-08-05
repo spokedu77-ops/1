@@ -1,3 +1,4 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH } from './site';
 
@@ -11,7 +12,7 @@ export const campProgramPage = {
   },
   heroCta: {
     label: '방학캠프 운영 문의하기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'camp' }),
     trackLabel: 'program-camp-dispatch-hero',
   },
   overview: {
@@ -105,7 +106,7 @@ export const campProgramPage = {
     title: '방학 시즌 프로그램을 함께 운영하고 싶다면',
     description: '운영 기간, 공간, 대상 연령, 인원을 확인한 뒤 하루 단위 캠프 구성을 제안드립니다.',
     label: '방학캠프 운영 문의하기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'camp' }),
     trackLabel: 'program-camp-dispatch-final',
   },
 } as const;

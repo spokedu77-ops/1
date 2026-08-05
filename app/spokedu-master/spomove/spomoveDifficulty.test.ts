@@ -11,9 +11,9 @@ import {
 } from './spomoveDifficulty';
 
 describe('spomoveDifficulty', () => {
-  it('매직 아이(사이먼 4)는 난이도 칩 없음', () => {
+  it('사이먼은 보통/어려움 난이도 칩을 쓴다', () => {
     const magic = findOfficialSpomovePreset('visual-reaction-blackout-37')!;
-    expect(getSpomoveDifficultyKind(magic)).toBeNull();
+    expect(getSpomoveDifficultyKind(magic)).toBe('simonPole');
   });
 
   it('흰 공 4옵션 ↔ tier+dual 매핑', () => {
@@ -43,10 +43,10 @@ describe('spomoveDifficulty', () => {
     expect(stage2.engine.colorTrackerDualPanel).toBe(false);
   });
 
-  it('사이먼 폴 도형·화살표 기본/응용', () => {
+  it('사이먼 보통/어려움', () => {
     const pole = findOfficialSpomovePreset('simon-pole-shape-06')!;
     expect(getSpomoveDifficultyKind(pole)).toBe('simonPole');
-    expect(getSpomoveDifficultyOptions('simonPole').map((o) => o.label)).toEqual(['기본', '응용']);
+    expect(getSpomoveDifficultyOptions('simonPole').map((o) => o.label)).toEqual(['보통', '어려움']);
     expect(readSpomoveDifficultyValue(pole, 'simonPole')).toBe('1');
 
     const advanced = applySpomoveDifficulty(pole, 'simonPole', '2');

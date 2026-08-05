@@ -243,7 +243,7 @@ export const homePage = {
     },
     secondaryCta: {
       label: '도입 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=spomove`,
+      href: `${SPOKEDU_BASE_PATH}/dispatch?program=spomove#contact`,
       trackLabel: 'cta-home-spomove-contact',
     },
   },
@@ -258,7 +258,7 @@ export const homePage = {
     },
     consultCta: {
       label: '기관 운영 상담',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      href: `${SPOKEDU_BASE_PATH}/dispatch#contact`,
       trackLabel: 'cta-home-cases-consult',
     },
     proofStats: [
@@ -277,17 +277,17 @@ export const homePage = {
     items: [
       {
         label: '기관 운영 상담',
-        href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+        href: `${SPOKEDU_BASE_PATH}/dispatch#contact`,
         trackLabel: 'cta-home-final-dispatch',
       },
       {
         label: '개인수업 상담',
-        href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
+        href: `${SPOKEDU_BASE_PATH}/private#apply`,
         trackLabel: 'cta-home-final-private',
       },
       {
         label: '커리큘럼·지도자 교육',
-        href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
+        href: `${SPOKEDU_BASE_PATH}/curriculum#modes`,
         trackLabel: 'cta-home-final-curriculum',
       },
     ] as const,

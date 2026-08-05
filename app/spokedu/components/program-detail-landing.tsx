@@ -1,20 +1,15 @@
 'use client';
 
-import Link from 'next/link';
-import { motion, useReducedMotion } from 'framer-motion';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
-import { CaseProofCard } from './case-proof-card';
 import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
 import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
-import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { programDetailBlocks, type ProgramDetailSlug } from '../data/program-details';
 import { getProgramBySlug } from '../data/programs';
-import { landingPageStack, landingSectionTitle, linkMuted } from '../lib/ui-classes';
-import { inferTrackFromHref } from '../lib/tracking';
+import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
 
 const whyVariants: LandingCardVariant[] = ['glass', 'gradient', 'image'];
 const activityVariants: LandingCardVariant[] = ['image', 'gradient', 'glass'];
@@ -24,12 +19,8 @@ type ProgramDetailLandingProps = {
 };
 
 export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
-  const reducedMotion = useReducedMotion();
   const program = getProgramBySlug(slug);
   const detail = programDetailBlocks[slug];
-  const relatedCases = detail.caseSlugs
-    .map((caseSlug) => getCaseBySlug(caseSlug))
-    .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   if (!program) return null;
 
@@ -122,40 +113,6 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
         <p className="mt-3 text-xs text-slate-500 sm:text-sm">연결 축 · {program.connectedTracks.join(' / ')}</p>
       </LandingSection>
 
-      {relatedCases.length > 0 ? (
-        <LandingSection className="space-y-3" delay={0.12}>
-          <div className="flex items-end justify-between gap-2">
-            <h2 className={landingSectionTitle}>실제 운영 예시</h2>
-            <Link
-              href="/spokedu/records"
-              data-track={inferTrackFromHref('/spokedu/records')}
-              data-track-label="program-records-link"
-              className={`text-sm ${linkMuted}`}
-            >
-              현장기록 →
-            </Link>
-          </div>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {relatedCases.map((item, index) => (
-              <motion.div
-                key={item.slug}
-                initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-                whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.4, delay: 0.05 * index }}
-              >
-                <CaseProofCard
-                  item={item}
-                  variant="compact"
-                  cardVariant={index % 2 === 0 ? 'image' : 'glass'}
-                  trackPrefix={`program-${slug}`}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </LandingSection>
-      ) : null}
-
       <LandingFinalCta
         title={detail.finalCtaTitle}
         description={detail.finalCtaSub}
@@ -168,12 +125,16 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
             trackLabel: detail.primaryCta.trackLabel,
             variant: 'primary',
           },
-          {
-            label: detail.secondaryCta.label,
-            href: detail.secondaryCta.href,
-            trackLabel: detail.secondaryCta.trackLabel,
-            variant: 'on-light-outline',
-          },
+          ...(detail.secondaryCta
+            ? [
+                {
+                  label: detail.secondaryCta.label,
+                  href: detail.secondaryCta.href,
+                  trackLabel: detail.secondaryCta.trackLabel,
+                  variant: 'on-light-outline' as const,
+                },
+              ]
+            : []),
           {
             label: '전체 프로그램 보기',
             href: '/spokedu/programs',

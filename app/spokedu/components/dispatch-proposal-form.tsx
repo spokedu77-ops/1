@@ -1,22 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { brandContactLinks, brandProfile } from '../data/brand';
+import {
+  DISPATCH_PROGRAM_OPTIONS,
+  parseConversionEvidenceSlug,
+  parseDispatchProgramLabel,
+} from '../data/commercial-routes';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
-import { captureAcquisitionFromLocation, getAcquisitionContext } from '../lib/acquisition';
+import type { FieldRecordSlug } from '../data/field-records-catalog';
+import { getAcquisitionContext } from '../lib/acquisition';
 import { trackCommercialEvent } from '../lib/commercial-events';
 import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
-
-const PROGRAM_OPTIONS = [
-  'SPOMOVE',
-  '월간 뉴스포츠',
-  '특수체육',
-  '미니 올림픽',
-  '스포츠 부스·원데이',
-  '방학캠프',
-  '맞춤 스포츠 특강',
-  '기타',
-] as const;
 
 const AGE_OPTIONS = ['유아', '초등 저학년', '초등 고학년', '중등', '혼합 연령'] as const;
 const HEADCOUNT_OPTIONS = ['10명 미만', '10~20명', '20~30명', '30명 이상'] as const;
@@ -31,6 +27,8 @@ const formShell =
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
 
 export function DispatchProposalForm() {
+  const searchParams = useSearchParams();
+  const didApplyQueryDefaults = useRef(false);
   const [organization, setOrganization] = useState('');
   const [manager, setManager] = useState('');
   const [phone, setPhone] = useState('');
@@ -44,6 +42,7 @@ export function DispatchProposalForm() {
   const [headcount, setHeadcount] = useState('');
   const [specialNeeds, setSpecialNeeds] = useState('');
   const [inquiry, setInquiry] = useState('');
+  const [conversionEvidenceSlug, setConversionEvidenceSlug] = useState<FieldRecordSlug | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<Status>({ tone: 'idle', message: '' });
 
@@ -72,8 +71,16 @@ export function DispatchProposalForm() {
   }, []);
 
   useEffect(() => {
-    captureAcquisitionFromLocation();
-  }, []);
+    if (didApplyQueryDefaults.current) return;
+    didApplyQueryDefaults.current = true;
+
+    const programLabel = parseDispatchProgramLabel(searchParams.get('program'));
+    if (programLabel) {
+      setPrograms((prev) => (prev.includes(programLabel) ? prev : [programLabel, ...prev]));
+    }
+    const evidence = parseConversionEvidenceSlug(searchParams.get('conversionEvidence'));
+    if (evidence) setConversionEvidenceSlug(evidence);
+  }, [searchParams]);
 
   const programsPayload = useMemo(() => {
     const list = [...programs];
@@ -98,12 +105,6 @@ export function DispatchProposalForm() {
       setSubmitting(true);
       setStatus({ tone: 'idle', message: '' });
       try {
-        trackCommercialEvent({
-          name: 'primary_cta_clicked',
-          route: 'dispatch',
-          ctaIntentId: 'dispatch_proposal',
-          selectionId: programsPayload[0],
-        });
         const response = await fetch('/api/dispatch/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -124,6 +125,7 @@ export function DispatchProposalForm() {
             source: 'spokedu-dispatch-proposal',
             acquisition: getAcquisitionContext(),
             cta_intent_id: 'dispatch_proposal',
+            conversion_evidence_slug: conversionEvidenceSlug ?? undefined,
           }),
         });
         const result = (await response.json().catch(() => null)) as {
@@ -149,7 +151,10 @@ export function DispatchProposalForm() {
           });
         }
         reset();
-        setStatus({ tone: 'ok', message: '운영 상담이 접수되었습니다. 담당자가 확인 후 연락드립니다.' });
+        setStatus({
+          tone: 'ok',
+          message: '접수가 완료되었습니다. 담당자가 확인 후 연락드립니다.',
+        });
       } catch {
         setStatus({ tone: 'error', message: '네트워크 오류로 접수에 실패했습니다.' });
       } finally {
@@ -169,19 +174,25 @@ export function DispatchProposalForm() {
       headcount,
       specialNeeds,
       inquiry,
+      conversionEvidenceSlug,
       reset,
     ],
   );
 
   return (
-    <section id="contact" className="scroll-mt-24 space-y-5 sm:space-y-6">
+    <section id="contact" className="scroll-mt-36 space-y-5 sm:space-y-6">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">운영 상담</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">운영안 요청</p>
         <h2 className={`mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl ${koreanLineBreak}`}>
-          기관 맞춤 운영 상담
+          기관 조건으로 운영안 받기
         </h2>
         <p className={`mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
-          공간·인원·일정·프로그램 조건을 알려주시면 정규·원데이·방학·SPOMOVE 중 맞는 운영안을 제안합니다.
+          프로그램·연령·인원을 알려주시면 운영 가능 범위를 맞춰 제안합니다.
+          {conversionEvidenceSlug ? (
+            <span className="mt-1 block text-xs font-semibold text-teal-800">
+              연결 사례: {conversionEvidenceSlug}
+            </span>
+          ) : null}
         </p>
       </div>
 
@@ -189,89 +200,143 @@ export function DispatchProposalForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="dispatch-org">
-              기관명 / 센터명 <span className="text-teal-700">*</span>
+              기관명 <span className="text-teal-700">*</span>
             </label>
             <input
               id="dispatch-org"
               className={inputClass}
               value={organization}
               onChange={(e) => setOrganization(e.target.value)}
-              placeholder="예: ○○거점형키움센터"
+              placeholder="예: ○○키움센터"
               required
             />
           </div>
           <div>
             <label className={labelClass} htmlFor="dispatch-manager">
-              담당자 직책 및 성함 <span className="text-teal-700">*</span>
+              담당자 <span className="text-teal-700">*</span>
             </label>
             <input
               id="dispatch-manager"
               className={inputClass}
               value={manager}
               onChange={(e) => setManager(e.target.value)}
-              placeholder="예: 김○○ 담당자"
+              placeholder="예: 홍길동"
               required
             />
           </div>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-teal-100 bg-teal-50/50 px-4 py-3">
-          <p className="text-xs font-bold uppercase tracking-wide text-teal-900">연락처 안내</p>
-          <p className={`mt-1 text-sm text-slate-600 ${koreanLineBreak}`}>
-            전화번호 또는 이메일 중 하나만 있어도 접수됩니다. 운영안 안내는 이메일로 회신하는 경우가 많습니다.
-          </p>
-        </div>
-
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="dispatch-phone">
-              담당자 전화번호
+              연락처
             </label>
-            <p className={hintClass}>휴대전화·유선 모두 가능</p>
             <input
               id="dispatch-phone"
-              type="tel"
               className={inputClass}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="예: 010-1234-5678"
-              autoComplete="tel"
+              inputMode="tel"
             />
+            <p className={hintClass}>전화 또는 이메일 중 하나는 필수입니다.</p>
           </div>
           <div>
             <label className={labelClass} htmlFor="dispatch-email">
-              담당자 이메일
+              이메일
             </label>
-            <p className={hintClass}>운영안 회신용</p>
             <input
               id="dispatch-email"
-              type="email"
               className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="예: manager@company.co.kr"
-              autoComplete="email"
+              placeholder="예: name@org.kr"
+              inputMode="email"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelClass} htmlFor="dispatch-location">
+              기관 소재지
+            </label>
+            <input
+              id="dispatch-location"
+              className={inputClass}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="예: 서울 양천구"
             />
           </div>
         </div>
 
-        <div className="mt-4">
-          <label className={labelClass} htmlFor="dispatch-location">
-            기관 소재지 <span className="font-medium text-slate-400">(선택)</span>
-          </label>
-          <input
-            id="dispatch-location"
-            className={inputClass}
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="예: 서울 양천구"
-          />
-        </div>
+        <fieldset className="mt-6">
+          <legend className={labelClass}>희망 프로그램</legend>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {DISPATCH_PROGRAM_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => toggleProgram(option)}
+                className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
+                  programs.includes(option)
+                    ? 'border-teal-600 bg-teal-600 text-white'
+                    : 'border-stone-200 bg-white text-slate-700 hover:border-teal-300'
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+          {programs.includes('기타') ? (
+            <input
+              className={inputClass}
+              value={programOther}
+              onChange={(e) => setProgramOther(e.target.value)}
+              placeholder="기타 프로그램명을 적어 주세요"
+            />
+          ) : null}
+        </fieldset>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <fieldset className="mt-6">
+          <legend className={labelClass}>대상 연령</legend>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {AGE_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => toggleAge(option)}
+                className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
+                  targetAge.includes(option)
+                    ? 'border-teal-600 bg-teal-600 text-white'
+                    : 'border-stone-200 bg-white text-slate-700 hover:border-teal-300'
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="mt-6">
+          <legend className={labelClass}>예상 인원</legend>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {HEADCOUNT_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setHeadcount(option)}
+                className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
+                  headcount === option
+                    ? 'border-teal-600 bg-teal-600 text-white'
+                    : 'border-stone-200 bg-white text-slate-700 hover:border-teal-300'
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="dispatch-start">
-              희망 시작일 <span className="font-medium text-slate-400">(선택)</span>
+              희망 시작일
             </label>
             <input
               id="dispatch-start"
@@ -283,7 +348,7 @@ export function DispatchProposalForm() {
           </div>
           <div>
             <label className={labelClass} htmlFor="dispatch-end">
-              희망 종료일 <span className="font-medium text-slate-400">(선택)</span>
+              희망 종료일
             </label>
             <input
               id="dispatch-end"
@@ -295,110 +360,29 @@ export function DispatchProposalForm() {
           </div>
         </div>
 
-        <fieldset className="mt-6">
-          <legend className={labelClass}>희망 프로그램 (다중 선택)</legend>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {PROGRAM_OPTIONS.map((option) => {
-              const active = programs.includes(option);
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => toggleProgram(option)}
-                  className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
-                    active
-                      ? 'border-teal-600 bg-teal-600 text-white'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-teal-300'
-                  }`}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-          {programs.includes('기타') ? (
-            <input
-              className={`${inputClass} mt-3`}
-              value={programOther}
-              onChange={(e) => setProgramOther(e.target.value)}
-              placeholder="기타 프로그램·조건을 적어 주세요"
-            />
-          ) : null}
-        </fieldset>
-
-        <fieldset className="mt-6">
-          <legend className={labelClass}>대상 연령 (다중 선택)</legend>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {AGE_OPTIONS.map((option) => {
-              const active = targetAge.includes(option);
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => toggleAge(option)}
-                  className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
-                    active
-                      ? 'border-teal-600 bg-teal-600 text-white'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-teal-300'
-                  }`}
-                >
-                  {option}
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
-
-        <fieldset className="mt-6">
-          <legend className={labelClass}>대략적인 인원</legend>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {HEADCOUNT_OPTIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setHeadcount(option)}
-                className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
-                  headcount === option
-                    ? 'border-teal-600 bg-teal-600 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-teal-300'
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-
-        <fieldset className="mt-6">
-          <legend className={labelClass}>특수 아동 참여 유무</legend>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {['있음', '없음', '상담 후 확인'].map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setSpecialNeeds(option)}
-                className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
-                  specialNeeds === option
-                    ? 'border-teal-600 bg-teal-600 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-teal-300'
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <div className="mt-6">
+          <label className={labelClass} htmlFor="dispatch-special">
+            특수·통합 운영
+          </label>
+          <input
+            id="dispatch-special"
+            className={inputClass}
+            value={specialNeeds}
+            onChange={(e) => setSpecialNeeds(e.target.value)}
+            placeholder="예: 통합반 포함 / 해당 없음"
+          />
+        </div>
 
         <div className="mt-6">
           <label className={labelClass} htmlFor="dispatch-inquiry">
-            희망 수업 내용 또는 방향성
+            희망 수업 내용·방향
           </label>
           <textarea
             id="dispatch-inquiry"
-            className={`${inputClass} min-h-[110px] resize-y`}
+            className={`${inputClass} min-h-[96px] resize-y`}
             value={inquiry}
             onChange={(e) => setInquiry(e.target.value)}
-            placeholder="운영 목적, 공간 조건, 꼭 반영하고 싶은 사항을 자유롭게 적어 주세요."
+            placeholder="공간, 일정, 목적 등 참고할 내용을 적어 주세요."
           />
         </div>
 
@@ -419,19 +403,14 @@ export function DispatchProposalForm() {
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button type="submit" disabled={submitting} className={`${siteBtnPrimary} disabled:opacity-60`}>
-            {submitting ? '접수 중…' : '맞춤 운영안 받아보기'}
+            {submitting ? '접수 중…' : '기관 조건으로 운영안 요청하기'}
           </button>
           <a href={brandContactLinks.phone} className={siteBtnSecondary}>
-            전화 상담 {brandProfile.phone}
+            전화 {brandProfile.phone}
           </a>
           {KAKAO_CHANNEL_URL ? (
-            <a
-              href={KAKAO_CHANNEL_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={siteBtnSecondary}
-            >
-              카카오 상담
+            <a href={KAKAO_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className={siteBtnSecondary}>
+              카카오 채널
             </a>
           ) : null}
         </div>

@@ -1,5 +1,5 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
 
 export const papsProgramPage = {
   hero: {
@@ -11,7 +11,7 @@ export const papsProgramPage = {
   },
   heroCta: {
     label: 'PAPS 프로그램 문의하기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'paps' }),
     trackLabel: 'program-paps-dispatch-hero',
   },
   overview: {
@@ -82,7 +82,7 @@ export const papsProgramPage = {
     description:
       '대상 연령, 인원, 공간, 운영 목적을 확인한 뒤 체력 요소 중심의 수업 형태로 안내드립니다.',
     label: 'PAPS 프로그램 문의하기',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'paps' }),
     trackLabel: 'program-paps-dispatch-final',
   },
 } as const;

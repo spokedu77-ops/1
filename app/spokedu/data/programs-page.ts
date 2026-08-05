@@ -1,3 +1,4 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
 import { programSystemItems } from './program-system-items';
 import { SPOKEDU_BASE_PATH } from './site';
@@ -13,7 +14,7 @@ export const programsPage = {
   heroCtas: {
     primary: {
       label: '상담 문의하기',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      href: dispatchInquiryHref({}),
       trackLabel: 'programs-cta-contact',
     },
     secondary: {
@@ -34,7 +35,7 @@ export const programsPage = {
     mediaKey: 'programSpomove' as HomeMediaKey,
     primary: {
       label: '프로그램 상담받기',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      href: dispatchInquiryHref({}),
       trackLabel: 'programs-final-contact',
     },
   },

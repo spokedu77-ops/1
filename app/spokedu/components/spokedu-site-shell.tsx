@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { captureAcquisitionFromLocation } from '../lib/acquisition';
 import { scrollSpokeduToTopOrHash } from '../lib/scroll';
 import { SiteFooter, SiteHeader } from './site-chrome';
 
@@ -13,6 +14,11 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const isSpomoveCatalogPage = pathname === '/spokedu/programs/spomove/catalog';
   /** Full-bleed pages own their header spacing and horizontal padding. */
   const isFullBleedPage = isHomePage || isSpomoveCatalogPage;
+
+  useEffect(() => {
+    // first-touch attribution — 랜딩 폼 마운트보다 먼저 고정
+    captureAcquisitionFromLocation();
+  }, []);
 
   useEffect(() => {
     const run = () => scrollSpokeduToTopOrHash();

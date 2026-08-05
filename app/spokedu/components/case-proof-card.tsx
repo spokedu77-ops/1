@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { CaseData } from '../data/cases';
+import { dispatchInquiryHref } from '../data/commercial-routes';
 import { getProgramBySlug } from '../data/programs';
 import { HOME_MEDIA } from '../data/home-media';
 import { cardInteractive, fineHover } from '../lib/ui-classes';
@@ -26,7 +27,7 @@ export function CaseProofCard({
   cardVariant = 'image',
 }: CaseProofCardProps) {
   const related = getProgramBySlug(item.relatedProgram);
-  const inquiryHref = related?.inquiryHref ?? '/spokedu/contact?type=dispatch';
+  const inquiryHref = related?.inquiryHref ?? dispatchInquiryHref({});
   const compact = variant === 'compact';
 
   const card = (

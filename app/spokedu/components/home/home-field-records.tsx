@@ -70,6 +70,8 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
             <TrackedLink
               href={homePage.cases.consultCta.href}
               trackLabel={homePage.cases.consultCta.trackLabel}
+              commercialRoute="dispatch"
+              ctaIntentId={homePage.cases.consultCta.trackLabel}
               className={`${siteBtnPrimary} ${homeFocusRing}`}
             >
               {homePage.cases.consultCta.label}

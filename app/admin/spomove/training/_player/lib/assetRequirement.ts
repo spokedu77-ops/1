@@ -36,19 +36,24 @@ export function getAssetRequirement(params: {
   mode: string;
   level: number;
   theme: SpomoveColorThemeId;
+  simonPoleCount?: 1 | 2;
 }): AssetRequirement {
-  const { mode, level, theme } = params;
+  const { mode, level, theme, simonPoleCount } = params;
 
-  // 사이먼 3번: 전 테마 이미지 풀 — 테마 선택 없음
-  if (mode === 'simon' && level === 3) {
-    return { minimumCount: 1, requiresDistinctImages: false, requiresDistinctColors: false };
+  // 사이먼 4번: 전 테마 이미지 풀 — 테마 선택 없음
+  if (mode === 'simon' && level === 4) {
+    return {
+      minimumCount: simonPoleCount === 2 ? 2 : 1,
+      requiresDistinctImages: simonPoleCount === 2,
+      requiresDistinctColors: false,
+    };
   }
 
   // color 테마: 이미지 없이 색상 신호만 사용
   if (theme === 'color') return NO_REQUIREMENT;
 
-  // 플랭커 6번 테마: 연상 색지각과 동일 — 선택한 테마 이미지 1장 이상
-  if (mode === 'flanker' && level === 6) {
+  // 플랭커 2·6번 테마: 연상 색지각과 동일 — 선택한 테마 이미지 1장 이상
+  if (mode === 'flanker' && (level === 2 || level === 3 || level === 6)) {
     return { minimumCount: 1, requiresDistinctImages: false, requiresDistinctColors: false };
   }
 
@@ -112,12 +117,13 @@ export function evaluateAssetReadiness(params: {
   mode: string;
   level: number;
   theme: SpomoveColorThemeId;
+  simonPoleCount?: 1 | 2;
   loadStatus: AssetLoadStatus;
   slides: TrainingSlide[];
   failedAssetIds?: Set<string>;
 }): AssetReadiness {
-  const { mode, level, theme, loadStatus, slides, failedAssetIds } = params;
-  const requirement = getAssetRequirement({ mode, level, theme });
+  const { mode, level, theme, simonPoleCount, loadStatus, slides, failedAssetIds } = params;
+  const requirement = getAssetRequirement({ mode, level, theme, simonPoleCount });
 
   // 이미지 불필요: 항상 ready
   if (requirement.minimumCount === 0) {

@@ -113,7 +113,7 @@ type Props = {
   numberCartTier?: 1 | 2 | 3;
   colorTrackerTier?: 1 | 2 | 3;
   goalkeeperTier?: 1 | 2;
-  /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
+  /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount?: 1 | 2;
   colorTrackerDualPanel?: boolean;
   camouflagePlacement?: 'center' | 'variant';
@@ -211,7 +211,7 @@ export function EngineRouter({
     [level, mode, onComplete],
   );
 
-  if (mode === 'simon' && level === 4) {
+  if (mode === 'simon' && level === 5) {
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 5);
     const sp = speedSec ?? 5;
     const reactSpeedLevel = mapReactSpeedLevel(sp);
@@ -222,6 +222,7 @@ export function EngineRouter({
           speedLevel={reactSpeedLevel}
           speedSec={sp}
           placementMode="variant"
+          concurrent={simonPoleCount === 2 ? 2 : 1}
           onExit={onExit}
           onComplete={handleReactTrainComplete}
         />
@@ -229,7 +230,7 @@ export function EngineRouter({
     );
   }
 
-  if (mode === 'simon' && level === 5) {
+  if (mode === 'simon' && level === 3) {
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
     const sp = speedSec ?? 3;
     return (
@@ -238,6 +239,7 @@ export function EngineRouter({
           variant="balloonSimon"
           durationSec={dur}
           speedSec={sp}
+          concurrent={simonPoleCount === 2 ? 2 : 1}
           onExit={onExit}
           onComplete={handleReactTrainComplete}
         />
@@ -248,7 +250,7 @@ export function EngineRouter({
   if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
     const safeLevel = mode === 'basic' ? Math.min(Math.max(level, 1), 10) : Math.max(level, 1);
     const effectiveSimonPole: 1 | 2 =
-      mode === 'simon' && (safeLevel === 1 || safeLevel === 2) && simonPoleCount === 2 ? 2 : 1;
+      mode === 'simon' && (safeLevel === 1 || safeLevel === 2 || safeLevel === 4) && simonPoleCount === 2 ? 2 : 1;
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <MemoryGameApp

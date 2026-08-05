@@ -1,3 +1,4 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import { SPOKEDU_BASE_PATH } from './site';
 import { SPOKEDU_IMAGES } from './images';
 
@@ -52,7 +53,7 @@ export const monthlyRecords: MonthlyRecord[] = [
       },
     ],
     relatedCases: [RECORDS_LINK],
-    nextInquiryCta: { label: '기관수업 제안', href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch` },
+    nextInquiryCta: { label: '기관수업 제안', href: dispatchInquiryHref({ program: 'monthly-newsports' }) },
   },
   {
     slug: '2026-04',
@@ -75,7 +76,7 @@ export const monthlyRecords: MonthlyRecord[] = [
       },
     ],
     relatedCases: [RECORDS_LINK],
-    nextInquiryCta: { label: '기관수업 제안', href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch` },
+    nextInquiryCta: { label: '기관수업 제안', href: dispatchInquiryHref({ program: 'monthly-newsports' }) },
   },
   {
     slug: '2026-03',
@@ -98,7 +99,7 @@ export const monthlyRecords: MonthlyRecord[] = [
       },
     ],
     relatedCases: [RECORDS_LINK],
-    nextInquiryCta: { label: '기관수업 제안', href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch` },
+    nextInquiryCta: { label: '기관수업 제안', href: dispatchInquiryHref({ program: 'monthly-newsports' }) },
   },
 ];
 

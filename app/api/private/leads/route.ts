@@ -6,6 +6,7 @@ import {
   LeadEnvelopeValidationError,
   parseAcquisitionFromBody,
 } from '@/app/lib/server/leadEnvelope';
+import { parseConversionEvidenceSlug } from '@/app/spokedu/data/commercial-routes';
 import {
   isPrivatePreferredFormat,
   isPrivateStartDirection,
@@ -123,7 +124,8 @@ export async function POST(req: NextRequest) {
     const instructorPreference = normalize(body.instructor_preference);
     const region = normalize(body.region);
     const schedule = normalize(body.schedule);
-    const conversionEvidenceSlug = normalize(body.conversion_evidence_slug) || undefined;
+    const conversionEvidenceSlug =
+      parseConversionEvidenceSlug(normalize(body.conversion_evidence_slug)) ?? undefined;
     const ctaIntentId = normalize(body.cta_intent_id) || 'private_fit_consult';
 
     if (!name || !content) {

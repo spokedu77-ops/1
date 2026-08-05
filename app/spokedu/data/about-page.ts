@@ -57,17 +57,17 @@ export const aboutPage = {
     links: [
       {
         label: '개인수업 상담',
-        href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
+        href: `${SPOKEDU_BASE_PATH}/private#apply`,
         trackLabel: 'about-cta-private',
       },
       {
         label: '기관 운영 상담',
-        href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+        href: `${SPOKEDU_BASE_PATH}/dispatch#contact`,
         trackLabel: 'about-cta-dispatch',
       },
       {
         label: '커리큘럼·지도자 교육 문의',
-        href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
+        href: `${SPOKEDU_BASE_PATH}/curriculum#modes`,
         trackLabel: 'about-cta-curriculum',
       },
     ],

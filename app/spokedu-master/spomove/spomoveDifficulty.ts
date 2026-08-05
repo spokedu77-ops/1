@@ -36,7 +36,7 @@ export function colorTrackerEngineToStage(
 export function getSpomoveDifficultyKind(
   preset: OfficialSpomovePreset,
 ): SpomoveDifficultyKind | null {
-  if (preset.engine.mode === 'simon' && (preset.engine.level === 1 || preset.engine.level === 2)) {
+  if (preset.engine.mode === 'simon') {
     return 'simonPole';
   }
   if (preset.engine.mode !== 'reactTrain') return null;
@@ -77,8 +77,8 @@ export function getSpomoveDifficultyOptions(
       ];
     case 'simonPole':
       return [
-        { value: '1', label: '기본', sub: '1개' },
-        { value: '2', label: '응용', sub: '2개' },
+        { value: '1', label: '보통', sub: '1개' },
+        { value: '2', label: '어려움', sub: '2개' },
       ];
   }
 }

@@ -160,6 +160,9 @@ export function HomeSpomoveSpotlight() {
               <TrackedLink
                 href={secondaryCta.href}
                 trackLabel={secondaryCta.trackLabel}
+                commercialRoute="dispatch"
+                ctaIntentId={secondaryCta.trackLabel}
+                selectionId="spomove"
                 className={`${siteBtnSecondary} h-11 min-h-0 w-full px-5 py-0 text-sm sm:w-auto ${homeFocusRing}`}
               >
                 {secondaryCta.label}

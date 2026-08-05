@@ -34,8 +34,11 @@ export function useIntervalTimer({
   handFootDifficulty = 'easy',
   flankerStimulusType,
   flankerNestedCircleCount,
+  flankerExtremeMode,
   flankerArrowMode,
   stroopWordMode,
+  stroopArrowMode,
+  stroopWordDifficulty,
   simonPoleCount = 1,
   onSignal,
   onFinish,
@@ -56,9 +59,12 @@ export function useIntervalTimer({
   handFootDifficulty?: 'easy' | 'normal' | 'hard';
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  flankerExtremeMode?: 'theme' | 'arrow';
   flankerArrowMode?: 'lr' | 'udlr';
   stroopWordMode?: 'bg' | 'missing';
-  /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
+  stroopArrowMode?: 'basic' | 'bg';
+  stroopWordDifficulty?: 'basic' | 'bg';
+  /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount?: 1 | 2;
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
@@ -93,8 +99,8 @@ export function useIntervalTimer({
       mode === 'stroop' && level === 1 ? 'color' : spatialArrowColorMode;
       const fruitOpts = {
         ...(fruitSlides ? { fruitSlides } : {}),
-        ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount, flankerArrowMode } : {}),
-        ...(engineMode === 'stroop' ? { stroopWordMode } : {}),
+        ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode } : {}),
+        ...(engineMode === 'stroop' ? { stroopWordMode, stroopArrowMode, stroopWordDifficulty } : {}),
       };
     if (engineMode === 'basic') {
       genRef.current = createBasicSignalGenerator(
@@ -193,7 +199,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, simonPoleCount, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, simonPoleCount, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

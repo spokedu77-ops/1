@@ -12,6 +12,10 @@ function variantCells(panel: VariantPanelContent | null | undefined): FruitSlide
   return panel.cells ?? (panel.slide ? [panel.slide] : []);
 }
 
+function clampUnitPosition(value: number, safeRatio: number) {
+  return Math.min(1 - safeRatio, Math.max(safeRatio, value));
+}
+
 /** postimg 등 **직링크**만 사용 (next/image·최적화 경로 없음 — 환경마다 깨지는 문제 방지). */
 function VariantFruitImg({ slide }: { slide: FruitSlide }) {
   return (
@@ -847,6 +851,11 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'flanker_arrows') {
     const arrows = (content?.arrows as { id: string; fillHex?: string }[] | undefined) ?? [];
     const centerIndex = typeof content?.centerIndex === 'number' ? content.centerIndex : 2;
+    const sizeMultsRaw = content?.sizeMults as number[] | undefined;
+    const hasVariedSizes =
+      Array.isArray(sizeMultsRaw) &&
+      sizeMultsRaw.length === arrows.length &&
+      sizeMultsRaw.length > 0;
     return (
       <div
         key={animKey}
@@ -877,9 +886,12 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             const rot = a.id === 'up' ? 0 : a.id === 'right' ? 90 : a.id === 'down' ? 180 : -90;
             const fill = a.fillHex ?? '#FFFFFF';
             const isCenter = i === centerIndex;
-            const size = isCenter
-              ? 'clamp(11.25rem, 48vmin, 30rem)'
-              : 'clamp(9.3rem, 39vmin, 24rem)';
+            const m = Math.max(0.14, sizeMultsRaw?.[i] ?? 1);
+            const size = hasVariedSizes
+              ? `clamp(${Math.max(4.8, 9.3 * m).toFixed(2)}rem, ${(39 * m).toFixed(2)}vmin, ${(24 * m).toFixed(2)}rem)`
+              : isCenter
+                ? 'clamp(11.25rem, 48vmin, 30rem)'
+                : 'clamp(9.3rem, 39vmin, 24rem)';
             return (
               <svg
                 key={i}
@@ -933,8 +945,9 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     return (
       <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         {items.map((item, idx) => {
-          const posX = typeof item.posX === 'number' ? item.posX : 0.5;
-          const posY = typeof item.posY === 'number' ? item.posY : 0.5;
+          const safe = items.length > 1 ? 0.17 : 0.21;
+          const posX = clampUnitPosition(typeof item.posX === 'number' ? item.posX : 0.5, safe);
+          const posY = clampUnitPosition(typeof item.posY === 'number' ? item.posY : 0.5, safe);
           const arrowId = item.arrowId;
           const fillHex = item.fillHex ?? '#FFFFFF';
           const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
@@ -947,8 +960,8 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                 left: `${posX * 100}%`,
                 top: `${posY * 100}%`,
                 transform: 'translate(-50%, -50%)',
-                width: items.length > 1 ? 'min(32vw, 32vh)' : 'min(40vw, 40vh)',
-                height: items.length > 1 ? 'min(32vw, 32vh)' : 'min(40vw, 40vh)',
+                width: items.length > 1 ? 'min(26vw, 26vh)' : 'min(34vw, 34vh)',
+                height: items.length > 1 ? 'min(26vw, 26vh)' : 'min(34vw, 34vh)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1008,7 +1021,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
               posY: typeof content?.posY === 'number' ? content.posY : 0.5,
             },
           ];
-    const size = items.length > 1 ? 'min(20vw, 20vh)' : 'min(25vw, 25vh)';
+    const size = items.length > 1 ? 'min(18vw, 18vh)' : 'min(24vw, 24vh)';
     return (
       <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         {items.map((item, idx) => {
@@ -1017,8 +1030,9 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           const symbol = item.symbol;
           const textColor = item.textColor ?? '#fff';
           const imageUrl = item.imageUrl ?? null;
-          const posX = typeof item.posX === 'number' ? item.posX : 0.5;
-          const posY = typeof item.posY === 'number' ? item.posY : 0.5;
+          const safe = items.length > 1 ? 0.12 : 0.14;
+          const posX = clampUnitPosition(typeof item.posX === 'number' ? item.posX : 0.5, safe);
+          const posY = clampUnitPosition(typeof item.posY === 'number' ? item.posY : 0.5, safe);
           const common: React.CSSProperties = {
             width: '100%',
             height: '100%',

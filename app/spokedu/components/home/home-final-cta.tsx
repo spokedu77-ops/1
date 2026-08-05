@@ -78,6 +78,8 @@ export function HomeFinalCta() {
                 <TrackedLink
                   href={primary.href}
                   trackLabel={primary.trackLabel}
+                  commercialRoute="dispatch"
+                  ctaIntentId={primary.trackLabel}
                   className={`${siteBtnPrimary} h-12 w-full ${homeFocusRing}`}
                 >
                   {primary.label}
@@ -87,6 +89,8 @@ export function HomeFinalCta() {
                 <TrackedLink
                   href={secondary.href}
                   trackLabel={secondary.trackLabel}
+                  commercialRoute="private"
+                  ctaIntentId={secondary.trackLabel}
                   className={`${siteBtnSecondary} !min-h-11 w-full py-2.5 ${homeFocusRing}`}
                 >
                   {secondary.label}
@@ -96,6 +100,8 @@ export function HomeFinalCta() {
                 <TrackedLink
                   href={tertiary.href}
                   trackLabel={tertiary.trackLabel}
+                  commercialRoute="curriculum"
+                  ctaIntentId={tertiary.trackLabel}
                   className={`${siteBtnSecondary} !min-h-11 w-full py-2.5 ${homeFocusRing}`}
                 >
                   {tertiary.label}

@@ -15,7 +15,7 @@ export function buildProgramDetailMetadata(slug: ProgramDetailSlug) {
     title: `${program.title} | SPOKEDU 프로그램`,
     description: program.detailDescription ?? program.description,
     canonical: `/spokedu/programs/${slug}`,
-    keywords: [program.title, ...program.effects],
+    keywords: [program.title],
     pageKey: 'programs',
     ogImage: buildProgramDetailOgImage(slug),
   });

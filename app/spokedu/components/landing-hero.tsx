@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import type { HomeMediaItem } from '../data/home-media';
+import { trackCommercialEvent } from '../lib/commercial-events';
 import {
   btnPrimary,
   btnSecondary,
@@ -39,6 +40,23 @@ type LandingHeroProps = {
   primaryCta?: LandingHeroCta;
   secondaryCta?: LandingHeroCta;
 };
+
+function inferCommercialRoute(href: string): 'private' | 'curriculum' | 'dispatch' | null {
+  if (href.includes('/private')) return 'private';
+  if (href.includes('/curriculum')) return 'curriculum';
+  if (href.includes('/dispatch')) return 'dispatch';
+  return null;
+}
+
+function emitCtaClick(cta: LandingHeroCta) {
+  const route = inferCommercialRoute(cta.href);
+  if (!route) return;
+  trackCommercialEvent({
+    name: 'primary_cta_clicked',
+    route,
+    ctaIntentId: cta.trackLabel,
+  });
+}
 
 /** 서브 랜딩 Hero — inset split + 호버 줌. 전 페이지 풀블리드 강제 없음. */
 export function LandingHero({
@@ -92,6 +110,7 @@ export function LandingHero({
                   data-track="cta-contact"
                   data-track-label={primaryCta.trackLabel}
                   className={`${btnPrimary} min-h-12 !w-full sm:!w-auto ${homeFocusRing}`}
+                  onClick={() => emitCtaClick(primaryCta)}
                 >
                   {primaryCta.label}
                 </Link>
@@ -102,6 +121,7 @@ export function LandingHero({
                   data-track="cta-contact"
                   data-track-label={secondaryCta.trackLabel}
                   className={`${btnSecondary} min-h-12 !w-full sm:!w-auto ${homeFocusRing}`}
+                  onClick={() => emitCtaClick(secondaryCta)}
                 >
                   {secondaryCta.label}
                 </Link>

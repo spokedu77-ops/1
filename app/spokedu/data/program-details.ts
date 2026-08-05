@@ -1,6 +1,11 @@
 import type { HomeMediaKey } from './home-media';
 import type { FieldRecordSlug } from './field-records-catalog';
 import {
+  curriculumInquiryHref,
+  dispatchInquiryHref,
+  privateInquiryHref,
+} from './commercial-routes';
+import {
   getProgramRegistryItem,
   PROGRAM_DETAIL_SLUGS,
   type ProgramDetailSlug,
@@ -17,20 +22,22 @@ export type ProgramActivity = {
   mediaKey: HomeMediaKey;
 };
 
+export type ProgramCta = { label: string; href: string; trackLabel: string };
+
 export type ProgramDetailBlock = {
   mediaKey: HomeMediaKey;
   heroSubtitle: string;
   whyPoints: string[];
   activities: ProgramActivity[];
   targets: string[];
-  caseSlugs: string[];
-  /** 온사이트/카탈로그 사례 — 프로그램 상세 신뢰·교차 링크 */
+  /** 공개 사례 SSOT — FieldRecordSlug만 */
   fieldRecordSlugs: readonly FieldRecordSlug[];
   trustLine: string;
   finalCtaTitle: string;
   finalCtaSub: string;
-  primaryCta: { label: string; href: string; trackLabel: string };
-  secondaryCta: { label: string; href: string; trackLabel: string };
+  primaryCta: ProgramCta;
+  /** route가 다를 때만. 동일 route 중복 금지 */
+  secondaryCta?: ProgramCta;
 };
 
 const PROGRAM_TRUST_LINE = '공개 운영 사례와 같은 현장 기준으로 프로그램을 설계합니다.';
@@ -52,20 +59,19 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
       { title: '난이도 단계화', description: '연령·수준에 맞춰 미션을 조절합니다.', mediaKey: 'trackDispatch' },
     ],
     targets: ['키움센터·방과후', '개인·소그룹 응용', '혼합 연령 기관 수업'],
-    caseSlugs: ['yangcheon-spomove', 'dongjak-rhythm'],
     fieldRecordSlugs: ['dongjak-spomove', 'dasarang-oneday'],
     trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: 'SPOMOVE 도입 상담',
-    finalCtaSub: '공간·인원·일정을 확인한 뒤 맞는 운영안을 안내합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
+    finalCtaSub: '공간·인원·일정을 확인한 뒤 기관 운영안 또는 지도자 교육·도입으로 이어드립니다.',
     primaryCta: {
-      label: 'SPOMOVE 수업 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
-      trackLabel: 'program-spomove-private',
+      label: '기관에서 운영하기',
+      href: dispatchInquiryHref({ program: 'spomove' }),
+      trackLabel: 'program-spomove-dispatch',
     },
     secondaryCta: {
-      label: '기관 도입 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'program-spomove-dispatch',
+      label: '지도자 교육·도입 문의',
+      href: curriculumInquiryHref({ mode: 'training' }),
+      trackLabel: 'program-spomove-curriculum-training',
     },
   },
   paps: {
@@ -83,20 +89,19 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
       { title: '협동 챌린지', description: '팀 미션으로 재미와 몰입을 더합니다.', mediaKey: 'trackDispatch' },
     ],
     targets: ['초등 저·고학년', '기관 정규수업', '체력 경험형 프로그램'],
-    caseSlugs: ['yangcheon-spomove'],
     fieldRecordSlugs: ['yangcheon-paps'],
     trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: 'PAPS 도입 상담',
-    finalCtaSub: '대상 연령과 운영 목적에 맞춰 구성안을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
+    finalCtaSub: '기관 정규 운영이 우선입니다. 개인 종목 준비 상담은 별도 경로로 이어집니다.',
     primaryCta: {
-      label: 'PAPS 놀이체육 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'program-paps-inquiry',
+      label: '기관 프로그램 운영 문의',
+      href: dispatchInquiryHref({ program: 'paps' }),
+      trackLabel: 'program-paps-dispatch',
     },
     secondaryCta: {
-      label: '기관 수업 제안',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'program-paps-dispatch',
+      label: '개인 종목 준비 상담',
+      href: privateInquiryHref({ startDirection: 'sport-prep' }),
+      trackLabel: 'program-paps-private-sport-prep',
     },
   },
   'monthly-newsports': {
@@ -126,15 +131,14 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
       },
     ],
     targets: ['키움·방과후 정규수업', '월 4회 흐름이 필요한 기관', '뉴스포츠·협동 중심 프로그램'],
-    caseSlugs: ['dasarang-oneday'],
     fieldRecordSlugs: ['yangcheon-paps', 'dasarang-oneday'],
     trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: '월간 뉴스포츠 도입 상담',
-    finalCtaSub: '운영 주기와 공간을 확인한 뒤 월간 테마안을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
+    finalCtaSub: '운영 주기와 공간을 확인한 뒤 월간 테마안을 제안합니다.',
     primaryCta: {
-      label: '월간 뉴스포츠 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'program-monthly-newsports-inquiry',
+      label: '기관 운영 문의',
+      href: dispatchInquiryHref({ program: 'monthly-newsports' }),
+      trackLabel: 'program-monthly-newsports-dispatch',
     },
     secondaryCta: {
       label: '월간 수업 전체 보기',
@@ -157,20 +161,14 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
       { title: '현장 회전 운영', description: '공간·인원에 맞춰 동선을 설계합니다.', mediaKey: 'proofEvent' },
     ],
     targets: ['지역아동센터 행사', '어린이날·시즌 이벤트', '기관 특별활동'],
-    caseSlugs: ['dasarang-oneday', 'seodaemun-event-booth'],
     fieldRecordSlugs: ['dasarang-oneday', 'seodaemun-event-booth'],
     trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: '원데이 행사 상담',
-    finalCtaSub: '행사 일정과 공간을 알려주시면 프로그램안을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
+    finalCtaSub: '행사 일정과 공간을 알려주시면 프로그램안을 제안합니다.',
     primaryCta: {
-      label: '원데이 행사 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'program-oneday-inquiry',
-    },
-    secondaryCta: {
-      label: '기관 운영 상담',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'program-oneday-proposal',
+      label: '기관 행사 운영 문의',
+      href: dispatchInquiryHref({ program: 'oneday-event' }),
+      trackLabel: 'program-oneday-dispatch',
     },
   },
   camp: {
@@ -188,20 +186,14 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
       { title: '캠프 피드백', description: '하루 단위 목표와 회고를 포함합니다.', mediaKey: 'programPlay' },
     ],
     targets: ['방학 집중 프로그램', '키즈 복합공간', '기관·공간 연계 캠프'],
-    caseSlugs: ['playz-camp'],
     fieldRecordSlugs: ['dasarang-oneday', 'seodaemun-event-booth'],
     trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: '방학캠프 상담',
-    finalCtaSub: '운영 기간과 공간 조건에 맞춰 캠프안을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
+    finalCtaSub: '운영 기간과 공간 조건에 맞춰 캠프안을 제안합니다.',
     primaryCta: {
-      label: '방학캠프 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'program-camp-inquiry',
-    },
-    secondaryCta: {
-      label: '공간 제휴 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'program-camp-partnership',
+      label: '기관 캠프 운영 문의',
+      href: dispatchInquiryHref({ program: 'camp' }),
+      trackLabel: 'program-camp-dispatch',
     },
   },
 };
@@ -218,8 +210,13 @@ export function getProgramDetailMetadata(slug: ProgramDetailSlug) {
     title: item.title,
     description: item.listDescription,
     detailDescription: detail.heroSubtitle,
-    effects: item.effects,
-    category: item.category,
-    tracks: item.tracks,
   };
+}
+
+/** 상업 CTA가 서로 다른 route인지 (secondary가 있을 때) */
+export function programCommercialCtaRoutesDiffer(block: ProgramDetailBlock): boolean {
+  if (!block.secondaryCta) return true;
+  const primaryPath = block.primaryCta.href.split('?')[0] ?? '';
+  const secondaryPath = block.secondaryCta.href.split('?')[0] ?? '';
+  return primaryPath !== secondaryPath;
 }

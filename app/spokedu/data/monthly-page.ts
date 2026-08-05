@@ -1,3 +1,4 @@
+import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH } from './site';
 
@@ -10,7 +11,7 @@ export const monthlyPage = {
     mediaKey: 'proofClass' as HomeMediaKey,
     cta: {
       label: '월간 수업 문의하기',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      href: dispatchInquiryHref({ program: 'monthly-newsports' }),
       trackLabel: 'monthly-hero-inquiry',
     },
   },
@@ -104,7 +105,7 @@ export const monthlyPage = {
     description:
       '대상 연령, 운영 주기, 공간, 수업 목적을 확인한 뒤 월별 테마 흐름을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
     label: '기관 운영 상담',
-    href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+    href: dispatchInquiryHref({ program: 'monthly-newsports' }),
     trackLabel: 'monthly-dispatch-cta',
     mediaKey: 'trackDispatch' as HomeMediaKey,
   },

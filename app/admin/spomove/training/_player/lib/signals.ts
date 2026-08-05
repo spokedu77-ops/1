@@ -330,6 +330,7 @@ export type GenerateSignalOptions = {
   basicNumberOverlay?: 'none' | '2' | '3';
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  flankerExtremeMode?: 'theme' | 'arrow';
   /** flanker 5번: 기본 좌우 | 응용 상하좌우 */
   flankerArrowMode?: 'lr' | 'udlr';
   /** Simon pole placement only. basic level 1 renders a centered arrow and does not use this. */
@@ -340,6 +341,10 @@ export type GenerateSignalOptions = {
   handFootDifficulty?: 'easy' | 'normal' | 'hard';
   /** stroop 4단계: 단어+배경(기본) | 누락 색상 */
   stroopWordMode?: 'bg' | 'missing';
+  /** stroop 1번 색상화살표: 기본 | 배경 간섭 */
+  stroopArrowMode?: 'basic' | 'bg';
+  /** stroop 2번 단어: 기본 | 배경 간섭 */
+  stroopWordDifficulty?: 'basic' | 'bg';
 };
 
 export function generateSignal(
@@ -495,21 +500,24 @@ export function generateSignal(
         voice: null,
       };
     }
-    // level 7: 손 따로, 발 따로. 쉬움=발만, 보통=발+손, 어려움=발/손 합쳐 최대 2개.
+    // level 7: 손 따로, 발 따로. easy=1, normal=1/2, hard=1/2/3 by configured probabilities.
     if (level === 7) {
       const difficulty = opts?.handFootDifficulty ?? 'easy';
-      const count = difficulty === 'easy' && Math.random() < 0.5 ? 1 : 2;
-      const picked = pickN(activeColors.length >= count ? activeColors : COLORS, count) as ColorItem[];
-      const actions: BodyActionId[] =
+      const roll = Math.random();
+      const count =
         difficulty === 'easy'
-          ? count === 1
-            ? [randomFoot()]
-            : fisherYates<BodyActionId>(['rightFoot', 'leftFoot'])
+          ? 1
           : difficulty === 'normal'
-            ? fisherYates<BodyActionId>([randomFoot(), randomHand()])
-            : Math.random() < 0.5
-              ? fisherYates<BodyActionId>([randomFoot(), randomHand()])
-              : fisherYates<BodyActionId>([randomHand(), randomFoot()]);
+            ? (roll < 0.5 ? 1 : 2)
+            : (roll < 0.2 ? 1 : roll < 0.7 ? 2 : 3);
+      const picked = pickN(activeColors.length >= count ? activeColors : COLORS, count) as ColorItem[];
+      const actions: BodyActionId[] = (() => {
+        if (count === 1) return [randomFoot()];
+        if (count === 2) return fisherYates<BodyActionId>([randomFoot(), randomHand()]);
+        return Math.random() < 0.5
+          ? fisherYates<BodyActionId>(['rightFoot', 'leftFoot', randomSingleHand()])
+          : fisherYates<BodyActionId>([randomSingleFoot(), 'rightHand', 'leftHand']);
+      })();
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
@@ -600,9 +608,9 @@ export function generateSignal(
     const NEUTRAL_BG = '#000000';
 
     /** 1~4: 화살표 채움 — 신호마다 방향 말하기 vs 채움 색 말하기 무작위; 3·4는 역규칙(힌트 음성이 반대 차원) */
-    const pickArrowStroop = (bgHex: string, reverse: boolean) => {
+    const pickArrowStroop = (bgHex: string, reverse: boolean, forcedFill?: { name: string; hex: string }) => {
       const arrow = r(ARROWS);
-      const fill = r(stroopPool);
+      const fill = forcedFill ?? r(stroopPool);
       const taskDir = Math.random() < 0.5;
       const voice = !reverse
         ? taskDir
@@ -629,30 +637,30 @@ export function generateSignal(
       return (candidates.length ? r(candidates) : r(stroopPool)).hex;
     };
 
-    // 1~2: 화살표 스트룹/역스트룹 통합 (배경 검정 / 배경 간섭)
-    if (level === 1) return pickArrowStroop(NEUTRAL_BG, Math.random() < 0.5);
-    if (level === 2) {
-      const reverse = Math.random() < 0.5;
-      const fill = r(stroopPool);
-      const bgHex = pickBgNotFill(fill.hex);
-      const arrow = r(ARROWS);
-      const taskDir = Math.random() < 0.5;
-      const voice = !reverse ? (taskDir ? arrow.voice : fill.name) : (taskDir ? fill.name : arrow.voice);
-      return {
-        type: 'stroop_arrow',
-        bg: bgHex,
-        content: {
-          arrowId: arrow.id,
-          fillHex: fill.hex,
-          stroopArrowTask: taskDir ? ('direction' as const) : ('fill' as const),
-          stroopArrowReverse: reverse,
-        },
-        voice,
-      };
+    // 1: 색상화살표. 반응인지 색상화살표와 달리 화살표 색은 매 신호 랜덤이다.
+    if (level === 1) {
+      if (opts?.stroopArrowMode === 'bg') {
+        const fill = r(stroopPool);
+        return pickArrowStroop(pickBgNotFill(fill.hex), Math.random() < 0.5, fill);
+      }
+      return pickArrowStroop(NEUTRAL_BG, Math.random() < 0.5);
     }
 
-    // 3: 글자 스트룹/역스트룹 통합(배경 검정)
-    if (level === 3) {
+    // 2: 단어. 보통은 검정 배경, 어려움은 배경 간섭을 추가한다.
+    if (level === 2 || level === 3) {
+      if (level === 2 && opts?.stroopWordDifficulty === 'bg') {
+        for (let retry = 0; retry < 25; retry++) {
+          const [w, tc, bg] = triple(stroopPool);
+          if (tc.hex !== bg.hex && tc.hex !== w.hex && bg.hex !== w.hex) {
+            return {
+              type: 'stroop',
+              bg: bg.hex,
+              content: { word: w.name, textHex: tc.hex, stroopKind: 'bg_interference' as const },
+              voice: tc.name,
+            };
+          }
+        }
+      }
       const [w, tc] = pair(stroopPool);
       const sayMeaning = Math.random() < 0.5;
       const reverse = Math.random() < 0.5;
@@ -774,9 +782,19 @@ export function generateSignal(
       return packRow(maybeNumberCircles(circles));
     }
 
-    // 2: 랜덤 플랭커 (레거시 그룹형 2도 랜덤으로 통합)
+    // 2: 랜덤 자극 — 색상 기본, 선택 테마가 있으면 이미지 원 사용
     if (level === 2) {
+      const vSlides = (opts?.fruitSlides ?? []).filter((s) => (s.imageUrl ?? '').trim());
       const circles = Array.from({ length: 5 }, () => {
+        if (vSlides.length > 0) {
+          const slide = r(vSlides);
+          return {
+            id: slide.color.id,
+            bg: slide.color.bg,
+            text: slide.color.text,
+            imageUrl: slide.imageUrl,
+          };
+        }
         const c = r(activeColors);
         return { id: c.id, bg: c.bg, text: c.text };
       });
@@ -785,12 +803,44 @@ export function generateSignal(
 
     // 3: 5원 극단 크기
     if (level === 3) {
+      if (opts?.flankerExtremeMode === 'arrow') {
+        const pool = ARROWS;
+        const target = r(pool);
+        const distractors = pool.filter((a) => a.id !== target.id);
+        const shuffledDistractors = fisherYates([...distractors]);
+        let distractorCursor = 0;
+        const arrows = Array.from({ length: 5 }, (_, i) => {
+          if (i === 2) return target;
+          if (Math.random() < 0.2) return target;
+          const next = shuffledDistractors[distractorCursor % shuffledDistractors.length] ?? r(distractors);
+          distractorCursor += 1;
+          return next;
+        });
+        return {
+          type: 'flanker_arrows' as const,
+          bg: '#0F172A',
+          content: {
+            arrows: arrows.map((a) => ({ id: a.id, fillHex: '#FFFFFF' })),
+            centerIndex: 2,
+            targetArrowId: target.id,
+            flankerArrowMode: 'udlr',
+            fillHex: '#FFFFFF',
+            sizeMults: fisherYates([1.72, 1.28, 0.72, 0.44, 0.14]),
+          },
+          voice: null,
+        };
+      }
       const pool = activeColors.length >= 2 ? activeColors : COLORS;
       const maxPer = Math.max(2, Math.ceil(5 / Math.max(1, pool.length)));
       const colorSeq = generateColorsWithPerMax(pool, 5, maxPer);
-      const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
+      const vSlides = (opts?.fruitSlides ?? []).filter((s) => (s.imageUrl ?? '').trim());
+      const circles = colorSeq.map((c) => {
+        const slidePool = vSlides.filter((s) => s.color.id === c.id);
+        const slide = slidePool.length > 0 ? r(slidePool) : null;
+        return slide ? { id: c.id, bg: c.bg, text: c.text, imageUrl: slide.imageUrl } : { id: c.id, bg: c.bg, text: c.text };
+      });
       // 매우 큰 원 ↔ 매우 작은 원 — 크기 대비 극대화
-      const sizeMults = fisherYates([1.72, 1.28, 0.72, 0.22, 0.07]);
+      const sizeMults = fisherYates([1.72, 1.28, 0.72, 0.44, 0.14]);
       return packRow(maybeNumberCircles(circles), sizeMults);
     }
 
@@ -808,10 +858,10 @@ export function generateSignal(
       return packRow(circles, sizeMults, 'nestedCircles', circles.length - 1);
     }
 
-    // 5: 화살표 플랭커 — 옵션 기본(좌우) / 응용(상하좌우)
+    // 5: 화살표 플랭커 — 기본(좌우) / 응용(상하좌우)
     if (level === 5) {
-      const modeKey = 'udlr';
-      const pool = ARROWS;
+      const modeKey = opts?.flankerArrowMode === 'lr' ? 'lr' : 'udlr';
+      const pool = modeKey === 'lr' ? ARROWS.filter((a) => a.id === 'left' || a.id === 'right') : ARROWS;
       const target = r(pool);
       const distractors = pool.filter((a) => a.id !== target.id);
       const shuffledDistractors = fisherYates([...distractors]);
@@ -1019,7 +1069,7 @@ export function generateSignal(
 }
 
 /**
- * 사이먼 효과: 화면 좌·우·상·하 양극단을 번갈아 배치(도형 중심 좌표 0~1).
+ * 사이먼 이펙트: 화면 좌·우·상·하 양극단을 번갈아 배치(도형 중심 좌표 0~1).
  * 직교 방향은 안전 여백 안에서 무작위로 살짝 흔들어 매 신호 질감 유지.
  */
 export function pickSimonPolePosition(edge: number, margin = 0.125): { posX: number; posY: number } {
@@ -1060,9 +1110,9 @@ export function buildPoleArrowSignal(
   };
 }
 
-/** 사이먼 전용: 1번=도형+색 / 2번=↑↓←→ 화살표+방향 / 3번=믹스 갤러리(전체 변형 색상 이미지)+색
+/** 사이먼 전용: 1번=↑↓←→ 화살표+방향 / 2번=도형+색 / 4번=랜덤 테마(전체 변형 색상 이미지)+색
  * · 색(또는 방향) 중복 규칙 + 좌→우→상→하 극단 순환
- * · poleCount=2(응용): 극단 2개 동시 · 쌍 내 동일 답 비율 <10%
+ * · poleCount=2(어려움): 극단 2개 동시 · 쌍 내 동일 답 비율 <10%
  */
 export function createSimonSignalGenerator(
   level: number,
@@ -1072,7 +1122,7 @@ export function createSimonSignalGenerator(
 ) {
   const activeColors = colors.length >= 2 ? colors : COLORS;
   const effectivePoleCount: 1 | 2 =
-    (level === 1 || level === 2) && poleCount === 2 ? 2 : 1;
+    (level === 1 || level === 2 || level === 4) && poleCount === 2 ? 2 : 1;
   let edgeIdx = 0;
   const readSlides = (): FruitSlide[] | undefined => {
     const slides = typeof fruitSlides === 'function' ? fruitSlides() : fruitSlides;
@@ -1109,9 +1159,8 @@ export function createSimonSignalGenerator(
 
   const pickTwoEdges = (): [number, number] => {
     const a = Math.floor(Math.random() * 4);
-    let b = Math.floor(Math.random() * 3);
-    if (b >= a) b += 1;
-    return [a, b % 4];
+    const opposite = [1, 0, 3, 2] as const;
+    return [a, opposite[a]];
   };
 
   /** 응용(2개) 쌍 내 동일 답 확률 — 10% 미만 */
@@ -1124,6 +1173,30 @@ export function createSimonSignalGenerator(
     return [first, others.length > 0 ? r(others) : first];
   };
 
+  const pickThemedItems = (edges: number[]): ShapeItem[] => {
+    let c = r(activeColors);
+    const pool = uniqueSlidesByImageUrl((readSlides() ?? []).filter((s) => (s.imageUrl ?? '').trim()));
+    if (pool.length >= edges.length) {
+      const shuffled = [...pool];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+      }
+      return edges.map((edge, idx) => {
+        const slide = shuffled[idx]!;
+        return buildShapeItem(edge, slide.color, slide.imageUrl);
+      });
+    }
+    return edges.map((edge) => {
+      c = r(activeColors);
+      return buildShapeItem(edge, c, null);
+    });
+  };
+
+  const pickThemedItem = (edge: number): ShapeItem => {
+    return pickThemedItems([edge])[0]!;
+  };
+
   const pickPairArrows = (): [(typeof ARROWS)[number], (typeof ARROWS)[number]] => {
     const first = r(ARROWS);
     if (Math.random() < PAIR_DUP_CHANCE) return [first, first];
@@ -1133,11 +1206,13 @@ export function createSimonSignalGenerator(
 
   return createColorDupConstrainedGenerator(
     () => {
-      if (level === 1 || level === 3) {
-        if (effectivePoleCount === 2 && level === 1) {
+      if (level === 2 || level === 4) {
+        if (effectivePoleCount === 2) {
           const [e0, e1] = pickTwoEdges();
           const [c0, c1] = pickPairColors();
-          const items = [buildShapeItem(e0, c0, null), buildShapeItem(e1, c1, null)];
+          const items = level === 4
+            ? pickThemedItems([e0, e1])
+            : [buildShapeItem(e0, c0, null), buildShapeItem(e1, c1, null)];
           return {
             type: 'simon_shape',
             bg: '#0F172A',
@@ -1149,18 +1224,17 @@ export function createSimonSignalGenerator(
           };
         }
 
-        let c = r(activeColors);
-        let imageUrl: string | null = null;
-        if (level === 3) {
-          const vSlides = readSlides() ?? [];
-          const themed =
-            vSlides.length > 0 ? r(vSlides.filter((s) => (s.imageUrl ?? '').trim())) : null;
-          if (themed) {
-            c = themed.color;
-            imageUrl = themed.imageUrl;
-          }
+        if (level === 4) {
+          const item = pickThemedItem(edgeIdx % 4);
+          return {
+            type: 'simon_shape',
+            bg: '#0F172A',
+            content: item,
+            voice: null,
+          };
         }
-        const item = buildShapeItem(edgeIdx % 4, c, imageUrl);
+        const c = r(activeColors);
+        const item = buildShapeItem(edgeIdx % 4, c, null);
         return {
           type: 'simon_shape',
           bg: '#0F172A',
@@ -1168,7 +1242,7 @@ export function createSimonSignalGenerator(
           voice: null,
         };
       }
-      if (level === 2) {
+      if (level === 1) {
         if (effectivePoleCount === 2) {
           const [e0, e1] = pickTwoEdges();
           const [a0, a1] = pickPairArrows();

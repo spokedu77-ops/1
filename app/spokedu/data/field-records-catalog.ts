@@ -51,6 +51,20 @@ export type FieldRecordVenueType =
   | '보건소'
   | '찾아가는 수업';
 
+export type FieldRecordProveClaim =
+  | '기관 정규 운영'
+  | '에듀테크 운영'
+  | 'PAPS·체력'
+  | '원데이·행사'
+  | '특수체육'
+  | '학교·늘봄'
+  | '보건·복지 연계'
+  | '주민·통합';
+
+export type FieldRecordRelevantRoute = 'dispatch' | 'private' | 'curriculum';
+
+export type FieldRecordEvidenceStrength = 'primary' | 'supporting';
+
 export type FieldRecordCatalogItem = {
   slug: FieldRecordSlug;
   /** 홈 카드 상단 프로그램 라벨 */
@@ -69,6 +83,12 @@ export type FieldRecordCatalogItem = {
   recordsTrackLabel: string;
   homeTrackLabel: string;
   filters: readonly RecordFilterId[];
+  /** 이 사례가 증명하는 상업 주장 */
+  proves: readonly FieldRecordProveClaim[];
+  /** 연결 가능한 상업 route */
+  relevantRoutes: readonly FieldRecordRelevantRoute[];
+  /** 해당 주장에 대한 증거 강도 */
+  strength: FieldRecordEvidenceStrength;
   blogImageIndex?: number;
   thumbnailSrc?: string;
   /** 온사이트 요약이 있을 때 후기 원문(네이버 블로그) */
@@ -114,6 +134,9 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-dongjak-spomove',
     homeTrackLabel: 'cta-home-proof-dongjak',
     filters: ['regular', 'edtech'],
+    proves: ['기관 정규 운영', '에듀테크 운영'],
+    relevantRoutes: ['dispatch', 'curriculum'],
+    strength: 'primary',
     thumbnailSrc: recordsThumb('dongjak-spomove', 'jpg'),
     onsite: {
       purpose: '스크린 신호를 보고 판단·반응하며 움직이는 SPOMOVE 놀이체육으로 거점센터 정규 참여를 안정화',
@@ -143,6 +166,9 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-yangcheon-paps',
     homeTrackLabel: 'cta-home-proof-yangcheon-paps',
     filters: ['regular'],
+    proves: ['기관 정규 운영', 'PAPS·체력'],
+    relevantRoutes: ['dispatch'],
+    strength: 'primary',
     thumbnailSrc: recordsThumb('yangcheon-paps', 'jpg'),
     onsite: {
       purpose: 'PAPS 체력 요소를 놀이체육으로 경험하게 해 저학년 정규 수업의 참여·성취 흐름을 만들기',
@@ -171,6 +197,9 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-maedong-sports-blog',
     homeTrackLabel: 'cta-home-proof-maedong-blog',
     filters: ['regular'],
+    proves: ['학교·늘봄', '기관 정규 운영'],
+    relevantRoutes: ['dispatch'],
+    strength: 'supporting',
     thumbnailSrc: recordsThumb('maedong-sports-stepup', 'jpg'),
   },
   {
@@ -189,6 +218,9 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-dasarang',
     homeTrackLabel: 'cta-home-proof-dasarang',
     filters: ['oneday', 'edtech'],
+    proves: ['원데이·행사', '에듀테크 운영'],
+    relevantRoutes: ['dispatch'],
+    strength: 'primary',
     thumbnailSrc: recordsThumb('dasarang-oneday-field', 'jpg'),
     onsite: {
       purpose: '하루 일정 안에서 학년 혼합 아동이 안전하게 순환하며 협동·기능 체육을 경험하게 만들기',
@@ -218,6 +250,9 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-seodaemun',
     homeTrackLabel: 'cta-home-proof-seodaemun',
     filters: ['oneday', 'edtech'],
+    proves: ['원데이·행사', '에듀테크 운영'],
+    relevantRoutes: ['dispatch'],
+    strength: 'primary',
     thumbnailSrc: recordsThumb('seodaemun-event-booth', 'jpg'),
     onsite: {
       purpose: '공공·문화 행사에서 처음 참여하는 아이·가족도 짧은 시간에 체험을 완료하게 만들기',
@@ -246,6 +281,9 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-donghaeng-special-blog',
     homeTrackLabel: 'cta-home-proof-donghaeng-blog',
     filters: ['regular'],
+    proves: ['특수체육', '기관 정규 운영'],
+    relevantRoutes: ['dispatch'],
+    strength: 'supporting',
     thumbnailSrc: recordsThumb('donghaeng-special-pe-field', 'jpg'),
   },
   {
@@ -263,6 +301,9 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-gangdong-health-blog',
     homeTrackLabel: 'cta-home-proof-gangdong-blog',
     filters: ['regular'],
+    proves: ['보건·복지 연계', '기관 정규 운영'],
+    relevantRoutes: ['dispatch'],
+    strength: 'supporting',
     thumbnailSrc: recordsThumb('gangdong-health-pe', 'jpg'),
   },
   {
@@ -280,6 +321,9 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-shinwol-integrated-blog',
     homeTrackLabel: 'cta-home-proof-shinwol-blog',
     filters: ['oneday'],
+    proves: ['주민·통합', '원데이·행사'],
+    relevantRoutes: ['dispatch'],
+    strength: 'supporting',
     thumbnailSrc: recordsThumb('shinwol-integrated-pe', 'jpg'),
   },
 ] as const;

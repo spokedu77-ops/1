@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { HomeMediaItem } from '../data/home-media';
+import { trackCommercialEvent } from '../lib/commercial-events';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   homeBandSoftBlue,
@@ -41,6 +42,13 @@ function resolveLinkClass(link: LandingFinalCtaLink, index: number) {
   return isPrimary ? `${siteBtnPrimary} w-full` : `${siteBtnSecondary} w-full`;
 }
 
+function inferCommercialRoute(href: string): 'private' | 'curriculum' | 'dispatch' | null {
+  if (href.includes('/private')) return 'private';
+  if (href.includes('/curriculum')) return 'curriculum';
+  if (href.includes('/dispatch')) return 'dispatch';
+  return null;
+}
+
 /**
  * 서브 랜딩 하단 CTA
  * - 남색 풀밴드 대신 soft-blue 밴드 + 화이트 카드
@@ -55,7 +63,10 @@ export function LandingFinalCta({
   eyebrow = '상담',
 }: LandingFinalCtaProps) {
   return (
-    <section className={`relative w-full overflow-hidden ${homeBandSoftBlue} py-10 sm:py-12 lg:py-14`} aria-labelledby="landing-final-cta-title">
+    <section
+      className={`relative w-full overflow-hidden ${homeBandSoftBlue} py-10 sm:py-12 lg:py-14`}
+      aria-labelledby="landing-final-cta-title"
+    >
       <div className={siteContainer}>
         <div className="relative overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white shadow-[0_18px_50px_rgba(15,33,70,0.07)]">
           <div className="h-1.5 w-full bg-[#0B1F46]" aria-hidden />
@@ -82,17 +93,28 @@ export function LandingFinalCta({
                   />
                 </div>
               ) : null}
-              {links.map((link, index) => (
-                <Link
-                  key={`${link.href}-${link.trackLabel}`}
-                  href={link.href}
-                  data-track={inferTrackFromHref(link.href)}
-                  data-track-label={link.trackLabel}
-                  className={`${resolveLinkClass(link, index)} ${homeFocusRing}`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {links.map((link, index) => {
+                const route = inferCommercialRoute(link.href);
+                return (
+                  <Link
+                    key={`${link.href}-${link.trackLabel}`}
+                    href={link.href}
+                    data-track={inferTrackFromHref(link.href)}
+                    data-track-label={link.trackLabel}
+                    className={`${resolveLinkClass(link, index)} ${homeFocusRing}`}
+                    onClick={() => {
+                      if (!route) return;
+                      trackCommercialEvent({
+                        name: 'primary_cta_clicked',
+                        route,
+                        ctaIntentId: link.trackLabel,
+                      });
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>

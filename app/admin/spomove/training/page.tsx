@@ -153,21 +153,25 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Variant Color 2/3': '3분할 자극',
   'Variant 3': '랜덤분할 자극',
   'Spatial Orientation': '공간방향 자극',
-  'Spatial Orientation (Color)': '공간방향 자극',
-  'Arrow Stroop / Reverse': '공간 방향 · 색상',
-  'Arrow + BG Interference': '화살표 + 배경 간섭',
-  'Word Stroop / Reverse': '단어 스트룹/역스트룹',
+  'Spatial Orientation (Color)': '색상화살표',
+  'Color Arrow': '색상화살표',
+  'Arrow Stroop / Reverse': '색상화살표',
+  'Arrow + BG Interference': '(보류) 화살표 배경간섭',
+  'Word': '단어',
+  'Word Stroop / Reverse': '단어',
   'Word + BG': '단어 + 배경',
   'Missing Color': '누락 색상 찾기',
   'Pole Shape': '폴 도형',
   'Pole Arrows': '폴 화살표',
   'Uniform Flankers': '동일 플랭커',
-  'Random Flankers': '랜덤 플랭커',
-  'Nested Circles': '원 속의 원',
-  'Arrow Flanker': '화살표 플랭커',
+  'Random Flankers': '랜덤 자극',
+  '(On Hold) Nested Circles': '(보류) 원 속의 원',
+  'Nested Circles': '(보류) 원 속의 원',
+  'Arrow Flanker': '화살표',
   'Theme Flanker': '테마 플랭커',
   'Mixed Size & Color': '크기/색 혼합',
-  '5-Circle Extreme Sizes': '5원 극단 크기',
+  'Extreme': '극단',
+  '5-Circle Extreme Sizes': '극단',
   'Go / No-Go (Color)': '색상 고/노고',
   'Go / No-Go (Shape)': '도형 고/노고',
   'Go / No-Go (Action)': '동작 고/노고',
@@ -175,15 +179,15 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Task Switching (Text Cues)': '텍스트 큐 전환',
   'Task Switching (Icon Cues)': '아이콘 큐 전환',
   'Task Switching (Border Cues)': '테두리 큐 전환',
-  '3항 기억': '색 순서 기억',
-  '5항 기억': '색 순서 기억',
-  '10항 기억': '색 순서 기억',
+  '3항 기억': '순서 기억',
+  '5항 기억': '순서 기억',
+  '10항 기억': '순서 기억',
   '색깔-번호 기억': '색·번호 기억',
   '색깔-번호 전체 공개': '색·번호 기억',
-  '3-Color Sequence': '색 순서 기억',
-  '5-Color Sequence': '색 순서 기억',
-  '10-Color Sequence': '색 순서 기억',
-  'Color Sequence': '색 순서 기억',
+  '3-Color Sequence': '순서 기억',
+  '5-Color Sequence': '순서 기억',
+  '10-Color Sequence': '순서 기억',
+  'Color Sequence': '순서 기억',
   'Color-Number Quiz': '색·번호 기억',
   'Color-Number Full Board': '색·번호 기억',
   'Color-Number': '색·번호 기억',
@@ -292,8 +296,11 @@ type LaunchSettings = {
   spatialArrowColorMode: 'basic' | 'color';
   flankerStimulusType: 'color' | 'number';
   flankerNestedCircleCount: 3 | 5;
+  flankerExtremeMode: 'theme' | 'arrow';
   flankerArrowMode: 'lr' | 'udlr';
   stroopWordMode: 'bg' | 'missing';
+  stroopArrowMode: 'basic' | 'bg';
+  stroopWordDifficulty: 'basic' | 'bg';
   flowFeatures: FlowFeatureKey[];
   diveEnvironmentTheme: DiveThemeId;
   flowDuration: number;
@@ -344,8 +351,11 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   spatialArrowColorMode: 'basic',
   flankerStimulusType: 'color',
   flankerNestedCircleCount: 5,
+  flankerExtremeMode: 'theme',
   flankerArrowMode: 'udlr',
   stroopWordMode: 'bg',
+  stroopArrowMode: 'basic',
+  stroopWordDifficulty: 'basic',
   flowFeatures: [],
   diveEnvironmentTheme: 'space',
   flowDuration: 25,
@@ -383,8 +393,11 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     spatialArrowColorMode: auto.spatialArrowColorMode === 'color' ? 'color' : fallback.spatialArrowColorMode,
     flankerStimulusType: auto.flankerStimulusType ?? fallback.flankerStimulusType,
     flankerNestedCircleCount: auto.flankerNestedCircleCount === 3 ? 3 : (fallback.flankerNestedCircleCount ?? 5),
-    flankerArrowMode: 'udlr',
+    flankerExtremeMode: auto.flankerExtremeMode === 'arrow' ? 'arrow' : (fallback.flankerExtremeMode ?? 'theme'),
+    flankerArrowMode: auto.flankerArrowMode ?? fallback.flankerArrowMode,
     stroopWordMode: auto.stroopWordMode === 'missing' ? 'missing' : (fallback.stroopWordMode ?? 'bg'),
+    stroopArrowMode: auto.stroopArrowMode === 'bg' ? 'bg' : (fallback.stroopArrowMode ?? 'basic'),
+    stroopWordDifficulty: auto.stroopWordDifficulty === 'bg' ? 'bg' : (fallback.stroopWordDifficulty ?? 'basic'),
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
     diveEnvironmentTheme: normalizeDiveThemeId(auto.diveEnvironmentTheme ?? fallback.diveEnvironmentTheme),
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
@@ -434,6 +447,10 @@ function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchS
   }
 
   if (modeId === 'flanker' && (levelId === 4 || levelId === 5 || levelId === 6) && launch.flankerStimulusType !== 'color') {
+    return { ...launch, flankerStimulusType: 'color' };
+  }
+
+  if (modeId === 'flanker' && levelId === 1 && launch.flankerStimulusType !== 'color') {
     return { ...launch, flankerStimulusType: 'color' };
   }
 
@@ -504,8 +521,11 @@ function TrainingPortal({
     spatialArrowColorMode: launch.spatialArrowColorMode,
     flankerStimulusType: launch.flankerStimulusType,
     flankerNestedCircleCount: launch.flankerNestedCircleCount,
+    flankerExtremeMode: launch.flankerExtremeMode,
     flankerArrowMode: launch.flankerArrowMode,
     stroopWordMode: launch.stroopWordMode,
+    stroopArrowMode: launch.stroopArrowMode,
+    stroopWordDifficulty: launch.stroopWordDifficulty,
     flowFeatures: launch.flowFeatures,
     diveEnvironmentTheme: launch.diveEnvironmentTheme,
     flowDuration: launch.flowDuration,
@@ -534,7 +554,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -1089,7 +1109,7 @@ function SettingsScreen({
           </section>
 
           {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}
-          {modeId === 'flanker' && levelId !== 5 && levelId !== 6 ? (
+          {modeId === 'flanker' && levelId !== 1 && levelId !== 2 && levelId !== 3 && levelId !== 5 && levelId !== 6 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>시작 옵션</label>
@@ -1170,18 +1190,60 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {false && modeId === 'flanker' && levelId === 5 ? (
+          {modeId === 'flanker' && levelId === 3 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>5단계 옵션</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  가운데 화살표 방향만 보고 이동합니다. 기본은 좌·우, 응용은 상·하·좌·우입니다.
+                  보통은 7개 테마의 극단 크기 원, 어려움은 상하좌우 화살표 방해 자극입니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 'lr' as const, label: '기본', sub: '좌우만' },
-                  { id: 'udlr' as const, label: '응용', sub: '상하좌우' },
+                  { id: 'theme' as const, label: '보통', sub: '7개 테마' },
+                  { id: 'arrow' as const, label: '어려움', sub: '화살표' },
+                ]).map((opt) => {
+                  const active = launch.flankerExtremeMode === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, flankerExtremeMode: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 14,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ marginTop: 4, fontSize: 11, fontWeight: 700, opacity: 0.85 }}>{opt.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {modeId === 'flanker' && levelId === 1 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  가운데 화살표 방향만 보고 이동합니다. 보통은 좌우, 어려움은 상하좌우입니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 'lr' as const, label: '보통', sub: '좌우 화살표' },
+                  { id: 'udlr' as const, label: '어려움', sub: '상하좌우 화살표' },
                 ]).map((opt) => {
                   const active = launch.flankerArrowMode === opt.id;
                   return (
@@ -1212,17 +1274,17 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 플랭커 6번 · 이미지 테마 (연상 색지각과 동일 7종) */}
-          {modeId === 'flanker' && levelId === 6 ? (
+          {/* 플랭커 랜덤 자극/테마 · 이미지 테마 (연상 색지각과 동일 7종) */}
+          {modeId === 'flanker' && (levelId === 2 || levelId === 6 || (levelId === 3 && launch.flankerExtremeMode !== 'arrow')) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>이미지 테마</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>연상 색지각 이미지 테마</label>
                 <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
                   {SPOMOVE_COLOR_THEME_LABELS[launch.variantColorTheme as SpomoveColorThemeId]}
                 </div>
               </div>
               <p style={{ margin: '0 0 10px', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
-                연상 색지각과 동일한 7가지입니다. 선택한 테마 이미지가 다섯 원 안에 나오고, 가운데 원 색으로 반응합니다. 「색상」은 이미지 없이 원만 사용합니다.
+                연상 색지각과 동일한 7가지입니다. 색상이 기본값이며, 선택한 테마 이미지가 다섯 원 안에 나오고 가운데 원 색으로 반응합니다. 믹스는 색상을 제외한 5개 이미지 테마를 섞습니다.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {SPOMOVE_COLOR_THEME_ORDER.map((tid) => {
@@ -1784,19 +1846,19 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 사이먼 폴 도형(1)·화살표(2): 기본 1개 / 응용 2개 */}
-          {isSimon && (levelId === 1 || levelId === 2) ? (
+          {/* 사이먼: 보통 1개 / 어려움 2개 */}
+          {isSimon ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  기본은 극단에 {levelId === 1 ? '도형' : '화살표'} 1개, 응용은 서로 다른 극단 2곳에 동시에 뜹니다. 같은 답 쌍은 10% 미만입니다.
+                  보통은 자극 1개, 어려움은 서로 다른 극단 2곳에 동시에 뜹니다. 같은 답 쌍은 10% 미만입니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 1 as const, label: '기본', sub: '1개' },
-                  { id: 2 as const, label: '응용', sub: '2개' },
+                  { id: 1 as const, label: '보통', sub: '1개' },
+                  { id: 2 as const, label: '어려움', sub: '2개' },
                 ]).map((opt) => {
                   const active = launch.simonPoleCount === opt.id;
                   return (
@@ -1829,8 +1891,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (DIVE·매직 아이·흰 공·순차기억 1·2번은 내부 타이밍) */}
-          {!isFlowOrChallenge && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSimon && levelId === 4) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {/* 속도 (DIVE·흰 공·순차기억 1·2번은 내부 타이밍) */}
+          {!isFlowOrChallenge && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -1854,17 +1916,17 @@ function SettingsScreen({
             <>
               <section style={{ marginBottom: 22 }}>
                 <div style={{ marginBottom: 8 }}>
-                  <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>항 수</label>
+                  <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                   <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                    3·5개는 고정 항 수입니다. 「추가」는 5라운드 동안 3→7개로 늘어납니다.
+                    쉬움은 3개, 보통은 5개, 어려움은 라운드마다 항목이 추가됩니다.
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {([
-                    { id: 3 as const, label: '3개' },
-                    { id: 5 as const, label: '5개' },
-                    { id: 'ramp' as const, label: '추가' },
-                  ] satisfies { id: ColorSequenceOption; label: string }[]).map((opt) => {
+                    { id: 3 as const, label: '쉬움', detail: '3개' },
+                    { id: 5 as const, label: '보통', detail: '5개' },
+                    { id: 'ramp' as const, label: '어려움', detail: '추가' },
+                  ] satisfies { id: ColorSequenceOption; label: string; detail: string }[]).map((opt) => {
                     const active = colorSequenceOption(levelId) === opt.id;
                     return (
                       <button
@@ -1885,7 +1947,8 @@ function SettingsScreen({
                           textAlign: 'center',
                         }}
                       >
-                        {opt.label}
+                        <span style={{ display: 'block' }}>{opt.label}</span>
+                        <span style={{ display: 'block', marginTop: 3, fontSize: 11, color: active ? accent : T.muted, fontWeight: 800 }}>{opt.detail}</span>
                       </button>
                     );
                   })}
@@ -2358,6 +2421,90 @@ function SettingsScreen({
             </section>
           ) : null}
 
+          {modeId === 'stroop' && levelId === 1 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  보통은 검정 배경의 색상화살표, 어려움은 화살표 색과 다른 배경 간섭이 추가됩니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 'basic' as const, label: '보통', sub: '기본' },
+                  { id: 'bg' as const, label: '어려움', sub: '배경 간섭' },
+                ]).map((opt) => {
+                  const active = launch.stroopArrowMode === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, stroopArrowMode: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 14,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ marginTop: 4, fontSize: 11, fontWeight: 700, opacity: 0.85 }}>{opt.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {modeId === 'stroop' && levelId === 2 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  보통은 검정 배경의 단어, 어려움은 단어 색과 다른 배경 간섭이 추가됩니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 'basic' as const, label: '보통', sub: '기본' },
+                  { id: 'bg' as const, label: '어려움', sub: '배경 간섭' },
+                ]).map((opt) => {
+                  const active = launch.stroopWordDifficulty === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, stroopWordDifficulty: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 14,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ marginTop: 4, fontSize: 11, fontWeight: 700, opacity: 0.85 }}>{opt.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
           {/* 스트룹 4단계: 기본(단어+배경) / 누락 */}
           {modeId === 'stroop' && (levelId === 4 || levelId === 5) ? (
             <section style={{ marginBottom: 22 }}>
@@ -2420,11 +2567,11 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 사이먼 3번 · 믹스 갤러리 */}
-          {modeId === 'simon' && levelId === 3 ? (
+          {/* 사이먼 4번 · 랜덤 테마 */}
+          {modeId === 'simon' && levelId === 4 ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>믹스 갤러리</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>랜덤 테마</label>
               </div>
               <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
                 Asset Hub에 업로드된 <strong style={{ color: T.text }}>과일·동물·음식·자연·탈 것</strong> 이미지가 전부 섞여 나옵니다. 테마를 따로 고를 필요는 없습니다.
