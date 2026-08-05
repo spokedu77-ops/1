@@ -255,7 +255,7 @@ export async function POST(request: Request) {
   try {
     const supabase = getServiceSupabase();
     const equipment = splitLines(isString(body.equipment) ? body.equipment : '');
-    const steps = splitLines(isString(body.steps) ? body.steps : '');
+    const steps = splitIndentedLines(isString(body.steps) ? body.steps : '');
     const videoUrl = normalizeVideoUrl(isString(body.videoUrl) ? body.videoUrl : null);
 
     const { data: orderRows, error: orderErr } = await supabase

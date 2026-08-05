@@ -70,7 +70,7 @@ function validOverlay(overrides: Record<string, unknown> = {}) {
     title: 'Balance Game',
     source_center_curriculum_id: 101,
     video_url: 'not-a-video-url',
-    activity_method: 'Step one\nStep one\nStep two',
+    activity_method: 'Step one\nStep one\n Step two',
     equipment: null,
     updated_at: '2026-06-26T00:00:00.000Z',
     is_published: true,
@@ -209,7 +209,7 @@ describe('SPOKEDU MASTER program GET validation', () => {
       title: 'Second program',
       homeSortOrder: 10,
     }));
-    expect(result.body.data[0].steps).toEqual(['Step one', 'Step two']);
+    expect(result.body.data[0].steps).toEqual(['Step one', ' Step two']);
     expect(result.body.data[0].lessonDetail.relatedSpomoveIds).toEqual([]);
     expect(result.body.data[0].lessonDetail.galleryImageUrls).toEqual(['https://example.com/gallery.jpg']);
     expect(result.body.data[0].thumbnailUrl).toBe('https://example.com/hero.jpg');

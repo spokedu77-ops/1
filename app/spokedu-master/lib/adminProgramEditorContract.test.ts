@@ -70,6 +70,27 @@ describe('admin program editor contract', () => {
     expect(payload.overlay).not.toHaveProperty('checklist');
   });
 
+  it('preserves leading spaces in activity method lines for nested bullets', () => {
+    const payload = buildAdminProgramSavePayload({
+      title: 'Title',
+      fallbackTitle: 'fallback',
+      videoUrl: '',
+      equipment: 'Cone',
+      activityMethod: 'Parent line\n Child line\n  Grandchild line  ',
+      publicationStatus: 'ready',
+      theme: '',
+      target: '',
+      tags: [],
+      space: '',
+      setupImageUrl: '',
+      coachScript: '',
+      briefingNotes: '',
+      variationMethod: '',
+    });
+
+    expect(payload.overlay.activity_method).toBe('Parent line\n Child line\n  Grandchild line');
+  });
+
   it('reports a partial save after a later stage fails', () => {
     expect(buildAdminProgramSaveFailure({
       overlaySaved: true,

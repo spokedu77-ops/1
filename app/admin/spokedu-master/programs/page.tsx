@@ -273,6 +273,29 @@ function splitIndentedLines(value: string) {
     .filter((item) => item.trim());
 }
 
+function AdminActivityMethodList({ items }: { items: string[] }) {
+  const visibleItems = items.length > 0 ? items : ['미입력'];
+  return (
+    <ul className="mt-1 space-y-1 font-semibold text-slate-600">
+      {visibleItems.map((step, index) => {
+        const nested = /^\s/.test(step);
+        const text = step.trim();
+        return (
+          <li key={`${text}-${index}`} className={`flex items-start gap-2 leading-5 ${nested ? 'ml-5' : ''}`}>
+            <span
+              aria-hidden
+              className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${
+                nested ? 'border border-slate-500 bg-white' : 'bg-slate-950'
+              }`}
+            />
+            <span className="min-w-0">{text}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function joinLines(value: string[] | null | undefined) {
   return (value ?? []).filter(Boolean).join('\n');
 }
@@ -2173,7 +2196,7 @@ function QualityFlags({ report }: { report: QualityReport }) {
 function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
   const title = form.title.trim() || item.curriculum.title;
   const equipment = splitLines(form.equipment).slice(0, 4);
-  const steps = splitLines(form.steps).slice(0, 4);
+  const steps = splitIndentedLines(form.steps).slice(0, 4);
   const functionLabel = mergeStrengthBodyFunctions(selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction)).join(', ');
 
   return (
@@ -2194,9 +2217,7 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
       </div>
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12px] sm:col-span-2">
         <p className="font-black text-slate-900">활동 방법</p>
-        <ol className="mt-1 list-decimal space-y-1 pl-4 font-semibold text-slate-600">
-          {(steps.length ? steps : ['미입력']).map((step) => <li key={step}>{step}</li>)}
-        </ol>
+        <AdminActivityMethodList items={steps} />
       </div>
     </div>
   );
