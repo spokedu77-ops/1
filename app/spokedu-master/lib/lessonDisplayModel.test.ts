@@ -59,6 +59,18 @@ describe('lessonDisplayModel', () => {
     expect(model.quality.status).not.toBe('READY');
   });
 
+  it('preserves leading indentation for activity method nesting', () => {
+    const model = buildLessonDisplayModel(program({
+      steps: ['Parent step', ' Child step'],
+      lessonDetail: {
+        ...program().lessonDetail!,
+        rules: ['Parent rule', ' Child rule'],
+      },
+    }));
+
+    expect(model.activityMethod).toEqual(['Parent rule', ' Child rule']);
+  });
+
   it('keeps public tags verbatim while excluding internal structure tags', () => {
     expect(buildLessonDisplayModel(program()).tags).toEqual(['교실 체육', '미취학']);
     expect(getPublicLessonTags(['  협동  ', '협동', '인원:12명'])).toEqual(['협동']);

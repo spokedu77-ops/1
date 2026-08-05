@@ -12,7 +12,7 @@ import { getVideoThumbnailCandidates } from '../lib/program-media';
 import type { SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 import { publicOfficialPresetSessionHref } from './officialSpomovePresets';
-import { buildSpomoveGuideDisplayModel, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
+import { buildSpomoveGuideDisplayModel, resolveSpomovePresetDisplayTitle } from './spomovePresetDisplayModel';
 import type { SpomoveHubViewMode } from './spomoveHubNavigation';
 import { getActivityFamily } from './movements/activityFamilies';
 import { resolveSessionCueSeconds } from './spomoveCueSpeed';
@@ -331,7 +331,7 @@ export function SpomoveGuidelineSheet({
 
   if (!preset) return null;
 
-  const display = getSpomovePresetDisplayModel(preset);
+  const displayTitle = resolveSpomovePresetDisplayTitle(preset, contentOverride);
 
   const family = preset.activityFamilyId ? getActivityFamily(preset.activityFamilyId) : null;
   const operationProfileId = preset.operationProfileId ?? family?.operationProfileId;
@@ -371,7 +371,7 @@ export function SpomoveGuidelineSheet({
   });
 
   return (
-    <BottomSheet open title={display.displayTitle} onClose={onClose} size="preview">
+    <BottomSheet open title={displayTitle} onClose={onClose} size="preview">
       <div className="flex flex-col gap-3" data-spm-spomove-launch-confirm="">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.62fr)_minmax(320px,0.88fr)] lg:items-stretch">
           <div data-preview-column="media" className="min-w-0 lg:flex">

@@ -95,7 +95,12 @@ function normalizeSpomoveIds(ids: string[]): string[] {
 
 function hasBrokenText(value: string | null | undefined) {
   if (!value) return false;
-  return value.includes(String.fromCharCode(0xfffd)) || /怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|諛|湲|由|誘/.test(value);
+  const mojibakeCodePoints = [
+    0x6028, 0x8adb, 0xf9de, 0x5a9b, 0x8e42, 0x936e,
+    0x6e72, 0x91ab, 0x5ac4, 0x73e5, 0x7531, 0x8a98,
+  ];
+  return value.includes(String.fromCharCode(0xfffd)) ||
+    mojibakeCodePoints.some((codePoint) => value.includes(String.fromCharCode(codePoint)));
 }
 
 function cleanText(value: string | null | undefined, fallback: string) {
@@ -106,6 +111,15 @@ function cleanText(value: string | null | undefined, fallback: string) {
 
 function cleanList(items: string[] | null | undefined, fallback: string[]) {
   const cleaned = [...new Set((items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item)))];
+  return cleaned.length > 0 ? cleaned : fallback;
+}
+
+function cleanIndentedList(items: string[] | null | undefined, fallback: string[]) {
+  const cleaned = [...new Set(
+    (items ?? [])
+      .map((item) => item.replace(/\s+$/g, ''))
+      .filter((item) => item.trim() && !hasBrokenText(item.trim())),
+  )];
   return cleaned.length > 0 ? cleaned : fallback;
 }
 
@@ -139,7 +153,7 @@ function normalizeProgramForMaster(program: Program): Program {
           variations: cleanList(program.lessonDetail.variations, []),
           safetyNotes: cleanList(program.lessonDetail.safetyNotes, []),
           briefingNotes: cleanList(program.lessonDetail.briefingNotes ?? [], []),
-          rules: cleanList(program.lessonDetail.rules ?? [], []),
+          rules: cleanIndentedList(program.lessonDetail.rules ?? [], []),
           setupNotes: cleanList(program.lessonDetail.setupNotes ?? [], []),
           relatedSpomoveIds,
           videoUrl: normalizeVideoUrl(program.lessonDetail.videoUrl),
@@ -223,7 +237,12 @@ function hasValidCurriculumId(value: unknown): value is number {
 }
 
 function splitLines(value: string | null | undefined): string[] {
-  return [...new Set(String(value ?? '').split('\n').map((item) => item.trim()).filter((item) => item && !hasBrokenText(item)))];
+  return [...new Set(
+    String(value ?? '')
+      .split('\n')
+      .map((item) => item.replace(/\s+$/g, ''))
+      .filter((item) => item.trim() && !hasBrokenText(item.trim())),
+  )];
 }
 
 function extractAnySectionLines(source: string | null | undefined, labels: string[]) {

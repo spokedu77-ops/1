@@ -47,6 +47,7 @@ import {
   buildSpomoveProgramGroupSections,
   buildSpomoveGuideDisplayModel,
   getSpomovePresetDisplayModel,
+  resolveSpomovePresetDisplayTitle,
   sortSpomovePresetsByCatalogOrder,
   sortSpomovePresetsByDisplayTitle,
 } from './spomovePresetDisplayModel';
@@ -789,6 +790,7 @@ function PresetCard({
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset);
+  const displayTitle = resolveSpomovePresetDisplayTitle(preset, contentOverride);
 
   const inner = (
     <>
@@ -822,7 +824,7 @@ function PresetCard({
           if (!preset.isReady) return;
           onPreview();
         }}
-        aria-label={`${displayModel.displayTitle} 시작 준비 열기`}
+        aria-label={`${displayTitle} 시작 준비 열기`}
         className="relative flex min-h-0 w-full flex-1 cursor-pointer flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
       >
         <CardVisual
@@ -830,7 +832,7 @@ function PresetCard({
           thumbnailUrl={thumbnailUrl}
           imageFailed={imageFailed}
           onImageError={() => setImageFailed(true)}
-          title={displayModel.displayTitle}
+          title={displayTitle}
           label={displayModel.programLabel}
         />
       </button>
@@ -1061,8 +1063,8 @@ export default function SpomoveHubView() {
       : `공식 가이드는 순차 작성 중입니다. 기본 안내 ${guideStatusCounts.legacy}개와 실행 가능한 활동 ${guideStatusCounts.preparing}개를 먼저 사용할 수 있습니다.`;
   const guideSummaryActionText =
     guideStatusCounts.published > 0
-      ? '공식 가이드는 준비·진행·교사 멘트까지 정리된 수업안입니다. 기본 안내는 수업을 바로 시작할 수 있는 최소 실행안입니다.'
-      : '아직 공식 수업안이 없는 활동도 시작할 수 있습니다. 기본 안내에서 준비물과 진행 흐름을 확인하고 바로 실행하세요.';
+      ? '공식 가이드는 준비·진행·교사 멘트까지 정리된 수업안입니다. 기본 안내는 수업을 즉시 진행할 수 있는 최소 실행안입니다.'
+      : '아직 공식 수업안이 없는 활동도 시작할 수 있습니다. 기본 안내에서 준비물과 진행 흐름을 확인하고 즉시 시작하세요.';
   const activeGuideLabel =
     GUIDE_STATUS_FILTERS.find((filter) => filter.id === guideStatusFilter)?.label ?? '전체';
   const programGroupSections = useMemo(() => {
@@ -1386,7 +1388,7 @@ export default function SpomoveHubView() {
             </p>
             <p className="mx-auto mt-2 max-w-xl text-[13px] font-semibold leading-6 text-slate-500">
               {guideStatusFilter === 'published'
-                ? '공식 가이드가 작성되기 전에도 기본 안내와 화면 활동은 바로 실행할 수 있습니다. 수업을 바로 해야 한다면 기본 안내 또는 전체 목록으로 전환하세요.'
+                ? '공식 가이드가 작성되기 전에도 기본 안내와 화면 활동은 즉시 시작할 수 있습니다. 수업을 바로 해야 한다면 기본 안내 또는 전체 목록으로 전환하세요.'
                 : '활동 종류, 인지 난이도, 가이드 상태 조건을 넓히면 더 많은 SPOMOVE 활동을 볼 수 있습니다.'}
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">

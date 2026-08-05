@@ -205,6 +205,7 @@ describe('SPOMOVE pilot flow contract', () => {
   it('keeps user-facing hub copy in valid UTF-8 Korean', () => {
     expect(hub).not.toMatch(/[\u0080-\u009f]/);
     expect(hub).not.toContain('\ufffd');
-    expect(hub).not.toMatch(/[怨諛鍮異醫珥]/);
+    const mojibakeCodePoints = [0x6028, 0x8adb, 0x936e, 0x7570, 0x91ab, 0x73e5];
+    expect(mojibakeCodePoints.some((codePoint) => hub.includes(String.fromCharCode(codePoint)))).toBe(false);
   });
 });

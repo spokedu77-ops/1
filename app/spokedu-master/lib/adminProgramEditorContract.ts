@@ -39,6 +39,15 @@ export function normalizeTextarea(value: string | null | undefined) {
   return text || null;
 }
 
+export function normalizeIndentedTextarea(value: string | null | undefined) {
+  const text = (value ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+$/g, ''))
+    .filter((line) => line.trim())
+    .join('\n');
+  return text || null;
+}
+
 export function normalizeAdminTags(tags: string[]) {
   return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))];
 }
@@ -67,7 +76,7 @@ export function buildAdminProgramSavePayload(input: AdminProgramSaveInput) {
       title: normalizeNullableText(input.title) ?? input.fallbackTitle.trim(),
       video_url: normalizeNullableText(input.videoUrl),
       equipment: normalizeTextarea(input.equipment),
-      activity_method: normalizeTextarea(input.activityMethod),
+      activity_method: normalizeIndentedTextarea(input.activityMethod),
       is_published: input.publicationStatus !== 'hidden',
     },
   };

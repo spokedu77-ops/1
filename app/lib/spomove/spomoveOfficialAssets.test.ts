@@ -8,6 +8,7 @@ describe('spomoveOfficialAssets', () => {
       schemaVersion: 2,
       content: {
         'reaction-cognition-space-direction-01': {
+          title: ' Custom title ',
           coreKeywords: ['behindMat', 'individual', 'easy'],
           activityMethod: ' Legacy method ',
           activityConcept: ' Legacy concept ',
@@ -22,6 +23,7 @@ describe('spomoveOfficialAssets', () => {
 
     expect(map['reaction-cognition-space-direction-01']?.coreKeywords).toHaveLength(3);
     expect(map['reaction-cognition-space-direction-01']).toMatchObject({
+      title: 'Custom title',
       activityMethod: 'Legacy method',
       activityConcept: 'Legacy concept',
       movementGuideStatus: 'draft',

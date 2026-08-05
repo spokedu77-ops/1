@@ -9,6 +9,7 @@ import {
   buildAdminProgramSaveFailure,
   buildAdminProgramSaveSuccess,
   normalizeAdminTags,
+  normalizeIndentedTextarea,
   normalizeNullableText,
   normalizeTextarea,
   type AdminProgramSaveStage,
@@ -83,6 +84,13 @@ function splitLines(value: string | null | undefined): string[] {
     .split('\n')
     .map((item) => item.trim())
     .filter((item) => item && !/^\[[^\]]+\]$/.test(item));
+}
+
+function splitIndentedLines(value: string | null | undefined): string[] {
+  return (value ?? '')
+    .split('\n')
+    .map((item) => item.replace(/\s+$/g, ''))
+    .filter((item) => item.trim() && !/^\s*\[[^\]]+\]\s*$/.test(item));
 }
 
 function safeArray(value: string[] | null | undefined): string[] {
@@ -168,7 +176,7 @@ async function loadPrograms() {
     const title = (overlay?.title ?? row.title ?? '').trim() || `curriculum #${row.id}`;
     const videoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
     const equipment = overlay?.equipment ? splitLines(overlay.equipment) : safeArray(row.equipment);
-    const steps = overlay?.activity_method ? splitLines(overlay.activity_method) : safeArray(row.steps);
+    const steps = overlay?.activity_method ? splitIndentedLines(overlay.activity_method) : safeArray(row.steps);
     const target = normalizeMasterTarget(meta?.sm_grade ?? overlay?.group_size ?? '');
     const space = normalizeMasterSpace(meta?.sm_space ?? '');
     const status = completeness({
@@ -376,7 +384,7 @@ export async function PATCH(request: Request) {
       source_center_curriculum_id: curriculumId,
       video_url: normalizeUnknownText(overlayInput.video_url),
       equipment: normalizeUnknownTextarea(overlayInput.equipment),
-      activity_method: normalizeUnknownTextarea(overlayInput.activity_method),
+      activity_method: normalizeUnknownIndentedTextarea(overlayInput.activity_method),
       is_published: typeof overlayInput.is_published === 'boolean' ? overlayInput.is_published : true,
     };
 
@@ -455,6 +463,10 @@ function normalizeUnknownText(value: unknown) {
 
 function normalizeUnknownTextarea(value: unknown) {
   return normalizeTextarea(isString(value) ? value : null);
+}
+
+function normalizeUnknownIndentedTextarea(value: unknown) {
+  return normalizeIndentedTextarea(isString(value) ? value : null);
 }
 
 function errorMessage(error: unknown) {

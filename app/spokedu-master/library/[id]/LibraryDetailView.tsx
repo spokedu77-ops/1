@@ -23,10 +23,10 @@ import { SaveErrorBanner } from '../../components/ui/SaveErrorBanner';
 
 import {
   LessonBulletList,
+  LessonActivityMethodList,
   LessonCoachScript,
   LessonFullSection,
   LessonMetaGrid,
-  LessonNumberedList,
   LessonTitle,
   LessonVariationText,
 } from '../../components/lesson/LessonPanels';
@@ -754,7 +754,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
         {model.activityMethod.length > 0 ? (
           <LessonFullSection title="활동 방법">
-            <LessonNumberedList items={model.activityMethod} />
+            <LessonActivityMethodList items={model.activityMethod} />
           </LessonFullSection>
         ) : null}
 

@@ -266,6 +266,13 @@ function splitLines(value: string) {
     .filter(Boolean);
 }
 
+function splitIndentedLines(value: string) {
+  return value
+    .split('\n')
+    .map((item) => item.replace(/\s+$/g, ''))
+    .filter((item) => item.trim());
+}
+
 function joinLines(value: string[] | null | undefined) {
   return (value ?? []).filter(Boolean).join('\n');
 }
@@ -536,7 +543,7 @@ function mergeSavedProgram(
       target,
       space,
       equipment: overlay.equipment ? splitLines(overlay.equipment) : current.curriculum.equipment,
-      steps: overlay.activity_method ? splitLines(overlay.activity_method) : current.curriculum.steps,
+      steps: overlay.activity_method ? splitIndentedLines(overlay.activity_method) : current.curriculum.steps,
       parentNote: meta.sm_parent_note?.trim() || '',
       relatedSpomoveIds: meta.sm_related_spomove_ids ?? [],
     },
@@ -674,6 +681,7 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
 
 function normalizeContentDraft(value: SpomovePresetContentOverride | undefined): SpomovePresetContentOverride {
   return {
+    title: value?.title ?? '',
     coreKeywords: normalizeSpomoveCoreKeywordsList(value?.coreKeywords ?? []),
     activityMethod: value?.activityMethod ?? '',
     activityConcept: value?.activityConcept ?? '',
@@ -687,6 +695,7 @@ function contentDraftIsEmpty(value: SpomovePresetContentOverride | undefined) {
     !value?.activityMethod?.trim() &&
     !value?.activityConcept?.trim() &&
     !value?.movementGuide &&
+    !value?.title?.trim() &&
     normalizeSpomoveCoreKeywordsList(value?.coreKeywords ?? []).length === 0
   );
 }
@@ -939,6 +948,7 @@ function SpomoveContentManager() {
   const saveContent = useCallback(async (presetId: string) => {
     const draft = normalizeContentDraft(draftMap[presetId]);
     const nextEntry: SpomovePresetContentOverride = {
+      title: draft.title?.trim() ?? '',
       coreKeywords: normalizeSpomoveCoreKeywordsList(draft.coreKeywords ?? []),
       activityMethod: draft.activityMethod?.trim() ?? '',
       activityConcept: draft.activityConcept?.trim() ?? '',
@@ -1219,8 +1229,18 @@ function SpomoveContentManager() {
 
                     return (
                       <article key={preset.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-[13px] font-black text-slate-950">{preset.title}</p>
+                        <p className="text-[13px] font-black text-slate-950">{draft.title?.trim() || preset.title}</p>
                         <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
+                        <label className="mt-3 block text-[11px] font-black text-slate-500">
+                          제목
+                          <input
+                            value={draft.title ?? ''}
+                            onChange={(event) => updateDraft(preset.id, { title: event.target.value })}
+                            placeholder={preset.title}
+                            disabled={savingThis || deletingThis}
+                            className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                          />
+                        </label>
                         <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-[11px] font-black text-slate-700">

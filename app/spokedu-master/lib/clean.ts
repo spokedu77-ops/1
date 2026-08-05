@@ -1,11 +1,21 @@
 import type { Program } from '../types';
 
-export const BROKEN_TEXT_PATTERN =
-  /[�]|[?][가-힣]|怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|獄|筌|揶|癰|疫|椰/;
+const REPLACEMENT_CHAR = String.fromCharCode(0xfffd);
+const CP949_MOJIBAKE_CODE_POINTS = [
+  0x6028, 0x8adb, 0xf9de, 0x5a9b, 0x8e42, 0x936e,
+  0x6e72, 0x91ab, 0x5ac4, 0x73e5, 0x7344, 0x7b4c,
+  0x63f6, 0x7670, 0x75ab, 0x6930,
+];
+const LATIN_MOJIBAKE_CODE_POINTS = [
+  0x00ec, 0x00ed, 0x00eb, 0x00ea, 0x00f0, 0x00c3, 0x00c2,
+];
 
 export function hasBrokenText(value: string | undefined): boolean {
   if (!value) return false;
-  return value.includes('�') || /[ìíëêðÃÂ]/.test(value) || BROKEN_TEXT_PATTERN.test(value);
+  if (value.includes(REPLACEMENT_CHAR)) return true;
+  if (/[?][가-힣]/.test(value)) return true;
+  return [...CP949_MOJIBAKE_CODE_POINTS, ...LATIN_MOJIBAKE_CODE_POINTS]
+    .some((codePoint) => value.includes(String.fromCharCode(codePoint)));
 }
 
 export function cleanText(value: string | undefined, fallback: string): string {

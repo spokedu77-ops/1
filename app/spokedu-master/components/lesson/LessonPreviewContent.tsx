@@ -7,7 +7,7 @@ import { isLessonPlaceholder } from '../../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
 import type { Program } from '../../types';
 import { LessonPreviewMedia } from './LessonPreviewMedia';
-import { LessonTitle } from './LessonPanels';
+import { LessonActivityMethodList, LessonTitle } from './LessonPanels';
 
 function firstUsableLine(values: string[]) {
   return values.map((value) => value.trim()).find((value) => value && !isLessonPlaceholder(value)) ?? '';
@@ -124,21 +124,9 @@ export function LessonPreviewContent({
                 <section className="border-t border-slate-100 pt-4">
                   <p className="sr-only">주요 활동 순서 요약</p>
                   <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">활동 방법</h3>
-                  <ol className="mt-3 space-y-3">
-                    {previewRules.map((rule, index) => (
-                      <li key={`${rule}-${index}`} className="relative grid grid-cols-[28px_minmax(0,1fr)] gap-2.5">
-                        {index < previewRules.length - 1 ? (
-                          <span aria-hidden className="absolute left-[13px] top-7 h-[calc(100%+4px)] w-px bg-slate-200" />
-                        ) : null}
-                        <span className="relative z-10 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-[11px] font-black text-[var(--spm-acc)]">
-                          {index + 1}
-                        </span>
-                        <span className="min-w-0 pt-0.5 text-[13px] font-semibold leading-6 text-slate-700">
-                          {rule}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
+                  <div className="mt-3">
+                    <LessonActivityMethodList items={previewRules} />
+                  </div>
                 </section>
               ) : null}
 

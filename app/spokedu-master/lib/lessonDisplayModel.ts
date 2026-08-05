@@ -14,6 +14,12 @@ function cleanList(values?: string[] | null) {
   return (values ?? []).map((value) => value.trim()).filter(Boolean);
 }
 
+function cleanIndentedList(values?: string[] | null) {
+  return (values ?? [])
+    .map((value) => value.replace(/\s+$/g, ''))
+    .filter((value) => value.trim());
+}
+
 export function normalizeTagKey(value: string) {
   return value.normalize('NFKC').replace(/\s+/g, '').trim();
 }
@@ -117,7 +123,7 @@ export function buildLessonDisplayModel(program: Program): LessonDisplayModel {
     setupNotes: cleanList(detail?.setupNotes),
     safetyNotes: cleanList(detail?.safetyNotes),
     fieldTips: cleanList(detail?.fieldTips),
-    activityMethod: cleanList(detail?.rules?.length ? detail.rules : program.steps),
+    activityMethod: cleanIndentedList(detail?.rules?.length ? detail.rules : program.steps),
     variationMethod: cleanList(detail?.variations),
     quality: getProgramQualityReport(program),
     parentNote: cleanValue(detail?.parentNote),

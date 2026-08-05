@@ -252,3 +252,32 @@ export function LessonNumberedList({ items }: { items: string[] }) {
     </ol>
   );
 }
+
+export function LessonActivityMethodList({ items }: { items: string[] }) {
+  if (items.length === 0) {
+    return <p className="text-[13px] font-semibold text-slate-400">등록된 단계가 없습니다.</p>;
+  }
+
+  return (
+    <ul className="space-y-2">
+      {items.map((step, index) => {
+        const nested = /^\s/.test(step);
+        const text = step.trim();
+        return (
+          <li
+            key={`${text}-${index}`}
+            className={`flex items-start gap-2 text-sm font-semibold leading-6 text-slate-700 ${nested ? 'ml-6' : ''}`}
+          >
+            <span
+              aria-hidden
+              className={`mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full ${
+                nested ? 'border border-slate-500 bg-white' : 'bg-slate-950'
+              }`}
+            />
+            <span className="min-w-0">{text}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}

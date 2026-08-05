@@ -234,6 +234,13 @@ export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): Spo
   };
 }
 
+export function resolveSpomovePresetDisplayTitle(
+  preset: OfficialSpomovePreset,
+  contentOverride?: SpomovePresetContentOverride,
+) {
+  return contentOverride?.title?.trim() || getSpomovePresetDisplayModel(preset).displayTitle;
+}
+
 export function sortSpomovePresetsByDisplayTitle(presets: readonly OfficialSpomovePreset[]): OfficialSpomovePreset[] {
   return [...presets].sort((a, b) =>
     getSpomovePresetDisplayModel(a).displayTitle.localeCompare(
@@ -401,7 +408,7 @@ export function buildSpomoveGuideDisplayModel({
         }
       : undefined;
   const base = {
-    title: display.displayTitle,
+    title: resolveSpomovePresetDisplayTitle(preset, contentOverride),
     programGroupLabel: display.programLabel,
     guideMode,
     isOfficialGuide: officialGuide,

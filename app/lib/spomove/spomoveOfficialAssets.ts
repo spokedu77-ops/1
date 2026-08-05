@@ -31,6 +31,7 @@ export type SpomoveHomeFeaturedAssetsJson = {
 };
 
 export type SpomovePresetContentOverride = {
+  title?: string;
   coreKeywords?: string[];
   activityMethod?: string;
   activityConcept?: string;
@@ -82,6 +83,7 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
     if (!validPresetIds.has(presetId) || !value || typeof value !== 'object') continue;
     const entry = value as Record<string, unknown>;
     /** 핵심 키워드: 시작 위치 · 참여 인원 · 난이도 고정 어휘만 */
+    const title = typeof entry.title === 'string' ? entry.title.trim() : '';
     const coreKeywords = normalizeSpomoveCoreKeywordsList(entry.coreKeywords);
     const activityMethod = typeof entry.activityMethod === 'string' ? entry.activityMethod.trim() : '';
     const activityConcept = typeof entry.activityConcept === 'string' ? entry.activityConcept.trim() : '';
@@ -91,6 +93,7 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
         ? entry.movementGuideStatus
         : undefined;
     const normalized: SpomovePresetContentOverride = {};
+    if (title) normalized.title = title;
     if (coreKeywords.length > 0) normalized.coreKeywords = coreKeywords;
     if (activityMethod) normalized.activityMethod = activityMethod;
     if (activityConcept) normalized.activityConcept = activityConcept;
