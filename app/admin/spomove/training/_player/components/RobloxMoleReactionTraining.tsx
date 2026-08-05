@@ -19,7 +19,7 @@ type Props = {
   speedLevel: number;
   speedSec: number;
   lookMode?: MoleLookMode;
-  onExit: () => void;
+  bonusTimeEnabled?: boolean;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -191,7 +191,7 @@ export function RobloxMoleReactionTraining({
   speedLevel,
   speedSec,
   lookMode = 'classic',
-  onExit,
+  bonusTimeEnabled = false,
   onComplete,
 }: Props) {
   const uid = useId();
@@ -208,6 +208,9 @@ export function RobloxMoleReactionTraining({
     lastHolePairA: number;
     lastHolePairB: number;
     spawnCount: number;
+    bonusActive: boolean;
+    bonusStarted: boolean;
+    endsAtMs: number;
     lastSpawnDualBoth: boolean;
     timer: ReturnType<typeof setInterval> | null;
     hideTimer: ReturnType<typeof setTimeout> | null;
@@ -299,6 +302,9 @@ export function RobloxMoleReactionTraining({
       lastHolePairA: -1,
       lastHolePairB: -1,
       spawnCount: 0,
+      bonusActive: false,
+      bonusStarted: false,
+      endsAtMs: performance.now() + durationSec * 1000,
       lastSpawnDualBoth: false,
       timer: null as ReturnType<typeof setInterval> | null,
       hideTimer: null as ReturnType<typeof setTimeout> | null,
@@ -326,9 +332,8 @@ export function RobloxMoleReactionTraining({
 
     const triggerMixed = () => {
       g.spawnCount += 1;
-      const warmupSingleOnly = g.spawnCount <= 4;
       const spawnPair =
-        lookMode === 'variant' && !warmupSingleOnly && Math.random() < 0.5;
+        !g.bonusActive && lookMode === 'variant' && Math.random() < 0.5;
       g.lastSpawnDualBoth = spawnPair;
       const next = new Map<number, ActiveMole>();
 
@@ -351,7 +356,7 @@ export function RobloxMoleReactionTraining({
         g.lastHoleSingle = hole.id;
         const color = MOLE_COLORS[Math.floor(Math.random() * MOLE_COLORS.length)]!;
         registerStim(color.lane);
-        addActiveMole(next, hole, color, lookMode);
+        addActiveMole(next, hole, color, g.bonusActive ? 'classic' : lookMode);
       }
 
       setActiveMap(next);
@@ -368,7 +373,7 @@ export function RobloxMoleReactionTraining({
       g.nextTimer = setTimeout(() => {
         if (!g.running) return;
         triggerMole();
-        const nextDelay = g.lastSpawnDualBoth ? Math.round(g.cadenceMs * 1.2) : g.cadenceMs;
+        const nextDelay = g.bonusActive ? 1000 : g.lastSpawnDualBoth ? Math.round(g.cadenceMs * 1.2) : g.cadenceMs;
         scheduleNext(nextDelay);
       }, delayMs);
     };
@@ -376,14 +381,28 @@ export function RobloxMoleReactionTraining({
     setActiveMap(new Map());
     setHud();
     scheduleNext(g.cadenceMs);
-    const endsAtMs = performance.now() + durationSec * 1000;
     g.timer = setInterval(() => {
-      const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
+      const newLeft = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
       if (g.timeLeft !== newLeft) {
         g.timeLeft = newLeft;
         setHud();
       }
       if (g.timeLeft <= 0) {
+        if (bonusTimeEnabled && !g.bonusStarted) {
+          g.bonusStarted = true;
+          g.bonusActive = true;
+          g.timeLeft = 30;
+          g.exposeMs = 650;
+          g.cadenceMs = 1000;
+          g.spawnCount = 0;
+          g.lastSpawnDualBoth = false;
+          g.endsAtMs = performance.now() + 30_000;
+          clearSpawnTimers();
+          setActiveMap(new Map());
+          setHud();
+          scheduleNext(200);
+          return;
+        }
         if (g.timer) clearInterval(g.timer);
         g.timer = null;
         endGame();
@@ -395,7 +414,7 @@ export function RobloxMoleReactionTraining({
       if (g.timer) clearInterval(g.timer);
       clearSpawnTimers();
     };
-  }, [clearSpawnTimers, durationSec, endGame, lookMode, showCombo, speedLevel, speedSec]);
+  }, [bonusTimeEnabled, clearSpawnTimers, durationSec, endGame, lookMode, showCombo, speedLevel, speedSec]);
 
   return (
     <div className="rmt">

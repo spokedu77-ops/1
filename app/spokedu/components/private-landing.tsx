@@ -40,7 +40,13 @@ function PrivateGoalFitSection() {
       <LandingSectionHeading eyebrow={section.eyebrow} title={section.title} lead={section.lead} accent="teal" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {section.items.map((item) => (
-          <article key={item.title} className={whoCardShell}>
+          <a
+            key={item.id}
+            href={`?startDirection=${item.id}#apply`}
+            className={`${whoCardShell} transition hover:border-teal-200`}
+            data-track="private"
+            data-track-label={`private-fit-${item.id}`}
+          >
             <h3 className={`text-[15px] font-bold text-slate-950 ${koreanLineBreak}`}>{item.title}</h3>
             <p className={`mt-2 text-xs font-semibold leading-relaxed text-teal-800 ${koreanLineBreak}`}>
               {item.childSignal}
@@ -48,12 +54,16 @@ function PrivateGoalFitSection() {
             <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.classDirection}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {item.programs.map((program) => (
-                <span key={program} className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-semibold text-stone-600">
+                <span
+                  key={program}
+                  className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-semibold text-stone-600"
+                >
                   {program}
                 </span>
               ))}
             </div>
-          </article>
+            <p className="mt-3 text-sm font-semibold text-teal-800">이 방향으로 상담 →</p>
+          </a>
         ))}
       </div>
     </div>
@@ -98,22 +108,49 @@ function PrivateConsultConditionsSection() {
 }
 
 function PrivateInstructorTrustSection() {
+  const policy = privatePage.assignmentPolicy;
+
   return (
     <div className={`${premiumPanelDark} px-5 py-6 text-white sm:px-7 sm:py-7`}>
       <LandingSectionHeading
         eyebrow={privatePage.instructors.eyebrow}
-        title="지도자 신뢰는 프로필보다 수업 기준으로 확인합니다"
-        lead="체육교육 전공 운영진이 수업 구조와 강사 기준을 함께 봅니다. 화면에는 핵심 기준만 남기고, 세부 배정은 상담에서 확인합니다."
+        title="지도자 신뢰는 얼굴 식별과 배정 규칙으로 확인합니다"
+        lead="체육교육 전공 운영진이 기준을 잡고, 실제 담당은 지역·시간·시작 방향을 확인한 뒤 배정합니다. 첫 수업 후 적합성을 다시 볼 수 있습니다."
         accent="teal"
       />
-      <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
         {privatePage.instructors.items.map((item) => (
-          <article key={item.name} className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
-            <h3 className="text-sm font-bold text-white">{item.name}</h3>
-            <p className="mt-1 text-xs font-semibold text-[#A8C0FF]">{item.degree}</p>
-            <p className={`mt-2 text-xs leading-relaxed text-white/70 ${koreanLineBreak}`}>{item.badges[0]}</p>
+          <article key={item.name} className="rounded-xl border border-white/10 bg-white/[0.06] p-3.5">
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.photo}
+                alt={item.name}
+                width={56}
+                height={56}
+                className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white/20"
+              />
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-white">{item.name}</h3>
+                <p className="mt-0.5 text-xs font-semibold text-[#A8C0FF]">{item.degree}</p>
+              </div>
+            </div>
+            <p className={`mt-2.5 text-xs leading-relaxed text-white/70 ${koreanLineBreak}`}>{item.badges[0]}</p>
           </article>
         ))}
+      </div>
+      <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-4 sm:px-5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#8FB0FF]">{policy.eyebrow}</p>
+        <h3 className={`mt-2 text-base font-bold text-white ${koreanLineBreak}`}>{policy.title}</h3>
+        <p className={`mt-2 text-sm leading-relaxed text-white/70 ${koreanLineBreak}`}>{policy.lead}</p>
+        <ol className="mt-3 space-y-2">
+          {policy.steps.map((step, index) => (
+            <li key={step} className={`flex gap-2 text-sm text-white/85 ${koreanLineBreak}`}>
+              <span className="shrink-0 font-bold text-[#A8C0FF]">{String(index + 1).padStart(2, '0')}</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
       </div>
     </div>
   );

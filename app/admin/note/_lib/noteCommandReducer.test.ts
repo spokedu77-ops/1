@@ -303,6 +303,27 @@ describe('applyNoteCommand', () => {
     expect(blocks.map((item) => item.id)).toEqual(['heading', 'todo']);
   });
 
+  it('keeps checked empty todo — not treated as disposable placeholder', () => {
+    const previous = [
+      block('heading', { type: 'heading3', content: { text: '히스토리', html: '<p>히스토리</p>' } }),
+      block('checked-empty', {
+        type: 'todo',
+        order_index: 1,
+        content: { text: '', html: '<p></p>', checked: true },
+        created_at: '2020-01-01T00:00:00.000Z',
+      }),
+      block('todo', { type: 'todo', order_index: 2, content: { text: 'live', html: '<p>live</p>', checked: false } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'replaceBlocks', blocks: previous },
+      ctx,
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['heading', 'checked-empty', 'todo']);
+  });
+
   it('keeps the active empty todo while the user is editing it', () => {
     const previous = [
       block('empty-todo', { type: 'todo', content: { text: '', html: '<p></p>', checked: false } }),

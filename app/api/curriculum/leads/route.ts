@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import {
+  buildEnvelopeOrThrow,
+  consultInsertFromEnvelope,
+  LeadEnvelopeValidationError,
+  parseAcquisitionFromBody,
+} from '@/app/lib/server/leadEnvelope';
+import {
+  curriculumModeLabel,
+  isCurriculumCommercialMode,
+  type CurriculumCommercialMode,
+} from '@/app/spokedu/data/curriculum-commercial-modes';
 
 type LeadBody = {
   type?: unknown;
+  lead_mode?: unknown;
   name_or_org?: unknown;
   phone?: unknown;
   content_type?: unknown;
@@ -11,10 +23,26 @@ type LeadBody = {
   teacher_training?: unknown;
   partnership_type?: unknown;
   extra?: unknown;
+  acquisition?: unknown;
+  conversion_evidence_slug?: unknown;
+  cta_intent_id?: unknown;
 };
 
 function normalize(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function defaultCtaForMode(mode: CurriculumCommercialMode): string {
+  switch (mode) {
+    case 'package':
+      return 'package_quote';
+    case 'training':
+      return 'training_consult';
+    case 'master':
+      return 'master_org_inquiry';
+    case 'license':
+      return 'license_consult';
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -29,7 +57,16 @@ export async function POST(req: NextRequest) {
     if (rawType && rawType !== 'curriculum') {
       return NextResponse.json({ ok: false, message: '문의 유형(type)이 올바르지 않습니다.' }, { status: 400 });
     }
-    const type = 'curriculum';
+    const leadModeRaw = normalize(body.lead_mode);
+    const leadMode: CurriculumCommercialMode =
+      leadModeRaw && isCurriculumCommercialMode(leadModeRaw) ? leadModeRaw : 'training';
+    if (leadModeRaw && !isCurriculumCommercialMode(leadModeRaw)) {
+      return NextResponse.json(
+        { ok: false, message: '도입 모드(lead_mode)가 올바르지 않습니다.' },
+        { status: 400 },
+      );
+    }
+
     const phone = normalize(body.phone);
     const contentType = normalize(body.content_type);
     const targetAge = normalize(body.target_age);
@@ -37,12 +74,40 @@ export async function POST(req: NextRequest) {
     const teacherTraining = normalize(body.teacher_training);
     const partnershipType = normalize(body.partnership_type);
     const extra = normalize(body.extra);
+    const conversionEvidenceSlug = normalize(body.conversion_evidence_slug) || undefined;
+    const ctaIntentId = normalize(body.cta_intent_id) || defaultCtaForMode(leadMode);
 
     if (!nameOrOrg || !phone || !contentType || !targetAge || !purpose || !teacherTraining || !partnershipType) {
       return NextResponse.json({ ok: false, message: '필수 항목이 비어 있습니다.' }, { status: 400 });
     }
 
+    let envelope;
+    try {
+      envelope = buildEnvelopeOrThrow({
+        schemaVersion: 1,
+        route: 'curriculum',
+        acquisition: parseAcquisitionFromBody(body.acquisition),
+        selection: {
+          route: 'curriculum',
+          mode: leadMode,
+          contentType,
+          purpose,
+          teacherTraining,
+          partnershipType,
+          targetAge,
+        },
+        conversionEvidenceSlug,
+        ctaIntentId,
+      });
+    } catch (e) {
+      if (e instanceof LeadEnvelopeValidationError) {
+        return NextResponse.json({ ok: false, message: e.message }, { status: 400 });
+      }
+      throw e;
+    }
+
     const content = [
+      `[커리큘럼 도입 모드] ${leadMode} · ${curriculumModeLabel(leadMode)}`,
       '[커리큘럼·콘텐츠 문의]',
       `이름/기관명: ${nameOrOrg}`,
       `연락처: ${phone}`,
@@ -51,28 +116,50 @@ export async function POST(req: NextRequest) {
       `활용 목적: ${purpose}`,
       `강사 교육 필요 여부: ${teacherTraining}`,
       `제휴/구매 형태: ${partnershipType}`,
-      `문의 type: ${type}`,
+      `문의 type: curriculum`,
+      `lead_mode: ${leadMode}`,
       '',
       '[추가 문의]',
       extra || '-',
     ].join('\n');
 
     const supabase = getServiceSupabase();
-    const { error } = await supabase.from('consultations').insert({
-      parent_name: nameOrOrg,
+    const insertRow = consultInsertFromEnvelope({
+      envelope,
+      parentName: nameOrOrg,
       phone,
-      child_age: targetAge,
+      childAge: targetAge,
       content,
-      consult_type: 'center',
-      status: 'pending',
+      consultType: 'center',
     });
+
+    const { data: inserted, error } = await supabase
+      .from('consultations')
+      .insert(insertRow)
+      .select('id')
+      .single();
 
     if (error) {
       console.error('[curriculum/leads] insert error', error);
-      return NextResponse.json({ ok: false, message: 'DB 저장에 실패했습니다.' }, { status: 500 });
+      const { data: fallback, error: fallbackError } = await supabase
+        .from('consultations')
+        .insert({
+          parent_name: nameOrOrg,
+          phone,
+          child_age: targetAge,
+          content,
+          consult_type: 'center',
+          status: 'pending',
+        })
+        .select('id')
+        .single();
+      if (fallbackError) {
+        return NextResponse.json({ ok: false, message: 'DB 저장에 실패했습니다.' }, { status: 500 });
+      }
+      return NextResponse.json({ ok: true, lead_mode: leadMode, leadId: fallback?.id });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, lead_mode: leadMode, leadId: inserted?.id });
   } catch (error) {
     console.error('[curriculum/leads] unexpected', error);
     return NextResponse.json({ ok: false, message: '서버 처리 중 오류가 발생했습니다.' }, { status: 500 });

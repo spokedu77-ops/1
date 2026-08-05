@@ -79,6 +79,14 @@ describe('noteDataIntegrity', () => {
     expect(next.checked).toBe(true);
   });
 
+  it('mergePassiveIncomingContent keeps checked on empty-text todo', () => {
+    const next = mergePassiveIncomingContent(
+      { text: '', checked: true },
+      { text: '', checked: false },
+    );
+    expect(next.checked).toBe(true);
+  });
+
   it('mergePassiveIncomingContent keeps page_document_id when incoming clears it', () => {
     const next = mergePassiveIncomingContent(
       { title: 'Child', page_document_id: 'child-doc' },

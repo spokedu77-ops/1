@@ -309,7 +309,6 @@ export function EngineRouter({
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
-            onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
         </Suspense>
@@ -377,7 +376,6 @@ export function EngineRouter({
             speedLevel={reactSpeedLevel}
             speedSec={sp}
             lookMode={effectiveMoleLook}
-            onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
         </Suspense>

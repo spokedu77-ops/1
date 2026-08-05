@@ -83,6 +83,13 @@ export function documentHasProtectablePresence(
     if (readAuthorityBlockText(block.content).length > 0) return true;
     if (STRUCTURAL_PRESENCE_TYPES.has(block.type)) return true;
     const content = block.content;
+    if (
+      content
+      && typeof content === 'object'
+      && (content as Record<string, unknown>).checked === true
+    ) {
+      return true;
+    }
     return contentHasStructuredPresence(content);
   });
 }
@@ -126,9 +133,13 @@ export function decideEmptySnapshotApply(input: {
 }
 
 /**
- * patch_content가 본문·미디어 presence를 비울 때.
+ * outbound 사전 필터 전용 — content authority SSOT 아님.
+ * SSOT는 `shouldIgnoreRegressiveContentPatch` (`noteContentAuthority`).
+ *
+ * patch_content가 본문·미디어 presence를 비울 때:
  * store가 이미 비었으면 clear intent → push.
  * store에 text/title/url 등이 남아 있으면 reconcile 레이스 → drop_stale.
+ * 동일길이 rewrite·체크·html 판정은 이 함수가 아니라 SSOT가 한다.
  */
 export function decideRegressiveContentOp(input: {
   localText: string;

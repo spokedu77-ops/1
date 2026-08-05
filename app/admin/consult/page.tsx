@@ -1,9 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, RefreshCw, X } from 'lucide-react';
 import { notifyConsultPendingRefresh } from '@/app/lib/admin/consultPendingBadge';
+import { summarizeLeadRow } from '@/app/lib/admin/leadInboxSummary';
+import {
+  getLeadResponseChecklist,
+  leadRouteLabel,
+  type LeadEnvelope,
+  type LeadRoute,
+} from '@/app/spokedu/data/lead-envelope';
+import type { CurriculumCommercialMode } from '@/app/spokedu/data/curriculum-commercial-modes';
+import type { PrivateStartDirection } from '@/app/spokedu/data/private-page';
 
 type ConsultRow = {
   id: string;
@@ -14,17 +23,21 @@ type ConsultRow = {
   consult_type: 'tutoring' | 'center' | string;
   status: string;
   created_at: string;
+  lead_route?: string | null;
+  lead_context?: LeadEnvelope | null;
+  curriculum_mode?: string | null;
+  private_start_direction?: string | null;
+  private_preferred_format?: string | null;
+  conversion_evidence_slug?: string | null;
+  source_lead_id?: string | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
   pending: '미확인',
   done: '확인완료',
 };
-const TYPE_LABEL: Record<string, string> = {
-  tutoring: '과외',
-  center: '센터',
-};
-type TypeTab = 'all' | 'tutoring' | 'center';
+
+type RouteTab = 'all' | LeadRoute;
 
 function formatDate(iso: string) {
   try {
@@ -38,6 +51,16 @@ function formatDate(iso: string) {
   }
 }
 
+function resolveRoute(row: ConsultRow): LeadRoute {
+  if (row.lead_route === 'private' || row.lead_route === 'curriculum' || row.lead_route === 'dispatch' || row.lead_route === 'other') {
+    return row.lead_route;
+  }
+  if (row.consult_type === 'tutoring') return 'private';
+  if (row.content.includes('[커리큘럼')) return 'curriculum';
+  if (row.content.includes('[기관 맞춤 제안서 요청]')) return 'dispatch';
+  return 'other';
+}
+
 export default function AdminConsultPage() {
   const [rows, setRows] = useState<ConsultRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +68,9 @@ export default function AdminConsultPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ConsultRow | null>(null);
-  const [typeTab, setTypeTab] = useState<TypeTab>('all');
+  const [routeTab, setRouteTab] = useState<RouteTab>('all');
+  const [dispatchDetail, setDispatchDetail] = useState<Record<string, unknown> | null>(null);
+  const [dispatchLoading, setDispatchLoading] = useState(false);
   const seenPendingIdsRef = useRef<Set<string>>(new Set());
 
   const load = useCallback(async () => {
@@ -94,7 +119,7 @@ export default function AdminConsultPage() {
       }
 
       const newPending = nextRows.find(
-        (r) => r.status === 'pending' && !seenPendingIdsRef.current.has(r.id)
+        (r) => r.status === 'pending' && !seenPendingIdsRef.current.has(r.id),
       );
 
       for (const r of nextRows) {
@@ -131,6 +156,29 @@ export default function AdminConsultPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, [detail]);
+
+  useEffect(() => {
+    setDispatchDetail(null);
+    if (!detail?.source_lead_id || resolveRoute(detail) !== 'dispatch') return;
+    let cancelled = false;
+    setDispatchLoading(true);
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/dispatch-leads?id=${encodeURIComponent(detail.source_lead_id!)}`, {
+          credentials: 'include',
+        });
+        const json = (await res.json()) as { ok?: boolean; lead?: Record<string, unknown> };
+        if (!cancelled && json.ok && json.lead) setDispatchDetail(json.lead);
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setDispatchLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [detail]);
 
   async function setStatus(id: string, status: 'pending' | 'done') {
@@ -214,12 +262,23 @@ export default function AdminConsultPage() {
     </div>
   );
 
-  const filteredRows = rows.filter((row) => {
-    if (typeTab === 'all') return true;
-    return row.consult_type === typeTab;
-  });
+  const filteredRows = useMemo(() => {
+    return rows.filter((row) => {
+      if (routeTab === 'all') return true;
+      return resolveRoute(row) === routeTab;
+    });
+  }, [rows, routeTab]);
+
   const pendingCount = filteredRows.filter((row) => row.status === 'pending').length;
   const doneCount = filteredRows.filter((row) => row.status === 'done').length;
+
+  const detailChecklist = detail
+    ? getLeadResponseChecklist({
+        leadRoute: resolveRoute(detail),
+        curriculumMode: (detail.curriculum_mode as CurriculumCommercialMode | null) ?? null,
+        privateStartDirection: (detail.private_start_direction as PrivateStartDirection | null) ?? null,
+      })
+    : null;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -235,7 +294,7 @@ export default function AdminConsultPage() {
             </Link>
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-white">상담 신청</h1>
-              <p className="text-xs text-slate-400">consultations · 종합/과외/센터 · 최신순</p>
+              <p className="text-xs text-slate-400">Structured Lead · route 필터 · 최신순</p>
             </div>
           </div>
           <button
@@ -252,17 +311,21 @@ export default function AdminConsultPage() {
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-4 flex flex-wrap gap-2">
-          {([
-            ['all', '종합'],
-            ['tutoring', '과외'],
-            ['center', '센터'],
-          ] as const).map(([key, label]) => (
+          {(
+            [
+              ['all', '전체'],
+              ['private', '개인수업'],
+              ['dispatch', '기관수업'],
+              ['curriculum', '커리큘럼'],
+              ['other', '기타'],
+            ] as const
+          ).map(([key, label]) => (
             <button
               key={key}
               type="button"
-              onClick={() => setTypeTab(key)}
+              onClick={() => setRouteTab(key)}
               className={`flex-1 rounded-lg border px-3 py-1.5 text-sm transition sm:flex-none ${
-                typeTab === key
+                routeTab === key
                   ? 'border-indigo-400 bg-indigo-500/20 text-indigo-100'
                   : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
               }`}
@@ -303,64 +366,72 @@ export default function AdminConsultPage() {
               등록된 상담이 없습니다.
             </div>
           ) : (
-            filteredRows.map((row) => (
-              <article key={row.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 shadow-xl shadow-black/30">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{row.parent_name}</p>
-                    <p className="mt-1 text-xs text-slate-400">{formatDate(row.created_at)}</p>
+            filteredRows.map((row) => {
+              const summary = summarizeLeadRow({
+                lead_route: resolveRoute(row),
+                curriculum_mode: row.curriculum_mode ?? null,
+                private_start_direction: row.private_start_direction ?? null,
+                private_preferred_format: row.private_preferred_format ?? null,
+                conversion_evidence_slug: row.conversion_evidence_slug ?? null,
+                lead_context: row.lead_context ?? null,
+                content: row.content,
+                consult_type: row.consult_type,
+              });
+              return (
+                <article key={row.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 shadow-xl shadow-black/30">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{row.parent_name}</p>
+                      <p className="mt-1 text-xs text-slate-400">{formatDate(row.created_at)}</p>
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        row.status === 'done' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-200'
+                      }`}
+                    >
+                      {STATUS_LABEL[row.status] ?? row.status}
+                    </span>
                   </div>
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      row.status === 'done' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-200'
-                    }`}
-                  >
-                    {STATUS_LABEL[row.status] ?? row.status}
-                  </span>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-lg bg-slate-800/60 px-2.5 py-2 text-slate-300">
-                    <p className="text-slate-500">연락처</p>
-                    <p className="mt-0.5 font-medium text-slate-200">{row.phone ?? '—'}</p>
+                  <div className="mt-2">
+                    <span className="inline-flex rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-200">
+                      {summary.badge}
+                    </span>
                   </div>
-                  <div className="rounded-lg bg-slate-800/60 px-2.5 py-2 text-slate-300">
-                    <p className="text-slate-500">자녀 나이</p>
-                    <p className="mt-0.5 font-medium text-slate-200">{row.child_age ?? '—'}</p>
+                  <dl className="mt-3 space-y-1.5 text-sm">
+                    {summary.lines.slice(0, 3).map((line) => (
+                      <div key={line.label} className="grid grid-cols-[4.5rem_1fr] gap-2">
+                        <dt className="text-slate-500">{line.label}</dt>
+                        <dd className="text-slate-200">{line.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p className="mt-2 text-xs text-slate-400">{row.phone ?? '—'}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDetail(row)}
+                      className="rounded-md border border-slate-600 bg-slate-800 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-700"
+                    >
+                      전체보기
+                    </button>
+                    {renderRowActions(row)}
                   </div>
-                </div>
-                <div className="mt-2">
-                  <span className="inline-flex rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-200">
-                    {TYPE_LABEL[row.consult_type] ?? row.consult_type}
-                  </span>
-                </div>
-                <p className="mt-3 line-clamp-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{row.content}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDetail(row)}
-                    className="rounded-md border border-slate-600 bg-slate-800 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-700"
-                  >
-                    전체보기
-                  </button>
-                  {renderRowActions(row)}
-                </div>
-              </article>
-            ))
+                </article>
+              );
+            })
           )}
         </div>
 
         <div className="hidden overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-2xl shadow-black/40 md:block">
           <div className="overflow-x-auto">
-            {/* min-w: 좁은 폭에서 이름 열이 1글자로 붕괴되지 않게 가로 스크롤 강제 */}
             <table className="min-w-[960px] w-full divide-y divide-slate-800 text-left text-sm">
               <thead className="bg-slate-900/90">
                 <tr>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">접수일시</th>
                   <th className="min-w-[7.5rem] whitespace-nowrap px-4 py-3 font-semibold text-slate-300">이름</th>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">연락처</th>
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">자녀 나이</th>
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">타입</th>
-                  <th className="min-w-[200px] px-4 py-3 font-semibold text-slate-300">상담 내용</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">경로</th>
+                  <th className="min-w-[220px] px-4 py-3 font-semibold text-slate-300">요청 요약</th>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">상세</th>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">상태</th>
                   <th className="whitespace-nowrap px-4 py-3 font-semibold text-slate-300">처리</th>
@@ -369,63 +440,77 @@ export default function AdminConsultPage() {
               <tbody className="divide-y divide-slate-800">
                 {loading && filteredRows.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-16 text-center text-slate-500">
+                    <td colSpan={8} className="px-4 py-16 text-center text-slate-500">
                       <Loader2 className="mx-auto h-8 w-8 animate-spin opacity-60" />
                       <p className="mt-2 text-sm">불러오는 중…</p>
                     </td>
                   </tr>
                 ) : filteredRows.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
+                    <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
                       등록된 상담이 없습니다.
                     </td>
                   </tr>
                 ) : (
-                  filteredRows.map((row) => (
-                    <tr key={row.id} className="align-top hover:bg-slate-800/30">
-                      <td className="whitespace-nowrap px-4 py-3 text-slate-400">
-                        {formatDate(row.created_at)}
-                      </td>
-                      <td className="min-w-[7.5rem] max-w-[14rem] px-4 py-3 font-medium text-white">
-                        <span className="block truncate" title={row.parent_name}>
-                          {row.parent_name}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-slate-300">{row.phone ?? '—'}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-slate-300">{row.child_age ?? '—'}</td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span className="inline-flex rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-200">
-                          {TYPE_LABEL[row.consult_type] ?? row.consult_type}
-                        </span>
-                      </td>
-                      <td className="min-w-[200px] max-w-md px-4 py-3 text-slate-300">
-                        <span className="line-clamp-3 whitespace-pre-wrap break-words">{row.content}</span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => setDetail(row)}
-                          className="rounded-md border border-slate-600 bg-slate-800 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-700"
-                        >
-                          전체보기
-                        </button>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            row.status === 'done'
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'bg-amber-500/20 text-amber-200'
-                          }`}
-                        >
-                          {STATUS_LABEL[row.status] ?? row.status}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        {renderRowActions(row)}
-                      </td>
-                    </tr>
-                  ))
+                  filteredRows.map((row) => {
+                    const summary = summarizeLeadRow({
+                      lead_route: resolveRoute(row),
+                      curriculum_mode: row.curriculum_mode ?? null,
+                      private_start_direction: row.private_start_direction ?? null,
+                      private_preferred_format: row.private_preferred_format ?? null,
+                      conversion_evidence_slug: row.conversion_evidence_slug ?? null,
+                      lead_context: row.lead_context ?? null,
+                      content: row.content,
+                      consult_type: row.consult_type,
+                    });
+                    return (
+                      <tr key={row.id} className="align-top hover:bg-slate-800/30">
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-400">{formatDate(row.created_at)}</td>
+                        <td className="min-w-[7.5rem] max-w-[14rem] px-4 py-3 font-medium text-white">
+                          <span className="block truncate" title={row.parent_name}>
+                            {row.parent_name}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-300">{row.phone ?? '—'}</td>
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <span className="inline-flex rounded-full bg-sky-500/20 px-2.5 py-0.5 text-xs font-medium text-sky-200">
+                            {leadRouteLabel(resolveRoute(row))}
+                          </span>
+                        </td>
+                        <td className="min-w-[220px] max-w-md px-4 py-3 text-slate-300">
+                          <p className="font-medium text-slate-100">{summary.badge}</p>
+                          <ul className="mt-1 space-y-0.5 text-xs text-slate-400">
+                            {summary.lines.slice(0, 3).map((line) => (
+                              <li key={line.label}>
+                                {line.label}: {line.value}
+                              </li>
+                            ))}
+                          </ul>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => setDetail(row)}
+                            className="rounded-md border border-slate-600 bg-slate-800 px-2.5 py-1 text-xs text-slate-200 hover:bg-slate-700"
+                          >
+                            전체보기
+                          </button>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              row.status === 'done'
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : 'bg-amber-500/20 text-amber-200'
+                            }`}
+                          >
+                            {STATUS_LABEL[row.status] ?? row.status}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3">{renderRowActions(row)}</td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -448,12 +533,11 @@ export default function AdminConsultPage() {
             <div className="flex items-start justify-between gap-4 border-b border-slate-800 px-5 py-4">
               <div>
                 <h2 id="consult-detail-title" className="text-lg font-semibold text-white">
-                  상담 내용 전체
+                  상담 상세
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">
                   {formatDate(detail.created_at)} · {detail.parent_name}
-                  {detail.phone ? ` · ${detail.phone}` : ''}
-                  {detail.consult_type ? ` · ${TYPE_LABEL[detail.consult_type] ?? detail.consult_type}` : ''}
+                  {detail.phone ? ` · ${detail.phone}` : ''} · {leadRouteLabel(resolveRoute(detail))}
                 </p>
               </div>
               <button
@@ -465,15 +549,69 @@ export default function AdminConsultPage() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="max-h-[calc(min(90vh,720px)-88px)] overflow-y-auto px-5 py-4">
-              {detail.child_age ? (
-                <p className="mb-3 text-sm text-slate-300">
-                  <span className="font-medium text-slate-400">자녀 나이·비고</span> {detail.child_age}
-                </p>
+            <div className="max-h-[calc(min(90vh,720px)-88px)] space-y-4 overflow-y-auto px-5 py-4">
+              {(() => {
+                const summary = summarizeLeadRow({
+                  lead_route: resolveRoute(detail),
+                  curriculum_mode: detail.curriculum_mode ?? null,
+                  private_start_direction: detail.private_start_direction ?? null,
+                  private_preferred_format: detail.private_preferred_format ?? null,
+                  conversion_evidence_slug: detail.conversion_evidence_slug ?? null,
+                  lead_context: detail.lead_context ?? null,
+                  content: detail.content,
+                  consult_type: detail.consult_type,
+                });
+                return (
+                  <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
+                    <p className="text-sm font-semibold text-indigo-200">{summary.badge}</p>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      {summary.lines.map((line) => (
+                        <div key={line.label} className="grid grid-cols-[5rem_1fr] gap-2">
+                          <dt className="text-slate-500">{line.label}</dt>
+                          <dd className="text-slate-200">{line.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                );
+              })()}
+
+              {detailChecklist ? (
+                <div className="rounded-xl border border-amber-900/50 bg-amber-950/20 p-4">
+                  <p className="text-sm font-semibold text-amber-100">{detailChecklist.title}</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-50/90">
+                    {detailChecklist.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
               ) : null}
-              <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-slate-200">
-                {detail.content}
-              </pre>
+
+              {resolveRoute(detail) === 'dispatch' ? (
+                <div className="rounded-xl border border-slate-700 bg-slate-800/30 p-4">
+                  <p className="text-sm font-semibold text-slate-100">Dispatch 원본</p>
+                  {dispatchLoading ? (
+                    <p className="mt-2 text-xs text-slate-400">불러오는 중…</p>
+                  ) : dispatchDetail ? (
+                    <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs text-slate-300">
+                      {JSON.stringify(dispatchDetail, null, 2)}
+                    </pre>
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-400">
+                      {detail.source_lead_id
+                        ? '원본을 찾지 못했습니다. 마이그레이션·연결을 확인하세요.'
+                        : 'source_lead_id 없음 (레거시 미러)'}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              <div>
+                <p className="mb-2 text-sm font-medium text-slate-400">원문 content</p>
+                <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-slate-200">
+                  {detail.content}
+                </pre>
+              </div>
             </div>
             <div className="flex justify-end gap-2 border-t border-slate-800 px-5 py-3">
               <button

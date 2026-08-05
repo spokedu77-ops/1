@@ -12,6 +12,22 @@ alwaysApply: true
 이 규칙은 `note-sync-invariants` / `note-editing-contracts` 보다 **우선**한다.  
 충돌 시: 저장됨처럼 보이지만 DB가 구버전 · 순서가 섞임 · 금액/문장이 되돌아감 → **전부 P0**.
 
+## 계층 (논리 충돌 시 승자)
+
+```
+ZERO LOSS (이 문서)  >  Sync 불변식  >  편집 C1–C6
+```
+
+| 긴장 | 승자 |
+|------|------|
+| 본문 침묵 wipe 보호 vs soft-delete/purge/leave | **삭제 Intent** (되살림 금지) |
+| 본문·체크 침묵 변경 vs 편집 UX(C1–C6) | **ZERO LOSS** (새 C번호로 덮지 말 것) |
+| local 미전송 vs remote Intent materialize | **ACK된 remote Intent** — passive seal은 stale만 막음 |
+| open 시 topology outbound 없음 | **서버 형제 순서** (#6) |
+| densify / create 직전 정렬 | densify는 **중복 order만** + 만남 순서 (#4); create 0..n-1은 **C1 Intent** |
+
+노션 따라 하기 = 편집 문법(C1–C6). 저장·merge가 Intent 없이 덮는 문제는 ZERO LOSS.
+
 ## ZERO LOSS 불변식
 
 1. **ACK ≡ materialize**  
@@ -19,8 +35,9 @@ alwaysApply: true
    outbound만 비우고 draft clear / UI `saved` 찍는 것은 **계약 위반**.
 
 2. **공유 predicate 단일**  
-   본문 회귀 판정은 `app/lib/note/noteContentAuthority.ts` (`shouldIgnoreRegressiveContentPatch`) **만**.  
-   서버·OpQueue·coordinator·passive가 각자 다른 “길이 비교”를 두면 위반.
+   본문·체크·html 회귀 판정은 `app/lib/note/noteContentAuthority.ts` (`shouldIgnoreRegressiveContentPatch`) **만**.  
+   서버·OpQueue·coordinator·passive가 각자 다른 “길이 비교”를 두면 위반.  
+   `decideRegressiveContentOp`는 outbound **빈 패치/접두 절단 사전 필터**일 뿐 SSOT가 아니다.
 
 3. **동일 길이 rewrite**  
    `1400만원` ↔ `1100만원`처럼 길이가 같아도 **matching `baseContent` 없으면 거부**.
@@ -53,4 +70,5 @@ alwaysApply: true
 - base 없는 동일길이 LWW를 “편의상” 다시 허용  
 - ignore/no-op materialize인데 ACK·draft clear·saved  
 - densify를 id 정렬로 “결정적”이라며 화면 순서 파괴  
-- 문서 전환 시 pending map clear / getBlock 없으면 drop
+- 문서 전환 시 pending map clear / getBlock 없으면 drop  
+- `decideRegressiveContentOp` / hook 길이 비교를 content authority SSOT처럼 추가

@@ -38,12 +38,52 @@ export type PrivateReview = {
   course: string;
 };
 
+export type PrivateStartDirection = 'confidence' | 'fundamental' | 'sport-prep' | 'peer-group';
+
+export type PrivatePreferredFormat = 'one-to-one' | 'small-group' | 'undecided';
+
 export type PrivateGoalPath = {
+  id: PrivateStartDirection;
   title: string;
   childSignal: string;
   classDirection: string;
   programs: readonly string[];
 };
+
+export const PRIVATE_START_DIRECTION_OPTIONS = [
+  { id: 'confidence', label: '운동 자신감' },
+  { id: 'fundamental', label: '기초체력·움직임' },
+  { id: 'sport-prep', label: '종목 준비' },
+  { id: 'peer-group', label: '또래 협동' },
+] as const satisfies ReadonlyArray<{ id: PrivateStartDirection; label: string }>;
+
+export const PRIVATE_FORMAT_OPTIONS = [
+  { id: 'one-to-one', label: '1:1 개인수업' },
+  { id: 'small-group', label: '2~4명 소그룹' },
+  { id: 'undecided', label: '상담 후 결정' },
+] as const satisfies ReadonlyArray<{ id: PrivatePreferredFormat; label: string }>;
+
+export const PRIVATE_INSTRUCTOR_PREFERENCE_OPTIONS = [
+  '여성 지도자',
+  '특정 종목 경험',
+  '별도 희망 없음',
+] as const;
+
+export function privateStartDirectionLabel(id: PrivateStartDirection): string {
+  return PRIVATE_START_DIRECTION_OPTIONS.find((o) => o.id === id)?.label ?? id;
+}
+
+export function privateFormatLabel(id: PrivatePreferredFormat): string {
+  return PRIVATE_FORMAT_OPTIONS.find((o) => o.id === id)?.label ?? id;
+}
+
+export function isPrivateStartDirection(value: string): value is PrivateStartDirection {
+  return PRIVATE_START_DIRECTION_OPTIONS.some((o) => o.id === value);
+}
+
+export function isPrivatePreferredFormat(value: string): value is PrivatePreferredFormat {
+  return PRIVATE_FORMAT_OPTIONS.some((o) => o.id === value);
+}
 
 /** 실시간 카운팅 시뮬레이션 — 근거 검증 전까지 랜딩에서는 미사용 */
 export const PRIVATE_COUNTER_BASE_DATE = '2024-01-01';
@@ -120,30 +160,44 @@ export const privatePage = {
     lead: '줄넘기·축구·농구 같은 종목은 목표를 위한 수단입니다. 먼저 아이가 어떤 경험을 쌓아야 하는지부터 정합니다.',
     items: [
       {
+        id: 'confidence',
         title: '운동 자신감',
         childSignal: '움직임을 피하거나 실패를 무서워하는 아이',
         classDirection: '작은 성공 경험을 반복해 참여감과 자기효능감을 먼저 만듭니다.',
         programs: ['기초 움직임', '구기 자신감', '놀이형 체육'],
       },
       {
+        id: 'fundamental',
         title: '기초체력·움직임',
         childSignal: '자세, 균형, 달리기, 점프 같은 기본기가 필요한 아이',
         classDirection: '균형·민첩성·협응성을 수업 루틴 안에서 차근차근 쌓습니다.',
         programs: ['달리기', '줄넘기', 'PAPS 기초'],
       },
       {
+        id: 'sport-prep',
         title: '종목 준비',
         childSignal: '특정 종목을 시작했지만 기본 기술에서 막히는 아이',
         classDirection: '종목 기술보다 먼저 필요한 자세, 리듬, 공 감각을 분리해 연습합니다.',
         programs: ['축구', '농구', '자전거·인라인'],
       },
       {
+        id: 'peer-group',
         title: '또래 협동',
         childSignal: '함께 움직이는 경험과 규칙 이해가 필요한 아이',
         classDirection: '소그룹 안에서 순서, 협동, 기다림, 역할 수행을 자연스럽게 익힙니다.',
         programs: ['소그룹 체육', '팀 미션', '협동 게임'],
       },
     ] satisfies PrivateGoalPath[],
+  },
+  assignmentPolicy: {
+    eyebrow: '배정 규칙',
+    title: '상담 조건 확인 후 적합 강사를 배정합니다',
+    lead: '프로필만 보고 확정하지 않습니다. 시작 방향·지역·시간을 확인한 뒤 담당을 맞추고, 첫 수업 후 적합성을 다시 봅니다.',
+    steps: [
+      '상담에서 시작 방향·수업 형태·지역·시간을 확인합니다.',
+      '가능 강사 풀에서 종목·일정·성별 희망에 맞춰 배정합니다.',
+      '첫 수업 후 참여감·진행 속도를 보고 필요 시 조정합니다.',
+    ] as const,
   },
   instructors: {
     eyebrow: '운영진',

@@ -13,21 +13,22 @@ export type SpomoveDifficultyOption = {
   sub: string;
 };
 
-/** 흰 공 찾기 통합 3단계 → engine tier+dual 매핑 */
-export function colorTrackerStageToEngine(stage: 1 | 2 | 3): {
+/** 흰 공 찾기 4옵션: 1=보통 느림, 2=보통 빠름, 3=어려움 느림, 4=어려움 빠름 */
+export function colorTrackerStageToEngine(stage: 1 | 2 | 3 | 4): {
   colorTrackerTier: 1 | 3;
   colorTrackerDualPanel: boolean;
 } {
-  if (stage === 3) return { colorTrackerTier: 3, colorTrackerDualPanel: true };
   if (stage === 2) return { colorTrackerTier: 3, colorTrackerDualPanel: false };
+  if (stage === 3) return { colorTrackerTier: 1, colorTrackerDualPanel: true };
+  if (stage === 4) return { colorTrackerTier: 3, colorTrackerDualPanel: true };
   return { colorTrackerTier: 1, colorTrackerDualPanel: false };
 }
 
 export function colorTrackerEngineToStage(
   tier: number | undefined,
   dualPanel: boolean | undefined,
-): 1 | 2 | 3 {
-  if (dualPanel) return 3;
+): 1 | 2 | 3 | 4 {
+  if (dualPanel) return tier === 3 || tier === 2 ? 4 : 3;
   if (tier === 3 || tier === 2) return 2;
   return 1;
 }
@@ -59,9 +60,10 @@ export function getSpomoveDifficultyOptions(
       ];
     case 'colorTracker':
       return [
-        { value: '1', label: '1', sub: '입문 · 단일' },
-        { value: '2', label: '2', sub: '집중 · 단일' },
-        { value: '3', label: '3', sub: '집중 · 2패널' },
+        { value: '1', label: '보통', sub: '1패널 · 느림' },
+        { value: '2', label: '보통', sub: '1패널 · 빠름' },
+        { value: '3', label: '어려움', sub: '2패널 · 느림' },
+        { value: '4', label: '어려움', sub: '2패널 · 빠름' },
       ];
     case 'mole':
       return [
@@ -117,7 +119,7 @@ export function applySpomoveDifficulty(
       break;
     }
     case 'colorTracker': {
-      const stage = value === '2' ? 2 : value === '3' ? 3 : 1;
+      const stage = value === '2' ? 2 : value === '3' ? 3 : value === '4' ? 4 : 1;
       const mapped = colorTrackerStageToEngine(stage);
       engine.colorTrackerTier = mapped.colorTrackerTier;
       engine.colorTrackerDualPanel = mapped.colorTrackerDualPanel;

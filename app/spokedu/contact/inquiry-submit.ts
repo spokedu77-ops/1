@@ -103,6 +103,9 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
         phone: payload.phone,
         email: payload.email,
         content: formatPrivateContent(payload),
+        preferred_format: 'undecided',
+        cta_intent_id: 'private_fit_consult',
+        acquisition: { entrySurface: 'direct' },
       },
     };
   }
@@ -125,6 +128,8 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
         programs: payload.preferredOperation ? [payload.preferredOperation] : [],
         targetAge: payload.targetAge ? [payload.targetAge] : [],
         source: 'spokedu-contact-dispatch',
+        cta_intent_id: 'dispatch_proposal',
+        acquisition: { entrySurface: 'direct' },
       },
     };
   }
@@ -147,6 +152,8 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
         programs: ['SPOMOVE', ...(payload.preferredOperation ? [payload.preferredOperation] : [])],
         targetAge: payload.targetAge ? [payload.targetAge] : [],
         source: 'spokedu-contact-spomove',
+        cta_intent_id: 'dispatch_proposal',
+        acquisition: { entrySurface: 'direct' },
       },
     };
   }
@@ -156,15 +163,18 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
       endpoint: '/api/curriculum/leads',
       body: {
         type: 'curriculum',
+        lead_mode: 'license',
         name_or_org: payload.nameOrOrg || payload.name,
         phone: payload.phone,
         email: payload.email,
-        content_type: payload.collaborationPurpose || '기타 협업',
-        target_age: payload.preferredRegion,
-        purpose: payload.message,
-        teacher_training: '해당 없음',
-        partnership_type: '기타 협업',
+        content_type: payload.collaborationPurpose || '기타',
+        target_age: payload.preferredRegion || '혼합 연령',
+        purpose: '협업 검토',
+        teacher_training: '상담 후 결정',
+        partnership_type: '협업 검토',
         extra: formatOtherExtra(payload),
+        cta_intent_id: 'license_consult',
+        acquisition: { entrySurface: 'direct' },
       },
     };
   }
@@ -173,15 +183,18 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
     endpoint: '/api/curriculum/leads',
     body: {
       type: payload.type,
+      lead_mode: 'training',
       name_or_org: payload.nameOrOrg,
       phone: payload.phone,
       email: payload.email,
-      content_type: payload.inquiryPurpose,
-      target_age: payload.preferredRegion,
-      purpose: payload.utilizationTarget,
-      teacher_training: '검토 중',
-      partnership_type: payload.utilizationTarget,
+      content_type: payload.inquiryPurpose || '지도자 교육·세미나',
+      target_age: payload.preferredRegion || '혼합 연령',
+      purpose: payload.utilizationTarget || '강사 교육',
+      teacher_training: '상담 후 결정',
+      partnership_type: payload.utilizationTarget || '교육 위탁',
       extra: formatCurriculumExtra(payload),
+      cta_intent_id: 'training_consult',
+      acquisition: { entrySurface: 'direct' },
     },
   };
 }

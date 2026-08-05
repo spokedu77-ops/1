@@ -39,6 +39,7 @@ import {
   clearNoteEmergencyDrafts,
   saveNoteEmergencyDraft,
 } from './noteEmergencyDrafts';
+import { noteContentHasProtectableUserPayload } from '@/app/lib/note/noteContentAuthority';
 
 import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
 import { resolveCreateBlockPersistOrders } from './noteCreatePersistOrders';
@@ -215,6 +216,9 @@ export class NoteDocumentPipeline {
       triggerSave: () => this.callbacks.triggerSave(),
       onError: (error) => this.callbacks.onError?.(error),
       onContentPersisted: (blockIds) => clearNoteEmergencyDrafts(this.documentId, blockIds),
+      onPreservePendingContent: (_documentId, blockId, content) => {
+        saveNoteEmergencyDraft(this.documentId, blockId, content);
+      },
       persistViaOpLog: this.coordinator
         ? (op, options) => this.coordinator!.enqueuePersistOp(op, options)
         : undefined,
@@ -258,16 +262,23 @@ export class NoteDocumentPipeline {
       return;
     }
     const storeBlock = useNoteBlockStore.getState().byId[blockId];
-    if (!storeBlock || storeBlock.document_id !== this.documentId) {
-      clearNoteEmergencyDraft(this.documentId, blockId);
-      this.queue?.clearContentPatch(blockId);
-      this.syncPendingFlag();
-      return;
-    }
     const prevContent = (baseContent
       ?? (storeBlock?.content as Record<string, unknown> | null | undefined)
       ?? {}) as Record<string, unknown>;
     const nextContent = { ...prevContent, ...content };
+
+    // leave/switch로 store에 없어도 보호 본문·체크는 pending+draft로 유지 (ZERO LOSS #5)
+    if (!storeBlock || storeBlock.document_id !== this.documentId) {
+      const protectable = noteContentHasProtectableUserPayload(nextContent)
+        || noteContentHasProtectableUserPayload(prevContent);
+      if (protectable) {
+        this.queue?.scheduleContentPatch(blockId, nextContent, baseContent ?? prevContent);
+        saveNoteEmergencyDraft(this.documentId, blockId, nextContent);
+        this.syncPendingFlag();
+      }
+      return;
+    }
+
     // LocalApply = dispatch(patchContent) — store 직패치 금지
     this.dispatch({ type: 'patchContent', blockId, content: nextContent });
     markNoteLocalSave(this.documentId);

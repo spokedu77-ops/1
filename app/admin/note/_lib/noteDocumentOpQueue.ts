@@ -17,6 +17,7 @@ const CONTENT_DEBOUNCE_MS = 1500;
 
 function hasProtectableContent(content: Record<string, unknown> | null | undefined): boolean {
   if (!content) return false;
+  if (content.checked === true) return true;
   const textKeys = ['text', 'html', 'title', 'body', 'caption', 'url', 'icon', 'blockColor', 'page_document_id'];
   return textKeys.some((key) => {
     const value = content[key];
@@ -55,6 +56,12 @@ export type NoteDocumentOpQueueDeps = {
   onServerPatches?: (blocks: PatchedNoteBlock[]) => void;
   onServerConflicts?: (blocks: NoteBlock[]) => void;
   onContentPersisted?: (blockIds: string[]) => void;
+  /** dispose 시 미전송 pending을 emergency draft 등으로 고정 */
+  onPreservePendingContent?: (
+    documentId: string,
+    blockId: string,
+    content: Record<string, unknown>,
+  ) => void;
   /** op-log sync 활성 시 HTTP persist 대신 coordinator에 위임. true = outbound 소진(서버 반영) */
   persistViaOpLog?: (
     op: NotePersistOp,
@@ -354,6 +361,16 @@ export class NoteDocumentOpQueue {
       clearTimeout(timer);
     }
     this.contentTimers.clear();
+    // ZERO LOSS: dispose가 pending을 삼키지 않게 emergency draft로 고정
+    for (const [blockId, pending] of this.pendingContent) {
+      if (!hasProtectableContent(pending.content)) continue;
+      const block = this.deps.getBlock(blockId);
+      this.deps.onPreservePendingContent?.(
+        block?.document_id ?? '',
+        blockId,
+        pending.content,
+      );
+    }
     this.pendingContent.clear();
     this.contentFlushPending = false;
   }

@@ -94,6 +94,7 @@ function filterRegressivePatchContentOps(
     const block = blocksById.get(payload.blockId);
     const localText = block ? readAuthorityBlockText(block.content) : '';
     const patchText = readAuthorityBlockText(payload.content);
+    // 사전 필터(빈 wipe/접두) — 최종 authority는 아래 shouldIgnoreRegressiveContentPatch
     const decision = decideRegressiveContentOp({
       localText,
       patchText,
@@ -106,7 +107,7 @@ function filterRegressivePatchContentOps(
       dropStaleIds.push(op.clientOpId);
       continue;
     }
-    // 동일길이 stale(1100 vs 1400): store를 current로 보고 공유 predicate로 차단
+    // SSOT: 동일길이·체크·html 등 (decideRegressiveContentOp가 통과시켜도 여기서 차단)
     if (
       block
       && shouldIgnoreRegressiveContentPatch(

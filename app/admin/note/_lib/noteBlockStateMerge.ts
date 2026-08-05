@@ -318,17 +318,17 @@ export function registerNoteContentFlush(fn: (() => Promise<void>) | null): void
 /** 문서 이탈 전 편집 내용을 최대한 보존 */
 export async function commitNoteDocumentBeforeLeave(): Promise<void> {
   commitActiveNoteEditorToStore();
-  if (registeredContentFlush) {
-    try {
-      await Promise.race([
-        registeredContentFlush(),
-        new Promise<void>((resolve) => {
-          window.setTimeout(resolve, BEFORE_LEAVE_CONTENT_FLUSH_TIMEOUT_MS);
-        }),
-      ]);
-    } catch {
-      // 저장 실패해도 스토어 커밋은 유지
-    }
+  if (!registeredContentFlush) return;
+  try {
+    // soft-timeout으로 pending을 버리지 않음 — timeout은 대기만 끊고 flush는 계속
+    await Promise.race([
+      registeredContentFlush(),
+      new Promise<void>((resolve) => {
+        window.setTimeout(resolve, BEFORE_LEAVE_CONTENT_FLUSH_TIMEOUT_MS);
+      }),
+    ]);
+  } catch {
+    // 저장 실패해도 스토어 커밋·emergency draft는 유지
   }
 }
 

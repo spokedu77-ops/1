@@ -8,9 +8,10 @@
  * Explicit Intent = create / patchContent / applyPatches(user) / structure command / 명시 migration
  */
 
-import { decideRegressiveContentOp, readAuthorityBlockText } from './noteAuthority';
+import { readAuthorityBlockText } from './noteAuthority';
 import {
   isStrictNoteTextExtension,
+  shouldIgnoreRegressiveContentPatch,
 } from '@/app/lib/note/noteContentAuthority';
 import type { NoteBlock } from './types';
 
@@ -91,8 +92,8 @@ export function isStrictPassiveTextExtension(localText: string, incomingText: st
 }
 
 /**
- * Passive merge: incoming이 로컬 사용자 본문을 비우거나 짧게/동등길이로 바꾸면 local 필드를 지킨다.
- * (active editor / storeAhead와 독립 — 비활성 체크리스트도 보호)
+ * Passive merge: 공유 shouldIgnoreRegressiveContentPatch로 본문·체크 회귀를 거부한다.
+ * (active editor / storeAhead와 독립 — 비활성 체크리스트·빈 체크 todo도 보호)
  * 허용: 로컬이 비었을 때 incoming 채움, 로컬의 **엄격한 확장**(prefix + 더 김).
  */
 export function mergePassiveIncomingContent(
@@ -101,30 +102,10 @@ export function mergePassiveIncomingContent(
 ): Record<string, unknown> {
   const local = { ...(localContent ?? {}) };
   const incoming = { ...(incomingContent ?? {}) };
-  const localText = readAuthorityBlockText(local);
-  const incomingText = readAuthorityBlockText(incoming);
-  const decision = decideRegressiveContentOp({
-    localText,
-    patchText: incomingText,
-    localHasMediaPresence: Boolean(
-      (typeof local.url === 'string' && local.url.trim())
-      || (typeof local.page_document_id === 'string' && local.page_document_id.trim()),
-    ),
-    patchHasMediaPresence: Boolean(
-      (typeof incoming.url === 'string' && incoming.url.trim())
-      || (typeof incoming.page_document_id === 'string' && incoming.page_document_id.trim()),
-    ),
-  });
 
-  if (decision === 'drop_stale') {
+  // ZERO LOSS: passive도 서버 push와 동일 predicate — 이중 판정 금지
+  if (shouldIgnoreRegressiveContentPatch(local, incoming)) {
     return copyLocalUserFieldsOnto(incoming, local);
-  }
-
-  // 짧은 비어 있지 않은: empty/짧은/동일길이 다른 본문/비확장 rewrite 전부 거부
-  if (localText.length > 0 && incomingText !== localText) {
-    if (!isStrictPassiveTextExtension(localText, incomingText)) {
-      return copyLocalUserFieldsOnto(incoming, local);
-    }
   }
 
   // push: incoming 채택하되, local-only 사용자 필드가 incoming에 비어 있으면 보존
@@ -141,17 +122,10 @@ export function mergePassiveIncomingContent(
       : typeof localValue === 'string' && localValue.trim().length > 0;
     if (incomingEmpty && localFilled) next[key] = localValue;
   }
-  // checked: incoming이 명시하지 않으면 local 유지. 텍스트를 local로 지킨 경우도 local checked.
-  if (!('checked' in incoming) && 'checked' in local) {
-    next.checked = local.checked === true;
-  } else if (
-    'checked' in local
-    && 'checked' in incoming
-    && localText.length > 0
-    && readAuthorityBlockText(next) === localText
-    && (local.checked === true) !== (incoming.checked === true)
-  ) {
-    // 본문은 local인데 checked만 flip — passive에서 침묵 uncheck 금지
+  // passive는 Intent base가 없다 — 체크된 로컬을 침묵 uncheck 금지 (빈 본문 포함)
+  if (local.checked === true && incoming.checked !== true) {
+    next.checked = true;
+  } else if (!('checked' in incoming) && 'checked' in local) {
     next.checked = local.checked === true;
   }
   return next;

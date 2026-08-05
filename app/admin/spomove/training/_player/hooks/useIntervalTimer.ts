@@ -31,6 +31,7 @@ export function useIntervalTimer({
   basicNumberOverlay,
   spatialArrowColorMode = 'basic',
   spatialArrowColorMapping = 'compass',
+  handFootDifficulty = 'easy',
   flankerStimulusType,
   flankerNestedCircleCount,
   flankerArrowMode,
@@ -52,6 +53,7 @@ export function useIntervalTimer({
   basicNumberOverlay?: 'none' | '2' | '3';
   spatialArrowColorMode?: 'basic' | 'color';
   spatialArrowColorMapping?: SpatialArrowColorMapping;
+  handFootDifficulty?: 'easy' | 'normal' | 'hard';
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
   flankerArrowMode?: 'lr' | 'udlr';
@@ -95,7 +97,15 @@ export function useIntervalTimer({
         ...(engineMode === 'stroop' ? { stroopWordMode } : {}),
       };
     if (engineMode === 'basic') {
-      genRef.current = createBasicSignalGenerator(engineLevel, colors, fruitSlides, basicNumberOverlay, effectiveArrowColorMode, spatialArrowColorMapping);
+      genRef.current = createBasicSignalGenerator(
+        engineLevel,
+        colors,
+        fruitSlides,
+        basicNumberOverlay,
+        effectiveArrowColorMode,
+        spatialArrowColorMapping,
+        handFootDifficulty,
+      );
     } else if (engineMode === 'simon') {
       const pole: 1 | 2 = simonPoleCount === 2 ? 2 : 1;
       genRef.current = createSimonSignalGenerator(engineLevel, colors, fruitSlides, pole);
@@ -183,7 +193,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, simonPoleCount, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, simonPoleCount, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

@@ -7,6 +7,7 @@ alwaysApply: false
 # admin/note — 편집 전역 계약
 
 `note-sync-invariants.mdc`와 **직교**. sync는 OpKind·pipeline 수명주기, **편집 UX는 이 rule**.
+본문·체크가 침묵으로 바뀌면 이 문서가 아니라 **`note-data-preservation` (ZERO LOSS)** 가 우선한다.
 
 문서 종류(루트·하위페이지·중첩 하위)·UI 경로(+ / Enter / paste / DnD / 마퀴)와 무관하게 **같은 계약만** 탄다.  
 “이 페이지만 / 이 훅만” 예외·경로별 땜빵 **금지**.

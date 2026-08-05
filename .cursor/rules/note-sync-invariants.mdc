@@ -44,15 +44,18 @@ exclude 레지스트리는 outbound leave/relocation의 **투영**일 뿐 SSOT�
 ## Authority (`noteAuthority.ts`) + Integrity (`noteDataIntegrity.ts`)
 
 open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Authority 모듈이다 (OpKind 표에 `authority` kind 없음).
-사용자 본문·체크의 **침묵 회귀 금지**는 Sync/Save Trust 계약이며, `sealPassiveIncomingBlock` /
-`mergePassiveIncomingContent`가 **모든 passive merge 구멍**에서 강제한다. hook에 무결 가드를 새로 넣지 않는다.
+사용자 본문·체크·html의 **침묵 회귀 금지**는 Sync/Save Trust 계약이며, **SSOT는
+`shouldIgnoreRegressiveContentPatch` (`app/lib/note/noteContentAuthority.ts`) 하나**다.
+`mergePassiveIncomingContent` / `sealPassiveIncomingBlock`은 그 predicate를 강제하는
+passive choke다. hook에 무결 가드를 새로 넣지 않는다.
 
 | 판정 | 의미 |
 |------|------|
+| `shouldIgnoreRegressiveContentPatch` | **본문·체크·html authority SSOT** — 서버 push·passive·outbound 최종 판정 |
 | `decideEmptySnapshotApply` | 빈 스냅샷 수용 vs race wipe 거부 (`emptyConfirmed` · leave 투영 · 보호 본문) |
-| `decideRegressiveContentOp` | 본문 clear intent push vs stale empty drop |
+| `decideRegressiveContentOp` | outbound **빈 wipe/접두 절단 사전 필터만** — SSOT 아님. 최종은 위 predicate |
 | `shouldKeepLocalOverEmptyServerAuthority` | open이 빈 서버보다 local 본문을 지킬지 |
-| `mergePassiveIncomingContent` | empty/짧은/동일길이·비확장 rewrite 거부; checked·page_id 보호 |
+| `mergePassiveIncomingContent` | seal이 호출 — `shouldIgnoreRegressiveContentPatch`로 회귀 거부; checked·page_id 보호 |
 | `sealPassiveIncomingBlock(s)` | incoming 골격·버전 유지 + 위 content 봉인 |
 | `reportNoteDurableSave` | UI saved 유일 게이트 (content/outbound pending 차단) |
 | **Intentional delete** | soft-delete/purge/leave는 Intent. IDB·merge가 삭제 id를 되살리면 계약 위반 |
@@ -79,6 +82,7 @@ open / pull / cache / regressive content 충돌은 **OpKind와 직교**인 Autho
 reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 호출한다. **새 passive 경로를 추가할 때 seal을 빼면 계약 위반이다. hook에 Authority/Integrity 분기를 새로 넣지 않는다.
 
 **주의:** “본문 침묵 wipe 금지”와 “의도된 삭제 유지”는 충돌하면 **삭제 Intent가 이긴다**. empty race wipe 거부로 soft-deleted id를 되살리는 땜빵 금지.
+**우선순위:** ZERO LOSS (`note-data-preservation`) > 이 Sync 문서 > 편집 C1–C6.
 
 ## Absolute rules (data preservation first)
 

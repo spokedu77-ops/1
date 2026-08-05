@@ -127,10 +127,14 @@ function DispatchEvidenceSection() {
             </div>
             <div className="p-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-teal-800">{item.audience} · {item.operation}</p>
+              <p className="mt-1 text-[11px] font-semibold text-stone-500">증명 · {item.proves}</p>
               <h3 className={`mt-1.5 text-base font-bold text-slate-950 ${koreanLineBreak}`}>{item.venue}</h3>
               <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.fitReason}</p>
               <p className={`mt-3 border-t border-stone-100 pt-3 text-sm font-semibold leading-relaxed text-slate-800 ${koreanLineBreak}`}>
                 “{item.review}”
+              </p>
+              <p className="mt-3 text-sm font-semibold text-teal-800">
+                {item.recordSlug ? '사례 상세 보기 →' : '관련 사례 목록 →'}
               </p>
             </div>
           </Link>

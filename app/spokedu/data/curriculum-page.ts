@@ -28,14 +28,14 @@ export const curriculumPage = {
   },
   heroCtas: {
     primary: {
-      label: '커리큘럼·지도자 교육 문의',
-      href: '#inquiry',
-      trackLabel: 'curriculum-cta-inquiry',
+      label: '필요한 교육·콘텐츠 제안받기',
+      href: '#modes',
+      trackLabel: 'curriculum-cta-modes',
     },
     secondary: {
-      label: '상담으로 이어가기',
-      href: '/spokedu/contact?type=curriculum',
-      trackLabel: 'curriculum-cta-contact',
+      label: 'SPOKEDU MASTER 보기',
+      href: '/spokedu-master/landing',
+      trackLabel: 'curriculum-cta-master',
     },
   },
   leaderAxes: {
@@ -129,6 +129,7 @@ export const curriculumPage = {
     lead: '세미나·커리큘럼 판매·구독 도구까지, 현장 기준을 교육과 콘텐츠로 확장한 기록입니다.',
     items: [
       {
+        id: 'gwangju-seminar',
         title: '광주광역시 체육 지도자 교육 세미나',
         date: '2026. 07. 16',
         venue: '스포키듀 / 스포키듀LAB',
@@ -142,6 +143,7 @@ export const curriculumPage = {
         } satisfies CurriculumMediaRequirement,
       },
       {
+        id: 'seocho-seminar',
         title: '강사 세미나',
         date: '2023. 10~12',
         venue: '서초여성가족플라자',
@@ -155,6 +157,7 @@ export const curriculumPage = {
         } satisfies CurriculumMediaRequirement,
       },
       {
+        id: 'emart-package',
         title: '커리큘럼 판매',
         date: '2025. 03',
         venue: '이마트 문화센터',
@@ -169,6 +172,7 @@ export const curriculumPage = {
         } satisfies CurriculumMediaRequirement,
       },
       {
+        id: 'master-subscription',
         title: '구독 서비스',
         date: '2026',
         venue: 'SPOKEDU MASTER',
@@ -203,14 +207,14 @@ export const curriculumPage = {
     },
   },
   finalCta: {
-    title: '커리큘럼·지도자 교육을 함께 만들고 싶다면',
+    title: '필요한 도입 단위를 먼저 고르고 문의해 주세요',
     description:
-      '수업안, 운영 매뉴얼, 강사교육, SPOMOVE 도입, 라이선싱 등 필요한 범위에 맞춰 안내드립니다.',
+      '자료·패키지, 교육·도입, MASTER, 라이선스 중 맞는 모드를 고르면 문의 내용이 그 범위로 이어집니다.',
     mediaKey: 'curriculumPackage' as HomeMediaKey,
     primary: {
-      label: '커리큘럼·교육 문의하기',
-      href: '#inquiry',
-      trackLabel: 'curriculum-final-inquiry',
+      label: '도입 모드 고르기',
+      href: '#modes',
+      trackLabel: 'curriculum-final-modes',
     },
   },
   processOnePager: {

@@ -395,4 +395,25 @@ describe('NoteDocumentOpQueue', () => {
     );
     expect(triggerSave).toHaveBeenCalledOnce();
   });
+
+  it('preserves protectable pending content to draft on dispose (no silent drop)', () => {
+    const preserve = vi.fn();
+    const queue = new NoteDocumentOpQueue({
+      getBlock: (id) => (id === 'a' ? baseBlock('a', 'typed') : undefined),
+      getActiveBlockId: () => null,
+      triggerSave: vi.fn(),
+      persistViaOpLog: vi.fn().mockResolvedValue(true),
+      onPreservePendingContent: preserve,
+    });
+
+    queue.scheduleContentPatch('a', { text: 'typed and not flushed' }, { text: 'typed' });
+    queue.dispose();
+
+    expect(preserve).toHaveBeenCalledWith(
+      'doc-1',
+      'a',
+      { text: 'typed and not flushed' },
+    );
+    expect(queue.hasPendingContent).toBe(false);
+  });
 });

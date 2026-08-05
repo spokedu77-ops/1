@@ -124,7 +124,7 @@ export const PROGRAMS: Program[] = [
         '콘을 밟거나 차지 않도록 이동 경로 바깥쪽으로 발을 둡니다.',
         '바닥이 미끄러우면 달리기 대신 빠른 걷기로 진행합니다.',
       ],
-      relatedSpomoveIds: ['reactTrain', 'basic'],
+      relatedSpomoveIds: ['basic', 'reactTrain'],
       heroImageUrl: '/images/spokedu-master/programs/figure-8-agility/hero.svg',
       galleryImageUrls: [],
       briefingNotes: [
@@ -264,7 +264,7 @@ export const PROGRAMS: Program[] = [
         '이동 중 충돌이 생기지 않도록 한 번에 이동하는 인원을 제한합니다.',
         '처음에는 빠른 이동보다 정확한 색 찾기에 집중하도록 안내합니다.',
       ],
-      relatedSpomoveIds: ['reactTrain', 'basic'],
+      relatedSpomoveIds: ['basic', 'reactTrain'],
       galleryImageUrls: [],
       briefingNotes: [
         '색깔 원판 위치를 미리 정하고 이동 경로가 겹치지 않는지 확인합니다.',
@@ -402,7 +402,7 @@ export const PROGRAMS: Program[] = [
         '사다리 금속 프레임이 있는 경우 밟지 않도록 미리 안내합니다.',
         '미끄러운 바닥에서는 양말 착용을 금지하고 운동화를 확인합니다.',
       ],
-      relatedSpomoveIds: ['reactTrain', 'basic'],
+      relatedSpomoveIds: ['basic', 'reactTrain'],
       heroImageUrl: '/images/spokedu-master/programs/agility-ladder-sprint/hero.svg',
       galleryImageUrls: [],
       briefingNotes: [

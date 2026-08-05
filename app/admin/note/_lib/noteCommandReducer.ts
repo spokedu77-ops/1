@@ -40,6 +40,8 @@ function hasVisibleBlockContent(block: NoteBlock): boolean {
     if (typeof value === 'string' && value.trim().length > 0) return true;
   }
   if (!isEffectivelyEmptyHtml(content.html)) return true;
+  // 체크된 todo는 빈 글자여도 사용자 기록 — Intent 없이 drop 금지
+  if (content.checked === true) return true;
   return false;
 }
 

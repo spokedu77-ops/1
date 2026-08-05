@@ -6,10 +6,26 @@ This file defines the minimum Notion-like contract for Admin Note. New fixes sho
 
 **The product baseline for Admin Note is data preservation, not feature completeness.**
 
-- User-authored text, callout bodies, checklist text, and sibling relative order must not change or disappear without an explicit Intent.
+Precedence when contracts tension:
+
+```
+ZERO LOSS (this section)  >  Sync / Save Trust  >  Editing C1–C6
+```
+
+| Tension | Winner |
+|---------|--------|
+| Silent body wipe protection vs soft-delete / purge / leave | **Delete Intent** (no resurrection) |
+| Silent body/check change vs editing UX (C1–C6) | **ZERO LOSS** (do not invent a new C-number) |
+| Unsent local vs ACK'd remote Intent | **ACK'd remote Intent** — passive seal blocks stale only |
+| Open with no topology outbound | **Server sibling order** |
+| Densify vs create renumber | Densify only on **duplicate orders** + encounter order; create `0..n-1` is **C1 Intent** |
+
+Notion-like editing grammar is C1–C6. Silent overwrite on save/merge is ZERO LOSS — they do not contradict when precedence is applied.
+
+- User-authored text, callout bodies, checklist text/checked, html marks, and sibling relative order must not change or disappear without an explicit Intent.
 - `ACK ≡ materialize`: a regressive `patch_content` must not be committed to the op-log as a successful content write. Rejected ops must not clear emergency drafts or flip UI to `saved`.
-- Content authority is a single shared predicate: `app/lib/note/noteContentAuthority.ts` (`shouldIgnoreRegressiveContentPatch`). Server, push filter, flush, and passive merge must not invent alternate length/LWW rules.
-- Equal-length rewrites (e.g. `1400만원` ↔ `1100만원`) without a matching `baseContent` are forbidden.
+- Content authority is a **single** shared predicate: `app/lib/note/noteContentAuthority.ts` (`shouldIgnoreRegressiveContentPatch`). Server, push filter, flush, and passive merge must not invent alternate length/LWW rules. `decideRegressiveContentOp` is only an outbound empty/prefix prefilter — **not** the authority SSOT.
+- Equal-length rewrites (e.g. `1400만원` ↔ `1100만원`) without a matching `baseContent` are forbidden. Same for silent `checked` flips and html-only rewrites without matching base.
 - Sibling densify runs only on duplicate `order_index` and must preserve encounter order (never reshuffle by id).
 - Document leave/switch must not drop pending content because the store row is temporarily missing.
 
@@ -79,7 +95,7 @@ The supported Notion-like surface is intentionally small:
 - Structural changes and text/content patches are different classes of operations.
 - Remote snapshots must not wipe local unpublished structural intent.
 - When local structure is authoritative (`hasUnpublishedTopology` / preserve_local), `type`, `parent_block_id`, `order_index`, and `document_id` stay local. When structure authority is **incoming** (idle), `syncSnapshot` / `mergeSnapshots` must project incoming order/parent — they must not unconditionally overwrite incoming positions with local ones.
-- **Data integrity (foundation):** Passive paths must not change user-authored payload without an explicit Intent. Clearing, truncating, equal-length replacement, or non-extension rewrite of non-empty local text is forbidden. Passive may only fill empty local text or apply a **strict extension**: incoming starts with local, is longer, local trimmed length is **> 2**, and the suffix has **no newline** (blocks paste residue). Short-prefix false hits like `"A"` → `"A server"` are forbidden. `checked` must not flip off while text is unchanged. `page_document_id` / media ids must not clear while local still holds them. Every passive hole uses `mergePassiveIncomingContent` / `sealPassiveIncomingBlock`. **Adding a new passive merge that assigns `content` from server/remote without seal is a contract violation.**
+- **Data integrity (foundation):** Passive paths must not change user-authored payload without an explicit Intent. The shared gate is `shouldIgnoreRegressiveContentPatch` (text / checked / html). Clearing, truncating, equal-length replacement, or non-extension rewrite of non-empty local text is forbidden. Passive may only fill empty local text or apply a **strict extension**: incoming starts with local, is longer, local trimmed length is **> 2**, and the suffix has **no newline** (blocks paste residue). Short-prefix false hits like `"A"` → `"A server"` are forbidden. `checked` / html-only flips without matching base are forbidden. `page_document_id` / media ids must not clear while local still holds them. Every passive hole uses `mergePassiveIncomingContent` / `sealPassiveIncomingBlock` (which call the shared predicate). **Adding a new passive merge that assigns `content` from server/remote without seal is a contract violation.**
 - **Intentional delete is Intent, not passive wipe:** Soft-delete / purge / leave-exclude is an explicit user (or system leave) Intent. Integrity must not resurrect deleted block ids.
   - Soft-delete enqueue must clear emergency drafts for those ids. Product delete uses `persistBlockTransaction(deleteIds)`: draft clear, content-patch clear, and `markPendingBlockDeletes` (leave-exclude) on that choke. TipTap late `scheduleContentPatch` for excluded/missing ids must not rewrite drafts or store.
   - `mergeServerBlocksIntoLocalSnapshot` must **drop** pending-delete / leave-exclude ids from the **local** side, not only skip re-adding them from the server.

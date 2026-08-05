@@ -1,8 +1,10 @@
 'use client';
 
-import { useCallback, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
+import { captureAcquisitionFromLocation, getAcquisitionContext } from '../lib/acquisition';
+import { trackCommercialEvent } from '../lib/commercial-events';
 import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
 
 const PROGRAM_OPTIONS = [
@@ -69,6 +71,10 @@ export function DispatchProposalForm() {
     setInquiry('');
   }, []);
 
+  useEffect(() => {
+    captureAcquisitionFromLocation();
+  }, []);
+
   const programsPayload = useMemo(() => {
     const list = [...programs];
     if (programs.includes('기타') && programOther.trim()) {
@@ -92,6 +98,12 @@ export function DispatchProposalForm() {
       setSubmitting(true);
       setStatus({ tone: 'idle', message: '' });
       try {
+        trackCommercialEvent({
+          name: 'primary_cta_clicked',
+          route: 'dispatch',
+          ctaIntentId: 'dispatch_proposal',
+          selectionId: programsPayload[0],
+        });
         const response = await fetch('/api/dispatch/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -110,15 +122,31 @@ export function DispatchProposalForm() {
             specialNeeds,
             inquiry: inquiry.trim(),
             source: 'spokedu-dispatch-proposal',
+            acquisition: getAcquisitionContext(),
+            cta_intent_id: 'dispatch_proposal',
           }),
         });
-        const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string; message?: string } | null;
+        const result = (await response.json().catch(() => null)) as {
+          ok?: boolean;
+          error?: string;
+          message?: string;
+          leadId?: string;
+        } | null;
         if (!response.ok || !result?.ok) {
           setStatus({
             tone: 'error',
             message: result?.error || result?.message || '접수에 실패했습니다. 잠시 후 다시 시도해 주세요.',
           });
           return;
+        }
+        if (result.leadId) {
+          trackCommercialEvent({
+            name: 'form_submitted',
+            route: 'dispatch',
+            leadId: result.leadId,
+            selectionId: programsPayload[0],
+            ctaIntentId: 'dispatch_proposal',
+          });
         }
         reset();
         setStatus({ tone: 'ok', message: '운영 상담이 접수되었습니다. 담당자가 확인 후 연락드립니다.' });

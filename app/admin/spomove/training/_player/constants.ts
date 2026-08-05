@@ -92,15 +92,16 @@ export const MODES: Record<string, SpomoveMode> = {
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
       // id = engine level (불변). 화면 N번은 카탈로그 배열 순번.
-      { id: 1, name: '파도 피하기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
-      { id: 2, name: '떨어지는 벽돌들', enName: 'FLOW', desc: '색 자극이 동시에 2개씩 흘러내립니다.' },
-      { id: 3, name: '풍선 터뜨리기', enName: 'FLASH', desc: '떨어지는 색 풍선이 하단 가시에 닿을 때 해당 색으로 반응합니다.' },
-      { id: 6, name: '두더지 잡기', enName: 'Mole', desc: '구멍에서 튀어나오는 두더지에 반응합니다. 난이도(1/2)는 아래에서 고릅니다.' },
-      { id: 8, name: '숫자 연산 기차', enName: 'Number Train', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 기차가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
-      { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '흰 공을 끝까지 추적한 뒤 멈춘 구역을 맞춥니다. 단계(1/2/3)는 아래에서 고릅니다.' },
-      { id: 10, name: '골키퍼 모드', enName: 'Goalkeeper', desc: '4코너로 날아오는 슛·커브·더블을 눈으로 보고 도착 위치에 맞춰 반응합니다. 가운데 위치 구령 없음.' },
-      { id: 12, name: '색 기억 그리드', enName: 'Color Memory Grid', desc: '색 배열을 기억한 뒤 단 한 칸만 바뀝니다. 바뀐 색 패드로 반응합니다. 깜빡이/원샷 선택.' },
-      { id: 13, name: '바이러스 폭증', enName: 'Virus Outbreak', desc: '배양 접시에 증식하는 색의 양감을 보고 가장 많거나 적은 색 패드로 반응합니다. 난이도 1~3.' },
+      { id: 3, name: '풍선 터뜨리기', enName: 'Balloon Pop', desc: '난이도 쉬움. 풍선 색 패드로 이동하고, 풍선이 터질 때 박수로 반응합니다.' },
+      { id: 1, name: '파도 피하기', enName: 'Wave Dodge', desc: '난이도 쉬움. 파도 색 패드로 이동하고, 파도가 터질 때 점프합니다.' },
+      { id: 2, name: '떨어지는 벽돌', enName: 'Falling Bricks', desc: '난이도 보통. 색 벽돌 2개가 떨어지면 해당 색 패드 두 곳에 한 발씩 놓습니다.' },
+      { id: 6, name: '두더지 잡기', enName: 'Mole', desc: '난이도 쉬움/보통. 쉬움은 1마리, 보통은 1마리 50%·2마리 50%로 등장합니다. 보너스타임 ON 시 본 활동 뒤 30초 동안 1초마다 1마리씩 추가 등장합니다.' },
+      { id: 10, name: '축구 : 골키퍼', enName: 'Soccer Goalkeeper', desc: '난이도 쉬움/보통. 쉬움은 공 1개, 보통은 공 1개 50%·2개 50%로 날아옵니다. 보너스타임 ON 시 본 활동 뒤 30초 동안 1초마다 공 1개씩 추가 등장합니다.' },
+      { id: 201, name: '손 따로, 발 따로', enName: 'Hand and Foot Separate', desc: '난이도 쉬움/보통/어려움. 기존 변형 4분할 프로그램을 시지각 반응으로 이관합니다.' },
+      { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '난이도 보통(1패널)/어려움(2패널). 각 난이도에서 속도 느림/빠름을 선택합니다.' },
+      { id: 8, name: '(보류) 숫자 연산 기차', enName: '(On Hold) Number Train', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
+      { id: 12, name: '(보류) 색 기억 그리드', enName: '(On Hold) Color Memory Grid', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
+      { id: 13, name: '(보류) 바이러스 폭증', enName: '(On Hold) Virus Outbreak', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
     ],
   },
   basic: {
@@ -228,8 +229,8 @@ export const MODES: Record<string, SpomoveMode> = {
  * 복합 반응: 스트룹 과제 / 순차 기억
  */
 export const SPOMOVE_CATALOG_SLOT_IDS = [
-  'reactTrain', // 단순 1 — 시지각 반응 / Visual Reaction
-  'basic',      // 단순 2 — 반응 인지 / Reactive Cognition
+  'basic',      // 단순 1 — 반응 인지 / Reactive Cognition
+  'reactTrain', // 단순 2 — 시지각 반응 / Visual Reaction
   'simon',      // 선택 1 — 사이먼 효과 / Simon Effect
   'flanker',    // 선택 2 — 플랭커 / Flanker
   'stroop',     // 복합 1 — 스트룹 과제 / Stroop Task
@@ -243,6 +244,7 @@ export const SPOMOVE_BOTTOM_CATALOG_SLOT_IDS = [
 
 export type ReactTrainUiLevelDefaults = {
   engineLevel: number;
+  engineMode?: string;
   moleLookMode?: 'classic' | 'variant';
   numberCartTier?: 1 | 2 | 3;
   colorTrackerTier?: 1 | 2 | 3;
@@ -276,6 +278,8 @@ const LEGACY_REACT_TRAIN_LEVEL_REMAP: Record<number, number> = {
  */
 export function resolveReactTrainUiLevel(level: number): ReactTrainUiLevelDefaults {
   switch (level) {
+    case 201:
+      return { engineMode: 'basic', engineLevel: 7 };
     case 41:
       return { engineLevel: 5, camouflagePlacement: 'variant' };
     case 5:
@@ -431,7 +435,8 @@ export function resolveTrainingEngine(mode: string, level: number): { engineMode
     return { engineMode: 'stroop', engineLevel: 4 };
   }
   if (mode === 'reactTrain') {
-    return { engineMode: 'reactTrain', engineLevel: resolveReactTrainUiLevel(level).engineLevel };
+    const resolved = resolveReactTrainUiLevel(level);
+    return { engineMode: resolved.engineMode ?? 'reactTrain', engineLevel: resolved.engineLevel };
   }
   return { engineMode: mode, engineLevel: level };
 }

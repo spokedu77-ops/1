@@ -80,7 +80,7 @@ describe('syncBlocksStructure list type change', () => {
     expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('typing now');
   });
 
-  it('preserves active editor content when hydrate receives a stale snapshot', () => {
+  it('preserves active editor text and checked when hydrate receives a stale snapshot', () => {
     useNoteBlockStore.getState().hydrate([
       block('a', 'todo', { text: 'checked while editing', checked: true }),
     ]);
@@ -91,7 +91,8 @@ describe('syncBlocksStructure list type change', () => {
     ]);
 
     expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('checked while editing');
-    expect(useNoteBlockStore.getState().getBlock('a')?.content?.checked).toBe(false);
+    // ZERO LOSS: 편집 중 stale hydrate가 체크를 풀면 안 됨 (전 문서 공통)
+    expect(useNoteBlockStore.getState().getBlock('a')?.content?.checked).toBe(true);
   });
 
   it('does not preserve active editor content across block type changes', () => {

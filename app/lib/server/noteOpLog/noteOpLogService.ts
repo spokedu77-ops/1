@@ -193,6 +193,53 @@ function hasStructuredContent(content: unknown): boolean {
   return noteContentHasStructuredPresence(content);
 }
 
+function isTopologyOnlyPatch(patch: TransactionLikePatch): boolean {
+  return patch.type !== undefined
+    || typeof patch.order_index === 'number'
+    || 'parent_block_id' in patch
+    || typeof patch.document_id === 'string';
+}
+
+/**
+ * patch_fields / transaction 의 content는 baseContent 없이 올 수 있다.
+ * 공유 authority로 regressive content를 제거해 topology만 남긴다 (predicate 우회 금지).
+ */
+export async function stripRegressiveContentFromPatches<T extends TransactionLikePatch>(
+  supabase: SupabaseClient,
+  documentId: string,
+  patches: T[],
+): Promise<T[]> {
+  const out: T[] = [];
+  for (const patch of patches) {
+    if (patch.content === undefined) {
+      out.push(patch);
+      continue;
+    }
+    const { data: current } = await supabase
+      .from('note_blocks')
+      .select('content')
+      .eq('id', patch.id)
+      .eq('document_id', documentId)
+      .maybeSingle();
+    if (!current) {
+      if (isTopologyOnlyPatch(patch)) {
+        const { content: _dropped, ...topology } = patch;
+        out.push(topology as T);
+      }
+      continue;
+    }
+    if (shouldIgnoreRegressiveContentPatch(current.content, patch.content)) {
+      if (isTopologyOnlyPatch(patch)) {
+        const { content: _dropped, ...topology } = patch;
+        out.push(topology as T);
+      }
+      continue;
+    }
+    out.push(patch);
+  }
+  return out;
+}
+
 function softDeleteMetaMatches(
   row: Record<string, unknown>,
   deleteMeta: Array<{ id: string; updated_at?: string | null }> | undefined,
@@ -454,8 +501,9 @@ export async function applyNoteBlockOpPayload(
       documentId,
       payload.patches.map(stripExpectedVersion),
     );
-    if (patches.length === 0) return [];
-    const normalized = await normalizeRpcTransactionPayload(supabase, documentId, patches, [], []);
+    const safePatches = await stripRegressiveContentFromPatches(supabase, documentId, patches);
+    if (safePatches.length === 0) return [];
+    const normalized = await normalizeRpcTransactionPayload(supabase, documentId, safePatches, [], []);
     const { data, error } = await supabase.rpc('note_apply_block_transaction', {
       p_updates: normalized.updates,
       p_delete_ids: [],
@@ -513,6 +561,7 @@ export async function applyNoteBlockOpPayload(
     const updates = await filterExistingTransactionPatches(supabase, documentId, [
       ...(payload.transactionUpdates ?? []).map(stripExpectedVersion),
     ]);
+    const safeUpdates = await stripRegressiveContentFromPatches(supabase, documentId, updates);
     const creates = [{
       id: payload.id,
       document_id: payload.documentId,
@@ -521,7 +570,7 @@ export async function applyNoteBlockOpPayload(
       order_index: payload.order_index ?? 0,
       content: payload.content,
     }];
-    const normalized = await normalizeRpcTransactionPayload(supabase, documentId, updates, creates, []);
+    const normalized = await normalizeRpcTransactionPayload(supabase, documentId, safeUpdates, creates, []);
     const { data, error } = await supabase.rpc('note_apply_block_transaction', {
       p_updates: normalized.updates,
       p_delete_ids: [],
@@ -547,6 +596,7 @@ export async function applyNoteBlockOpPayload(
       documentId,
       payload.patches.map(stripExpectedVersion),
     );
+    const safePatches = await stripRegressiveContentFromPatches(supabase, documentId, patches);
     const deleteIds = payload.deleteIds.length > 0
       ? await filterSoftDeleteIdsByMeta(supabase, documentId, payload.deleteIds, payload.deleteMeta)
       : [];
@@ -566,7 +616,7 @@ export async function applyNoteBlockOpPayload(
     const normalized = await normalizeRpcTransactionPayload(
       supabase,
       documentId,
-      patches,
+      safePatches,
       payload.creates ?? [],
       deleteIds,
     );
@@ -678,6 +728,34 @@ export async function pushNoteBlockOps(
       }
     }
 
+    // patch_fields / transaction content — regressive면 commit·ACK 금지 (strip 후 ACK 구멍 차단)
+    if (
+      op.payload.opType === 'patch_fields'
+      || op.payload.opType === 'block_transaction'
+    ) {
+      let rejected = false;
+      for (const patch of op.payload.patches) {
+        if (patch.content === undefined) continue;
+        const { data: current } = await supabase
+          .from('note_blocks')
+          .select('content')
+          .eq('id', patch.id)
+          .eq('document_id', documentId)
+          .maybeSingle();
+        if (
+          current
+          && shouldIgnoreRegressiveContentPatch(current.content, patch.content)
+        ) {
+          rejected = true;
+          break;
+        }
+      }
+      if (rejected) {
+        rejectedClientOpIds.push(op.clientOpId);
+        continue;
+      }
+    }
+
     const commit = await commitNoteBlockOp(
       supabase,
       documentId,
@@ -699,13 +777,30 @@ export async function pushNoteBlockOps(
     if (commit.status === 'duplicate') {
       if (isLeaveMaterializePayload(op.payload)) {
         blocks.push(...await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId));
+        appliedClientOpIds.push(op.clientOpId);
+      } else if (op.payload.opType === 'patch_content') {
+        // duplicate여도 materialize 재시도 — ACK≠빈 apply 금지
+        const applied = await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId);
+        if (applied.length === 0) {
+          rejectedClientOpIds.push(op.clientOpId);
+        } else {
+          blocks.push(...applied);
+          appliedClientOpIds.push(op.clientOpId);
+        }
+      } else {
+        appliedClientOpIds.push(op.clientOpId);
       }
-      appliedClientOpIds.push(op.clientOpId);
       runningBaseSeq = commit.assignedSeq;
       continue;
     }
 
     const applied = await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId);
+    // ZERO LOSS #1: materialize 실패([])인데 ACK하면 draft clear·saved 후보가 열린다
+    if (op.payload.opType === 'patch_content' && applied.length === 0) {
+      rejectedClientOpIds.push(op.clientOpId);
+      runningBaseSeq = commit.assignedSeq;
+      continue;
+    }
     blocks.push(...applied);
     appliedClientOpIds.push(op.clientOpId);
     runningBaseSeq = commit.assignedSeq;

@@ -338,21 +338,37 @@ class Particle {
   r: number;
   grav: number;
   soft: boolean;
-  constructor(x: number, y: number, color: string, burstScale = 1, soft = false) {
+  shape: 'dot' | 'clap';
+  rot: number;
+  spin: number;
+  constructor(x: number, y: number, color: string, burstScale = 1, soft = false, shape: 'dot' | 'clap' = 'dot') {
     this.x = x;
     this.y = y;
     this.color = color;
     this.soft = soft;
+    this.shape = shape;
     const a = Math.random() * Math.PI * 2;
-    if (soft) {
-      // 풍선 팡: 느리게 크게 퍼지는 방울 (체감 ~5배 스케일)
-      const s = (Math.random() * 9 + 5) * burstScale;
-      this.vx = Math.cos(a) * s;
-      this.vy = Math.sin(a) * s - 1.5;
+    this.rot = Math.random() * Math.PI * 2;
+    this.spin = (Math.random() - 0.5) * 0.18;
+    if (shape === 'clap') {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const s = (Math.random() * 10 + 13) * burstScale;
+      this.vx = side * s;
+      this.vy = -(Math.random() * 7 + 7) * burstScale;
       this.life = 1;
-      this.dec = 0.012 + Math.random() * 0.008;
-      this.r = (Math.random() * 55 + 48) * Math.sqrt(burstScale);
-      this.grav = 0.04;
+      this.dec = 0.014 + Math.random() * 0.01;
+      this.r = (Math.random() * 24 + 28) * Math.sqrt(burstScale);
+      this.grav = 0.22 * Math.sqrt(burstScale);
+      this.rot = side > 0 ? -0.7 : 0.7;
+      this.spin = side * (0.05 + Math.random() * 0.05);
+    } else if (soft) {
+      const s = (Math.random() * 9 + 8) * burstScale;
+      this.vx = Math.cos(a) * s;
+      this.vy = Math.sin(a) * s - 1.2;
+      this.life = 1;
+      this.dec = 0.012 + Math.random() * 0.012;
+      this.r = (Math.random() * 22 + 16) * Math.sqrt(burstScale);
+      this.grav = 0.08;
     } else {
       const s = (Math.random() * 10 + 3) * burstScale;
       this.vx = Math.cos(a) * s;
@@ -368,21 +384,35 @@ class Particle {
     this.y += this.vy;
     this.vy += this.grav;
     if (this.soft) {
-      this.vx *= 0.955;
-      this.vy *= 0.955;
-      this.r *= 1.018;
+      this.vx *= 0.96;
+      this.vy *= 0.96;
+      this.r *= 1.012;
     }
+    this.rot += this.spin;
     this.life -= this.dec;
   }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
-    ctx.globalAlpha = Math.max(0, this.life) * (this.soft ? 0.72 : 1);
+    ctx.globalAlpha = Math.max(0, this.life) * (this.soft ? 0.86 : 1);
     ctx.shadowColor = this.color;
-    ctx.shadowBlur = this.soft ? 28 : 12;
+    ctx.shadowBlur = this.shape === 'clap' ? 36 : this.soft ? 34 : 12;
     ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fill();
+    if (this.shape === 'clap') {
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rot);
+      const w = this.r * 0.72;
+      const h = this.r * 1.18;
+      fillRoundPath(ctx, -w / 2, -h / 2, w, h, w * 0.42);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha *= 0.35;
+      fillRoundPath(ctx, -w * 0.12, -h * 0.34, w * 0.24, h * 0.45, w * 0.16);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 }
@@ -478,9 +508,8 @@ function buildFlashSpikeLayout(count = 26): {
     return {
       id,
       leftPct: 1.5 + t * 97 + (Math.random() - 0.5) * 0.8,
-      // 이전 대비 두께·길이 2배 (시인성)
-      heightPx: tall ? 116 + Math.random() * 84 : 72 + Math.random() * 56,
-      widthPx: tall ? 7 + Math.random() * 5.6 : 9 + Math.random() * 7,
+      heightPx: tall ? 128 + Math.random() * 90 : 82 + Math.random() * 62,
+      widthPx: tall ? 21 + Math.random() * 16 : 27 + Math.random() * 21,
       rotateDeg: -14 + Math.random() * 28,
       opacity: 0.55 + Math.random() * 0.4,
     };
@@ -605,10 +634,13 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       }
       const c = RT_COLORS[lane].main;
       if (g.mode === 'flash') {
-        // 풍선 터뜨리기: 큰 방울이 느리게 퍼짐
-        const n = g.isLow ? 36 : 56;
-        for (let i = 0; i < n; i++) g.particles.push(new Particle(x, y, c, 2.6, true));
-        for (let i = 0; i < (g.isLow ? 12 : 20); i++) g.particles.push(new Particle(x, y, '#ffffff', 2.2, true));
+        // 풍선 터뜨리기: 무조건 크게 터지는 박수형 팝. 화면을 덮을 정도로 과장한다.
+        const claps = g.isLow ? 64 : 120;
+        const pops = g.isLow ? 120 : 220;
+        const whites = g.isLow ? 42 : 76;
+        for (let i = 0; i < claps; i++) g.particles.push(new Particle(x, y, c, 3.8, false, 'clap'));
+        for (let i = 0; i < pops; i++) g.particles.push(new Particle(x, y, c, 3.2, true));
+        for (let i = 0; i < whites; i++) g.particles.push(new Particle(x, y, '#ffffff', 2.8, true));
       } else {
         // 파도 피하기·풍선 사이먼: 파편처럼 부서짐 (사이먼은 더 크게)
         const scale = g.mode === 'balloonSimon' ? 2.6 : 1;

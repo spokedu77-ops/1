@@ -32,6 +32,7 @@ export function useTrainingTimer({
   basicNumberOverlay,
   spatialArrowColorMode = 'basic',
   spatialArrowColorMapping = 'compass',
+  handFootDifficulty = 'easy',
   flankerStimulusType,
   flankerNestedCircleCount,
   flankerArrowMode,
@@ -55,6 +56,7 @@ export function useTrainingTimer({
   basicNumberOverlay?: 'none' | '2' | '3';
   spatialArrowColorMode?: 'basic' | 'color';
   spatialArrowColorMapping?: SpatialArrowColorMapping;
+  handFootDifficulty?: 'easy' | 'normal' | 'hard';
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
   flankerArrowMode?: 'lr' | 'udlr';
@@ -93,7 +95,15 @@ export function useTrainingTimer({
       // fruitSlides가 undefined이면 color 모드(이미지 없음) — getter를 undefined로 전달
       // defined이면 항상 최신 슬라이드를 읽는 getter 전달 → 타이머 재시작 없이 이미지 반영
       const getSlidesRef = () => fruitSlidesRef.current;
-      genRef.current = createBasicSignalGenerator(engineLevel, colors, getSlidesRef, basicNumberOverlay, effectiveArrowColorMode, spatialArrowColorMapping);
+      genRef.current = createBasicSignalGenerator(
+        engineLevel,
+        colors,
+        getSlidesRef,
+        basicNumberOverlay,
+        effectiveArrowColorMode,
+        spatialArrowColorMapping,
+        handFootDifficulty,
+      );
     } else if (engineMode === 'simon') {
       const getSlidesRef = () => fruitSlidesRef.current;
       const pole: 1 | 2 = simonPoleCount === 2 ? 2 : 1;
@@ -202,7 +212,7 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, simonPoleCount, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, simonPoleCount, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

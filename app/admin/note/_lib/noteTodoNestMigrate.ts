@@ -121,8 +121,9 @@ export function migrateTodoListNestLevelsToTree(blocks: NoteBlock[]): {
   }
   const orderById = new Map<string, number>();
   for (const list of groups.values()) {
+    // 동점은 입력(화면) 만남 순서 유지 — id.localeCompare로 재섞기 금지
     list
-      .sort((a, b) => a.order_index - b.order_index || a.id.localeCompare(b.id))
+      .sort((a, b) => a.order_index - b.order_index)
       .forEach((block, index) => orderById.set(block.id, index));
   }
 

@@ -164,22 +164,35 @@ describe('getAssetRequirement', () => {
 // ── 3. Readiness (evaluateAssetReadiness) ────────────────────────────────────
 
 describe('modified quadrant body actions', () => {
-  test('stage 2 three-cell body actions stay anatomically possible', () => {
-    for (let i = 0; i < 800; i++) {
-      const sig = generateSignal('basic', 8, Object.values(COLORS_META));
+  test('hand/foot difficulty rules stay within the 6번 contract', () => {
+    const isFoot = (id: string | undefined) => id === 'rightFoot' || id === 'leftFoot' || id === 'bothFeet';
+    const isHand = (id: string | undefined) => id === 'rightHand' || id === 'leftHand' || id === 'bothHands';
+
+    for (let i = 0; i < 300; i++) {
+      const sig = generateSignal('basic', 7, Object.values(COLORS_META), { handFootDifficulty: 'easy' });
       expect(sig?.type).toBe('think_quad_body');
       const cells = (sig?.content as { cells?: { bodyActionId?: string }[] } | undefined)?.cells ?? [];
-      if (cells.length !== 3) continue;
+      expect(cells.length).toBeGreaterThanOrEqual(1);
+      expect(cells.length).toBeLessThanOrEqual(2);
+      expect(cells.every((cell) => isFoot(cell.bodyActionId))).toBe(true);
+    }
 
-      const actionIds = cells.map((cell) => cell.bodyActionId);
-      if (actionIds.includes('bothHands')) {
-        expect(actionIds).toEqual(expect.arrayContaining(['rightFoot', 'leftFoot']));
-        expect(actionIds).not.toContain('bothFeet');
-      }
-      if (actionIds.includes('bothFeet')) {
-        expect(actionIds).toEqual(expect.arrayContaining(['rightHand', 'leftHand']));
-        expect(actionIds).not.toContain('bothHands');
-      }
+    for (let i = 0; i < 300; i++) {
+      const sig = generateSignal('basic', 7, Object.values(COLORS_META), { handFootDifficulty: 'normal' });
+      expect(sig?.type).toBe('think_quad_body');
+      const cells = (sig?.content as { cells?: { bodyActionId?: string }[] } | undefined)?.cells ?? [];
+      expect(cells).toHaveLength(2);
+      expect(cells.some((cell) => isFoot(cell.bodyActionId))).toBe(true);
+      expect(cells.some((cell) => isHand(cell.bodyActionId))).toBe(true);
+    }
+
+    for (let i = 0; i < 300; i++) {
+      const sig = generateSignal('basic', 7, Object.values(COLORS_META), { handFootDifficulty: 'hard' });
+      expect(sig?.type).toBe('think_quad_body');
+      const cells = (sig?.content as { cells?: { bodyActionId?: string }[] } | undefined)?.cells ?? [];
+      expect(cells).toHaveLength(2);
+      expect(cells.some((cell) => isFoot(cell.bodyActionId))).toBe(true);
+      expect(cells.some((cell) => isHand(cell.bodyActionId))).toBe(true);
     }
   });
 });
@@ -818,28 +831,30 @@ describe('training result summary', () => {
   test('resolveReactTrainUiLevel: 화면 카탈로그 엔진 id + 구 id 폴백', async () => {
     const { resolveReactTrainUiLevel, MODES } = await import('./constants');
     const ids = MODES.reactTrain.levels.map((lv) => lv.id);
-    expect(ids).toEqual([1, 2, 3, 6, 8, 9, 10, 12, 13]);
+    expect(ids).toEqual([3, 1, 2, 6, 10, 201, 9, 8, 12, 13]);
     expect(MODES.reactTrain.levels.map((lv) => lv.enName)).toEqual([
-      'Rush',
-      'FLOW',
-      'FLASH',
+      'Balloon Pop',
+      'Wave Dodge',
+      'Falling Bricks',
       'Mole',
-      'Number Train',
+      'Soccer Goalkeeper',
+      'Hand and Foot Separate',
       'Color Tracker',
-      'Goalkeeper',
-      'Color Memory Grid',
-      'Virus Outbreak',
+      '(On Hold) Number Train',
+      '(On Hold) Color Memory Grid',
+      '(On Hold) Virus Outbreak',
     ]);
     expect(MODES.reactTrain.levels.map((lv) => lv.name)).toEqual([
-      '파도 피하기',
-      '떨어지는 벽돌들',
       '풍선 터뜨리기',
+      '파도 피하기',
+      '떨어지는 벽돌',
       '두더지 잡기',
-      '숫자 연산 기차',
+      '축구 : 골키퍼',
+      '손 따로, 발 따로',
       '흰 공 찾기',
-      '골키퍼 모드',
-      '색 기억 그리드',
-      '바이러스 폭증',
+      '(보류) 숫자 연산 기차',
+      '(보류) 색 기억 그리드',
+      '(보류) 바이러스 폭증',
     ]);
     // 화면 순번(1-based index) ≠ 엔진 id (예: 화면 4번 = 두더지 eng 6)
     expect(MODES.reactTrain.levels[3]?.id).toBe(6);

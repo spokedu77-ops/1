@@ -15,7 +15,7 @@ export const SPOMOVE_AXIS_META: Record<
     enTitle: 'Simple Reaction',
     salesCopy: '보고 바로 움직이는 단순 반응력',
     desc: '하나의 자극에 정해진 대응으로 즉시 연결하는 영역',
-    tabSub: '시지각 반응 · 반응 인지',
+    tabSub: '반응 인지 · 시지각 반응',
   },
   attention: {
     title: '선택 반응',

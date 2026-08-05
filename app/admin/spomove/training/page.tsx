@@ -119,9 +119,7 @@ function levelLabel(modeId: string, levelId: number): string {
       ? catalogBasicUiLevel(levelId)
       : modeId === 'spatial'
         ? catalogSpatialUiLevel(levelId)
-        : modeId === 'reactTrain'
-          ? reactTrainEngineLevelForUi(levelId)
-          : levelId;
+        : levelId;
   const idx = m?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
   if (idx >= 0) return `${idx + 1}번`;
   return `${levelId}번`;
@@ -194,13 +192,17 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Color & Arrow': '색상 & 화살표',
   'Flow Program': '플로우 프로그램',
   'Rhythm Program': '리듬 프로그램',
-  FLOW: '떨어지는 벽돌들',
+  'Balloon Pop': '풍선 터뜨리기',
+  'Falling Bricks': '떨어지는 벽돌',
+  'Wave Dodge': '파도 피하기',
+  FLOW: '떨어지는 벽돌',
   FLASH: '풍선 터뜨리기',
   'Beat Wave': '동그라미 파동',
   Rush: '파도 피하기',
   Camouflage: '매직 아이',
   'Camouflage L1': '매직 아이',
   'Camouflage L2': '매직 아이',
+  'Mole Easy': '두더지 잡기',
   Mole: '두더지 잡기',
   'Mole L1': '두더지 잡기',
   'Mole L2': '두더지 잡기',
@@ -213,7 +215,15 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Color Tracker L1': '흰 공 찾기',
   'Color Tracker L2': '흰 공 찾기',
   'Color Tracker L3': '흰 공 찾기',
-  Goalkeeper: '골키퍼 모드',
+  Goalkeeper: '축구 : 골키퍼',
+  'Soccer Goalkeeper': '축구 : 골키퍼',
+  'Hand and Foot Separate': '손 따로, 발 따로',
+  'Hand and Foot Separate Easy': '손 따로, 발 따로',
+  'Hand and Foot Separate Normal': '손 따로, 발 따로 (보통)',
+  'Hand and Foot Separate Hard': '손 따로, 발 따로 (어려움)',
+  '(On Hold) Number Train': '(보류) 숫자 연산 기차',
+  '(On Hold) Color Memory Grid': '(보류) 색 기억 그리드',
+  '(On Hold) Virus Outbreak': '(보류) 바이러스 폭증',
 };
 
 function levelNameEnDisplay(enName: string): string {
@@ -291,16 +301,20 @@ type LaunchSettings = {
   reactTrainConcurrent: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 숫자 연산 기차(엔진 8) 전용: L1/L2/L3 */
   numberCartTier: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 흰 공을 찾아라(9번) 전용: L1/L2/L3 */
+  /** 시지각반응(reactTrain) 흰 공 찾기(9번) 전용: 1=느림 · 3=빠름 */
   colorTrackerTier: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 흰 공을 찾아라(9번) 전용: 2패널 양손 모드 */
+  /** 시지각반응(reactTrain) 흰 공 찾기(9번) 전용: false=보통 1패널 · true=어려움 2패널 */
   colorTrackerDualPanel: boolean;
   /** 시지각반응(reactTrain) 두더지 잡기(6번) 전용: 기존(눈·코) / 변형(모자·선글라스 등) */
   moleLookMode: 'classic' | 'variant';
+  /** 시지각반응(reactTrain) 두더지 잡기(6번) 전용: 본 활동 뒤 30초 보너스타임 */
+  moleBonusTimeEnabled: boolean;
   /** 레거시·사이먼 매직 아이: 극단(variant)만 사용 */
   camouflagePlacement: 'center' | 'variant';
   /** 시지각반응(reactTrain) 골키퍼(10번) 전용: 1=항상 1개 · 2=1~2개(더블) */
   goalkeeperTier: 1 | 2;
+  goalkeeperBonusTimeEnabled: boolean;
+  handFootDifficulty: 'easy' | 'normal' | 'hard';
   /** 시지각반응(reactTrain) 색 기억 그리드(12) 전용: 3×3 / 4×4 / 5×5 */
   colorMemoryGridSize: 3 | 4 | 5;
   /** 시지각반응(reactTrain) 색 기억 그리드(12) 전용: flicker=깜빡이 · oneshot=원샷 */
@@ -340,8 +354,11 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   colorTrackerTier: 1,
   colorTrackerDualPanel: false,
   moleLookMode: 'classic',
+  moleBonusTimeEnabled: false,
   camouflagePlacement: 'variant',
   goalkeeperTier: 2,
+  goalkeeperBonusTimeEnabled: false,
+  handFootDifficulty: 'easy',
   colorMemoryGridSize: 4,
   colorMemoryGridMode: 'flicker',
   virusOutbreakDifficulty: 'normal',
@@ -376,8 +393,14 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
     colorTrackerDualPanel: auto.colorTrackerDualPanel ?? fallback.colorTrackerDualPanel,
     moleLookMode: auto.moleLookMode === 'variant' ? 'variant' : fallback.moleLookMode,
+    moleBonusTimeEnabled: typeof auto.moleBonusTimeEnabled === 'boolean' ? auto.moleBonusTimeEnabled : fallback.moleBonusTimeEnabled,
     camouflagePlacement: 'variant',
     goalkeeperTier: auto.goalkeeperTier === 1 ? 1 : fallback.goalkeeperTier,
+    goalkeeperBonusTimeEnabled: typeof auto.goalkeeperBonusTimeEnabled === 'boolean' ? auto.goalkeeperBonusTimeEnabled : fallback.goalkeeperBonusTimeEnabled,
+    handFootDifficulty:
+      auto.handFootDifficulty === 'normal' || auto.handFootDifficulty === 'hard'
+        ? auto.handFootDifficulty
+        : fallback.handFootDifficulty,
     colorMemoryGridSize:
       auto.colorMemoryGridSize === 3 || auto.colorMemoryGridSize === 5
         ? auto.colorMemoryGridSize
@@ -491,8 +514,11 @@ function TrainingPortal({
     colorTrackerTier: launch.colorTrackerTier,
     colorTrackerDualPanel: launch.colorTrackerDualPanel,
     moleLookMode: launch.moleLookMode,
+    moleBonusTimeEnabled: launch.moleBonusTimeEnabled,
     camouflagePlacement: launch.camouflagePlacement,
     goalkeeperTier: launch.goalkeeperTier,
+    goalkeeperBonusTimeEnabled: launch.goalkeeperBonusTimeEnabled,
+    handFootDifficulty: launch.handFootDifficulty,
     colorMemoryGridSize: launch.colorMemoryGridSize,
     colorMemoryGridMode: launch.colorMemoryGridMode,
     virusOutbreakDifficulty: launch.virusOutbreakDifficulty,
@@ -508,7 +534,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -777,9 +803,12 @@ function SettingsScreen({
     return {
       ...initial,
       ...(mapped.moleLookMode ? { moleLookMode: mapped.moleLookMode } : {}),
+      ...(typeof launch.moleBonusTimeEnabled === 'boolean' ? { moleBonusTimeEnabled: launch.moleBonusTimeEnabled } : {}),
       ...(mapped.numberCartTier ? { numberCartTier: mapped.numberCartTier } : {}),
       ...(mapped.colorTrackerTier ? { colorTrackerTier: mapped.colorTrackerTier } : {}),
       ...(mapped.goalkeeperTier ? { goalkeeperTier: mapped.goalkeeperTier } : {}),
+      ...(typeof launch.goalkeeperBonusTimeEnabled === 'boolean' ? { goalkeeperBonusTimeEnabled: launch.goalkeeperBonusTimeEnabled } : {}),
+      ...(launch.handFootDifficulty ? { handFootDifficulty: launch.handFootDifficulty } : {}),
       ...(mapped.camouflagePlacement ? { camouflagePlacement: mapped.camouflagePlacement } : {}),
     };
   });
@@ -977,9 +1006,12 @@ function SettingsScreen({
                             reactTrainConcurrent: 2,
                             camouflagePlacement: 'variant',
                             moleLookMode: mapped.moleLookMode ?? next.moleLookMode,
+                            moleBonusTimeEnabled: next.moleBonusTimeEnabled,
                             numberCartTier: mapped.numberCartTier ?? next.numberCartTier,
                             colorTrackerTier: mapped.colorTrackerTier ?? next.colorTrackerTier,
                             goalkeeperTier: mapped.goalkeeperTier ?? next.goalkeeperTier,
+                            goalkeeperBonusTimeEnabled: next.goalkeeperBonusTimeEnabled,
+                            handFootDifficulty: next.handFootDifficulty,
                           };
                           const engineLevel = mapped.engineLevel;
                           if (engineLevel === 8) {
@@ -1309,13 +1341,13 @@ function SettingsScreen({
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  1은 기본 외형 1마리, 2는 변형 외형·2마리 동시 출현이 섞입니다.
+                  쉬움은 항상 1마리, 보통은 1마리 50% · 2마리 50%로 등장합니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 'classic' as const, label: '1', sub: '기본 · 1마리' },
-                  { id: 'variant' as const, label: '2', sub: '변형 · 1·2마리' },
+                  { id: 'classic' as const, label: '쉬움', sub: '1마리' },
+                  { id: 'variant' as const, label: '보통', sub: '1마리 50% · 2마리 50%' },
                 ]).map((opt) => {
                   const active = launch.moleLookMode === opt.id;
                   return (
@@ -1339,6 +1371,75 @@ function SettingsScreen({
                     >
                       {opt.label}
                       <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => setLaunch((s) => ({ ...s, moleBonusTimeEnabled: !s.moleBonusTimeEnabled }))}
+                style={{
+                  width: '100%',
+                  marginTop: 10,
+                  padding: '11px 12px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${launch.moleBonusTimeEnabled ? accent : T.border}`,
+                  background: launch.moleBonusTimeEnabled ? `${accent}16` : T.card,
+                  color: launch.moleBonusTimeEnabled ? accent : T.textDim,
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                보너스타임 {launch.moleBonusTimeEnabled ? 'ON' : 'OFF'}
+                <div style={{ fontSize: 10, fontWeight: 700, color: launch.moleBonusTimeEnabled ? accent : T.muted, marginTop: 3, letterSpacing: '0.03em' }}>
+                  본 활동 뒤 30초 · 1초마다 1마리
+                </div>
+              </button>
+            </section>
+          ) : null}
+
+          {/* 시지각반응 손 따로, 발 따로(6번) 전용: 난이도 */}
+          {isReactTrain && levelId === 201 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  쉬움은 발만, 보통은 발+손, 어려움은 발·손 조합을 최대 2개까지만 표시합니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 'easy' as const, label: '쉬움', sub: '발만 · 한 발/두 발' },
+                  { id: 'normal' as const, label: '보통', sub: '발+손 · 발 필수' },
+                  { id: 'hard' as const, label: '어려움', sub: '최대 2개 · 손발 혼합' },
+                ]).map((opt) => {
+                  const active = launch.handFootDifficulty === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, handFootDifficulty: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 14,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.03em' }}>
                         {opt.sub}
                       </div>
                     </button>
@@ -1394,24 +1495,21 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 흰 공 찾기(9번): 통합 3단계 */}
+          {/* 시지각반응 흰 공 찾기(7번): 난이도 + 속도 */}
           {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  1 입문(느림·단일) → 2 집중(빠름·단일) → 3 집중(빠름·2패널). 정답은 선생님이 버튼으로 공개합니다.
+                  보통은 1패널, 어려움은 2패널입니다. 각 난이도에서 추적 속도만 느림/빠름으로 나눕니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 1 as const, label: '1', sub: '입문 · 단일', tier: 1 as const, dual: false },
-                  { id: 2 as const, label: '2', sub: '집중 · 단일', tier: 3 as const, dual: false },
-                  { id: 3 as const, label: '3', sub: '집중 · 2패널', tier: 3 as const, dual: true },
+                  { id: 'normal' as const, label: '보통', sub: '1패널', dual: false },
+                  { id: 'hard' as const, label: '어려움', sub: '2패널', dual: true },
                 ]).map((opt) => {
-                  const stage =
-                    launch.colorTrackerDualPanel ? 3 : launch.colorTrackerTier === 3 || launch.colorTrackerTier === 2 ? 2 : 1;
-                  const active = stage === opt.id;
+                  const active = launch.colorTrackerDualPanel === opt.dual;
                   return (
                     <button
                       key={opt.id}
@@ -1419,7 +1517,6 @@ function SettingsScreen({
                       onClick={() =>
                         setLaunch((s) => ({
                           ...s,
-                          colorTrackerTier: opt.tier,
                           colorTrackerDualPanel: opt.dual,
                         }))
                       }
@@ -1445,22 +1542,58 @@ function SettingsScreen({
                   );
                 })}
               </div>
+              <div style={{ margin: '14px 0 8px' }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>속도</label>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 1 as const, label: '느림', sub: '추적 속도 낮음' },
+                  { id: 3 as const, label: '빠름', sub: '추적 속도 높음' },
+                ]).map((opt) => {
+                  const active = (launch.colorTrackerTier === 3 ? 3 : 1) === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, colorTrackerTier: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </section>
           ) : null}
 
-          {/* 시지각반응 골키퍼(10번) 전용: 동시 공 수 */}
+          {/* 시지각반응 골키퍼(10번) 전용: 난이도 + 보너스타임 */}
           {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  1은 항상 공 1개, 2는 더블 블록 구간에서 1~2개가 동시에 날아옵니다. 비행 시간은 아래 신호 속도로 맞춥니다.
+                  쉬움은 항상 공 1개, 보통은 1개 50% · 2개 50%로 날아옵니다. 비행 시간은 아래 신호 속도로 조절합니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 1 as const, label: '1', sub: '항상 1개' },
-                  { id: 2 as const, label: '2', sub: '1~2개' },
+                  { id: 1 as const, label: '쉬움', sub: '항상 1개' },
+                  { id: 2 as const, label: '보통', sub: '1개 50% · 2개 50%' },
                 ]).map((opt) => {
                   const active = launch.goalkeeperTier === opt.id;
                   return (
@@ -1490,6 +1623,29 @@ function SettingsScreen({
                   );
                 })}
               </div>
+              <button
+                type="button"
+                onClick={() => setLaunch((s) => ({ ...s, goalkeeperBonusTimeEnabled: !s.goalkeeperBonusTimeEnabled }))}
+                style={{
+                  width: '100%',
+                  marginTop: 10,
+                  padding: '11px 12px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${launch.goalkeeperBonusTimeEnabled ? accent : T.border}`,
+                  background: launch.goalkeeperBonusTimeEnabled ? `${accent}16` : T.card,
+                  color: launch.goalkeeperBonusTimeEnabled ? accent : T.textDim,
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+              >
+                보너스타임 {launch.goalkeeperBonusTimeEnabled ? 'ON' : 'OFF'}
+                <div style={{ fontSize: 10, fontWeight: 700, color: launch.goalkeeperBonusTimeEnabled ? accent : T.muted, marginTop: 3, letterSpacing: '0.03em' }}>
+                  본 활동 뒤 30초 · 1초마다 공 1개
+                </div>
+              </button>
             </section>
           ) : null}
 

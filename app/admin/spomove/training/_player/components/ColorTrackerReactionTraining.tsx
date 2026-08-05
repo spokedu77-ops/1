@@ -210,10 +210,10 @@ function tierParams(tier: ColorTrackerTier): TierParams {
   };
 }
 
-function tierBadge(tier: ColorTrackerTier): string {
-  if (tier === 1) return 'L1 · 입문';
-  if (tier === 2) return 'L2 · 기본';
-  return 'L3 · 집중';
+function tierBadge(tier: ColorTrackerTier, dualPanel: boolean): string {
+  const difficulty = dualPanel ? '어려움 · 2패널' : '보통 · 1패널';
+  const speed = tier === 3 ? '빠름' : '느림';
+  return `${difficulty} · ${speed}`;
 }
 
 function buildFlashSchedule(scrambleMs: number): number[] {
@@ -458,7 +458,7 @@ export function ColorTrackerReactionTraining({
       if (hudRoundRef.current) hudRoundRef.current.textContent = `${current} / ${g.targetRounds}`;
     };
     updateHudRound();
-    if (hudTierRef.current) hudTierRef.current.textContent = tierBadge(trackerTier);
+    if (hudTierRef.current) hudTierRef.current.textContent = tierBadge(trackerTier, g.dualPanel);
 
     const setMsg = (text: string) => {
       if (msgRef.current) msgRef.current.textContent = text;
@@ -812,7 +812,7 @@ export function ColorTrackerReactionTraining({
         </div>
         <div className="ctrk-hc grow">
           <div className="ctrk-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>
-            흰 공을 찾아라
+            흰 공 찾기
           </div>
           <div className="ctrk-tier" ref={hudTierRef} />
         </div>

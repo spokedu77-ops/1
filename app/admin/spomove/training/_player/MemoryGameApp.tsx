@@ -164,10 +164,14 @@ type Settings = {
   colorTrackerDualPanel: boolean;
   /** reactTrain level 6 (두더지 잡기): classic | variant */
   moleLookMode: 'classic' | 'variant';
+  /** reactTrain level 6 (두더지 잡기): 본 활동 뒤 30초 보너스타임 */
+  moleBonusTimeEnabled: boolean;
   /** reactTrain legacy L5 / simon L4: always variant */
   camouflagePlacement: 'center' | 'variant';
   /** reactTrain level 10 (골키퍼): 1=항상 1개 · 2=1~2개(더블) */
   goalkeeperTier: 1 | 2;
+  goalkeeperBonusTimeEnabled: boolean;
+  handFootDifficulty: 'easy' | 'normal' | 'hard';
   /** reactTrain level 12 (색 기억 그리드): 3×3 / 4×4 / 5×5 */
   colorMemoryGridSize: 3 | 4 | 5;
   /** reactTrain level 12 (색 기억 그리드): flicker=깜빡이 · oneshot=원샷 */
@@ -215,8 +219,11 @@ const defaultSettings: Settings = {
   colorTrackerTier: 1,
   colorTrackerDualPanel: false,
   moleLookMode: 'classic',
+  moleBonusTimeEnabled: false,
   camouflagePlacement: 'variant',
   goalkeeperTier: 2,
+  goalkeeperBonusTimeEnabled: false,
+  handFootDifficulty: 'easy',
   colorMemoryGridSize: 4,
   colorMemoryGridMode: 'flicker',
   virusOutbreakDifficulty: 'normal',
@@ -268,10 +275,13 @@ export type MemoryGameAutoLaunch = {
   colorTrackerDualPanel?: boolean;
   /** reactTrain level 6 (두더지 잡기): classic | variant */
   moleLookMode?: 'classic' | 'variant';
+  moleBonusTimeEnabled?: boolean;
   /** reactTrain legacy L5 / simon L4: always variant */
   camouflagePlacement?: 'center' | 'variant';
   /** reactTrain level 10 (골키퍼): 1=항상 1개 · 2=1~2개(더블) */
   goalkeeperTier?: 1 | 2;
+  goalkeeperBonusTimeEnabled?: boolean;
+  handFootDifficulty?: 'easy' | 'normal' | 'hard';
   /** reactTrain level 12 (색 기억 그리드): 3×3 / 4×4 / 5×5 */
   colorMemoryGridSize?: 3 | 4 | 5;
   /** reactTrain level 12 (색 기억 그리드): flicker=깜빡이 · oneshot=원샷 */
@@ -325,8 +335,11 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       colorTrackerTier: s.colorTrackerTier,
       colorTrackerDualPanel: s.colorTrackerDualPanel,
       moleLookMode: s.moleLookMode,
+      moleBonusTimeEnabled: s.moleBonusTimeEnabled,
       camouflagePlacement: s.camouflagePlacement,
       goalkeeperTier: s.goalkeeperTier,
+      goalkeeperBonusTimeEnabled: s.goalkeeperBonusTimeEnabled,
+      handFootDifficulty: s.handFootDifficulty,
       colorMemoryGridSize: s.colorMemoryGridSize,
       colorMemoryGridMode: s.colorMemoryGridMode,
       virusOutbreakDifficulty: s.virusOutbreakDifficulty,
@@ -678,6 +691,7 @@ export default function MemoryGameApp({
         if (mapped.colorTrackerTier) next.colorTrackerTier = mapped.colorTrackerTier;
         if (mapped.goalkeeperTier) next.goalkeeperTier = mapped.goalkeeperTier;
         if (mapped.camouflagePlacement) next.camouflagePlacement = 'variant';
+        if (value === 201 && (next.handFootDifficulty !== 'easy' && next.handFootDifficulty !== 'normal' && next.handFootDifficulty !== 'hard')) next.handFootDifficulty = 'easy';
         next.reactTrainConcurrent = 2;
       }
       if (key === 'variantColorTheme' && typeof window !== 'undefined' && typeof value === 'string') {
@@ -769,6 +783,7 @@ export default function MemoryGameApp({
     flankerNestedCircleCount: settings.flankerNestedCircleCount,
     flankerArrowMode: settings.flankerArrowMode,
     stroopWordMode: settings.stroopWordMode,
+    handFootDifficulty: settings.handFootDifficulty,
     simonPoleCount: settings.simonPoleCount,
     onSignal,
     onFinish,
@@ -792,6 +807,7 @@ export default function MemoryGameApp({
     flankerNestedCircleCount: settings.flankerNestedCircleCount,
     flankerArrowMode: settings.flankerArrowMode,
     stroopWordMode: settings.stroopWordMode,
+    handFootDifficulty: settings.handFootDifficulty,
     simonPoleCount: settings.simonPoleCount,
     onSignal,
     onFinish,
@@ -950,8 +966,13 @@ export default function MemoryGameApp({
         setCountdown(null);
       } else {
         // spatial(?????????????????????????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲???????????????????????????????????????????????????????????????????????????????????????warmup ?????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐????????????????????????
+        const resolvedForStart = resolveTrainingEngine(cfg.mode, cfg.level);
         const nextScreen: Screen =
-          cfg.mode === 'spatial' ? 'memory' : cfg.mode === 'reactTrain' ? 'visualReaction' : 'training';
+          cfg.mode === 'spatial'
+            ? 'memory'
+            : cfg.mode === 'reactTrain' && resolvedForStart.engineMode === 'reactTrain'
+              ? 'visualReaction'
+              : 'training';
         // 시지각·풍선 사이먼: 플레이어 내부 카운트다운만 사용 (바깥 워밍업과 이중 카운트 방지)
         const screenWarmupSec =
           nextScreen === 'visualReaction' || (cfg.mode === 'simon' && cfg.level === 5) ? 0 : warmupSec;
@@ -2151,6 +2172,7 @@ export default function MemoryGameApp({
             durationSec={Math.max(1, settings.duration ?? 120)}
             speedSec={safeReactSpeedSec}
             goalkeeperTier={settings.goalkeeperTier === 1 ? 1 : 2}
+            bonusTimeEnabled={settings.goalkeeperBonusTimeEnabled}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -2176,7 +2198,6 @@ export default function MemoryGameApp({
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
-            onExit={stop}
             onComplete={handleReactTrainComplete}
           />
         ) : reactEngineLevel === 6 ? (
@@ -2185,7 +2206,7 @@ export default function MemoryGameApp({
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
             lookMode={settings.moleLookMode}
-            onExit={stop}
+            bonusTimeEnabled={settings.moleBonusTimeEnabled}
             onComplete={handleReactTrainComplete}
           />
         ) : reactEngineLevel === 5 ? (

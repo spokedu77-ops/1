@@ -245,6 +245,18 @@ describe('noteOpLogService transaction patch filtering', () => {
     )).toBe(true);
   });
 
+  it('rejects silent checklist uncheck without matching base (document-agnostic)', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '히스토리 항목', checked: true },
+      { text: '히스토리 항목', checked: false },
+    )).toBe(true);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '히스토리 항목', checked: false },
+      { text: '히스토리 항목', checked: true },
+      { text: '히스토리 항목', checked: false },
+    )).toBe(false);
+  });
+
   it('does not materialize block data before an op-log seq conflict is committed', async () => {
     vi.mocked(commitNoteBlockOp).mockResolvedValueOnce({ status: 'conflict' });
 
@@ -412,6 +424,81 @@ describe('noteOpLogService transaction patch filtering', () => {
 
     expect(result).toEqual([]);
     expect(calls).not.toContain('note_blocks.update');
+  });
+
+  it('rejects patch_content when materialize returns empty after commit (ACK≠materialize)', async () => {
+    let noteBlocksSelectCount = 0;
+    vi.mocked(commitNoteBlockOp).mockResolvedValueOnce({
+      status: 'ok',
+      assignedSeq: 2,
+    });
+
+    const supabase = {
+      from(table: string) {
+        const chain: Record<string, unknown> = {};
+        const self = () => chain;
+        chain.select = self;
+        chain.update = self;
+        chain.eq = self;
+        chain.in = self;
+        chain.gt = self;
+        chain.order = self;
+        chain.limit = self;
+        chain.is = self;
+        chain.maybeSingle = () => {
+          if (table === 'note_document_sync_state') {
+            return Promise.resolve({ data: { last_seq: 2 }, error: null });
+          }
+          if (table === 'note_blocks') {
+            noteBlocksSelectCount += 1;
+            // pre-check: allow intentional check
+            if (noteBlocksSelectCount === 1) {
+              return Promise.resolve({
+                data: { content: { text: 'item', checked: false } },
+                error: null,
+              });
+            }
+            // apply: server text advanced → regressive ignore → []
+            return Promise.resolve({
+              data: { version: 2, content: { text: 'item advanced', checked: false } },
+              error: null,
+            });
+          }
+          return Promise.resolve({ data: null, error: null });
+        };
+        chain.then = (resolve: (value: unknown) => void) => {
+          if (table === 'note_block_ops') {
+            resolve({ data: [], error: null });
+            return undefined;
+          }
+          resolve({ data: null, error: null });
+          return undefined;
+        };
+        return chain;
+      },
+    };
+
+    const result = await pushNoteBlockOps(
+      supabase as never,
+      'doc-1',
+      1,
+      [{
+        clientOpId: 'op-check',
+        opType: 'patch_content',
+        payload: {
+          opType: 'patch_content',
+          blockId: 'block-1',
+          content: { text: 'item', checked: true },
+          baseContent: { text: 'item', checked: false },
+        },
+      }],
+      'actor-1',
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.appliedClientOpIds).not.toContain('op-check');
+    expect(result.rejectedClientOpIds).toContain('op-check');
   });
 });
 

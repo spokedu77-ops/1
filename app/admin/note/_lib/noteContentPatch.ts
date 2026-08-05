@@ -35,7 +35,11 @@ function stripVolatileLegacyContent(
   return next;
 }
 
-/** React·서버 content와 스토어(편집 중 text/html)를 병합 — title·checked 등은 React 우선 */
+/**
+ * React·서버 content와 스토어(편집 중 text/html/title)를 병합.
+ * 비어 있지 않은 스토어 title·todo checked는 Intent로 지킨다
+ * (편집 중 hydrate/pull이 침묵으로 덮지 않도록 — 문서 종류 무관).
+ */
 export function mergeBlockContentWithStore(
   base: Record<string, unknown> | null | undefined,
   fromStore: Record<string, unknown> | null | undefined,
@@ -58,6 +62,15 @@ export function mergeBlockContentWithStore(
     ) {
       merged[key] = storeValue;
     }
+  }
+  // title: 스토어에 비어 있지 않으면 서버/React보다 우선 (타이핑 중 stale hydrate 방지)
+  if (typeof fromStore.title === 'string' && fromStore.title.trim().length > 0) {
+    merged.title = fromStore.title;
+  }
+  // checked는 STORE_ONLY가 아님(React 재렌더 필요)이지만, active-editor preserve 시
+  // 스토어에 키가 있으면 침묵 uncheck 금지.
+  if ('checked' in fromStore) {
+    merged.checked = fromStore.checked === true;
   }
   return stripVolatileLegacyContent(merged);
 }

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import {
+  buildEnvelopeOrThrow,
+  consultInsertFromEnvelope,
+  LeadEnvelopeValidationError,
+  parseAcquisitionFromBody,
+} from '@/app/lib/server/leadEnvelope';
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -30,10 +36,19 @@ export async function POST(req: NextRequest) {
     if (rawType && rawType !== 'dispatch') {
       return NextResponse.json({ ok: false, error: '문의 유형(type)이 올바르지 않습니다.' }, { status: 400 });
     }
-    const type = 'dispatch';
     const source = typeof body.source === 'string' ? body.source.trim() : 'dispatch-page';
-    const programs = Array.isArray(body.programs) ? body.programs.filter((v): v is string => typeof v === 'string') : [];
-    const targetAge = Array.isArray(body.targetAge) ? body.targetAge.filter((v): v is string => typeof v === 'string') : [];
+    const programs = Array.isArray(body.programs)
+      ? body.programs.filter((v): v is string => typeof v === 'string')
+      : [];
+    const targetAge = Array.isArray(body.targetAge)
+      ? body.targetAge.filter((v): v is string => typeof v === 'string')
+      : [];
+    const conversionEvidenceSlug =
+      typeof body.conversion_evidence_slug === 'string' ? body.conversion_evidence_slug.trim() : '';
+    const ctaIntentId =
+      typeof body.cta_intent_id === 'string' && body.cta_intent_id.trim()
+        ? body.cta_intent_id.trim()
+        : 'dispatch_proposal';
 
     if (!organization || !manager) {
       return NextResponse.json({ ok: false, error: '기관명과 담당자 정보는 필수입니다.' }, { status: 400 });
@@ -48,25 +63,87 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: '이메일 형식이 올바르지 않습니다.' }, { status: 400 });
     }
 
-    const supabase = getServiceSupabase();
-    const { error } = await supabase.from('dispatch_leads').insert({
-      organization_name: organization,
-      manager_name: manager,
-      phone: phone || null,
-      email: email || null,
-      location: location || null,
-      start_date: startDate || null,
-      end_date: endDate || null,
-      programs,
-      target_ages: targetAge,
-      headcount: headcount || null,
-      special_needs: specialNeeds || null,
-      inquiry: inquiry || null,
-      source,
-    });
+    let envelope;
+    try {
+      envelope = buildEnvelopeOrThrow({
+        schemaVersion: 1,
+        route: 'dispatch',
+        acquisition: parseAcquisitionFromBody(body.acquisition),
+        selection: {
+          route: 'dispatch',
+          programs,
+          targetAges: targetAge,
+          headcount: headcount || undefined,
+          specialNeeds: specialNeeds || undefined,
+          location: location || undefined,
+          organizationName: organization,
+        },
+        conversionEvidenceSlug: conversionEvidenceSlug || undefined,
+        ctaIntentId,
+      });
+    } catch (e) {
+      if (e instanceof LeadEnvelopeValidationError) {
+        return NextResponse.json({ ok: false, error: e.message }, { status: 400 });
+      }
+      throw e;
+    }
 
-    if (error) {
-      console.error('[dispatch/leads]', error);
+    const supabase = getServiceSupabase();
+    let dispatchLead: { id: string } | null = null;
+    {
+      const primary = await supabase
+        .from('dispatch_leads')
+        .insert({
+          organization_name: organization,
+          manager_name: manager,
+          phone: phone || null,
+          email: email || null,
+          location: location || null,
+          start_date: startDate || null,
+          end_date: endDate || null,
+          programs,
+          target_ages: targetAge,
+          headcount: headcount || null,
+          special_needs: specialNeeds || null,
+          inquiry: inquiry || null,
+          source,
+          mirror_status: 'pending',
+        })
+        .select('id')
+        .single();
+
+      if (primary.error || !primary.data?.id) {
+        // 마이그레이션 전: mirror_status 없이 재시도
+        const fallback = await supabase
+          .from('dispatch_leads')
+          .insert({
+            organization_name: organization,
+            manager_name: manager,
+            phone: phone || null,
+            email: email || null,
+            location: location || null,
+            start_date: startDate || null,
+            end_date: endDate || null,
+            programs,
+            target_ages: targetAge,
+            headcount: headcount || null,
+            special_needs: specialNeeds || null,
+            inquiry: inquiry || null,
+            source,
+          })
+          .select('id')
+          .single();
+        if (fallback.error || !fallback.data?.id) {
+          console.error('[dispatch/leads]', primary.error ?? fallback.error);
+          return NextResponse.json({ ok: false, error: '접수 저장 중 오류가 발생했습니다.' }, { status: 500 });
+        }
+        dispatchLead = fallback.data;
+      } else {
+        dispatchLead = primary.data;
+      }
+    }
+
+    if (!dispatchLead?.id) {
       return NextResponse.json({ ok: false, error: '접수 저장 중 오류가 발생했습니다.' }, { status: 500 });
     }
 
@@ -83,7 +160,8 @@ export async function POST(req: NextRequest) {
       `대상 연령: ${targetAge.length ? targetAge.join(', ') : '-'}`,
       `인원: ${headcount || '-'}`,
       `특수 아동 참여 유무: ${specialNeeds || '-'}`,
-      `문의 type: ${type}`,
+      `문의 type: dispatch`,
+      `source_lead_id: ${dispatchLead.id}`,
       '',
       '[희망 수업 내용/방향성]',
       inquiry || '-',
@@ -91,22 +169,55 @@ export async function POST(req: NextRequest) {
       `유입 경로: ${source || '-'}`,
     ].join('\n');
 
-    const { error: consultError } = await supabase.from('consultations').insert({
-      parent_name: `${organization} / ${manager}`,
+    const insertRow = consultInsertFromEnvelope({
+      envelope,
+      parentName: `${organization} / ${manager}`,
       phone: phone || null,
-      child_age: null,
       content: consultContent,
-      consult_type: 'center',
-      status: 'pending',
+      consultType: 'center',
+      sourceLeadId: dispatchLead.id,
     });
+
+    const { data: consultRow, error: consultError } = await supabase
+      .from('consultations')
+      .insert(insertRow)
+      .select('id')
+      .single();
+
     if (consultError) {
       console.error('[dispatch/leads] consultations mirror insert failed', consultError);
+      await supabase
+        .from('dispatch_leads')
+        .update({
+          mirror_status: 'failed',
+          mirror_error: consultError.message?.slice(0, 500) ?? 'mirror failed',
+        })
+        .eq('id', dispatchLead.id);
+      // 본체(dispatch_leads) 성공이 우선 — 요청은 성공
+      return NextResponse.json({
+        ok: true,
+        leadId: dispatchLead.id,
+        mirrorStatus: 'failed',
+      });
     }
 
-    return NextResponse.json({ ok: true });
+    await supabase
+      .from('dispatch_leads')
+      .update({
+        mirror_status: 'synced',
+        mirror_consult_id: consultRow?.id ?? null,
+        mirror_error: null,
+      })
+      .eq('id', dispatchLead.id);
+
+    return NextResponse.json({
+      ok: true,
+      leadId: dispatchLead.id,
+      consultId: consultRow?.id,
+      mirrorStatus: 'synced',
+    });
   } catch (error) {
     console.error('[dispatch/leads] unexpected', error);
     return NextResponse.json({ ok: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }
-

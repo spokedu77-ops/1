@@ -337,6 +337,7 @@ export type GenerateSignalOptions = {
   /** basic 1번 · 공간 방향: 기본(흰 화살표) | 색상(방향별 고정 색: 위 빨·좌 초·우 노·아래 파) */
   spatialArrowColorMode?: 'basic' | 'color';
   spatialArrowColorMapping?: SpatialArrowColorMapping;
+  handFootDifficulty?: 'easy' | 'normal' | 'hard';
   /** stroop 4단계: 단어+배경(기본) | 누락 색상 */
   stroopWordMode?: 'bg' | 'missing';
 };
@@ -494,13 +495,25 @@ export function generateSignal(
         voice: null,
       };
     }
-    // level 7: 변형 사분할 1단계 — 1개 색상, 발만
+    // level 7: 손 따로, 발 따로. 쉬움=발만, 보통=발+손, 어려움=발/손 합쳐 최대 2개.
     if (level === 7) {
-      const c = r(activeColors);
+      const difficulty = opts?.handFootDifficulty ?? 'easy';
+      const count = difficulty === 'easy' && Math.random() < 0.5 ? 1 : 2;
+      const picked = pickN(activeColors.length >= count ? activeColors : COLORS, count) as ColorItem[];
+      const actions: BodyActionId[] =
+        difficulty === 'easy'
+          ? count === 1
+            ? [randomFoot()]
+            : fisherYates<BodyActionId>(['rightFoot', 'leftFoot'])
+          : difficulty === 'normal'
+            ? fisherYates<BodyActionId>([randomFoot(), randomHand()])
+            : Math.random() < 0.5
+              ? fisherYates<BodyActionId>([randomFoot(), randomHand()])
+              : fisherYates<BodyActionId>([randomHand(), randomFoot()]);
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
-        content: { cells: [makeQuadCell(c, randomFoot())] },
+        content: { cells: picked.map((c, i) => makeQuadCell(c, actions[i]!)) },
         voice: null,
       };
     }
@@ -1451,6 +1464,7 @@ export function createBasicSignalGenerator(
   basicNumberOverlay?: 'none' | '2' | '3',
   spatialArrowColorMode: 'basic' | 'color' = 'basic',
   spatialArrowColorMapping: SpatialArrowColorMapping = 'compass',
+  handFootDifficulty: 'easy' | 'normal' | 'hard' = 'easy',
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1483,6 +1497,7 @@ export function createBasicSignalGenerator(
       // 색상 모드에서는 항상 compass 고정 매핑
       o.spatialArrowColorMapping = spatialArrowColorMode === 'color' ? 'compass' : spatialArrowColorMapping;
     }
+    if (level === 7) o.handFootDifficulty = handFootDifficulty;
     if (level === 3) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 4) o.excludeVariantPairKey = lastVariantPairKey;
     else if (level === 5 || level === 6) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;

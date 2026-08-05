@@ -6,7 +6,7 @@ import { curriculumPage } from './curriculum-page';
 import { HOME_MEDIA } from './home-media';
 import { dispatchPage } from './dispatch-page';
 import { HOME_MAIN_CASE_SLUGS, homePage } from './home-page';
-import { privatePage } from './private-page';
+import { privatePage, PRIVATE_FORMAT_OPTIONS, PRIVATE_START_DIRECTION_OPTIONS } from './private-page';
 import { programDetailBlocks } from './program-details';
 import { seoMeta } from './seo';
 import {
@@ -211,7 +211,17 @@ describe('spokedu site IA', () => {
     expect(dispatchPage.comparison.title).toContain('운영 기준');
     expect(JSON.stringify(dispatchPage.comparison)).not.toMatch(/프리랜서|다른 업체|기본 업체|시간 채우기|전무함/);
     expect(dispatchPage.examples.items.length).toBeGreaterThanOrEqual(2);
-    expect(dispatchPage.examples.items.every((item) => item.fitReason && item.review)).toBe(true);
+    expect(dispatchPage.examples.items.every((item) => item.fitReason && item.review && item.proves)).toBe(true);
+    expect(dispatchPage.examples.items.some((item) => item.recordSlug === 'dongjak-spomove')).toBe(true);
+    expect(dispatchPage.examples.items.some((item) => item.recordSlug === 'yangcheon-paps')).toBe(true);
+    expect(
+      dispatchPage.examples.items
+        .filter((item) => item.recordSlug)
+        .every((item) => item.href.includes(`/records/${item.recordSlug}`)),
+    ).toBe(true);
+    expect(dispatchPage.examples.items.every((item) => !item.operation.includes('SPOMOVE') || item.recordSlug === 'dongjak-spomove')).toBe(
+      true,
+    );
     expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual(['조건 확인', '운영안 제안', '수업 운영']);
   });
 
@@ -233,8 +243,25 @@ describe('spokedu site IA', () => {
       '종목 준비',
       '또래 협동',
     ]);
+    expect(privatePage.goalPaths.items.map((item) => item.id)).toEqual([
+      'confidence',
+      'fundamental',
+      'sport-prep',
+      'peer-group',
+    ]);
+    expect(privatePage.assignmentPolicy.steps.length).toBeGreaterThanOrEqual(3);
     expect(privatePage.heroCtas.primary.label).toContain('아이 조건');
     expect(privatePage.reviews.items[0]?.text).not.toContain('학원에내면');
+  });
+
+  it('preserves private startDirection ids as lead-contract vocabulary', () => {
+    expect(PRIVATE_START_DIRECTION_OPTIONS.map((o) => o.id)).toEqual([
+      'confidence',
+      'fundamental',
+      'sport-prep',
+      'peer-group',
+    ]);
+    expect(PRIVATE_FORMAT_OPTIONS.map((o) => o.id)).toEqual(['one-to-one', 'small-group', 'undecided']);
   });
 
   it('keeps SPOMOVE activity media aligned with task contracts', () => {

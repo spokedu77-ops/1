@@ -22,11 +22,18 @@ describe('mergeBlockContentWithStore', () => {
     });
   });
 
-  it('does not overwrite a non-empty incoming title with store title', () => {
+  it('does not overwrite a non-empty incoming title with empty store title', () => {
+    expect(mergeBlockContentWithStore(
+      { title: '서버 제목' },
+      { title: '' },
+    )).toEqual({ title: '서버 제목' });
+  });
+
+  it('keeps non-empty store title over stale server title', () => {
     expect(mergeBlockContentWithStore(
       { title: '서버 제목' },
       { title: '로컬 제목' },
-    )).toEqual({ title: '서버 제목' });
+    )).toEqual({ title: '로컬 제목' });
   });
   it('does not resurrect legacy body fields from store during content merge', () => {
     expect(mergeBlockContentWithStore(
@@ -39,6 +46,13 @@ describe('mergeBlockContentWithStore', () => {
         createdInsideToggle: true,
       },
     )).toEqual({ text: 'current', html: '<p>current</p>' });
+  });
+
+  it('keeps store todo checked over stale React/server uncheck', () => {
+    expect(mergeBlockContentWithStore(
+      { text: 'older todo', checked: false },
+      { text: 'checked while editing', checked: true },
+    )).toEqual({ text: 'checked while editing', checked: true });
   });
 });
 

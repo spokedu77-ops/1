@@ -1,6 +1,11 @@
 import type { HomeMediaKey } from './home-media';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
 import type { ConversionPageIntent } from './conversion-page-intent';
+import {
+  getFieldRecordCatalogItem,
+  getFieldRecordOnsitePath,
+  type FieldRecordSlug,
+} from './field-records-catalog';
 import { SPOKEDU_BASE_PATH } from './site';
 
 type DispatchMediaRequirement = {
@@ -20,7 +25,16 @@ export type DispatchExampleItem = {
   review: string;
   mediaKey: HomeMediaKey;
   href: string;
+  /** 이 카드가 증명하는 기관 운영 주장 */
+  proves: string;
+  /** 온사이트 상세가 있으면 slug, 없으면 목록(/records)만 */
+  recordSlug?: FieldRecordSlug;
 };
+
+function dispatchExampleHref(recordSlug?: FieldRecordSlug): string {
+  if (!recordSlug) return `${SPOKEDU_BASE_PATH}/records`;
+  return getFieldRecordCatalogItem(recordSlug).href || getFieldRecordOnsitePath(recordSlug);
+}
 
 export type DispatchReview = {
   quote: string;
@@ -408,7 +422,8 @@ export const dispatchPage = {
       label: '기관 조건으로 운영안 요청하기',
       href: '#contact',
     },
-  },  examples: {
+  },
+  examples: {
     eyebrow: '사례',
     title: '실제 운영 사례',
     href: `${SPOKEDU_BASE_PATH}/records`,
@@ -417,12 +432,15 @@ export const dispatchPage = {
       {
         venue: '양천거점형키움센터',
         audience: '초등 저학년',
-        operation: 'SPOMOVE 정규수업',
-        activity: '시각 자극 반응형 에듀테크 체육',
-        fitReason: '초등 저학년이 반복 참여하는 정규 운영이라 화면 신호와 패드 반응을 안정적으로 누적했습니다.',
-        review: '한 명도 소외되지 않는 진짜 교육이라는 평가를 받았습니다.',
-        mediaKey: 'proofClass' as HomeMediaKey,
-        href: `${SPOKEDU_BASE_PATH}/records`,
+        operation: 'PAPS 연계 정규수업',
+        activity: '교구·놀이체육으로 체력 요소 경험',
+        fitReason:
+          '초등 저학년이 반복 참여하는 정규 운영이라 짧은 미션 블록과 교구 단계로 참여·성취 흐름을 안정적으로 누적했습니다.',
+        review: '측정형 요소를 놀이로 풀면서도 체력 경험의 목적이 드러났습니다.',
+        mediaKey: 'proofYangcheon' as HomeMediaKey,
+        proves: '저학년 정규 · 공간·인원 대응',
+        recordSlug: 'yangcheon-paps',
+        href: dispatchExampleHref('yangcheon-paps'),
       },
       {
         venue: 'PLAYZ Lounge',
@@ -432,17 +450,21 @@ export const dispatchPage = {
         fitReason: '방학 기간의 짧은 집중 일정에 맞춰 체육과 놀이형 몰입 활동을 결합했습니다.',
         review: '짧은 일정 안에서도 참여 흐름이 분명했습니다.',
         mediaKey: 'proofLounge' as HomeMediaKey,
-        href: `${SPOKEDU_BASE_PATH}/records`,
+        proves: '방학·원데이 단기 운영',
+        // 전용 온사이트 slug 없음 — 목록으로만 연결 (억지 페어 금지)
+        href: dispatchExampleHref(),
       },
       {
         venue: '동작거점형키움센터',
         audience: '거점센터 연계',
-        operation: '에듀테크 체육수업',
+        operation: 'SPOMOVE 정규수업',
         activity: '리듬·타이밍 반응형 수업 운영',
         fitReason: '거점센터 연계 수업에서 리듬과 반응 과제를 반복 운영해 참여 밀도를 유지했습니다.',
         review: '사진에만 머무르지 않고 성장 흐름이 보이는 수업이었습니다.',
         mediaKey: 'proofCenter' as HomeMediaKey,
-        href: `${SPOKEDU_BASE_PATH}/records`,
+        proves: '에듀테크 · 거점 정규 운영',
+        recordSlug: 'dongjak-spomove',
+        href: dispatchExampleHref('dongjak-spomove'),
       },
     ] satisfies DispatchExampleItem[],
   },

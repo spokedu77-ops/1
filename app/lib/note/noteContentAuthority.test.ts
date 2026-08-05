@@ -58,4 +58,54 @@ describe('noteContentAuthority (ZERO LOSS shared predicate)', () => {
       { text: 'saved callout body' },
     )).toBe(false);
   });
+
+  it('rejects silent todo uncheck without matching base (all documents)', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '8.5 야간 가족 클래스', checked: true },
+      { text: '8.5 야간 가족 클래스', checked: false },
+    )).toBe(true);
+  });
+
+  it('allows intentional todo check toggle when base matches current', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '8.5 야간 가족 클래스', checked: false },
+      { text: '8.5 야간 가족 클래스', checked: true },
+      { text: '8.5 야간 가족 클래스', checked: false },
+    )).toBe(false);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '8.5 야간 가족 클래스', checked: true },
+      { text: '8.5 야간 가족 클래스', checked: false },
+      { text: '8.5 야간 가족 클래스', checked: true },
+    )).toBe(false);
+  });
+
+  it('rejects stale uncheck when base no longer matches checked current', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '교구 드랍', checked: true },
+      { text: '교구 드랍', checked: false },
+      { text: '교구 드랍', checked: false },
+    )).toBe(true);
+  });
+
+  it('protects checked-only empty todo from silent uncheck', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '', checked: true },
+      { text: '', checked: false },
+    )).toBe(true);
+  });
+
+  it('rejects html-only rewrite without matching base', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: 'same', html: '<p>same</p>' },
+      { text: 'same', html: '<p><strong>same</strong></p>' },
+    )).toBe(true);
+  });
+
+  it('allows intentional html-only rewrite when base matches', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: 'same', html: '<p>same</p>' },
+      { text: 'same', html: '<p><strong>same</strong></p>' },
+      { text: 'same', html: '<p>same</p>' },
+    )).toBe(false);
+  });
 });

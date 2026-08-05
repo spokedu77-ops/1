@@ -27,6 +27,7 @@ type ProjectileData = {
   targetY: number;
   speed: number;
   isBoss: boolean;
+  baseScale: number;
   isCurve: boolean;
   coreMesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
 };
@@ -148,6 +149,7 @@ type SpawnPhase = {
 type GoalkeeperGame = {
   running: boolean;
   timeLeft: number;
+  endsAtMs: number;
   score: number;
   combo: number;
   maxCombo: number;
@@ -161,6 +163,8 @@ type GoalkeeperGame = {
   phaseId: number;
   lastStart: CornerKey | null;
   bossSpawned: boolean;
+  bonusActive: boolean;
+  bonusStarted: boolean;
   projectiles: THREE.Group[];
   trails: Trail[];
   effects: FxMesh[];
@@ -181,10 +185,6 @@ function flightSpeedFromSec(speedSec: number, mult = 1): number {
   return (FLIGHT_DIST / normalizeReactSpeedSec(speedSec)) * mult;
 }
 
-function randBetween(min: number, max: number) {
-  return min + Math.random() * (max - min);
-}
-
 function pickCorner(exclude?: CornerKey | null): CornerKey {
   const pool = exclude ? CORNER_KEYS.filter((k) => k !== exclude) : CORNER_KEYS;
   return pool[Math.floor(Math.random() * pool.length)]!;
@@ -199,57 +199,57 @@ function buildPhases(allowDouble: boolean): SpawnPhase[] {
       curveChance: 0,
       doubleChance: 0,
       intervalMul: [0.95, 1.25],
-      msg: '공을 보고 반응!',
+      msg: '',
       col: '#ffffff',
     },
     {
       id: 1,
       until: 0.34,
-      speedMult: 1.15,
+      speedMult: 1,
       curveChance: 0.5,
       doubleChance: 0,
       intervalMul: [0.85, 1.15],
-      msg: '커브볼 주의! 끝까지 봐라!',
+      msg: '',
       col: '#ffd600',
     },
     {
       id: 2,
       until: 0.52,
-      speedMult: 1.25,
+      speedMult: 1,
       curveChance: 0.4,
       doubleChance: allowDouble ? 0.4 : 0,
       intervalMul: [0.75, 1.05],
-      msg: allowDouble ? '더블 슛! 집중!' : '연속 슛! 집중!',
+      msg: '',
       col: '#00e5ff',
     },
     {
       id: 3,
       until: 0.74,
-      speedMult: 1.65,
+      speedMult: 1,
       curveChance: 0.45,
       doubleChance: allowDouble ? 0.28 : 0,
       intervalMul: [0.55, 0.9],
-      msg: '무차별 폭격!! 뚫리지 마라!!',
+      msg: '',
       col: '#ff1744',
     },
     {
       id: 4,
       until: 0.88,
-      speedMult: 2.2,
+      speedMult: 1,
       curveChance: 0.35,
       doubleChance: allowDouble ? 0.22 : 0,
       intervalMul: [0.38, 0.65],
-      msg: '하이퍼 모드!!',
+      msg: '',
       col: '#ff4dd8',
     },
     {
       id: 5,
       until: 1,
-      speedMult: 0.78,
+      speedMult: 1,
       curveChance: 0.2,
       doubleChance: 0,
       intervalMul: [1.1, 1.4],
-      msg: '위험!! 거대 슛 접근!!',
+      msg: '',
       col: '#ffffff',
     },
   ];
@@ -297,6 +297,7 @@ type Props = {
   speedSec: number;
   /** 1: 항상 1개 · 2: 1~2개(더블 블록 포함) */
   goalkeeperTier?: 1 | 2;
+  bonusTimeEnabled?: boolean;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
@@ -305,6 +306,7 @@ export function GoalkeeperReactionTraining({
   durationSec,
   speedSec,
   goalkeeperTier = 2,
+  bonusTimeEnabled = false,
   onExit,
   onComplete,
 }: Props) {
@@ -366,9 +368,20 @@ export function GoalkeeperReactionTraining({
     const travelSec = normalizeReactSpeedSec(speedSec);
     const baseSpeed = flightSpeedFromSec(travelSec, 1);
     const phases = buildPhases(tier >= 2);
+    const bonusPhase: SpawnPhase = {
+      id: 99,
+      until: 1,
+      speedMult: 1,
+      curveChance: 0.2,
+      doubleChance: 0,
+      intervalMul: [0.95, 1.05],
+      msg: '',
+      col: '#ffd600',
+    };
     const g: GoalkeeperGame = {
       running: true,
       timeLeft: duration,
+      endsAtMs: performance.now() + duration * 1000,
       score: 0,
       combo: 0,
       maxCombo: 0,
@@ -377,11 +390,13 @@ export function GoalkeeperReactionTraining({
       raf: null,
       timer: null,
       startedAt: performance.now(),
-      nextSpawnAt: 1.2,
+      nextSpawnAt: Math.max(0.2, travelSec),
       currentSpeed: baseSpeed,
       phaseId: -1,
       lastStart: null,
       bossSpawned: false,
+      bonusActive: false,
+      bonusStarted: false,
       projectiles: [],
       trails: [],
       effects: [],
@@ -434,7 +449,7 @@ export function GoalkeeperReactionTraining({
     const spawnShot = (startKey: CornerKey, targetKey?: CornerKey, speed = g.currentSpeed, isBoss = false) => {
       const start = cornerByKey(startKey);
       const target = cornerByKey(targetKey ?? startKey);
-      const radius = isBoss ? 3.4 : 0.95;
+      const radius = isBoss ? 1.7 : 0.95;
       const segs = isLow ? 12 : 20;
       const group = new THREE.Group();
       const coreGeo = new THREE.SphereGeometry(radius, segs, isLow ? 10 : 16);
@@ -454,6 +469,7 @@ export function GoalkeeperReactionTraining({
         targetY: target.key.startsWith('T') ? 4 : -3,
         speed,
         isBoss,
+        baseScale: 1,
         isCurve: start.key !== target.key,
         coreMesh: core,
       } satisfies ProjectileData;
@@ -468,19 +484,6 @@ export function GoalkeeperReactionTraining({
       el.style.color = color;
       el.classList.add('show');
       window.setTimeout(() => el.classList.remove('show'), ms);
-    };
-
-    const createAction = (corner: (typeof CORNERS)[number], msg: string) => {
-      const root = actionRootRef.current;
-      if (!root) return;
-      const txt = document.createElement('div');
-      txt.className = 'gk-action';
-      txt.textContent = msg;
-      txt.style.color = corner.css;
-      txt.style.left = corner.key.endsWith('L') ? '25%' : '75%';
-      txt.style.top = corner.key.startsWith('T') ? '30%' : '70%';
-      root.appendChild(txt);
-      window.setTimeout(() => txt.remove(), 700);
     };
 
     const createShield = (x: number, y: number, colorHex: number) => {
@@ -538,7 +541,6 @@ export function GoalkeeperReactionTraining({
             cue.style.opacity = '0';
           }, 260);
         }
-        createAction(corner, ['막았어요', '좋아요', '방어 성공', '나이스'][Math.floor(Math.random() * 4)]!);
       }
       g.stims += data.isBoss ? 1 : 1;
       g.combo++;
@@ -551,13 +553,13 @@ export function GoalkeeperReactionTraining({
     };
 
     const scheduleNext = (nowSec: number, phase: SpawnPhase) => {
-      const gap = travelSec * randBetween(phase.intervalMul[0], phase.intervalMul[1]);
-      g.nextSpawnAt = nowSec + Math.max(0.35, gap);
+      void phase;
+      g.nextSpawnAt = nowSec + Math.max(0.35, travelSec);
     };
 
     const spawnRandomWave = (phase: SpawnPhase) => {
       g.currentSpeed = flightSpeedFromSec(travelSec, phase.speedMult);
-      const isDouble = phase.doubleChance > 0 && Math.random() < phase.doubleChance;
+      const isDouble = !g.bonusActive && tier >= 2 && Math.random() < 0.5;
       if (isDouble) {
         const a = pickCorner(g.lastStart);
         const b = pickCorner(a);
@@ -579,29 +581,33 @@ export function GoalkeeperReactionTraining({
       if (!g.running) return;
       const delta = Math.min(0.05, clock.getDelta());
       const nowSec = (performance.now() - g.startedAt) / 1000;
-      const progress = Math.max(0, Math.min(1, nowSec / duration));
-      const phase = phaseForProgress(phases, progress);
+      const activeDuration = g.bonusActive ? 30 : duration;
+      const progress = Math.max(0, Math.min(1, nowSec / activeDuration));
+      const phase = g.bonusActive ? bonusPhase : phaseForProgress(phases, progress);
 
       if (phase.id !== g.phaseId) {
         g.phaseId = phase.id;
         g.currentSpeed = flightSpeedFromSec(travelSec, phase.speedMult);
-        showCallout(phase.msg, phase.col, 1700);
+        if (phase.msg) showCallout(phase.msg, phase.col, 1700);
       }
 
       // 후반: 보스 1회 (랜덤 코너)
-      if (!g.bossSpawned && progress >= 0.88 && nowSec < duration - 1.2) {
+      if (!g.bonusActive && !g.bossSpawned && nowSec >= Math.max(0, duration - 6) && nowSec < duration - 0.2) {
         g.bossSpawned = true;
-        g.currentSpeed = flightSpeedFromSec(travelSec, 0.78);
+        g.currentSpeed = FLIGHT_DIST / 6;
         const bossStart = pickCorner(g.lastStart);
         spawnShot(bossStart, bossStart, g.currentSpeed, true);
         g.lastStart = bossStart;
         scheduleNext(nowSec, phase);
-      } else if (nowSec >= g.nextSpawnAt && nowSec < duration - 1.5 && phase.id < 5) {
+      } else if (nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5 && phase.id < 5) {
         spawnRandomWave(phase);
         scheduleNext(nowSec, phase);
+      } else if (g.bonusActive && nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5) {
+        spawnRandomWave(bonusPhase);
+        g.nextSpawnAt = nowSec + 1;
       } else if (nowSec >= g.nextSpawnAt && nowSec < duration - 1.5 && phase.id >= 5 && g.bossSpawned) {
         // 보스 이후 가끔 일반 슛
-        if (Math.random() < 0.55) spawnRandomWave({ ...phase, doubleChance: 0, speedMult: 1.1 });
+        if (Math.random() < 0.55) spawnRandomWave({ ...phase, doubleChance: 0, speedMult: 1 });
         scheduleNext(nowSec, phase);
       }
 
@@ -616,6 +622,10 @@ export function GoalkeeperReactionTraining({
         p.rotation.x += 12 * delta;
         p.rotation.y += 12 * delta;
         const progress = Math.max(0, Math.min(1, (p.position.z - SPAWN_Z) / (HIT_Z - SPAWN_Z)));
+        if (data.isBoss) {
+          const grow = 0.72 + progress * 3.4;
+          p.scale.setScalar(grow * data.baseScale);
+        }
         const ease = progress * progress * (3 - 2 * progress);
         const swing = Math.sin(progress * Math.PI) * 6;
         const swingDir = data.targetX > data.startX ? -1 : 1;
@@ -694,15 +704,31 @@ export function GoalkeeperReactionTraining({
     if (hudScoreRef.current) hudScoreRef.current.textContent = '0';
     if (hudComboRef.current) hudComboRef.current.textContent = 'READY';
 
-    const endsAtMs = performance.now() + duration * 1000;
     g.timer = setInterval(() => {
-      const next = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
+      const next = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
       if (next !== g.timeLeft) {
         g.timeLeft = next;
         updateTime();
         setWarn(next <= 10);
       }
-      if (next <= 0) endGame();
+      if (next <= 0) {
+        if (bonusTimeEnabled && !g.bonusStarted) {
+          g.bonusStarted = true;
+          g.bonusActive = true;
+          g.timeLeft = 30;
+          g.startedAt = performance.now();
+          g.endsAtMs = performance.now() + 30_000;
+          g.nextSpawnAt = 0.2;
+          g.phaseId = -1;
+          g.bossSpawned = true;
+          g.currentSpeed = baseSpeed;
+          g.projectiles.forEach((p) => scene.remove(p));
+          g.projectiles = [];
+          updateTime();
+          return;
+        }
+        endGame();
+      }
     }, 250);
 
     const onResize = () => {
@@ -742,7 +768,7 @@ export function GoalkeeperReactionTraining({
       (goalFrame.material as THREE.Material).dispose();
       renderer.dispose();
     };
-  }, [durationSec, endGame, goalkeeperTier, speedSec]);
+  }, [bonusTimeEnabled, durationSec, endGame, goalkeeperTier, speedSec]);
 
   return (
     <div className="gk">

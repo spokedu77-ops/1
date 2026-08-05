@@ -1,8 +1,23 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
+import {
+  isPrivatePreferredFormat,
+  isPrivateStartDirection,
+  PRIVATE_FORMAT_OPTIONS,
+  PRIVATE_INSTRUCTOR_PREFERENCE_OPTIONS,
+  PRIVATE_START_DIRECTION_OPTIONS,
+  privateFormatLabel,
+  privateStartDirectionLabel,
+  type PrivatePreferredFormat,
+  type PrivateStartDirection,
+} from '../data/private-page';
+import { getAcquisitionContext, captureAcquisitionFromLocation } from '../lib/acquisition';
+import { trackCommercialEvent } from '../lib/commercial-events';
 
 const inputClass =
   'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
@@ -21,11 +36,49 @@ function formatLearnerBlock(learners: string[]): string {
 
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
 
+function ChipGroup<T extends string>({
+  options,
+  value,
+  onChange,
+  name,
+}: {
+  options: ReadonlyArray<{ id: T; label: string }>;
+  value: T | '';
+  onChange: (next: T) => void;
+  name: string;
+}) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label={name}>
+      {options.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          onClick={() => onChange(option.id)}
+          className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
+            value === option.id
+              ? 'border-teal-600 bg-teal-600 text-white'
+              : 'border-stone-200 bg-white text-slate-700 hover:border-teal-300'
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** 개인수업 상담 폼 — 온페이지 문의 전환 */
 export function PrivateApplyForm() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [learners, setLearners] = useState<string[]>(['']);
   const [phone, setPhone] = useState('');
+  const [startDirection, setStartDirection] = useState<PrivateStartDirection | ''>('');
+  const [preferredFormat, setPreferredFormat] = useState<PrivatePreferredFormat | ''>('');
   const [sport, setSport] = useState('');
+  const [instructorPreference, setInstructorPreference] = useState('');
   const [region, setRegion] = useState('');
   const [schedule, setSchedule] = useState('');
   const [note, setNote] = useState('');
@@ -41,26 +94,56 @@ export function PrivateApplyForm() {
     } catch {
       // ignore
     }
+    captureAcquisitionFromLocation();
   }, []);
+
+  useEffect(() => {
+    const dir = searchParams.get('startDirection');
+    const format = searchParams.get('preferredFormat');
+    if (dir && isPrivateStartDirection(dir)) {
+      setStartDirection(dir);
+    }
+    if (format && isPrivatePreferredFormat(format)) {
+      setPreferredFormat(format);
+    }
+  }, [searchParams]);
+
+  const syncDirectionToUrl = useCallback(
+    (next: PrivateStartDirection) => {
+      setStartDirection(next);
+      trackCommercialEvent({
+        name: 'selection_changed',
+        route: 'private',
+        selectionId: next,
+      });
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('startDirection', next);
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   const filledCount = useMemo(() => {
     let n = learners.some((l) => l.trim()) ? 1 : 0;
-    for (const v of [phone, sport, region, schedule, note]) {
+    for (const v of [phone, startDirection, preferredFormat, region, schedule, sport, instructorPreference, note]) {
       if (v.trim()) n += 1;
     }
     return n;
-  }, [learners, phone, sport, region, schedule, note]);
+  }, [learners, phone, startDirection, preferredFormat, region, schedule, sport, instructorPreference, note]);
 
   const requiredCount = useMemo(() => {
     let n = learners.some((l) => l.trim()) ? 1 : 0;
-    for (const v of [phone, sport, region, schedule]) {
+    for (const v of [phone, startDirection, preferredFormat, region, schedule]) {
       if (v.trim()) n += 1;
     }
     return n;
-  }, [learners, phone, sport, region, schedule]);
+  }, [learners, phone, startDirection, preferredFormat, region, schedule]);
 
   const previewText = useMemo(() => {
     const learnerText = formatLearnerBlock(learners);
+    const directionLabel = startDirection ? privateStartDirectionLabel(startDirection) : '[정보 미기재]';
+    const formatLabel = preferredFormat ? privateFormatLabel(preferredFormat) : '[정보 미기재]';
     return [
       '안녕하세요. SPOKEDU 개인·소그룹 체육 상담을 의뢰합니다.',
       '',
@@ -68,35 +151,74 @@ export function PrivateApplyForm() {
         ? `1. 학습자 정보 :${learnerText}`
         : `1. 학습자 정보 : ${learnerText}`,
       `2. 연락처(휴대폰) : ${safeVal(phone)}`,
-      `3. 희망 종목 : ${safeVal(sport)}`,
-      `4. 방문 지역/장소 : ${safeVal(region)}`,
-      `5. 가능 시간대 : ${safeVal(schedule)}`,
-      `6. 전하고 싶은 말 : ${safeVal(note)}`,
+      `3. 시작 방향 : ${directionLabel}`,
+      `4. 희망 수업 형태 : ${formatLabel}`,
+      `5. 희망 종목(보조) : ${safeVal(sport)}`,
+      `6. 지도자 희망 : ${safeVal(instructorPreference)}`,
+      `7. 방문 지역/장소 : ${safeVal(region)}`,
+      `8. 가능 시간대 : ${safeVal(schedule)}`,
+      `9. 전하고 싶은 말 : ${safeVal(note)}`,
       '',
       '위 내용을 바탕으로 맞춤 상담 및 일정 안내를 도와드리겠습니다.',
     ].join('\n');
-  }, [learners, phone, sport, region, schedule, note]);
+  }, [
+    learners,
+    phone,
+    startDirection,
+    preferredFormat,
+    sport,
+    instructorPreference,
+    region,
+    schedule,
+    note,
+  ]);
 
   const previewRows = useMemo(
     () => [
       { label: '학습자', value: learners.map((l) => l.trim()).filter(Boolean).join(' / ') || '—' },
       { label: '연락처', value: phone.trim() || '—' },
+      {
+        label: '시작 방향',
+        value: startDirection ? privateStartDirectionLabel(startDirection) : '—',
+      },
+      {
+        label: '수업 형태',
+        value: preferredFormat ? privateFormatLabel(preferredFormat) : '—',
+      },
       { label: '희망 종목', value: sport.trim() || '—' },
+      { label: '지도자 희망', value: instructorPreference.trim() || '—' },
       { label: '지역/장소', value: region.trim() || '—' },
       { label: '가능 시간', value: schedule.trim() || '—' },
       { label: '전달 사항', value: note.trim() || '—' },
     ],
-    [learners, phone, sport, region, schedule, note],
+    [
+      learners,
+      phone,
+      startDirection,
+      preferredFormat,
+      sport,
+      instructorPreference,
+      region,
+      schedule,
+      note,
+    ],
   );
 
   const handleSubmit = useCallback(async () => {
     if (submittingRef.current || submitted) return;
 
     const learnerLines = learners.map((l) => l.trim()).filter(Boolean);
-    if (!learnerLines.length || !phone.trim() || !sport.trim() || !region.trim() || !schedule.trim()) {
+    if (
+      !learnerLines.length ||
+      !phone.trim() ||
+      !startDirection ||
+      !preferredFormat ||
+      !region.trim() ||
+      !schedule.trim()
+    ) {
       setStatus({
         tone: 'error',
-        message: '필수 항목(학습자·연락처·종목·지역·시간)을 모두 기재해 주세요.',
+        message: '필수 항목(학습자·연락처·시작 방향·수업 형태·지역·시간)을 모두 기재해 주세요.',
       });
       return;
     }
@@ -104,6 +226,12 @@ export function PrivateApplyForm() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      trackCommercialEvent({
+        name: 'primary_cta_clicked',
+        route: 'private',
+        ctaIntentId: 'private_fit_consult',
+        selectionId: startDirection,
+      });
       const response = await fetch('/api/private/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,10 +239,18 @@ export function PrivateApplyForm() {
           name: learnerLines.join('\n'),
           phone: phone.trim(),
           content: previewText,
+          start_direction: startDirection,
+          preferred_format: preferredFormat,
+          sport: sport.trim() || undefined,
+          instructor_preference: instructorPreference.trim() || undefined,
+          region: region.trim(),
+          schedule: schedule.trim(),
+          acquisition: getAcquisitionContext(),
+          cta_intent_id: 'private_fit_consult',
         }),
       });
       const result = (await response.json().catch(() => null)) as
-        | { ok?: boolean; emailSent?: boolean; message?: string }
+        | { ok?: boolean; emailSent?: boolean; message?: string; leadId?: string }
         | null;
       if (!response.ok || !result?.ok) {
         setStatus({
@@ -122,6 +258,15 @@ export function PrivateApplyForm() {
           message: result?.message || '접수 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.',
         });
         return;
+      }
+      if (result.leadId) {
+        trackCommercialEvent({
+          name: 'form_submitted',
+          route: 'private',
+          leadId: result.leadId,
+          selectionId: startDirection,
+          ctaIntentId: 'private_fit_consult',
+        });
       }
       setSubmitted(true);
       setStatus({
@@ -135,7 +280,18 @@ export function PrivateApplyForm() {
       submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [learners, phone, sport, region, schedule, previewText, submitted]);
+  }, [
+    learners,
+    phone,
+    startDirection,
+    preferredFormat,
+    sport,
+    instructorPreference,
+    region,
+    schedule,
+    previewText,
+    submitted,
+  ]);
 
   return (
     <section id="apply" className="scroll-mt-24 space-y-6 sm:space-y-7">
@@ -145,15 +301,15 @@ export function PrivateApplyForm() {
           개인·소그룹 수업 상담
         </h2>
         <p className={`mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
-          아래 정보를 접수하신 뒤, 카카오 채널에 문의 남겨 주셨다는 메시지를 꼭 남겨 주세요.
+          시작 방향과 수업 형태를 먼저 알려 주시면, 종목·지역·일정에 맞춰 배정 상담을 이어갑니다.
         </p>
       </div>
 
       <ol className="grid gap-2.5 sm:grid-cols-3">
         {[
-          { step: '01', title: '정보 입력', desc: '아이·종목·일정' },
+          { step: '01', title: '조건 입력', desc: '방향·형태·일정' },
           { step: '02', title: '접수·카카오', desc: '채널에 문의 남기기' },
-          { step: '03', title: '수업 배정', desc: '맞춤 시작' },
+          { step: '03', title: '강사 배정', desc: '적합 확인 후 시작' },
         ].map((item) => (
           <li
             key={item.step}
@@ -169,19 +325,19 @@ export function PrivateApplyForm() {
       <div className="overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]">
         <div className="border-b border-stone-100 bg-stone-50/80 px-5 py-3.5 sm:px-7">
           <p className={`text-sm text-stone-600 ${koreanLineBreak}`}>
-            연령·종목·방문 지역을 구체적으로 적어 주시면 안내가 빨라집니다.
+            시작 방향은 페이지 상단 카드에서 골라도 여기로 이어집니다. 희망 종목은 보조 정보입니다.
           </p>
         </div>
 
         <div className="p-5 sm:p-7">
           <div className="flex items-center justify-between gap-3 text-sm">
             <span className="font-semibold text-slate-700">입력 진행</span>
-            <span className="font-bold text-teal-800">{filledCount}/6</span>
+            <span className="font-bold text-teal-800">{filledCount}/9</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-stone-100">
             <div
               className="h-full rounded-full bg-teal-700 transition-all"
-              style={{ width: `${(requiredCount / 5) * 100}%` }}
+              style={{ width: `${(requiredCount / 6) * 100}%` }}
             />
           </div>
 
@@ -225,36 +381,97 @@ export function PrivateApplyForm() {
               </div>
             </div>
 
+            <div>
+              <label className={labelClass} htmlFor="private-phone">
+                2. 연락처 <span className="text-teal-700">*</span>
+              </label>
+              <input
+                id="private-phone"
+                type="tel"
+                className={inputClass}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="예: 010-1234-5678"
+                autoComplete="tel"
+              />
+            </div>
+
+            <fieldset>
+              <legend className={labelClass}>
+                3. 시작 방향 <span className="text-teal-700">*</span>
+              </legend>
+              <ChipGroup
+                name="시작 방향"
+                options={PRIVATE_START_DIRECTION_OPTIONS}
+                value={startDirection}
+                onChange={syncDirectionToUrl}
+              />
+            </fieldset>
+
+            <fieldset>
+              <legend className={labelClass}>
+                4. 희망 수업 형태 <span className="text-teal-700">*</span>
+              </legend>
+              <ChipGroup
+                name="희망 수업 형태"
+                options={PRIVATE_FORMAT_OPTIONS}
+                value={preferredFormat}
+                onChange={setPreferredFormat}
+              />
+            </fieldset>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className={labelClass} htmlFor="private-phone">
-                  2. 연락처 <span className="text-teal-700">*</span>
-                </label>
-                <input
-                  id="private-phone"
-                  type="tel"
-                  className={inputClass}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="예: 010-1234-5678"
-                  autoComplete="tel"
-                />
-              </div>
-              <div>
                 <label className={labelClass} htmlFor="private-sport">
-                  3. 희망 종목 <span className="text-teal-700">*</span>
+                  5. 희망 종목 <span className="text-xs font-medium text-stone-500">(선택)</span>
                 </label>
                 <input
                   id="private-sport"
                   className={inputClass}
                   value={sport}
                   onChange={(e) => setSport(e.target.value)}
-                  placeholder="예: 기초체력, 축구 준비"
+                  placeholder="예: 축구 준비, 줄넘기"
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="private-instructor">
+                  6. 지도자 희망 <span className="text-xs font-medium text-stone-500">(선택)</span>
+                </label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {PRIVATE_INSTRUCTOR_PREFERENCE_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() =>
+                        setInstructorPreference((prev) => (prev === option ? '' : option))
+                      }
+                      className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
+                        instructorPreference === option
+                          ? 'border-teal-600 bg-teal-600 text-white'
+                          : 'border-stone-200 bg-white text-slate-700 hover:border-teal-300'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  id="private-instructor"
+                  className={inputClass}
+                  value={
+                    (PRIVATE_INSTRUCTOR_PREFERENCE_OPTIONS as readonly string[]).includes(
+                      instructorPreference,
+                    )
+                      ? ''
+                      : instructorPreference
+                  }
+                  onChange={(e) => setInstructorPreference(e.target.value)}
+                  placeholder="기타 희망이 있으면 적어 주세요"
                 />
               </div>
               <div>
                 <label className={labelClass} htmlFor="private-region">
-                  4. 방문 지역/장소 <span className="text-teal-700">*</span>
+                  7. 방문 지역/장소 <span className="text-teal-700">*</span>
                 </label>
                 <input
                   id="private-region"
@@ -266,7 +483,7 @@ export function PrivateApplyForm() {
               </div>
               <div>
                 <label className={labelClass} htmlFor="private-schedule">
-                  5. 가능 시간대 <span className="text-teal-700">*</span>
+                  8. 가능 시간대 <span className="text-teal-700">*</span>
                 </label>
                 <input
                   id="private-schedule"
@@ -280,7 +497,7 @@ export function PrivateApplyForm() {
 
             <div>
               <label className={labelClass} htmlFor="private-note">
-                6. 전하고 싶은 말
+                9. 전하고 싶은 말
               </label>
               <textarea
                 id="private-note"
@@ -351,6 +568,9 @@ export function PrivateApplyForm() {
                 카카오 채널 열기
               </a>
             ) : null}
+            <Link href="#instructors" className={`${siteBtnSecondary} text-center`}>
+              배정 규칙 다시 보기
+            </Link>
           </div>
         </div>
       </div>

@@ -59,6 +59,7 @@ type RushState = {
   hitY: number;
   railHalfW: number;
   railVPHalfW: number;
+  wavePhase: number;
 };
 
 const css = `
@@ -86,7 +87,6 @@ type Props = {
   durationSec: number;
   speedLevel: number;
   speedSec: number;
-  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -97,7 +97,7 @@ function project(g: RushState, z: number, laneOffset: number) {
   return { x, y };
 }
 
-export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete }: Props) {
+export function RushReactionTraining({ durationSec, speedSec, onComplete }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
@@ -170,6 +170,7 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
       hitY: 0,
       railHalfW: 0,
       railVPHalfW: 0,
+      wavePhase: 0,
     };
     gRef.current = g;
 
@@ -205,53 +206,53 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
       if (g.combo > g.maxCombo) g.maxCombo = g.combo;
       if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
       if (hudMaxRef.current) hudMaxRef.current.textContent = String(g.maxCombo);
-      // 히트라인 전체 폭으로 대형 파도 붕괴
+      // 파도 피하기: 파도 색 위치로 이동한 뒤 터질 때 위로 점프하는 이펙트.
       const hitL = project(g, 0, -0.5);
       const hitR = project(g, 0, 0.5);
       const cx = (hitL.x + hitR.x) * 0.5;
       const cy = g.hitY;
       const span = Math.max(g.W * 0.55, hitR.x - hitL.x);
       const col = C[lane].main;
-      // 코어 폭발
-      for (let i = 0; i < 90; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const s = Math.random() * 36 + 14;
-        g.particles.push({
-          x: cx + (Math.random() - 0.5) * span * 0.55,
-          y: cy + (Math.random() - 0.5) * 28,
-          vx: Math.cos(a) * s,
-          vy: Math.sin(a) * s * 0.75 - 10,
-          color: col,
-          life: 1,
-          dec: 0.008 + Math.random() * 0.01,
-          r: 10 + Math.random() * 28,
-        });
-      }
-      // 가로로 퍼지는 파도 시트
-      for (let i = 0; i < 48; i++) {
+      // 발밑 압축: 히트라인에서 짧고 넓게 눌린 색 파동.
+      for (let i = 0; i < 54; i++) {
         const side = Math.random() < 0.5 ? -1 : 1;
         g.particles.push({
-          x: cx + (Math.random() - 0.5) * span * 0.2,
-          y: cy + (Math.random() - 0.5) * 16,
-          vx: side * (18 + Math.random() * 42),
-          vy: -4 - Math.random() * 14,
+          x: cx + (Math.random() - 0.5) * span * 0.28,
+          y: cy + (Math.random() - 0.5) * 12,
+          vx: side * (12 + Math.random() * 26),
+          vy: -2 - Math.random() * 10,
           color: col,
           life: 1,
-          dec: 0.01 + Math.random() * 0.012,
-          r: 14 + Math.random() * 36,
+          dec: 0.014 + Math.random() * 0.014,
+          r: 12 + Math.random() * 32,
         });
       }
-      // 위로 솟는 큰 물보라
-      for (let i = 0; i < 28; i++) {
+      // 점프 아크: 중앙에서 위로 크게 솟았다가 떨어지는 색 물방울.
+      for (let i = 0; i < 96; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.15;
+        const s = 20 + Math.random() * 44;
         g.particles.push({
-          x: cx + (Math.random() - 0.5) * span * 0.7,
-          y: cy,
-          vx: (Math.random() - 0.5) * 12,
-          vy: -(18 + Math.random() * 32),
+          x: cx + (Math.random() - 0.5) * span * 0.34,
+          y: cy + (Math.random() - 0.5) * 14,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s - 12,
           color: col,
           life: 1,
           dec: 0.009 + Math.random() * 0.01,
-          r: 16 + Math.random() * 40,
+          r: 16 + Math.random() * 38,
+        });
+      }
+      // 학생 점프를 암시하는 굵은 수직 스파크.
+      for (let i = 0; i < 34; i++) {
+        g.particles.push({
+          x: cx + (Math.random() - 0.5) * span * 0.18,
+          y: cy,
+          vx: (Math.random() - 0.5) * 8,
+          vy: -(34 + Math.random() * 42),
+          color: i % 4 === 0 ? '#ffffff' : col,
+          life: 1,
+          dec: 0.01 + Math.random() * 0.008,
+          r: 22 + Math.random() * 46,
         });
       }
       if (g.combo >= 5 && g.combo % 5 === 0 && comboRef.current && comboNRef.current) {
@@ -318,20 +319,60 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
       const pBR = project(g, zB, 0.5);
       const col = C[s.ci];
       const near = 1 - Math.max(0, s.z);
-      const grd = ctx.createLinearGradient(0, pFR.y, 0, pBR.y);
-      grd.addColorStop(0, col.main);
-      grd.addColorStop(1, `rgba(${col.rgb},0.5)`);
       ctx.save();
       ctx.shadowColor = col.main;
-      ctx.shadowBlur = 20 * near;
-      ctx.fillStyle = grd;
+      ctx.shadowBlur = 18 + 22 * near;
+      const frontW = Math.max(1, pFR.x - pFL.x);
+      const frontY = (pFL.y + pFR.y) * 0.5;
+      const backY = (pBL.y + pBR.y) * 0.5;
+      const crest = 12 + near * 34;
+
+      const bodyPath = new Path2D();
+      bodyPath.moveTo(pBL.x, pBL.y);
+      bodyPath.quadraticCurveTo((pBL.x + pBR.x) * 0.5, backY - crest * 0.12, pBR.x, pBR.y);
+      bodyPath.lineTo(pFR.x, pFR.y);
+      bodyPath.bezierCurveTo(
+        pFR.x - frontW * 0.2,
+        frontY - crest * 0.68,
+        pFL.x + frontW * 0.28,
+        frontY - crest * 0.72,
+        pFL.x,
+        pFL.y,
+      );
+      bodyPath.closePath();
+
+      ctx.fillStyle = col.main;
+      ctx.fill(bodyPath);
+
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 4 + near * 7;
       ctx.beginPath();
-      ctx.moveTo(pBL.x, pBL.y);
-      ctx.lineTo(pBR.x, pBR.y);
-      ctx.lineTo(pFR.x, pFR.y);
-      ctx.lineTo(pFL.x, pFL.y);
-      ctx.closePath();
-      ctx.fill();
+      ctx.moveTo(pFL.x + frontW * 0.04, frontY - crest * 0.02);
+      ctx.bezierCurveTo(
+        pFL.x + frontW * 0.28,
+        frontY - crest * 0.72,
+        pFR.x - frontW * 0.28,
+        frontY - crest * 0.68,
+        pFR.x - frontW * 0.05,
+        frontY - crest * 0.1,
+      );
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.48;
+      ctx.lineWidth = 2 + near * 2;
+      ctx.beginPath();
+      ctx.moveTo(pFL.x + frontW * 0.1, frontY + crest * 0.35);
+      ctx.bezierCurveTo(
+        pFL.x + frontW * 0.35,
+        frontY + crest * 0.05,
+        pFR.x - frontW * 0.35,
+        frontY + crest * 0.12,
+        pFR.x - frontW * 0.1,
+        frontY + crest * 0.28,
+      );
+      ctx.stroke();
       ctx.restore();
     };
 
@@ -396,6 +437,7 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
       if (!g.running) return;
       const dt = Math.min((now - g.lastTime) / 1000, 0.05);
       g.lastTime = now;
+      g.wavePhase += dt * 7.5;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, g.W, g.H);
 

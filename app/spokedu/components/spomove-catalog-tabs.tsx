@@ -45,7 +45,7 @@ const responseStages: InfoCard[] = [
     eyebrow: '01',
     title: '단순 반응',
     body: '하나의 자극을 보고 정해진 위치나 동작으로 즉시 연결합니다.',
-    note: '시지각 반응 · 반응 인지',
+    note: '반응 인지 · 시지각 반응',
   },
   {
     eyebrow: '02',
