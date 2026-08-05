@@ -30,6 +30,7 @@ import {
   decideRegressiveContentOp,
   readAuthorityBlockText,
 } from './noteAuthority';
+import { shouldIgnoreRegressiveContentPatch } from '@/app/lib/note/noteContentAuthority';
 import {
   mergeBlocksWithStoreContent,
   mergeReconciledBlocks,
@@ -70,7 +71,7 @@ const LEADER_CHANNEL = 'spm-note-sync-leader-v1';
 const LEADER_LOCK_PREFIX = 'spm-note-sync-leader-lock';
 const MAX_PUSH_ATTEMPTS = 8;
 
-/** Authority: clear intent는 push, store에 본문이 남은 stale empty patch만 drop */
+/** Authority: clear intent는 push, store/서버 기준 regressive patch만 drop */
 function filterRegressivePatchContentOps(
   ops: NoteBlockOpPushItem[],
   blocks: NoteBlock[],
@@ -103,6 +104,18 @@ function filterRegressivePatchContentOps(
       dropStaleIds.push(op.clientOpId);
       continue;
     }
+    // 동일길이 stale(1100 vs 1400): store를 current로 보고 공유 predicate로 차단
+    if (
+      block
+      && shouldIgnoreRegressiveContentPatch(
+        block.content,
+        payload.content,
+        payload.baseContent,
+      )
+    ) {
+      dropStaleIds.push(op.clientOpId);
+      continue;
+    }
     safeReady.push(op);
   }
   return { safeReady, dropStaleIds };
@@ -129,7 +142,13 @@ function getTabInstanceId(): string {
 }
 
 type PushResponse =
-  | { ok: true; lastSeq: number; appliedClientOpIds: string[]; blocks: NoteBlockSnapshot[] }
+  | {
+    ok: true;
+    lastSeq: number;
+    appliedClientOpIds: string[];
+    rejectedClientOpIds: string[];
+    blocks: NoteBlockSnapshot[];
+  }
   | { ok: false; error: 'seq_conflict'; lastSeq: number; ops: NoteBlockOpRecord[] };
 
 async function fetchSyncState(documentId: string): Promise<number> {
@@ -234,7 +253,12 @@ async function pushOps(
     return {
       ok: true,
       lastSeq: json.lastSeq as number,
-      appliedClientOpIds: json.appliedClientOpIds as string[],
+      appliedClientOpIds: Array.isArray(json.appliedClientOpIds)
+        ? json.appliedClientOpIds as string[]
+        : [],
+      rejectedClientOpIds: Array.isArray(json.rejectedClientOpIds)
+        ? json.rejectedClientOpIds as string[]
+        : [],
       blocks: json.blocks as NoteBlockSnapshot[],
     };
   } catch (error) {
@@ -252,6 +276,8 @@ export class NoteSyncCoordinator {
   private isLeader = false;
 
   private isPushing = false;
+  /** regressive content reject — outbound는 비어도 saved/draft clear 금지 */
+  private lastPushHadContentReject = false;
 
   private pushRequested = false;
 
@@ -588,6 +614,10 @@ export class NoteSyncCoordinator {
     } finally {
       this.isPushing = false;
     }
+    if (this.lastPushHadContentReject) {
+      this.lastPushHadContentReject = false;
+      return false;
+    }
     return !(await this.hasPendingOutbound());
   }
 
@@ -677,6 +707,13 @@ export class NoteSyncCoordinator {
         continue;
       }
 
+      const rejectedIds = new Set(result.rejectedClientOpIds ?? []);
+      // Save Trust: materialize된 content만 draft clear / saved 후보
+      if (rejectedIds.size > 0) {
+        this.lastPushHadContentReject = true;
+        this.schedulePull();
+      }
+
       const pendingExcluded = getStructuralExcludeIds(this.documentId);
       this.blocks = excludeBlocksPendingSoftDelete(
         mergeSnapshotPatches(this.blocks, result.blocks, {
@@ -691,8 +728,12 @@ export class NoteSyncCoordinator {
         seq: result.lastSeq,
         fetchedAt: Date.now(),
       });
+      // rejected도 outbound에서 제거(재시도 루프 방지). draft clear는 OpQueue가 pushed=false로 스킵.
       await removeOutboundOps(consumedClientOpIds);
-      const consumedLeaveIds = collectLeaveIdsFromPushItems(safeReady, this.documentId);
+      const consumedLeaveIds = collectLeaveIdsFromPushItems(
+        safeReady.filter((op) => !rejectedIds.has(op.clientOpId)),
+        this.documentId,
+      );
       if (consumedLeaveIds.length > 0) {
         retainLeaveExcludeAfterAck(this.documentId, consumedLeaveIds);
       }

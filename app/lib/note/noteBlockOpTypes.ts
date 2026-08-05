@@ -90,6 +90,8 @@ export type NoteBlockOpPushResult =
     ok: true;
     lastSeq: number;
     appliedClientOpIds: string[];
+    /** regressive content — op-log에 안 심음. outbound는 제거하되 draft/saved 금지 */
+    rejectedClientOpIds?: string[];
     blocks: NoteBlockSnapshot[];
   }
   | {

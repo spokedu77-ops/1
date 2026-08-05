@@ -13,6 +13,7 @@ alwaysApply: false
 ## 허용
 
 - 기존 기능 버그 수정 (최소 diff)
+- **데이터 보존(ZERO LOSS)** 위반 수정 — `note-data-preservation.mdc` 최우선
 - `note-sync-invariants.mdc` 불변식 준수 수정 (reducer/pipeline/open)
 - `note-editing-contracts.mdc` C1–C6 준수 수정 (Enter/undo/placement/marquee/paste)
 - 단위·스모크·회귀 테스트 추가
@@ -20,9 +21,10 @@ alwaysApply: false
 
 ## 금지
 
-- 새 블록 타입, column 3열, paste 확장, 미디어 신규 등 **기능 로드맵 항목**
+- 새 블록 타입, column 3열, paste 확장, 미디어 편집 등 **기능 로드맵 항목**
 - hook별 ad-hoc guard·캐시 분기 추가 (open/pipeline/reducer로 흡수)
 - 증상만 가리는 UI 땜빵 (표시≠스토어 이중 진실 유지)
+- **본문·순서 침묵 회귀를 “편의상” 허용하는 동기화 완화**
 
 ## 완료 정의 (기존 범위)
 
@@ -34,7 +36,8 @@ alwaysApply: false
 
 ## 수정 순서 (고정)
 
-1. **SSOT** — 표시 = store = blocksRef (`noteDisplayBlocks`, `noteDocumentOpen`, `patchContent`)
-2. **동기화** — op-log 단일 경로, 캐시/reconcile 부작용 제거
-3. **편집 동작** — 키보드·DnD·cross-select 스모크 기준
-4. **동시 편집** — 되돌림·좀비 (서버 비원자성 문서화·완화만)
+1. **데이터 보존** — ACK≡materialize, shared content authority, order signature
+2. **SSOT** — 표시 = store = blocksRef (`noteDisplayBlocks`, `noteDocumentOpen`, `patchContent`)
+3. **동기화** — op-log 단일 경로, 캐시/reconcile 부작용 제거
+4. **편집 동작** — 키보드·DnD·cross-select 스모크 기준
+5. **동시 편집** — 되돌림·좀비 (서버 비원자성 문서화·완화만)

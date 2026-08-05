@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       lastSeq: result.lastSeq,
       appliedClientOpIds: result.appliedClientOpIds,
+      rejectedClientOpIds: result.rejectedClientOpIds ?? [],
       blocks: result.blocks,
     });
   } catch (err) {

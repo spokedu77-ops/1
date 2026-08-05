@@ -82,6 +82,67 @@ describe('NoteDocumentOpQueue', () => {
     );
   });
 
+  it('prefers same-length store text over stale pending flush (1100 vs 1400)', async () => {
+    const blocks = new Map([['a', baseBlock('a', 'progress payment: 1400', 3)]]);
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
+
+    const queue = new NoteDocumentOpQueue({
+      getBlock: (id) => blocks.get(id),
+      getActiveBlockId: () => null,
+      triggerSave: vi.fn(),
+      persistViaOpLog,
+    });
+
+    queue.scheduleContentPatch(
+      'a',
+      { text: 'progress payment: 1100' },
+      { text: 'progress payment: 1100' },
+    );
+    await queue.flushContentPatches();
+    await queue.drain();
+
+    expect(persistViaOpLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'patchContent',
+        updates: [expect.objectContaining({
+          id: 'a',
+          content: expect.objectContaining({ text: 'progress payment: 1400' }),
+        })],
+      }),
+      { immediate: true },
+    );
+  });
+
+  it('does not drop pending content when store block is temporarily missing', async () => {
+    const persistViaOpLog = vi.fn().mockResolvedValue(true);
+
+    const queue = new NoteDocumentOpQueue({
+      getBlock: () => undefined,
+      getActiveBlockId: () => null,
+      triggerSave: vi.fn(),
+      persistViaOpLog,
+    });
+
+    queue.scheduleContentPatch(
+      'gone',
+      { text: 'must survive leave race' },
+      { text: 'old' },
+    );
+    await queue.flushContentPatches();
+    await queue.drain();
+
+    expect(persistViaOpLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'patchContent',
+        updates: [expect.objectContaining({
+          id: 'gone',
+          content: { text: 'must survive leave race' },
+        })],
+      }),
+      { immediate: true },
+    );
+  });
+
   it('does not persist stale empty body patches over protectable content', async () => {
     const blocks = new Map([
       ['a', {
@@ -152,9 +213,9 @@ describe('NoteDocumentOpQueue', () => {
   });
 
   it.each([
-    ['todo', { text: '7.20 ?�요??11??강승??면접', checked: false }],
-    ['toggle', { title: 'P0 ?�심 과제', collapsed: false }],
-    ['page', { title: '최�????�무?�트 ?�위?�이지', page_document_id: 'child-doc-1' }],
+    ['todo', { text: '7.20 ?????11????????', checked: false }],
+    ['toggle', { title: 'P0 ??? ??', collapsed: false }],
+    ['page', { title: '??????????? ???????', page_document_id: 'child-doc-1' }],
   ] satisfies Array<[NoteBlock['type'], Record<string, unknown>]>)(
     'drops stale empty body patches over %s contract fields',
     async (type, content) => {

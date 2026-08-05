@@ -80,8 +80,9 @@ reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 
 
 **주의:** “본문 침묵 wipe 금지”와 “의도된 삭제 유지”는 충돌하면 **삭제 Intent가 이긴다**. empty race wipe 거부로 soft-deleted id를 되살리는 땜빵 금지.
 
-## 절대 규칙
+## Absolute rules (data preservation first)
 
+0. **Data preservation is #1** — see `.cursor/rules/note-data-preservation.mdc` and contract Foundation. Sync UX is secondary to ZERO LOSS.
 1. **블록 상태 mutation은 `NoteDocumentPipeline.dispatch()` 또는 engine API만** 허용
 2. **`blocksRef.current =` 직접 쓰기 금지** — store 구독 미러만
 3. **`setBlocks`는 pipeline `replaceBlocks` 경유** (useNoteBlockData)
@@ -95,6 +96,7 @@ reducer hydrate/syncSnapshot · cache remember · coordinator · open이 위만 
 11. **exclude Project** — 활성 집합 투영은 store write. pipeline dispatch에서 재필터하지 않음. coordinator는 transport merge에만 leave 투영
 12. **Project** — coordinator `onBlocksUpdated`는 `dispatchSnapshotIfChanged`→`syncSnapshot`만. skip no-op·store 직쓰기 금지
 13. **Pull** — `pipeline.schedulePull` → `coordinator.schedulePull` (idle/realtime); publish 게이트는 `shouldPublishPullAfterRebase`
+14. **Content authority** — `shouldIgnoreRegressiveContentPatch`는 `app/lib/note/noteContentAuthority.ts`만. ACK≠materialize 금지 (`rejectedClientOpIds`)
 
 ## 파일 역할
 

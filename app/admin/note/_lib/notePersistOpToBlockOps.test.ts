@@ -76,6 +76,39 @@ describe('coalescePushItems', () => {
     });
   });
 
+  it('keeps earliest baseContent when coalescing patch_content', () => {
+    const items: NoteBlockOpPushItem[] = [
+      {
+        clientOpId: 'c1',
+        opType: 'patch_content',
+        payload: {
+          opType: 'patch_content',
+          blockId: 'a',
+          content: { text: '1100' },
+          baseContent: { text: '1000' },
+        },
+      },
+      {
+        clientOpId: 'c2',
+        opType: 'patch_content',
+        payload: {
+          opType: 'patch_content',
+          blockId: 'a',
+          content: { text: '1400' },
+          baseContent: { text: '1100' },
+        },
+      },
+    ];
+    const coalesced = coalescePushItems(items);
+    expect(coalesced).toHaveLength(1);
+    expect(coalesced[0]?.payload).toMatchObject({
+      opType: 'patch_content',
+      blockId: 'a',
+      content: { text: '1400' },
+      baseContent: { text: '1000' },
+    });
+  });
+
   it('carries baseContent so the server can distinguish user deletion from stale truncation', () => {
     const [item] = persistOpToPushItems({
       type: 'patchContent',

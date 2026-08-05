@@ -140,10 +140,10 @@ export class NoteDocumentOpQueue {
     this.contentFlushPending = false;
 
     const updates = [...snapshot.entries()]
-      .filter(([id]) => !!this.deps.getBlock(id))
       .map(([id, pending]) => {
-        const storeBlock = this.deps.getBlock(id)!;
-        const storeContent = storeBlock.content as Record<string, unknown> | null | undefined;
+        const storeBlock = this.deps.getBlock(id);
+        // leave/switch 레이스로 store가 비어도 pending content는 버리지 않음 (데이터 보존)
+        const storeContent = storeBlock?.content as Record<string, unknown> | null | undefined;
         const storeText = typeof storeContent?.text === 'string' ? storeContent.text : '';
         const pendingText = typeof pending.content.text === 'string' ? pending.content.text : '';
         const baseText = typeof pending.baseContent?.text === 'string' ? pending.baseContent.text : '';
@@ -159,8 +159,21 @@ export class NoteDocumentOpQueue {
           if (staleEmptyPatch) return null;
           if (storeMatchesEmptyPatch && !hasProtectableContent(pending.baseContent)) return null;
         }
-        const content = storeText.length > pendingText.length
-          ? { ...(storeContent ?? {}), ...pending.content, text: storeText }
+        // store가 더 길거나, 동일·다른 본문이면 store 우선(1100↔1400 stale pending 차단)
+        const preferStoreText = storeText.length > 0
+          && storeText !== pendingText
+          && (
+            storeText.length > pendingText.length
+            || !pendingText.startsWith(storeText)
+          );
+        const storeHtml = typeof storeContent?.html === 'string' ? storeContent.html : undefined;
+        const content = preferStoreText
+          ? {
+            ...(storeContent ?? {}),
+            ...pending.content,
+            text: storeText,
+            ...(storeHtml !== undefined ? { html: storeHtml } : {}),
+          }
           : pending.content;
         return {
           id,

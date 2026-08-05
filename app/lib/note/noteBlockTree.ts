@@ -20,15 +20,20 @@ export function buildChildrenByParentBlock<T extends NoteBlockLike>(blocks: T[])
     map.set(block.parent_block_id, list);
   }
   for (const [key, list] of map.entries()) {
-    map.set(key, [...list].sort((a, b) => a.order_index - b.order_index));
+    map.set(key, [...list].sort(compareSiblingOrder));
   }
   return map;
+}
+
+/** order_index 우선. 동점은 입력 배열 만남 순서 유지(stable sort) — densify가 화면 순서를 바꾸지 않음 */
+export function compareSiblingOrder<T extends NoteBlockLike>(a: T, b: T): number {
+  return a.order_index - b.order_index;
 }
 
 export function sortRootBlocks<T extends NoteBlockLike>(blocks: T[]) {
   return blocks
     .filter((block) => !block.parent_block_id)
-    .sort((a, b) => a.order_index - b.order_index);
+    .sort(compareSiblingOrder);
 }
 
 /** 동일 id가 배열에 두 번 들어가면 React key 경고·UI 중복 — 첫 등장 순서 유지, 최신 객체 우선 */
@@ -258,7 +263,7 @@ export function filterSiblingBlocks<T extends NoteBlockLike>(blocks: T[], block:
 export function getBlocksInParent<T extends NoteBlockLike>(blocks: T[], parentId: string | null): T[] {
   return blocks
     .filter((item) => (item.parent_block_id ?? null) === parentId)
-    .sort((a, b) => a.order_index - b.order_index);
+    .sort(compareSiblingOrder);
 }
 
 export type BlockDropPlan<T extends BlockWithMeta = BlockWithMeta> = {
@@ -420,7 +425,7 @@ export function numberedListIndexAmongSiblings<T extends BlockWithMeta>(
 ): number {
   const ordered = [...siblings]
     .filter((item) => item.type === 'numberedList')
-    .sort((a, b) => a.order_index - b.order_index);
+    .sort(compareSiblingOrder);
   const idx = ordered.findIndex((item) => item.id === block.id);
   return idx >= 0 ? idx + 1 : 1;
 }

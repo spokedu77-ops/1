@@ -9,6 +9,9 @@
  */
 
 import { decideRegressiveContentOp, readAuthorityBlockText } from './noteAuthority';
+import {
+  isStrictNoteTextExtension,
+} from '@/app/lib/note/noteContentAuthority';
 import type { NoteBlock } from './types';
 
 const USER_CONTENT_KEYS = [
@@ -81,17 +84,10 @@ function copyLocalUserFieldsOnto(
 }
 
 /**
- * Passive strict extension: 로컬 접두 + 더 긴 incoming만.
- * 짧은 로컬(≤2자) 접두 오인("A"→"A server")과 줄바꿈 paste 잔여 확장은 거부.
+ * Passive strict extension — `app/lib/note/noteContentAuthority` SSOT.
  */
 export function isStrictPassiveTextExtension(localText: string, incomingText: string): boolean {
-  if (!incomingText.startsWith(localText) || incomingText.length <= localText.length) {
-    return false;
-  }
-  if (localText.trim().length <= 2) return false;
-  const suffix = incomingText.slice(localText.length);
-  if (/\n/.test(suffix) && suffix.trim().length > 0) return false;
-  return true;
+  return isStrictNoteTextExtension(localText, incomingText);
 }
 
 /**
@@ -161,7 +157,7 @@ export function mergePassiveIncomingContent(
   return next;
 }
 
-/** 같은 parent 형제들의 상대 순서 서명 (id 나열) — absolute order_index와 무관 */
+/** 같은 parent 형제들의 상대 순서 서명 (id 나열) — absolute order_index와 무관, 동점은 만남 순서 */
 export function siblingRelativeOrderSignature(
   blocks: ReadonlyArray<Pick<NoteBlock, 'id' | 'parent_block_id' | 'order_index'>>,
   parentId: string | null,
@@ -169,10 +165,7 @@ export function siblingRelativeOrderSignature(
   return blocks
     .filter((block) => (block.parent_block_id ?? null) === parentId)
     .slice()
-    .sort((left, right) => {
-      if (left.order_index !== right.order_index) return left.order_index - right.order_index;
-      return left.id.localeCompare(right.id);
-    })
+    .sort((left, right) => left.order_index - right.order_index)
     .map((block) => block.id)
     .join(',');
 }
@@ -279,6 +272,22 @@ export function findSilentUserPayloadRegressions(
           blockId: local.id,
           kind: 'topology_drift',
           detail: 'order_index changed without explicit intent',
+        });
+      }
+    }
+  }
+
+  if (!options?.allowTopologyChange) {
+    const parents = new Set<string | null>();
+    for (const block of before) parents.add(block.parent_block_id ?? null);
+    for (const parentId of parents) {
+      const beforeSig = siblingRelativeOrderSignature(before, parentId);
+      const afterSig = siblingRelativeOrderSignature(after, parentId);
+      if (beforeSig && afterSig && beforeSig !== afterSig) {
+        violations.push({
+          blockId: parentId ?? '__root__',
+          kind: 'relative_order',
+          detail: `sibling relative order changed: ${beforeSig} → ${afterSig}`,
         });
       }
     }

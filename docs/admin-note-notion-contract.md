@@ -2,6 +2,19 @@
 
 This file defines the minimum Notion-like contract for Admin Note. New fixes should preserve these rules instead of adding symptom-level workarounds.
 
+## Foundation: Data Preservation (ZERO LOSS)
+
+**The product baseline for Admin Note is data preservation, not feature completeness.**
+
+- User-authored text, callout bodies, checklist text, and sibling relative order must not change or disappear without an explicit Intent.
+- `ACK ≡ materialize`: a regressive `patch_content` must not be committed to the op-log as a successful content write. Rejected ops must not clear emergency drafts or flip UI to `saved`.
+- Content authority is a single shared predicate: `app/lib/note/noteContentAuthority.ts` (`shouldIgnoreRegressiveContentPatch`). Server, push filter, flush, and passive merge must not invent alternate length/LWW rules.
+- Equal-length rewrites (e.g. `1400만원` ↔ `1100만원`) without a matching `baseContent` are forbidden.
+- Sibling densify runs only on duplicate `order_index` and must preserve encounter order (never reshuffle by id).
+- Document leave/switch must not drop pending content because the store row is temporarily missing.
+
+If a change makes the UI look saved while reload shows older text or a scrambled checklist, it is a P0 contract break — fix the choke, do not add a hook-level workaround.
+
 ## Scope
 
 The supported Notion-like surface is intentionally small:
@@ -92,11 +105,11 @@ The supported Notion-like surface is intentionally small:
 
 ## Save Trust Contract
 
-- The UI must not report content as saved merely because a local outbound op was queued.
+- The UI must not report content as saved merely because a local outbound op was queued **or because the server ACKed an ignored regressive patch**.
 - Debounced content edits may batch locally, but once flushed they must request immediate server push before showing the saved state.
-- If server push fails or remains pending, the note must stay in a pending/error state instead of silently implying durable persistence.
-- `triggerSave` / UI `saved` may fire only through `reportNoteDurableSave` (`noteSaveTrust`). Content debounce pending or outbound remaining → `saving` only, never `saved`. Hook `triggerSave()` calls are gated the same way — there is no ungated saved path.
-- Emergency drafts clear only after content patch push success (`onContentPersisted` after outbound drain).
+- If server push fails, remains pending, or returns `rejectedClientOpIds` for content, the note must stay in a pending/error state instead of silently implying durable persistence.
+- `triggerSave` / UI `saved` may fire only through `reportNoteDurableSave` (`noteSaveTrust`). Content debounce pending, outbound remaining, or content reject → never `saved`.
+- Emergency drafts clear only after content patch **materialize** success (`onContentPersisted` only when `persistViaOpLog` returns true after a non-rejected content push).
 - Content edits must write a synchronous emergency draft before the debounce/server push path. The draft is cleared only after the corresponding content patch is persisted, and newer emergency drafts may recover over stale server snapshots on document load.
 - Missing-content investigations must start with `node scripts/admin-note-search-data.mjs <terms...>` before assuming a rendering bug.
 - **Integrity gate:** After edit → save flush → document switch → reload, the same block ids must keep the same user-authored content unless the user explicitly changed them. Regression suites must fail on silent content clear/truncate (`noteDataIntegrity` / `noteSyncVerification`).

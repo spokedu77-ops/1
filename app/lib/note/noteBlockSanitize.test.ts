@@ -85,6 +85,23 @@ describe('sanitizeNoteBlockTree', () => {
     expect(roots.map((item) => item.order_index)).toEqual([0, 1, 2]);
   });
 
+  it('densifies duplicate orders preserving encounter order (not id shuffle)', () => {
+    const forward = sanitizeNoteBlockTree([
+      block('z-last', 'text', null, 3),
+      block('a-first', 'text', null, 3),
+      block('m-mid', 'text', null, 3),
+    ]);
+    expect(forward.map((item) => item.id)).toEqual(['z-last', 'a-first', 'm-mid']);
+    expect(forward.map((item) => item.order_index)).toEqual([0, 1, 2]);
+
+    const reverse = sanitizeNoteBlockTree([
+      block('m-mid', 'text', null, 3),
+      block('a-first', 'text', null, 3),
+      block('z-last', 'text', null, 3),
+    ]);
+    expect(reverse.map((item) => item.id)).toEqual(['m-mid', 'a-first', 'z-last']);
+  });
+
   it('sanitizes root siblings per document_id so transfer projections do not compact across docs', () => {
     type DocBlock = Block & { document_id: string };
     const withDoc = (

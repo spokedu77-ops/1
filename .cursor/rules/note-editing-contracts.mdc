@@ -37,6 +37,6 @@ alwaysApply: false
 
 ## 버그 수정 시
 
-1. 어느 계약(C1–C6)이 깨졌는지 특정 — **본문·데이터가 침묵으로 바뀌면** 편집 C가 아니라 **Sync/Save Trust + `noteDataIntegrity`** (새 C번호 만들지 말 것)
-2. **choke point**에만 고친다 (hook별 ad-hoc repair 추가 금지 — C1은 pipeline, C5는 placement/transfer, 무결은 `mergeReconciledBlocks`/`sanitizeNoteBlockTree`)
+1. 어느 계약(C1–C6)이 깨졌는지 특정 — **본문·데이터가 침묵으로 바뀌면** 편집 C가 아니라 **`.cursor/rules/note-data-preservation.mdc` + Sync/Save Trust + `noteContentAuthority` / `noteDataIntegrity`** (새 C번호 만들지 말 것)
+2. **choke point**에만 고친다 (hook별 ad-hoc repair 추가 금지 — C1은 pipeline, C5는 placement/transfer, 무결은 `mergeReconciledBlocks`/`sanitizeNoteBlockTree`/`noteContentAuthority`)
 3. 계약 테스트에 재현 케이스 추가

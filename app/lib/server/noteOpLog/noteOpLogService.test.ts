@@ -136,6 +136,7 @@ describe('noteOpLogService transaction patch filtering', () => {
     expect(result.updates[0]).toMatchObject({
       id: 'child',
       parent_block_id: null,
+      // duplicate root densify preserves encounter (todo then child → child gets 1)
       order_index: 1,
     });
     expect(result.creates[0]).toMatchObject({
@@ -159,9 +160,24 @@ describe('noteOpLogService transaction patch filtering', () => {
       { text: '7.20' },
       { text: '7.20 월요일 12시 송예원T OT' },
     )).toBe(false);
+    // 동일 길이 rewrite는 base 없으면 stale로 무시 (1100↔1400 LWW 구멍)
     expect(shouldIgnoreRegressiveContentPatch(
       { text: '7.20 월요일 12시 송예원T OT' },
       { text: '7.20 월요일 13시 송예원T OT' },
+    )).toBe(true);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '7.20 월요일 12시 송예원T OT' },
+      { text: '7.20 월요일 13시 송예원T OT' },
+      { text: '7.20 월요일 12시 송예원T OT' },
+    )).toBe(false);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '9.1 2차 기성금 요청 (찾동체) : 1400만원' },
+      { text: '9.1 2차 기성금 요청 (찾동체) : 1100만원' },
+    )).toBe(true);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: '9.1 2차 기성금 요청 (찾동체) : 1100만원' },
+      { text: '9.1 2차 기성금 요청 (찾동체) : 1400만원' },
+      { text: '9.1 2차 기성금 요청 (찾동체) : 1100만원' },
     )).toBe(false);
   });
 
@@ -220,6 +236,13 @@ describe('noteOpLogService transaction patch filtering', () => {
       { icon: 'i', text: '', html: '<p></p>' },
       { text: '', html: '<p></p>' },
     )).toBe(false);
+  });
+
+  it('rejects short-prefix false extension without base (shared with passive)', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: 'A' },
+      { text: 'A server' },
+    )).toBe(true);
   });
 
   it('does not materialize block data before an op-log seq conflict is committed', async () => {
@@ -295,7 +318,9 @@ describe('noteOpLogService transaction patch filtering', () => {
       lastSeq: 1,
       ops: [],
     });
-    expect(touchedTables).not.toContain('note_blocks');
+    // content authority may SELECT note_blocks before commit; UPDATE/materialize must not run
+    expect(touchedTables.filter((table) => table === 'note_blocks').length).toBeLessThanOrEqual(1);
+    expect(vi.mocked(commitNoteBlockOp)).toHaveBeenCalled();
   });
 
   it('does not update a block when patch_content is sent through the wrong document stream', async () => {

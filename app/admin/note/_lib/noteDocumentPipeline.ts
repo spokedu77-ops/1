@@ -271,7 +271,8 @@ export class NoteDocumentPipeline {
     // LocalApply = dispatch(patchContent) — store 직패치 금지
     this.dispatch({ type: 'patchContent', blockId, content: nextContent });
     markNoteLocalSave(this.documentId);
-    this.queue?.scheduleContentPatch(blockId, nextContent, baseContent);
+    // base는 반드시 편집 전 스냅샷 — 서버가 동일길이 stale rewrite를 가려낼 수 있게
+    this.queue?.scheduleContentPatch(blockId, nextContent, baseContent ?? prevContent);
     this.syncPendingFlag();
     const next = useNoteBlockStore.getState().getBlocksArray();
     const forDoc = blocksForDocument(next, this.documentId);
@@ -614,7 +615,9 @@ export class NoteDocumentPipeline {
     const merged = blocks.map((block) => recoveredById.get(block.id) ?? block);
     for (const draft of recovered) {
       if (excluded.has(draft.blockId)) continue;
-      this.queue?.scheduleContentPatch(draft.blockId, draft.content);
+      const existing = blocks.find((block) => block.id === draft.blockId);
+      const baseContent = (existing?.content as Record<string, unknown> | null | undefined) ?? {};
+      this.queue?.scheduleContentPatch(draft.blockId, draft.content, baseContent);
     }
     if (recovered.length > 0) {
       this.syncPendingFlag();

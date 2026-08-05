@@ -477,21 +477,35 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
 }
 
 /**
- * 같은 블록의 patch_content만 최신으로 합친다.
- * create → patch 등 상대 순서는 유지한다 (content를 앞으로 끌어올리면 block not found 발생).
+ * 같은 블록의 patch_content만 최신 content로 합친다.
+ * create → patch 등 상대 순서는 유지. baseContent는 **최초(earliest)** 를 보존해
+ * OT stale 판정이 깨지지 않게 한다.
  */
 export function coalescePushItems(items: NoteBlockOpPushItem[]): NoteBlockOpPushItem[] {
   const latestContentIndexByBlock = new Map<string, number>();
+  const earliestBaseByBlock = new Map<string, Record<string, unknown> | undefined>();
   items.forEach((item, index) => {
-    if (item.payload.opType === 'patch_content') {
-      latestContentIndexByBlock.set(item.payload.blockId, index);
+    if (item.payload.opType !== 'patch_content') return;
+    const blockId = item.payload.blockId;
+    if (!earliestBaseByBlock.has(blockId)) {
+      earliestBaseByBlock.set(blockId, item.payload.baseContent);
     }
+    latestContentIndexByBlock.set(blockId, index);
   });
 
   const result: NoteBlockOpPushItem[] = [];
   items.forEach((item, index) => {
     if (item.payload.opType === 'patch_content') {
       if (latestContentIndexByBlock.get(item.payload.blockId) !== index) return;
+      const earliestBase = earliestBaseByBlock.get(item.payload.blockId);
+      const payload = { ...item.payload };
+      if (earliestBase !== undefined) {
+        payload.baseContent = earliestBase;
+      } else {
+        delete payload.baseContent;
+      }
+      result.push({ ...item, payload });
+      return;
     }
     result.push(item);
   });

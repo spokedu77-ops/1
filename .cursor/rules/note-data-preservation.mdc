@@ -1,0 +1,52 @@
+---
+description: admin/note 데이터 보존 최상위 계약 — 본문·순서 침묵 유실 금지
+globs: app/admin/note/**/*,app/lib/note/**/*,app/lib/server/noteOpLog/**/*,app/api/admin/note/**/*
+alwaysApply: true
+---
+
+# admin/note — 데이터 보존 (최상위)
+
+노트 기본은 **기능·UX가 아니라 데이터 보존**이다.  
+사용자가 쓴 본문·콜아웃·체크리스트·형제 순서는 **Intent 없이 바뀌거나 사라져서는 안 된다.**
+
+이 규칙은 `note-sync-invariants` / `note-editing-contracts` 보다 **우선**한다.  
+충돌 시: 저장됨처럼 보이지만 DB가 구버전 · 순서가 섞임 · 금액/문장이 되돌아감 → **전부 P0**.
+
+## ZERO LOSS 불변식
+
+1. **ACK ≡ materialize**  
+   `patch_content`가 regressive로 무시되면 op-log에 심지 말고 `rejectedClientOpIds`로 돌려라.  
+   outbound만 비우고 draft clear / UI `saved` 찍는 것은 **계약 위반**.
+
+2. **공유 predicate 단일**  
+   본문 회귀 판정은 `app/lib/note/noteContentAuthority.ts` (`shouldIgnoreRegressiveContentPatch`) **만**.  
+   서버·OpQueue·coordinator·passive가 각자 다른 “길이 비교”를 두면 위반.
+
+3. **동일 길이 rewrite**  
+   `1400만원` ↔ `1100만원`처럼 길이가 같아도 **matching `baseContent` 없으면 거부**.
+
+4. **형제 순서**  
+   densify는 중복 `order_index`일 때만. 동점은 **입력(화면) 만남 순서** 유지 (id로 재섞기 금지).  
+   densify 전후 `siblingRelativeOrderSignature`가 바뀌면 위반.
+
+5. **Leave / switch**  
+   pending content는 store에서 블록이 사라져도 **버리지 않는다**.  
+   flush soft-timeout으로 “성공한 척”하고 편집을 폐기하는 경로 금지.
+
+6. **새 passive/merge 구멍**  
+   server/remote `content`를 seal 없이 대입 금지.  
+   “저장됨”은 `reportNoteDurableSave` + **실제 materialize** 이후에만.
+
+## 수정 시 절차
+
+1. 어떤 ZERO LOSS 불변식이 깨졌는지 특정  
+2. choke에만 수정 (`noteContentAuthority` · `noteOpLogService` push · `noteDataIntegrity` · OpQueue flush)  
+3. 재현 단위 테스트 추가 — 증상 UI 패치로 끝내지 말 것  
+4. hook별 ad-hoc “이번만” 가드 추가 금지
+
+## 금지
+
+- base 없는 동일길이 LWW를 “편의상” 다시 허용  
+- ignore/no-op materialize인데 ACK·draft clear·saved  
+- densify를 id 정렬로 “결정적”이라며 화면 순서 파괴  
+- 문서 전환 시 pending map clear / getBlock 없으면 drop

@@ -5,8 +5,15 @@ import type {
   NoteBlockOpRecord,
   NoteBlockSnapshot,
 } from '@/app/lib/note/noteBlockOpTypes';
+import {
+  noteContentHasStructuredPresence,
+  readNoteContentAuthorityText,
+  shouldIgnoreRegressiveContentPatch,
+} from '@/app/lib/note/noteContentAuthority';
 import { commitNoteBlockOp } from '@/app/lib/server/noteOpLog/noteCommitBlockOp';
 import { sanitizeNoteBlockTree, type SanitizableNoteBlock } from '@/app/lib/note/noteBlockSanitize';
+
+export { shouldIgnoreRegressiveContentPatch } from '@/app/lib/note/noteContentAuthority';
 
 const BLOCK_SELECT =
   'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by, version';
@@ -179,36 +186,11 @@ async function fetchActiveDocumentBlocks(
 }
 
 function readContentText(content: unknown): string {
-  if (!content || typeof content !== 'object') return '';
-  const record = content as Record<string, unknown>;
-  for (const key of ['text', 'title', 'html', 'body', 'caption', 'url', 'page_document_id']) {
-    const value = record[key];
-    if (key === 'html' && isEmptyHtml(value)) continue;
-    if (typeof value === 'string' && value.trim().length > 0) return value;
-  }
-  return '';
-}
-
-function isEmptyHtml(value: unknown): boolean {
-  return value === ''
-    || value === '<p></p>'
-    || value === '<p><br></p>'
-    || value === '<p><br class="ProseMirror-trailingBreak"></p>';
+  return readNoteContentAuthorityText(content);
 }
 
 function hasStructuredContent(content: unknown): boolean {
-  if (!content || typeof content !== 'object') return false;
-  const record = content as Record<string, unknown>;
-  return Object.entries(record).some(([key, value]) => {
-    if (['checked', 'collapsed', 'icon', 'blockColor', 'backgroundColor', 'color'].includes(key)) return false;
-    if (typeof value === 'string') {
-      if (key === 'html') return !isEmptyHtml(value);
-      return value.trim().length > 0;
-    }
-    if (Array.isArray(value)) return value.length > 0;
-    if (value && typeof value === 'object') return Object.keys(value).length > 0;
-    return false;
-  });
+  return noteContentHasStructuredPresence(content);
 }
 
 function softDeleteMetaMatches(
@@ -285,34 +267,6 @@ async function filterSoftDeleteIdsByMeta(
     rows: (data ?? []) as Array<Record<string, unknown>>,
     deleteMeta,
   });
-}
-
-export function shouldIgnoreRegressiveContentPatch(
-  currentContent: unknown,
-  incomingContent: unknown,
-  baseContent?: unknown,
-): boolean {
-  const currentText = readContentText(currentContent).trim();
-  const incomingText = readContentText(incomingContent).trim();
-  const baseText = readContentText(baseContent).trim();
-  const currentHasStructuredContent = hasStructuredContent(currentContent);
-  const incomingHasStructuredContent = hasStructuredContent(incomingContent);
-  const baseHasStructuredContent = hasStructuredContent(baseContent);
-  if (!currentText && !currentHasStructuredContent) return false;
-  if ((baseText || baseHasStructuredContent) && (
-    baseText !== currentText
-    || baseHasStructuredContent !== currentHasStructuredContent
-  )) {
-    return incomingText !== currentText
-      || incomingHasStructuredContent !== currentHasStructuredContent;
-  }
-  if (!incomingText && !incomingHasStructuredContent) {
-    return baseText !== currentText || baseHasStructuredContent !== currentHasStructuredContent;
-  }
-  if (!incomingText) return baseText !== currentText;
-  if (incomingText.length >= currentText.length) return false;
-  if (baseText && baseText === currentText) return false;
-  return currentText.startsWith(incomingText);
 }
 
 export function filterTransactionPatchesByExistingIds<T extends { id: string }>(
@@ -659,12 +613,18 @@ export async function pushNoteBlockOps(
   ops: NoteBlockOpPushItem[],
   actorId: string,
 ): Promise<
-  | { ok: true; lastSeq: number; appliedClientOpIds: string[]; blocks: NoteBlockSnapshot[] }
+  | {
+    ok: true;
+    lastSeq: number;
+    appliedClientOpIds: string[];
+    rejectedClientOpIds: string[];
+    blocks: NoteBlockSnapshot[];
+  }
   | { ok: false; error: 'seq_conflict'; lastSeq: number; ops: NoteBlockOpRecord[] }
 > {
   if (ops.length === 0) {
     const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);
-    return { ok: true, lastSeq, appliedClientOpIds: [], blocks: [] };
+    return { ok: true, lastSeq, appliedClientOpIds: [], rejectedClientOpIds: [], blocks: [] };
   }
 
   // client_op_id 기준 멱등 처리: 이미 기록된 op은 재적용하지 않는다(재시도/다중 탭 안전).
@@ -687,15 +647,37 @@ export async function pushNoteBlockOps(
       blocks.push(...await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId));
     }
     const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);
-    return { ok: true, lastSeq, appliedClientOpIds: clientOpIds, blocks };
+    return { ok: true, lastSeq, appliedClientOpIds: clientOpIds, rejectedClientOpIds: [], blocks };
   }
 
   // op마다: commit → materialize. leave는 duplicate여도 materialize를 다시 시도.
+  // regressive patch_content는 commit 금지 — ACK≠materialize 구멍 차단.
   const appliedClientOpIds: string[] = [...existingSet];
+  const rejectedClientOpIds: string[] = [];
   const blocks: NoteBlockSnapshot[] = [];
   let runningBaseSeq = baseSeq;
 
   for (const op of newOps) {
+    if (op.payload.opType === 'patch_content') {
+      const { data: current } = await supabase
+        .from('note_blocks')
+        .select('content')
+        .eq('id', op.payload.blockId)
+        .eq('document_id', documentId)
+        .maybeSingle();
+      if (
+        current
+        && shouldIgnoreRegressiveContentPatch(
+          current.content,
+          op.payload.content,
+          op.payload.baseContent,
+        )
+      ) {
+        rejectedClientOpIds.push(op.clientOpId);
+        continue;
+      }
+    }
+
     const commit = await commitNoteBlockOp(
       supabase,
       documentId,
@@ -730,7 +712,7 @@ export async function pushNoteBlockOps(
   }
 
   const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);
-  return { ok: true, lastSeq, appliedClientOpIds, blocks };
+  return { ok: true, lastSeq, appliedClientOpIds, rejectedClientOpIds, blocks };
 }
 
 export async function loadNoteDocumentSnapshot(
