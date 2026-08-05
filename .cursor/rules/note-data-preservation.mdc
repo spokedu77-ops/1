@@ -33,7 +33,11 @@ alwaysApply: true
    pending content는 store에서 블록이 사라져도 **버리지 않는다**.  
    flush soft-timeout으로 “성공한 척”하고 편집을 폐기하는 경로 금지.
 
-6. **새 passive/merge 구멍**  
+6. **삭제 후 IDB 부활 금지**  
+   open merge는 outbound에 content만 있어도 **서버에 없는 local id를 prune**한다  
+   (미ack create·grace만 예외). topology outbound가 없으면 **서버 형제 순서**를 따른다.
+
+7. **새 passive/merge 구멍**  
    server/remote `content`를 seal 없이 대입 금지.  
    “저장됨”은 `reportNoteDurableSave` + **실제 materialize** 이후에만.
 

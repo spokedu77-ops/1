@@ -143,7 +143,8 @@ export function shouldAllowRemotePullBeforePush(
   return !outboundHasUnpublishedTopology(items);
 }
 
-function collectCreateIdsFromOutbound(
+/** outbound에 아직 서버에 없는 create id — prune에서 보호 */
+export function collectCreateIdsFromOutbound(
   outbound: ReadonlyArray<NoteBlockOpPushItem>,
 ): Set<string> {
   const ids = new Set<string>();

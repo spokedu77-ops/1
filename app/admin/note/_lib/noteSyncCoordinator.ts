@@ -37,7 +37,9 @@ import {
   noteDocumentStructureFingerprint,
   shouldPublishPullAfterRebase,
 } from './noteBlockStateMerge';
-import { buildKnownBlockIdsForPush,
+import {
+  buildKnownBlockIdsForPush,
+  collectCreateIdsFromOutbound,
   collectLeaveIdsFromPushItems,
   isPureIdentityLeaveOrRelocationPush,
   outboundHasPureIdentityLeaveOrRelocation,
@@ -371,29 +373,30 @@ export class NoteSyncCoordinator {
       ...getStructuralExcludeIds(this.documentId),
     ]);
     this.lastAppliedSeq = lastSeq;
-    if (outbound.length > 0) {
-      if (local && local.blocks.length > 0) {
-        this.blocks = mergeServerBlocksIntoLocalSnapshot(
-          local.blocks,
-          serverBlocks,
-          excludedIds,
-        );
-      } else if (shouldTrustEmptyLocalWithOutbound(outbound, serverBlocks)) {
-        this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
-      } else {
-        this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
-      }
-    } else if (local && local.blocks.length > 0) {
-      // outbound 없어도 IDB에 보호 본문이 있으면 서버 raw 교체 금지
-      // 단, 서버에 없는 stale local(이미 삭제된 블록)은 prune — 지워도 되살아나는 경로
+    const outboundItems = outbound.map(({ documentId, createdAt, ...op }) => {
+      void documentId;
+      void createdAt;
+      return op;
+    });
+    const hasTopologyOutbound = outboundHasUnpublishedTopology(outboundItems);
+    const protectCreates = collectCreateIdsFromOutbound(outboundItems);
+    // ZERO LOSS: outbound에 content만 있어도 서버에 없는 July 좀비를 prune.
+    // topology outbound가 없을 때는 서버 형제 순서를 따름 (정리한 순서가 IDB에 덮이지 않게).
+    if (local && local.blocks.length > 0) {
       this.blocks = mergeServerBlocksIntoLocalSnapshot(
         local.blocks,
         serverBlocks,
         excludedIds,
-        { pruneLocalOnlyNotOnServer: true },
+        {
+          pruneLocalOnlyNotOnServer: true,
+          protectLocalOnlyIds: protectCreates,
+          preferServerStructure: !hasTopologyOutbound,
+        },
       );
+    } else if (outbound.length > 0 && shouldTrustEmptyLocalWithOutbound(outbound, serverBlocks)) {
+      this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
     } else {
-      this.blocks = serverBlocks;
+      this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
     }
 
     // outbound 없고 병합 결과가 빈면 confirmed empty를 durable에 기록 — stale IDB 재오픈 좀비 차단

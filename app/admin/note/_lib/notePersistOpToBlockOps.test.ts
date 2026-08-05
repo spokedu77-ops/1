@@ -460,6 +460,54 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
     expect(merged.map((block) => block.id)).toEqual(['keep']);
   });
 
+  it('prunes server-absent July zombies by default even without explicit prune flag', () => {
+    const julyZombie: NoteBlock = {
+      ...serverBlock('july-old', '7.21 picnic'),
+      created_at: '2020-07-21T00:00:00.000Z',
+      order_index: 3,
+    };
+    const august: NoteBlock = {
+      ...serverBlock('aug', '8.5 class'),
+      order_index: 0,
+    };
+    const merged = mergeServerBlocksIntoLocalSnapshot(
+      [julyZombie, august],
+      [august],
+      new Set(),
+    );
+    expect(merged.map((block) => block.id)).toEqual(['aug']);
+  });
+
+  it('keeps unpublished create ids when pruning server-absent locals', () => {
+    const draftCreate: NoteBlock = {
+      ...serverBlock('new-create', 'typing'),
+      created_at: '2020-01-01T00:00:00.000Z',
+    };
+    const onServer = serverBlock('keep', 'ok');
+    const merged = mergeServerBlocksIntoLocalSnapshot(
+      [draftCreate, onServer],
+      [onServer],
+      new Set(),
+      { protectLocalOnlyIds: new Set(['new-create']) },
+    );
+    expect(merged.map((block) => block.id).sort()).toEqual(['keep', 'new-create']);
+  });
+
+  it('prefers server sibling order when preferServerStructure is set', () => {
+    const localA = { ...serverBlock('a', 'A'), order_index: 5, parent_block_id: null };
+    const localB = { ...serverBlock('b', 'B'), order_index: 1, parent_block_id: null };
+    const serverA = { ...serverBlock('a', 'A'), order_index: 0, parent_block_id: null };
+    const serverB = { ...serverBlock('b', 'B'), order_index: 1, parent_block_id: null };
+    const merged = mergeServerBlocksIntoLocalSnapshot(
+      [localB, localA],
+      [serverA, serverB],
+      new Set(),
+      { preferServerStructure: true },
+    );
+    expect(merged.map((block) => block.id)).toEqual(['a', 'b']);
+    expect(merged.map((block) => block.order_index)).toEqual([0, 1]);
+  });
+
   it('filterStalePendingSoftDeletes keeps pending ids while server still has blocks (pre-push)', () => {
     const server = [serverBlock('child-1', '복구 본문')];
     const pending = new Set(['child-1', 'gone-forever']);

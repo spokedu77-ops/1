@@ -85,8 +85,12 @@ function mergeServerMetadata(local: NoteBlock, server: NoteBlock): NoteBlock {
   };
 }
 
-function mergeServerBlockIntoLocal(local: NoteBlock, server: NoteBlock): NoteBlock {
-  if (shouldPreferServerBlockOverLocal(local, server)) {
+function mergeServerBlockIntoLocal(
+  local: NoteBlock,
+  server: NoteBlock,
+  preferServerStructure = false,
+): NoteBlock {
+  if (shouldPreferServerBlockOverLocal(local, server) || preferServerStructure) {
     // Integrity: 서버 골격·버전은 수용하되 사용자 본문 wipe/truncate는 봉인
     return sealPassiveIncomingBlock(local, server);
   }
@@ -293,10 +297,24 @@ export function mergeServerBlocksIntoLocalSnapshot(
   serverBlocks: NoteBlock[],
   pendingDeleteIds: Set<string>,
   options?: {
-    /** outbound 비었을 때: 서버에 없는 로컬 id는 grace 밖이면 폐기 (삭제 후 IDB 부활 차단) */
+    /**
+     * 서버에 없는 로컬 id 폐기 (삭제 후 IDB 부활 차단).
+     * 기본 true — outbound에 content만 있어도 prune 해야 한다.
+     */
     pruneLocalOnlyNotOnServer?: boolean;
+    /** 미ack create — 서버에 아직 없어도 유지 */
+    protectLocalOnlyIds?: ReadonlySet<string>;
+    /**
+     * 미ack topology가 없을 때 서버 order/parent·형제 순서를 따름.
+     * 본문은 seal로 보호.
+     */
+    preferServerStructure?: boolean;
   },
 ): NoteBlock[] {
+  const prune = options?.pruneLocalOnlyNotOnServer !== false;
+  const preferServerStructure = options?.preferServerStructure === true;
+  const protectLocalOnlyIds = options?.protectLocalOnlyIds ?? new Set<string>();
+
   // soft-delete 대기 id는 로컬 스냅샷에서도 즉시 제거 — 서버 skip만으로는 IDB 부활을 못 막음
   const keptLocal = localBlocks.filter((block) => !pendingDeleteIds.has(block.id));
   const byId = new Map(keptLocal.map((block) => [block.id, block]));
@@ -310,7 +328,7 @@ export function mergeServerBlocksIntoLocalSnapshot(
       order.push(serverBlock.id);
       continue;
     }
-    const nextBlock = mergeServerBlockIntoLocal(local, serverBlock);
+    const nextBlock = mergeServerBlockIntoLocal(local, serverBlock, preferServerStructure);
     if (nextBlock === local) continue;
     byId.set(serverBlock.id, nextBlock);
   }
@@ -319,16 +337,29 @@ export function mergeServerBlocksIntoLocalSnapshot(
     .map((id) => byId.get(id))
     .filter((block): block is NoteBlock => Boolean(block));
 
-  if (options?.pruneLocalOnlyNotOnServer) {
+  if (prune) {
     const serverIds = new Set(serverBlocks.map((block) => block.id));
     const now = Date.now();
     merged = merged.filter((block) => {
       if (serverIds.has(block.id)) return true;
+      if (protectLocalOnlyIds.has(block.id)) return true;
       if (!block.created_at) return false;
       const createdAt = new Date(block.created_at).getTime();
       if (!Number.isFinite(createdAt)) return false;
       return now - createdAt <= LOCAL_ONLY_BLOCK_GRACE_MS;
     });
+  }
+
+  if (preferServerStructure) {
+    const serverIds = serverBlocks
+      .filter((block) => !pendingDeleteIds.has(block.id))
+      .map((block) => block.id);
+    const mergedById = new Map(merged.map((block) => [block.id, block]));
+    const serverOrdered = serverIds
+      .map((id) => mergedById.get(id))
+      .filter((block): block is NoteBlock => Boolean(block));
+    const localOnly = merged.filter((block) => !serverIds.includes(block.id));
+    merged = [...serverOrdered, ...localOnly];
   }
 
   return dedupeNoteBlocksById(merged);
