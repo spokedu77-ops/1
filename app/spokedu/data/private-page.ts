@@ -1,5 +1,6 @@
 import type { HomeMediaKey } from './home-media';
 import type { ConversionPageIntent } from './conversion-page-intent';
+import { SPOKEDU_BASE_PATH } from './site';
 
 export type PrivateLocationItem = {
   title: string;
@@ -94,12 +95,17 @@ export const privatePage = {
     pageFlow: ['hero', 'trust', 'fit', 'format', 'class-flow', 'instructors', 'reviews', 'apply'],
   } satisfies ConversionPageIntent,
   hero: {
-    kicker: '학부모 · 개인수업',
+    kicker: '체육교육 · 개인·소그룹',
     trustBadge: '연세대 체육교육학과 출신 운영진',
-    lines: ['즐거운 신체활동으로', '평생체육의 경험을 선물합니다'] as const,
+    lines: ['현재 수준과 목표에 맞춰', '개인·소그룹 수업을 안내합니다'] as const,
     subtitle:
-      '아이의 운동 경험, 수업 목표, 가능한 장소를 함께 확인하고 1:1·소그룹 수업 방향을 안내드립니다.',
+      '아이의 운동 경험, 수업 목표, 가능한 장소를 함께 확인하고 1:1·소그룹 수업 방향을 상담으로 정합니다. 치료·검사 서비스가 아닙니다.',
     mediaKey: 'trackPrivate' as HomeMediaKey,
+    hubParent: {
+      label: '체육교육 허브',
+      href: `${SPOKEDU_BASE_PATH}/education`,
+      trackLabel: 'private-hub-parent',
+    },
   },
   trustMetrics: {
     eyebrow: '운영 방식',

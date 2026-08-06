@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { privatePage } from '../data/private-page';
+import { inferTrackFromHref } from '../lib/tracking';
 import { koreanLineBreak, landingCardFrame } from '../lib/ui-classes';
 import { LandingFaqList } from './landing-faq-list';
 import { LandingFinalCta } from './landing-final-cta';
@@ -31,6 +33,8 @@ const privateAnchorItems = [
   { href: '#reviews', label: '학부모 사례' },
   { href: '#apply', label: '상담' },
 ] as const;
+const focusRing =
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 function PrivateGoalFitSection() {
   const section = privatePage.goalPaths;
@@ -190,8 +194,16 @@ export default function PrivateLanding() {
           kickerClassName="text-stone-500"
           leading={
             <div className="space-y-3">
+              <Link
+                href={privatePage.hero.hubParent.href}
+                data-track={inferTrackFromHref(privatePage.hero.hubParent.href)}
+                data-track-label={privatePage.hero.hubParent.trackLabel}
+                className={`inline-flex text-sm font-semibold text-teal-800 underline-offset-4 hover:underline ${focusRing}`}
+              >
+                ← {privatePage.hero.hubParent.label}
+              </Link>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">학부모</p>
-              <div className="flex flex-wrap gap-2" aria-label="개인수업 상담 주제">
+              <div className="flex flex-wrap gap-2" aria-label="개인·소그룹 상담 주제">
                 {privateHeroNeeds.map((item) => (
                   <span
                     key={item}
@@ -215,8 +227,8 @@ export default function PrivateLanding() {
 
       <LandingAnchorNav
         items={privateAnchorItems}
-        cta={{ href: '#apply', label: '개인수업 상담' }}
-        ariaLabel="개인수업 랜딩 바로가기"
+        cta={{ href: '#apply', label: '개인·소그룹 상담' }}
+        ariaLabel="개인·소그룹 랜딩 바로가기"
       />
 
       <Section className="border-y border-stone-200 bg-white px-1 py-5 sm:px-2 sm:py-6">
@@ -344,7 +356,7 @@ export default function PrivateLanding() {
         <PrivateApplyForm />
       </Section>
 
-      <LandingFloatingCta primaryHref="#apply" primaryLabel="개인수업 상담" showAfterId="hero" />
+      <LandingFloatingCta primaryHref="#apply" primaryLabel="개인·소그룹 상담" showAfterId="hero" />
     </div>
   );
 }

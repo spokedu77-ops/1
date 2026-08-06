@@ -177,15 +177,25 @@ export default function DispatchLanding() {
           kicker={dispatchPage.hero.kicker}
           kickerClassName="text-stone-500"
           leading={
-            <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4 sm:max-w-xl">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">기관 담당자</p>
-              <ul className="mt-3 grid gap-2 sm:grid-cols-3" aria-label="기관 프로그램 제안 기준">
-                {dispatchHeroChecks.map((item) => (
-                  <li key={item} className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-700">
-                    {item}
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-3">
+              <Link
+                href={dispatchPage.hero.hubParent.href}
+                data-track={inferTrackFromHref(dispatchPage.hero.hubParent.href)}
+                data-track-label={dispatchPage.hero.hubParent.trackLabel}
+                className={`inline-flex text-sm font-semibold text-teal-800 underline-offset-4 hover:underline ${focusRing}`}
+              >
+                ← {dispatchPage.hero.hubParent.label}
+              </Link>
+              <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4 sm:max-w-xl">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">기관 담당자</p>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-3" aria-label="기관 프로그램 제안 기준">
+                  {dispatchHeroChecks.map((item) => (
+                    <li key={item} className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-700">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           }
           lines={dispatchPage.hero.lines}

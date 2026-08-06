@@ -83,13 +83,38 @@ describe('spokedu site IA', () => {
     expect(MASTER_HANDOFF.shop).toBe('/spokedu-master/shop');
   });
 
-  it('exposes education hub shell with institution and private paths', () => {
-    expect(educationHubPage.hero.title.length).toBeGreaterThan(4);
-    expect(educationHubPage.paths.map((path) => path.id)).toEqual(['dispatch', 'private', 'oneday', 'inclusive']);
-    expect(educationHubPage.paths.find((path) => path.id === 'dispatch')?.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch`);
-    expect(educationHubPage.paths.find((path) => path.id === 'private')?.href).toBe(`${SPOKEDU_BASE_PATH}/private`);
-    expect(educationHubPage.cta.href).toBe(`${SPOKEDU_BASE_PATH}/contact`);
+  it('exposes education hub with institution and private routing', () => {
+    expect(educationHubPage.sectionOrder).toHaveLength(6);
+    expect(educationHubPage.hero.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch`);
+    expect(educationHubPage.hero.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/private`);
+    expect(educationHubPage.primaryPaths.items.map((item) => item.id)).toEqual(['dispatch', 'private']);
+    expect(educationHubPage.formats.items.map((item) => item.id)).toEqual([
+      'regular',
+      'private',
+      'oneday',
+      'inclusive',
+    ]);
+    expect(educationHubPage.formats.items.find((item) => item.id === 'oneday')?.href).toContain('/dispatch');
+    expect(educationHubPage.formats.items.find((item) => item.id === 'oneday')?.href).toContain('#programs');
+    expect(educationHubPage.formats.items.find((item) => item.id === 'inclusive')?.href).toContain('/dispatch');
+    expect(educationHubPage.principles.spomoveCta.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove`);
+    expect(educationHubPage.principles.spomoveNote).toMatch(/일부 수업/);
+    expect(educationHubPage.principles.spomoveNote).toMatch(/모든 수업에 포함되는 것은 아닙니다/);
+    expect(educationHubPage.principles.spomoveNote).not.toMatch(/모든 수업에 포함됩니다/);
+    expect(educationHubPage.cases.cards).toHaveLength(3);
+    expect(educationHubPage.cases.cards.map((card) => card.slug)).toEqual([
+      'yangcheon-paps',
+      'dasarang-oneday',
+      'donghaeng-special-pe',
+    ]);
+    expect(educationHubPage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
+    expect(educationHubPage.finalCta.primary.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch#contact`);
+    expect(educationHubPage.finalCta.secondary.href).toBe(`${SPOKEDU_BASE_PATH}/private#apply`);
+    expect(educationHubPage.finalCta.contactLink.href).toBe(`${SPOKEDU_BASE_PATH}/contact`);
     expect(JSON.stringify(educationHubPage)).not.toMatch(/준비 중|곧 공개|추후 업데이트/);
+    expect(JSON.stringify(educationHubPage)).not.toMatch(/SPO-MAT|치료|회복|발달 개선|향상됩니다|검증된|최고|유일/);
+    expect(JSON.stringify(educationHubPage)).not.toMatch(/15,?015|9,900|3,?000회|\d+년\+/);
+    expect(educationHubPage.paths.map((path) => path.id)).toEqual(['dispatch', 'private', 'oneday', 'inclusive']);
   });
 
   it('keeps home within seven top-level sections and PR2 routing', () => {

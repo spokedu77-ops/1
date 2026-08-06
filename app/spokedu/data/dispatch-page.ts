@@ -107,11 +107,16 @@ export const dispatchPage = {
     ] as const,
   },
   hero: {
-    kicker: '기관·단체 프로그램',
+    kicker: '체육교육 · 기관수업',
     lines: ['기관 조건에 맞게', '체육수업 운영안을 설계합니다'] as const,
     subtitle:
-      '키움센터·아동시설·학교·복지관에 맞춘 맞춤 프로그램. 공간·인원·목표에 따라 정규·원데이·방학 운영과 SPOMOVE를 제안합니다.',
+      '키움센터·아동시설·학교·복지관 등 기관의 정규·원데이·방학 운영을 공간·인원·일정에 맞춰 구성합니다. 필요 시 SPOMOVE 등 콘텐츠를 조합해 제안합니다.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
+    hubParent: {
+      label: '체육교육 허브',
+      href: `${SPOKEDU_BASE_PATH}/education`,
+      trackLabel: 'dispatch-hub-parent',
+    },
   },
   heroCtas: {
     primary: {
