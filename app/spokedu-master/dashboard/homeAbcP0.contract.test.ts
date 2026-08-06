@@ -76,21 +76,23 @@ describe('home A/B/C P0 component contracts', () => {
     expect(contextIndex).toBeGreaterThan(spomoveIndex);
   });
 
-  it('locks SPOMOVE Start contract on home (not dive / not 바로 실행)', () => {
-    expect(dashboard).toContain('<span>시작</span>');
-    expect(dashboard).toContain('시작 준비 열기');
+  it('locks SPOMOVE preparation contract on home (not dive / not 바로 실행)', () => {
+    expect(dashboard).toContain('getSpomovePresetDisplayModel');
+    expect(dashboard).toContain('displayModel.displayTitle');
+    expect(dashboard).toContain('<span>활동 준비</span>');
+    expect(dashboard).toContain('활동 준비 열기');
     expect(dashboard).toContain('data-spm-spomove-card-action="start"');
     expect(dashboard).not.toContain('바로 실행');
     expect(dashboard).not.toContain('바로 시작');
     expect(dashboard).not.toContain('가이드 보기');
   });
 
-  it('locks SPOMOVE Start + Settings on hub; guide stays off the card CTA', () => {
-    expect(hub).toContain('<span>시작</span>');
-    expect(hub).toContain('시작 준비 열기');
+  it('locks SPOMOVE preparation + start settings on hub; guide stays off the card CTA', () => {
+    expect(hub).toContain('<span>활동 준비</span>');
+    expect(hub).toContain('활동 준비 열기');
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
-    expect(hub).toContain('설정');
+    expect(hub).toContain('시작 설정');
     expect(hub).not.toContain('바로 실행');
     expect(hub).not.toContain('바로 시작');
     expect(hub).not.toContain('가이드 보기');
@@ -98,9 +100,8 @@ describe('home A/B/C P0 component contracts', () => {
   });
 
   it('locks GuidelineSheet as start-confirm with honest primary', () => {
-    expect(sheet).toContain('시작 준비');
-    expect(sheet).toContain('지도법');
-    expect(sheet).toContain('이 설정으로 시작');
+    expect(sheet).toContain('수업 시작');
+    expect(sheet).toContain('진행 방법');
     expect(sheet).toContain('data-spm-spomove-launch-confirm');
     expect(sheet).toContain('data-spm-spomove-guide-action="start-official"');
     expect(sheet).not.toContain('바로 시작');
@@ -135,9 +136,11 @@ describe('home A/B/C P0 component contracts', () => {
 
   it('P1 tone rebalance: header stays light and operations-flow stays tertiary', () => {
     expect(dashboard).not.toContain('bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_52%,#f1f5f9_100%)]');
-    expect(dashboard).toContain('조건에 맞는 보조 수업');
-    expect(dashboard).toContain('bg-slate-50/80');
-    expect(dashboard).toContain('>보조</p>');
+    expect(dashboard).toContain('상황별 수업');
+    expect(dashboard).toContain('lg:grid-cols-[minmax(0,1fr)_280px]');
+    expect(dashboard).toContain('>추천</p>');
+    expect(dashboard).not.toContain('조건에 맞는 보조 수업');
+    expect(dashboard).not.toContain('bg-slate-50/60');
     expect(dashboard).not.toContain('현장으로 이어가기');
   });
 });

@@ -7,6 +7,7 @@ import {
   resolveCurriculumMode,
 } from './curriculum-commercial-modes';
 import { curriculumPage } from './curriculum-page';
+import { MASTER_HANDOFF } from './site';
 
 describe('curriculum commercial modes', () => {
   it('defines four commercial modes with distinct primary intent ids', () => {
@@ -17,7 +18,7 @@ describe('curriculum commercial modes', () => {
 
   it('keeps MASTER primary off the general inquiry form', () => {
     const master = curriculumCommercialModes.master;
-    expect(master.primaryAction.href).toBe('/spokedu-master/landing');
+    expect(master.primaryAction.href).toBe(MASTER_HANDOFF.landing);
     expect(master.primaryAction.intentId).toBe('master_view');
     expect(master.secondaryAction?.intentId).toBe('master_org_inquiry');
     expect(master.secondaryAction?.formDefaults?.leadMode).toBe('master');
@@ -53,7 +54,7 @@ describe('curriculum commercial modes', () => {
   });
 
   it('drops duplicated contact secondary CTA from curriculum hero', () => {
-    expect(curriculumPage.heroCtas.secondary.href).toBe('/spokedu-master/landing');
+    expect(curriculumPage.heroCtas.secondary.href).toBe(MASTER_HANDOFF.landing);
     expect(curriculumPage.heroCtas.secondary.label).toContain('MASTER');
     expect(curriculumPage.heroCtas.primary.href).toBe('#modes');
   });

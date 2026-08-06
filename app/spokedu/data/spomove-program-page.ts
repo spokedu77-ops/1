@@ -105,8 +105,8 @@ export const spomoveProgramPage = {
   },
   movementExpansion: {
     eyebrow: 'MOVEMENT',
-    title: '인지 과제는 실제 움직임 기술로 완성됩니다.',
-    lead: '화면에서 정답을 찾는 것만으로는 끝나지 않습니다. 선택한 반응을 몸으로 정확히 실행해야 SPOMOVE의 과제가 완성됩니다.',
+    title: '화면 신호는 실제 움직임 수행으로 이어집니다.',
+    lead: '화면에서 목표를 확인하는 것만으로 끝나지 않습니다. 선택한 반응을 몸으로 실행해야 SPOMOVE 활동이 완성됩니다.',
     items: [
       { title: '이동하고 멈추기', body: '움직인 뒤 정확한 위치에 멈추고 다음 이동을 준비합니다.' },
       { title: '균형과 자세 조절', body: '스텝, 점프, 방향 전환 과정에서 착지와 무게중심을 조절합니다.' },
@@ -117,9 +117,9 @@ export const spomoveProgramPage = {
     title: '교육적 가치',
     items: [
       {
-        title: '집중력',
+        title: '주의 유지',
         description:
-          '화면의 색, 위치, 방향을 끝까지 보고 반응해야 하기 때문에 활동 중 주의 집중이 자연스럽게 이어집니다.',
+          '화면의 색, 위치, 방향을 끝까지 확인한 뒤 반응하도록 활동을 구성합니다.',
       },
       {
         title: '반응 선택',

@@ -280,6 +280,17 @@ function levelLabelKoEn(modeId: string, levelId: number): string {
   return `${levelLabel(modeId, levelId)} : ${levelNameKo(modeId, levelId)} (${enDisplay})`;
 }
 
+function catalogLevelLabelKoEn(modeId: string, catalogId: number): string {
+  const m = MODES[modeId];
+  const idx = m?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
+  const lv = m?.levels.find((x) => x.id === catalogId);
+  if (!lv) return `${catalogId}번`;
+  const byEn = LEVEL_KO_ALIAS_BY_EN[lv.enName];
+  const ko = byEn ?? lv.name;
+  const enDisplay = levelNameEnDisplay(lv.enName);
+  return `${idx >= 0 ? idx + 1 : catalogId}번 : ${ko} (${enDisplay})`;
+}
+
 function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
   return modeId === 'reactTrain' ? 'time' : 'reps';
 }
@@ -1080,7 +1091,7 @@ function SettingsScreen({
                     }}
                   >
                     <span style={{ fontSize: 13, fontWeight: 900, color: active ? accent : T.text }}>
-                      {levelLabel(modeId, lv.id)} : {levelNameKo(modeId, lv.id)} ({levelNameEnDisplay(lv.enName)})
+                      {catalogLevelLabelKoEn(modeId, lv.id)}
                     </span>
                   </button>
                 );

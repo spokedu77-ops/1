@@ -9,6 +9,11 @@ import {
 } from './officialSpomovePresetGuides';
 import type { SpomoveFocusTag, SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
 import {
+  MODES,
+  catalogBasicUiLevel,
+  catalogSpatialUiLevel,
+} from '@/app/admin/spomove/training/_player/constants';
+import {
   resolveSpomoveGuideContentState,
   type SpomoveGuideLegacyManual,
 } from '@/app/lib/spomove/spomoveGuideContentState';
@@ -27,6 +32,8 @@ export type SpomovePresetDisplayModel = {
   difficultyLabel: string;
   settingLabel: string;
   bodyFunctionLabel: string;
+  supportMeta: string;
+  supportMetaParts: string[];
   durationLabel: string;
   padLayoutVariant: ReturnType<typeof getSpomovePadLayoutVariant>;
   isAvailable: boolean;
@@ -173,52 +180,98 @@ function buildBodyFunctionLabel(preset: OfficialSpomovePreset): string {
     .join(' · ');
 }
 
-/**
- * 카드 표시 제목: 프로그램명 태그·구 카탈로그 번호(N번) 잔여물 제거.
- * 예: "반응인지 1번 · 공간 방향" → "공간 방향"
- *     "시지각 반응 · 매직 아이" → "매직 아이"
- */
-function buildDisplayTitle(preset: OfficialSpomovePreset): string {
-  let title = preset.title.trim();
-  if (!title) return title;
+const THEME_LABELS: Record<string, string> = {
+  color: '색상',
+  fruit: '과일',
+  animal: '동물',
+  food: '음식',
+  nature: '자연',
+  vehicle: '탈 것',
+  mix: '믹스',
+};
 
-  const program = preset.programTitle.trim();
-  // 반응 인지 ↔ 반응인지 등 공백 유무 alias
-  const aliases = new Set<string>(
-    [program, program.replace(/\s+/g, ''), program.replace(/\s+/g, ' ')].filter(Boolean),
-  );
-
-  for (const alias of aliases) {
-    if (!alias) continue;
-    // "{프로그램} · 나머지"
-    const dotted = new RegExp(`^${escapeRegExp(alias)}\\s*[·:]\\s*(.+)$`);
-    const dottedMatch = title.match(dotted);
-    if (dottedMatch?.[1]) {
-      title = dottedMatch[1].trim();
-      break;
-    }
-
-    // "{프로그램} N번 · 나머지" → "나머지" (N번은 잔여물)
-    const numbered = new RegExp(`^${escapeRegExp(alias)}\\s*\\d+번\\s*[·:]\\s*(.+)$`);
-    const numberedMatch = title.match(numbered);
-    if (numberedMatch?.[1]) {
-      title = numberedMatch[1].trim();
-      break;
-    }
-  }
-
-  // 접두 제거 후에도 남은 "N번 · " 잔여물
-  title = title.replace(/^\d+번\s*[·:]\s*/, '').trim();
-  return title || preset.title.trim();
+function displayModeId(preset: OfficialSpomovePreset): keyof typeof MODES | null {
+  if (preset.programGroup === 'visual-reaction') return 'reactTrain';
+  if (preset.programGroup === 'reaction-cognition') return 'basic';
+  if (preset.programGroup === 'simon') return 'simon';
+  if (preset.programGroup === 'flanker') return 'flanker';
+  if (preset.programGroup === 'stroop') return 'stroop';
+  if (preset.programGroup === 'sequential-memory') return 'spatial';
+  if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') return 'flow';
+  return null;
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function catalogLevelId(preset: OfficialSpomovePreset, modeId: keyof typeof MODES): number {
+  if (modeId === 'basic') return catalogBasicUiLevel(preset.engine.level);
+  if (modeId === 'spatial') return catalogSpatialUiLevel(preset.engine.level);
+  if (modeId === 'flanker' && preset.engine.level === 6) return 2;
+  if (modeId === 'flow') return preset.engine.flowFeatures?.includes('colorGate') ? 2 : 1;
+  return preset.engine.level;
+}
+
+function buildDisplayTitle(preset: OfficialSpomovePreset): string {
+  const modeId = displayModeId(preset);
+  if (modeId) {
+    const mode = MODES[modeId];
+    const catalogId = catalogLevelId(preset, modeId);
+    const level = mode.levels.find((item) => item.id === catalogId);
+    if (level?.name) return level.name.replace(/^\(보류\)\s*/u, '').trim();
+  }
+  const segments = preset.title.split('·').map((segment) => segment.trim()).filter(Boolean);
+  return segments[segments.length - 1] ?? preset.title.trim();
+}
+
+function compactRecommendedUse(preset: OfficialSpomovePreset): string[] {
+  return preset.recommendedUse
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => !/BGM|자동|확률|50%|20%|30%|엔진/i.test(part))
+    .slice(0, 2);
+}
+
+function difficultyFact(preset: OfficialSpomovePreset): string | null {
+  const fact = preset.executionFacts.find((item) => item.label === '난이도')?.value.trim();
+  if (!fact) return null;
+  if (fact.includes('쉬움') && fact.includes('보통')) return null;
+  if (fact.includes('1~') || fact.includes('50%')) return null;
+  return fact;
+}
+
+function optionMeta(preset: OfficialSpomovePreset): string | null {
+  const theme = preset.engine.variantColorTheme ? THEME_LABELS[preset.engine.variantColorTheme] : null;
+  if (theme) return theme;
+  if (preset.engine.spatialArrowColorMode === 'color') return '보통';
+  if (preset.engine.bodyLabelMode === 'easy') return '쉬움';
+  if (preset.engine.bodyLabelMode === 'hard') return '어려움';
+  if (preset.engine.handFootDifficulty === 'easy') return '쉬움';
+  if (preset.engine.handFootDifficulty === 'normal') return '보통';
+  if (preset.engine.handFootDifficulty === 'hard') return '어려움';
+  if (preset.engine.simonPoleCount === 2) return '어려움';
+  if (preset.engine.simonPoleCount === 1) return '보통';
+  if (preset.engine.camouflagePlacement === 'center') return '보통';
+  if (preset.engine.camouflagePlacement === 'variant') return '어려움';
+  if (preset.engine.goalkeeperTier === 1) return '쉬움';
+  if (preset.engine.goalkeeperTier === 2) return '보통';
+  if (preset.engine.moleLookMode === 'variant') return '보통';
+  if (preset.engine.colorTrackerDualPanel) return '어려움';
+  if (preset.engine.colorTrackerTier) return '보통';
+  if (preset.engine.numberCartTier) return `${preset.engine.numberCartTier}단계`;
+  if (preset.engine.level === 1 && preset.engine.mode === 'basic') return '쉬움';
+  return difficultyFact(preset);
+}
+
+function buildSupportMetaParts(preset: OfficialSpomovePreset): string[] {
+  const parts = [optionMeta(preset), ...compactRecommendedUse(preset)]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part));
+  return Array.from(new Set(parts)).slice(0, 3);
 }
 
 export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): SpomovePresetDisplayModel {
   const guide = getOfficialSpomovePresetGuide(preset);
   const durationLabel = buildDurationLabel(preset);
+  const supportMetaParts = buildSupportMetaParts(preset);
   return {
     displayTitle: buildDisplayTitle(preset),
     axisLabel: preset.axisTitle,
@@ -228,6 +281,8 @@ export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): Spo
     difficultyLabel: SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel],
     settingLabel: durationLabel,
     bodyFunctionLabel: buildBodyFunctionLabel(preset),
+    supportMeta: supportMetaParts.join(' · '),
+    supportMetaParts,
     durationLabel,
     padLayoutVariant: getSpomovePadLayoutVariant(preset),
     isAvailable: preset.isReady,

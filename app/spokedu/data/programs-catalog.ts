@@ -59,7 +59,7 @@ export const programRegistry: ProgramRegistryItem[] = [
     category: '에듀테크',
     listDescription: '빔 반응 에듀테크 놀이',
     tracks: ['Private', 'Dispatch', 'Curriculum'],
-    effects: ['집중력', '반응속도', '타이밍', '방향전환'],
+    effects: ['주의 유지', '반응속도', '타이밍', '방향전환'],
     target: '키움센터·방과후, 개인·소그룹 응용, 혼합 연령 기관 수업',
     hasDetailPage: true,
     detailHref: `${SPOKEDU_BASE_PATH}/programs/spomove`,

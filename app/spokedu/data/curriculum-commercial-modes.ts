@@ -1,5 +1,5 @@
 import type { EvidenceSource } from './conversion-evidence';
-import { SPOKEDU_BASE_PATH } from './site';
+import { MASTER_HANDOFF, SPOKEDU_BASE_PATH } from './site';
 
 export type CurriculumCommercialMode = 'package' | 'training' | 'master' | 'license';
 
@@ -88,7 +88,7 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     secondaryAction: {
       intentId: 'master_view',
       label: 'SPOKEDU MASTER 보기',
-      href: '/spokedu-master/landing',
+      href: MASTER_HANDOFF.landing,
       trackingLabel: 'curriculum-mode-package-secondary-master',
     },
     formDefaults: {
@@ -149,7 +149,7 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     evidence: [
       {
         type: 'product',
-        href: '/spokedu-master/landing',
+        href: MASTER_HANDOFF.landing,
         label: 'MASTER 제품 페이지·이용 흐름',
       },
       {
@@ -161,7 +161,7 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     primaryAction: {
       intentId: 'master_view',
       label: 'SPOKEDU MASTER 살펴보기',
-      href: '/spokedu-master/landing',
+      href: MASTER_HANDOFF.landing,
       trackingLabel: 'curriculum-mode-master-primary',
     },
     secondaryAction: {

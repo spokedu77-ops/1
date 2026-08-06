@@ -109,7 +109,7 @@ function buildRecordDraftAnchor(input: HomeOpsInput): HomeAnchor | null {
     primary: { label: '이어서 기록', href },
     secondary: programId
       ? { label: '간편 준비', href: `/spokedu-master/library/${programId}` }
-      : { label: '수업자료에서 찾기', href: '/spokedu-master/library' },
+      : { label: '수업 라이브러리에서 찾기', href: '/spokedu-master/library' },
     programId,
     dedupeKey: `record_draft:${programId ?? 'none'}`,
   };
@@ -130,7 +130,7 @@ function buildReportDraftAnchor(input: HomeOpsInput): HomeAnchor | null {
     primary: { label: '안내문 이어서 작성', href: qs ? `/spokedu-master/report?${qs}` : '/spokedu-master/report' },
     secondary: programId
       ? { label: '관련 수업 보기', href: `/spokedu-master/library/${programId}` }
-      : { label: '수업자료에서 찾기', href: '/spokedu-master/library' },
+      : { label: '수업 라이브러리에서 찾기', href: '/spokedu-master/library' },
     programId,
     dedupeKey: `report_draft:${programId ?? 'none'}`,
   };
@@ -195,7 +195,7 @@ export function buildEmptyHomeAnchor(): HomeAnchor {
     kind: 'empty',
     status: '오늘 이어갈 수업을 고르세요',
     title: '아직 이어갈 수업이 없습니다',
-    primary: { label: '수업자료에서 찾기', href: '/spokedu-master/library' },
+    primary: { label: '수업 라이브러리에서 찾기', href: '/spokedu-master/library' },
     secondary: { label: '화면 활동 열기', href: '/spokedu-master/spomove' },
     dedupeKey: 'empty',
   };

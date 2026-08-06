@@ -17,6 +17,15 @@ describe('report writing flow contract', () => {
     expect(source).toContain('setSelectedRecordId(record.id)');
   });
 
+  it('gates record-query report generation until operational records are ready', () => {
+    expect(source).toContain("const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading'");
+    expect(source).toContain("const operationalError = operationalData.status === 'error'");
+    expect(source).toContain('const recordQueryMissing = Boolean(queryRecordId) && operationalReady && !selectedRecord');
+    expect(source).toContain('const recordQueryGateStatus = queryRecordId');
+    expect(source).toContain('if (recordQueryGateStatus) {');
+    expect(source).toContain('<ReportRecordGateState status={recordQueryGateStatus} onRetry={() => void operationalData.reload()} />');
+  });
+
   it('separates full-class and per-student report targets', () => {
     expect(source).toContain("type ReportTarget = 'class' | 'student'");
     expect(source).toContain('전체 수업 안내문');

@@ -106,7 +106,7 @@ export const SPOKEDU_IMAGES = {
       'brand',
       'spomat',
       'spomat.png',
-      '스포매트 — SPOMOVE 4색 반응 패드 (초록·빨강·파랑·노랑)',
+      'SPOMAT — SPOMOVE 4색 반응 패드 (초록·빨강·파랑·노랑)',
       { kind: 'product', programs: ['spomove'], allowedPages: ['home', 'programs', 'programs/spomove', 'curriculum'] },
     ),
   },

@@ -42,7 +42,7 @@ export const aboutPage = {
       {
         title: '수업을 콘텐츠로 확장합니다',
         description:
-          '현장에서 검증한 활동을 수업안, 매뉴얼, 강사교육, 라이선싱 형태로 정리합니다.',
+          '현장 수업에서 정리한 활동을 수업안, 매뉴얼, 강사교육, 라이선싱 형태로 구성합니다.',
         mediaKey: 'trackCurriculum',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'about-role-curriculum',

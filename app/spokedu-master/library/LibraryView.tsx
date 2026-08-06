@@ -461,15 +461,15 @@ export default function LibraryView() {
     if (!programsLoaded) return <LibrarySkeleton />;
     const message =
       programsError === 'unauthorized'
-        ? '로그인 후 수업 자료를 확인할 수 있습니다.'
+        ? '로그인 후 수업 라이브러리를 확인할 수 있습니다.'
         : programsError === 'forbidden'
-          ? '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 구독을 시작하면 수업 자료를 이용할 수 있습니다.'
-          : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+          ? '이용 기간이 종료되어 수업 라이브러리를 불러올 수 없습니다. 구독을 시작하면 전체 수업을 이용할 수 있습니다.'
+          : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto px-4 py-16 sm:px-6 lg:px-8" style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center shadow-sm">
           <Lock className="mx-auto h-6 w-6 text-[color:var(--spm-t3)]" />
-          <h1 className="mt-3 text-xl font-black text-[color:var(--spm-t)]">수업 자료를 불러올 수 없습니다.</h1>
+          <h1 className="mt-3 text-xl font-black text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
           <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">
             다시 구독하기
@@ -496,7 +496,7 @@ export default function LibraryView() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--spm-acc)]">
-                수업자료
+                수업 라이브러리
               </p>
               <h1 className="mt-1 text-[23px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[27px]">
                 {isBrowseMode ? '바로 쓸 수업 고르기' : '맞는 수업 찾기'}
@@ -633,7 +633,7 @@ export default function LibraryView() {
                           기록 보기
                         </Link>
                         <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-9 items-center justify-center rounded-[9px] bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
-                          전체 수업 자료 보기
+                          수업 라이브러리 열기
                         </Link>
                       </div>
                     </article>

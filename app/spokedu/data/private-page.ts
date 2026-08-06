@@ -85,13 +85,6 @@ export function isPrivatePreferredFormat(value: string): value is PrivatePreferr
   return PRIVATE_FORMAT_OPTIONS.some((o) => o.id === value);
 }
 
-/** 실시간 카운팅 시뮬레이션 — 근거 검증 전까지 랜딩에서는 미사용 */
-export const PRIVATE_COUNTER_BASE_DATE = '2024-01-01';
-export const PRIVATE_COUNTER_BASE_STUDENTS = 1200;
-export const PRIVATE_COUNTER_BASE_SESSIONS = 8500;
-export const PRIVATE_COUNTER_DAILY_STUDENTS = 3;
-export const PRIVATE_COUNTER_DAILY_SESSIONS = 5;
-
 export const privatePage = {
   intent: {
     decisionQuestion: '우리 아이가 부담 없이 시작하고, 필요한 움직임 경험을 쌓을 수 있는가?',
@@ -113,7 +106,7 @@ export const privatePage = {
     items: [
       { id: 'format', value: '1:1·소그룹', label: '아이 속도에 맞춘 수업 형태' },
       { id: 'visit', value: '방문형', label: '집·공원·체육시설 상담 후 운영' },
-      { id: 'feedback', value: '회차 피드백', label: '수업 후 성장 포인트 전달' },
+      { id: 'feedback', value: '회차 피드백', label: '수업 후 관찰·다음 방향 공유' },
     ],
   },
   heroCtas: {
@@ -201,7 +194,7 @@ export const privatePage = {
   },
   instructors: {
     eyebrow: '운영진',
-    title: '검증된 체육교육 전문가 운영진',
+    title: '체육교육 전공 기반 운영진',
     items: [
       {
         photo: '/images/spokedu/private/instructor-choi.jpg',
@@ -250,74 +243,74 @@ export const privatePage = {
         img: '/images/spokedu/private/curriculum-jumprope.jpg',
         alt: '줄넘기',
         title: '줄넘기',
-        description: '리듬감 및 전신 협응력 강화',
+        description: '리듬에 맞춰 줄넘기 기본 동작을 단계적으로 연습',
       },
       {
         img: '/images/spokedu/private/curriculum-running.jpg',
         alt: '육상',
         title: '육상(달리기)',
-        description: '바른 자세 교정과 반응 속도 향상',
+        description: '달리기 자세와 반응 타이밍을 단계적으로 연습',
       },
       {
         img: '/images/spokedu/private/curriculum-bike.jpg',
         alt: '자전거',
         title: '자전거',
-        description: '균형 감각 및 두려움 극복',
+        description: '균형·출발·정지를 안전한 순서로 연습',
       },
       {
         img: '/images/spokedu/private/curriculum-inline.jpg',
         alt: '인라인',
         title: '인라인',
-        description: '안전한 라이딩과 중심 이동 훈련',
+        description: '중심 이동과 안전한 라이딩 순서를 연습',
       },
       {
         img: '/images/spokedu/private/curriculum-preschool.jpg',
         alt: '유아체육',
         title: '유아체육',
-        description: '놀이 기반 기초 운동 발달',
+        description: '놀이로 기본 움직임과 교구 조작을 경험',
       },
       {
         img: '/images/spokedu/private/curriculum-soccer.jpg',
         alt: '축구',
         title: '축구',
-        description: '민첩성, 팀워크, 기초 구기 능력 향상',
+        description: '패스·드리블·협동 규칙을 기초부터 연습',
       },
       {
         img: '/images/spokedu/private/curriculum-basketball.jpg',
         alt: '농구',
         title: '농구',
-        description: '드리블과 공간 인지 능력 강화',
+        description: '드리블과 공간 이동을 기초부터 연습',
       },
       {
         img: '/images/spokedu/private/curriculum-paps.jpg',
         alt: '팝스',
         title: '팝스',
-        description: '팝스 수행평가 대비 및 체력향상',
+        description: 'PAPS 체력 요소를 놀이형으로 경험',
       },
     ] satisfies PrivateCurriculumItem[],
   },
   classFlow: {
     eyebrow: '수업 구조',
     title: '스포키듀 수업 스케치',
-    lead: '아이의 자발적인 참여를 이끌어내는 체계적인 3단계 수업 구조입니다.',
+    lead: '아이 속도와 목표에 맞춰 준비·메인·마무리로 이어가는 수업 구조입니다.',
     steps: [
       {
         num: '01',
-        title: '라포 형성 및 신체기능 향상 세션',
+        title: '라포 형성 및 몸 풀기',
         description:
-          '강사와의 유대감을 형성하고, 그날 진행할 메인 세션에 필요한 신체 기능 향상 프로그램을 진행합니다.',
+          '강사와 아이 사이의 분위기를 맞추고, 그날 메인 활동에 필요한 기본 움직임으로 몸을 준비합니다.',
       },
       {
         num: '02',
         title: '메인 활동',
         description:
-          '아동별 발달 특성과 운동 수행 수준에 따라 다양한 종목을 맞춤형으로 구성하고 기술 습득과 신체 기능 향상이 함께 이루어지는 체육 수업을 제공합니다.',
+          '아이의 운동 경험과 수행 수준을 확인해 종목·교구·난이도를 맞춘 뒤, 기본 기술과 움직임을 연습합니다.',
       },
       {
         num: '03',
         title: '쿨다운 및 피드백',
         description:
-          '신체를 안정시키며 오늘 성취한 부분에 대해 스스로 이야기하게 유도하고, 긍정적인 피드백으로 자존감을 높여 마무리합니다.',
+          '활동을 정리하고, 오늘 잘한 점과 다음 수업에서 이어갈 점을 짧게 나눈 뒤 마무리합니다.',
       },
     ] satisfies PrivateClassFlowStep[],
     /** 현장 실사진만 (커리큘럼 가이드 PNG 금지) — 큰 1 + 작은 2 */
@@ -365,10 +358,10 @@ export const privatePage = {
   reviews: {
     eyebrow: '후기',
     title: '학부모 후기',
-    lead: '스포키듀의 체계적인 교육 시스템을 먼저 경험하신 학부모님들의 솔직한 피드백입니다.',
+    lead: '수업을 경험한 학부모의 운영·과정 중심 피드백입니다. (공개 동의·출처는 운영에서 추가 확인)',
     items: [
       {
-        text: '동네 학원에 내면 아이가 뒤처질까 봐 걱정이었는데, 1:1로 아이 성향에 완벽하게 맞춰서 지도해주시니 아이가 매주 체육 시간만 기다려요.',
+        text: '동네 학원에 내면 아이가 뒤처질까 봐 걱정이었는데, 1:1로 아이 성향과 속도에 맞춰 지도해 주시니 아이가 매주 수업 시간을 기다려요.',
         who: '초등 2학년 학부모',
         course: '기초체력 및 달리기 코스',
       },
@@ -378,9 +371,9 @@ export const privatePage = {
         course: '기초 구기 자신감 코스',
       },
       {
-        text: 'PAPS 준비를 막연하게만 생각했는데, 아이 수준에 맞춰 차근차근 지도해주셔서 부담 없이 시작할 수 있었어요. 수업 후에는 아이도 체육에 대한 자신감이 조금씩 생기고, 기록도 전보다 좋아지는 게 보여 만족스러웠습니다.',
+        text: 'PAPS 준비를 막연하게만 생각했는데, 아이 수준에 맞춰 차근차근 지도해 주셔서 부담 없이 시작할 수 있었어요. 수업 후에는 아이도 체육 수업에 대한 거부감이 줄고, 다음 활동을 스스로 이어가려는 모습이 보였습니다.',
         who: '초등 5학년 학부모',
-        course: 'PAPS 대비 체력 향상 코스',
+        course: 'PAPS 대비 체력 요소 경험 코스',
       },
     ] satisfies PrivateReview[],
   },

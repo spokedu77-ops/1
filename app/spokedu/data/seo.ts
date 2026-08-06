@@ -4,6 +4,7 @@ import { SPOKEDU_IMAGES } from './images';
 export type SpokeduSeoPageKey =
   | 'home'
   | 'about'
+  | 'education'
   | 'private'
   | 'dispatch'
   | 'curriculum'
@@ -31,6 +32,7 @@ const SITE_NAME = 'SPOKEDU';
 const CANONICAL: Record<SpokeduSeoPageKey, string> = {
   home: '/spokedu',
   about: '/spokedu/about',
+  education: '/spokedu/education',
   private: '/spokedu/private',
   dispatch: '/spokedu/dispatch',
   curriculum: '/spokedu/curriculum',
@@ -52,6 +54,10 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
   about: {
     url: SPOKEDU_IMAGES.programs.spomove.src,
     alt: SPOKEDU_IMAGES.programs.spomove.alt,
+  },
+  education: {
+    url: SPOKEDU_IMAGES.dispatch.groupClass.src,
+    alt: SPOKEDU_IMAGES.dispatch.groupClass.alt,
   },
   private: {
     url: SPOKEDU_IMAGES.private.oneToOne.src,
@@ -93,14 +99,19 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
 
 export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
   home: {
-    title: '스포키듀 | 기관·개인 맞춤 아동 체육수업',
+    title: '스포키듀 | 아동체육 · SPOMOVE · 구독시스템',
     description:
-      '키움센터·학교·복지관 기관 체육수업부터 1:1 개인수업, SPOMOVE 도입까지 현장 조건에 맞춰 설계하는 아동·청소년 체육교육.',
+      '현장에서 운영한 아동·청소년 체육교육, 화면과 움직임을 잇는 SPOMOVE, 지도자의 준비·진행·기록을 돕는 구독시스템.',
   },
   about: {
     title: '스포키듀 소개 | 현장 체육교육 운영 브랜드',
     description:
       '대표 소개·연혁과 함께, 현장 수업에서 프로그램·커리큘럼으로 확장하는 아동·청소년 체육교육 운영 브랜드 SPOKEDU를 소개합니다.',
+  },
+  education: {
+    title: '체육교육 | 기관수업·개인·소그룹 SPOKEDU',
+    description:
+      '키움센터·학교 등 기관수업과 개인·소그룹 체육교육 경로. 원데이·행사·특수·포용 체육 안내와 상담을 한곳에서 연결합니다.',
   },
   private: {
     title: '개인·소그룹 체육수업 | SPOKEDU',
@@ -152,6 +163,7 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
 export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
   home: ['스포키듀', 'SPOKEDU', '기관 체육수업', '단체 체육', '아동 체육교육', 'SPOMOVE', '체육과외'],
   about: ['스포키듀', 'SPOKEDU', '아동 체육교육', '체육 커리큘럼'],
+  education: ['체육교육', '기관 체육수업', '개인 체육수업', '원데이 체육', '특수체육', 'SPOKEDU'],
   private: ['개인 체육수업', '소그룹 체육수업', '어린이 체육수업', '아동 체육교육'],
   dispatch: ['기관 체육수업', '키움센터 체육 프로그램', 'SPOMOVE', 'PAPS 놀이체육'],
   curriculum: ['체육 커리큘럼', '놀이체육 수업안', '강사 교육', 'SPOMOVE'],

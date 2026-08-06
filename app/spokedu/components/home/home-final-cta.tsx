@@ -17,8 +17,9 @@ import {
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
 
+/** 최종 4경로 CTA — 경로당 최우선 행동 1개 */
 export function HomeFinalCta() {
-  const [primary, secondary, tertiary] = homePage.finalCta.items;
+  const items = homePage.finalCta.items;
   const reducedMotion = useReducedMotion();
   const media = HOME_MEDIA.finalCta;
 
@@ -37,9 +38,9 @@ export function HomeFinalCta() {
         >
           <div className="h-1.5 w-full bg-[#0B1F46]" aria-hidden />
 
-          <div className="grid gap-8 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(240px,300px)] lg:items-stretch lg:gap-10 lg:px-10 lg:py-11">
+          <div className="grid gap-8 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,1fr)] lg:items-stretch lg:gap-10 lg:px-10 lg:py-11">
             <div className="min-w-0">
-              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">상담</p>
+              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">다음 단계</p>
               <h2 className={`${homeSectionH2} mt-3 text-[#0B1F46]`}>
                 {homePage.finalCta.headlineLines.map((line) => (
                   <span key={line} className="block">
@@ -53,7 +54,7 @@ export function HomeFinalCta() {
               <p className={`mt-2 max-w-xl text-sm leading-relaxed text-[#6D7B90] ${koreanText}`}>
                 {homePage.finalCta.support}
               </p>
-              <ul className="mt-5 flex flex-wrap gap-2" aria-label="상담 진행 안내">
+              <ul className="mt-5 flex flex-wrap gap-2" aria-label="경로 안내">
                 {homePage.finalCta.notes.map((note) => (
                   <li
                     key={note}
@@ -74,39 +75,20 @@ export function HomeFinalCta() {
                   objectFit="cover"
                 />
               </div>
-              {primary ? (
+              {items.map((item, index) => (
                 <TrackedLink
-                  href={primary.href}
-                  trackLabel={primary.trackLabel}
-                  commercialRoute="dispatch"
-                  ctaIntentId={primary.trackLabel}
-                  className={`${siteBtnPrimary} h-12 w-full ${homeFocusRing}`}
+                  key={item.trackLabel}
+                  href={item.href}
+                  trackLabel={item.trackLabel}
+                  commercialRoute={'commercialRoute' in item ? item.commercialRoute : undefined}
+                  ctaIntentId={'commercialRoute' in item ? item.trackLabel : undefined}
+                  className={`${index === 0 ? siteBtnPrimary : siteBtnSecondary} ${
+                    index === 0 ? 'h-12' : '!min-h-11 py-2.5'
+                  } w-full ${homeFocusRing}`}
                 >
-                  {primary.label}
+                  {item.label}
                 </TrackedLink>
-              ) : null}
-              {secondary ? (
-                <TrackedLink
-                  href={secondary.href}
-                  trackLabel={secondary.trackLabel}
-                  commercialRoute="private"
-                  ctaIntentId={secondary.trackLabel}
-                  className={`${siteBtnSecondary} !min-h-11 w-full py-2.5 ${homeFocusRing}`}
-                >
-                  {secondary.label}
-                </TrackedLink>
-              ) : null}
-              {tertiary ? (
-                <TrackedLink
-                  href={tertiary.href}
-                  trackLabel={tertiary.trackLabel}
-                  commercialRoute="curriculum"
-                  ctaIntentId={tertiary.trackLabel}
-                  className={`${siteBtnSecondary} !min-h-11 w-full py-2.5 ${homeFocusRing}`}
-                >
-                  {tertiary.label}
-                </TrackedLink>
-              ) : null}
+              ))}
             </div>
           </div>
         </motion.div>

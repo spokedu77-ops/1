@@ -20,7 +20,7 @@ import { MediaPanel } from '../visual';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
 
-/** 경로 선택 — soft-blue 밴드 위 세련된 게이트 카드 */
+/** 방문자 4경로 — 기관 · 학부모 · 지도자 · 파트너 */
 export function HomeAudienceGates() {
   const reducedMotion = useReducedMotion();
 
@@ -37,11 +37,8 @@ export function HomeAudienceGates() {
           viewport={{ once: true, amount: 0.25 }}
           transition={{ duration: 0.45 }}
         >
-          <p
-            className="text-[12px] font-bold uppercase tracking-[0.14em]"
-            style={{ color: brandBlue }}
-          >
-            어디로 갈까요
+          <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
+            경로 선택
           </p>
           <h2 className={`${homeSectionH2} mt-3`}>{homePage.audienceGate.title}</h2>
           <p className={`mt-3 max-w-xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -49,7 +46,7 @@ export function HomeAudienceGates() {
           </p>
         </motion.div>
 
-        <ul className="mt-8 grid grid-cols-1 gap-4 min-[900px]:mt-10 min-[900px]:grid-cols-3 min-[900px]:gap-5">
+        <ul className="mt-8 grid grid-cols-1 gap-4 min-[700px]:grid-cols-2 min-[700px]:gap-5">
           {homePage.audienceGate.items.map((item, index) => {
             const media = HOME_MEDIA[item.mediaKey];
             return (
@@ -59,7 +56,7 @@ export function HomeAudienceGates() {
                 initial={reducedMotion ? false : { opacity: 0, y: 18 }}
                 whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.45, delay: index * 0.06 }}
+                transition={{ duration: 0.45, delay: index * 0.05 }}
               >
                 <TrackedLink
                   href={item.href}
@@ -75,11 +72,8 @@ export function HomeAudienceGates() {
                       objectFit="cover"
                     />
                   </div>
-                  <div className="flex min-w-0 flex-1 flex-col px-5 py-5 sm:px-6 sm:py-6">
-                    <p
-                      className="text-[12px] font-bold tracking-[0.08em]"
-                      style={{ color: brandBlue }}
-                    >
+                  <div className="flex min-h-[13.5rem] min-w-0 flex-1 flex-col px-5 py-5 sm:min-h-[14.5rem] sm:px-6 sm:py-6">
+                    <p className="text-[12px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
                       {item.badge}
                     </p>
                     <h3
@@ -90,9 +84,6 @@ export function HomeAudienceGates() {
                     </h3>
                     <p className={`mt-2 line-clamp-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>
                       {item.description}
-                    </p>
-                    <p className={`mt-2 text-[13px] leading-relaxed text-[#6D7B90] ${koreanText}`}>
-                      {item.fit}
                     </p>
                     <ul className="mt-3.5 flex flex-wrap gap-1.5" aria-label="포함 내용">
                       {item.bullets.map((bullet) => (

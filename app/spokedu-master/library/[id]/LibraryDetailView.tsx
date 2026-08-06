@@ -10,7 +10,6 @@ import {
   FileText,
   MonitorPlay,
   Play,
-  Printer,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -32,7 +31,7 @@ import {
 } from '../../components/lesson/LessonPanels';
 import { TrackedVideoIframe } from '../../components/lesson/TrackedVideoIframe';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
-import { formatLessonPlanText, printLessonPlan } from '../../lib/lessonPlanExport';
+import { formatLessonPlanText } from '../../lib/lessonPlanExport';
 import { canOptimizeRemoteImage } from '../../lib/mediaPreferences';
 import {
   getExternalVideoUrl,
@@ -394,7 +393,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[var(--spm-bg)] px-6 text-center">
         <BookOpenFallback />
-        <h1 className="mt-5 text-xl font-black text-[color:var(--spm-t)]">수업 자료를 찾을 수 없습니다.</h1>
+        <h1 className="mt-5 text-xl font-black text-[color:var(--spm-t)]">수업을 찾을 수 없습니다.</h1>
         <p className="mt-2 text-sm text-[color:var(--spm-t3)]">라이브러리에서 다른 수업을 선택해 주세요.</p>
         <Link href={libraryReturnHref} className="spm-btn-primary mt-6 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">
           라이브러리로 돌아가기
@@ -409,7 +408,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-[18px] border border-amber-200 bg-amber-50 text-amber-600">
           <FileText className="h-7 w-7" />
         </div>
-        <h1 className="mt-5 text-xl font-black text-[color:var(--spm-t)]">프리미엄 전용 수업 자료입니다.</h1>
+        <h1 className="mt-5 text-xl font-black text-[color:var(--spm-t)]">프리미엄 전용 수업입니다.</h1>
         <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">
           이 수업의 전체 지도안, 코치 스크립트, 영상 자료는 프리미엄 이용권에서 열람할 수 있습니다.
         </p>
@@ -633,7 +632,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                     안내문
                   </Link>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid gap-2">
                   <button
                     type="button"
                     onClick={() => void copyLessonPlan()}
@@ -641,14 +640,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
                   >
                     <Copy className="h-4 w-4" />
                     {planCopied ? '복사 완료' : '지도안 복사'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => printLessonPlan(model)}
-                    className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800"
-                  >
-                    <Printer className="h-4 w-4" />
-                    지도안 인쇄
                   </button>
                 </div>
               </div>
@@ -875,7 +866,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         ) : null}
 
         <details className="rounded-[14px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-4 text-[12px] font-bold text-[color:var(--spm-t2)]">
-          <summary className="cursor-pointer text-[13px] font-black text-[color:var(--spm-t)]">전체 수업 자료 구성</summary>
+          <summary className="cursor-pointer text-[13px] font-black text-[color:var(--spm-t)]">수업 구성</summary>
           <ol className="mt-3 grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
             {['1. 수업 개요', '2. 준비물·공간', '3. 수업 목표', '4. 활동 진행 순서', '5. 규칙과 지도 포인트', '6. 난이도 조절·변형', '7. 안전 유의사항', '8. 실행 행동'].map((item) => (
               <li key={item} className="break-words rounded-lg bg-[var(--spm-s2)] px-3 py-2">{item}</li>
@@ -975,7 +966,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
               className="mt-1.5 w-full resize-none rounded-xl border border-[color:var(--spm-br2)] bg-[var(--spm-s2)] px-3 py-2.5 text-sm font-semibold leading-6 text-[color:var(--spm-t)] outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
             />
             <p className="mt-1 text-[11px] font-semibold text-[color:var(--spm-t3)]">
-              필요 없으면 비워도 됩니다. 저장된 문구는 이 수업 기록에만 남고, 원본 수업 자료는 변경되지 않습니다.
+              필요 없으면 비워도 됩니다. 저장된 문구는 이 수업 기록에만 남고, 원본 수업은 변경되지 않습니다.
             </p>
           </div>
           {quickSaved ? (

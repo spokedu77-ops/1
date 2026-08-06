@@ -74,6 +74,7 @@ import {
 } from '../spomove/officialSpomovePresets';
 import { SpomoveGuidelineSheet } from '../spomove/SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
+import { getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
 import { useHasMasterEntitlement, useHasPremiumEntitlement, useMasterAccessSnapshot } from '../access/MasterAccessProvider';
@@ -367,7 +368,7 @@ function WeeklyProgramCard({
   );
 }
 
-/** 하단 보조 추천 행 — 사진 선반 반복을 피하기 위한 컴팩트 리스트 */
+/** 하단 보조 추천 행 — 메인 수업 선반보다 낮은 밀도의 컴팩트 리스트 */
 function ContextProgramRow({
   program,
   cornerLabel,
@@ -389,19 +390,19 @@ function ContextProgramRow({
       type="button"
       data-context-program={program.id}
       onClick={() => onPreview(program)}
-      className="flex w-full min-h-14 items-center gap-3 rounded-[12px] border border-slate-200 bg-white px-2.5 py-2 text-left transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
+      className="flex w-full min-h-12 items-center gap-2.5 rounded-[10px] border border-slate-100 bg-slate-50/70 px-2 py-1.5 text-left transition-colors hover:border-slate-200 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
     >
-      <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
+      <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[8px] bg-slate-100">
         {hero ? (
           // eslint-disable-next-line @next/next/no-img-element -- mixed local/remote program heroes
           <img src={hero} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : null}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-black text-[color:var(--spm-t)]">{model.title}</span>
+        <span className="block truncate text-[12px] font-black text-[color:var(--spm-t)]">{model.title}</span>
         <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500">{meta}</span>
       </span>
-      <span className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-bold text-slate-500">
+      <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-bold text-slate-500">
         보기
         <ArrowRight size={13} />
       </span>
@@ -459,6 +460,7 @@ function SpomoveCard({
   const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   const fitClass = stretch ? 'object-fill object-center' : 'object-cover object-center';
+  const displayModel = getSpomovePresetDisplayModel(preset);
 
   return (
     <article
@@ -469,7 +471,7 @@ function SpomoveCard({
         type="button"
         onClick={() => onOpenGuide(preset)}
         className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
-        aria-label={`${preset.title} 시작 준비 열기`}
+        aria-label={`${displayModel.displayTitle} 활동 준비 열기`}
       >
         {showThumbnail ? (
           /* eslint-disable-next-line @next/next/no-img-element -- SPOMOVE 썸네일은 외부 URL이라 next/image remotePatterns 밖일 수 있음 */
@@ -508,10 +510,10 @@ function SpomoveCard({
         </span>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
           <p className="max-w-[76%] truncate text-[11px] font-black text-white/82 drop-shadow">
-            {preset.programTitle}
+            {displayModel.programLabel}
           </p>
           <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-black leading-5 text-white drop-shadow">
-            {preset.title}
+            {displayModel.displayTitle}
           </h3>
         </div>
       </button>
@@ -526,7 +528,7 @@ function SpomoveCard({
           className="spm-btn-primary inline-flex h-9 w-full items-center justify-center gap-2 rounded-[9px] px-3 text-[13px] font-black hover:brightness-100 focus-visible:outline-none"
         >
           <Play className="h-3.5 w-3.5 fill-current" aria-hidden />
-          <span>시작</span>
+          <span>활동 준비</span>
         </button>
       </div>
     </article>
@@ -541,8 +543,8 @@ function ActivityPanel({
   className = '',
 }: {
   reportCount: number | null;
-  recordCount: number;
-  studentMemoCount: number;
+  recordCount: number | null;
+  studentMemoCount: number | null;
   compact?: boolean;
   className?: string;
 }) {
@@ -584,7 +586,7 @@ function ActivityPanel({
             {status}
           </Link>
         </div>
-        <div className="grid gap-1.5 sm:grid-cols-2">
+        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1">
           {activities.map(({ label, value, href, Icon, action }) => (
             <Link
               key={label}
@@ -908,16 +910,16 @@ function EntitledDashboardView() {
     const isUnauthorized = programsError === 'unauthorized';
     const isForbidden = programsError === 'forbidden';
     const message = isUnauthorized
-      ? '로그인 후 수업 자료를 불러올 수 있습니다.'
+      ? '로그인 후 수업 라이브러리를 불러올 수 있습니다.'
       : isForbidden
-        ? '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다.'
+        ? '이용 기간이 종료되어 수업 라이브러리를 불러올 수 없습니다.'
         : programsError === 'network'
-          ? '네트워크 문제로 수업 자료를 불러오지 못했습니다. 연결 상태를 확인해 주세요.'
-          : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+          ? '네트워크 문제로 수업 라이브러리를 불러오지 못했습니다. 연결 상태를 확인해 주세요.'
+          : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto px-4 py-16" style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl rounded-[22px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center shadow-[0_16px_48px_rgba(15,23,42,0.06)]">
-          <h1 className="text-xl font-black text-[color:var(--spm-t)]">수업 자료를 불러올 수 없습니다.</h1>
+          <h1 className="text-xl font-black text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
           {isUnauthorized ? (
             <Link href="/login?next=/spokedu-master/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-black focus-visible:outline-none">로그인하기</Link>
@@ -969,7 +971,7 @@ function EntitledDashboardView() {
 
       <CompactOpsBar
         anchor={homeAnchor}
-        recordCount={classRecords.length}
+        recordCount={operationalStatus === 'ready' ? classRecords.length : null}
         reportCount={explanationData.status === 'loading' ? null : explanationData.total}
         onClearTodayLesson={
           homeAnchor.kind === 'today_lesson' && recentActivityOwnerId
@@ -985,7 +987,7 @@ function EntitledDashboardView() {
       >
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading" className="relative">
           <SectionHeader
-            eyebrow="수업 자료"
+            eyebrow="수업 라이브러리"
             eyebrowIcon={<BookOpen size={14} />}
             title="현장에서 바로 펼칠 수업"
             titleId="weekly-heading"
@@ -993,7 +995,7 @@ function EntitledDashboardView() {
             tone="feature"
             description="고르고 준비하면, 오늘 수업에 바로 씁니다."
             href="/spokedu-master/library"
-            action="수업자료 더 보기"
+            action="수업 더 보기"
           />
           {weeklyPrograms.length > 0 ? (
             <div className="relative -mx-3.5 flex snap-x gap-3.5 overflow-x-auto px-3.5 pb-2 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
@@ -1011,7 +1013,7 @@ function EntitledDashboardView() {
             <div className="rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-5 text-center">
               <p className="text-[14px] font-semibold text-[color:var(--spm-t2)]">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
               <Link href="/spokedu-master/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[13px] font-black focus-visible:outline-none">
-                라이브러리 열기
+                수업 라이브러리 열기
               </Link>
             </div>
           )}
@@ -1053,20 +1055,20 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="operations-flow"
         aria-label="보조 추천과 기록"
-        className="relative space-y-2 rounded-[12px] border border-slate-200/70 bg-slate-50/60 p-2 sm:p-2.5"
+        className="relative grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]"
       >
         {availableContextTabs.length > 0 || profile?.isAdmin ? (
-          <section data-dashboard-section="context-programs">
+          <section data-dashboard-section="context-programs" className="rounded-[12px] border border-slate-200/70 bg-white p-3">
             <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">보조</p>
-                <h2 className="mt-0.5 text-[14px] font-black text-slate-700">조건에 맞는 보조 수업</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">추천</p>
+                <h2 className="mt-0.5 text-[14px] font-black text-slate-700">상황별 수업</h2>
               </div>
               <Link
                 href="/spokedu-master/library"
                 className="inline-flex min-h-8 items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-800"
               >
-                수업자료에서 찾기
+                수업 라이브러리에서 찾기
                 <ArrowRight size={12} />
               </Link>
             </div>
@@ -1089,7 +1091,7 @@ function EntitledDashboardView() {
               </div>
             ) : null}
             {contextPrograms.length > 0 ? (
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid gap-1.5 sm:grid-cols-3">
                 {contextPrograms.slice(0, 3).map((program) => (
                   <ContextProgramRow
                     key={program.id}
@@ -1108,9 +1110,10 @@ function EntitledDashboardView() {
         ) : null}
         <ActivityPanel
           compact
+          className="lg:h-full"
           reportCount={explanationData.status === 'loading' ? null : explanationData.total}
-          recordCount={classRecords.length}
-          studentMemoCount={studentMemoCount}
+          recordCount={operationalStatus === 'ready' ? classRecords.length : null}
+          studentMemoCount={operationalStatus === 'ready' ? studentMemoCount : null}
         />
       </section>
 

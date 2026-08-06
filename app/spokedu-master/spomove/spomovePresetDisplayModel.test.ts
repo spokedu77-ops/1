@@ -11,13 +11,7 @@ import {
 } from './spomovePresetDisplayModel';
 
 describe('spomove preset display model', () => {
-  it('uses unique program+displayTitle pairs and runtime-aware duration labels without BGM copy', () => {
-    const keys = OFFICIAL_SPOMOVE_LIBRARY.map((preset) => {
-      const display = getSpomovePresetDisplayModel(preset);
-      return `${display.programLabel}::${display.displayTitle}`;
-    });
-    expect(new Set(keys).size).toBe(OFFICIAL_SPOMOVE_LIBRARY.length);
-
+  it('uses master card titles with compact support meta and runtime-aware duration labels without BGM copy', () => {
     const visual = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
     expect(visual).toBeTruthy();
     expect(getSpomovePresetDisplayModel(visual!).durationLabel).not.toMatch(/BGM/i);
@@ -32,7 +26,32 @@ describe('spomove preset display model', () => {
       const bodyFunctionTag = buildSpomoveCardTags(preset).find((tag) => tag.key === 'bodyFunction');
       expect(settingTag?.value).not.toMatch(/BGM/i);
       expect((bodyFunctionTag?.value.split(' · ') ?? []).filter(Boolean).length).toBeLessThanOrEqual(2);
+      const display = getSpomovePresetDisplayModel(preset);
+      expect(display.displayTitle.length).toBeGreaterThan(0);
+      expect(display.supportMetaParts.length).toBeLessThanOrEqual(3);
+      expect(display.supportMeta).not.toMatch(/50%|20%|30%|엔진|BGM/i);
     }
+  });
+
+  it('aligns hub card language to admin mode and level names', () => {
+    const quadFruit = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'reaction-cognition-quad-fruit-10');
+    const quadAnimalExpansion = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'reaction-cognition-l2-animal-exp');
+    const moleNormal = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-mole-normal-skeleton');
+    const sequenceFive = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'sequential-memory-5color-51');
+    expect(quadFruit && quadAnimalExpansion && moleNormal && sequenceFive).toBeTruthy();
+
+    expect(getSpomovePresetDisplayModel(quadFruit!).programLabel).toBe('반응 인지');
+    expect(getSpomovePresetDisplayModel(quadFruit!).displayTitle).toBe('4분할 자극');
+    expect(getSpomovePresetDisplayModel(quadFruit!).supportMetaParts[0]).toBe('과일');
+    expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).displayTitle).toBe('4분할 자극');
+    expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).supportMetaParts[0]).toBe('동물');
+
+    expect(getSpomovePresetDisplayModel(moleNormal!).programLabel).toBe('시지각 반응');
+    expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기');
+    expect(getSpomovePresetDisplayModel(moleNormal!).supportMeta).not.toMatch(/1·2마리|50%/);
+
+    expect(getSpomovePresetDisplayModel(sequenceFive!).programLabel).toBe('순차 기억');
+    expect(getSpomovePresetDisplayModel(sequenceFive!).displayTitle).toBe('순서 기억');
   });
 
   it('sortSpomovePresetsByCatalogOrder keeps official catalog order', () => {

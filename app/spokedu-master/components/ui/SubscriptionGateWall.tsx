@@ -17,26 +17,26 @@ type SubscriptionGateWallProps = {
 const FEATURE_COPY = {
   library: {
     icon: BookOpen,
-    title: '수업 자료를 열려면 이용권이 필요합니다.',
-    desc: '라이브러리의 전체 수업 자료는 활성 이용권에서 사용할 수 있습니다.',
-    access: '라이브러리 및 전체 수업 자료',
+    title: '수업 라이브러리를 열려면 이용권이 필요합니다.',
+    desc: '수업 라이브러리의 전체 수업은 활성 이용권에서 사용할 수 있습니다.',
+    access: '수업 라이브러리 및 전체 수업',
   },
   classTools: {
     icon: Timer,
-    title: '수업 도구를 다시 열려면 이용권이 필요합니다.',
+    title: '수업 도구를 다시 쓰려면 이용권이 필요합니다.',
     desc: '로그인 직후 무료로 써볼 수 있는 수업 도구는 이용 기간이 끝나면 활성 이용권이 필요합니다.',
     access: '수업 도구',
   },
   records: {
     icon: FileText,
-    title: '기록 누적은 Premium에서 이용할 수 있습니다.',
-    desc: 'Lite에서는 출석부까지만 사용할 수 있고, 수업 기록 저장과 안내문은 Premium에서 열립니다.',
+    title: '기록 누적은 프리미엄에서 이용할 수 있습니다.',
+    desc: '라이트에서는 출석부까지만 사용할 수 있고, 수업 기록 저장과 안내문은 프리미엄에서 열립니다.',
     access: '수업 기록 및 안내문',
   },
   spomove: {
     icon: MonitorPlay,
-    title: 'SPOMOVE는 Premium에서 이용할 수 있습니다.',
-    desc: '수업 중 프로젝터, TV, 태블릿에 연결해 SPOMOVE 공식 활동을 전체 화면으로 시작하려면 Premium이 필요합니다.',
+    title: 'SPOMOVE는 프리미엄에서 이용할 수 있습니다.',
+    desc: '수업 중 프로젝터, TV, 태블릿에 연결해 SPOMOVE 공식 활동을 전체 화면으로 시작하려면 프리미엄이 필요합니다.',
     access: 'SPOMOVE 공식 활동 및 전체 화면 실행',
   },
 } as const;

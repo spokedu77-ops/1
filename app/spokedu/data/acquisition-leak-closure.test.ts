@@ -16,15 +16,17 @@ import { programRegistry } from './programs-catalog';
 import { SPOKEDU_BASE_PATH } from './site';
 
 describe('acquisition leak closure', () => {
-  it('keeps home audience gates route-only', () => {
+  it('keeps home audience gates on marketing routes without query noise', () => {
     expect(homePage.audienceGate.items.map((item) => item.href)).toEqual([
       `${SPOKEDU_BASE_PATH}/dispatch`,
       `${SPOKEDU_BASE_PATH}/private`,
       `${SPOKEDU_BASE_PATH}/curriculum`,
+      `${SPOKEDU_BASE_PATH}/contact`,
     ]);
     for (const item of homePage.audienceGate.items) {
       expect(item.href).not.toMatch(/[?#]/);
-      expect(item.href).not.toContain('/contact');
+      expect(item.href).not.toContain('/spokedu-master');
+      expect(item.href).not.toContain('onboarding');
     }
   });
 
@@ -76,14 +78,15 @@ describe('acquisition leak closure', () => {
   });
 
   it('routes home commercial CTAs into structured landings', () => {
-    expect(homePage.spomove.secondaryCta.href).toBe(
-      `${SPOKEDU_BASE_PATH}/dispatch?program=spomove#contact`,
-    );
-    expect(homePage.cases.consultCta.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch#contact`);
+    expect(homePage.spomove.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove`);
+    expect(homePage.spomove.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
+    expect(homePage.cases.consultCta.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch`);
     expect(homePage.finalCta.items.map((item) => item.href)).toEqual([
-      `${SPOKEDU_BASE_PATH}/dispatch#contact`,
-      `${SPOKEDU_BASE_PATH}/private#apply`,
-      `${SPOKEDU_BASE_PATH}/curriculum#modes`,
+      `${SPOKEDU_BASE_PATH}/dispatch`,
+      `${SPOKEDU_BASE_PATH}/private`,
+      `${SPOKEDU_BASE_PATH}/curriculum`,
+      `${SPOKEDU_BASE_PATH}/contact`,
     ]);
+    expect(homePage.finalCta.items.every((item) => !item.href.includes('onboarding'))).toBe(true);
   });
 });

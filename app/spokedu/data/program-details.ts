@@ -77,7 +77,7 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
   paps: {
     mediaKey: 'programPaps',
     heroSubtitle:
-      '학교 체력평가 요소를 놀이형 수업으로 경험하며, 참여와 움직임 이해를 돕는 체력 향상 프로그램입니다.',
+      '학교 체력평가 요소를 놀이형 수업으로 경험하며, 참여와 움직임 이해를 돕는 프로그램입니다.',
     whyPoints: [
       '평가 부담 없이 체력 요소를 놀이로 경험',
       '심폐·근력·유연성·순발력을 스테이션으로 분리',

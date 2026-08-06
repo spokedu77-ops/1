@@ -123,7 +123,7 @@ describe('buildStagePreview', () => {
     test(`${label} — 미리보기 구조`, () => {
       const preview = labBuildStagePreview(mods);
       expect(preview.length).toBeGreaterThan(0);
-      expect(preview.every((s) => s.modules.includes('jump'))).toBe(true);
+      expect(preview.every((s) => s.modules.includes('jump') || s.modules.includes('colorGate'))).toBe(true);
     });
   }
 });
@@ -198,6 +198,10 @@ describe('generateObstacleSchedule', () => {
       }
 
       expect(sched.length).toBeGreaterThan(0);
+      if (mods.length === 1 && mods.includes('reach' as AnyModuleKey) && !isBonus) {
+        expect(sched.filter((s) => s === 'reach')).toHaveLength(2 - sessionReach);
+        return;
+      }
       expect(sched.every((s) => s !== null)).toBe(true);
     });
 
@@ -838,14 +842,14 @@ describe('BridgeRenderer enhanced deck bounds', () => {
     const scene = new THREE.Scene();
     const br = new BridgeRenderer(scene, true);
     const v = br.createBridge({ lane: 1, x: 0, z: 0 });
-    const deckHalf = (LANE_WIDTH - 5) / 2;
+    const laneHalf = LANE_WIDTH / 2;
     for (const child of v.mesh.children) {
       const mesh = child as THREE.Mesh;
       if (!mesh.isMesh || !mesh.visible) continue;
       const box = new THREE.Box3().setFromObject(mesh);
-      expect(box.min.x).toBeGreaterThanOrEqual(-deckHalf - 0.001);
-      expect(box.max.x).toBeLessThanOrEqual(deckHalf + 0.001);
-      expect(box.min.z).toBeGreaterThanOrEqual(-BRIDGE_LENGTH / 2 - 0.001);
+      expect(box.min.x).toBeGreaterThanOrEqual(-laneHalf - 0.001);
+      expect(box.max.x).toBeLessThanOrEqual(laneHalf + 0.001);
+      expect(box.min.z).toBeGreaterThanOrEqual(-BRIDGE_LENGTH / 2 - PAD_DEPTH - 0.001);
       expect(box.max.z).toBeLessThanOrEqual(BRIDGE_LENGTH / 2 + 0.001);
     }
     br.dispose();

@@ -21,7 +21,7 @@ import {
 const PREVIEW_PROGRAMS = PROGRAMS.slice(0, 1);
 
 const LITE_FEATURES = [
-  '전체 수업 자료 열람',
+  '수업 라이브러리 열람',
   '수업 도구 (타이머·팀 나누기 등)',
   '출석부',
   '기록 저장·누적은 프리미엄',
@@ -71,7 +71,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         </h1>
         <p className="mt-3 max-w-[560px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           {isLapsed
-            ? '수업 자료, 기록, 안내문을 다시 쓰려면 구독을 선택해 주세요. 기존 계정과 프로필은 그대로 유지됩니다.'
+            ? '수업 라이브러리, 기록, 안내문을 다시 쓰려면 구독을 선택해 주세요. 기존 계정과 프로필은 그대로 유지됩니다.'
             : '수업 도구는 로그인 후 바로 써 볼 수 있습니다. 라이브러리·기록·안내문·SPOMOVE는 이용권에서 이어집니다.'}
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">

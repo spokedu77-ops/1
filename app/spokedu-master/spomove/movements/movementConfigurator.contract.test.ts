@@ -56,13 +56,13 @@ describe('MovementConfigurator contract', () => {
     expect(session).not.toContain('onMovementPickChange');
   });
 
-  it('Hub 카드 하단은 추천 동작과 활용 요소만 노출한다', () => {
-    expect(hub).toContain('추천');
-    expect(hub).toContain('동작');
-    expect(hub).toContain('활용 요소');
+  it('Hub 카드 하단은 MASTER 카드 문법의 짧은 support meta만 노출한다', () => {
+    expect(hub).toContain('supportMetaParts');
+    expect(hub).toContain("after:content-['·']");
+    expect(hub).not.toContain('활용 요소');
     expect(hub).not.toContain('최근 설정');
     expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('설정');
+    expect(hub).toContain('시작 설정');
   });
 
   it('Selectable Family 허용분만 그룹에 들어가고 추천은 하나다', () => {

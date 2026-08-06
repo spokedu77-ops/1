@@ -38,15 +38,17 @@ describe('library quick record save contracts', () => {
     expect(source).not.toContain('상세 기록 작성');
   });
 
-  it('exposes lesson plan copy and print with fixed export template', () => {
+  it('exposes lesson plan copy without print controls and keeps fixed export template', () => {
     const exportSource = readFileSync(
       join(process.cwd(), 'app/spokedu-master/lib/lessonPlanExport.ts'),
       'utf8',
     );
     expect(source).toContain('formatLessonPlanText');
-    expect(source).toContain('printLessonPlan');
     expect(source).toContain('지도안 복사');
-    expect(source).toContain('지도안 인쇄');
+    expect(source).not.toContain('printLessonPlan');
+    expect(source).not.toContain('지도안 인쇄');
+    expect(exportSource).not.toContain('window.print');
+    expect(exportSource).not.toContain('formatLessonPlanPrintHtml');
     expect(exportSource).toContain("'title'");
     expect(exportSource).toContain("'context'");
     expect(exportSource).toContain("'equipment'");

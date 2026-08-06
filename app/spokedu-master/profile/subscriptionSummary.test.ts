@@ -234,6 +234,7 @@ describe('subscriptionSummary', () => {
       trialEndsAt: future,
       isAdmin: false,
       canCancelAutoBilling: false,
+      billingRenewalFailed: false,
     });
     expect(getSubscriptionStatusLabel(value)).toBe('이용권 없음');
   });

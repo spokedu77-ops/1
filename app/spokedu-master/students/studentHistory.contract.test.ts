@@ -20,6 +20,13 @@ describe('student history flow contract', () => {
     expect(studentDetail).not.toContain('fetch(');
   });
 
+  it('does not present load failures as missing students', () => {
+    expect(studentDetail).toContain("operationalData.status === 'error'");
+    expect(studentDetail).toContain('학생 기록을 불러오지 못했습니다.');
+    expect(studentDetail).toContain('onClick={() => void operationalData.reload()}');
+    expect(studentDetail.indexOf("operationalData.status === 'error'")).toBeLessThan(studentDetail.indexOf('if (!student)'));
+  });
+
   it('filters class records by the selected student id', () => {
     expect(studentDetail).toContain('record.students.find((item) => item.studentId === studentId)');
     expect(studentDetail).toContain('sort((a, b) => new Date(b.record.date).getTime() - new Date(a.record.date).getTime())');

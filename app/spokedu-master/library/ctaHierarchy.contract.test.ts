@@ -17,7 +17,7 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(library).toContain('LessonCatalogCard');
     expect(library).toContain('autoplayVideo: programHasPlayableVideo(program)');
-    expect(library).toContain('전체 수업 자료 보기');
+    expect(library).toContain('수업 라이브러리 열기');
     expect(library).not.toMatch(/>\s*전체 자료 보기\s*</);
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
   });

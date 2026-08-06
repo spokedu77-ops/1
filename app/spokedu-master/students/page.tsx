@@ -772,7 +772,7 @@ export default function StudentsPage() {
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <Link href={`/spokedu-master/library/${selectedPreparationRecord.record.programId}`} className="spm-btn-primary flex h-9 items-center justify-center gap-2 rounded-[9px] text-[12px] font-black focus-visible:outline-none">
                           <BookOpen size={15} />
-                          전체 수업 자료 보기
+                          수업 라이브러리 열기
                         </Link>
                         <Link href={`/spokedu-master/class-record?program=${selectedPreparationRecord.record.programId}`} className="flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[12px] font-black text-slate-700">
                           <ClipboardList size={15} />

@@ -6,7 +6,10 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, ty
 import {
   brandContactLinks,
   brandProfile,
+  footerNavLinks,
+  footerServiceLinks,
   getSocialLinks,
+  siteHeaderCta,
   siteNav,
   SPOKEDU_BASE_PATH,
   type SiteNavEntry,
@@ -347,8 +350,8 @@ export function SiteHeader() {
 
           <div className="flex h-9 items-center gap-2">
             <NavAnchor
-              href={`${SPOKEDU_BASE_PATH}/contact`}
-              trackLabel="header-contact"
+              href={siteHeaderCta.href}
+              trackLabel={siteHeaderCta.trackLabel}
               className={`hidden h-9 items-center justify-center rounded-full px-5 text-[13px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
@@ -358,7 +361,7 @@ export function SiteHeader() {
               }`}
               style={onHero || menuOpen ? undefined : { backgroundColor: ATHLETIC_BLUE }}
             >
-              상담하기
+              {siteHeaderCta.label}
             </NavAnchor>
 
             <button
@@ -409,13 +412,13 @@ export function SiteHeader() {
           {siteNav.map(renderMobileEntry)}
           <div className="mt-4 grid gap-2">
             <NavAnchor
-              href={`${SPOKEDU_BASE_PATH}/contact`}
-              trackLabel="mobile-header-contact"
+              href={siteHeaderCta.href}
+              trackLabel={`mobile-${siteHeaderCta.trackLabel}`}
               className="inline-flex min-h-12 items-center justify-center rounded-md px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               style={{ backgroundColor: ATHLETIC_BLUE }}
               onNavigate={closeMenus}
             >
-              상담하기
+              {siteHeaderCta.label}
             </NavAnchor>
           </div>
         </nav>
@@ -428,20 +431,7 @@ export function SiteFooter() {
   const socialLinks = getSocialLinks();
   const blogLink = socialLinks.find((c) => c.key === 'naver-blog');
   const kakaoLink = socialLinks.find((c) => c.key === 'kakao-channel');
-
-  const programLinks = [
-    { label: '개인·소그룹 수업', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'footer-program-private' },
-    { label: '기관 프로그램', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'footer-program-dispatch' },
-    { label: '커리큘럼·지도자 교육', href: `${SPOKEDU_BASE_PATH}/curriculum`, trackLabel: 'footer-program-curriculum' },
-    { label: 'SPOMOVE', href: `${SPOKEDU_BASE_PATH}/programs/spomove`, trackLabel: 'footer-program-spomove' },
-    { label: '한눈에 보기', href: `${SPOKEDU_BASE_PATH}/programs/spomove?tab=catalog`, trackLabel: 'footer-program-spomove-catalog' },
-  ];
-
-  const infoLinks = [
-    { label: '스포키듀 소개', href: `${SPOKEDU_BASE_PATH}/about`, trackLabel: 'footer-info-about' },
-    { label: '수업 사례', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'footer-info-records' },
-    { label: '문의', href: `${SPOKEDU_BASE_PATH}/contact`, trackLabel: 'footer-info-contact' },
-  ];
+  const instagramLink = socialLinks.find((c) => c.key === 'instagram');
 
   const footerLinkClass =
     `inline-flex min-h-8 items-center text-[14px] font-medium leading-none tracking-[-0.01em] text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${koreanText}`;
@@ -459,9 +449,9 @@ export function SiteFooter() {
           </div>
 
           <div className="min-w-0">
-            <p className={footerHeadingClass}>프로그램</p>
+            <p className={footerHeadingClass}>탐색</p>
             <ul className="mt-3 space-y-0.5">
-              {programLinks.map((link) => (
+              {footerNavLinks.map((link) => (
                 <li key={link.href} className="flex">
                   <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
                     {link.label}
@@ -472,9 +462,9 @@ export function SiteFooter() {
           </div>
 
           <div className="min-w-0">
-            <p className={footerHeadingClass}>정보</p>
+            <p className={footerHeadingClass}>수업 경로</p>
             <ul className="mt-3 space-y-0.5">
-              {infoLinks.map((link) => (
+              {footerServiceLinks.map((link) => (
                 <li key={link.href} className="flex">
                   <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
                     {link.label}
@@ -512,6 +502,20 @@ export function SiteFooter() {
                     className={footerLinkClass}
                   >
                     네이버 블로그
+                  </a>
+                </li>
+              ) : null}
+              {instagramLink ? (
+                <li className="flex">
+                  <a
+                    href={instagramLink.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-track="external-instagram"
+                    data-track-label="footer-instagram"
+                    className={footerLinkClass}
+                  >
+                    인스타그램
                   </a>
                 </li>
               ) : null}

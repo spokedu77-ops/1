@@ -137,7 +137,7 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
             SPOKEDU MASTER 이용 권한이 필요합니다.
           </h1>
           <p className="mt-3 text-[14px] font-semibold leading-6 text-slate-500">
-            수업 자료, 학생 기록, 저장 안내문을 사용하려면 구독을 시작해 주세요.
+            수업 라이브러리, 학생 기록, 저장 안내문을 사용하려면 구독을 시작해 주세요.
           </p>
 
           <div className="mt-6 grid gap-2">

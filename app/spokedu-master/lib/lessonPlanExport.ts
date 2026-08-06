@@ -57,7 +57,7 @@ export type LessonPlanSection = {
 };
 
 /**
- * 지도안 텍스트/인쇄용 섹션.
+ * 지도안 복사용 텍스트 섹션.
  * 내용이 있는 섹션만 반환. 「없음」·placeholder 미노출.
  */
 export function buildLessonPlanSections(model: LessonDisplayModel): LessonPlanSection[] {
@@ -116,62 +116,4 @@ export function formatLessonPlanText(model: LessonDisplayModel): string {
   return buildLessonPlanSections(model)
     .map((section) => `${section.label}\n${section.body}`)
     .join('\n\n');
-}
-
-/** 인쇄용 단순 HTML (임시 창) */
-export function formatLessonPlanPrintHtml(model: LessonDisplayModel): string {
-  const sections = buildLessonPlanSections(model);
-  const body = sections
-    .map((section) => {
-      const heading = section.label;
-      const content =
-        section.id === 'title' || section.id === 'context' || section.id === 'parentNote'
-          ? `<p>${escapeHtml(section.body).replace(/\n/g, '<br />')}</p>`
-          : `<pre>${escapeHtml(section.body)}</pre>`;
-      return `<section><h2>${escapeHtml(heading)}</h2>${content}</section>`;
-    })
-    .join('');
-
-  return `<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <title>${escapeHtml(usableLine(model.title) || '지도안')}</title>
-  <style>
-    body { font-family: "Pretendard", "Noto Sans KR", sans-serif; color: #0f172a; margin: 24px; line-height: 1.5; }
-    h1 { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin: 0 0 8px; }
-    h2 { font-size: 15px; margin: 20px 0 8px; }
-    section:first-of-type h2 { margin-top: 0; }
-    p { margin: 0; font-size: 16px; font-weight: 700; white-space: pre-wrap; }
-    pre { margin: 0; font-family: inherit; font-size: 14px; white-space: pre-wrap; }
-    @media print { body { margin: 12mm; } }
-  </style>
-</head>
-<body>
-  <h1>SPOKEDU MASTER 지도안</h1>
-  ${body}
-</body>
-</html>`;
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-export function printLessonPlan(model: LessonDisplayModel) {
-  if (typeof window === 'undefined') return;
-  const html = formatLessonPlanPrintHtml(model);
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700');
-  if (!printWindow) return;
-  printWindow.document.open();
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus();
-  window.setTimeout(() => {
-    printWindow.print();
-  }, 250);
 }

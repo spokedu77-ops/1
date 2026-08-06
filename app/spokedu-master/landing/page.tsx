@@ -9,7 +9,7 @@ const FEATURES = [
     color: 'var(--spm-acc-a18)',
     ic: 'var(--spm-acc)',
     title: '라이브러리',
-    desc: '유아부터 초등까지, 실내외 환경에 맞는 수업 자료가 태그와 검색으로 정리되어 있습니다. 연령·환경·준비물 기준으로 오늘 쓸 수업을 빠르게 고를 수 있습니다.',
+    desc: '유아부터 초등까지, 실내외 환경에 맞는 수업이 태그와 검색으로 정리되어 있습니다. 연령·환경·준비물 기준으로 오늘 쓸 수업을 빠르게 고를 수 있습니다.',
     items: ['연령·환경·준비물 필터', '즐겨찾기와 최근 사용', '수업 준비 키트 연결'],
   },
   {
@@ -64,7 +64,7 @@ const PRICING = [
     price: MASTER_PRODUCT_CATALOG.center.priceLabel,
     period: MASTER_PRODUCT_CATALOG.center.billingCycleLabel,
     desc: '여러 수업을 운영하는 센터와 기관을 위한 플랜',
-    includes: ['프리미엄 기능 전체', '센터 수업 자료 활용', '기관 제출용 안내문', '추가 계정·기관 도입 별도 문의'],
+    includes: ['프리미엄 기능 전체', '센터 수업 콘텐츠 활용', '기관 제출용 안내문', '추가 계정·기관 도입 별도 문의'],
     accent: 'var(--spm-grn-a12)',
     border: 'var(--spm-grn-a38)',
     badgeColor: 'var(--spm-grn)',
@@ -73,14 +73,14 @@ const PRICING = [
 ] as const;
 
 const STATS = [
-  { label: '수업 프로그램', value: '라이브러리', caption: '연령·환경별 수업 자료', Icon: BookOpen },
+  { label: '수업 프로그램', value: '라이브러리', caption: '연령·환경별 수업', Icon: BookOpen },
   { label: 'SPOMOVE 공식 활동', value: '51+', caption: '큰 화면 반응 활동', Icon: Zap },
   { label: '연령 대상', value: '유아~중등', caption: '현장 수업 기준', Icon: Users },
   { label: '수업 공간', value: '실내 · 실외', caption: '환경별 자료 구분', Icon: MapPin },
 ];
 
 const FLOW = [
-  { num: '1', label: '라이브러리에서 수업 고르기', caption: '태그와 검색으로 오늘 쓸 수업 자료를 빠르게 찾습니다', color: 'var(--spm-acc-a14)', accent: 'var(--spm-acc)' },
+  { num: '1', label: '수업 라이브러리에서 고르기', caption: '태그와 검색으로 오늘 쓸 수업을 빠르게 찾습니다', color: 'var(--spm-acc-a14)', accent: 'var(--spm-acc)' },
   { num: '2', label: 'SPOMOVE 큰 화면 실행 (프리미엄)', caption: '프로젝터·TV에 연결해 아이들이 화면 신호를 보고 움직입니다', color: 'var(--spm-grn-a12)', accent: 'var(--spm-grn)' },
   { num: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'var(--spm-amb-a12)', accent: 'var(--spm-amb)' },
 ] as const;
@@ -94,7 +94,7 @@ const HERO_PROOF = [
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
 
 const LANDING_DESCRIPTION =
-  '수업 자료와 영상, 안내문을 제공하는 체육교육 월 구독 서비스입니다. 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 이용할 수 있습니다.';
+  '수업 라이브러리와 영상, 안내문을 제공하는 체육교육 월 구독 서비스입니다. 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 이용할 수 있습니다.';
 
 export const metadata = {
   title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
@@ -155,7 +155,7 @@ export default function LandingPage() {
               SPOKEDU<br />MASTER
             </h1>
             <p className="mt-6 max-w-[640px] text-[19px] font-black leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
-              수업 자료와 영상, 안내문을 이용하고 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 연결합니다.
+              수업 라이브러리와 영상, 안내문을 이용하고 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 연결합니다.
             </p>
             <p className="mt-4 max-w-[620px] text-[14px] font-semibold leading-7 md:text-[15px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
               오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육수업 운영 서비스입니다.

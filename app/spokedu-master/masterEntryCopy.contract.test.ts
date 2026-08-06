@@ -27,7 +27,8 @@ describe('SPOKEDU MASTER entry copy alignment', () => {
 
     expect(curriculum).toContain('월 자동결제');
     expect(curriculum).toContain('이용권 보기');
-    expect(curriculum).toContain('/spokedu-master/landing#pricing');
+    expect(curriculum).toContain('MASTER_HANDOFF.landing');
+    expect(curriculum).toContain('`${MASTER_HANDOFF.landing}#pricing`');
 
     expect(curriculum).not.toContain('7일 무료 체험');
     expect(curriculum).not.toContain('14일');

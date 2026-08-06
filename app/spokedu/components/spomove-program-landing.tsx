@@ -15,7 +15,7 @@ import {
   landingSectionTitle,
 } from '../lib/ui-classes';
 
-/** 스포매트 실물 배치 — 좌상 초록 · 우상 빨강 · 좌하 파랑 · 우하 노랑 */
+/** SPOMAT 실물 배치 — 좌상 초록 · 우상 빨강 · 좌하 파랑 · 우하 노랑 */
 const PAD_CELLS = [
   { name: 'GREEN', ko: '초록', hex: '#22C55E' },
   { name: 'RED', ko: '빨강', hex: '#EF4444' },
@@ -205,9 +205,9 @@ export default function SpomoveProgramLanding() {
               </div>
             </div>
             <p className={`mt-2 text-center text-xs font-semibold text-slate-600 ${koreanText}`}>
-              스포매트 · 현장 4색 반응 패드
+              SPOMAT · 현장 4색 반응 패드
             </p>
-            <ul className="mt-2 grid grid-cols-2 gap-1.5" aria-label="스포매트 색 구성">
+            <ul className="mt-2 grid grid-cols-2 gap-1.5" aria-label="SPOMAT 색 구성">
               {PAD_CELLS.map((pad) => (
                 <li
                   key={pad.name}

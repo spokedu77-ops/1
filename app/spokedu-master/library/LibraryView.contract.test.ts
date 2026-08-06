@@ -21,7 +21,8 @@ describe('LibraryView favorites contract', () => {
 
   it('keeps one ProgramCard implementation for both views', () => {
     expect(source.match(/function ProgramCard\(/g)).toHaveLength(1);
-    expect(source.match(/<ProgramGrid/g)).toHaveLength(1);
+    expect(source.match(/function ProgramGrid\(/g)).toHaveLength(1);
+    expect(source.match(/<ProgramGrid/g)).toHaveLength(2);
     expect(source).toContain('LessonCatalogCard');
   });
 
@@ -38,7 +39,7 @@ describe('LibraryView favorites contract', () => {
     expect(catalogCard).toContain('수업 준비');
     expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(source).toContain('autoplayVideo: programHasPlayableVideo(program)');
-    expect(source).toContain('전체 수업 자료 보기');
+    expect(source).toContain('수업 라이브러리 열기');
   });
 
   it('keeps the library search controls compact and purpose-led', () => {

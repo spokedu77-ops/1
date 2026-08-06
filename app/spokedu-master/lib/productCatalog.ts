@@ -147,7 +147,7 @@ export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
 
 export function getMasterProductPaymentFeatureLabels(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return ['전체 수업 자료', '수업 도구', '출석부', '기록 저장은 프리미엄'];
+    return ['수업 라이브러리', '수업 도구', '출석부', '기록 저장은 프리미엄'];
   }
   if (product.id === 'premium') {
     return ['라이트의 모든 기능', '기록 누적·히스토리', 'SPOMOVE 공식 활동', 'SPOMAT 회원가 구매'];
@@ -157,7 +157,7 @@ export function getMasterProductPaymentFeatureLabels(product: MasterProductCatal
 
 export function getMasterProductPaymentDescription(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return '전체 수업 자료와 수업 도구, 출석부를 이용할 수 있습니다. 기록 저장과 누적 관리는 프리미엄에서 열립니다.';
+    return '수업 라이브러리와 수업 도구, 출석부를 이용할 수 있습니다. 기록 저장과 누적 관리는 프리미엄에서 열립니다.';
   }
   if (product.id === 'premium') {
     return '라이트 전체 + 기록 누적, 학생 히스토리, 안내문, SPOMOVE를 모두 이용할 수 있습니다.';

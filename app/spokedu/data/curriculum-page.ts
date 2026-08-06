@@ -1,5 +1,6 @@
 import type { HomeMediaKey } from './home-media';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
+import { MASTER_HANDOFF } from './site';
 
 type CurriculumMediaRequirement = {
   page: 'curriculum';
@@ -13,9 +14,9 @@ export const curriculumPage = {
   hero: {
     kicker: '지도자 교육 · 커리큘럼',
     trustBadge: '연세대 체육교육학과 출신 운영진',
-    lines: ['현장에서 검증한 기준을', '지도자 교육으로 전합니다'] as const,
+    lines: ['현장 수업에서 정리한 기준을', '지도자 교육으로 전합니다'] as const,
     subtitle:
-      '현장 수업에서 검증한 기준을 수업안·운영 매뉴얼·지도자 교육·SPOMOVE 도입 교육으로 확장합니다. 더 많은 선생님이 좋은 수업을 운영할 수 있도록 기준과 도구를 제공합니다.',
+      '현장 수업에서 정리한 기준을 수업안·운영 매뉴얼·지도자 교육·SPOMOVE 도입 교육으로 확장합니다. 더 많은 선생님이 좋은 수업을 운영할 수 있도록 기준과 도구를 제공합니다.',
     mediaKey: 'trackCurriculum' as HomeMediaKey,
   },
   trustMetrics: {
@@ -34,7 +35,7 @@ export const curriculumPage = {
     },
     secondary: {
       label: 'SPOKEDU MASTER 보기',
-      href: '/spokedu-master/landing',
+      href: MASTER_HANDOFF.landing,
       trackLabel: 'curriculum-cta-master',
     },
   },
@@ -185,7 +186,7 @@ export const curriculumPage = {
           kind: 'screen',
           allowVisualFallback: true,
         } satisfies CurriculumMediaRequirement,
-        href: '/spokedu-master/landing',
+        href: MASTER_HANDOFF.landing,
       },
     ],
   },
@@ -197,12 +198,12 @@ export const curriculumPage = {
     tags: ['프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 기록', '설명 문구 자동 생성', '월 자동결제'] as const,
     primary: {
       label: 'SPOKEDU MASTER 살펴보기',
-      href: '/spokedu-master/landing',
+      href: MASTER_HANDOFF.landing,
       trackLabel: 'curriculum-master-cta-primary',
     },
     secondary: {
       label: '이용권 보기',
-      href: '/spokedu-master/landing#pricing',
+      href: `${MASTER_HANDOFF.landing}#pricing`,
       trackLabel: 'curriculum-master-cta-pricing',
     },
   },

@@ -312,6 +312,38 @@ function SingleChoice({ options, value, onChange }: { options: string[]; value: 
   );
 }
 
+function ReportRecordGateState({ status, onRetry }: { status: 'error' | 'loading' | 'missing'; onRetry: () => void }) {
+  const copy = {
+    error: {
+      title: '수업 기록을 불러오지 못했습니다.',
+      body: '기록 기반 안내문은 해당 수업 기록을 확인한 뒤 만들 수 있습니다. 잠시 후 다시 시도해 주세요.',
+      action: '다시 시도',
+    },
+    loading: {
+      title: '수업 기록을 불러오는 중입니다.',
+      body: '기록을 확인한 뒤 안내문 초안을 준비합니다.',
+      action: '',
+    },
+    missing: {
+      title: '수업 기록을 찾을 수 없습니다.',
+      body: '현재 계정에서 확인할 수 있는 기록이 아닙니다. 수업 기록을 다시 선택해 주세요.',
+      action: '기록 다시 불러오기',
+    },
+  }[status];
+
+  return (
+    <section className="my-4 rounded-[16px] border border-red-200 bg-red-50 p-4 text-[13px] font-bold text-red-700">
+      <h2 className="text-[15px] font-black">{copy.title}</h2>
+      <p className="mt-1 leading-6">{copy.body}</p>
+      {copy.action ? (
+        <button type="button" onClick={onRetry} className="mt-3 h-10 rounded-[9px] bg-red-600 px-4 text-[12px] font-black text-white">
+          {copy.action}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
 function ReportContent() {
   const [showRefine, setShowRefine] = useState(false);
   const [showExtras, setShowExtras] = useState(false);
@@ -325,6 +357,9 @@ function ReportContent() {
   const accessSnapshot = useMasterAccessSnapshot();
   const operationalData = useOperationalData();
   const explanationData = useExplanationData();
+  const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
+  const operationalError = operationalData.status === 'error';
+  const operationalReady = operationalData.status === 'ready';
   const classRecords = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
   const programPool = useMemo(() => programs, [programs]);
   const { programId: queryProgramId, recordId: queryRecordId, savedId: savedExplanationId } = getReportQuery(searchParams);
@@ -335,6 +370,16 @@ function ReportContent() {
     () => (selectedRecordId ? classRecords.find((r) => r.id === selectedRecordId) ?? null : null),
     [classRecords, selectedRecordId],
   );
+  const recordQueryMissing = Boolean(queryRecordId) && operationalReady && !selectedRecord;
+  const recordQueryGateStatus = queryRecordId
+    ? operationalError
+      ? 'error'
+      : operationalLoading
+        ? 'loading'
+        : recordQueryMissing
+          ? 'missing'
+          : null
+    : null;
   const [programId, setProgramId] = useState(initialProgramId);
   const [audience, setAudience] = useState<Audience>('parent');
   const [target, setTarget] = useState<ReportTarget>('class');
@@ -614,6 +659,23 @@ function ReportContent() {
   const focused = Boolean(selectedRecord);
   const programOptions = search.trim() ? filteredPrograms : programPool;
 
+  if (recordQueryGateStatus) {
+    return (
+      <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
+        <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+          <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
+            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">안내문</p>
+            <h1 className="mt-1 text-[27px] font-black leading-tight text-[color:var(--spm-t)]">안내문 만들고 복사</h1>
+            <p className="mt-2 max-w-[680px] text-[13px] font-semibold leading-6 text-slate-600">
+              수업 기록을 확인한 뒤 가정·기관·학교용 안내문을 만듭니다.
+            </p>
+          </header>
+          <ReportRecordGateState status={recordQueryGateStatus} onRetry={() => void operationalData.reload()} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
       <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
@@ -679,7 +741,7 @@ function ReportContent() {
                 ))}
               </select>
               {programsError === 'forbidden' ? (
-                <p className="mt-2 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>이용권 만료로 수업 자료를 불러올 수 없습니다.</p>
+                <p className="mt-2 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>이용권 만료로 수업 라이브러리를 불러올 수 없습니다.</p>
               ) : null}
             </label>
           </section>
@@ -872,7 +934,7 @@ function ReportContent() {
             {hasProgramQuery && program ? (
               <Link href={`/spokedu-master/library/${program.id}`} className="spm-btn-primary inline-flex h-9 items-center gap-2 rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
                 <BookOpen size={14} />
-                전체 수업 자료 보기
+                수업 라이브러리 열기
               </Link>
             ) : null}
           </section>

@@ -34,7 +34,7 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('설정');
+    expect(hub).toContain('시작 설정');
     expect(hub).toContain('hrefForSettings');
     expect(hub).not.toContain("hrefForOfficial('start')");
     expect(hub).toContain('publicOfficialPresetSessionHref');
@@ -71,11 +71,11 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(session).not.toContain('사용한 동작');
   });
 
-  it('2c) Hub 시작·썸네일은 같은 확인 모달 루트', () => {
-    expect(hub).toContain('<span>시작</span>');
+  it('2c) Hub 활동 준비·썸네일은 같은 확인 모달 루트', () => {
+    expect(hub).toContain('<span>활동 준비</span>');
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('onClick={onGuide}');
-    expect(hub).toContain('시작 준비 열기');
+    expect(hub).toContain('활동 준비 열기');
     expect(hub).not.toContain('가이드 보기');
     expect(hub).not.toContain('바로 실행');
     expect(hub).not.toContain('바로 시작');

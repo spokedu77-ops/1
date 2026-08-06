@@ -64,7 +64,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
 
     expect(source).toContain('라이브러리');
     expect(source).toContain('수업 미리보기');
-    expect(source).toContain('전체 수업 자료 보기');
+    expect(source).toContain('수업 라이브러리 열기');
     expect(source).not.toMatch(/>\s*수업 자료\s*</);
     expect(source).not.toMatch(/>\s*수업 자료 보기\s*</);
     expect(source).not.toMatch(/>\s*전체 자료 보기\s*</);

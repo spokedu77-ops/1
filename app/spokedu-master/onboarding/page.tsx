@@ -11,7 +11,7 @@ const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등
 const PROGRAM_TYPES = ['대근육 활동', 'SPOMOVE', '민첩성', '협동 활동', '체력'];
 const STEP_LABELS = ['환경', '프로필', '흐름', '시작'];
 const FLOW_ITEMS = [
-  { icon: BookOpen, title: '수업 전', desc: '홈, 라이브러리, 수업 미리보기에서 전체 수업 자료를 확인합니다.' },
+  { icon: BookOpen, title: '수업 전', desc: '홈, 수업 라이브러리, 수업 미리보기에서 오늘 쓸 수업을 확인합니다.' },
   { icon: MonitorPlay, title: '수업 중', desc: '수업 도구와 연결된 활동 화면으로 현장 진행을 돕습니다.' },
   { icon: Clipboard, title: '수업 후', desc: '빠른 기록으로 관찰을 남기고, 같은 기록을 보강한 뒤 안내문으로 이어갑니다.' },
 ] as const;
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
             {step === 0 ? (
               <div className="space-y-3">
                 <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>사용 환경</h2>
-                <ChoiceCard title="개인 강사·교사" desc="내 계정으로 수업 자료와 기록 흐름을 준비합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
+                <ChoiceCard title="개인 강사·교사" desc="내 계정으로 수업과 기록 흐름을 준비합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
                 <ChoiceCard title="센터·기관 운영" desc="여러 수업을 운영하는 환경입니다. 계정 설정은 개인 계정 기준으로 저장합니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
               </div>
             ) : null}
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
                     <h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>대시보드에서 시작하세요</h2>
                   </div>
                 </div>
-                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 홈에서 수업 자료, 수업 도구, 기록 흐름을 확인할 수 있습니다. 이용권이 필요한 기능은 해당 화면에서 안내됩니다.</p>
+                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 홈에서 수업 라이브러리, 수업 도구, 기록 흐름을 확인할 수 있습니다. 이용권이 필요한 기능은 해당 화면에서 안내됩니다.</p>
                 {saveError ? (
                   <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
                     {saveError}

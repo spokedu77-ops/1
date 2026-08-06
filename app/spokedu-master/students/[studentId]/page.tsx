@@ -62,6 +62,20 @@ export default function StudentDetailPage() {
     return <div className="h-full p-6 text-[13px] font-bold" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t2)' }}>학생 기록을 불러오는 중입니다.</div>;
   }
 
+  if (operationalData.status === 'error') {
+    return (
+      <div className="h-full overflow-y-auto p-[22px] pb-28 lg:p-10" style={{ background: 'var(--spm-bg)' }}>
+        <section className="rounded-[16px] border border-red-200 bg-red-50 p-6 text-center text-red-700">
+          <h1 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>학생 기록을 불러오지 못했습니다.</h1>
+          <p className="mt-2 text-[13px] font-semibold leading-6">데이터를 다시 불러온 뒤 학생 기록을 확인해 주세요.</p>
+          <button type="button" onClick={() => void operationalData.reload()} className="mt-5 inline-flex h-10 items-center justify-center rounded-[9px] bg-red-600 px-5 text-[13px] font-black text-white">
+            다시 시도
+          </button>
+        </section>
+      </div>
+    );
+  }
+
   if (!student) {
     return (
       <div className="h-full overflow-y-auto p-[22px] pb-28 lg:p-10" style={{ background: 'var(--spm-bg)' }}>

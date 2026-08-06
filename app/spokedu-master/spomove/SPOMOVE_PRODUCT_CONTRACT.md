@@ -47,9 +47,9 @@ Phase 0은 SPOMOVE를 새로 설계하는 단계가 아니다. 즉시 실행·�
 
 ### Hub
 
-- `[시작]` · 썸네일 → 확인 Sheet(지도법·준비 포함). Sheet Primary만 `entry=start` (`이 설정으로 시작`)
-- `[설정]` → `entry=settings` (Secondary, Start보다 작은 무게)
-- 카드 레벨 「가이드 보기」·「바로 실행」·「바로 시작」 금지. 썸네일 aria는 `{활동명} 시작 준비 열기`
+- `[활동 준비]` · 썸네일 → 확인 Sheet(진행 방법·준비 포함). Sheet Primary만 `entry=start` (`이 설정으로 시작`)
+- `[시작 설정]` → `entry=settings` (Secondary, 활동 준비보다 작은 무게)
+- 카드 레벨 「가이드 보기」·「바로 실행」·「바로 시작」 금지. 썸네일 aria는 `{활동명} 활동 준비 열기`
 - Hub 클릭으로 **Family 저장값 변경 금지** (`writeFamilyMovement` 없음)
 - `preset.description` 임시 미노출 · 임시 자동 카피 금지
 - 「사전 설정된 공식 조건으로 실행」 등 사실과 다른 헤더 문구 금지

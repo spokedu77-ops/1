@@ -34,7 +34,16 @@ describe('class record entry flow contract', () => {
     expect(source).toContain('선택 출석');
     expect(source).toContain('선택 결석');
     expect(source).toContain('출석 초기화');
-    expect(source).toContain('선택 {selectedStudentCount}명 / 전체 {students.length}명');
+    expect(source).toContain('선택 {selectedStudentCount}명 / 전체 {students.length}명 · 출석 {present} · 결석 {absent} · 관찰 {focusCount}');
+  });
+
+  it('keeps student attendance rows compact instead of nested cards', () => {
+    expect(source).toContain('function StudentRow');
+    expect(source).toContain('grid min-h-[58px] grid-cols-[minmax(0,1fr)_auto]');
+    expect(source).toContain('aria-label={`${student.name} 참여`}');
+    expect(source).toContain('<section className="grid gap-1.5">');
+    expect(source).not.toContain('rounded-t-[18px]');
+    expect(source).not.toContain('SummaryPill');
   });
 
   it('opens the student creation sheet directly when records need students', () => {
@@ -50,12 +59,29 @@ describe('class record entry flow contract', () => {
 
   it('prevents duplicate submit and preserves explicit save labels', () => {
     expect(source).toContain('if (!canSaveRecord || recordSaving) return null');
+    expect(source).toContain('operationalReady && recordStatus.allowed');
+    expect(source).toContain('saveBlockerLabel');
     expect(source).toContain('canAttemptOnlineSave(isOnline)');
     expect(source).toContain('SaveErrorBanner');
     expect(source).toContain('저장 중...');
     expect(source).toContain('수업 기록 수정');
     expect(source).toContain('수업 기록 저장');
     expect(source).toContain('보강 저장');
+  });
+
+  it('blocks the entry form while operational data is loading or failed', () => {
+    expect(source).toContain("const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading'");
+    expect(source).toContain("const operationalError = operationalData.status === 'error'");
+    expect(source).toContain("const operationalReady = operationalData.status === 'ready'");
+    expect(source).toContain('<RecordLoadingState />');
+    expect(source).toContain('<RecordErrorState onRetry={() => void operationalData.reload()} />');
+    expect(source).toContain('{operationalReady ? (');
+  });
+
+  it('keeps report creation behind a saved record in the entry footer', () => {
+    expect(source).toContain('savedRecordId ? (');
+    expect(source).toContain('저장 후 안내문');
+    expect(source).toContain('aria-disabled="true"');
   });
 
   it('enriches quick records on the same record id and promotes to detailed', () => {

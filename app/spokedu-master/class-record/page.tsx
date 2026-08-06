@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { isSameDay } from 'date-fns';
-import { AlertTriangle, BookOpen, Check, ChevronRight, ClipboardList, FileText, History, MessageCircle, Star, UserCheck, UserX } from 'lucide-react';
+import { AlertTriangle, BookOpen, Check, ChevronRight, ClipboardList, FileText, Star, UserCheck, UserX } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { BottomSheet } from '../components/ui/BottomSheet';
@@ -60,27 +59,6 @@ type ClassRecordDraft = {
   selectedStudentIds: Record<string, boolean>;
   bulkStudentMemo: string;
 };
-
-function SummaryPill({ label, value, tone }: { label: string; value: string; tone: string }) {
-  return (
-    <div className="rounded-[12px] p-2.5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-      <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: tone }}>{value}</p>
-      <p className="mt-1 text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-    </div>
-  );
-}
-
-function OutcomeCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return (
-    <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
-      <div className="mb-2 flex items-center gap-2">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-acc-a14)' }}>{icon}</span>
-        <p className="text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-      </div>
-      <p className="text-[13px] font-bold leading-5" style={{ color: 'var(--spm-t)' }}>{value}</p>
-    </div>
-  );
-}
 
 function EmptyRecordState() {
   return (
@@ -227,12 +205,40 @@ function RecordListView() {
   );
 }
 
-function StudentRow({ student, attendance, focused, onAttendance, onFocus, onOpen, disabled }: { student: StudentProfile; attendance: AttendanceStatus; focused: boolean; onAttendance: (status: AttendanceStatus) => void; onFocus: () => void; onOpen: () => void; disabled: boolean }) {
+function StudentRow({
+  student,
+  selected,
+  attendance,
+  focused,
+  onSelected,
+  onAttendance,
+  onFocus,
+  onOpen,
+  disabled,
+}: {
+  student: StudentProfile;
+  selected: boolean;
+  attendance: AttendanceStatus;
+  focused: boolean;
+  onSelected: (selected: boolean) => void;
+  onAttendance: (status: AttendanceStatus) => void;
+  onFocus: () => void;
+  onOpen: () => void;
+  disabled: boolean;
+}) {
   const dot = attendance === 'present' ? 'var(--spm-grn)' : attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)';
   return (
-    <div className="rounded-[15px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
-      <button type="button" onClick={onOpen} disabled={disabled} className="flex w-full items-center gap-3 text-left disabled:opacity-60">
-        <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
+    <div className="grid min-h-[58px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[12px] border bg-white px-2.5 py-2" style={{ borderColor: selected ? 'var(--spm-acc-a42)' : 'var(--spm-br2)' }}>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={(event) => onSelected(event.target.checked)}
+          className="h-4 w-4 shrink-0"
+          aria-label={`${student.name} 참여`}
+        />
+        <button type="button" onClick={onOpen} disabled={disabled} className="flex min-w-0 flex-1 items-center gap-2.5 text-left disabled:opacity-60">
+        <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-black text-white" style={{ background: selected ? 'var(--spm-acc)' : 'var(--spm-t3)', fontFamily: 'var(--spm-font-display)' }}>
           {student.name.slice(0, 1)}
           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full" style={{ background: dot, border: '2px solid var(--spm-s2)' }} />
         </span>
@@ -242,16 +248,17 @@ function StudentRow({ student, attendance, focused, onAttendance, onFocus, onOpe
           </span>
           <span className="mt-1 block truncate text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.meta}</span>
         </span>
-        <ChevronRight size={16} color="var(--spm-t3)" />
-      </button>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <button type="button" disabled={disabled} onClick={() => onAttendance('present')} className="flex min-h-11 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: attendance === 'present' ? 'var(--spm-grn-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 출석`}>
+          <ChevronRight size={15} color="var(--spm-t3)" />
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <button type="button" disabled={disabled} onClick={() => onAttendance('present')} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: attendance === 'present' ? 'var(--spm-grn-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 출석`}>
           <UserCheck size={17} color={attendance === 'present' ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
         </button>
-        <button type="button" disabled={disabled} onClick={() => onAttendance('absent')} className="flex min-h-11 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: attendance === 'absent' ? 'rgba(239,68,68,0.15)' : 'var(--spm-s3)' }} aria-label={`${student.name} 결석`}>
+        <button type="button" disabled={disabled} onClick={() => onAttendance('absent')} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: attendance === 'absent' ? 'rgba(239,68,68,0.15)' : 'var(--spm-s3)' }} aria-label={`${student.name} 결석`}>
           <UserX size={17} color={attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)'} />
         </button>
-        <button type="button" disabled={disabled} onClick={onFocus} className="flex min-h-11 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: focused ? 'var(--spm-amb-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 집중 관찰`}>
+        <button type="button" disabled={disabled} onClick={onFocus} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: focused ? 'var(--spm-amb-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 집중 관찰`}>
           <Star size={17} color={focused ? 'var(--spm-amb)' : 'var(--spm-t3)'} fill={focused ? 'var(--spm-amb)' : 'none'} />
         </button>
       </div>
@@ -319,9 +326,29 @@ function RecordEntryView() {
   const recordStatus = canCreateClassRecordFromSnapshot(accessSnapshot);
   const upgradeHref = getUpgradeHrefFromSnapshot(accessSnapshot);
   const upgradeLabel = getUpgradeLabelFromSnapshot(accessSnapshot);
+  const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
+  const operationalError = operationalData.status === 'error';
+  const operationalReady = operationalData.status === 'ready';
   const hasStudents = students.length > 0;
   const hasAttendance = present + absent > 0;
-  const canSaveRecord = recordStatus.allowed && hasStudents && selectedStudentCount > 0 && hasAttendance && Boolean(recordDate.trim()) && Boolean(program);
+  const canSaveRecord = operationalReady && recordStatus.allowed && hasStudents && selectedStudentCount > 0 && hasAttendance && Boolean(recordDate.trim()) && Boolean(program);
+  const saveBlockerLabel = operationalError
+    ? '데이터를 불러오지 못했습니다. 다시 불러온 뒤 기록을 저장해 주세요.'
+    : operationalLoading
+      ? '데이터를 불러오는 중입니다.'
+      : !recordStatus.allowed
+    ? recordStatus.reason
+    : !program
+      ? '기록할 수업을 선택해 주세요.'
+      : !recordDate.trim()
+        ? '수업일을 선택해 주세요.'
+        : !hasStudents
+          ? '학생을 먼저 추가해 주세요.'
+          : selectedStudentCount === 0
+            ? '참여 학생을 1명 이상 선택해 주세요.'
+            : !hasAttendance
+              ? '출석 또는 결석을 최소 1명 이상 체크해 주세요.'
+              : null;
   const editingRecordMissing = Boolean(requestedRecordId && operationalData.status === 'ready' && !editingRecord);
   const sourceRecordMissing = Boolean(sourceRecordId && operationalData.status === 'ready' && !sourceRecord && !editingRecord);
   const isEditingRecord = Boolean(editingRecord);
@@ -587,7 +614,7 @@ function RecordEntryView() {
           </p>
           {editingRecord.parentNoteSnapshot?.trim() ? (
             <p className="mt-2 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-              안내문 초안은 유지됩니다. 원본 수업 자료는 변경되지 않습니다.
+              안내문 초안은 유지됩니다. 원본 수업은 변경되지 않습니다.
             </p>
           ) : null}
         </section>
@@ -606,6 +633,20 @@ function RecordEntryView() {
         </section>
       ) : null}
 
+      {operationalLoading ? (
+        <section className="mt-4">
+          <RecordLoadingState />
+        </section>
+      ) : null}
+
+      {operationalError ? (
+        <section className="mt-4">
+          <RecordErrorState onRetry={() => void operationalData.reload()} />
+        </section>
+      ) : null}
+
+      {operationalReady ? (
+        <>
       <section className="mt-4 overflow-hidden rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -616,7 +657,7 @@ function RecordEntryView() {
             <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>{[packageMeta, packageFocus].filter(Boolean).join(' · ')}</p>
           </div>
           {program ? (
-            <Link href={`/spokedu-master/library/${program.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-slate-950" aria-label="전체 수업 자료 보기">
+            <Link href={`/spokedu-master/library/${program.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-slate-950" aria-label="수업 라이브러리 열기">
               <BookOpen size={18} color="#fff" />
             </Link>
           ) : null}
@@ -678,14 +719,10 @@ function RecordEntryView() {
 
       <div className="mb-2 mt-4">
         <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>2. 참여 학생</h2>
-        <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>선택 {selectedStudentCount}명 / 전체 {students.length}명</p>
+        <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
+          선택 {selectedStudentCount}명 / 전체 {students.length}명 · 출석 {present} · 결석 {absent} · 관찰 {focusCount}
+        </p>
       </div>
-
-      <section className="mb-3 grid grid-cols-3 gap-2">
-        <SummaryPill label="출석" value={String(present)} tone="var(--spm-grn)" />
-        <SummaryPill label="결석" value={String(absent)} tone="var(--spm-red)" />
-        <SummaryPill label="관찰" value={String(focusCount)} tone="var(--spm-amb)" />
-      </section>
 
       {hasStudents ? (
         <div className="mb-3 flex flex-wrap gap-2">
@@ -697,15 +734,20 @@ function RecordEntryView() {
         </div>
       ) : null}
 
-      <section className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+      <section className="grid gap-1.5">
         {hasStudents ? students.map((student) => (
-          <div key={student.id} className="rounded-[18px]" style={{ outline: selectedStudentIds[student.id] ? '2px solid var(--spm-acc-a50)' : '1px solid var(--spm-br2)' }}>
-            <label className="flex min-h-11 items-center gap-2 rounded-t-[18px] px-4 py-2 text-[12px] font-black" style={{ background: selectedStudentIds[student.id] ? 'var(--spm-acc-a12)' : 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-              <input type="checkbox" checked={!!selectedStudentIds[student.id]} onChange={(event) => setSelectedStudentIds((prev) => ({ ...prev, [student.id]: event.target.checked }))} />
-              참여 학생
-            </label>
-            <StudentRow student={student} attendance={attendance[student.id] ?? 'pending'} focused={!!focused[student.id]} disabled={!recordStatus.allowed || !selectedStudentIds[student.id]} onAttendance={(status) => setAttendance((prev) => ({ ...prev, [student.id]: status }))} onFocus={() => setFocused((prev) => ({ ...prev, [student.id]: !prev[student.id] }))} onOpen={() => selectedStudentIds[student.id] ? setSelectedId(student.id) : undefined} />
-          </div>
+          <StudentRow
+            key={student.id}
+            student={student}
+            selected={!!selectedStudentIds[student.id]}
+            attendance={attendance[student.id] ?? 'pending'}
+            focused={!!focused[student.id]}
+            disabled={!recordStatus.allowed || !selectedStudentIds[student.id]}
+            onSelected={(selected) => setSelectedStudentIds((prev) => ({ ...prev, [student.id]: selected }))}
+            onAttendance={(status) => setAttendance((prev) => ({ ...prev, [student.id]: status }))}
+            onFocus={() => setFocused((prev) => ({ ...prev, [student.id]: !prev[student.id] }))}
+            onOpen={() => selectedStudentIds[student.id] ? setSelectedId(student.id) : undefined}
+          />
         )) : (
           <div className="rounded-[18px] p-5 md:col-span-2 xl:col-span-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>아직 등록된 학생이 없습니다.</p>
@@ -743,23 +785,16 @@ function RecordEntryView() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 마무리</p>
-            <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 후 1분 정리</h2>
+            <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>기록 저장</h2>
           </div>
-          <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-acc-a13)', color: 'var(--spm-acc)' }}>다음: 안내문 복사</span>
+          <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-acc-a13)', color: 'var(--spm-acc)' }}>
+            출석 {present}명 · 결석 {absent}명 · 관찰 {focusCount}명
+          </span>
         </div>
-        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>기록 저장 후 안내문 문구를 만들어 복사해 전달할 수 있습니다.</p>
-        <div className="mt-4 grid gap-2 md:grid-cols-3">
-          <OutcomeCard icon={<History size={15} color="var(--spm-acc)" />} label="학생 이력" value={`출석 ${present}명 · 관찰 ${focusCount}명`} />
-          <OutcomeCard icon={<FileText size={15} color="var(--spm-acc)" />} label="기록 근거" value={packageFocus || '활동 목표와 관찰 포인트'} />
-          <OutcomeCard icon={<MessageCircle size={15} color="var(--spm-acc)" />} label="안내문" value="복사해서 전달" />
-        </div>
-        {!hasStudents ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>등록된 학생이 없어 학생 기록을 만들 수 없습니다.</p> : null}
-        {!program ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb)' }}>기록할 수업을 선택해 주세요.</p> : null}
-        {hasStudents && selectedStudentCount === 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb)' }}>참여 학생을 1명 이상 선택해 주세요.</p> : null}
-        {hasStudents && !hasAttendance ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb)' }}>출석 또는 결석을 최소 1명 이상 체크해 주세요.</p> : null}
+        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 기록만 먼저 저장합니다. 안내문은 저장 후 필요한 경우 이어서 만듭니다.</p>
         {savedOnly ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }}>
-            <p className="text-[12px] font-bold">출석과 관찰 원본 기록이 저장되었습니다.</p>
+            <p className="text-[12px] font-bold">수업 기록이 저장되었습니다.</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Link href={reportHref} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>안내문 만들고 복사</Link>
               <Link href={savedRecordId && program ? `/spokedu-master/class-record?record=${savedRecordId}&program=${program.id}` : '/spokedu-master/class-record'} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>저장한 기록 보기</Link>
@@ -778,12 +813,23 @@ function RecordEntryView() {
             />
           </div>
         ) : null}
+        {saveBlockerLabel && !savedOnly ? (
+          <p className="mt-4 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] font-bold text-amber-700">
+            {saveBlockerLabel}
+          </p>
+        ) : null}
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr]">
           <button type="button" onClick={() => persistRecord()} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="spm-btn-primary flex h-11 w-full items-center justify-center gap-2 rounded-[9px] text-[14px] font-black focus-visible:outline-none disabled:opacity-60"><Check size={16} />{recordSaving ? '저장 중...' : isEnrichingQuickRecord ? '보강 저장' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
-          <Link href={reportHref} className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[14px] font-black text-slate-700"><FileText size={16} />안내문 만들고 복사</Link>
+          {savedRecordId ? (
+            <Link href={reportHref} className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[14px] font-black text-slate-700"><FileText size={16} />안내문 만들고 복사</Link>
+          ) : (
+            <span className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-slate-50 text-[14px] font-black text-slate-400" aria-disabled="true"><FileText size={16} />저장 후 안내문</span>
+          )}
         </div>
       </section>
 
+        </>
+      ) : null}
       </div>
       <BottomSheet open={!!selectedStudent} title="학생 동작 기록" onClose={() => setSelectedId(null)}>
         {selectedStudent ? (

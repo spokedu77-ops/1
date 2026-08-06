@@ -15,7 +15,7 @@ describe('quadrantLaneCountToResultLaneCount', () => {
 
     expect(source).toContain('exploded: boolean');
     expect(source).toContain('exploded: false');
-    expect(source).toContain('const ASTEROID_EXPLOSION_SCALE_PROGRESS = 0.62');
+    expect(source).toContain('const ASTEROID_EXPLOSION_SCALE_PROGRESS = 0.8');
     expect(source).toContain('if (!data.exploded && scaleT >= ASTEROID_EXPLOSION_SCALE_PROGRESS)');
     expect(source).toContain('const burstPosition = new THREE.Vector3(obs.position.x, obs.position.y, obs.position.z)');
     expect(source).toContain('scene.remove(obs)');

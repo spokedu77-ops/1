@@ -19,7 +19,7 @@ const padLayoutView = read('app/spokedu-master/spomove/SpomovePadLayoutView.tsx'
 describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and start/settings actions on hub cards', () => {
     expect(hub).toContain('sortSpomovePresetsByDisplayTitle');
-    expect(hub).toContain('시작 준비 열기');
+    expect(hub).toContain('활동 준비 열기');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('가이드 보기');
@@ -91,7 +91,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="dive"');
     expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('설정');
+    expect(hub).toContain('시작 설정');
     expect(hub).toContain('hrefForSettings');
     expect(hub).not.toContain("hrefForOfficial('start')");
     expect(hub).not.toContain('writeFamilyMovement');

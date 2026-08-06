@@ -705,9 +705,14 @@ function CardInfo({
 }) {
   const router = useRouter();
   const guideDisplay = buildSpomoveGuideDisplayModel({ preset, contentOverride, audience: 'public' });
+  const displayModel = getSpomovePresetDisplayModel(preset);
   const guideStatusBadge = getGuideStatusBadge(guideDisplay.guideMode);
-  const movementLabel = guideDisplay.recommendedMovementLabel ?? (guideDisplay.guideMode === 'published' ? '화면 지시' : '시트에서 확인');
-  const focusLabel = guideDisplay.focusTags.slice(0, 2).join(' · ') || (guideDisplay.guideMode === 'published' ? '-' : '기본 실행 안내');
+  const supportMetaParts = displayModel.supportMetaParts.length
+    ? displayModel.supportMetaParts
+    : [
+        guideDisplay.recommendedMovementLabel,
+        ...guideDisplay.focusTags,
+      ].filter((part): part is string => Boolean(part)).slice(0, 3);
   const showSettings =
     supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
 
@@ -724,14 +729,16 @@ function CardInfo({
         </span>
         <span className="shrink-0 text-[10px] font-bold text-slate-400">{guideStatusBadge.helper}</span>
       </div>
-      <p className="line-clamp-1 text-[12px] font-bold text-slate-700">
-        <span className="font-black text-slate-900">추천</span>{' '}
-        <span className="text-slate-500">동작</span>{' '}
-        <span className="text-[var(--spm-acc)]">{movementLabel}</span>
-        <span className="px-1.5 text-slate-300">/</span>
-        <span className="text-slate-500">활용 요소</span>{' '}
-        <span className="text-slate-800">{focusLabel}</span>
-      </p>
+      <div className="flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-slate-600">
+        {supportMetaParts.length > 0 ? supportMetaParts.map((part) => (
+          <span
+            key={part}
+            className="min-w-0 truncate after:mx-1.5 after:text-slate-300 after:content-['·'] last:after:content-none"
+          >
+            {part}
+          </span>
+        )) : <span className="text-slate-400">&nbsp;</span>}
+      </div>
 
       {isReady ? (
         <div className="flex gap-2">
@@ -743,7 +750,7 @@ function CardInfo({
             className="spm-btn-primary inline-flex h-9 min-w-0 flex-[1.6] items-center justify-center gap-1.5 rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none"
           >
             <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden />
-            <span>시작</span>
+            <span>활동 준비</span>
           </button>
           {showSettings ? (
             <button
@@ -753,7 +760,7 @@ function CardInfo({
               onClick={() => router.push(hrefForSettings())}
               className="inline-flex h-9 min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
             >
-              설정
+              시작 설정
             </button>
           ) : null}
         </div>
@@ -823,7 +830,7 @@ function PresetCard({
           if (!preset.isReady) return;
           onPreview();
         }}
-        aria-label={`${displayModel.displayTitle} 시작 준비 열기`}
+        aria-label={`${displayModel.displayTitle} 활동 준비 열기`}
         className="relative flex min-h-0 w-full flex-1 cursor-pointer flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
       >
         <CardVisual

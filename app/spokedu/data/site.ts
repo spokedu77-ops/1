@@ -21,6 +21,15 @@ export { brandProfile, brandContactLinks, brandChannels, isChannelLive };
 export { getLiveExternalChannels };
 export type { BrandChannel };
 
+/** MASTER handoff — 마케팅 사이트 경로 상수 (가격·권한 SSOT 아님) */
+export const MASTER_HANDOFF = {
+  landing: '/spokedu-master/landing',
+  onboardingLogin: '/login?next=/spokedu-master/onboarding',
+  dashboardLogin: '/login?next=/spokedu-master/dashboard',
+  payment: '/spokedu-master/payment',
+  shop: '/spokedu-master/shop',
+} as const;
+
 export type SiteNavLink = {
   label: string;
   href: string;
@@ -43,6 +52,7 @@ export type SiteNavEntry =
       children: SiteNavLink[];
     };
 
+/** 글로벌 헤더·모바일 메뉴 SSOT */
 export const siteNav: SiteNavEntry[] = [
   {
     type: 'link',
@@ -53,72 +63,76 @@ export const siteNav: SiteNavEntry[] = [
   },
   {
     type: 'link',
-    label: '개인수업',
-    href: `${SPOKEDU_BASE_PATH}/private`,
-    trackLabel: 'nav-private',
-    matchPrefix: '/private',
+    label: '체육교육',
+    href: `${SPOKEDU_BASE_PATH}/education`,
+    trackLabel: 'nav-education',
+    matchPrefix: '/education',
   },
   {
     type: 'link',
-    label: '기관수업',
-    href: `${SPOKEDU_BASE_PATH}/dispatch`,
-    trackLabel: 'nav-dispatch',
-    matchPrefix: '/dispatch',
-  },
-  {
-    type: 'group',
-    label: '프로그램',
-    trackLabel: 'nav-programs',
-    children: [
-      {
-        label: 'SPOMOVE',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
-        trackLabel: 'nav-spomove-hub',
-      },
-      {
-        label: 'PAPS',
-        href: `${SPOKEDU_BASE_PATH}/programs/paps`,
-        trackLabel: 'nav-program-paps',
-      },
-      {
-        label: '월간 뉴스포츠',
-        href: `${SPOKEDU_BASE_PATH}/programs/monthly-newsports`,
-        trackLabel: 'nav-program-monthly-newsports',
-      },
-      {
-        label: '원데이',
-        href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
-        trackLabel: 'nav-program-oneday',
-      },
-      {
-        label: '방학캠프',
-        href: `${SPOKEDU_BASE_PATH}/programs/camp`,
-        trackLabel: 'nav-program-camp',
-      },
-    ],
+    label: 'SPOMOVE',
+    href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+    trackLabel: 'nav-spomove',
+    matchPrefix: '/programs/spomove',
   },
   {
     type: 'link',
-    label: '커리큘럼',
+    label: '구독시스템',
     href: `${SPOKEDU_BASE_PATH}/curriculum`,
-    trackLabel: 'nav-curriculum',
+    trackLabel: 'nav-subscription',
     matchPrefix: '/curriculum',
   },
   {
     type: 'link',
-    label: '사례',
+    label: '운영 사례',
     href: `${SPOKEDU_BASE_PATH}/records`,
     trackLabel: 'nav-records',
     matchPrefix: '/records',
   },
   {
     type: 'link',
-    label: '문의',
+    label: '문의·협업',
     href: `${SPOKEDU_BASE_PATH}/contact`,
     trackLabel: 'nav-contact',
     matchPrefix: '/contact',
   },
 ];
+
+export const siteHeaderCta = {
+  label: '상담하기',
+  href: `${SPOKEDU_BASE_PATH}/contact`,
+  trackLabel: 'header-contact',
+} as const;
+
+/** 푸터 탐색 링크 — siteNav와 동일 목적지, trackLabel만 footer 접두 */
+export const footerNavLinks: SiteNavLink[] = siteNav
+  .filter((entry): entry is Extract<SiteNavEntry, { type: 'link' }> => entry.type === 'link')
+  .map((entry) => ({
+    label: entry.label,
+    href: entry.href,
+    trackLabel: entry.trackLabel.replace(/^nav-/, 'footer-'),
+  }));
+
+/** 푸터 서비스 바로가기 (허브 하위 실경로) */
+export const footerServiceLinks: SiteNavLink[] = [
+  {
+    label: '기관수업',
+    href: `${SPOKEDU_BASE_PATH}/dispatch`,
+    trackLabel: 'footer-service-dispatch',
+  },
+  {
+    label: '개인·소그룹',
+    href: `${SPOKEDU_BASE_PATH}/private`,
+    trackLabel: 'footer-service-private',
+  },
+  {
+    label: 'SPOMOVE 카탈로그',
+    href: `${SPOKEDU_BASE_PATH}/programs/spomove?tab=catalog`,
+    trackLabel: 'footer-service-spomove-catalog',
+  },
+];
+
+export const footerSupplementaryLinks: SiteNavLink[] = [];
 
 /** @deprecated — `siteNav` 사용 */
 export type SiteNavItem = {
@@ -142,35 +156,30 @@ export const AUDIENCE_TRACK_PATHS: Record<AudienceTrackId, string> = {
   curriculum: '/curriculum',
 };
 
-/** @deprecated — `siteNav` 사용 */
-export const siteNavItems: SiteNavItem[] = [
-  { label: '스포키듀', path: '/about', href: `${SPOKEDU_BASE_PATH}/about` },
-  { label: '개인수업', path: AUDIENCE_TRACK_PATHS.private, href: `${SPOKEDU_BASE_PATH}/private` },
-  { label: '기관수업', path: AUDIENCE_TRACK_PATHS.dispatch, href: `${SPOKEDU_BASE_PATH}/dispatch` },
-  { label: '프로그램', path: '/programs', href: `${SPOKEDU_BASE_PATH}/programs` },
-  { label: '커리큘럼', path: AUDIENCE_TRACK_PATHS.curriculum, href: `${SPOKEDU_BASE_PATH}/curriculum` },
-  { label: '사례', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
-  { label: '문의', path: '/contact', href: `${SPOKEDU_BASE_PATH}/contact` },
-];
+/**
+ * @deprecated `siteNav` 사용.
+ * content.ts 등 레거시 import 호환용 — 글로벌 IA와 동일한 1급 경로만 평탄화.
+ */
+export const siteNavItems: SiteNavItem[] = footerNavLinks.map((link) => ({
+  label: link.label,
+  path: link.href.replace(SPOKEDU_BASE_PATH, '') || '/',
+  href: link.href,
+}));
 
-export const footerNavLinks: SiteNavLink[] = [
-  { label: '스포키듀', href: `${SPOKEDU_BASE_PATH}/about`, trackLabel: 'footer-about' },
-  { label: '개인수업', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'footer-private' },
-  { label: '기관수업', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'footer-dispatch' },
-  { label: '프로그램', href: `${SPOKEDU_BASE_PATH}/programs`, trackLabel: 'footer-programs' },
-  { label: '커리큘럼', href: `${SPOKEDU_BASE_PATH}/curriculum`, trackLabel: 'footer-curriculum' },
-  { label: '사례', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'footer-records' },
-  { label: '문의', href: `${SPOKEDU_BASE_PATH}/contact`, trackLabel: 'footer-contact' },
-];
-
-/** @deprecated */
+/** @deprecated — `footerNavLinks` 사용 */
 export const footerLinks = siteNavItems;
-
-export const footerSupplementaryLinks: SiteNavLink[] = [];
 
 export function getSocialLinks(): BrandChannel[] {
   return getLiveExternalChannels().filter((channel) => channel.href.trim().length > 0);
 }
+
+/** redirect-only 프로그램 경로 — 메뉴 노출 금지, 라우트·next.config는 유지 */
+export const REDIRECT_ONLY_PROGRAM_PATHS = [
+  `${SPOKEDU_BASE_PATH}/programs/paps`,
+  `${SPOKEDU_BASE_PATH}/programs/camp`,
+  `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
+  `${SPOKEDU_BASE_PATH}/programs/monthly-newsports`,
+] as const;
 
 export type ContactInquiryType = 'private' | 'dispatch' | 'spomove' | 'curriculum' | 'other';
 

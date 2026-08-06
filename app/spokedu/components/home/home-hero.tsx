@@ -21,7 +21,7 @@ import {
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
 
-/** 히어로: SPOKEDU 브랜드 · 풀블리드 사진 · H1 · CTA 2개 (사인오프) */
+/** 히어로: 브랜드 정의 · CTA 2개 · 사례 텍스트 링크 */
 export function HomeHero() {
   const media = HOME_MEDIA[homePage.hero.mediaKey];
   const [line1, line2] = homePage.hero.lines;
@@ -48,7 +48,7 @@ export function HomeHero() {
       <div className={homeHeroFullBleedCopy}>
         <div className={siteContainer}>
           <motion.div
-            className="flex max-w-[36rem] flex-col"
+            className="flex max-w-[38rem] flex-col"
             initial={reducedMotion ? false : { opacity: 0, y: 14 }}
             animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -62,7 +62,7 @@ export function HomeHero() {
               <span className={`${homeHeroH1Line} mt-1.5 block text-[#8FB5FF]`}>{line2}</span>
             </h1>
 
-            <p className={`${homeHeroFullBleedLead} mt-5 max-w-[28rem]`}>{homePage.hero.support}</p>
+            <p className={`${homeHeroFullBleedLead} mt-5 max-w-[32rem]`}>{homePage.hero.support}</p>
 
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <TrackedLink
@@ -80,6 +80,14 @@ export function HomeHero() {
                 {homePage.hero.secondaryCta.label}
               </TrackedLink>
             </div>
+
+            <TrackedLink
+              href={homePage.hero.recordsLink.href}
+              trackLabel={homePage.hero.recordsLink.trackLabel}
+              className={`mt-4 inline-flex w-fit text-[14px] font-semibold text-[#C5D8FF] underline-offset-4 hover:text-white hover:underline ${homeFocusRing} ${koreanText}`}
+            >
+              {homePage.hero.recordsLink.label}
+            </TrackedLink>
           </motion.div>
         </div>
       </div>

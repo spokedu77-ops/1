@@ -17,7 +17,7 @@ const boxClass = {
   lg: 'h-24 w-24 sm:h-28 sm:w-28',
 } as const;
 
-/** SPOMOVE 4색 스포매트 — 시그니처 교구 사진 */
+/** SPOMOVE 4색 SPOMAT — 시그니처 교구 사진 */
 export function SpomatPhoto({
   className = '',
   size = 'md',

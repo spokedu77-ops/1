@@ -160,7 +160,7 @@ describe('commercial launch architecture contracts', () => {
     expect(dashboard).toContain('CompactOpsBar');
     expect(dashboard).toContain('data-dashboard-section="featured-flow"');
     expect(dashboard).not.toContain('HomeOpsBoard');
-    expect(homeOps).toContain('수업자료에서 찾기');
+    expect(homeOps).toContain('수업 라이브러리에서 찾기');
   });
 
   it('persists onboarding and profile through server API and access snapshot', () => {

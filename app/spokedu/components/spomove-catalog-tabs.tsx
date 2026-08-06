@@ -295,7 +295,7 @@ const tabs: TabContent[] = [
   {
     id: 'catalog',
     label: '한눈에 보기',
-    description: '도입 검토에 필요한 프로그램 구조, 난이도, DIVE, 스포매트, 구독과 가격 정보를 한눈에 정리합니다.',
+    description: '도입 검토에 필요한 프로그램 구조, 난이도, DIVE, SPOMAT, 구독 이용 범위를 한눈에 정리합니다.',
     sections: [
       {
         eyebrow: 'WHAT IS SPOMOVE',
@@ -371,22 +371,22 @@ const tabs: TabContent[] = [
           { title: '숙이기', body: '상황에 따라 몸을 낮추며 반응 폭을 확장합니다.' },
           { title: '점프', body: '타이밍과 공간 정보를 연결해 전신 점프를 수행합니다.' },
         ],
-        footnote: 'DIVE는 4색 스포매트가 없어도 진행 가능한 별도 프로그램입니다.',
+        footnote: 'DIVE는 4색 SPOMAT이 없어도 진행 가능한 별도 프로그램입니다.',
       },
       {
         eyebrow: 'SPOMOVE PLAY ACTIVITIES',
         title: '프로그램을 활용해 놀이체육으로 확장합니다.',
         cards: [
-          { title: '스포매트 필수 활동', body: '색상과 위치를 실제 스포매트에서 정확하게 수행한 뒤 교구 미션으로 연결합니다.' },
-          { title: '스포매트 권장 활동', body: '스포매트가 있으면 공간 구분과 활동 운영이 효율적이지만 다른 색 마커로도 변형할 수 있습니다.' },
+          { title: 'SPOMAT 필수 활동', body: '색상과 위치를 실제 SPOMAT에서 수행한 뒤 교구 미션으로 연결합니다.' },
+          { title: 'SPOMAT 권장 활동', body: 'SPOMAT이 있으면 공간 구분과 활동 운영이 수월하지만, 다른 색 마커로도 변형할 수 있습니다.' },
           { title: '매트 없이 가능한 활동', body: '방향, 형태, 타이밍 등의 화면 정보를 활용해 이동, 타격, 던지기, 협동 활동으로 확장합니다.' },
         ],
       },
       {
-        eyebrow: 'SPO-MAT',
+        eyebrow: 'SPOMAT',
         title: '화면의 색과 위치를 바닥의 움직임으로 연결합니다.',
         lead:
-          '스포매트는 스포무브를 가장 직관적이고 효율적으로 활용할 수 있게 돕는 대표 권장 교구입니다. 다만 모든 스포무브 프로그램에 반드시 필요한 것은 아닙니다.',
+          'SPOMAT은 SPOMOVE를 실행할 때 색·위치를 바닥 공간으로 연결하는 대표 권장 교구입니다. 모든 SPOMOVE 프로그램에 필수는 아닙니다.',
         tone: 'blue',
         cards: [
           { title: '규격', body: '60 x 60cm' },
@@ -396,15 +396,15 @@ const tabs: TabContent[] = [
         ],
       },
       {
-        eyebrow: 'SUBSCRIPTION & PRICE',
-        title: '필요한 수업 범위에 따라 구독과 스포매트를 선택합니다.',
+        eyebrow: 'SUBSCRIPTION',
+        title: '필요한 수업 범위에 따라 구독과 SPOMAT 이용을 확인합니다.',
         cards: [
-          { eyebrow: 'FREE', title: '무료 이용자', body: '홈 화면 이번 주 추천 활동 1개와 기본 수업도구를 별도 구독 없이 이용합니다.', note: '0원' },
-          { eyebrow: 'LIGHT', title: '라이트', body: '놀이체육 144개, 매월 추가 놀이체육 업데이트, 수업 기록 작성을 사용하는 기본 구독입니다.', note: '9,900원 / 1개월 · 108,900원 / 12개월' },
-          { eyebrow: 'PREMIUM', title: '프리미엄', body: '라이트의 모든 기능과 SPOMOVE 전체 프로그램, 권장 난이도, 화면 제시시간 설정, 활용 놀이체육을 제공합니다.', note: '28,900원 / 1개월 · 289,000원 / 12개월' },
-          { eyebrow: 'SPO-MAT', title: '스포매트 구매', body: '화면과 실제 움직임을 직관적으로 연결하는 대표 권장 교구입니다.', note: '단품 20,900원 · 프리미엄 이용 시 15,900원' },
+          { eyebrow: 'FREE', title: '무료 이용자', body: '홈 화면 이번 주 추천 활동 1개와 기본 수업도구를 별도 구독 없이 이용합니다.', note: '구독시스템에서 체험 범위 확인' },
+          { eyebrow: 'LIGHT', title: '라이트', body: '놀이체육 자료와 수업 기록 등 기본 구독 범위를 이용합니다.', note: '구독시스템에서 플랜 확인' },
+          { eyebrow: 'PREMIUM', title: '프리미엄', body: '라이트 범위에 SPOMOVE 공식 활동과 기록·히스토리 기능을 더합니다.', note: '구독시스템에서 플랜 확인' },
+          { eyebrow: 'SPOMAT', title: 'SPOMAT 구매·이용', body: '화면과 실제 움직임을 연결하는 실행 교구입니다. 구매·이용 안내는 구독시스템에서 확인합니다.', note: '구독시스템·구매 안내에서 확인' },
         ],
-        footnote: '스포매트 대량 구매는 수량과 이용 규모에 따라 별도 협의 후 진행됩니다.',
+        footnote: 'SPOMAT 대량 구매는 수량과 이용 규모에 따라 별도 협의합니다. 금액은 구독시스템·구매 안내에서 확인합니다.',
       },
     ],
   },
@@ -415,13 +415,13 @@ const refinedCatalogSections: SectionBlock[] = [
     eyebrow: 'CATALOG OVERVIEW',
     title: '도입 검토에 필요한 구성만 한눈에 정리합니다.',
     lead:
-      '공식 카탈로그는 교육 철학을 다시 설명하기보다, 실제 기관이 무엇을 선택하고 어떻게 운영할 수 있는지 확인하는 자료입니다. 콘텐츠 범위, 운영 환경, 난이도 설정, 스포매트, 구독과 가격 정보를 중심으로 정리합니다.',
+      '공식 카탈로그는 교육 철학을 다시 설명하기보다, 실제 기관이 무엇을 선택하고 어떻게 운영할 수 있는지 확인하는 자료입니다. 콘텐츠 범위, 운영 환경, 난이도 설정, SPOMAT, 구독 이용 범위를 중심으로 정리합니다.',
     tone: 'blue',
     cards: [
       { title: '콘텐츠 범위', body: '단순반응, 선택반응, 복합반응, DIVE, 활용 놀이체육까지 어떤 프로그램을 사용할 수 있는지 확인합니다.' },
-      { title: '운영 환경', body: '빔프로젝터, 전자칠판, 대형 모니터, 활동 공간, 스포매트 필요 여부를 기준으로 도입 가능성을 판단합니다.' },
+      { title: '운영 환경', body: '빔프로젝터, 전자칠판, 대형 모니터, 활동 공간, SPOMAT 필요 여부를 기준으로 도입 가능성을 판단합니다.' },
       { title: '난이도 설정', body: '쉬움, 보통, 어려움과 화면 제시시간을 기준으로 수업 대상에 맞는 운영 범위를 정합니다.' },
-      { title: '구독과 장비', body: '무료, 라이트, 프리미엄 구독 범위와 스포매트 구매 조건을 함께 확인합니다.' },
+      { title: '구독과 장비', body: '무료, 라이트, 프리미엄 구독 범위와 SPOMAT 이용·구매 안내를 함께 확인합니다.' },
     ],
   },
   {
@@ -460,16 +460,16 @@ const refinedCatalogSections: SectionBlock[] = [
   },
   {
     eyebrow: 'MAT REQUIREMENT',
-    title: '스포매트가 필요한 활동과 없어도 가능한 활동을 구분합니다.',
+    title: 'SPOMAT이 필요한 활동과 없어도 가능한 활동을 구분합니다.',
     cards: [
-      { title: '스포매트 필수 활동', body: '색상과 위치를 실제 스포매트에서 정확하게 수행한 뒤 교구 미션으로 연결하는 활동입니다.' },
-      { title: '스포매트 권장 활동', body: '스포매트가 있으면 공간 구분과 활동 운영이 효율적이지만, 다른 색 마커로도 변형할 수 있습니다.' },
+      { title: 'SPOMAT 필수 활동', body: '색상과 위치를 실제 SPOMAT에서 수행한 뒤 교구 미션으로 연결하는 활동입니다.' },
+      { title: 'SPOMAT 권장 활동', body: 'SPOMAT이 있으면 공간 구분과 활동 운영이 수월하지만, 다른 색 마커로도 변형할 수 있습니다.' },
       { title: '매트 없이 가능한 활동', body: '방향, 형태, 타이밍 등의 화면 정보를 활용해 이동, 타격, 던지기, 협동 활동으로 확장합니다.' },
     ],
   },
   {
-    eyebrow: 'SPO-MAT SPEC',
-    title: '스포매트는 화면의 색과 위치를 바닥 공간으로 연결합니다.',
+    eyebrow: 'SPOMAT SPEC',
+    title: 'SPOMAT은 화면의 색과 위치를 바닥 공간으로 연결합니다.',
     tone: 'blue',
     cards: [
       { title: '규격', body: '60 x 60cm' },
@@ -479,15 +479,15 @@ const refinedCatalogSections: SectionBlock[] = [
     ],
   },
   {
-    eyebrow: 'SUBSCRIPTION & PRICE',
-    title: '구독 범위와 스포매트 구매 조건을 함께 확인합니다.',
+    eyebrow: 'SUBSCRIPTION',
+    title: '구독 범위와 SPOMAT 이용 안내는 구독시스템에서 확인합니다.',
     cards: [
-      { eyebrow: 'FREE', title: '무료 이용자', body: '홈 화면 이번 주 추천 활동 1개와 기본 수업도구를 별도 구독 없이 이용합니다.', note: '0원' },
-      { eyebrow: 'LIGHT', title: '라이트', body: '놀이체육 144개, 매월 추가 놀이체육 업데이트, 수업 기록 기능을 사용하는 기본 구독입니다.', note: '9,900원 / 1개월 · 108,900원 / 12개월' },
-      { eyebrow: 'PREMIUM', title: '프리미엄', body: '라이트 기능에 SPOMOVE 전체 프로그램, 권장 난이도, 화면 제시시간 설정, 활용 놀이체육을 더합니다.', note: '28,900원 / 1개월 · 289,000원 / 12개월' },
-      { eyebrow: 'SPO-MAT', title: '스포매트 구매', body: '화면과 실제 움직임을 직관적으로 연결하는 대표 권장 교구입니다.', note: '단품 20,900원 · 프리미엄 이용 시 15,900원' },
+      { eyebrow: 'FREE', title: '무료 이용자', body: '홈 화면 이번 주 추천 활동 1개와 기본 수업도구를 별도 구독 없이 이용합니다.', note: '구독시스템에서 체험 범위 확인' },
+      { eyebrow: 'LIGHT', title: '라이트', body: '놀이체육 자료와 수업 기록 등 기본 구독 범위를 이용합니다.', note: '구독시스템에서 플랜 확인' },
+      { eyebrow: 'PREMIUM', title: '프리미엄', body: '라이트 범위에 SPOMOVE 공식 활동과 기록·히스토리 기능을 더합니다.', note: '구독시스템에서 플랜 확인' },
+      { eyebrow: 'SPOMAT', title: 'SPOMAT 구매·이용', body: '화면과 실제 움직임을 연결하는 실행 교구입니다. 구매·이용 안내는 구독시스템에서 확인합니다.', note: '구독시스템·구매 안내에서 확인' },
     ],
-    footnote: '스포매트 대량 구매는 수량과 이용 규모에 따라 별도 협의 후 진행됩니다.',
+    footnote: 'SPOMAT 대량 구매는 수량과 이용 규모에 따라 별도 협의합니다. 금액은 구독시스템·구매 안내에서 확인합니다.',
   },
 ];
 
@@ -497,7 +497,7 @@ function getActiveTab(id: string | null) {
   return {
     ...tab,
     description:
-      '공식 카탈로그는 교육 소개와 달리 제품 구성, 운영 흐름, 프로그램 라인업, 난이도, 스포매트, 구독과 가격을 도입 검토 관점에서 정리합니다.',
+      '공식 카탈로그는 교육 소개와 달리 제품 구성, 운영 흐름, 프로그램 라인업, 난이도, SPOMAT, 구독 이용 범위를 도입 검토 관점에서 정리합니다.',
     sections: refinedCatalogSections,
   };
 }
@@ -797,7 +797,7 @@ function FinalCta({ activeLabel }: { activeLabel: string }) {
             {activeLabel} 자료를 바탕으로 기관에 맞는 수업 형태를 설계합니다.
           </h2>
           <p className={`mt-4 max-w-2xl text-sm leading-[1.75] text-[#536279] sm:text-base ${koreanText}`}>
-            공간, 인원, 대상 연령, 반응 수준, 수업 목적을 확인한 뒤 SPOMOVE 콘텐츠, 기본 움직임, 교구 활동, 스포매트 구성을 함께 제안합니다.
+            공간, 인원, 대상 연령, 반응 수준, 수업 목적을 확인한 뒤 SPOMOVE 콘텐츠, 기본 움직임, 교구 활동, SPOMAT 구성을 함께 제안합니다.
           </p>
         </div>
         <Link

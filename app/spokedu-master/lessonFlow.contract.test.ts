@@ -56,7 +56,7 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).not.toContain('data-weekly-featured');
     expect(dashboard).toContain('현장에서 바로 쓰는 수업과 화면 활동을 이어서 준비하세요.');
     expect(dashboard).toContain('현장에서 바로 펼칠 수업');
-    expect(dashboard).toContain('시작 준비 열기');
+    expect(dashboard).toContain('활동 준비 열기');
     expect(dashboard).toContain('data-spm-spomove-card-action="start"');
     expect(dashboard).not.toContain('바로 실행');
     expect(dashboard).toContain('spm-btn-primary');

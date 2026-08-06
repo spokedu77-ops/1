@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import { HOME_MEDIA } from '../../data/home-media';
-import { homePage } from '../../data/home-page';
+import { homePage, type HomeCaseCard } from '../../data/home-page';
 import {
   brandBlue,
   brandInk,
@@ -22,21 +22,27 @@ import {
   siteBtnSecondary,
   siteContainer,
 } from '../../lib/ui-classes';
+import { ExternalPhoto } from '../external-photo';
 import { MediaPanel } from '../visual';
 import { SpomatPhoto } from '../spomat-photo';
+import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
 
-/** 카탈로그 4색 패드 — 초록 · 빨강 · 파랑 · 노랑 */
 const PAD_COLORS = [brandPadGreen, brandPadRed, brandPadBlue, brandPadYellow] as const;
 
+type HomeSpomoveSpotlightProps = {
+  featuredCase?: HomeCaseCard;
+};
+
 /**
- * SPOMOVE 스포트라이트 — 제품 언어(pad)·운영 신뢰 하이브리드
+ * SPOMOVE 핵심 + 단일 사례 증거 (갤러리·이중 섹션 확장 금지)
  */
-export function HomeSpomoveSpotlight() {
+export function HomeSpomoveSpotlight({ featuredCase }: HomeSpomoveSpotlightProps) {
   const media = HOME_MEDIA[homePage.spomove.mediaKey];
   const reducedMotion = useReducedMotion();
-  const { title, titleLine2, lead, flowSteps, proofs, useCases, primaryCta, secondaryCta } =
+  const { title, titleLine2, lead, flowSteps, useCases, primaryCta, secondaryCta, featuredCase: dataCase } =
     homePage.spomove;
+  const caseCard = featuredCase ?? dataCase;
 
   return (
     <section
@@ -45,9 +51,9 @@ export function HomeSpomoveSpotlight() {
       aria-labelledby="home-spomove-heading"
     >
       <div className={`relative ${siteContainer}`}>
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-12">
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
           <motion.div
-            className="relative min-h-[18rem] overflow-hidden rounded-[1.5rem] shadow-[0_18px_50px_rgba(15,33,70,0.1)] ring-1 ring-[#DCE3EE] sm:min-h-[20rem] lg:h-full lg:min-h-full sm:rounded-[1.75rem]"
+            className="relative min-h-[18rem] overflow-hidden rounded-[1.5rem] shadow-[0_18px_50px_rgba(15,33,70,0.1)] ring-1 ring-[#DCE3EE] sm:min-h-[20rem] sm:rounded-[1.75rem]"
             initial={reducedMotion ? false : { opacity: 0, y: 16 }}
             whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
@@ -78,11 +84,8 @@ export function HomeSpomoveSpotlight() {
           >
             <div className="flex h-8 items-center gap-2">
               <SpomatPhoto size="sm" bare />
-              <p
-                className="text-[11px] font-bold uppercase tracking-[0.14em]"
-                style={{ color: brandBlue }}
-              >
-                SPOMOVE · 스포매트
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
+                SPOMOVE · SPOMAT
               </p>
             </div>
 
@@ -92,31 +95,13 @@ export function HomeSpomoveSpotlight() {
             >
               {title}
               {titleLine2 ? (
-                <span className="mt-1.5 block text-[0.88em] font-bold leading-snug text-[#37455C]">
-                  {titleLine2}
-                </span>
+                <span className="mt-1.5 block text-[0.88em] font-bold leading-snug text-[#37455C]">{titleLine2}</span>
               ) : null}
             </h2>
 
             <p className={`${homeBody} mt-3 max-w-md text-[15px] leading-relaxed`}>{lead}</p>
 
-            <dl className="mt-5 grid grid-cols-3 gap-2" aria-label="운영 포인트">
-              {proofs.map((proof) => (
-                <div
-                  key={proof.label}
-                  className="rounded-[1.05rem] border border-[#D6E3FF] bg-[#EAF1FF] px-2.5 py-3 text-center"
-                >
-                  <dt className={`text-sm font-bold ${koreanText}`} style={{ color: brandInk }}>
-                    {proof.value}
-                  </dt>
-                  <dd className={`mt-1 text-[11px] leading-snug text-[#6D7B90] ${koreanText}`}>
-                    {proof.label}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-
-            <ol className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="수업 흐름">
+            <ol className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="수업 흐름">
               {flowSteps.map((step, index) => (
                 <li
                   key={step.label}
@@ -139,7 +124,7 @@ export function HomeSpomoveSpotlight() {
               ))}
             </ol>
 
-            <ul className="mt-4 space-y-1.5" aria-label="적용 형태">
+            <ul className="mt-4 space-y-1.5" aria-label="활용 관계">
               {useCases.map((item) => (
                 <li key={item.title} className={`text-sm leading-snug text-[#536279] ${koreanText}`}>
                   <span className="font-semibold text-[#14213A]">{item.title}</span>
@@ -160,9 +145,6 @@ export function HomeSpomoveSpotlight() {
               <TrackedLink
                 href={secondaryCta.href}
                 trackLabel={secondaryCta.trackLabel}
-                commercialRoute="dispatch"
-                ctaIntentId={secondaryCta.trackLabel}
-                selectionId="spomove"
                 className={`${siteBtnSecondary} h-11 min-h-0 w-full px-5 py-0 text-sm sm:w-auto ${homeFocusRing}`}
               >
                 {secondaryCta.label}
@@ -170,6 +152,59 @@ export function HomeSpomoveSpotlight() {
             </div>
           </motion.div>
         </div>
+
+        <motion.div
+          className="mt-8"
+          initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+          whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.4 }}
+        >
+          <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
+            현장 증거
+          </p>
+          <TrackedLink
+            href={caseCard.href}
+            trackLabel={caseCard.trackLabel}
+            className={`${homeFocusRing} mt-3 grid overflow-hidden rounded-[1.35rem] border border-[#DCE3EE] bg-[#F5F7FB] shadow-[0_12px_32px_rgba(15,33,70,0.05)] sm:grid-cols-[minmax(0,280px)_minmax(0,1fr)]`}
+          >
+            <div className="relative aspect-[16/10] sm:aspect-auto sm:min-h-[11rem]">
+              {caseCard.thumbnailSrc ? (
+                <ExternalPhoto
+                  src={caseCard.thumbnailSrc}
+                  alt={`${caseCard.programName} — ${caseCard.venue}`}
+                  className="absolute inset-0 h-full w-full"
+                  fit="cover"
+                  quality={90}
+                  sizes="(max-width: 640px) 100vw, 280px"
+                />
+              ) : (
+                <MediaPanel
+                  media={HOME_MEDIA[caseCard.mediaKey]}
+                  className={`absolute inset-0 h-full w-full border-0 rounded-none ${homePhotoGrade}`}
+                  sizes="gateCard"
+                  objectFit="cover"
+                />
+              )}
+            </div>
+            <div className="flex min-w-0 flex-col justify-center px-5 py-5 sm:px-6 sm:py-6">
+              <p className={`text-[12px] font-semibold ${koreanText}`} style={{ color: brandBlue }}>
+                {caseCard.programType} · {caseCard.programName}
+              </p>
+              <h3 className={`mt-1.5 text-lg font-bold tracking-tight sm:text-xl ${koreanText}`} style={{ color: brandInk }}>
+                {caseCard.venue}
+              </h3>
+              <p className={`mt-1 text-sm font-medium text-[#6D7B90] ${koreanText}`}>{caseCard.audience}</p>
+              <p className={`mt-2 line-clamp-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>
+                {caseCard.description}
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold" style={{ color: brandBlue }}>
+                {caseCard.ctaLabel}
+                <HomeChevron />
+              </span>
+            </div>
+          </TrackedLink>
+        </motion.div>
       </div>
     </section>
   );

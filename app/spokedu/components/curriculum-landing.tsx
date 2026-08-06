@@ -16,6 +16,7 @@ import {
   type CurriculumModeConfig,
 } from '../data/curriculum-commercial-modes';
 import type { EvidenceSource } from '../data/conversion-evidence';
+import { MASTER_HANDOFF } from '../data/site';
 import { trackCommercialEvent } from '../lib/commercial-events';
 import { captureAcquisitionFromLocation } from '../lib/acquisition';
 import { btnPrimary, btnSecondary, koreanLineBreak } from '../lib/ui-classes';
@@ -539,7 +540,7 @@ export default function CurriculumLanding() {
       </Section>
 
       <LandingFloatingCta
-        primaryHref={mode === 'master' ? '/spokedu-master/landing' : '#inquiry'}
+        primaryHref={mode === 'master' ? MASTER_HANDOFF.landing : '#inquiry'}
         primaryLabel={mode === 'master' ? active.primaryAction.label : curriculumSubmitLabel(mode)}
         showAfterId="hero"
       />

@@ -101,6 +101,6 @@ export function selectMasterLoopAction(input: MasterLoopStateInput): MasterLoopA
     key: 'prepare_next',
     label: '다음 수업 준비',
     href: '/spokedu-master/activity',
-    summary: '최근 기록의 학생·메모 맥락을 확인하고 다음 수업 자료로 돌아갑니다.',
+    summary: '최근 기록의 학생·메모 맥락을 확인하고 다음 수업으로 돌아갑니다.',
   };
 }

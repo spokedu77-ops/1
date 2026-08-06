@@ -11,7 +11,7 @@ export default function SpokeduHomePage() {
   return (
     <LandingPageRoot heroMediaKey={homePage.hero.mediaKey}>
       <HomeStructuredData />
-      <SpokeduHomeLanding proofCards={homePage.cases.cards} />
+      <SpokeduHomeLanding proofCards={[...homePage.cases.cards]} />
     </LandingPageRoot>
   );
 }

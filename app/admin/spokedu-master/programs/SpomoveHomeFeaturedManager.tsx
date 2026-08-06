@@ -15,11 +15,30 @@ import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
 } from '@/app/spokedu-master/spomove/officialSpomovePresets';
+import { getSpomovePresetDisplayModel } from '@/app/spokedu-master/spomove/spomovePresetDisplayModel';
 import { readAdminJsonSafe } from './readAdminJsonSafe';
 
 const koreanTitleCollator = new Intl.Collator('ko');
 
 const READY_PRESETS = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.isReady);
+
+function buildPresetAdminLabel(preset: OfficialSpomovePreset) {
+  const display = getSpomovePresetDisplayModel(preset);
+  return {
+    title: display.displayTitle,
+    group: display.programLabel,
+    meta: display.supportMeta || display.axisLabel,
+    searchText: [
+      display.displayTitle,
+      display.programLabel,
+      display.supportMeta,
+      preset.title,
+      preset.programTitle,
+      preset.axisTitle,
+      preset.id,
+    ].filter(Boolean).join(' ').toLowerCase(),
+  };
+}
 
 function SlotSpomoveCombobox({
   selectedId,
@@ -41,19 +60,22 @@ function SlotSpomoveCombobox({
   const [highlight, setHighlight] = useState(0);
 
   const selected = READY_PRESETS.find((preset) => preset.id === selectedId) ?? null;
-  const inputValue = open ? query : selected?.title ?? '';
+  const selectedDisplay = selected ? buildPresetAdminLabel(selected) : null;
+  const inputValue = open ? query : selectedDisplay?.title ?? '';
 
   const options = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return READY_PRESETS.filter((preset) => {
       if (selectedElsewhere.has(preset.id) && preset.id !== selectedId) return false;
       if (!normalized) return true;
-      const text =
-        `${preset.title} ${preset.programTitle} ${preset.axisTitle} ${preset.id}`.toLowerCase();
-      return text.includes(normalized);
+      return buildPresetAdminLabel(preset).searchText.includes(normalized);
     }).sort((a, b) => {
-      const titleCompare = koreanTitleCollator.compare(a.title.trim(), b.title.trim());
-      return titleCompare || a.id.localeCompare(b.id);
+      const aLabel = buildPresetAdminLabel(a);
+      const bLabel = buildPresetAdminLabel(b);
+      const groupCompare = koreanTitleCollator.compare(aLabel.group, bLabel.group);
+      const titleCompare = koreanTitleCollator.compare(aLabel.title, bLabel.title);
+      const metaCompare = koreanTitleCollator.compare(aLabel.meta, bLabel.meta);
+      return groupCompare || titleCompare || metaCompare || a.id.localeCompare(b.id);
     });
   }, [query, selectedElsewhere, selectedId]);
 
@@ -174,27 +196,30 @@ function SlotSpomoveCombobox({
           >
             비우기 (자동 추천)
           </li>
-          {options.map((preset, index) => (
-            <li
-              key={preset.id}
-              role="option"
-              aria-selected={highlight === index}
-              data-active={highlight === index ? 'true' : undefined}
-              className={`cursor-pointer px-3 py-2 ${
-                highlight === index ? 'bg-indigo-50' : 'hover:bg-slate-50'
-              }`}
-              onMouseEnter={() => setHighlight(index)}
-              onMouseDown={(event) => {
-                event.preventDefault();
-                choose(preset.id);
-              }}
-            >
-              <p className="text-[13px] font-black text-slate-900">{preset.title}</p>
-              <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
-                {preset.axisTitle} · {preset.programTitle}
-              </p>
-            </li>
-          ))}
+          {options.map((preset, index) => {
+            const label = buildPresetAdminLabel(preset);
+            return (
+              <li
+                key={preset.id}
+                role="option"
+                aria-selected={highlight === index}
+                data-active={highlight === index ? 'true' : undefined}
+                className={`cursor-pointer px-3 py-2 ${
+                  highlight === index ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                }`}
+                onMouseEnter={() => setHighlight(index)}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  choose(preset.id);
+                }}
+              >
+                <p className="text-[13px] font-black text-slate-900">{label.title}</p>
+                <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+                  {label.group}{label.meta ? ` · ${label.meta}` : ''}
+                </p>
+              </li>
+            );
+          })}
           {options.length === 0 ? (
             <li className="px-3 py-2 text-[12px] font-semibold text-slate-400">검색 결과 없음</li>
           ) : null}
@@ -288,7 +313,7 @@ export function SpomoveHomeFeaturedManager() {
     }
   };
 
-  const selectedLabel = (presetId: string | null): OfficialSpomovePreset | null =>
+  const selectedPreset = (presetId: string | null): OfficialSpomovePreset | null =>
     presetId ? (READY_PRESETS.find((preset) => preset.id === presetId) ?? null) : null;
 
   return (
@@ -323,7 +348,8 @@ export function SpomoveHomeFeaturedManager() {
             const selectedElsewhere = new Set(
               slots.filter((id, slotIndex): id is string => slotIndex !== index && id != null),
             );
-            const preset = selectedLabel(selectedId);
+            const preset = selectedPreset(selectedId);
+            const label = preset ? buildPresetAdminLabel(preset) : null;
 
             return (
               <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -349,7 +375,7 @@ export function SpomoveHomeFeaturedManager() {
                 />
                 {preset ? (
                   <p className="mt-1.5 text-[11px] font-bold text-slate-400">
-                    {preset.axisTitle} · {preset.id}
+                    {label?.group}{label?.meta ? ` · ${label.meta}` : ''} · {preset.id}
                   </p>
                 ) : (
                   <p className="mt-1.5 text-[11px] font-bold text-slate-400">비어 있음</p>

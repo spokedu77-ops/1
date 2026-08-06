@@ -25,7 +25,7 @@ export function CompactOpsBar({
   onClearTodayLesson,
 }: {
   anchor: HomeAnchor;
-  recordCount: number;
+  recordCount: number | null;
   reportCount: number | null;
   onClearTodayLesson?: () => void;
 }) {
@@ -34,7 +34,9 @@ export function CompactOpsBar({
   const isEmpty = anchor.kind === 'empty';
   const isTodayLesson = anchor.kind === 'today_lesson';
   const countsLabel =
-    reportCount === null
+    recordCount === null
+      ? '기록 확인 중'
+      : reportCount === null
       ? `기록 ${recordCount}개`
       : `기록 ${recordCount}개 · 안내문 ${reportCount}개`;
 

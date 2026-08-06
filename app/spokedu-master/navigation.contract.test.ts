@@ -16,7 +16,7 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
 
     const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
     expect(navLabels).toContain("key: 'dashboard'");
-    expect(navLabels).toContain("href: '/spokedu-master/library', label: '수업자료'");
+    expect(navLabels).toContain("href: '/spokedu-master/library', label: '수업 라이브러리'");
     expect(navLabels).toContain("href: '/spokedu-master/spomove', label: 'SPOMOVE'");
     expect(navLabels).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
     expect(navLabels).toContain("href: '/spokedu-master/activity', label: '수업 기록'");
@@ -34,7 +34,7 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
     expect(tabBar).toContain("activity: 'records'");
     expect(statusBar).toContain('href="/spokedu-master/profile"');
     expect(navLabels).toContain("key: 'library'");
-    expect(navLabels).toContain("label: '수업자료'");
+    expect(navLabels).toContain("label: '수업 라이브러리'");
     expect(navLabels).toContain("key: 'spomove'");
     expect(navLabels).toContain("key: 'class-tools'");
     expect(navLabels).toContain("key: 'activity'");

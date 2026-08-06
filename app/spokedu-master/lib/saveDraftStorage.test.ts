@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   CLASS_RECORD_DRAFT_KEY,
@@ -15,10 +15,33 @@ import {
 const OWNER_A = 'id:user-a';
 const OWNER_B = 'id:user-b';
 
+function createSessionStorageMock(): Storage {
+  const store = new Map<string, string>();
+  return {
+    get length() {
+      return store.size;
+    },
+    clear: () => store.clear(),
+    getItem: (key: string) => store.get(key) ?? null,
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    setItem: (key: string, value: string) => {
+      store.set(key, String(value));
+    },
+  };
+}
+
+beforeEach(() => {
+  vi.stubGlobal('window', { sessionStorage: createSessionStorageMock() });
+});
+
 afterEach(() => {
   clearSaveDraft(CLASS_RECORD_DRAFT_KEY);
   clearSaveDraft(scopedSaveDraftKey(CLASS_RECORD_DRAFT_KEY, OWNER_A));
   clearSaveDraft(scopedSaveDraftKey(CLASS_RECORD_DRAFT_KEY, OWNER_B));
+  vi.unstubAllGlobals();
 });
 
 describe('saveDraftStorage', () => {
