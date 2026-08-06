@@ -173,6 +173,7 @@ type GoalkeeperGame = {
 
 const HIT_Z = -3;
 const SPAWN_Z = -120;
+const BONUS_TIME_SEC = 15;
 /** 스폰→히트 거리. speedSec초 동안 이 거리를 비행하도록 속도를 계산한다. */
 const FLIGHT_DIST = Math.abs(HIT_Z - SPAWN_Z);
 
@@ -257,6 +258,20 @@ function buildPhases(allowDouble: boolean): SpawnPhase[] {
 
 function phaseForProgress(phases: SpawnPhase[], progress: number): SpawnPhase {
   return phases.find((p) => progress < p.until) ?? phases[phases.length - 1]!;
+}
+
+function bonusPhaseForProgress(progress: number): SpawnPhase {
+  const p = Math.max(0, Math.min(1, progress));
+  return {
+    id: 99,
+    until: 1,
+    speedMult: 1.12 + p * 0.68,
+    curveChance: 0.22 + p * 0.28,
+    doubleChance: 0.38 + p * 0.44,
+    intervalMul: [Math.max(0.22, 0.58 - p * 0.34), Math.max(0.34, 0.82 - p * 0.38)],
+    msg: '',
+    col: '#ffd600',
+  };
 }
 
 const css = `
@@ -368,16 +383,6 @@ export function GoalkeeperReactionTraining({
     const travelSec = normalizeReactSpeedSec(speedSec);
     const baseSpeed = flightSpeedFromSec(travelSec, 1);
     const phases = buildPhases(tier >= 2);
-    const bonusPhase: SpawnPhase = {
-      id: 99,
-      until: 1,
-      speedMult: 1,
-      curveChance: 0.2,
-      doubleChance: 0,
-      intervalMul: [0.95, 1.05],
-      msg: '',
-      col: '#ffd600',
-    };
     const g: GoalkeeperGame = {
       running: true,
       timeLeft: duration,
@@ -553,13 +558,20 @@ export function GoalkeeperReactionTraining({
     };
 
     const scheduleNext = (nowSec: number, phase: SpawnPhase) => {
-      void phase;
-      g.nextSpawnAt = nowSec + Math.max(0.35, travelSec);
+      if (!g.bonusActive) {
+        g.nextSpawnAt = nowSec + Math.max(0.35, travelSec);
+        return;
+      }
+      const [minMul, maxMul] = phase.intervalMul;
+      const intervalMul = minMul + Math.random() * Math.max(0, maxMul - minMul);
+      g.nextSpawnAt = nowSec + Math.max(0.18, travelSec * intervalMul);
     };
 
     const spawnRandomWave = (phase: SpawnPhase) => {
       g.currentSpeed = flightSpeedFromSec(travelSec, phase.speedMult);
-      const isDouble = !g.bonusActive && tier >= 2 && Math.random() < 0.5;
+      const isDouble = g.bonusActive
+        ? phase.doubleChance > 0 && Math.random() < phase.doubleChance
+        : tier >= 2 && Math.random() < 0.5;
       if (isDouble) {
         const a = pickCorner(g.lastStart);
         const b = pickCorner(a);
@@ -581,9 +593,9 @@ export function GoalkeeperReactionTraining({
       if (!g.running) return;
       const delta = Math.min(0.05, clock.getDelta());
       const nowSec = (performance.now() - g.startedAt) / 1000;
-      const activeDuration = g.bonusActive ? 30 : duration;
+      const activeDuration = g.bonusActive ? BONUS_TIME_SEC : duration;
       const progress = Math.max(0, Math.min(1, nowSec / activeDuration));
-      const phase = g.bonusActive ? bonusPhase : phaseForProgress(phases, progress);
+      const phase = g.bonusActive ? bonusPhaseForProgress(progress) : phaseForProgress(phases, progress);
 
       if (phase.id !== g.phaseId) {
         g.phaseId = phase.id;
@@ -603,8 +615,8 @@ export function GoalkeeperReactionTraining({
         spawnRandomWave(phase);
         scheduleNext(nowSec, phase);
       } else if (g.bonusActive && nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5) {
-        spawnRandomWave(bonusPhase);
-        g.nextSpawnAt = nowSec + 1;
+        spawnRandomWave(phase);
+        scheduleNext(nowSec, phase);
       } else if (nowSec >= g.nextSpawnAt && nowSec < duration - 1.5 && phase.id >= 5 && g.bossSpawned) {
         // 보스 이후 가끔 일반 슛
         if (Math.random() < 0.55) spawnRandomWave({ ...phase, doubleChance: 0, speedMult: 1 });
@@ -715,9 +727,9 @@ export function GoalkeeperReactionTraining({
         if (bonusTimeEnabled && !g.bonusStarted) {
           g.bonusStarted = true;
           g.bonusActive = true;
-          g.timeLeft = 30;
+          g.timeLeft = BONUS_TIME_SEC;
           g.startedAt = performance.now();
-          g.endsAtMs = performance.now() + 30_000;
+          g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
           g.nextSpawnAt = 0.2;
           g.phaseId = -1;
           g.bossSpawned = true;

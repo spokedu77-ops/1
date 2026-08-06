@@ -856,6 +856,15 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       Array.isArray(sizeMultsRaw) &&
       sizeMultsRaw.length === arrows.length &&
       sizeMultsRaw.length > 0;
+    const columnWeights =
+      arrows.length > 0
+        ? arrows
+            .map((_, i) => {
+              const weight = hasVariedSizes ? Math.max(0.18, sizeMultsRaw![i] ?? 1) : i === centerIndex ? 1.14 : 1;
+              return `${weight.toFixed(2)}fr`;
+            })
+            .join(' ')
+        : '1fr';
     return (
       <div
         key={animKey}
@@ -873,49 +882,59 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       >
         <div
           style={{
-            width: '100%',
-            maxWidth: 'min(98vw, 1400px)',
-            display: 'flex',
-            flexDirection: 'row',
+            width: 'min(96vw, 1680px)',
+            maxWidth: '100%',
+            maxHeight: '78dvh',
+            display: 'grid',
+            gridTemplateColumns: columnWeights,
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 'clamp(0px, 0.25vmin, 4px)',
+            gap: 'clamp(1px, 0.45vmin, 8px)',
+            boxSizing: 'border-box',
+            overflow: 'visible',
           }}
         >
           {arrows.map((a, i) => {
             const rot = a.id === 'up' ? 0 : a.id === 'right' ? 90 : a.id === 'down' ? 180 : -90;
             const fill = a.fillHex ?? '#FFFFFF';
             const isCenter = i === centerIndex;
-            const m = Math.max(0.14, sizeMultsRaw?.[i] ?? 1);
-            const size = hasVariedSizes
-              ? `clamp(${Math.max(4.8, 9.3 * m).toFixed(2)}rem, ${(39 * m).toFixed(2)}vmin, ${(24 * m).toFixed(2)}rem)`
-              : isCenter
-                ? 'clamp(11.25rem, 48vmin, 30rem)'
-                : 'clamp(9.3rem, 39vmin, 24rem)';
             return (
-              <svg
+              <div
                 key={i}
-                viewBox="0 0 100 130"
-                preserveAspectRatio="xMidYMid meet"
                 style={{
-                  width: size,
-                  height: size,
-                  flex: '0 0 auto',
-                  opacity: isCenter ? 1 : 0.92,
-                  filter: isCenter ? 'drop-shadow(0 0 18px rgba(255,255,255,0.32))' : undefined,
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'visible',
                 }}
-                aria-hidden
               >
-                <g transform={`rotate(${rot} 50 67)`}>
-                  <path
-                    d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
-                    fill={fill}
-                    stroke="rgba(255,255,255,0.26)"
-                    strokeWidth={5}
-                    strokeLinejoin="round"
-                  />
-                </g>
-              </svg>
+                <svg
+                  viewBox="0 0 100 130"
+                  preserveAspectRatio="xMidYMid meet"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxWidth: hasVariedSizes ? '100%' : isCenter ? 'min(100%, 31vmin)' : 'min(100%, 28vmin)',
+                    maxHeight: '76dvh',
+                    flex: '0 0 auto',
+                    opacity: isCenter ? 1 : 0.92,
+                    filter: isCenter ? 'drop-shadow(0 0 18px rgba(255,255,255,0.32))' : undefined,
+                    display: 'block',
+                  }}
+                  aria-hidden
+                >
+                  <g transform={`rotate(${rot} 50 67)`}>
+                    <path
+                      d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
+                      fill={fill}
+                      stroke="rgba(255,255,255,0.26)"
+                      strokeWidth={5}
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                </svg>
+              </div>
             );
           })}
         </div>

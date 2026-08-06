@@ -83,15 +83,30 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
   const byGroup = (group: string) => activeLibrary.filter((preset) => preset.programGroup === group);
   const allByGroup = (group: string) => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === group);
 
+  it('keeps Simon titles ordered by normal/hard pairs', () => {
+    expect(byGroup('simon').map((preset) => preset.title)).toEqual([
+      '사이먼 이펙트 · 화살표 · 보통',
+      '사이먼 이펙트 · 화살표 · 어려움',
+      '사이먼 이펙트 · 도형 · 보통',
+      '사이먼 이펙트 · 도형 · 어려움',
+      '사이먼 이펙트 · 풍선 · 보통',
+      '사이먼 이펙트 · 풍선 · 어려움',
+      '사이먼 이펙트 · 랜덤 테마 · 보통',
+      '사이먼 이펙트 · 랜덤 테마 · 어려움',
+      '사이먼 이펙트 · 카모플라쥬 · 보통',
+      '사이먼 이펙트 · 카모플라쥬 · 어려움',
+    ]);
+  });
+
 
 
   it('그룹별 개수가 확장 목표와 일치한다', () => {
 
-    expect(activeLibrary).toHaveLength(88);
+    expect(activeLibrary).toHaveLength(72);
 
-    expect(byGroup('reaction-cognition')).toHaveLength(37);
+    expect(byGroup('reaction-cognition')).toHaveLength(23);
 
-    expect(byGroup('visual-reaction')).toHaveLength(12);
+    expect(byGroup('visual-reaction')).toHaveLength(10);
 
     expect(byGroup('simon')).toHaveLength(10);
 
@@ -104,6 +119,19 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(byGroup('dive')).toHaveLength(2);
 
     expect(byGroup('bonus')).toHaveLength(0);
+
+    const holdouts = OFFICIAL_SPOMOVE_LIBRARY.filter(
+      (preset) =>
+        preset.catalogStatus === 'hold' &&
+        (
+          (preset.engine.mode === 'basic' && (preset.engine.level === 5 || preset.engine.level === 6)) ||
+          (preset.engine.mode === 'reactTrain' && preset.engine.level === 9)
+        ),
+    );
+    expect(holdouts).toHaveLength(16);
+    expect(activeLibrary.some((preset) => preset.engine.mode === 'basic' && preset.engine.level === 5)).toBe(false);
+    expect(activeLibrary.some((preset) => preset.engine.mode === 'basic' && preset.engine.level === 6)).toBe(false);
+    expect(activeLibrary.some((preset) => preset.engine.mode === 'reactTrain' && preset.engine.level === 9)).toBe(false);
 
   });
 
@@ -161,13 +189,13 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     const themed = byGroup('reaction-cognition').filter(
 
-      (preset) => preset.engine.mode === 'basic' && preset.engine.level >= 2 && preset.engine.level <= 6,
+      (preset) => preset.engine.mode === 'basic' && preset.engine.level >= 2 && preset.engine.level <= 4,
 
     );
 
-    expect(themed).toHaveLength(35);
+    expect(themed).toHaveLength(21);
 
-    for (const level of [2, 3, 4, 5, 6]) {
+    for (const level of [2, 3, 4]) {
 
       const levelPresets = themed.filter((preset) => preset.engine.level === level);
 
@@ -176,7 +204,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     }
 
     expect(themed.some((preset) => preset.engine.variantColorTheme === 'emotion')).toBe(false);
-    for (const level of [2, 3, 4, 5, 6]) {
+    for (const level of [2, 3, 4]) {
       const themes = themed
         .filter((preset) => preset.engine.level === level)
         .map((preset) => preset.engine.variantColorTheme);
@@ -217,9 +245,9 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(findOfficialSpomovePreset('visual-reaction-flow-3x-32')).toBeNull();
   });
 
-  it('숫자 연산 기차·흰 공·두더지는 기본 1개만 카탈로그에 두고 난이도는 세션에서 고른다', () => {
+  it('숫자 연산 기차·두더지·골키퍼는 노출하고 흰 공은 SPOKEDU MASTER 카탈로그에서 제외한다', () => {
     expect(vr.filter((preset) => preset.engine.level === 8 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
-    expect(vr.filter((preset) => preset.engine.level === 9 && preset.engine.mode === 'reactTrain')).toHaveLength(2);
+    expect(vr.filter((preset) => preset.engine.level === 9 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
     expect(vr.filter((preset) => preset.engine.level === 10 && preset.engine.mode === 'reactTrain')).toHaveLength(2);
     expect(vr.filter((preset) => preset.engine.level === 6 && preset.engine.mode === 'reactTrain')).toHaveLength(2);
     expect(vr.filter((preset) => preset.engine.level === 5 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
@@ -227,6 +255,8 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(vr.filter((preset) => preset.engine.level === 7 && preset.engine.mode === 'reactTrain')).toHaveLength(3);
 
     expect(findOfficialSpomovePreset('visual-reaction-number-cart-l2')?.engine.numberCartTier).toBe(1);
+    expect(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')?.catalogStatus).toBe('hold');
+    expect(findOfficialSpomovePreset('visual-reaction-white-ball-hard-skeleton')?.catalogStatus).toBe('hold');
     expect(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')?.engine.colorTrackerTier).toBe(1);
     expect(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')?.engine.colorTrackerDualPanel).toBe(false);
     expect(findOfficialSpomovePreset('visual-reaction-goalkeeper-42')?.engine.level).toBe(10);
@@ -246,9 +276,9 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(vr.some((preset) => preset.id === 'visual-reaction-sweep-38')).toBe(false);
   });
 
-  it('시지각 반응 카탈로그는 엔진 7종(파도·벽돌·풍선·두더지·기차·흰공·골키퍼)', () => {
-    expect(vr).toHaveLength(12);
-    expect(vr.map((p) => p.engine.level).sort((a, b) => a - b)).toEqual([1, 2, 3, 6, 6, 7, 7, 7, 9, 9, 10, 10]);
+  it('시지각 반응 카탈로그는 흰 공 찾기를 제외하고 10개를 노출한다', () => {
+    expect(vr).toHaveLength(10);
+    expect(vr.map((p) => p.engine.level).sort((a, b) => a - b)).toEqual([1, 2, 3, 6, 6, 7, 7, 7, 10, 10]);
   });
 
   it('사이먼 그룹에 카모플라쥬(level 5)·풍선(level 3)이 포함된다', () => {

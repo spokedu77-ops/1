@@ -161,8 +161,12 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Word Stroop / Reverse': '단어',
   'Word + BG': '단어 + 배경',
   'Missing Color': '누락 색상 찾기',
-  'Pole Shape': '폴 도형',
-  'Pole Arrows': '폴 화살표',
+  'Pole Shape': '도형',
+  Shape: '도형',
+  'Pole Arrows': '화살표',
+  Arrow: '화살표',
+  'Mixed Gallery': '랜덤 테마',
+  'Random Theme': '랜덤 테마',
   'Uniform Flankers': '동일 플랭커',
   'Random Flankers': '랜덤 자극',
   '(On Hold) Nested Circles': '(보류) 원 속의 원',
@@ -203,9 +207,11 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   FLASH: '풍선 터뜨리기',
   'Beat Wave': '동그라미 파동',
   Rush: '파도 피하기',
-  Camouflage: '매직 아이',
-  'Camouflage L1': '매직 아이',
-  'Camouflage L2': '매직 아이',
+  Camouflage: '카모플라쥬',
+  'Camouflage L1': '카모플라쥬',
+  'Camouflage L2': '카모플라쥬',
+  'Balloon Simon': '풍선',
+  Balloon: '풍선',
   'Mole Easy': '두더지 잡기',
   Mole: '두더지 잡기',
   'Mole L1': '두더지 잡기',
@@ -314,7 +320,7 @@ type LaunchSettings = {
   colorTrackerDualPanel: boolean;
   /** 시지각반응(reactTrain) 두더지 잡기(6번) 전용: 기존(눈·코) / 변형(모자·선글라스 등) */
   moleLookMode: 'classic' | 'variant';
-  /** 시지각반응(reactTrain) 두더지 잡기(6번) 전용: 본 활동 뒤 30초 보너스타임 */
+  /** 시지각반응(reactTrain) 두더지 잡기(6번) 전용: 본 활동 뒤 15초 가속 보너스타임 */
   moleBonusTimeEnabled: boolean;
   /** 레거시·사이먼 매직 아이: 극단(variant)만 사용 */
   camouflagePlacement: 'center' | 'variant';
@@ -1459,7 +1465,7 @@ function SettingsScreen({
               >
                 보너스타임 {launch.moleBonusTimeEnabled ? 'ON' : 'OFF'}
                 <div style={{ fontSize: 10, fontWeight: 700, color: launch.moleBonusTimeEnabled ? accent : T.muted, marginTop: 3, letterSpacing: '0.03em' }}>
-                  본 활동 뒤 30초 · 1초마다 1마리
+                  본 활동 뒤 15초 · 점점 빠르게 다중 등장
                 </div>
               </button>
             </section>
@@ -1705,7 +1711,7 @@ function SettingsScreen({
               >
                 보너스타임 {launch.goalkeeperBonusTimeEnabled ? 'ON' : 'OFF'}
                 <div style={{ fontSize: 10, fontWeight: 700, color: launch.goalkeeperBonusTimeEnabled ? accent : T.muted, marginTop: 3, letterSpacing: '0.03em' }}>
-                  본 활동 뒤 30초 · 1초마다 공 1개
+                  본 활동 뒤 15초 · 점점 빠르게 다중 슛
                 </div>
               </button>
             </section>
@@ -2568,8 +2574,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 사이먼 4번 · 랜덤 테마 */}
-          {modeId === 'simon' && levelId === 4 ? (
+          {/* 사이먼 · 랜덤 테마 */}
+          {modeId === 'simon' && levelId === 3 ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>랜덤 테마</label>

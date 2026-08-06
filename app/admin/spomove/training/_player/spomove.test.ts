@@ -648,8 +648,13 @@ describe('테마 이미지 런타임 슬라이드', () => {
 describe('사이먼 3번 · 연상 색지각 이미지', () => {
   const COLORS_ARR = Object.values(THEME_COLORS);
 
+  test('level 1은 도형, level 2는 화살표를 생성한다', () => {
+    expect(createSimonSignalGenerator(1, COLORS_ARR, undefined).next()?.type).toBe('simon_shape');
+    expect(createSimonSignalGenerator(2, COLORS_ARR, undefined).next()?.type).toBe('simon_arrow');
+  });
+
   test('level 3 + 이미지 슬라이드 → simon_shape content에 imageUrl 포함', () => {
-    const gen = createSimonSignalGenerator(4, COLORS_ARR, SAMPLE_SLIDES);
+    const gen = createSimonSignalGenerator(3, COLORS_ARR, SAMPLE_SLIDES);
     const sig = gen.next();
     expect(sig).not.toBeNull();
     expect(sig?.type).toBe('simon_shape');
@@ -659,7 +664,7 @@ describe('사이먼 3번 · 연상 색지각 이미지', () => {
   });
 
   test('level 3 + slides 미전달(color 모드) → simon_shape imageUrl=null · 도형 폴백', () => {
-    const gen = createSimonSignalGenerator(4, COLORS_ARR, undefined);
+    const gen = createSimonSignalGenerator(3, COLORS_ARR, undefined);
     const sig = gen.next();
     expect(sig).not.toBeNull();
     expect(sig?.type).toBe('simon_shape');
@@ -667,8 +672,8 @@ describe('사이먼 3번 · 연상 색지각 이미지', () => {
     expect((sig?.content as Record<string, unknown>)?.shape).toBeTruthy();
   });
 
-  test('simon level 4 → asset minimumCount 1 (전체 이미지 풀)', () => {
-    expect(getAssetRequirement({ mode: 'simon', level: 4, theme: 'color' }).minimumCount).toBe(1);
+  test('simon level 3 → asset minimumCount 1 (전체 이미지 풀)', () => {
+    expect(getAssetRequirement({ mode: 'simon', level: 3, theme: 'color' }).minimumCount).toBe(1);
   });
 });
 
@@ -910,10 +915,8 @@ describe('training result summary', () => {
     // 화면 순번(1-based index) ≠ 엔진 id (예: 화면 4번 = 두더지 eng 6)
     expect(MODES.reactTrain.levels[3]?.id).toBe(6);
     expect(MODES.basic.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(MODES.simon.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4, 5]);
-    expect(MODES.simon.levels[3]?.enName).toBe('Camouflage');
-    expect(MODES.simon.levels[4]?.enName).toBe('Balloon Simon');
-    expect(MODES.simon.levels[4]?.name).toBe('풍선 사이먼');
+    expect(MODES.simon.levels.map((lv) => lv.id)).toEqual([2, 1, 5, 3, 4]);
+    expect(MODES.simon.levels.map((lv) => lv.name)).toEqual(['화살표', '도형', '풍선', '랜덤 테마', '카모플라쥬']);
     // 신 카탈로그 passthrough
     expect(resolveReactTrainUiLevel(1).engineLevel).toBe(1);
     expect(resolveReactTrainUiLevel(9).engineLevel).toBe(9);

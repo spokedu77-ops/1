@@ -1332,6 +1332,28 @@ const VARIANT_QUADRANT_LABELS: Record<string, string> = {
   'reaction-cognition-mq3-34': '(보류) 손 따로, 발 따로 · 어려움',
 };
 
+const SIMON_CATALOG_TITLE_BY_ID: Record<string, string> = {
+  'simon-pole-arrows-41': '사이먼 이펙트 · 화살표 · 보통',
+  'simon-arrow-hard-skeleton': '사이먼 이펙트 · 화살표 · 어려움',
+  'simon-pole-shape-06': '사이먼 이펙트 · 도형 · 보통',
+  'simon-shape-hard-skeleton': '사이먼 이펙트 · 도형 · 어려움',
+  'simon-balloon-flash-05': '사이먼 이펙트 · 풍선 · 보통',
+  'simon-balloon-hard-skeleton': '사이먼 이펙트 · 풍선 · 어려움',
+  'simon-mixed-gallery-exp': '사이먼 이펙트 · 랜덤 테마 · 보통',
+  'simon-random-hard-skeleton': '사이먼 이펙트 · 랜덤 테마 · 어려움',
+  'simon-camouflage-center-skeleton': '사이먼 이펙트 · 카모플라쥬 · 보통',
+  'visual-reaction-blackout-37': '사이먼 이펙트 · 카모플라쥬 · 어려움',
+};
+
+const SIMON_CATALOG_ORDER = Object.keys(SIMON_CATALOG_TITLE_BY_ID);
+
+function isSpokeduMasterCatalogHoldout(preset: OfficialSpomovePreset) {
+  return (
+    (preset.engine.mode === 'basic' && (preset.engine.level === 5 || preset.engine.level === 6)) ||
+    (preset.engine.mode === 'reactTrain' && preset.engine.level === 9)
+  );
+}
+
 function isVariantQuadrantPreset(preset: OfficialSpomovePreset) {
   return Object.prototype.hasOwnProperty.call(VARIANT_QUADRANT_LABELS, preset.id);
 }
@@ -1357,9 +1379,44 @@ function withVariantQuadrantEasyPresets(presets: OfficialSpomovePreset[]): Offic
   });
 }
 
+function withSimonCatalogOrderAndTitles(presets: OfficialSpomovePreset[]): OfficialSpomovePreset[] {
+  const simonPresets = presets
+    .filter((preset) => preset.programGroup === 'simon')
+    .map((preset) => ({
+      ...preset,
+      title: SIMON_CATALOG_TITLE_BY_ID[preset.id] ?? preset.title,
+    }));
+  const simonById = new Map(simonPresets.map((preset) => [preset.id, preset]));
+  const orderedSimonPresets = [
+    ...SIMON_CATALOG_ORDER.map((id) => simonById.get(id)).filter((preset): preset is OfficialSpomovePreset => Boolean(preset)),
+    ...simonPresets.filter((preset) => !SIMON_CATALOG_TITLE_BY_ID[preset.id]),
+  ];
+
+  let simonIndex = 0;
+  return presets.map((preset) => {
+    if (preset.programGroup !== 'simon') return preset;
+    return orderedSimonPresets[simonIndex++] ?? preset;
+  });
+}
+
+function withSpokeduMasterCatalogHoldouts(presets: OfficialSpomovePreset[]): OfficialSpomovePreset[] {
+  return presets.map((preset) => {
+    if (!isSpokeduMasterCatalogHoldout(preset)) return preset;
+    return {
+      ...preset,
+      catalogStatus: 'hold' as const,
+      holdReason: 'SPOKEDU MASTER 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기',
+    };
+  });
+}
+
 const OFFICIAL_SPOMOVE_LIBRARY_RAW: OfficialSpomovePreset[] = assignSequentialSortOrders([
-  ...withVariantQuadrantEasyPresets(OFFICIAL_SPOMOVE_CORE_LIBRARY),
-  ...buildOfficialSpomoveExpansionPresets(OFFICIAL_SPOMOVE_CORE_COUNT + 1),
+  ...withSpokeduMasterCatalogHoldouts(
+    withSimonCatalogOrderAndTitles([
+      ...withVariantQuadrantEasyPresets(OFFICIAL_SPOMOVE_CORE_LIBRARY),
+      ...buildOfficialSpomoveExpansionPresets(OFFICIAL_SPOMOVE_CORE_COUNT + 1),
+    ]),
+  ),
 ]);
 
 /** family/profile enrichment 완료본 — Hub·세션·테스트 SSOT */

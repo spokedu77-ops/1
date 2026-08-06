@@ -40,8 +40,8 @@ export function getAssetRequirement(params: {
 }): AssetRequirement {
   const { mode, level, theme, simonPoleCount } = params;
 
-  // 사이먼 4번: 전 테마 이미지 풀 — 테마 선택 없음
-  if (mode === 'simon' && level === 4) {
+  // 사이먼 3번: 전 테마 이미지 풀 — 테마 선택 없음
+  if (mode === 'simon' && level === 3) {
     return {
       minimumCount: simonPoleCount === 2 ? 2 : 1,
       requiresDistinctImages: simonPoleCount === 2,

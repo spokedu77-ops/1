@@ -1122,7 +1122,7 @@ export function createSimonSignalGenerator(
 ) {
   const activeColors = colors.length >= 2 ? colors : COLORS;
   const effectivePoleCount: 1 | 2 =
-    (level === 1 || level === 2 || level === 4) && poleCount === 2 ? 2 : 1;
+    (level === 1 || level === 2 || level === 3) && poleCount === 2 ? 2 : 1;
   let edgeIdx = 0;
   const readSlides = (): FruitSlide[] | undefined => {
     const slides = typeof fruitSlides === 'function' ? fruitSlides() : fruitSlides;
@@ -1206,11 +1206,11 @@ export function createSimonSignalGenerator(
 
   return createColorDupConstrainedGenerator(
     () => {
-      if (level === 2 || level === 4) {
+      if (level === 1 || level === 3) {
         if (effectivePoleCount === 2) {
           const [e0, e1] = pickTwoEdges();
           const [c0, c1] = pickPairColors();
-          const items = level === 4
+          const items = level === 3
             ? pickThemedItems([e0, e1])
             : [buildShapeItem(e0, c0, null), buildShapeItem(e1, c1, null)];
           return {
@@ -1224,7 +1224,7 @@ export function createSimonSignalGenerator(
           };
         }
 
-        if (level === 4) {
+        if (level === 3) {
           const item = pickThemedItem(edgeIdx % 4);
           return {
             type: 'simon_shape',
@@ -1242,7 +1242,7 @@ export function createSimonSignalGenerator(
           voice: null,
         };
       }
-      if (level === 1) {
+      if (level === 2) {
         if (effectivePoleCount === 2) {
           const [e0, e1] = pickTwoEdges();
           const [a0, a1] = pickPairArrows();
