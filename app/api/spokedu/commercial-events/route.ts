@@ -6,6 +6,7 @@ const ALLOWED_NAMES = new Set([
   'evidence_opened',
   'primary_cta_clicked',
   'form_submitted',
+  'form_started',
 ]);
 
 const ALLOWED_ROUTES = new Set(['private', 'curriculum', 'dispatch', 'other']);

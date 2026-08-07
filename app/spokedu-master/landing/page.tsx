@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BookOpen, CheckCircle2, ChevronRight, Clock, MapPin, Play, Shield, Timer, Users, Zap } from 'lucide-react';
+import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
 import { MASTER_PRODUCT_CATALOG, MASTER_BUSINESS_INFO, MASTER_CUSTOMER_SERVICE_HREF, MASTER_CENTER_INQUIRY_HREF } from '../lib/productCatalog';
 import { LandingLoggedInBanner } from './LandingLoggedInBanner';
 
@@ -91,7 +92,7 @@ const HERO_PROOF = [
   { label: '바로 쓰는 자료', value: '4종', caption: '영상, 준비물, 세팅, 문구' },
 ] as const;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
+const SITE_URL = getSpokeduSiteUrl();
 
 const LANDING_DESCRIPTION =
   '수업 라이브러리와 영상, 안내문을 제공하는 체육교육 월 구독 서비스입니다. 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 이용할 수 있습니다.';

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { AppShell } from './components/layout/AppShell';
+import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
 
 export const metadata: Metadata = {
   title: {
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   keywords: ['체육교육', '유아체육', 'SPOMOVE', '수업 라이브러리', '체육 강사', '스포츠 교육', '반응 훈련'],
   authors: [{ name: 'SPOKEDU' }],
   creator: 'SPOKEDU',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com'),
+  metadataBase: new URL(getSpokeduSiteUrl()),
   openGraph: {
     type: 'website',
     locale: 'ko_KR',

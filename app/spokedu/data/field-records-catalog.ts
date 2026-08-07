@@ -4,19 +4,44 @@ import { SPOKEDU_BASE_PATH } from './site';
 /** 현장 수업 사례 — 홈·records 공통 원천 */
 export type RecordFilterId = 'all' | 'regular' | 'oneday' | 'camp' | 'edtech';
 
-/** 온사이트 사례 요약 — 목적·대상·구성·결과 (블로그는 blogHref로 원문 유지) */
+/**
+ * 온사이트 사례 요약.
+ * 필수(목록·헤더): venue / audience·meta / operationType / programLabel / 대표 이미지
+ * 상세 선택 필드: 값 있을 때만 섹션 렌더. 빈 placeholder·창작 금지.
+ */
 export type FieldRecordOnsiteSummary = {
+  /** @deprecated 표시명「요청」— 기존 데이터 호환 */
   purpose: string;
   audience: string;
+  /** 적용 프로그램·구성 요약 */
   composition: readonly string[];
+  /** @deprecated 표시명「관찰」— 과정·행동 중심 (효과 단정 금지) */
   outcome: string;
+  /** 요청 (있으면 purpose 대신 우선 표시 가능) */
+  request?: string;
+  /** 공간·인원 조건 */
+  spaceConditions?: string;
+  /** 난이도 조정 */
+  difficultyAdjustment?: string;
+  /** 관찰 (있으면 outcome 대신 우선) */
+  observation?: string;
+  /** 피드백 */
+  feedback?: string;
+  /** 보고서 */
+  report?: string;
 };
+
+export function hasOnsiteOptionalText(value: string | undefined | null): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
 
 export type FieldRecordItem = {
   slug: string;
   venue: string;
   meta: string;
   operationType: string;
+  /** 적용 프로그램 (목록 카드 필수 표시) */
+  programLabel: string;
   description: string;
   mediaKey: HomeMediaKey;
   href: string;
@@ -348,6 +373,7 @@ export function catalogItemToRecordsPageItem(item: FieldRecordCatalogItem): Fiel
     venue: item.venue,
     meta: item.meta,
     operationType: item.operationType,
+    programLabel: item.programLabel,
     description: item.description,
     mediaKey: item.mediaKey,
     href: item.href,

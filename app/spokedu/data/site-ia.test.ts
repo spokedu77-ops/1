@@ -351,6 +351,33 @@ describe('spokedu site IA', () => {
     expect(PRIVATE_FORMAT_OPTIONS.map((o) => o.id)).toEqual(['one-to-one', 'small-group', 'undecided']);
   });
 
+  it('exposes SPOMOVE static landing with dual paths and catalog fallback contracts', () => {
+    expect(spomoveProgramPage.sectionOrder).toHaveLength(7);
+    expect(spomoveProgramPage.hero.lines.join(' ')).toMatch(/화면|움직임|SPOMOVE/);
+    expect(spomoveProgramPage.flow.steps.map((step) => step.label)).toEqual(['확인', '판단', '수행', '조절']);
+    expect(spomoveProgramPage.content.levels.map((level) => level.id)).toEqual(['simple', 'choice', 'complex']);
+    expect(spomoveProgramPage.content.catalogCta.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove/catalog`);
+    expect(spomoveProgramPage.spomat.title).toMatch(/SPOMAT/);
+    expect(spomoveProgramPage.spomat.body).toMatch(/도구/);
+    expect(spomoveProgramPage.usePaths.items.map((item) => item.id)).toEqual(['institution', 'subscription']);
+    expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'institution')?.href).toContain('/dispatch');
+    expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'institution')?.href).toContain('program=spomove');
+    expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'subscription')?.href).toBe(
+      `${SPOKEDU_BASE_PATH}/curriculum`,
+    );
+    expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'subscription')?.href).not.toContain('onboarding');
+    expect(spomoveProgramPage.cases.cards.length).toBeGreaterThanOrEqual(1);
+    expect(spomoveProgramPage.cases.cards.length).toBeLessThanOrEqual(3);
+    expect(spomoveProgramPage.cases.cards.every((card) => /SPOMOVE|spomove|에듀테크|반응/i.test(`${card.programLabel} ${card.description} ${card.audience}`))).toBe(
+      true,
+    );
+    expect(spomoveProgramPage.catalogFinal.primary.href).toContain('/dispatch');
+    expect(spomoveProgramPage.catalogFinal.secondary.href).toBe(`${SPOKEDU_BASE_PATH}/curriculum`);
+    expect(JSON.stringify(spomoveProgramPage)).not.toMatch(/SPO-MAT|집중력이 향상|인지능력이|발달 회복|치료 효과|검증된 효과|9,900|15,?015/);
+    expect(spomoveProgramPage.usePaths.items[0]?.body).toMatch(/필수는 아닙니다/);
+    expect(spomoveProgramPage.usePaths.items[0]?.body).not.toMatch(/필수로 포함됩니다|반드시 포함/);
+  });
+
   it('keeps SPOMOVE activity media aligned with task contracts', () => {
     const slots = [
       spomoveProgramPage.hero,
@@ -469,9 +496,36 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(siteSource).not.toMatch(/프리랜서|다른 업체|기본 업체/);
     expect(chromeSource).not.toMatch(/9,900|28,900|20,900|15,900/);
 
+    // curriculum 허브는 공개 계약에서만 가격을 렌더 — 소스에 숫자 하드코딩 금지
+    const curriculumPageSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/data/curriculum-page.ts'),
+      'utf8',
+    );
+    const curriculumLandingSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/components/curriculum-landing.tsx'),
+      'utf8',
+    );
+    expect(curriculumPageSource).not.toMatch(/\b9900\b|\b28900\b|9,?900|28,?900/);
+    expect(curriculumLandingSource).not.toMatch(/\b9900\b|\b28900\b|9,?900|28,?900/);
+    expect(curriculumPageSource).not.toMatch(/productCatalog/);
+    expect(curriculumLandingSource).not.toMatch(/productCatalog/);
+    expect(curriculumLandingSource).toMatch(/getPublicProductContract/);
+
     const homeSource = readFileSync(join(process.cwd(), 'app/spokedu/data/home-page.ts'), 'utf8');
     const homeLandingSource = readFileSync(
       join(process.cwd(), 'app/spokedu/components/home-landing.tsx'),
+      'utf8',
+    );
+    const spomoveLandingSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/components/spomove-program-landing.tsx'),
+      'utf8',
+    );
+    const spomovePageSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/programs/spomove/page.tsx'),
+      'utf8',
+    );
+    const catalogPageSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/programs/spomove/catalog/page.tsx'),
       'utf8',
     );
     expect(homeSource).not.toMatch(/SPO-MAT/);
@@ -481,6 +535,13 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeLandingSource).toMatch(/HomePillars/);
     expect(homeLandingSource).toMatch(/HomeCycle/);
     expect(homeLandingSource).toMatch(/HomeEvidenceStrip/);
+    expect(spomoveLandingSource).toMatch(/SpomoveProgramLanding|data-spokedu-spomove-sections/);
+    expect(spomoveLandingSource).not.toMatch(/SPO-MAT/);
+    expect(spomoveLandingSource).not.toMatch(/9,900|28,900|집중력이 향상|인지능력이 개선/);
+    expect(spomovePageSource).toMatch(/SpomoveProgramLanding/);
+    expect(catalogPageSource).toMatch(/title=\"SPOMOVE 전체 프로그램 카탈로그\"|title='SPOMOVE 전체 프로그램 카탈로그'/);
+    expect(catalogPageSource).toMatch(/SPOMOVE 소개로 돌아가기|SPOMOVE 소개/);
+    expect(catalogPageSource).toMatch(/구독시스템 알아보기/);
   });
 
   it('keeps redirect-only program routes in next.config', () => {

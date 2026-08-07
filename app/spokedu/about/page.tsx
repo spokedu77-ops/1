@@ -7,7 +7,7 @@ export const metadata = buildSpokeduMetadata('about');
 
 export default function SpokeduAboutPage() {
   return (
-    <LandingPageRoot heroMediaKey={aboutPage.hero.mediaKey}>
+    <LandingPageRoot heroMediaKey={aboutPage.intro.mediaKey}>
       <AboutLanding />
     </LandingPageRoot>
   );

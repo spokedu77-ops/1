@@ -130,6 +130,16 @@ export const footerServiceLinks: SiteNavLink[] = [
     href: `${SPOKEDU_BASE_PATH}/programs/spomove?tab=catalog`,
     trackLabel: 'footer-service-spomove-catalog',
   },
+  {
+    label: 'SPOMAT',
+    href: `${SPOKEDU_BASE_PATH}/spomat`,
+    trackLabel: 'footer-service-spomat',
+  },
+  {
+    label: '파트너·협업 안내',
+    href: `${SPOKEDU_BASE_PATH}/partners`,
+    trackLabel: 'footer-service-partners',
+  },
 ];
 
 export const footerSupplementaryLinks: SiteNavLink[] = [];
@@ -184,10 +194,10 @@ export const REDIRECT_ONLY_PROGRAM_PATHS = [
 export type ContactInquiryType = 'private' | 'dispatch' | 'spomove' | 'curriculum' | 'other';
 
 export const CONTACT_INQUIRY_TYPE_ORDER: readonly ContactInquiryType[] = [
-  'private',
   'dispatch',
-  'spomove',
+  'private',
   'curriculum',
+  'spomove',
   'other',
 ] as const;
 

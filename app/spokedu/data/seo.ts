@@ -104,9 +104,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '현장에서 운영한 아동·청소년 체육교육, 화면과 움직임을 잇는 SPOMOVE, 지도자의 준비·진행·기록을 돕는 구독시스템.',
   },
   about: {
-    title: '스포키듀 소개 | 현장 체육교육 운영 브랜드',
+    title: '스포키듀 소개 | 현장 체육교육 · SPOMOVE · 구독시스템',
     description:
-      '대표 소개·연혁과 함께, 현장 수업에서 프로그램·커리큘럼으로 확장하는 아동·청소년 체육교육 운영 브랜드 SPOKEDU를 소개합니다.',
+      '현장 체육교육에서 시작해 콘텐츠와 시스템으로 확장하는 SPOKEDU. 체육교육·SPOMOVE·구독시스템의 관계와 주요 연혁을 안내합니다.',
   },
   education: {
     title: '체육교육 | 기관수업·개인·소그룹·원데이 SPOKEDU',
@@ -124,9 +124,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '기관 조건에 맞춘 정규·원데이·방학 체육수업 운영안. 공간·인원·일정에 따라 구성을 조정하고 필요 시 SPOMOVE를 조합합니다.',
   },
   curriculum: {
-    title: '지도자 교육·체육 커리큘럼 | SPOKEDU',
+    title: '스포키듀 구독시스템 | 수업 준비·진행·기록 SPOKEDU',
     description:
-      '수업안·운영 매뉴얼·교구 활용·지도자 세미나·SPOMOVE 도입 교육. 현장 수업을 과정으로 만들고 강사를 교육하는 스포키듀 커리큘럼을 안내합니다.',
+      '수업을 찾고 준비하고 진행하고 기록하는 흐름을 연결하는 지도자용 구독시스템. Free·Lite·Premium 범위와 SPOMOVE 관계를 안내합니다.',
   },
   programs: {
     title: 'SPOKEDU 프로그램 | SPOMOVE·PAPS·원데이·방학캠프',
@@ -166,7 +166,7 @@ export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
   education: ['체육교육', '기관 체육수업', '개인 체육수업', '원데이 체육', '특수체육', 'SPOKEDU'],
   private: ['개인 체육수업', '소그룹 체육수업', '어린이 체육수업', '아동 체육교육'],
   dispatch: ['기관 체육수업', '키움센터 체육 프로그램', 'SPOMOVE', 'PAPS 놀이체육'],
-  curriculum: ['체육 커리큘럼', '놀이체육 수업안', '강사 교육', 'SPOMOVE'],
+  curriculum: ['스포키듀 구독시스템', '체육 수업 라이브러리', '지도자 교육', 'SPOMOVE'],
   programs: ['SPOMOVE', 'PAPS', '놀이체육', '방학캠프', '체육 커리큘럼'],
   records: ['수업 사례', '키움센터 체육', 'SPOMOVE', '기관 체육수업', '방학캠프'],
   cases: ['수업 운영 사례', '기관 협업', '키움센터 체육', 'SPOMOVE', '방학캠프'],

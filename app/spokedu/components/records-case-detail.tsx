@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { getRecordConversionHref } from '../data/commercial-routes';
-import type { FieldRecordCatalogItem, FieldRecordOnsiteSummary } from '../data/field-records-catalog';
+import {
+  hasOnsiteOptionalText,
+  type FieldRecordCatalogItem,
+  type FieldRecordOnsiteSummary,
+} from '../data/field-records-catalog';
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import { externalLinkProps } from '../lib/external-link';
 import { trackCommercialEvent } from '../lib/commercial-events';
@@ -20,16 +24,32 @@ type RecordsCaseDetailProps = {
   };
 };
 
-/** 상위 사례 온사이트 요약 — 목적·대상·구성·결과 + 블로그 원문 링크 */
+function DetailSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
+      <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">{title}</h2>
+      <div className={`mt-3 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}>{children}</div>
+    </section>
+  );
+}
+
+/** 온사이트 사례 상세 — 필수 헤더 + 값이 있는 선택 섹션만 렌더 */
 export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
   const { onsite } = item;
   const conversionHref = getRecordConversionHref(item.slug);
+
+  const requestText = hasOnsiteOptionalText(onsite.request) ? onsite.request : onsite.purpose;
+  const observationText = hasOnsiteOptionalText(onsite.observation) ? onsite.observation : onsite.outcome;
+  const showComposition = onsite.composition.length > 0;
 
   useEffect(() => {
     trackCommercialEvent({
       name: 'evidence_opened',
       route: 'dispatch',
       evidenceSlug: item.slug,
+      surface: 'record',
+      schema_version: 1,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : undefined,
     });
   }, [item.slug]);
 
@@ -74,38 +94,63 @@ export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
       ) : null}
 
       <div className="grid gap-4 sm:gap-5">
-        <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">목적</h2>
-          <p className={`mt-3 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}>
-            {onsite.purpose}
-          </p>
-        </section>
-        <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">대상</h2>
-          <p className={`mt-3 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}>
-            {onsite.audience}
-          </p>
-        </section>
-        <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">구성</h2>
-          <ul className="mt-3 space-y-2">
-            {onsite.composition.map((line) => (
-              <li
-                key={line}
-                className={`flex gap-2 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}
-              >
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#245DFF]" aria-hidden />
-                <span>{line}</span>
-              </li>
-            ))}
+        <DetailSection title="기본 정보">
+          <ul className="space-y-1.5">
+            <li>기관·프로젝트: {item.venue}</li>
+            <li>대상: {onsite.audience}</li>
+            <li>운영 형태: {item.operationType}</li>
+            <li>적용 프로그램: {item.programLabel}</li>
           </ul>
-        </section>
-        <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">결과</h2>
-          <p className={`mt-3 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}>
-            {onsite.outcome}
-          </p>
-        </section>
+        </DetailSection>
+
+        {hasOnsiteOptionalText(requestText) ? (
+          <DetailSection title="요청">
+            <p>{requestText}</p>
+          </DetailSection>
+        ) : null}
+
+        {hasOnsiteOptionalText(onsite.spaceConditions) ? (
+          <DetailSection title="공간·인원 조건">
+            <p>{onsite.spaceConditions}</p>
+          </DetailSection>
+        ) : null}
+
+        {showComposition ? (
+          <DetailSection title="적용 프로그램">
+            <ul className="space-y-2">
+              {onsite.composition.map((line) => (
+                <li key={line} className="flex gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#245DFF]" aria-hidden />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </DetailSection>
+        ) : null}
+
+        {hasOnsiteOptionalText(onsite.difficultyAdjustment) ? (
+          <DetailSection title="수업 조정">
+            <p>{onsite.difficultyAdjustment}</p>
+          </DetailSection>
+        ) : null}
+
+        {hasOnsiteOptionalText(observationText) ? (
+          <DetailSection title="관찰">
+            <p>{observationText}</p>
+          </DetailSection>
+        ) : null}
+
+        {hasOnsiteOptionalText(onsite.feedback) ? (
+          <DetailSection title="피드백">
+            <p>{onsite.feedback}</p>
+          </DetailSection>
+        ) : null}
+
+        {hasOnsiteOptionalText(onsite.report) ? (
+          <DetailSection title="보고서">
+            <p>{onsite.report}</p>
+          </DetailSection>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -124,8 +169,11 @@ export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
                 trackCommercialEvent({
                   name: 'primary_cta_clicked',
                   route: 'dispatch',
-                  ctaIntentId: `records-detail-consult-${item.slug}`,
+                  ctaIntentId: 'institution_cta',
                   evidenceSlug: item.slug,
+                  surface: 'record',
+                  audience: 'institution',
+                  schema_version: 1,
                 });
               }}
             >

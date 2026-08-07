@@ -3,10 +3,12 @@ import {
   CURRICULUM_COMMERCIAL_MODES,
   curriculumCommercialModes,
   curriculumModeList,
+  curriculumModeScrollTarget,
   isCurriculumCommercialMode,
   resolveCurriculumMode,
 } from './curriculum-commercial-modes';
 import { curriculumPage } from './curriculum-page';
+import { getPublicProductContract } from './public-product-contract';
 import { MASTER_HANDOFF } from './site';
 
 describe('curriculum commercial modes', () => {
@@ -16,12 +18,13 @@ describe('curriculum commercial modes', () => {
     expect(new Set(intentIds).size).toBe(4);
   });
 
-  it('keeps MASTER primary off the general inquiry form', () => {
+  it('keeps MASTER/subscription primary on product handoff (not inquiry form)', () => {
     const master = curriculumCommercialModes.master;
-    expect(master.primaryAction.href).toBe(MASTER_HANDOFF.landing);
-    expect(master.primaryAction.intentId).toBe('master_view');
-    expect(master.secondaryAction?.intentId).toBe('master_org_inquiry');
-    expect(master.secondaryAction?.formDefaults?.leadMode).toBe('master');
+    const contract = getPublicProductContract();
+    expect(master.primaryAction.href).toBe(contract.handoff.freeStartHref);
+    expect(master.primaryAction.intentId).toBe('free_start');
+    expect(master.secondaryAction?.href).toBe(contract.handoff.landingHref);
+    expect(master.secondaryAction?.intentId).toBe('master_view');
   });
 
   it('gives every inquiry mode formDefaults with matching leadMode', () => {
@@ -46,16 +49,29 @@ describe('curriculum commercial modes', () => {
     }
   });
 
-  it('resolves URL mode safely', () => {
+  it('resolves URL mode safely with subscription default', () => {
+    expect(resolveCurriculumMode(null)).toBe('master');
     expect(resolveCurriculumMode('package')).toBe('package');
-    expect(resolveCurriculumMode('nope')).toBe('training');
+    expect(resolveCurriculumMode('training')).toBe('training');
+    expect(resolveCurriculumMode('license')).toBe('license');
+    expect(resolveCurriculumMode('nope')).toBe('master');
     expect(isCurriculumCommercialMode('license')).toBe(true);
     expect(isCurriculumCommercialMode('x')).toBe(false);
   });
 
-  it('drops duplicated contact secondary CTA from curriculum hero', () => {
-    expect(curriculumPage.heroCtas.secondary.href).toBe(MASTER_HANDOFF.landing);
-    expect(curriculumPage.heroCtas.secondary.label).toContain('MASTER');
-    expect(curriculumPage.heroCtas.primary.href).toBe('#modes');
+  it('maps mode query to scroll anchors for training/license/package/master', () => {
+    expect(curriculumModeScrollTarget('master')).toBe('plans');
+    expect(curriculumModeScrollTarget('training')).toBe('training');
+    expect(curriculumModeScrollTarget('license')).toBe('license');
+    expect(curriculumModeScrollTarget('package')).toBe('package');
+  });
+
+  it('uses public contract handoff on subscription hub hero (no hardcoded MASTER product name CTA)', () => {
+    const contract = getPublicProductContract();
+    expect(curriculumPage.hero.primaryCta.href).toBe(contract.handoff.freeStartHref);
+    expect(curriculumPage.hero.secondaryCta.href).toBe(contract.handoff.landingHref);
+    expect(curriculumPage.hero.secondaryCta.href).toBe(MASTER_HANDOFF.landing);
+    expect(curriculumPage.hero.eyebrow).toBe('스포키듀 구독시스템');
+    expect(curriculumPage.sectionOrder.length).toBeLessThanOrEqual(7);
   });
 });

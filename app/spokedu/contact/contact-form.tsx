@@ -17,6 +17,8 @@ import {
   type StoredInquiryDraft,
 } from './inquiry-draft';
 import { submitInquiry } from './inquiry-submit';
+import { createFormStartedTracker, trackCommercialEvent } from '../lib/commercial-events';
+import { externalLinkProps } from '../lib/external-link';
 import { btnPrimary, cardInteractive, fineHover } from '../lib/ui-classes';
 import type {
   CurriculumInquiryFields,
@@ -138,6 +140,15 @@ function ContactSidebar() {
     <aside className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 lg:sticky lg:top-24 lg:p-7">
       <p className="text-base font-bold text-slate-950">{sidebar.title}</p>
       <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{sidebar.description}</p>
+      <p className="mt-3">
+        <a
+          href={sidebar.partnersHref}
+          data-track-label="contact-sidebar-partners"
+          className={`text-sm font-semibold text-[#245DFF] underline-offset-2 hover:underline ${focusRing}`}
+        >
+          {sidebar.partnersLabel} →
+        </a>
+      </p>
       <dl className="mt-5 space-y-4 border-t border-slate-100 pt-5 text-sm">
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">대표</dt>
@@ -169,6 +180,22 @@ function ContactSidebar() {
             </a>
           </dd>
         </div>
+        {contactPageContent.kakaoChannelHref ? (
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">카카오채널</dt>
+            <dd className="mt-1.5 pl-0.5">
+              <a
+                href={contactPageContent.kakaoChannelHref}
+                {...externalLinkProps}
+                data-track="cta-kakao"
+                data-track-label={contactPageContent.contactTracks.kakao}
+                className={`text-base font-medium text-slate-900 underline-offset-2 hover:underline ${focusRing}`}
+              >
+                카카오채널로 문의
+              </a>
+            </dd>
+          </div>
+        ) : null}
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">운영지역</dt>
           <dd className="mt-1.5 pl-0.5 text-base leading-relaxed text-slate-800">{brandProfile.serviceArea}</dd>
@@ -386,7 +413,8 @@ export default function SpokeduContactForm() {
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLDivElement>(null);
   const submittingRef = useRef(false);
-  const [inquiryType, setInquiryType] = useState<InquiryType>('private');
+  const markFormStartedRef = useRef(createFormStartedTracker('other', 'contact_form'));
+  const [inquiryType, setInquiryType] = useState<InquiryType>('dispatch');
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<SubmitNotice>(null);
   const [storedDraft, setStoredDraft] = useState<StoredInquiryDraft | null>(null);
@@ -395,6 +423,13 @@ export default function SpokeduContactForm() {
   const [spomoveForm, setSpomoveForm] = useState<SpomoveInquiryFields>(SPOMOVE_DEFAULT);
   const [curriculumForm, setCurriculumForm] = useState<CurriculumInquiryFields>(CURRICULUM_DEFAULT);
   const [otherForm, setOtherForm] = useState<OtherInquiryFields>(OTHER_DEFAULT);
+
+  useEffect(() => {
+    markFormStartedRef.current = createFormStartedTracker(
+      inquiryType === 'curriculum' ? 'curriculum' : inquiryType === 'private' ? 'private' : inquiryType === 'other' ? 'other' : 'dispatch',
+      `contact_${inquiryType}`,
+    );
+  }, [inquiryType]);
 
   useEffect(() => {
     migrateLegacyInquiryStorage();
@@ -450,6 +485,7 @@ export default function SpokeduContactForm() {
   );
 
   function selectType(type: ContactInquiryType) {
+    markFormStartedRef.current();
     setInquiryType(type);
     setNotice(null);
     router.replace(`/spokedu/contact?type=${type}`, { scroll: false });
@@ -520,6 +556,22 @@ export default function SpokeduContactForm() {
       setStoredDraft(null);
       resetFormForType(inquiryType);
       setNotice({ kind: 'ok', text: CONTACT_SUCCESS_MESSAGE });
+      const route =
+        inquiryType === 'private'
+          ? 'private'
+          : inquiryType === 'curriculum' || inquiryType === 'other'
+            ? 'curriculum'
+            : 'dispatch';
+      trackCommercialEvent({
+        name: 'form_submitted',
+        route,
+        leadId: `contact-${inquiryType}-${Date.now()}`,
+        ctaIntentId: activeOption.submitTrackLabel,
+        selectionId: inquiryType,
+        surface: 'contact',
+        audience: activeOption.audienceHint,
+      });
+      markFormStartedRef.current = createFormStartedTracker(route, `contact_${inquiryType}`);
     } catch {
       setNotice({
         kind: 'error',
@@ -545,6 +597,7 @@ export default function SpokeduContactForm() {
             : otherForm;
 
   const onCommonChange = (patch: Partial<InquiryCommonFields>) => {
+    markFormStartedRef.current();
     if (inquiryType === 'private') setPrivateForm((p) => ({ ...p, ...patch }));
     else if (inquiryType === 'dispatch') setDispatchForm((p) => ({ ...p, ...patch }));
     else if (inquiryType === 'spomove') setSpomoveForm((p) => ({ ...p, ...patch }));
@@ -681,29 +734,38 @@ export default function SpokeduContactForm() {
             {inquiryType === 'dispatch' ? (
               <InstitutionFields
                 values={dispatchForm}
-                onChange={(patch) => setDispatchForm((p) => ({ ...p, ...patch }))}
-                title="기관 프로그램 정보"
+                onChange={(patch) => {
+                  markFormStartedRef.current();
+                  setDispatchForm((p) => ({ ...p, ...patch }));
+                }}
+                title="기관 체육교육 정보"
               />
             ) : null}
 
             {inquiryType === 'spomove' ? (
               <InstitutionFields
                 values={spomoveForm}
-                onChange={(patch) => setSpomoveForm((p) => ({ ...p, ...patch }))}
-                title="SPOMOVE 도입 정보"
+                onChange={(patch) => {
+                  markFormStartedRef.current();
+                  setSpomoveForm((p) => ({ ...p, ...patch }));
+                }}
+                title="지도자 교육·SPOMOVE 정보"
               />
             ) : null}
 
             {inquiryType === 'curriculum' ? (
               <div className="space-y-3 border-t border-slate-100 pt-4">
-                <p className="text-sm font-bold text-slate-900">커리큘럼·지도자 교육 정보</p>
+                <p className="text-sm font-bold text-slate-900">구독시스템·교육 문의 정보</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <Field label="기관명 또는 소속" required>
                       <input
                         required
                         value={curriculumForm.nameOrOrg}
-                        onChange={(e) => setCurriculumForm((p) => ({ ...p, nameOrOrg: e.target.value }))}
+                        onChange={(e) => {
+                          markFormStartedRef.current();
+                          setCurriculumForm((p) => ({ ...p, nameOrOrg: e.target.value }));
+                        }}
                         className={inputClass}
                       />
                     </Field>
@@ -712,14 +774,17 @@ export default function SpokeduContactForm() {
                     <select
                       required
                       value={curriculumForm.inquiryPurpose}
-                      onChange={(e) => setCurriculumForm((p) => ({ ...p, inquiryPurpose: e.target.value }))}
+                      onChange={(e) => {
+                        markFormStartedRef.current();
+                        setCurriculumForm((p) => ({ ...p, inquiryPurpose: e.target.value }));
+                      }}
                       className={`${inputClass} bg-white`}
                     >
                       <option value="">선택해 주세요</option>
-                      <option value="수업안">수업안</option>
-                      <option value="매뉴얼">매뉴얼</option>
+                      <option value="구독시스템">구독시스템</option>
                       <option value="지도자 교육">지도자 교육</option>
-                      <option value="라이선싱">라이선싱</option>
+                      <option value="수업안">수업안·패키지</option>
+                      <option value="매뉴얼">매뉴얼</option>
                       <option value="기타">기타</option>
                     </select>
                   </Field>
@@ -727,7 +792,10 @@ export default function SpokeduContactForm() {
                     <select
                       required
                       value={curriculumForm.utilizationTarget}
-                      onChange={(e) => setCurriculumForm((p) => ({ ...p, utilizationTarget: e.target.value }))}
+                      onChange={(e) => {
+                        markFormStartedRef.current();
+                        setCurriculumForm((p) => ({ ...p, utilizationTarget: e.target.value }));
+                      }}
                       className={`${inputClass} bg-white`}
                     >
                       <option value="">선택해 주세요</option>
@@ -743,7 +811,7 @@ export default function SpokeduContactForm() {
 
             {inquiryType === 'other' ? (
               <div className="space-y-3 border-t border-slate-100 pt-4">
-                <p className="text-sm font-bold text-slate-900">협업 정보</p>
+                <p className="text-sm font-bold text-slate-900">라이선스·협업 정보</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <Field label="기관명 또는 소속" required>

@@ -86,11 +86,14 @@ function RecordCard({
           <span className="rounded-full bg-[#EAF1FF] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#174BE6]">
             {record.operationType}
           </span>
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-700">
+            {record.programLabel}
+          </span>
           {onsite ? (
             <span className="rounded-full bg-slate-950 px-2 py-1 text-[10px] font-bold text-white">사례 요약</span>
           ) : (
             <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
-              블로그 후기
+              외부 후기
             </span>
           )}
           {metaItems.map((item) => (

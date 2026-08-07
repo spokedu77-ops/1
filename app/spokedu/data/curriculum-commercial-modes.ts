@@ -1,5 +1,8 @@
 import type { EvidenceSource } from './conversion-evidence';
-import { MASTER_HANDOFF, SPOKEDU_BASE_PATH } from './site';
+import { getPublicProductContract } from './public-product-contract';
+import { SPOKEDU_BASE_PATH } from './site';
+
+const publicProduct = getPublicProductContract();
 
 export type CurriculumCommercialMode = 'package' | 'training' | 'master' | 'license';
 
@@ -8,7 +11,8 @@ export type CurriculumModeIntentId =
   | 'training_consult'
   | 'master_view'
   | 'master_org_inquiry'
-  | 'license_consult';
+  | 'license_consult'
+  | 'free_start';
 
 export type CurriculumFormDefaults = {
   leadMode: CurriculumCommercialMode;
@@ -87,8 +91,8 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     },
     secondaryAction: {
       intentId: 'master_view',
-      label: 'SPOKEDU MASTER 보기',
-      href: MASTER_HANDOFF.landing,
+      label: '구독시스템 알아보기',
+      href: `${SPOKEDU_BASE_PATH}/curriculum`,
       trackingLabel: 'curriculum-mode-package-secondary-master',
     },
     formDefaults: {
@@ -102,7 +106,7 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
   },
   training: {
     id: 'training',
-    title: '교육·도입',
+    title: '지도자 교육',
     promise: '지도자 세미나·SPOMOVE 도입·기관 컨설팅 범위를 맞춰 교육합니다.',
     audienceHint: '기관 담당자 · 지도자 교육 담당',
     deliverables: ['지도자 세미나', 'SPOMOVE 도입 교육', '기관 컨설팅'],
@@ -142,15 +146,19 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
   },
   master: {
     id: 'master',
-    title: 'SPOKEDU MASTER',
-    promise: '매주 쓸 수업안·SPOMOVE 실행·설명 문구를 한곳에서 운영하는 구독 도구입니다.',
+    title: '구독시스템',
+    promise: '수업을 찾고 준비하고 진행하고 기록하는 흐름을 하나로 연결합니다.',
     audienceHint: '지금 도구가 필요한 지도자',
-    deliverables: ['프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 기록', '설명 문구'],
+    deliverables: [
+      '수업 도구 (무료)',
+      '수업 라이브러리 · 출석부 (Lite)',
+      '수업 기록 · SPOMOVE (Premium)',
+    ],
     evidence: [
       {
         type: 'product',
-        href: MASTER_HANDOFF.landing,
-        label: 'MASTER 제품 페이지·이용 흐름',
+        href: publicProduct.handoff.landingHref,
+        label: '구독시스템 제품 화면·이용 흐름',
       },
       {
         type: 'history',
@@ -159,23 +167,16 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
       },
     ],
     primaryAction: {
-      intentId: 'master_view',
-      label: 'SPOKEDU MASTER 살펴보기',
-      href: MASTER_HANDOFF.landing,
+      intentId: 'free_start',
+      label: '무료로 시작하기',
+      href: publicProduct.handoff.freeStartHref,
       trackingLabel: 'curriculum-mode-master-primary',
     },
     secondaryAction: {
-      intentId: 'master_org_inquiry',
-      label: '기관·단체 이용 문의',
-      href: `${SPOKEDU_BASE_PATH}/curriculum?mode=master#inquiry`,
-      trackingLabel: 'curriculum-mode-master-secondary',
-      formDefaults: {
-        leadMode: 'master',
-        contentType: '기타',
-        purpose: '기관 도입',
-        teacherTraining: '선택',
-        partnershipType: '구독·정기',
-      },
+      intentId: 'master_view',
+      label: '제품 화면 보기',
+      href: publicProduct.handoff.landingHref,
+      trackingLabel: 'curriculum-mode-master-secondary-landing',
     },
     formDefaults: {
       leadMode: 'master',
@@ -226,9 +227,10 @@ export const curriculumModeList: readonly CurriculumModeConfig[] = CURRICULUM_CO
   (id) => curriculumCommercialModes[id],
 );
 
+/** 기본 = 구독 허브(master). URL에 mode가 없으면 구독 랜딩. */
 export function resolveCurriculumMode(
   raw: string | null | undefined,
-  fallback: CurriculumCommercialMode = 'training',
+  fallback: CurriculumCommercialMode = 'master',
 ): CurriculumCommercialMode {
   if (raw && isCurriculumCommercialMode(raw)) return raw;
   return fallback;
@@ -245,8 +247,22 @@ export function curriculumSubmitLabel(mode: CurriculumCommercialMode): string {
     case 'training':
       return '교육·도입 문의 접수';
     case 'master':
-      return 'MASTER 기관·단체 이용 문의 접수';
+      return '센터·기관 구독 문의 접수';
     case 'license':
       return '라이선스·파트너 문의 접수';
+  }
+}
+
+/** mode 쿼리에 대응하는 스크롤 앵커 */
+export function curriculumModeScrollTarget(mode: CurriculumCommercialMode): string {
+  switch (mode) {
+    case 'master':
+      return 'plans';
+    case 'training':
+      return 'training';
+    case 'license':
+      return 'license';
+    case 'package':
+      return 'package';
   }
 }

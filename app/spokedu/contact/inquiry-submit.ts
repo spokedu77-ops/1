@@ -61,7 +61,7 @@ function formatSpomoveInquiry(payload: SpomoveInquiryPayload): string {
 
 function formatCurriculumExtra(payload: CurriculumInquiryPayload): string {
   return [
-    '[커리큘럼·지도자 교육 문의]',
+    '[구독시스템·지도자 교육 문의]',
     `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
     `이메일: ${payload.email}`,
@@ -76,7 +76,7 @@ function formatCurriculumExtra(payload: CurriculumInquiryPayload): string {
 
 function formatOtherExtra(payload: OtherInquiryPayload): string {
   return [
-    '[기타 협업 문의]',
+    '[라이선스·협업 문의]',
     `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
     `이메일: ${payload.email}`,
@@ -86,6 +86,13 @@ function formatOtherExtra(payload: OtherInquiryPayload): string {
     `협업 목적: ${payload.collaborationPurpose}`,
     `createdAt: ${payload.createdAt}`,
   ].join('\n');
+}
+
+function resolveCurriculumLeadMode(inquiryPurpose: string): 'master' | 'training' | 'package' {
+  const purpose = inquiryPurpose.trim();
+  if (/구독|MASTER|마스터|Lite|Premium/i.test(purpose)) return 'master';
+  if (/패키지|수업안|매뉴얼|자료/i.test(purpose)) return 'package';
+  return 'training';
 }
 
 type LegacyRequest = {
@@ -183,17 +190,18 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
     endpoint: '/api/curriculum/leads',
     body: {
       type: payload.type,
-      lead_mode: 'training',
+      lead_mode: resolveCurriculumLeadMode(payload.inquiryPurpose),
       name_or_org: payload.nameOrOrg,
       phone: payload.phone,
       email: payload.email,
-      content_type: payload.inquiryPurpose || '지도자 교육·세미나',
+      content_type: payload.inquiryPurpose || '구독시스템',
       target_age: payload.preferredRegion || '혼합 연령',
-      purpose: payload.utilizationTarget || '강사 교육',
+      purpose: payload.utilizationTarget || '지도자 이용',
       teacher_training: '상담 후 결정',
-      partnership_type: payload.utilizationTarget || '교육 위탁',
+      partnership_type: payload.utilizationTarget || '구독·교육',
       extra: formatCurriculumExtra(payload),
-      cta_intent_id: 'training_consult',
+      cta_intent_id:
+        resolveCurriculumLeadMode(payload.inquiryPurpose) === 'master' ? 'master_handoff' : 'training_consult',
       acquisition: { entrySurface: 'direct' },
     },
   };

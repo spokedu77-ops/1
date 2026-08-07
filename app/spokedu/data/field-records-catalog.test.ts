@@ -60,6 +60,30 @@ describe('field-records-catalog', () => {
     expect(yangcheon.mediaKey).toBe('proofYangcheon');
   });
 
+  it('keeps onsite optional sections unset unless real data exists (no placeholders)', () => {
+    for (const item of FIELD_RECORD_CATALOG) {
+      if (!item.onsite) continue;
+      for (const key of ['request', 'spaceConditions', 'difficultyAdjustment', 'observation', 'feedback', 'report'] as const) {
+        const value = item.onsite[key];
+        if (value !== undefined) {
+          expect(value.trim().length).toBeGreaterThan(0);
+          expect(value).not.toMatch(/추후 입력|정보 없음|TBD|TODO/i);
+        }
+      }
+      const blob = `${item.onsite.purpose} ${item.onsite.outcome} ${item.onsite.composition.join(' ')}`;
+      expect(blob).not.toMatch(/집중력이 향상|인지능력이 개선|발달이 향상|치료 효과|치료적/);
+    }
+  });
+
+  it('keeps external blog-only cases without inventing onsite summaries', () => {
+    const external = FIELD_RECORD_CATALOG.filter((item) => !hasFieldRecordOnsiteSummary(item));
+    expect(external.length).toBeGreaterThan(0);
+    for (const item of external) {
+      expect(item.href).toMatch(/^https:\/\/blog\.naver\.com\//);
+      expect(item.onsite).toBeUndefined();
+    }
+  });
+
   it('uses proofDasarang media for dasarang oneday', () => {
     const dasarang = getFieldRecordCatalogItem('dasarang-oneday');
     expect(dasarang.mediaKey).toBe('proofDasarang');

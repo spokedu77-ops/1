@@ -79,4 +79,31 @@ describe('submitInquiry', () => {
     expect(body.source).toBe('spokedu-contact-spomove');
     expect(body.programs).toContain('SPOMOVE');
   });
+
+  it('maps curriculum subscription purpose to master lead_mode', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 }),
+    );
+
+    await submitInquiry({
+      type: 'curriculum',
+      createdAt: '2026-07-01T00:00:00.000Z',
+      name: '홍길동',
+      phone: '010-1234-5678',
+      email: 'test@example.com',
+      preferredRegion: '서울',
+      message: '구독 문의',
+      nameOrOrg: '테스트센터',
+      inquiryPurpose: '구독시스템',
+      utilizationTarget: '기관 도입',
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/curriculum/leads',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body));
+    expect(body.lead_mode).toBe('master');
+    expect(body.cta_intent_id).toBe('master_handoff');
+  });
 });

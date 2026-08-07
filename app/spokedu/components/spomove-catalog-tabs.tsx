@@ -399,7 +399,7 @@ const tabs: TabContent[] = [
         eyebrow: 'SUBSCRIPTION',
         title: '필요한 수업 범위에 따라 구독과 SPOMAT 이용을 확인합니다.',
         cards: [
-          { eyebrow: 'FREE', title: '무료 이용자', body: '홈 화면 이번 주 추천 활동 1개와 기본 수업도구를 별도 구독 없이 이용합니다.', note: '구독시스템에서 체험 범위 확인' },
+          { eyebrow: 'FREE', title: '무료 이용자', body: '로그인 후 무료 수업 도구를 이용합니다. 추천 미리보기는 이용 권한이 아닙니다.', note: '구독시스템에서 체험 범위 확인' },
           { eyebrow: 'LIGHT', title: '라이트', body: '놀이체육 자료와 수업 기록 등 기본 구독 범위를 이용합니다.', note: '구독시스템에서 플랜 확인' },
           { eyebrow: 'PREMIUM', title: '프리미엄', body: '라이트 범위에 SPOMOVE 공식 활동과 기록·히스토리 기능을 더합니다.', note: '구독시스템에서 플랜 확인' },
           { eyebrow: 'SPOMAT', title: 'SPOMAT 구매·이용', body: '화면과 실제 움직임을 연결하는 실행 교구입니다. 구매·이용 안내는 구독시스템에서 확인합니다.', note: '구독시스템·구매 안내에서 확인' },
@@ -482,7 +482,7 @@ const refinedCatalogSections: SectionBlock[] = [
     eyebrow: 'SUBSCRIPTION',
     title: '구독 범위와 SPOMAT 이용 안내는 구독시스템에서 확인합니다.',
     cards: [
-      { eyebrow: 'FREE', title: '무료 이용자', body: '홈 화면 이번 주 추천 활동 1개와 기본 수업도구를 별도 구독 없이 이용합니다.', note: '구독시스템에서 체험 범위 확인' },
+      { eyebrow: 'FREE', title: '무료 이용자', body: '로그인 후 무료 수업 도구를 이용합니다. 추천 미리보기는 이용 권한이 아닙니다.', note: '구독시스템에서 체험 범위 확인' },
       { eyebrow: 'LIGHT', title: '라이트', body: '놀이체육 자료와 수업 기록 등 기본 구독 범위를 이용합니다.', note: '구독시스템에서 플랜 확인' },
       { eyebrow: 'PREMIUM', title: '프리미엄', body: '라이트 범위에 SPOMOVE 공식 활동과 기록·히스토리 기능을 더합니다.', note: '구독시스템에서 플랜 확인' },
       { eyebrow: 'SPOMAT', title: 'SPOMAT 구매·이용', body: '화면과 실제 움직임을 연결하는 실행 교구입니다. 구매·이용 안내는 구독시스템에서 확인합니다.', note: '구독시스템·구매 안내에서 확인' },

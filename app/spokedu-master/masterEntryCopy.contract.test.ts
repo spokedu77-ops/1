@@ -24,16 +24,21 @@ describe('SPOKEDU MASTER entry copy alignment', () => {
 
   it('keeps spokedu curriculum marketing aligned with MASTER billing policy', () => {
     const curriculum = read('app/spokedu/data/curriculum-page.ts');
+    const publicContract = read('app/spokedu-master/lib/publicProductContract.ts');
 
-    expect(curriculum).toContain('월 자동결제');
-    expect(curriculum).toContain('이용권 보기');
-    expect(curriculum).toContain('MASTER_HANDOFF.landing');
-    expect(curriculum).toContain('`${MASTER_HANDOFF.landing}#pricing`');
+    expect(curriculum).toContain('getPublicProductContract');
+    expect(curriculum).toContain('연간 결제');
+    expect(curriculum).toContain('현재 판매하지 않음');
+    expect(curriculum).toContain('무료로 시작하기');
+    expect(publicContract).toContain('annualSold: false');
+    expect(publicContract).toContain("billingCycle: 'monthly'");
+    expect(read('app/spokedu-master/lib/productCatalog.ts')).toContain('월 자동결제');
 
     expect(curriculum).not.toContain('7일 무료 체험');
     expect(curriculum).not.toContain('14일');
     expect(curriculum).not.toContain('무료 체험');
     expect(curriculum).not.toContain('오픈 예정');
+    expect(curriculum).not.toMatch(/from ['"].*productCatalog['"]/);
   });
 
   it('keeps the parent route as a blocked public link sink, not a browse feature', () => {
