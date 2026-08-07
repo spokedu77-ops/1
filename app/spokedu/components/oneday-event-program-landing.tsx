@@ -171,7 +171,7 @@ export default function OnedayEventProgramLanding() {
           },
           {
             label: '전체 프로그램 보기',
-            href: '/spokedu/programs',
+            href: '/spomove',
             trackLabel: 'program-oneday-all',
             variant: 'on-light-outline',
           },

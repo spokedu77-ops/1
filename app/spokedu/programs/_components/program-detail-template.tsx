@@ -6,6 +6,7 @@ import {
   isProgramDetailSlug,
   type ProgramDetailSlug,
 } from '../../data/program-details';
+import { SPOKEDU_PATHS } from '../../data/site';
 import type { ProgramSlug } from '../../data/programs-catalog';
 
 export function buildProgramDetailMetadata(slug: ProgramDetailSlug) {
@@ -14,7 +15,7 @@ export function buildProgramDetailMetadata(slug: ProgramDetailSlug) {
   return buildSpokeduPageMetadata({
     title: `${program.title} | SPOKEDU 프로그램`,
     description: program.detailDescription ?? program.description,
-    canonical: `/spokedu/programs/${slug}`,
+    canonical: slug === 'spomove' ? SPOKEDU_PATHS.spomove : SPOKEDU_PATHS.dispatch,
     keywords: [program.title],
     pageKey: 'programs',
     ogImage: buildProgramDetailOgImage(slug),

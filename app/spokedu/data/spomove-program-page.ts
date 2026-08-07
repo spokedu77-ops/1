@@ -5,7 +5,7 @@ import {
 } from './field-records-catalog';
 import type { HomeMediaKey } from './home-media';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 type SpomoveMediaRequirement = {
   page: 'programs/spomove';
@@ -162,7 +162,7 @@ export const spomoveProgramPage = {
     ] as const,
     catalogCta: {
       label: '전체 프로그램 보기',
-      href: `${SPOKEDU_BASE_PATH}/programs/spomove/catalog`,
+      href: `${SPOKEDU_PATHS.spomoveCatalog}`,
       trackLabel: 'spomove-content-catalog',
     },
   },
@@ -252,7 +252,7 @@ export const spomoveProgramPage = {
         body: '구독시스템에서 SPOMOVE 콘텐츠를 확인하고, 놀이체육 자료·수업 흐름과 연결합니다. 실행·기록은 제품 경로에서 이어집니다.',
         bullets: ['콘텐츠 이용', '수업 준비', '현장 실행'] as const,
         ctaLabel: '구독시스템 알아보기',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'spomove-path-curriculum',
       },
     ] as const,
@@ -321,12 +321,12 @@ export const spomoveProgramPage = {
     lead: '전체 프로그램 카탈로그에서 구성을 확인하고, 기관 도입 또는 구독 이용으로 이어가세요.',
     catalogCta: {
       label: '전체 프로그램 보기',
-      href: `${SPOKEDU_BASE_PATH}/programs/spomove/catalog`,
+      href: `${SPOKEDU_PATHS.spomoveCatalog}`,
       trackLabel: 'spomove-final-catalog',
     },
     materialsLink: {
       label: '교육·특수체육 자료 탭',
-      href: `${SPOKEDU_BASE_PATH}/programs/spomove?tab=education`,
+      href: `${SPOKEDU_PATHS.spomove}?tab=education`,
       trackLabel: 'spomove-final-tabs',
     },
     primary: {
@@ -336,7 +336,7 @@ export const spomoveProgramPage = {
     },
     secondary: {
       label: '구독시스템 알아보기',
-      href: `${SPOKEDU_BASE_PATH}/curriculum`,
+      href: `${SPOKEDU_PATHS.subscription}`,
       trackLabel: 'spomove-final-curriculum',
     },
   },

@@ -488,7 +488,7 @@ export default function SpokeduContactForm() {
     markFormStartedRef.current();
     setInquiryType(type);
     setNotice(null);
-    router.replace(`/spokedu/contact?type=${type}`, { scroll: false });
+    router.replace(`/contact?type=${type}`, { scroll: false });
     requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -514,7 +514,7 @@ export default function SpokeduContactForm() {
   function restoreDraft() {
     if (!storedDraft) return;
     setInquiryType(storedDraft.payload.type);
-    router.replace(`/spokedu/contact?type=${storedDraft.payload.type}`, { scroll: false });
+    router.replace(`/contact?type=${storedDraft.payload.type}`, { scroll: false });
     applyPayloadToForms(storedDraft.payload, {
       setPrivateForm,
       setDispatchForm,

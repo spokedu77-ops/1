@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { SPOKEDU_IMAGES } from './images';
+import { SPOKEDU_PATHS } from './public-routes';
 
 export type SpokeduSeoPageKey =
   | 'home'
@@ -30,18 +31,18 @@ export type SeoOgImage = {
 const SITE_NAME = 'SPOKEDU';
 
 const CANONICAL: Record<SpokeduSeoPageKey, string> = {
-  home: '/spokedu',
-  about: '/spokedu/about',
-  education: '/spokedu/education',
-  private: '/spokedu/private',
-  dispatch: '/spokedu/dispatch',
-  curriculum: '/spokedu/curriculum',
-  programs: '/spokedu/programs',
-  records: '/spokedu/records',
-  cases: '/spokedu/records',
-  monthly: '/spokedu/monthly',
-  insights: '/spokedu/insights',
-  contact: '/spokedu/contact',
+  home: SPOKEDU_PATHS.home,
+  about: SPOKEDU_PATHS.about,
+  education: SPOKEDU_PATHS.education,
+  private: SPOKEDU_PATHS.private,
+  dispatch: SPOKEDU_PATHS.dispatch,
+  curriculum: SPOKEDU_PATHS.subscription,
+  programs: SPOKEDU_PATHS.spomove,
+  records: SPOKEDU_PATHS.records,
+  cases: SPOKEDU_PATHS.records,
+  monthly: SPOKEDU_PATHS.records,
+  insights: SPOKEDU_PATHS.about,
+  contact: SPOKEDU_PATHS.contact,
 };
 
 const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {

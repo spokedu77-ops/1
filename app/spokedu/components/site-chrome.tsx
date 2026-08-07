@@ -11,7 +11,7 @@ import {
   getSocialLinks,
   siteHeaderCta,
   siteNav,
-  SPOKEDU_BASE_PATH,
+  isSpokeduHomePath,
   type SiteNavEntry,
   type SiteNavLink,
 } from '../data/site';
@@ -40,7 +40,7 @@ function isLinkActive(pathname: string, href: string, matchPrefix?: string): boo
   const hrefPath = normalizePath(stripQueryAndHash(href));
   if (matchPrefix) {
     const prefixPath = matchPrefix.includes('?') ? stripQueryAndHash(matchPrefix) : matchPrefix;
-    return current === `${SPOKEDU_BASE_PATH}${prefixPath}` || current.startsWith(`${SPOKEDU_BASE_PATH}${prefixPath}/`);
+    return current === prefixPath || current.startsWith(`${prefixPath}/`);
   }
   return current === hrefPath || current.startsWith(`${hrefPath}/`);
 }
@@ -48,8 +48,7 @@ function isLinkActive(pathname: string, href: string, matchPrefix?: string): boo
 function isGroupActive(pathname: string, children: SiteNavLink[]): boolean {
   return children.some((child) => {
     const base = stripQueryAndHash(child.href);
-    const prefix = base.replace(SPOKEDU_BASE_PATH, '');
-    return isLinkActive(pathname, child.href, prefix || undefined);
+    return isLinkActive(pathname, child.href, base || undefined);
   });
 }
 
@@ -103,7 +102,7 @@ function NavAnchor({
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const isHome = pathname === '/spokedu';
+  const isHome = isSpokeduHomePath(pathname);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [openDesktopGroup, setOpenDesktopGroup] = useState<string | null>(null);

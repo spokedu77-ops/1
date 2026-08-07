@@ -37,8 +37,8 @@ type TabContent = {
   sections: SectionBlock[];
 };
 
-const CONTACT_HREF = '/spokedu/dispatch?program=spomove#contact';
-const CATALOG_HREF = '/spokedu/programs/spomove/catalog';
+const CONTACT_HREF = '/dispatch?program=spomove#contact';
+const CATALOG_HREF = '/spomove/catalog';
 
 const responseStages: InfoCard[] = [
   {

@@ -44,7 +44,7 @@ function resolveLinkClass(link: LandingFinalCtaLink, index: number) {
 
 function inferCommercialRoute(href: string): 'private' | 'curriculum' | 'dispatch' | null {
   if (href.includes('/private')) return 'private';
-  if (href.includes('/curriculum')) return 'curriculum';
+  if (href.includes('/curriculum') || href.includes('/subscription')) return 'curriculum';
   if (href.includes('/dispatch')) return 'dispatch';
   return null;
 }

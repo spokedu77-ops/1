@@ -1,6 +1,6 @@
 import type { EvidenceSource } from './conversion-evidence';
 import { getPublicProductContract } from './public-product-contract';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_PATHS } from './site';
 
 const publicProduct = getPublicProductContract();
 
@@ -55,7 +55,7 @@ export function isCurriculumCommercialMode(value: string): value is CurriculumCo
 }
 
 export function curriculumModePath(mode: CurriculumCommercialMode): string {
-  return `${SPOKEDU_BASE_PATH}/curriculum?mode=${mode}`;
+  return `${SPOKEDU_PATHS.subscription}?mode=${mode}`;
 }
 
 export function curriculumModeSectionHref(mode: CurriculumCommercialMode): string {
@@ -79,7 +79,7 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     primaryAction: {
       intentId: 'package_quote',
       label: '수업안·패키지 제안 받기',
-      href: `${SPOKEDU_BASE_PATH}/curriculum?mode=package#inquiry`,
+      href: `${SPOKEDU_PATHS.subscription}?mode=package#inquiry`,
       trackingLabel: 'curriculum-mode-package-primary',
       formDefaults: {
         leadMode: 'package',
@@ -92,7 +92,7 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     secondaryAction: {
       intentId: 'master_view',
       label: '구독시스템 알아보기',
-      href: `${SPOKEDU_BASE_PATH}/curriculum`,
+      href: `${SPOKEDU_PATHS.subscription}`,
       trackingLabel: 'curriculum-mode-package-secondary-master',
     },
     formDefaults: {
@@ -125,7 +125,7 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     primaryAction: {
       intentId: 'training_consult',
       label: '교육·도입 범위 상담하기',
-      href: `${SPOKEDU_BASE_PATH}/curriculum?mode=training#inquiry`,
+      href: `${SPOKEDU_PATHS.subscription}?mode=training#inquiry`,
       trackingLabel: 'curriculum-mode-training-primary',
       formDefaults: {
         leadMode: 'training',
@@ -202,7 +202,7 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     primaryAction: {
       intentId: 'license_consult',
       label: '라이선스·파트너 상담하기',
-      href: `${SPOKEDU_BASE_PATH}/curriculum?mode=license#inquiry`,
+      href: `${SPOKEDU_PATHS.subscription}?mode=license#inquiry`,
       trackingLabel: 'curriculum-mode-license-primary',
       formDefaults: {
         leadMode: 'license',

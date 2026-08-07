@@ -1,7 +1,7 @@
 import type { HomeMediaKey } from './home-media';
 import type { SpokeduImageKind, SpokeduImageProgram } from './images';
 import { getPublicProductContract } from './public-product-contract';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 type CurriculumMediaRequirement = {
   page: 'curriculum';
@@ -195,7 +195,7 @@ export const curriculumPage = {
     ] as const,
     primary: {
       label: 'SPOMOVE 알아보기',
-      href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+      href: `${SPOKEDU_PATHS.spomove}`,
       trackLabel: 'curriculum-spomove-learn',
       ctaIntentId: 'spomove_subscription',
     },
@@ -240,7 +240,7 @@ export const curriculumPage = {
     ] as const,
     cta: {
       label: '지도자 교육 문의',
-      href: `${SPOKEDU_BASE_PATH}/curriculum?mode=training#inquiry`,
+      href: `${SPOKEDU_PATHS.subscription}?mode=training#inquiry`,
       trackLabel: 'curriculum-training-inquiry',
     },
   },
@@ -253,7 +253,7 @@ export const curriculumPage = {
       title: '커리큘럼 · 라이선스 · 파트너',
       lead: '프로그램 공급·라이선싱·파트너 운영은 구독 플랜이 아닙니다. 별도 상담으로 이어집니다.',
       ctaLabel: '라이선스·파트너 문의',
-      href: `${SPOKEDU_BASE_PATH}/curriculum?mode=license#inquiry`,
+      href: `${SPOKEDU_PATHS.subscription}?mode=license#inquiry`,
       trackLabel: 'curriculum-license-inquiry',
     },
     package: {
@@ -262,7 +262,7 @@ export const curriculumPage = {
       title: '구독 콘텐츠와 자료·패키지',
       lead: '수업안·운영 매뉴얼 등 단건 자료·패키지 제안은 구독 허브의 콘텐츠 범위와 연결해 안내합니다.',
       ctaLabel: '자료·패키지 문의',
-      href: `${SPOKEDU_BASE_PATH}/curriculum?mode=package#inquiry`,
+      href: `${SPOKEDU_PATHS.subscription}?mode=package#inquiry`,
       trackLabel: 'curriculum-package-inquiry',
     },
   },

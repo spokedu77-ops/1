@@ -1,5 +1,5 @@
 import { getPublicProductContract } from './public-product-contract';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_PATHS } from './site';
 import type { HomeMediaKey } from './home-media';
 
 const publicProduct = getPublicProductContract();
@@ -106,12 +106,12 @@ export const spomatPage = {
     secondary: [
       {
         label: 'SPOMOVE 알아보기',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+        href: `${SPOKEDU_PATHS.spomove}`,
         trackLabel: 'spomat-to-spomove',
       },
       {
         label: '구독시스템 알아보기',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'spomat-to-curriculum',
       },
     ] as const,

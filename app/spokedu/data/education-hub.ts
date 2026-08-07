@@ -2,7 +2,7 @@ import {
   getFieldRecordCatalogItem,
   type FieldRecordSlug,
 } from './field-records-catalog';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 /** 체육교육 허브 사례 — 홈(dongjak)과 겹치지 않게 분산 */
 export const EDUCATION_HUB_CASE_SLUGS = [
@@ -172,7 +172,7 @@ export const educationHubPage = {
       '일부 수업에서는 화면과 움직임을 연결하는 SPOMOVE 콘텐츠를 활용합니다. 모든 수업에 포함되는 것은 아닙니다.',
     spomoveCta: {
       label: 'SPOMOVE 알아보기',
-      href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+      href: `${SPOKEDU_PATHS.spomove}`,
       trackLabel: 'education-principles-spomove',
     },
   },

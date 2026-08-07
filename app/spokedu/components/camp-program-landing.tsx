@@ -172,7 +172,7 @@ export default function CampProgramLanding() {
           },
           {
             label: '전체 프로그램 보기',
-            href: '/spokedu/programs',
+            href: '/spomove',
             trackLabel: 'program-camp-all',
             variant: 'on-light-outline',
           },

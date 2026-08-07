@@ -1,6 +1,6 @@
 import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_PATHS } from './site';
 
 export const monthlyPage = {
   hero: {
@@ -97,7 +97,7 @@ export const monthlyPage = {
       '기관 현장에서 매월 운영할 수 있는 월별 수업 흐름 — 테마, 활동, 회차 운영을 중심으로 제안합니다.',
     curriculumLead:
       '수업안, 매뉴얼, 강사교육, 라이선싱 등 콘텐츠 자산화 — 현장 운영을 자료·교육 체계로 확장합니다.',
-    curriculumHref: `${SPOKEDU_BASE_PATH}/curriculum`,
+    curriculumHref: `${SPOKEDU_PATHS.subscription}`,
     curriculumLinkLabel: '커리큘럼 콘텐츠 보기',
   },
   cta: {

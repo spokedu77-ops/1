@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return buildSpokeduPageMetadata({
       title: '수업 사례',
       description: '스포키듀 현장 수업 사례',
-      canonical: '/spokedu/records',
+      canonical: '/records',
       pageKey: 'records',
     });
   }

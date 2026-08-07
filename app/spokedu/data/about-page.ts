@@ -1,5 +1,5 @@
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 /**
  * About 허브 — 영업 랜딩이 아니라 조직·관계·경로 설명.
@@ -65,7 +65,7 @@ export const aboutPage = {
         role: '콘텐츠',
         title: 'SPOMOVE',
         body: '체육교육 현장과 구독시스템 양쪽에서 활용하는 화면 신호 기반 활동 콘텐츠입니다.',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+        href: `${SPOKEDU_PATHS.spomove}`,
         ctaLabel: 'SPOMOVE 알아보기',
         trackLabel: 'about-what-spomove',
       },
@@ -74,7 +74,7 @@ export const aboutPage = {
         role: '지도자용 제품',
         title: '구독시스템',
         body: '수업을 찾고 준비하고 진행·기록하는 흐름을 돕는 지도자용 제품입니다.',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        href: `${SPOKEDU_PATHS.subscription}`,
         ctaLabel: '구독시스템 알아보기',
         trackLabel: 'about-what-curriculum',
       },
@@ -145,12 +145,12 @@ export const aboutPage = {
       },
       {
         label: 'SPOMOVE',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+        href: `${SPOKEDU_PATHS.spomove}`,
         trackLabel: 'about-next-spomove',
       },
       {
         label: '구독시스템',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'about-next-curriculum',
       },
       {

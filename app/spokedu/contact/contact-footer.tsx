@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { brandContactLinks, brandProfile, footerNavLinks, SPOKEDU_BASE_PATH } from '../data/site';
+import { brandContactLinks, brandProfile, footerNavLinks, SPOKEDU_PATHS } from '../data/site';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
@@ -66,7 +66,7 @@ export function ContactPageFooter() {
           </ul>
         </nav>
         <p className="mt-6 text-xs text-slate-500">
-          <Link href={SPOKEDU_BASE_PATH} className={`font-medium hover:text-slate-700 ${focusRing}`}>
+          <Link href={SPOKEDU_PATHS.home} className={`font-medium hover:text-slate-700 ${focusRing}`}>
             {brandProfile.nameEn} 홈
           </Link>
         </p>

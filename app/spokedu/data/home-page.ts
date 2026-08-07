@@ -4,7 +4,7 @@ import {
   type FieldRecordSlug,
 } from './field-records-catalog';
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 export type HomeCaseCard = {
   slug: string;
@@ -147,7 +147,7 @@ export const homePage = {
     },
     secondaryCta: {
       label: '구독시스템 알아보기',
-      href: `${SPOKEDU_BASE_PATH}/curriculum`,
+      href: `${SPOKEDU_PATHS.subscription}`,
       trackLabel: 'cta-home-curriculum-hero',
     },
     recordsLink: {
@@ -169,7 +169,7 @@ export const homePage = {
       },
       {
         label: '지도자·파트너',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'cta-home-hero-quick-curriculum',
       },
     ] as const satisfies readonly HomeHeroQuickLink[],
@@ -216,7 +216,7 @@ export const homePage = {
         fit: '수업을 고르고 준비하고 진행·기록할 도구가 필요할 때',
         bullets: ['콘텐츠', 'SPOMOVE', '준비·진행·기록'] as const,
         ctaLabel: '구독시스템 알아보기',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'cta-home-gate-curriculum',
         mediaKey: 'gateCurriculum',
       },
@@ -259,7 +259,7 @@ export const homePage = {
         role: '화면의 시각 정보를 실제 움직임으로 연결하는 스포키듀 콘텐츠',
         examples: ['수업에서 사용', '구독으로 이용', 'SPOMAT으로 실행'] as const,
         ctaLabel: 'SPOMOVE 보기',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+        href: `${SPOKEDU_PATHS.spomove}`,
         trackLabel: 'cta-home-pillar-spomove',
         relationNote: '체육교육·구독 공통 콘텐츠',
       },
@@ -270,7 +270,7 @@ export const homePage = {
         role: '지도자가 수업을 고르고 준비하고 진행하고 기록하도록 돕는 제품',
         examples: ['콘텐츠 선택', '수업 준비', '진행·기록'] as const,
         ctaLabel: '구독시스템 보기',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'cta-home-pillar-curriculum',
       },
     ] as const satisfies readonly HomePillarItem[],
@@ -350,7 +350,7 @@ export const homePage = {
     featuredCase,
     primaryCta: {
       label: 'SPOMOVE 알아보기',
-      href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+      href: `${SPOKEDU_PATHS.spomove}`,
       trackLabel: 'cta-home-spomove-learn',
     },
     secondaryCta: {
@@ -425,7 +425,7 @@ export const homePage = {
       },
       {
         label: '구독시스템 알아보기',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'cta-home-final-curriculum',
         commercialRoute: 'curriculum' as const,
       },

@@ -5,7 +5,7 @@ import {
 } from './commercial-routes';
 import { SPOKEDU_IMAGES } from './images';
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 /** 프로그램 상세·링크·트랙 매핑의 단일 기준 (목록은 홈 #program-system) */
 export type ProgramCategory = '에듀테크' | '기초체력' | '월간형' | '놀이체육' | '행사형' | '캠프형' | '콘텐츠';
@@ -62,7 +62,7 @@ export const programRegistry: ProgramRegistryItem[] = [
     effects: ['주의 유지', '반응속도', '타이밍', '방향전환'],
     target: '키움센터·방과후, 개인·소그룹 응용, 혼합 연령 기관 수업',
     hasDetailPage: true,
-    detailHref: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+    detailHref: `${SPOKEDU_PATHS.spomove}`,
     inquiryHref: dispatchInquiryHref({ program: 'spomove' }),
     listCtaLabel: '자세히 보기',
     listCtaTrack: 'cta-program-spomove',
@@ -152,7 +152,7 @@ export const programRegistry: ProgramRegistryItem[] = [
     effects: ['수업안', '매뉴얼', '강사교육', '라이선싱'],
     target: '강사 교육, 기관 도입, 파트너 제휴/라이선스',
     hasDetailPage: false,
-    detailHref: `${SPOKEDU_BASE_PATH}/curriculum`,
+    detailHref: `${SPOKEDU_PATHS.subscription}`,
     inquiryHref: curriculumInquiryHref({ mode: 'package' }),
     listCtaLabel: '커리큘럼 문의',
     listCtaTrack: 'cta-program-curriculum-content',
@@ -209,19 +209,19 @@ export const trackUsageRows = [
   {
     track: '개인수업',
     summary: 'SPOMOVE·놀이체육·방학캠프',
-    href: '/spokedu/private',
+    href: '/private',
     programs: ['SPOMOVE', '놀이체육', '방학캠프'],
   },
   {
     track: '기관수업',
     summary: 'PAPS·원데이·SPOMOVE',
-    href: '/spokedu/dispatch',
+    href: '/dispatch',
     programs: ['PAPS', '원데이', 'SPOMOVE', '놀이체육'],
   },
   {
     track: '교육 콘텐츠',
     summary: '수업안·매뉴얼·강사 교육',
-    href: '/spokedu/curriculum',
+    href: '/subscription',
     programs: ['커리큘럼 콘텐츠', 'PAPS', 'SPOMOVE'],
   },
 ] as const;

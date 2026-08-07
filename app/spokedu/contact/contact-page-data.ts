@@ -88,7 +88,7 @@ export const contactPageContent = {
     title: '상담 전 확인해 주세요',
     description:
       '문의 내용을 남겨주시면 수업 목적과 운영 환경을 확인한 뒤 적합한 방향으로 안내드립니다. 협업 범위 안내는 파트너 페이지에서도 확인할 수 있습니다.',
-    partnersHref: '/spokedu/partners',
+    partnersHref: '/partners',
     partnersLabel: '파트너·협업 안내',
   },
   expectGuide: {

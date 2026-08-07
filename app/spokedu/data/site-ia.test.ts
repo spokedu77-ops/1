@@ -19,7 +19,8 @@ import {
   isSpokeduImageProgramMatch,
   SPOKEDU_IMAGES,
 } from './images';
-import { HOME_PROGRAM_SYSTEM_HREF, MASTER_HANDOFF, REDIRECT_ONLY_PROGRAM_PATHS, footerNavLinks, footerServiceLinks, siteHeaderCta, siteNav, SPOKEDU_BASE_PATH } from './site';
+import { HOME_PROGRAM_SYSTEM_HREF, MASTER_HANDOFF, REDIRECT_ONLY_PROGRAM_PATHS, footerNavLinks, footerServiceLinks, siteHeaderCta, siteNav } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_LEGACY_PREFIX, SPOKEDU_PATHS } from './public-routes';
 import { educationHubPage } from './education-hub';
 import { spomoveProgramPage } from './spomove-program-page';
 
@@ -43,12 +44,12 @@ describe('spokedu site IA', () => {
     const byLabel = Object.fromEntries(
       siteNav.filter((entry) => entry.type === 'link').map((entry) => [entry.label, entry.href]),
     );
-    expect(byLabel['체육교육']).toBe(`${SPOKEDU_BASE_PATH}/education`);
-    expect(byLabel.SPOMOVE).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove`);
-    expect(byLabel['구독시스템']).toBe(`${SPOKEDU_BASE_PATH}/curriculum`);
-    expect(byLabel['운영 사례']).toBe(`${SPOKEDU_BASE_PATH}/records`);
-    expect(byLabel['문의·협업']).toBe(`${SPOKEDU_BASE_PATH}/contact`);
-    expect(byLabel['스포키듀']).toBe(`${SPOKEDU_BASE_PATH}/about`);
+    expect(byLabel['체육교육']).toBe(SPOKEDU_PATHS.education);
+    expect(byLabel.SPOMOVE).toBe(SPOKEDU_PATHS.spomove);
+    expect(byLabel['구독시스템']).toBe(SPOKEDU_PATHS.subscription);
+    expect(byLabel['운영 사례']).toBe(SPOKEDU_PATHS.records);
+    expect(byLabel['문의·협업']).toBe(SPOKEDU_PATHS.contact);
+    expect(byLabel['스포키듀']).toBe(SPOKEDU_PATHS.about);
   });
 
   it('hides redirect-only programs from global nav while keeping path data', () => {
@@ -56,10 +57,10 @@ describe('spokedu site IA', () => {
     expect(navBlob).not.toMatch(/PAPS|캠프|원데이|월간 뉴스포츠|방학캠프/);
     expect(siteNav.some((entry) => entry.type === 'group')).toBe(false);
     expect([...REDIRECT_ONLY_PROGRAM_PATHS]).toEqual([
-      `${SPOKEDU_BASE_PATH}/programs/paps`,
-      `${SPOKEDU_BASE_PATH}/programs/camp`,
-      `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
-      `${SPOKEDU_BASE_PATH}/programs/monthly-newsports`,
+      `${SPOKEDU_LEGACY_PREFIX}/programs/paps`,
+      `${SPOKEDU_LEGACY_PREFIX}/programs/camp`,
+      `${SPOKEDU_LEGACY_PREFIX}/programs/oneday-event`,
+      `${SPOKEDU_LEGACY_PREFIX}/programs/monthly-newsports`,
     ]);
   });
 
@@ -97,7 +98,7 @@ describe('spokedu site IA', () => {
     expect(educationHubPage.formats.items.find((item) => item.id === 'oneday')?.href).toContain('/dispatch');
     expect(educationHubPage.formats.items.find((item) => item.id === 'oneday')?.href).toContain('#programs');
     expect(educationHubPage.formats.items.find((item) => item.id === 'inclusive')?.href).toContain('/dispatch');
-    expect(educationHubPage.principles.spomoveCta.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove`);
+    expect(educationHubPage.principles.spomoveCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
     expect(educationHubPage.principles.spomoveNote).toMatch(/일부 수업/);
     expect(educationHubPage.principles.spomoveNote).toMatch(/모든 수업에 포함되는 것은 아닙니다/);
     expect(educationHubPage.principles.spomoveNote).not.toMatch(/모든 수업에 포함됩니다/);
@@ -131,7 +132,7 @@ describe('spokedu site IA', () => {
     expect(homePage.hero.lines.join(' ')).toMatch(/현장|아동체육|수업|콘텐츠|시스템/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
     expect(homePage.hero.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/education`);
-    expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/curriculum`);
+    expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_PATHS.subscription}`);
     expect(homePage.hero.recordsLink.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
     expect(homePage.audienceGate.title).toMatch(/찾고/);
     expect(homePage.audienceGate.items.map((item) => item.id)).toEqual([
@@ -143,7 +144,7 @@ describe('spokedu site IA', () => {
     expect(homePage.audienceGate.items.map((item) => item.href)).toEqual([
       `${SPOKEDU_BASE_PATH}/dispatch`,
       `${SPOKEDU_BASE_PATH}/private`,
-      `${SPOKEDU_BASE_PATH}/curriculum`,
+      `${SPOKEDU_PATHS.subscription}`,
       `${SPOKEDU_BASE_PATH}/contact`,
     ]);
     expect(homePage.audienceGate.items.map((item) => item.id)).not.toContain('spomove');
@@ -152,14 +153,14 @@ describe('spokedu site IA', () => {
       `${SPOKEDU_BASE_PATH}/education`,
     );
     expect(homePage.pillars.items.find((item) => item.id === 'spomove')?.href).toBe(
-      `${SPOKEDU_BASE_PATH}/programs/spomove`,
+      `${SPOKEDU_PATHS.spomove}`,
     );
     expect(homePage.pillars.items.find((item) => item.id === 'spomove')?.relationNote).toMatch(/공통/);
     expect(homePage.cycle.processLine).toContain('현장');
     expect(homePage.cycle.processLine).toContain('시스템');
     expect(homePage.cycle.steps).toHaveLength(4);
     expect(homePage.spomove.flowSteps).toHaveLength(4);
-    expect(homePage.spomove.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove`);
+    expect(homePage.spomove.primaryCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
     expect(homePage.spomove.featuredCase.slug).toBe('dongjak-spomove');
     expect(homePage.spomove.lead).not.toMatch(/향상|개선|반드시 성장/);
     expect(homePage.evidenceStrip.items).toHaveLength(4);
@@ -170,7 +171,7 @@ describe('spokedu site IA', () => {
     expect(homePage.finalCta.items.map((item) => item.href)).toEqual([
       `${SPOKEDU_BASE_PATH}/dispatch`,
       `${SPOKEDU_BASE_PATH}/private`,
-      `${SPOKEDU_BASE_PATH}/curriculum`,
+      `${SPOKEDU_PATHS.subscription}`,
       `${SPOKEDU_BASE_PATH}/contact`,
     ]);
     expect(JSON.stringify(homePage.hero)).not.toMatch(/SPO-MAT|9,900|15,015/);
@@ -193,7 +194,7 @@ describe('spokedu site IA', () => {
   });
 
   it('keeps program index href valid (no self-redirect target)', () => {
-    expect(HOME_PROGRAM_SYSTEM_HREF).toBe(`${SPOKEDU_BASE_PATH}/programs`);
+    expect(HOME_PROGRAM_SYSTEM_HREF).toBe(SPOKEDU_PATHS.spomove);
   });
 
   it('records image usage metadata for proof-sensitive assets', () => {
@@ -356,14 +357,14 @@ describe('spokedu site IA', () => {
     expect(spomoveProgramPage.hero.lines.join(' ')).toMatch(/화면|움직임|SPOMOVE/);
     expect(spomoveProgramPage.flow.steps.map((step) => step.label)).toEqual(['확인', '판단', '수행', '조절']);
     expect(spomoveProgramPage.content.levels.map((level) => level.id)).toEqual(['simple', 'choice', 'complex']);
-    expect(spomoveProgramPage.content.catalogCta.href).toBe(`${SPOKEDU_BASE_PATH}/programs/spomove/catalog`);
+    expect(spomoveProgramPage.content.catalogCta.href).toBe(`${SPOKEDU_PATHS.spomoveCatalog}`);
     expect(spomoveProgramPage.spomat.title).toMatch(/SPOMAT/);
     expect(spomoveProgramPage.spomat.body).toMatch(/도구/);
     expect(spomoveProgramPage.usePaths.items.map((item) => item.id)).toEqual(['institution', 'subscription']);
     expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'institution')?.href).toContain('/dispatch');
     expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'institution')?.href).toContain('program=spomove');
     expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'subscription')?.href).toBe(
-      `${SPOKEDU_BASE_PATH}/curriculum`,
+      `${SPOKEDU_PATHS.subscription}`,
     );
     expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'subscription')?.href).not.toContain('onboarding');
     expect(spomoveProgramPage.cases.cards.length).toBeGreaterThanOrEqual(1);
@@ -372,7 +373,7 @@ describe('spokedu site IA', () => {
       true,
     );
     expect(spomoveProgramPage.catalogFinal.primary.href).toContain('/dispatch');
-    expect(spomoveProgramPage.catalogFinal.secondary.href).toBe(`${SPOKEDU_BASE_PATH}/curriculum`);
+    expect(spomoveProgramPage.catalogFinal.secondary.href).toBe(`${SPOKEDU_PATHS.subscription}`);
     expect(JSON.stringify(spomoveProgramPage)).not.toMatch(/SPO-MAT|집중력이 향상|인지능력이|발달 회복|치료 효과|검증된 효과|9,900|15,?015/);
     expect(spomoveProgramPage.usePaths.items[0]?.body).toMatch(/필수는 아닙니다/);
     expect(spomoveProgramPage.usePaths.items[0]?.body).not.toMatch(/필수로 포함됩니다|반드시 포함/);

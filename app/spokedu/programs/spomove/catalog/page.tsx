@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { SPOKEDU_BASE_PATH } from '../../../data/site';
+import { SPOKEDU_PATHS } from '../../../data/site';
 import { dispatchInquiryHref } from '../../../data/commercial-routes';
 
 export const metadata: Metadata = {
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 };
 
 const ENV_NAME = 'SPOMOVE_NOTION_CATALOG_URL';
-const SPOMOVE_HREF = `${SPOKEDU_BASE_PATH}/programs/spomove`;
-const CURRICULUM_HREF = `${SPOKEDU_BASE_PATH}/curriculum`;
+const SPOMOVE_HREF = SPOKEDU_PATHS.spomove;
+const CURRICULUM_HREF = SPOKEDU_PATHS.subscription;
 const DISPATCH_HREF = dispatchInquiryHref({ program: 'spomove' });
 
 function getCatalogUrl(): string | null {

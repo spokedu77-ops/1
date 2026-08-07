@@ -28,7 +28,9 @@ function writeStored(ctx: AcquisitionContext) {
 function inferSurfaceFromPath(pathname: string): AcquisitionEntrySurface {
   if (pathname.includes('/records')) return 'record';
   if (pathname.includes('/programs') || pathname.includes('/spomove')) return 'programs';
-  if (pathname === '/spokedu' || pathname.endsWith('/spokedu/')) return 'home';
+  if (pathname === '/' || pathname === '' || pathname === '/spokedu' || pathname.endsWith('/spokedu/')) {
+    return 'home';
+  }
   return 'direct';
 }
 

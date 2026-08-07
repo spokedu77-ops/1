@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { aboutPage } from './about-page';
 import { spomatPage } from './spomat-page';
 import { partnersPage } from './partners-page';
-import { footerServiceLinks, siteNav, SPOKEDU_BASE_PATH } from './site';
+import { footerServiceLinks, siteNav, SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 import { getPublicProductContract } from './public-product-contract';
 
 describe('PR7 about / spomat / partners', () => {
@@ -16,8 +16,8 @@ describe('PR7 about / spomat / partners', () => {
     expect(json).not.toMatch(/9,?900|28,?900|SPO-MAT/);
     expect(aboutPage.nextPaths.items.map((i) => i.href)).toEqual([
       `${SPOKEDU_BASE_PATH}/education`,
-      `${SPOKEDU_BASE_PATH}/programs/spomove`,
-      `${SPOKEDU_BASE_PATH}/curriculum`,
+      `${SPOKEDU_PATHS.spomove}`,
+      `${SPOKEDU_PATHS.subscription}`,
       `${SPOKEDU_BASE_PATH}/contact`,
     ]);
   });

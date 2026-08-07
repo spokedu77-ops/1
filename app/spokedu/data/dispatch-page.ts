@@ -7,7 +7,7 @@ import {
   getFieldRecordOnsitePath,
   type FieldRecordSlug,
 } from './field-records-catalog';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 type DispatchMediaRequirement = {
   page: 'dispatch';
@@ -253,7 +253,7 @@ export const dispatchPage = {
         ],
         tags: ['몰입형 웜업', '연령별 커리큘럼', '교구 직접 지참'],
         example: '예시: 반응 인지, 이중 과제 등',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+        href: `${SPOKEDU_PATHS.spomove}`,
         trackLabel: 'dispatch-lineup-spomove',
         mediaKey: 'dispatchSpomove' as HomeMediaKey,
         mediaRequirement: {

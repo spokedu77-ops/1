@@ -44,7 +44,7 @@ describe('field-records-catalog', () => {
       const catalog = getFieldRecordCatalogItem(slug);
       expect(hasFieldRecordOnsiteSummary(catalog)).toBe(true);
       expect(catalog.href).toBe(getFieldRecordOnsitePath(slug));
-      expect(catalog.href.startsWith('/spokedu/records/')).toBe(true);
+      expect(catalog.href.startsWith('/records/')).toBe(true);
       expect(catalog.blogHref).toMatch(/^https:\/\/blog\.naver\.com\//);
       expect(catalog.onsite!.composition.length).toBeGreaterThanOrEqual(2);
       expect(catalog.thumbnailSrc).toMatch(/^\/images\/spokedu\/records\//);

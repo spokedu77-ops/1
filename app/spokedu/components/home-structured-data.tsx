@@ -5,7 +5,7 @@ import { getSpokeduSiteUrl } from '../lib/site-url';
 /** Home OG·검색용 Organization / WebSite */
 export function HomeStructuredData() {
   const siteUrl = getSpokeduSiteUrl();
-  const homeUrl = `${siteUrl}/spokedu`;
+  const homeUrl = `${siteUrl}/`;
   const heroImage = `${siteUrl}${SPOKEDU_IMAGES.home.hero.src}`;
 
   const graph = {

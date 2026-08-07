@@ -1,5 +1,5 @@
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 export type InsightFilterId =
   | 'all'
@@ -79,7 +79,7 @@ export const insightArticles: InsightArticle[] = [
     audience: '기관 담당자 · 강사',
     filters: ['edtech', 'lesson-design'],
     mediaKey: 'programSpomove',
-    href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+    href: `${SPOKEDU_PATHS.spomove}`,
     ctaLabel: 'SPOMOVE 프로그램',
     trackLabel: 'insights-article-spomove',
     detail: {

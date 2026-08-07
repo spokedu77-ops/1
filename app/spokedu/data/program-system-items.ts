@@ -1,5 +1,5 @@
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_LEGACY_PREFIX, SPOKEDU_PATHS } from './site';
 
 export type ProgramSystemItem = {
   id: string;
@@ -19,7 +19,7 @@ export const programSystemItems = [
     name: 'SPOMOVE',
     description: '시각 자극을 보고 몸으로 반응하는 스크린 기반 에듀테크 놀이체육입니다.',
     mediaKey: 'programSpomove',
-    href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
+    href: SPOKEDU_PATHS.spomove,
     trackLabel: 'cta-home-system-spomove',
   },
   {
@@ -27,7 +27,7 @@ export const programSystemItems = [
     name: 'PAPS 놀이체육',
     description: '학교 체력평가 요소를 놀이형 수업으로 경험하며 참여와 움직임을 돕는 프로그램입니다.',
     mediaKey: 'programPaps',
-    href: `${SPOKEDU_BASE_PATH}/programs/paps`,
+    href: `${SPOKEDU_LEGACY_PREFIX}/programs/paps`,
     trackLabel: 'cta-home-system-paps',
   },
   {
@@ -35,7 +35,7 @@ export const programSystemItems = [
     name: '월간 뉴스포츠',
     description: '매월 뉴스포츠 테마를 중심으로 교구·협동 활동을 이어가는 월간형 체육 프로그램입니다.',
     mediaKey: 'programMonthlyNewsports',
-    href: `${SPOKEDU_BASE_PATH}/programs/monthly-newsports`,
+    href: `${SPOKEDU_LEGACY_PREFIX}/programs/monthly-newsports`,
     trackLabel: 'cta-home-system-monthly',
   },
   {
@@ -43,15 +43,15 @@ export const programSystemItems = [
     name: '방학캠프',
     description: '방학 기간 동안 체육과 예체능 활동을 결합해 하루 단위 몰입 프로그램으로 운영합니다.',
     mediaKey: 'programCamp',
-    href: `${SPOKEDU_BASE_PATH}/programs/camp`,
+    href: `${SPOKEDU_LEGACY_PREFIX}/programs/camp`,
     trackLabel: 'cta-home-system-camp',
   },
   {
     id: 'oneday',
     name: '원데이 스페셜 이벤트',
-    description: '기관 행사나 특별활동 일정에 맞춰 짧고 몰입감 있는 체육 경험을 제공합니다.',
+    description: '기관 행사나 특별활동 일정에 맞춰 짧고 몰입감 있는 체험 경험을 제공합니다.',
     mediaKey: 'programOneday',
-    href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
+    href: `${SPOKEDU_LEGACY_PREFIX}/programs/oneday-event`,
     trackLabel: 'cta-home-system-oneday',
   },
   {
@@ -59,7 +59,7 @@ export const programSystemItems = [
     name: '맞춤 스포츠 특강',
     description: '기관 목적과 대상에 맞춰 종목·난이도·운영 형태를 조정하는 맞춤형 스포츠 특강입니다.',
     mediaKey: 'programPlay',
-    href: `${SPOKEDU_BASE_PATH}/dispatch`,
+    href: SPOKEDU_PATHS.dispatch,
     trackLabel: 'cta-home-system-custom',
   },
 ] satisfies ProgramSystemItem[];

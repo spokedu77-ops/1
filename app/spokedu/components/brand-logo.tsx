@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { SPOKEDU_IMAGES } from '../data/images';
-import { SPOKEDU_BASE_PATH } from '../data/site';
+import { SPOKEDU_PATHS } from '../data/site';
 import { scrollSpokeduToTop } from '../lib/scroll';
 
 type BrandLogoProps = {
@@ -51,7 +51,7 @@ export function BrandLogo({
 
   return (
     <Link
-      href={SPOKEDU_BASE_PATH}
+      href={SPOKEDU_PATHS.home}
       onClick={scrollHomeOnClick ? () => scrollSpokeduToTop() : undefined}
       className={`inline-flex h-8 items-center bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF] ${className}`}
       aria-label="SPOKEDU 홈"

@@ -3,7 +3,7 @@ import {
   hasFieldRecordOnsiteSummary,
   type FieldRecordSlug,
 } from './field-records-catalog';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 /** URL 안정 ID → Dispatch 폼 칩 라벨 */
 export const DISPATCH_PROGRAM_QUERY_MAP = {
@@ -82,7 +82,7 @@ export function curriculumInquiryHref(args: {
   const params = new URLSearchParams();
   params.set('mode', args.mode);
   if (args.conversionEvidence) params.set('conversionEvidence', args.conversionEvidence);
-  return `${SPOKEDU_BASE_PATH}/curriculum?${params.toString()}#inquiry`;
+  return `${SPOKEDU_PATHS.subscription}?${params.toString()}#inquiry`;
 }
 
 /** 사례 → 관련 상업 경로 (온사이트 상세만) */
