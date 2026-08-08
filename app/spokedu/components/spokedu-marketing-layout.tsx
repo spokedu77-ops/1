@@ -17,6 +17,11 @@ export const spokeduMarketingMetadata: Metadata = {
   },
   description: seoMeta.home.description,
   keywords: [...seoKeywords.home],
+  verification: {
+    other: {
+      'naver-site-verification': 'ff169900d6c9a7dd4a127d1bb3384acaf94cb85d',
+    },
+  },
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
