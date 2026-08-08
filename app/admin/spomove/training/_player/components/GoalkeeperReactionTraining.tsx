@@ -5,6 +5,11 @@ import * as THREE from 'three';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import { normalizeReactSpeedSec } from '../lib/reactTrainTiming';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { staticPerfTier } from '../lib/reactTrainPerf';
 
@@ -338,6 +343,7 @@ export function GoalkeeperReactionTraining({
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
   const [warn, setWarn] = useState(false);
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -386,7 +392,7 @@ export function GoalkeeperReactionTraining({
     const g: GoalkeeperGame = {
       running: true,
       timeLeft: duration,
-      endsAtMs: performance.now() + duration * 1000,
+      endsAtMs: Number.POSITIVE_INFINITY,
       score: 0,
       combo: 0,
       maxCombo: 0,
@@ -394,7 +400,7 @@ export function GoalkeeperReactionTraining({
       laneCount: [0, 0, 0, 0],
       raf: null,
       timer: null,
-      startedAt: performance.now(),
+      startedAt: 0,
       nextSpawnAt: Math.max(0.2, travelSec),
       currentSpeed: baseSpeed,
       phaseId: -1,
@@ -716,32 +722,38 @@ export function GoalkeeperReactionTraining({
     if (hudScoreRef.current) hudScoreRef.current.textContent = '0';
     if (hudComboRef.current) hudComboRef.current.textContent = 'READY';
 
-    g.timer = setInterval(() => {
-      const next = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
-      if (next !== g.timeLeft) {
-        g.timeLeft = next;
-        updateTime();
-        setWarn(next <= 10);
-      }
-      if (next <= 0) {
-        if (bonusTimeEnabled && !g.bonusStarted) {
-          g.bonusStarted = true;
-          g.bonusActive = true;
-          g.timeLeft = BONUS_TIME_SEC;
-          g.startedAt = performance.now();
-          g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
-          g.nextSpawnAt = 0.2;
-          g.phaseId = -1;
-          g.bossSpawned = true;
-          g.currentSpeed = baseSpeed;
-          g.projectiles.forEach((p) => scene.remove(p));
-          g.projectiles = [];
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
+      g.startedAt = performance.now();
+      g.endsAtMs = performance.now() + duration * 1000;
+      g.timer = setInterval(() => {
+        const next = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
+        if (next !== g.timeLeft) {
+          g.timeLeft = next;
           updateTime();
-          return;
+          setWarn(next <= 10);
         }
-        endGame();
-      }
-    }, 250);
+        if (next <= 0) {
+          if (bonusTimeEnabled && !g.bonusStarted) {
+            g.bonusStarted = true;
+            g.bonusActive = true;
+            g.timeLeft = BONUS_TIME_SEC;
+            g.startedAt = performance.now();
+            g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
+            g.nextSpawnAt = 0.2;
+            g.phaseId = -1;
+            g.bossSpawned = true;
+            g.currentSpeed = baseSpeed;
+            g.projectiles.forEach((p) => scene.remove(p));
+            g.projectiles = [];
+            updateTime();
+            return;
+          }
+          endGame();
+        }
+      }, 250);
+      g.raf = requestAnimationFrame(animate);
+    };
 
     const onResize = () => {
       const w = play.clientWidth || window.innerWidth;
@@ -753,9 +765,14 @@ export function GoalkeeperReactionTraining({
     const unbindResize = bindViewportResize(play, onResize);
     onResize();
     renderer.render(scene, camera);
-    g.raf = requestAnimationFrame(animate);
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
 
     return () => {
+      stopCountdown();
       unbindResize();
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
@@ -810,6 +827,7 @@ export function GoalkeeperReactionTraining({
       </div>
       <div ref={playRef} className="gk-play">
         <canvas ref={cvRef} className="gk-canvas" />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="gk-ui">
           <div className="gk-cue tl" ref={(el) => { cueRefs.current.TL = el; }} />
           <div className="gk-cue tr" ref={(el) => { cueRefs.current.TR = el; }} />

@@ -4,6 +4,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { staticPerfTier } from '../lib/reactTrainPerf';
 
@@ -216,6 +221,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
   const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudWavesRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const gRef = useRef<WhGame | null>(null);
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
@@ -628,7 +634,8 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
 
     renderer.render(scene, camera);
 
-    const startId = window.setTimeout(() => {
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
       onResize();
       g.raf = requestAnimationFrame(animate);
       g.waveTimer = setTimeout(triggerObstacleWave, 3000);
@@ -646,10 +653,15 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
           endGame();
         }
       }, 250);
-    }, 60);
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
 
     return () => {
-      clearTimeout(startId);
+      stopCountdown();
       unbindResize();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
@@ -701,6 +713,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       </div>
       <div ref={playRef} className="wh-play">
         <canvas className="wh-canvas" ref={cvRef} />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="wh-ui">
           <div className="wh-corner wh-tl" style={{ color: QUADRANT_COLORS[0].css, textShadow: `0 0 20px ${QUADRANT_COLORS[0].css}` }}>
             RED

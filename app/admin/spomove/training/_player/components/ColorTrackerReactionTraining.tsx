@@ -3,6 +3,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { LongPressButton } from './LongPressButton';
 import { setupCanvas } from '../lib/canvasUtils';
@@ -338,6 +343,7 @@ export function ColorTrackerReactionTraining({
   const hudTierRef = useRef<HTMLDivElement>(null);
   const msgRef = useRef<HTMLDivElement>(null);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
+  const [startCountdown, setStartCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const [showRevealBtn, setShowRevealBtn] = useState(false);
   const revealAnswerRef = useRef<(() => void) | null>(null);
   const gRef = useRef<TrackerGame | null>(null);
@@ -782,16 +788,22 @@ export function ColorTrackerReactionTraining({
       g.raf = requestAnimationFrame(loop);
     };
 
-    const startId = window.setTimeout(() => {
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
       calcLayout();
       beginRound();
       g.raf = requestAnimationFrame(loop);
-    }, 60);
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setStartCountdown,
+      onDone: beginGame,
+    });
 
     const unbindResize = bindViewportResize(playRef.current, () => calcLayout());
 
     return () => {
-      clearTimeout(startId);
+      stopCountdown();
       unbindResize();
       g.running = false;
       if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
@@ -845,6 +857,7 @@ export function ColorTrackerReactionTraining({
         <div className="ctrk-overlay">
           <div className="ctrk-msg" ref={msgRef} />
         </div>
+        <ReactTrainStartCountdownOverlay countdown={startCountdown} />
         {showRevealBtn ? (
           <div className="ctrk-reveal">
             <LongPressButton onTrigger={revealAnswer} label="정답 공개" />

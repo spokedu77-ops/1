@@ -508,6 +508,67 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
     expect(merged.map((block) => block.order_index)).toEqual([0, 1]);
   });
 
+  it('ZERO LOSS: newer server content must not rewrite local sibling order without preferServerStructure', () => {
+    const localC = {
+      ...serverBlock('todo-c', 'C'),
+      type: 'todo' as const,
+      order_index: 0,
+      content: { text: 'C', checked: false },
+      version: 1,
+    };
+    const localA = {
+      ...serverBlock('todo-a', 'A local'),
+      type: 'todo' as const,
+      order_index: 1,
+      content: { text: 'A local', checked: false },
+      version: 1,
+    };
+    const localB = {
+      ...serverBlock('todo-b', 'B'),
+      type: 'todo' as const,
+      order_index: 2,
+      content: { text: 'B', checked: false },
+      version: 1,
+    };
+    const serverA = {
+      ...serverBlock('todo-a', 'A server'),
+      type: 'todo' as const,
+      order_index: 0,
+      content: { text: 'A server', checked: false },
+      version: 4,
+      updated_at: '2099-01-01T00:00:00.000Z',
+    };
+    const serverB = {
+      ...serverBlock('todo-b', 'B'),
+      type: 'todo' as const,
+      order_index: 1,
+      content: { text: 'B', checked: false },
+      version: 1,
+    };
+    const serverC = {
+      ...serverBlock('todo-c', 'C'),
+      type: 'todo' as const,
+      order_index: 2,
+      content: { text: 'C', checked: false },
+      version: 1,
+    };
+    const merged = mergeServerBlocksIntoLocalSnapshot(
+      [localC, localA, localB],
+      [serverA, serverB, serverC],
+      new Set(),
+      { preferServerStructure: false },
+    );
+    expect(merged.find((block) => block.id === 'todo-c')?.order_index).toBe(0);
+    expect(merged.find((block) => block.id === 'todo-a')?.order_index).toBe(1);
+    expect(merged.find((block) => block.id === 'todo-b')?.order_index).toBe(2);
+    // 상대 순서 서명(order_index 기준)은 로컬 C→A→B 유지
+    expect(
+      [...merged]
+        .sort((left, right) => left.order_index - right.order_index)
+        .map((block) => block.id),
+    ).toEqual(['todo-c', 'todo-a', 'todo-b']);
+  });
+
   it('filterStalePendingSoftDeletes keeps pending ids while server still has blocks (pre-push)', () => {
     const server = [serverBlock('child-1', '복구 본문')];
     const pending = new Set(['child-1', 'gone-forever']);

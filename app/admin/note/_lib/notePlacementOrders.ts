@@ -5,11 +5,9 @@
 
 export type NotePlacementOrderPatch = { id: string; order_index: number };
 
+/** order_index 우선. 동점은 입력 만남 순서(stable) — id로 재섞지 않음 (ZERO LOSS #4) */
 function sortByExistingOrder<T extends { id: string; order_index: number }>(blocks: ReadonlyArray<T>): T[] {
-  return [...blocks].sort((left, right) => {
-    if (left.order_index !== right.order_index) return left.order_index - right.order_index;
-    return left.id.localeCompare(right.id);
-  });
+  return [...blocks].sort((left, right) => left.order_index - right.order_index);
 }
 
 /**

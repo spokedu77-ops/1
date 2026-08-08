@@ -7,11 +7,16 @@
  * — 정답 = 가장 많거나(적게) 증식한 4색 중 하나 (회색 돌연변이는 무시)
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { setupCanvas } from '../lib/canvasUtils';
 import { getAudioCtx } from '../lib/audio';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
 const COLORS = [
@@ -209,6 +214,7 @@ export function VirusOutbreakReactionTraining({
   const gRef = useRef<Game | null>(null);
   const onCompleteRef = useRef(onComplete);
   const lastCountTextRef = useRef('');
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -521,17 +527,27 @@ export function VirusOutbreakReactionTraining({
     };
     const unbind = bindViewportResize(play, resize);
     getAudioCtx();
-    startRound();
-    g.raf = requestAnimationFrame(draw);
-    g.timer = setInterval(() => {
-      if (!g.running) return;
-      g.durationLeft -= 1;
-      if (timeRef.current) timeRef.current.textContent = String(Math.max(0, g.durationLeft));
-      if (g.durationLeft <= 0) complete();
-    }, 1000);
     if (timeRef.current) timeRef.current.textContent = String(g.durationLeft);
 
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
+      startRound();
+      g.raf = requestAnimationFrame(draw);
+      g.timer = setInterval(() => {
+        if (!g.running) return;
+        g.durationLeft -= 1;
+        if (timeRef.current) timeRef.current.textContent = String(Math.max(0, g.durationLeft));
+        if (g.durationLeft <= 0) complete();
+      }, 1000);
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
+
     return () => {
+      stopCountdown();
       unbind();
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
@@ -561,6 +577,7 @@ export function VirusOutbreakReactionTraining({
       </div>
       <div ref={playRef} className="vburst-play">
         <canvas className="vburst-canvas" ref={cvRef} />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="vburst-lens" aria-hidden />
         <div className="vburst-warn" ref={warnRef}>회색 돌연변이를 무시하세요!</div>
         <div className="vburst-mission" ref={missionRef} />

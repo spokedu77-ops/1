@@ -11,11 +11,9 @@ function siblingKey(block: Pick<NoteBlock, 'parent_block_id'>): string | null {
   return block.parent_block_id ?? null;
 }
 
+/** order_index 우선. 동점은 입력 만남 순서(stable) — id.localeCompare 재섞기 금지 (ZERO LOSS #4) */
 function sortSiblings(blocks: NoteBlock[]): NoteBlock[] {
-  return [...blocks].sort((left, right) => {
-    if (left.order_index !== right.order_index) return left.order_index - right.order_index;
-    return left.id.localeCompare(right.id);
-  });
+  return [...blocks].sort((left, right) => left.order_index - right.order_index);
 }
 
 function hasDuplicateOrders(blocks: NoteBlock[]): boolean {

@@ -3,6 +3,11 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 
 import { setupCanvas } from '../lib/canvasUtils';
 
@@ -568,7 +573,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
   const padRefs = useRef<(HTMLDivElement | null)[]>([]);
   const milestoneRootRef = useRef<HTMLDivElement>(null);
   const [hudTimeWarn, setHudTimeWarn] = useState(false);
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const [flashSpikes] = useState(() =>
     variant === 'flash' ? buildFlashSpikeLayout(22 + Math.floor(Math.random() * 10)) : []
   );
@@ -1000,11 +1005,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       g.minStimGapMs = computeMinStimGapMs();
     };
 
-    setCountdown(3);
-    let countdownValue = 3;
-    let countdownTimer: ReturnType<typeof setInterval> | null = null;
-
     const beginGame = () => {
+      if (!gRef.current?.running) return;
       const play = playAreaRef.current;
       if (play) {
         resizeCv(play);
@@ -1031,27 +1033,15 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       g.raf = requestAnimationFrame(loop);
     };
 
-    const startId = window.setTimeout(() => {
-      countdownTimer = setInterval(() => {
-        countdownValue--;
-        if (countdownValue <= 0) {
-          if (countdownTimer) {
-            clearInterval(countdownTimer);
-            countdownTimer = null;
-          }
-          setCountdown(0);
-          beginGame();
-          return;
-        }
-        setCountdown(countdownValue);
-      }, 1000);
-    }, 60);
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
 
     const unbindResize = bindViewportResize(playAreaRef.current, onWinResize);
 
     return () => {
-      clearTimeout(startId);
-      if (countdownTimer) clearInterval(countdownTimer);
+      stopCountdown();
       unbindResize();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
@@ -1119,36 +1109,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
               ))}
         </div>
         <div ref={milestoneRootRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
-        {countdown > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 80,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(0,0,0,0.62)',
-              backdropFilter: 'blur(8px)',
-              pointerEvents: 'none',
-            }}
-          >
-            <div
-              key={countdown}
-              className="countdown-pop"
-              style={{
-                fontFamily: 'Bebas Neue,Barlow Condensed,sans-serif',
-                fontSize: 'clamp(120px,30vw,260px)',
-                fontWeight: 900,
-                color: '#F97316',
-                lineHeight: 1,
-                textShadow: '0 0 48px rgba(249,115,22,0.42)',
-              }}
-            >
-              {countdown}
-            </div>
-          </div>
-        )}
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div
           id="vrt-combo"
           ref={comboRef}

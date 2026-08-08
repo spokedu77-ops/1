@@ -1001,9 +1001,11 @@ export default function MemoryGameApp({
             : cfg.mode === 'reactTrain' && resolvedForStart.engineMode === 'reactTrain'
               ? 'visualReaction'
               : 'training';
-        // 시지각·풍선 사이먼: 플레이어 내부 카운트다운만 사용 (바깥 워밍업과 이중 카운트 방지)
+        // 시지각·사이먼 카모/풍선: 플레이어 내부 카운트다운만 사용 (바깥 워밍업과 이중 카운트 방지)
         const screenWarmupSec =
-          nextScreen === 'visualReaction' || (cfg.mode === 'simon' && cfg.level === 5) ? 0 : warmupSec;
+          nextScreen === 'visualReaction' || (cfg.mode === 'simon' && (cfg.level === 4 || cfg.level === 5))
+            ? 0
+            : warmupSec;
         setScreen(nextScreen);
         setIsTraining(false);
 
@@ -2361,24 +2363,19 @@ export default function MemoryGameApp({
       const safeReactSpeedSec = settings.kidsSafeMode
         ? Math.min(6, settings.speed * 1.25)
         : settings.speed;
+      // 워밍업은 CamouflageReactionTraining 내부 카운트다운만 사용 (이중 3·2·1 방지)
       return (
         <div ref={trainingContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
           <style>{CSS}</style>
-          {countdown !== null ? (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
-            </div>
-          ) : (
-            <CamouflageReactionTraining
-              durationSec={Math.max(1, settings.duration ?? 60)}
-              speedLevel={safeReactSpeedLevel}
-              speedSec={safeReactSpeedSec}
-              placementMode="variant"
-              concurrent={settings.simonPoleCount === 2 ? 2 : 1}
-              onExit={stop}
-              onComplete={handleReactTrainComplete}
-            />
-          )}
+          <CamouflageReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
+            placementMode="variant"
+            concurrent={settings.simonPoleCount === 2 ? 2 : 1}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
         </div>
       );
     }

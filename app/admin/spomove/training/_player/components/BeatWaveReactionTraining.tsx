@@ -3,6 +3,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
@@ -116,6 +121,7 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
   const comboRef = useRef<HTMLDivElement>(null);
   const comboNRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const [soundOn, setSoundOn] = useState(true);
   const gRef = useRef<BwGame | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -507,7 +513,7 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
       g.raf = requestAnimationFrame(loop);
     };
 
-    const startId = window.setTimeout(() => {
+    const beginGame = () => {
       if (!g.running) return;
       calcLayout();
       const nowMs = performance.now();
@@ -524,12 +530,17 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
         if (left <= 0) { clearInterval(g.timer!); g.timer = null; endGame(); }
       }, 250) : null;
       g.raf = requestAnimationFrame(loop);
-    }, 60);
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
 
     const unbindResize = bindViewportResize(play, () => calcLayout());
 
     return () => {
-      clearTimeout(startId);
+      stopCountdown();
       unbindResize();
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
@@ -565,6 +576,7 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
       </div>
       <div ref={playRef} className="bwt-play">
         <canvas ref={cvRef} className="bwt-canvas" />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="bwt-coach">
           <div ref={coachCardRef} className="bwt-card">
             <div ref={coachTitleRef} className="bwt-card-title" style={{ color: '#fff' }}>READY</div>

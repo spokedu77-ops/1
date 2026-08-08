@@ -76,6 +76,34 @@ describe('resolveCreateBlockPersistOrders', () => {
     );
   });
 
+  it('ZERO LOSS #4: densify keeps encounter order on tied order_index (no id sort)', () => {
+    // uuid 역순 id여도 화면 만남 순서(z → a → m)를 densify가 유지해야 함
+    const created = block('new', 0);
+    const blocks = [
+      block('z-last-uuid', 0, { type: 'todo', content: { text: 'first on screen', checked: false } }),
+      block('a-first-uuid', 0, { type: 'todo', content: { text: 'second on screen', checked: false } }),
+      block('m-mid-uuid', 0, { type: 'todo', content: { text: 'third on screen', checked: false } }),
+      created,
+    ];
+
+    const result = resolveCreateBlockPersistOrders({
+      blocks,
+      documentId: 'doc-1',
+      createdId: 'new',
+      parentId: null,
+      fallbackInsertIndex: 3,
+      createdBlock: created,
+    });
+
+    expect(result.repairedSiblings?.map((item) => item.id)).toEqual([
+      'z-last-uuid',
+      'a-first-uuid',
+      'm-mid-uuid',
+      'new',
+    ]);
+    expect(result.repairedSiblings?.map((item) => item.order_index)).toEqual([0, 1, 2, 3]);
+  });
+
   it('reinserts missing create into sibling list', () => {
     const created = block('new', 99);
     const blocks = [block('a', 0), block('b', 1)];

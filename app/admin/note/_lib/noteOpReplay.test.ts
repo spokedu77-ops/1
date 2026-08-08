@@ -263,4 +263,29 @@ describe('mergeSnapshotPatches', () => {
     });
     expect(next.map((block) => block.id)).toEqual(['a']);
   });
+
+  it('ZERO LOSS: content ACK snapshot must not rewrite sibling order_index', () => {
+    const blocks = [
+      baseBlock('todo-c', 'C', { type: 'todo', order_index: 0, content: { text: 'C', checked: false } }),
+      baseBlock('todo-a', 'A', { type: 'todo', order_index: 1, content: { text: 'A local', checked: false } }),
+      baseBlock('todo-b', 'B', { type: 'todo', order_index: 2, content: { text: 'B', checked: false } }),
+    ];
+    // 서버는 예전 순서 A,B,C — content push ACK만 왔는데 order까지 덮으면 체크리스트가 춤춤
+    const snapshots: NoteBlockSnapshot[] = [{
+      id: 'todo-a',
+      document_id: 'doc-1',
+      parent_block_id: null,
+      type: 'todo',
+      order_index: 0,
+      content: { text: 'A server', checked: false },
+      version: 3,
+      updated_at: '2026-08-09T00:00:00.000Z',
+    }];
+    const next = mergeSnapshotPatches(blocks, snapshots);
+    expect(next.map((block) => block.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
+    expect(next.map((block) => block.order_index)).toEqual([0, 1, 2]);
+    expect((next.find((block) => block.id === 'todo-a')?.content as { text?: string }).text)
+      .toBe('A local');
+    expect(next.find((block) => block.id === 'todo-a')?.version).toBe(3);
+  });
 });

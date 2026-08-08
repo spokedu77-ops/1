@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
 export const NUMBER_CART_ROUND_OPTIONS = [7, 10, 15, 25] as const;
@@ -328,6 +333,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
   const gRef = useRef<CartGame | null>(null);
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
@@ -1116,11 +1122,22 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     const unbindResize = bindViewportResize(play, onWinResize);
     onWinResize();
     renderer.render(scene, camera);
-    g.raf = requestAnimationFrame(animate);
-    startRound();
+
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
+      g.raf = requestAnimationFrame(animate);
+      startRound();
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
+
     const flashEl = flashRef.current;
 
     return () => {
+      stopCountdown();
       unbindResize();
       g.running = false;
       if (g.roundTimer) clearTimeout(g.roundTimer);
@@ -1161,6 +1178,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       </div>
       <div ref={playRef} className="ncart-play">
         <canvas className="ncart-canvas" ref={cvRef} />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="ncart-vignette" />
         <div className="ncart-flash" ref={flashRef} aria-hidden />
         <div className="ncart-target hidden" ref={targetHudRef}>

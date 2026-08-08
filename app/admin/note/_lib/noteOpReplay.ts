@@ -161,7 +161,17 @@ export function mergeSnapshotPatches(
       continue;
     }
     const serverBlock = snapshotToNoteBlock(snapshot);
-    next.push(sealPassiveIncomingBlock(block, serverBlock));
+    const sealed = sealPassiveIncomingBlock(block, serverBlock);
+    // ZERO LOSS: content/meta ACK 스냅샷이 형제 순서를 침묵 덮지 않음.
+    // topology는 LocalApply·remote op로만 바뀐다. 서버 stale order를 한 칸씩 섞으면
+    // duplicate → densify 춤이 난다.
+    next.push({
+      ...sealed,
+      document_id: block.document_id,
+      parent_block_id: block.parent_block_id ?? null,
+      type: block.type,
+      order_index: block.order_index,
+    });
   }
   for (const snapshot of snapshots) {
     if (seen.has(snapshot.id)) continue;

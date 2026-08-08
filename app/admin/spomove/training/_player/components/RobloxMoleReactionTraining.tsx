@@ -3,6 +3,11 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import {
   MOLE_HOLES_SINGLE,
@@ -223,6 +228,7 @@ export function RobloxMoleReactionTraining({
   const comboRef = useRef<HTMLDivElement>(null);
   const comboNRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const [activeMap, setActiveMap] = useState<Map<number, ActiveMole>>(() => new Map());
 
   const clearSpawnTimers = useCallback(() => {
@@ -305,7 +311,7 @@ export function RobloxMoleReactionTraining({
       spawnCount: 0,
       bonusActive: false,
       bonusStarted: false,
-      endsAtMs: performance.now() + durationSec * 1000,
+      endsAtMs: Number.POSITIVE_INFINITY,
       lastSpawnDualBoth: false,
       timer: null as ReturnType<typeof setInterval> | null,
       hideTimer: null as ReturnType<typeof setTimeout> | null,
@@ -401,38 +407,50 @@ export function RobloxMoleReactionTraining({
       }, delayMs);
     };
 
-    setActiveMap(new Map());
     setHud();
-    scheduleNext(g.cadenceMs);
-    g.timer = setInterval(() => {
-      const newLeft = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
-      if (g.timeLeft !== newLeft) {
-        g.timeLeft = newLeft;
-        setHud();
-      }
-      if (g.timeLeft <= 0) {
-        if (bonusTimeEnabled && !g.bonusStarted) {
-          g.bonusStarted = true;
-          g.bonusActive = true;
-          g.timeLeft = BONUS_TIME_SEC;
-          g.exposeMs = 620;
-          g.cadenceMs = Math.min(900, Math.max(620, Math.round(g.cadenceMs * 0.75)));
-          g.spawnCount = 0;
-          g.lastSpawnDualBoth = false;
-          g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
-          clearSpawnTimers();
-          setActiveMap(new Map());
+
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
+      g.endsAtMs = performance.now() + durationSec * 1000;
+      setActiveMap(new Map());
+      setHud();
+      scheduleNext(g.cadenceMs);
+      g.timer = setInterval(() => {
+        const newLeft = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
+        if (g.timeLeft !== newLeft) {
+          g.timeLeft = newLeft;
           setHud();
-          scheduleNext(200);
-          return;
         }
-        if (g.timer) clearInterval(g.timer);
-        g.timer = null;
-        endGame();
-      }
-    }, 250);
+        if (g.timeLeft <= 0) {
+          if (bonusTimeEnabled && !g.bonusStarted) {
+            g.bonusStarted = true;
+            g.bonusActive = true;
+            g.timeLeft = BONUS_TIME_SEC;
+            g.exposeMs = 620;
+            g.cadenceMs = Math.min(900, Math.max(620, Math.round(g.cadenceMs * 0.75)));
+            g.spawnCount = 0;
+            g.lastSpawnDualBoth = false;
+            g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
+            clearSpawnTimers();
+            setActiveMap(new Map());
+            setHud();
+            scheduleNext(200);
+            return;
+          }
+          if (g.timer) clearInterval(g.timer);
+          g.timer = null;
+          endGame();
+        }
+      }, 250);
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
 
     return () => {
+      stopCountdown();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
       clearSpawnTimers();
@@ -471,6 +489,7 @@ export function RobloxMoleReactionTraining({
 
       <div className="rmt-play">
         <MoleField uid={uid} holes={MOLE_HOLES_SINGLE} activeMap={activeMap} />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="rmt-combo" ref={comboRef}>
           <div className="rmt-combo-n" ref={comboNRef}>
             0

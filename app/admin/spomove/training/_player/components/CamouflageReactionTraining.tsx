@@ -3,6 +3,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import {
@@ -92,6 +97,7 @@ export function CamouflageReactionTraining({
   const hudRoundsRef = useRef<HTMLDivElement>(null);
   const msgRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const gRef = useRef<CamoGame | null>(null);
   const placementModeRef = useRef(placementMode);
   useEffect(() => {
@@ -270,7 +276,8 @@ export function CamouflageReactionTraining({
       g.raf = requestAnimationFrame(loop);
     };
 
-    const startId = window.setTimeout(() => {
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
       calcLayout();
       startRound();
       const endsAtMs = performance.now() + durationSec * 1000;
@@ -287,12 +294,17 @@ export function CamouflageReactionTraining({
         }
       }, 250);
       g.raf = requestAnimationFrame(loop);
-    }, 60);
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
 
     const unbindResize = bindViewportResize(play, () => calcLayout());
 
     return () => {
-      clearTimeout(startId);
+      stopCountdown();
       unbindResize();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
@@ -329,6 +341,7 @@ export function CamouflageReactionTraining({
       </div>
       <div ref={playRef} className="camo-play">
         <canvas className="camo-canvas" ref={cvRef} />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="camo-msg" ref={msgRef} />
       </div>
     </div>

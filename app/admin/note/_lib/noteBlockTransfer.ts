@@ -59,10 +59,8 @@ export async function fetchDocumentRootBlocksForPlacement(documentId: string): P
   const json = (await res.json()) as { blocks?: NoteBlock[] };
   return (json.blocks ?? [])
     .filter((block) => (block.parent_block_id ?? null) === null)
-    .sort((left, right) => {
-      if (left.order_index !== right.order_index) return left.order_index - right.order_index;
-      return left.id.localeCompare(right.id);
-    });
+    // 동점은 응답 만남 순서 유지 — id.localeCompare 재섞기 금지 (ZERO LOSS #4)
+    .sort((left, right) => left.order_index - right.order_index);
 }
 
 /** 블록 트리를 다른 문서로 옮길 때 PATCH 목록 생성 */

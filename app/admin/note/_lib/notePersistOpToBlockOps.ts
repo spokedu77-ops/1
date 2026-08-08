@@ -90,9 +90,20 @@ function mergeServerBlockIntoLocal(
   server: NoteBlock,
   preferServerStructure = false,
 ): NoteBlock {
-  if (shouldPreferServerBlockOverLocal(local, server) || preferServerStructure) {
-    // Integrity: 서버 골격·버전은 수용하되 사용자 본문 wipe/truncate는 봉인
+  if (preferServerStructure) {
+    // open #6: topology outbound 없을 때만 서버 형제 순서·골격 채택
     return sealPassiveIncomingBlock(local, server);
+  }
+  if (shouldPreferServerBlockOverLocal(local, server)) {
+    // 본문/버전만 서버 — order/parent는 로컬 유지 (content 갱신으로 체크리스트 춤 금지)
+    const sealed = sealPassiveIncomingBlock(local, server);
+    return {
+      ...sealed,
+      document_id: local.document_id,
+      parent_block_id: local.parent_block_id ?? null,
+      type: local.type,
+      order_index: local.order_index,
+    };
   }
   if (
     local.type !== server.type

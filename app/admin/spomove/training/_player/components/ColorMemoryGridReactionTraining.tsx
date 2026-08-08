@@ -7,11 +7,16 @@
  * — 정답 색 = 바뀐(새) 색 (패드 반응 기준)
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { setupCanvas } from '../lib/canvasUtils';
 import { getAudioCtx } from '../lib/audio';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
 const COLORS = [
@@ -163,6 +168,7 @@ export function ColorMemoryGridReactionTraining({
   const gRef = useRef<Game | null>(null);
   const onCompleteRef = useRef(onComplete);
   const centerTextRef = useRef('');
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -420,17 +426,27 @@ export function ColorMemoryGridReactionTraining({
     };
     const unbind = bindViewportResize(play, resize);
     getAudioCtx();
-    startRound();
-    g.raf = requestAnimationFrame(draw);
-    g.timer = setInterval(() => {
-      if (!g.running) return;
-      g.durationLeft -= 1;
-      if (timeRef.current) timeRef.current.textContent = String(Math.max(0, g.durationLeft));
-      if (g.durationLeft <= 0) complete();
-    }, 1000);
     if (timeRef.current) timeRef.current.textContent = String(g.durationLeft);
 
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
+      startRound();
+      g.raf = requestAnimationFrame(draw);
+      g.timer = setInterval(() => {
+        if (!g.running) return;
+        g.durationLeft -= 1;
+        if (timeRef.current) timeRef.current.textContent = String(Math.max(0, g.durationLeft));
+        if (g.durationLeft <= 0) complete();
+      }, 1000);
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
+
     return () => {
+      stopCountdown();
       unbind();
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
@@ -461,6 +477,7 @@ export function ColorMemoryGridReactionTraining({
       </div>
       <div ref={playRef} className="cmgrid-play">
         <canvas className="cmgrid-canvas" ref={cvRef} />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="cmgrid-flash" ref={flashRef} aria-hidden />
         <div className="cmgrid-center" ref={centerRef} aria-hidden />
         <div className="cmgrid-status" ref={statusRef} />

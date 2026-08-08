@@ -4,6 +4,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import {
+  ReactTrainStartCountdownOverlay,
+  REACT_TRAIN_START_COUNTDOWN_SEC,
+  runReactTrainStartCountdown,
+} from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import { normalizeReactSpeedSec } from '../lib/reactTrainTiming';
@@ -107,6 +112,7 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
   const comboRef = useRef<HTMLDivElement>(null);
   const comboNRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
+  const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
 
   const stopGame = useCallback(() => {
     const g = gRef.current;
@@ -477,16 +483,34 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
     updateHudTime();
     if (hudStimsRef.current) hudStimsRef.current.textContent = '0';
     if (hudMaxRef.current) hudMaxRef.current.textContent = '0';
-    const endsAtMs = performance.now() + durationSec * 1000;
-    g.timer = setInterval(() => {
-      const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
-      if (g.timeLeft !== newLeft) { g.timeLeft = newLeft; updateHudTime(); }
-      if (g.timeLeft <= 0) { if (g.timer) clearInterval(g.timer); g.timer = null; endGame(); }
-    }, 250);
-    g.raf = requestAnimationFrame(loop);
+
+    const beginGame = () => {
+      if (!gRef.current?.running) return;
+      g.lastTime = performance.now();
+      const endsAtMs = performance.now() + durationSec * 1000;
+      g.timer = setInterval(() => {
+        const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
+        if (g.timeLeft !== newLeft) {
+          g.timeLeft = newLeft;
+          updateHudTime();
+        }
+        if (g.timeLeft <= 0) {
+          if (g.timer) clearInterval(g.timer);
+          g.timer = null;
+          endGame();
+        }
+      }, 250);
+      g.raf = requestAnimationFrame(loop);
+    };
+
+    const stopCountdown = runReactTrainStartCountdown({
+      onTick: setCountdown,
+      onDone: beginGame,
+    });
 
     const unbindResize = bindViewportResize(play, resize);
     return () => {
+      stopCountdown();
       unbindResize();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
@@ -525,6 +549,7 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
 
       <div ref={playRef} className="rrt-play">
         <canvas ref={cvRef} className="rrt-cv" />
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
         <div className="rrt-combo" ref={comboRef}>
           <div className="rrt-combo-n" ref={comboNRef}>
             0
