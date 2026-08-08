@@ -73,7 +73,6 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
   return (
     <html lang="ko" className="font-sans" style={fontVariables}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#185FA5" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>

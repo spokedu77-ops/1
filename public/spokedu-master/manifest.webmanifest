@@ -4,6 +4,7 @@
   "description": "인터넷 연결 상태에서 수업 자료, SPOMOVE 실행 화면, 기록 도구를 빠르게 여는 SPOKEDU MASTER 앱",
   "start_url": "/spokedu-master",
   "scope": "/spokedu-master/",
+  "id": "/spokedu-master/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#07070c",

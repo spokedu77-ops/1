@@ -34,6 +34,12 @@ const nextConfig: NextConfig = {
   turbopack: {},
   async redirects() {
     return [
+      // Legacy root MASTER manifest — admin/teacher PWA 누수 방지용으로 경로 이전
+      {
+        source: '/manifest.json',
+        destination: '/spokedu-master/manifest.webmanifest',
+        permanent: true,
+      },
       // --- Clean public URL migration: legacy /spokedu/** → clean ---
       { source: "/spokedu", destination: "/", permanent: true },
       { source: "/spokedu/about", destination: "/about", permanent: true },

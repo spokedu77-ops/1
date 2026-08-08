@@ -35,7 +35,9 @@ describe('SPOKEDU MASTER service worker cache contract', () => {
 
     expect(source).toContain("if (request.mode === 'navigate' || request.destination === 'document') return;");
     expect(source).toContain("if (url.pathname.startsWith('/api/')) return;");
-    expect(source).toContain("if (url.pathname.startsWith('/spokedu-master')) return;");
+    expect(source).toContain(
+      "if (url.pathname.startsWith('/spokedu-master') && !PUBLIC_STATIC_PATHS.has(url.pathname)) return;",
+    );
     expect(source).toContain("'text/html'");
     expect(source).toContain("'application/json'");
     expect(source).toContain("'text/x-component'");
@@ -58,8 +60,9 @@ describe('SPOKEDU MASTER service worker cache contract', () => {
     // Hashed Next bundles must not be SW cache-first (stale ChunkLoadError after deploy).
     expect(source).toContain("if (url.pathname.startsWith('/_next/static/')) return;");
     expect(source).not.toContain("url.pathname.startsWith('/_next/static/') ||");
-    expect(source).toContain("'/manifest.json'");
+    expect(source).toContain("'/spokedu-master/manifest.webmanifest'");
     expect(source).toContain("'/spokedu-master-icon.svg'");
+    expect(source).not.toContain("'/manifest.json'");
     expect(source).toContain("url.pathname.includes('/storage/v1/object/public/iiwarmup-files/')");
     expect(source).toContain("!url.pathname.includes('/storage/v1/object/sign/')");
     expect(source).toContain("!url.pathname.includes('/storage/v1/object/authenticated/')");
@@ -133,12 +136,25 @@ describe('SPOKEDU MASTER protected response cache contract', () => {
     );
   });
 
-  it('describes the manifest as an online-first quick-launch app', () => {
-    const source = read('public/manifest.json');
+  it('describes the manifest as an online-first quick-launch app scoped to MASTER', () => {
+    const source = read('public/spokedu-master/manifest.webmanifest');
 
     expect(source).toContain('"name": "SPOKEDU MASTER"');
+    expect(source).toContain('"start_url": "/spokedu-master"');
+    expect(source).toContain('"scope": "/spokedu-master/"');
     expect(source).toContain('인터넷 연결 상태에서');
     expect(source).not.toContain('오프라인');
     expect(source).not.toContain('동기화');
+    expect(existsSync(join(process.cwd(), 'public/manifest.json'))).toBe(false);
+  });
+
+  it('does not attach MASTER manifest from the root layout (admin/teacher leak guard)', () => {
+    const rootLayout = read('app/layout.tsx');
+    const masterLayout = read('app/spokedu-master/layout.tsx');
+
+    expect(rootLayout).not.toContain('rel="manifest"');
+    expect(rootLayout).not.toContain('/manifest.json');
+    expect(rootLayout).not.toContain('/spokedu-master/manifest.webmanifest');
+    expect(masterLayout).toContain("manifest: '/spokedu-master/manifest.webmanifest'");
   });
 });

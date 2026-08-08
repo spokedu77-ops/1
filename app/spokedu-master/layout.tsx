@@ -13,6 +13,15 @@ export const metadata: Metadata = {
   authors: [{ name: 'SPOKEDU' }],
   creator: 'SPOKEDU',
   metadataBase: new URL(getSpokeduSiteUrl()),
+  /** admin/teacher 전역 누수 방지 — MASTER 경로에서만 PWA manifest 연결 */
+  manifest: '/spokedu-master/manifest.webmanifest',
+  applicationName: 'SPOKEDU MASTER',
+  appleWebApp: {
+    title: 'SPOKEDU MASTER',
+    capable: true,
+    statusBarStyle: 'black-translucent',
+  },
+  themeColor: '#6366f1',
   openGraph: {
     type: 'website',
     locale: 'ko_KR',

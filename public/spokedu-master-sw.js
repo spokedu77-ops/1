@@ -1,8 +1,11 @@
-const STATIC_CACHE = 'spokedu-master-static-v5';
+const STATIC_CACHE = 'spokedu-master-static-v6';
 const STORAGE_CACHE = 'spokedu-master-storage-v1';
 const CURRENT_CACHES = new Set([STATIC_CACHE, STORAGE_CACHE]);
 const MASTER_CACHE_PREFIX = 'spokedu-master';
-const PUBLIC_STATIC_PATHS = new Set(['/manifest.json', '/spokedu-master-icon.svg']);
+const PUBLIC_STATIC_PATHS = new Set([
+  '/spokedu-master/manifest.webmanifest',
+  '/spokedu-master-icon.svg',
+]);
 const DISALLOWED_CONTENT_TYPES = ['text/html', 'application/json', 'text/x-component'];
 
 function isAllowedSupabasePublicAsset(url) {
@@ -83,7 +86,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin === self.location.origin) {
     if (url.pathname.startsWith('/api/')) return;
-    if (url.pathname.startsWith('/spokedu-master')) return;
+    // MASTER HTML/RSC는 캐시하지 않되, allowlist 정적 파일(manifest 등)은 예외
+    if (url.pathname.startsWith('/spokedu-master') && !PUBLIC_STATIC_PATHS.has(url.pathname)) return;
     // Never intercept Next hashed bundles — let the network/HTTP cache handle them.
     if (url.pathname.startsWith('/_next/static/')) return;
   }
