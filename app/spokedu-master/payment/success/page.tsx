@@ -106,7 +106,7 @@ function SuccessContent() {
 
   const persistPaidOnboarding = useCallback(async () => {
     if (!profile) return;
-    await fetch('/api/spokedu-master/profile', {
+    const response = await fetch('/api/spokedu-master/profile', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -117,8 +117,9 @@ function SuccessContent() {
         programTypes: profile.programTypes,
         onboardingDone: true,
       }),
-    }).catch(() => undefined);
-    await syncMasterProfile().catch(() => undefined);
+    });
+    if (!response.ok) throw new Error('paid onboarding profile sync failed');
+    await syncMasterProfile();
   }, [profile, syncMasterProfile]);
 
   const checkAccessActivation = useCallback(async () => {

@@ -528,12 +528,12 @@ async function runTodoBackspaceChainOnOpenDoc(page, label, anchor) {
     .click({ force: true });
   for (let attempt = 0; attempt < 3; attempt += 1) {
     if ((await todoCheckboxLocator(page, 1).count()) < 1) break;
-    // eslint-disable-next-line no-await-in-loop
+     
     await page.keyboard.press('Backspace');
-    // eslint-disable-next-line no-await-in-loop
+     
     await page.waitForTimeout(700);
     if ((await todoCheckboxLocator(page, 1).count()) > 0) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await focusBlockAt(page, 1);
     }
   }
@@ -847,7 +847,7 @@ async function assertIdentityLeaveSurvivesReload(page) {
     const deadline = Date.now() + 20000;
     let last = { keep: false, gone: true };
     while (Date.now() < deadline) {
-      // eslint-disable-next-line no-await-in-loop
+       
       last = await page.evaluate(async ({ docId, keepId, goneId }) => {
         const res = await fetch(
           `/api/admin/note/blocks/load?documentId=${encodeURIComponent(docId)}&skipReconcile=true`,
@@ -859,7 +859,7 @@ async function assertIdentityLeaveSurvivesReload(page) {
         return { keep: ids.includes(keepId), gone: ids.includes(goneId) };
       }, seeded);
       if (last.keep && !last.gone) break;
-      // eslint-disable-next-line no-await-in-loop
+       
       await page.waitForTimeout(400);
     }
     if (!last.keep || last.gone) {

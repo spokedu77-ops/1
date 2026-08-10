@@ -113,7 +113,7 @@ export default function CameraControlPage() {
   const [resultsMessage, setResultsMessage] = useState('저장된 결과를 불러오는 중');
   const [selectedResult, setSelectedResult] = useState<CameraActivityResultDetail | null>(null);
   const [detailMessage, setDetailMessage] = useState('');
-  const [rosterStudents, setRosterStudents] = useState<CameraRosterStudent[]>([]);
+  const [rosterStudents] = useState<CameraRosterStudent[]>([]);
   const [rosterMessage, setRosterMessage] = useState('');
   const [selectedClassGroup, setSelectedClassGroup] = useState('all');
 

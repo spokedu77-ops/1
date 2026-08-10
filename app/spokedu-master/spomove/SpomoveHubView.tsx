@@ -742,7 +742,7 @@ function CardInfo({
         ].filter(Boolean).slice(0, 4).map((part) => (
           <span
             key={part}
-            className="inline-flex max-w-full items-center truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-slate-600"
+            className="inline-flex max-w-full items-center truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-slate-600 after:content-['·'] last:after:content-['']"
           >
             {part}
           </span>
@@ -891,6 +891,7 @@ export default function SpomoveHubView() {
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
   const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const [assetPackError, setAssetPackError] = useState(false);
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
   const profile = useProfile();
   const ownerId = getRecentActivityOwnerId(profile);
@@ -937,6 +938,7 @@ export default function SpomoveHubView() {
 
       const { data: thumbnailData, error: thumbnailError } = thumbnailResult as SpomoveThumbnailPackQueryResult;
       if (thumbnailError && thumbnailError.code !== 'PGRST116') {
+        setAssetPackError(true);
         setThumbnailPaths({});
         setThumbnailCacheBust(undefined);
       } else {
@@ -949,6 +951,7 @@ export default function SpomoveHubView() {
 
       const { data: guideVideoData, error: guideVideoError } = guideVideoResult as SpomoveGuideVideoPackQueryResult;
       if (guideVideoError && guideVideoError.code !== 'PGRST116') {
+        setAssetPackError(true);
         setGuideVideoUrls({});
       } else {
         setGuideVideoUrls(normalizeSpomoveGuideVideoMap(guideVideoData?.assets_json));
@@ -956,12 +959,14 @@ export default function SpomoveHubView() {
 
       const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
       if (contentError && contentError.code !== 'PGRST116') {
+        setAssetPackError(true);
         setContentOverrides({});
       } else {
         setContentOverrides(normalizeSpomoveContentMap(contentData?.assets_json));
       }
     }).catch(() => {
       if (!alive) return;
+      setAssetPackError(true);
       setThumbnailPaths({});
       setThumbnailCacheBust(undefined);
       setGuideVideoUrls({});
@@ -1124,6 +1129,11 @@ export default function SpomoveHubView() {
   return (
     <main className="h-full overflow-y-auto" style={{ background: 'var(--spm-bg)' }}>
       <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-16">
+        {assetPackError ? (
+          <div role="status" className="mb-3 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-bold leading-5 text-amber-800">
+            일부 활동 이미지·가이드가 일시적으로 불러와지지 않았습니다. 활동 실행은 계속할 수 있습니다.
+          </div>
+        ) : null}
         {/* 헤더 */}
         <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] px-4 py-5 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:px-5 sm:py-5 lg:px-6">
           <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.15em] text-slate-700">

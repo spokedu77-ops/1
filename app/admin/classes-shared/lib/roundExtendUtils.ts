@@ -30,11 +30,6 @@ function formatErrorMessage(err: unknown): string {
   return String(err);
 }
 
-function assertMutationApplied(data: { id?: string } | null, error: unknown, fallback: string) {
-  if (error) throw error;
-  if (!data?.id) throw new Error(fallback);
-}
-
 // 그룹 수업 회차 확장 유틸
 export async function extendClass(
   supabase: any,
