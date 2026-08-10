@@ -215,7 +215,12 @@ function buildDisplayTitle(preset: OfficialSpomovePreset): string {
     const mode = MODES[modeId];
     const catalogId = catalogLevelId(preset, modeId);
     const level = mode.levels.find((item) => item.id === catalogId);
-    if (level?.name) return level.name.replace(/^\(보류\)\s*/u, '').trim();
+    if (level?.name) {
+      const base = level.name.replace(/^\(보류\)\s*/u, '').trim();
+      const theme = preset.engine.variantColorTheme ? THEME_LABELS[preset.engine.variantColorTheme] : null;
+      if (theme && !base.includes(theme)) return `${base} · ${theme}`;
+      return base;
+    }
   }
   const segments = preset.title.split('·').map((segment) => segment.trim()).filter(Boolean);
   return segments[segments.length - 1] ?? preset.title.trim();

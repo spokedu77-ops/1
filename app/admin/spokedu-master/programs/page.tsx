@@ -65,7 +65,10 @@ import {
   type OfficialSpomovePreset,
   type OfficialSpomoveProgramGroup,
 } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-import { SPOMOVE_FOCUS_TAG_LABELS } from '@/app/spokedu-master/spomove/spomovePresetDisplayModel';
+import {
+  getSpomovePresetDisplayModel,
+  SPOMOVE_FOCUS_TAG_LABELS,
+} from '@/app/spokedu-master/spomove/spomovePresetDisplayModel';
 import { getPresetMovementSummary } from '@/app/spokedu-master/spomove/movements/presetMovementSummary';
 import { movementDisplayLabel } from '@/app/spokedu-master/spomove/movements/movementLabels';
 import { MOVEMENT_REGISTRY } from '@/app/spokedu-master/spomove/movements/movementRegistry';
@@ -101,7 +104,7 @@ import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'home-ready' | 'image-needed';
-type AdminTabKey = 'programs' | 'content-audit' | 'spomove-content' | 'spomove-thumbnails' | 'spomove-guide-videos';
+type AdminTabKey = 'programs' | 'content-audit' | 'spomove-catalog' | 'spomove-content' | 'spomove-thumbnails' | 'spomove-guide-videos';
 
 type SpomoveGuideVideoDraft = Record<string, string>;
 
@@ -229,6 +232,7 @@ const LIBRARY_ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
   { key: 'content-audit', label: 'Phase E 감사' },
 ];
 const SPOMOVE_ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
+  { key: 'spomove-catalog', label: '공식 프리셋' },
   { key: 'spomove-content', label: 'SPOMOVE 설명' },
   { key: 'spomove-thumbnails', label: 'SPOMOVE 썸네일' },
   { key: 'spomove-guide-videos', label: 'SPOMOVE 가이드 영상' },
@@ -2976,7 +2980,34 @@ export default function AdminSmProgramsPage() {
         />
       ) : null}
 
-      {activeTab === 'content-audit' ? (
+      {activeTab === 'spomove-catalog' ? (
+        <main className="p-5">
+          <div className="mb-4">
+            <h2 className="text-xl font-black">공식 SPOMOVE 프리셋</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">SPOKEDU MASTER에 노출되는 공식 카탈로그와 동일한 목록입니다.</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {OFFICIAL_SPOMOVE_LIBRARY.map((preset) => {
+              const display = getSpomovePresetDisplayModel(preset);
+              return (
+                <article key={preset.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-black text-indigo-600">{display.axisLabel}</p>
+                      <h3 className="mt-1 text-base font-black text-slate-950">{display.displayTitle}</h3>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-600">{display.programLabel}</span>
+                  </div>
+                  <p className="mt-3 text-xs font-semibold text-slate-500">{display.settingLabel}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {preset.settingChips.slice(0, 4).map((chip) => <span key={chip} className="rounded-full border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-500">{chip}</span>)}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </main>
+      ) : activeTab === 'content-audit' ? (
         <ContentAuditPanel onOpenProgram={openProgramFromAudit} />
       ) : activeTab === 'spomove-content' ? (
         <SpomoveContentManager />
