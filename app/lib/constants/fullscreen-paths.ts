@@ -4,7 +4,6 @@
  */
 export const FULLSCREEN_PATH_PREFIXES = [
   '/login',
-  '/',
   '/report',
   '/program',
   '/info',
@@ -13,14 +12,23 @@ export const FULLSCREEN_PATH_PREFIXES = [
   '/admin/spomove/training/_player',
   '/pro',
   '/spokedu-master',
-  '/spokedu',
   '/teacher',
   '/move-report',
 ] as const;
 
+const PUBLIC_MARKETING_PATH_PREFIXES = [
+  '/', '/about', '/education', '/dispatch', '/private', '/spomove',
+  '/subscription', '/records', '/contact', '/spomat', '/partners',
+] as const;
+
+export function isPublicMarketingPath(pathname: string): boolean {
+  return PUBLIC_MARKETING_PATH_PREFIXES.some(
+    (p) => pathname === p || (p !== '/' && pathname.startsWith(`${p}/`))
+  );
+}
+
 export function isFullscreenPath(pathname: string): boolean {
-  if (pathname === '/') return true;
   return FULLSCREEN_PATH_PREFIXES.some(
-    (p) => p !== '/' && (pathname === p || pathname.startsWith(p + '/'))
+    (p) => pathname === p || pathname.startsWith(p + '/')
   );
 }

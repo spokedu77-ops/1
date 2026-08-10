@@ -13,7 +13,7 @@ import {
 import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
 import { reportLoginUxEvent } from '@/app/lib/auth/loginUxTelemetry';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
+import { isFullscreenPath, isPublicMarketingPath } from '@/app/lib/constants/fullscreen-paths';
 import { AppSidebarProvider, useAppSidebar } from './providers/AppSidebarProvider';
 import { QueryProvider } from './providers/QueryProvider';
 import { I18nProvider } from './providers/I18nProvider';
@@ -34,12 +34,13 @@ const fontVariables = {
 
 function RootLayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const hideSidebar = isFullscreenPath(pathname ?? '');
+  const publicMarketing = isPublicMarketingPath(pathname ?? '');
+  const hideSidebar = publicMarketing || isFullscreenPath(pathname ?? '');
   const { isDesktopOpen, toggleDesktop } = useAppSidebar();
-  const fullscreenWrapStyle = hideSidebar
+  const fullscreenWrapStyle = hideSidebar && !publicMarketing
     ? { minHeight: 'var(--viewport-height-px, 100dvh)', height: 'var(--viewport-height-px, 100dvh)', width: '100vw', maxWidth: '100%' }
     : undefined;
-  const mainFullscreenStyle = hideSidebar ? { height: 'var(--viewport-height-px, 100dvh)' } : undefined;
+  const mainFullscreenStyle = hideSidebar && !publicMarketing ? { height: 'var(--viewport-height-px, 100dvh)' } : undefined;
 
   useEffect(() => installChunkLoadRecovery(), []);
 
@@ -92,7 +93,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                 style={mainFullscreenStyle}
                 className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                   hideSidebar
-                    ? 'flex flex-col min-h-0 pr-0 mr-0 overflow-x-hidden'
+                    ? `${publicMarketing ? 'block' : 'flex flex-col min-h-0'} pr-0 mr-0 overflow-x-hidden`
                     : `pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0${isDesktopOpen ? ' md:ml-64' : ' md:ml-0'}`
                 }`}
               >

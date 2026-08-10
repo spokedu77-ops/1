@@ -17,7 +17,7 @@ import {
 } from '../data/site';
 import { BrandLogo } from './brand-logo';
 import { isExternalHref, externalLinkProps } from '../lib/external-link';
-import { lockSpokeduScroll, getSpokeduScrollRoot, getSpokeduScrollY, scrollSpokeduToTop, unlockSpokeduScroll } from '../lib/scroll';
+import { lockSpokeduScroll, getSpokeduScrollY, scrollSpokeduToTop, unlockSpokeduScroll } from '../lib/scroll';
 import { inferTrackFromHref } from '../lib/tracking';
 import { brandBlue, brandNavy, koreanText, siteContainer } from '../lib/ui-classes';
 
@@ -127,11 +127,8 @@ export function SiteHeader() {
     }
     const onScroll = () => setScrolled(getSpokeduScrollY() > 56);
     onScroll();
-    const root = getSpokeduScrollRoot();
-    root?.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
-      root?.removeEventListener('scroll', onScroll);
       window.removeEventListener('scroll', onScroll);
     };
   }, [isHome]);
