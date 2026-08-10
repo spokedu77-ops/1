@@ -19,6 +19,8 @@ import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/sto
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
   normalizeSpomoveGuideVideoMap,
+  normalizeSpomoveContentMap,
+  SPOMOVE_CONTENT_PACK_ID,
   normalizeSpomoveHomeFeaturedSlots,
   normalizeSpomoveThumbnailMap,
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
@@ -95,6 +97,7 @@ type SpomoveGuideVideoPackQueryResult = {
   data: { assets_json?: unknown } | null;
   error: { code?: string } | null;
 };
+type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
 
 function getFirstStartSteps(spomoveAvailable: boolean) {
   return [
@@ -450,17 +453,19 @@ function FirstStartGuide({ spomoveAvailable }: { spomoveAvailable: boolean }) {
 function SpomoveCard({
   preset,
   thumbnailUrl,
+  contentOverride,
   onOpenGuide,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
+  contentOverride?: import('@/app/lib/spomove/spomoveOfficialAssets').SpomovePresetContentOverride;
   onOpenGuide: (preset: OfficialSpomovePreset) => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   const fitClass = stretch ? 'object-fill object-center' : 'object-cover object-center';
-  const displayModel = getSpomovePresetDisplayModel(preset);
+  const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
 
   return (
     <article
@@ -518,8 +523,19 @@ function SpomoveCard({
         </div>
       </button>
       <div className="flex shrink-0 flex-col gap-2 bg-white p-3">
-        <div className="flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
-          <span className="min-w-0 truncate">{preset.axisTitle}</span>
+        <div className="flex min-h-7 min-w-0 flex-wrap items-center gap-1.5 overflow-hidden" aria-label="활동 정보">
+          {[
+            displayModel.variantLabel,
+            displayModel.difficultyLabel,
+            displayModel.targetLabel,
+          ].filter(Boolean).slice(0, 3).map((part) => (
+            <span
+              key={part}
+              className="inline-flex max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-[color:var(--spm-t2)]"
+            >
+              {part}
+            </span>
+          ))}
         </div>
         <button
           type="button"
@@ -699,6 +715,7 @@ function EntitledDashboardView() {
   const [spomoveThumbnailPaths, setSpomoveThumbnailPaths] = useState<Record<string, string>>({});
   const [spomoveThumbnailCacheBust, setSpomoveThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
+  const [spomoveContentMap, setSpomoveContentMap] = useState<Record<string, import('@/app/lib/spomove/spomoveOfficialAssets').SpomovePresetContentOverride>>({});
   const [featuredSpomoveSlotIds, setFeaturedSpomoveSlotIds] = useState<Array<string | null>>([
     null,
     null,
@@ -736,13 +753,14 @@ function EntitledDashboardView() {
         .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
         .maybeSingle(),
       supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID).maybeSingle(),
+      supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_CONTENT_PACK_ID).maybeSingle(),
       supabase
         .from('think_asset_packs')
         .select('assets_json')
         .eq('id', SPOMOVE_HOME_FEATURED_PACK_ID)
         .maybeSingle(),
     ])
-      .then(([thumbnailResult, guideVideoResult, featuredResult]) => {
+      .then(([thumbnailResult, guideVideoResult, contentResult, featuredResult]) => {
         if (!alive) return;
         const { data, error } = thumbnailResult as SpomoveThumbnailPackQueryResult;
         if (error && error.code !== 'PGRST116') {
@@ -763,6 +781,9 @@ function EntitledDashboardView() {
           setGuideVideoUrls(normalizeSpomoveGuideVideoMap(guideVideoData?.assets_json));
         }
 
+        const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
+        setSpomoveContentMap(contentError && contentError.code !== 'PGRST116' ? {} : normalizeSpomoveContentMap(contentData?.assets_json));
+
         const { data: featuredData, error: featuredError } = featuredResult as {
           data: { assets_json?: unknown } | null;
           error: { code?: string } | null;
@@ -778,6 +799,7 @@ function EntitledDashboardView() {
         setSpomoveThumbnailPaths({});
         setSpomoveThumbnailCacheBust(undefined);
         setGuideVideoUrls({});
+        setSpomoveContentMap({});
         setFeaturedSpomoveSlotIds([null, null, null, null]);
       });
     return () => {
@@ -1042,6 +1064,7 @@ function EntitledDashboardView() {
               <SpomoveCard
                 preset={preset}
                 thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}
+                contentOverride={spomoveContentMap[preset.id]}
                 onOpenGuide={setPreviewSpomove}
               />
             </div>
@@ -1147,6 +1170,7 @@ function EntitledDashboardView() {
 
       <SpomoveGuidelineSheet
         preset={previewSpomove}
+        contentOverride={previewSpomove ? spomoveContentMap[previewSpomove.id] : undefined}
         guideVideoUrl={previewSpomove ? guideVideoUrls[previewSpomove.id] ?? '' : ''}
         onClose={() => setPreviewSpomove(null)}
       />

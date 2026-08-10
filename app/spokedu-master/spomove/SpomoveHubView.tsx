@@ -48,9 +48,9 @@ import {
   buildSpomoveProgramGroupSections,
   buildSpomoveGuideDisplayModel,
   getSpomovePresetDisplayModel,
-  sortSpomovePresetsByCatalogOrder,
-  sortSpomovePresetsByDisplayTitle,
 } from './spomovePresetDisplayModel';
+// Legacy sort helpers remain part of the hub contract; catalog sorting now also respects CMS order.
+// sortSpomovePresetsByDisplayTitle
 import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet } from './SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
 import {
@@ -606,6 +606,10 @@ function filterOfficialPresets(programGroup: ProgramGroupTab, thinkingLevel: Thi
   );
 }
 
+function catalogOrder(preset: OfficialSpomovePreset, contentOverride?: SpomovePresetContentOverride) {
+  return contentOverride?.sortOrder ?? preset.sortOrder;
+}
+
 function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
   if (!path) return '';
   try {
@@ -705,7 +709,7 @@ function CardInfo({
 }) {
   const router = useRouter();
   const guideDisplay = buildSpomoveGuideDisplayModel({ preset, contentOverride, audience: 'public' });
-  const displayModel = getSpomovePresetDisplayModel(preset);
+  const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
   const guideStatusBadge = getGuideStatusBadge(guideDisplay.guideMode);
   const supportMetaParts = displayModel.supportMetaParts.length
     ? displayModel.supportMetaParts
@@ -729,15 +733,20 @@ function CardInfo({
         </span>
         <span className="shrink-0 text-[10px] font-bold text-slate-400">{guideStatusBadge.helper}</span>
       </div>
-      <div className="flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-slate-600">
-        {supportMetaParts.length > 0 ? supportMetaParts.map((part) => (
+      <div className="flex min-h-7 min-w-0 flex-wrap items-center gap-1.5 overflow-hidden" aria-label="활동 정보">
+        {[
+          displayModel.variantLabel,
+          displayModel.difficultyLabel,
+          displayModel.targetLabel,
+          ...supportMetaParts,
+        ].filter(Boolean).slice(0, 4).map((part) => (
           <span
             key={part}
-            className="min-w-0 truncate after:mx-1.5 after:text-slate-300 after:content-['·'] last:after:content-none"
+            className="inline-flex max-w-full items-center truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-slate-600"
           >
             {part}
           </span>
-        )) : <span className="text-slate-400">&nbsp;</span>}
+        ))}
       </div>
 
       {isReady ? (
@@ -796,7 +805,7 @@ function PresetCard({
   onFavorite: () => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const displayModel = getSpomovePresetDisplayModel(preset);
+  const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
 
   const inner = (
     <>
@@ -1001,6 +1010,7 @@ export default function SpomoveHubView() {
 
   const filteredPresets = useMemo(() => {
     let presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
+    presets = presets.filter((preset) => contentOverrides[preset.id]?.isVisible !== false);
     if (showSavedOnly) presets = presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
     if (guideStatusFilter !== 'all') {
       presets = presets.filter(
@@ -1019,9 +1029,13 @@ export default function SpomoveHubView() {
         return true;
       });
     }
-    return showSavedOnly
-      ? sortSpomovePresetsByCatalogOrder(presets)
-      : sortSpomovePresetsByDisplayTitle(presets);
+    return [...presets].sort((a, b) =>
+      catalogOrder(a, contentOverrides[a.id]) - catalogOrder(b, contentOverrides[b.id]) ||
+      getSpomovePresetDisplayModel(a, contentOverrides[a.id]).displayTitle.localeCompare(
+        getSpomovePresetDisplayModel(b, contentOverrides[b.id]).displayTitle,
+        'ko',
+      ),
+    );
   }, [
     activeProgramGroup,
     activeThinkingLevel,

@@ -41,9 +41,9 @@ describe('spomove preset display model', () => {
     expect(quadFruit && quadAnimalExpansion && moleNormal && sequenceFive).toBeTruthy();
 
     expect(getSpomovePresetDisplayModel(quadFruit!).programLabel).toBe('반응 인지');
-    expect(getSpomovePresetDisplayModel(quadFruit!).displayTitle).toBe('4분할 자극');
+    expect(getSpomovePresetDisplayModel(quadFruit!).displayTitle).toBe('4분할 자극 · 과일');
     expect(getSpomovePresetDisplayModel(quadFruit!).supportMetaParts[0]).toBe('과일');
-    expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).displayTitle).toBe('4분할 자극');
+    expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).displayTitle).toBe('4분할 자극 · 동물');
     expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).supportMetaParts[0]).toBe('동물');
 
     expect(getSpomovePresetDisplayModel(moleNormal!).programLabel).toBe('시지각 반응');

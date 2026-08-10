@@ -678,6 +678,12 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
 
 function normalizeContentDraft(value: SpomovePresetContentOverride | undefined): SpomovePresetContentOverride {
   return {
+    displayTitle: value?.displayTitle ?? '',
+    shortDescription: value?.shortDescription ?? '',
+    variantLabel: value?.variantLabel ?? '',
+    catalogTags: value?.catalogTags ?? [],
+    isVisible: value?.isVisible ?? true,
+    sortOrder: value?.sortOrder,
     coreKeywords: normalizeSpomoveCoreKeywordsList(value?.coreKeywords ?? []),
     activityMethod: value?.activityMethod ?? '',
     activityConcept: value?.activityConcept ?? '',
@@ -688,6 +694,10 @@ function normalizeContentDraft(value: SpomovePresetContentOverride | undefined):
 
 function contentDraftIsEmpty(value: SpomovePresetContentOverride | undefined) {
   return (
+    !value?.displayTitle?.trim() &&
+    !value?.shortDescription?.trim() &&
+    !value?.variantLabel?.trim() &&
+    !(value?.catalogTags?.length) &&
     !value?.activityMethod?.trim() &&
     !value?.activityConcept?.trim() &&
     !value?.movementGuide &&
@@ -859,6 +869,8 @@ function SpomoveContentManager() {
   const [error, setError] = useState<string | null>(null);
   const [saveIssues, setSaveIssues] = useState<SpomovePublishedGuideSaveIssue[]>([]);
   const [workFilter, setWorkFilter] = useState<SpomoveContentWorkFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedPresetId, setExpandedPresetId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -943,6 +955,12 @@ function SpomoveContentManager() {
   const saveContent = useCallback(async (presetId: string) => {
     const draft = normalizeContentDraft(draftMap[presetId]);
     const nextEntry: SpomovePresetContentOverride = {
+      displayTitle: draft.displayTitle?.trim() ?? '',
+      shortDescription: draft.shortDescription?.trim() ?? '',
+      variantLabel: draft.variantLabel?.trim() ?? '',
+      catalogTags: draft.catalogTags?.map((tag) => tag.trim()).filter(Boolean).slice(0, 5) ?? [],
+      isVisible: draft.isVisible !== false,
+      sortOrder: draft.sortOrder,
       coreKeywords: normalizeSpomoveCoreKeywordsList(draft.coreKeywords ?? []),
       activityMethod: draft.activityMethod?.trim() ?? '',
       activityConcept: draft.activityConcept?.trim() ?? '',
@@ -1006,8 +1024,15 @@ function SpomoveContentManager() {
     [draftMap, issuePresetIds, workFilter],
   );
   const visibleContentPresets = useMemo(
-    () => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => matchesWorkFilter(preset.id)),
-    [matchesWorkFilter],
+    () => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => {
+      if (!matchesWorkFilter(preset.id)) return false;
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      const draft = normalizeContentDraft(draftMap[preset.id]);
+      return [preset.id, preset.title, preset.programTitle, draft.displayTitle, draft.variantLabel, ...(draft.catalogTags ?? [])]
+        .filter(Boolean).join(' ').toLowerCase().includes(q);
+    }),
+    [draftMap, matchesWorkFilter, searchQuery],
   );
   const workFilterCounts = useMemo(
     () =>
@@ -1047,7 +1072,7 @@ function SpomoveContentManager() {
 
     return { readyForReview, published, needsWork };
   }, [draftMap]);
-  const visiblePresetCount = workFilterCounts[workFilter];
+  const visiblePresetCount = visibleContentPresets.length;
   const fillVisibleStarterDrafts = useCallback(() => {
     if (visibleContentPresets.length === 0) {
       toast.error('현재 필터에 초안을 채울 프리셋이 없습니다.');
@@ -1121,6 +1146,17 @@ function SpomoveContentManager() {
             </div>
           </div>
           <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <label className="relative min-w-0 flex-1">
+                <span className="sr-only">SPOMOVE 활동 검색</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+                <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="활동명, 프리셋 ID, 태그 검색" className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+              </label>
+              <div className="flex shrink-0 gap-1.5">
+                <button type="button" onClick={() => setExpandedPresetId(null)} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-600 hover:text-indigo-700">모두 접기</button>
+                <button type="button" onClick={() => setExpandedPresetId('__all__')} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-600 hover:text-indigo-700">모두 펼치기</button>
+              </div>
+            </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[11px] font-black text-slate-600">작업 필터</p>
               <p className="text-[11px] font-bold text-slate-500">현재 {visiblePresetCount}개 프리셋 표시</p>
@@ -1196,9 +1232,8 @@ function SpomoveContentManager() {
           </section>
         ) : (
           SPOMOVE_GROUP_OPTIONS.map((group) => {
-            const presets = OFFICIAL_SPOMOVE_LIBRARY
+            const presets = visibleContentPresets
               .filter((preset) => preset.programGroup === group.key)
-              .filter((preset) => matchesWorkFilter(preset.id))
               .sort((a, b) => a.sortOrder - b.sortOrder);
             if (presets.length === 0) return null;
 
@@ -1222,9 +1257,75 @@ function SpomoveContentManager() {
                     const guideCompletion = getMovementGuideCompletion(preset, draft.movementGuide);
 
                     return (
-                      <article key={preset.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <details
+                        key={preset.id}
+                        open={expandedPresetId === '__all__' || expandedPresetId === preset.id}
+                        onToggle={(event) => {
+                          if (event.currentTarget.open) setExpandedPresetId(preset.id);
+                          else if (expandedPresetId === preset.id) setExpandedPresetId(null);
+                        }}
+                        className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                      >
+                        <summary className="cursor-pointer list-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 [&::-webkit-details-marker]:hidden">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-[13px] font-black text-slate-950">{draft.displayTitle?.trim() || preset.title}</p>
+                              <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {(draft.catalogTags ?? []).slice(0, 4).map((tag) => <span key={tag} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">{tag}</span>)}
+                              </div>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-black text-indigo-700">상세 편집</span>
+                          </div>
+                        </summary>
                         <p className="text-[13px] font-black text-slate-950">{preset.title}</p>
                         <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
+                        <section className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
+                          <p className="text-[11px] font-black text-indigo-900">구독자 카드 정보</p>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                            <label className="block text-[10px] font-black text-slate-500">
+                              사용자용 활동명
+                              <input value={draft.displayTitle ?? ''} onChange={(event) => updateDraft(preset.id, { displayTitle: event.target.value })} placeholder={getSpomovePresetDisplayModel(preset).displayTitle} disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                            </label>
+                            <label className="block text-[10px] font-black text-slate-500">
+                              카드 변형명
+                              <input value={draft.variantLabel ?? ''} onChange={(event) => updateDraft(preset.id, { variantLabel: event.target.value })} placeholder={getSpomovePresetDisplayModel(preset).variantLabel} disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                            </label>
+                          </div>
+                          <label className="mt-2 block text-[10px] font-black text-slate-500">
+                            카드 한줄 설명
+                            <input value={draft.shortDescription ?? ''} onChange={(event) => updateDraft(preset.id, { shortDescription: event.target.value })} placeholder="활동 방식을 한 문장으로 설명" disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                          </label>
+                          <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_6rem]">
+                            <label className="flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-bold text-slate-600">
+                              <input type="checkbox" checked={draft.isVisible !== false} onChange={(event) => updateDraft(preset.id, { isVisible: event.target.checked })} disabled={savingThis || deletingThis} className="h-4 w-4 accent-indigo-600" />
+                              구독자 화면에 노출
+                            </label>
+                            <label className="block text-[10px] font-black text-slate-500">
+                              정렬 순서
+                              <input type="number" min={0} value={draft.sortOrder ?? preset.sortOrder} onChange={(event) => updateDraft(preset.id, { sortOrder: Number(event.target.value) })} disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                            </label>
+                          </div>
+                          <label className="mt-2 block text-[10px] font-black text-slate-500">
+                            카드 태그 (쉼표로 구분, 최대 5개)
+                            <input value={(draft.catalogTags ?? []).join(', ')} onChange={(event) => updateDraft(preset.id, { catalogTags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 5) })} placeholder="선택 반응, 양측 이동, 보통" disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                          </label>
+                          <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                            <div className="bg-slate-900 px-3 py-4 text-white">
+                              <p className="text-[10px] font-bold text-white/70">{preset.programTitle}</p>
+                              <p className="mt-1 text-[15px] font-black">{draft.displayTitle?.trim() || getSpomovePresetDisplayModel(preset).displayTitle}</p>
+                            </div>
+                            <div className="p-3">
+                              <p className="text-[11px] font-semibold leading-4 text-slate-500">{draft.shortDescription?.trim() || '카드 한줄 설명을 입력하면 여기에 표시됩니다.'}</p>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {(draft.catalogTags?.length ? draft.catalogTags : [draft.variantLabel?.trim() || getSpomovePresetDisplayModel(preset).variantLabel]).filter(Boolean).map((tag) => (
+                                  <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>
+                                ))}
+                              </div>
+                              <p className="mt-3 text-right text-[10px] font-black text-indigo-600">활동 준비 →</p>
+                            </div>
+                          </div>
+                        </section>
                         <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-[11px] font-black text-slate-700">
@@ -1446,7 +1547,7 @@ function SpomoveContentManager() {
                             삭제
                           </button>
                         </div>
-                      </article>
+                      </details>
                     );
                   })}
                 </div>

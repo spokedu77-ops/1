@@ -31,6 +31,12 @@ export type SpomoveHomeFeaturedAssetsJson = {
 };
 
 export type SpomovePresetContentOverride = {
+  displayTitle?: string;
+  shortDescription?: string;
+  variantLabel?: string;
+  catalogTags?: string[];
+  isVisible?: boolean;
+  sortOrder?: number;
   coreKeywords?: string[];
   activityMethod?: string;
   activityConcept?: string;
@@ -91,6 +97,18 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
         ? entry.movementGuideStatus
         : undefined;
     const normalized: SpomovePresetContentOverride = {};
+    const displayTitle = typeof entry.displayTitle === 'string' ? entry.displayTitle.trim() : '';
+    const shortDescription = typeof entry.shortDescription === 'string' ? entry.shortDescription.trim() : '';
+    const variantLabel = typeof entry.variantLabel === 'string' ? entry.variantLabel.trim() : '';
+    const catalogTags = Array.isArray(entry.catalogTags)
+      ? entry.catalogTags.filter((tag): tag is string => typeof tag === 'string').map((tag) => tag.trim()).filter(Boolean).slice(0, 5)
+      : [];
+    if (displayTitle) normalized.displayTitle = displayTitle;
+    if (shortDescription) normalized.shortDescription = shortDescription;
+    if (variantLabel) normalized.variantLabel = variantLabel;
+    if (catalogTags.length) normalized.catalogTags = catalogTags;
+    if (typeof entry.isVisible === 'boolean') normalized.isVisible = entry.isVisible;
+    if (typeof entry.sortOrder === 'number' && Number.isFinite(entry.sortOrder)) normalized.sortOrder = Math.max(0, Math.round(entry.sortOrder));
     if (coreKeywords.length > 0) normalized.coreKeywords = coreKeywords;
     if (activityMethod) normalized.activityMethod = activityMethod;
     if (activityConcept) normalized.activityConcept = activityConcept;

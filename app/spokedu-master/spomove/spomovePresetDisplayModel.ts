@@ -25,6 +25,7 @@ import { getSpomovePadLayoutVariant } from './spomovePadLayout';
 
 export type SpomovePresetDisplayModel = {
   displayTitle: string;
+  shortDescription: string;
   axisLabel: string;
   programLabel: string;
   variantLabel: string;
@@ -209,7 +210,8 @@ function catalogLevelId(preset: OfficialSpomovePreset, modeId: keyof typeof MODE
   return preset.engine.level;
 }
 
-function buildDisplayTitle(preset: OfficialSpomovePreset): string {
+function buildDisplayTitle(preset: OfficialSpomovePreset, contentOverride?: SpomovePresetContentOverride): string {
+  if (contentOverride?.displayTitle?.trim()) return contentOverride.displayTitle.trim();
   const modeId = displayModeId(preset);
   if (modeId) {
     const mode = MODES[modeId];
@@ -217,6 +219,8 @@ function buildDisplayTitle(preset: OfficialSpomovePreset): string {
     const level = mode.levels.find((item) => item.id === catalogId);
     if (level?.name) {
       const base = level.name.replace(/^\(보류\)\s*/u, '').trim();
+      // Keep the theme in the title: otherwise every basic card is only
+      // "2분할 자극"/"4분할 자극" and cannot be distinguished at a glance.
       const theme = preset.engine.variantColorTheme ? THEME_LABELS[preset.engine.variantColorTheme] : null;
       if (theme && !base.includes(theme)) return `${base} · ${theme}`;
       return base;
@@ -273,21 +277,28 @@ function buildSupportMetaParts(preset: OfficialSpomovePreset): string[] {
   return Array.from(new Set(parts)).slice(0, 3);
 }
 
-export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): SpomovePresetDisplayModel {
+export function getSpomovePresetDisplayModel(
+  preset: OfficialSpomovePreset,
+  contentOverride?: SpomovePresetContentOverride,
+): SpomovePresetDisplayModel {
   const guide = getOfficialSpomovePresetGuide(preset);
   const durationLabel = buildDurationLabel(preset);
   const supportMetaParts = buildSupportMetaParts(preset);
+  const effectiveSupportMetaParts = contentOverride?.catalogTags?.length
+    ? contentOverride.catalogTags
+    : supportMetaParts;
   return {
-    displayTitle: buildDisplayTitle(preset),
+    displayTitle: buildDisplayTitle(preset, contentOverride),
+    shortDescription: contentOverride?.shortDescription?.trim() || preset.description,
     axisLabel: preset.axisTitle,
     programLabel: preset.programTitle,
-    variantLabel: buildVariantLabel(preset),
+    variantLabel: contentOverride?.variantLabel?.trim() || buildVariantLabel(preset),
     targetLabel: buildTargetLabel(guide.targetGroups),
     difficultyLabel: SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel],
     settingLabel: durationLabel,
     bodyFunctionLabel: buildBodyFunctionLabel(preset),
     supportMeta: supportMetaParts.join(' · '),
-    supportMetaParts,
+    supportMetaParts: effectiveSupportMetaParts,
     durationLabel,
     padLayoutVariant: getSpomovePadLayoutVariant(preset),
     isAvailable: preset.isReady,

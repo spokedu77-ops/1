@@ -262,16 +262,16 @@ export function DocItem({
       </button>
       <div className="relative min-w-0 flex-1 overflow-hidden">
         <p
-          className="truncate text-[14px] leading-5 text-neutral-700"
+          className="truncate pr-24 text-[14px] leading-5 text-neutral-700"
           title={doc.title}
         >
           {doc.title}
         </p>
         <div
-          className={`absolute inset-y-0 right-0 flex items-center gap-0.5 pl-10 ${
+          className={`pointer-events-none absolute inset-y-0 right-0 flex items-center gap-0.5 pl-10 ${
             isActive
-              ? 'bg-gradient-to-l from-neutral-200/95 via-neutral-200/75 to-transparent'
-              : 'bg-gradient-to-l from-[#f7f7f5] via-[#f7f7f5]/85 to-transparent opacity-0 transition-opacity group-hover:opacity-100'
+              ? 'pointer-events-auto bg-gradient-to-l from-neutral-200/95 via-neutral-200/75 to-transparent'
+              : 'bg-gradient-to-l from-[#f7f7f5] via-[#f7f7f5]/85 to-transparent opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100'
           }`}
           onClick={(e) => e.stopPropagation()}
         >
