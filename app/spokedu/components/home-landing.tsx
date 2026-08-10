@@ -21,7 +21,6 @@ type SpokeduHomeLandingProps = {
  */
 export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingProps) {
   const caseCards = mergeHomeCaseCards(proofCards);
-  const featuredCase = caseCards[0] ?? homePage.spomove.featuredCase;
 
   return (
     <div
@@ -29,14 +28,14 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
       data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID}
       data-spokedu-home-sections={homePage.sectionOrder.length}
     >
-      <a href={`#${homePage.audienceGate.id}`} className={homeSkipLink}>
+      <a href="#services" className={homeSkipLink}>
         본문으로 건너뛰기
       </a>
 
       <HomeHero />
       <HomeServices />
       <HomeWhySpokedu />
-      <HomeSpomoveSpotlight featuredCase={featuredCase} />
+      <HomeSpomoveSpotlight />
       <HomeFieldRecords caseCards={caseCards} />
       <HomeFinalCta />
     </div>

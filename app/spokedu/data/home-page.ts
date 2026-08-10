@@ -120,7 +120,7 @@ function buildAboutTrustStripItems(): readonly HomeTrustStat[] {
 
 export const homePage = {
   /** 홈 최상위 섹션 조립 순서 — 7개 이하 */
-  sectionOrder: ['hero', 'services', 'whySpokedu', 'spomove', 'fieldProof'] as const,
+  sectionOrder: ['hero', 'services', 'whySpokedu', 'spomove', 'fieldProof', 'finalAction'] as const,
 
   hero: {
     id: 'hero',

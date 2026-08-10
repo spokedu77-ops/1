@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import { HOME_MEDIA } from '../../data/home-media';
-import { homePage, type HomeCaseCard } from '../../data/home-page';
+import { homePage } from '../../data/home-page';
 import {
   brandBlue,
   brandInk,
@@ -19,30 +19,25 @@ import {
   homeSectionScrollMt,
   koreanText,
   siteBtnPrimary,
-  siteBtnSecondary,
   siteContainer,
 } from '../../lib/ui-classes';
-import { ExternalPhoto } from '../external-photo';
 import { MediaPanel } from '../visual';
+import { ExternalPhoto } from '../external-photo';
 import { SpomatPhoto } from '../spomat-photo';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
 
 const PAD_COLORS = [brandPadGreen, brandPadRed, brandPadBlue, brandPadYellow] as const;
 
-type HomeSpomoveSpotlightProps = {
-  featuredCase?: HomeCaseCard;
-};
-
 /**
  * SPOMOVE 핵심 + 단일 사례 증거 (갤러리·이중 섹션 확장 금지)
  */
-export function HomeSpomoveSpotlight({ featuredCase }: HomeSpomoveSpotlightProps) {
+export function HomeSpomoveSpotlight() {
   const media = HOME_MEDIA[homePage.spomove.mediaKey];
   const reducedMotion = useReducedMotion();
-  const { title, titleLine2, lead, flowSteps, useCases, primaryCta, secondaryCta, featuredCase: dataCase } =
+  const { title, titleLine2, lead, flowSteps, useCases, primaryCta } =
     homePage.spomove;
-  const caseCard = featuredCase ?? dataCase;
+  const caseCard = { ...homePage.spomove.featuredCase, thumbnailSrc: homePage.spomove.featuredCase.thumbnailSrc ?? '' };
 
   return (
     <section
@@ -102,7 +97,7 @@ export function HomeSpomoveSpotlight({ featuredCase }: HomeSpomoveSpotlightProps
             <p className={`${homeBody} mt-3 max-w-md text-[15px] leading-relaxed`}>{lead}</p>
 
             <ol className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="수업 흐름">
-              {flowSteps.map((step, index) => (
+              {flowSteps.slice(0, 3).map((step, index) => (
                 <li
                   key={step.label}
                   className="rounded-[0.95rem] border border-[#DCE3EE] bg-white px-2.5 py-2.5 shadow-[0_8px_20px_rgba(15,33,70,0.04)]"
@@ -142,18 +137,11 @@ export function HomeSpomoveSpotlight({ featuredCase }: HomeSpomoveSpotlightProps
               >
                 {primaryCta.label}
               </TrackedLink>
-              <TrackedLink
-                href={secondaryCta.href}
-                trackLabel={secondaryCta.trackLabel}
-                className={`${siteBtnSecondary} h-11 min-h-0 w-full px-5 py-0 text-sm sm:w-auto ${homeFocusRing}`}
-              >
-                {secondaryCta.label}
-              </TrackedLink>
             </div>
           </motion.div>
         </div>
 
-        <motion.div
+        {false && <motion.div
           className="mt-8"
           initial={reducedMotion ? false : { opacity: 0, y: 12 }}
           whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
@@ -204,7 +192,7 @@ export function HomeSpomoveSpotlight({ featuredCase }: HomeSpomoveSpotlightProps
               </span>
             </div>
           </TrackedLink>
-        </motion.div>
+        </motion.div>}
       </div>
     </section>
   );
