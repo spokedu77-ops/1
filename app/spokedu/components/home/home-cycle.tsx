@@ -15,10 +15,9 @@ import {
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
 
-/** 현장 → 콘텐츠 → 시스템 → 다시 현장 */
+/** 현장 → 콘텐츠 → 시스템 — 4단계만으로 완결 (하단 pill rail 없음) */
 export function HomeCycle() {
-  const { id, title, lead, processLabel, processLine, steps } = homePage.cycle;
-  const processSteps = processLine.split(/\s*→\s*/).filter(Boolean);
+  const { id, title, lead, processLabel, steps } = homePage.cycle;
   const reducedMotion = useReducedMotion();
   const media = HOME_MEDIA.proofLab;
 
@@ -75,26 +74,6 @@ export function HomeCycle() {
             </ul>
           </div>
         </motion.div>
-
-        <div className="mt-10 border-t border-white/12 pt-8">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/45">{processLabel}</p>
-          <ol className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-3">
-            {processSteps.map((step, index) => (
-              <li key={step} className="flex min-w-0 items-center gap-2">
-                <span
-                  className={`inline-flex rounded-full bg-white px-4 py-2.5 text-sm font-bold text-[#0B1F46] shadow-[0_10px_24px_rgba(0,0,0,0.12)] ${koreanText}`}
-                >
-                  {step}
-                </span>
-                {index < processSteps.length - 1 ? (
-                  <span className="hidden text-white/30 sm:inline" aria-hidden>
-                    →
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-        </div>
       </div>
     </section>
   );

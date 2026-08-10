@@ -252,6 +252,10 @@ export const focusRing = homeFocusRing;
 export const homeGateCard =
   `group flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-[#DCE3EE] bg-white shadow-[0_12px_32px_rgba(15,33,70,0.05)] transition ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:border-[#C5D2E8] ${fineHover}hover:shadow-[0_18px_40px_rgba(15,33,70,0.08)]`;
 
+/** 홈 Audience Gate — 빠른 경로 선택용 compact block (이미지 카드와 구분) */
+export const homePathNavItem =
+  `group flex h-full min-w-0 flex-col rounded-[1.1rem] border border-[#D6E3FF]/90 bg-white/90 px-4 py-4 transition ${fineHover}hover:border-[#245DFF]/35 ${fineHover}hover:bg-white ${fineHover}hover:shadow-[0_10px_28px_rgba(15,33,70,0.06)] sm:px-4 sm:py-4`;
+
 export const homeCaseCard =
   `group flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-[#DCE3EE] bg-white shadow-[0_12px_32px_rgba(15,33,70,0.05)] transition ${fineHover}hover:border-[#C5D2E8]`;
 
