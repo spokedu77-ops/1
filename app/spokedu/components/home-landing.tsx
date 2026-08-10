@@ -4,14 +4,12 @@ import { SPOKEDU_HOME_BUILD_ID } from '../data/home-build';
 import { homePage } from '../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../lib/resolve-field-records';
 import { homePageSurface, homeSkipLink } from '../lib/ui-classes';
-import { HomeAudienceGates } from './home/home-audience-gates';
-import { HomeCycle } from './home/home-cycle';
-import { HomeEvidenceStrip } from './home/home-evidence-strip';
-import { mergeHomeCaseCards } from './home/home-field-records';
+import { HomeFieldRecords, mergeHomeCaseCards } from './home/home-field-records';
 import { HomeFinalCta } from './home/home-final-cta';
 import { HomeHero } from './home/home-hero';
-import { HomePillars } from './home/home-pillars';
+import { HomeServices } from './home/home-services';
 import { HomeSpomoveSpotlight } from './home/home-spomove-spotlight';
+import { HomeWhySpokedu } from './home/home-why-spokedu';
 
 type SpokeduHomeLandingProps = {
   proofCards: HomeFieldRecordCardWithThumbnail[];
@@ -36,11 +34,10 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
       </a>
 
       <HomeHero />
-      <HomeAudienceGates />
-      <HomePillars />
-      <HomeCycle />
+      <HomeServices />
+      <HomeWhySpokedu />
       <HomeSpomoveSpotlight featuredCase={featuredCase} />
-      <HomeEvidenceStrip />
+      <HomeFieldRecords caseCards={caseCards} />
       <HomeFinalCta />
     </div>
   );
