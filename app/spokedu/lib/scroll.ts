@@ -1,8 +1,4 @@
 /** `/spokedu`는 root layout fullscreen이라 window가 아니라 main이 스크롤됨 */
-export function getSpokeduScrollRoot(): HTMLElement | null {
-  return null;
-}
-
 export function getSpokeduScrollY(): number {
   if (typeof window === 'undefined') return 0;
   return window.scrollY || document.documentElement.scrollTop || 0;
@@ -14,7 +10,6 @@ export function scrollSpokeduToTop() {
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
-
 }
 
 export function scrollSpokeduToTopOrHash() {
@@ -23,7 +18,10 @@ export function scrollSpokeduToTopOrHash() {
   if (hash) {
     const target = document.getElementById(hash);
     if (target) {
-      target.scrollIntoView({ block: 'start' });
+      const header = document.querySelector('header');
+      const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 0;
+      const top = target.getBoundingClientRect().top + window.scrollY - headerOffset - 12;
+      window.scrollTo({ top: Math.max(0, top), left: 0, behavior: 'auto' });
       return;
     }
   }

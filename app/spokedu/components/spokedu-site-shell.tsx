@@ -22,17 +22,8 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const run = () => scrollSpokeduToTopOrHash();
-    run();
-    const frame = window.requestAnimationFrame(() => {
-      run();
-      window.requestAnimationFrame(run);
-    });
-    const timer = window.setTimeout(run, 50);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timer);
-    };
+    const frame = window.requestAnimationFrame(scrollSpokeduToTopOrHash);
+    return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
 
   return (
