@@ -1,4 +1,3 @@
-/** `/spokedu`는 root layout fullscreen이라 window가 아니라 main이 스크롤됨 */
 export function getSpokeduScrollY(): number {
   if (typeof window === 'undefined') return 0;
   return window.scrollY || document.documentElement.scrollTop || 0;
@@ -34,18 +33,15 @@ type ScrollLockState = {
 
 let scrollLockState: ScrollLockState | null = null;
 
-/** fullscreen main + body 모두 잠근다 (메뉴 오버레이용) */
+/** Lock document scrolling while the mobile navigation overlay is open. */
 export function lockSpokeduScroll() {
   if (typeof document === 'undefined' || scrollLockState) return;
-  scrollLockState = {
-    bodyOverflow: document.body.style.overflow,
-  };
+  scrollLockState = { bodyOverflow: document.body.style.overflow };
   document.body.style.overflow = 'hidden';
 }
 
 export function unlockSpokeduScroll() {
   if (typeof document === 'undefined' || !scrollLockState) return;
-  const { bodyOverflow } = scrollLockState;
-  document.body.style.overflow = bodyOverflow;
+  document.body.style.overflow = scrollLockState.bodyOverflow;
   scrollLockState = null;
 }
