@@ -210,8 +210,16 @@ function catalogLevelId(preset: OfficialSpomovePreset, modeId: keyof typeof MODE
   return preset.engine.level;
 }
 
+function cleanDisplayTitle(value: string): string {
+  return value
+    .replace(/\b\d+\s*(?:단계|분할|칸|원)\b\s*/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s*·\s*$/u, '')
+    .trim();
+}
+
 function buildDisplayTitle(preset: OfficialSpomovePreset, contentOverride?: SpomovePresetContentOverride): string {
-  if (contentOverride?.displayTitle?.trim()) return contentOverride.displayTitle.trim();
+  if (contentOverride?.displayTitle?.trim()) return cleanDisplayTitle(contentOverride.displayTitle.trim());
   const modeId = displayModeId(preset);
   if (modeId) {
     const mode = MODES[modeId];
@@ -223,11 +231,11 @@ function buildDisplayTitle(preset: OfficialSpomovePreset, contentOverride?: Spom
       // "2분할 자극"/"4분할 자극" and cannot be distinguished at a glance.
       const theme = preset.engine.variantColorTheme ? THEME_LABELS[preset.engine.variantColorTheme] : null;
       if (theme && !base.includes(theme)) return `${base} · ${theme}`;
-      return base;
+      return cleanDisplayTitle(base);
     }
   }
   const segments = preset.title.split('·').map((segment) => segment.trim()).filter(Boolean);
-  return segments[segments.length - 1] ?? preset.title.trim();
+  return cleanDisplayTitle(segments[segments.length - 1] ?? preset.title.trim());
 }
 
 function compactRecommendedUse(preset: OfficialSpomovePreset): string[] {
