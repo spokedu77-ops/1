@@ -1,5 +1,5 @@
-'use client';
+import SpomoveHubView from '@/app/spokedu-master/spomove/SpomoveHubView';
 
-import AdminSmProgramsPage from '../programs/page';
-
-export default AdminSmProgramsPage;
+export default function AdminSpokeduMasterSpomovePage() {
+  return <SpomoveHubView />;
+}
