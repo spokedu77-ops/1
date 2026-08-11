@@ -154,8 +154,8 @@ export function EducationHubLanding() {
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
             {formats.lead}
           </p>
-          <ul className="mt-8 grid grid-cols-1 gap-4 min-[700px]:grid-cols-2">
-            {formats.items.map((item) => (
+          <ul className="mt-8 grid grid-cols-1 gap-4 min-[700px]:grid-cols-2 min-[1050px]:grid-cols-3">
+            {formats.items.filter((item) => item.id !== 'private').map((item) => (
               <li key={item.id} className="min-w-0">
                 <TrackedLink
                   href={item.href}
@@ -228,7 +228,6 @@ export function EducationHubLanding() {
         <div className={siteContainer}>
           <div className="flex flex-col gap-4 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between">
             <div className="max-w-2xl">
-              <p className={homeSectionEyebrow}>{cases.eyebrow}</p>
               <h2 id="education-cases-heading" className={`${homeSectionH2} mt-3`}>
                 {cases.title}
               </h2>
