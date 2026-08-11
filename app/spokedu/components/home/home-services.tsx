@@ -21,7 +21,7 @@ export function HomeServices() {
   );
 }
 
-function ServiceCard({ item, links, primary }: { item: { title: string; summary: string; href: string; trackLabel: string; directLinks?: readonly { label: string; href: string; trackLabel: string }[] }; links: readonly { label: string; href: string; trackLabel: string }[]; primary: string }) {
+function ServiceCard({ item, links, primary }: { item: { title: string; summary: string; ctaLabel: string; href: string; trackLabel: string; directLinks?: readonly { label: string; href: string; trackLabel: string }[] }; links: readonly { label: string; href: string; trackLabel: string }[]; primary: string }) {
   return (
     <article className={`${homeFocusRing} rounded-[1.5rem] border border-[#DCE3EE] bg-white p-6 shadow-[0_12px_32px_rgba(15,33,70,0.05)] sm:p-8`}>
       <h3 className={`mt-2 text-2xl font-bold tracking-[-0.03em] ${koreanText}`} style={{ color: brandInk }}>{item.title}</h3>

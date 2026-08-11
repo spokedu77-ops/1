@@ -175,6 +175,7 @@ export const homePage = {
     education: {
       title: '체육교육',
       summary: 'SPOKEDU가 직접 운영하는 현장 체육교육입니다.',
+      ctaLabel: '체육교육 알아보기',
       href: `${SPOKEDU_BASE_PATH}/education`,
       trackLabel: 'cta-home-services-education',
       directLinks: [
@@ -185,6 +186,7 @@ export const homePage = {
     subscription: {
       title: '구독시스템',
       summary: '지도자가 직접 수업을 운영할 수 있도록 만든 콘텐츠 시스템입니다.',
+      ctaLabel: '구독시스템 알아보기',
       href: `${SPOKEDU_PATHS.subscription}`,
       trackLabel: 'cta-home-services-subscription',
     },

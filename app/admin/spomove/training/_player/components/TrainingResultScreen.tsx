@@ -627,7 +627,7 @@ export function TrainingResultScreen({
                 }}
               >
                 <div style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: accent }}>
-                  {sessionSettings.title ?? '사용한 동작'}
+                  {sessionSettings?.title ?? '사용한 동작'}
                 </div>
                 <p
                   style={{
@@ -639,9 +639,9 @@ export function TrainingResultScreen({
                     wordBreak: 'keep-all',
                   }}
                 >
-                  {sessionSettings.primary}
+                  {sessionSettings?.primary}
                 </p>
-                {sessionSettings.secondary ? (
+                {sessionSettings?.secondary ? (
                   <p
                     style={{
                       margin: '0.3rem 0 0',
@@ -652,7 +652,7 @@ export function TrainingResultScreen({
                       wordBreak: 'keep-all',
                     }}
                   >
-                    {sessionSettings.secondary}
+                    {sessionSettings?.secondary}
                   </p>
                 ) : null}
               </div>
