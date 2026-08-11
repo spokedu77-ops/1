@@ -739,9 +739,9 @@ function CardInfo({
           displayModel.difficultyLabel,
           displayModel.targetLabel,
           ...supportMetaParts,
-        ].filter(Boolean).slice(0, 4).map((part) => (
+        ].filter(Boolean).slice(0, 4).map((part, index) => (
           <span
-            key={part}
+            key={`${part}-${index}`}
             className="inline-flex max-w-full items-center truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-slate-600 after:content-['·'] last:after:content-['']"
           >
             {part}
