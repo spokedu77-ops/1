@@ -70,6 +70,7 @@ import {
   SPOMOVE_FOCUS_TAG_LABELS,
 } from '@/app/spokedu-master/spomove/spomovePresetDisplayModel';
 import { getPresetMovementSummary } from '@/app/spokedu-master/spomove/movements/presetMovementSummary';
+import { isHubListedPreset } from '@/app/spokedu-master/spomove/movements/isHubVisiblePreset';
 import { movementDisplayLabel } from '@/app/spokedu-master/spomove/movements/movementLabels';
 import { MOVEMENT_REGISTRY } from '@/app/spokedu-master/spomove/movements/movementRegistry';
 import {
@@ -227,6 +228,7 @@ const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
 /** 화면 표시용 — 긴 변 제한. 그 이하면 해상도 유지, WebP만 재인코딩 */
 const SETUP_IMAGE_OPTIMIZE = { maxW: 1600, maxH: 1600, quality: 0.85 } as const;
 const SPOMOVE_THUMBNAIL_OPTIMIZE = { maxW: 1200, maxH: 1200, quality: 0.82 } as const;
+const ADMIN_SPOMOVE_LIBRARY = OFFICIAL_SPOMOVE_LIBRARY.filter(isHubListedPreset);
 const LIBRARY_ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
   { key: 'programs', label: '수업 자료' },
   { key: 'content-audit', label: 'Phase E 감사' },
@@ -1024,7 +1026,7 @@ function SpomoveContentManager() {
     [draftMap, issuePresetIds, workFilter],
   );
   const visibleContentPresets = useMemo(
-    () => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => {
+    () => ADMIN_SPOMOVE_LIBRARY.filter((preset) => {
       if (!matchesWorkFilter(preset.id)) return false;
       const q = searchQuery.trim().toLowerCase();
       if (!q) return true;
@@ -1038,7 +1040,7 @@ function SpomoveContentManager() {
     () =>
       SPOMOVE_CONTENT_WORK_FILTERS.reduce<Record<SpomoveContentWorkFilter, number>>(
         (counts, filter) => {
-          counts[filter.id] = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => {
+          counts[filter.id] = ADMIN_SPOMOVE_LIBRARY.filter((preset) => {
             const draft = normalizeContentDraft(draftMap[preset.id]);
             if (filter.id === 'all') return true;
             if (filter.id === 'hasIssue') return issuePresetIds.has(preset.id);
@@ -1062,7 +1064,7 @@ function SpomoveContentManager() {
     let published = 0;
     let needsWork = 0;
 
-    OFFICIAL_SPOMOVE_LIBRARY.forEach((preset) => {
+    ADMIN_SPOMOVE_LIBRARY.forEach((preset) => {
       const draft = normalizeContentDraft(draftMap[preset.id]);
       const completion = getMovementGuideCompletion(preset, draft.movementGuide);
       if (draft.movementGuideStatus === 'published') published += 1;
@@ -1120,7 +1122,7 @@ function SpomoveContentManager() {
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
             <div className="rounded-lg bg-slate-50 p-3">
               <p className="text-[10px] font-black text-slate-500">공식 프리셋</p>
-              <p className="mt-1 text-[18px] font-black text-slate-950">{OFFICIAL_SPOMOVE_LIBRARY.length}개</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{ADMIN_SPOMOVE_LIBRARY.length}개</p>
             </div>
             <div className="rounded-lg bg-indigo-50 p-3">
               <p className="text-[10px] font-black text-indigo-600">수기 수정</p>
@@ -1713,7 +1715,7 @@ function SpomoveThumbnailManager() {
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
             <div className="rounded-lg bg-slate-50 p-3">
               <p className="text-[10px] font-black text-slate-500">공식 프리셋</p>
-              <p className="mt-1 text-[18px] font-black text-slate-950">{OFFICIAL_SPOMOVE_LIBRARY.length}개</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{ADMIN_SPOMOVE_LIBRARY.length}개</p>
             </div>
             <div className="rounded-lg bg-indigo-50 p-3">
               <p className="text-[10px] font-black text-indigo-600">저장된 썸네일</p>
@@ -1737,7 +1739,7 @@ function SpomoveThumbnailManager() {
           </div>
         ) : (
           SPOMOVE_GROUP_OPTIONS.map((group) => {
-            const presets = OFFICIAL_SPOMOVE_LIBRARY
+            const presets = ADMIN_SPOMOVE_LIBRARY
               .filter((preset) => preset.programGroup === group.key)
               .sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -1951,7 +1953,7 @@ function SpomoveGuideVideoManager() {
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
             <div className="rounded-lg bg-slate-50 p-3">
               <p className="text-[10px] font-black text-slate-500">공식 프리셋</p>
-              <p className="mt-1 text-[18px] font-black text-slate-950">{OFFICIAL_SPOMOVE_LIBRARY.length}개</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{ADMIN_SPOMOVE_LIBRARY.length}개</p>
             </div>
             <div className="rounded-lg bg-indigo-50 p-3">
               <p className="text-[10px] font-black text-indigo-600">등록된 영상</p>
@@ -3088,7 +3090,7 @@ export default function AdminSmProgramsPage() {
             <p className="mt-1 text-sm font-semibold text-slate-500">SPOKEDU MASTER에 노출되는 공식 카탈로그와 동일한 목록입니다.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {OFFICIAL_SPOMOVE_LIBRARY.map((preset) => {
+            {ADMIN_SPOMOVE_LIBRARY.map((preset) => {
               const display = getSpomovePresetDisplayModel(preset);
               return (
                 <article key={preset.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
