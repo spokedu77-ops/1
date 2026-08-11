@@ -4,7 +4,6 @@ import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import type { HomeMediaItem } from '../../data/home-media';
-import { SPOKEDU_FALLBACK_FIELD } from '../../data/images';
 import { homePhotoGrade } from '../../lib/ui-classes';
 import { BrandOverlay } from './brand-overlay';
 import { GradientVisual } from './gradient-visual';
@@ -22,10 +21,6 @@ type MediaRendererProps = {
   objectFit?: 'cover' | 'contain';
 };
 
-function resolveFallback(media: HomeMediaItem): string {
-  return media.fallbackSrc ?? SPOKEDU_FALLBACK_FIELD;
-}
-
 export function MediaRenderer({
   media,
   className = '',
@@ -39,7 +34,6 @@ export function MediaRenderer({
 }: MediaRendererProps) {
   const reducedMotion = useReducedMotion();
   const primarySrc = media.src;
-  const fallbackSrc = resolveFallback(media);
   const [useImage, setUseImage] = useState(Boolean(primarySrc));
   const [imgSrc, setImgSrc] = useState(primarySrc ?? '');
 
@@ -49,13 +43,11 @@ export function MediaRenderer({
   }, [primarySrc]);
 
   const handleError = () => {
-    if (imgSrc && imgSrc !== fallbackSrc) {
-      setImgSrc(fallbackSrc);
-      return;
-    }
-    if (!strictPhoto) {
-      setUseImage(false);
-    }
+    // A generic field fallback is intentionally not used for marketing cards:
+    // it is too pale and reads as an empty panel when a photo URL is stale.
+    // Fall back directly to the branded visual so a failed asset can never
+    // leave a blank white card behind.
+    setUseImage(false);
   };
 
   if (!useImage || !imgSrc) {
