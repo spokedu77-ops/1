@@ -13,7 +13,6 @@ import {
   homeSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
-  siteBtnPrimary,
   siteBtnSecondary,
   siteContainer,
 } from '../../lib/ui-classes';
