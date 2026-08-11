@@ -300,22 +300,13 @@ function MyClassesContent() {
     const urls = Array.isArray(session.file_url) ? session.file_url : [];
     const isCenterSession =
       isCenterSessionType(session.session_type);
-    const centerUrlsForModal =
-      isCenterSession && urls.length > 1 ? [urls[urls.length - 1]!] : urls;
+    const centerUrlsForModal = isCenterSession ? urls.slice(0, 2) : urls;
 
     let fieldsForModal: FeedbackFields = nextFeedbackFields;
     if (isCenterSession && centerUrlsForModal.length > 0) {
       const names = nextFeedbackFields.center_document_names;
       let namesForAlign: string[] | undefined;
-      if (urls.length > 1) {
-        if (Array.isArray(names) && names.length >= urls.length) {
-          namesForAlign = [String(names[names.length - 1]).trim().slice(0, 300)];
-        } else {
-          namesForAlign = undefined;
-        }
-      } else {
-        namesForAlign = nextFeedbackFields.center_document_names;
-      }
+      namesForAlign = Array.isArray(names) ? names.slice(0, 2) : undefined;
       fieldsForModal = {
         ...nextFeedbackFields,
         center_document_names: alignCenterDocumentNamesWithUrls(centerUrlsForModal, namesForAlign),
@@ -802,22 +793,17 @@ function MyClassesContent() {
                             const f = e.target.files?.[0];
                             e.target.value = '';
                             if (!f) return;
+                            if (fileUrls.length >= 2) {
+                              toast.error('센터 피드백 첨부는 최대 2개까지 가능합니다.');
+                              return;
+                            }
                             const previousUrls = [...fileUrls];
                             const r = await uploadFile(f, SESSION_FILES_BUCKET);
                             if (!r) return;
-                            if (supabase && previousUrls.length > 0) {
-                              for (const oldUrl of previousUrls) {
-                                const path = sessionFilesObjectPathFromPublicUrl(oldUrl);
-                                if (path) {
-                                  const { error } = await supabase.storage.from(SESSION_FILES_BUCKET).remove([path]);
-                                  if (error) devLogger.warn('[my-classes] center file replace: remove old', error);
-                                }
-                              }
-                            }
-                            setFileUrls([r.publicUrl]);
+                            setFileUrls([...previousUrls, r.publicUrl].slice(0, 2));
                             setFeedbackFields((prev) => ({
                               ...prev,
-                              center_document_names: [r.displayName],
+                              center_document_names: [...(Array.isArray(prev.center_document_names) ? prev.center_document_names : []), r.displayName].slice(0, 2),
                             }));
                           }}
                           disabled={uploading}

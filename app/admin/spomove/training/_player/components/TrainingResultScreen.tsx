@@ -616,7 +616,7 @@ export function TrainingResultScreen({
               </p>
             </div>
 
-            {sessionSettings?.primary ? (
+            {false && sessionSettings?.primary ? (
               <div
                 style={{
                   flexShrink: 0,

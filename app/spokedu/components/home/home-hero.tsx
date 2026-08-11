@@ -30,7 +30,7 @@ export function HomeHero() {
   return (
     <section
       id={homePage.hero.id}
-      className={`${homeHeroFullBleed} ${homeSectionScrollMt}`}
+      className={`${homeHeroFullBleed} relative left-1/2 w-[100vw] -translate-x-1/2 ${homeSectionScrollMt}`}
       aria-labelledby="home-hero-heading"
     >
       <div className="absolute inset-0">

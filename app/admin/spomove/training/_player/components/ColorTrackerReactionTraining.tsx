@@ -294,6 +294,17 @@ function quadrantIndexOf(x: number, y: number, w: number, h: number): number {
   return 3;
 }
 
+/** 결과(추적 종료) 시 흰공이 사분면 경계선 위에 걸리지 않도록 칸 안쪽으로 고정한다. */
+function lockTargetInsideQuadrant(panel: PanelArena, target: TrackerBall, quadrantIdx: number) {
+  const inset = panel.ballRadius + 6;
+  const midX = panel.W / 2;
+  const midY = panel.H / 2;
+  const left = quadrantIdx === 0 || quadrantIdx === 2;
+  const top = quadrantIdx === 0 || quadrantIdx === 1;
+  target.x = Math.max(left ? inset : midX + inset, Math.min(left ? midX - inset : panel.W - inset, target.x));
+  target.y = Math.max(top ? inset : midY + inset, Math.min(top ? midY - inset : panel.H - inset, target.y));
+}
+
 const css = `
 .ctrk{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#111;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .ctrk,.ctrk *{box-sizing:border-box}
@@ -737,6 +748,7 @@ export function ColorTrackerReactionTraining({
             const target = panel.balls[panel.targetIdx];
             if (target) {
               panel.targetQuadrantIdx = quadrantIndexOf(target.x, target.y, panel.W, panel.H);
+              lockTargetInsideQuadrant(panel, target, panel.targetQuadrantIdx);
             }
           });
           setMsg('빨·노·초·파 — 어디 구역인지 맞춰보세요!');
