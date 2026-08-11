@@ -126,7 +126,7 @@ export const SPOKEDU_IMAGES = {
     heroSpomoveClass: defineImage(
       'home',
       'home-hero-spomove-class',
-      'home-hero-spomove-class.jpg',
+      'home-hero-spomove-class.JPG',
       'SPOMOVE 수업 현장 — 아이들이 4색 패드 위에서 스크린을 보며 움직이는 장면',
     ),
     labScene: defineImage(

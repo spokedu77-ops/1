@@ -198,7 +198,7 @@ export const homePageSurface = 'bg-[#F5F7FB] text-[#14213A]';
 export const homeSectionPad = 'py-16 sm:py-20 lg:py-24 xl:py-28';
 
 /** Audience·Cases 등 — 기본 대비 15~20% 축소 */
-export const homeSectionPadCompact = 'py-12 sm:py-14 lg:py-20 xl:py-[5.5rem]';
+export const homeSectionPadCompact = 'py-9 sm:py-12 lg:py-14 xl:py-16';
 
 /** Final CTA — SPOMOVE 하단·Footer 직전 여백 축소 */
 export const homeFinalCtaPad = 'pt-8 pb-12 sm:pt-10 sm:pb-14 lg:pt-12 lg:pb-16';

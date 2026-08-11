@@ -11,8 +11,8 @@ export function HomeSpomoveSpotlight() {
   const { title, titleLine2, lead, flowSteps, primaryCta } = homePage.spomove;
   return (
     <section id={homePage.spomove.id} className={`${homeSectionScrollMt} ${homeSectionPadCompact} ${homeBandWhite}`} aria-labelledby="home-spomove-heading">
-      <div className={`${siteContainer} grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-12`}>
-        <div className="relative min-h-[18rem] overflow-hidden rounded-[1.5rem] ring-1 ring-[#DCE3EE] sm:min-h-[24rem]">
+      <div className={`${siteContainer} grid gap-7 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-16`}>
+        <div className="relative min-h-[15rem] overflow-hidden rounded-[1.5rem] ring-1 ring-[#DCE3EE] sm:min-h-[19rem] lg:min-h-[21rem]">
           <MediaPanel media={HOME_MEDIA[homePage.spomove.mediaKey]} className={`absolute inset-0 h-full w-full rounded-none border-0 ${homePhotoGrade}`} sizes="card2" objectFit="cover" />
           <div className="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-[#0B1F46]/70 to-transparent p-5 pt-16"><div className="h-1.5 w-40 rounded-full bg-gradient-to-r from-[#4BD36B] via-[#F23B61] to-[#F6C744]" aria-hidden /></div>
         </div>

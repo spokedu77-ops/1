@@ -9,9 +9,9 @@ import { TrackedLink } from './tracked-link';
 export function HomeWhySpokedu() {
   return (
     <section id="why-spokedu" className={`${homeSectionScrollMt} ${homeSectionPadCompact} ${homeBandWhite}`} aria-labelledby="home-why-heading">
-      <div className={`${siteContainer} grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-12`}>
-        <div className="relative min-h-[18rem] overflow-hidden rounded-[1.5rem] ring-1 ring-[#DCE3EE] sm:min-h-[22rem]">
-          <MediaPanel media={HOME_MEDIA.proofLab} className={`absolute inset-0 h-full w-full rounded-none border-0 ${homePhotoGrade}`} sizes="card2" objectFit="cover" />
+      <div className={`${siteContainer} grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16`}>
+        <div className="relative min-h-[15rem] overflow-hidden rounded-[1.5rem] ring-1 ring-[#DCE3EE] sm:min-h-[19rem] lg:min-h-[21rem]">
+          <MediaPanel media={HOME_MEDIA.homeHero} className={`absolute inset-0 h-full w-full rounded-none border-0 ${homePhotoGrade}`} sizes="card2" objectFit="cover" />
         </div>
         <div>
           <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>WHY SPOKEDU</p>
