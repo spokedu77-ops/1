@@ -231,11 +231,15 @@ function buildDisplayTitle(preset: OfficialSpomovePreset, contentOverride?: Spom
       // "2분할 자극"/"4분할 자극" and cannot be distinguished at a glance.
       const theme = preset.engine.variantColorTheme ? THEME_LABELS[preset.engine.variantColorTheme] : null;
       if (theme && !base.includes(theme)) return `${base} · ${theme}`;
-      return cleanDisplayTitle(base);
+      const normalizedBase = cleanDisplayTitle(base);
+      const variant = optionMeta(preset);
+      return variant && !normalizedBase.includes(variant) ? `${normalizedBase} · ${variant}` : normalizedBase;
     }
   }
   const segments = preset.title.split('·').map((segment) => segment.trim()).filter(Boolean);
-  return cleanDisplayTitle(segments[segments.length - 1] ?? preset.title.trim());
+  const normalizedBase = cleanDisplayTitle(segments[segments.length - 1] ?? preset.title.trim());
+  const variant = optionMeta(preset);
+  return variant && !normalizedBase.includes(variant) ? `${normalizedBase} · ${variant}` : normalizedBase;
 }
 
 function compactRecommendedUse(preset: OfficialSpomovePreset): string[] {
