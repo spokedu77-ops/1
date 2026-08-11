@@ -528,9 +528,9 @@ function SpomoveCard({
             displayModel.variantLabel,
             displayModel.difficultyLabel,
             displayModel.targetLabel,
-          ].filter(Boolean).slice(0, 3).map((part) => (
+          ].filter(Boolean).slice(0, 3).map((part, index) => (
             <span
-              key={part}
+              key={`${part}-${index}`}
               className="inline-flex max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-[color:var(--spm-t2)]"
             >
               {part}

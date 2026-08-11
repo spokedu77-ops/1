@@ -278,9 +278,9 @@ export function LessonCatalogCard({
 
       <div className="flex shrink-0 flex-col gap-2 bg-white p-3">
         <div className="flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
-          {descriptionParts.length > 0 ? descriptionParts.map((part) => (
+          {descriptionParts.length > 0 ? descriptionParts.map((part, index) => (
             <span
-              key={part}
+              key={`${part}-${index}`}
               className="min-w-0 truncate after:mx-1.5 after:text-[color:var(--spm-t3)] after:content-['·'] last:after:content-none"
             >
               {part}
