@@ -6,6 +6,7 @@ export type AdminName = (typeof ADMIN_NAMES)[number];
 
 /** 마스터(최고 관리자) 이메일 — 정산 리포트 등 제한 접근용 */
 export const MASTER_EMAIL = 'choijihoon@spokedu.com';
+export const SPOMOVE_EMAIL = 'spomove@spokedu.com';
 
 /**
  * 환경변수 ADMIN_EMAILS 기반 어드민 이메일 목록.

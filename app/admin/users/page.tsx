@@ -35,7 +35,7 @@ interface UserData {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'teacher';
+  role: 'admin' | 'teacher' | 'spomove';
   phone: string | null;
   organization: string | null;
   departure_location?: string | null;
@@ -650,7 +650,7 @@ function UserDashboardPageContent() {
           >
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${user.role === 'teacher' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>{user.role === 'teacher' ? 'Inst' : 'Adm'}</span>
+                <span className={`text-[9px] font-black px-2 py-1 rounded-lg uppercase ${user.role === 'spomove' ? 'bg-purple-50 text-purple-600' : user.role === 'teacher' ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>{user.role === 'spomove' ? 'SPOMOVE' : user.role === 'teacher' ? 'Inst' : 'Adm'}</span>
                 <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${user.is_active ? 'bg-blue-600 text-white animate-pulse' : 'bg-slate-100 text-slate-500'}`}>{user.is_active ? '활동중' : '종료'}</span>
                 {user.is_active && (user.ending_soon ?? false) && (
                   <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-amber-500 text-white">종료 예정</span>

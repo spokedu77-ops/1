@@ -1,8 +1,9 @@
-import { ADMIN_NAMES, MASTER_EMAIL, ROLES, getAdminEmails } from '@/app/lib/constants/admin';
+import { ADMIN_NAMES, MASTER_EMAIL, SPOMOVE_EMAIL, ROLES, getAdminEmails } from '@/app/lib/constants/admin';
 
 /** 로그인 alias와 동일 — 플랫폼 운영진 3인 auth 이메일 */
 export const PLATFORM_ADMIN_EMAILS = [
   MASTER_EMAIL,
+  SPOMOVE_EMAIL,
   'kimkoomin@spokedu.com',
   'kimyoonki@spokedu.com',
 ] as const;

@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { defaultTeacherEmail } from '@/app/lib/constants/domain';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { SPOMOVE_EMAIL } from '@/app/lib/constants/admin';
 
 function generatePassword(length = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       id: authId,
       email,
       name,
-      role: 'teacher',
+      role: email === SPOMOVE_EMAIL ? 'spomove' : 'teacher',
       is_active: true,
       points: 0,
       documents: [],

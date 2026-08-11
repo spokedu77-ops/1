@@ -169,10 +169,15 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
   ];
 
   const isSubscriber = pathname.startsWith('/billing');
+  const isSpomoveAccount = userEmail?.toLowerCase() === 'spomove@spokedu.com';
 
   if (!isAdminRoute && !isSubscriber) return null;
 
-  const groups = isSubscriber ? subscriberMenuItems : adminMenuItems;
+  const groups = isSubscriber
+    ? subscriberMenuItems
+    : isSpomoveAccount
+      ? [{ group: 'SPOMOVE', items: [{ name: 'SPOMOVE Training', href: '/admin/spomove/training', icon: Sparkles }] }]
+      : adminMenuItems;
 
   const isActiveItem = (href: string) => {
     if (href === '/admin/spokedu-master/programs') {

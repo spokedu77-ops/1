@@ -28,6 +28,8 @@ interface IClassSession {
 interface PostponeNotice {
   id: string;
   notice_date: string;
+  start_date: string;
+  end_date: string;
   memo: string | null;
   teacher_name: string;
 }
@@ -96,9 +98,11 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 function MiniCalendar({
   selectedDate,
+  selectedEndDate,
   onSelect,
 }: {
   selectedDate: string;
+  selectedEndDate?: string;
   onSelect: (date: string) => void;
 }) {
   const today = new Date();
@@ -160,6 +164,7 @@ function MiniCalendar({
           if (d === null) return <div key={`e-${i}`} />;
           const dateStr = toDateStr(d);
           const isSelected = dateStr === selectedDate;
+          const isInRange = Boolean(selectedEndDate && dateStr >= selectedDate && dateStr <= selectedEndDate);
           const isToday = dateStr === today.toISOString().split('T')[0];
           const isPast = new Date(dateStr + 'T00:00:00') < today;
           const dayOfWeek = (firstDay + d - 1) % 7;
@@ -170,7 +175,7 @@ function MiniCalendar({
               onClick={() => !isPast && onSelect(dateStr)}
               disabled={isPast}
               className={`text-center text-xs py-1.5 rounded-lg font-medium transition-colors cursor-pointer
-                ${isSelected ? 'bg-indigo-600 text-white' : ''}
+                ${isSelected ? 'bg-indigo-600 text-white' : isInRange ? 'bg-indigo-100 text-indigo-800' : ''}
                 ${!isSelected && isToday ? 'bg-indigo-50 text-indigo-700 font-bold' : ''}
                 ${!isSelected && !isToday && !isPast ? (dayOfWeek === 0 ? 'text-rose-500 hover:bg-rose-50' : dayOfWeek === 6 ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-700 hover:bg-slate-100') : ''}
                 ${isPast ? 'text-slate-200 cursor-not-allowed' : ''}
@@ -200,6 +205,7 @@ export default function SpokeduHQDashboard() {
   const [upcomingPostponedLoading, setUpcomingPostponedLoading] = useState(true);
   const [isPostponeModalOpen, setIsPostponeModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedEndDate, setSelectedEndDate] = useState('');
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [noticeMemo, setNoticeMemo] = useState('');
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -408,6 +414,7 @@ export default function SpokeduHQDashboard() {
 
   const openPostponeModal = async () => {
     setSelectedDate('');
+    setSelectedEndDate('');
     setSelectedTeacherId('');
     setNoticeMemo('');
     setNoticeError('');
@@ -432,6 +439,10 @@ export default function SpokeduHQDashboard() {
       setNoticeError('날짜를 선택해주세요.');
       return;
     }
+    if (selectedEndDate && selectedEndDate < selectedDate) {
+      setNoticeError('종료일은 시작일 이후로 선택해 주세요.');
+      return;
+    }
     if (!selectedTeacherId) {
       setNoticeError('강사를 선택해주세요.');
       return;
@@ -444,6 +455,8 @@ export default function SpokeduHQDashboard() {
         body: JSON.stringify({
           teacher_id: selectedTeacherId,
           notice_date: selectedDate,
+          start_date: selectedDate,
+          end_date: selectedEndDate || selectedDate,
           memo: noticeMemo.trim() || null,
         }),
       });
@@ -482,9 +495,12 @@ export default function SpokeduHQDashboard() {
     }
   };
 
-  const getNoticeDateDisplay = (dateStr: string) => {
+  const getNoticeDateDisplay = (dateStr: string, endDate?: string) => {
     const date = new Date(dateStr + 'T00:00:00');
-    return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+    const start = date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+    if (!endDate || endDate === dateStr) return start;
+    const end = new Date(endDate + 'T00:00:00');
+    return `${start} ~ ${end.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}`;
   };
 
   const getClassDateDisplay = (startAt: string) => {
@@ -591,8 +607,6 @@ export default function SpokeduHQDashboard() {
           </div>
         </header>
 
-        <StorageRecompressPanel />
-
         {/* 관리 홈: 패널 2개 — (1) 오늘 수업·연기·휴강 (2) 공지·상담·MOVE·안내 링크 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full min-w-0">
 
@@ -663,7 +677,7 @@ export default function SpokeduHQDashboard() {
                 ) : (
                   <div className="space-y-2">
                     {postponeNotices.map((n) => {
-                      const dateDisplay = getNoticeDateDisplay(n.notice_date);
+                      const dateDisplay = getNoticeDateDisplay(n.start_date || n.notice_date, n.end_date);
                       const urgent = isNoticeUrgent(n.notice_date);
                       return (
                         <div key={n.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
@@ -922,6 +936,9 @@ export default function SpokeduHQDashboard() {
 
         </div>
 
+        {/* Storage 정리 패널은 안내 카드 아래에서 독립된 한 칸으로 표시 */}
+        <StorageRecompressPanel />
+
       </div>
 
       {/* 수업 연기 알림 등록 모달 */}
@@ -952,10 +969,31 @@ export default function SpokeduHQDashboard() {
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <MiniCalendar
                     selectedDate={selectedDate}
-                    onSelect={setSelectedDate}
+                    selectedEndDate={selectedEndDate}
+                    onSelect={(date) => {
+                      if (!selectedDate || selectedEndDate) {
+                        setSelectedDate(date);
+                        setSelectedEndDate('');
+                      } else if (date < selectedDate) {
+                        setSelectedDate(date);
+                      } else {
+                        setSelectedEndDate(date);
+                      }
+                    }}
                   />
                 </div>
-                {selectedDate && (
+                {selectedDate && selectedEndDate && (
+                  <p className="mt-1.5 text-xs font-bold text-indigo-600 text-center">
+                    선택 범위: {selectedDate} ~ {selectedEndDate}
+                  </p>
+                )}
+                {selectedDate && !selectedEndDate && (
+                  <p className="mt-1.5 text-xs font-bold text-indigo-600 text-center">
+                    시작일: {selectedDate} · 종료일을 한 번 더 클릭하세요
+                  </p>
+                )}
+                {/* legacy single-date summary */}
+                {false && (
                   <p className="mt-1.5 text-xs text-indigo-600 font-medium text-center">
                     선택: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
                   </p>

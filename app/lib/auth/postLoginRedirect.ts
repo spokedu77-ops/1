@@ -3,6 +3,7 @@ import {
   isKnownPlatformAdminEmail,
   isPlatformAdminIdentity,
 } from '@/app/lib/auth/platformAdminIdentity';
+import { SPOMOVE_EMAIL } from '@/app/lib/constants/admin';
 import {
   readLastUsedApp,
   resolveDefaultHomeForLastUsedApp,
@@ -56,6 +57,7 @@ export async function resolvePostLoginRedirect(
   supabase?: SupabaseClient,
   user?: { id: string; email?: string | null },
 ): Promise<string> {
+  if (user?.email?.trim().toLowerCase() === SPOMOVE_EMAIL) return '/admin/spomove/training';
   const isAdmin = await fetchPlatformAdminStatus(supabase, user);
   if (nextSafe && !isAdmin) return nextSafe;
   if (nextSafe && isAdmin && nextSafe.startsWith('/teacher')) {

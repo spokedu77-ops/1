@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
@@ -40,6 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [scopeChecked, setScopeChecked] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
   const isNoteRoute = pathname != null && pathname.startsWith('/admin/note');
   const isFullscreenRoute =
@@ -49,6 +51,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isGameRoute =
     pathname != null &&
     GAME_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+  useEffect(() => {
+    const checkSpomoveScope = async () => {
+      const { data: { user } } = await getSupabaseBrowserClient().auth.getUser();
+      if (user?.email?.toLowerCase() === 'spomove@spokedu.com' && pathname !== '/admin/spomove/training') {
+        router.replace('/admin/spomove/training');
+        return;
+      }
+      setScopeChecked(true);
+    };
+    void checkSpomoveScope();
+  }, [pathname, router]);
 
   useEffect(() => {
     const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);
@@ -108,7 +122,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     void check();
   }, [router]);
 
-  if (!isAdmin) {
+  if (!isAdmin || !scopeChecked) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-white">
         <p className="animate-pulse text-sm font-bold text-slate-300">권한 확인 중...</p>

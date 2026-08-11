@@ -270,6 +270,7 @@ function LoginContent() {
 
           <form
             onSubmit={handleLogin}
+            autoComplete="off"
             className="flex flex-col justify-center bg-[#f7f8fb] p-6 text-slate-900 sm:p-9 lg:p-11"
           >
             <div className="lg:hidden">
@@ -358,6 +359,8 @@ function LoginContent() {
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                           type="text"
+                          name="username"
+                          autoComplete="off"
                           placeholder="아이디를 입력하세요"
                           value={id}
                           onChange={(e) => setId(e.target.value)}
@@ -375,6 +378,8 @@ function LoginContent() {
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                           type="password"
+                          name="password"
+                          autoComplete="new-password"
                           placeholder="비밀번호를 입력하세요"
                           value={pw}
                           onChange={(e) => setPw(e.target.value)}
