@@ -59,9 +59,6 @@ export function MediaRenderer({
   };
 
   if (!useImage || !imgSrc) {
-    if (strictPhoto) {
-      return null;
-    }
     return (
       <GradientVisual
         media={media}
