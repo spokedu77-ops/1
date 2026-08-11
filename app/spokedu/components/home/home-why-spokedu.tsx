@@ -15,10 +15,9 @@ export function HomeWhySpokedu() {
         </div>
         <div>
           <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>WHY SPOKEDU</p>
-          <h2 id="home-why-heading" className={`${homeSectionH2} mt-3`}>직접 수업하며 필요한 것을 만듭니다.</h2>
-          <p className={`${homeBody} mt-4 max-w-xl ${koreanText}`}>{homePage.pillars.lead}</p>
-          <p className={`mt-3 max-w-xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{homePage.pillars.relationLine}</p>
-          <TrackedLink href={homePage.pillars.items[0]?.href ?? '/education'} trackLabel="cta-home-why-education" className="mt-6 inline-flex font-semibold text-[#245DFF] underline-offset-4 hover:underline">현장 수업 보기 →</TrackedLink>
+          <h2 id="home-why-heading" className={`${homeSectionH2} mt-3`}>{homePage.whySpokedu.title}</h2>
+          <p className={`${homeBody} mt-4 max-w-xl ${koreanText}`}>{homePage.whySpokedu.body}</p>
+          <TrackedLink href={homePage.whySpokedu.cta.href} trackLabel={homePage.whySpokedu.cta.trackLabel} className="mt-6 inline-flex font-semibold text-[#245DFF] underline-offset-4 hover:underline">{homePage.whySpokedu.cta.label} →</TrackedLink>
         </div>
       </div>
     </section>

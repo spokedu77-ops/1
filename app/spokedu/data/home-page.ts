@@ -171,6 +171,31 @@ export const homePage = {
     },
   },
 
+  services: {
+    education: {
+      title: '체육교육',
+      summary: 'SPOKEDU가 직접 운영하는 현장 체육교육입니다.',
+      href: `${SPOKEDU_BASE_PATH}/education`,
+      trackLabel: 'cta-home-services-education',
+      directLinks: [
+        { label: '기관 수업', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'cta-home-services-dispatch' },
+        { label: '개인·소그룹', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'cta-home-services-private' },
+      ],
+    },
+    subscription: {
+      title: '구독시스템',
+      summary: '지도자가 직접 수업을 운영할 수 있도록 만든 콘텐츠 시스템입니다.',
+      href: `${SPOKEDU_PATHS.subscription}`,
+      trackLabel: 'cta-home-services-subscription',
+    },
+  },
+
+  whySpokedu: {
+    title: '직접 수업하며 필요한 것을 만듭니다.',
+    body: 'SPOKEDU는 실제 체육수업에서 움직임을 관찰하고, 수업에 필요한 콘텐츠와 시스템을 직접 만듭니다.',
+    cta: { label: '운영 사례 보기', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'cta-home-why-records' },
+  },
+
   audienceGate: {
     id: 'paths',
     title: '무엇을 찾고 계신가요?',
@@ -372,7 +397,7 @@ export const homePage = {
       { value: '원데이·행사', label: '축제·특별활동 구성' },
       { value: '특수·SPOMOVE', label: '통합반·에듀테크 현장 적용' },
     ] as const,
-    cards: [featuredCase],
+    cards: [featuredCase, buildHomeCaseCard('yangcheon-paps')],
   },
 
   evidenceStrip: {

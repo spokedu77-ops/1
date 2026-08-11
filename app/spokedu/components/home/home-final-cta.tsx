@@ -1,97 +1,29 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
-import { HOME_MEDIA } from '../../data/home-media';
-import { homePage } from '../../data/home-page';
-import {
-  homeBandSoftBlue,
-  homeFocusRing,
-  homePhotoGrade,
-  homeSectionH2,
-  homeSectionScrollMt,
-  koreanText,
-  siteBtnPrimary,
-  siteBtnSecondary,
-  siteContainer,
-} from '../../lib/ui-classes';
-import { MediaPanel } from '../visual';
+import { homeBandSoftBlue, homeFocusRing, homeSectionH2, homeSectionScrollMt, koreanText, siteBtnPrimary, siteBtnSecondary, siteContainer } from '../../lib/ui-classes';
 import { TrackedLink } from './tracked-link';
 
-/** 최종 4경로 CTA — 경로당 최우선 행동 1개 */
 export function HomeFinalCta() {
-  const items = homePage.finalCta.items;
-  const reducedMotion = useReducedMotion();
-  const media = HOME_MEDIA.finalCta;
-
+  const [education, subscription, contact] = [
+    { label: '체육교육 알아보기', href: '/education', trackLabel: 'cta-home-final-education' },
+    { label: '구독시스템 알아보기', href: '/subscription', trackLabel: 'cta-home-final-subscription' },
+    { label: '문의·협업 시작하기', href: '/contact', trackLabel: 'cta-home-final-contact' },
+  ];
   return (
-    <section
-      id={homePage.finalCta.id}
-      className={`${homeSectionScrollMt} relative overflow-hidden ${homeBandSoftBlue} py-12 sm:py-14 lg:py-16`}
-    >
+    <section id="final-action" className={`${homeSectionScrollMt} ${homeBandSoftBlue} py-12 sm:py-14`} aria-labelledby="home-final-action-heading">
       <div className={siteContainer}>
-        <motion.div
-          className="overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white shadow-[0_18px_50px_rgba(15,33,70,0.07)]"
-          initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-          whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.35 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="h-1.5 w-full bg-[#0B1F46]" aria-hidden />
-
-          <div className="grid gap-8 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,1fr)] lg:items-stretch lg:gap-10 lg:px-10 lg:py-11">
-            <div className="min-w-0">
-              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">다음 단계</p>
-              <h2 className={`${homeSectionH2} mt-3 text-[#0B1F46]`}>
-                {homePage.finalCta.headlineLines.map((line) => (
-                  <span key={line} className="block">
-                    {line}
-                  </span>
-                ))}
-              </h2>
-              <p className={`mt-4 max-w-xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-                {homePage.finalCta.lead}
-              </p>
-              <p className={`mt-2 max-w-xl text-sm leading-relaxed text-[#6D7B90] ${koreanText}`}>
-                {homePage.finalCta.support}
-              </p>
-              <ul className="mt-5 flex flex-wrap gap-2" aria-label="경로 안내">
-                {homePage.finalCta.notes.map((note) => (
-                  <li
-                    key={note}
-                    className={`rounded-full border border-[#D6E3FF] bg-[#EAF1FF] px-3.5 py-1.5 text-xs font-medium text-[#2C446D] ${koreanText}`}
-                  >
-                    {note}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="flex w-full min-w-0 flex-col gap-3">
-              <div className="relative mb-1 hidden aspect-[16/10] overflow-hidden rounded-[1.15rem] ring-1 ring-[#DCE3EE] lg:block">
-                <MediaPanel
-                  media={media}
-                  className={`absolute inset-0 h-full w-full rounded-none border-0 ${homePhotoGrade}`}
-                  sizes="card2"
-                  objectFit="cover"
-                />
-              </div>
-              {items.map((item, index) => (
-                <TrackedLink
-                  key={item.trackLabel}
-                  href={item.href}
-                  trackLabel={item.trackLabel}
-                  commercialRoute={'commercialRoute' in item ? item.commercialRoute : undefined}
-                  ctaIntentId={'commercialRoute' in item ? item.trackLabel : undefined}
-                  className={`${index === 0 ? siteBtnPrimary : siteBtnSecondary} ${
-                    index === 0 ? 'h-12' : '!min-h-11 py-2.5'
-                  } w-full ${homeFocusRing}`}
-                >
-                  {item.label}
-                </TrackedLink>
-              ))}
-            </div>
+        <div className="flex flex-col gap-6 border-y border-[#D6E3FF] py-8 sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:py-10">
+          <div className="max-w-2xl">
+            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">다음 단계</p>
+            <h2 id="home-final-action-heading" className={`${homeSectionH2} mt-3 text-[#0B1F46]`}>필요한 것부터 시작하세요.</h2>
+            <p className={`mt-3 text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>직접 수업을 찾거나, 현장에서 쓸 수 있는 시스템을 살펴보세요.</p>
           </div>
-        </motion.div>
+          <div className="grid w-full shrink-0 gap-2 sm:w-auto sm:min-w-[17rem]">
+            {[education, subscription, contact].map((item, index) => (
+              <TrackedLink key={item.trackLabel} href={item.href} trackLabel={item.trackLabel} className={`${index === 0 ? siteBtnPrimary : siteBtnSecondary} ${homeFocusRing} min-h-11 w-full`}>{item.label}</TrackedLink>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

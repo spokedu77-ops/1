@@ -50,14 +50,6 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
             <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.cases.lead}
             </p>
-            <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
-              {homePage.cases.proofStats.map((stat) => (
-                <div key={stat.label} className="min-w-0">
-                  <dt className={`text-sm font-bold text-[#0B1F46] ${koreanText}`}>{stat.value}</dt>
-                  <dd className={`mt-0.5 text-xs text-slate-500 ${koreanText}`}>{stat.label}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
           <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row">
             <TrackedLink
@@ -66,15 +58,6 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
               className={`${siteBtnSecondary} ${homeFocusRing}`}
             >
               {homePage.cases.recordsCta.label}
-            </TrackedLink>
-            <TrackedLink
-              href={homePage.cases.consultCta.href}
-              trackLabel={homePage.cases.consultCta.trackLabel}
-              commercialRoute="dispatch"
-              ctaIntentId={homePage.cases.consultCta.trackLabel}
-              className={`${siteBtnPrimary} ${homeFocusRing}`}
-            >
-              {homePage.cases.consultCta.label}
             </TrackedLink>
           </div>
         </motion.div>
