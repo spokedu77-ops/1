@@ -1271,7 +1271,7 @@ function SpomoveContentManager() {
                         <summary className="cursor-pointer list-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 [&::-webkit-details-marker]:hidden">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="truncate text-[13px] font-black text-slate-950">{draft.displayTitle?.trim() || preset.title}</p>
+                              <p className="truncate text-[13px] font-black text-slate-950">{draft.displayTitle?.trim() || getSpomovePresetDisplayModel(preset).displayTitle}</p>
                               <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
                               <div className="mt-2 flex flex-wrap gap-1">
                                 {(draft.catalogTags ?? []).slice(0, 4).map((tag) => <span key={tag} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">{tag}</span>)}
@@ -1280,7 +1280,7 @@ function SpomoveContentManager() {
                             <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-black text-indigo-700">상세 편집</span>
                           </div>
                         </summary>
-                        <p className="text-[13px] font-black text-slate-950">{preset.title}</p>
+                        <p className="text-[13px] font-black text-slate-950">{getSpomovePresetDisplayModel(preset).displayTitle}</p>
                         <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
                         <section className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
                           <p className="text-[11px] font-black text-indigo-900">구독자 카드 정보</p>
@@ -1778,7 +1778,7 @@ function SpomoveThumbnailManager() {
                           )}
                         </div>
                         <div className="p-3">
-                          <p className="line-clamp-2 text-[12px] font-black leading-4 text-slate-950">{preset.title}</p>
+                          <p className="line-clamp-2 text-[12px] font-black leading-4 text-slate-950">{getSpomovePresetDisplayModel(preset).displayTitle}</p>
                           <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
                           {path ? (
                             <p className="mt-2 truncate text-[10px] font-semibold text-slate-400">{path}</p>
@@ -2002,7 +2002,7 @@ function SpomoveGuideVideoManager() {
 
                     return (
                       <article key={preset.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-[13px] font-black text-slate-950">{preset.title}</p>
+                        <p className="text-[13px] font-black text-slate-950">{getSpomovePresetDisplayModel(preset).displayTitle}</p>
                         <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
                         <input
                           value={draftUrl}
