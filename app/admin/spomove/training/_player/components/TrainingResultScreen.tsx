@@ -609,7 +609,7 @@ export function TrainingResultScreen({
               }}
             >
               <div style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-                코칭 팁
+                다음 시도 팁
               </div>
               <p style={{ margin: 0, fontSize: 'var(--tr-body)', lineHeight: 1.5, fontWeight: 700, color: 'var(--text)', wordBreak: 'keep-all' }}>
                 {rich.coachTip}

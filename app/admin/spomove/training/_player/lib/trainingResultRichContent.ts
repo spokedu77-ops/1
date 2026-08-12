@@ -270,6 +270,19 @@ function buildBenefitLine(mode: string, level: number): string {
 }
 
 function buildCoachTip(mode: string, level: number): string {
+  const commercialTips: Record<string, string> = {
+    basic: '화면 신호를 확인한 뒤 목표 위치로 정확하게 이동해 보세요.',
+    reactTrain: '색과 위치를 함께 확인하고, 서두르기보다 정확한 반응을 이어가 보세요.',
+    simon: '화면의 위치와 색을 차례로 확인한 뒤 목표 패드로 움직여 보세요.',
+    flanker: '주변 신호보다 목표 신호에 집중해 한 번에 하나씩 반응해 보세요.',
+    stroop: '이번 활동의 규칙을 먼저 떠올리고, 화면을 본 뒤 차분하게 반응해 보세요.',
+    spatial: '순서를 짧게 나누어 기억하고, 한 단계씩 정확하게 이어가 보세요.',
+    flow: '리듬을 유지하면서 다음 신호를 미리 살펴보며 움직여 보세요.',
+  };
+  return commercialTips[mode] ?? '화면 신호를 확인하고 자신의 속도로 정확하게 반응해 보세요.';
+
+  /* 가이드 원문은 수업용 가이드에서만 사용합니다. 결과 화면에는 노출하지 않습니다. */
+  /* istanbul ignore next */
   if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
     return '색만 보지 말고 발·손 아이콘까지 같이 읽어요.';
   }
