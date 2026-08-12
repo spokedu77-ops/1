@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { AppShell } from './components/layout/AppShell';
 import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
@@ -21,7 +22,6 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
   },
-  themeColor: '#6366f1',
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
@@ -40,6 +40,10 @@ export const metadata: Metadata = {
     index: false,
     follow: false,
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#6366f1',
 };
 
 export default function SpokeduMasterLayout({ children }: { children: ReactNode }) {
