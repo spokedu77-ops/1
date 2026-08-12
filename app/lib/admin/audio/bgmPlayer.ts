@@ -125,7 +125,7 @@ export class BgmPlayer {
         if ('suspend' in this.audio && typeof this.audio.suspend === 'function') {
           this.audio.suspend();
         }
-      } catch (e) {
+      } catch {
         // 무시
       }
       
@@ -133,7 +133,7 @@ export class BgmPlayer {
       try {
         this.audio.removeAttribute('src');
         this.audio.src = '';
-      } catch (e) {
+      } catch {
         // 무시
       }
       
@@ -213,7 +213,7 @@ export class BgmPlayer {
             }
             this.audio.removeAttribute('src');
             this.audio.src = '';
-          } catch (e) {
+          } catch {
             // 무시
           }
           
@@ -293,7 +293,7 @@ export class BgmPlayer {
         // src를 제거하여 재생 중단
         this.audio.removeAttribute('src');
         this.audio.src = '';
-      } catch (e) {
+      } catch {
         // 무시
       }
       

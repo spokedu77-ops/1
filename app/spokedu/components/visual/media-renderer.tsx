@@ -32,6 +32,7 @@ export function MediaRenderer({
   strictPhoto = false,
   objectFit = 'cover',
 }: MediaRendererProps) {
+  void strictPhoto;
   const reducedMotion = useReducedMotion();
   const primarySrc = media.src;
   const [useImage, setUseImage] = useState(Boolean(primarySrc));

@@ -19,7 +19,6 @@ export const PAD_DEPTH     = 200;
 const TRACK_SEG_LEN  = 420;
 const TRACK_SEGS     = 10;
 const TRACK_SEG_Y    = 37;
-const TRACK_RAIL_NAMES = new Set(['EMISSIVE_RAIL_LEFT', 'EMISSIVE_RAIL_RIGHT']);
 const TRACK_PAD_NAME   = 'PAD';
 const TRACK_ARROW_PREFIX = 'ARROW_';
 

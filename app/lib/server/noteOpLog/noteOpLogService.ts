@@ -7,7 +7,6 @@ import type {
 } from '@/app/lib/note/noteBlockOpTypes';
 import {
   noteContentHasStructuredPresence,
-  readNoteContentAuthorityText,
   shouldIgnoreRegressiveContentPatch,
 } from '@/app/lib/note/noteContentAuthority';
 import { commitNoteBlockOp } from '@/app/lib/server/noteOpLog/noteCommitBlockOp';
@@ -185,10 +184,6 @@ async function fetchActiveDocumentBlocks(
   return rows;
 }
 
-function readContentText(content: unknown): string {
-  return readNoteContentAuthorityText(content);
-}
-
 function hasStructuredContent(content: unknown): boolean {
   return noteContentHasStructuredPresence(content);
 }
@@ -224,6 +219,7 @@ export async function stripRegressiveContentFromPatches<T extends TransactionLik
     if (!current) {
       if (isTopologyOnlyPatch(patch)) {
         const { content: _dropped, ...topology } = patch;
+        void _dropped;
         out.push(topology as T);
       }
       continue;
@@ -231,6 +227,7 @@ export async function stripRegressiveContentFromPatches<T extends TransactionLik
     if (shouldIgnoreRegressiveContentPatch(current.content, patch.content)) {
       if (isTopologyOnlyPatch(patch)) {
         const { content: _dropped, ...topology } = patch;
+        void _dropped;
         out.push(topology as T);
       }
       continue;

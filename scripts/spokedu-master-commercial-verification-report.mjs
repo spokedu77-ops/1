@@ -1,10 +1,8 @@
-import nextEnv from '@next/env';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadMasterQaEnv } from './lib/spokedu-master-qa-env.mjs';
 
-const { loadEnvConfig } = nextEnv;
 loadMasterQaEnv();
 
 const BASE = (process.argv.find((arg) => /^https?:\/\//.test(arg)) || 'http://localhost:3000').replace(/\/$/, '');

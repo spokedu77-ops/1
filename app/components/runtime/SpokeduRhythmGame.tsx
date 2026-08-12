@@ -70,11 +70,14 @@ const COUNTDOWN_TICK_MS = 750;
 
 /** 레벨 완료 → 다음 beat 0까지 rest 3초 고정. */
 function getTransitionDurationMs(_bpm: number, _bgmSourceBpm?: number | null): number {
+  void _bpm;
+  void _bgmSourceBpm;
   return BETWEEN_LEVEL_MS;
 }
 
 /** 초반 3초 + 4단계 플레이(256비트) + 3회 전환(6초) + 아웃트로(0.6s) 총 재생 시간(초). 오프셋 없음. */
 function getTotalChallengeDurationSec(bpm: number, _bgmSourceBpm?: number | null): number {
+  void _bgmSourceBpm;
   const beatSec = 60 / bpm;
   const levelBeats = MAX_LEVELS * ROUNDS_PER_LEVEL * BEATS_PER_ROUND;
   return (
@@ -115,6 +118,7 @@ export function SpokeduRhythmGame({
   autoStart = false,
   bgmStartOffsetMs = 0,
 }: SpokeduRhythmGameProps) {
+  void bgmStartOffsetMs;
   const [isPlaying, setIsPlaying] = useState(false);
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -155,7 +159,6 @@ export function SpokeduRhythmGame({
   const isPlayingRef = useRef(false);
   const startCountdownRef = useRef<() => void>(() => {});
   const schedulerRef = useRef<() => void>(() => {});
-  const hasAutoStartedRef = useRef(false);
   /** 초반 3초 카운트다운 끝에 호출(스케줄러 시작 직전). BGM 재생을 여기서 하면 노래·영상 동시 시작 보장. */
   const onCountdownEndRef = useRef<(() => void) | null>(null);
 
@@ -557,19 +560,19 @@ export function SpokeduRhythmGame({
     setCurrentBeat(-4);
     currentBeatIndexRef.current = -4;
 
-    const t1 = setTimeout(() => {
+    setTimeout(() => {
       if (myRunId !== runIdRef.current) return;
       setCurrentBeat(-3);
     }, COUNTDOWN_TICK_MS);
-    const t2 = setTimeout(() => {
+    setTimeout(() => {
       if (myRunId !== runIdRef.current) return;
       setCurrentBeat(-2);
     }, COUNTDOWN_TICK_MS * 2);
-    const t3 = setTimeout(() => {
+    setTimeout(() => {
       if (myRunId !== runIdRef.current) return;
       setCurrentBeat(-1);
     }, COUNTDOWN_TICK_MS * 3);
-    const t4 = setTimeout(() => {
+    setTimeout(() => {
       if (myRunId !== runIdRef.current) return;
       if (isFinishingRef.current) return;
       const fn = onCountdownEndRef.current;

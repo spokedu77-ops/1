@@ -101,7 +101,7 @@ async function main() {
     ['curriculum', '커리큘럼'],
   ]) {
     await page.goto(`${BASE}/spokedu/contact?type=${type}`, { waitUntil: 'networkidle', timeout: 45000 });
-    const state = await page.evaluate((expect) => {
+    const state = await page.evaluate(() => {
       const params = new URLSearchParams(location.search);
       const h3 = document.querySelector('form h3')?.textContent?.trim() || '';
       const selected = [...document.querySelectorAll('#contact-type-select button')].map((b) => ({
@@ -112,7 +112,6 @@ async function main() {
       const phoneRequired = !!document.querySelector('input[type="tel"][required], input[name*="phone"][required]');
       const emailOptional = [...document.querySelectorAll('label')].some((l) => l.textContent?.includes('이메일') && !l.textContent?.includes('필수'));
       const footers = [...document.querySelectorAll('footer')].length;
-      const privateOnly = !!document.querySelector('select, [name*="preferredClass"], input[placeholder*="아이"]');
       return { type: params.get('type'), h3, selected, phoneRequired, emailOptional, footers, hasForm: !!document.querySelector('form') };
     }, titleExpect);
     report.contactForms.push({ type, ...state, titleOk: state.h3.includes(titleExpect) });

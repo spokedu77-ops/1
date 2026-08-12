@@ -59,7 +59,7 @@ async function testContactType(page, type) {
 
   await page.goto(result.url, { waitUntil: 'networkidle', timeout: 45000 });
   result.h3 = await page.locator('form h3').innerText().catch(() => '');
-  result.activeCard = await page.evaluate((t) => {
+  result.activeCard = await page.evaluate(() => {
     const btn = [...document.querySelectorAll('#contact-type-select button')].find((b) =>
       b.textContent?.includes('선택됨'),
     );
@@ -72,7 +72,6 @@ async function testContactType(page, type) {
   await fillCommon(page);
 
   if (type === 'private') {
-    const age = page.locator('input').filter({ has: page.locator('xpath=..') });
     const childAge = page.getByLabel(/아이 연령|연령/i).first();
     if ((await childAge.count()) > 0) await childAge.fill('초등 1학년');
   }

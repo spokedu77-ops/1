@@ -100,7 +100,7 @@ function LoginContent() {
     return () => {
       cancelled = true;
     };
-  }, [nextSafe, router]);
+  }, [nextSafe, prefersMasterTab, router]);
 
   const finishLogin = async (
     supabase: ReturnType<typeof getSupabaseBrowserClient>,

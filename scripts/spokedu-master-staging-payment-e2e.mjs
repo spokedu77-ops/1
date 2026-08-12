@@ -8,7 +8,6 @@ const MANUAL_ONLY = process.argv.includes('--manual-only');
 const MOCK_ACTIVATION = process.argv.includes('--mock-activation');
 const SKIP_SERVER = process.argv.includes('--skip-server-check');
 
-const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || process.env.SPM_QA_ID || '';
 const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
 const PAYMENT_QA_ID =
   process.env.SPOKEDU_MASTER_QA_SECONDARY_ID ||

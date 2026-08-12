@@ -262,7 +262,7 @@ function MyClassesContent() {
     setCurrentSessionLessonPlanId(null);
     setPreviousPlans([]);
     setPreviousPlansExpandedId(null);
-  }, [currentDate]);
+  }, [currentDate, uploading]);
 
   const handleItemClick = (session: Session) => {
     if (session.status === 'postponed') {
@@ -315,6 +315,7 @@ function MyClassesContent() {
       const { center_document_names: _c, ...rest } = nextFeedbackFields as FeedbackFields & {
         center_document_names?: string[];
       };
+      void _c;
       fieldsForModal = rest;
     }
 

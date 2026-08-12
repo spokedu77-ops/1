@@ -144,6 +144,7 @@ export async function POST(req: Request) {
       const { center_document_names: _omit, ...rest } = mergedFeedback as FeedbackFields & {
         center_document_names?: string[];
       };
+      void _omit;
       mergedFeedback = rest;
     }
 

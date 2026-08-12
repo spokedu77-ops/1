@@ -246,7 +246,7 @@ export default function TeacherInventoryPage() {
             {/* Modal Header */}
             <div className="p-8 pb-6 border-b border-slate-800 flex gap-6 items-center">
                 <div className="w-20 h-20 rounded-[20px] bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center border border-slate-700">
-                    {detailItem.image ? <img src={detailItem.image} className="w-full h-full object-cover" /> : <Package size={32} className="text-slate-600"/>}
+                    {detailItem.image ? <img src={detailItem.image} alt={`${detailItem.name} 이미지`} className="w-full h-full object-cover" /> : <Package size={32} className="text-slate-600"/>}
                 </div>
                 <div className="flex-1 min-w-0">
                     <span className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em]">{detailItem.category}</span>

@@ -14,6 +14,7 @@ export async function applyToggleBodyForwardMigrations(
   blocks: LoadedNoteBlock[],
   _actorId: string,
 ): Promise<LoadedNoteBlock[]> {
+  void _actorId;
   const plans = planToggleBodyForwardMigrations(blocks);
   if (plans.length === 0) return blocks;
 

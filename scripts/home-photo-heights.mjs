@@ -11,7 +11,6 @@ async function main() {
     await page.waitForTimeout(1500);
     const m = await page.evaluate(() => {
       const collage = document.querySelector('[aria-label="스포키듀 수업 현장"]');
-      const gateImg = document.querySelector('#visitor-gate a .relative.h-\\[min');
       const gateLink = document.querySelector('#visitor-gate a');
       const fieldFeatured = document.querySelector('[aria-label="현장 운영 증거"] > div:first-child a');
       return {

@@ -29,7 +29,6 @@ export default function CurriculumMonthWeekPicker({
   isSubSelected = false,
   onSubChange,
   teacherMode = false,
-  currentMonth = new Date().getMonth() + 1,
   className = '',
 }: CurriculumMonthWeekPickerProps) {
   return (

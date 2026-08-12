@@ -108,13 +108,6 @@ function toggleChildren<T extends BlockLike>(toggleId: string, blocks: T[]): T[]
     .sort((a, b) => a.order_index - b.order_index);
 }
 
-function hasDisplayableToggleChildren<T extends BlockLike>(toggleId: string, blocks: T[]): boolean {
-  return toggleChildren(toggleId, blocks).some((child) => {
-    if (child.type === 'text') return !isEmptyTextBlock(child);
-    return true;
-  });
-}
-
 function mergeTextBlockContent(
   existing: Record<string, unknown> | null | undefined,
   incoming: Record<string, unknown>,

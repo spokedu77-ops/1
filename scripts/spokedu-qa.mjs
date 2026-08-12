@@ -89,7 +89,6 @@ async function main() {
     let title = '';
     let h1Text = '';
     let footerCount = 0;
-    let postimgOnPage = 0;
 
     try {
       const res = await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle', timeout: 45000 });
@@ -118,8 +117,6 @@ async function main() {
 
       if (path.includes('contact')) {
         const active = await page.evaluate(() => {
-          const cards = [...document.querySelectorAll('#contact-type-select button, #contact-type-select [role="button"]')];
-          const selected = document.querySelector('#contact-type-select [aria-pressed="true"], #contact-type-select button[class*="ring"], #contact-type-select button.border-indigo-600');
           const params = new URLSearchParams(window.location.search);
           const type = params.get('type') || 'private';
           const buttons = [...document.querySelectorAll('#contact-type-select button')];
@@ -157,7 +154,6 @@ async function main() {
         const hero = await page.evaluate(() => {
           const h1 = document.querySelector('h1');
           const rect = h1?.getBoundingClientRect();
-          const subs = document.querySelector('p');
           return {
             h1Lines: h1?.innerText?.split('\n').map((l) => l.trim()).filter(Boolean),
             h1Width: rect?.width,

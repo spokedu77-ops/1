@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useMemo, useState } from 'react';
-import { Check, CheckSquare, ChevronDown, FileText, Image as ImageIcon } from 'lucide-react';
+import { Check, ChevronDown, FileText, Image as ImageIcon } from 'lucide-react';
 import type { PublicNoteBlock, PublicNoteDocument } from '@/app/lib/server/publicNote';
 import { buildChildrenByParentBlock, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
@@ -263,7 +264,7 @@ function PublicBlock({
           style={imageFrameWidthStyle(imageWidthPercent)}
         >
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-            <img src={url} alt={caption || ''} className="max-h-96 w-full object-contain" />
+            <Image src={url} alt={caption || ''} width={1200} height={900} unoptimized className="h-auto max-h-96 w-full object-contain" />
           </div>
           {caption ? (
             <p className={`mt-1.5 text-[12px] text-slate-500 ${imageCaptionAlignClass(imageAlign)}`}>{caption}</p>
@@ -348,7 +349,6 @@ function PublicBlock({
     return (
       <PublicToggleBlock
         block={block}
-        publicPages={publicPages}
         indentStyle={indentStyle}
         childBlocks={childBlocks}
         renderChildBlock={renderChildBlock}
@@ -369,14 +369,12 @@ function PublicBlock({
 
 function PublicToggleBlock({
   block,
-  publicPages,
   indentStyle,
   childBlocks = [],
   renderChildBlock,
   isInsideToggle = false,
 }: {
   block: PublicNoteBlock;
-  publicPages: Record<string, string>;
   indentStyle?: React.CSSProperties;
   childBlocks?: PublicNoteBlock[];
   renderChildBlock?: (child: PublicNoteBlock) => React.ReactNode;
@@ -423,7 +421,7 @@ function PublicToggleBlock({
                     <ImageIcon className="h-3.5 w-3.5" />
                     이미지
                   </div>
-                  <img src={url} alt="" className="max-h-56 w-full object-contain" />
+                  <Image src={url} alt="" width={1200} height={900} unoptimized className="h-auto max-h-56 w-full object-contain" />
                 </div>
               ))}
             </div>

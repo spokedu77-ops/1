@@ -11,13 +11,6 @@ const dataPath = join(root, 'app/spokedu-master/lib/data.ts');
 const source = readFileSync(dataPath, 'utf8');
 
 const DEDICATED_PREFIX = '/images/spokedu-master/programs/';
-const GENERIC_PATTERNS = [
-  /\/images\/spokedu\/records\//,
-  /\/images\/spokedu\/cases\/hero/,
-  /\/images\/spokedu\/curriculum-instructor/,
-  /img\.youtube\.com/,
-];
-
 function extractProgramBlocks(text) {
   return text.split(/\n  \{\n    id: '/).slice(1);
 }
@@ -32,10 +25,6 @@ function parseImageUrls(block) {
 
 function isDedicated(url) {
   return url.startsWith(DEDICATED_PREFIX);
-}
-
-function isGeneric(url) {
-  return GENERIC_PATTERNS.some((pattern) => pattern.test(url));
 }
 
 function publicPath(url) {

@@ -1700,7 +1700,6 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                 })
                                 .map((r, i) => {
                                   const start = new Date(r.start_at);
-                                  const end = new Date(r.end_at);
                                   const savedDateStr = toDateInputValueLocal(start);
                                   const savedTimeStr = start.toTimeString().slice(0, 5);
                                   const scheduleDraft = scheduleDraftBySessionId[r.id];

@@ -32,7 +32,7 @@ async function requireUserId(): Promise<{ userId: string } | { response: NextRes
   return { userId: auth.userId };
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const auth = await requireUserId();
   if ('response' in auth) return auth.response;
 

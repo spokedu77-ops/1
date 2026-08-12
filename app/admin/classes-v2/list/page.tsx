@@ -310,14 +310,12 @@ function ClassListPageV2Content() {
         ongoingTeacherId,
         earliestUpcomingTeacherId,
         earliestOngoingStartMs,
-        earliestUpcomingStartMs,
         maxEndMs,
         minStartMs,
         earliestUpcomingStartAt,
         earliestOngoingStartAt,
       } of byGroup.values()) {
         const hasOngoing = Number.isFinite(earliestOngoingStartMs) && earliestOngoingStartMs !== Number.POSITIVE_INFINITY;
-        const hasUpcoming = Number.isFinite(earliestUpcomingStartMs) && earliestUpcomingStartMs !== Number.POSITIVE_INFINITY;
 
         // ✅ 시리즈 관점: (1) 아직 시작 전이면 예정, (2) 모두 끝났으면 완료, (3) 그 외는 진행중
         const timeStatus: TimeStatus =

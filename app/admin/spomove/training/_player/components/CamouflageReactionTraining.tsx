@@ -91,6 +91,7 @@ export function CamouflageReactionTraining({
   onExit,
   onComplete,
 }: Props) {
+  void _speedLevel;
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);

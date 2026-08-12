@@ -47,9 +47,6 @@ export function parseWeekKey(weekKey: string): { year: number; month: number; we
   };
 }
 
-/** 48주 = 12개월×4주. 시스템 표준 슬롯 수 (W1~W4) */
-const SLOTS_PER_YEAR = 48;
-
 /**
  * 48주 슬롯 생성 (1월 1~4주차 ~ 12월 4주차)
  * week_key = YYYY-MM-W{1..4}

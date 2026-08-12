@@ -25,7 +25,7 @@ export async function loadAssetWithFallback(
     const response = await fetch(url, { method: 'HEAD' });
     if (!response.ok) throw new Error('Load failed');
     return url;
-  } catch (error) {
+  } catch {
     devLogger.warn(`Asset 로딩 실패, Fallback 사용: ${url} → ${fallbackUrl}`);
     return fallbackUrl;
   }

@@ -2,7 +2,7 @@
  * Pexels 스톡 → public/images/spokedu (SOURCES.internal.md 기준)
  * Usage: node scripts/fetch-spokedu-images.mjs
  */
-import { copyFileSync, mkdirSync, existsSync } from 'fs';
+import { copyFileSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
