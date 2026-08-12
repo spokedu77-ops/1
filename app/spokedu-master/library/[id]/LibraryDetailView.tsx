@@ -226,19 +226,14 @@ function TodayLessonActionPanel({
 }) {
   const view = buildDetailTodayLessonActionView(recommendation, program);
   return (
-    <div className="rounded-[12px] border border-emerald-200 bg-emerald-50 p-3">
-      <p className="text-[12px] font-black text-emerald-800">{view.title}</p>
-      <p className="mt-1 text-[12px] font-semibold leading-5 text-emerald-900">{view.description}</p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <a href={view.primary.href} className="spm-btn-primary inline-flex h-10 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
-          {view.primary.label}
-        </a>
-        {view.secondary ? (
-          <Link href={view.secondary.href} className="inline-flex h-10 items-center justify-center rounded-[9px] border border-emerald-200 bg-white px-3 text-[12px] font-black text-emerald-800">
-            {view.secondary.label}
-          </Link>
-        ) : null}
+    <div data-detail-today-status className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+      <div className="min-w-0">
+        <p className="flex items-center gap-1.5 text-[12px] font-black text-emerald-800"><Check className="h-3.5 w-3.5 shrink-0" />{view.title}</p>
+        <p className="mt-0.5 text-[12px] font-semibold leading-[1.45] text-emerald-900">{view.description}</p>
       </div>
+      <a href={view.primary.href} className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-[8px] border border-emerald-300 bg-white px-3 text-[12px] font-black text-emerald-800 focus-visible:outline-none">
+        {view.primary.label}
+      </a>
     </div>
   );
 }
@@ -271,6 +266,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const searchParams = useSearchParams();
   const openedProgramRef = useRef<string | null>(null);
   const videoReportedRef = useRef<string | null>(null);
+  const heroTitleRef = useRef<HTMLHeadingElement | null>(null);
+  const [isHeroTitleVisible, setIsHeroTitleVisible] = useState(true);
   const [copied, setCopied] = useState(false);
   const [planCopied, setPlanCopied] = useState(false);
   const [quickModalOpen, setQuickModalOpen] = useState(false);
@@ -288,6 +285,18 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const isTodayLesson = Boolean(program && todayLesson?.programId === program.id);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
   const quickRecordDraft = readOwnerSaveDraft<QuickRecordDraft>(QUICK_RECORD_DRAFT_KEY, ownerId);
+
+  useEffect(() => {
+    const heroTitle = heroTitleRef.current;
+    if (!heroTitle || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsHeroTitleVisible(entry?.isIntersecting ?? false),
+      { rootMargin: '-56px 0px 0px 0px', threshold: 0 },
+    );
+    observer.observe(heroTitle);
+    return () => observer.disconnect();
+  }, [program?.id]);
   const recentSpomoveForProgram = useMemo(
     () => recentProgramActivities
       .filter((activity) =>
@@ -502,7 +511,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <ArrowLeft className="h-4 w-4 shrink-0" />
           <span className="hidden sm:inline">라이브러리로</span>
         </Link>
-        <p className="min-w-0 truncate text-center text-[13px] font-black text-[color:var(--spm-t)] sm:text-[14px]">
+        <p
+          data-detail-sticky-title
+          aria-hidden={isHeroTitleVisible}
+          className={`min-w-0 truncate text-center text-[13px] font-black text-[color:var(--spm-t)] transition-opacity duration-150 motion-reduce:transition-none sm:text-[14px] ${isHeroTitleVisible ? 'invisible opacity-0' : 'visible opacity-100'}`}
+        >
           {title}
         </p>
         <button
@@ -527,6 +540,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
       <div className="mx-auto w-full max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 lg:space-y-8 lg:px-8">
         <DetailLessonGuide
           model={model}
+          heroTitleRef={heroTitleRef}
           headerStatus={usageCount > 0 ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
               <Check className="h-3 w-3" />
@@ -536,16 +550,16 @@ export default function LibraryDetailView({ id }: { id: string }) {
           actions={(
             <div className="space-y-3">
               {isTodayLesson ? <TodayLessonActionPanel recommendation={todayLessonRecommendation} program={program} /> : null}
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                <Link href={`/spokedu-master/class-record?program=${program.id}`} className="spm-btn-primary inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[9px] px-5 text-[13px] font-black focus-visible:outline-none sm:min-w-[190px]">
+              <div data-detail-actions className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 md:flex md:flex-wrap md:items-center">
+                <Link data-detail-action="primary" href={`/spokedu-master/class-record?program=${program.id}`} className="spm-btn-primary col-span-2 inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-[9px] px-3 text-[13px] font-black focus-visible:outline-none md:col-auto md:min-w-[190px] md:px-5">
                   <Clipboard className="h-4 w-4" /> 수업 기록 시작
                 </Link>
-                <button type="button" disabled={!ownerId} onClick={() => { if (!ownerId) return; if (isTodayLesson) clearTodayLesson(ownerId); else setTodayLesson(ownerId, { id: program.id, title: program.title }); }} className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border border-slate-300 bg-white px-4 text-[13px] font-black text-slate-800 disabled:cursor-not-allowed disabled:opacity-50" aria-pressed={isTodayLesson}>
+                <button data-detail-action="today" type="button" disabled={!ownerId} onClick={() => { if (!ownerId) return; if (isTodayLesson) clearTodayLesson(ownerId); else setTodayLesson(ownerId, { id: program.id, title: program.title }); }} className="inline-flex min-h-11 min-w-0 items-center justify-center whitespace-nowrap rounded-[9px] border border-slate-300 bg-white px-2 text-[12px] font-black text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 md:px-4 md:text-[13px]" aria-pressed={isTodayLesson}>
                   {isTodayLesson ? '오늘 수업 해제' : '오늘 수업으로 지정'}
                 </button>
-                <button type="button" onClick={openQuickModal} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-emerald-200 bg-emerald-50/70 px-3.5 text-[12px] font-black text-emerald-800"><Check className="h-3.5 w-3.5" /> 빠른 기록</button>
-                <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-3.5 text-[12px] font-black text-[color:var(--spm-t2)]"><FileText className="h-3.5 w-3.5" /> 안내문</Link>
-                <button type="button" onClick={() => void copyLessonPlan()} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-3.5 text-[12px] font-black text-[color:var(--spm-t2)]"><Copy className="h-3.5 w-3.5" /> {planCopied ? '복사 완료' : '지도안 복사'}</button>
+                <button data-detail-action="quick" type="button" onClick={openQuickModal} className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-[9px] border border-emerald-200 bg-emerald-50/70 px-2 text-[12px] font-black text-emerald-800 md:px-3.5"><Check className="h-3.5 w-3.5 shrink-0" /> 빠른 기록</button>
+                <Link data-detail-action="report" href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-2 text-[12px] font-black text-[color:var(--spm-t2)] md:px-3.5"><FileText className="h-3.5 w-3.5 shrink-0" /> 안내문</Link>
+                <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-2 text-[12px] font-black text-[color:var(--spm-t2)] md:px-3.5"><Copy className="h-3.5 w-3.5 shrink-0" /> {planCopied ? '복사 완료' : '지도안 복사'}</button>
               </div>
             </div>
           )}

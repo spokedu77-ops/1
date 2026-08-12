@@ -59,3 +59,12 @@ export function isSpokeduContactPath(pathname: string): boolean {
 export function isSpomoveCatalogPath(pathname: string): boolean {
   return pathname === SPOKEDU_PATHS.spomoveCatalog;
 }
+
+/** Public marketing pages that own their full-width section bands and inner container. */
+export function isSpokeduFullBleedPath(pathname: string): boolean {
+  return (
+    isSpokeduHomePath(pathname) ||
+    isSpomoveCatalogPath(pathname) ||
+    pathname === SPOKEDU_PATHS.subscription
+  );
+}

@@ -118,20 +118,21 @@ describe('spokedu site IA', () => {
     expect(educationHubPage.paths.map((path) => path.id)).toEqual(['dispatch', 'private', 'oneday', 'inclusive']);
   });
 
-  it('keeps home within six top-level sections and current routing', () => {
-    expect(homePage.sectionOrder).toHaveLength(6);
+  it('keeps home within seven top-level sections and current routing', () => {
+    expect(homePage.sectionOrder).toHaveLength(7);
     expect([...homePage.sectionOrder]).toEqual([
       'hero',
-      'services',
-      'whySpokedu',
+      'paths',
+      'education',
       'spomove',
+      'subscription',
       'fieldProof',
       'finalAction',
     ]);
     expect(homePage.hero.lines.join(' ')).toMatch(/현장|아동체육|수업|콘텐츠|시스템/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
     expect(homePage.hero.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/education`);
-    expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_PATHS.subscription}`);
+    expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
     expect(homePage.hero.recordsLink.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
     expect(homePage.audienceGate.title).toMatch(/찾고/);
     expect(homePage.audienceGate.items.map((item) => item.id)).toEqual([
@@ -168,10 +169,10 @@ describe('spokedu site IA', () => {
     );
     expect(homePage.finalCta.items).toHaveLength(4);
     expect(homePage.finalCta.items.map((item) => item.href)).toEqual([
-      `${SPOKEDU_BASE_PATH}/dispatch`,
-      `${SPOKEDU_BASE_PATH}/private`,
+      `${SPOKEDU_PATHS.education}`,
+      `${SPOKEDU_PATHS.spomove}`,
       `${SPOKEDU_PATHS.subscription}`,
-      `${SPOKEDU_BASE_PATH}/contact`,
+      `${SPOKEDU_PATHS.contact}`,
     ]);
     expect(JSON.stringify(homePage.hero)).not.toMatch(/SPO-MAT|9,900|15,015/);
     expect(JSON.stringify(homePage.pillars)).not.toMatch(/3대 사업|SPO-MAT/);
@@ -180,8 +181,12 @@ describe('spokedu site IA', () => {
 
   it('uses the verified field cases on the home proof section', () => {
     expect(HOME_MAIN_CASE_SLUGS).toEqual(['dongjak-spomove']);
-    expect(homePage.cases.cards.map((card) => card.slug)).toEqual(['dongjak-spomove', 'yangcheon-paps']);
-    expect(homePage.cases.cards).toHaveLength(2);
+    expect(homePage.cases.cards.map((card) => card.slug)).toEqual([
+      'dongjak-spomove',
+      'maedong-sports-stepup',
+      'donghaeng-special-pe',
+    ]);
+    expect(homePage.cases.cards).toHaveLength(3);
     expect(homePage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
   });
 

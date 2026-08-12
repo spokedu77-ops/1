@@ -71,6 +71,11 @@ export type HomePillarItem = {
   trackLabel: string;
   /** SPOMOVE 등 관계 표기 */
   relationNote?: string;
+  visual: {
+    src: string;
+    alt: string;
+    fit?: 'cover' | 'contain';
+  };
 };
 
 export type HomeCycleStep = {
@@ -120,7 +125,7 @@ function buildAboutTrustStripItems(): readonly HomeTrustStat[] {
 
 export const homePage = {
   /** 홈 최상위 섹션 조립 순서 — 7개 이하 */
-  sectionOrder: ['hero', 'services', 'whySpokedu', 'spomove', 'fieldProof', 'finalAction'] as const,
+  sectionOrder: ['hero', 'paths', 'education', 'spomove', 'subscription', 'fieldProof', 'finalAction'] as const,
 
   hero: {
     id: 'hero',
@@ -138,9 +143,9 @@ export const homePage = {
       trackLabel: 'cta-home-education-hero',
     },
     secondaryCta: {
-      label: '구독시스템 알아보기',
-      href: `${SPOKEDU_PATHS.subscription}`,
-      trackLabel: 'cta-home-curriculum-hero',
+      label: 'SPOMOVE 알아보기',
+      href: `${SPOKEDU_PATHS.spomove}`,
+      trackLabel: 'cta-home-spomove-hero',
     },
     recordsLink: {
       label: '운영 사례 보기',
@@ -196,6 +201,25 @@ export const homePage = {
     title: '직접 수업하며 필요한 것을 만듭니다.',
     body: 'SPOKEDU는 실제 체육수업에서 움직임을 관찰하고, 수업에 필요한 콘텐츠와 시스템을 직접 만듭니다.',
     cta: { label: '운영 사례 보기', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'cta-home-why-records' },
+  },
+
+  education: {
+    id: 'education',
+    eyebrow: 'PHYSICAL EDUCATION',
+    title: '아이와 현장에 맞춰\n직접 설계하고 운영합니다.',
+    lead: '학교와 기관의 운영 조건부터 개인·소그룹의 발달 속도까지 살펴 수업의 구성과 난이도를 조절합니다.',
+    mediaKey: 'trackDispatch' as HomeMediaKey,
+    points: ['기관·학교 정규수업', '개인·소그룹 수업', '원데이·행사', '특수·포용 체육'] as const,
+    primaryCta: {
+      label: '체육교육 알아보기',
+      href: SPOKEDU_PATHS.education,
+      trackLabel: 'cta-home-education-section',
+    },
+    secondaryCta: {
+      label: '기관수업 보기',
+      href: SPOKEDU_PATHS.dispatch,
+      trackLabel: 'cta-home-education-dispatch',
+    },
   },
 
   audienceGate: {
@@ -257,7 +281,7 @@ export const homePage = {
   pillars: {
     id: 'pillars',
     eyebrow: '탐색 진입점',
-    title: '체육교육 · SPOMOVE · 구독시스템',
+    title: '현장에서 시작해\n세 가지 방식으로 이어집니다.',
     lead: '세 경로는 역할이 다릅니다. SPOMOVE는 체육교육 현장과 구독시스템에서 함께 쓰는 콘텐츠입니다.',
     relationLine: '체육교육에서 운영하고, 구독시스템으로 지도자도 활용합니다.',
     items: [
@@ -270,6 +294,11 @@ export const homePage = {
         ctaLabel: '체육교육 보기',
         href: `${SPOKEDU_BASE_PATH}/education`,
         trackLabel: 'cta-home-pillar-education',
+        visual: {
+          src: '/images/spokedu/dispatch/dispatch-institution-class.jpg',
+          alt: '기관에서 진행 중인 스포키듀 체육교육 현장',
+          fit: 'cover',
+        },
       },
       {
         id: 'spomove',
@@ -281,6 +310,11 @@ export const homePage = {
         href: `${SPOKEDU_PATHS.spomove}`,
         trackLabel: 'cta-home-pillar-spomove',
         relationNote: '체육교육·구독 공통 콘텐츠',
+        visual: {
+          src: '/images/spokedu/home/home-hero-spomove-class.JPG',
+          alt: '화면 신호를 보며 움직이는 SPOMOVE 수업 현장',
+          fit: 'cover',
+        },
       },
       {
         id: 'curriculum',
@@ -291,6 +325,11 @@ export const homePage = {
         ctaLabel: '구독시스템 보기',
         href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'cta-home-pillar-curriculum',
+        visual: {
+          src: '/images/spokedu/subscription/product-dashboard.png',
+          alt: '스포키듀 구독시스템의 실제 수업 운영 화면',
+          fit: 'contain',
+        },
       },
     ] as const satisfies readonly HomePillarItem[],
   },
@@ -399,7 +438,11 @@ export const homePage = {
       { value: '원데이·행사', label: '축제·특별활동 구성' },
       { value: '특수·SPOMOVE', label: '통합반·에듀테크 현장 적용' },
     ] as const,
-    cards: [featuredCase, buildHomeCaseCard('yangcheon-paps')],
+    cards: [
+      featuredCase,
+      buildHomeCaseCard('maedong-sports-stepup'),
+      buildHomeCaseCard('donghaeng-special-pe'),
+    ],
   },
 
   evidenceStrip: {
@@ -431,16 +474,14 @@ export const homePage = {
     notes: ['기관 조건', '아이 조건', '구독·협업'] as const,
     items: [
       {
-        label: '기관 프로그램 문의',
-        href: `${SPOKEDU_BASE_PATH}/dispatch`,
-        trackLabel: 'cta-home-final-dispatch',
-        commercialRoute: 'dispatch' as const,
+        label: '체육교육 알아보기',
+        href: SPOKEDU_PATHS.education,
+        trackLabel: 'cta-home-final-education',
       },
       {
-        label: '개인·소그룹 상담',
-        href: `${SPOKEDU_BASE_PATH}/private`,
-        trackLabel: 'cta-home-final-private',
-        commercialRoute: 'private' as const,
+        label: 'SPOMOVE 알아보기',
+        href: SPOKEDU_PATHS.spomove,
+        trackLabel: 'cta-home-final-spomove',
       },
       {
         label: '구독시스템 알아보기',
@@ -450,7 +491,7 @@ export const homePage = {
       },
       {
         label: '문의·협업',
-        href: `${SPOKEDU_BASE_PATH}/contact`,
+        href: SPOKEDU_PATHS.contact,
         trackLabel: 'cta-home-final-partner',
       },
     ] as const,

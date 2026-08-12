@@ -3,7 +3,11 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { isSpokeduContactPath, isSpokeduHomePath, isSpomoveCatalogPath } from '../data/public-routes';
+import {
+  isSpokeduContactPath,
+  isSpokeduFullBleedPath,
+  isSpomoveCatalogPath,
+} from '../data/public-routes';
 import { captureAcquisitionFromLocation } from '../lib/acquisition';
 import { scrollSpokeduToTopOrHash } from '../lib/scroll';
 import { SiteFooter, SiteHeader } from './site-chrome';
@@ -11,10 +15,9 @@ import { SiteFooter, SiteHeader } from './site-chrome';
 export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isContactPage = isSpokeduContactPath(pathname);
-  const isHomePage = isSpokeduHomePath(pathname);
   const isSpomoveCatalogPage = isSpomoveCatalogPath(pathname);
   /** Full-bleed pages own their header spacing and horizontal padding. */
-  const isFullBleedPage = isHomePage || isSpomoveCatalogPage;
+  const isFullBleedPage = isSpokeduFullBleedPath(pathname);
 
   useEffect(() => {
     // first-touch attribution — 랜딩 폼 마운트보다 먼저 고정

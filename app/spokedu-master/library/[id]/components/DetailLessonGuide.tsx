@@ -2,7 +2,7 @@
 
 import { ExternalLink, Play, X, ZoomIn } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 
 import { TrackedVideoIframe } from '../../../components/lesson/TrackedVideoIframe';
 import type { LessonDisplayModel } from '../../../lib/lessonDisplayModel';
@@ -195,13 +195,13 @@ function ReferenceVideo({ title, video }: { title: string; video: VideoProps }) 
   );
 }
 
-export function DetailLessonGuide({ model, headerStatus, actions, video }: { model: LessonDisplayModel; headerStatus?: ReactNode; actions: ReactNode; video: VideoProps }) {
+export function DetailLessonGuide({ model, headerStatus, actions, video, heroTitleRef }: { model: LessonDisplayModel; headerStatus?: ReactNode; actions: ReactNode; video: VideoProps; heroTitleRef?: Ref<HTMLHeadingElement> }) {
   const hasOverview = model.equipment.length > 0 || model.setupNotes.length > 0 || model.briefingNotes.length > 0 || Boolean(model.objective) || Boolean(model.developmentFocus);
   return (
     <>
       <section className="rounded-[14px] border border-slate-200 bg-white p-5 sm:p-6">
         {headerStatus ? <div className="mb-3">{headerStatus}</div> : null}
-        <h1 className="max-w-[30ch] break-keep text-[30px] font-black leading-[1.18] tracking-[-0.035em] text-[color:var(--spm-t)] sm:text-[32px]">{model.title}</h1>
+        <h1 ref={heroTitleRef} data-detail-hero-title className="max-w-[800px] break-keep text-[30px] font-black leading-[1.18] tracking-[-0.035em] text-[color:var(--spm-t)] sm:text-[32px]">{model.title}</h1>
         {model.description ? <p className="mt-2.5 max-w-[72ch] break-keep text-[14px] font-semibold leading-[1.65] text-[color:var(--spm-t2)] sm:text-[15px]">{model.description}</p> : null}
         <div className="mt-4"><MetaGroup model={model} /></div>
         <div className="mt-5 border-t border-slate-200 pt-4">{actions}</div>

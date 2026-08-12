@@ -1,28 +1,34 @@
 'use client';
 
-import { homeBandSoftBlue, homeFocusRing, homeSectionH2, homeSectionScrollMt, koreanText, siteBtnPrimary, siteBtnSecondary, siteContainer } from '../../lib/ui-classes';
+import { homePage } from '../../data/home-page';
+import {
+  homeSectionScrollMt,
+  marketingBandNavy,
+  marketingButtonPrimaryOnDark,
+  marketingButtonSecondaryOnDark,
+  marketingButtonTextAction,
+  marketingEyebrowOnDark,
+  marketingSectionDisplay,
+  marketingSectionInner,
+  marketingSectionPadCompact,
+} from '../../lib/ui-classes';
 import { TrackedLink } from './tracked-link';
 
 export function HomeFinalCta() {
-  const [education, subscription, contact] = [
-    { label: '체육교육 알아보기', href: '/education', trackLabel: 'cta-home-final-education' },
-    { label: '구독시스템 알아보기', href: '/subscription', trackLabel: 'cta-home-final-subscription' },
-    { label: '문의·협업 시작하기', href: '/contact', trackLabel: 'cta-home-final-contact' },
-  ];
+  const [education, spomove, subscription, contact] = homePage.finalCta.items;
   return (
-    <section id="final-action" className={`${homeSectionScrollMt} ${homeBandSoftBlue} py-12 sm:py-14`} aria-labelledby="home-final-action-heading">
-      <div className={siteContainer}>
-        <div className="flex flex-col gap-6 border-y border-[#D6E3FF] py-8 sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:py-10">
-          <div className="max-w-2xl">
-            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">다음 단계</p>
-            <h2 id="home-final-action-heading" className={`${homeSectionH2} mt-3 text-[#0B1F46]`}>필요한 것부터 시작하세요.</h2>
-            <p className={`mt-3 text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>직접 수업을 찾거나, 현장에서 쓸 수 있는 시스템을 살펴보세요.</p>
-          </div>
-          <div className="grid w-full shrink-0 gap-2 sm:w-auto sm:min-w-[17rem]">
-            {[education, subscription, contact].map((item, index) => (
-              <TrackedLink key={item.trackLabel} href={item.href} trackLabel={item.trackLabel} className={`${index === 0 ? siteBtnPrimary : siteBtnSecondary} ${homeFocusRing} min-h-11 w-full`}>{item.label}</TrackedLink>
-            ))}
-          </div>
+    <section id="final-action" className={`${homeSectionScrollMt} ${marketingBandNavy} ${marketingSectionPadCompact} relative overflow-hidden`} aria-labelledby="home-final-action-heading">
+      <div className={`${marketingSectionInner} relative grid gap-9 lg:grid-cols-[minmax(0,0.9fr)_minmax(34rem,1.1fr)] lg:items-center lg:gap-14`}>
+        <div className="max-w-2xl">
+          <p className={marketingEyebrowOnDark}>NEXT PATH</p>
+          <h2 id="home-final-action-heading" className={`${marketingSectionDisplay} mt-4 text-white`}>필요한 경로에서<br />바로 시작하세요.</h2>
+          <p className="mt-5 text-base leading-relaxed text-[#BDC9DF] sm:text-lg">직접 운영하는 체육교육부터 SPOMOVE와 구독시스템까지 이어서 살펴볼 수 있습니다.</p>
+          <TrackedLink href={contact.href} trackLabel={contact.trackLabel} className={`${marketingButtonTextAction} mt-4 !text-[#AFC8FF]`}>{contact.label} →</TrackedLink>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[education, spomove, subscription].map((item, index) => (
+            <TrackedLink key={item.trackLabel} href={item.href} trackLabel={item.trackLabel} className={`${index === 0 ? marketingButtonPrimaryOnDark : marketingButtonSecondaryOnDark} min-h-14 text-center`}>{item.label}</TrackedLink>
+          ))}
         </div>
       </div>
     </section>

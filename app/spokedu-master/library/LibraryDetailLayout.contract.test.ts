@@ -47,4 +47,30 @@ describe('SPOKEDU MASTER library detail layout contract', () => {
     expect(view).toContain('lg:pb-12');
     expect(view).not.toContain('primarySpomovePreset');
   });
+
+  it('keeps the hero title and sticky context mutually exclusive without shifting the header', () => {
+    expect(view).toContain('new IntersectionObserver');
+    expect(view).toContain("rootMargin: '-56px 0px 0px 0px'");
+    expect(view).toContain('motion-reduce:transition-none');
+    expect(view).toContain("isHeroTitleVisible ? 'invisible opacity-0' : 'visible opacity-100'");
+    expect(view).toContain('heroTitleRef={heroTitleRef}');
+    expect(guide).toContain('data-detail-hero-title');
+  });
+
+  it('uses the compact five-action mobile grid and a stable readable title width', () => {
+    expect(view).toContain('grid-cols-[repeat(2,minmax(0,1fr))]');
+    expect(view).toContain('md:flex md:flex-wrap md:items-center');
+    expect(view).toContain('data-detail-action="primary"');
+    expect(view).toContain('col-span-2');
+    expect(view.match(/data-detail-action=/g)).toHaveLength(5);
+    expect(guide).toContain('max-w-[800px]');
+    expect(guide).not.toContain('max-w-[30ch]');
+  });
+
+  it('presents the today lesson recommendation as one compact row', () => {
+    const todayPanel = view.slice(view.indexOf('function TodayLessonActionPanel'), view.indexOf('export default function LibraryDetailView'));
+    expect(todayPanel).toContain('data-detail-today-status');
+    expect(todayPanel).toContain('grid-cols-[minmax(0,1fr)_auto]');
+    expect(todayPanel).not.toContain('sm:grid-cols-2');
+  });
 });

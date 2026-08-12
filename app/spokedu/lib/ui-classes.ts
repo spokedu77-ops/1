@@ -2,26 +2,22 @@
 export const fineHover = '[@media(hover:hover)_and_(pointer:fine)]:';
 
 export const btnPrimary =
-  `inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[#245DFF] px-5 py-2.5 text-sm font-semibold leading-snug text-white shadow-[0_10px_24px_rgba(36,93,255,0.2)] transition active:scale-[0.98] sm:w-auto ${fineHover}hover:bg-[#174BE6] ${fineHover}hover:-translate-y-0.5`;
+  `inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-[0.875rem] bg-[#245DFF] px-[1.375rem] py-3 text-[15px] font-extrabold leading-snug text-white shadow-[0_12px_28px_rgba(36,93,255,0.25)] transition duration-200 active:scale-[0.98] sm:w-auto ${fineHover}hover:bg-[#174BE6] ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:shadow-[0_16px_34px_rgba(36,93,255,0.32)]`;
 
 export const btnPrimaryOnDark =
-  `inline-flex min-h-12 w-full items-center justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold leading-snug text-[#0B1F46] transition active:scale-[0.98] sm:px-5 sm:w-auto ${fineHover}hover:bg-[#EAF1FF] ${fineHover}hover:-translate-y-0.5`;
+  `inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-[0.875rem] bg-white px-[1.375rem] py-3 text-[15px] font-extrabold leading-snug text-[#0B1F46] shadow-[0_12px_28px_rgba(3,12,30,0.2)] transition duration-200 active:scale-[0.98] sm:w-auto ${fineHover}hover:bg-[#EAF1FF] ${fineHover}hover:-translate-y-0.5`;
 
 export const btnSecondary =
-  `inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#DCE3EE] bg-white px-5 py-2.5 text-sm font-semibold text-[#0B1F46] transition active:scale-[0.98] sm:w-auto ${fineHover}hover:border-[#B8C6DC] ${fineHover}hover:-translate-y-0.5`;
+  `inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-[0.875rem] border border-[#D5DEEB] bg-white px-[1.375rem] py-3 text-[15px] font-extrabold text-[#0B1F46] shadow-[0_8px_22px_rgba(15,33,70,0.07)] transition duration-200 active:scale-[0.98] sm:w-auto ${fineHover}hover:border-[#AFC0D7] ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:shadow-[0_12px_28px_rgba(15,33,70,0.11)]`;
 
 export const btnSecondaryOnDark =
-  `inline-flex min-h-12 w-full items-center justify-center rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-sm font-semibold leading-snug text-white transition active:scale-[0.98] sm:w-auto ${fineHover}hover:border-white/45 ${fineHover}hover:bg-white/10`;
+  `inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-[0.875rem] border border-white/30 bg-white/8 px-[1.375rem] py-3 text-[15px] font-extrabold leading-snug text-white shadow-[0_8px_24px_rgba(3,12,30,0.14)] transition duration-200 active:scale-[0.98] sm:w-auto ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:border-white/50 ${fineHover}hover:bg-white/12`;
 
 export const cardInteractive =
   `transition duration-200 ${fineHover}hover:-translate-y-1 ${fineHover}hover:border-[#C5D2E8] ${fineHover}hover:shadow-[0_14px_32px_rgba(15,33,70,0.08)]`;
 
 export const linkMuted =
   'font-semibold text-[#0B1F46] underline-offset-2 hover:underline active:text-[#245DFF]';
-
-/** @deprecated Home·서브 공통 — `landingPageStack` 사용 (max-w 중복 제거) */
-export const landingTrackStack =
-  'flex w-full flex-col gap-14 overflow-x-clip pb-8 sm:gap-[4.5rem] sm:pb-10 lg:gap-24 lg:pb-12';
 
 /** 섹션 제목 아래 한 줄 안내 */
 export const landingSectionLead =
@@ -34,7 +30,8 @@ export const landingHeroSubtitle =
 export const landingHeroSupport =
   'rounded-xl border border-slate-200/70 bg-slate-50/80 px-4 py-3 text-sm leading-relaxed text-slate-600 sm:leading-6';
 
-export const landingPageStack = landingTrackStack;
+export const landingPageStack =
+  'flex w-full flex-col gap-14 overflow-x-clip pb-8 sm:gap-[4.5rem] sm:pb-10 lg:gap-24 lg:pb-12';
 
 /** 개인·기관 랜딩 — 밀도 높은 섹션 리듬 */
 export const audienceLandingStack =
@@ -141,9 +138,16 @@ export const siteSectionPadCompact =
 /** 브랜드 컬러 — SPOMOVE 카탈로그 하이브리드 (세련된 navy/blue/paper) */
 export const brandNavy = '#0B1F46';
 export const brandBlue = '#245DFF';
+export const brandBlueHover = '#174BE6';
 export const brandSurface = '#EAF1FF';
 export const brandPaper = '#F5F7FB';
 export const brandInk = '#14213A';
+export const brandBody = '#536279';
+export const brandMuted = '#728097';
+export const brandBorder = '#DCE3EE';
+export const brandWhite = '#FFFFFF';
+export const brandDarkBody = '#CFDAEA';
+export const brandDarkEyebrow = '#9FC0FF';
 export const brandPadRed = '#ED3D4F';
 export const brandPadYellow = '#F5BF1F';
 export const brandPadGreen = '#67A92C';
@@ -268,3 +272,67 @@ export const landingHeroCinematic =
 export const landingHeroCinematicScrim = homeHeroFullBleedScrim;
 
 export const landingHeroCinematicCopy = homeHeroFullBleedCopy;
+
+/**
+ * Public Marketing foundation
+ * - 다음 페이지별 리팩토링에서 점진적으로 사용한다.
+ * - 기존 home, landing, site prefix export는 현재 화면 호환을 위해 유지한다.
+ */
+export const marketingHeroDisplay =
+  `[font-family:var(--spokedu-marketing-font-display)] font-black tracking-[-0.045em] ${koreanText} text-[2.6rem] leading-[1.08] min-[390px]:text-[2.85rem] sm:text-[3.5rem] md:text-[4rem] lg:text-[4.5rem] xl:text-[4.75rem]`;
+
+export const marketingSectionDisplay =
+  `[font-family:var(--spokedu-marketing-font-display)] font-extrabold tracking-[-0.04em] ${koreanText} text-[2.125rem] leading-[1.16] sm:text-[2.55rem] md:text-[3rem] lg:text-[3.45rem]`;
+
+export const marketingCompactDisplay =
+  `[font-family:var(--spokedu-marketing-font-accent)] font-normal tracking-[-0.03em] ${koreanText} text-[1.75rem] leading-[1.16] sm:text-[2.1rem] lg:text-[2.75rem]`;
+
+export const marketingMetricDisplay =
+  '[font-family:var(--spokedu-marketing-font-display)] text-[2.5rem] font-normal leading-none tracking-[-0.035em] sm:text-[3.25rem] lg:text-[4rem]';
+
+export const marketingEyebrow =
+  'text-[12px] font-bold [color:var(--spokedu-marketing-color-blue)] sm:text-[13px]';
+export const marketingEyebrowOnDark =
+  'text-[12px] font-bold [color:var(--spokedu-marketing-color-dark-eyebrow)] sm:text-[13px]';
+export const marketingEyebrowUppercase = 'uppercase tracking-[0.14em]';
+export const marketingSectionLead =
+  `max-w-[40rem] text-base leading-[1.7] [color:var(--spokedu-marketing-color-body)] sm:text-[17px] lg:text-lg ${koreanText}`;
+export const marketingBody =
+  `text-base leading-[1.7] [color:var(--spokedu-marketing-color-body)] sm:text-[17px] ${koreanText}`;
+export const marketingCaption =
+  'text-[13px] font-medium leading-[1.5] [color:var(--spokedu-marketing-color-muted)] sm:text-sm';
+
+export const marketingSectionPad = siteSectionPad;
+export const marketingSectionPadCompact = siteSectionPadCompact;
+export const marketingSectionInner = siteContainer;
+export const marketingCardPadding = landingCardPanelPad;
+export const marketingMajorGridGap = 'gap-8 lg:gap-12';
+
+export const marketingBandWhite = 'bg-[var(--spokedu-marketing-color-white)]';
+export const marketingBandSoft = 'bg-[var(--spokedu-marketing-color-paper)]';
+export const marketingBandNavy = 'bg-[radial-gradient(circle_at_82%_18%,rgba(75,127,255,0.2),transparent_32%),radial-gradient(circle_at_12%_86%,rgba(36,93,255,0.13),transparent_34%),linear-gradient(135deg,#081126_0%,var(--spokedu-marketing-color-navy)_58%,#132245_100%)] text-white';
+export const marketingLightHeroSurface = 'bg-[radial-gradient(circle_at_8%_18%,rgba(75,127,255,0.14),transparent_30%),radial-gradient(circle_at_88%_22%,rgba(12,166,120,0.1),transparent_25%),radial-gradient(circle_at_68%_100%,rgba(36,93,255,0.1),transparent_32%),linear-gradient(180deg,#FFFFFF_0%,#F5F8FF_100%)]';
+export const marketingBandTransparent = 'bg-transparent';
+
+export const marketingRadiusSmall = '[border-radius:var(--spokedu-marketing-radius-sm)]';
+export const marketingRadiusMedium = '[border-radius:var(--spokedu-marketing-radius-md)]';
+export const marketingRadiusLarge = '[border-radius:var(--spokedu-marketing-radius-lg)]';
+export const marketingRadiusPill = '[border-radius:var(--spokedu-marketing-radius-pill)]';
+
+export const marketingCardStatic =
+  `${marketingRadiusMedium} border border-[var(--spokedu-marketing-color-border)] bg-[var(--spokedu-marketing-color-white)] shadow-[var(--spokedu-marketing-shadow-subtle)]`;
+export const marketingCardInteractive =
+  `${marketingCardStatic} transition duration-200 ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:shadow-[var(--spokedu-marketing-shadow-interactive)]`;
+export const marketingMediaFrame =
+  `${marketingRadiusMedium} overflow-hidden border border-[var(--spokedu-marketing-color-border)] bg-[var(--spokedu-marketing-color-white)] shadow-[var(--spokedu-marketing-shadow-media)]`;
+export const marketingPanelEmphasized =
+  `${marketingRadiusLarge} overflow-hidden bg-[var(--spokedu-marketing-color-soft)]`;
+
+export const marketingButtonPrimary = `${btnPrimary} ${brandFocusRing}`;
+export const marketingButtonSecondary = `${btnSecondary} ${brandFocusRing}`;
+export const marketingButtonPrimaryOnDark =
+  `${btnPrimaryOnDark} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`;
+export const marketingButtonSecondaryOnDark =
+  `${btnSecondaryOnDark} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`;
+export const marketingButtonTextAction =
+  `inline-flex min-h-11 items-center font-semibold [color:var(--spokedu-marketing-color-blue)] underline-offset-4 transition ${fineHover}hover:underline ${brandFocusRing}`;

@@ -9,6 +9,7 @@ import { HomeFinalCta } from './home/home-final-cta';
 import { HomeHero } from './home/home-hero';
 import { HomeServices } from './home/home-services';
 import { HomeSpomoveSpotlight } from './home/home-spomove-spotlight';
+import { HomeSubscriptionSpotlight } from './home/home-subscription-spotlight';
 import { HomeWhySpokedu } from './home/home-why-spokedu';
 
 type SpokeduHomeLandingProps = {
@@ -28,7 +29,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
       data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID}
       data-spokedu-home-sections={homePage.sectionOrder.length}
     >
-      <a href="#services" className={homeSkipLink}>
+      <a href="#paths" className={homeSkipLink}>
         본문으로 건너뛰기
       </a>
 
@@ -36,6 +37,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
       <HomeServices />
       <HomeWhySpokedu />
       <HomeSpomoveSpotlight />
+      <HomeSubscriptionSpotlight />
       <HomeFieldRecords caseCards={caseCards} />
       <HomeFinalCta />
     </div>

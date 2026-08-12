@@ -71,6 +71,8 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const ContentRoot = publicMarketing ? 'div' : 'main';
+
   return (
     <html lang="ko" className="font-sans" style={fontVariables}>
       <head>
@@ -89,7 +91,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                 />
               )}
 
-              <main
+              <ContentRoot
                 style={mainFullscreenStyle}
                 className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                   hideSidebar
@@ -98,7 +100,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                 }`}
               >
                 {children}
-              </main>
+              </ContentRoot>
             </div>
           </I18nProvider>
         </QueryProvider>

@@ -6,15 +6,17 @@ import { homePage, type HomeCaseCard } from '../../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../../lib/resolve-field-records';
 import {
   homeCaption,
-  homeCaseCard,
   homeFocusRing,
   homePhotoGrade,
-  homeSectionH2,
-  homeSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
-  siteBtnSecondary,
-  siteContainer,
+  marketingBandSoft,
+  marketingButtonSecondary,
+  marketingCardStatic,
+  marketingEyebrow,
+  marketingSectionDisplay,
+  marketingSectionInner,
+  marketingSectionPad,
 } from '../../lib/ui-classes';
 import { ExternalPhoto } from '../external-photo';
 import { MediaPanel } from '../visual';
@@ -33,9 +35,10 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
   return (
     <section
       id={homePage.cases.id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-[#F5F7FB]`}
+      className={`${homeSectionScrollMt} ${marketingBandSoft} ${marketingSectionPad}`}
+      aria-labelledby="home-records-heading"
     >
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <motion.div
           className="flex flex-col gap-5 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between"
           initial={reducedMotion ? false : { opacity: 0, y: 14 }}
@@ -44,8 +47,8 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
           transition={{ duration: 0.45 }}
         >
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#245DFF]">현장 기록</p>
-            <h2 className={`${homeSectionH2} mt-3`}>{homePage.cases.title}</h2>
+            <p className={marketingEyebrow}>FIELD PROOF</p>
+            <h2 id="home-records-heading" className={`${marketingSectionDisplay} mt-3`}>{homePage.cases.title}</h2>
             <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.cases.lead}
             </p>
@@ -54,14 +57,14 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
             <TrackedLink
               href={homePage.cases.recordsCta.href}
               trackLabel={homePage.cases.recordsCta.trackLabel}
-              className={`${siteBtnSecondary} ${homeFocusRing}`}
+              className={marketingButtonSecondary}
             >
               {homePage.cases.recordsCta.label}
             </TrackedLink>
           </div>
         </motion.div>
 
-        <ul className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
+        <ul className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
           {caseCards.map((card, index) => (
             <motion.li
               key={card.slug}
@@ -75,6 +78,15 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
             </motion.li>
           ))}
         </ul>
+
+        <dl className="mt-10 grid gap-px overflow-hidden rounded-[22px] border border-[#DCE3EE] bg-[#DCE3EE] md:grid-cols-3">
+          {homePage.evidenceStrip.items.slice(0, 3).map((item) => (
+            <div key={item.value} className="bg-white p-5 sm:p-6">
+              <dt className="[font-family:var(--spokedu-marketing-font-display)] text-2xl leading-tight text-[#0B1F46]">{item.value}</dt>
+              <dd className="mt-2 text-sm leading-relaxed text-[#6D7B90]">{item.label}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );
@@ -91,7 +103,7 @@ export function mergeHomeCaseCards(resolved: HomeFieldRecordCardWithThumbnail[])
 function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
   return (
     <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block h-full ${homeFocusRing}`}>
-      <article className={`${homeCaseCard} grid h-full grid-rows-[11.5rem_1fr] overflow-hidden sm:grid-rows-[13rem_1fr]`}>
+      <article className={`${marketingCardStatic} grid h-full grid-rows-[11.5rem_1fr] overflow-hidden sm:grid-rows-[13rem_1fr]`}>
         <div className="relative min-h-0 overflow-hidden">
           <CaseMedia card={card} priority={priority} />
           <div

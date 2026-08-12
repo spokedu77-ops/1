@@ -9,13 +9,12 @@ import {
   homeHeroFullBleedCopy,
   homeHeroFullBleedLead,
   homeHeroFullBleedScrim,
-  homeHeroFullBleedTitle,
-  homeHeroH1Line,
+  marketingHeroDisplay,
   homePhotoGrade,
   homeSectionScrollMt,
   koreanText,
-  siteBtnPrimaryOnHero,
-  siteBtnSecondaryOnHero,
+  marketingButtonPrimaryOnDark,
+  marketingButtonSecondaryOnDark,
   siteContainer,
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
@@ -30,7 +29,7 @@ export function HomeHero() {
   return (
     <section
       id={homePage.hero.id}
-      className={`${homeHeroFullBleed} relative left-1/2 w-[100vw] -translate-x-1/2 ${homeSectionScrollMt}`}
+      className={`${homeHeroFullBleed} w-full ${homeSectionScrollMt}`}
       aria-labelledby="home-hero-heading"
     >
       <div className="absolute inset-0">
@@ -48,7 +47,7 @@ export function HomeHero() {
       <div className={homeHeroFullBleedCopy}>
         <div className={siteContainer}>
           <motion.div
-            className="flex max-w-[38rem] flex-col"
+            className="flex max-w-[52rem] flex-col"
             initial={reducedMotion ? false : { opacity: 0, y: 14 }}
             animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -57,25 +56,25 @@ export function HomeHero() {
               {homePage.hero.brand}
             </p>
 
-            <h1 id="home-hero-heading" className={`${homeHeroFullBleedTitle} mt-4 sm:mt-5`}>
-              <span className={`${homeHeroH1Line} block`}>{line1}</span>
-              <span className={`${homeHeroH1Line} mt-1.5 block text-[#8FB5FF]`}>{line2}</span>
+            <h1 id="home-hero-heading" className={`${marketingHeroDisplay} mt-4 text-white sm:mt-5`}>
+              <span className="block">{line1}</span>
+              <span className="mt-1.5 block text-[#AFC8FF]">{line2}</span>
             </h1>
 
-            <p className={`${homeHeroFullBleedLead} mt-5 max-w-[32rem]`}>{homePage.hero.support}</p>
+            <p className={`${homeHeroFullBleedLead} mt-6 max-w-[39rem] sm:text-lg sm:leading-[1.75]`}>{homePage.hero.support}</p>
 
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <TrackedLink
                 href={homePage.hero.primaryCta.href}
                 trackLabel={homePage.hero.primaryCta.trackLabel}
-                className={`${siteBtnPrimaryOnHero} h-12 min-h-12 whitespace-nowrap px-7 ${homeFocusRing}`}
+                className={marketingButtonPrimaryOnDark}
               >
                 {homePage.hero.primaryCta.label}
               </TrackedLink>
               <TrackedLink
                 href={homePage.hero.secondaryCta.href}
                 trackLabel={homePage.hero.secondaryCta.trackLabel}
-                className={`${siteBtnSecondaryOnHero} h-12 min-h-12 whitespace-nowrap px-7 ${homeFocusRing}`}
+                className={marketingButtonSecondaryOnDark}
               >
                 {homePage.hero.secondaryCta.label}
               </TrackedLink>

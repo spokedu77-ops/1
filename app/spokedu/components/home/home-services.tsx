@@ -1,34 +1,57 @@
 'use client';
 
-import { homePage } from '../../data/home-page';
-import { brandBlue, brandInk, homeBandSoftBlue, homeFocusRing, homeSectionH2, homeSectionPadCompact, homeSectionScrollMt, koreanText, siteBtnPrimary, siteBtnSecondary, siteContainer } from '../../lib/ui-classes';
+import Image from 'next/image';
+import { homePage, type HomePillarItem } from '../../data/home-page';
+import {
+  marketingBandSoft,
+  marketingButtonTextAction,
+  marketingCardInteractive,
+  marketingCardPadding,
+  marketingEyebrow,
+  marketingSectionDisplay,
+  marketingSectionInner,
+  marketingSectionLead,
+  marketingSectionPad,
+  homeSectionScrollMt,
+} from '../../lib/ui-classes';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
 
 export function HomeServices() {
-  const { education, subscription } = homePage.services;
   return (
-    <section id="services" className={`${homeSectionScrollMt} ${homeSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="home-services-heading">
-      <div className={siteContainer}>
-        <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>서비스</p>
-        <h2 id="home-services-heading" className={`${homeSectionH2} mt-3`}>무엇을 시작할지 고르세요.</h2>
-        <div className="mt-8 grid gap-4 lg:grid-cols-2">
-          <ServiceCard item={education} links={education.directLinks} primary={education.href} />
-          <ServiceCard item={subscription} links={[]} primary={subscription.href} />
+    <section id="paths" className={`${homeSectionScrollMt} ${marketingBandSoft} ${marketingSectionPad}`} aria-labelledby="home-paths-heading">
+      <div className={marketingSectionInner}>
+        <p className={marketingEyebrow}>{homePage.pillars.eyebrow}</p>
+        <div className="mt-3 grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
+          <h2 id="home-paths-heading" className={`${marketingSectionDisplay} whitespace-pre-line`}>{homePage.pillars.title}</h2>
+          <p className={`${marketingSectionLead} lg:justify-self-end`}>{homePage.pillars.lead}</p>
         </div>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {homePage.pillars.items.map((item, index) => <PathCard key={item.id} item={item} index={index} />)}
+        </div>
+        <p className="mt-7 text-sm font-semibold text-[#536279]">{homePage.pillars.relationLine}</p>
       </div>
     </section>
   );
 }
 
-function ServiceCard({ item, links, primary }: { item: { title: string; summary: string; ctaLabel: string; href: string; trackLabel: string; directLinks?: readonly { label: string; href: string; trackLabel: string }[] }; links: readonly { label: string; href: string; trackLabel: string }[]; primary: string }) {
+function PathCard({ item, index }: { item: HomePillarItem; index: number }) {
   return (
-    <article className={`${homeFocusRing} rounded-[1.5rem] border border-[#DCE3EE] bg-white p-6 shadow-[0_12px_32px_rgba(15,33,70,0.05)] sm:p-8`}>
-      <h3 className={`mt-2 text-2xl font-bold tracking-[-0.03em] ${koreanText}`} style={{ color: brandInk }}>{item.title}</h3>
-      <p className={`mt-3 max-w-lg text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{item.summary}</p>
-      <div className="mt-6 flex flex-wrap gap-2">
-        <TrackedLink href={primary} trackLabel={item.trackLabel} className={`${siteBtnPrimary} ${homeFocusRing}`}>{item.ctaLabel}</TrackedLink>
-        {links.map((link) => <TrackedLink key={link.href} href={link.href} trackLabel={link.trackLabel} className={`${siteBtnSecondary} ${homeFocusRing}`}>{link.label}<HomeChevron /></TrackedLink>)}
+    <article className={`${marketingCardInteractive} group flex h-full flex-col overflow-hidden border-[#D8E1EE]`}>
+      <div className="relative aspect-[16/9] overflow-hidden border-b border-[#DFE6F1] bg-[#EAF1FF]">
+        <Image src={item.visual.src} alt={item.visual.alt} fill sizes="(min-width: 1024px) 31vw, (min-width: 640px) 48vw, 92vw" className={item.visual.fit === 'contain' ? 'object-contain p-3' : 'object-cover transition duration-500 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.03]'} />
+      </div>
+      <div className={`${marketingCardPadding} flex flex-1 flex-col`}>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-xs font-extrabold text-[#245DFF]">0{index + 1}</span>
+          <span className="text-xs font-bold text-[#6D7B90]">{item.badge}</span>
+        </div>
+        <h3 className="mt-5 text-[1.75rem] font-black leading-none tracking-[-0.035em] text-[#0B1F46]">{item.title}</h3>
+        <p className="mt-3 text-[15px] font-medium leading-[1.7] text-[#536279]">{item.role}</p>
+        {item.relationNote ? <p className="mt-3 text-xs font-bold text-[#245DFF]">{item.relationNote}</p> : null}
+        <TrackedLink href={item.href} trackLabel={item.trackLabel} className={`${marketingButtonTextAction} mt-auto pt-5`}>
+          {item.ctaLabel}<HomeChevron />
+        </TrackedLink>
       </div>
     </article>
   );

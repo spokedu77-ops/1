@@ -2,6 +2,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@font-face {
+  font-family: "Cafe24SsurroundAir";
+  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.1/Cafe24SsurroundAir.woff") format("woff");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 @theme inline {
   @keyframes accordion-down {
     from {
@@ -442,11 +450,34 @@ body {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/** Public Marketing 전용 foundation. 제품 UI의 --spm-*와 분리한다. */
+.spokedu-marketing {
+  --spokedu-marketing-font-body: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --spokedu-marketing-font-display: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --spokedu-marketing-font-accent: "Cafe24SsurroundAir", "Pretendard Variable", Pretendard, "Noto Sans KR", system-ui, sans-serif;
+  --spokedu-marketing-content-max: 77.5rem;
+  --spokedu-marketing-gutter-mobile: 1.25rem;
+  --spokedu-marketing-gutter-wide: 3rem;
+  --spokedu-marketing-radius-sm: 0.875rem;
+  --spokedu-marketing-radius-md: 1.375rem;
+  --spokedu-marketing-radius-lg: 2rem;
+  --spokedu-marketing-radius-pill: 9999px;
+  --spokedu-marketing-shadow-subtle: 0 8px 24px rgba(15, 33, 70, 0.065);
+  --spokedu-marketing-shadow-interactive: 0 18px 48px rgba(15, 33, 70, 0.11);
+  --spokedu-marketing-shadow-media: 0 24px 64px rgba(15, 33, 70, 0.14);
+  --spokedu-marketing-shadow-object: 0 30px 78px rgba(15, 33, 70, 0.18);
+  font-family: var(--spokedu-marketing-font-body);
+}
+
 /** SPOKEDU 마케팅 — 섹션 콘텐츠 정렬 (clamp padding은 Tailwind arbitrary px 미지원 대비) */
 .site-container {
   box-sizing: border-box;
   width: 100%;
-  max-width: 1240px;
+  max-width: var(--spokedu-marketing-content-max, 1240px);
   margin-inline: auto;
-  padding-inline: clamp(1.25rem, 4vw, 3rem);
+  padding-inline: clamp(
+    var(--spokedu-marketing-gutter-mobile, 1.25rem),
+    4vw,
+    var(--spokedu-marketing-gutter-wide, 3rem)
+  );
 }
