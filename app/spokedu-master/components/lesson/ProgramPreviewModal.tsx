@@ -74,14 +74,14 @@ export function ProgramPreviewModal({
               <button
                 type="button"
                 onClick={onToggleTodayLesson}
-                className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border px-4 text-[13px] font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 sm:h-10 sm:w-[152px] ${
+                className={`inline-flex h-10 w-auto shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-3.5 text-[13px] font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 ${
                   isTodayLesson
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                     : 'border-slate-200 bg-white text-slate-700'
                 }`}
                 aria-pressed={isTodayLesson}
               >
-                <CheckCircle2 className={`h-4 w-4 ${isTodayLesson ? 'fill-emerald-100' : ''}`} />
+                <CheckCircle2 className={`h-4 w-4 shrink-0 ${isTodayLesson ? 'fill-emerald-100' : ''}`} />
                 {isTodayLesson ? '오늘 수업 지정됨' : '오늘 수업으로 지정'}
               </button>
             ) : null}

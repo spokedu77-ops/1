@@ -6,37 +6,24 @@ import {
   Check,
   Clipboard,
   Copy,
-  ExternalLink,
   FileText,
   MonitorPlay,
-  Play,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { SaveErrorBanner } from '../../components/ui/SaveErrorBanner';
 
-import {
-  LessonBulletList,
-  LessonCoachScript,
-  LessonFullSection,
-  LessonMetaGrid,
-  LessonNumberedList,
-  LessonTitle,
-  LessonVariationText,
-} from '../../components/lesson/LessonPanels';
-import { TrackedVideoIframe } from '../../components/lesson/TrackedVideoIframe';
+import { DetailLessonGuide } from './components/DetailLessonGuide';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
 import { formatLessonPlanText } from '../../lib/lessonPlanExport';
 import { canOptimizeRemoteImage } from '../../lib/mediaPreferences';
 import {
   getExternalVideoUrl,
   getVideoEmbedUrl,
-  getVideoThumbnail,
   isDirectVideoUrl,
   isRemoteImage,
 } from '../../lib/program-media';
@@ -96,30 +83,6 @@ function resolveQuickRecordClassId(
     .map((group) => group?.trim() ?? '')
     .find((label) => label && label !== '수업');
   return fromStudents ?? '';
-}
-
-function LessonPrepBlock({
-  label,
-  accent = 'slate',
-  children,
-}: {
-  label: string;
-  accent?: 'emerald' | 'indigo' | 'slate';
-  children: ReactNode;
-}) {
-  const accentClass =
-    accent === 'emerald'
-      ? 'text-[var(--spm-grn)]'
-      : accent === 'indigo'
-        ? 'text-[var(--spm-acc)]'
-        : 'text-[color:var(--spm-t2)]';
-
-  return (
-    <section className="border-t border-[color:var(--spm-br)] pt-4 first:border-t-0 first:pt-0">
-      <h4 className={`text-[11px] font-black uppercase tracking-[0.08em] ${accentClass}`}>{label}</h4>
-      <div className="mt-2">{children}</div>
-    </section>
-  );
 }
 
 function BookOpenFallback() {
@@ -519,13 +482,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const videoEmbedUrl = getVideoEmbedUrl(videoUrl, { autoplay: shouldAutoplayVideo });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(videoUrl) ? videoUrl : undefined;
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(videoUrl) : undefined;
-  const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
-  const setupImage = model.setupImageUrl;
-  const hasPreActivityChecklist =
-    model.equipment.length > 0 ||
-    model.setupNotes.length > 0 ||
-    Boolean(model.coachScript) ||
-    model.briefingNotes.length > 0;
   const galleryImages = model.galleryImageUrls;
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -568,205 +524,35 @@ export default function LibraryDetailView({ id }: { id: string }) {
         </button>
       </header>
 
-      <div className="mx-auto w-full max-w-[1360px] space-y-4 px-4 py-6 sm:px-6 lg:px-8">
-        <section className="rounded-[14px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-6">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-            <div className="min-w-0">
-              <LessonTitle
-                title={title}
-                badges={usageCount > 0 ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
-                    <Check className="h-3 w-3" />
-                    {usageCount}회 사용{latestUsageDate ? ` · 최근 ${latestUsageDate}` : ''}
-                  </span>
-                ) : undefined}
-              />
-              <div className="mt-4">
-                <LessonMetaGrid
-                  cells={[
-                    { label: '테마', value: model.theme },
-                    { label: '대상', value: model.target },
-                    { label: '기능', value: model.functions.join(', ') },
-                    { label: '움직임', value: model.movements.join(', ') },
-                    { label: '공간', value: model.space },
-                    { label: '인원', value: model.participantFormat },
-                  ].filter((cell) => cell.value)}
-                />
-              </div>
-            </div>
-
-            <aside className="rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--spm-acc)]">이 수업으로</p>
-              <p className="mt-1 text-base font-black text-[color:var(--spm-t)]">이 수업으로 바로 진행</p>
-              <p className="mt-1 text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
-                오늘 관찰을 남기면 학생 이력과 안내문 초안으로 이어집니다.
-              </p>
-              <div className="mt-4 grid gap-2">
-                {isTodayLesson ? (
-                  <TodayLessonActionPanel recommendation={todayLessonRecommendation} program={program} />
-                ) : null}
-                <Link href={`/spokedu-master/class-record?program=${program.id}`} className="spm-btn-primary inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none">
-                  <Clipboard className="h-4 w-4" />
-                  수업 기록 시작
+      <div className="mx-auto w-full max-w-[1280px] space-y-6 px-4 py-6 sm:px-6 lg:space-y-8 lg:px-8">
+        <DetailLessonGuide
+          model={model}
+          headerStatus={usageCount > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
+              <Check className="h-3 w-3" />
+              {usageCount}회 사용{latestUsageDate ? ` · 최근 ${latestUsageDate}` : ''}
+            </span>
+          ) : undefined}
+          actions={(
+            <div className="space-y-3">
+              {isTodayLesson ? <TodayLessonActionPanel recommendation={todayLessonRecommendation} program={program} /> : null}
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <Link href={`/spokedu-master/class-record?program=${program.id}`} className="spm-btn-primary inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[9px] px-5 text-[13px] font-black focus-visible:outline-none sm:min-w-[190px]">
+                  <Clipboard className="h-4 w-4" /> 수업 기록 시작
                 </Link>
-                <button
-                  type="button"
-                  disabled={!ownerId}
-                  onClick={() => {
-                    if (!ownerId) return;
-                    if (isTodayLesson) clearTodayLesson(ownerId);
-                    else setTodayLesson(ownerId, { id: program.id, title: program.title });
-                  }}
-                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-slate-300 bg-white px-3 text-[13px] font-black text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-pressed={isTodayLesson}
-                >
+                <button type="button" disabled={!ownerId} onClick={() => { if (!ownerId) return; if (isTodayLesson) clearTodayLesson(ownerId); else setTodayLesson(ownerId, { id: program.id, title: program.title }); }} className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border border-slate-300 bg-white px-4 text-[13px] font-black text-slate-800 disabled:cursor-not-allowed disabled:opacity-50" aria-pressed={isTodayLesson}>
                   {isTodayLesson ? '오늘 수업 해제' : '오늘 수업으로 지정'}
                 </button>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={openQuickModal} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-emerald-200 bg-[var(--spm-s1)] px-3 text-[13px] font-black text-emerald-700">
-                    <Check className="h-4 w-4" />
-                    빠른 기록
-                  </button>
-                  <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-[var(--spm-s1)] px-3 text-[13px] font-black text-[var(--spm-acc)]">
-                    <FileText className="h-4 w-4" />
-                    안내문
-                  </Link>
-                </div>
-                <div className="grid gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void copyLessonPlan()}
-                    className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800"
-                  >
-                    <Copy className="h-4 w-4" />
-                    {planCopied ? '복사 완료' : '지도안 복사'}
-                  </button>
-                </div>
+                <button type="button" onClick={openQuickModal} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-emerald-200 bg-emerald-50/70 px-3.5 text-[12px] font-black text-emerald-800"><Check className="h-3.5 w-3.5" /> 빠른 기록</button>
+                <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-3.5 text-[12px] font-black text-[color:var(--spm-t2)]"><FileText className="h-3.5 w-3.5" /> 안내문</Link>
+                <button type="button" onClick={() => void copyLessonPlan()} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-3.5 text-[12px] font-black text-[color:var(--spm-t2)]"><Copy className="h-3.5 w-3.5" /> {planCopied ? '복사 완료' : '지도안 복사'}</button>
               </div>
-            </aside>
-          </div>
-        </section>
+            </div>
+          )}
+          video={{ embedUrl: videoEmbedUrl, directUrl: directVideoUrl, externalUrl: externalVideoUrl, sourceUrl: videoUrl, autoplay: shouldAutoplayVideo, onPlaybackStarted: recordVideoStarted }}
+        />
 
         <RelatedSpomoveSection program={program} />
-
-        {setupImage || hasPreActivityChecklist ? (
-          <div id="lesson-preparation" className="grid scroll-mt-20 gap-5 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] lg:items-start">
-            {setupImage ? (
-              <LessonFullSection title="초기 교구 세팅">
-                <div className="overflow-hidden rounded-[12px] border border-[color:var(--spm-br2)] bg-[var(--spm-s3)] p-2">
-                  <Image
-                    src={setupImage}
-                    alt={`${title} 세팅 방법`}
-                    width={960}
-                    height={720}
-                    sizes="(min-width: 1024px) 44vw, 100vw"
-                    className="mx-auto h-auto max-h-[420px] w-full rounded-[10px] object-contain lg:max-h-[500px]"
-                    unoptimized={isRemoteImage(setupImage) && !canOptimizeRemoteImage(setupImage)}
-                  />
-                </div>
-              </LessonFullSection>
-            ) : null}
-
-            {hasPreActivityChecklist ? (
-              <LessonFullSection title="사전 체크리스트">
-                <div className="space-y-4">
-                  {model.equipment.length > 0 ? (
-                    <LessonPrepBlock label="준비물" accent="emerald">
-                      <LessonBulletList items={model.equipment} compact />
-                    </LessonPrepBlock>
-                  ) : null}
-                  {model.setupNotes.length > 0 ? (
-                    <LessonPrepBlock label="세팅">
-                      <LessonBulletList items={model.setupNotes} compact />
-                    </LessonPrepBlock>
-                  ) : null}
-                  {model.coachScript ? (
-                    <LessonPrepBlock label="수업 스크립트" accent="indigo">
-                      <LessonCoachScript text={model.coachScript} />
-                    </LessonPrepBlock>
-                  ) : null}
-                  {model.briefingNotes.length > 0 ? (
-                    <LessonPrepBlock label="사전 교육">
-                      <LessonBulletList items={model.briefingNotes} compact />
-                    </LessonPrepBlock>
-                  ) : null}
-                </div>
-              </LessonFullSection>
-            ) : null}
-          </div>
-        ) : null}
-
-        {hasVideo ? (
-          <div id="lesson-video" className="scroll-mt-20">
-            <LessonFullSection title="영상">
-              <div className="overflow-hidden rounded-[14px] bg-slate-950">
-                <div className="relative aspect-video">
-                  {videoEmbedUrl ? (
-                    <TrackedVideoIframe
-                      key={`${program.id}-${videoEmbedUrl}`}
-                      src={videoEmbedUrl}
-                      title={`${title} 참고 영상`}
-                      className="h-full w-full"
-                      onPlaybackStarted={recordVideoStarted}
-                      posterUrl={getVideoThumbnail(videoUrl) ?? undefined}
-                      deferUntilPlay={!shouldAutoplayVideo}
-                    />
-                  ) : directVideoUrl ? (
-                    <video
-                      src={directVideoUrl}
-                      className="h-full w-full object-cover"
-                      controls
-                      playsInline
-                      autoPlay={shouldAutoplayVideo}
-                      muted={shouldAutoplayVideo}
-                      preload="none"
-                      poster={getVideoThumbnail(videoUrl)}
-                      onPlay={recordVideoStarted}
-                    />
-                  ) : (
-                    <div className="grid h-full place-items-center p-6 text-center text-white">
-                      <div>
-                        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--spm-acc)] text-white ring-4 ring-white/70">
-                          <Play className="h-5 w-5 fill-current" />
-                        </span>
-                        <p className="mt-4 text-base font-black">참고 영상 링크</p>
-                        <a href={externalVideoUrl} target="_blank" rel="noreferrer" onClick={recordVideoStarted} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--spm-s1)] px-5 text-sm font-black text-[color:var(--spm-t)]">
-                          유튜브에서 열기
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </LessonFullSection>
-          </div>
-        ) : null}
-
-        {model.activityMethod.length > 0 ? (
-          <LessonFullSection title="활동 방법">
-            <LessonNumberedList items={model.activityMethod} />
-          </LessonFullSection>
-        ) : null}
-
-        {model.variationMethod.length > 0 ? (
-          <LessonFullSection title="변형 방법">
-            <LessonVariationText text={model.variationMethod.join('\n')} />
-          </LessonFullSection>
-        ) : null}
-
-        {/* 보호자 문구 — 등록된 값이 있을 때만 표시 (6순위) */}
-        {model.fieldTips.length > 0 ? (
-          <LessonFullSection title="지도 포인트">
-            <LessonBulletList items={model.fieldTips} />
-          </LessonFullSection>
-        ) : null}
-
-        {model.safetyNotes.length > 0 ? (
-          <LessonFullSection title="안전 유의사항">
-            <LessonBulletList items={model.safetyNotes} />
-          </LessonFullSection>
-        ) : null}
 
         {parentCopy ? (
           <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 p-5">
@@ -865,19 +651,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </section>
         ) : null}
 
-        <details className="rounded-[14px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-4 text-[12px] font-bold text-[color:var(--spm-t2)]">
-          <summary className="cursor-pointer text-[13px] font-black text-[color:var(--spm-t)]">수업 구성</summary>
-          <ol className="mt-3 grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
-            {['1. 수업 개요', '2. 준비물·공간', '3. 수업 목표', '4. 활동 진행 순서', '5. 규칙과 지도 포인트', '6. 난이도 조절·변형', '7. 안전 유의사항', '8. 실행 행동'].map((item) => (
-              <li key={item} className="break-words rounded-lg bg-[var(--spm-s2)] px-3 py-2">{item}</li>
-            ))}
-          </ol>
-          {usageCount > 0 ? (
-            <Link href="/spokedu-master/class-record" className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-xl px-1 text-[12px] font-black text-[color:var(--spm-t2)]">
-              기존 기록 보기
-            </Link>
-          ) : null}
-        </details>
       </div>
 
       <BottomSheet open={quickModalOpen} title="빠른 기록" onClose={() => setQuickModalOpen(false)}>

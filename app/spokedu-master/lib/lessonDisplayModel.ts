@@ -36,6 +36,9 @@ export function getPublicLessonTags(tags: string[]) {
 export type LessonDisplayModel = {
   id: string;
   title: string;
+  description?: string;
+  objective?: string;
+  developmentFocus?: string;
   theme: string;
   target: string;
   space: string;
@@ -97,6 +100,9 @@ export function buildLessonDisplayModel(program: Program): LessonDisplayModel {
   return {
     id: program.id,
     title: cleanValue(program.title),
+    description: cleanValue(program.description),
+    objective: cleanValue(detail?.objective),
+    developmentFocus: cleanValue(detail?.developmentFocus),
     theme: normalizeLessonTheme(program.category),
     target: cleanValue(detail?.recommendedAge || program.grade),
     space: cleanValue(program.space),

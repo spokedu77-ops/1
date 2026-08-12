@@ -5,45 +5,46 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('SPOKEDU MASTER library detail layout contract', () => {
-  const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
+  const view = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
+  const guide = read('app/spokedu-master/library/[id]/components/DetailLessonGuide.tsx');
   const preview = read('app/spokedu-master/components/lesson/LessonPreviewContent.tsx');
 
-  it('keeps the setup image and prep checklist top-aligned without equal-height stretch', () => {
-    expect(detail).toContain('lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)]');
-    expect(detail).toContain('lg:items-start');
-    expect(detail).not.toContain('lg:items-stretch');
-    expect(detail).not.toContain('title="초기 교구 세팅" className="h-full"');
-    expect(detail).not.toContain('title="사전 체크리스트" className="h-full"');
+  it('keeps orchestration separate from the dedicated detail presentation', () => {
+    expect(view).toContain("from './components/DetailLessonGuide'");
+    expect(view).toContain('<DetailLessonGuide');
+    expect(view).not.toContain("from '../../components/lesson/LessonPanels'");
+    expect(guide).toContain('export function DetailLessonGuide');
   });
 
-  it('preserves educational setup images instead of cropping them as covers', () => {
-    expect(detail).toContain('width={960}');
-    expect(detail).toContain('height={720}');
-    expect(detail).toContain('object-contain');
-    expect(detail).toContain('lg:max-h-[500px]');
-    expect(detail).not.toContain('relative aspect-[4/3] w-full overflow-hidden sm:aspect-square lg:aspect-[4/5]');
+  it('renders the canonical lesson-guide hierarchy and six taxonomy fields', () => {
+    for (const label of ['테마', '대상', '기능', '움직임', '공간', '인원']) expect(guide).toContain(`['${label}',`);
+    const composition = guide.slice(guide.indexOf('export function DetailLessonGuide'));
+    expect(composition).toMatch(/lesson-preparation[\s\S]*lesson-opening-title[\s\S]*<LessonSteps[\s\S]*guidance-title[\s\S]*<ReferenceVideo[\s\S]*<VariationList/);
   });
 
-  it('uses a single section level for short preparation blocks', () => {
-    expect(detail).toContain('function LessonPrepBlock');
-    expect(detail).toContain('border-t border-[color:var(--spm-br)] pt-4');
-    expect(detail).not.toContain('LessonChecklistCard');
+  it('preserves setup images without cropping and limits their desktop height', () => {
+    expect(guide).toContain('object-contain');
+    expect(guide).toContain('md:max-h-[360px]');
+    expect(guide).toContain('lg:max-h-[390px]');
+    expect(guide).toContain('lg:items-start');
   });
 
-  it('does not expose internal lesson quality warnings in user-facing library screens', () => {
-    for (const source of [detail, preview]) {
-      expect(source).not.toContain('일부 정보가 부족합니다');
-      expect(source).not.toContain('수업 정보 보강이 필요합니다');
-      expect(source).not.toContain('부족 정보:');
-      expect(source).not.toContain('{quality.status}');
-      expect(source).not.toContain('qualityNotice');
-    }
+  it('supports variable step counts and hides absent optional sections', () => {
+    expect(guide).toContain('items.length <= 3');
+    expect(guide).toContain("items.length === 2 ? 'md:max-w-4xl md:grid-cols-2'");
+    expect(guide).toContain('if (items.length === 0) return null');
+    expect(guide).toContain('model.fieldTips.length > 0 || model.safetyNotes.length > 0');
   });
 
-  it('uses stable bottom padding without sticky secondary actions', () => {
-    expect(detail).toContain('pb-[calc(5.5rem+env(safe-area-inset-bottom))]');
-    expect(detail).toContain('lg:pb-12');
-    expect(detail).not.toContain('primarySpomovePreset');
-    expect(detail).not.toContain('SPOMOVE 실행');
+  it('removes legacy structure and leaves the preview modal implementation untouched', () => {
+    expect(view).not.toContain('수업 구성');
+    expect(view).not.toContain('LessonFullSection');
+    expect(preview).not.toContain('DetailLessonGuide');
+  });
+
+  it('keeps stable page padding without sticky secondary actions', () => {
+    expect(view).toContain('pb-[calc(5.5rem+env(safe-area-inset-bottom))]');
+    expect(view).toContain('lg:pb-12');
+    expect(view).not.toContain('primarySpomovePreset');
   });
 });

@@ -96,7 +96,7 @@ export function SettingsBriefing({
       {showCueSpeed ? (
         <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5">
           <p className="text-[12px] font-black tracking-[0.08em] text-white/55">자극 속도</p>
-          <div className="mt-3 grid grid-cols-6 gap-2">
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
             {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
               const active = cueSeconds === sec;
               const recommended = sec === 3;

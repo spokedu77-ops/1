@@ -35,15 +35,13 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   });
 
   it('makes library detail the compact bridge from lesson choice to operation', () => {
-    expect(detail).toContain('이 수업으로');
-    expect(detail).toContain('이 수업으로 바로 진행');
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
     expect(detail).toContain('/spokedu-master/class-record?record=${quickSavedRecordId}&program=${program.id}');
     expect(detail).toContain('수업 기록 시작');
     expect(detail).toContain('오늘 수업으로 지정');
     expect(detail).toContain('오늘 수업 해제');
     expect(detail).toContain('빠른 기록');
-    expect(detail).toContain('오늘 관찰을 남기면 학생 이력과 안내문 초안으로 이어집니다.');
+    expect(detail).toContain('날짜와 관찰 한 줄만 남겨도 학생 이력·안내문 근거로 쌓입니다.');
     expect(detail).not.toContain('라이브러리 수업을 내 반 기록과 안내문으로 이어갑니다.');
     expect(detail).toContain('오늘 관찰·지도 포인트');
     expect(detail).toContain('오늘 집중 관찰');
@@ -65,7 +63,6 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(detail).not.toContain('수업 준비 보조');
     expect(detail).toContain('aria-pressed={favorite}');
     expect(detail).toContain('title={favorite');
-    expect(detail).toContain('이 수업으로 바로 진행');
     expect(detail).toContain('빠른 기록');
     expect(detail).toContain('기존 기록 보기');
     expect(detail).toContain('이 수업에 쌓인 운영 증거');

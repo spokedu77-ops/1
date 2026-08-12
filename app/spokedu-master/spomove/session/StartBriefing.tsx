@@ -48,7 +48,7 @@ export function StartBriefing({
               <span className="ml-1 text-[16px] font-black text-white/55">초</span>
             </p>
           </div>
-          <div className="mt-4 grid grid-cols-6 gap-2">
+          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
             {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
               const active = cueSeconds === sec;
               const recommended = sec === 3;

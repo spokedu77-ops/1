@@ -62,7 +62,7 @@ export function LessonPreviewMedia({
         key={`${program.id}-${videoEmbedUrl}`}
         src={videoEmbedUrl}
         title={`${title} 참고 영상`}
-        className="h-full w-full"
+        className={layout === 'preview' ? 'aspect-video w-full' : 'h-full w-full'}
         onPlaybackStarted={reportPlayback}
         posterUrl={posterUrl}
         deferUntilPlay={!autoplay}
@@ -72,7 +72,7 @@ export function LessonPreviewMedia({
     media = (
       <video
         src={directVideoUrl}
-        className="h-full w-full object-cover"
+        className={layout === 'preview' ? 'aspect-video w-full object-contain' : 'h-full w-full object-cover'}
         controls
         playsInline
         autoPlay={autoplay}
@@ -122,17 +122,17 @@ export function LessonPreviewMedia({
 
   const frameClass =
     layout === 'preview'
-      ? 'relative aspect-video w-full'
+      ? 'relative flex aspect-video w-full items-center bg-black lg:h-full lg:aspect-auto'
       : hasVideo
         ? 'relative mx-auto aspect-video w-full'
         : 'relative mx-auto aspect-square w-full max-w-[1250px]';
 
   return (
-    <div className={layout === 'preview' ? 'min-w-0 w-full' : 'lg:h-fit lg:self-start'}>
+    <div className={layout === 'preview' ? 'h-full min-w-0 w-full' : 'lg:h-fit lg:self-start'}>
       <div
         className={
           layout === 'preview'
-            ? 'w-full overflow-hidden rounded-[14px] border border-slate-200 bg-slate-50 shadow-[0_12px_40px_rgba(15,23,42,0.12)]'
+            ? 'h-full w-full overflow-hidden rounded-[14px] border border-slate-200 bg-black shadow-[0_12px_40px_rgba(15,23,42,0.12)]'
             : 'overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.16)]'
         }
       >
