@@ -34,7 +34,7 @@ const MOLE_COLORS = [
   { hex: '#27b758', lane: 2 as const },
   { hex: '#f5cd30', lane: 3 as const },
 ] as const;
-const BONUS_TIME_SEC = 15;
+const BONUS_TIME_SEC = 12;
 
 type ActiveMole = { holeId: number; hex: string; lane: number; look: MoleLook };
 
@@ -345,8 +345,9 @@ export function RobloxMoleReactionTraining({
 
     const getBonusDelayMs = () => {
       const progress = getBonusProgress();
-      const startDelay = Math.min(720, Math.max(430, Math.round(g.cadenceMs * 0.7)));
-      const endDelay = 240;
+      // Fever is quicker than the base round, but still leaves a visible reaction window.
+      const startDelay = Math.min(820, Math.max(620, Math.round(g.cadenceMs * 0.82)));
+      const endDelay = 500;
       return Math.round(startDelay + (endDelay - startDelay) * progress);
     };
 
@@ -387,7 +388,7 @@ export function RobloxMoleReactionTraining({
       if (!g.running) return;
       if (g.bonusActive) {
         const progress = getBonusProgress();
-        g.exposeMs = Math.max(260, Math.round(620 - progress * 280));
+        g.exposeMs = Math.max(600, Math.round(900 - progress * 300));
       }
       triggerMixed();
       g.hideTimer = setTimeout(() => setActiveMap(new Map()), g.exposeMs);
@@ -426,15 +427,15 @@ export function RobloxMoleReactionTraining({
             g.bonusStarted = true;
             g.bonusActive = true;
             g.timeLeft = BONUS_TIME_SEC;
-            g.exposeMs = 620;
-            g.cadenceMs = Math.min(900, Math.max(620, Math.round(g.cadenceMs * 0.75)));
+            g.exposeMs = 900;
+            g.cadenceMs = Math.min(1100, Math.max(760, Math.round(g.cadenceMs * 0.86)));
             g.spawnCount = 0;
             g.lastSpawnDualBoth = false;
             g.endsAtMs = performance.now() + BONUS_TIME_SEC * 1000;
             clearSpawnTimers();
             setActiveMap(new Map());
             setHud();
-            scheduleNext(200);
+            scheduleNext(520);
             return;
           }
           if (g.timer) clearInterval(g.timer);

@@ -175,12 +175,12 @@ type TierParams = {
 function tierParams(tier: ColorTrackerTier): TierParams {
   if (tier === 1) {
     return {
-      ballCount: 9,
+      ballCount: 1,
       chaosAmp: 0.18,
       revealMs: 3700,
       scrambleMs: 9000,
       answerMs: 1600,
-      speedFactor: 1.57,
+      speedFactor: 2.35,
       wallChaos: 0.08,
       collisionPasses: 2,
       sepBoost: 1.08,
@@ -189,7 +189,7 @@ function tierParams(tier: ColorTrackerTier): TierParams {
   }
   if (tier === 2) {
     return {
-      ballCount: 13,
+      ballCount: 2,
       chaosAmp: 0.28,
       revealMs: 2350,
       scrambleMs: 12600,
@@ -202,7 +202,7 @@ function tierParams(tier: ColorTrackerTier): TierParams {
     };
   }
   return {
-    ballCount: 13,
+      ballCount: 2,
     chaosAmp: 0.32,
     revealMs: 2350,
     scrambleMs: 12600,
@@ -217,8 +217,7 @@ function tierParams(tier: ColorTrackerTier): TierParams {
 
 function tierBadge(tier: ColorTrackerTier, dualPanel: boolean): string {
   const difficulty = dualPanel ? '어려움 · 2패널' : '보통 · 1패널';
-  const speed = tier === 3 ? '빠름' : '느림';
-  return `${difficulty} · ${speed}`;
+  return `${difficulty} · 공 ${tier === 1 ? 1 : 2}개 · 빠름`;
 }
 
 function buildFlashSchedule(scrambleMs: number): number[] {

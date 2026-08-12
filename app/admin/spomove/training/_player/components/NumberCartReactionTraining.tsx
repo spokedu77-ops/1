@@ -658,7 +658,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       const isPair = parts.length === 2 && parts.every((part) => part.length <= 2);
       ctx.clearRect(0, 0, 512, 256);
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.textBaseline = 'alphabetic';
       ctx.shadowColor = 'rgba(255,255,255,.82)';
       ctx.shadowBlur = 2;
       const fitText = (value: string, maxWidth: number, maxSize: number) => {
@@ -668,6 +668,12 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
           if (ctx.measureText(value).width <= maxWidth) break;
           fontSize -= 2;
         } while (fontSize > 54);
+      };
+      const fillCenteredText = (value: string, centerX: number, centerY: number) => {
+        const metrics = ctx.measureText(value);
+        const ascent = metrics.actualBoundingBoxAscent ?? 0;
+        const descent = metrics.actualBoundingBoxDescent ?? 0;
+        ctx.fillText(value, centerX, centerY + (ascent - descent) / 2);
       };
       if (isPair) {
         parts.forEach((part, i) => {
@@ -685,7 +691,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
           ctx.stroke();
           fitText(part, boxW - 32, 146);
           ctx.fillStyle = '#111827';
-          ctx.fillText(part, x, boxY + boxH / 2);
+          fillCenteredText(part, x, boxY + boxH / 2);
         });
         ctx.fillStyle = 'rgba(17,24,39,.5)';
         ctx.fillRect(252, 72, 8, 112);
@@ -703,7 +709,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
         ctx.stroke();
         fitText(text, boxW - 42, 170);
         ctx.fillStyle = '#111827';
-        ctx.fillText(text, boxX + boxW / 2, boxY + boxH / 2);
+        fillCenteredText(text, boxX + boxW / 2, boxY + boxH / 2);
       }
       ctx.shadowBlur = 0;
       door.signTex.needsUpdate = true;

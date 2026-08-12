@@ -1912,7 +1912,7 @@ export default function MemoryGameApp({
             )}
             {settings.mode !== 'flow' && (
               <>
-                {settings.mode === 'reactTrain' && settings.level === 5 ? null : spatialBasicRandomSpeed ? (
+                {settings.mode === 'reactTrain' && (settings.level === 5 || reactTrainEngineLevelForUi(settings.level) === 9) ? null : spatialBasicRandomSpeed ? (
                   <div style={S.sec}>
                     {stepNum(stepSpeed, "Signal speed")}
                     <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600 }}>
@@ -1927,6 +1927,37 @@ export default function MemoryGameApp({
                     <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
                   </div>
                 )}
+
+                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 9 ? (
+                  <div style={S.sec}>
+                    {stepNum(stepSpeed, 'Choose ball count')}
+                    <p style={{ margin: '0 0 0.75rem', fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                      Both options use fast movement. Choose how many white balls to track.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      {([1, 2] as const).map((count) => (
+                        <button
+                          key={count}
+                          type="button"
+                          onClick={() => set('colorTrackerTier', count)}
+                          style={{
+                            flex: 1,
+                            padding: '0.65rem 0.75rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${settings.colorTrackerTier === count ? '#F97316' : 'var(--border)'}`,
+                            background: settings.colorTrackerTier === count ? '#FFF7ED' : 'var(--card)',
+                            color: 'var(--text)',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          공 {count}개 · 빠름
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 {settings.mode === 'spatial' && settings.level === 6 ? (
                   <div style={S.sec}>

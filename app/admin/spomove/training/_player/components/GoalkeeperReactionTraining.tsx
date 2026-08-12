@@ -405,7 +405,8 @@ export function GoalkeeperReactionTraining({
       currentSpeed: baseSpeed,
       phaseId: -1,
       lastStart: null,
-      bossSpawned: false,
+      // Legacy flag retained for the late-round scheduling path; no boss projectile is spawned.
+      bossSpawned: true,
       bonusActive: false,
       bonusStarted: false,
       projectiles: [],
@@ -432,10 +433,24 @@ export function GoalkeeperReactionTraining({
     const ceilingGrid = new THREE.GridHelper(200, 80, 0xff4dd8, 0x351238);
     ceilingGrid.position.y = 8;
     scene.add(ceilingGrid);
-    const goalFrame = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.PlaneGeometry(16, 11)),
-      new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.24 }),
-    );
+    const goalFrame = new THREE.Group();
+    const postMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.52 });
+    const netMaterial = new THREE.LineBasicMaterial({ color: 0x9ed8ff, transparent: true, opacity: 0.1 });
+    const addGoalLines = (points: number[], material: THREE.LineBasicMaterial) => {
+      const geometry = new THREE.BufferGeometry().setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(points, 3),
+      );
+      goalFrame.add(new THREE.LineSegments(geometry, material));
+    };
+    addGoalLines([
+      -7.5, -4.5, 0, -7.5, 4.5, 0,
+      7.5, -4.5, 0, 7.5, 4.5, 0,
+      -7.5, 4.5, 0, 7.5, 4.5, 0,
+    ], postMaterial);
+    const netZ = 0.35;
+    for (let x = -6; x <= 6; x += 2) addGoalLines([x, -4.5, netZ, x, 4.5, netZ], netMaterial);
+    for (let y = -3; y <= 3; y += 2) addGoalLines([-7.5, y, netZ, 7.5, y, netZ], netMaterial);
     goalFrame.position.set(0, 0.5, HIT_Z);
     scene.add(goalFrame);
     scene.add(new THREE.AmbientLight(0xffffff, 0.45));
@@ -610,14 +625,7 @@ export function GoalkeeperReactionTraining({
       }
 
       // 후반: 보스 1회 (랜덤 코너)
-      if (!g.bonusActive && !g.bossSpawned && nowSec >= Math.max(0, duration - 6) && nowSec < duration - 0.2) {
-        g.bossSpawned = true;
-        g.currentSpeed = FLIGHT_DIST / 6;
-        const bossStart = pickCorner(g.lastStart);
-        spawnShot(bossStart, bossStart, g.currentSpeed, true);
-        g.lastStart = bossStart;
-        scheduleNext(nowSec, phase);
-      } else if (nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5 && phase.id < 5) {
+      if (nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5 && phase.id < 5) {
         spawnRandomWave(phase);
         scheduleNext(nowSec, phase);
       } else if (g.bonusActive && nowSec >= g.nextSpawnAt && nowSec < activeDuration - 1.5) {
@@ -793,8 +801,12 @@ export function GoalkeeperReactionTraining({
       (fieldGrid.material as THREE.Material).dispose();
       ceilingGrid.geometry.dispose();
       (ceilingGrid.material as THREE.Material).dispose();
-      goalFrame.geometry.dispose();
-      (goalFrame.material as THREE.Material).dispose();
+      goalFrame.traverse((obj) => {
+        const line = obj as THREE.LineSegments;
+        line.geometry?.dispose();
+      });
+      postMaterial.dispose();
+      netMaterial.dispose();
       renderer.dispose();
     };
   }, [bonusTimeEnabled, durationSec, endGame, goalkeeperTier, speedSec]);
