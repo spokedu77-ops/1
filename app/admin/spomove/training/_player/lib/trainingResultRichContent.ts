@@ -298,7 +298,7 @@ function buildCoachTip(mode: string, level: number): string {
   const phase = findGuidePhase(mode, level);
   const raw = phase?.pitfall ?? GUIDE_BLOCKS.find((b) => b.id === mode)?.tip;
   if (!raw) return '다음에도 이렇게 하면 더 쉬워져요.';
-  return toFriendlyLine(raw);
+  return toFriendlyLine(raw ?? '');
 }
 
 function spatialPatternLabel(level: number): string {
