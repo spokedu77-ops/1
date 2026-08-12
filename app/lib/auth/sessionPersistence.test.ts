@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import {
   applyLoginSessionPreference,
@@ -64,6 +66,7 @@ describe('sessionPersistence', () => {
     expect(localStorage.getItem('spokedu:ephemeral-tab-count')).toBe('2');
     expect(sessionStorage.getItem('spokedu:tab-registered')).toBe('1');
 
+    window.dispatchEvent(new Event('pagehide'));
     cleanup();
     expect(localStorage.getItem('spokedu:ephemeral-tab-count')).toBe('1');
     expect(localStorage.getItem('spokedu:ephemeral-session-active')).toBe('1');
@@ -76,6 +79,7 @@ describe('sessionPersistence', () => {
     sessionStorage.setItem('spokedu:tab-registered', '1');
 
     const cleanup = registerEphemeralBrowserSession();
+    window.dispatchEvent(new Event('pagehide'));
     cleanup();
 
     expect(localStorage.getItem('spokedu:ephemeral-session-active')).toBeNull();

@@ -54,8 +54,8 @@ describe('normalizeTransactionPayloadForInvariants', () => {
     });
 
     expect(result.creates).toEqual([
-      expect.objectContaining({ id: 'child-page', parent_block_id: 'root', order_index: 0 }),
-      expect.objectContaining({ id: 'todo-child', parent_block_id: 'child-page', order_index: 0 }),
+      expect.objectContaining({ id: 'child-page', parent_block_id: 'root', order_index: 99 }),
+      expect.objectContaining({ id: 'todo-child', parent_block_id: 'child-page', order_index: 99 }),
     ]);
   });
 
@@ -75,7 +75,7 @@ describe('normalizeTransactionPayloadForInvariants', () => {
     expect(result.updates[0]).toMatchObject({
       id: 'keep',
       parent_block_id: null,
-      order_index: 0,
+      order_index: 10,
     });
   });
 });

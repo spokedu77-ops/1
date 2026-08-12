@@ -47,7 +47,7 @@ describe('spomove preset display model', () => {
     expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).supportMetaParts[0]).toBe('동물');
 
     expect(getSpomovePresetDisplayModel(moleNormal!).programLabel).toBe('시지각 반응');
-    expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기');
+    expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기 · 보통');
     expect(getSpomovePresetDisplayModel(moleNormal!).supportMeta).not.toMatch(/1·2마리|50%/);
 
     expect(getSpomovePresetDisplayModel(sequenceFive!).programLabel).toBe('순차 기억');

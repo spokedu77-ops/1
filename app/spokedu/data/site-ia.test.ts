@@ -118,16 +118,15 @@ describe('spokedu site IA', () => {
     expect(educationHubPage.paths.map((path) => path.id)).toEqual(['dispatch', 'private', 'oneday', 'inclusive']);
   });
 
-  it('keeps home within seven top-level sections and PR2 routing', () => {
-    expect(homePage.sectionOrder).toHaveLength(7);
+  it('keeps home within six top-level sections and current routing', () => {
+    expect(homePage.sectionOrder).toHaveLength(6);
     expect([...homePage.sectionOrder]).toEqual([
       'hero',
-      'audienceGate',
-      'pillars',
-      'cycle',
+      'services',
+      'whySpokedu',
       'spomove',
-      'evidenceStrip',
-      'finalCta',
+      'fieldProof',
+      'finalAction',
     ]);
     expect(homePage.hero.lines.join(' ')).toMatch(/현장|아동체육|수업|콘텐츠|시스템/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
@@ -179,10 +178,10 @@ describe('spokedu site IA', () => {
     expect(JSON.stringify(homePage.finalCta)).not.toMatch(/onboarding|스포키듀 마스터/);
   });
 
-  it('uses a single verified SPOMOVE case on the home spotlight', () => {
+  it('uses the verified field cases on the home proof section', () => {
     expect(HOME_MAIN_CASE_SLUGS).toEqual(['dongjak-spomove']);
-    expect(homePage.cases.cards.map((card) => card.slug)).toEqual([...HOME_MAIN_CASE_SLUGS]);
-    expect(homePage.cases.cards).toHaveLength(1);
+    expect(homePage.cases.cards.map((card) => card.slug)).toEqual(['dongjak-spomove', 'yangcheon-paps']);
+    expect(homePage.cases.cards).toHaveLength(2);
     expect(homePage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
   });
 
@@ -533,9 +532,9 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeSource).not.toMatch(/15,?015|PRIVATE_COUNTER|3,?000회/);
     expect(homeSource).not.toMatch(/9,900|28,900|20,900|15,900/);
     expect(homeLandingSource).not.toMatch(/HomePartnerReviews|HomeMediaRail/);
-    expect(homeLandingSource).toMatch(/HomePillars/);
-    expect(homeLandingSource).toMatch(/HomeCycle/);
-    expect(homeLandingSource).toMatch(/HomeEvidenceStrip/);
+    expect(homeLandingSource).toMatch(/HomeServices/);
+    expect(homeLandingSource).toMatch(/HomeWhySpokedu/);
+    expect(homeLandingSource).toMatch(/HomeFieldRecords/);
     expect(spomoveLandingSource).toMatch(/SpomoveProgramLanding|data-spokedu-spomove-sections/);
     expect(spomoveLandingSource).not.toMatch(/SPO-MAT/);
     expect(spomoveLandingSource).not.toMatch(/9,900|28,900|집중력이 향상|인지능력이 개선/);
