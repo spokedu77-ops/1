@@ -17,6 +17,7 @@ type Body = {
   feedbackFields?: FeedbackFields;
   photoUrls?: unknown;
   fileUrls?: unknown;
+  removedFileUrls?: unknown;
 };
 
 function isAssistantTeacherUser(
@@ -72,6 +73,9 @@ export async function POST(req: Request) {
       : {}) as FeedbackFields;
     const photoUrls = Array.isArray(body.photoUrls) ? (body.photoUrls as string[]) : [];
     const fileUrls = Array.isArray(body.fileUrls) ? (body.fileUrls as string[]) : [];
+    const removedFileUrls = Array.isArray(body.removedFileUrls)
+      ? (body.removedFileUrls as string[])
+      : [];
 
     if (!sessionId) {
       return NextResponse.json({ error: 'sessionId이 필요합니다.' }, { status: 400 });
@@ -80,7 +84,7 @@ export async function POST(req: Request) {
     const svc = getServiceSupabase();
     const { data: row, error: fetchErr } = await svc
       .from('sessions')
-      .select('id, created_by, start_at, session_type, title, memo, students_text, status, feedback_fields')
+      .select('id, created_by, start_at, session_type, title, memo, students_text, status, feedback_fields, file_url')
       .eq('id', sessionId)
       .maybeSingle();
 
@@ -111,24 +115,48 @@ export async function POST(req: Request) {
     const sessionType = String(row.session_type || '');
     const isCenterType = isCenterSessionType(sessionType);
 
-    /** 센터 첨부는 항상 1개만 저장(클라이언트가 여러 URL을 내도 마지막만 반영) */
-    let centerFileUrls = fileUrls;
-    let centerFeedbackFields = feedbackFields;
-    if (isCenterType && fileUrls.length > 1) {
-      centerFileUrls = [fileUrls[fileUrls.length - 1]!];
-      const cn = feedbackFields.center_document_names;
-      if (Array.isArray(cn) && cn.length > 0) {
-        centerFeedbackFields = {
-          ...feedbackFields,
-          center_document_names: [String(cn[cn.length - 1]).replace(/\0/g, '').trim().slice(0, 300)],
-        };
-      }
-    }
-
     const prevFf =
       row.feedback_fields && typeof row.feedback_fields === 'object' && !Array.isArray(row.feedback_fields)
         ? (row.feedback_fields as Record<string, unknown>)
         : {};
+
+    /** 기존 파일 + 이번 요청 파일을 병합하되, 사용자가 명시적으로 제거한 파일만 제외한다. */
+    const removedSet = new Set(removedFileUrls.filter((url): url is string => typeof url === 'string'));
+    const previousFileUrls = Array.isArray(row.file_url)
+      ? row.file_url.filter((url): url is string => typeof url === 'string' && !removedSet.has(url))
+      : [];
+    const requestedFileUrls = fileUrls.filter((url): url is string => typeof url === 'string' && !removedSet.has(url));
+    const centerFileUrls = isCenterType
+      ? Array.from(new Set([...previousFileUrls, ...requestedFileUrls]))
+      : requestedFileUrls;
+
+    let centerFeedbackFields = feedbackFields;
+    if (isCenterType) {
+      const previousNames = alignCenterDocumentNamesForSave(
+        previousFileUrls,
+        prevFf.center_document_names,
+        undefined,
+      );
+      const requestedNames = alignCenterDocumentNamesForSave(
+        requestedFileUrls,
+        feedbackFields.center_document_names,
+        undefined,
+      );
+      const nameByUrl = new Map<string, string>();
+      previousFileUrls.forEach((url, index) => nameByUrl.set(url, previousNames[index]!));
+      requestedFileUrls.forEach((url, index) => nameByUrl.set(url, requestedNames[index]!));
+      centerFeedbackFields = {
+        ...feedbackFields,
+        center_document_names: centerFileUrls.map((url, index) => nameByUrl.get(url) || `첨부파일 ${index + 1}`),
+      };
+    }
+
+    if (isCenterType && centerFileUrls.length > 2) {
+      return NextResponse.json(
+        { error: '센터 피드백 파일은 최대 2개까지 업로드할 수 있습니다.' },
+        { status: 400 },
+      );
+    }
 
     let mergedFeedback: FeedbackFields = { ...centerFeedbackFields };
     if (isCenterType && centerFileUrls.length > 0) {

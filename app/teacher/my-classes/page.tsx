@@ -143,6 +143,7 @@ function MyClassesContent() {
   const [uploading, setUploading] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [fileUrls, setFileUrls] = useState<string[]>([]);
+  const [removedFileUrls, setRemovedFileUrls] = useState<string[]>([]);
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [isLessonPlanModalOpen, setIsLessonPlanModalOpen] = useState(false);
   const [lessonPlanContent, setLessonPlanContent] = useState(LESSON_PLAN_DEFAULT_TEMPLATE);
@@ -256,6 +257,7 @@ function MyClassesContent() {
     setFeedbackFields({});
     setPhotoUrls([]);
     setFileUrls([]);
+    setRemovedFileUrls([]);
 
     setIsLessonPlanModalOpen(false);
     setLessonPlanContent(LESSON_PLAN_DEFAULT_TEMPLATE);
@@ -293,6 +295,7 @@ function MyClassesContent() {
       setFeedbackFields({});
       setPhotoUrls([]);
       setFileUrls([]);
+      setRemovedFileUrls([]);
       setIsModalOpen(true);
       return;
     }
@@ -322,6 +325,7 @@ function MyClassesContent() {
     setFeedbackFields(fieldsForModal);
     setPhotoUrls(Array.isArray(session.photo_url) ? session.photo_url : []);
     setFileUrls(isCenterSession ? centerUrlsForModal : urls);
+    setRemovedFileUrls([]);
     setIsModalOpen(true);
   };
 
@@ -373,8 +377,8 @@ function MyClassesContent() {
           sessionId: selectedEvent.id,
           feedbackFields,
           photoUrls,
-          fileUrls:
-            isCenterType && fileUrls.length > 0 ? [fileUrls[fileUrls.length - 1]!] : fileUrls,
+          fileUrls,
+          removedFileUrls,
         }),
       });
       const payload = (await res.json().catch(() => ({}))) as { error?: string; ok?: boolean };
@@ -744,8 +748,7 @@ function MyClassesContent() {
                       <Paperclip size={14} /> Center Documents
                     </div>
                     <p className="text-[11px] leading-relaxed text-slate-600 font-semibold rounded-xl bg-white/80 border border-blue-100/80 px-3 py-2.5">
-                      센터 피드백은 <span className="text-blue-700">파일 1개만</span> 저장됩니다. 새 파일을 올리면 이전 첨부는{' '}
-                      <span className="text-blue-700">자동으로 교체</span>되며, 저장소에서 이전 파일도 삭제됩니다.
+                      센터 피드백은 <span className="text-blue-700">수업당 파일 2개까지</span> 저장됩니다.
                       워드·PPT·엑셀·한글(hwpx) 문서에 들어 있는 사진도 업로드 시 자동으로 줄입니다.
                     </p>
                     <div className="grid gap-2">
@@ -765,6 +768,7 @@ function MyClassesContent() {
                                 }
                               }
                               setFileUrls((prev) => prev.filter((_, idx) => idx !== i));
+                              setRemovedFileUrls((prev) => (prev.includes(url) ? prev : [...prev, url]));
                               setFeedbackFields((prev) => ({
                                 ...prev,
                                 center_document_names: Array.isArray(prev.center_document_names)
@@ -780,11 +784,11 @@ function MyClassesContent() {
                       ))}
                       <label className="flex flex-col items-center justify-center gap-1 p-4 bg-white border-2 border-dashed border-blue-200 rounded-xl text-blue-500 hover:bg-blue-50 cursor-pointer transition-all active:scale-[0.99]">
                         <span className="text-xs font-black uppercase tracking-widest">
-                          {fileUrls.length > 0 ? '파일 바꾸기' : '+ 파일 올리기'}
+                          {fileUrls.length > 0 ? '+ 파일 추가하기' : '+ 파일 올리기'}
                         </span>
-                        {fileUrls.length > 0 ? (
+                        {fileUrls.length > 0 && fileUrls.length < 2 ? (
                           <span className="text-[10px] font-bold text-slate-400 normal-case tracking-normal">
-                            새 파일 선택 시 이전 첨부가 교체됩니다
+                            파일을 하나 더 올릴 수 있습니다
                           </span>
                         ) : null}
                         <input
