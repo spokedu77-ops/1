@@ -103,7 +103,7 @@ export function mergeHomeCaseCards(resolved: HomeFieldRecordCardWithThumbnail[])
 function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
   return (
     <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block h-full ${homeFocusRing}`}>
-      <article className={`${marketingCardStatic} grid h-full grid-rows-[11.5rem_1fr] overflow-hidden sm:grid-rows-[13rem_1fr]`}>
+      <article className={`${marketingCardStatic} grid h-full grid-rows-[13rem_1fr] overflow-hidden sm:grid-rows-[15rem_1fr]`}>
         <div className="relative min-h-0 overflow-hidden">
           <CaseMedia card={card} priority={priority} />
           <div
@@ -113,7 +113,7 @@ function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: bool
         </div>
         <div className="grid grid-rows-[auto_auto_auto_1fr_auto] gap-0 p-5 sm:p-6">
           <p className={`${homeCaption} font-semibold text-[#245DFF]`}>{card.programType}</p>
-          <h3 className={`mt-2 line-clamp-1 text-lg font-bold leading-snug text-[#0B1F46] sm:text-xl ${koreanText}`}>
+          <h3 className={`mt-2 line-clamp-1 text-xl font-extrabold leading-snug text-[#0B1F46] sm:text-[1.375rem] ${koreanText}`}>
             {card.programName}
           </h3>
           <p className={`mt-1.5 line-clamp-1 text-sm font-semibold text-slate-700 ${koreanText}`}>{card.venue}</p>

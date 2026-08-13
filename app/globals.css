@@ -453,8 +453,9 @@ body {
 /** Public Marketing 전용 foundation. 제품 UI의 --spm-*와 분리한다. */
 .spokedu-marketing {
   --spokedu-marketing-font-body: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
-  --spokedu-marketing-font-display: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --spokedu-marketing-font-display: "Cafe24SsurroundAir", "Pretendard Variable", Pretendard, "Noto Sans KR", system-ui, sans-serif;
   --spokedu-marketing-font-accent: "Cafe24SsurroundAir", "Pretendard Variable", Pretendard, "Noto Sans KR", system-ui, sans-serif;
+  --spokedu-public-header-height: 3.5rem;
   --spokedu-marketing-content-max: 77.5rem;
   --spokedu-marketing-gutter-mobile: 1.25rem;
   --spokedu-marketing-gutter-wide: 3rem;
@@ -467,6 +468,12 @@ body {
   --spokedu-marketing-shadow-media: 0 24px 64px rgba(15, 33, 70, 0.14);
   --spokedu-marketing-shadow-object: 0 30px 78px rgba(15, 33, 70, 0.18);
   font-family: var(--spokedu-marketing-font-body);
+}
+
+@media (min-width: 1024px) {
+  .spokedu-marketing {
+    --spokedu-public-header-height: 4.5rem;
+  }
 }
 
 /** SPOKEDU 마케팅 — 섹션 콘텐츠 정렬 (clamp padding은 Tailwind arbitrary px 미지원 대비) */

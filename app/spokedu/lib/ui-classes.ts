@@ -279,13 +279,13 @@ export const landingHeroCinematicCopy = homeHeroFullBleedCopy;
  * - 기존 home, landing, site prefix export는 현재 화면 호환을 위해 유지한다.
  */
 export const marketingHeroDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-black tracking-[-0.045em] ${koreanText} text-[2.6rem] leading-[1.08] min-[390px]:text-[2.85rem] sm:text-[3.5rem] md:text-[4rem] lg:text-[4.5rem] xl:text-[4.75rem]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-bold tracking-[-0.04em] [font-synthesis:weight] ${koreanText} text-[2.75rem] leading-[1.08] min-[390px]:text-[3rem] sm:text-[3.75rem] md:text-[4.25rem] lg:text-[4.5rem] xl:text-[4.75rem]`;
 
 export const marketingSectionDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-extrabold tracking-[-0.04em] ${koreanText} text-[2.125rem] leading-[1.16] sm:text-[2.55rem] md:text-[3rem] lg:text-[3.45rem]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-bold tracking-[-0.03em] [font-synthesis:weight] ${koreanText} text-[2.125rem] leading-[1.16] sm:text-[2.625rem] md:text-[3rem] lg:text-[3.5rem]`;
 
 export const marketingCompactDisplay =
-  `[font-family:var(--spokedu-marketing-font-accent)] font-normal tracking-[-0.03em] ${koreanText} text-[1.75rem] leading-[1.16] sm:text-[2.1rem] lg:text-[2.75rem]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-bold tracking-[-0.03em] [font-synthesis:weight] ${koreanText} text-[1.75rem] leading-[1.16] sm:text-[2.1rem] lg:text-[2.75rem]`;
 
 export const marketingMetricDisplay =
   '[font-family:var(--spokedu-marketing-font-display)] text-[2.5rem] font-normal leading-none tracking-[-0.035em] sm:text-[3.25rem] lg:text-[4rem]';

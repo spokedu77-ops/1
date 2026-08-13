@@ -120,9 +120,9 @@ export const curriculumPage = {
         { label: 'CLASS TOOLS', title: '현장 도구', body: '진행과 기록을 한 흐름으로 연결' },
       ] as const,
       visual: {
-        src: '/images/spokedu/subscription/product-library.png',
-        alt: '스포키듀 구독시스템의 실제 수업 라이브러리 검색과 조건 필터 화면',
-        caption: '실제 수업 라이브러리 화면',
+        src: '/images/spokedu/subscription/product-lesson.png',
+        alt: '스포키듀 구독시스템의 실제 수업 상세와 현장 진행 화면',
+        caption: '수업 준비와 현장 진행을 잇는 실제 제품 화면',
       },
     },
     how: {
@@ -159,7 +159,7 @@ export const curriculumPage = {
     spomove: {
       id: 'spomove',
       eyebrow: 'SPOMOVE',
-      title: 'CHECK → DECIDE → MOVE',
+      title: '화면을 확인하고\n판단하고 움직입니다.',
       lead: '화면의 시각 정보를 확인하고 규칙에 따라 판단한 뒤 실제 움직임으로 반응합니다.',
       relation: 'SPOMOVE는 구독시스템 전체가 아니라 Premium에서 연결되는 핵심 콘텐츠 영역입니다.',
       spomat: 'SPOMAT은 화면과 실제 공간을 연결하는 실행 도구입니다.',
@@ -172,9 +172,9 @@ export const curriculumPage = {
       lead: '각 도구를 따로 찾는 대신 수업 운영 흐름 안에서 바로 꺼내 씁니다.',
       items: SUBSCRIPTION_TOOLS,
       visual: {
-        src: '/images/spokedu/subscription/product-dashboard.png',
-        alt: '실제 구독시스템의 오늘 수업 운영 화면',
-        caption: '수업 선택과 화면 활동, 도구와 기록으로 이어지는 실제 제품 화면',
+        src: '/images/spokedu/subscription/product-lesson.png',
+        alt: '실제 수업 화면의 진행, 빠른 기록과 안내문 도구',
+        caption: '수업 중 바로 사용하는 진행·기록 도구',
       },
     },
     records: {
@@ -189,7 +189,7 @@ export const curriculumPage = {
       ] as const,
       results: ['학생 이력 확인', '다음 수업 판단', '안내문 작성 근거'] as const,
       visuals: [
-        { src: '/images/spokedu/subscription/product-dashboard.png', alt: '실제 구독시스템의 오늘 수업 운영 화면', caption: '수업 선택과 현장 진행' },
+        { src: '/images/spokedu/subscription/product-library.png', alt: '실제 수업 라이브러리의 검색과 수업 선택 화면', caption: '수업 선택' },
         { src: '/images/spokedu/subscription/product-lesson.png', alt: '실제 수업자료 상세 화면의 준비와 활동 방법', caption: '수업 기준과 기록 연결' },
       ] as const,
     },

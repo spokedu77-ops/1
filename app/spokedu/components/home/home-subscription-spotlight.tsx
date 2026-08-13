@@ -35,7 +35,7 @@ export function HomeSubscriptionSpotlight() {
           </ol>
           <TrackedLink href={action.href} trackLabel={action.trackLabel} className={`${marketingButtonPrimary} mt-8`}>{action.ctaLabel}</TrackedLink>
         </div>
-        <ProductVisualFrame {...source.tools.visual} emphasis="feature" />
+        <ProductVisualFrame {...source.tools.visual} emphasis="feature" aspectClassName="aspect-[16/9] min-h-[20rem]" />
       </div>
     </section>
   );

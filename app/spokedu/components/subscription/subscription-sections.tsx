@@ -95,7 +95,7 @@ export function SubscriptionHero({ reducedMotion }: { reducedMotion: boolean | n
   return (
     <section
       id={hero.id}
-      className={`${marketingLightHeroSurface} relative flex min-h-[min(52rem,calc(100svh-1rem))] scroll-mt-20 items-center overflow-hidden pb-20 pt-[calc(3.5rem+env(safe-area-inset-top,0px)+4rem)] sm:pb-24 sm:pt-[calc(3.75rem+env(safe-area-inset-top,0px)+5rem)] lg:pb-24 lg:pt-[calc(3.75rem+env(safe-area-inset-top,0px)+4.5rem)]`}
+      className={`${marketingLightHeroSurface} relative flex min-h-[min(58rem,calc(100svh+5rem))] scroll-mt-20 items-center overflow-hidden pb-20 pt-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px)+4rem)] sm:pb-24 sm:pt-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px)+5rem)] lg:pb-24 lg:pt-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px)+4.5rem)]`}
     >
       <div className="pointer-events-none absolute -right-32 top-20 hidden h-[34rem] w-[34rem] rounded-full border border-[#245DFF]/10 lg:block" aria-hidden />
       <div className="pointer-events-none absolute bottom-[-12rem] left-[42%] h-[24rem] w-[24rem] rounded-full bg-[#245DFF]/8 blur-3xl" aria-hidden />
@@ -134,16 +134,16 @@ export function SubscriptionHero({ reducedMotion }: { reducedMotion: boolean | n
           </div>
           <ul className="mt-8 grid gap-3 sm:grid-cols-3" aria-label="구독시스템 주요 구성">
             {hero.signals.map((signal, index) => (
-              <li key={signal.label} className="relative overflow-hidden rounded-2xl border border-[#DFE6F1] bg-white/80 px-4 pb-4 pt-5 shadow-[var(--spokedu-marketing-shadow-subtle)] backdrop-blur-sm">
+              <li key={signal.label} className="relative flex min-h-[8.25rem] flex-col overflow-hidden rounded-2xl border border-[#DFE6F1] bg-white/85 px-[1.125rem] pb-5 pt-6 shadow-[var(--spokedu-marketing-shadow-subtle)] backdrop-blur-sm">
                 <span className={`absolute inset-x-0 top-0 h-1 ${index === 0 ? 'bg-gradient-to-r from-[#245DFF] to-[#0CA678]' : index === 1 ? 'bg-gradient-to-r from-[#6D5DFB] to-[#245DFF]' : 'bg-gradient-to-r from-[#0CA678] to-[#62C5A6]'}`} aria-hidden />
                 <span className="text-[10px] font-extrabold tracking-[0.1em] text-[#728097]">{signal.label}</span>
-                <strong className="mt-1 block text-sm text-[#0B1F46]">{signal.title}</strong>
-                <span className="mt-1 block text-xs leading-5 text-[#6D7B90]">{signal.body}</span>
+                <strong className="mt-2 block text-lg font-extrabold text-[#0B1F46]">{signal.title}</strong>
+                <span className="mt-auto block pt-3 text-[13px] leading-5 text-[#6D7B90]">{signal.body}</span>
               </li>
             ))}
           </ul>
         </motion.div>
-        <ProductVisualFrame {...hero.visual} priority emphasis="hero" className="lg:rotate-[0.7deg] motion-reduce:rotate-0" aspectClassName="aspect-[16/10]" />
+        <ProductVisualFrame {...hero.visual} priority emphasis="hero" className="lg:rotate-[0.7deg] motion-reduce:rotate-0" aspectClassName="min-h-[22rem] sm:min-h-[28rem] lg:min-h-0" />
       </div>
     </section>
   );
@@ -160,13 +160,13 @@ export function SubscriptionHowItWorks() {
           {how.pillars.map((item, index) => {
             const Icon = pillarIcons[index];
             return (
-              <li key={item.label} className={`${marketingCardStatic} ${marketingCardPadding} flex min-h-[15rem] flex-col border-[#D8E1EE]`}>
+              <li key={item.label} className={`${marketingCardStatic} flex min-h-[17.5rem] flex-col border-[#D8E1EE] px-6 py-7 lg:min-h-[18.5rem] lg:px-[1.625rem] lg:py-[1.875rem]`}>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="grid h-11 w-11 place-items-center rounded-[0.875rem] bg-[#EAF1FF]"><Icon aria-hidden size={21} className="[color:var(--spokedu-marketing-color-blue)]" /></span>
+                  <span className="grid h-14 w-14 place-items-center rounded-[1rem] bg-[#EAF1FF]"><Icon aria-hidden size={26} className="[color:var(--spokedu-marketing-color-blue)]" /></span>
                   <span className={marketingCaption}>{item.number} · {item.label}</span>
                 </div>
-                <h3 className="mt-8 text-xl font-extrabold [color:var(--spokedu-marketing-color-navy)]">{item.title}</h3>
-                <p className={`${marketingCaption} mt-3 leading-6`}>{item.body}</p>
+                <h3 className="mt-8 text-[1.375rem] font-extrabold leading-tight [color:var(--spokedu-marketing-color-navy)] lg:text-2xl">{item.title}</h3>
+                <p className="mt-4 text-[14px] font-medium leading-[1.75] [color:var(--spokedu-marketing-color-muted)]">{item.body}</p>
                 <span className="mt-auto pt-6 text-xs font-bold text-[#245DFF]">{String(index + 1).padStart(2, '0')}</span>
               </li>
             );
@@ -174,10 +174,11 @@ export function SubscriptionHowItWorks() {
         </ul>
         <ol className="mt-10 grid overflow-hidden rounded-[1.75rem] border border-[#D8E1EE] bg-white shadow-[var(--spokedu-marketing-shadow-subtle)] sm:grid-cols-2 lg:grid-cols-5" aria-label="수업 운영 5단계">
           {flow.map((step, index) => (
-            <li key={step.title} className="relative min-h-[9rem] border-b border-[#E3E9F2] px-5 py-5 last:border-b-0 sm:[&:nth-child(odd)]:border-r lg:border-b-0 lg:border-r lg:last:border-r-0 lg:[&:nth-child(odd)]:border-r">
-              <span className={marketingCaption}>{String(index + 1).padStart(2, '0')} · {step.phase}</span>
-              <h3 className="mt-3 font-extrabold [color:var(--spokedu-marketing-color-navy)]">{step.title}</h3>
-              <p className="mt-2 text-xs leading-5 text-[#728097]">{step.body}</p>
+            <li key={step.title} className="relative min-h-[13rem] border-b border-[#E3E9F2] px-6 py-7 last:border-b-0 sm:[&:nth-child(odd)]:border-r lg:border-b-0 lg:border-r lg:last:border-r-0 lg:[&:nth-child(odd)]:border-r">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EAF1FF] text-sm font-extrabold text-[#245DFF]">{String(index + 1).padStart(2, '0')}</span>
+              <span className="mt-4 block text-xs font-bold text-[#728097]">{step.phase}</span>
+              <h3 className="mt-2 text-lg font-extrabold [color:var(--spokedu-marketing-color-navy)] lg:text-xl">{step.title}</h3>
+              <p className="mt-3 text-[13px] leading-[1.65] text-[#728097]">{step.body}</p>
               {index < flow.length - 1 ? <ArrowRight aria-hidden className="absolute -right-2.5 top-1/2 z-10 hidden -translate-y-1/2 rounded-full bg-white p-0.5 [color:var(--spokedu-marketing-color-blue)] lg:block" size={20} /> : null}
             </li>
           ))}
@@ -207,14 +208,14 @@ export function SubscriptionLibrary() {
     <section id={library.id} className={`${marketingBandWhite} ${marketingSectionPad} scroll-mt-20`}>
       <div className={siteContainer}>
         <SectionHeading {...library} />
-        <div className="mt-12 rounded-[2rem] border border-[#DFE6F1] bg-[linear-gradient(135deg,#F5F8FF_0%,#FFFFFF_58%,#EDF3FF_100%)] p-5 shadow-[var(--spokedu-marketing-shadow-media)] sm:p-8 lg:grid lg:grid-cols-[1.18fr_0.82fr] lg:items-center lg:gap-10 lg:p-10">
-          <ProductVisualFrame {...library.visuals[0]} emphasis="feature" />
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:mt-0 lg:grid-cols-1">
+        <div className="mt-12 rounded-[2rem] border border-[#DFE6F1] bg-[linear-gradient(135deg,#F5F8FF_0%,#FFFFFF_58%,#EDF3FF_100%)] p-5 shadow-[var(--spokedu-marketing-shadow-media)] sm:p-8 lg:p-10">
+          <ProductVisualFrame {...library.visuals[1]} emphasis="feature" aspectClassName="aspect-[2.6/1] min-h-[17rem]" />
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <InfoList title="수업을 찾을 때" items={library.find} icon={<Search aria-hidden size={19} />} />
             <InfoList title="현장에서 진행할 때" items={library.run} icon={<BookOpen aria-hidden size={19} />} />
           </div>
         </div>
-        <div className="mt-10 grid items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="mt-10 grid items-center gap-8 lg:grid-cols-[0.72fr_1.28fr]">
           <article className={`${marketingCardStatic} ${marketingCardPadding}`}>
             <p className={marketingEyebrow}>대표 수업 예시</p>
             <h3 className={`${marketingCompactDisplay} mt-3 [color:var(--spokedu-marketing-color-navy)]`}>{library.example.title}</h3>
@@ -224,7 +225,7 @@ export function SubscriptionLibrary() {
             </dl>
             <p className={`${marketingBody} mt-6 border-t border-[var(--spokedu-marketing-color-border)] pt-5`}>{library.example.proof}</p>
           </article>
-          <ProductVisualFrame {...library.visuals[1]} emphasis="feature" />
+          <ProductVisualFrame {...library.visuals[0]} emphasis="feature" aspectClassName="aspect-[16/9]" />
         </div>
       </div>
     </section>
@@ -247,12 +248,12 @@ export function SubscriptionSpomove() {
   return (
     <section id={spomove.id} className={`${marketingBandNavy} ${marketingSectionPad} relative scroll-mt-20 overflow-hidden`}>
       <div className={siteContainer}>
-        <div className="grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+        <div className="grid items-center gap-12 lg:grid-cols-[0.44fr_0.56fr] lg:gap-16">
           <div>
             <SectionHeading {...spomove} dark />
             <p className="mt-7 text-base leading-7 text-white/72">{spomove.relation}</p>
             <p className="mt-3 text-base leading-7 text-white/72">{spomove.spomat}</p>
-            <p className="mt-8 text-[clamp(1.75rem,4vw,3.25rem)] font-black leading-none tracking-[-0.045em] text-white">CHECK <span className="text-[#7FA6FF]">→</span> DECIDE <span className="text-[#7FA6FF]">→</span> MOVE</p>
+            <p className="mt-8 text-[clamp(1.5rem,3vw,2.5rem)] font-black leading-none tracking-[-0.04em] text-white">CHECK <span className="text-[#7FA6FF]">→</span> DECIDE <span className="text-[#7FA6FF]">→</span> MOVE</p>
             <ul className="mt-7 flex flex-wrap gap-2" aria-label="SPOMOVE 시리즈">
               {spomove.series.map((series) => <li key={series} className="rounded-full border border-white/18 bg-white/8 px-3 py-2 text-sm font-semibold text-white/88">{series}</li>)}
             </ul>
@@ -285,11 +286,11 @@ export function SubscriptionTools() {
       <div className={siteContainer}>
         <SectionHeading {...tools} />
         <div className="mt-12">
-          <ProductVisualFrame {...tools.visual} emphasis="feature" aspectClassName="aspect-[16/7]" />
+          <ProductVisualFrame {...tools.visual} emphasis="feature" aspectClassName="aspect-[16/9]" />
           <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {tools.items.map((tool) => {
               const Icon = toolIcons[tool.id];
-              return <li key={tool.id} className={`${marketingCardStatic} flex min-h-[10.5rem] flex-col p-5 sm:p-6`}><span className="grid h-10 w-10 place-items-center rounded-[0.875rem] bg-[#EAF1FF]"><Icon aria-hidden size={20} className="[color:var(--spokedu-marketing-color-blue)]" /></span><h3 className="mt-5 font-extrabold [color:var(--spokedu-marketing-color-navy)]">{tool.title}</h3><p className={`${marketingCaption} mt-2 leading-6`}>{tool.body}</p></li>;
+              return <li key={tool.id} className={`${marketingCardStatic} flex min-h-[11.5rem] flex-col p-5 sm:p-6`}><span className="grid h-12 w-12 place-items-center rounded-[0.875rem] bg-[#EAF1FF]"><Icon aria-hidden size={23} className="[color:var(--spokedu-marketing-color-blue)]" /></span><h3 className="mt-5 text-lg font-extrabold [color:var(--spokedu-marketing-color-navy)]">{tool.title}</h3><p className={`${marketingCaption} mt-2 leading-6`}>{tool.body}</p></li>;
             })}
           </ul>
         </div>
@@ -304,15 +305,16 @@ export function SubscriptionRecords() {
     <section id={records.id} className={`${marketingBandSoft} ${marketingSectionPad} scroll-mt-20`}>
       <div className={siteContainer}>
         <SectionHeading {...records} />
+        <div className="mt-12 grid items-start gap-6 lg:grid-cols-[1.35fr_0.65fr]">
+          <ProductVisualFrame {...records.visuals[1]} emphasis="feature" aspectClassName="aspect-[16/9]" />
+          <div className="grid gap-5">
+            {records.types.map((type) => <div key={type.eyebrow} className={`${marketingCardStatic} p-6`}><p className={marketingEyebrow}>{type.eyebrow}</p><h3 className="mt-3 text-xl font-extrabold [color:var(--spokedu-marketing-color-navy)]">{type.title}</h3><p className={`${marketingBody} mt-3`}>{type.body}</p></div>)}
+            <ProductVisualFrame {...records.visuals[0]} emphasis="compact" aspectClassName="aspect-[2.6/1]" />
+          </div>
+        </div>
         <ol className="mt-10 grid overflow-hidden rounded-[1.375rem] border border-[#D8E1EE] bg-white shadow-[var(--spokedu-marketing-shadow-subtle)] sm:grid-cols-2 lg:grid-cols-4">
-          {records.steps.map((step, index) => <li key={step} className="border-b border-[#E3E9F2] p-5 last:border-b-0 sm:[&:nth-child(odd)]:border-r lg:border-b-0 lg:border-r lg:last:border-r-0"><span className={marketingCaption}>{String(index + 1).padStart(2, '0')}</span><h3 className="mt-3 font-extrabold [color:var(--spokedu-marketing-color-navy)]">{step}</h3></li>)}
+          {records.steps.map((step, index) => <li key={step} className="min-h-[9.5rem] border-b border-[#E3E9F2] p-6 last:border-b-0 sm:[&:nth-child(odd)]:border-r lg:border-b-0 lg:border-r lg:last:border-r-0"><span className="grid h-9 w-9 place-items-center rounded-full bg-[#EAF1FF] text-xs font-extrabold text-[#245DFF]">{String(index + 1).padStart(2, '0')}</span><h3 className="mt-4 text-lg font-extrabold [color:var(--spokedu-marketing-color-navy)]">{step}</h3></li>)}
         </ol>
-        <div className="mt-8 grid items-start gap-6 lg:grid-cols-2">
-          {records.visuals.map((visual) => <ProductVisualFrame key={visual.src} {...visual} emphasis="compact" aspectClassName="aspect-[16/9]" />)}
-        </div>
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          {records.types.map((type) => <div key={type.eyebrow} className={`${marketingCardStatic} ${marketingCardPadding}`}><p className={marketingEyebrow}>{type.eyebrow}</p><h3 className={`${marketingCompactDisplay} mt-3 [color:var(--spokedu-marketing-color-navy)]`}>{type.title}</h3><p className={`${marketingBody} mt-4`}>{type.body}</p></div>)}
-        </div>
         <ul className="mt-8 grid gap-3 sm:grid-cols-3">
           {records.results.map((result) => <li key={result} className="flex items-center gap-3 rounded-[var(--spokedu-marketing-radius-small)] bg-[var(--spokedu-marketing-color-navy)] px-5 py-4 text-sm font-semibold text-white"><Check aria-hidden size={17} className="[color:var(--spokedu-marketing-color-dark-eyebrow)]" />{result}</li>)}
         </ul>
@@ -354,9 +356,9 @@ export function SubscriptionPlans({
             return (
               <li key={plan.code} data-plan-code={plan.code} data-purchasable={String(plan.purchasable)} className={`${marketingCardStatic} ${marketingCardPadding} flex min-h-[31rem] flex-col ${isPremium ? 'border-2 border-[var(--spokedu-marketing-color-blue)] shadow-[var(--spokedu-marketing-shadow-interactive)]' : ''}`}>
                 <div className="flex items-center justify-between gap-3"><p className={marketingEyebrow}>{plan.billingCycleLabel}</p>{isPremium ? <span className="rounded-full bg-[var(--spokedu-marketing-color-soft)] px-3 py-1 text-xs font-bold [color:var(--spokedu-marketing-color-blue)]">SPOMOVE</span> : null}</div>
-                <h3 className={`${marketingCompactDisplay} mt-4 [color:var(--spokedu-marketing-color-navy)]`}>{plan.displayName}</h3>
-                <p className="mt-3 min-h-7 text-lg font-bold [color:var(--spokedu-marketing-color-navy)]">{plan.priceLabel ?? plan.billingCycleLabel}</p>
-                <ul className="mt-6 flex-1 space-y-3">{plan.featureSummary.map((feature) => <li key={feature} className={`${marketingBody} flex gap-2`}><Check aria-hidden size={17} className="mt-1 shrink-0 [color:var(--spokedu-marketing-color-blue)]" />{feature}</li>)}</ul>
+                <h3 className="mt-4 text-[1.75rem] font-extrabold leading-tight [color:var(--spokedu-marketing-color-navy)] lg:text-[2rem]">{plan.displayName}</h3>
+                <p className="mt-3 min-h-7 text-xl font-bold [color:var(--spokedu-marketing-color-navy)]">{plan.priceLabel ?? plan.billingCycleLabel}</p>
+                <ul className="mt-6 flex-1 space-y-3">{plan.featureSummary.map((feature) => <li key={feature} className="flex gap-2 text-[15px] leading-[1.7] [color:var(--spokedu-marketing-color-body)]"><Check aria-hidden size={17} className="mt-1 shrink-0 [color:var(--spokedu-marketing-color-blue)]" />{feature}</li>)}</ul>
                 <TrackedLink href={href} trackLabel={`curriculum-plan-${plan.code}`} commercialRoute="curriculum" ctaIntentId={plan.code === 'free' ? 'free_start' : 'master_handoff'} className={`${isPremium ? marketingButtonPrimary : marketingButtonSecondary} mt-7 w-full`}>
                   {plan.code === 'free' ? '무료로 시작하기' : `${plan.displayName} 시작하기`}
                 </TrackedLink>
@@ -381,7 +383,7 @@ export function SubscriptionPlans({
 
         <div className="mt-16 grid gap-10 lg:grid-cols-[0.72fr_1.28fr]">
           <div><p className={marketingEyebrow}>FAQ</p><h2 className={`${marketingSectionDisplay} mt-3 [color:var(--spokedu-marketing-color-navy)]`}>자주 묻는 질문</h2></div>
-          <div className="divide-y divide-[var(--spokedu-marketing-color-border)] border-y border-[var(--spokedu-marketing-color-border)]">{plans.faq.map((item) => <details key={item.q} className="group"><summary className="flex min-h-16 list-none items-center justify-between gap-5 py-4 font-bold [color:var(--spokedu-marketing-color-navy)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spokedu-marketing-color-blue)]">{item.q}<span aria-hidden className="text-xl font-normal [color:var(--spokedu-marketing-color-blue)] group-open:rotate-45">+</span></summary><p className={`${marketingBody} pb-5 pr-8`}>{item.a}</p></details>)}</div>
+          <div className="divide-y divide-[var(--spokedu-marketing-color-border)] border-y border-[var(--spokedu-marketing-color-border)]">{plans.faq.map((item) => <details key={item.q} className="group"><summary className="flex min-h-[4.75rem] list-none items-center justify-between gap-5 py-5 text-[17px] font-bold [color:var(--spokedu-marketing-color-navy)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spokedu-marketing-color-blue)]">{item.q}<span aria-hidden className="text-xl font-normal [color:var(--spokedu-marketing-color-blue)] group-open:rotate-45">+</span></summary><p className={`${marketingBody} pb-6 pr-8`}>{item.a}</p></details>)}</div>
         </div>
       </div>
       <div className={`${marketingBandNavy} ${marketingSectionPadCompact} relative overflow-hidden`}>

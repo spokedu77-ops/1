@@ -5,8 +5,6 @@ import { homePage, type HomePillarItem } from '../../data/home-page';
 import {
   marketingBandSoft,
   marketingButtonTextAction,
-  marketingCardInteractive,
-  marketingCardPadding,
   marketingEyebrow,
   marketingSectionDisplay,
   marketingSectionInner,
@@ -14,6 +12,7 @@ import {
   marketingSectionPad,
   homeSectionScrollMt,
 } from '../../lib/ui-classes';
+import { ProductVisualFrame } from '../product-visual-frame';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
 
@@ -26,8 +25,8 @@ export function HomeServices() {
           <h2 id="home-paths-heading" className={`${marketingSectionDisplay} whitespace-pre-line`}>{homePage.pillars.title}</h2>
           <p className={`${marketingSectionLead} lg:justify-self-end`}>{homePage.pillars.lead}</p>
         </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {homePage.pillars.items.map((item, index) => <PathCard key={item.id} item={item} index={index} />)}
+        <div className="mt-10 grid gap-5 min-[820px]:grid-cols-12">
+          {homePage.pillars.items.map((item, index) => <PathComposition key={item.id} item={item} index={index} />)}
         </div>
         <p className="mt-7 text-sm font-semibold text-[#536279]">{homePage.pillars.relationLine}</p>
       </div>
@@ -35,24 +34,41 @@ export function HomeServices() {
   );
 }
 
-function PathCard({ item, index }: { item: HomePillarItem; index: number }) {
+function PathComposition({ item, index }: { item: HomePillarItem; index: number }) {
+  if (index === 2) {
+    return (
+      <article className="relative overflow-hidden rounded-[2rem] border border-[#D8E1EE] bg-white p-5 shadow-[var(--spokedu-marketing-shadow-media)] sm:p-7 min-[820px]:col-span-12 lg:grid lg:grid-cols-[0.72fr_1.28fr] lg:items-center lg:gap-10 lg:p-10">
+        <PathCopy item={item} index={index} className="pb-6 lg:pb-0" />
+        <ProductVisualFrame src={item.visual.src} alt={item.visual.alt} emphasis="feature" aspectClassName="aspect-[2.6/1] min-h-[16rem]" />
+      </article>
+    );
+  }
+
+  const education = index === 0;
   return (
-    <article className={`${marketingCardInteractive} group flex h-full flex-col overflow-hidden border-[#D8E1EE]`}>
-      <div className="relative aspect-[16/9] overflow-hidden border-b border-[#DFE6F1] bg-[#EAF1FF]">
-        <Image src={item.visual.src} alt={item.visual.alt} fill sizes="(min-width: 1024px) 31vw, (min-width: 640px) 48vw, 92vw" className={item.visual.fit === 'contain' ? 'object-contain p-3' : 'object-cover transition duration-500 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.03]'} />
-      </div>
-      <div className={`${marketingCardPadding} flex flex-1 flex-col`}>
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-xs font-extrabold text-[#245DFF]">0{index + 1}</span>
-          <span className="text-xs font-bold text-[#6D7B90]">{item.badge}</span>
-        </div>
-        <h3 className="mt-5 text-[1.75rem] font-black leading-none tracking-[-0.035em] text-[#0B1F46]">{item.title}</h3>
-        <p className="mt-3 text-[15px] font-medium leading-[1.7] text-[#536279]">{item.role}</p>
-        {item.relationNote ? <p className="mt-3 text-xs font-bold text-[#245DFF]">{item.relationNote}</p> : null}
-        <TrackedLink href={item.href} trackLabel={item.trackLabel} className={`${marketingButtonTextAction} mt-auto pt-5`}>
-          {item.ctaLabel}<HomeChevron />
-        </TrackedLink>
+    <article className={`group relative min-h-[30rem] overflow-hidden rounded-[2rem] shadow-[var(--spokedu-marketing-shadow-media)] ${education ? 'bg-[#0B1F46] min-[820px]:col-span-7' : 'bg-[#07152F] min-[820px]:col-span-5'}`}>
+      <Image src={item.visual.src} alt={item.visual.alt} fill sizes={education ? '(min-width: 1024px) 58vw, 92vw' : '(min-width: 1024px) 42vw, 92vw'} className="object-cover transition duration-700 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.025]" />
+      <div className={`absolute inset-0 ${education ? 'bg-gradient-to-t from-[#07152F]/95 via-[#0B1F46]/35 to-transparent' : 'bg-gradient-to-t from-[#050D20]/95 via-[#07152F]/50 to-[#245DFF]/10'}`} aria-hidden />
+      <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+        <PathCopy item={item} index={index} dark />
       </div>
     </article>
+  );
+}
+
+function PathCopy({ item, index, dark = false, className = '' }: { item: HomePillarItem; index: number; dark?: boolean; className?: string }) {
+  return (
+    <div className={className}>
+      <div className="flex items-center justify-between gap-4">
+        <span className={`text-xs font-extrabold ${dark ? 'text-[#8EB0FF]' : 'text-[#245DFF]'}`}>0{index + 1}</span>
+        <span className={`text-xs font-bold ${dark ? 'text-white/70' : 'text-[#6D7B90]'}`}>{item.badge}</span>
+      </div>
+      <h3 className={`mt-5 text-[2rem] font-black leading-none tracking-[-0.035em] ${dark ? 'text-white' : 'text-[#0B1F46]'}`}>{item.title}</h3>
+      <p className={`mt-4 max-w-xl text-[15px] font-medium leading-[1.7] ${dark ? 'text-white/78' : 'text-[#536279]'}`}>{item.role}</p>
+      {item.relationNote ? <p className={`mt-3 text-xs font-bold ${dark ? 'text-[#9FC0FF]' : 'text-[#245DFF]'}`}>{item.relationNote}</p> : null}
+      <TrackedLink href={item.href} trackLabel={item.trackLabel} className={`${marketingButtonTextAction} mt-5 ${dark ? '!text-white' : ''}`}>
+        {item.ctaLabel}<HomeChevron />
+      </TrackedLink>
+    </div>
   );
 }

@@ -43,7 +43,7 @@ export function HomeSpomoveSpotlight() {
             <TrackedLink href={section.secondaryCta.href} trackLabel={section.secondaryCta.trackLabel} className={marketingButtonSecondaryOnDark}>{section.secondaryCta.label}</TrackedLink>
           </div>
         </div>
-        <MediaPanel media={HOME_MEDIA[section.mediaKey]} className={`${marketingMediaFrame} ${homePhotoGrade} aspect-[16/11] w-full border-white/10`} sizes="card1" objectFit="cover" />
+        <MediaPanel media={HOME_MEDIA[section.mediaKey]} className={`${marketingMediaFrame} ${homePhotoGrade} aspect-[16/11] min-h-[28rem] w-full border-white/10`} sizes="card1" objectFit="cover" />
       </div>
     </section>
   );

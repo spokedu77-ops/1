@@ -337,18 +337,18 @@ export function SiteHeader() {
             : 'border-b border-[#DCE3EE]/90 bg-white/92 shadow-[0_1px_0_rgba(15,33,70,0.04)] backdrop-blur-xl'
         }`}
       >
-        <div className={`${siteContainer} flex h-14 items-center justify-between gap-3 sm:h-[3.75rem]`}>
-          <BrandLogo onDark={onHero} scrollHomeOnClick size="sm" />
+        <div className={`${siteContainer} flex h-[var(--spokedu-public-header-height)] items-center justify-between gap-4`}>
+          <BrandLogo onDark={onHero} scrollHomeOnClick size="md" />
 
-          <nav className="hidden h-9 items-center gap-7 lg:flex" aria-label="주 메뉴">
+          <nav className="hidden h-10 items-center gap-8 lg:flex xl:gap-10" aria-label="주 메뉴">
             {siteNav.map(renderDesktopEntry)}
           </nav>
 
-          <div className="flex h-9 items-center gap-2">
+          <div className="flex h-10 items-center gap-2">
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={siteHeaderCta.trackLabel}
-              className={`hidden h-9 items-center justify-center rounded-full px-5 text-[13px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+              className={`hidden h-10 items-center justify-center rounded-xl px-5 text-[13px] font-bold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
                   : onHero
@@ -394,7 +394,7 @@ export function SiteHeader() {
       <div
         id="mobile-nav-panel"
         ref={mobilePanelRef}
-        className={`fixed inset-x-0 bottom-0 top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-50 sm:top-[calc(3.75rem+env(safe-area-inset-top,0px))] lg:hidden ${
+        className={`fixed inset-x-0 bottom-0 top-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px))] z-50 lg:hidden ${
           menuOpen ? '' : 'pointer-events-none invisible'
         }`}
         style={{ backgroundColor: menuOpen ? `${NAVY}f2` : undefined }}

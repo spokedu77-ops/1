@@ -326,8 +326,8 @@ export const homePage = {
         href: `${SPOKEDU_PATHS.subscription}`,
         trackLabel: 'cta-home-pillar-curriculum',
         visual: {
-          src: '/images/spokedu/subscription/product-dashboard.png',
-          alt: '스포키듀 구독시스템의 실제 수업 운영 화면',
+          src: '/images/spokedu/subscription/product-library.png',
+          alt: '스포키듀 구독시스템의 실제 수업 라이브러리 화면',
           fit: 'contain',
         },
       },

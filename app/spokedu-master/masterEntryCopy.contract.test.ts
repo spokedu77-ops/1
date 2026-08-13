@@ -27,8 +27,8 @@ describe('SPOKEDU MASTER entry copy alignment', () => {
     const publicContract = read('app/spokedu-master/lib/publicProductContract.ts');
 
     expect(curriculum).toContain('getPublicProductContract');
-    expect(curriculum).toContain('연간 결제');
-    expect(curriculum).toContain('현재 판매하지 않음');
+    expect(curriculum).toContain('publicProduct.productDisplayName');
+    expect(curriculum).toContain('publicProduct.handoff.landingHref');
     expect(curriculum).toContain('무료로 시작하기');
     expect(publicContract).toContain('annualSold: false');
     expect(publicContract).toContain("billingCycle: 'monthly'");
