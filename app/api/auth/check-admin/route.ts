@@ -13,10 +13,17 @@ export async function GET() {
       status === 401 ? 'no-session' :
       status === 403 ? 'forbidden' :
       'server-error';
-    return NextResponse.json(
+    const response = NextResponse.json(
       { admin: false, reason },
       { status: 200 } // layout은 항상 JSON을 파싱하므로 200으로 반환
     );
+    for (const cookie of auth.response.cookies.getAll()) {
+      response.cookies.set(cookie);
+    }
+    return response;
   }
-  return NextResponse.json({ admin: true });
+  return NextResponse.json({
+    admin: true,
+    scope: auth.email?.toLowerCase() === 'spomove@spokedu.com' ? 'spomove' : 'admin',
+  });
 }

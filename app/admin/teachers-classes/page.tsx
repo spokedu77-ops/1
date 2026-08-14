@@ -23,8 +23,6 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
-  ChevronUp,
   Calendar,
 } from 'lucide-react';
 import { SessionPhotosCleanupButton } from '@/app/components/admin/assets/SessionPhotosCleanupButton';
@@ -506,7 +504,7 @@ function FeedbackReviewTab({
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [duplicateCheck, setDuplicateCheck] = useState<{ isDuplicate: boolean; similarity?: number; matchedSession?: { title?: string; start_at?: string }; duplicate?: boolean; message?: string } | null>(null);
-  const [expandedCenterWeekdays, setExpandedCenterWeekdays] = useState<Set<number>>(new Set());
+  const [selectedCenterWeekday, setSelectedCenterWeekday] = useState<number | 'all'>('all');
   const feedbackDateInputRef = useRef<HTMLInputElement>(null);
 
   const fetchListData = useCallback(async () => {
@@ -690,22 +688,11 @@ function FeedbackReviewTab({
     if (feedbackScope !== 'center') {
       return filteredAndSearchedSessions.map((session) => ({ kind: 'session' as const, session }));
     }
-    return centerWeekdayGroups.flatMap((group) => [
-      { kind: 'weekday' as const, group },
-      ...(expandedCenterWeekdays.has(group.dayIndex)
-        ? group.sessions.map((session) => ({ kind: 'session' as const, session }))
-        : []),
-    ]);
-  }, [feedbackScope, filteredAndSearchedSessions, centerWeekdayGroups, expandedCenterWeekdays]);
-
-  const toggleCenterWeekday = (dayIndex: number) => {
-    setExpandedCenterWeekdays((previous) => {
-      const next = new Set(previous);
-      if (next.has(dayIndex)) next.delete(dayIndex);
-      else next.add(dayIndex);
-      return next;
-    });
-  };
+    const visible = selectedCenterWeekday === 'all'
+      ? filteredAndSearchedSessions
+      : centerWeekdayGroups[selectedCenterWeekday]?.sessions ?? [];
+    return visible.map((session) => ({ kind: 'session' as const, session }));
+  }, [feedbackScope, filteredAndSearchedSessions, centerWeekdayGroups, selectedCenterWeekday]);
 
   const toggleSelection = (sessionId: string) => {
     setSelectedSessions(prev => {
@@ -1042,33 +1029,27 @@ function FeedbackReviewTab({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="space-y-4">
+          {feedbackScope === 'center' && (
+            <div className="grid grid-cols-8 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+              {[{ dayIndex: 'all' as const, label: '전체', sessions: filteredAndSearchedSessions }, ...centerWeekdayGroups].map((item) => {
+                const selected = selectedCenterWeekday === item.dayIndex;
+                return (
+                  <button
+                    key={String(item.dayIndex)}
+                    type="button"
+                    onClick={() => setSelectedCenterWeekday(item.dayIndex)}
+                    className={`min-w-0 rounded-xl px-1 py-2.5 text-xs font-black transition-colors ${selected ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                  >
+                    <span className="block truncate">{item.label}</span>
+                    <span className={`mt-0.5 block text-[9px] ${selected ? 'text-slate-300' : 'text-slate-400'}`}>{item.sessions.length}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {feedbackListItems.map((item) => {
-            if (item.kind === 'weekday') {
-              const { group } = item;
-              const expanded = expandedCenterWeekdays.has(group.dayIndex);
-              return (
-                <button
-                  key={`weekday-${group.dayIndex}`}
-                  type="button"
-                  onClick={() => toggleCenterWeekday(group.dayIndex)}
-                  aria-expanded={expanded}
-                  className="col-span-full flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4 text-left shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-50/40"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-sm font-black text-white">{group.label}</span>
-                    <span>
-                      <span className="block text-sm font-black text-slate-900">{group.label}요일</span>
-                      <span className="block text-[11px] font-bold text-slate-400">{group.dateLabel}</span>
-                    </span>
-                  </span>
-                  <span className="flex items-center gap-3">
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{group.sessions.length}건</span>
-                    {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </span>
-                </button>
-              );
-            }
             const s = item.session;
             const sessionStatus = getSessionStatusForFeedbackReview(s);
             const rawStatus = s.status;
@@ -1177,6 +1158,7 @@ function FeedbackReviewTab({
               </div>
             );
           })}
+          </div>
         </div>
       )}
 

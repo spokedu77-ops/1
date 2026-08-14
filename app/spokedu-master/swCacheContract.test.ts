@@ -10,7 +10,9 @@ describe('SPOKEDU MASTER service worker cache contract', () => {
 
     expect(nextConfig).not.toContain('@ducanh2912/next-pwa');
     expect(nextConfig).not.toContain('withPWA');
-    expect(existsSync(join(process.cwd(), 'public/sw.js'))).toBe(false);
+    const rootWorker = read('public/sw.js');
+    expect(rootWorker).toContain('self.registration.unregister()');
+    expect(rootWorker).not.toContain('workbox');
     expect(existsSync(join(process.cwd(), 'public/workbox-7144475a.js'))).toBe(false);
   });
 

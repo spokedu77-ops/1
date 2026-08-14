@@ -9,5 +9,6 @@ export function isTeacherSpomovePath(pathname: string | null): boolean {
 }
 
 export function isTeacherMaterialsGatedPath(pathname: string | null): boolean {
-  return isTeacherCurriculumPath(pathname) || isTeacherSpomovePath(pathname);
+  if (pathname == null || !pathname.startsWith('/teacher')) return false;
+  return pathname !== '/teacher/report' && !pathname.startsWith('/teacher/report/');
 }

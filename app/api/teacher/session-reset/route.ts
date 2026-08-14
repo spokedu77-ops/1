@@ -3,6 +3,7 @@
  */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
@@ -15,6 +16,9 @@ export async function POST(req: Request) {
       data: { user },
     } = await serverSupabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!(await canAccessTeacherMaterials(user, serverSupabase))) {
+      return NextResponse.json({ error: 'Forbidden', reason: 'inactive_teacher' }, { status: 403 });
+    }
 
     const body = (await req.json().catch(() => ({}))) as Body;
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : '';
@@ -59,4 +63,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
-

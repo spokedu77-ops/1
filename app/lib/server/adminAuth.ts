@@ -12,6 +12,7 @@
  *   5. profiles.role = 'admin' | 'master'  (fallback)
  */
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import {
@@ -23,12 +24,31 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 
 // ─── 결과 타입 ────────────────────────────────────────────────────────────────
 
-export type AdminAuthOk = { ok: true; userId: string };
+export type AdminAuthOk = { ok: true; userId: string; email: string | null };
 export type AdminAuthFail = { ok: false; response: NextResponse };
 export type AdminAuthResult = AdminAuthOk | AdminAuthFail;
 
 const ADMIN_AUTH_CACHE_TTL_MS = 30_000;
 const adminDecisionCache = new Map<string, { isAdmin: boolean; expiresAt: number }>();
+
+function isInvalidRefreshTokenError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as { code?: unknown; message?: unknown };
+  return candidate.code === 'refresh_token_not_found'
+    || String(candidate.message ?? '').toLowerCase().includes('invalid refresh token');
+}
+
+async function unauthorizedResponse(clearSessionCookies = false): Promise<NextResponse> {
+  const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!clearSessionCookies) return response;
+
+  const cookieStore = await cookies();
+  for (const cookie of cookieStore.getAll()) {
+    if (!cookie.name.startsWith('sb-') || !cookie.name.includes('auth-token')) continue;
+    response.cookies.set(cookie.name, '', { path: '/', maxAge: 0 });
+  }
+  return response;
+}
 
 // ─── Service Role 클라이언트 (RLS 우회) ───────────────────────────────────────
 
@@ -125,17 +145,17 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
     const serverSupabase = await createServerSupabaseClient();
 
     // getUser: Auth 서버에 검증 요청 (getSession은 쿠키만 읽어 신뢰할 수 없음)
-    const { data: { user } } = await serverSupabase.auth.getUser();
+    const { data: { user }, error: userError } = await serverSupabase.auth.getUser();
     if (!user) {
       return {
         ok: false,
-        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+        response: await unauthorizedResponse(isInvalidRefreshTokenError(userError)),
       };
     }
 
     const admin = await isPlatformAdminUser(user, serverSupabase);
     if (admin) {
-      return { ok: true, userId: user.id };
+      return { ok: true, userId: user.id, email: user.email ?? null };
     }
 
     return {
@@ -143,6 +163,9 @@ export async function requireAdmin(): Promise<AdminAuthResult> {
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
     };
   } catch (err) {
+    if (isInvalidRefreshTokenError(err)) {
+      return { ok: false, response: await unauthorizedResponse(true) };
+    }
     devLogger.error('[requireAdmin]', err);
     return {
       ok: false,
