@@ -244,14 +244,13 @@ const SPOMOVE_GROUP_OPTIONS: Array<{
   label: string;
   expectedCount: number;
 }> = [
-  { key: 'visual-reaction', label: '시지각 반응', expectedCount: 17 },
-  { key: 'reaction-cognition', label: '반응 인지', expectedCount: 40 },
-  { key: 'simon', label: '사이먼 효과', expectedCount: 3 },
-  { key: 'flanker', label: '플랭커', expectedCount: 9 },
-  { key: 'stroop', label: '스트룹 과제', expectedCount: 5 },
+  { key: 'reaction-cognition', label: '반응 인지', expectedCount: 23 },
+  { key: 'visual-reaction', label: '시지각 반응', expectedCount: 10 },
+  { key: 'simon', label: '사이먼 이펙트', expectedCount: 10 },
+  { key: 'flanker', label: '플랭커 이펙트', expectedCount: 17 },
+  { key: 'stroop', label: '스트룹 이펙트', expectedCount: 4 },
   { key: 'sequential-memory', label: '순차 기억', expectedCount: 6 },
-  { key: 'dive', label: '다이브', expectedCount: 5 },
-  { key: 'bonus', label: '보너스', expectedCount: 1 },
+  { key: 'dive', label: '다이브', expectedCount: 2 },
 ];
 const MOVEMENT_OPTIONS = ['동적', '정적'];
 const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근력·근지구력', '심폐지구력', '리듬감', '평형성'];
@@ -1271,7 +1270,11 @@ function SpomoveContentManager() {
                         <summary className="cursor-pointer list-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 [&::-webkit-details-marker]:hidden">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="truncate text-[13px] font-black text-slate-950">{draft.displayTitle?.trim() || getSpomovePresetDisplayModel(preset).displayTitle}</p>
+                              <p className="truncate text-[13px] font-black text-slate-950">
+                                {['flanker', 'stroop', 'sequential-memory', 'simon'].includes(preset.programGroup)
+                                  ? getSpomovePresetDisplayModel(preset).displayTitle
+                                  : draft.displayTitle?.trim() || getSpomovePresetDisplayModel(preset).displayTitle}
+                              </p>
                               <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
                               <div className="mt-2 flex flex-wrap gap-1">
                                 {(draft.catalogTags ?? []).slice(0, 4).map((tag) => <span key={tag} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">{tag}</span>)}
@@ -1699,7 +1702,7 @@ function SpomoveThumbnailManager() {
               </p>
               <h2 className="mt-1 text-[18px] font-black text-slate-950">SPOMOVE 공식 프리셋 썸네일</h2>
               <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-                공식 프리셋 {OFFICIAL_SPOMOVE_LIBRARY.length}개의 썸네일만 관리합니다. SPOMAT 2×2 패드와 맞추려면 1:1 정사각형으로 업로드하세요.
+                공개 공식 프리셋 {ADMIN_SPOMOVE_LIBRARY.length}개의 썸네일만 관리합니다. SPOMAT 2×2 패드와 맞추려면 1:1 정사각형으로 업로드하세요.
               </p>
             </div>
             <button
@@ -1977,7 +1980,7 @@ function SpomoveGuideVideoManager() {
           </div>
         ) : (
           SPOMOVE_GROUP_OPTIONS.map((group) => {
-            const presets = OFFICIAL_SPOMOVE_LIBRARY
+            const presets = ADMIN_SPOMOVE_LIBRARY
               .filter((preset) => preset.programGroup === group.key)
               .sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -3089,23 +3092,41 @@ export default function AdminSmProgramsPage() {
             <h2 className="text-xl font-black">공식 SPOMOVE 프리셋</h2>
             <p className="mt-1 text-sm font-semibold text-slate-500">SPOKEDU MASTER에 노출되는 공식 카탈로그와 동일한 목록입니다.</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {ADMIN_SPOMOVE_LIBRARY.map((preset) => {
-              const display = getSpomovePresetDisplayModel(preset);
+          <div className="space-y-4">
+            {SPOMOVE_GROUP_OPTIONS.map((group) => {
+              const presets = ADMIN_SPOMOVE_LIBRARY
+                .filter((preset) => preset.programGroup === group.key)
+                .sort((a, b) => a.sortOrder - b.sortOrder);
+
               return (
-                <article key={preset.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-black text-indigo-600">{display.axisLabel}</p>
-                      <h3 className="mt-1 text-base font-black text-slate-950">{display.displayTitle}</h3>
-                    </div>
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-600">{display.programLabel}</span>
+                <section key={group.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-[15px] font-black text-slate-950">{group.label}</h3>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-600 shadow-sm">
+                      {presets.length}개
+                    </span>
                   </div>
-                  <p className="mt-3 text-xs font-semibold text-slate-500">{display.settingLabel}</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {preset.settingChips.slice(0, 4).map((chip) => <span key={chip} className="rounded-full border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-500">{chip}</span>)}
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                    {presets.map((preset) => {
+                      const display = getSpomovePresetDisplayModel(preset);
+                      return (
+                        <article key={preset.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[11px] font-black text-indigo-600">{display.axisLabel}</p>
+                              <h4 className="mt-1 text-base font-black text-slate-950">{display.displayTitle}</h4>
+                            </div>
+                            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-600">{display.programLabel}</span>
+                          </div>
+                          <p className="mt-3 text-xs font-semibold text-slate-500">{display.settingLabel}</p>
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {preset.settingChips.slice(0, 4).map((chip) => <span key={chip} className="rounded-full border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-500">{chip}</span>)}
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
-                </article>
+                </section>
               );
             })}
           </div>

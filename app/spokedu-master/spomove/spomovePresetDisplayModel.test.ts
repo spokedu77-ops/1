@@ -51,7 +51,7 @@ describe('spomove preset display model', () => {
     expect(getSpomovePresetDisplayModel(moleNormal!).supportMeta).not.toMatch(/1·2마리|50%/);
 
     expect(getSpomovePresetDisplayModel(sequenceFive!).programLabel).toBe('순차 기억');
-    expect(getSpomovePresetDisplayModel(sequenceFive!).displayTitle).toBe('순서 기억');
+    expect(getSpomovePresetDisplayModel(sequenceFive!).displayTitle).toBe('순서 기억 · 보통 (5개)');
   });
 
   it('sortSpomovePresetsByCatalogOrder keeps official catalog order', () => {

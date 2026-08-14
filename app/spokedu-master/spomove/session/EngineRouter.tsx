@@ -123,6 +123,7 @@ type Props = {
   flowIncludeBonus?: boolean;
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  flankerExtremeMode?: 'theme' | 'arrow';
   flankerArrowMode?: 'lr' | 'udlr';
   stroopWordMode?: 'bg' | 'missing';
   /** O4 — Operation timing.interval → MemoryGame intervalMode */
@@ -180,6 +181,7 @@ export function EngineRouter({
   flowIncludeBonus,
   flankerStimulusType,
   flankerNestedCircleCount,
+  flankerExtremeMode,
   flankerArrowMode,
   stroopWordMode,
   intervalLaunch = null,
@@ -269,6 +271,7 @@ export function EngineRouter({
             spatialArrowColorMapping,
             flankerStimulusType,
             flankerNestedCircleCount,
+            flankerExtremeMode,
             flankerArrowMode,
             stroopWordMode: (mode === 'stroop' && level === 5) || stroopWordMode === 'missing' ? 'missing' : 'bg',
             simonPoleCount: effectiveSimonPole,

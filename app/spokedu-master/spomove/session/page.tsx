@@ -640,6 +640,7 @@ function SpomoveSessionContent() {
           flowIncludeBonus={officialPreset.engine.flowIncludeBonus}
           flankerStimulusType={officialPreset.engine.flankerStimulusType}
           flankerNestedCircleCount={officialPreset.engine.flankerNestedCircleCount}
+          flankerExtremeMode={officialPreset.engine.flankerExtremeMode}
           flankerArrowMode={officialPreset.engine.flankerArrowMode}
           stroopWordMode={officialPreset.engine.stroopWordMode}
           intervalLaunch={
