@@ -138,7 +138,6 @@ function MyClassesContent() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<Session | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [feedbackFields, setFeedbackFields] = useState<FeedbackFields>({});
   const [uploading, setUploading] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
@@ -250,9 +249,6 @@ function MyClassesContent() {
   // 이전 주 세션 기준으로 남아 혼동되는 케이스가 있습니다.
   // 특정 계정에서만 체감될 수 있지만, 상태 초기화로 방지합니다.
   useEffect(() => {
-    if (uploading) return;
-
-    setIsModalOpen(false);
     setSelectedEvent(null);
     setFeedbackFields({});
     setPhotoUrls([]);
@@ -264,7 +260,7 @@ function MyClassesContent() {
     setCurrentSessionLessonPlanId(null);
     setPreviousPlans([]);
     setPreviousPlansExpandedId(null);
-  }, [currentDate, uploading]);
+  }, [currentDate]);
 
   const handleItemClick = (session: Session) => {
     if (session.status === 'postponed') {
@@ -296,7 +292,6 @@ function MyClassesContent() {
       setPhotoUrls([]);
       setFileUrls([]);
       setRemovedFileUrls([]);
-      setIsModalOpen(true);
       return;
     }
 
@@ -326,7 +321,6 @@ function MyClassesContent() {
     setPhotoUrls(Array.isArray(session.photo_url) ? session.photo_url : []);
     setFileUrls(isCenterSession ? centerUrlsForModal : urls);
     setRemovedFileUrls([]);
-    setIsModalOpen(true);
   };
 
   const handleCompleteSession = async () => {
@@ -388,7 +382,7 @@ function MyClassesContent() {
 
       toast.success('성공적으로 저장되었습니다.');
 
-      setIsModalOpen(false);
+      setSelectedEvent(null);
       getMySchedule();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -410,7 +404,7 @@ function MyClassesContent() {
       });
       const payload = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(payload.error || '초기화에 실패했습니다.');
-      setIsModalOpen(false);
+      setSelectedEvent(null);
       getMySchedule();
     } catch (err: unknown) {
       toast.error('초기화 실패: ' + (err instanceof Error ? err.message : String(err)));
@@ -462,12 +456,23 @@ function MyClassesContent() {
         contentType = uploadFileBody.type || undefined;
       }
 
-      const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(safeFileName, uploadFileBody, {
-        contentType: contentType ?? (uploadFileBody.type || undefined),
-      });
-      if (error) throw error;
-      const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
+      let publicUrl: string;
+      if (bucket === SESSION_FILES_BUCKET) {
+        const body = new FormData();
+        body.set('sessionId', selectedEvent.id);
+        body.set('file', uploadFileBody, `${safeBase}${ext}`);
+        const response = await fetch('/api/teacher/session-file-upload', { method: 'POST', body });
+        const payload = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+        if (!response.ok || !payload.url) throw new Error(payload.error || '파일 업로드에 실패했습니다.');
+        publicUrl = payload.url;
+      } else {
+        const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
+        const { error } = await supabase.storage.from(bucket).upload(safeFileName, uploadFileBody, {
+          contentType: contentType ?? (uploadFileBody.type || undefined),
+        });
+        if (error) throw error;
+        publicUrl = supabase.storage.from(bucket).getPublicUrl(safeFileName).data.publicUrl;
+      }
       return { publicUrl, displayName };
     } catch (err: unknown) {
       toast.error(`파일 업로드 오류: ${storageUploadErrorMessage(err)}`);
@@ -717,8 +722,8 @@ function MyClassesContent() {
         </div>
       </div>
 
-      {isModalOpen && selectedEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
+      {selectedEvent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)}>
           <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
             <div className="px-4 sm:px-8 py-4 sm:py-6 border-b flex justify-between items-center bg-white sticky top-0 z-10 text-left">
               <div>
@@ -735,7 +740,7 @@ function MyClassesContent() {
                 >
                   <FileText size={16} /> <span className="hidden sm:inline">수업안 작성</span><span className="sm:hidden">수업안</span>
                 </button>
-                <button onClick={() => setIsModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors p-1"><X size={24} /></button>
+                <button type="button" onClick={() => setSelectedEvent(null)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors p-1"><X size={24} /></button>
               </div>
             </div>
 

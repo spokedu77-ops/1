@@ -2,33 +2,34 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
-let cache: { admin: boolean; ts: number } | null = null;
+let cache: { admin: boolean; ts: number; scope: 'admin' | 'spomove' } | null = null;
 const STORAGE_KEY = 'admin_check_cache_v1';
 
 type AdminCheckResponse = {
   admin?: boolean;
   reason?: 'no-session' | 'forbidden' | 'server-error';
+  scope?: 'admin' | 'spomove';
 };
 
-function readStorageCache(): { admin: boolean; ts: number } | null {
+function readStorageCache(): { admin: boolean; ts: number; scope: 'admin' | 'spomove' } | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { admin?: unknown; ts?: unknown };
+    const parsed = JSON.parse(raw) as { admin?: unknown; ts?: unknown; scope?: unknown };
     if (typeof parsed?.admin !== 'boolean') return null;
     if (typeof parsed?.ts !== 'number') return null;
-    return { admin: parsed.admin, ts: parsed.ts };
+    if (parsed.scope !== 'admin' && parsed.scope !== 'spomove') return null;
+    return { admin: parsed.admin, ts: parsed.ts, scope: parsed.scope };
   } catch {
     return null;
   }
 }
 
-function writeStorageCache(next: { admin: boolean; ts: number }) {
+function writeStorageCache(next: { admin: boolean; ts: number; scope: 'admin' | 'spomove' }) {
   if (typeof window === 'undefined') return;
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -53,18 +54,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     GAME_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   useEffect(() => {
-    const checkSpomoveScope = async () => {
-      const { data: { user } } = await getSupabaseBrowserClient().auth.getUser();
-      if (user?.email?.toLowerCase() === 'spomove@spokedu.com' && pathname !== '/admin/spomove/training') {
-        router.replace('/admin/spomove/training');
-        return;
-      }
-      setScopeChecked(true);
-    };
-    void checkSpomoveScope();
-  }, [pathname, router]);
-
-  useEffect(() => {
     const slowTimer = setTimeout(() => setCheckSlow(true), SLOW_CHECK_MS);
     return () => clearTimeout(slowTimer);
   }, []);
@@ -74,12 +63,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const now = Date.now();
       const mem = cache;
       if (mem?.admin && now - mem.ts < CACHE_TTL) {
+        if (mem.scope === 'spomove' && pathname !== '/admin/spomove/training') {
+          router.replace('/admin/spomove/training');
+          return;
+        }
         setIsAdmin(true);
+        setScopeChecked(true);
         return;
       }
       const stored = readStorageCache();
       if (stored?.admin && now - stored.ts < CACHE_TTL) {
+        if (stored.scope === 'spomove' && pathname !== '/admin/spomove/training') {
+          router.replace('/admin/spomove/training');
+          return;
+        }
+        cache = stored;
         setIsAdmin(true);
+        setScopeChecked(true);
         return;
       }
 
@@ -99,9 +99,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
 
       if (json.admin) {
-        cache = { admin: true, ts: Date.now() };
+        if (json.scope === 'spomove' && pathname !== '/admin/spomove/training') {
+          router.replace('/admin/spomove/training');
+          return;
+        }
+        cache = { admin: true, ts: Date.now(), scope: json.scope ?? 'admin' };
         writeStorageCache(cache);
         setIsAdmin(true);
+        setScopeChecked(true);
         return;
       }
 
@@ -120,7 +125,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     void check();
-  }, [router]);
+  }, [pathname, router]);
 
   if (!isAdmin || !scopeChecked) {
     return (

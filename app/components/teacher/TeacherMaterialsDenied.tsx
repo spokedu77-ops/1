@@ -23,10 +23,10 @@ export default function TeacherMaterialsDenied({
       <p className="mb-8 max-w-sm text-sm font-medium leading-relaxed text-slate-500">{description}</p>
       <button
         type="button"
-        onClick={() => router.push('/teacher/my-classes')}
+        onClick={() => router.push('/teacher/report')}
         className="rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-black text-white transition-colors hover:bg-indigo-500"
       >
-        주간 일정으로 이동
+        수업료 내역 확인
       </button>
     </div>
   );

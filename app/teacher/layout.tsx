@@ -18,6 +18,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const materialsAccess = useTeacherMaterialsAccess();
   const isMaterialsGatedRoute = isTeacherMaterialsGatedPath(pathname);
   const blockMaterialsRoute = isMaterialsGatedRoute && materialsAccess === 'denied';
+  const isInactiveTeacher = materialsAccess === 'denied';
 
   const isActive = (path: string) => pathname === path;
 
@@ -37,13 +38,13 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const moreMenus = [
     { id: '/teacher/inventory', label: '교구목록', icon: Package },
     { id: '/teacher/report', label: '정산 확인', icon: Receipt },
-  ] as const;
+  ].filter((menu) => !isInactiveTeacher || menu.id === '/teacher/report');
 
   return (
     <div className="min-h-screen w-full bg-[#F9FBFF] block relative overflow-x-hidden">
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200/50 pt-[env(safe-area-inset-top)] flex justify-center">
         <div className="max-w-2xl w-full h-16 px-6 flex items-center justify-between font-sans">
-          <button onClick={() => router.push('/teacher')} className="flex items-center gap-3 cursor-pointer outline-none group text-left">
+          <button onClick={() => router.push(isInactiveTeacher ? '/teacher/report' : '/teacher')} className="flex items-center gap-3 cursor-pointer outline-none group text-left">
             <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-100 group-hover:scale-105 transition-transform">S</div>
             <div className="flex flex-col">
               <h1 className="text-[15px] font-black text-slate-900 uppercase leading-none tracking-tight text-indigo-600">SPOKEDU</h1>
@@ -107,12 +108,14 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-white/95 backdrop-blur-xl border-t border-slate-100 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_10px_rgba(0,0,0,0.02)]">
         <div className="max-w-2xl w-full h-20 px-4 flex justify-around items-center">
-          {([
+          {(isInactiveTeacher ? [
+            { id: '/teacher/report', label: '정산 확인', icon: Receipt },
+          ] : [
             { id: '/teacher', label: '메인', icon: Home },
             { id: '/teacher/curriculum', label: '프로그램', icon: BookOpen },
             { id: '/teacher/spomove', label: 'SPOMOVE', icon: Zap },
             { id: '/teacher/my-classes', label: '일정', icon: Calendar },
-          ] as const).map((item) => (
+          ]).map((item) => (
             <button 
               key={item.id} 
               onClick={() => router.push(item.id)} 

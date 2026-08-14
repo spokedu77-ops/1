@@ -504,6 +504,7 @@ function FeedbackReviewTab({
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [duplicateCheck, setDuplicateCheck] = useState<{ isDuplicate: boolean; similarity?: number; matchedSession?: { title?: string; start_at?: string }; duplicate?: boolean; message?: string } | null>(null);
+  const [selectedCenterWeekday, setSelectedCenterWeekday] = useState<number | 'all'>('all');
   const feedbackDateInputRef = useRef<HTMLInputElement>(null);
 
   const fetchListData = useCallback(async () => {
@@ -664,6 +665,34 @@ function FeedbackReviewTab({
       return true;
     });
   }, [sessions, statusFilter, searchTerm, coaches]);
+
+  const centerWeekdayGroups = useMemo(() => {
+    const labels = ['월', '화', '수', '목', '금', '토', '일'];
+    const { start } = getKstWeekRangeFromYmd(selectedDate);
+    return labels.map((label, dayIndex) => {
+      const date = new Date(start.getTime() + dayIndex * 24 * 60 * 60 * 1000);
+      const sessionsForDay = filteredAndSearchedSessions.filter((session) => {
+        const kst = new Date(new Date(session.start_at).getTime() + 9 * 60 * 60 * 1000);
+        return (kst.getUTCDay() + 6) % 7 === dayIndex;
+      });
+      return {
+        dayIndex,
+        label,
+        dateLabel: `${date.getUTCMonth() + 1}.${date.getUTCDate()}`,
+        sessions: sessionsForDay,
+      };
+    });
+  }, [filteredAndSearchedSessions, selectedDate]);
+
+  const feedbackListItems = useMemo(() => {
+    if (feedbackScope !== 'center') {
+      return filteredAndSearchedSessions.map((session) => ({ kind: 'session' as const, session }));
+    }
+    const visible = selectedCenterWeekday === 'all'
+      ? filteredAndSearchedSessions
+      : centerWeekdayGroups[selectedCenterWeekday]?.sessions ?? [];
+    return visible.map((session) => ({ kind: 'session' as const, session }));
+  }, [feedbackScope, filteredAndSearchedSessions, centerWeekdayGroups, selectedCenterWeekday]);
 
   const toggleSelection = (sessionId: string) => {
     setSelectedSessions(prev => {
@@ -991,19 +1020,37 @@ function FeedbackReviewTab({
 
       {loading ? (
         <div className="py-40 text-center font-black text-slate-300 animate-pulse">Syncing...</div>
-      ) : filteredAndSearchedSessions.length === 0 ? (
+      ) : filteredAndSearchedSessions.length === 0 && feedbackScope !== 'center' ? (
         <div className="bg-white rounded-[40px] py-32 text-center border border-dashed border-slate-300">
           <p className="text-slate-400 font-bold">
             {searchTerm || statusFilter !== 'all'
               ? '검색 결과가 없습니다.'
-              : feedbackScope === 'center'
-                ? '해당 주에 등록된 센터 수업이 없습니다.'
-                : '해당 일자에 등록된 과외 수업이 없습니다.'}
+              : '해당 일자에 등록된 과외 수업이 없습니다.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filteredAndSearchedSessions.map((s) => {
+        <div className="space-y-4">
+          {feedbackScope === 'center' && (
+            <div className="grid grid-cols-8 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+              {[{ dayIndex: 'all' as const, label: '전체', sessions: filteredAndSearchedSessions }, ...centerWeekdayGroups].map((item) => {
+                const selected = selectedCenterWeekday === item.dayIndex;
+                return (
+                  <button
+                    key={String(item.dayIndex)}
+                    type="button"
+                    onClick={() => setSelectedCenterWeekday(item.dayIndex)}
+                    className={`min-w-0 rounded-xl px-1 py-2.5 text-xs font-black transition-colors ${selected ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                  >
+                    <span className="block truncate">{item.label}</span>
+                    <span className={`mt-0.5 block text-[9px] ${selected ? 'text-slate-300' : 'text-slate-400'}`}>{item.sessions.length}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          {feedbackListItems.map((item) => {
+            const s = item.session;
             const sessionStatus = getSessionStatusForFeedbackReview(s);
             const rawStatus = s.status;
             const isSelected = selectedSessions.has(s.id);
@@ -1111,6 +1158,7 @@ function FeedbackReviewTab({
               </div>
             );
           })}
+          </div>
         </div>
       )}
 

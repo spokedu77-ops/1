@@ -219,6 +219,13 @@ function cleanDisplayTitle(value: string): string {
 }
 
 function buildDisplayTitle(preset: OfficialSpomovePreset, contentOverride?: SpomovePresetContentOverride): string {
+  if (preset.programGroup === 'flanker' || preset.programGroup === 'stroop' || preset.programGroup === 'sequential-memory') {
+    const escapedProgramTitle = preset.programTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return cleanDisplayTitle(preset.title.replace(new RegExp(`^${escapedProgramTitle}(?:\\s+\\d+번)?\\s*·\\s*`, 'u'), ''));
+  }
+  if (preset.programGroup === 'simon') {
+    return cleanDisplayTitle(preset.title.replace(/^사이먼 이펙트\s*·\s*/u, ''));
+  }
   if (contentOverride?.displayTitle?.trim()) return cleanDisplayTitle(contentOverride.displayTitle.trim());
   const modeId = displayModeId(preset);
   if (modeId) {

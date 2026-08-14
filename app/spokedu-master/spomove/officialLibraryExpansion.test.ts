@@ -291,22 +291,45 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
 
 
-  it('플랭커 색 7종 + 숫자 3종', () => {
+  it('플랭커를 화살표 2 + 랜덤 자극 7 + 극단 8로 공개한다', () => {
+    const flanker = byGroup('flanker').sort((a, b) => a.sortOrder - b.sortOrder);
+    expect(flanker).toHaveLength(17);
+    expect(flanker.filter((preset) => preset.title.startsWith('화살표 ·'))).toHaveLength(2);
+    expect(flanker.filter((preset) => preset.title.startsWith('랜덤 자극 ·'))).toHaveLength(7);
+    expect(flanker.filter((preset) => preset.title.startsWith('극단 ·'))).toHaveLength(8);
+    expect(flanker.some((preset) => preset.title.includes('원 속의 원'))).toBe(false);
+    expect(flanker.some((preset) => preset.title === '극단')).toBe(false);
+    expect(flanker.filter((preset) => preset.engine.flankerStimulusType === 'number')).toHaveLength(0);
+    expect(flanker.filter((preset) => preset.engine.level === 3 && preset.engine.flankerExtremeMode === 'theme')).toHaveLength(7);
+    expect(flanker.filter((preset) => preset.engine.level === 3 && preset.engine.flankerExtremeMode === 'arrow')).toHaveLength(1);
+  });
 
-    const flanker = byGroup('flanker');
+  it('스트룹 4개 공식 제목과 순서를 유지한다', () => {
+    expect(byGroup('stroop').sort((a, b) => a.sortOrder - b.sortOrder).map((preset) => preset.title)).toEqual([
+      '색상화살표 · 보통 (기본)',
+      '색상화살표 · 어려움 (배경간섭 추가)',
+      '단어 · 보통 (기본)',
+      '단어 · 어려움 (배경간섭 추가)',
+    ]);
+  });
 
-    expect(flanker.filter((preset) => preset.engine.flankerStimulusType === 'number')).toHaveLength(3);
+  it('순차 기억 6개 공식 제목과 순서를 유지한다', () => {
+    expect(byGroup('sequential-memory').sort((a, b) => a.sortOrder - b.sortOrder).map((preset) => preset.title)).toEqual([
+      '순서 기억 · 쉬움 (3개)',
+      '순서 기억 · 보통 (5개)',
+      '순서 기억 · 쉬움 → 보통 → 어려움 (3~7개)',
+      '순서 기억 · 어려움 (커스텀)',
+      '랜덤 기억 · 어려움 (퀴즈)',
+      '전체 공개 · 어려움',
+    ]);
+  });
 
-    expect(flanker.filter((preset) => !preset.engine.flankerStimulusType || preset.engine.flankerStimulusType === 'color')).toHaveLength(14);
-    expect(flanker.some((preset) => preset.id === 'flanker-nested-circles-04')).toBe(true);
-    expect(flanker.some((preset) => preset.id === 'flanker-arrow-05')).toBe(true);
-    expect(flanker.some((preset) => preset.id === 'flanker-theme-06')).toBe(true);
-
-    expect(flanker.some((preset) => preset.id === 'flanker-grouped-42')).toBe(false);
-
-    expect(flanker.some((preset) => preset.id === 'flanker-3circle-exp')).toBe(false);
-    expect(flanker.some((preset) => preset.id === 'flanker-mixed-size-exp')).toBe(false);
-
+  it('사이먼 10개는 모든 보통/어려움 쌍을 제목에 표시한다', () => {
+    const titles = byGroup('simon').map((preset) => preset.title);
+    for (const family of ['화살표', '도형', '풍선', '랜덤 테마', '카모플라쥬']) {
+      expect(titles.some((title) => title.includes(`${family} · 보통`))).toBe(true);
+      expect(titles.some((title) => title.includes(`${family} · 어려움`))).toBe(true);
+    }
   });
 
 
