@@ -1464,7 +1464,7 @@ const FLANKER_PUBLIC_CATALOG: Record<string, {
 };
 
 function withCanonicalFlankerCatalog(presets: OfficialSpomovePreset[]): OfficialSpomovePreset[] {
-  const normalized = presets.map((preset) => {
+  const normalized: OfficialSpomovePreset[] = presets.map((preset): OfficialSpomovePreset => {
     const mapping = FLANKER_PUBLIC_CATALOG[preset.id];
     if (!mapping) return preset;
     return {
@@ -1474,7 +1474,7 @@ function withCanonicalFlankerCatalog(presets: OfficialSpomovePreset[]): Official
         ...preset.engine,
         level: mapping.level,
         variantColorTheme: mapping.theme,
-        flankerStimulusType: 'color',
+        flankerStimulusType: 'color' as const,
         flankerNestedCircleCount: undefined,
         flankerExtremeMode: mapping.extremeMode,
         flankerArrowMode: mapping.arrowMode,
