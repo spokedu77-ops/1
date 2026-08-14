@@ -107,7 +107,27 @@ const CONTENT_SCOPE_ITEMS = [
  */
 export const curriculumPage = {
   subscription: {
-    sectionOrder: ['hero', 'how', 'library', 'spomove', 'tools', 'records', 'trust', 'plans'] as const,
+    sectionOrder: [
+      'hero',
+      'overview',
+      'why',
+      'comparison',
+      'library',
+      'spomove',
+      'spomoveSystem',
+      'playSpomove',
+      'tools',
+      'records',
+      'scenarios',
+      'changes',
+      'team',
+      'audience',
+      'environment',
+      'plans',
+      'differentiators',
+      'faq',
+      'finalCta',
+    ] as const,
     hero: {
       id: 'hero',
       eyebrow: '체육 지도자의 실제 수업을 위한 구독서비스',
@@ -126,7 +146,7 @@ export const curriculumPage = {
       },
     },
     how: {
-      id: 'how-it-works',
+      id: 'overview',
       eyebrow: 'HOW IT WORKS',
       title: '콘텐츠를 보는 데서 끝나지 않고\n오늘 수업 하나를 완성합니다.',
       lead: '흩어진 준비 행동을 하나의 수업 운영 흐름으로 연결합니다.',

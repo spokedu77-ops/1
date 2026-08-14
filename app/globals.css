@@ -4,10 +4,10 @@
 
 @font-face {
   font-family: "Cafe24SsurroundAir";
-  src: url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.1/Cafe24SsurroundAir.woff") format("woff");
+  src: url("/fonts/Cafe24SsurroundAir.woff") format("woff");
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
 }
 
 @theme inline {

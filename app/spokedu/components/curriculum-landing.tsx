@@ -19,16 +19,7 @@ import { trackCommercialEvent } from '../lib/commercial-events';
 import { marketingBody, marketingCardStatic } from '../lib/ui-classes';
 import { CurriculumInquiryForm } from './curriculum-inquiry-form';
 import { LandingProcessOnePager } from './landing-process-one-pager';
-import {
-  SubscriptionHero,
-  SubscriptionHowItWorks,
-  SubscriptionLibrary,
-  SubscriptionPlans,
-  SubscriptionRecords,
-  SubscriptionSpomove,
-  SubscriptionTools,
-  SubscriptionTrust,
-} from './subscription/subscription-sections';
+import { SubscriptionV17Page } from './subscription-v17/subscription-v17-page';
 
 const publicProduct = getPublicProductContract();
 
@@ -101,19 +92,6 @@ export default function CurriculumLanding() {
   ) : null;
 
   return (
-    <div
-      className="w-full overflow-x-clip"
-      data-spokedu-curriculum-sections={curriculumPage.subscription.sectionOrder.length}
-      data-curriculum-mode={mode}
-    >
-      <SubscriptionHero reducedMotion={reducedMotion} />
-      <SubscriptionHowItWorks />
-      <SubscriptionLibrary />
-      <SubscriptionSpomove />
-      <SubscriptionTools />
-      <SubscriptionRecords />
-      <SubscriptionTrust />
-      <SubscriptionPlans mode={mode} onModeChange={setMode} inquiry={inquiry} />
-    </div>
+    <SubscriptionV17Page mode={mode} onModeChange={setMode} inquiry={inquiry} reducedMotion={reducedMotion} />
   );
 }
