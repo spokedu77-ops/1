@@ -462,12 +462,23 @@ function MyClassesContent() {
         contentType = uploadFileBody.type || undefined;
       }
 
-      const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(safeFileName, uploadFileBody, {
-        contentType: contentType ?? (uploadFileBody.type || undefined),
-      });
-      if (error) throw error;
-      const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
+      let publicUrl: string;
+      if (bucket === SESSION_FILES_BUCKET) {
+        const body = new FormData();
+        body.set('sessionId', selectedEvent.id);
+        body.set('file', uploadFileBody, `${safeBase}${ext}`);
+        const response = await fetch('/api/teacher/session-file-upload', { method: 'POST', body });
+        const payload = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+        if (!response.ok || !payload.url) throw new Error(payload.error || '파일 업로드에 실패했습니다.');
+        publicUrl = payload.url;
+      } else {
+        const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
+        const { error } = await supabase.storage.from(bucket).upload(safeFileName, uploadFileBody, {
+          contentType: contentType ?? (uploadFileBody.type || undefined),
+        });
+        if (error) throw error;
+        publicUrl = supabase.storage.from(bucket).getPublicUrl(safeFileName).data.publicUrl;
+      }
       return { publicUrl, displayName };
     } catch (err: unknown) {
       toast.error(`파일 업로드 오류: ${storageUploadErrorMessage(err)}`);
