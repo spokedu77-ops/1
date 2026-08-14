@@ -250,8 +250,6 @@ function MyClassesContent() {
   // 이전 주 세션 기준으로 남아 혼동되는 케이스가 있습니다.
   // 특정 계정에서만 체감될 수 있지만, 상태 초기화로 방지합니다.
   useEffect(() => {
-    if (uploading) return;
-
     setIsModalOpen(false);
     setSelectedEvent(null);
     setFeedbackFields({});
@@ -264,7 +262,7 @@ function MyClassesContent() {
     setCurrentSessionLessonPlanId(null);
     setPreviousPlans([]);
     setPreviousPlansExpandedId(null);
-  }, [currentDate, uploading]);
+  }, [currentDate]);
 
   const handleItemClick = (session: Session) => {
     if (session.status === 'postponed') {
