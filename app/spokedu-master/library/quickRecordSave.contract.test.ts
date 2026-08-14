@@ -8,34 +8,18 @@ const source = readFileSync(
 );
 
 describe('library quick record save contracts', () => {
-  it('uses shared offline and entitlement save feedback', () => {
-    expect(source).toContain('canAttemptOnlineSave(isOnline)');
-    expect(source).toContain('getOfflineSaveFeedback()');
-    expect(source).toContain('resolveSaveActionFeedback(caught, accessSnapshot)');
-    expect(source).toContain('SaveErrorBanner');
+  it('removes only the detail-page quick-record entry and imports', () => {
+    expect(source).not.toContain('data-detail-action="quick"');
+    expect(source).not.toContain("from '../../components/ui/BottomSheet'");
+    expect(source).not.toContain("from '../../lib/saveDraftStorage'");
+    expect(source).not.toContain("from '../../lib/saveActionFeedback'");
+    expect(source).not.toContain('resolveQuickRecordClassId(');
   });
 
-  it('restores and clears quick-record drafts in the same tab', () => {
-    expect(source).toContain('QUICK_RECORD_DRAFT_KEY');
-    expect(source).toContain('readOwnerSaveDraft<QuickRecordDraft>(QUICK_RECORD_DRAFT_KEY');
-    expect(source).toContain('writeOwnerSaveDraft(QUICK_RECORD_DRAFT_KEY');
-    expect(source).toContain('clearOwnerSaveDraft(QUICK_RECORD_DRAFT_KEY');
-  });
-
-  it('offers home loop CTA after quick-record save', () => {
-    expect(source).toContain('data-loop-action="home"');
-    expect(source).toContain('href="/spokedu-master/dashboard"');
-  });
-
-  it('prefills class from recent records and frames memo as observation', () => {
-    expect(source).toContain('resolveQuickRecordClassId');
-    expect(source).toContain('오늘 관찰·지도 포인트');
-    expect(source).toContain('오늘 집중 관찰');
-    expect(source).toContain('오늘 수업 기록이 쌓였습니다.');
+  it('keeps existing evidence and record continuation links', () => {
     expect(source).toContain('이 기록 보강');
-    expect(source).toContain('기록 남기기');
-    expect(source).toContain('focusStudentId');
-    expect(source).not.toContain('상세 기록 작성');
+    expect(source).toContain('기존 기록 보기');
+    expect(source).toContain('recentEvidenceRecords');
   });
 
   it('exposes lesson plan copy without print controls and keeps fixed export template', () => {

@@ -868,11 +868,12 @@ function EntitledDashboardView() {
     () => (recentActivityOwnerId ? selectRecentSpomoveActivity(validSpomoveActivities, recentActivityOwnerId) : null),
     [recentActivityOwnerId, validSpomoveActivities],
   );
-  const todayLessonAssignment = useMasterStore((state) =>
-    recentActivityOwnerId ? state.getTodayLesson(recentActivityOwnerId) : null,
+  const todayLessonAssignments = useMasterStore((state) =>
+    recentActivityOwnerId ? state.getTodayLessons(recentActivityOwnerId) : [],
   );
+  const todayLessonAssignment = todayLessonAssignments[0] ?? null;
   const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
-  const clearTodayLesson = useMasterStore((state) => state.clearTodayLesson);
+  const removeTodayLesson = useMasterStore((state) => state.removeTodayLesson);
   const programsById = useMemo(() => new Map(programs.map((program) => [program.id, program])), [programs]);
   const homeAnchor = useMemo(
     () =>
@@ -995,11 +996,8 @@ function EntitledDashboardView() {
         anchor={homeAnchor}
         recordCount={operationalStatus === 'ready' ? classRecords.length : null}
         reportCount={explanationData.status === 'loading' ? null : explanationData.total}
-        onClearTodayLesson={
-          homeAnchor.kind === 'today_lesson' && recentActivityOwnerId
-            ? () => clearTodayLesson(recentActivityOwnerId)
-            : undefined
-        }
+        todayLessons={todayLessonAssignments}
+        onRemoveTodayLesson={recentActivityOwnerId ? (programId) => removeTodayLesson(recentActivityOwnerId, programId) : undefined}
       />
 
       <section
@@ -1145,10 +1143,10 @@ function EntitledDashboardView() {
           program={selectedProgram}
           autoplayVideo={previewAutoplay}
           isPremium={isPremium}
-          isTodayLesson={todayLessonAssignment?.programId === selectedProgram.id}
+          isTodayLesson={todayLessonAssignments.some((assignment) => assignment.programId === selectedProgram.id)}
           onToggleTodayLesson={recentActivityOwnerId ? () => {
-            if (todayLessonAssignment?.programId === selectedProgram.id) {
-              clearTodayLesson(recentActivityOwnerId);
+            if (todayLessonAssignments.some((assignment) => assignment.programId === selectedProgram.id)) {
+              removeTodayLesson(recentActivityOwnerId, selectedProgram.id);
               return;
             }
             setTodayLesson(recentActivityOwnerId, { id: selectedProgram.id, title: selectedProgram.title });

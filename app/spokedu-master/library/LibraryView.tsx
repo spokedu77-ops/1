@@ -235,9 +235,9 @@ export default function LibraryView() {
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
-  const clearTodayLesson = useMasterStore((state) => state.clearTodayLesson);
-  const todayLesson = useMasterStore((state) =>
-    ownerId ? state.getTodayLesson(ownerId) : null,
+  const removeTodayLesson = useMasterStore((state) => state.removeTodayLesson);
+  const todayLessons = useMasterStore((state) =>
+    ownerId ? state.getTodayLessons(ownerId) : [],
   );
   const { classRecords: serverClassRecords } = useOperationalData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
@@ -785,10 +785,10 @@ export default function LibraryView() {
           isPremium={isPremium}
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
           onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
-          isTodayLesson={todayLesson?.programId === selected.program.id}
+          isTodayLesson={todayLessons.some((assignment) => assignment.programId === selected.program.id)}
           onToggleTodayLesson={ownerId ? () => {
-            if (todayLesson?.programId === selected.program.id) {
-              clearTodayLesson(ownerId);
+            if (todayLessons.some((assignment) => assignment.programId === selected.program.id)) {
+              removeTodayLesson(ownerId, selected.program.id);
               return;
             }
             setTodayLesson(ownerId, { id: selected.program.id, title: selected.program.title });

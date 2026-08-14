@@ -22,6 +22,7 @@ import { ExternalPhoto } from '../external-photo';
 import { MediaPanel } from '../visual';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
+import styles from './home-canonical.module.css';
 
 type CaseCardWithThumb = HomeCaseCard & { thumbnailSrc?: string };
 
@@ -48,7 +49,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
         >
           <div className="min-w-0 flex-1">
             <p className={marketingEyebrow}>FIELD PROOF</p>
-            <h2 id="home-records-heading" className={`${marketingSectionDisplay} mt-3`}>{homePage.cases.title}</h2>
+            <h2 id="home-records-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} mt-3`}>{homePage.cases.title}</h2>
             <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.cases.lead}
             </p>
@@ -103,7 +104,7 @@ export function mergeHomeCaseCards(resolved: HomeFieldRecordCardWithThumbnail[])
 function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
   return (
     <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block h-full ${homeFocusRing}`}>
-      <article className={`${marketingCardStatic} grid h-full grid-rows-[13rem_1fr] overflow-hidden sm:grid-rows-[15rem_1fr]`}>
+      <article className={`${marketingCardStatic} ${styles.caseCard} grid h-full grid-rows-[13rem_1fr] overflow-hidden sm:grid-rows-[15rem_1fr]`}>
         <div className="relative min-h-0 overflow-hidden">
           <CaseMedia card={card} priority={priority} />
           <div

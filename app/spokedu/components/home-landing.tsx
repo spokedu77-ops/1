@@ -11,6 +11,7 @@ import { HomeServices } from './home/home-services';
 import { HomeSpomoveSpotlight } from './home/home-spomove-spotlight';
 import { HomeSubscriptionSpotlight } from './home/home-subscription-spotlight';
 import { HomeWhySpokedu } from './home/home-why-spokedu';
+import styles from './home/home-canonical.module.css';
 
 type SpokeduHomeLandingProps = {
   proofCards: HomeFieldRecordCardWithThumbnail[];
@@ -25,7 +26,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
 
   return (
     <div
-      className={`w-full overflow-x-clip font-sans antialiased ${homePageSurface}`}
+      className={`w-full overflow-x-clip font-sans antialiased ${homePageSurface} ${styles.root}`}
       data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID}
       data-spokedu-home-sections={homePage.sectionOrder.length}
     >

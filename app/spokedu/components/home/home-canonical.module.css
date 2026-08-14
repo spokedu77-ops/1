@@ -1,0 +1,115 @@
+.root {
+  --home-navy: #0b1530;
+  --home-deep: #081126;
+  --home-blue: #235de8;
+  --home-soft: #eaf1ff;
+  --home-paper: #f5f8ff;
+  --home-border: #dfe6f1;
+  --home-body: #4b5563;
+  --home-muted: #6b7280;
+  color: var(--home-navy);
+  background: var(--home-paper);
+}
+
+.root :is(h1, h2) {
+  font-family: var(--spokedu-marketing-font-display), sans-serif;
+  font-weight: 400 !important;
+  font-synthesis: none !important;
+  word-break: keep-all;
+}
+
+.heroTitle {
+  font-size: clamp(2.75rem, 6vw, 4.75rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.sectionTitle {
+  font-size: clamp(2.125rem, 4.2vw, 3.5rem) !important;
+  line-height: 1.16 !important;
+  letter-spacing: -0.03em !important;
+}
+
+.gatewayCard,
+.fieldMedia,
+.productFeature,
+.caseCard {
+  border-radius: 22px !important;
+}
+
+.gatewayCard,
+.fieldMedia,
+.productFeature {
+  box-shadow: 0 22px 54px rgba(11, 21, 48, 0.12);
+}
+
+.gatewayCard {
+  min-height: 30rem;
+}
+
+.gatewayProduct {
+  border: 1px solid var(--home-border);
+  background: #fff;
+}
+
+.flowGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.bridgeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.bridgeCard {
+  min-width: 0;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 14px;
+  background: rgba(255,255,255,.055);
+  padding: 16px;
+}
+
+.bridgeCard strong { display:block; color:#fff; font-size:14px; }
+.bridgeCard span { display:block; margin-top:6px; color:#b9c7da; font-size:12px; line-height:1.55; }
+
+.proofRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  background: rgba(255,255,255,.14);
+}
+
+.proofItem { background: rgba(8,17,38,.72); padding: 14px; }
+.proofItem dt { color:#fff; font-size:13px; font-weight:700; }
+.proofItem dd { margin-top:4px; color:#9eacc2; font-size:11px; line-height:1.45; }
+
+.caseCard {
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+@media (hover:hover) and (pointer:fine) {
+  .caseCard:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(11,21,48,.11); }
+}
+
+@media (max-width: 819px) {
+  .gatewayCard { min-height: 27rem; }
+}
+
+@media (max-width: 760px) {
+  .heroTitle { font-size: clamp(2.35rem, 11vw, 3.5rem) !important; }
+  .sectionTitle { font-size: clamp(2rem, 9vw, 2.625rem) !important; }
+  .flowGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bridgeGrid, .proofRow { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root *, .root *::before, .root *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -18,10 +18,13 @@ import {
 import {
   clearTodayLessonForOwner,
   getActiveTodayLesson,
+  getActiveTodayLessons,
   getSeoulDayKey,
   normalizeTodayLessonByOwner,
+  removeTodayLessonForOwner,
   setTodayLessonForOwner,
   type TodayLessonAssignment,
+  type TodayLessonsByOwner,
 } from '../lib/todayLesson';
 import {
   flushPendingRecentProgramActivities,
@@ -88,12 +91,15 @@ interface MasterState {
   recordRecentProgramActivity: (activity: RecentProgramActivityInput) => void;
   favoriteProgramIdsByOwner: Record<string, string[]>;
   pendingLegacyFavoriteProgramIds: string[];
-  todayLessonByOwner: Record<string, TodayLessonAssignment>;
+  todayLessonByOwner: TodayLessonsByOwner;
   getFavoriteProgramIds: (ownerId: string | null) => string[];
   isFavoriteProgram: (ownerId: string | null, programId: string) => boolean;
   toggleFavoriteProgram: (ownerId: string | null, programId: string) => void;
   getTodayLesson: (ownerId: string | null) => TodayLessonAssignment | null;
+  getTodayLessons: (ownerId: string | null) => TodayLessonAssignment[];
   setTodayLesson: (ownerId: string | null, program: { id: string; title: string }) => void;
+  addTodayLesson: (ownerId: string | null, program: { id: string; title: string }) => void;
+  removeTodayLesson: (ownerId: string | null, programId: string) => void;
   clearTodayLesson: (ownerId: string | null) => void;
   syncFavoriteProgramsFromServer: () => Promise<boolean>;
   notifications: Notification[];
@@ -625,6 +631,8 @@ export const useMasterStore = create<MasterState>()(
       },
       getTodayLesson: (ownerId) =>
         getActiveTodayLesson(get().todayLessonByOwner, ownerId, getSeoulDayKey()),
+      getTodayLessons: (ownerId) =>
+        getActiveTodayLessons(get().todayLessonByOwner, ownerId, getSeoulDayKey()),
       setTodayLesson: (ownerId, program) => {
         set((state) => ({
           todayLessonByOwner: setTodayLessonForOwner(
@@ -633,6 +641,14 @@ export const useMasterStore = create<MasterState>()(
             program,
             getSeoulDayKey(),
           ),
+        }));
+      },
+      addTodayLesson: (ownerId, program) => {
+        get().setTodayLesson(ownerId, program);
+      },
+      removeTodayLesson: (ownerId, programId) => {
+        set((state) => ({
+          todayLessonByOwner: removeTodayLessonForOwner(state.todayLessonByOwner, ownerId, programId),
         }));
       },
       clearTodayLesson: (ownerId) => {
@@ -682,7 +698,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 16,
+      version: 17,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,

@@ -109,14 +109,13 @@ describe('home A/B/C P0 component contracts', () => {
     expect(sheet).not.toContain('autostart: true');
   });
 
-  it('P2 today_lesson: CompactOpsBar content slot without growing the bar', () => {
-    expect(opsBar).toContain("anchor.kind === 'today_lesson'");
-    expect(opsBar).toContain('오늘 수업 해제');
-    expect(opsBar).toContain('max-h-[84px]');
-    expect(opsBar).toContain('{anchor.primary.label}');
-    expect(opsBar).toContain('{anchor.secondary.label}');
-    expect(dashboard).toContain('clearTodayLesson');
-    expect(dashboard).toContain('getTodayLesson');
+  it('P2 today lessons: renders and removes each accumulated lesson', () => {
+    expect(opsBar).toContain('todayLessons.map');
+    expect(opsBar).toContain('onRemoveTodayLesson(lesson.programId)');
+    expect(opsBar).toContain('오늘 수업에서 제거');
+    expect(opsBar).toContain('/spokedu-master/library/${lesson.programId}');
+    expect(dashboard).toContain('removeTodayLesson');
+    expect(dashboard).toContain('getTodayLessons');
   });
 
   it('hides first-start guide when today lesson or drafts already exist', () => {

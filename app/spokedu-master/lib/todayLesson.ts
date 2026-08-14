@@ -1,7 +1,6 @@
 import type { UserProfile } from '../types';
 import { getRecentActivityOwnerId } from './recentProgramActivity';
 
-/** 오늘 지정 수업 — owner별 1개, 당일(dayKey)만 유효 */
 export type TodayLessonAssignment = {
   programId: string;
   programTitle: string;
@@ -9,22 +8,19 @@ export type TodayLessonAssignment = {
   dayKey: string;
 };
 
-/** 교사 현장 기준. 브라우저 로컬 TZ 사용 금지. */
+export type TodayLessonsByOwner = Record<string, TodayLessonAssignment[]>;
+
 export const TODAY_LESSON_TIME_ZONE = 'Asia/Seoul';
 
 export function getTodayLessonOwnerId(profile: UserProfile | null): string | null {
   return getRecentActivityOwnerId(profile);
 }
 
-/**
- * Asia/Seoul 달력 기준 YYYY-MM-DD.
- * @deprecated 이름만 호환 — 실제는 Seoul. 신규 코드는 getSeoulDayKey 사용.
- */
+/** @deprecated Use getSeoulDayKey. */
 export function getLocalDayKey(date = new Date()): string {
   return getSeoulDayKey(date);
 }
 
-/** Asia/Seoul 달력 기준 YYYY-MM-DD (운영 계약) */
 export function getSeoulDayKey(date = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: TODAY_LESSON_TIME_ZONE,
@@ -35,11 +31,7 @@ export function getSeoulDayKey(date = new Date()): string {
   const year = parts.find((part) => part.type === 'year')?.value;
   const month = parts.find((part) => part.type === 'month')?.value;
   const day = parts.find((part) => part.type === 'day')?.value;
-  if (!year || !month || !day) {
-    // Intl 실패 시에만 UTC 날짜 — 계약상 정상 경로 아님
-    return date.toISOString().slice(0, 10);
-  }
-  return `${year}-${month}-${day}`;
+  return year && month && day ? `${year}-${month}-${day}` : date.toISOString().slice(0, 10);
 }
 
 export function normalizeTodayLessonAssignment(value: unknown): TodayLessonAssignment | null {
@@ -58,54 +50,83 @@ export function normalizeTodayLessonAssignment(value: unknown): TodayLessonAssig
   };
 }
 
-export function normalizeTodayLessonByOwner(
-  byOwner: unknown,
-): Record<string, TodayLessonAssignment> {
+/** Normalizes both the legacy single-assignment shape and the new array shape. */
+export function normalizeTodayLessonByOwner(byOwner: unknown): TodayLessonsByOwner {
   if (!byOwner || typeof byOwner !== 'object' || Array.isArray(byOwner)) return {};
-  const next: Record<string, TodayLessonAssignment> = {};
+  const next: TodayLessonsByOwner = {};
   for (const [ownerId, value] of Object.entries(byOwner)) {
     if (!ownerId.startsWith('id:') && !ownerId.startsWith('email:')) continue;
-    const assignment = normalizeTodayLessonAssignment(value);
-    if (assignment) next[ownerId] = assignment;
+    const candidates = Array.isArray(value) ? value : [value];
+    const seen = new Set<string>();
+    const assignments = candidates.flatMap((candidate) => {
+      const assignment = normalizeTodayLessonAssignment(candidate);
+      if (!assignment || seen.has(assignment.programId)) return [];
+      seen.add(assignment.programId);
+      return [assignment];
+    });
+    if (assignments.length > 0) next[ownerId] = assignments;
   }
   return next;
 }
 
-/** 오늘이 아니면 null — 만료된 지정은 호출 측에서 정리 */
+export function getActiveTodayLessons(
+  byOwner: TodayLessonsByOwner,
+  ownerId: string | null,
+  dayKey = getSeoulDayKey(),
+): TodayLessonAssignment[] {
+  if (!ownerId) return [];
+  return (byOwner[ownerId] ?? []).filter((assignment) => assignment.dayKey === dayKey);
+}
+
+/** Compatibility helper for workflow code that uses the first lesson as its anchor. */
 export function getActiveTodayLesson(
-  byOwner: Record<string, TodayLessonAssignment>,
+  byOwner: TodayLessonsByOwner,
   ownerId: string | null,
   dayKey = getSeoulDayKey(),
 ): TodayLessonAssignment | null {
-  if (!ownerId) return null;
-  const assignment = byOwner[ownerId];
-  if (!assignment) return null;
-  if (assignment.dayKey !== dayKey) return null;
-  return assignment;
+  return getActiveTodayLessons(byOwner, ownerId, dayKey)[0] ?? null;
 }
 
-export function setTodayLessonForOwner(
-  byOwner: Record<string, TodayLessonAssignment>,
+export function addTodayLessonForOwner(
+  byOwner: TodayLessonsByOwner,
   ownerId: string | null,
   program: { id: string; title: string },
   dayKey = getSeoulDayKey(),
-): Record<string, TodayLessonAssignment> {
+): TodayLessonsByOwner {
   if (!ownerId || !program.id) return byOwner;
+  const active = getActiveTodayLessons(byOwner, ownerId, dayKey);
+  if (active.some((assignment) => assignment.programId === program.id)) return byOwner;
   return {
     ...byOwner,
-    [ownerId]: {
+    [ownerId]: [...active, {
       programId: program.id,
       programTitle: program.title.trim() || program.id,
       assignedAt: new Date().toISOString(),
       dayKey,
-    },
+    }],
   };
 }
 
-export function clearTodayLessonForOwner(
-  byOwner: Record<string, TodayLessonAssignment>,
+export const setTodayLessonForOwner = addTodayLessonForOwner;
+
+export function removeTodayLessonForOwner(
+  byOwner: TodayLessonsByOwner,
   ownerId: string | null,
-): Record<string, TodayLessonAssignment> {
+  programId: string,
+): TodayLessonsByOwner {
+  if (!ownerId || !byOwner[ownerId]) return byOwner;
+  const remaining = byOwner[ownerId].filter((assignment) => assignment.programId !== programId);
+  if (remaining.length === byOwner[ownerId].length) return byOwner;
+  const next = { ...byOwner };
+  if (remaining.length > 0) next[ownerId] = remaining;
+  else delete next[ownerId];
+  return next;
+}
+
+export function clearTodayLessonForOwner(
+  byOwner: TodayLessonsByOwner,
+  ownerId: string | null,
+): TodayLessonsByOwner {
   if (!ownerId || !byOwner[ownerId]) return byOwner;
   const next = { ...byOwner };
   delete next[ownerId];

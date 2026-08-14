@@ -14,6 +14,7 @@ import {
 } from '../../lib/ui-classes';
 import { ProductVisualFrame } from '../product-visual-frame';
 import { TrackedLink } from './tracked-link';
+import styles from './home-canonical.module.css';
 
 export function HomeSubscriptionSpotlight() {
   const source = curriculumPage.subscription;
@@ -23,7 +24,7 @@ export function HomeSubscriptionSpotlight() {
       <div className={`${marketingSectionInner} grid gap-10 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:items-center lg:gap-16`}>
         <div>
           <p className={marketingEyebrow}>SUBSCRIPTION SYSTEM</p>
-          <h2 id="home-subscription-heading" className={`${marketingSectionDisplay} mt-3 whitespace-pre-line`}>{source.how.title}</h2>
+          <h2 id="home-subscription-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} mt-3 whitespace-pre-line`}>{source.how.title}</h2>
           <p className={`${marketingSectionLead} mt-5`}>{source.hero.lead}</p>
           <ol className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="구독시스템 운영 흐름">
             {source.how.pillars.map((pillar, index) => (
@@ -35,7 +36,7 @@ export function HomeSubscriptionSpotlight() {
           </ol>
           <TrackedLink href={action.href} trackLabel={action.trackLabel} className={`${marketingButtonPrimary} mt-8`}>{action.ctaLabel}</TrackedLink>
         </div>
-        <ProductVisualFrame {...source.tools.visual} emphasis="feature" aspectClassName="aspect-[16/9] min-h-[20rem]" />
+        <div className={styles.productFeature}><ProductVisualFrame {...source.tools.visual} emphasis="feature" aspectClassName="aspect-[16/9] min-h-[20rem]" /></div>
       </div>
     </section>
   );

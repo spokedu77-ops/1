@@ -19,6 +19,7 @@ import {
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
+import styles from './home-canonical.module.css';
 
 /** 히어로: 브랜드 정의 · CTA 2개 · 사례 텍스트 링크 */
 export function HomeHero() {
@@ -56,7 +57,7 @@ export function HomeHero() {
               {homePage.hero.brand}
             </p>
 
-            <h1 id="home-hero-heading" className={`${marketingHeroDisplay} mt-4 text-white sm:mt-5`}>
+            <h1 id="home-hero-heading" className={`${marketingHeroDisplay} ${styles.heroTitle} mt-4 text-white sm:mt-5`}>
               <span className="block">{line1}</span>
               <span className="mt-1.5 block text-[#AFC8FF]">{line2}</span>
             </h1>
