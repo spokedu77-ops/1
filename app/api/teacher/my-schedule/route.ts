@@ -7,7 +7,6 @@ import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
-import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
 
 type ExtraTeacher = { id: string; price?: number };
 
@@ -27,9 +26,6 @@ export async function GET(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (!(await canAccessTeacherMaterials(user, supabase))) {
-      return NextResponse.json({ error: 'Forbidden', reason: 'inactive_teacher' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
