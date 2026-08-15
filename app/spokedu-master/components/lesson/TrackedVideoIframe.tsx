@@ -46,6 +46,7 @@ function PosterStill({
   return (
     // eslint-disable-next-line @next/next/no-img-element -- poster before iframe; avoid optimizer cost on click path
     <img
+      data-video-poster
       src={current}
       alt=""
       className="absolute inset-0 h-full w-full object-cover"

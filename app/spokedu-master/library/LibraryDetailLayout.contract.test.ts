@@ -7,6 +7,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('SPOKEDU MASTER library detail final IA', () => {
   const view = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
   const guide = read('app/spokedu-master/library/[id]/components/DetailLessonGuide.tsx');
+  const related = read('app/spokedu-master/library/relatedLessonVideos.ts');
 
   it('splits the display title safely and keeps public tags below it', () => {
     expect(guide).toContain('export function splitLessonTitle');
@@ -33,24 +34,29 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     const preparation = guide.indexOf('data-detail-row="preparation"');
     expect(execution).toBeGreaterThan(-1);
     expect(preparation).toBeGreaterThan(execution);
-    expect(guide).toContain('min-[900px]:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]');
-    expect(guide).toContain('min-[900px]:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]');
-    expect(guide.indexOf('model.activityMethod')).toBeLessThan(guide.indexOf('model.variationMethod'));
+    expect(guide).toContain('min-[900px]:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)]');
+    expect(guide).toContain('min-[900px]:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]');
+    expect(guide.indexOf('<VideoPanel model={model}')).toBeLessThan(guide.indexOf('<MethodPanel model={model}'));
   });
 
   it('uses one equal-height panel and heading system per desktop row', () => {
-    expect(guide).toContain("const PANEL_CLASS = 'flex h-full min-w-0 flex-col'");
-    expect(guide).toContain("const PANEL_HEADING_CLASS = 'm-0 flex min-h-7 items-center");
-    expect(guide).toContain("const PANEL_BODY_CLASS = 'mt-4 min-h-0 flex-1'");
-    expect(guide.match(/items-stretch/g)).toHaveLength(2);
-    expect(guide).toContain('min-[900px]:min-h-[440px]');
-    expect(guide).toContain('min-[900px]:min-h-[420px]');
+    expect(guide).toContain('const DETAIL_PANEL_CLASS');
+    expect(guide).toContain("grid-rows-[30px_minmax(0,1fr)] gap-5");
+    expect(guide).toContain('const DETAIL_PANEL_HEADING_CLASS');
+    expect(guide).toContain("h-[30px] items-center");
+    expect(guide).toContain('const DETAIL_PANEL_BODY_CLASS');
+    expect(guide).toContain("const DETAIL_ROW_CLASS =");
+    expect(guide).toContain("'grid items-stretch");
+    expect(guide.match(/data-detail-panel-heading/g)).toHaveLength(4);
+    expect(guide.match(/data-detail-panel-body/g)).toHaveLength(4);
     expect(guide).not.toContain('h-[450px]');
   });
 
-  it('renders only equipment, script, and briefing in the overview', () => {
-    const overview = guide.slice(guide.indexOf('function OverviewColumn'), guide.indexOf('export function DetailLessonGuide'));
-    expect(overview).toContain('model.equipment');
+  it('groups equipment with setup and only script and briefing in the overview', () => {
+    const setup = guide.slice(guide.indexOf('function SetupPanel'), guide.indexOf('function OverviewPanel'));
+    const overview = guide.slice(guide.indexOf('function OverviewPanel'), guide.indexOf('function RelatedVideosSection'));
+    expect(setup).toContain('model.equipment');
+    expect(overview).not.toContain('model.equipment');
     expect(overview).toContain('model.coachScript');
     expect(overview).toContain('model.briefingNotes');
     expect(overview).not.toContain('model.objective');
@@ -64,12 +70,32 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain('max-h-full');
     expect(guide).toContain('이미지 확대');
     expect(guide).toContain("event.key === 'Escape'");
-    expect(guide).toContain('model.setupImageUrl ?? getVideoThumbnail');
+    expect(guide).toContain('getVideoThumbnailCandidates(video.sourceUrl');
+    expect(guide).toContain('posterCandidates={posterCandidates}');
+    expect(guide).toContain('model.thumbnailUrl !== model.setupImageUrl');
+    expect(guide).not.toContain('model.setupImageUrl ?? getVideoThumbnail');
     expect(view).toContain("action: 'video_started'");
     expect(view).toContain('new IntersectionObserver');
   });
 
-  it('does not substitute unrelated sections for actual related videos', () => {
+  it('shows two variations before accessible progressive disclosure', () => {
+    expect(guide).toContain('model.variationMethod.slice(0, 2)');
+    expect(guide).toContain('aria-expanded={variationsExpanded}');
+    expect(guide).toContain('aria-controls={variationListId}');
+    expect(guide).toContain("variationsExpanded ? '접기'");
+    expect(guide).toContain('`+ ${hiddenVariationCount}개 더보기`');
+  });
+
+  it('renders related videos only from deterministic playable program data', () => {
+    expect(view).toContain('selectRelatedLessonVideos(program, programs)');
+    expect(view).toContain('relatedVideos={relatedVideos}');
+    expect(guide).toContain('function RelatedVideosSection');
+    expect(guide).toContain('if (videos.length === 0) return null');
+    expect(guide).toContain('data-detail-related-videos');
+    expect(related).toContain('programHasPlayableVideo(candidate)');
+    expect(related).toContain('candidate.id !== current.id');
+    expect(related).toContain('.slice(0, Math.max(0, limit))');
+    expect(related).not.toContain('Math.random');
     expect(view).not.toContain('RelatedSpomoveSection');
     expect(view).not.toContain('관련 콘텐츠');
     expect(view).not.toContain('recentEvidenceRecords');
