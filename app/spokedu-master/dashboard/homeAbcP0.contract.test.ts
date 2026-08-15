@@ -115,7 +115,8 @@ describe('home A/B/C P0 component contracts', () => {
     expect(opsBar).toContain('오늘 수업에서 제거');
     expect(opsBar).toContain('/spokedu-master/library/${lesson.programId}');
     expect(dashboard).toContain('removeTodayLesson');
-    expect(dashboard).toContain('getTodayLessons');
+    expect(dashboard).toContain('getActiveTodayLessons(todayLessonByOwner, recentActivityOwnerId)');
+    expect(dashboard).not.toContain('state.getTodayLessons(recentActivityOwnerId)');
   });
 
   it('hides first-start guide when today lesson or drafts already exist', () => {

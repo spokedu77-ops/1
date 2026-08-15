@@ -26,6 +26,7 @@ import {
 } from '../../lib/program-media';
 import { toClassRecord } from '../../lib/operationalDataAdapter';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
+import { getActiveTodayLessons } from '../../lib/todayLesson';
 import {
   getSupportedOfficialSpomovePresets,
 } from '../../lib/program-meta';
@@ -115,8 +116,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
-  const todayLessons = useMasterStore((state) =>
-    ownerId ? state.getTodayLessons(ownerId) : [],
+  const todayLessonByOwner = useMasterStore((state) => state.todayLessonByOwner);
+  const todayLessons = useMemo(
+    () => getActiveTodayLessons(todayLessonByOwner, ownerId),
+    [ownerId, todayLessonByOwner],
   );
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const operationalData = useOperationalData();

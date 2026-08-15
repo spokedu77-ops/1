@@ -18,6 +18,7 @@ import {
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
+import { getActiveTodayLessons } from '../lib/todayLesson';
 import {
   LESSON_TAG_PREFIX,
   getLessonTheme,
@@ -236,8 +237,10 @@ export default function LibraryView() {
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
   const removeTodayLesson = useMasterStore((state) => state.removeTodayLesson);
-  const todayLessons = useMasterStore((state) =>
-    ownerId ? state.getTodayLessons(ownerId) : [],
+  const todayLessonByOwner = useMasterStore((state) => state.todayLessonByOwner);
+  const todayLessons = useMemo(
+    () => getActiveTodayLessons(todayLessonByOwner, ownerId),
+    [ownerId, todayLessonByOwner],
   );
   const { classRecords: serverClassRecords } = useOperationalData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);

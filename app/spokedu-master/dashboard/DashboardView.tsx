@@ -32,6 +32,7 @@ import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
+import { getActiveTodayLessons } from '../lib/todayLesson';
 import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
 import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
@@ -868,8 +869,10 @@ function EntitledDashboardView() {
     () => (recentActivityOwnerId ? selectRecentSpomoveActivity(validSpomoveActivities, recentActivityOwnerId) : null),
     [recentActivityOwnerId, validSpomoveActivities],
   );
-  const todayLessonAssignments = useMasterStore((state) =>
-    recentActivityOwnerId ? state.getTodayLessons(recentActivityOwnerId) : [],
+  const todayLessonByOwner = useMasterStore((state) => state.todayLessonByOwner);
+  const todayLessonAssignments = useMemo(
+    () => getActiveTodayLessons(todayLessonByOwner, recentActivityOwnerId),
+    [recentActivityOwnerId, todayLessonByOwner],
   );
   const todayLessonAssignment = todayLessonAssignments[0] ?? null;
   const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
