@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 
 /** 시지각·관련 캔버스 플레이어 공통 시작 워밍업(초). VisualReactionTraining과 동일. */
 export const REACT_TRAIN_START_COUNTDOWN_SEC = 3;

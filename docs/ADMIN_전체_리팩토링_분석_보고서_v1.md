@@ -307,7 +307,6 @@
 - [admin_classes_오류분석_및_수업로그.md](admin_classes_오류분석_및_수업로그.md) — 수업 관리·session_count_logs 상세
 - [session_count_logs_analysis.md](session_count_logs_analysis.md) — 로그 경로·중복 분석
 - [PWA_및_전체_개선_보고서.md](PWA_및_전체_개선_보고서.md) — PWA·ESLint·세션
-- `.cursor/plans/coach_app_전반_개선_보완.plan.md` — 전반 개선 계획
 
 ---
 

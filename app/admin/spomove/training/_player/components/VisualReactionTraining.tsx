@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
 import {
@@ -113,7 +113,7 @@ class FlowTile {
   fired: boolean;
   dead: boolean;
 
-  constructor(g: GameState, cv: HTMLCanvasElement, lane: number, isPattern = false) {
+  constructor(g: GameState, _cv: HTMLCanvasElement, lane: number, isPattern = false) {
     this.lane = lane;
     this.isPattern = isPattern;
     this.color = RT_COLORS[lane];
@@ -126,7 +126,7 @@ class FlowTile {
     this.dead = false;
   }
 
-  update(g: GameState, cv: HTMLCanvasElement, nowMs: number, deltaSec: number, onLaneStim: (lane: number) => void) {
+  update(g: GameState, _cv: HTMLCanvasElement, nowMs: number, deltaSec: number, onLaneStim: (lane: number) => void) {
     if (this.fired) return;
     this.y += this.speed * deltaSec;
     if (this.y + this.h < g.hitY) return;

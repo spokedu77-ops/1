@@ -126,10 +126,6 @@ export type LessonCatalogCardProps = {
   decisionMeta?: string;
   /** 2줄: 준비물·활동 등 지원 보조 → 설명 */
   supportMeta?: string;
-  /** @deprecated decisionMeta / supportMeta 사용 */
-  contextMeta?: string;
-  /** @deprecated */
-  activityPrepMeta?: string;
   cornerLabel?: string;
   locked?: boolean;
   used?: boolean;
@@ -151,8 +147,6 @@ export function LessonCatalogCard({
   detailHref,
   decisionMeta,
   supportMeta,
-  contextMeta,
-  activityPrepMeta,
   cornerLabel,
   locked = false,
   used = false,
@@ -168,8 +162,8 @@ export function LessonCatalogCard({
     Object.entries(dataAttrs ?? {}).filter((entry): entry is [string, string] => Boolean(entry[1])),
   );
   const { title, subtitle } = splitLessonCardTitle(rawTitle);
-  const eyebrow = (decisionMeta ?? contextMeta ?? categoryFallback).trim() || categoryFallback;
-  const description = (supportMeta ?? activityPrepMeta ?? subtitle).trim();
+  const eyebrow = (decisionMeta ?? categoryFallback).trim() || categoryFallback;
+  const description = (supportMeta ?? subtitle).trim();
   const descriptionParts = description.split(/\s*·\s*/).map((part) => part.trim()).filter(Boolean).slice(0, 3);
   const cornerText = variant === 'home' ? cornerLabel?.replace(/^추천\s*/u, '') : cornerLabel;
   const showUsed = variant === 'library' && used;

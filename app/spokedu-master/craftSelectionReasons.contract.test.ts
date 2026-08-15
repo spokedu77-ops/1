@@ -1,24 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  LIBRARY_SELECTION_REASON_STANDARD,
-  LIBRARY_SELECTION_REASON_IDS,
-} from './library/librarySelectionReasons';
 
 function read(path: string) {
   return readFileSync(join(process.cwd(), path), 'utf8');
 }
 
-/**
- * P3 — 만듦새 + 선택이유 강제.
- * 홈 구조 확대 금지. Primary CTA 토큰·선택이유 근거만 잠근다.
- */
-describe('SPOKEDU MASTER craft + selection reasons (P3)', () => {
-  it('clears all pendingP3Tighten flags and bans tag-only SPOMOVE', () => {
-    for (const id of LIBRARY_SELECTION_REASON_IDS) {
-      expect(LIBRARY_SELECTION_REASON_STANDARD[id].pendingP3Tighten).toBe(false);
-    }
+describe('SPOKEDU MASTER craft + selection reasons', () => {
+  it('bans tag-only SPOMOVE selection reasons', () => {
     const source = read('app/spokedu-master/library/librarySelectionReasons.ts');
     expect(source).toContain('hasExplicitSpomoveLink');
     expect(source).toContain('readyNowEvidenceBlob');

@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { CSS, S } from '../styles';
 import { GUIDE_BLOCKS, TRAINING_GUIDE_PAGE_INTRO, TRAINING_PREP_CARD } from '../trainingGuideContent';
 import { VariantImageAppendix } from './VariantImageAppendix';

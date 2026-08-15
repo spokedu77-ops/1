@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { useSpomoveVariantSlidesForTraining } from '../hooks/useSpomoveVariantFruitSlidesForTraining';

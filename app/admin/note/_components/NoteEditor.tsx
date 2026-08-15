@@ -739,7 +739,7 @@ export function NoteEditor({
           flushAfterCompositionSettles();
           return false;
         },
-        dblclick: (view, event) => {
+        dblclick: (_view, event) => {
           event.preventDefault();
           const ed = editorRef.current;
           if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
@@ -1108,7 +1108,7 @@ export function NoteEditor({
         }
         return false;
       },
-      handlePaste: (view, event) => {
+      handlePaste: (_view, event) => {
         if (isComposingRef.current) return false;
         const file = firstImageFile(event.clipboardData?.files);
         const currentUploadImage = callbacksRef.current.uploadImage;

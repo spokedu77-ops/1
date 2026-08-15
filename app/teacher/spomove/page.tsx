@@ -2541,64 +2541,6 @@ function PresetRunnerScreen({
   );
 }
 
-function PresetCompleteScreen({
-  onRetry,
-  onBack,
-}: {
-  onRetry: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <>
-      <style>{CSS}</style>
-      <div className="spm-wrap">
-        <button
-          type="button"
-          className="spm-home-btn-left"
-          onClick={onBack}
-          aria-label="프로그램 목록으로"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-          뒤로
-        </button>
-        <button
-          type="button"
-          className="spm-home-btn"
-          onClick={onRetry}
-          aria-label="다시 실행"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <polyline points="23 4 23 10 17 10" />
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-          </svg>
-          다시
-        </button>
-        <div className="spm-complete">
-          <div className="spm-complete-card">
-            <div className="spm-complete-eyebrow">Complete</div>
-            <div className="spm-complete-title">수고했어요.</div>
-            <p className="spm-complete-sub">훈련이 끝났습니다.<br />같은 프로그램을 다시 실행하거나<br />다른 프로그램을 선택하세요.</p>
-          </div>
-          <div className="spm-complete-bottom">
-            <button className="spm-btn-cta spm-cta-ac" onClick={onRetry}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
-                <polyline points="23 4 23 10 17 10" />
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-              </svg>
-              다시 실행
-            </button>
-            <button className="spm-btn-cta spm-cta-w" onClick={onBack}>
-              프로그램 목록
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
 function CountdownScreen({ onDone }: { onDone: () => void }) {
   const [count, setCount] = useState(3);
 

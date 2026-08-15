@@ -432,7 +432,7 @@ export function numberedListIndexAmongSiblings<T extends BlockWithMeta>(
 
 export function buildReparentContentPatch(
   content: Record<string, unknown> | null | undefined,
-  blockType: string,
+  _blockType: string,
   placedInToggle: boolean,
 ): Record<string, unknown> | undefined {
   const base = (content ?? {}) as Record<string, unknown>;

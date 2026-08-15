@@ -317,7 +317,7 @@ export default function AdminCurriculumPage() {
     return c;
   }, []);
 
-  const subTabDisplayLabel = useCallback((category: string, st: string) => {
+  const subTabDisplayLabel = useCallback((_category: string, st: string) => {
     return st;
   }, []);
 

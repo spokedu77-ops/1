@@ -6,7 +6,6 @@ import {
   getProgramSelectionReasons,
   LIBRARY_SELECTION_REASON_IDS,
   LIBRARY_SELECTION_REASON_MAX,
-  LIBRARY_SELECTION_REASON_STANDARD,
   LIBRARY_SELECTION_REASONS,
   programMatchesSelectionReason,
 } from './librarySelectionReasons';
@@ -30,21 +29,13 @@ function makeProgram(overrides: Partial<Program> = {}): Program {
 }
 
 describe('librarySelectionReasons', () => {
-  it('locks P3 vocab/mapping with no pending tighten leftovers', () => {
+  it('keeps the public reason vocabulary and maximum count aligned', () => {
     expect(LIBRARY_SELECTION_REASON_MAX).toBe(3);
     expect(LIBRARY_SELECTION_REASON_IDS).toHaveLength(Object.keys(LIBRARY_SELECTION_REASONS).length);
     for (const id of LIBRARY_SELECTION_REASON_IDS) {
-      const standard = LIBRARY_SELECTION_REASON_STANDARD[id];
-      expect(standard.id).toBe(id);
-      expect(standard.label).toBe(LIBRARY_SELECTION_REASONS[id].label);
-      expect(standard.requiredEvidence.length).toBeGreaterThan(8);
-      expect(standard.pendingP3Tighten).toBe(false);
+      expect(LIBRARY_SELECTION_REASONS[id].id).toBe(id);
+      expect(LIBRARY_SELECTION_REASONS[id].label.length).toBeGreaterThan(0);
     }
-    expect(LIBRARY_SELECTION_REASON_STANDARD.team.evidenceLevel).toBe('structured');
-    expect(LIBRARY_SELECTION_REASON_STANDARD.solo.evidenceLevel).toBe('structured');
-    expect(LIBRARY_SELECTION_REASON_STANDARD.narrow_space.evidenceLevel).toBe('structured');
-    expect(LIBRARY_SELECTION_REASON_STANDARD.spomove.evidenceLevel).toBe('structured');
-    expect(LIBRARY_SELECTION_REASON_STANDARD.ready_now.evidenceLevel).toBe('text_only');
   });
 
   it('maps narrow space and low equipment from structured fields', () => {

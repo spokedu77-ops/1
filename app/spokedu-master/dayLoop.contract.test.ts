@@ -6,12 +6,8 @@ function read(path: string) {
   return readFileSync(join(process.cwd(), path), 'utf8');
 }
 
-/**
- * P2 — 하루 루프 전 여정 계약.
- * library(지정) → home(today) → record → report → home → spomove
- * 홈 CompactOpsBar 확대·새 선반·히어로 변경 금지.
- */
-describe('SPOKEDU MASTER day loop journey (P2)', () => {
+/** library(지정) → home(today) → record → report → home → spomove 여정 계약. */
+describe('SPOKEDU MASTER day loop journey', () => {
   const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
   const opsBar = read('app/spokedu-master/dashboard/CompactOpsBar.tsx');
   const homeOps = read('app/spokedu-master/dashboard/homeOpsModel.ts');
@@ -23,25 +19,26 @@ describe('SPOKEDU MASTER day loop journey (P2)', () => {
 
   it('starts the day from library detail: assign today + open record', () => {
     expect(detail).toContain('오늘 수업으로 지정');
-    expect(detail).toContain('오늘 수업 해제');
+    expect(detail).toContain('✓ 오늘 수업 지정됨');
     expect(detail).toContain('setTodayLesson(ownerId');
+    expect(detail).toContain('disabled={!ownerId || isTodayLesson}');
     expect(detail).toContain('수업 기록 시작');
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
     expect(detail).toContain('spm-btn-primary');
-    expect(detail).toContain('data-loop-action="home"');
+    expect(detail.match(/data-detail-action=/g)).toHaveLength(3);
   });
 
-  it('keeps CompactOpsBar today_lesson as prepare/record without growing the bar', () => {
+  it('keeps CompactOpsBar multi-lesson preparation and removal compact', () => {
     expect(homeOps).toContain("kind: 'today_lesson'");
     expect(homeOps).toContain("label: '준비'");
     expect(homeOps).toContain('`/spokedu-master/library/${encodeURIComponent(programId)}`');
     expect(homeOps).toContain("label: '기록'");
     expect(homeOps).toContain('`/spokedu-master/class-record?program=${encodeURIComponent(programId)}`');
-    expect(opsBar).toContain("anchor.kind === 'today_lesson'");
+    expect(opsBar).toContain('if (todayLessons.length > 0)');
+    expect(opsBar).toContain('todayLessons.map');
     expect(opsBar).toContain('max-h-[84px]');
-    expect(opsBar).toContain('오늘 수업 해제');
-    expect(opsBar).toContain('{anchor.primary.label}');
-    expect(opsBar).toContain('{anchor.secondary.label}');
+    expect(opsBar).toContain('오늘 수업에서 제거');
+    expect(opsBar).toContain('onRemoveTodayLesson(lesson.programId)');
   });
 
   it('closes record and report back to home with loop CTAs', () => {

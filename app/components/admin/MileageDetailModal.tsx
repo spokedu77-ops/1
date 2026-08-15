@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Save, Trash2, BookOpen, Calendar, ChevronDown } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';

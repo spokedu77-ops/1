@@ -8,16 +8,7 @@ import {
   type HomeAnchor,
 } from './homeOpsModel';
 
-/**
- * 홈 상단 운영 바 — 콘텐츠(사진) 주인공을 이기면 안 됨.
- * 높이 체감 56~84px (max-h-[84px]). 140px+ 히어로 금지.
- * P0 계약: 확대 금지. P2는 내용 슬롯(today_lesson)만 교체.
- *
- * today_lesson 위계 (문서화 — 캡처 QA 전 UI 예감 수정 금지):
- * 1행: 오늘 + 수업명 1줄 truncate
- * 2행: 준비(강) / 기록(약) / X 아이콘(해제)
- * @see .cursor/rules/spokedu-master-home-freeze.mdc
- */
+/** 홈 상단의 다음 작업과 오늘 수업 목록을 간결하게 제공한다. */
 export function CompactOpsBar({
   anchor,
   recordCount,

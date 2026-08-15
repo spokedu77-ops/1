@@ -85,7 +85,7 @@ function shouldKeepLocalOverEmptyServer(
 }
 
 function finishOpenWithLocalBlocks(
-  documentId: string,
+  _documentId: string,
   localBlocks: NoteBlock[],
   toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'],
 ): OpenNoteDocumentResult {

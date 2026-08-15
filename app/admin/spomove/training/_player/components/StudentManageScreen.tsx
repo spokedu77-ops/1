@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import type { Student } from '../hooks/useStudents';
 import { CSS } from '../styles';
 

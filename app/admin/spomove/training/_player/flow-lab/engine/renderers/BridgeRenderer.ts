@@ -40,7 +40,6 @@ export interface BridgeVisual {
 
 export class BridgeRenderer {
   private scene:    THREE.Scene;
-  private enhanced: boolean;
 
   private laneDeckMats: [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial, THREE.MeshBasicMaterial] | null = null;
   private sideMat: THREE.MeshPhongMaterial | null = null;
@@ -51,7 +50,6 @@ export class BridgeRenderer {
 
   constructor(scene: THREE.Scene, enhanced = false, trackGlbScene: THREE.Object3D | null = null) {
     this.scene    = scene;
-    this.enhanced = enhanced;
 
     if (enhanced && trackGlbScene) {
       this.trackGlbScene = trackGlbScene;
@@ -113,12 +111,11 @@ export class BridgeRenderer {
     }
 
     // ── legacy / enhanced BoxGeometry 폴백 (동일 단색) ───────────────────────
-    return this.createLegacyStyleBridge(g, lane, x, z, deckMat);
+    return this.createLegacyStyleBridge(g, x, z, deckMat);
   }
 
   private createLegacyStyleBridge(
     g: THREE.Group,
-    lane: 0 | 1 | 2,
     x: number,
     z: number,
     deckMat: THREE.MeshBasicMaterial,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { StudentModal } from './StudentModal';
 import { StudentManageScreen } from './StudentManageScreen';

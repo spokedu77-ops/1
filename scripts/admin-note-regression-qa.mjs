@@ -19,16 +19,11 @@ loadEnvConfig(process.cwd());
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const COMMON_BOARD_ID = NOTE_QA_DOCUMENTS[0]?.id ?? '7c095438-335b-4318-a3fb-09145f01d24a';
 const JIHOON_NOTE_ID = '630e1104-84f9-41a2-b25b-7c4faa6a1300';
-const GYM_TOGGLE_TITLE = '체육관 이용방법';
 const RECONCILE_WAIT_MS = 3500;
 const ZOMBIE_MARKER = '좀비회귀QA마커';
 const REGRESSION_CLEANUP_OPTIONS = {
   titlePrefixes: ['Regression QA ', 'Toggle KB QA ', 'Toggle Zombie QA '],
 };
-
-function matchesGymToggleTitle(value) {
-  return typeof value === 'string' && value.includes(GYM_TOGGLE_TITLE);
-}
 
 async function openDocument(page, documentId) {
   await page.goto(
@@ -50,35 +45,6 @@ async function fetchBlocks(page, documentId, { skipServerMigration = false } = {
     const json = await res.json();
     return json.blocks ?? [];
   }, { docId: documentId, skip: skipServerMigration });
-}
-
-async function findToggleWithGymTitle(page, documentId) {
-  const blocks = await fetchBlocks(page, documentId);
-  const toggle = blocks.find((block) => {
-    if (block.type !== 'toggle') return false;
-    const title = block.content?.title;
-    const text = block.content?.text;
-    return matchesGymToggleTitle(title) || matchesGymToggleTitle(text);
-  });
-  if (!toggle) {
-    const titles = blocks
-      .filter((b) => b.type === 'toggle')
-      .map((b) => (b.content?.title ?? b.content?.text ?? '').toString().trim())
-      .filter(Boolean);
-    throw new Error(`toggle "${GYM_TOGGLE_TITLE}" not found. toggles: ${titles.join(' | ') || '(none)'}`);
-  }
-  const children = blocks.filter((b) => b.parent_block_id === toggle.id);
-  const legacyBody = [
-    toggle.content?.body,
-    toggle.content?.legacyBody,
-    toggle.content?.bodyHtml,
-    toggle.content?.legacyBodyHtml,
-  ].filter((v) => typeof v === 'string' && v.trim()).join(' ');
-  const childText = children
-    .map((c) => (typeof c.content?.text === 'string' ? c.content.text : ''))
-    .join(' ')
-    .trim();
-  return { toggle, children, legacyBody, childText };
 }
 
 async function expandToggleByTitleInDomAndRead(page, titleNeedle) {

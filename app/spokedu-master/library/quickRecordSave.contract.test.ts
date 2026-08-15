@@ -16,10 +16,11 @@ describe('library quick record save contracts', () => {
     expect(source).not.toContain('resolveQuickRecordClassId(');
   });
 
-  it('keeps existing evidence and record continuation links', () => {
-    expect(source).toContain('이 기록 보강');
-    expect(source).toContain('기존 기록 보기');
-    expect(source).toContain('recentEvidenceRecords');
+  it('keeps operational evidence out of the final lesson-detail IA', () => {
+    expect(source).not.toContain('이 기록 보강');
+    expect(source).not.toContain('기존 기록 보기');
+    expect(source).not.toContain('recentEvidenceRecords');
+    expect(source).toContain('/spokedu-master/class-record?program=${program.id}');
   });
 
   it('exposes lesson plan copy without print controls and keeps fixed export template', () => {

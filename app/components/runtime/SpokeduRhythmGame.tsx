@@ -468,7 +468,7 @@ export function SpokeduRhythmGame({
         }
       }, transitionMs);
     }, delayMs);
-  }, [levelData, finishGame, bpm, bgmPath, setGridFromShuffle]);
+  }, [levelData, finishGame, bgmPath, setGridFromShuffle]);
 
   const scheduleNote = useCallback(
     (beatNumber: number, time: number, currentLevelRound: number) => {
@@ -607,10 +607,11 @@ export function SpokeduRhythmGame({
   }, [bgmPath]);
 
   useEffect(() => {
+    const activeRunIdRef = runIdRef;
     return () => {
       onCountdownEndRef.current = null;
       if (timerIDRef.current) cancelAnimationFrame(timerIDRef.current);
-      runIdRef.current++;
+      activeRunIdRef.current++;
       stopChallengeBGM();
     };
   }, []);
@@ -723,8 +724,6 @@ export function SpokeduRhythmGame({
     startCountdown,
     scheduler,
     bgmPath,
-    bgmSourceBpm,
-    bpm,
     levelData,
     setGridFromShuffle,
   ]);

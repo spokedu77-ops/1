@@ -82,10 +82,10 @@ describe('acquisition leak closure', () => {
     expect(homePage.spomove.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
     expect(homePage.cases.consultCta.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch`);
     expect(homePage.finalCta.items.map((item) => item.href)).toEqual([
-      `${SPOKEDU_BASE_PATH}/dispatch`,
-      `${SPOKEDU_BASE_PATH}/private`,
+      `${SPOKEDU_PATHS.education}`,
+      `${SPOKEDU_PATHS.spomove}`,
       `${SPOKEDU_PATHS.subscription}`,
-      `${SPOKEDU_BASE_PATH}/contact`,
+      `${SPOKEDU_PATHS.contact}`,
     ]);
     expect(homePage.finalCta.items.every((item) => !item.href.includes('onboarding'))).toBe(true);
   });

@@ -73,9 +73,6 @@ const MICROJOLT_AMOUNT  = 0.65;
 const PUNCH_VFX_Y       = 112;  // 복부 상단~가슴 하단 펀치
 const KICK_VFX_Y        = 66;  // 무릎~허벅지 높이 킥
 
-// 스피드라인
-const SPEEDLINE_COUNT      = 250;
-
 // 브릿지 프룬
 const BRIDGE_PRUNE_Z = 5000;
 
@@ -152,8 +149,6 @@ export class FlowEngine {
   private scene:    THREE.Scene | null = null;
   private camera:   THREE.PerspectiveCamera | null = null;
   private renderer: THREE.WebGLRenderer | null = null;
-  private stars:      THREE.Points | null = null;
-  private speedLines: THREE.Group | null = null;
   private speedVFX:      SpeedVFX      | null = null;
   private punchVFX:      PunchVFX      | null = null;
   private arenaRenderer: ArenaRenderer | null = null;
@@ -165,12 +160,8 @@ export class FlowEngine {
   private spaceshipGlbScene: THREE.Object3D | null = null;
   private wallGlbScene:      THREE.Object3D | null = null;
   private trackLaneMeshes: THREE.Mesh[] = [];
-  private oceanSurface: THREE.Mesh | null = null;
-  private oceanBubbles: THREE.Points | null = null;
-  private oceanTime = 0;
   private lastTickMs = -1;
   private rafId      = 0;
-  private oceanFrameIdx = 0;
 
   private audio:          FlowAudio         = new FlowAudio();
   private aq:             AdaptiveQuality   = new AdaptiveQuality(
@@ -178,7 +169,6 @@ export class FlowEngine {
   );
   private obstacles:      ObstacleManager | null = null;
   private colorGates:     ColorGateManager | null = null;
-  private currentColorGatePose: ColorGatePoseKey | null = null;
   private flowCam:        FlowCamera | null = null;
   private bridgeRenderer: BridgeRenderer | null = null;
   private spaceEnv:       SpaceEnvironment | null = null;
@@ -233,7 +223,6 @@ export class FlowEngine {
   private wallBreakHits    = 0;
   private wallBreakTimer   = 0;
   private jumpInstrCooldown = 0;
-  private isBonus = false; // 보너스 스테이지 여부
 
   private stats:     FlowStats = {
     stagesCompleted: 0,
@@ -467,133 +456,6 @@ export class FlowEngine {
     // 구분선 제거 — 흰 선이 배경에서 계속 보이는 문제
   }
 
-  // ── 별 ───────────────────────────────────────────────────────────────────
-
-  private buildStars(): void {
-    if (!this.scene) return;
-    const cnt = Math.floor(1800 * this.aq.getStarCountScale());
-    const pos = new Float32Array(cnt * 3);
-    for (let i = 0; i < cnt; i++) {
-      pos[i * 3]     = (Math.random() - 0.5) * 22000;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 22000;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 22000;
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, transparent: true, opacity: 0.75 }));
-    this.scene.add(this.stars);
-  }
-
-  // ── default 테마 대기 이펙트 ─────────────────────────────────────────────
-
-  private buildDefaultAtmosphere(): void { /* 제거 — 배경 이미지 없을 때 기본 검정만 */ }
-
-  // ── 바다 환경 (ocean 테마 전용) ──────────────────────────────────────────
-  //
-  // 핵심 원리:
-  //  · THEMES.ocean의 bg·fog를 동일한 바다파란색으로 설정 → 거리가 전부 파랗게 채워짐
-  //  · 트랙 바로 아래·양옆에 파도 수면을 배치 → 카메라에서 바로 보임
-  //  · 카메라 높이(Y=160)에서 -30°각도로 내려보면 수면이 가시거리 안에 있어야 함
-
-  private buildOceanEnvironment(): void {
-    if (!this.scene) return;
-
-    // ① 파도 수면 — 트랙(폭 240) 양옆 포함 초광폭 + 트랙 아래
-    // PlaneGeometry 회전 후 buffer: getX=X좌우, getZ=Z깊이, setY=파고
-    // Y=-2: 트랙 바닥 레인(Y=-30)보다 위, 브릿지 발판(Y=0)과 같은 높이
-    const wGeo = new THREE.PlaneGeometry(18000, 55000, 40, 80);
-    wGeo.rotateX(-Math.PI / 2);
-    const wMat = new THREE.MeshPhongMaterial({
-      color: 0x0077be,
-      emissive: 0x003d7a,
-      emissiveIntensity: 0.35,
-      transparent: true,
-      opacity: 0.86,
-      shininess: 220,
-      specular: 0x7dd3fc,
-    });
-    this.oceanSurface = new THREE.Mesh(wGeo, wMat);
-    this.oceanSurface.position.set(0, -2, -20000);
-    this.scene.add(this.oceanSurface);
-
-    // ② 물보라 파티클 — 트랙 양옆에 집중, 항상 수면 위
-    const cnt = 500;
-    const bpos = new Float32Array(cnt * 3);
-    for (let i = 0; i < cnt; i++) {
-      const side = Math.random() < 0.5 ? -1 : 1;
-      bpos[i * 3]     = side * (160 + Math.random() * 4000); // 트랙 가장자리 바깥
-      bpos[i * 3 + 1] = 5 + Math.random() * 60;
-      bpos[i * 3 + 2] = -Math.random() * 42000;
-    }
-    const bGeo = new THREE.BufferGeometry();
-    bGeo.setAttribute('position', new THREE.BufferAttribute(bpos, 3));
-    this.oceanBubbles = new THREE.Points(bGeo, new THREE.PointsMaterial({
-      color: 0xe0f7ff, size: 6, transparent: true, opacity: 0.65,
-    }));
-    this.scene.add(this.oceanBubbles);
-
-    // ③ 하늘빛 반사 띠 — 수면 위 낮게 떠있는 수평 발광 빔 여러 개
-    //    카메라가 살짝 아래를 보므로 Z=-200~-1500 구간에 배치해야 시야에 들어옴
-    for (let i = 0; i < 5; i++) {
-      const beam = new THREE.Mesh(
-        new THREE.BoxGeometry(14000, 3, 4),
-        new THREE.MeshBasicMaterial({
-          color: 0x7dd3fc, transparent: true,
-          opacity: 0.18 - i * 0.02, depthWrite: false,
-        }),
-      );
-      beam.position.set(0, -2 + i * 1.5, -300 - i * 600);
-      this.scene.add(beam);
-    }
-
-    // ④ 태양광 기둥 — 카메라 시야 범위(fog 2800) 안에, 약간 옆으로
-    for (let i = 0; i < 6; i++) {
-      const h = 1800 + Math.random() * 600;
-      const shaft = new THREE.Mesh(
-        new THREE.BoxGeometry(18 + Math.random() * 24, h, 100),
-        new THREE.MeshBasicMaterial({
-          color: 0xbae6fd, transparent: true,
-          opacity: 0.055 + Math.random() * 0.04, depthWrite: false,
-        }),
-      );
-      shaft.position.set(
-        (Math.random() < 0.5 ? -1 : 1) * (300 + Math.random() * 1800),
-        h * 0.5 - 2,
-        -400 - i * 420,
-      );
-      shaft.rotation.z = (Math.random() - 0.5) * 0.25;
-      this.scene.add(shaft);
-    }
-
-    // ⑤ 수평선 글로우 빔 (먼 거리, 수면 높이와 일치)
-    const glow = new THREE.Mesh(
-      new THREE.BoxGeometry(22000, 18, 8),
-      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.30 }),
-    );
-    glow.position.set(0, -2, -2600);
-    this.scene.add(glow);
-  }
-
-  // ── 3D 스피드라인 (원본 동일) ─────────────────────────────────────────────
-
-  private buildSpeedLines(): void {
-    if (!this.scene) return;
-    this.speedLines = new THREE.Group();
-    for (let i = 0; i < SPEEDLINE_COUNT; i++) {
-      const line = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 1.2, 800),
-        new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0 }),
-      );
-      line.position.set(
-        (Math.random() - 0.5) * 12000,
-        (Math.random() - 0.5) * 12000,
-        (Math.random() - 1) * 15000,
-      );
-      this.speedLines.add(line);
-    }
-    this.scene.add(this.speedLines);
-  }
-
   // ── 브릿지 ───────────────────────────────────────────────────────────────
 
   private spawnBridge(isFirst: boolean): void {
@@ -714,7 +576,6 @@ export class FlowEngine {
     if (!stage) { this.endGame(); return; }
 
     this.activeModules    = stage.activeModules;
-    this.isBonus          = stage.isBonus;
     this.stageTimer       = 0;
     this.speedIntroShown  = false;
     this.jumpHeight    = JUMP_HEIGHT;
@@ -764,7 +625,6 @@ export class FlowEngine {
 
     const initialPose = stage.colorGatePose ?? stage.colorGateAction;
     if (stage.isColorGate && initialPose) {
-      this.currentColorGatePose = initialPose;
       this.ensureColorGateManager();
       this.colorGates?.resetRun();
       this.cb.onColorGateStage?.({
@@ -773,7 +633,6 @@ export class FlowEngine {
         total: stage.colorGateTotal ?? 5,
       });
     } else {
-      this.currentColorGatePose = null;
       this.cb.onColorGateColor?.(null);
     }
 
@@ -896,38 +755,6 @@ export class FlowEngine {
         cameraX:      this.camera?.position.x ?? 0,
         isIntroPhase,
       });
-    } else if (this.stars && !isIntroPhase) {
-      this.stars.rotation.y -= 0.00008 * dt60M;
-    }
-
-    // 바다 파도 애니메이션 (인트로 중에는 멈춤)
-    if ((this.oceanSurface || this.oceanBubbles) && !isIntroPhase) {
-      this.oceanTime += dt;
-      // 꼭짓점 계산 — tier에 따라 N프레임마다 1회
-      if (this.oceanSurface && this.aq.shouldUpdateOcean(this.oceanFrameIdx)) {
-        const pos = this.oceanSurface.geometry.attributes['position'] as THREE.BufferAttribute;
-        const t   = this.oceanTime;
-        for (let i = 0; i < pos.count; i++) {
-          const wx = pos.getX(i);
-          const wz = pos.getZ(i);
-          pos.setY(i,
-            Math.sin(wx * 0.0020 + t * 1.15) * 28
-            + Math.sin(wz * 0.0008 + t * 0.80) * 20
-            + Math.sin(wx * 0.0042 + wz * 0.0028 + t * 1.55) * 11,
-          );
-        }
-        pos.needsUpdate = true;
-      }
-      this.oceanFrameIdx++;
-      if (this.oceanBubbles) {
-        const bp = this.oceanBubbles.geometry.attributes['position'] as THREE.BufferAttribute;
-        for (let i = 0; i < bp.count; i++) {
-          let y = bp.getY(i) + dt * (10 + (i % 6) * 4);
-          if (y > 120) y = 5 + Math.random() * 15;
-          bp.setY(i, y);
-        }
-        bp.needsUpdate = true;
-      }
     }
 
     if (this.phase !== 'playing') {
@@ -1180,10 +1007,6 @@ export class FlowEngine {
   }
 
   // ── 유틸 ─────────────────────────────────────────────────────────────────
-
-  private showInstruction(text: string, colorClass: string, ms: number, priority = 1): void {
-    this.cb.onInstruction?.(text, colorClass, ms, priority);
-  }
 
   getPhase(): FlowGamePhase { return this.phase; }
 

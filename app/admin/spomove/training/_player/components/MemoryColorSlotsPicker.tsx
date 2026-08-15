@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { COLORS } from '../constants';
 import {
   SPOMOVE_MEMORY_COLOR_ORDER,

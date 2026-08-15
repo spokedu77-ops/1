@@ -11,6 +11,7 @@ export default function CurriculumLayout({
         href="https://fonts.gstatic.com"
         crossOrigin="anonymous"
       />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- this App Router layout intentionally scopes the marketing font to this route */}
       <link
         href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap"
         rel="stylesheet"

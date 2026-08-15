@@ -813,7 +813,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     await applyInlineUpdate(gid, row.id, { created_by: newMainId, memo });
   };
 
-  const handlePostpone = async (gid: string, sessionId: string) => {
+  const handlePostpone = async (_gid: string, sessionId: string) => {
     if (!supabase) return;
     if (!confirm("현재 회차부터 이후 회차를 1주일씩 미룹니다. 계속할까요?")) return;
     await postponeCascade(supabase, sessionId, {

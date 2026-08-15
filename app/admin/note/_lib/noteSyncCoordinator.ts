@@ -558,15 +558,6 @@ export class NoteSyncCoordinator {
     this.leaderLockRelease = null;
   }
 
-  private requestLeaderFlush(): void {
-    if (!this.leaderChannel) return;
-    this.leaderChannel.postMessage({
-      type: 'flush_request',
-      documentId: this.documentId,
-      tabId: getTabInstanceId(),
-    });
-  }
-
   private schedulePush(delayMs: number): void {
     if (this.pushTimer) clearTimeout(this.pushTimer);
     this.pushTimer = setTimeout(() => {

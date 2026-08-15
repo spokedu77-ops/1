@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import {

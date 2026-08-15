@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { SPEED_PRESETS } from '../constants';
 
 export function SpeedSelector({

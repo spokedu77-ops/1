@@ -78,7 +78,7 @@ Do not write actual secret values in this checklist.
 
 ## Path-to-9 P3 gates (B 만듦새 / 선택이유)
 
-- [ ] `vitest` contract: `app/spokedu-master/craftP3.contract.test.ts` + `librarySelectionReasons.test.ts`
+- [ ] `vitest` contract: `app/spokedu-master/craftSelectionReasons.contract.test.ts` + `librarySelectionReasons.test.ts`
 - [ ] SPOMOVE 선택이유는 tag-only/구 엔진 ID 단독으로 붙지 않음
 - [ ] 홈·라이브러리 카드가 `formatProgramSelectionReasons` 어휘를 공유
 - [ ] `npm run qa:spokedu-master:craft-capture -- http://localhost:3000` (랜딩 Primary · 라이브러리 어휘 · 바 ≤84)
@@ -88,7 +88,7 @@ Do not write actual secret values in this checklist.
 - [ ] `vitest` contract: `app/spokedu-master/ownerIsolation.contract.test.ts`
 - [ ] Smoke flow `owner isolation` passes (A 학생/메모가 B에 비노출 + draft 키 격리)
 - [ ] `release-automated` includes `craft_capture` (do not ship with `--skip-craft`)
-- [ ] verification-report includes entitlement/dayLoop/craftP3/ownerIsolation contracts
+- [ ] verification-report includes entitlement/dayLoop/selection-reasons/ownerIsolation contracts
 - [ ] Toss sandbox 실결제·복구 DB integrity는 secrets 준비 후 (mock만으로 D 8+ 선언 금지)
 
 ## Path-to-9 P5 gates (D readiness · secrets 대기)

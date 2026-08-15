@@ -9,7 +9,7 @@ import type { GameState } from '../types';
 export type StateUpdate = (patch: Partial<GameState>) => void;
 
 export function nextBalancePose(
-  state: Readonly<GameState>,
+  _state: Readonly<GameState>,
   getElement: (id: string) => HTMLElement | null,
   onStateUpdate: StateUpdate
 ): void {
@@ -53,7 +53,7 @@ export function checkBalanceComplete(state: Readonly<GameState>, now: number): b
 }
 
 export function nextMirrorPose(
-  state: Readonly<GameState>,
+  _state: Readonly<GameState>,
   setMissionText: (text: string) => void,
   onStateUpdate: StateUpdate
 ): void {

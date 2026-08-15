@@ -88,21 +88,6 @@ async function openDocument(page, documentId, { requireBlocks = true } = {}) {
   await page.waitForTimeout(1500);
 }
 
-async function resolveLastPageChildDocumentId(page, parentDocumentId) {
-  return page.evaluate(async (parentId) => {
-    const res = await fetch(
-      `/api/admin/note/blocks/load?documentId=${encodeURIComponent(parentId)}&skipReconcile=true`,
-      { credentials: 'include' },
-    );
-    if (!res.ok) throw new Error(`blocks load failed (${res.status})`);
-    const json = await res.json();
-    const pageBlocks = (json.blocks ?? []).filter((block) => block.type === 'page');
-    const last = pageBlocks[pageBlocks.length - 1];
-    const childId = last?.content?.page_document_id;
-    return typeof childId === 'string' && childId.length > 0 ? childId : null;
-  }, parentDocumentId);
-}
-
 async function resolveDocumentId(page) {
   const fromUrl = documentIdFromPage(page);
   if (fromUrl) return fromUrl;
@@ -303,31 +288,6 @@ async function focusBlockAt(page, index) {
   await editor.waitFor({ state: 'visible', timeout: 15000 });
   await editor.click({ force: true });
   return editor;
-}
-
-async function focusLastEditor(page) {
-  const editable = page.locator(
-    '[data-note-block-row] [data-note-editor-host], [data-note-block-row] [data-note-list-text]',
-  );
-  const count = await editable.count();
-  if (count > 0) {
-    const host = editable.last();
-    await host.scrollIntoViewIfNeeded();
-    await host.click({ position: { x: 40, y: 10 } });
-    await page.waitForTimeout(400);
-    const editor = host.locator('.ProseMirror').first();
-    if (await editor.count()) {
-      await editor.click();
-      return editor;
-    }
-  }
-  const rowCount = await page.locator('[data-note-block-row]').count();
-  if (rowCount < 1) throw new Error('no block rows');
-  return focusBlockAt(page, rowCount - 1);
-}
-
-async function clickEditorWhitespace(page) {
-  await clickDocumentBody(page);
 }
 
 function assertNoListMarker(text, label) {
@@ -1096,12 +1056,6 @@ async function waitForDocumentTextNotContaining(page, unexpectedSubstring, timeo
     await page.waitForTimeout(500);
   }
   throw new Error(`document still contains "${unexpectedSubstring}": ${JSON.stringify(lastTexts)}`);
-}
-
-async function blockTextFromPage(page, blockIndex, type = 'text', explicitDocumentId) {
-  const domText = await blockTextFromDom(page, blockIndex);
-  if (domText.length > 0) return domText;
-  return blockTextFromApi(page, blockIndex, type, explicitDocumentId);
 }
 
 async function blockTextFromApi(page, blockIndex, type = 'text', explicitDocumentId) {
