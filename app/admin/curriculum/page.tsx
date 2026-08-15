@@ -1795,10 +1795,10 @@ export default function AdminCurriculumPage() {
                                <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden">
                                 {act.activity_video_url && getYouTubeId(act.activity_video_url) ? (
                                   <img src={`https://img.youtube.com/vi/${getYouTubeId(act.activity_video_url)}/hqdefault.jpg`} alt="" className="w-full h-full object-cover" />
-                                ) : act.activity_video_url ? (
-                                  <video src={act.activity_video_url} className="w-full h-full object-cover" muted playsInline />
                                 ) : act.activity_image_url ? (
                                   <img src={act.activity_image_url} alt="" className="w-full h-full object-cover" />
+                                ) : act.activity_video_url ? (
+                                  <Play size={28} className="text-slate-400" aria-hidden="true" />
                                 ) : (
                                    <div className="p-4 text-center">
                                      <p className="text-sm font-bold text-slate-500 line-clamp-3">{act.activity_text || '활동 내용 없음'}</p>

@@ -9,6 +9,7 @@ import {
   Play,
   UsersRound,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
@@ -456,11 +457,13 @@ function SpomoveCard({
   thumbnailUrl,
   contentOverride,
   onOpenGuide,
+  priority = false,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   contentOverride?: import('@/app/lib/spomove/spomoveOfficialAssets').SpomovePresetContentOverride;
   onOpenGuide: (preset: OfficialSpomovePreset) => void;
+  priority?: boolean;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
@@ -480,11 +483,14 @@ function SpomoveCard({
         aria-label={`${displayModel.displayTitle} 활동 준비 열기`}
       >
         {showThumbnail ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- SPOMOVE 썸네일은 외부 URL이라 next/image remotePatterns 밖일 수 있음 */
-          <img
+          <Image
             src={thumbnailUrl}
             alt=""
-            className={`h-full w-full ${fitClass}`}
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 74vw"
+            quality={75}
+            className={fitClass}
+            priority={priority}
             onLoad={(event) => {
               if (
                 shouldStretchSpomoveThumbnail(
@@ -1060,13 +1066,14 @@ function EntitledDashboardView() {
           action="활동 더 보기"
         />
         <div className="relative -mx-3.5 flex snap-x items-stretch gap-3.5 overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
-          {featuredSpomove.map((preset) => (
+          {featuredSpomove.map((preset, index) => (
             <div key={preset.id} className="h-full w-[74vw] max-w-[300px] shrink-0 snap-start md:w-auto md:max-w-none">
               <SpomoveCard
                 preset={preset}
                 thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}
                 contentOverride={spomoveContentMap[preset.id]}
                 onOpenGuide={setPreviewSpomove}
+                priority={index < 2}
               />
             </div>
           ))}

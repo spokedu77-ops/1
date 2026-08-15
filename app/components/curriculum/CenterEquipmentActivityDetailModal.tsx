@@ -69,7 +69,7 @@ export default function CenterEquipmentActivityDetailModal({
                 title={title}
               />
             ) : videoUrl ? (
-              <video src={videoUrl} className="w-full h-full object-contain" controls playsInline />
+              <video src={videoUrl} className="w-full h-full object-contain" controls playsInline preload="none" />
             ) : (
               <Image src={mediaUrl} alt="" fill sizes="(max-width: 768px) 100vw, 672px" className="object-cover" unoptimized />
             )}

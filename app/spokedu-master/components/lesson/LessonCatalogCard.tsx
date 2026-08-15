@@ -41,6 +41,19 @@ function placeholderBackground(category: string) {
   return '#e2e8f0';
 }
 
+function isSupabasePublicStorageImage(src: string) {
+  try {
+    const url = new URL(src);
+    return (
+      url.protocol === 'https:' &&
+      url.hostname.endsWith('.supabase.co') &&
+      url.pathname.startsWith('/storage/v1/object/public/')
+    );
+  } catch {
+    return false;
+  }
+}
+
 function CoverImage({
   src,
   alt,
@@ -62,7 +75,7 @@ function CoverImage({
     if (shouldStretchToSquare(width, height, imageSrc)) setStretch(true);
   };
 
-  if (isRemoteImage(imageSrc)) {
+  if (isRemoteImage(imageSrc) && !isSupabasePublicStorageImage(imageSrc)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- remote program heroes may sit outside next/image patterns
       <img
@@ -91,6 +104,10 @@ function CoverImage({
       priority={priority}
       onLoad={(event) => {
         applyNaturalSize(event.currentTarget.naturalWidth, event.currentTarget.naturalHeight);
+      }}
+      onError={(event) => {
+        const fallback = getImageFallbackSrc(imageSrc);
+        if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
       }}
     />
   );

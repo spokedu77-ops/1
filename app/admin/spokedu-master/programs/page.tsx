@@ -551,12 +551,11 @@ function mergeSavedProgram(
 function resolveSetupImageSrc(url: string) {
   const trimmed = url.trim();
   if (!trimmed) return '';
-  const cacheBust = Date.now();
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
-    return withPublicUrlCacheBust(trimmed, cacheBust);
+    return trimmed;
   }
   try {
-    return withPublicUrlCacheBust(getPublicUrl(trimmed), cacheBust);
+    return getPublicUrl(trimmed);
   } catch {
     return trimmed;
   }

@@ -9,57 +9,33 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   const catalogCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
   const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 
-  it('keeps library cards focused on media preview and one full-lesson CTA', () => {
+  it('keeps library cards focused on preview and the detail-page CTA', () => {
     expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
-    expect(catalogCard).toContain('aria-label={`${title} 수업 미리보기`}');
-    expect(catalogCard).not.toMatch(/>\s*수업 미리보기\s*</);
-    expect(catalogCard).toContain('수업 준비');
-    expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(library).toContain('LessonCatalogCard');
     expect(library).toContain('autoplayVideo: programHasPlayableVideo(program)');
-    expect(library).toContain('수업 라이브러리 열기');
-    expect(library).not.toMatch(/>\s*전체 자료 보기\s*</);
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
   });
 
-  it('keeps the library header as a compact search control with curated-first IA', () => {
-    expect(library).toContain('바로 쓸 수업 고르기');
-    expect(library).toContain('전체에서 찾기');
-    expect(library).toContain('전체 {pool.length}개 수업');
-    expect(library).toContain('placeholder="수업명 검색"');
-    expect(library).toContain('return program.title.toLowerCase()');
-    expect(library).not.toContain('조건에 맞는 수업 찾기');
-    expect(library).not.toContain('MATERIAL_VIDEO_VALUE');
-    expect(library).not.toContain('MATERIAL_SPOMOVE_VALUE');
-    expect(library).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
-  });
-
-  it('makes library detail the compact bridge from lesson choice to operation', () => {
+  it('uses exactly the three approved detail actions', () => {
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
     expect(detail).toContain('수업 기록 시작');
     expect(detail).toContain('오늘 수업으로 지정');
     expect(detail).toContain('✓ 오늘 수업 지정됨');
     expect(detail).toContain('지도안 복사');
     expect(detail.match(/data-detail-action=/g)).toHaveLength(3);
-    expect(detail).toContain('이 기록 보강');
-    expect(detail).not.toContain('상세 기록 작성');
+    expect(detail).not.toContain('빠른 기록');
   });
 
-  it('does not expose SPOMOVE execution from library detail', () => {
-    expect(detail).not.toContain('primarySpomovePreset');
-    expect(detail).not.toContain('SPOMOVE 실행');
+  it('does not expose SPOMOVE execution or extra operation sections', () => {
+    expect(detail).not.toContain('RelatedSpomoveSection');
     expect(detail).not.toContain('getSpomoveSessionHref');
     expect(detail).not.toContain('/spokedu-master/class-mode/${program.id}');
+    expect(detail).not.toContain('recentEvidenceRecords');
   });
 
-  it('keeps favorite as a compact support action instead of a preparation section', () => {
-    expect(detail).not.toContain('Preparation');
-    expect(detail).not.toContain('수업 준비 보조');
+  it('keeps favorite as a compact sticky-header action', () => {
     expect(detail).toContain('aria-pressed={favorite}');
     expect(detail).toContain('title={favorite');
-    expect(detail).toContain('기존 기록 보기');
-    expect(detail).toContain('이 수업에 쌓인 운영 증거');
-    expect(detail).toContain('recentEvidenceRecords');
     expect(detail).not.toContain('/spokedu-master/class-tools');
   });
 });
