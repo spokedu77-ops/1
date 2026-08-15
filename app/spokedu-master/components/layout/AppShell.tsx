@@ -300,30 +300,25 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
-    if (process.env.NODE_ENV !== 'production') {
-      navigator.serviceWorker
-        .getRegistrations()
-        .then((registrations) => {
-          registrations
-            .filter((registration) => registration.scope.includes('/spokedu-master/'))
-            .forEach((registration) => void registration.unregister());
-        })
-        .catch(() => undefined);
-      return;
-    }
     navigator.serviceWorker
       .getRegistrations()
-      .then((registrations) =>
-        Promise.all(
-          registrations
-            .filter(isLegacyRootServiceWorker)
-            .map((registration) => registration.unregister()),
-        ),
-      )
-      .catch(() => undefined)
-      .finally(() => {
-        void navigator.serviceWorker.register('/spokedu-master-sw.js', { scope: '/spokedu-master/' }).catch(() => undefined);
-      });
+      .then((registrations) => registrations
+        .filter((registration) => (
+          isLegacyRootServiceWorker(registration)
+          || registration.scope.includes('/spokedu-master/')
+        ))
+        .forEach((registration) => void registration.unregister()))
+      .catch(() => undefined);
+
+    if ('caches' in window) {
+      void window.caches.keys()
+        .then((cacheNames) => Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName.startsWith('spokedu-master'))
+            .map((cacheName) => window.caches.delete(cacheName)),
+        ))
+        .catch(() => undefined);
+    }
   }, []);
 
   const onboardingDone = accessGuard.snapshot?.onboardingDone ?? profile?.onboardingDone ?? false;
