@@ -458,13 +458,30 @@ function MyClassesContent() {
 
       let publicUrl: string;
       if (bucket === SESSION_FILES_BUCKET) {
-        const body = new FormData();
-        body.set('sessionId', selectedEvent.id);
-        body.set('file', uploadFileBody, `${safeBase}${ext}`);
-        const response = await fetch('/api/teacher/session-file-upload', { method: 'POST', body });
-        const payload = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
-        if (!response.ok || !payload.url) throw new Error(payload.error || '파일 업로드에 실패했습니다.');
-        publicUrl = payload.url;
+        const response = await fetch('/api/teacher/session-file-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: selectedEvent.id,
+            fileName: `${safeBase}${ext}`,
+            fileSize: uploadFileBody.size,
+          }),
+        });
+        const payload = (await response.json().catch(() => ({}))) as {
+          path?: string;
+          token?: string;
+          error?: string;
+        };
+        if (!response.ok || !payload.path || !payload.token) {
+          throw new Error(payload.error || `파일 업로드 권한 발급에 실패했습니다. (HTTP ${response.status})`);
+        }
+        const { error } = await supabase.storage
+          .from(bucket)
+          .uploadToSignedUrl(payload.path, payload.token, uploadFileBody, {
+            contentType: contentType ?? (uploadFileBody.type || undefined),
+          });
+        if (error) throw error;
+        publicUrl = supabase.storage.from(bucket).getPublicUrl(payload.path).data.publicUrl;
       } else {
         const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
         const { error } = await supabase.storage.from(bucket).upload(safeFileName, uploadFileBody, {

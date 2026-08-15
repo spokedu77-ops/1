@@ -7,6 +7,7 @@ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { canTeacherEditSession } from '@/app/lib/server/teacherSessionAccess';
 import {
   type FeedbackFields,
   fieldsToTemplateText,
@@ -19,22 +20,6 @@ type Body = {
   fileUrls?: unknown;
   removedFileUrls?: unknown;
 };
-
-function isAssistantTeacherUser(
-  userId: string,
-  session: { memo?: string | null; students_text?: string | null }
-): boolean {
-  const uid = String(userId || '').trim().toLowerCase();
-  if (!uid) return false;
-  for (const raw of [session.memo, session.students_text]) {
-    if (!raw?.includes('EXTRA_TEACHERS:')) continue;
-    const { extraTeachers } = parseExtraTeachers(raw);
-    if (extraTeachers.some((t) => String(t.id || '').trim().toLowerCase() === uid)) {
-      return true;
-    }
-  }
-  return false;
-}
 
 function alignCenterDocumentNamesForSave(
   fileUrls: string[],
@@ -95,9 +80,7 @@ export async function POST(req: Request) {
     if (!row) {
       return NextResponse.json({ error: '세션을 찾을 수 없습니다.' }, { status: 404 });
     }
-    const isMainTeacher = String(row.created_by || '') === String(user.id);
-    const isAssistantTeacher = isAssistantTeacherUser(String(user.id), row);
-    if (!isMainTeacher && !isAssistantTeacher) {
+    if (!canTeacherEditSession(user.id, row)) {
       return NextResponse.json({ error: '이 수업을 수정할 권한이 없습니다.' }, { status: 403 });
     }
 
@@ -206,23 +189,30 @@ export async function POST(req: Request) {
       }
     }
 
-    const { data: updated, error: upErr } = await svc
-      .from('sessions')
-      .update({
-        status: 'finished',
-        feedback_fields: mergedFeedback,
-        students_text: fieldsToTemplateText(mergedFeedback),
-        photo_url: photoUrls,
-        file_url: centerFileUrls,
-      })
-      .eq('id', sessionId)
-      .select('id');
+    const requestedNames = alignCenterDocumentNamesForSave(
+      requestedFileUrls,
+      feedbackFields.center_document_names,
+      undefined,
+    );
+    const requestedFileNames = Object.fromEntries(
+      requestedFileUrls.map((url, index) => [url, requestedNames[index]]),
+    );
+    const { data: updated, error: upErr } = await svc.rpc('teacher_save_session_feedback', {
+      p_session_id: sessionId,
+      p_is_center: isCenterType,
+      p_feedback_fields: mergedFeedback,
+      p_photo_urls: photoUrls,
+      p_requested_file_urls: requestedFileUrls,
+      p_removed_file_urls: removedFileUrls,
+      p_requested_file_names: requestedFileNames,
+      p_students_text: fieldsToTemplateText(mergedFeedback),
+    });
 
     if (upErr) {
       devLogger.error('[teacher/session-feedback] update', upErr);
       return NextResponse.json({ error: upErr.message || '저장에 실패했습니다.' }, { status: 500 });
     }
-    if (!updated?.length) {
+    if (!updated) {
       return NextResponse.json({ error: '저장이 반영되지 않았습니다.' }, { status: 500 });
     }
 
