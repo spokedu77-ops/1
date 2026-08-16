@@ -80,8 +80,7 @@ function SetupImage({ title, src }: { title: string; src: string }) {
             src={src}
             alt={`${title} 초기 교구 세팅`}
             fill
-            priority
-            sizes="(min-width: 900px) 48vw, 100vw"
+            sizes="(min-width: 1220px) 560px, (min-width: 900px) 46vw, 100vw"
             className="object-contain p-1 sm:p-2"
             unoptimized={unoptimized}
           />
@@ -292,9 +291,9 @@ function SetupPanel({ model }: { model: LessonDisplayModel }) {
       <h2 data-detail-panel-heading className={DETAIL_PANEL_HEADING_CLASS}>초기 교구 세팅</h2>
       <div
         data-detail-panel-body
-        className={`${DETAIL_PANEL_BODY_CLASS} grid grid-rows-[minmax(0,1fr)_auto] gap-3.5`}
+        className={`${DETAIL_PANEL_BODY_CLASS} ${model.setupImageUrl ? 'grid grid-rows-[minmax(0,1fr)_auto] gap-3.5' : 'flex flex-col gap-3.5'}`}
       >
-        {model.setupImageUrl ? <SetupImage title={model.title} src={model.setupImageUrl} /> : <div />}
+        {model.setupImageUrl ? <SetupImage title={model.title} src={model.setupImageUrl} /> : null}
         {model.setupNotes.length > 0 ? (
           <p className="m-0 break-keep px-1 text-[14px] font-semibold leading-6 text-[color:var(--spm-t2)]">
             {model.setupNotes.join(' · ')}
@@ -374,9 +373,9 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
                   src={video.thumbnailUrl}
                   alt=""
                   fill
-                  sizes="(min-width: 900px) 33vw, 100vw"
+                  sizes="(min-width: 1220px) 370px, (min-width: 900px) 31vw, 100vw"
                   className="object-cover transition duration-200 ease-out group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
-                  unoptimized={imageNeedsUnoptimized(video.thumbnailUrl)}
+                  unoptimized={video.thumbnailUrl.includes('img.youtube.com') || imageNeedsUnoptimized(video.thumbnailUrl)}
                 />
               ) : (
                 <Play className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 text-white/80" />

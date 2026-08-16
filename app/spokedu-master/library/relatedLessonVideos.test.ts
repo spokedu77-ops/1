@@ -15,6 +15,7 @@ function program(overrides: Partial<Program> & Pick<Program, 'id' | 'title'>): P
     equipment: [],
     tags: overrides.tags ?? [],
     colors: ['#111827', '#334155', '#64748b', '#e2e8f0'],
+    thumbnailUrl: overrides.thumbnailUrl,
     isPro: false,
     isNew: false,
     lessonDetail: {
@@ -57,5 +58,48 @@ describe('selectRelatedLessonVideos', () => {
     expect(selectRelatedLessonVideos(current, candidates).map((item) => item.id)).toEqual([
       'tag-a', 'tag-b', 'category',
     ]);
+  });
+
+  it('prefers the trusted video thumbnail and never reuses the setup image', () => {
+    const candidate = program({
+      id: 'video-first',
+      title: '영상 우선',
+      thumbnailUrl: 'https://example.com/dedicated.jpg',
+      lessonDetail: {
+        videoUrl: 'https://youtu.be/thumbnail1',
+        setupImageUrl: 'https://example.supabase.co/storage/v1/object/public/setup.jpg',
+      } as Program['lessonDetail'],
+    });
+
+    expect(selectRelatedLessonVideos(current, [candidate])).toEqual([
+      expect.objectContaining({
+        thumbnailUrl: 'https://img.youtube.com/vi/thumbnail1/hqdefault.jpg',
+      }),
+    ]);
+  });
+
+  it('does not use a setup image when no dedicated related thumbnail exists', () => {
+    const candidate = program({
+      id: 'setup-only',
+      title: '세팅 이미지 제외',
+      thumbnailUrl: 'https://example.supabase.co/storage/v1/object/public/setup.jpg',
+      lessonDetail: {
+        videoUrl: 'https://youtu.be/related12',
+        setupImageUrl: 'https://example.supabase.co/storage/v1/object/public/setup.jpg',
+      } as Program['lessonDetail'],
+    });
+
+    expect(selectRelatedLessonVideos(current, [candidate])[0]?.thumbnailUrl)
+      .toBe('https://img.youtube.com/vi/related12/hqdefault.jpg');
+  });
+
+  it('excludes blocked videos through the current trusted-video policy', () => {
+    const blocked = program({
+      id: 'blocked',
+      title: '차단 영상',
+      lessonDetail: { videoUrl: 'https://youtu.be/7PJhBm5RkgY' } as Program['lessonDetail'],
+    });
+
+    expect(selectRelatedLessonVideos(current, [blocked])).toEqual([]);
   });
 });

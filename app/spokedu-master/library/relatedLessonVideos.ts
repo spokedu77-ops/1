@@ -3,8 +3,9 @@ import { getPublicLessonTags, normalizeTagKey } from '../lib/lessonDisplayModel'
 import {
   getTrustedProgramVideoUrl,
   getVideoThumbnail,
+  isInterimDedicatedHero,
+  isStockPlaceholderImage,
   programHasPlayableVideo,
-  resolveProgramHero,
 } from '../lib/program-media';
 
 export type RelatedLessonVideo = {
@@ -29,6 +30,18 @@ function sharedPartCount(left: Set<string>, right: Set<string>) {
     if (right.has(value)) count += 1;
   }
   return count;
+}
+
+function getDedicatedRelatedThumbnail(program: Program): string | undefined {
+  const setupImage = program.lessonDetail?.setupImageUrl?.trim();
+  return [program.thumbnailUrl, program.lessonDetail?.heroImageUrl]
+    .map((value) => value?.trim())
+    .find((value): value is string => Boolean(
+      value &&
+      value !== setupImage &&
+      !isStockPlaceholderImage(value) &&
+      !isInterimDedicatedHero(value),
+    ));
 }
 
 export function selectRelatedLessonVideos(
@@ -63,7 +76,7 @@ export function selectRelatedLessonVideos(
       return {
         id: candidate.id,
         title: candidate.title,
-        thumbnailUrl: resolveProgramHero(candidate) ?? getVideoThumbnail(videoUrl) ?? null,
+        thumbnailUrl: getVideoThumbnail(videoUrl) ?? getDedicatedRelatedThumbnail(candidate) ?? null,
         href: `/spokedu-master/library/${candidate.id}`,
       };
     });

@@ -117,7 +117,12 @@ async function checkViewport(browser, viewport) {
   await context.addInitScript((value) => localStorage.setItem('spokedu-master-store', value), storeValue());
   const page = await context.newPage();
   const consoleErrors = [];
+  const mediaRequests = [];
   page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+  page.on('request', (request) => {
+    const url = decodeURIComponent(request.url());
+    if (/img\.youtube\.com|supabase\.co|youtube\.com\/embed/i.test(url)) mediaRequests.push(url);
+  });
   await installMocks(page);
   await page.goto(`${BASE}/spokedu-master/library/${program.id}`, { waitUntil: 'domcontentloaded', timeout: 45_000 });
   try {
@@ -142,6 +147,13 @@ async function checkViewport(browser, viewport) {
   assert(await page.locator('[data-detail-variation-item]').count() === 5, `${viewport.width}: variations did not expand`);
   assert(await variationToggle.getAttribute('aria-expanded') === 'true', `${viewport.width}: variation toggle did not expose expanded state`);
   await variationToggle.click();
+  const initialMediaRequests = {
+    youtubePosters: mediaRequests.filter((url) => url.includes('img.youtube.com')).length,
+    supabaseImages: mediaRequests.filter((url) => url.includes('supabase.co')).length,
+    youtubeIframes: mediaRequests.filter((url) => url.includes('youtube.com/embed')).length,
+    duplicateRequests: mediaRequests.length - new Set(mediaRequests).size,
+  };
+  assert(initialMediaRequests.youtubeIframes === 0, `${viewport.width}: YouTube iframe loaded before play`);
 
   const layout = await page.evaluate(() => {
     const actions = [...document.querySelectorAll('[data-detail-action]')].map((element) => element.getBoundingClientRect());
@@ -217,7 +229,7 @@ async function checkViewport(browser, viewport) {
   const relevantErrors = consoleErrors.filter((message) => !/ERR_NETWORK_ACCESS_DENIED|favicon|youtube/i.test(message));
   assert(relevantErrors.length === 0, `${viewport.width}: console errors: ${relevantErrors.join(' | ')}`);
   await context.close();
-  return { width: viewport.width, ...layout, screenshot, foldScreenshot };
+  return { width: viewport.width, ...layout, initialMediaRequests, screenshot, foldScreenshot };
 }
 
 let serverProcess;

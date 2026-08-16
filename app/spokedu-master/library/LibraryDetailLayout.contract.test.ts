@@ -76,6 +76,9 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).not.toContain('model.setupImageUrl ?? getVideoThumbnail');
     expect(view).toContain("action: 'video_started'");
     expect(view).toContain('new IntersectionObserver');
+    const setupImage = guide.slice(guide.indexOf('function SetupImage'), guide.indexOf('function LessonVideo'));
+    expect(setupImage).not.toContain('priority');
+    expect(setupImage).toContain('(min-width: 1220px) 560px');
   });
 
   it('shows two variations before accessible progressive disclosure', () => {
@@ -105,6 +108,10 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(related).toContain('candidate.id !== current.id');
     expect(related).toContain('.slice(0, Math.max(0, limit))');
     expect(related).not.toContain('Math.random');
+    expect(related).toContain('getVideoThumbnail(videoUrl) ?? getDedicatedRelatedThumbnail(candidate)');
+    expect(related).not.toContain('resolveProgramHero');
+    expect(guide).not.toContain('<SetupImage title={model.title} src={model.setupImageUrl} /> : <div />');
+    expect(guide).toContain("video.thumbnailUrl.includes('img.youtube.com') || imageNeedsUnoptimized");
     expect(view).not.toContain('RelatedSpomoveSection');
     expect(view).not.toContain('관련 콘텐츠');
     expect(view).not.toContain('recentEvidenceRecords');
