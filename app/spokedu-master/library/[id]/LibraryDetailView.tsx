@@ -153,7 +153,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
       className="min-h-dvh pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-[color:var(--spm-t)] lg:pb-14"
       style={{
         background:
-          'radial-gradient(circle at 50% -8rem, var(--spm-acc-a10), transparent 34rem), linear-gradient(180deg, color-mix(in srgb, var(--spm-s2) 82%, white) 0, var(--spm-bg) 38rem)',
+          'linear-gradient(180deg, color-mix(in srgb, var(--spm-s2) 58%, white) 0, var(--spm-bg) 34rem)',
       }}
     >
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200/70 bg-[color-mix(in_srgb,var(--spm-s1)_91%,transparent)] px-3 shadow-[0_6px_24px_rgba(15,23,42,0.035)] backdrop-blur-2xl sm:gap-3 sm:px-6 lg:px-8">
@@ -164,7 +164,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <p data-detail-sticky-title aria-hidden={isHeroTitleVisible} className={`min-w-0 truncate text-center text-[13px] font-black text-[color:var(--spm-t)] transition-opacity duration-150 motion-reduce:transition-none sm:text-[14px] ${isHeroTitleVisible ? 'invisible opacity-0' : 'visible opacity-100'}`}>
           {model.title}
         </p>
-        <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--spm-t2)] shadow-sm ring-1 transition duration-200 ease-out hover:scale-[1.03] hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : ownerId ? 'bg-white/85 ring-slate-200/80 hover:bg-white' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200/70'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} disabled={!ownerId}>
+        <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--spm-t2)] ring-1 transition duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : ownerId ? 'bg-white/70 ring-slate-200/70 hover:bg-white' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200/70'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} disabled={!ownerId}>
           <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
         </button>
       </header>
@@ -175,13 +175,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
           heroTitleRef={heroTitleRef}
           actions={(
             <div data-detail-actions className="mx-auto grid w-full max-w-[740px] grid-cols-3 gap-1.5 sm:gap-2.5">
-              <Link data-detail-action="primary" href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[12px] bg-[linear-gradient(145deg,var(--spm-acc),var(--spm-acc-muted))] px-1 text-[12px] font-black text-white shadow-[0_10px_24px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.16)] transition duration-200 ease-out hover:-translate-y-px hover:shadow-[0_13px_30px_rgba(15,23,42,0.23),inset_0_1px_0_rgba(255,255,255,0.18)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
+              <Link data-detail-action="primary" href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-1 text-[12px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] transition duration-200 ease-out hover:-translate-y-px hover:brightness-[0.97] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
                 <Clipboard className="hidden h-4 w-4 shrink-0 sm:block" /> 수업 기록 시작
               </Link>
               <button data-detail-action="today" type="button" disabled={!ownerId || isTodayLesson} onClick={() => { if (ownerId && !isTodayLesson) setTodayLesson(ownerId, { id: program.id, title: program.title }); }} className={`inline-flex h-12 min-w-0 items-center justify-center whitespace-nowrap rounded-[12px] px-1 text-[12px] font-black shadow-sm ring-1 transition duration-200 ease-out motion-reduce:transform-none motion-reduce:transition-none sm:px-3 sm:text-[13px] ${isTodayLesson ? 'cursor-default bg-[var(--spm-acc-a10)] text-[var(--spm-acc)] ring-[var(--spm-acc-a28)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]' : ownerId ? 'bg-white/90 text-slate-800 ring-slate-300/90 hover:-translate-y-px hover:bg-white hover:shadow-md' : 'cursor-not-allowed bg-slate-100 text-slate-400 ring-slate-200'}`} aria-pressed={isTodayLesson}>
                 {isTodayLesson ? '✓ 오늘 수업 지정됨' : '오늘 수업으로 지정'}
               </button>
-              <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[12px] bg-white/74 px-1 text-[12px] font-black text-[color:var(--spm-t2)] shadow-sm ring-1 ring-slate-200/80 transition duration-200 ease-out hover:-translate-y-px hover:bg-white hover:shadow-md active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
+              <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-white/62 px-1 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition duration-200 ease-out hover:-translate-y-px hover:bg-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
                 <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopied ? '복사 완료' : '지도안 복사'}
               </button>
             </div>

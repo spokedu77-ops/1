@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpRight, ExternalLink, Play, X, ZoomIn } from 'lucide-react';
+import { ExternalLink, Play, X, ZoomIn } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
@@ -31,7 +31,7 @@ const DETAIL_PANEL_HEADING_CLASS =
   'm-0 flex h-[30px] items-center text-[21px] font-black leading-[30px] tracking-[-0.025em] text-[color:var(--spm-t)]';
 const DETAIL_PANEL_BODY_CLASS = 'min-h-0';
 const DETAIL_ROW_CLASS =
-  'grid items-stretch gap-8 rounded-[22px] p-5 shadow-[0_22px_64px_rgba(15,23,42,0.07)] ring-1 ring-slate-200/60 sm:p-7 min-[900px]:gap-9';
+  'grid items-stretch gap-8 rounded-[19px] p-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/55 sm:p-7 min-[900px]:gap-9';
 
 export function splitLessonTitle(title: string): {
   koreanTitle: string;
@@ -74,26 +74,15 @@ function SetupImage({ title, src }: { title: string; src: string }) {
   const unoptimized = imageNeedsUnoptimized(src);
   return (
     <>
-      <div className="group relative h-full min-h-[310px] overflow-hidden rounded-[17px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--spm-s3)_72%,white),color-mix(in_srgb,var(--spm-s2)_84%,white))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:min-h-[360px] sm:p-4 min-[900px]:min-h-0">
-        <div aria-hidden className="absolute inset-0 overflow-hidden">
-          <Image
-            src={src}
-            alt=""
-            fill
-            sizes="(min-width: 900px) 48vw, 100vw"
-            className="scale-110 object-cover opacity-[0.11] blur-2xl"
-            unoptimized={unoptimized}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.3),rgba(241,245,249,0.7))]" />
-        </div>
-        <div className="relative z-10 h-full min-h-[286px] overflow-hidden rounded-[14px] bg-white/72 shadow-[0_16px_40px_rgba(15,23,42,0.08)] ring-1 ring-white/90 sm:min-h-[328px] min-[900px]:min-h-0">
+      <div className="group relative h-full min-h-[300px] overflow-hidden rounded-[15px] bg-[color-mix(in_srgb,var(--spm-s3)_76%,white)] p-3 sm:min-h-[340px] sm:p-4 min-[900px]:min-h-0">
+        <div className="relative z-10 h-full min-h-[276px] overflow-hidden rounded-[12px] sm:min-h-[308px] min-[900px]:min-h-0">
           <Image
             src={src}
             alt={`${title} 초기 교구 세팅`}
             fill
             priority
             sizes="(min-width: 900px) 48vw, 100vw"
-            className="object-contain p-2 sm:p-3"
+            className="object-contain p-1 sm:p-2"
             unoptimized={unoptimized}
           />
         </div>
@@ -174,7 +163,7 @@ function LessonVideo({ model, video }: { model: LessonDisplayModel; video: Video
   }
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-[15px] bg-slate-950 shadow-[0_18px_42px_rgba(2,6,23,0.22)] ring-1 ring-white/10">
+    <div className="relative aspect-video w-full overflow-hidden rounded-[14px] bg-slate-950 shadow-[0_10px_28px_rgba(2,6,23,0.18)]">
       <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_35%,#334155,#020617_72%)] text-center text-white/70">
         <div><span className="text-[11px] font-black tracking-[0.18em]">SPOKEDU MASTER</span><p className="m-0 mt-2 text-[13px] font-bold">수업 영상</p></div>
       </div>
@@ -229,7 +218,7 @@ function VideoPanel({ model, video }: { model: LessonDisplayModel; video: VideoP
       <h2 data-detail-panel-heading className={DETAIL_PANEL_HEADING_CLASS}>수업 영상</h2>
       <div
         data-detail-panel-body
-        className={`${DETAIL_PANEL_BODY_CLASS} flex items-center rounded-[17px] bg-[radial-gradient(circle_at_50%_15%,#334155_0%,#0f172a_56%,#020617_100%)] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:p-3.5`}
+        className={`${DETAIL_PANEL_BODY_CLASS} self-start`}
       >
         <LessonVideo model={model} video={video} />
       </div>
@@ -249,9 +238,9 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
     <div data-detail-panel="method" className={DETAIL_PANEL_CLASS}>
       <h2 data-detail-panel-heading className={DETAIL_PANEL_HEADING_CLASS}>진행 방법</h2>
       <div data-detail-panel-body className={`${DETAIL_PANEL_BODY_CLASS} flex flex-col`}>
-        <ol className="m-0 divide-y divide-slate-200/65">
+        <ol className="m-0 space-y-5">
           {model.activityMethod.map((item, index) => (
-            <li key={`${index}-${item}`} className="grid grid-cols-[44px_minmax(0,1fr)] gap-3 py-3.5 first:pt-0 sm:gap-4">
+            <li key={`${index}-${item}`} className="grid grid-cols-[40px_minmax(0,1fr)] gap-3 sm:gap-4">
               <span className="pt-px text-[18px] font-black leading-7 tabular-nums tracking-[-0.04em] text-[var(--spm-acc)]">
                 {String(index + 1).padStart(2, '0')}
               </span>
@@ -263,16 +252,14 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
         </ol>
 
         {model.variationMethod.length > 0 ? (
-          <section className="mt-auto border-t border-slate-200/70 pt-5">
+          <section className="mt-7 border-t border-slate-200/60 pt-5">
             <h3 className="m-0 text-[17px] font-black tracking-[-0.018em] text-[color:var(--spm-t)]">
               난이도 조절 · 변형 활동
             </h3>
             <ul id={variationListId} className="m-0 mt-3.5 space-y-3">
               {visibleVariations.map((item, index) => (
-                <li data-detail-variation-item key={`${index}-${item}`} className="grid grid-cols-[28px_minmax(0,1fr)] items-start gap-2.5">
-                  <span aria-hidden className="mt-1 grid h-6 w-6 place-items-center rounded-[8px] bg-[var(--spm-acc-a08)] text-[13px] font-black text-[var(--spm-acc)]">
-                    ↗
-                  </span>
+                <li data-detail-variation-item key={`${index}-${item}`} className="grid grid-cols-[14px_minmax(0,1fr)] items-start gap-2.5">
+                  <span aria-hidden className="mt-[10px] h-1.5 w-1.5 rounded-full bg-[var(--spm-acc-a30)]" />
                   <p className="m-0 break-keep text-[14px] font-semibold leading-[1.65] text-[color:var(--spm-t2)] sm:text-[15px]">
                     {item}
                   </p>
@@ -283,7 +270,7 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
               <button
                 data-detail-variation-toggle
                 type="button"
-                className="mt-4 inline-flex min-h-11 items-center rounded-[10px] px-3 text-[14px] font-black text-[var(--spm-acc)] transition-colors hover:bg-[var(--spm-acc-a08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+                className="mt-2 inline-flex min-h-11 items-center px-0 text-[14px] font-black text-[var(--spm-acc)] transition-colors hover:text-[color:var(--spm-t)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
                 aria-expanded={variationsExpanded}
                 aria-controls={variationListId}
                 onClick={() => setVariationsExpanded((expanded) => !expanded)}
@@ -336,12 +323,12 @@ function OverviewPanel({ model }: { model: LessonDisplayModel }) {
       <h2 data-detail-panel-heading className={DETAIL_PANEL_HEADING_CLASS}>수업 한눈에 보기</h2>
       <div
         data-detail-panel-body
-        className={`${DETAIL_PANEL_BODY_CLASS} divide-y divide-slate-200/70 rounded-[17px] bg-white/82 px-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] ring-1 ring-white/85 sm:px-6`}
+        className={`${DETAIL_PANEL_BODY_CLASS} divide-y divide-slate-200/65`}
       >
         {model.coachScript ? (
           <section className="py-5">
             <h3 className="m-0 text-[15px] font-black text-[color:var(--spm-t)]">스크립트</h3>
-            <div className="relative mt-3 overflow-hidden rounded-[12px] bg-[color-mix(in_srgb,var(--spm-acc)_4%,white)] px-4 py-3.5 before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-[var(--spm-acc-a30)]">
+            <div className="mt-3">
               <p className="m-0 whitespace-pre-line break-keep text-[15px] font-semibold leading-[1.74] text-[color:var(--spm-t2)] sm:text-[16px]">
                 {model.coachScript}
               </p>
@@ -379,7 +366,7 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
             key={video.id}
             data-related-video-card
             href={video.href}
-            className="group grid min-w-0 grid-rows-[auto_1fr] rounded-[17px] bg-white/82 p-2.5 shadow-[0_12px_34px_rgba(15,23,42,0.055)] ring-1 ring-slate-200/55 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(15,23,42,0.09)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transform-none motion-reduce:transition-none"
+            className="group grid min-w-0 grid-rows-[auto_1fr] transition duration-200 ease-out hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transform-none motion-reduce:transition-none"
           >
             <div data-related-video-thumbnail className="relative aspect-video overflow-hidden rounded-[14px] bg-[radial-gradient(circle_at_50%_30%,#475569,#0f172a_72%)]">
               {video.thumbnailUrl ? (
@@ -398,11 +385,10 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
                 <Play className="ml-0.5 h-4 w-4 fill-current" />
               </span>
             </div>
-            <div className="flex min-h-[66px] items-start justify-between gap-3 px-1.5 pb-1 pt-3.5">
+            <div className="min-h-[58px] px-0.5 pt-3">
               <h3 className="m-0 line-clamp-2 break-keep text-[15px] font-extrabold leading-[1.45] tracking-[-0.012em] text-[color:var(--spm-t)]">
                 {video.title}
               </h3>
-              <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--spm-t3)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none motion-reduce:transition-none" />
             </div>
           </Link>
         ))}
@@ -429,7 +415,7 @@ export function DetailLessonGuide({
 
   return (
     <div>
-      <header className="mx-auto max-w-[980px] px-1 pb-12 pt-4 text-center sm:pb-14 sm:pt-2 lg:pb-[52px]">
+      <header className="mx-auto max-w-[980px] px-1 pb-10 pt-3 text-center sm:pb-12 sm:pt-1 lg:pb-11">
         <h1
           ref={heroTitleRef}
           data-detail-hero-title
@@ -464,7 +450,7 @@ export function DetailLessonGuide({
         <section
           id="lesson-preparation"
           data-detail-row="preparation"
-          className={`${DETAIL_ROW_CLASS} mt-14 scroll-mt-20 bg-[color-mix(in_srgb,var(--spm-s2)_72%,white)] sm:mt-16 min-[900px]:min-h-[460px] min-[900px]:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]`}
+          className={`${DETAIL_ROW_CLASS} mt-12 scroll-mt-20 bg-[color-mix(in_srgb,var(--spm-s2)_55%,white)] sm:mt-14 min-[900px]:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]`}
         >
           <SetupPanel model={model} />
           {hasOverview ? <OverviewPanel model={model} /> : null}

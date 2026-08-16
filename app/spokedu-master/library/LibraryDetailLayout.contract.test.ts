@@ -86,6 +86,15 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain('`+ ${hiddenVariationCount}개 더보기`');
   });
 
+  it('keeps the precision pass free of nested decorative media cards', () => {
+    expect(guide).toContain("className={`${DETAIL_PANEL_BODY_CLASS} self-start`}");
+    expect(guide).not.toContain('blur-2xl');
+    expect(guide).not.toContain('ArrowUpRight');
+    expect(guide).not.toContain('mt-auto border-t');
+    expect(guide).not.toContain('min-[900px]:min-h-[460px]');
+    expect(view).not.toContain('linear-gradient(145deg,var(--spm-acc)');
+  });
+
   it('renders related videos only from deterministic playable program data', () => {
     expect(view).toContain('selectRelatedLessonVideos(program, programs)');
     expect(view).toContain('relatedVideos={relatedVideos}');
