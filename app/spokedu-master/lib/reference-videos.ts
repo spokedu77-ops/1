@@ -1,6 +1,6 @@
 import { PROGRAMS as STATIC_PROGRAMS } from './data';
 import { getYouTubeId } from './program-media';
-import { isFunstickFencingProgram, resolveTrustedReferenceVideoUrl } from './verified-program-video';
+import { resolveTrustedReferenceVideoUrl } from './verified-program-video';
 
 function normalizeTitle(title: string) {
   return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
@@ -27,8 +27,7 @@ export function resolveReferenceVideoForTitle(title: string): string | undefined
   return resolveTrustedReferenceVideoUrl(staticMatch.lessonDetail?.videoUrl, staticMatch);
 }
 
-export function resolveReferenceVideoForSeed(title: string, curriculumId: number): string | undefined {
-  if (isFunstickFencingProgram({ id: String(curriculumId), title })) return undefined;
+export function resolveReferenceVideoForSeed(title: string): string | undefined {
   return resolveReferenceVideoForTitle(title);
 }
 

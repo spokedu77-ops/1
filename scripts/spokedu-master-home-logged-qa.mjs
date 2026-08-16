@@ -74,6 +74,9 @@ function bootstrapStore(email) {
 async function login(context) {
   const page = await context.newPage();
   await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/dashboard')}`, { waitUntil: 'domcontentloaded' });
+  if (await page.locator('input[name="username"]').count() === 0) {
+    await page.getByRole('tab', { name: /강사|관리자/ }).click();
+  }
   await page.locator('input[type="text"]').first().fill(QA_ID);
   await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
   await page.locator('button[type="submit"]').click();

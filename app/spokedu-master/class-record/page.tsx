@@ -228,7 +228,7 @@ function StudentRow({
 }) {
   const dot = attendance === 'present' ? 'var(--spm-grn)' : attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)';
   return (
-    <div className="grid min-h-[58px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[12px] border bg-white px-2.5 py-2" style={{ borderColor: selected ? 'var(--spm-acc-a42)' : 'var(--spm-br2)' }}>
+    <div data-student-row={student.id} className="grid min-h-[58px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[12px] border bg-white px-2.5 py-2" style={{ borderColor: selected ? 'var(--spm-acc-a42)' : 'var(--spm-br2)' }}>
       <div className="flex min-w-0 items-center gap-2.5">
         <input
           type="checkbox"
@@ -252,10 +252,10 @@ function StudentRow({
         </button>
       </div>
       <div className="grid grid-cols-3 gap-1.5">
-        <button type="button" disabled={disabled} onClick={() => onAttendance('present')} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: attendance === 'present' ? 'var(--spm-grn-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 출석`}>
+        <button data-attendance="present" type="button" disabled={disabled} onClick={() => onAttendance('present')} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: attendance === 'present' ? 'var(--spm-grn-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 출석`}>
           <UserCheck size={17} color={attendance === 'present' ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
         </button>
-        <button type="button" disabled={disabled} onClick={() => onAttendance('absent')} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: attendance === 'absent' ? 'rgba(239,68,68,0.15)' : 'var(--spm-s3)' }} aria-label={`${student.name} 결석`}>
+        <button data-attendance="absent" type="button" disabled={disabled} onClick={() => onAttendance('absent')} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: attendance === 'absent' ? 'rgba(239,68,68,0.15)' : 'var(--spm-s3)' }} aria-label={`${student.name} 결석`}>
           <UserX size={17} color={attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)'} />
         </button>
         <button type="button" disabled={disabled} onClick={onFocus} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: focused ? 'var(--spm-amb-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 집중 관찰`}>

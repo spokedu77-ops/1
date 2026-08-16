@@ -52,7 +52,7 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
   const primaryLabel = model?.ctaLabel ?? (subscriptionBlockedFeature ? '구독 관리' : '구독 선택');
 
   return (
-    <div className="grid h-full place-items-center overflow-y-auto p-6" style={{ background: 'var(--spm-bg)' }}>
+    <div data-subscription-gate={requirement} className="grid h-full place-items-center overflow-y-auto p-6" style={{ background: 'var(--spm-bg)' }}>
       <section className="w-full max-w-[440px] rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px] border border-red-200 bg-red-50">
           <Lock size={24} className="text-red-600" />

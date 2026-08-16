@@ -12,6 +12,13 @@ const catalogCard = readFileSync(
 );
 
 describe('LibraryView favorites contract', () => {
+  it('searches operational lesson fields instead of title only', () => {
+    expect(source).toContain('...(program.equipment ?? [])');
+    expect(source).toContain('...(program.steps ?? [])');
+    expect(source).toContain('...(program.tags ?? [])');
+    expect(source).not.toContain('return program.title.toLowerCase()');
+  });
+
   it('uses the owner-scoped canonical selectors and action', () => {
     expect(source).toContain('state.getFavoriteProgramIds');
     expect(source).toContain('state.isFavoriteProgram');
@@ -47,8 +54,8 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain('전체에서 찾기');
     expect(source).toContain('상황별 바로 고르기');
     expect(source).toContain('전체 {pool.length}개 수업');
-    expect(source).toContain('placeholder="수업명 검색"');
-    expect(source).toContain('return program.title.toLowerCase()');
+    expect(source).toContain('placeholder="수업명·준비물·키워드 검색"');
+    expect(source).toContain('...(program.equipment ?? [])');
     expect(source).not.toContain('조건에 맞는 수업 찾기');
     expect(source).not.toContain('전체 수업 ${filteredPrograms.length}개');
     expect(source).not.toContain('MATERIAL_VIDEO_VALUE');

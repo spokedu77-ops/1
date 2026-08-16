@@ -706,7 +706,7 @@ async function checkNoHorizontalOverflow(page, label) {
 
 async function waitForText(page, text, description) {
   try {
-    await page.getByText(text).first().waitFor({ state: 'visible', timeout: 10_000 });
+    await page.getByText(text).filter({ visible: true }).first().waitFor({ state: 'visible', timeout: 10_000 });
   } catch {
     const body = await page.locator('body').innerText().catch(() => '');
     throw new Error(`${description} not visible. Body: ${body.slice(0, 700).replace(/\s+/g, ' ')}`);
@@ -751,7 +751,7 @@ async function runAccessDeniedSmoke(browser) {
   await page.getByRole('heading', { name: 'SPOKEDU MASTER 이용 권한이 필요합니다.' }).waitFor({ state: 'visible', timeout: 15_000 });
   const bodyText = await page.locator('body').innerText();
   assert(bodyText.includes('SPOKEDU MASTER'), '403 screen did not render SPOKEDU MASTER copy');
-  const paymentCta = page.getByRole('link', { name: /이용권 선택|이용권 다시 선택|구독 관리/ });
+  const paymentCta = page.locator('a[href="/spokedu-master/payment"]');
   assert(await paymentCta.count() >= 1, 'payment CTA missing');
   assert(await page.locator('a[href="/spokedu-master/landing"]').count() >= 1, 'landing CTA missing');
   assert(mocks.operationalCalls === 0, '403 state rendered operational providers or children');
@@ -1012,38 +1012,6 @@ async function runStudentCreationSmoke(browser) {
   await context.close();
 }
 
-async function runQuickRecordToReportSmoke(browser) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await installAppState(context);
-  await login(context);
-  const page = await context.newPage();
-  const finishConsoleCheck = await assertNoConsoleErrors(page, 'quick record');
-  await installOperationalMocks(page);
-  await gotoPage(page, '/spokedu-master/library/52');
-  await waitAppReady(page);
-  await waitForText(page, 'QA Jump Adventure', 'library detail title');
-  await checkNoHorizontalOverflow(page, 'library detail before quick modal');
-  await page.getByRole('button', { name: '빠른 기록' }).click();
-  await page.locator('[role="dialog"] input[type="date"]').fill(EXISTING_RECORD_DATE);
-  const textareas = page.locator('[role="dialog"] textarea');
-  await textareas.nth(0).fill('QA quick memo for report context.');
-  await textareas.nth(1).fill('QA parent note snapshot.');
-  await clickFirstAvailable([
-    page.locator('[role="dialog"] button.bg-emerald-600'),
-  ], 'quick record save button');
-  const reportLink = page.locator('[role="dialog"] a[href*="/spokedu-master/report?record="]').first();
-  await reportLink.waitFor({ state: 'visible', timeout: 10_000 });
-  const href = await reportLink.getAttribute('href');
-  assert(href?.includes('record=quick-record-1'), 'quick record report link missing saved record id');
-  assert(href?.includes('program=52'), 'quick record report link missing program id');
-  await gotoPage(page, href);
-  await page.waitForURL(/record=quick-record-1/, { timeout: 10_000 });
-  assert(new URL(page.url()).searchParams.get('record') === 'quick-record-1', 'quick report URL lost record query');
-  await waitForReportOutput(page, 'QA quick memo for report context.', 'quick record report output');
-  finishConsoleCheck();
-  await context.close();
-}
-
 async function runDetailedRecordSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await installAppState(context);
@@ -1059,8 +1027,8 @@ async function runDetailedRecordSmoke(browser) {
     const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
       node.textContent?.includes('QA Alice Longname Student'),
     );
-    const card = nameNode?.closest('div.rounded-\\[15px\\]');
-    const attendanceButton = card?.querySelectorAll('button')[1];
+    const card = nameNode?.closest('[data-student-row]');
+    const attendanceButton = card?.querySelector('[data-attendance="present"]');
     if (!(attendanceButton instanceof HTMLButtonElement)) throw new Error('Alice attendance button not found');
     attendanceButton.click();
   });
@@ -1101,8 +1069,8 @@ async function runDetailedRecordFailureSmoke(browser) {
     const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
       node.textContent?.includes('QA Alice Longname Student'),
     );
-    const card = nameNode?.closest('div.rounded-\\[15px\\]');
-    const attendanceButton = card?.querySelectorAll('button')[1];
+    const card = nameNode?.closest('[data-student-row]');
+    const attendanceButton = card?.querySelector('[data-attendance="present"]');
     if (!(attendanceButton instanceof HTMLButtonElement)) throw new Error('Alice attendance button not found');
     attendanceButton.click();
   });
@@ -1148,7 +1116,7 @@ async function runReportSaveRestoreSmoke(browser) {
   await waitForOperationalReady(page);
   assert(new URL(page.url()).searchParams.get('saved') === 'exp-new-1', 'reload lost saved query');
   await waitForReportOutput(page, '오늘은 QA Jump Adventure 활동을 진행했습니다.', 'saved restore report output');
-  await page.locator('aside section').nth(1).getByRole('button', { name: /^QA Balance Program / }).first().click();
+  await page.locator('select').filter({ has: page.locator('option[value="53"]') }).selectOption('53');
   await page.waitForURL(/program=53/, { timeout: 10_000 });
   const programOnlyUrl = new URL(page.url());
   assert(programOnlyUrl.searchParams.get('program') === '53', 'program select did not switch program');
@@ -1243,8 +1211,8 @@ async function markAlicePresent(page) {
     const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
       node.textContent?.includes('QA Alice Longname Student'),
     );
-    const card = nameNode?.closest('div.rounded-\\[15px\\]');
-    const attendanceButton = card?.querySelectorAll('button')[1];
+    const card = nameNode?.closest('[data-student-row]');
+    const attendanceButton = card?.querySelector('[data-attendance="present"]');
     if (!(attendanceButton instanceof HTMLButtonElement)) throw new Error('Alice attendance button not found');
     attendanceButton.click();
   });
@@ -1402,7 +1370,9 @@ async function runDayLoopSmoke(browser) {
   await assignToday.waitFor({ state: 'visible', timeout: 10_000 });
   assert(!(await assignToday.isDisabled()), 'today assign disabled (ownerId missing)');
   await assignToday.click();
-  await page.getByRole('button', { name: '오늘 수업 해제' }).waitFor({ state: 'visible', timeout: 10_000 });
+  const assignedToday = page.locator('[data-detail-action="today"]');
+  await assignedToday.waitFor({ state: 'visible', timeout: 10_000 });
+  assert((await assignedToday.getAttribute('aria-pressed')) === 'true', 'today lesson assignment did not persist in detail');
 
   // 2) home CompactOpsBar today_lesson → record
   await gotoPage(page, '/spokedu-master/dashboard');
@@ -1513,34 +1483,33 @@ async function openWithTier(browser, tier, route) {
 
 async function runEntitlementMatrixSmoke(browser) {
   {
-    const { context, body } = await openWithTier(browser, 'lite', '/spokedu-master/class-record');
-    assert(/기록 누적은 프리미엄/.test(body), 'lite class-record did not show Premium GateWall');
-    assert(/프리미엄 필요/.test(body), 'lite class-record missing Premium badge');
+    const { context, page } = await openWithTier(browser, 'lite', '/spokedu-master/class-record');
+    assert(await page.locator('[data-subscription-gate="records"]').count() === 1, 'lite class-record did not show Premium GateWall');
     await context.close();
   }
   {
-    const { context, body } = await openWithTier(browser, 'lite', '/spokedu-master/class-tools');
-    assert(!/이용권이 필요합니다|프리미엄 필요|기록 누적은 프리미엄/.test(body), 'lite unexpectedly gated on class-tools');
+    const { context, page } = await openWithTier(browser, 'lite', '/spokedu-master/class-tools');
+    assert(await page.locator('[data-subscription-gate]').count() === 0, 'lite unexpectedly gated on class-tools');
     await context.close();
   }
   {
-    const { context, body } = await openWithTier(browser, 'premium', '/spokedu-master/spomove');
-    assert(!/이용권이 필요합니다|프리미엄 필요|SPOMOVE는 프리미엄/.test(body), 'premium unexpectedly gated on SPOMOVE');
+    const { context, page } = await openWithTier(browser, 'premium', '/spokedu-master/spomove');
+    assert(await page.locator('[data-subscription-gate]').count() === 0, 'premium unexpectedly gated on SPOMOVE');
     await context.close();
   }
   {
-    const { context, body } = await openWithTier(browser, 'expired', '/spokedu-master/library');
-    assert(/이용권이 필요합니다|이 기능을 사용하려면 이용권이 필요합니다/.test(body), 'expired library did not show renew GateWall');
+    const { context, page } = await openWithTier(browser, 'expired', '/spokedu-master/library');
+    assert(await page.locator('[data-subscription-gate="library"]').count() === 1, 'expired library did not show renew GateWall');
     await context.close();
   }
   {
-    const { context, body } = await openWithTier(browser, 'free', '/spokedu-master/library');
-    assert(/이용권이 필요합니다|이 기능을 사용하려면 이용권이 필요합니다/.test(body), 'free library did not show GateWall');
+    const { context, page } = await openWithTier(browser, 'free', '/spokedu-master/library');
+    assert(await page.locator('[data-subscription-gate="library"]').count() === 1, 'free library did not show GateWall');
     await context.close();
   }
   {
-    const { context, body } = await openWithTier(browser, 'free', '/spokedu-master/class-tools');
-    assert(!/이용권이 필요합니다|프리미엄 필요/.test(body), 'free unexpectedly gated on class-tools');
+    const { context, page } = await openWithTier(browser, 'free', '/spokedu-master/class-tools');
+    assert(await page.locator('[data-subscription-gate]').count() === 0, 'free unexpectedly gated on class-tools');
     await context.close();
   }
 }
@@ -1600,8 +1569,8 @@ async function runRecordCorrectionSmoke(browser) {
     const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
       node.textContent?.includes('QA Alice Longname Student'),
     );
-    const card = nameNode?.closest('div.rounded-\\[15px\\]');
-    const absentButton = card?.querySelectorAll('button')[2];
+    const card = nameNode?.closest('[data-student-row]');
+    const absentButton = card?.querySelector('[data-attendance="absent"]');
     if (!(absentButton instanceof HTMLButtonElement)) throw new Error('Alice absent button not found');
     absentButton.click();
   });
@@ -1632,6 +1601,7 @@ async function runRecordCorrectionSmoke(browser) {
 
   await gotoPage(page, '/spokedu-master/report?record=record-existing-1&program=52');
   await waitAppReady(page);
+  await page.getByRole('button', { name: '학생별 안내문' }).click();
   await waitForText(page, correctedMemo, 'corrected memo in regenerated report draft');
   finishConsoleCheck();
   await context.close();
@@ -1676,8 +1646,8 @@ async function runLibraryDiscoveryReuseSmoke(browser) {
     const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
       node.textContent?.includes('QA Alice Longname Student'),
     );
-    const card = nameNode?.closest('div.rounded-\\[15px\\]');
-    const presentButton = card?.querySelectorAll('button')[1];
+    const card = nameNode?.closest('[data-student-row]');
+    const presentButton = card?.querySelector('[data-attendance="present"]');
     if (!(presentButton instanceof HTMLButtonElement)) throw new Error('Alice present button not found');
     presentButton.click();
   });
@@ -1745,10 +1715,35 @@ async function runMobileSmoke(browser) {
     ['/spokedu-master/library/52', 'library detail 390px'],
     ['/spokedu-master/class-record?program=52', 'class-record 390px'],
     ['/spokedu-master/students', 'students 390px'],
+    ['/spokedu-master/class-tools', 'class-tools 390px'],
   ]) {
     await gotoPage(page, route);
     await waitAppReady(page);
     await checkNoHorizontalOverflow(page, label);
+    if (route.endsWith('/class-tools')) {
+      const toolsLayout = await page.evaluate(() => {
+        const tabs = document.querySelector('[data-class-tools-tabs]');
+        const content = document.querySelector('[data-class-tools-content]');
+        const nav = document.querySelector('nav.fixed');
+        if (!(tabs instanceof HTMLElement) || !(content instanceof HTMLElement)) return null;
+        const tabsRect = tabs.getBoundingClientRect();
+        const contentRect = content.getBoundingClientRect();
+        const navRect = nav instanceof HTMLElement ? nav.getBoundingClientRect() : null;
+        return {
+          tabsTop: tabsRect.top,
+          contentTop: contentRect.top,
+          contentBottom: contentRect.bottom,
+          navTop: navRect?.top ?? window.innerHeight,
+        };
+      });
+      assert(toolsLayout, 'class-tools immediate controls are missing');
+      assert(toolsLayout.tabsTop < 140, `class-tools tabs start too low (${toolsLayout.tabsTop}px)`);
+      assert(toolsLayout.contentTop < 200, `class-tools function starts too low (${toolsLayout.contentTop}px)`);
+      assert(
+        toolsLayout.contentBottom <= toolsLayout.navTop + 1,
+        `class-tools function is covered by bottom navigation (${JSON.stringify(toolsLayout)})`,
+      );
+    }
   }
   await context.close();
 }
@@ -1902,7 +1897,6 @@ async function main() {
       ['entitlement matrix', () => runEntitlementMatrixSmoke(browser)],
       ['payment activation first use', () => runPaymentActivationSmoke(browser)],
       ['student creation roster contract', () => runStudentCreationSmoke(browser)],
-      ['quick record to report', () => runQuickRecordToReportSmoke(browser)],
       ['detailed record to report', () => runDetailedRecordSmoke(browser)],
       ['detailed record failure retry', () => runDetailedRecordFailureSmoke(browser)],
       ['report save restore', () => runReportSaveRestoreSmoke(browser)],

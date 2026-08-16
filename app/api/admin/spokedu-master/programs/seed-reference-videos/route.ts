@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       if (existing) continue;
 
       const title = ((row.title as string | null) ?? '').trim() || `curriculum #${id}`;
-      const resolved = resolveReferenceVideoForSeed(title, id);
+      const resolved = resolveReferenceVideoForSeed(title);
       if (!resolved) continue;
 
       candidates.push({ id, title, url: resolved });

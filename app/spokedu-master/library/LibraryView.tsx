@@ -122,7 +122,23 @@ function getHeroImage(program: Program) {
 }
 
 function getSearchText(program: Program) {
-  return program.title.toLowerCase();
+  return [
+    program.title,
+    program.category,
+    program.description,
+    program.grade,
+    program.space,
+    ...(program.tags ?? []),
+    ...(program.equipment ?? []),
+    ...(program.steps ?? []),
+    program.lessonDetail?.objective,
+    program.lessonDetail?.developmentFocus,
+    program.lessonDetail?.recommendedAge,
+    program.lessonDetail?.recommendedPlayers,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
 }
 
 function parseReasonId(value: string | null): LibrarySelectionReasonId | null {
@@ -521,7 +537,7 @@ export default function LibraryView() {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="수업명 검색"
+                placeholder="수업명·준비물·키워드 검색"
                 className="h-10 w-full rounded-xl border border-[color:var(--spm-br2)] bg-white pl-10 pr-4 text-sm font-semibold text-[color:var(--spm-t)] outline-none placeholder:text-[color:var(--spm-t3)] focus:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200"
               />
             </label>

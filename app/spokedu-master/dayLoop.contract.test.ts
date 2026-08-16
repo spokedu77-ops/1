@@ -36,6 +36,7 @@ describe('SPOKEDU MASTER day loop journey', () => {
     expect(homeOps).toContain('`/spokedu-master/class-record?program=${encodeURIComponent(programId)}`');
     expect(opsBar).toContain('if (todayLessons.length > 0)');
     expect(opsBar).toContain('todayLessons.map');
+    expect(opsBar).toContain('/spokedu-master/class-record?program=${lesson.programId}');
     expect(opsBar).toContain('max-h-[84px]');
     expect(opsBar).toContain('오늘 수업에서 제거');
     expect(opsBar).toContain('onRemoveTodayLesson(lesson.programId)');

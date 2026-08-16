@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CheckCircle2, LayoutList, ListOrdered, MonitorPlay, Pause, Play, RotateCcw, Shuffle, Timer, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
+import { CheckCircle2, LayoutList, ListOrdered, Pause, Play, RotateCcw, Shuffle, Timer, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -19,21 +19,6 @@ const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'teams', label: '팀 나누기', icon: Users },
   { id: 'order', label: '진행 순서', icon: ListOrdered },
 ];
-
-const TOOL_STATUS = [
-  { label: '화면 도구', value: '스탑워치·타이머·점수판' },
-  { label: '명단 도구', value: '선택·팀·순서' },
-  { label: '운영 방식', value: '수업 중 즉시 실행' },
-] as const;
-
-const TOOL_HELP: Record<TabId, string> = {
-  stopwatch: '활동 시작부터 흐른 시간을 크게 보여주고, 구간별 랩타임을 남길 수 있습니다.',
-  'return-timer': '분/초를 직접 맞추거나 3·5·10분 버튼으로 바로 시작하는 수업용 카운트다운입니다.',
-  scoreboard: '팀 경기 활동에서 점수를 크게 보여주고 흐름을 끊지 않습니다.',
-  picker: '발표, 시범, 시작 순서를 공정하게 뽑습니다.',
-  teams: '참여 인원을 고려해 팀을 빠르게 나눕니다.',
-  order: '게임, 발표, 로테이션 순서를 한 번에 정합니다.',
-};
 
 function shuffleItems<T>(items: T[]) {
   const copied = [...items];
@@ -813,55 +798,9 @@ export default function ClassToolsView() {
   const operationalData = useOperationalData();
   const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
   const usingSample = false;
-  const ActiveIcon = TABS.find((item) => item.id === tab)?.icon ?? Timer;
-
   return (
     <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
-      <section className="shrink-0 border-b px-5 py-5 sm:px-7" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-[640px]">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>수업 도구</p>
-            <h1 className="mt-1 text-[26px] font-black leading-tight sm:text-[34px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-              수업 중 바로 꺼내 쓰는 진행 콘솔
-            </h1>
-            <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              스탑워치, 타이머, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
-            </p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3 lg:w-[520px]">
-            {TOOL_STATUS.map((item) => (
-              <div key={item.label} className="rounded-[14px] px-4 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{item.label}</p>
-                <p className="mt-1 truncate text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="mt-5 flex flex-col gap-3 rounded-[16px] px-4 py-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: 'var(--spm-acc-a08)', border: '1px solid var(--spm-acc-a18)' }}>
-          <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'var(--spm-acc)', color: 'white' }}>
-              <ActiveIcon size={18} />
-            </span>
-            <div>
-              <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{TABS.find((item) => item.id === tab)?.label}</p>
-              <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{TOOL_HELP[tab]}</p>
-            </div>
-          </div>
-          <div className="flex shrink-0 gap-2">
-            <Link href="/spokedu-master/library" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="라이브러리">
-              <BookOpen size={16} />
-            </Link>
-            <Link href="/spokedu-master/spomove" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="스포무브 실행">
-              <MonitorPlay size={16} />
-            </Link>
-            <Link href="/spokedu-master/students" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="학생 명단">
-              <UserPlus size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <div className="flex shrink-0 overflow-x-auto border-b" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
+      <div data-class-tools-tabs className="flex shrink-0 overflow-x-auto border-b" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
         {TABS.map(({ id, label, icon: Icon }) => {
           const active = tab === id;
           const hasCount = (id === 'picker' || id === 'teams' || id === 'order') && students.length > 0;
@@ -889,7 +828,7 @@ export default function ClassToolsView() {
         })}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+      <div data-class-tools-content className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
         {tab === 'stopwatch' && <StopwatchTab />}
         {tab === 'return-timer' && <ReturnTimerTab />}
         {tab === 'scoreboard' && <ScoreboardTab />}

@@ -37,6 +37,11 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).not.toContain("returnTo?.startsWith('/spokedu-master/class-mode/')");
     expect(tools).not.toContain("returnTo?.startsWith('/spokedu-master/library/')");
     expect(tools).not.toContain('window.location.href');
+    expect(tools).not.toContain('TOOL_STATUS');
+    expect(tools).not.toContain('TOOL_HELP');
+    expect(tools).not.toContain('수업 중 바로 꺼내 쓰는 진행 콘솔');
+    expect(tools).toContain('data-class-tools-tabs');
+    expect(tools).toContain('data-class-tools-content');
   });
 
   it('lets teachers use quick presets and custom minutes/seconds for the timer', () => {
