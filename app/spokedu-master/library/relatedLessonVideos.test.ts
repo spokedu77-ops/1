@@ -102,4 +102,41 @@ describe('selectRelatedLessonVideos', () => {
 
     expect(selectRelatedLessonVideos(current, [blocked])).toEqual([]);
   });
+
+  it('keeps only candidates with a real tag, category, or grade relationship', () => {
+    const baseDetail = { videoUrl: 'https://youtu.be/relevant1' } as Program['lessonDetail'];
+    const unrelatedCurrent = program({ id: 'source', title: '기준', category: 'A', grade: '초등', tags: ['패스'] });
+    const candidates = [
+      program({ id: 'tag', title: '태그', category: 'B', grade: '중등', tags: ['패스'], lessonDetail: baseDetail }),
+      program({ id: 'category', title: '카테고리', category: 'A', grade: '중등', tags: [], lessonDetail: baseDetail }),
+      program({ id: 'grade', title: '학년', category: 'B', grade: '초등', tags: [], lessonDetail: baseDetail }),
+      program({ id: 'zero', title: '무관', category: 'B', grade: '중등', tags: [], lessonDetail: baseDetail }),
+    ];
+
+    expect(selectRelatedLessonVideos(unrelatedCurrent, candidates).map((item) => item.id))
+      .toEqual(['tag', 'category', 'grade']);
+  });
+
+  it('does not treat two empty categories as related', () => {
+    const emptyCurrent = program({ id: 'empty-current', title: '기준', category: '', grade: '', tags: [] });
+    const candidate = program({
+      id: 'empty-candidate', title: '후보', category: '', grade: '', tags: [],
+      lessonDetail: { videoUrl: 'https://youtu.be/emptycat1' } as Program['lessonDetail'],
+    });
+
+    expect(selectRelatedLessonVideos(emptyCurrent, [candidate])).toEqual([]);
+  });
+
+  it('returns exactly the available relevant count without padding', () => {
+    const one = program({
+      id: 'one', title: '하나', tags: ['패스'],
+      lessonDetail: { videoUrl: 'https://youtu.be/onlyone1' } as Program['lessonDetail'],
+    });
+    const unrelated = program({
+      id: 'unrelated', title: '무관', category: '다름', grade: '다름', tags: [],
+      lessonDetail: { videoUrl: 'https://youtu.be/notrelat1' } as Program['lessonDetail'],
+    });
+
+    expect(selectRelatedLessonVideos(current, [current, one, unrelated])).toHaveLength(1);
+  });
 });

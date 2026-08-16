@@ -58,13 +58,15 @@ export function selectRelatedLessonVideos(
     .map((candidate) => {
       const candidateTags = new Set(getPublicLessonTags(candidate.tags).map(normalizeTagKey));
       const tagOverlap = sharedPartCount(currentTags, candidateTags);
-      const sameCategory = normalizeTagKey(candidate.category) === currentCategory;
+      const candidateCategory = normalizeTagKey(candidate.category);
+      const sameCategory = Boolean(currentCategory) && Boolean(candidateCategory) && candidateCategory === currentCategory;
       const gradeOverlap = sharedPartCount(currentGrade, normalizedParts(candidate.grade));
       return {
         candidate,
         score: tagOverlap * 100 + Number(sameCategory) * 20 + Math.min(gradeOverlap, 3) * 5,
       };
     })
+    .filter(({ score }) => score > 0)
     .sort((left, right) =>
       right.score - left.score ||
       left.candidate.title.localeCompare(right.candidate.title, 'ko') ||

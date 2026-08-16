@@ -164,7 +164,7 @@ function LessonVideo({ model, video }: { model: LessonDisplayModel; video: Video
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-[14px] bg-slate-950 shadow-[0_10px_28px_rgba(2,6,23,0.18)]">
       <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_35%,#334155,#020617_72%)] text-center text-white/70">
-        <div><span className="text-[11px] font-black tracking-[0.18em]">SPOKEDU MASTER</span><p className="m-0 mt-2 text-[13px] font-bold">수업 영상</p></div>
+        <p className="m-0 text-[13px] font-bold tracking-[0.02em]">수업 영상</p>
       </div>
       {video.embedUrl ? (
         <TrackedVideoIframe
@@ -285,7 +285,7 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
 }
 
 function SetupPanel({ model }: { model: LessonDisplayModel }) {
-  if (!model.setupImageUrl && model.equipment.length === 0) return null;
+  if (!model.setupImageUrl && model.equipment.length === 0 && model.setupNotes.length === 0) return null;
   return (
     <div data-detail-panel="setup" className={DETAIL_PANEL_CLASS}>
       <h2 data-detail-panel-heading className={DETAIL_PANEL_HEADING_CLASS}>초기 교구 세팅</h2>
@@ -354,12 +354,17 @@ function OverviewPanel({ model }: { model: LessonDisplayModel }) {
 
 function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
   if (videos.length === 0) return null;
+  const gridClass = videos.length === 1
+    ? 'max-w-[370px] grid-cols-1'
+    : videos.length === 2
+      ? 'max-w-[760px] sm:grid-cols-2'
+      : 'sm:grid-cols-3';
   return (
     <section data-detail-related-videos className="mt-16 sm:mt-[72px]" aria-labelledby="related-video-heading">
       <h2 id="related-video-heading" className="m-0 text-[21px] font-black tracking-[-0.025em] text-[color:var(--spm-t)]">
         관련영상
       </h2>
-      <div className="mt-5 grid items-stretch gap-4 sm:grid-cols-3 sm:gap-5">
+      <div className={`mt-5 grid items-stretch gap-4 sm:gap-5 ${gridClass}`}>
         {videos.map((video) => (
           <Link
             key={video.id}
@@ -411,6 +416,7 @@ export function DetailLessonGuide({
 }) {
   const title = splitLessonTitle(model.title);
   const hasOverview = Boolean(model.coachScript) || model.briefingNotes.length > 0;
+  const hasPhysicalPreparation = Boolean(model.setupImageUrl) || model.equipment.length > 0 || model.setupNotes.length > 0;
 
   return (
     <div>
@@ -427,13 +433,15 @@ export function DetailLessonGuide({
             {title.englishTitle}
           </p>
         ) : null}
-        <div data-detail-public-tags className="mx-auto mt-4 flex max-w-3xl flex-wrap justify-center gap-2">
-          {model.tags.map((tag) => (
-            <span key={tag} className="inline-flex h-7 max-w-full items-center break-words rounded-[10px] bg-[color-mix(in_srgb,var(--spm-acc)_5%,white)] px-3 text-[13px] font-bold text-[color:var(--spm-t2)] ring-1 ring-[var(--spm-acc-a10)]">
-              {tag}
-            </span>
-          ))}
-        </div>
+        {model.tags.length > 0 ? (
+          <div data-detail-public-tags className="mx-auto mt-4 flex max-w-3xl flex-wrap justify-center gap-2">
+            {model.tags.map((tag) => (
+              <span key={tag} className="inline-flex h-7 max-w-full items-center break-words rounded-[10px] bg-[color-mix(in_srgb,var(--spm-acc)_5%,white)] px-3 text-[13px] font-bold text-[color:var(--spm-t2)] ring-1 ring-[var(--spm-acc-a10)]">
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className="mt-6">{actions}</div>
       </header>
 
@@ -445,13 +453,13 @@ export function DetailLessonGuide({
         <MethodPanel model={model} />
       </section>
 
-      {model.setupImageUrl || model.equipment.length > 0 || hasOverview ? (
+      {hasPhysicalPreparation || hasOverview ? (
         <section
           id="lesson-preparation"
           data-detail-row="preparation"
-          className={`${DETAIL_ROW_CLASS} mt-12 scroll-mt-20 bg-[color-mix(in_srgb,var(--spm-s2)_55%,white)] sm:mt-14 min-[900px]:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]`}
+          className={`${DETAIL_ROW_CLASS} mt-12 scroll-mt-20 bg-[color-mix(in_srgb,var(--spm-s2)_55%,white)] sm:mt-14 ${hasPhysicalPreparation && hasOverview ? 'min-[900px]:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]' : 'min-[900px]:grid-cols-1'}`}
         >
-          <SetupPanel model={model} />
+          {hasPhysicalPreparation ? <SetupPanel model={model} /> : null}
           {hasOverview ? <OverviewPanel model={model} /> : null}
         </section>
       ) : null}

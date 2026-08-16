@@ -108,6 +108,8 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(related).toContain('candidate.id !== current.id');
     expect(related).toContain('.slice(0, Math.max(0, limit))');
     expect(related).not.toContain('Math.random');
+    expect(related).toContain('.filter(({ score }) => score > 0)');
+    expect(related).toContain('Boolean(currentCategory) && Boolean(candidateCategory)');
     expect(related).toContain('getVideoThumbnail(videoUrl) ?? getDedicatedRelatedThumbnail(candidate)');
     expect(related).not.toContain('resolveProgramHero');
     expect(guide).not.toContain('<SetupImage title={model.title} src={model.setupImageUrl} /> : <div />');
@@ -116,5 +118,18 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(view).not.toContain('관련 콘텐츠');
     expect(view).not.toContain('recentEvidenceRecords');
     expect(view).not.toContain('galleryImages');
+  });
+
+  it('handles commercial empty states and interaction failures without changing the IA', () => {
+    expect(guide).not.toContain('SPOKEDU MASTER</span>');
+    expect(guide).toContain('model.setupNotes.length === 0');
+    expect(guide).toContain('const hasPhysicalPreparation');
+    expect(guide).toContain('hasPhysicalPreparation && hasOverview');
+    expect(guide).toContain('model.tags.length > 0');
+    expect(guide).toContain("videos.length === 1");
+    expect(guide).toContain("videos.length === 2");
+    expect(view).toContain("setPlanCopyStatus('error')");
+    expect(view).toContain('copyFeedbackTimerRef');
+    expect(view).toContain("prefersReducedMotion() ? 'auto' : 'smooth'");
   });
 });

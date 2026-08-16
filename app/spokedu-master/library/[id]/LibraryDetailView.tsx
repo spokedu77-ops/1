@@ -9,6 +9,7 @@ import { DetailLessonGuide } from './components/DetailLessonGuide';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
 import { formatLessonPlanText } from '../../lib/lessonPlanExport';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
+import { prefersReducedMotion } from '../../lib/mediaPreferences';
 import {
   getExternalVideoUrl,
   getVideoEmbedUrl,
@@ -49,7 +50,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const videoReportedRef = useRef<string | null>(null);
   const heroTitleRef = useRef<HTMLHeadingElement | null>(null);
   const [isHeroTitleVisible, setIsHeroTitleVisible] = useState(true);
-  const [planCopied, setPlanCopied] = useState(false);
+  const [planCopyStatus, setPlanCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const copyFeedbackTimerRef = useRef<number | null>(null);
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const relatedVideos = useMemo(
@@ -88,10 +90,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
   useEffect(() => {
     if (section !== 'video') return;
     const frame = window.requestAnimationFrame(() => {
-      document.getElementById('lesson-video')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('lesson-video')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [section]);
+
+  useEffect(() => () => {
+    if (copyFeedbackTimerRef.current !== null) window.clearTimeout(copyFeedbackTimerRef.current);
+  }, []);
 
   const recordVideoStarted = useCallback(() => {
     if (!program || videoReportedRef.current === program.id) return;
@@ -143,9 +149,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(videoUrl) : undefined;
 
   const copyLessonPlan = async () => {
-    await navigator.clipboard.writeText(formatLessonPlanText(model));
-    setPlanCopied(true);
-    window.setTimeout(() => setPlanCopied(false), 1400);
+    if (copyFeedbackTimerRef.current !== null) window.clearTimeout(copyFeedbackTimerRef.current);
+    try {
+      await navigator.clipboard.writeText(formatLessonPlanText(model));
+      setPlanCopyStatus('success');
+    } catch {
+      setPlanCopyStatus('error');
+    }
+    copyFeedbackTimerRef.current = window.setTimeout(() => setPlanCopyStatus('idle'), 1600);
   };
 
   return (
@@ -182,7 +193,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 {isTodayLesson ? '✓ 오늘 수업 지정됨' : '오늘 수업으로 지정'}
               </button>
               <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-white/62 px-1 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition duration-200 ease-out hover:-translate-y-px hover:bg-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
-                <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopied ? '복사 완료' : '지도안 복사'}
+                <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
               </button>
             </div>
           )}
