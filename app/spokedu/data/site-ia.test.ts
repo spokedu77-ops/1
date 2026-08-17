@@ -122,14 +122,14 @@ describe('spokedu site IA', () => {
     expect(homePage.sectionOrder).toHaveLength(7);
     expect([...homePage.sectionOrder]).toEqual([
       'hero',
+      'pillars',
       'paths',
-      'education',
       'spomove',
       'subscription',
       'fieldProof',
       'finalAction',
     ]);
-    expect(homePage.hero.lines.join(' ')).toMatch(/현장|아동체육|수업|콘텐츠|시스템/);
+    expect(homePage.hero.lines.join(' ')).toMatch(/아동·청소년|체육교육|콘텐츠|시스템/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
     expect(homePage.hero.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/education`);
     expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
@@ -538,7 +538,8 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeSource).not.toMatch(/9,900|28,900|20,900|15,900/);
     expect(homeLandingSource).not.toMatch(/HomePartnerReviews|HomeMediaRail/);
     expect(homeLandingSource).toMatch(/HomeServices/);
-    expect(homeLandingSource).toMatch(/HomeWhySpokedu/);
+    expect(homeLandingSource).toMatch(/HomeAudienceGates/);
+    expect(homeLandingSource).not.toMatch(/HomeWhySpokedu/);
     expect(homeLandingSource).toMatch(/HomeFieldRecords/);
     expect(spomoveLandingSource).toMatch(/SpomoveProgramLanding|data-spokedu-spomove-sections/);
     expect(spomoveLandingSource).not.toMatch(/SPO-MAT/);

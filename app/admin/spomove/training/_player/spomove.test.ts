@@ -927,6 +927,7 @@ describe('training result summary', () => {
     expect(resolveReactTrainUiLevel(71)).toEqual({ engineLevel: 6, moleLookMode: 'variant' });
     expect(resolveReactTrainUiLevel(91)).toEqual({ engineLevel: 8, numberCartTier: 1 });
     expect(resolveReactTrainUiLevel(103)).toEqual({ engineLevel: 9, colorTrackerTier: 3 });
+    expect(resolveReactTrainUiLevel(201)).toEqual({ engineMode: 'basic', engineLevel: 7 });
   });
 
   test('stroop 1번은 랜덤 색상화살표, 2번은 단어다', async () => {

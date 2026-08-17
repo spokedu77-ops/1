@@ -81,7 +81,7 @@
 }
 
 @media (max-width: 819px) {
-  .gatewayCard { min-height: 27rem; }
+  .gatewayCard { min-height: 24rem; }
 }
 
 @media (max-width: 760px) {
@@ -89,6 +89,7 @@
   .sectionTitle { font-size: clamp(2rem, 9vw, 2.625rem) !important; }
   .flowGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bridgeGrid, .proofRow { grid-template-columns: 1fr; }
+  .gatewayCard { min-height: 22rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

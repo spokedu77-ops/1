@@ -19,17 +19,25 @@ import styles from './home-canonical.module.css';
 
 export function HomeServices() {
   return (
-    <section id="paths" className={`${homeSectionScrollMt} ${marketingBandSoft} ${marketingSectionPad}`} aria-labelledby="home-paths-heading">
+    <section id={homePage.pillars.id} className={`${homeSectionScrollMt} ${marketingBandSoft} ${marketingSectionPad}`} aria-labelledby="home-pillars-heading">
       <div className={marketingSectionInner}>
         <p className={marketingEyebrow}>{homePage.pillars.eyebrow}</p>
         <div className="mt-3 grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
-          <h2 id="home-paths-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} whitespace-pre-line`}>{homePage.pillars.title}</h2>
+          <h2 id="home-pillars-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} whitespace-pre-line`}>{homePage.pillars.title}</h2>
           <p className={`${marketingSectionLead} lg:justify-self-end`}>{homePage.pillars.lead}</p>
         </div>
         <div className="mt-10 grid gap-5 min-[820px]:grid-cols-12">
           {homePage.pillars.items.map((item, index) => <PathComposition key={item.id} item={item} index={index} />)}
         </div>
         <p className="mt-7 text-sm font-semibold text-[#536279]">{homePage.pillars.relationLine}</p>
+        <dl className="mt-8 grid gap-5 border-t border-[var(--spokedu-marketing-color-border)] pt-6 sm:grid-cols-3">
+          {homePage.evidenceStrip.items.slice(0, 3).map((item) => (
+            <div key={item.value}>
+              <dt className="text-sm font-bold [color:var(--spokedu-marketing-color-navy)]">{item.value}</dt>
+              <dd className="mt-1 text-[13px] leading-relaxed [color:var(--spokedu-marketing-color-muted)]">{item.label}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );

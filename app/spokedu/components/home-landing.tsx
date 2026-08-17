@@ -5,12 +5,12 @@ import { homePage } from '../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../lib/resolve-field-records';
 import { homePageSurface, homeSkipLink } from '../lib/ui-classes';
 import { HomeFieldRecords, mergeHomeCaseCards } from './home/home-field-records';
+import { HomeAudienceGates } from './home/home-audience-gates';
 import { HomeFinalCta } from './home/home-final-cta';
 import { HomeHero } from './home/home-hero';
 import { HomeServices } from './home/home-services';
 import { HomeSpomoveSpotlight } from './home/home-spomove-spotlight';
 import { HomeSubscriptionSpotlight } from './home/home-subscription-spotlight';
-import { HomeWhySpokedu } from './home/home-why-spokedu';
 import styles from './home/home-canonical.module.css';
 
 type SpokeduHomeLandingProps = {
@@ -36,7 +36,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
 
       <HomeHero />
       <HomeServices />
-      <HomeWhySpokedu />
+      <HomeAudienceGates />
       <HomeSpomoveSpotlight />
       <HomeSubscriptionSpotlight />
       <HomeFieldRecords caseCards={caseCards} />

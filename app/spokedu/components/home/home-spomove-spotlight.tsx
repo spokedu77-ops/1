@@ -29,16 +29,6 @@ export function HomeSpomoveSpotlight() {
             {section.title}<span className="mt-1 block text-[#AFC8FF]">{section.titleLine2}</span>
           </h2>
           <p className="mt-5 max-w-xl text-base leading-[1.75] text-[#CFDAEA] sm:text-[17px]">{section.lead}</p>
-          <ol className={`${styles.flowGrid} mt-8 grid gap-3`} aria-label="SPOMOVE 흐름">
-            {section.flowSteps.map((step, index) => (
-              <li key={step.label} className="border-t border-white/20 pt-3">
-                <span className="text-xs font-bold text-[#7FA6FF]">0{index + 1}</span>
-                <strong className="mt-1 block text-sm text-white">{step.label}</strong>
-                <span className="mt-1 block text-xs text-[#9EACC2]">{step.hint}</span>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-6 text-sm leading-relaxed text-[#AFC0D8]">SPOMAT은 SPOMOVE를 실제 공간에서 실행하는 도구입니다.</p>
           <div className={styles.bridgeGrid} aria-label="SPOMOVE 활용 연결">
             {section.useCases.map((item) => (
               <div key={item.title} className={styles.bridgeCard}>
@@ -46,13 +36,6 @@ export function HomeSpomoveSpotlight() {
               </div>
             ))}
           </div>
-          <dl className={styles.proofRow}>
-            {section.proofs.map((item) => (
-              <div key={item.value} className={styles.proofItem}>
-                <dt>{item.value}</dt><dd>{item.label}</dd>
-              </div>
-            ))}
-          </dl>
           <div className="mt-8 flex flex-wrap gap-3">
             <TrackedLink href={section.primaryCta.href} trackLabel={section.primaryCta.trackLabel} className={marketingButtonPrimaryOnDark}>{section.primaryCta.label}</TrackedLink>
             <TrackedLink href={section.secondaryCta.href} trackLabel={section.secondaryCta.trackLabel} className={marketingButtonSecondaryOnDark}>{section.secondaryCta.label}</TrackedLink>

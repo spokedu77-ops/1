@@ -125,13 +125,13 @@ function buildAboutTrustStripItems(): readonly HomeTrustStat[] {
 
 export const homePage = {
   /** 홈 최상위 섹션 조립 순서 — 7개 이하 */
-  sectionOrder: ['hero', 'paths', 'education', 'spomove', 'subscription', 'fieldProof', 'finalAction'] as const,
+  sectionOrder: ['hero', 'pillars', 'paths', 'spomove', 'subscription', 'fieldProof', 'finalAction'] as const,
 
   hero: {
     id: 'hero',
-    lines: ['현장에서 운영한 아동체육을', '수업·콘텐츠·시스템으로 연결합니다.'] as const,
+    lines: ['아동·청소년 체육교육을 직접 운영하고', '콘텐츠와 시스템으로 이어갑니다.'] as const,
     support:
-      '학교·기관·개인 체육교육, 화면과 움직임을 잇는 SPOMOVE, 지도자의 준비·진행·기록을 돕는 구독시스템까지 현장 기준으로 이어집니다.',
+      '학교·기관·개인 수업에서 검증한 방식으로 SPOMOVE를 만들고, 지도자가 직접 활용하는 구독시스템까지 제공합니다.',
     mediaKey: 'homeHero' as HomeMediaKey,
     brand: 'SPOKEDU',
     youtubeVideoId: 'vv4f7Y9ea0k',
@@ -281,9 +281,9 @@ export const homePage = {
   pillars: {
     id: 'pillars',
     eyebrow: '탐색 진입점',
-    title: '현장에서 시작해\n세 가지 방식으로 이어집니다.',
-    lead: '세 경로는 역할이 다릅니다. SPOMOVE는 체육교육 현장과 구독시스템에서 함께 쓰는 콘텐츠입니다.',
-    relationLine: '체육교육에서 운영하고, 구독시스템으로 지도자도 활용합니다.',
+    title: '직접 운영한 체육교육에서\n콘텐츠와 시스템이 이어집니다.',
+    lead: '체육교육은 SPOKEDU가 직접 운영하는 서비스이고, SPOMOVE는 그 현장에서 만든 콘텐츠입니다. 구독시스템은 지도자가 이 콘텐츠와 운영 도구를 직접 쓰는 제품입니다.',
+    relationLine: '현장에서 수업하고, 필요한 콘텐츠를 만들고, 지도자가 다시 활용할 수 있게 연결합니다.',
     items: [
       {
         id: 'education',
@@ -378,7 +378,7 @@ export const homePage = {
     id: 'spomove',
     title: '보고 판단하고 움직이는',
     titleLine2: 'SPOMOVE',
-    lead: '색상·위치·방향·숫자·순서를 확인한 뒤, 규칙에 따라 SPOMAT 위에서 움직입니다. 활동 목적에 맞춰 속도와 난이도를 조절합니다.',
+    lead: 'SPOMOVE는 실제 체육수업에서 만든 화면-움직임 연결 콘텐츠입니다. SPOKEDU 수업에서 운영하고, 구독시스템을 통해 지도자도 활용합니다.',
     flowSteps: [
       { label: '확인', hint: '시각 자극' },
       { label: '판단', hint: '규칙 선택' },

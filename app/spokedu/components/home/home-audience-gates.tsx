@@ -8,6 +8,7 @@ import {
   homeBandSoftBlue,
   brandFocusRing,
   homePathNavItem,
+  marketingButtonTextAction,
   marketingSectionDisplay,
   marketingSectionPadCompact,
   homeSectionScrollMt,
@@ -20,6 +21,8 @@ import { TrackedLink } from './tracked-link';
 /** 방문자 4경로 — compact 경로 선택 (이미지 카드 반복 방지) */
 export function HomeAudienceGates() {
   const reducedMotion = useReducedMotion();
+  const primaryPaths = homePage.audienceGate.items.slice(0, 3);
+  const partnerPath = homePage.audienceGate.items[3];
 
   return (
     <section
@@ -43,8 +46,8 @@ export function HomeAudienceGates() {
           </p>
         </motion.div>
 
-        <ul className="mt-6 grid grid-cols-1 gap-3 min-[640px]:grid-cols-2 xl:mt-7 xl:grid-cols-4 xl:gap-3.5">
-          {homePage.audienceGate.items.map((item, index) => (
+        <ul className="mt-6 grid grid-cols-1 gap-3 min-[640px]:grid-cols-3 xl:mt-7 xl:gap-3.5">
+          {primaryPaths.map((item, index) => (
             <motion.li
               key={item.id}
               className="min-w-0"
@@ -91,6 +94,16 @@ export function HomeAudienceGates() {
             </motion.li>
           ))}
         </ul>
+        {partnerPath ? (
+          <TrackedLink
+            href={partnerPath.href}
+            trackLabel={partnerPath.trackLabel}
+            className={`${marketingButtonTextAction} mt-5`}
+          >
+            {partnerPath.badge}: {partnerPath.ctaLabel}
+            <HomeChevron />
+          </TrackedLink>
+        ) : null}
       </div>
     </section>
   );
