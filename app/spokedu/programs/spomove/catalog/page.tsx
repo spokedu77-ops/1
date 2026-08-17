@@ -2,11 +2,23 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SPOKEDU_PATHS } from '../../../data/site';
 import { dispatchInquiryHref } from '../../../data/commercial-routes';
+import { buildSpokeduPageMetadata } from '../../../data/seo';
 
-export const metadata: Metadata = {
+const catalogMetadata: Metadata = {
   title: 'SPOMOVE 전체 프로그램 카탈로그 | SPOKEDU',
   description:
     'SPOMOVE 프로그램 구성과 반응 시리즈를 확인하세요. 카탈로그가 준비되지 않은 경우에도 소개 랜딩과 이용 경로로 이어집니다.',
+};
+
+export const metadata: Metadata = {
+  ...catalogMetadata,
+  ...buildSpokeduPageMetadata({
+    title: 'SPOMOVE 전체 프로그램 카탈로그 | SPOKEDU',
+    description: 'SPOMOVE 프로그램 구성과 활동 시리즈를 확인하고 기관 도입 및 구독 서비스 경로를 안내합니다.',
+    canonical: '/spomove/catalog',
+    keywords: ['SPOMOVE', '스포무브', '체육교육 프로그램', '프로그램 카탈로그'],
+    pageKey: 'programs',
+  }),
 };
 
 const ENV_NAME = 'SPOMOVE_NOTION_CATALOG_URL';
@@ -72,10 +84,22 @@ export default function SpomoveCatalogPage() {
 
   return (
     <section className="relative h-[100dvh] overflow-hidden pt-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:pt-[calc(3.75rem+env(safe-area-inset-top,0px))]">
+      <div className="flex min-h-16 items-center justify-between gap-4 border-b border-[#DCE3EE] bg-white px-5 py-3 sm:px-8">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
+          <h1 className="text-lg font-black leading-tight text-[#0B1F46] sm:text-xl">SPOMOVE 전체 프로그램 카탈로그</h1>
+          <p className="mt-1 text-xs leading-relaxed text-[#536279] sm:text-sm">
+            화면의 정보를 움직임으로 연결하는 체육교육 활동과 프로그램 구성을 확인하세요.
+          </p>
+        </div>
+        <Link href={DISPATCH_HREF} className="shrink-0 text-sm font-bold text-[#245DFF] underline-offset-4 hover:underline">
+          기관 도입 문의
+        </Link>
+      </div>
       <iframe
         src={catalogUrl}
         title="SPOMOVE 전체 프로그램 카탈로그"
-        className="block h-[calc(100dvh-3.5rem)] w-full border-0 sm:h-[calc(100dvh-3.75rem)]"
+        className="block h-[calc(100dvh-8.5rem)] w-full border-0 sm:h-[calc(100dvh-8.75rem)]"
       />
       <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 sm:bottom-4 sm:left-4 sm:right-4">
         <Link

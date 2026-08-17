@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const LEGACY_PRODUCTION_HOST = 'spokedu.vercel.app';
+const CANONICAL_ORIGIN = 'https://spokedu.kr';
+
 const SPOKEDU_MASTER_PUBLIC_PREFIXES = [
   '/spokedu-master/landing',
   '/spokedu-master/payment',
@@ -67,6 +70,35 @@ function redirectWithNext(request: NextRequest, targetPath: string): NextRespons
 }
 
 export async function proxy(request: NextRequest) {
+  const requestHost = (
+    request.headers.get('x-forwarded-host') ??
+    request.headers.get('host') ??
+    request.nextUrl.hostname
+  ).split(':')[0].toLowerCase();
+  const isLegacyCatalogQuery =
+    request.nextUrl.pathname === '/spomove' &&
+    request.nextUrl.searchParams.get('tab') === 'catalog';
+
+  // Redirect only Vercel's stable production alias. Preview deployments and
+  // localhost must remain available for development and QA.
+  if (requestHost === LEGACY_PRODUCTION_HOST) {
+    const pathname = isLegacyCatalogQuery ? '/spomove/catalog' : request.nextUrl.pathname;
+    const searchParams = new URLSearchParams(request.nextUrl.searchParams);
+    if (isLegacyCatalogQuery) searchParams.delete('tab');
+    const search = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+    return NextResponse.redirect(
+      new URL(`${pathname}${search}`, CANONICAL_ORIGIN),
+      308,
+    );
+  }
+
+  if (isLegacyCatalogQuery) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/spomove/catalog';
+    redirectUrl.searchParams.delete('tab');
+    return NextResponse.redirect(redirectUrl, 308);
+  }
+
   const { pathname } = request.nextUrl;
 
   // 토큰 전용 phase — Supabase 세션 확인 없음
@@ -104,10 +136,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/spokedu-master',
-    '/spokedu-master/:path*',
-    '/play-phase/:path*',
-    '/think-phase/:path*',
-    '/flow-phase/:path*',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

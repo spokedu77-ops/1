@@ -11,6 +11,7 @@ import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-shared/lib/plannedRoundTotal";
+import { formatRoundDisplay } from "@/app/admin/classes-shared/lib/roundFields";
 import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
 import { findCrossGroupSlotConflicts } from "@/app/admin/classes-shared/lib/sessionRoundGuards";
 import {
@@ -815,7 +816,12 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
   const handlePostpone = async (_gid: string, sessionId: string) => {
     if (!supabase) return;
-    if (!confirm("현재 회차부터 이후 회차를 1주일씩 미룹니다. 계속할까요?")) return;
+    if (
+      !confirm(
+        "「연기(일정 미루기)」: 현재 회차부터 이후 회차 날짜를 한 칸씩 미룹니다.\n회차 차감·수업료 0원 처리가 목적이면 「회차 취소(차감)」를 사용하세요.\n\n계속할까요?"
+      )
+    )
+      return;
     await postponeCascade(supabase, sessionId, {
       onAfter: () => {
         void loadAll();
@@ -893,29 +899,72 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
   };
 
-  const handleDeleteSession = async (_gid: string, sessionId: string) => {
+  const handleDeleteSession = async (gid: string, sessionId: string) => {
     if (!supabase) return;
     if (!sessionId) return;
     if (deletingSessionId === sessionId) return;
-    if (!confirm("해당 회차를 취소 처리합니다. 취소된 회차는 수업료가 0원으로 반영됩니다. 계속할까요?")) return;
+
+    const { data: curr, error: fetchErr } = await supabase
+      .from("sessions")
+      .select("id, round_index, round_total, start_at, status")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (fetchErr) {
+      devLogger.error(fetchErr);
+      toast.error("회차 정보를 불러오지 못했습니다.");
+      return;
+    }
+    if (!curr?.id) {
+      toast.error("회차 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const groupRows = sessionsByGroupId[gid] || [];
+    const contractTotal = resolvePlannedTotal(groupRows.length > 0 ? groupRows : [curr]);
+    const roundIndex =
+      typeof curr.round_index === "number" && Number.isFinite(curr.round_index)
+        ? curr.round_index
+        : null;
+    const roundLabel =
+      roundIndex != null && contractTotal > 0
+        ? formatRoundDisplay(roundIndex, contractTotal)
+        : null;
+
+    const confirmMsg = roundLabel
+      ? `「${roundLabel}」 회차를 차감(취소) 처리합니다.\n\n· 해당 회차는 소진·수업료 0원입니다.\n· 이후 회차 번호·날짜는 그대로입니다. (예: 3/8 취소 → 다음 8.14 수업은 4/8)\n· 일정을 미루려면 「연기(일정 미루기)」를 사용하세요.\n\n계속할까요?`
+      : "해당 회차를 차감(취소) 처리합니다.\n\n· 해당 회차는 소진·수업료 0원입니다.\n· 이후 회차 번호·날짜는 재정렬·미루기하지 않습니다.\n· 일정을 미루려면 「연기(일정 미루기)」를 사용하세요.\n\n계속할까요?";
+    if (!confirm(confirmMsg)) return;
 
     setDeletingSessionId(sessionId);
     try {
-      // 취소 = price 0 + 해당 회차 슬롯은 진행(소진) 유지. round_index·round_total 재정렬하지 않음.
+      // 취소 = price 0 + 해당 회차 슬롯 소진. round_index·round_total·날짜는 유지(재정렬·연기 금지).
+      const cancelPatch: {
+        status: string;
+        price: number;
+        round_display?: string;
+      } = { status: "cancelled", price: 0 };
+      if (roundIndex != null && contractTotal > 0) {
+        cancelPatch.round_display = formatRoundDisplay(roundIndex, contractTotal);
+      }
+
       const { data: cancelledRow, error: cancelErr } = await supabase
         .from("sessions")
-        .update({ status: "cancelled", price: 0 })
+        .update(cancelPatch)
         .eq("id", sessionId)
         .select("id")
         .maybeSingle();
       if (cancelErr) throw cancelErr;
       if (!cancelledRow?.id) throw new Error("BUNDLE_SESSION_NOT_CANCELLED");
-      toast.success("회차가 취소 처리되었습니다.");
+      toast.success(
+        roundLabel
+          ? `「${roundLabel}」 회차가 차감(취소) 처리되었습니다. 이후 회차 번호·날짜는 유지됩니다.`
+          : "회차가 차감(취소) 처리되었습니다."
+      );
       await loadAll();
       onChanged?.();
     } catch (err) {
       devLogger.error(err);
-      toast.error("회차 취소 처리에 실패했습니다.");
+      toast.error("회차 차감(취소) 처리에 실패했습니다.");
     } finally {
       setDeletingSessionId(null);
     }
@@ -1867,19 +1916,27 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                                             ) : (
                                               <button
                                                 type="button"
-                                                className="px-2.5 py-1.5 rounded-full text-[10px] font-black bg-violet-50 text-violet-600 hover:bg-violet-100"
+                                                className="px-2 py-1.5 rounded-full text-[9px] font-black leading-tight bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200/80"
                                                 onClick={() => void handlePostpone(gid, r.id)}
                                               >
                                                 연기
+                                                <span className="block text-[8px] font-bold opacity-80">
+                                                  (일정 미루기)
+                                                </span>
                                               </button>
                                             )}
                                             <button
                                               type="button"
-                                              className="px-2.5 py-1.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
+                                              className="px-2 py-1.5 rounded-full text-[9px] font-black leading-tight bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200/80 disabled:opacity-50"
                                               disabled={deletingSessionId === r.id}
                                               onClick={() => void handleDeleteSession(gid, r.id)}
                                             >
-                                              {deletingSessionId === r.id ? "취소 중..." : "취소"}
+                                              {deletingSessionId === r.id ? "차감 중..." : "회차 취소"}
+                                              {deletingSessionId === r.id ? null : (
+                                                <span className="block text-[8px] font-bold opacity-80">
+                                                  (차감)
+                                                </span>
+                                              )}
                                             </button>
                                           </div>
                                         )}

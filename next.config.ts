@@ -107,6 +107,13 @@ const nextConfig: NextConfig = {
   // YouTube/Vimeo embed 허용. "www.youtube.com에서 연결을 거부했습니다" 방지 (CSP frame-src만 추가)
   async headers() {
     return [
+      // Internal/authenticated surfaces must not become search results. This
+      // HTTP directive also covers client-only layouts that cannot export
+      // Next.js metadata.
+      ...['/admin/:path*', '/api/:path*', '/login', '/teacher/:path*', '/portal/:path*'].map((source) => ({
+        source,
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      })),
       {
         source: "/sw.js",
         headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],

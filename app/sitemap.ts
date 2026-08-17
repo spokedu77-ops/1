@@ -8,7 +8,6 @@ import { getSpokeduSiteUrl } from './spokedu/lib/site-url';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = getSpokeduSiteUrl();
-  const now = new Date();
   const recordDetailRoutes = FIELD_RECORD_CATALOG.filter(hasFieldRecordOnsiteSummary).map(
     (record) => `${SPOKEDU_PATHS.records}/${record.slug}`,
   );
@@ -31,14 +30,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: `${base}/spokedu-master/landing`,
-      lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
     ...spokeduRoutes.map(
       (path): MetadataRoute.Sitemap[number] => ({
         url: path === '/' ? `${base}/` : `${base}${path}`,
-        lastModified: now,
         changeFrequency: path === '/' ? 'weekly' : 'monthly',
         priority: path === '/' ? 1 : 0.8,
       }),
