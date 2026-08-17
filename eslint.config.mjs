@@ -25,12 +25,7 @@ const eslintConfig = defineConfig([
   },
   // Legacy static JS bundles are separate from the app bundle; suppress unused warnings.
   {
-    files: [
-      "public/info/js/**/*.js",
-      "public/info/data/**/*.js",
-      "spokedu/js/**/*.js",
-      "spokedu/data/**/*.js",
-    ],
+    files: ["public/info/js/dispatch.js"],
     rules: {
       "@typescript-eslint/no-unused-vars": "off",
     },
