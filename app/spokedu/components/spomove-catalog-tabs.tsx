@@ -6,6 +6,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   brandFocusRing,
   koreanText,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
   marketingHeroDisplay,
   marketingSectionDisplay,
 } from '../lib/ui-classes';
@@ -567,7 +569,7 @@ export default function SpomoveCatalogTabs() {
             {active.id === 'catalog' ? (
               <Link
                 href={CATALOG_HREF}
-                className={`${brandFocusRing} inline-flex min-h-12 items-center justify-center rounded-full bg-[#245DFF] px-6 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(36,93,255,0.22)] transition hover:bg-[#174BE6]`}
+                className={marketingButtonPrimary}
               >
                 전체 프로그램 카탈로그 보기
               </Link>
@@ -625,14 +627,14 @@ function Hero() {
             href={CONTACT_HREF}
             data-track="contact"
             data-track-label="program-spomove-hero-contact"
-            className={`${brandFocusRing} inline-flex min-h-12 items-center justify-center rounded-full bg-[#245DFF] px-6 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(36,93,255,0.22)] transition hover:bg-[#174BE6]`}
+            className={marketingButtonPrimary}
           >
             수업 문의하기
           </Link>
           <button
             type="button"
             onClick={() => document.getElementById('spomove-tab-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className={`${brandFocusRing} inline-flex min-h-12 items-center justify-center rounded-full border border-[#DCE3EE] bg-white px-6 py-3 text-sm font-bold text-[#0B1F46] transition hover:bg-[#F5F7FB]`}
+            className={marketingButtonSecondary}
           >
             상세 자료 보기
           </button>
@@ -809,7 +811,7 @@ function FinalCta({ activeLabel }: { activeLabel: string }) {
           href={CONTACT_HREF}
           data-track="contact"
           data-track-label="program-spomove-final-contact"
-          className={`${brandFocusRing} inline-flex min-h-12 items-center justify-center rounded-full bg-[#245DFF] px-6 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(36,93,255,0.22)] transition hover:bg-[#174BE6]`}
+          className={marketingButtonPrimary}
         >
           수업 문의하기
         </Link>

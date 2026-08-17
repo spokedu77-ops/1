@@ -8,12 +8,11 @@ import {
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import { externalLinkProps, isExternalHref } from '../lib/external-link';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { fineHover, koreanLineBreak, marketingCompactDisplay } from '../lib/ui-classes';
+import { brandFocusRing, fineHover, koreanLineBreak, marketingCompactDisplay } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 import { ExternalPhoto } from './external-photo';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 const DEFAULT_TRUST_LINE = '공개 운영 사례와 같은 현장 기준으로 프로그램을 설계합니다.';
 

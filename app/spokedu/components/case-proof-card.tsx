@@ -5,13 +5,12 @@ import type { CaseData } from '../data/cases';
 import { dispatchInquiryHref } from '../data/commercial-routes';
 import { getProgramBySlug } from '../data/programs';
 import { HOME_MEDIA } from '../data/home-media';
-import { marketingInteractiveTransition, fineHover } from '../lib/ui-classes';
+import { brandFocusRing, marketingInteractiveTransition, fineHover } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import { MediaPanel } from './visual/media-panel';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 type CaseProofCardProps = {
   item: CaseData;

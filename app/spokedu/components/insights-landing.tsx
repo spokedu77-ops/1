@@ -11,6 +11,7 @@ import { insightArticles, insightFilters, insightMatchesFilter, type InsightArti
 import { insightsPage } from '../data/insights-page';
 import { HOME_MEDIA } from '../data/home-media';
 import {
+  brandFocusRing,
   marketingInteractiveTransition,
   fineHover,
   landingPageStack,
@@ -18,8 +19,7 @@ import {
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 function InsightArticleCard({ article, photoPriority }: { article: InsightArticle; photoPriority?: boolean }) {
   return (

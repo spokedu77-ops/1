@@ -9,10 +9,9 @@ import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { monthlyNewsportsProgramPage } from '../data/monthly-newsports-program-page';
 import { programDetailBlocks } from '../data/program-details';
-import { landingPageStack, marketingCompactDisplay } from '../lib/ui-classes';
+import { landingPageStack, marketingCardStatic, marketingCompactDisplay } from '../lib/ui-classes';
 
-const pointCardShell =
-  'flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5';
+const pointCardLayout = 'flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5';
 
 export default function MonthlyNewsportsProgramLanding() {
   return (
@@ -62,7 +61,7 @@ export default function MonthlyNewsportsProgramLanding() {
         <h2 className={marketingCompactDisplay}>{monthlyNewsportsProgramPage.programPoints.title}</h2>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-3">
           {monthlyNewsportsProgramPage.programPoints.items.map((item) => (
-            <li key={item.title} className={pointCardShell}>
+            <li key={item.title} className={`${marketingCardStatic} ${pointCardLayout}`}>
               <h3 className="text-base font-semibold text-slate-950">{item.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{item.description}</p>
             </li>

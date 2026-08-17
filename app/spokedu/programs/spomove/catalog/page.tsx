@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { SPOKEDU_PATHS } from '../../../data/site';
 import { dispatchInquiryHref } from '../../../data/commercial-routes';
 import { buildSpokeduPageMetadata } from '../../../data/seo';
-import { marketingHeroDisplay } from '../../../lib/ui-classes';
+import { marketingButtonPrimary, marketingCardStatic, marketingHeroDisplay } from '../../../lib/ui-classes';
 
 const catalogMetadata: Metadata = {
   title: 'SPOMOVE 전체 프로그램 카탈로그 | SPOKEDU',
@@ -43,7 +43,7 @@ function getCatalogUrl(): string | null {
 function CatalogFallback() {
   return (
     <section className="overflow-x-clip px-5 pb-16 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:px-8 sm:pt-[calc(5rem+env(safe-area-inset-top,0px))]">
-      <div className="mx-auto w-full max-w-xl rounded-[1.5rem] border border-[#DCE3EE] bg-white px-5 py-8 text-center shadow-sm sm:px-7 sm:py-10">
+      <div className={`${marketingCardStatic} mx-auto w-full max-w-xl px-5 py-8 text-center sm:px-7 sm:py-10`}>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
         <h1 className={`${marketingHeroDisplay} mt-3 !text-2xl !leading-tight text-[#0B1F46] sm:!text-3xl`}>
           전체 카탈로그를 아직 표시할 수 없습니다
@@ -58,7 +58,7 @@ function CatalogFallback() {
         <div className="mt-7 flex flex-col gap-3 sm:items-center">
           <Link
             href={SPOMOVE_HREF}
-            className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#245DFF] px-6 text-sm font-bold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]"
+            className={marketingButtonPrimary}
           >
             SPOMOVE 소개로 돌아가기
           </Link>

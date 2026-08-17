@@ -11,14 +11,11 @@ import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { onedayEventProgramPage } from '../data/oneday-event-program-page';
 import { programDetailBlocks } from '../data/program-details';
-import { landingPageStack, marketingCompactDisplay, linkMuted } from '../lib/ui-classes';
+import { landingPageStack, marketingCardStatic, marketingCompactDisplay, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
-const cardShell =
-  'flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5';
-
-const activityCardShell =
-  'flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white';
+const cardLayout = 'flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5';
+const activityCardLayout = 'flex h-full flex-col overflow-hidden';
 
 export default function OnedayEventProgramLanding() {
   const relatedCases = onedayEventProgramPage.cases.slugs
@@ -60,7 +57,7 @@ export default function OnedayEventProgramLanding() {
         <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.situations.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           {onedayEventProgramPage.situations.items.map((item) => (
-            <li key={item.title} className={cardShell}>
+            <li key={item.title} className={`${marketingCardStatic} ${cardLayout}`}>
               <h3 className="text-base font-semibold text-slate-950 [word-break:keep-all]">{item.title}</h3>
               <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
                 {item.description}
@@ -74,7 +71,7 @@ export default function OnedayEventProgramLanding() {
         <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.activities.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           {onedayEventProgramPage.activities.items.map((item, index) => (
-            <li key={item.title} className={activityCardShell}>
+            <li key={item.title} className={`${marketingCardStatic} ${activityCardLayout}`}>
               <MediaPanel
                 media={HOME_MEDIA[item.mediaKey]}
                 className="aspect-[16/9] min-h-[120px] shrink-0 rounded-none border-0 sm:min-h-0"
@@ -95,7 +92,7 @@ export default function OnedayEventProgramLanding() {
         <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.operations.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-4">
           {onedayEventProgramPage.operations.items.map((item) => (
-            <li key={item.title} className={cardShell}>
+            <li key={item.title} className={`${marketingCardStatic} ${cardLayout}`}>
               <h3 className="text-sm font-semibold text-slate-950">{item.title}</h3>
               <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
                 {item.description}

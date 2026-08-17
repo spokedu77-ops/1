@@ -14,7 +14,7 @@ import { parseConversionEvidenceSlug } from '../data/commercial-routes';
 import type { FieldRecordSlug } from '../data/field-records-catalog';
 import { captureAcquisitionFromLocation, getAcquisitionContext } from '../lib/acquisition';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary } from '../lib/ui-classes';
+import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary, marketingCardStatic } from '../lib/ui-classes';
 import { useSearchParams } from 'next/navigation';
 
 const CONTENT_OPTIONS = [
@@ -36,9 +36,6 @@ const PARTNERSHIP_OPTIONS = ['단건 구매', '구독·정기', '교육 위탁',
 const inputClass =
   'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
 const labelClass = 'text-sm font-semibold text-slate-800';
-const formShell =
-  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
-
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
 
 function ChipGroup({
@@ -228,7 +225,7 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
 
       <form
         onSubmit={handleSubmit}
-        className={`${formShell} p-5 sm:p-6 lg:p-7`}
+        className={`${marketingCardStatic} overflow-hidden p-5 sm:p-6 lg:p-7`}
         noValidate
         data-lead-mode={leadMode}
         data-track-label={`curriculum-inquiry-${leadMode}`}

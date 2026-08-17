@@ -67,7 +67,22 @@ Use `marketingSurface`, `marketingCardStatic`, `marketingCardInteractive`, `mark
 | Delete | `btnPrimary`, `btnSecondary`, `siteBtn*` | Removed after migration to the four canonical CTA variants. |
 | Delete | `landingCardFrame`, `cardInteractive` | Replaced by `marketingCardStatic` and `marketingInteractiveTransition`. |
 | Delete | `siteContainer`, `homeSectionPad*` | Replaced by `marketingSectionInner` and the two canonical section rhythms. |
-| Deprecate | `homeGateCard` | Still used by content-specific gate cards; its visual values now consume public tokens. Migrate call sites to a canonical surface in the next component-composition pass. |
+| Delete | `homeGateCard` | Removed after Education and SPOMOVE gate cards migrated to `marketingCardInteractive` plus layout-only classes. |
 | Keep | `landingHeroShell` | Shared hero composition primitive; its visual values now consume public tokens. |
 | Keep | `homePathNavItem` | Home audience-navigation composition, not a competing global surface system. |
 | Keep | `landingCardShell` | Variant behavior for image, glass, and gradient cards; semantic colors are tokenized. |
+
+## Component composition
+
+Components own layout and behavior: grid, flex direction, ordering, dimensions, content padding, and product-specific presentation. Canonical marketing primitives own shared visual grammar: color, border, radius, shadow, and interaction.
+
+The Phase 3 composition inventory is resolved as follows:
+
+| Classification | Examples | Decision |
+| --- | --- | --- |
+| Pure visual duplicate | `homeGateCard`, `premiumPanel*`, form shells, generic `*CardShell` helpers | Migrate to a canonical surface and delete the alias. |
+| Layout composition | Private review accent, Dispatch row layout, program card content padding | Keep as layout-only classes composed with a canonical surface. |
+| Semantic variant | `landingCardShell` image, dark, glass, and gradient modes | Keep the variant behavior; consume semantic foundation tokens. |
+| Product-specific visual | SPOMOVE activity screens, SPOMAT four colors, product mockups | Keep product meaning; canonicalize only surrounding marketing chrome. |
+
+`landingHeroShell`, the full-bleed Home hero composition, and Subscription V17 remain separate compositions. Sharing a visual contract does not require merging them into one React component.

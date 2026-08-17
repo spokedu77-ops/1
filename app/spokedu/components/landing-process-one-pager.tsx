@@ -1,7 +1,6 @@
-import { koreanLineBreak, marketingButtonPrimary } from '../lib/ui-classes';
+import { brandFocusRing, koreanLineBreak, marketingButtonPrimary, marketingCardStatic } from '../lib/ui-classes';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 export type LandingProcessOnePagerData = {
   eyebrow: string;
@@ -18,7 +17,7 @@ export function LandingProcessOnePager({ data }: { data: LandingProcessOnePagerD
   const { eyebrow, title, lead, flow, checklist, formats, cta } = data;
 
   return (
-    <div className="overflow-hidden rounded-[1.5rem] border border-stone-200/80 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]">
+    <div className={`${marketingCardStatic} overflow-hidden`}>
       <div className="border-b border-[#DBE6FB] bg-[#F5F7FB] px-5 py-5 sm:px-6 sm:py-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">{eyebrow}</p>
         <h3 className={`mt-1.5 text-lg font-bold tracking-tight text-[#0B1F46] sm:text-xl ${koreanLineBreak}`}>

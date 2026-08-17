@@ -11,11 +11,10 @@ import {
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import { externalLinkProps } from '../lib/external-link';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { fineHover, koreanLineBreak, marketingHeroDisplay } from '../lib/ui-classes';
+import { brandFocusRing, fineHover, koreanLineBreak, marketingHeroDisplay } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 type RecordsCaseDetailProps = {
   item: FieldRecordCatalogItem & {

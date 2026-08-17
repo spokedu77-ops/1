@@ -7,6 +7,7 @@ import { HOME_MEDIA } from '../data/home-media';
 import { programsPage } from '../data/programs-page';
 import {
   audienceLandingStack,
+  brandFocusRing,
   marketingInteractiveTransition,
   koreanLineBreak,
   landingCardPanelPad,
@@ -19,8 +20,7 @@ import { LandingHero } from './landing-hero';
 import { LandingSectionHeading } from './landing-section-heading';
 import { MediaPanel } from './visual';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 function Section({ children, className = '' }: { children: ReactNode; className?: string }) {
   const reducedMotion = useReducedMotion();

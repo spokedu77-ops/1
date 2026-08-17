@@ -8,11 +8,10 @@ import { LandingSection } from './landing-section';
 import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { monthlyPage } from '../data/monthly-page';
-import { fineHover, landingPageStack, marketingCompactDisplay } from '../lib/ui-classes';
+import { brandFocusRing, fineHover, landingPageStack, marketingCompactDisplay } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 function BenefitCard({
   title,

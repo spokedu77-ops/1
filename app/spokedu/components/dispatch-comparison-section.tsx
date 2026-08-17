@@ -1,9 +1,6 @@
 import { dispatchPage } from '../data/dispatch-page';
-import { koreanLineBreak } from '../lib/ui-classes';
+import { koreanLineBreak, marketingCardStatic } from '../lib/ui-classes';
 import { LandingSectionHeading } from './landing-section-heading';
-
-const premiumPanel =
-  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
 
 function CheckIcon() {
   return (
@@ -31,7 +28,7 @@ export function DispatchComparisonSection() {
 
       <div className="space-y-2.5 lg:hidden">
         {section.rows.map((row) => (
-          <article key={row.label} className={premiumPanel}>
+          <article key={row.label} className={`${marketingCardStatic} overflow-hidden`}>
             <div className="border-b border-stone-100 bg-stone-50/80 px-4 py-2.5">
               <h3 className="text-sm font-semibold text-slate-900">{row.label}</h3>
             </div>
@@ -54,7 +51,7 @@ export function DispatchComparisonSection() {
         ))}
       </div>
 
-      <div className={`hidden lg:block ${premiumPanel}`}>
+      <div className={`${marketingCardStatic} hidden overflow-hidden lg:block`}>
         <div className="grid grid-cols-[minmax(0,0.85fr)_1fr_1fr] border-b border-stone-100 bg-stone-50/90">
           <div className="px-5 py-3 text-xs font-bold uppercase tracking-wide text-stone-500">비교 항목</div>
           <div className="border-l border-stone-100 px-5 py-3">

@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { dispatchPage } from '../data/dispatch-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { marketingInteractiveTransition, fineHover, koreanLineBreak } from '../lib/ui-classes';
+import { brandFocusRing, marketingCardInteractive, marketingCardStatic, fineHover, koreanLineBreak } from '../lib/ui-classes';
 import { AudienceTrustStrip } from './audience-trust-strip';
 import { DispatchComparisonSection } from './dispatch-comparison-section';
 import { DispatchProcessOnePager } from './dispatch-process-one-pager';
@@ -20,11 +20,8 @@ import { LandingHero } from './landing-hero';
 import { MediaPanel } from './visual';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
-
-const premiumPanel =
-  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';const dispatchHeroChecks = ['공간·인원 확인', '운영 목적 설계', '강사·교구 투입'] as const;
+const focusRing = brandFocusRing;
+const dispatchHeroChecks = ['공간·인원 확인', '운영 목적 설계', '강사·교구 투입'] as const;
 const dispatchAnchorItems = [
   { href: '#fit', label: '조건 판단' },
   { href: '#evidence', label: '운영 사례' },
@@ -36,7 +33,7 @@ function DispatchDecisionFitSection() {
   const section = dispatchPage.decisionFit;
 
   return (
-    <div className={`${premiumPanel} space-y-5 px-5 py-5 sm:px-6 sm:py-6`}>
+    <div className={`${marketingCardStatic} space-y-5 overflow-hidden px-5 py-5 sm:px-6 sm:py-6`}>
       <LandingSectionHeading eyebrow={section.eyebrow} title={section.title} lead={section.lead} accent="teal" />
       <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {section.items.map((item) => (
@@ -64,7 +61,7 @@ function DispatchOperationSolutionsSection() {
       <LandingSectionHeading eyebrow={section.eyebrow} title={section.title} lead={section.lead} accent="teal" />
       <div className="grid gap-3 lg:grid-cols-3">
         {section.groups.map((group) => (
-          <article key={group.title} className={`${premiumPanel} p-4 sm:p-5`}>
+          <article key={group.title} className={`${marketingCardStatic} overflow-hidden p-4 sm:p-5`}>
             <h3 className={`text-base font-bold text-slate-950 ${koreanLineBreak}`}>{group.title}</h3>
             <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{group.description}</p>
             <ul className="mt-4 space-y-2.5">
@@ -116,7 +113,7 @@ function DispatchEvidenceSection() {
             href={item.href}
             data-track={inferTrackFromHref(item.href)}
             data-track-label={`dispatch-example-${item.venue}`}
-            className={`group overflow-hidden ${premiumPanel} ${marketingInteractiveTransition} ${focusRing}`}
+            className={`${marketingCardInteractive} ${focusRing} group overflow-hidden`}
           >
             <div className="relative aspect-[16/10]">
               <MediaPanel

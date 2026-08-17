@@ -10,7 +10,7 @@ import {
   homeBandWhite,
   homeBodyLead,
   brandFocusRing,
-  homeGateCard,
+  marketingCardInteractive,
   homePhotoGrade,
   homeSectionEyebrow,
   marketingHeroDisplay,
@@ -95,7 +95,7 @@ export function EducationHubLanding() {
                     trackLabel={item.trackLabel}
                     commercialRoute={item.id === 'dispatch' ? 'dispatch' : 'private'}
                     ctaIntentId={item.trackLabel}
-                    className={`${homeGateCard} ${brandFocusRing} block h-full`}
+                    className={`${marketingCardInteractive} ${brandFocusRing} group flex h-full flex-col overflow-hidden`}
                   >
                     <div className="relative aspect-[16/10] w-full overflow-hidden">
                       <MediaPanel
@@ -253,7 +253,7 @@ export function EducationHubLanding() {
                   <TrackedLink
                     href={card.href}
                     trackLabel={card.trackLabel}
-                    className={`${homeGateCard} ${brandFocusRing} block h-full`}
+                    className={`${marketingCardInteractive} ${brandFocusRing} group flex h-full flex-col overflow-hidden`}
                   >
                     <div className="relative aspect-[16/10] overflow-hidden">
                       {card.thumbnailSrc ? (

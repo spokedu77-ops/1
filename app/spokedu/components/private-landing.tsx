@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { privatePage } from '../data/private-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { koreanLineBreak, marketingCardStatic } from '../lib/ui-classes';
+import { brandFocusRing, koreanLineBreak, marketingCardInteractive, marketingCardStatic, marketingDarkSurface } from '../lib/ui-classes';
 import { LandingFaqList } from './landing-faq-list';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingSectionHeading } from './landing-section-heading';
@@ -19,12 +19,8 @@ import { LandingFloatingCta } from './landing-floating-cta';
 import { LandingProcessOnePager } from './landing-process-one-pager';
 import { MediaPanel } from './visual';
 
-const premiumPanel =
-  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
-const premiumPanelDark =
-  'overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0B1F46] text-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]';
-const whoCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${premiumPanel}`;
-const reviewCardShell = `flex h-full flex-col border-l-[3px] border-l-teal-700 px-5 py-5 sm:px-6 sm:py-6 ${premiumPanel}`;
+const whoCardLayout = 'flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5';
+const reviewCardLayout = 'flex h-full flex-col border-l-[3px] border-l-teal-700 px-5 py-5 sm:px-6 sm:py-6';
 const privateHeroNeeds = ['운동 자신감', '기초체력', '종목 준비'] as const;
 const privateAnchorItems = [
   { href: '#fit', label: '아이 적합성' },
@@ -33,8 +29,7 @@ const privateAnchorItems = [
   { href: '#reviews', label: '학부모 사례' },
   { href: '#apply', label: '상담' },
 ] as const;
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 function PrivateGoalFitSection() {
   const section = privatePage.goalPaths;
@@ -47,7 +42,7 @@ function PrivateGoalFitSection() {
           <a
             key={item.id}
             href={`?startDirection=${item.id}#apply`}
-            className={`${whoCardShell} transition hover:border-teal-200`}
+            className={`${marketingCardInteractive} ${whoCardLayout}`}
             data-track="private"
             data-track-label={`private-fit-${item.id}`}
           >
@@ -76,7 +71,7 @@ function PrivateGoalFitSection() {
 
 function PrivateConsultConditionsSection() {
   return (
-    <div className={`${premiumPanel} space-y-4 px-5 py-5 sm:px-6 sm:py-6`}>
+    <div className={`${marketingCardStatic} space-y-4 overflow-hidden px-5 py-5 sm:px-6 sm:py-6`}>
       <LandingSectionHeading
         eyebrow="상담 가능 조건"
         title="수업 장소와 주기는 상담에서 함께 맞춥니다"
@@ -115,7 +110,7 @@ function PrivateInstructorTrustSection() {
   const policy = privatePage.assignmentPolicy;
 
   return (
-    <div className={`${premiumPanelDark} px-5 py-6 text-white sm:px-7 sm:py-7`}>
+    <div className={`${marketingDarkSurface} overflow-hidden px-5 py-6 sm:px-7 sm:py-7`}>
       <LandingSectionHeading
         eyebrow={privatePage.instructors.eyebrow}
         title="지도자 신뢰는 얼굴 식별과 배정 규칙으로 확인합니다"
@@ -317,7 +312,7 @@ export default function PrivateLanding() {
         />
         <div className="grid gap-3 lg:grid-cols-2">
           {privatePage.reviews.items.slice(0, 2).map((item) => (
-            <article key={item.who + item.course} className={reviewCardShell}>
+            <article key={item.who + item.course} className={`${marketingCardStatic} ${reviewCardLayout}`}>
               <p className={`flex-1 text-sm leading-relaxed text-slate-700 ${koreanLineBreak}`}>
                 &ldquo;{item.text}&rdquo;
               </p>

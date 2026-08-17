@@ -10,6 +10,7 @@ import { HOME_MEDIA } from '../data/home-media';
 import type { FieldRecordWithThumbnail } from '../lib/resolve-field-records';
 import { ExternalPhoto } from './external-photo';
 import {
+  brandFocusRing,
   marketingInteractiveTransition,
   fineHover,
 } from '../lib/ui-classes';
@@ -20,8 +21,7 @@ import { LandingFinalCta } from './landing-final-cta';
 const recordsPageStack =
   'flex w-full flex-col gap-8 overflow-x-clip pb-8 sm:gap-10 sm:pb-10 lg:pb-12';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 function matchesFilter(record: FieldRecordWithThumbnail, filter: RecordFilterId): boolean {
   if (filter === 'all') return true;

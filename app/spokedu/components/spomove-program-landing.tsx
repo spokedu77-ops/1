@@ -9,7 +9,7 @@ import {
   homeBandWhite,
   homeBodyLead,
   brandFocusRing,
-  homeGateCard,
+  marketingCardInteractive,
   homePhotoGrade,
   homeSectionEyebrow,
   marketingHeroDisplay,
@@ -355,7 +355,7 @@ export default function SpomoveProgramLanding() {
                   trackLabel={item.trackLabel}
                   commercialRoute={item.id === 'institution' ? 'dispatch' : 'curriculum'}
                   ctaIntentId={item.trackLabel}
-                  className={`${homeGateCard} ${brandFocusRing} block h-full`}
+                  className={`${marketingCardInteractive} ${brandFocusRing} group flex h-full flex-col overflow-hidden`}
                 >
                   <div className="flex min-h-[13rem] flex-col px-5 py-5 sm:px-6 sm:py-6">
                     <p className="text-[12px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
@@ -418,7 +418,7 @@ export default function SpomoveProgramLanding() {
                   <TrackedLink
                     href={card.href}
                     trackLabel={card.trackLabel}
-                    className={`${homeGateCard} ${brandFocusRing} block h-full`}
+                    className={`${marketingCardInteractive} ${brandFocusRing} group flex h-full flex-col overflow-hidden`}
                   >
                     <div className="relative aspect-[16/10] overflow-hidden">
                       {card.thumbnailSrc ? (

@@ -22,6 +22,7 @@ describe('public marketing visual foundation contract', () => {
   const publicSource = [
     collectSource('app/spokedu/components'),
     collectSource('app/spokedu/contact'),
+    collectSource('app/spokedu/programs'),
   ].join('\n');
 
   it.each([
@@ -55,7 +56,32 @@ describe('public marketing visual foundation contract', () => {
   });
 
   it('keeps migrated public sources off legacy primitive names', () => {
-    expect(publicSource).not.toMatch(/\b(?:btnPrimary|btnSecondary|siteBtnPrimary|siteBtnSecondary|landingCardFrame|siteContainer|homeSectionPad)\b/);
+    expect(publicSource).not.toMatch(/\b(?:btnPrimary|btnSecondary|siteBtnPrimary|siteBtnSecondary|landingCardFrame|siteContainer|homeSectionPad|homeGateCard)\b/);
+    expect(utilities).not.toMatch(/export const homeGateCard\b/);
+  });
+
+  it('keeps visual-only local shell aliases out of migrated compositions', () => {
+    expect(publicSource).not.toMatch(/\b(?:premiumPanel|premiumPanelDark|whoCardShell|reviewCardShell|pointCardShell|elementCardShell|activityCardShell|blockCardShell)\b/);
+  });
+
+  it('publishes the canonical surface family', () => {
+    for (const primitive of [
+      'marketingSurface',
+      'marketingCardStatic',
+      'marketingCardInteractive',
+      'marketingMediaFrame',
+      'marketingPanelEmphasized',
+      'marketingDarkSurface',
+      'marketingInteractiveTransition',
+    ]) {
+      expect(utilities).toMatch(new RegExp(`export const ${primitive}\\b`));
+    }
+  });
+
+  it('retains intentional composition and semantic-variant primitives', () => {
+    expect(utilities).toMatch(/export const landingHeroShell\b/);
+    expect(utilities).toMatch(/export const homePathNavItem\b/);
+    expect(read('app/spokedu/components/visual/card-variants.ts')).toMatch(/export function landingCardShell\b/);
   });
 
   it('uses H1 role independently from its scale on Education and SPOMOVE', () => {

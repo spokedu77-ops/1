@@ -11,6 +11,7 @@ import type { MonthlyRecord } from '../data/monthly';
 import { HOME_MEDIA, type HomeMediaItem } from '../data/home-media';
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import {
+  brandFocusRing,
   marketingInteractiveTransition,
   fineHover,
   landingPageStack,
@@ -18,8 +19,7 @@ import {
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+const focusRing = brandFocusRing;
 
 const blockVariants: LandingCardVariant[] = ['glass', 'gradient', 'image'];
 

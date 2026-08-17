@@ -12,7 +12,7 @@ import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import type { FieldRecordSlug } from '../data/field-records-catalog';
 import { getAcquisitionContext } from '../lib/acquisition';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary } from '../lib/ui-classes';
+import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary, marketingCardStatic } from '../lib/ui-classes';
 
 const AGE_OPTIONS = ['유아', '초등 저학년', '초등 고학년', '중등', '혼합 연령'] as const;
 const HEADCOUNT_OPTIONS = ['10명 미만', '10~20명', '20~30명', '30명 이상'] as const;
@@ -21,9 +21,6 @@ const inputClass =
   'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
 const labelClass = 'text-sm font-semibold text-slate-800';
 const hintClass = 'mt-1 text-xs leading-relaxed text-stone-500';
-const formShell =
-  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
-
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
 
 export function DispatchProposalForm() {
@@ -196,7 +193,7 @@ export function DispatchProposalForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className={`${formShell} p-5 sm:p-6 lg:p-7`} noValidate>
+      <form onSubmit={handleSubmit} className={`${marketingCardStatic} overflow-hidden p-5 sm:p-6 lg:p-7`} noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="dispatch-org">

@@ -11,14 +11,11 @@ import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { campProgramPage } from '../data/camp-program-page';
 import { programDetailBlocks } from '../data/program-details';
-import { landingPageStack, marketingCompactDisplay, linkMuted } from '../lib/ui-classes';
+import { landingPageStack, marketingCardStatic, marketingCompactDisplay, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
-const cardShell =
-  'flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5';
-
-const blockCardShell =
-  'flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white';
+const cardLayout = 'flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5';
+const blockCardLayout = 'flex h-full flex-col overflow-hidden';
 
 export default function CampProgramLanding() {
   const relatedCases = campProgramPage.cases.slugs
@@ -60,7 +57,7 @@ export default function CampProgramLanding() {
         <h2 className={marketingCompactDisplay}>{campProgramPage.programBlocks.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           {campProgramPage.programBlocks.items.map((item, index) => (
-            <li key={item.title} className={blockCardShell}>
+            <li key={item.title} className={`${marketingCardStatic} ${blockCardLayout}`}>
               <MediaPanel
                 media={HOME_MEDIA[item.mediaKey]}
                 className="aspect-[16/9] min-h-[120px] shrink-0 rounded-none border-0 sm:min-h-0"
@@ -116,7 +113,7 @@ export default function CampProgramLanding() {
         <h2 className={marketingCompactDisplay}>{campProgramPage.faq.title}</h2>
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-3.5">
           {campProgramPage.faq.items.map((item) => (
-            <article key={item.q} className={cardShell}>
+            <article key={item.q} className={`${marketingCardStatic} ${cardLayout}`}>
               <h3 className="text-sm font-semibold text-slate-950 [word-break:keep-all]">{item.q}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{item.a}</p>
             </article>

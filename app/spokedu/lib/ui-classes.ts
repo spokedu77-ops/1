@@ -190,15 +190,9 @@ export const homeHeroFullBleedLead = `text-[15px] leading-[1.65] text-[#D5DFED] 
 
 export const focusRing = brandFocusRing;
 
-export const homeGateCard =
-  `group flex h-full flex-col overflow-hidden rounded-[var(--spokedu-marketing-radius-medium)] border border-[var(--spokedu-marketing-color-border)] bg-[var(--spokedu-marketing-color-white)] shadow-[var(--spokedu-marketing-shadow-subtle)] transition ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:border-[var(--spokedu-marketing-color-blue)]/25 ${fineHover}hover:shadow-[var(--spokedu-marketing-shadow-interactive)]`;
-
 /** 홈 Audience Gate — 빠른 경로 선택용 compact block (이미지 카드와 구분) */
 export const homePathNavItem =
-  `group flex h-full min-w-0 flex-col rounded-[1.1rem] border border-[#D6E3FF]/90 bg-white/90 px-4 py-4 transition ${fineHover}hover:border-[#245DFF]/35 ${fineHover}hover:bg-white ${fineHover}hover:shadow-[0_10px_28px_rgba(15,33,70,0.06)] sm:px-4 sm:py-4`;
-
-export const homeCaseCard =
-  `group flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--spokedu-marketing-color-border)] bg-white shadow-[0_12px_32px_rgba(15,33,70,0.05)] transition ${fineHover}hover:border-[#C5D2E8]`;
+  `group flex h-full min-w-0 flex-col rounded-[var(--spokedu-marketing-radius-small)] border border-[var(--spokedu-marketing-color-border)] bg-white/90 px-4 py-4 transition ${fineHover}hover:border-[var(--spokedu-marketing-color-blue)]/35 ${fineHover}hover:bg-white ${fineHover}hover:shadow-[var(--spokedu-marketing-shadow-interactive)] sm:px-4 sm:py-4`;
 
 export const homeDarkSection = 'relative overflow-hidden bg-[var(--spokedu-marketing-color-navy)] text-white';
 

@@ -4,15 +4,12 @@ import Link from 'next/link';
 import { HOME_MEDIA } from '../data/home-media';
 import { dispatchPage } from '../data/dispatch-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { marketingInteractiveTransition, koreanLineBreak } from '../lib/ui-classes';
+import { brandFocusRing, marketingCardInteractive, marketingInteractiveTransition, koreanLineBreak } from '../lib/ui-classes';
 import { LandingSectionHeading } from './landing-section-heading';
 import { MediaPanel } from './visual';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600';
-
-const premiumRow =
-  'flex flex-col overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)] sm:flex-row';
+const focusRing = brandFocusRing;
+const premiumRowLayout = 'flex flex-col overflow-hidden sm:flex-row';
 
 export const dispatchEvidenceVisuals: Record<
   string,
@@ -130,7 +127,7 @@ export function DispatchProgramLineup() {
           const isStructuredVisual = media.type === 'visual';
 
           const row = (
-            <div className={premiumRow}>
+            <div className={`${marketingCardInteractive} ${premiumRowLayout}`}>
               <div className="relative h-[9.5rem] w-full shrink-0 overflow-hidden bg-stone-100 sm:h-auto sm:min-h-[8.5rem] sm:w-[32%] lg:w-[30%]">
                 {isStructuredVisual ? (
                   <DispatchEvidencePanel itemId={id} />
