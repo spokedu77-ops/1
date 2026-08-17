@@ -23,36 +23,110 @@ export const GATE_COLORS: Record<GateColorId, GateColorDef> = {
 };
 
 /** Color Gate 실루엣 포즈 — 이미지 파일명(stem)과 1:1 */
-export type ColorGatePoseKey = 'jump' | 'kick' | 'side-squat' | 'lunge-reach' | 'star';
+export type ColorGatePoseKey =
+  | 'jump'
+  | 'kick'
+  | 'side-squat'
+  | 'lunge-reach'
+  | 'star'
+  | 'high-knee'
+  | 'single-leg-balance'
+  | 'side-lunge'
+  | 'bridge'
+  | 'plank'
+  | 'side-plank'
+  | 'bird-dog'
+  | 'v-sit'
+  | 'seated-toe-touch'
+  | 'downward-dog'
+  | 'partner-hold'
+  | 'partner-squat'
+  | 'partner-high-five';
 
 export const COLOR_GATE_POSE_IMAGE_MAP: Record<ColorGatePoseKey, string> = {
-  jump:        '/spomove/dive/color-gate/jump.png',
-  kick:        '/spomove/dive/color-gate/kick.png',
-  'side-squat': '/spomove/dive/color-gate/side-squat.png',
-  'lunge-reach': '/spomove/dive/color-gate/lunge-reach.png',
-  star:        '/spomove/dive/color-gate/star.png',
+  jump:                 '/spomove/dive/color-gate/jump.png',
+  kick:                 '/spomove/dive/color-gate/kick.png',
+  'side-squat':         '/spomove/dive/color-gate/side-squat.png',
+  'lunge-reach':        '/spomove/dive/color-gate/lunge-reach.png',
+  star:                 '/spomove/dive/color-gate/star.png',
+  'high-knee':          '/spomove/dive/color-gate/high-knee.png',
+  'single-leg-balance': '/spomove/dive/color-gate/single-leg-balance.png',
+  'side-lunge':         '/spomove/dive/color-gate/side-lunge.png',
+  bridge:               '/spomove/dive/color-gate/bridge.png',
+  plank:                '/spomove/dive/color-gate/plank.png',
+  'side-plank':         '/spomove/dive/color-gate/side-plank.png',
+  'bird-dog':           '/spomove/dive/color-gate/bird-dog.png',
+  'v-sit':              '/spomove/dive/color-gate/v-sit.png',
+  'seated-toe-touch':   '/spomove/dive/color-gate/seated-toe-touch.png',
+  'downward-dog':       '/spomove/dive/color-gate/downward-dog.png',
+  'partner-hold':       '/spomove/dive/color-gate/partner-hold.png',
+  'partner-squat':      '/spomove/dive/color-gate/partner-squat.png',
+  'partner-high-five':  '/spomove/dive/color-gate/partner-high-five.png',
 };
 
 /** 관문에서 순환 제시할 포즈 순서 */
 export const COLOR_GATE_POSE_SEQUENCE: ColorGatePoseKey[] = [
-  'jump', 'kick', 'side-squat', 'lunge-reach', 'star',
+  'jump',
+  'kick',
+  'side-squat',
+  'lunge-reach',
+  'star',
+  'high-knee',
+  'single-leg-balance',
+  'side-lunge',
+  'bridge',
+  'plank',
+  'side-plank',
+  'bird-dog',
+  'v-sit',
+  'seated-toe-touch',
+  'downward-dog',
+  'partner-hold',
+  'partner-squat',
+  'partner-high-five',
 ];
 
 /** HUD 라벨 — 이미지 파일명(stem)과 동일 */
 export const COLOR_GATE_POSE_LABELS: Record<ColorGatePoseKey, string> = {
-  jump:        'jump',
-  kick:        'kick',
-  'side-squat': 'side-squat',
-  'lunge-reach': 'lunge-reach',
-  star:        'star',
+  jump:                 'jump',
+  kick:                 'kick',
+  'side-squat':         'side-squat',
+  'lunge-reach':        'lunge-reach',
+  star:                 'star',
+  'high-knee':          'high-knee',
+  'single-leg-balance': 'single-leg-balance',
+  'side-lunge':         'side-lunge',
+  bridge:               'bridge',
+  plank:                'plank',
+  'side-plank':         'side-plank',
+  'bird-dog':           'bird-dog',
+  'v-sit':              'v-sit',
+  'seated-toe-touch':   'seated-toe-touch',
+  'downward-dog':       'downward-dog',
+  'partner-hold':       'partner-hold',
+  'partner-squat':      'partner-squat',
+  'partner-high-five':  'partner-high-five',
 };
 
 export const COLOR_GATE_POSE_INSTRUCTIONS: Record<ColorGatePoseKey, string> = {
-  jump:        'jump 자세를 취하세요',
-  kick:        'kick 자세를 취하세요',
-  'side-squat': 'side-squat 자세를 취하세요',
-  'lunge-reach': 'lunge-reach 자세를 취하세요',
-  star:        'star 자세를 취하세요',
+  jump:                 'jump 자세를 취하세요',
+  kick:                 'kick 자세를 취하세요',
+  'side-squat':         'side-squat 자세를 취하세요',
+  'lunge-reach':        'lunge-reach 자세를 취하세요',
+  star:                 'star 자세를 취하세요',
+  'high-knee':          'high-knee 자세를 취하세요',
+  'single-leg-balance': 'single-leg-balance 자세를 취하세요',
+  'side-lunge':         'side-lunge 자세를 취하세요',
+  bridge:               'bridge 자세를 취하세요',
+  plank:                'plank 자세를 취하세요',
+  'side-plank':         'side-plank 자세를 취하세요',
+  'bird-dog':           'bird-dog 자세를 취하세요',
+  'v-sit':              'v-sit 자세를 취하세요',
+  'seated-toe-touch':   'seated-toe-touch 자세를 취하세요',
+  'downward-dog':       'downward-dog 자세를 취하세요',
+  'partner-hold':       '두 명이 함께 partner-hold 자세를 취하세요',
+  'partner-squat':      '두 명이 함께 partner-squat 자세를 취하세요',
+  'partner-high-five':  '두 명이 함께 partner-high-five 자세를 취하세요',
 };
 
 export const COLOR_GATE_FIXED_COLOR_ID = 'red' as GateColorId;
