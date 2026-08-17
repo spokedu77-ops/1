@@ -11,7 +11,7 @@ import {
   homeBodyLead,
   homeFocusRing,
   homeSectionEyebrow,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   koreanText,
   siteBtnPrimary,
@@ -39,7 +39,7 @@ export function AboutLanding() {
           >
             <div className="max-w-2xl">
               <p className={homeSectionEyebrow}>{intro.eyebrow}</p>
-              <h1 className={`${homeSectionH2} mt-3`}>{intro.title}</h1>
+              <h1 className={`${marketingSectionDisplay} mt-3`}>{intro.title}</h1>
               <p className={`${homeBodyLead} mt-4`}>{intro.lead}</p>
             </div>
             <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-stone-200/80">
@@ -58,7 +58,7 @@ export function AboutLanding() {
       <section id={origin.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{origin.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{origin.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{origin.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{origin.lead}</p>
           <ol className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {origin.steps.map((step, index) => (
@@ -79,7 +79,7 @@ export function AboutLanding() {
       <section id={whatWeDo.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{whatWeDo.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{whatWeDo.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{whatWeDo.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{whatWeDo.lead}</p>
           <ul className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
             {whatWeDo.items.map((item) => (
@@ -108,7 +108,7 @@ export function AboutLanding() {
       <section id={principles.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{principles.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{principles.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{principles.title}</h2>
           <ul className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {principles.items.map((item) => (
               <li key={item.title} className="rounded-2xl border border-[#D6E3FF] bg-white px-5 py-5">
@@ -125,7 +125,7 @@ export function AboutLanding() {
       <section id={history.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{history.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{history.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{history.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{history.lead}</p>
           <ol className="mt-8 space-y-3">
             {history.milestones.map((item) => (
@@ -162,7 +162,7 @@ export function AboutLanding() {
       <section id={nextPaths.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{nextPaths.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{nextPaths.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{nextPaths.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{nextPaths.lead}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             {nextPaths.items.map((item, index) => (

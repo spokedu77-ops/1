@@ -13,7 +13,7 @@ import {
   homeGateCard,
   homePhotoGrade,
   homeSectionEyebrow,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   koreanText,
   siteBtnPrimary,
@@ -44,7 +44,7 @@ export function EducationHubLanding() {
             transition={{ duration: 0.45 }}
           >
             <p className={homeSectionEyebrow}>{hero.eyebrow}</p>
-            <h1 className={`${homeSectionH2} mt-3`}>{hero.title}</h1>
+            <h1 className={`${marketingSectionDisplay} mt-3`}>{hero.title}</h1>
             <p className={`${homeBodyLead} mt-4`}>{hero.lead}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <TrackedLink
@@ -77,7 +77,7 @@ export function EducationHubLanding() {
       >
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{primaryPaths.eyebrow}</p>
-          <h2 id="education-primary-heading" className={`${homeSectionH2} mt-3`}>
+          <h2 id="education-primary-heading" className={`${marketingSectionDisplay} mt-3`}>
             {primaryPaths.title}
           </h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -148,7 +148,7 @@ export function EducationHubLanding() {
       >
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{formats.eyebrow}</p>
-          <h2 id="education-formats-heading" className={`${homeSectionH2} mt-3`}>
+          <h2 id="education-formats-heading" className={`${marketingSectionDisplay} mt-3`}>
             {formats.title}
           </h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -184,7 +184,7 @@ export function EducationHubLanding() {
       >
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{principles.eyebrow}</p>
-          <h2 id="education-principles-heading" className={`${homeSectionH2} mt-3`}>
+          <h2 id="education-principles-heading" className={`${marketingSectionDisplay} mt-3`}>
             {principles.title}
           </h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -228,7 +228,7 @@ export function EducationHubLanding() {
         <div className={siteContainer}>
           <div className="flex flex-col gap-4 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between">
             <div className="max-w-2xl">
-              <h2 id="education-cases-heading" className={`${homeSectionH2} mt-3`}>
+              <h2 id="education-cases-heading" className={`${marketingSectionDisplay} mt-3`}>
                 {cases.title}
               </h2>
               <p className={`mt-3 text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -305,7 +305,7 @@ export function EducationHubLanding() {
             <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
               {finalCta.eyebrow}
             </p>
-            <h2 className={`${homeSectionH2} mt-3 text-[1.65rem] sm:text-[2rem]`}>{finalCta.title}</h2>
+            <h2 className={`${marketingSectionDisplay} mt-3 text-[1.65rem] sm:text-[2rem]`}>{finalCta.title}</h2>
             <p className={`mt-3 max-w-xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{finalCta.lead}</p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <TrackedLink

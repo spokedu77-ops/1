@@ -3,7 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { brandFocusRing, koreanText } from '../lib/ui-classes';
+import {
+  brandFocusRing,
+  koreanText,
+  marketingHeroDisplay,
+  marketingSectionDisplay,
+} from '../lib/ui-classes';
 
 type TabId = 'education' | 'special-pe' | 'catalog';
 
@@ -555,7 +560,7 @@ export default function SpomoveCatalogTabs() {
         <div className="grid gap-5 rounded-[1.35rem] border border-[#DCE3EE] bg-white px-5 py-5 shadow-sm shadow-slate-900/[0.03] sm:px-7 sm:py-6 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,1fr)] lg:items-center">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SELECTED MATERIAL</p>
-            <h2 className={`mt-2 text-2xl font-black leading-tight tracking-[-0.035em] text-[#14213A] sm:text-3xl ${koreanText}`}>{active.label}</h2>
+            <h2 className={`${marketingSectionDisplay} mt-2 !text-2xl !leading-tight text-[#14213A] sm:!text-3xl ${koreanText}`}>{active.label}</h2>
           </div>
           <div className="flex flex-col gap-4 lg:items-start">
             <p className={`max-w-3xl text-sm leading-[1.75] text-[#536279] sm:text-base ${koreanText}`}>{active.description}</p>
@@ -601,7 +606,7 @@ function Hero() {
       <div className="grid gap-6 px-5 py-6 sm:px-8 sm:py-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:px-10">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#245DFF] sm:text-xs">SPOKEDU · SPOMOVE</p>
-          <h1 className={`mt-3 max-w-3xl text-[2rem] font-black leading-[1.12] tracking-[-0.04em] text-[#14213A] sm:text-[2.75rem] lg:text-[3.2rem] ${koreanText}`}>
+          <h1 className={`${marketingHeroDisplay} mt-3 max-w-3xl !text-[2rem] !leading-[1.12] text-[#14213A] sm:!text-[2.75rem] lg:!text-[3.2rem] ${koreanText}`}>
             화면의 정보를 실제 움직임으로.
           </h1>
           <p className={`mt-4 max-w-3xl text-[15px] leading-[1.75] text-[#536279] sm:text-base ${koreanText}`}>
@@ -712,7 +717,7 @@ function Section({ section }: { section: SectionBlock }) {
       <div className="grid gap-4 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
         <div>
           <p className={`text-[11px] font-bold uppercase tracking-[0.16em] sm:text-xs ${dark ? 'text-[#9FC0FF]' : 'text-[#245DFF]'}`}>{section.eyebrow}</p>
-          <h2 className={`mt-3 text-[1.55rem] font-black leading-[1.16] tracking-[-0.035em] sm:text-[2.15rem] lg:text-[2.45rem] ${koreanText}`}>
+          <h2 className={`${marketingSectionDisplay} mt-3 !text-[1.55rem] !leading-[1.16] sm:!text-[2.15rem] lg:!text-[2.45rem] ${koreanText}`}>
             {section.title}
           </h2>
         </div>
@@ -793,7 +798,7 @@ function FinalCta({ activeLabel }: { activeLabel: string }) {
       <div className="grid gap-6 px-6 py-7 sm:px-8 sm:py-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:px-10">
         <div>
           <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE BY SPOKEDU</p>
-          <h2 className={`mt-3 text-2xl font-black leading-[1.14] tracking-[-0.04em] text-[#0B1F46] sm:text-4xl ${koreanText}`}>
+          <h2 className={`${marketingSectionDisplay} mt-3 !text-2xl !leading-[1.14] text-[#0B1F46] sm:!text-4xl ${koreanText}`}>
             {activeLabel} 자료를 바탕으로 기관에 맞는 수업 형태를 설계합니다.
           </h2>
           <p className={`mt-4 max-w-2xl text-sm leading-[1.75] text-[#536279] sm:text-base ${koreanText}`}>

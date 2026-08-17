@@ -1,4 +1,4 @@
-import { koreanLineBreak } from '../lib/ui-classes';
+import { koreanLineBreak, marketingMetricDisplay } from '../lib/ui-classes';
 
 export type AudienceTrustMetric = {
   id?: string;
@@ -21,7 +21,7 @@ export function AudienceTrustStrip({ badge, eyebrow, items }: AudienceTrustStrip
       <dl className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-8">
         {items.map((item) => (
           <div key={item.id ?? `${item.value}-${item.label}`} className="min-w-0">
-            <dt className={`text-2xl font-bold tracking-tight text-[#0B1F46] sm:text-[1.75rem] ${koreanLineBreak}`}>
+            <dt className={`${marketingMetricDisplay} !text-2xl !leading-tight text-[#0B1F46] sm:!text-[1.75rem] ${koreanLineBreak}`}>
               {item.value}
             </dt>
             <dd className={`mt-1.5 text-sm leading-relaxed text-slate-500 ${koreanLineBreak}`}>{item.label}</dd>

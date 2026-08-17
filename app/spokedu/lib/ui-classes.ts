@@ -79,8 +79,6 @@ export const homeBleedBand =
 export const homePhotoGrade =
   'object-cover brightness-[1.03] contrast-[1.06] saturate-[1.06]';
 
-export const landingSectionTitle = 'text-xl font-bold tracking-[-0.03em] text-[#14213A] sm:text-2xl';
-
 export const landingHeroGrid =
   'flex flex-col gap-6 sm:gap-8 lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:items-center lg:gap-10 xl:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] xl:gap-12';
 
@@ -107,17 +105,14 @@ export const landingCardPanelPad = 'p-5 sm:px-5 sm:py-5 lg:p-6';
 /** 이미지 하단 → 제목 최소 간격 */
 export const homeCardImageToTitle = 'mt-5';
 
-/** @deprecated landingH1 등 서브용 — `koreanText` 참고 */
-export const landingH1 = `text-[1.25rem] font-black leading-[1.14] tracking-tight text-[#14213A] min-[360px]:text-[1.35rem] min-[390px]:text-[1.4375rem] min-[430px]:text-[1.5625rem] sm:text-[2.75rem] sm:leading-[1.08] lg:text-[3.25rem] xl:text-[3.5rem] ${koreanText}`;
+/** Compact page-title scale; family/weight/synthesis remain owned by marketingHeroDisplay. */
+export const marketingHeroDisplayCompactScale = `!text-[1.25rem] !leading-[1.14] min-[360px]:!text-[1.35rem] min-[390px]:!text-[1.4375rem] min-[430px]:!text-[1.5625rem] sm:!text-[2.75rem] sm:!leading-[1.08] lg:!text-[3.25rem] xl:!text-[3.5rem]`;
 
-/** Home Hero H1 */
-export const homeHeroH1 = `font-bold tracking-[-0.035em] text-[#14213A] ${koreanText} text-[1.625rem] leading-[1.16] min-[360px]:text-[1.75rem] min-[390px]:text-[1.875rem] min-[430px]:text-[2rem] sm:text-[2.5rem] sm:leading-[1.12] lg:text-[3rem] xl:text-[3.25rem]`;
+/** Split-hero scale; family/weight/synthesis remain owned by marketingHeroDisplay. */
+export const marketingHeroDisplaySplitScale = `!text-[1.625rem] !leading-[1.16] min-[360px]:!text-[1.75rem] min-[390px]:!text-[1.875rem] min-[430px]:!text-[2rem] sm:!text-[2.5rem] sm:!leading-[1.12] lg:!text-[3rem] xl:!text-[3.25rem]`;
 
-/** 의미 줄 1개 = 블록 1줄 (내부에서 다시 쪼개지지 않게 폭·크기는 homeHeroH1이 담당) */
-export const homeHeroH1Line = 'block';
-
-/** Home 섹션 대제목 (프로그램 블록과 동일 위계) */
-export const homeSectionTitle = `text-[1.75rem] font-black leading-[1.12] tracking-[-0.04em] text-[#14213A] sm:text-4xl lg:text-[2.65rem] ${koreanLineBreak}`;
+/** One authored display line remains one block. */
+export const marketingHeroDisplayLine = 'block';
 
 export const homeSectionEyebrow =
   'text-[11px] font-bold uppercase tracking-[0.14em] text-[#245DFF]';
@@ -153,14 +148,7 @@ export const brandPadYellow = '#F5BF1F';
 export const brandPadGreen = '#67A92C';
 export const brandPadBlue = '#1F64BF';
 
-/** 홈 H1 — Hero 56~68px */
-export const homeHeroTitle = `font-bold leading-[1.15] tracking-tight text-white ${koreanLineBreak} text-[2rem] min-[390px]:text-[2.25rem] sm:text-[2.75rem] md:text-[3.25rem] lg:text-[3.5rem] xl:text-[4.25rem]`;
-
 /** 홈 섹션 H2 — 카탈로그식 디스플레이 (홈용으로 한 단계 완화) */
-export const homeSectionH2 = `font-black tracking-[-0.04em] text-[#14213A] ${koreanText} text-[1.85rem] sm:text-[2.25rem] lg:text-[2.65rem] xl:text-[3rem] leading-[1.12]`;
-
-export const homeSectionH2OnDark = `font-black tracking-[-0.04em] text-white ${koreanText} text-[1.85rem] sm:text-[2.25rem] lg:text-[2.65rem] xl:text-[3rem] leading-[1.12]`;
-
 /** 섹션 리드 18~20px */
 export const homeBodyLead = `mt-5 max-w-[40rem] text-base leading-[1.7] text-[#536279] sm:text-[17px] lg:text-lg xl:text-xl ${koreanText}`;
 
@@ -238,8 +226,6 @@ export const homeHeroFullBleedCopy =
 export const homeHeroBrand =
   'text-[11px] font-bold uppercase tracking-[0.22em] text-[#9FC0FF] sm:text-xs';
 
-export const homeHeroFullBleedTitle = `font-black tracking-[-0.045em] text-white ${koreanText} text-[1.85rem] leading-[1.12] min-[390px]:text-[2.15rem] sm:text-[2.75rem] sm:leading-[1.08] lg:text-[3.25rem] xl:text-[3.5rem]`;
-
 export const homeHeroFullBleedLead = `text-[15px] leading-[1.65] text-[#D5DFED] sm:text-base ${koreanText}`;
 
 export const siteBtnPrimaryOnHero =
@@ -276,19 +262,19 @@ export const landingHeroCinematicCopy = homeHeroFullBleedCopy;
 /**
  * Public Marketing foundation
  * - 다음 페이지별 리팩토링에서 점진적으로 사용한다.
- * - 기존 home, landing, site prefix export는 현재 화면 호환을 위해 유지한다.
+ * - Display roles use Cafe24 at its real 400 weight with synthesis disabled.
  */
 export const marketingHeroDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-bold tracking-[-0.04em] [font-synthesis:weight] ${koreanText} text-[2.75rem] leading-[1.08] min-[390px]:text-[3rem] sm:text-[3.75rem] md:text-[4.25rem] lg:text-[4.5rem] xl:text-[4.75rem]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.04em] [font-synthesis:none] ${koreanText} text-[2.75rem] leading-[1.08] min-[390px]:text-[3rem] sm:text-[3.75rem] md:text-[4.25rem] lg:text-[4.5rem] xl:text-[4.75rem]`;
 
 export const marketingSectionDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-bold tracking-[-0.03em] [font-synthesis:weight] ${koreanText} text-[2.125rem] leading-[1.16] sm:text-[2.625rem] md:text-[3rem] lg:text-[3.5rem]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.03em] [font-synthesis:none] ${koreanText} text-[2.125rem] leading-[1.16] sm:text-[2.625rem] md:text-[3rem] lg:text-[3.5rem]`;
 
 export const marketingCompactDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-bold tracking-[-0.03em] [font-synthesis:weight] ${koreanText} text-[1.75rem] leading-[1.16] sm:text-[2.1rem] lg:text-[2.75rem]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.03em] [font-synthesis:none] ${koreanText} text-[1.75rem] leading-[1.16] sm:text-[2.1rem] lg:text-[2.75rem]`;
 
 export const marketingMetricDisplay =
-  '[font-family:var(--spokedu-marketing-font-display)] text-[2.5rem] font-normal leading-none tracking-[-0.035em] sm:text-[3.25rem] lg:text-[4rem]';
+  '[font-family:var(--spokedu-marketing-font-display)] text-[2.5rem] font-normal leading-none tracking-[-0.035em] [font-synthesis:none] sm:text-[3.25rem] lg:text-[4rem]';
 
 export const marketingEyebrow =
   'text-[12px] font-bold [color:var(--spokedu-marketing-color-blue)] sm:text-[13px]';
@@ -296,11 +282,11 @@ export const marketingEyebrowOnDark =
   'text-[12px] font-bold [color:var(--spokedu-marketing-color-dark-eyebrow)] sm:text-[13px]';
 export const marketingEyebrowUppercase = 'uppercase tracking-[0.14em]';
 export const marketingSectionLead =
-  `max-w-[40rem] text-base leading-[1.7] [color:var(--spokedu-marketing-color-body)] sm:text-[17px] lg:text-lg ${koreanText}`;
+  `[font-family:var(--spokedu-marketing-font-body)] max-w-[40rem] text-base leading-[1.7] [color:var(--spokedu-marketing-color-body)] sm:text-[17px] lg:text-lg ${koreanText}`;
 export const marketingBody =
-  `text-base leading-[1.7] [color:var(--spokedu-marketing-color-body)] sm:text-[17px] ${koreanText}`;
+  `[font-family:var(--spokedu-marketing-font-body)] text-base leading-[1.7] [color:var(--spokedu-marketing-color-body)] sm:text-[17px] ${koreanText}`;
 export const marketingCaption =
-  'text-[13px] font-medium leading-[1.5] [color:var(--spokedu-marketing-color-muted)] sm:text-sm';
+  '[font-family:var(--spokedu-marketing-font-body)] text-[13px] font-medium leading-[1.5] [color:var(--spokedu-marketing-color-muted)] sm:text-sm';
 
 export const marketingSectionPad = siteSectionPad;
 export const marketingSectionPadCompact = siteSectionPadCompact;

@@ -1,4 +1,4 @@
-import { brandKicker, koreanLineBreak, landingSectionTitle } from '../lib/ui-classes';
+import { brandKicker, koreanLineBreak, marketingCompactDisplay } from '../lib/ui-classes';
 
 const accentEyebrow = {
   violet: brandKicker,
@@ -26,7 +26,7 @@ export function LandingSectionHeading({
   return (
     <div id={id} className={`${id ? 'scroll-mt-20' : ''} ${className}`.trim()}>
       {eyebrow ? <p className={accentEyebrow[accent]}>{eyebrow}</p> : null}
-      <h2 className={`${landingSectionTitle} ${eyebrow ? 'mt-1' : ''}`}>{title}</h2>
+      <h2 className={`${marketingCompactDisplay} ${eyebrow ? 'mt-1' : ''}`}>{title}</h2>
       {lead ? (
         <p className={`mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
           {lead}

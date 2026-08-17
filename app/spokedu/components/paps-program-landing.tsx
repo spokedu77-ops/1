@@ -8,7 +8,7 @@ import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { papsProgramPage } from '../data/paps-program-page';
 import { programDetailBlocks } from '../data/program-details';
-import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { landingPageStack, marketingCompactDisplay } from '../lib/ui-classes';
 
 const elementCardShell =
   'flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5';
@@ -39,7 +39,7 @@ export default function PapsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-lime-200/70 bg-gradient-to-br from-lime-50/60 via-white to-emerald-50/40 px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{papsProgramPage.overview.title}</h2>
+        <h2 className={marketingCompactDisplay}>{papsProgramPage.overview.title}</h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
           {papsProgramPage.overview.body}
         </p>
@@ -49,7 +49,7 @@ export default function PapsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5">
-        <h2 className={landingSectionTitle}>{papsProgramPage.fitnessElements.title}</h2>
+        <h2 className={marketingCompactDisplay}>{papsProgramPage.fitnessElements.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-3">
           {papsProgramPage.fitnessElements.items.map((item) => (
             <li key={item.title} className={elementCardShell}>
@@ -63,7 +63,7 @@ export default function PapsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5">
-        <h2 className={landingSectionTitle}>{papsProgramPage.classFlow.title}</h2>
+        <h2 className={marketingCompactDisplay}>{papsProgramPage.classFlow.title}</h2>
         <ol className="flex gap-2.5 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin] sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible lg:grid-cols-4">
           {papsProgramPage.classFlow.steps.map((step, index) => (
             <li
@@ -81,7 +81,7 @@ export default function PapsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{papsProgramPage.institutionFit.title}</h2>
+        <h2 className={marketingCompactDisplay}>{papsProgramPage.institutionFit.title}</h2>
         <p className="mt-3 text-base font-semibold text-slate-950 [word-break:keep-all] sm:text-lg">
           {papsProgramPage.institutionFit.lead}
         </p>
@@ -97,7 +97,7 @@ export default function PapsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{papsProgramPage.audience.title}</h2>
+        <h2 className={marketingCompactDisplay}>{papsProgramPage.audience.title}</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-5">
           <div>
             <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-lime-800">적합한 대상</dt>

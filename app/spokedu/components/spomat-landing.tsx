@@ -12,7 +12,7 @@ import {
   homeBodyLead,
   homeFocusRing,
   homeSectionEyebrow,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   koreanText,
   siteBtnPrimary,
@@ -33,7 +33,7 @@ export function SpomatLanding() {
         <div className={`${siteContainer} grid gap-8 lg:grid-cols-2 lg:items-center`}>
           <div>
             <p className={homeSectionEyebrow}>{definition.eyebrow}</p>
-            <h1 className={`${homeSectionH2} mt-3`}>{definition.title}</h1>
+            <h1 className={`${marketingSectionDisplay} mt-3`}>{definition.title}</h1>
             <p className={`${homeBodyLead} mt-4`}>{definition.lead}</p>
           </div>
           <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-50">
@@ -52,7 +52,7 @@ export function SpomatLanding() {
       <section id={structure.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{structure.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{structure.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{structure.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{structure.lead}</p>
           <ul className="mt-8 mx-auto grid max-w-sm grid-cols-2 gap-3" aria-label="SPOMAT 2×2 색 위치">
             {structure.cells.map((cell) => (
@@ -72,7 +72,7 @@ export function SpomatLanding() {
       <section id={usage.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{usage.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{usage.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{usage.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{usage.lead}</p>
           <ol className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {usage.points.map((point, index) => (
@@ -101,7 +101,7 @@ export function SpomatLanding() {
       <section id={examples.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{examples.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{examples.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{examples.title}</h2>
           <ul className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {examples.items.map((item) => (
               <li key={item.title} className="rounded-2xl border border-[#D6E3FF] bg-white px-5 py-5">
@@ -118,7 +118,7 @@ export function SpomatLanding() {
       <section id={specs.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{specs.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{specs.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{specs.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{specs.lead}</p>
           <dl className="mt-8 grid max-w-xl grid-cols-[auto_1fr] gap-x-6 gap-y-3">
             {specs.items.map((item) => (
@@ -137,7 +137,7 @@ export function SpomatLanding() {
       <section id={purchase.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{purchase.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{purchase.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{purchase.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{purchase.lead}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <TrackedLink

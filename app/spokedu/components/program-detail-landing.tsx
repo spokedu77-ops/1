@@ -9,7 +9,7 @@ import { landingCardShell, type LandingCardVariant } from './visual/card-variant
 import { HOME_MEDIA } from '../data/home-media';
 import { programDetailBlocks, type ProgramDetailSlug } from '../data/program-details';
 import { getProgramBySlug } from '../data/programs';
-import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { landingPageStack, marketingCompactDisplay } from '../lib/ui-classes';
 
 const whyVariants: LandingCardVariant[] = ['glass', 'gradient', 'image'];
 const activityVariants: LandingCardVariant[] = ['image', 'gradient', 'glass'];
@@ -49,7 +49,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.05}>
-        <h2 className={landingSectionTitle}>이 프로그램이 필요한 이유</h2>
+        <h2 className={marketingCompactDisplay}>이 프로그램이 필요한 이유</h2>
         <ul className="grid gap-2.5 sm:grid-cols-3">
           {detail.whyPoints.map((point, index) => (
             <li
@@ -63,7 +63,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
       </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.08}>
-        <h2 className={landingSectionTitle}>핵심 활동 구성</h2>
+        <h2 className={marketingCompactDisplay}>핵심 활동 구성</h2>
         <ul className="grid gap-2.5 sm:grid-cols-3">
           {detail.activities.map((item, index) => {
             const variant = activityVariants[index] ?? 'image';
@@ -99,7 +99,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
       </LandingSection>
 
       <LandingSection className={`rounded-2xl p-4 sm:p-5 ${landingCardShell('gradient')}`} delay={0.1}>
-        <h2 className={landingSectionTitle}>적용 대상</h2>
+        <h2 className={marketingCompactDisplay}>적용 대상</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {detail.targets.map((target) => (
             <span

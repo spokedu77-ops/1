@@ -12,7 +12,7 @@ import {
   homeGateCard,
   homePhotoGrade,
   homeSectionEyebrow,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   koreanText,
   siteBtnPrimary,
@@ -125,7 +125,7 @@ export default function SpomoveProgramLanding() {
         <div className={`${siteContainer} grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center`}>
           <div className="min-w-0">
             <p className={homeSectionEyebrow}>{page.hero.kicker}</p>
-            <h1 className={`${homeSectionH2} mt-3`}>
+            <h1 className={`${marketingSectionDisplay} mt-3`}>
               <span className="block">{page.hero.lines[0]}</span>
               <span className="mt-1.5 block text-[#245DFF]">{page.hero.lines[1]}</span>
             </h1>
@@ -163,7 +163,7 @@ export default function SpomoveProgramLanding() {
       <section id={page.flow.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-flow-heading">
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{page.flow.eyebrow}</p>
-          <h2 id="spomove-flow-heading" className={`${homeSectionH2} mt-3`}>
+          <h2 id="spomove-flow-heading" className={`${marketingSectionDisplay} mt-3`}>
             {page.flow.title}
           </h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -198,7 +198,7 @@ export default function SpomoveProgramLanding() {
       <section id={page.content.id} className={`${homeSectionPadCompact} ${homeBandWhite}`} aria-labelledby="spomove-content-heading">
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{page.content.eyebrow}</p>
-          <h2 id="spomove-content-heading" className={`${homeSectionH2} mt-3`}>
+          <h2 id="spomove-content-heading" className={`${marketingSectionDisplay} mt-3`}>
             {page.content.title}
           </h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -275,7 +275,7 @@ export default function SpomoveProgramLanding() {
               <SpomatPhoto size="sm" bare />
               <p className={homeSectionEyebrow}>{page.spomat.eyebrow}</p>
             </div>
-            <h2 id="spomove-spomat-heading" className={`${homeSectionH2} mt-3`}>
+            <h2 id="spomove-spomat-heading" className={`${marketingSectionDisplay} mt-3`}>
               {page.spomat.title}
             </h2>
             <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -339,7 +339,7 @@ export default function SpomoveProgramLanding() {
       <section id={page.usePaths.id} className={`${homeSectionPadCompact} ${homeBandWhite}`} aria-labelledby="spomove-paths-heading">
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{page.usePaths.eyebrow}</p>
-          <h2 id="spomove-paths-heading" className={`${homeSectionH2} mt-3`}>
+          <h2 id="spomove-paths-heading" className={`${marketingSectionDisplay} mt-3`}>
             {page.usePaths.title}
           </h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -393,7 +393,7 @@ export default function SpomoveProgramLanding() {
           <div className="flex flex-col gap-4 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between">
             <div className="max-w-2xl">
               <p className={homeSectionEyebrow}>{page.cases.eyebrow}</p>
-              <h2 id="spomove-cases-heading" className={`${homeSectionH2} mt-3`}>
+              <h2 id="spomove-cases-heading" className={`${marketingSectionDisplay} mt-3`}>
                 {page.cases.title}
               </h2>
               <p className={`mt-3 text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
@@ -470,7 +470,7 @@ export default function SpomoveProgramLanding() {
             <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
               {page.catalogFinal.eyebrow}
             </p>
-            <h2 className={`${homeSectionH2} mt-3 text-[1.65rem] sm:text-[2rem]`}>{page.catalogFinal.title}</h2>
+            <h2 className={`${marketingSectionDisplay} mt-3 text-[1.65rem] sm:text-[2rem]`}>{page.catalogFinal.title}</h2>
             <p className={`mt-3 max-w-xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>
               {page.catalogFinal.lead}
             </p>

@@ -9,7 +9,7 @@ import {
   fineHover,
   homeFocusRing,
   homePhotoGrade,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
@@ -73,7 +73,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-xl">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#9FC0FF]">수업 사례</p>
-            <h2 id="home-media-rail-heading" className={`${homeSectionH2} mt-3 text-white`}>
+            <h2 id="home-media-rail-heading" className={`${marketingSectionDisplay} mt-3 text-white`}>
               {homePage.cases.title}
             </h2>
             <p className={`mt-3 text-[15px] leading-relaxed text-[#CFDAEA] sm:text-base ${koreanText}`}>

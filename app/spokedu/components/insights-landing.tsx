@@ -14,7 +14,7 @@ import {
   cardInteractive,
   fineHover,
   landingPageStack,
-  landingSectionTitle,
+  marketingCompactDisplay,
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
@@ -78,14 +78,14 @@ export function InsightsLanding() {
       />
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7" delay={0.04}>
-        <h2 className={landingSectionTitle}>{insightsPage.definition.title}</h2>
+        <h2 className={marketingCompactDisplay}>{insightsPage.definition.title}</h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base [word-break:keep-all]">
           {insightsPage.definition.body}
         </p>
       </LandingSection>
 
       <LandingSection className="space-y-4" delay={0.06}>
-        <h2 className={landingSectionTitle}>{insightsPage.relatedPages.title}</h2>
+        <h2 className={marketingCompactDisplay}>{insightsPage.relatedPages.title}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {insightsPage.relatedPages.items.map((item) => (
             <div
@@ -108,7 +108,7 @@ export function InsightsLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5" delay={0.08}>
-        <h2 className={landingSectionTitle}>{insightsPage.articlesSectionTitle}</h2>
+        <h2 className={marketingCompactDisplay}>{insightsPage.articlesSectionTitle}</h2>
         <div
           className="flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin]"
           role="tablist"

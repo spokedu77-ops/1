@@ -11,7 +11,7 @@ import {
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import { externalLinkProps } from '../lib/external-link';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { fineHover, koreanLineBreak } from '../lib/ui-classes';
+import { fineHover, koreanLineBreak, marketingHeroDisplay } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 
 const focusRing =
@@ -73,7 +73,7 @@ export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
             {item.venueType}
           </span>
         </div>
-        <h1 className={`mt-3 max-w-3xl text-2xl font-black tracking-tight text-slate-950 sm:text-3xl ${koreanLineBreak}`}>
+        <h1 className={`${marketingHeroDisplay} mt-3 max-w-3xl !text-2xl text-slate-950 sm:!text-3xl ${koreanLineBreak}`}>
           {item.venue}
         </h1>
         <p className={`mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>

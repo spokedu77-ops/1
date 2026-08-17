@@ -13,6 +13,8 @@
     "lint:rules": "eslint . --format json -o eslint-report.json && node scripts/eslint-rule-count.mjs eslint-report.json",
     "lint:ci": "eslint . --max-warnings 102",
     "test": "vitest run",
+    "test:public-typography": "vitest run app/spokedu/lib/public-marketing-typography.contract.test.ts",
+    "qa:public-typography": "node scripts/spokedu-public-typography-qa.mjs",
     "typecheck": "tsc --noEmit --pretty false",
     "test:admin-note": "vitest run app/admin/note app/lib/note",
     "verify:admin-note": "vitest run app/admin/note app/lib/note && node scripts/admin-note-ops-materialization-integrity.mjs && tsc --noEmit --pretty false",

@@ -7,7 +7,7 @@ import {
   brandBlue,
   brandInk,
   homeFocusRing,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   koreanText,
   siteBtnSecondary,
@@ -39,7 +39,7 @@ export function HomePartnerReviews() {
           >
             {dispatchPage.partnerReviews.eyebrow}
           </p>
-          <h2 id="home-partner-reviews-heading" className={`${homeSectionH2} mt-3`}>
+          <h2 id="home-partner-reviews-heading" className={`${marketingSectionDisplay} mt-3`}>
             {dispatchPage.partnerReviews.title}
           </h2>
         </motion.div>

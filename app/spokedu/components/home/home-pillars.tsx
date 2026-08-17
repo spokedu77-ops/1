@@ -7,7 +7,7 @@ import {
   brandInk,
   homeBandWhite,
   homeFocusRing,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
@@ -97,7 +97,7 @@ export function HomePillars() {
           <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
             {eyebrow}
           </p>
-          <h2 id="home-pillars-heading" className={`${homeSectionH2} mt-3`}>
+          <h2 id="home-pillars-heading" className={`${marketingSectionDisplay} mt-3`}>
             {title}
           </h2>
           <p className={`mt-3 max-w-xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>

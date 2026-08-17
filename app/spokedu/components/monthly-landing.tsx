@@ -8,7 +8,7 @@ import { LandingSection } from './landing-section';
 import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { monthlyPage } from '../data/monthly-page';
-import { fineHover, landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { fineHover, landingPageStack, marketingCompactDisplay } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
@@ -58,7 +58,7 @@ export function MonthlyLanding() {
       />
 
       <LandingSection className="space-y-4 sm:space-y-5" delay={0.04}>
-        <h2 className={landingSectionTitle}>{monthlyPage.definition.title}</h2>
+        <h2 className={marketingCompactDisplay}>{monthlyPage.definition.title}</h2>
         <div className="grid gap-4 lg:grid-cols-[1.1fr_minmax(0,1fr)] lg:items-stretch">
           <p className="text-sm leading-relaxed text-slate-600 sm:text-base [word-break:keep-all]">
             {monthlyPage.definition.body}
@@ -73,7 +73,7 @@ export function MonthlyLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5" delay={0.06}>
-        <h2 className={landingSectionTitle}>{monthlyPage.benefits.title}</h2>
+        <h2 className={marketingCompactDisplay}>{monthlyPage.benefits.title}</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-stretch sm:gap-4">
           {monthlyPage.benefits.items.map((item, index) => (
             <BenefitCard
@@ -89,7 +89,7 @@ export function MonthlyLanding() {
 
       <LandingSection className="space-y-4 sm:space-y-5" delay={0.08}>
         <div>
-          <h2 className={landingSectionTitle}>{monthlyPage.themeExamples.title}</h2>
+          <h2 className={marketingCompactDisplay}>{monthlyPage.themeExamples.title}</h2>
           <p className="mt-2 text-sm text-slate-600 [word-break:keep-all]">{monthlyPage.themeExamples.lead}</p>
         </div>
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
@@ -112,7 +112,7 @@ export function MonthlyLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5" delay={0.1}>
-        <h2 className={landingSectionTitle}>{monthlyPage.operations.title}</h2>
+        <h2 className={marketingCompactDisplay}>{monthlyPage.operations.title}</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           {monthlyPage.operations.items.map((item, index) => (
             <motion.article
@@ -133,7 +133,7 @@ export function MonthlyLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7" delay={0.11}>
-        <h2 className={landingSectionTitle}>{monthlyPage.roleCompare.title}</h2>
+        <h2 className={marketingCompactDisplay}>{monthlyPage.roleCompare.title}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-5">
           <div className="rounded-xl border border-[#D6E3FF]/60 bg-white px-4 py-4 sm:px-5">
             <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#174BE6]">월간 수업</p>

@@ -8,7 +8,7 @@ import {
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import { externalLinkProps, isExternalHref } from '../lib/external-link';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { fineHover, koreanLineBreak, landingSectionTitle } from '../lib/ui-classes';
+import { fineHover, koreanLineBreak, marketingCompactDisplay } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 import { ExternalPhoto } from './external-photo';
 
@@ -41,7 +41,7 @@ export function ProgramRelatedProof({
         {trustLine}
       </p>
       <div className="flex items-end justify-between gap-2">
-        <h2 className={landingSectionTitle}>관련 운영 사례</h2>
+        <h2 className={marketingCompactDisplay}>관련 운영 사례</h2>
         <Link
           href={`${SPOKEDU_BASE_PATH}/records`}
           data-track={inferTrackFromHref(`${SPOKEDU_BASE_PATH}/records`)}

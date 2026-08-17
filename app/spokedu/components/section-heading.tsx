@@ -1,4 +1,4 @@
-import { homeSectionEyebrow, homeSectionTitle, koreanLineBreak, landingSectionLead } from '../lib/ui-classes';
+import { homeSectionEyebrow, koreanLineBreak, landingSectionLead, marketingSectionDisplay } from '../lib/ui-classes';
 
 type SpokeduSectionHeadingProps = {
   eyebrow?: string;
@@ -18,7 +18,7 @@ export function SpokeduSectionHeading({
 }: SpokeduSectionHeadingProps) {
   const heading =
     titleLines && titleLines.length > 0 ? (
-      <h2 className={`${homeSectionTitle} ${eyebrow ? 'mt-2' : ''} w-full max-w-none`}>
+      <h2 className={`${marketingSectionDisplay} ${eyebrow ? 'mt-2' : ''} w-full max-w-none`}>
         {titleLines.map((line) => (
           <span key={line} className="block">
             {line}
@@ -27,7 +27,7 @@ export function SpokeduSectionHeading({
       </h2>
     ) : title ? (
       <h2
-        className={`${homeSectionTitle} ${eyebrow ? 'mt-2' : ''} ${multilineTitle ? 'whitespace-pre-line' : ''} w-full max-w-none`}
+        className={`${marketingSectionDisplay} ${eyebrow ? 'mt-2' : ''} ${multilineTitle ? 'whitespace-pre-line' : ''} w-full max-w-none`}
       >
         {title}
       </h2>

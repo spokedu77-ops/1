@@ -11,7 +11,7 @@ import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { onedayEventProgramPage } from '../data/oneday-event-program-page';
 import { programDetailBlocks } from '../data/program-details';
-import { landingPageStack, landingSectionTitle, linkMuted } from '../lib/ui-classes';
+import { landingPageStack, marketingCompactDisplay, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const cardShell =
@@ -50,14 +50,14 @@ export default function OnedayEventProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50/60 via-white to-cyan-50/40 px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{onedayEventProgramPage.overview.title}</h2>
+        <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.overview.title}</h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
           {onedayEventProgramPage.overview.body}
         </p>
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5">
-        <h2 className={landingSectionTitle}>{onedayEventProgramPage.situations.title}</h2>
+        <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.situations.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           {onedayEventProgramPage.situations.items.map((item) => (
             <li key={item.title} className={cardShell}>
@@ -71,7 +71,7 @@ export default function OnedayEventProgramLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5">
-        <h2 className={landingSectionTitle}>{onedayEventProgramPage.activities.title}</h2>
+        <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.activities.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           {onedayEventProgramPage.activities.items.map((item, index) => (
             <li key={item.title} className={activityCardShell}>
@@ -92,7 +92,7 @@ export default function OnedayEventProgramLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5">
-        <h2 className={landingSectionTitle}>{onedayEventProgramPage.operations.title}</h2>
+        <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.operations.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-4">
           {onedayEventProgramPage.operations.items.map((item) => (
             <li key={item.title} className={cardShell}>
@@ -106,7 +106,7 @@ export default function OnedayEventProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{onedayEventProgramPage.compare.title}</h2>
+        <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.compare.title}</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4">
           <article className="rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-4 sm:px-5 sm:py-5">
             <h3 className="text-sm font-semibold text-slate-500">{onedayEventProgramPage.compare.regular.title}</h3>
@@ -124,7 +124,7 @@ export default function OnedayEventProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{onedayEventProgramPage.audience.title}</h2>
+        <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.audience.title}</h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
           {onedayEventProgramPage.audience.body}
         </p>
@@ -133,7 +133,7 @@ export default function OnedayEventProgramLanding() {
       {relatedCases.length > 0 ? (
         <LandingSection className="space-y-4 sm:space-y-5">
           <div className="flex items-end justify-between gap-2">
-            <h2 className={landingSectionTitle}>{onedayEventProgramPage.cases.title}</h2>
+            <h2 className={marketingCompactDisplay}>{onedayEventProgramPage.cases.title}</h2>
             <Link
               href={onedayEventProgramPage.cases.recordsHref}
               data-track={inferTrackFromHref(onedayEventProgramPage.cases.recordsHref)}

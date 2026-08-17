@@ -5,7 +5,8 @@ import {
   homeSectionEyebrow,
   koreanLineBreak,
   landingHeroShell,
-  landingH1,
+  marketingHeroDisplay,
+  marketingHeroDisplayCompactScale,
   landingPageStack,
   landingHeroSubtitle,
 } from '../lib/ui-classes';
@@ -20,7 +21,7 @@ export default function SpokeduContactPage() {
       <section className={landingHeroShell}>
         <div className="max-w-2xl">
           <p className={homeSectionEyebrow}>{hero.kicker}</p>
-          <h1 className={`${landingH1} mt-2 sm:mt-2.5`}>
+          <h1 className={`${marketingHeroDisplay} ${marketingHeroDisplayCompactScale} mt-2 text-[#14213A] sm:mt-2.5`}>
             {hero.titleLines.map((line) => (
               <span key={line} className="block">
                 {line}

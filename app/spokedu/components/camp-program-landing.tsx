@@ -11,7 +11,7 @@ import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { campProgramPage } from '../data/camp-program-page';
 import { programDetailBlocks } from '../data/program-details';
-import { landingPageStack, landingSectionTitle, linkMuted } from '../lib/ui-classes';
+import { landingPageStack, marketingCompactDisplay, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const cardShell =
@@ -50,14 +50,14 @@ export default function CampProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/40 px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{campProgramPage.overview.title}</h2>
+        <h2 className={marketingCompactDisplay}>{campProgramPage.overview.title}</h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
           {campProgramPage.overview.body}
         </p>
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5">
-        <h2 className={landingSectionTitle}>{campProgramPage.programBlocks.title}</h2>
+        <h2 className={marketingCompactDisplay}>{campProgramPage.programBlocks.title}</h2>
         <ul className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           {campProgramPage.programBlocks.items.map((item, index) => (
             <li key={item.title} className={blockCardShell}>
@@ -79,7 +79,7 @@ export default function CampProgramLanding() {
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className={landingSectionTitle}>{campProgramPage.dailySchedule.title}</h2>
+          <h2 className={marketingCompactDisplay}>{campProgramPage.dailySchedule.title}</h2>
           <p className="text-xs font-medium text-amber-800">{campProgramPage.dailySchedule.note}</p>
         </div>
         <ol className="mt-4 space-y-0 divide-y divide-slate-100 rounded-xl border border-slate-100">
@@ -95,7 +95,7 @@ export default function CampProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{campProgramPage.compare.title}</h2>
+        <h2 className={marketingCompactDisplay}>{campProgramPage.compare.title}</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4">
           <article className="rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-4 sm:px-5 sm:py-5">
             <h3 className="text-sm font-semibold text-slate-500">{campProgramPage.compare.oneday.title}</h3>
@@ -113,7 +113,7 @@ export default function CampProgramLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5">
-        <h2 className={landingSectionTitle}>{campProgramPage.faq.title}</h2>
+        <h2 className={marketingCompactDisplay}>{campProgramPage.faq.title}</h2>
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-3.5">
           {campProgramPage.faq.items.map((item) => (
             <article key={item.q} className={cardShell}>
@@ -125,7 +125,7 @@ export default function CampProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{campProgramPage.institutionFit.title}</h2>
+        <h2 className={marketingCompactDisplay}>{campProgramPage.institutionFit.title}</h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
           {campProgramPage.institutionFit.body}
         </p>
@@ -134,7 +134,7 @@ export default function CampProgramLanding() {
       {relatedCases.length > 0 ? (
         <LandingSection className="space-y-4 sm:space-y-5">
           <div className="flex items-end justify-between gap-2">
-            <h2 className={landingSectionTitle}>{campProgramPage.cases.title}</h2>
+            <h2 className={marketingCompactDisplay}>{campProgramPage.cases.title}</h2>
             <Link
               href={campProgramPage.cases.recordsHref}
               data-track={inferTrackFromHref(campProgramPage.cases.recordsHref)}

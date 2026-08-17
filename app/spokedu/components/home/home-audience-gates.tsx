@@ -8,7 +8,7 @@ import {
   homeBandSoftBlue,
   homeFocusRing,
   homePathNavItem,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
@@ -37,7 +37,7 @@ export function HomeAudienceGates() {
           <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
             경로 선택
           </p>
-          <h2 className={`${homeSectionH2} mt-3`}>{homePage.audienceGate.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{homePage.audienceGate.title}</h2>
           <p className={`mt-3 max-w-xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
             {homePage.audienceGate.lead}
           </p>

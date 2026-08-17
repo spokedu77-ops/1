@@ -8,7 +8,7 @@ import {
   homeBodyLead,
   homeFocusRing,
   homeSectionEyebrow,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   koreanText,
   siteBtnPrimary,
@@ -26,7 +26,7 @@ export function PartnersLanding() {
       <section id={intro.id} className={`${homeSectionPadCompact} bg-white`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{intro.eyebrow}</p>
-          <h1 className={`${homeSectionH2} mt-3`}>{intro.title}</h1>
+          <h1 className={`${marketingSectionDisplay} mt-3`}>{intro.title}</h1>
           <p className={`${homeBodyLead} mt-4 max-w-2xl`}>{intro.lead}</p>
         </div>
       </section>
@@ -34,7 +34,7 @@ export function PartnersLanding() {
       <section id={categories.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{categories.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{categories.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{categories.title}</h2>
           <ul className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
             {categories.items.map((item) => (
               <li key={item.id} className="rounded-2xl border border-[#D6E3FF] bg-white px-5 py-5">
@@ -61,7 +61,7 @@ export function PartnersLanding() {
       <section id={notes.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
         <div className={siteContainer}>
           <p className={homeSectionEyebrow}>{notes.eyebrow}</p>
-          <h2 className={`${homeSectionH2} mt-3`}>{notes.title}</h2>
+          <h2 className={`${marketingSectionDisplay} mt-3`}>{notes.title}</h2>
           <ul className="mt-6 max-w-2xl space-y-2">
             {notes.items.map((item) => (
               <li key={item} className={`text-sm leading-relaxed text-[#536279] ${koreanText}`}>
@@ -74,7 +74,7 @@ export function PartnersLanding() {
 
       <section id={cta.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
         <div className={siteContainer}>
-          <h2 className={homeSectionH2}>{cta.title}</h2>
+          <h2 className={marketingSectionDisplay}>{cta.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{cta.lead}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <TrackedLink

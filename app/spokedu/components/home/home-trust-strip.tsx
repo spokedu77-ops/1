@@ -8,6 +8,7 @@ import {
   homeBandSoftBlue,
   homeSectionScrollMt,
   koreanText,
+  marketingMetricDisplay,
   siteContainer,
 } from '../../lib/ui-classes';
 
@@ -40,7 +41,7 @@ export function HomeTrustStrip() {
             {items.map((item) => (
               <li key={item.label} className="min-w-0">
                 <p
-                  className={`text-[1.85rem] font-black leading-none tracking-[-0.04em] sm:text-[2.1rem] ${koreanText}`}
+                  className={`${marketingMetricDisplay} !text-[1.85rem] sm:!text-[2.1rem] ${koreanText}`}
                   style={{ color: brandInk }}
                 >
                   {item.value}

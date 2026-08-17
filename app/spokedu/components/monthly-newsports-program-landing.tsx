@@ -9,7 +9,7 @@ import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { monthlyNewsportsProgramPage } from '../data/monthly-newsports-program-page';
 import { programDetailBlocks } from '../data/program-details';
-import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { landingPageStack, marketingCompactDisplay } from '../lib/ui-classes';
 
 const pointCardShell =
   'flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5';
@@ -40,7 +40,7 @@ export default function MonthlyNewsportsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50/60 via-white to-cyan-50/40 px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{monthlyNewsportsProgramPage.overview.title}</h2>
+        <h2 className={marketingCompactDisplay}>{monthlyNewsportsProgramPage.overview.title}</h2>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
           {monthlyNewsportsProgramPage.overview.body}
         </p>
@@ -59,7 +59,7 @@ export default function MonthlyNewsportsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{monthlyNewsportsProgramPage.programPoints.title}</h2>
+        <h2 className={marketingCompactDisplay}>{monthlyNewsportsProgramPage.programPoints.title}</h2>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-3">
           {monthlyNewsportsProgramPage.programPoints.items.map((item) => (
             <li key={item.title} className={pointCardShell}>
@@ -71,7 +71,7 @@ export default function MonthlyNewsportsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{monthlyNewsportsProgramPage.target.title}</h2>
+        <h2 className={marketingCompactDisplay}>{monthlyNewsportsProgramPage.target.title}</h2>
         <dl className="mt-4 overflow-hidden rounded-xl border border-slate-200/90">
           {monthlyNewsportsProgramPage.target.rows.map((row) => (
             <div key={row.label} className="grid border-b border-slate-200/80 last:border-b-0 sm:grid-cols-[0.7fr_1.3fr]">
@@ -83,7 +83,7 @@ export default function MonthlyNewsportsProgramLanding() {
       </LandingSection>
 
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{monthlyNewsportsProgramPage.institutionFit.title}</h2>
+        <h2 className={marketingCompactDisplay}>{monthlyNewsportsProgramPage.institutionFit.title}</h2>
         <p className="mt-3 text-base font-semibold text-slate-950 [word-break:keep-all] sm:text-lg">
           {monthlyNewsportsProgramPage.institutionFit.lead}
         </p>

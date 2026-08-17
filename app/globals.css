@@ -454,7 +454,7 @@ body {
 .spokedu-marketing {
   --spokedu-marketing-font-body: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
   --spokedu-marketing-font-display: "Cafe24SsurroundAir", "Pretendard Variable", Pretendard, "Noto Sans KR", system-ui, sans-serif;
-  --spokedu-marketing-font-accent: "Cafe24SsurroundAir", "Pretendard Variable", Pretendard, "Noto Sans KR", system-ui, sans-serif;
+  --spokedu-marketing-font-metric: var(--spokedu-marketing-font-display);
   --spokedu-public-header-height: 3.5rem;
   --spokedu-marketing-content-max: 77.5rem;
   --spokedu-marketing-gutter-mobile: 1.25rem;

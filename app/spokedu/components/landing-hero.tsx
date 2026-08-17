@@ -9,8 +9,9 @@ import {
   btnPrimary,
   btnSecondary,
   homeFocusRing,
-  homeHeroH1,
-  homeHeroH1Line,
+  marketingHeroDisplay,
+  marketingHeroDisplaySplitScale,
+  marketingHeroDisplayLine,
   koreanLineBreak,
   landingHeroCopy,
   landingHeroGrid,
@@ -82,7 +83,7 @@ export function LandingHero({
           ) : null}
           {leading ? <div className={kicker ? 'mt-4' : ''}>{leading}</div> : null}
           <motion.h1
-            className={`${homeHeroH1} ${kicker || leading ? 'mt-4 sm:mt-5' : 'mt-2 sm:mt-2.5'}`}
+            className={`${marketingHeroDisplay} ${marketingHeroDisplaySplitScale} text-[#14213A] ${kicker || leading ? 'mt-4 sm:mt-5' : 'mt-2 sm:mt-2.5'}`}
             initial={reducedMotion ? false : { opacity: 0, y: 20 }}
             animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
@@ -93,7 +94,7 @@ export function LandingHero({
                 initial={reducedMotion ? false : { opacity: 0, y: 20 }}
                 animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.06 * index }}
-                className={homeHeroH1Line}
+                className={marketingHeroDisplayLine}
               >
                 {line}
               </motion.span>

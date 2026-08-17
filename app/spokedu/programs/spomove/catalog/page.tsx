@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { SPOKEDU_PATHS } from '../../../data/site';
 import { dispatchInquiryHref } from '../../../data/commercial-routes';
 import { buildSpokeduPageMetadata } from '../../../data/seo';
+import { marketingHeroDisplay } from '../../../lib/ui-classes';
 
 const catalogMetadata: Metadata = {
   title: 'SPOMOVE 전체 프로그램 카탈로그 | SPOKEDU',
@@ -44,7 +45,7 @@ function CatalogFallback() {
     <section className="overflow-x-clip px-5 pb-16 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:px-8 sm:pt-[calc(5rem+env(safe-area-inset-top,0px))]">
       <div className="mx-auto w-full max-w-xl rounded-[1.5rem] border border-[#DCE3EE] bg-white px-5 py-8 text-center shadow-sm sm:px-7 sm:py-10">
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
-        <h1 className="mt-3 text-2xl font-black leading-tight text-[#0B1F46] sm:text-3xl">
+        <h1 className={`${marketingHeroDisplay} mt-3 !text-2xl !leading-tight text-[#0B1F46] sm:!text-3xl`}>
           전체 카탈로그를 아직 표시할 수 없습니다
         </h1>
         <p className="mt-4 text-sm leading-[1.75] text-[#536279]">
@@ -87,7 +88,7 @@ export default function SpomoveCatalogPage() {
       <div className="flex min-h-16 items-center justify-between gap-4 border-b border-[#DCE3EE] bg-white px-5 py-3 sm:px-8">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
-          <h1 className="text-lg font-black leading-tight text-[#0B1F46] sm:text-xl">SPOMOVE 전체 프로그램 카탈로그</h1>
+          <h1 className={`${marketingHeroDisplay} !text-lg !leading-tight text-[#0B1F46] sm:!text-xl`}>SPOMOVE 전체 프로그램 카탈로그</h1>
           <p className="mt-1 text-xs leading-relaxed text-[#536279] sm:text-sm">
             화면의 정보를 움직임으로 연결하는 체육교육 활동과 프로그램 구성을 확인하세요.
           </p>

@@ -11,13 +11,6 @@
   background: var(--home-paper);
 }
 
-.root :is(h1, h2) {
-  font-family: var(--spokedu-marketing-font-display), sans-serif;
-  font-weight: 400 !important;
-  font-synthesis: none !important;
-  word-break: keep-all;
-}
-
 .heroTitle {
   font-size: clamp(2.75rem, 6vw, 4.75rem) !important;
   line-height: 1.08 !important;

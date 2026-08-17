@@ -8,7 +8,7 @@ import {
   homeBandSoftBlue,
   homeFocusRing,
   homePhotoGrade,
-  homeSectionH2,
+  marketingSectionDisplay,
   koreanText,
   siteBtnPrimary,
   siteBtnSecondary,
@@ -74,7 +74,7 @@ export function LandingFinalCta({
           <div className="grid gap-8 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(220px,280px)] lg:items-stretch lg:gap-10 lg:px-10 lg:py-11">
             <div className="min-w-0 text-left">
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">{eyebrow}</p>
-              <h2 id="landing-final-cta-title" className={`${homeSectionH2} mt-3 text-[#0B1F46]`}>
+              <h2 id="landing-final-cta-title" className={`${marketingSectionDisplay} mt-3 text-[#0B1F46]`}>
                 {title}
               </h2>
               <p className={`mt-4 max-w-xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>

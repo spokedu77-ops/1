@@ -7,7 +7,7 @@ import {
   homeBandNavy,
   homeBody,
   homePhotoGrade,
-  homeSectionH2,
+  marketingSectionDisplay,
   homeSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
@@ -54,7 +54,7 @@ export function HomeProofStrip() {
 
           <div className="flex min-w-0 flex-col justify-center">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#9FC0FF]">SPOKEDU SYSTEM</p>
-            <h2 id="home-proof-heading" className={`${homeSectionH2} mt-3 text-white`}>
+            <h2 id="home-proof-heading" className={`${marketingSectionDisplay} mt-3 text-white`}>
               {title}
             </h2>
             <p className={`${homeBody} mt-4 text-[#CFDAEA]`}>{lead}</p>

@@ -26,7 +26,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
 
   return (
     <div
-      className={`w-full overflow-x-clip font-sans antialiased ${homePageSurface} ${styles.root}`}
+      className={`w-full overflow-x-clip antialiased ${homePageSurface} ${styles.root}`}
       data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID}
       data-spokedu-home-sections={homePage.sectionOrder.length}
     >

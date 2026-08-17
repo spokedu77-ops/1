@@ -14,7 +14,7 @@ import {
   cardInteractive,
   fineHover,
   landingPageStack,
-  landingSectionTitle,
+  marketingCompactDisplay,
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
@@ -136,7 +136,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
       </LandingSection>
 
       <LandingSection className="space-y-4" delay={0.08}>
-        <h2 className={landingSectionTitle}>관련 사례</h2>
+        <h2 className={marketingCompactDisplay}>관련 사례</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <Link
             href={casesHref}
