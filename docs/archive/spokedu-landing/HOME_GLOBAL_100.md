@@ -2,8 +2,8 @@
 
 **기준:** Stripe / Linear / Apple / Nike / Awwwards SOTY 급 “첫 화면에서 브랜드·신뢰·다음 행동”이 동시에 완성된 상태.  
 **현재 추정 (코드):** **~98%** — 뷰포트 캡처 승인 · 카카오 OG · Lighthouse LCP만 남으면 100%.  
-**운영 가이드:** `app/spokedu/docs/PHOTO_DROPIN_100.md`  
-**승인:** `app/spokedu/docs/HOME_SIGNOFF.md`  
+**운영 가이드:** `docs/archive/spokedu-landing/PHOTO_DROPIN_100.md`  
+**승인:** `docs/archive/spokedu-landing/HOME_SIGNOFF.md`  
 **가정 작업:** Hero = `home-hero-movement.jpg`, `.bak-src` 제거, 후기 3건, preload/OG 정렬 완료 (2026-07-24).  
 **원칙:** 카피·CTA URL·문의 `?type=` 흐름은 유지. 비주얼·리듬·증거·사진은 전면 승격.
 
