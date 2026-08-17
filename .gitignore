@@ -28,6 +28,9 @@ qa-screenshots/
 
 # Temporary local artifacts
 .tmp/
+/tmp/
+/docs/*.generated.csv
+/commercial-verification/*.json
 
 # dev server logs (local only)
 .next-dev.log
