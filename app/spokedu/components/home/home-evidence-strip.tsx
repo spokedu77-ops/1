@@ -8,7 +8,7 @@ import {
   homeBandSoftBlue,
   homeSectionScrollMt,
   koreanText,
-  siteContainer,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 
 /** 검증 가능한 증거 스트립 — 미검증 수치·카운트업 없음 */
@@ -18,7 +18,7 @@ export function HomeEvidenceStrip() {
 
   return (
     <section id={id} className={`${homeSectionScrollMt} ${homeBandSoftBlue}`} aria-label="스포키듀 확인 가능한 기준">
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <motion.div
           className="flex flex-col gap-6 py-9 sm:py-11 lg:flex-row lg:items-baseline lg:justify-between lg:gap-12"
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}

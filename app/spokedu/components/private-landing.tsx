@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { privatePage } from '../data/private-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { koreanLineBreak, landingCardFrame } from '../lib/ui-classes';
+import { koreanLineBreak, marketingCardStatic } from '../lib/ui-classes';
 import { LandingFaqList } from './landing-faq-list';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingSectionHeading } from './landing-section-heading';
@@ -278,7 +278,7 @@ export default function PrivateLanding() {
               key={step.num}
               className={[
                 'flex h-full flex-col justify-center px-4 py-3 sm:px-5 sm:py-3.5',
-                landingCardFrame,
+                marketingCardStatic,
                 index === 0 ? 'lg:col-start-1 lg:row-start-1' : '',
                 index === 1 ? 'lg:col-start-1 lg:row-start-2' : '',
                 index === 2 ? 'lg:col-start-1 lg:row-start-3' : '',

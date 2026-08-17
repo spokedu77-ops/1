@@ -8,10 +8,10 @@ import {
   homeBody,
   homePhotoGrade,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
-  siteContainer,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
 
@@ -25,10 +25,10 @@ export function HomeProofStrip() {
   return (
     <section
       id={homePage.proofStrip.id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} ${homeBandNavy}`}
+      className={`${homeSectionScrollMt} ${marketingSectionPadCompact} ${homeBandNavy}`}
       aria-labelledby="home-proof-heading"
     >
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <motion.div
           className="grid gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-stretch lg:gap-12"
           initial={reducedMotion ? false : { opacity: 0, y: 16 }}

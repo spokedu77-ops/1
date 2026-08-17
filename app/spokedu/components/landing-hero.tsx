@@ -6,9 +6,9 @@ import type { ReactNode } from 'react';
 import type { HomeMediaItem } from '../data/home-media';
 import { trackCommercialEvent } from '../lib/commercial-events';
 import {
-  btnPrimary,
-  btnSecondary,
-  homeFocusRing,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  brandFocusRing,
   marketingHeroDisplay,
   marketingHeroDisplaySplitScale,
   marketingHeroDisplayLine,
@@ -62,7 +62,7 @@ function emitCtaClick(cta: LandingHeroCta) {
 /** 서브 랜딩 Hero — inset split + 호버 줌. 전 페이지 풀블리드 강제 없음. */
 export function LandingHero({
   kicker,
-  kickerClassName = 'text-[#245DFF]',
+  kickerClassName = '[color:var(--spokedu-marketing-color-blue)]',
   leading,
   lines,
   subtitle,
@@ -110,7 +110,7 @@ export function LandingHero({
                   href={primaryCta.href}
                   data-track="cta-contact"
                   data-track-label={primaryCta.trackLabel}
-                  className={`${btnPrimary} min-h-12 !w-full sm:!w-auto ${homeFocusRing}`}
+                  className={`${marketingButtonPrimary} min-h-12 !w-full sm:!w-auto ${brandFocusRing}`}
                   onClick={() => emitCtaClick(primaryCta)}
                 >
                   {primaryCta.label}
@@ -121,7 +121,7 @@ export function LandingHero({
                   href={secondaryCta.href}
                   data-track="cta-contact"
                   data-track-label={secondaryCta.trackLabel}
-                  className={`${btnSecondary} min-h-12 !w-full sm:!w-auto ${homeFocusRing}`}
+                  className={`${marketingButtonSecondary} min-h-12 !w-full sm:!w-auto ${brandFocusRing}`}
                   onClick={() => emitCtaClick(secondaryCta)}
                 >
                   {secondaryCta.label}

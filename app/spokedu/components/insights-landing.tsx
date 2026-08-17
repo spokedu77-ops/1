@@ -11,7 +11,7 @@ import { insightArticles, insightFilters, insightMatchesFilter, type InsightArti
 import { insightsPage } from '../data/insights-page';
 import { HOME_MEDIA } from '../data/home-media';
 import {
-  cardInteractive,
+  marketingInteractiveTransition,
   fineHover,
   landingPageStack,
   marketingCompactDisplay,
@@ -27,7 +27,7 @@ function InsightArticleCard({ article, photoPriority }: { article: InsightArticl
       href={article.href}
       data-track={inferTrackFromHref(article.href)}
       data-track-label={article.trackLabel}
-      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${cardInteractive} ${focusRing}`}
+      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${marketingInteractiveTransition} ${focusRing}`}
     >
       <MediaPanel
         media={HOME_MEDIA[article.mediaKey]}

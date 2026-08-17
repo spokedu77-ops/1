@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { HomeSignatureProgram } from '../../data/home-media';
-import { cardInteractive, fineHover } from '../../lib/ui-classes';
+import { marketingInteractiveTransition, fineHover } from '../../lib/ui-classes';
 import { inferTrackFromHref } from '../../lib/tracking';
 import {
   landingCardBadgeText,
@@ -14,7 +14,7 @@ import {
 import { MediaPanel } from './media-panel';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spokedu-marketing-color-blue)]';
 
 function TrackBadges({ tracks, variant }: { tracks: HomeSignatureProgram['tracks']; variant: LandingCardVariant }) {
   const chip =
@@ -47,7 +47,7 @@ export function ProgramShowcaseCard({ program, variant, className = '' }: Progra
       href={program.href}
       data-track={inferTrackFromHref(program.href)}
       data-track-label={program.trackLabel}
-      className={`group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${landingCardShell(cardVariant)} ${cardInteractive} ${focusRing} ${className}`}
+      className={`group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${landingCardShell(cardVariant)} ${marketingInteractiveTransition} ${focusRing} ${className}`}
     >
       <MediaPanel
         media={program.media}

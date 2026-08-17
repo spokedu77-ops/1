@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
+import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary } from '../lib/ui-classes';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import { parseConversionEvidenceSlug } from '../data/commercial-routes';
 import type { FieldRecordSlug } from '../data/field-records-catalog';
@@ -555,7 +555,7 @@ export function PrivateApplyForm() {
               type="button"
               disabled={submitting || submitted}
               onClick={handleSubmit}
-              className={`${siteBtnPrimary} disabled:opacity-60`}
+              className={`${marketingButtonPrimary} disabled:opacity-60`}
             >
               {submitted ? '접수 완료' : submitting ? '접수 중…' : '상담 접수하기'}
             </button>
@@ -564,12 +564,12 @@ export function PrivateApplyForm() {
                 href={KAKAO_CHANNEL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={siteBtnSecondary}
+                className={marketingButtonSecondary}
               >
                 카카오 채널 열기
               </a>
             ) : null}
-            <Link href="#instructors" className={`${siteBtnSecondary} text-center`}>
+            <Link href="#instructors" className={`${marketingButtonSecondary} text-center`}>
               배정 규칙 다시 보기
             </Link>
           </div>

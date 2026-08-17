@@ -6,10 +6,10 @@ import { motion, useReducedMotion } from 'framer-motion';
 import type { NewsportsTheme } from '../data/newsports-themes';
 import { NEWSPORTS_THEMES } from '../data/newsports-themes';
 import { SPOKEDU_FALLBACK_FIELD } from '../data/images';
-import { cardInteractive, koreanLineBreak } from '../lib/ui-classes';
+import { marketingInteractiveTransition, koreanLineBreak } from '../lib/ui-classes';
 import { HomeSectionHeading } from './home-section-heading';
 
-const cardShell = `flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/90 bg-white shadow-sm shadow-slate-900/[0.04] ${cardInteractive}`;
+const cardShell = `flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/90 bg-white shadow-sm shadow-slate-900/[0.04] ${marketingInteractiveTransition}`;
 
 function ThemePhoto({ theme, priority }: { theme: NewsportsTheme; priority?: boolean }) {
   const [src, setSrc] = useState(theme.imageSrc);

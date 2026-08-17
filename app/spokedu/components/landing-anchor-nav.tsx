@@ -1,6 +1,6 @@
 'use client';
 
-import { siteBtnPrimary } from '../lib/ui-classes';
+import { marketingButtonPrimary } from '../lib/ui-classes';
 
 export type LandingAnchorNavItem = {
   href: string;
@@ -38,7 +38,7 @@ export function LandingAnchorNav({
           ))}
         </ul>
         {cta ? (
-          <a href={cta.href} className={`${siteBtnPrimary} !min-h-9 shrink-0 !px-4 !py-2 text-sm`}>
+          <a href={cta.href} className={`${marketingButtonPrimary} !min-h-9 shrink-0 !px-4 !py-2 text-sm`}>
             {cta.label}
           </a>
         ) : null}

@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { dispatchPage } from '../data/dispatch-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { cardInteractive, fineHover, koreanLineBreak } from '../lib/ui-classes';
+import { marketingInteractiveTransition, fineHover, koreanLineBreak } from '../lib/ui-classes';
 import { AudienceTrustStrip } from './audience-trust-strip';
 import { DispatchComparisonSection } from './dispatch-comparison-section';
 import { DispatchProcessOnePager } from './dispatch-process-one-pager';
@@ -116,7 +116,7 @@ function DispatchEvidenceSection() {
             href={item.href}
             data-track={inferTrackFromHref(item.href)}
             data-track-label={`dispatch-example-${item.venue}`}
-            className={`group overflow-hidden ${premiumPanel} ${cardInteractive} ${focusRing}`}
+            className={`group overflow-hidden ${premiumPanel} ${marketingInteractiveTransition} ${focusRing}`}
           >
             <div className="relative aspect-[16/10]">
               <MediaPanel

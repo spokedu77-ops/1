@@ -47,7 +47,7 @@ import {
   marketingSectionLead,
   marketingSectionPad,
   marketingSectionPadCompact,
-  siteContainer,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 import { TrackedLink } from '../home/tracked-link';
 import { ProductVisualFrame } from '../product-visual-frame';
@@ -99,7 +99,7 @@ export function SubscriptionHero({ reducedMotion }: { reducedMotion: boolean | n
     >
       <div className="pointer-events-none absolute -right-32 top-20 hidden h-[34rem] w-[34rem] rounded-full border border-[#245DFF]/10 lg:block" aria-hidden />
       <div className="pointer-events-none absolute bottom-[-12rem] left-[42%] h-[24rem] w-[24rem] rounded-full bg-[#245DFF]/8 blur-3xl" aria-hidden />
-      <div className={`${siteContainer} relative grid items-center gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 xl:gap-14`}>
+      <div className={`${marketingSectionInner} relative grid items-center gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 xl:gap-14`}>
         <motion.div
           initial={reducedMotion ? false : { opacity: 0, y: 14 }}
           animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
@@ -154,7 +154,7 @@ export function SubscriptionHowItWorks() {
   const flow = curriculumPage.classFlow.steps;
   return (
     <section id={how.id} className={`${marketingBandSoft} ${marketingSectionPad} scroll-mt-20`}>
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <SectionHeading {...how} />
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {how.pillars.map((item, index) => {
@@ -206,7 +206,7 @@ export function SubscriptionLibrary() {
   const { library } = page;
   return (
     <section id={library.id} className={`${marketingBandWhite} ${marketingSectionPad} scroll-mt-20`}>
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <SectionHeading {...library} />
         <div className="mt-12 rounded-[2rem] border border-[#DFE6F1] bg-[linear-gradient(135deg,#F5F8FF_0%,#FFFFFF_58%,#EDF3FF_100%)] p-5 shadow-[var(--spokedu-marketing-shadow-media)] sm:p-8 lg:p-10">
           <ProductVisualFrame {...library.visuals[1]} emphasis="feature" aspectClassName="aspect-[2.6/1] min-h-[17rem]" />
@@ -247,7 +247,7 @@ export function SubscriptionSpomove() {
   const { spomove } = page;
   return (
     <section id={spomove.id} className={`${marketingBandNavy} ${marketingSectionPad} relative scroll-mt-20 overflow-hidden`}>
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <div className="grid items-center gap-12 lg:grid-cols-[0.44fr_0.56fr] lg:gap-16">
           <div>
             <SectionHeading {...spomove} dark />
@@ -283,7 +283,7 @@ export function SubscriptionTools() {
   const { tools } = page;
   return (
     <section id={tools.id} className={`${marketingBandWhite} ${marketingSectionPad} scroll-mt-20`}>
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <SectionHeading {...tools} />
         <div className="mt-12">
           <ProductVisualFrame {...tools.visual} emphasis="feature" aspectClassName="aspect-[16/9]" />
@@ -303,7 +303,7 @@ export function SubscriptionRecords() {
   const { records } = page;
   return (
     <section id={records.id} className={`${marketingBandSoft} ${marketingSectionPad} scroll-mt-20`}>
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <SectionHeading {...records} />
         <div className="mt-12 grid items-start gap-6 lg:grid-cols-[1.35fr_0.65fr]">
           <ProductVisualFrame {...records.visuals[1]} emphasis="feature" aspectClassName="aspect-[16/9]" />
@@ -327,7 +327,7 @@ export function SubscriptionTrust() {
   const { trust } = page;
   return (
     <section id={trust.id} className={`${marketingBandWhite} ${marketingSectionPadCompact} scroll-mt-20`}>
-      <div className={`${siteContainer} grid items-stretch gap-8 lg:grid-cols-2 lg:gap-10`}>
+      <div className={`${marketingSectionInner} grid items-stretch gap-8 lg:grid-cols-2 lg:gap-10`}>
         <figure className={`${marketingMediaFrame} relative min-h-[22rem]`}><Image src="/images/spokedu/curriculum/curriculum-instructor-training.jpg" alt="스포키듀 지도자 교육이 진행되는 실제 현장" fill sizes="(min-width: 1024px) 48vw, 92vw" className="object-cover" /></figure>
         <div className="flex flex-col justify-center rounded-[2rem] border border-[#DFE6F1] bg-[#F5F8FF] p-6 shadow-[var(--spokedu-marketing-shadow-subtle)] sm:p-9"><SectionHeading {...trust} /><ul className="mt-7 space-y-3">{trust.details.map((detail) => <li key={detail} className={`${marketingBody} flex gap-3`}><Check aria-hidden size={18} className="mt-1 shrink-0 [color:var(--spokedu-marketing-color-blue)]" />{detail}</li>)}</ul><TrackedLink href={SPOKEDU_PATHS.about} trackLabel="curriculum-trust-about" commercialRoute="curriculum" ctaIntentId="about" className={`${marketingButtonSecondary} mt-8`}>스포키듀 소개 보기</TrackedLink></div>
       </div>
@@ -347,7 +347,7 @@ export function SubscriptionPlans({
   const { plans } = page;
   return (
     <section id={plans.id} className={`${marketingBandSoft} scroll-mt-20`}>
-      <div className={`${siteContainer} ${marketingSectionPad}`}>
+      <div className={`${marketingSectionInner} ${marketingSectionPad}`}>
         <SectionHeading {...plans} />
         <ul className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {publicProduct.plans.map((plan) => {
@@ -387,7 +387,7 @@ export function SubscriptionPlans({
         </div>
       </div>
       <div className={`${marketingBandNavy} ${marketingSectionPadCompact} relative overflow-hidden`}>
-        <div className={`${siteContainer} flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center`}>
+        <div className={`${marketingSectionInner} flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center`}>
           <div><p className={marketingEyebrowOnDark}>{plans.finalCta.eyebrow}</p><h2 className={`${marketingSectionDisplay} mt-3 max-w-3xl whitespace-pre-line text-white`}>{plans.finalCta.title}</h2></div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row"><TrackedLink href={publicProduct.handoff.freeStartHref} trackLabel="curriculum-final-free-start" commercialRoute="curriculum" ctaIntentId="free_start" className={marketingButtonPrimaryOnDark}>무료로 시작하기</TrackedLink><TrackedLink href={publicProduct.handoff.landingHref} trackLabel="curriculum-final-landing" commercialRoute="curriculum" ctaIntentId="master_handoff" className={marketingButtonSecondaryOnDark}>제품 화면 보기</TrackedLink></div>
         </div>

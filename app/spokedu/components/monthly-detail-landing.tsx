@@ -11,7 +11,7 @@ import type { MonthlyRecord } from '../data/monthly';
 import { HOME_MEDIA, type HomeMediaItem } from '../data/home-media';
 import { SPOKEDU_BASE_PATH } from '../data/site';
 import {
-  cardInteractive,
+  marketingInteractiveTransition,
   fineHover,
   landingPageStack,
   marketingCompactDisplay,
@@ -142,7 +142,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
             href={casesHref}
             data-track={inferTrackFromHref(casesHref)}
             data-track-label={`monthly-detail-cases-${record.slug}`}
-            className={`flex min-h-[120px] flex-col justify-center rounded-2xl p-5 sm:p-6 ${landingCardShell('gradient')} ${cardInteractive} ${focusRing}`}
+            className={`flex min-h-[120px] flex-col justify-center rounded-2xl p-5 sm:p-6 ${landingCardShell('gradient')} ${marketingInteractiveTransition} ${focusRing}`}
           >
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#245DFF]">사례 아카이브</p>
             <p className="mt-2 text-lg font-bold text-slate-900">수업 사례 보기</p>
@@ -160,7 +160,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
                 href={link.href}
                 data-track={inferTrackFromHref(link.href)}
                 data-track-label={`monthly-detail-case-${record.slug}`}
-                className={`flex min-h-[120px] flex-col justify-between rounded-2xl p-5 sm:p-6 ${landingCardShell(blockVariants[index % blockVariants.length] ?? 'glass')} ${cardInteractive} ${focusRing}`}
+                className={`flex min-h-[120px] flex-col justify-between rounded-2xl p-5 sm:p-6 ${landingCardShell(blockVariants[index % blockVariants.length] ?? 'glass')} ${marketingInteractiveTransition} ${focusRing}`}
               >
                 <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">{link.label}</p>
                 <span className={`text-sm font-semibold text-slate-800 ${fineHover}group-hover:text-[#174BE6]`}>사례 보기 →</span>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { HOME_MEDIA } from '../data/home-media';
 import { dispatchPage } from '../data/dispatch-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { cardInteractive, koreanLineBreak } from '../lib/ui-classes';
+import { marketingInteractiveTransition, koreanLineBreak } from '../lib/ui-classes';
 import { LandingSectionHeading } from './landing-section-heading';
 import { MediaPanel } from './visual';
 
@@ -171,7 +171,7 @@ export function DispatchProgramLineup() {
                   href={href}
                   data-track={inferTrackFromHref(href)}
                   data-track-label={trackLabel}
-                  className={`block ${cardInteractive} ${focusRing}`}
+                  className={`block ${marketingInteractiveTransition} ${focusRing}`}
                 >
                   {row}
                 </Link>

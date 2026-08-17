@@ -6,7 +6,7 @@ import { homePage, type HomeCaseCard } from '../../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../../lib/resolve-field-records';
 import {
   homeCaption,
-  homeFocusRing,
+  brandFocusRing,
   homePhotoGrade,
   homeSectionScrollMt,
   koreanText,
@@ -104,7 +104,7 @@ export function mergeHomeCaseCards(resolved: HomeFieldRecordCardWithThumbnail[])
 
 function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
   return (
-    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block h-full ${homeFocusRing}`}>
+    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block h-full ${brandFocusRing}`}>
       <article className={`${marketingCardStatic} ${styles.caseCard} grid h-full grid-rows-[13rem_1fr] overflow-hidden sm:grid-rows-[15rem_1fr]`}>
         <div className="relative min-h-0 overflow-hidden">
           <CaseMedia card={card} priority={priority} />

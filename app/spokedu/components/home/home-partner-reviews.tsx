@@ -6,12 +6,12 @@ import { SPOKEDU_BASE_PATH } from '../../data/site';
 import {
   brandBlue,
   brandInk,
-  homeFocusRing,
+  brandFocusRing,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   koreanText,
-  siteBtnSecondary,
-  siteContainer,
+  marketingButtonSecondary,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 import { TrackedLink } from './tracked-link';
 
@@ -22,10 +22,10 @@ export function HomePartnerReviews() {
 
   return (
     <section
-      className={`${homeSectionPadCompact} bg-[#F5F7FB]`}
+      className={`${marketingSectionPadCompact} bg-[#F5F7FB]`}
       aria-labelledby="home-partner-reviews-heading"
     >
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <motion.div
           className="max-w-2xl"
           initial={reducedMotion ? false : { opacity: 0, y: 12 }}
@@ -80,7 +80,7 @@ export function HomePartnerReviews() {
         <TrackedLink
           href={`${SPOKEDU_BASE_PATH}/dispatch`}
           trackLabel="cta-home-review-dispatch"
-          className={`${siteBtnSecondary} mt-10 ${homeFocusRing}`}
+          className={`${marketingButtonSecondary} mt-10 ${brandFocusRing}`}
         >
           기관 프로그램 자세히 보기
         </TrackedLink>

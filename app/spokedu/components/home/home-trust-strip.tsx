@@ -9,7 +9,7 @@ import {
   homeSectionScrollMt,
   koreanText,
   marketingMetricDisplay,
-  siteContainer,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 
 /** Hero 직후 신뢰 스트립 — soft-blue 밴드, 숫자로 한눈에 신뢰 신호 */
@@ -23,7 +23,7 @@ export function HomeTrustStrip() {
       className={`${homeSectionScrollMt} ${homeBandSoftBlue}`}
       aria-label="스포키듀 운영 지표"
     >
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <motion.div
           className="flex flex-col gap-6 py-9 sm:py-11 lg:flex-row lg:items-baseline lg:justify-between lg:gap-12"
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}

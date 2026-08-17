@@ -6,14 +6,14 @@ import {
   homeBandSoftBlue,
   homeBandWhite,
   homeBodyLead,
-  homeFocusRing,
+  brandFocusRing,
   homeSectionEyebrow,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   koreanText,
-  siteBtnPrimary,
-  siteBtnSecondary,
-  siteContainer,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  marketingSectionInner,
 } from '../lib/ui-classes';
 import { TrackedLink } from './home/tracked-link';
 
@@ -23,16 +23,16 @@ export function PartnersLanding() {
 
   return (
     <main className="w-full overflow-x-clip" data-spokedu-partners-sections={partnersPage.sectionOrder.length}>
-      <section id={intro.id} className={`${homeSectionPadCompact} bg-white`}>
-        <div className={siteContainer}>
+      <section id={intro.id} className={`${marketingSectionPadCompact} bg-white`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{intro.eyebrow}</p>
           <h1 className={`${marketingSectionDisplay} mt-3`}>{intro.title}</h1>
           <p className={`${homeBodyLead} mt-4 max-w-2xl`}>{intro.lead}</p>
         </div>
       </section>
 
-      <section id={categories.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={categories.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{categories.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{categories.title}</h2>
           <ul className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -58,8 +58,8 @@ export function PartnersLanding() {
         </div>
       </section>
 
-      <section id={notes.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
-        <div className={siteContainer}>
+      <section id={notes.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{notes.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{notes.title}</h2>
           <ul className="mt-6 max-w-2xl space-y-2">
@@ -72,8 +72,8 @@ export function PartnersLanding() {
         </div>
       </section>
 
-      <section id={cta.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={cta.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <h2 className={marketingSectionDisplay}>{cta.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{cta.lead}</p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -82,14 +82,14 @@ export function PartnersLanding() {
               trackLabel={cta.primary.trackLabel}
               commercialRoute="curriculum"
               ctaIntentId="audience_partner"
-              className={`${siteBtnPrimary} h-12 px-7 ${homeFocusRing}`}
+              className={`${marketingButtonPrimary} h-12 px-7 ${brandFocusRing}`}
             >
               {cta.primary.label}
             </TrackedLink>
             <TrackedLink
               href={cta.secondary.href}
               trackLabel={cta.secondary.trackLabel}
-              className={`${siteBtnSecondary} h-12 px-7 ${homeFocusRing}`}
+              className={`${marketingButtonSecondary} h-12 px-7 ${brandFocusRing}`}
             >
               {cta.secondary.label}
             </TrackedLink>

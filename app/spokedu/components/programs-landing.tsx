@@ -7,7 +7,7 @@ import { HOME_MEDIA } from '../data/home-media';
 import { programsPage } from '../data/programs-page';
 import {
   audienceLandingStack,
-  cardInteractive,
+  marketingInteractiveTransition,
   koreanLineBreak,
   landingCardPanelPad,
 } from '../lib/ui-classes';
@@ -65,7 +65,7 @@ export default function ProgramsLanding() {
               href={item.href}
               data-track={inferTrackFromHref(item.href)}
               data-track-label={item.trackLabel}
-              className={`group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${landingCardShell('image')} ${cardInteractive} ${focusRing}`}
+              className={`group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${landingCardShell('image')} ${marketingInteractiveTransition} ${focusRing}`}
             >
               <MediaPanel
                 media={HOME_MEDIA[item.mediaKey]}

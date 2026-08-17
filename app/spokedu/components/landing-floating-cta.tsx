@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { brandContactLinks, brandProfile } from '../data/brand';
 import { getSpokeduScrollY } from '../lib/scroll';
-import { siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
+import { marketingButtonPrimary, marketingButtonSecondary } from '../lib/ui-classes';
 
 type LandingFloatingCtaProps = {
   primaryHref: string;
@@ -46,14 +46,14 @@ export function LandingFloatingCta({
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
         <a
           href={secondaryHref}
-          className={`${siteBtnSecondary} w-full sm:w-auto`}
+          className={`${marketingButtonSecondary} w-full sm:w-auto`}
           {...(secondaryIsExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
           {secondaryLabel}
         </a>
         <a
           href={primaryHref}
-          className={`${siteBtnPrimary} w-full sm:w-auto`}
+          className={`${marketingButtonPrimary} w-full sm:w-auto`}
           {...(primaryIsExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
           {primaryLabel}

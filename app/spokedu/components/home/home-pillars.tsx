@@ -6,12 +6,12 @@ import {
   brandBlue,
   brandInk,
   homeBandWhite,
-  homeFocusRing,
+  brandFocusRing,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
-  siteContainer,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
@@ -29,7 +29,7 @@ function PillarNode({
     <TrackedLink
       href={item.href}
       trackLabel={item.trackLabel}
-      className={`${homeFocusRing} block h-full rounded-[1.25rem] border px-5 py-5 transition sm:px-6 sm:py-6 ${
+      className={`${brandFocusRing} block h-full rounded-[1.25rem] border px-5 py-5 transition sm:px-6 sm:py-6 ${
         emphasis
           ? 'border-[#245DFF]/35 bg-[#F3F7FF] shadow-[0_14px_36px_rgba(36,93,255,0.08)]'
           : 'border-[#DCE3EE] bg-white'
@@ -83,10 +83,10 @@ export function HomePillars() {
   return (
     <section
       id={id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} ${homeBandWhite}`}
+      className={`${homeSectionScrollMt} ${marketingSectionPadCompact} ${homeBandWhite}`}
       aria-labelledby="home-pillars-heading"
     >
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <motion.div
           className="max-w-2xl"
           initial={reducedMotion ? false : { opacity: 0, y: 14 }}

@@ -9,14 +9,14 @@ import {
   homeBandSoftBlue,
   homeBandWhite,
   homeBodyLead,
-  homeFocusRing,
+  brandFocusRing,
   homeSectionEyebrow,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   koreanText,
-  siteBtnPrimary,
-  siteBtnSecondary,
-  siteContainer,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  marketingSectionInner,
 } from '../lib/ui-classes';
 import { MediaPanel } from './visual';
 import { TrackedLink } from './home/tracked-link';
@@ -29,8 +29,8 @@ export function AboutLanding() {
 
   return (
     <main className="w-full overflow-x-clip" data-spokedu-about-sections={aboutPage.sectionOrder.length}>
-      <section id={intro.id} className={`${homeSectionPadCompact} bg-white`}>
-        <div className={siteContainer}>
+      <section id={intro.id} className={`${marketingSectionPadCompact} bg-white`}>
+        <div className={marketingSectionInner}>
           <motion.div
             className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center"
             initial={reducedMotion ? false : { opacity: 0, y: 12 }}
@@ -55,8 +55,8 @@ export function AboutLanding() {
         </div>
       </section>
 
-      <section id={origin.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={origin.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{origin.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{origin.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{origin.lead}</p>
@@ -76,8 +76,8 @@ export function AboutLanding() {
         </div>
       </section>
 
-      <section id={whatWeDo.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
-        <div className={siteContainer}>
+      <section id={whatWeDo.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{whatWeDo.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{whatWeDo.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{whatWeDo.lead}</p>
@@ -94,7 +94,7 @@ export function AboutLanding() {
                 <TrackedLink
                   href={item.href}
                   trackLabel={item.trackLabel}
-                  className={`${siteBtnSecondary} mt-5 h-11 ${homeFocusRing}`}
+                  className={`${marketingButtonSecondary} mt-5 h-11 ${brandFocusRing}`}
                 >
                   {item.ctaLabel}
                   <HomeChevron />
@@ -105,8 +105,8 @@ export function AboutLanding() {
         </div>
       </section>
 
-      <section id={principles.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={principles.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{principles.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{principles.title}</h2>
           <ul className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -122,8 +122,8 @@ export function AboutLanding() {
         </div>
       </section>
 
-      <section id={history.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
-        <div className={siteContainer}>
+      <section id={history.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{history.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{history.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{history.lead}</p>
@@ -159,8 +159,8 @@ export function AboutLanding() {
         </div>
       </section>
 
-      <section id={nextPaths.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={nextPaths.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{nextPaths.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{nextPaths.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{nextPaths.lead}</p>
@@ -170,7 +170,7 @@ export function AboutLanding() {
                 key={item.href}
                 href={item.href}
                 trackLabel={item.trackLabel}
-                className={`${index === 0 ? siteBtnPrimary : siteBtnSecondary} h-12 px-6 ${homeFocusRing}`}
+                className={`${index === 0 ? marketingButtonPrimary : marketingButtonSecondary} h-12 px-6 ${brandFocusRing}`}
               >
                 {item.label}
               </TrackedLink>
@@ -182,7 +182,7 @@ export function AboutLanding() {
                 key={item.href}
                 href={item.href}
                 trackLabel={item.trackLabel}
-                className={`text-sm font-semibold text-[#245DFF] underline-offset-2 hover:underline ${homeFocusRing}`}
+                className={`text-sm font-semibold text-[#245DFF] underline-offset-2 hover:underline ${brandFocusRing}`}
               >
                 {item.label}
               </TrackedLink>

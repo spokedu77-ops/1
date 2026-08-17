@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { HomeProofField } from '../../data/home-media';
-import { cardInteractive, fineHover } from '../../lib/ui-classes';
+import { marketingInteractiveTransition, fineHover } from '../../lib/ui-classes';
 import { inferTrackFromHref } from '../../lib/tracking';
 import {
   landingCardBadgeText,
@@ -14,7 +14,7 @@ import {
 import { MediaPanel } from './media-panel';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spokedu-marketing-color-blue)]';
 
 type ProofFieldCardProps = {
   field: HomeProofField;
@@ -29,7 +29,7 @@ export function ProofFieldCard({ field, className = '' }: ProofFieldCardProps) {
       href={field.href}
       data-track={inferTrackFromHref(field.href)}
       data-track-label={field.trackLabel}
-      className={`group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${landingCardShell(variant)} ${cardInteractive} ${focusRing} ${className}`}
+      className={`group flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${landingCardShell(variant)} ${marketingInteractiveTransition} ${focusRing} ${className}`}
     >
       <MediaPanel
         media={field.media}

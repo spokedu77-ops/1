@@ -10,14 +10,14 @@ import {
   homeBandSoftBlue,
   homeBandWhite,
   homeBodyLead,
-  homeFocusRing,
+  brandFocusRing,
   homeSectionEyebrow,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   koreanText,
-  siteBtnPrimary,
-  siteBtnSecondary,
-  siteContainer,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  marketingSectionInner,
 } from '../lib/ui-classes';
 import { MediaPanel } from './visual';
 import { TrackedLink } from './home/tracked-link';
@@ -29,8 +29,8 @@ export function SpomatLanding() {
 
   return (
     <main className="w-full overflow-x-clip" data-spokedu-spomat-sections={spomatPage.sectionOrder.length}>
-      <section id={definition.id} className={`${homeSectionPadCompact} bg-white`}>
-        <div className={`${siteContainer} grid gap-8 lg:grid-cols-2 lg:items-center`}>
+      <section id={definition.id} className={`${marketingSectionPadCompact} bg-white`}>
+        <div className={`${marketingSectionInner} grid gap-8 lg:grid-cols-2 lg:items-center`}>
           <div>
             <p className={homeSectionEyebrow}>{definition.eyebrow}</p>
             <h1 className={`${marketingSectionDisplay} mt-3`}>{definition.title}</h1>
@@ -49,8 +49,8 @@ export function SpomatLanding() {
         </div>
       </section>
 
-      <section id={structure.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={structure.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{structure.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{structure.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{structure.lead}</p>
@@ -69,8 +69,8 @@ export function SpomatLanding() {
         </div>
       </section>
 
-      <section id={usage.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
-        <div className={siteContainer}>
+      <section id={usage.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{usage.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{usage.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{usage.lead}</p>
@@ -98,8 +98,8 @@ export function SpomatLanding() {
         </div>
       </section>
 
-      <section id={examples.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={examples.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{examples.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{examples.title}</h2>
           <ul className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -115,8 +115,8 @@ export function SpomatLanding() {
         </div>
       </section>
 
-      <section id={specs.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
-        <div className={siteContainer}>
+      <section id={specs.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{specs.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{specs.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{specs.lead}</p>
@@ -134,8 +134,8 @@ export function SpomatLanding() {
         </div>
       </section>
 
-      <section id={purchase.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={purchase.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{purchase.eyebrow}</p>
           <h2 className={`${marketingSectionDisplay} mt-3`}>{purchase.title}</h2>
           <p className={`mt-3 max-w-2xl text-[15px] text-[#536279] ${koreanText}`}>{purchase.lead}</p>
@@ -145,7 +145,7 @@ export function SpomatLanding() {
               trackLabel={purchase.primary.trackLabel}
               commercialRoute="curriculum"
               ctaIntentId="master_handoff"
-              className={`${siteBtnPrimary} h-12 px-7 ${homeFocusRing}`}
+              className={`${marketingButtonPrimary} h-12 px-7 ${brandFocusRing}`}
             >
               {purchase.primary.label}
             </TrackedLink>
@@ -154,7 +154,7 @@ export function SpomatLanding() {
                 key={item.href}
                 href={item.href}
                 trackLabel={item.trackLabel}
-                className={`${siteBtnSecondary} h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonSecondary} h-12 px-7 ${brandFocusRing}`}
               >
                 {item.label}
               </TrackedLink>

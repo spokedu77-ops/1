@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { privatePage } from '../data/private-page';
-import { koreanLineBreak, landingCardFrame } from '../lib/ui-classes';
+import { koreanLineBreak, marketingCardStatic } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 import { LandingSectionHeading } from './landing-section-heading';
 
@@ -41,7 +41,7 @@ export function PrivateCurriculumSection() {
           {section.items.map((item) => (
             <article
               key={item.title}
-              className={`overflow-hidden transition hover:border-teal-200/80 ${landingCardFrame}`}
+              className={`overflow-hidden transition hover:border-teal-200/80 ${marketingCardStatic}`}
             >
               <button
                 type="button"

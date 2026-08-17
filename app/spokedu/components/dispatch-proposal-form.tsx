@@ -12,7 +12,7 @@ import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import type { FieldRecordSlug } from '../data/field-records-catalog';
 import { getAcquisitionContext } from '../lib/acquisition';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
+import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary } from '../lib/ui-classes';
 
 const AGE_OPTIONS = ['유아', '초등 저학년', '초등 고학년', '중등', '혼합 연령'] as const;
 const HEADCOUNT_OPTIONS = ['10명 미만', '10~20명', '20~30명', '30명 이상'] as const;
@@ -402,14 +402,14 @@ export function DispatchProposalForm() {
         ) : null}
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <button type="submit" disabled={submitting} className={`${siteBtnPrimary} disabled:opacity-60`}>
+          <button type="submit" disabled={submitting} className={`${marketingButtonPrimary} disabled:opacity-60`}>
             {submitting ? '접수 중…' : '기관 조건으로 운영안 요청하기'}
           </button>
-          <a href={brandContactLinks.phone} className={siteBtnSecondary}>
+          <a href={brandContactLinks.phone} className={marketingButtonSecondary}>
             전화 {brandProfile.phone}
           </a>
           {KAKAO_CHANNEL_URL ? (
-            <a href={KAKAO_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className={siteBtnSecondary}>
+            <a href={KAKAO_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className={marketingButtonSecondary}>
               카카오 채널
             </a>
           ) : null}

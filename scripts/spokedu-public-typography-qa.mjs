@@ -35,10 +35,15 @@ try {
             family: style.fontFamily,
             weight: style.fontWeight,
             synthesis: style.fontSynthesis,
+            radius: style.borderRadius,
+            shadow: style.boxShadow,
             text: element.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80) ?? '',
           };
         };
         const displayH2 = document.querySelector('h2[class*="spokedu-marketing-font-display"]');
+        const canonicalControl = document.querySelector(
+          'main .button, main a[class*="spokedu-marketing-radius-sm"], main button[class*="spokedu-marketing-radius-sm"]',
+        );
         const fontResponse = await fetch('/fonts/Cafe24SsurroundAir.woff', { method: 'HEAD' });
         return {
           overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
@@ -47,13 +52,15 @@ try {
           h1: computed(document.querySelector('h1')),
           h2: computed(displayH2),
           body: computed(document.querySelector('main p')),
-          control: computed(document.querySelector('main button, main a')),
+          control: computed(canonicalControl),
+          surface: computed(document.querySelector('main article[class*="spokedu-marketing-radius-md"]')),
         };
       });
 
       const displayOk = (value) =>
         value && value.family.includes('Cafe24SsurroundAir') && value.weight === '400' && value.synthesis === 'none';
       const bodyOk = (value) => !value || /Pretendard/.test(value.family);
+      const controlOk = (value) => !value || (bodyOk(value) && value.radius === '14px');
       const pass = Boolean(
         response?.ok() &&
           !audit.overflowX &&
@@ -62,11 +69,11 @@ try {
           displayOk(audit.h1) &&
           (!audit.h2 || displayOk(audit.h2)) &&
           bodyOk(audit.body) &&
-          bodyOk(audit.control),
+          controlOk(audit.control),
       );
 
       const screenshot = path.join(outputDirectory, `${slug(route)}-${width}.png`);
-      await page.screenshot({ path: screenshot, fullPage: true });
+      await page.screenshot({ path: screenshot, fullPage: false });
       results.push({ route, width, status: response?.status() ?? null, pass, ...audit, screenshot });
     }
   }

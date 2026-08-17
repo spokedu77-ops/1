@@ -8,16 +8,18 @@ import {
   homeBandSoftBlue,
   homeBandWhite,
   homeBodyLead,
-  homeFocusRing,
+  brandFocusRing,
   homeGateCard,
   homePhotoGrade,
   homeSectionEyebrow,
+  marketingHeroDisplay,
+  marketingHeroDisplaySectionScale,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   koreanText,
-  siteBtnPrimary,
-  siteBtnSecondary,
-  siteContainer,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  marketingSectionInner,
 } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 import { SpomatPhoto } from './spomat-photo';
@@ -121,11 +123,11 @@ export default function SpomoveProgramLanding() {
       className="w-full overflow-x-clip bg-[#F5F7FB]"
       data-spokedu-spomove-sections={page.sectionOrder.length}
     >
-      <section id={page.hero.id} className={`${homeSectionPadCompact} bg-white`}>
-        <div className={`${siteContainer} grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center`}>
+      <section id={page.hero.id} className={`${marketingSectionPadCompact} bg-white`}>
+        <div className={`${marketingSectionInner} grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center`}>
           <div className="min-w-0">
             <p className={homeSectionEyebrow}>{page.hero.kicker}</p>
-            <h1 className={`${marketingSectionDisplay} mt-3`}>
+            <h1 className={`${marketingHeroDisplay} ${marketingHeroDisplaySectionScale} mt-3`}>
               <span className="block">{page.hero.lines[0]}</span>
               <span className="mt-1.5 block text-[#245DFF]">{page.hero.lines[1]}</span>
             </h1>
@@ -134,14 +136,14 @@ export default function SpomoveProgramLanding() {
               <TrackedLink
                 href={page.hero.primaryCta.href}
                 trackLabel={page.hero.primaryCta.trackLabel}
-                className={`${siteBtnPrimary} h-12 min-h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonPrimary} h-12 min-h-12 px-7 ${brandFocusRing}`}
               >
                 {page.hero.primaryCta.label}
               </TrackedLink>
               <TrackedLink
                 href={page.hero.secondaryCta.href}
                 trackLabel={page.hero.secondaryCta.trackLabel}
-                className={`${siteBtnSecondary} h-12 min-h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonSecondary} h-12 min-h-12 px-7 ${brandFocusRing}`}
               >
                 {page.hero.secondaryCta.label}
               </TrackedLink>
@@ -160,8 +162,8 @@ export default function SpomoveProgramLanding() {
         </div>
       </section>
 
-      <section id={page.flow.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-flow-heading">
-        <div className={siteContainer}>
+      <section id={page.flow.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-flow-heading">
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{page.flow.eyebrow}</p>
           <h2 id="spomove-flow-heading" className={`${marketingSectionDisplay} mt-3`}>
             {page.flow.title}
@@ -195,8 +197,8 @@ export default function SpomoveProgramLanding() {
         </div>
       </section>
 
-      <section id={page.content.id} className={`${homeSectionPadCompact} ${homeBandWhite}`} aria-labelledby="spomove-content-heading">
-        <div className={siteContainer}>
+      <section id={page.content.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`} aria-labelledby="spomove-content-heading">
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{page.content.eyebrow}</p>
           <h2 id="spomove-content-heading" className={`${marketingSectionDisplay} mt-3`}>
             {page.content.title}
@@ -260,7 +262,7 @@ export default function SpomoveProgramLanding() {
           <TrackedLink
             href={page.content.catalogCta.href}
             trackLabel={page.content.catalogCta.trackLabel}
-            className={`mt-6 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#245DFF] ${homeFocusRing}`}
+            className={`mt-6 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#245DFF] ${brandFocusRing}`}
           >
             {page.content.catalogCta.label}
             <HomeChevron />
@@ -268,8 +270,8 @@ export default function SpomoveProgramLanding() {
         </div>
       </section>
 
-      <section id={page.spomat.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-spomat-heading">
-        <div className={`${siteContainer} grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] lg:items-start`}>
+      <section id={page.spomat.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-spomat-heading">
+        <div className={`${marketingSectionInner} grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] lg:items-start`}>
           <div>
             <div className="flex items-center gap-2">
               <SpomatPhoto size="sm" bare />
@@ -303,7 +305,7 @@ export default function SpomoveProgramLanding() {
               <TrackedLink
                 href={page.spomat.detailHref}
                 trackLabel={page.spomat.detailTrackLabel}
-                className={`${siteBtnSecondary} mt-4 h-11 ${homeFocusRing}`}
+                className={`${marketingButtonSecondary} mt-4 h-11 ${brandFocusRing}`}
               >
                 {page.spomat.detailLabel}
                 <HomeChevron />
@@ -336,8 +338,8 @@ export default function SpomoveProgramLanding() {
         </div>
       </section>
 
-      <section id={page.usePaths.id} className={`${homeSectionPadCompact} ${homeBandWhite}`} aria-labelledby="spomove-paths-heading">
-        <div className={siteContainer}>
+      <section id={page.usePaths.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`} aria-labelledby="spomove-paths-heading">
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{page.usePaths.eyebrow}</p>
           <h2 id="spomove-paths-heading" className={`${marketingSectionDisplay} mt-3`}>
             {page.usePaths.title}
@@ -353,7 +355,7 @@ export default function SpomoveProgramLanding() {
                   trackLabel={item.trackLabel}
                   commercialRoute={item.id === 'institution' ? 'dispatch' : 'curriculum'}
                   ctaIntentId={item.trackLabel}
-                  className={`${homeGateCard} ${homeFocusRing} block h-full`}
+                  className={`${homeGateCard} ${brandFocusRing} block h-full`}
                 >
                   <div className="flex min-h-[13rem] flex-col px-5 py-5 sm:px-6 sm:py-6">
                     <p className="text-[12px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
@@ -388,8 +390,8 @@ export default function SpomoveProgramLanding() {
         </div>
       </section>
 
-      <section id={page.cases.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-cases-heading">
-        <div className={siteContainer}>
+      <section id={page.cases.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-cases-heading">
+        <div className={marketingSectionInner}>
           <div className="flex flex-col gap-4 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between">
             <div className="max-w-2xl">
               <p className={homeSectionEyebrow}>{page.cases.eyebrow}</p>
@@ -403,7 +405,7 @@ export default function SpomoveProgramLanding() {
             <TrackedLink
               href={page.cases.recordsCta.href}
               trackLabel={page.cases.recordsCta.trackLabel}
-              className={`${siteBtnSecondary} h-11 shrink-0 px-5 ${homeFocusRing}`}
+              className={`${marketingButtonSecondary} h-11 shrink-0 px-5 ${brandFocusRing}`}
             >
               {page.cases.recordsCta.label}
             </TrackedLink>
@@ -416,7 +418,7 @@ export default function SpomoveProgramLanding() {
                   <TrackedLink
                     href={card.href}
                     trackLabel={card.trackLabel}
-                    className={`${homeGateCard} ${homeFocusRing} block h-full`}
+                    className={`${homeGateCard} ${brandFocusRing} block h-full`}
                   >
                     <div className="relative aspect-[16/10] overflow-hidden">
                       {card.thumbnailSrc ? (
@@ -464,8 +466,8 @@ export default function SpomoveProgramLanding() {
         </div>
       </section>
 
-      <section id={page.catalogFinal.id} className={`${homeSectionPadCompact} ${homeBandWhite}`}>
-        <div className={siteContainer}>
+      <section id={page.catalogFinal.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
+        <div className={marketingSectionInner}>
           <div className="overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white px-5 py-8 shadow-[0_18px_50px_rgba(15,33,70,0.07)] sm:px-8 sm:py-10">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
               {page.catalogFinal.eyebrow}
@@ -478,14 +480,14 @@ export default function SpomoveProgramLanding() {
               <TrackedLink
                 href={page.catalogFinal.catalogCta.href}
                 trackLabel={page.catalogFinal.catalogCta.trackLabel}
-                className={`${siteBtnSecondary} h-11 px-5 ${homeFocusRing}`}
+                className={`${marketingButtonSecondary} h-11 px-5 ${brandFocusRing}`}
               >
                 {page.catalogFinal.catalogCta.label}
               </TrackedLink>
               <TrackedLink
                 href={page.catalogFinal.materialsLink.href}
                 trackLabel={page.catalogFinal.materialsLink.trackLabel}
-                className={`inline-flex h-11 items-center text-[14px] font-semibold text-[#536279] underline-offset-4 hover:underline ${homeFocusRing} ${koreanText}`}
+                className={`inline-flex h-11 items-center text-[14px] font-semibold text-[#536279] underline-offset-4 hover:underline ${brandFocusRing} ${koreanText}`}
               >
                 {page.catalogFinal.materialsLink.label}
               </TrackedLink>
@@ -497,7 +499,7 @@ export default function SpomoveProgramLanding() {
                 commercialRoute="dispatch"
                 ctaIntentId={page.catalogFinal.primary.trackLabel}
                 selectionId="spomove"
-                className={`${siteBtnPrimary} h-12 min-h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonPrimary} h-12 min-h-12 px-7 ${brandFocusRing}`}
               >
                 {page.catalogFinal.primary.label}
               </TrackedLink>
@@ -506,7 +508,7 @@ export default function SpomoveProgramLanding() {
                 trackLabel={page.catalogFinal.secondary.trackLabel}
                 commercialRoute="curriculum"
                 ctaIntentId={page.catalogFinal.secondary.trackLabel}
-                className={`${siteBtnSecondary} h-12 min-h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonSecondary} h-12 min-h-12 px-7 ${brandFocusRing}`}
               >
                 {page.catalogFinal.secondary.label}
               </TrackedLink>

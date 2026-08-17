@@ -64,9 +64,9 @@ describe('public marketing typography contract', () => {
   it('keeps key public page titles and section titles on canonical utilities', () => {
     expect(read('app/spokedu/components/home/home-hero.tsx')).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
     expect(read('app/spokedu/components/landing-hero.tsx')).toMatch(/<motion\.h1[\s\S]*marketingHeroDisplay/);
-    expect(read('app/spokedu/components/education-hub-landing.tsx')).toMatch(/<h1[\s\S]*marketingSectionDisplay/);
+    expect(read('app/spokedu/components/education-hub-landing.tsx')).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
     expect(read('app/spokedu/components/education-hub-landing.tsx')).toMatch(/<h2[\s\S]*marketingSectionDisplay/);
-    expect(read('app/spokedu/components/spomove-program-landing.tsx')).toMatch(/<h1[\s\S]*marketingSectionDisplay/);
+    expect(read('app/spokedu/components/spomove-program-landing.tsx')).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
     expect(read('app/spokedu/components/spomove-program-landing.tsx')).toMatch(/<h2[\s\S]*marketingSectionDisplay/);
   });
 

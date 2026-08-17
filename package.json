@@ -14,6 +14,7 @@
     "lint:ci": "eslint . --max-warnings 102",
     "test": "vitest run",
     "test:public-typography": "vitest run app/spokedu/lib/public-marketing-typography.contract.test.ts",
+    "test:public-visual": "vitest run app/spokedu/lib/public-marketing-visual.contract.test.ts",
     "qa:public-typography": "node scripts/spokedu-public-typography-qa.mjs",
     "typecheck": "tsc --noEmit --pretty false",
     "test:admin-note": "vitest run app/admin/note app/lib/note",

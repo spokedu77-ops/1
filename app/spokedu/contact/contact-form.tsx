@@ -19,7 +19,7 @@ import {
 import { submitInquiry } from './inquiry-submit';
 import { createFormStartedTracker, trackCommercialEvent } from '../lib/commercial-events';
 import { externalLinkProps } from '../lib/external-link';
-import { btnPrimary, cardInteractive, fineHover } from '../lib/ui-classes';
+import { marketingButtonPrimary, marketingInteractiveTransition, fineHover } from '../lib/ui-classes';
 import type {
   CurriculumInquiryFields,
   DispatchInquiryFields,
@@ -615,7 +615,7 @@ export default function SpokeduContactForm() {
               이전에 작성하신 내용이 브라우저에 보관되어 있습니다. 불러오거나 삭제할 수 있습니다.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={restoreDraft} className={`${btnPrimary} !w-auto px-4`}>
+              <button type="button" onClick={restoreDraft} className={`${marketingButtonPrimary} !w-auto px-4`}>
                 작성 내용 불러오기
               </button>
               <button
@@ -650,7 +650,7 @@ export default function SpokeduContactForm() {
                   onClick={() => selectType(option.id)}
                   className={`flex h-full min-h-[10.5rem] flex-col rounded-lg border p-5 text-left transition active:scale-[0.99] sm:p-6 ${
                     isLastOdd ? 'sm:col-span-2' : ''
-                  } ${cardInteractive} ${focusRing} ${
+                  } ${marketingInteractiveTransition} ${focusRing} ${
                     active
                       ? accent.activeBorder
                       : `border-slate-200/90 bg-white ${fineHover}hover:border-slate-300`
@@ -878,7 +878,7 @@ export default function SpokeduContactForm() {
                   disabled={submitting}
                   data-track={`contact-submit-${inquiryType}`}
                   data-track-label={activeOption.submitTrackLabel}
-                  className={`${btnPrimary} w-full`}
+                  className={`${marketingButtonPrimary} w-full`}
                 >
                   {submitting ? '접수 중...' : '상담 접수하기'}
                 </button>

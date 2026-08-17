@@ -2,7 +2,7 @@
 
 import { brandContactLinks, brandProfile } from '../data/site';
 import { contactPageContent } from './contact-page-data';
-import { btnPrimary } from '../lib/ui-classes';
+import { marketingButtonPrimary } from '../lib/ui-classes';
 import { externalLinkProps } from '../lib/external-link';
 
 const focusRing =
@@ -72,7 +72,7 @@ export function ContactFallback({
         ) : null}
       </dl>
       {onRetry ? (
-        <button type="button" onClick={onRetry} className={`${btnPrimary} mt-5`}>
+        <button type="button" onClick={onRetry} className={`${marketingButtonPrimary} mt-5`}>
           {retryLabel}
         </button>
       ) : null}

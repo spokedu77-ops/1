@@ -14,7 +14,7 @@ import { parseConversionEvidenceSlug } from '../data/commercial-routes';
 import type { FieldRecordSlug } from '../data/field-records-catalog';
 import { captureAcquisitionFromLocation, getAcquisitionContext } from '../lib/acquisition';
 import { trackCommercialEvent } from '../lib/commercial-events';
-import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
+import { koreanLineBreak, marketingButtonPrimary, marketingButtonSecondary } from '../lib/ui-classes';
 import { useSearchParams } from 'next/navigation';
 
 const CONTENT_OPTIONS = [
@@ -355,10 +355,10 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
         ) : null}
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <button type="submit" disabled={submitting || !canSubmit} className={`${siteBtnPrimary} disabled:opacity-60`}>
+          <button type="submit" disabled={submitting || !canSubmit} className={`${marketingButtonPrimary} disabled:opacity-60`}>
             {submitting ? '접수 중…' : curriculumSubmitLabel(leadMode)}
           </button>
-          <a href={brandContactLinks.phone} className={siteBtnSecondary}>
+          <a href={brandContactLinks.phone} className={marketingButtonSecondary}>
             전화 {brandProfile.phone}
           </a>
         </div>

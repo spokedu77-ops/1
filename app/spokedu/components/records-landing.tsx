@@ -10,7 +10,7 @@ import { HOME_MEDIA } from '../data/home-media';
 import type { FieldRecordWithThumbnail } from '../lib/resolve-field-records';
 import { ExternalPhoto } from './external-photo';
 import {
-  cardInteractive,
+  marketingInteractiveTransition,
   fineHover,
 } from '../lib/ui-classes';
 import { externalLinkProps, isExternalHref } from '../lib/external-link';
@@ -49,7 +49,7 @@ function RecordCard({
   const external = isExternalHref(record.href);
   const onsite = isOnsiteRecord(record);
   const metaItems = splitMeta(record.meta);
-  const className = `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${cardInteractive} ${focusRing}`;
+  const className = `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${marketingInteractiveTransition} ${focusRing}`;
   const inner = (
     <>
       {record.thumbnailSrc ? (

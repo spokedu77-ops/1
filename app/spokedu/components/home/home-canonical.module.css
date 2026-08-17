@@ -1,14 +1,6 @@
 .root {
-  --home-navy: #0b1530;
-  --home-deep: #081126;
-  --home-blue: #235de8;
-  --home-soft: #eaf1ff;
-  --home-paper: #f5f8ff;
-  --home-border: #dfe6f1;
-  --home-body: #4b5563;
-  --home-muted: #6b7280;
-  color: var(--home-navy);
-  background: var(--home-paper);
+  color: var(--spokedu-marketing-color-navy);
+  background: var(--spokedu-marketing-color-paper);
 }
 
 .heroTitle {
@@ -41,7 +33,7 @@
 }
 
 .gatewayProduct {
-  border: 1px solid var(--home-border);
+  border: 1px solid var(--spokedu-marketing-color-border);
   background: #fff;
 }
 

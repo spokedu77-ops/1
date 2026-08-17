@@ -6,13 +6,13 @@ import {
   brandBlue,
   brandInk,
   homeBandSoftBlue,
-  homeFocusRing,
+  brandFocusRing,
   homePathNavItem,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
-  siteContainer,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
@@ -24,9 +24,9 @@ export function HomeAudienceGates() {
   return (
     <section
       id={homePage.audienceGate.id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} ${homeBandSoftBlue}`}
+      className={`${homeSectionScrollMt} ${marketingSectionPadCompact} ${homeBandSoftBlue}`}
     >
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <motion.div
           className="max-w-2xl"
           initial={reducedMotion ? false : { opacity: 0, y: 14 }}
@@ -56,7 +56,7 @@ export function HomeAudienceGates() {
               <TrackedLink
                 href={item.href}
                 trackLabel={item.trackLabel}
-                className={`${homePathNavItem} ${homeFocusRing} block h-full`}
+                className={`${homePathNavItem} ${brandFocusRing} block h-full`}
               >
                 <p className="text-[11px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
                   {item.badge}

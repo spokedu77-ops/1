@@ -19,7 +19,7 @@ import { BrandLogo } from './brand-logo';
 import { isExternalHref, externalLinkProps } from '../lib/external-link';
 import { lockSpokeduScroll, getSpokeduScrollY, scrollSpokeduToTop, unlockSpokeduScroll } from '../lib/scroll';
 import { inferTrackFromHref } from '../lib/tracking';
-import { brandBlue, brandNavy, koreanText, siteContainer } from '../lib/ui-classes';
+import { brandBlue, brandNavy, koreanText, marketingSectionInner } from '../lib/ui-classes';
 
 const ATHLETIC_BLUE = brandBlue;
 const NAVY = brandNavy;
@@ -337,7 +337,7 @@ export function SiteHeader() {
             : 'border-b border-[#DCE3EE]/90 bg-white/92 shadow-[0_1px_0_rgba(15,33,70,0.04)] backdrop-blur-xl'
         }`}
       >
-        <div className={`${siteContainer} flex h-[var(--spokedu-public-header-height)] items-center justify-between gap-4`}>
+        <div className={`${marketingSectionInner} flex h-[var(--spokedu-public-header-height)] items-center justify-between gap-4`}>
           <BrandLogo onDark={onHero} scrollHomeOnClick size="md" />
 
           <nav className="hidden h-10 items-center gap-8 lg:flex xl:gap-10" aria-label="주 메뉴">
@@ -435,7 +435,7 @@ export function SiteFooter() {
 
   return (
     <footer style={{ backgroundColor: NAVY }} className="text-white">
-      <div className={`${siteContainer} py-9 sm:py-11`}>
+      <div className={`${marketingSectionInner} py-9 sm:py-11`}>
         <div className="grid grid-cols-1 gap-8 min-[640px]:grid-cols-2 min-[1200px]:grid-cols-4 min-[1200px]:items-start min-[1200px]:gap-10">
           <div className="min-w-0 space-y-2.5 min-[640px]:col-span-2 min-[1200px]:col-span-1">
             <BrandLogo onDark scrollHomeOnClick size="md" />

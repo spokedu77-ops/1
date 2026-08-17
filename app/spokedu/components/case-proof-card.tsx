@@ -5,7 +5,7 @@ import type { CaseData } from '../data/cases';
 import { dispatchInquiryHref } from '../data/commercial-routes';
 import { getProgramBySlug } from '../data/programs';
 import { HOME_MEDIA } from '../data/home-media';
-import { cardInteractive, fineHover } from '../lib/ui-classes';
+import { marketingInteractiveTransition, fineHover } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import { MediaPanel } from './visual/media-panel';
@@ -32,7 +32,7 @@ export function CaseProofCard({
 
   const card = (
     <article
-      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${landingCardShell(cardVariant)} ${compact ? '' : cardInteractive}`}
+      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl ${landingCardShell(cardVariant)} ${compact ? '' : marketingInteractiveTransition}`}
     >
       <MediaPanel
         media={HOME_MEDIA[item.mediaKey]}
@@ -111,7 +111,7 @@ export function CaseProofCard({
         href={item.href}
         data-track={inferTrackFromHref(item.href)}
         data-track-label={`${trackPrefix}-card-${item.slug}`}
-        className={`group block h-full ${cardInteractive} ${focusRing}`}
+        className={`group block h-full ${marketingInteractiveTransition} ${focusRing}`}
       >
         {card}
       </Link>

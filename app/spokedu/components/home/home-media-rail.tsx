@@ -7,15 +7,15 @@ import { homePage, type HomeCaseCard } from '../../data/home-page';
 import { externalLinkProps } from '../../lib/external-link';
 import {
   fineHover,
-  homeFocusRing,
+  brandFocusRing,
   homePhotoGrade,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
-  siteBtnPrimaryOnHero,
-  siteBtnSecondaryOnDark,
-  siteContainer,
+  marketingButtonPrimaryOnDark,
+  marketingButtonSecondaryOnDark,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 import { ExternalPhoto } from '../external-photo';
 import { MediaPanel } from '../visual';
@@ -57,7 +57,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
   return (
     <section
       id={homePage.cases.id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-[#0B1F46] text-white`}
+      className={`${homeSectionScrollMt} ${marketingSectionPadCompact} bg-[#0B1F46] text-white`}
       aria-labelledby="home-media-rail-heading"
       aria-roledescription="carousel"
       onMouseEnter={() => setPaused(true)}
@@ -69,7 +69,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
         }
       }}
     >
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-xl">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#9FC0FF]">수업 사례</p>
@@ -84,7 +84,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
               {...externalLinkProps}
               data-track="external-youtube"
               data-track-label={homePage.hero.youtubeTrackLabel}
-              className={`mt-3 inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#9FC0FF] underline-offset-4 ${fineHover}hover:text-white ${fineHover}hover:underline ${homeFocusRing} rounded-sm`}
+              className={`mt-3 inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#9FC0FF] underline-offset-4 ${fineHover}hover:text-white ${fineHover}hover:underline ${brandFocusRing} rounded-sm`}
             >
               <span
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#9FC0FF]/50"
@@ -100,14 +100,14 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
             <TrackedLink
               href={homePage.cases.recordsCta.href}
               trackLabel={homePage.cases.recordsCta.trackLabel}
-              className={`${siteBtnSecondaryOnDark} h-11 min-h-0 px-5 py-0 text-sm ${homeFocusRing}`}
+              className={`${marketingButtonSecondaryOnDark} h-11 min-h-0 px-5 py-0 text-sm ${brandFocusRing}`}
             >
               {homePage.cases.recordsCta.label}
             </TrackedLink>
             <TrackedLink
               href={homePage.cases.consultCta.href}
               trackLabel={homePage.cases.consultCta.trackLabel}
-              className={`${siteBtnPrimaryOnHero} h-11 min-h-0 px-5 py-0 text-sm ${homeFocusRing}`}
+              className={`${marketingButtonPrimaryOnDark} h-11 min-h-0 px-5 py-0 text-sm ${brandFocusRing}`}
             >
               {homePage.cases.consultCta.label}
             </TrackedLink>
@@ -164,7 +164,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
                   <TrackedLink
                     href={active.href}
                     trackLabel={active.trackLabel}
-                    className={`${siteBtnPrimaryOnHero} ${homeFocusRing} mt-5 h-11 w-fit px-5 ${fineHover}hover:bg-sky-50`}
+                    className={`${marketingButtonPrimaryOnDark} ${brandFocusRing} mt-5 h-11 w-fit px-5 ${fineHover}hover:bg-sky-50`}
                   >
                     {active.ctaLabel}
                   </TrackedLink>
@@ -178,7 +178,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
                   type="button"
                   onClick={goPrev}
                   aria-label="이전 사례"
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/35 text-white backdrop-blur-sm ${fineHover}hover:bg-black/55 ${homeFocusRing}`}
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/35 text-white backdrop-blur-sm ${fineHover}hover:bg-black/55 ${brandFocusRing}`}
                 >
                   <span aria-hidden className="text-lg leading-none">
                     ‹
@@ -188,7 +188,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
                   type="button"
                   onClick={goNext}
                   aria-label="다음 사례"
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/35 text-white backdrop-blur-sm ${fineHover}hover:bg-black/55 ${homeFocusRing}`}
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/35 text-white backdrop-blur-sm ${fineHover}hover:bg-black/55 ${brandFocusRing}`}
                 >
                   <span aria-hidden className="text-lg leading-none">
                     ›
@@ -212,7 +212,7 @@ export function HomeMediaRail({ caseCards }: HomeMediaRailProps) {
                   aria-label={`${item.programName} 보기`}
                   aria-current={i === index}
                   onClick={() => setIndex(i)}
-                  className={`inline-flex h-11 min-w-11 items-center justify-center rounded-full ${homeFocusRing}`}
+                  className={`inline-flex h-11 min-w-11 items-center justify-center rounded-full ${brandFocusRing}`}
                 >
                   <span
                     className={`block h-2 rounded-full transition ${

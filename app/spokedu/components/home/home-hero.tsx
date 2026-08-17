@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { HOME_MEDIA } from '../../data/home-media';
 import { homePage } from '../../data/home-page';
 import {
-  homeFocusRing,
+  brandFocusRing,
   homeHeroFullBleed,
   homeHeroFullBleedCopy,
   homeHeroFullBleedLead,
@@ -15,7 +15,7 @@ import {
   koreanText,
   marketingButtonPrimaryOnDark,
   marketingButtonSecondaryOnDark,
-  siteContainer,
+  marketingSectionInner,
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
@@ -46,7 +46,7 @@ export function HomeHero() {
       <div className={homeHeroFullBleedScrim} aria-hidden />
 
       <div className={homeHeroFullBleedCopy}>
-        <div className={siteContainer}>
+        <div className={marketingSectionInner}>
           <motion.div
             className="flex max-w-[52rem] flex-col"
             initial={reducedMotion ? false : { opacity: 0, y: 14 }}
@@ -84,7 +84,7 @@ export function HomeHero() {
             <TrackedLink
               href={homePage.hero.recordsLink.href}
               trackLabel={homePage.hero.recordsLink.trackLabel}
-              className={`mt-4 inline-flex w-fit text-[14px] font-semibold text-[#C5D8FF] underline-offset-4 hover:text-white hover:underline ${homeFocusRing} ${koreanText}`}
+              className={`mt-4 inline-flex w-fit text-[14px] font-semibold text-[#C5D8FF] underline-offset-4 hover:text-white hover:underline ${brandFocusRing} ${koreanText}`}
             >
               {homePage.hero.recordsLink.label}
             </TrackedLink>

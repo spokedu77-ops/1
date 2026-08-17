@@ -9,16 +9,18 @@ import {
   homeBandSoftBlue,
   homeBandWhite,
   homeBodyLead,
-  homeFocusRing,
+  brandFocusRing,
   homeGateCard,
   homePhotoGrade,
   homeSectionEyebrow,
+  marketingHeroDisplay,
+  marketingHeroDisplaySectionScale,
   marketingSectionDisplay,
-  homeSectionPadCompact,
+  marketingSectionPadCompact,
   koreanText,
-  siteBtnPrimary,
-  siteBtnSecondary,
-  siteContainer,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  marketingSectionInner,
 } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 import { MediaPanel } from './visual';
@@ -35,8 +37,8 @@ export function EducationHubLanding() {
       className="w-full overflow-x-clip"
       data-spokedu-education-sections={educationHubPage.sectionOrder.length}
     >
-      <section id={hero.id} className={`${homeSectionPadCompact} bg-white`}>
-        <div className={siteContainer}>
+      <section id={hero.id} className={`${marketingSectionPadCompact} bg-white`}>
+        <div className={marketingSectionInner}>
           <motion.div
             className="max-w-3xl"
             initial={reducedMotion ? false : { opacity: 0, y: 12 }}
@@ -44,7 +46,7 @@ export function EducationHubLanding() {
             transition={{ duration: 0.45 }}
           >
             <p className={homeSectionEyebrow}>{hero.eyebrow}</p>
-            <h1 className={`${marketingSectionDisplay} mt-3`}>{hero.title}</h1>
+            <h1 className={`${marketingHeroDisplay} ${marketingHeroDisplaySectionScale} mt-3`}>{hero.title}</h1>
             <p className={`${homeBodyLead} mt-4`}>{hero.lead}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <TrackedLink
@@ -52,7 +54,7 @@ export function EducationHubLanding() {
                 trackLabel={hero.primaryCta.trackLabel}
                 commercialRoute="dispatch"
                 ctaIntentId={hero.primaryCta.trackLabel}
-                className={`${siteBtnPrimary} h-12 min-h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonPrimary} h-12 min-h-12 px-7 ${brandFocusRing}`}
               >
                 {hero.primaryCta.label}
               </TrackedLink>
@@ -61,7 +63,7 @@ export function EducationHubLanding() {
                 trackLabel={hero.secondaryCta.trackLabel}
                 commercialRoute="private"
                 ctaIntentId={hero.secondaryCta.trackLabel}
-                className={`${siteBtnSecondary} h-12 min-h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonSecondary} h-12 min-h-12 px-7 ${brandFocusRing}`}
               >
                 {hero.secondaryCta.label}
               </TrackedLink>
@@ -72,10 +74,10 @@ export function EducationHubLanding() {
 
       <section
         id={primaryPaths.id}
-        className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}
+        className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}
         aria-labelledby="education-primary-heading"
       >
-        <div className={siteContainer}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{primaryPaths.eyebrow}</p>
           <h2 id="education-primary-heading" className={`${marketingSectionDisplay} mt-3`}>
             {primaryPaths.title}
@@ -93,7 +95,7 @@ export function EducationHubLanding() {
                     trackLabel={item.trackLabel}
                     commercialRoute={item.id === 'dispatch' ? 'dispatch' : 'private'}
                     ctaIntentId={item.trackLabel}
-                    className={`${homeGateCard} ${homeFocusRing} block h-full`}
+                    className={`${homeGateCard} ${brandFocusRing} block h-full`}
                   >
                     <div className="relative aspect-[16/10] w-full overflow-hidden">
                       <MediaPanel
@@ -143,10 +145,10 @@ export function EducationHubLanding() {
 
       <section
         id={formats.id}
-        className={`${homeSectionPadCompact} ${homeBandWhite}`}
+        className={`${marketingSectionPadCompact} ${homeBandWhite}`}
         aria-labelledby="education-formats-heading"
       >
-        <div className={siteContainer}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{formats.eyebrow}</p>
           <h2 id="education-formats-heading" className={`${marketingSectionDisplay} mt-3`}>
             {formats.title}
@@ -160,7 +162,7 @@ export function EducationHubLanding() {
                 <TrackedLink
                   href={item.href}
                   trackLabel={item.trackLabel}
-                  className={`flex h-full flex-col rounded-[1.25rem] border border-[#DCE3EE] bg-[#F5F7FB] px-5 py-5 ${homeFocusRing} sm:px-6 sm:py-6`}
+                  className={`flex h-full flex-col rounded-[1.25rem] border border-[#DCE3EE] bg-[#F5F7FB] px-5 py-5 ${brandFocusRing} sm:px-6 sm:py-6`}
                 >
                   <h3 className={`text-lg font-bold tracking-tight ${koreanText}`} style={{ color: brandInk }}>
                     {item.title}
@@ -179,10 +181,10 @@ export function EducationHubLanding() {
 
       <section
         id={principles.id}
-        className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}
+        className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}
         aria-labelledby="education-principles-heading"
       >
-        <div className={siteContainer}>
+        <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{principles.eyebrow}</p>
           <h2 id="education-principles-heading" className={`${marketingSectionDisplay} mt-3`}>
             {principles.title}
@@ -211,7 +213,7 @@ export function EducationHubLanding() {
             <TrackedLink
               href={principles.spomoveCta.href}
               trackLabel={principles.spomoveCta.trackLabel}
-              className={`mt-3 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#245DFF] ${homeFocusRing}`}
+              className={`mt-3 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#245DFF] ${brandFocusRing}`}
             >
               {principles.spomoveCta.label}
               <HomeChevron />
@@ -222,10 +224,10 @@ export function EducationHubLanding() {
 
       <section
         id={cases.id}
-        className={`${homeSectionPadCompact} ${homeBandWhite}`}
+        className={`${marketingSectionPadCompact} ${homeBandWhite}`}
         aria-labelledby="education-cases-heading"
       >
-        <div className={siteContainer}>
+        <div className={marketingSectionInner}>
           <div className="flex flex-col gap-4 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between">
             <div className="max-w-2xl">
               <h2 id="education-cases-heading" className={`${marketingSectionDisplay} mt-3`}>
@@ -238,7 +240,7 @@ export function EducationHubLanding() {
             <TrackedLink
               href={cases.recordsCta.href}
               trackLabel={cases.recordsCta.trackLabel}
-              className={`${siteBtnSecondary} h-11 shrink-0 px-5 ${homeFocusRing}`}
+              className={`${marketingButtonSecondary} h-11 shrink-0 px-5 ${brandFocusRing}`}
             >
               {cases.recordsCta.label}
             </TrackedLink>
@@ -251,7 +253,7 @@ export function EducationHubLanding() {
                   <TrackedLink
                     href={card.href}
                     trackLabel={card.trackLabel}
-                    className={`${homeGateCard} ${homeFocusRing} block h-full`}
+                    className={`${homeGateCard} ${brandFocusRing} block h-full`}
                   >
                     <div className="relative aspect-[16/10] overflow-hidden">
                       {card.thumbnailSrc ? (
@@ -299,8 +301,8 @@ export function EducationHubLanding() {
         </div>
       </section>
 
-      <section id={finalCta.id} className={`${homeSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={siteContainer}>
+      <section id={finalCta.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
+        <div className={marketingSectionInner}>
           <div className="overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white px-5 py-8 shadow-[0_18px_50px_rgba(15,33,70,0.07)] sm:px-8 sm:py-10">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
               {finalCta.eyebrow}
@@ -313,7 +315,7 @@ export function EducationHubLanding() {
                 trackLabel={finalCta.primary.trackLabel}
                 commercialRoute="dispatch"
                 ctaIntentId={finalCta.primary.trackLabel}
-                className={`${siteBtnPrimary} h-12 min-h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonPrimary} h-12 min-h-12 px-7 ${brandFocusRing}`}
               >
                 {finalCta.primary.label}
               </TrackedLink>
@@ -322,7 +324,7 @@ export function EducationHubLanding() {
                 trackLabel={finalCta.secondary.trackLabel}
                 commercialRoute="private"
                 ctaIntentId={finalCta.secondary.trackLabel}
-                className={`${siteBtnSecondary} h-12 min-h-12 px-7 ${homeFocusRing}`}
+                className={`${marketingButtonSecondary} h-12 min-h-12 px-7 ${brandFocusRing}`}
               >
                 {finalCta.secondary.label}
               </TrackedLink>
@@ -330,7 +332,7 @@ export function EducationHubLanding() {
             <TrackedLink
               href={finalCta.contactLink.href}
               trackLabel={finalCta.contactLink.trackLabel}
-              className={`mt-5 inline-flex text-[14px] font-semibold text-[#536279] underline-offset-4 hover:text-[#14213A] hover:underline ${homeFocusRing} ${koreanText}`}
+              className={`mt-5 inline-flex text-[14px] font-semibold text-[#536279] underline-offset-4 hover:text-[#14213A] hover:underline ${brandFocusRing} ${koreanText}`}
             >
               {finalCta.contactLink.label}
             </TrackedLink>

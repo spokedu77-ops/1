@@ -12,8 +12,8 @@ describe('landingCardShell naming contract', () => {
     expect(landingCardShell('image')).toEqual(expect.any(String));
   });
 
-  it('does not re-export landingCardShell from ui-classes (static frame is landingCardFrame)', () => {
+  it('does not re-export landingCardShell from ui-classes (static frame is canonical)', () => {
     expect('landingCardShell' in uiClasses).toBe(false);
-    expect(typeof uiClasses.landingCardFrame).toBe('string');
+    expect(typeof uiClasses.marketingCardStatic).toBe('string');
   });
 });

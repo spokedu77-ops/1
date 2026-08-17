@@ -6,13 +6,13 @@ import { trackCommercialEvent } from '../lib/commercial-events';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   homeBandSoftBlue,
-  homeFocusRing,
+  brandFocusRing,
   homePhotoGrade,
   marketingSectionDisplay,
   koreanText,
-  siteBtnPrimary,
-  siteBtnSecondary,
-  siteContainer,
+  marketingButtonPrimary,
+  marketingButtonSecondary,
+  marketingSectionInner,
 } from '../lib/ui-classes';
 import { MediaRenderer } from './visual';
 
@@ -39,7 +39,7 @@ function resolveLinkClass(link: LandingFinalCtaLink, index: number) {
     link.variant === 'primary' ||
     link.variant === 'on-dark-primary' ||
     (!link.variant && index === 0);
-  return isPrimary ? `${siteBtnPrimary} w-full` : `${siteBtnSecondary} w-full`;
+  return isPrimary ? `${marketingButtonPrimary} w-full` : `${marketingButtonSecondary} w-full`;
 }
 
 function inferCommercialRoute(href: string): 'private' | 'curriculum' | 'dispatch' | null {
@@ -67,7 +67,7 @@ export function LandingFinalCta({
       className={`relative w-full overflow-hidden ${homeBandSoftBlue} py-10 sm:py-12 lg:py-14`}
       aria-labelledby="landing-final-cta-title"
     >
-      <div className={siteContainer}>
+      <div className={marketingSectionInner}>
         <div className="relative overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white shadow-[0_18px_50px_rgba(15,33,70,0.07)]">
           <div className="h-1.5 w-full bg-[#0B1F46]" aria-hidden />
 
@@ -101,7 +101,7 @@ export function LandingFinalCta({
                     href={link.href}
                     data-track={inferTrackFromHref(link.href)}
                     data-track-label={link.trackLabel}
-                    className={`${resolveLinkClass(link, index)} ${homeFocusRing}`}
+                    className={`${resolveLinkClass(link, index)} ${brandFocusRing}`}
                     onClick={() => {
                       if (!route) return;
                       trackCommercialEvent({

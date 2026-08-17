@@ -1,4 +1,4 @@
-import { koreanLineBreak, siteBtnPrimary } from '../lib/ui-classes';
+import { koreanLineBreak, marketingButtonPrimary } from '../lib/ui-classes';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
@@ -71,7 +71,7 @@ export function LandingProcessOnePager({ data }: { data: LandingProcessOnePagerD
               </li>
             ))}
           </ul>
-          <a href={cta.href} className={`mt-4 w-full ${siteBtnPrimary} ${focusRing}`}>
+          <a href={cta.href} className={`mt-4 w-full ${marketingButtonPrimary} ${focusRing}`}>
             {cta.label}
           </a>
         </div>
