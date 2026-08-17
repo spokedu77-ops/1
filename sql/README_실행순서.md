@@ -1,5 +1,8 @@
 # IIW Warmup SQL 실행 가이드
 
+> **2026-08 정리:** 신규 Supabase 프로젝트는 [`supabase/migrations/`](../supabase/migrations/)만 적용하세요.  
+> 아래 `01_`~`77_` 번호 스크립트는 [`archive/legacy/`](archive/legacy/)로 이동했습니다. 이 문서는 **과거 수동 부트스트랩** 참고용입니다.
+
 ## 📋 실행 순서 (필수)
 
 Supabase SQL Editor에서 아래 순서대로 실행하세요.

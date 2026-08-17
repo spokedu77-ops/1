@@ -1,5 +1,8 @@
 # 일정(schedules) 테이블 마이그레이션 가이드
 
+> **2026-08 정리:** 신규 환경은 [`supabase/migrations/`](../supabase/migrations/)를 사용하세요.  
+> 아래 SQL 파일은 [`archive/legacy/`](archive/legacy/)에 있습니다 (예: `archive/legacy/29_schedules_schema.sql`).
+
 관리자 대시보드·일정 페이지에서 사용하는 `schedules` 테이블을 Supabase에 생성하는 방법입니다.
 
 ## 실행 순서 (필수)
@@ -20,7 +23,7 @@ Supabase Dashboard → **SQL Editor**에서 아래 순서대로 실행하세요.
 1. Supabase Dashboard 로그인
 2. 왼쪽 메뉴 **SQL Editor** 클릭
 3. **New query** 선택
-4. `sql/29_schedules_schema.sql` 파일 내용 전체 복사 후 붙여넣기
+4. `sql/archive/legacy/29_schedules_schema.sql` 파일 내용 전체 복사 후 붙여넣기
 5. **Run** (또는 Ctrl+Enter) 실행
 6. 결과에 `Schedules schema (29) created successfully.` 가 나오면 성공
 
@@ -33,7 +36,7 @@ Supabase Dashboard → **SQL Editor**에서 아래 순서대로 실행하세요.
 **실행 방법**
 
 1. SQL Editor에서 **New query** 선택
-2. `sql/30_schedules_rls.sql` 파일 내용 전체 복사 후 붙여넣기
+2. `sql/archive/legacy/30_schedules_rls.sql` 파일 내용 전체 복사 후 붙여넣기
 3. **Run** 실행
 4. 결과에 `Schedules RLS (30) applied.` 가 나오면 성공
 
@@ -58,11 +61,11 @@ Supabase Dashboard → **SQL Editor**에서 아래 순서대로 실행하세요.
 **실행 방법**
 
 1. SQL Editor에서 **New query** 선택
-2. `sql/37_schedules_status_and_center.sql` 파일 내용 전체 복사 후 붙여넣기
+2. `sql/archive/legacy/37_schedules_status_and_center.sql` 파일 내용 전체 복사 후 붙여넣기
 3. **Run** 실행
 4. 결과에 `Schedules status + center_id (37) applied.` 가 나오면 성공
 
-**사전 요구**: `centers` 테이블이 있어야 합니다. 없으면 먼저 `27_centers_schema.sql` 실행.
+**사전 요구**: `centers` 테이블이 있어야 합니다. 없으면 먼저 `sql/archive/legacy/27_centers_schema.sql` 실행.
 
 ### 5단계: 특정 일자만 (단회/2회기) 지원
 
