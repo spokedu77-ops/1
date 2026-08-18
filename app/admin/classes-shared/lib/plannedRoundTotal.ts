@@ -39,6 +39,19 @@ export function resolvePlannedTotalAfterDeleting(
   return Math.max(1, resolvePlannedTotal(rows) - count);
 }
 
+/** 회차 확장 후 계약 분모. 취소 칸은 이미 소진된 회차이므로 활성 개수로 바꾸지 않는다. */
+export function resolvePlannedTotalAfterExtend(
+  rows: {
+    status?: string | null;
+    round_total?: number | null;
+    round_index?: number | null;
+  }[],
+  addCount: number
+): number {
+  const add = Math.max(0, Math.floor(addCount));
+  return resolvePlannedTotal(rows) + add;
+}
+
 /** 세션 행을 group_id별로 모아 각 그룹에 `resolvePlannedTotal` 적용 (캘린더 훅·관리자 대시보드 공통). */
 export function buildGroupPlannedTotals(
   rows: {

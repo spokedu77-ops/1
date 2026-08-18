@@ -12,7 +12,7 @@ import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/li
 import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-shared/lib/plannedRoundTotal";
 import { formatRoundDisplay } from "@/app/admin/classes-shared/lib/roundFields";
-import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
+import { reindexGroupRounds, occupyingRoundCount } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
 import { findCrossGroupSlotConflicts } from "@/app/admin/classes-shared/lib/sessionRoundGuards";
 import {
   isSessionScheduleDraftDirty,
@@ -1027,40 +1027,19 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       // 2) 메인 group_id 기준으로 회차 번호/총회차 재계산
       const { data: mainRows, error: mainSelErr } = await supabase
         .from("sessions")
-        .select("id, start_at, end_at, status, round_total")
+        .select("id, start_at, status, round_total, round_index")
         .eq("group_id", mainGid);
       if (mainSelErr) throw mainSelErr;
 
       const allMain = (mainRows || []) as Array<{
         id: string;
         start_at: string;
-        end_at: string;
         status: string | null;
         round_total: number | null;
+        round_index: number | null;
       }>;
 
-      const baseAll = allMain.filter(
-        (r) => r.status !== "postponed" && r.status !== "cancelled" && r.status !== "deleted"
-      );
-      const sortedBase = [...baseAll].sort(
-        (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-      );
-      const total = sortedBase.length;
-      if (total >= 1) {
-        await Promise.all(
-          sortedBase.map((row, i) =>
-            supabase
-              .from("sessions")
-              .update({
-                round_index: i + 1,
-                round_total: total,
-                sequence_number: i + 1,
-                round_display: `${i + 1}/${total}`,
-              })
-              .eq("id", row.id)
-          )
-        );
-      }
+      await reindexGroupRounds(supabase, allMain, { total: occupyingRoundCount(allMain) });
 
       toast.success("회차를 합쳤습니다.");
 

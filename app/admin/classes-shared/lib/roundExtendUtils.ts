@@ -1,6 +1,8 @@
 import { toast } from 'sonner';
 
 import { omitSessionIdentityForInsertClone } from './sessionInsertClone';
+import { resolvePlannedTotal, resolvePlannedTotalAfterExtend } from './plannedRoundTotal';
+import { formatRoundDisplay } from './roundFields';
 import { reindexGroupRounds } from './reindexGroupRounds';
 
 function formatErrorMessage(err: unknown): string {
@@ -75,7 +77,8 @@ export async function extendClass(
       if (diffDays > 0) dayInterval = diffDays;
     }
 
-    const newTotal = activeSessions.length + addCount;
+    const newTotal = resolvePlannedTotalAfterExtend(sessions, addCount);
+    const planned = resolvePlannedTotal(sessions);
     const baseDuration =
       (new Date(last.end_at).getTime() - new Date(last.start_at).getTime()) / (1000 * 60);
 
@@ -113,8 +116,8 @@ export async function extendClass(
       const end = new Date(start);
       end.setMinutes(end.getMinutes() + baseDuration);
 
-      const roundIndex = (last.round_index ?? activeSessions.length) + i;
-      const roundDisplay = `${roundIndex}/${newTotal}`;
+      const roundIndex = planned + i;
+      const roundDisplay = formatRoundDisplay(roundIndex, newTotal);
 
       newSessions.push({
         ...insertBaseSafe,
