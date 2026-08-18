@@ -33,7 +33,7 @@ describe('public marketing typography contract', () => {
   it('owns the two font families in the marketing foundation', () => {
     expect(globals).toMatch(/@font-face\s*{[^}]*font-family:\s*"Cafe24SsurroundAir"[^}]*Cafe24SsurroundAir\.woff/);
     expect(existsSync(join(root, 'public/fonts/Cafe24SsurroundAir.woff'))).toBe(true);
-    expect(globals).toMatch(/--spokedu-marketing-font-display:\s*"Cafe24SsurroundAir"/);
+    expect(globals).toMatch(/--spokedu-marketing-font-display:\s*Pretendard/);
     expect(globals).toMatch(/--spokedu-marketing-font-body:\s*Pretendard,\s*"Noto Sans KR",\s*"Apple SD Gothic Neo",\s*"Malgun Gothic",\s*system-ui/);
     expect(globals).toMatch(/--spokedu-marketing-font-metric:\s*var\(--spokedu-marketing-font-display\)/);
     expect(globals).toMatch(/\.spokedu-marketing\s*{[^}]*font-family:\s*var\(--spokedu-marketing-font-body\)/);
@@ -51,17 +51,24 @@ describe('public marketing typography contract', () => {
     expect(home).toMatch(/@media \(max-width:\s*480px\)\s*{[\s\S]*?\.sectionTitle\s*{[^}]*font-size:\s*34px/);
   });
 
-  it.each([
-    'marketingHeroDisplay',
-    'marketingSectionDisplay',
-    'marketingCompactDisplay',
-    'marketingMetricDisplay',
-  ])('%s uses real Cafe24 weight without synthesis', (name) => {
+  it('keeps the V17 subscription headings on the approved bold rendering', () => {
+    const v17 = read('app/spokedu/components/subscription-v17/subscription-v17.module.css');
+    expect(v17).toMatch(/--font-display:\s*Pretendard/);
+    expect(v17).toMatch(/\.root :global\(\.hero h1\)\s*{[^}]*font-weight:\s*700/);
+    expect(v17).toMatch(/\.root :global\(\.section-title\)\s*{[^}]*font-weight:\s*700/);
+  });
+
+  it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s matches the rendered V17 heading fallback', (name) => {
+    const value = utility(utilities, name);
+    expect(value).toContain('[font-family:var(--spokedu-marketing-font-display)]');
+    expect(value).toContain('font-bold');
+    expect(value).not.toContain('[font-synthesis:none]');
+  });
+
+  it.each(['marketingCompactDisplay', 'marketingMetricDisplay'])('%s keeps its explicit lightweight display role', (name) => {
     const value = utility(utilities, name);
     expect(value).toContain('[font-family:var(--spokedu-marketing-font-display)]');
     expect(value).toContain('font-normal');
-    expect(value).toContain('[font-synthesis:none]');
-    expect(value).not.toMatch(/font-(?:bold|black|extrabold)|font-synthesis:weight/);
   });
 
   it.each(['marketingBody', 'marketingSectionLead', 'marketingCaption'])('%s remains on the body family', (name) => {
