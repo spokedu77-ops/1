@@ -210,10 +210,10 @@ export const landingHeroCinematicCopy = homeHeroFullBleedCopy;
  * - Display roles use Cafe24 at its real 400 weight with synthesis disabled.
  */
 export const marketingHeroDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.04em] [font-synthesis:none] ${koreanText} text-[2.75rem] leading-[1.08] min-[390px]:text-[3rem] sm:text-[3.75rem] md:text-[4.25rem] lg:text-[4.5rem] xl:text-[4.75rem]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.04em] [font-synthesis:none] ${koreanText} text-[clamp(44px,6vw,76px)] leading-[1.08] max-[480px]:text-[38px]`;
 
 export const marketingSectionDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.03em] [font-synthesis:none] ${koreanText} text-[2.125rem] leading-[1.16] sm:text-[2.625rem] md:text-[3rem] lg:text-[3.5rem]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.03em] [font-synthesis:none] ${koreanText} text-[clamp(34px,5vw,58px)] leading-[1.16]`;
 
 export const marketingCompactDisplay =
   `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.03em] [font-synthesis:none] ${koreanText} text-[1.75rem] leading-[1.16] sm:text-[2.1rem] lg:text-[2.75rem]`;

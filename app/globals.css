@@ -452,8 +452,8 @@ body {
 
 /** Public Marketing 전용 foundation. 제품 UI의 --spm-*와 분리한다. */
 .spokedu-marketing {
-  --spokedu-marketing-font-body: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
-  --spokedu-marketing-font-display: "Cafe24SsurroundAir", "Pretendard Variable", Pretendard, "Noto Sans KR", system-ui, sans-serif;
+  --spokedu-marketing-font-body: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --spokedu-marketing-font-display: "Cafe24SsurroundAir", Pretendard, "Noto Sans KR", sans-serif;
   --spokedu-marketing-font-metric: var(--spokedu-marketing-font-display);
   --spokedu-marketing-color-navy-deep: #081126;
   --spokedu-marketing-color-navy: #0b1f46;

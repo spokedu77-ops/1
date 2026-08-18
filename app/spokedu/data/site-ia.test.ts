@@ -126,8 +126,8 @@ describe('spokedu site IA', () => {
       'paths',
       'spomove',
       'subscription',
-      'fieldProof',
-      'finalAction',
+      'cases',
+      'final-action',
     ]);
     expect(homePage.hero.lines.join(' ')).toMatch(/아동·청소년|체육교육|콘텐츠|시스템/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
@@ -188,6 +188,22 @@ describe('spokedu site IA', () => {
     ]);
     expect(homePage.cases.cards).toHaveLength(3);
     expect(homePage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
+  });
+
+  it('keeps Home media roles distinct and backed by approved assets', () => {
+    const educationVisual = homePage.pillars.items.find((item) => item.id === 'education')?.visual;
+    const spomoveVisual = homePage.pillars.items.find((item) => item.id === 'spomove')?.visual;
+    const subscriptionVisual = homePage.pillars.items.find((item) => item.id === 'curriculum')?.visual;
+    const spomoveDetail = HOME_MEDIA[homePage.spomove.mediaKey];
+
+    expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.hero);
+    expect(educationVisual?.src).toBe(SPOKEDU_IMAGES.dispatch.kiwoomCenter.src);
+    expect(spomoveVisual?.src).toBe(SPOKEDU_IMAGES.programs.spomove.src);
+    expect(canUseSpokeduImageOnPage(SPOKEDU_IMAGES.programs.spomove, 'home')).toBe(true);
+    expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.home.heroSpomoveClass);
+    expect(spomoveVisual?.src).not.toBe(spomoveDetail.asset?.src);
+    expect(subscriptionVisual?.src).toBe('/images/spokedu/subscription/product-library.png');
+    expect(subscriptionVisual?.src).not.toBe(curriculumPage.subscription.tools.visual.src);
   });
 
   it('keeps home SEO aligned with the homepage positioning', () => {

@@ -4,6 +4,7 @@ import {
   type FieldRecordSlug,
 } from './field-records-catalog';
 import type { HomeMediaKey } from './home-media';
+import { SPOKEDU_IMAGES } from './images';
 import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
 export type HomeCaseCard = {
@@ -47,12 +48,6 @@ export type HomeSpomoveProof = {
 export type HomeSpomoveUseCase = {
   title: string;
   body: string;
-};
-
-export type HomeHeroQuickLink = {
-  label: string;
-  href: string;
-  trackLabel: string;
 };
 
 export type HomeTrustStat = {
@@ -125,7 +120,7 @@ function buildAboutTrustStripItems(): readonly HomeTrustStat[] {
 
 export const homePage = {
   /** 홈 최상위 섹션 조립 순서 — 7개 이하 */
-  sectionOrder: ['hero', 'pillars', 'paths', 'spomove', 'subscription', 'fieldProof', 'finalAction'] as const,
+  sectionOrder: ['hero', 'pillars', 'paths', 'spomove', 'subscription', 'cases', 'final-action'] as const,
 
   hero: {
     id: 'hero',
@@ -152,24 +147,6 @@ export const homePage = {
       href: `${SPOKEDU_BASE_PATH}/records`,
       trackLabel: 'cta-home-hero-records',
     },
-    /** @deprecated 히어로 퀵링크 — PR2에서 섹션2로 이관 */
-    quickLinks: [
-      {
-        label: '기관 담당자',
-        href: `${SPOKEDU_BASE_PATH}/dispatch`,
-        trackLabel: 'cta-home-hero-quick-dispatch',
-      },
-      {
-        label: '학부모',
-        href: `${SPOKEDU_BASE_PATH}/private`,
-        trackLabel: 'cta-home-hero-quick-private',
-      },
-      {
-        label: '지도자·파트너',
-        href: `${SPOKEDU_PATHS.subscription}`,
-        trackLabel: 'cta-home-hero-quick-curriculum',
-      },
-    ] as const satisfies readonly HomeHeroQuickLink[],
     mediaCaption: {
       label: '대표 현장',
       title: '기관·아동과 함께하는 체육수업 현장',
@@ -177,17 +154,6 @@ export const homePage = {
   },
 
   services: {
-    education: {
-      title: '체육교육',
-      summary: 'SPOKEDU가 직접 운영하는 현장 체육교육입니다.',
-      ctaLabel: '체육교육 알아보기',
-      href: `${SPOKEDU_BASE_PATH}/education`,
-      trackLabel: 'cta-home-services-education',
-      directLinks: [
-        { label: '기관 수업', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'cta-home-services-dispatch' },
-        { label: '개인·소그룹', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'cta-home-services-private' },
-      ],
-    },
     subscription: {
       title: '구독시스템',
       summary: '지도자가 직접 수업을 운영할 수 있도록 만든 콘텐츠 시스템입니다.',
@@ -195,12 +161,6 @@ export const homePage = {
       href: `${SPOKEDU_PATHS.subscription}`,
       trackLabel: 'cta-home-services-subscription',
     },
-  },
-
-  whySpokedu: {
-    title: '직접 수업하며 필요한 것을 만듭니다.',
-    body: 'SPOKEDU는 실제 체육수업에서 움직임을 관찰하고, 수업에 필요한 콘텐츠와 시스템을 직접 만듭니다.',
-    cta: { label: '운영 사례 보기', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'cta-home-why-records' },
   },
 
   education: {
@@ -311,8 +271,8 @@ export const homePage = {
         trackLabel: 'cta-home-pillar-spomove',
         relationNote: '체육교육·구독 공통 콘텐츠',
         visual: {
-          src: '/images/spokedu/home/home-hero-spomove-class.JPG',
-          alt: '화면 신호를 보며 움직이는 SPOMOVE 수업 현장',
+          src: SPOKEDU_IMAGES.programs.spomove.src,
+          alt: SPOKEDU_IMAGES.programs.spomove.alt,
           fit: 'cover',
         },
       },
@@ -422,7 +382,7 @@ export const homePage = {
   cases: {
     id: 'cases',
     title: '실제 운영 사례',
-    lead: '공개된 현장 기록 중 SPOMOVE 운영이 확인되는 대표 사례입니다.',
+    lead: '기관 정규수업, 특수체육, SPOMOVE 등 공개된 현장 기록에서 대표 사례를 모았습니다.',
     recordsCta: {
       label: '사례 전체 보기',
       href: `${SPOKEDU_BASE_PATH}/records`,

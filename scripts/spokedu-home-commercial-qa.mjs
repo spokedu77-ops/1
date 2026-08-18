@@ -16,14 +16,52 @@ const smoke = [];
 
 try {
   for (const width of widths) {
+    await page.goto('about:blank');
     await page.setViewportSize({ width, height: 900 });
     const response = await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(700);
-    const audit = await page.evaluate((sectionIds) => {
+    await page.screenshot({ path: path.join(outputDirectory, `home-${width}-viewport.jpg`), type: 'jpeg', quality: 82 });
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.documentElement.scrollHeight; y += Math.max(500, window.innerHeight * 0.75)) {
+        window.scrollTo(0, y);
+        await new Promise((resolve) => setTimeout(resolve, 120));
+      }
+      window.scrollTo(0, 0);
+    });
+    await page.evaluate(async () => {
+      const images = [...document.querySelectorAll('main img')];
+      for (const image of images) image.loading = 'eager';
+      await Promise.all(images.map((image) => {
+        if (image.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener('error', resolve, { once: true });
+          window.setTimeout(resolve, 5_000);
+        });
+      }));
+      window.scrollTo(0, 0);
+    });
+    await page.screenshot({ path: path.join(outputDirectory, `home-${width}-full.jpg`), type: 'jpeg', quality: 68, fullPage: true });
+    const audit = await page.evaluate(async (sectionIds) => {
       const heroPrimary = document.querySelector('[data-track-label="cta-home-education-hero"]');
       const heroSecondary = document.querySelector('[data-track-label="cta-home-spomove-hero"]');
       const sections = sectionIds.map((id) => document.getElementById(id));
+      const images = [...document.querySelectorAll('main img')];
+      const imageSources = images.map((image) => image.currentSrc || image.getAttribute('src') || '');
+      const duplicateImageSources = [...new Set(imageSources.filter((src, index) => src && imageSources.indexOf(src) !== index))];
+      const unresolvedImages = images
+        .filter((image) => !image.complete || image.naturalWidth === 0)
+        .map((image) => image.currentSrc || image.getAttribute('src') || '')
+        .filter(Boolean);
+      const brokenImages = (await Promise.all(unresolvedImages.map(async (src) => {
+        try {
+          const response = await fetch(src, { cache: 'no-store' });
+          return response.ok ? null : src;
+        } catch {
+          return src;
+        }
+      }))).filter(Boolean);
       return {
         overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
         h1: document.querySelector('h1')?.textContent?.trim().replace(/\s+/g, ' ') ?? '',
@@ -32,6 +70,8 @@ try {
         secondaryHref: heroSecondary?.getAttribute('href') ?? null,
         primaryRadius: heroPrimary ? getComputedStyle(heroPrimary).borderRadius : null,
         pathLinks: [...document.querySelectorAll('#paths a[data-track-label]')].map((link) => link.getAttribute('href')),
+        brokenImages,
+        duplicateImageSources,
       };
     }, expectedSections);
     const pass = Boolean(
@@ -42,23 +82,16 @@ try {
       audit.primaryHref === '/education' &&
       audit.secondaryHref === '/spomove' &&
       audit.primaryRadius === '14px' &&
+      audit.brokenImages.length === 0 &&
+      audit.duplicateImageSources.length === 0 &&
       ['/dispatch', '/private', '/subscription', '/contact'].every((href) => audit.pathLinks.includes(href))
     );
-    await page.screenshot({ path: path.join(outputDirectory, `home-${width}-viewport.jpg`), type: 'jpeg', quality: 82 });
-    await page.evaluate(async () => {
-      for (let y = 0; y < document.documentElement.scrollHeight; y += Math.max(500, window.innerHeight * 0.75)) {
-        window.scrollTo(0, y);
-        await new Promise((resolve) => setTimeout(resolve, 120));
-      }
-      window.scrollTo(0, 0);
-    });
-    await page.waitForTimeout(250);
-    await page.screenshot({ path: path.join(outputDirectory, `home-${width}-full.jpg`), type: 'jpeg', quality: 68, fullPage: true });
     home.push({ width, status: response?.status() ?? null, pass, ...audit });
   }
 
   for (const route of smokeRoutes) {
     for (const width of [390, 1440]) {
+      await page.goto('about:blank');
       await page.setViewportSize({ width, height: 900 });
       const response = await page.goto(`${baseUrl}${route}`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
       const overflowX = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);

@@ -14,7 +14,6 @@ import {
   marketingButtonSecondary,
   marketingCardStatic,
   marketingEyebrow,
-  marketingMetricDisplay,
   marketingSectionDisplay,
   marketingSectionInner,
   marketingSectionPad,
@@ -80,15 +79,6 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
             </motion.li>
           ))}
         </ul>
-
-        <dl className="mt-10 grid gap-px overflow-hidden rounded-[22px] border border-[#DCE3EE] bg-[#DCE3EE] md:grid-cols-3">
-          {homePage.evidenceStrip.items.slice(0, 3).map((item) => (
-            <div key={item.value} className="bg-white p-5 sm:p-6">
-              <dt className={`${marketingMetricDisplay} !text-2xl !leading-tight text-[#0B1F46]`}>{item.value}</dt>
-              <dd className="mt-2 text-sm leading-relaxed text-[#6D7B90]">{item.label}</dd>
-            </div>
-          ))}
-        </dl>
       </div>
     </section>
   );
