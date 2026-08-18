@@ -21,14 +21,15 @@ try {
       }
     });
 
-    const response = await page.goto(`${baseUrl}/`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
+    const response = await page.goto(`${baseUrl}/subscription`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
     await page.evaluate(() => document.fonts.ready);
+    await page.screenshot({ path: path.join(outputDirectory, `current-subscription-${width}.png`) });
 
     const audit = await page.evaluate(async ({ testText }) => {
-      const h1 = document.querySelector('#home-hero-heading');
-      if (!h1) throw new Error('Home H1 not found');
+      const h1 = document.querySelector('main h1');
+      if (!h1) throw new Error('Subscription H1 not found');
       const style = getComputedStyle(h1);
-      const h2 = document.querySelector('#home-pillars-heading');
+      const h2 = document.querySelector('main h2');
       const h2Style = h2 ? getComputedStyle(h2) : null;
       const mainStyle = getComputedStyle(document.querySelector('main') ?? document.body);
       const fontAsset = await fetch('/fonts/Cafe24SsurroundAir.woff', { method: 'HEAD', cache: 'no-store' });
