@@ -5,9 +5,6 @@ import {
   homeSectionScrollMt,
   marketingBandNavy,
   marketingButtonPrimaryOnDark,
-  marketingButtonSecondaryOnDark,
-  marketingButtonTextAction,
-  marketingEyebrowOnDark,
   marketingSectionDisplay,
   marketingSectionInner,
   marketingSectionPadCompact,
@@ -16,21 +13,25 @@ import { TrackedLink } from './tracked-link';
 import styles from './home-canonical.module.css';
 
 export function HomeFinalCta() {
-  const [education, spomove, subscription, contact] = homePage.finalCta.items;
+  const section = homePage.finalCta;
   return (
-    <section id="final-action" className={`${homeSectionScrollMt} ${marketingBandNavy} ${marketingSectionPadCompact} relative overflow-hidden`} aria-labelledby="home-final-action-heading">
-      <div className={`${marketingSectionInner} relative grid gap-9 lg:grid-cols-[minmax(0,0.9fr)_minmax(34rem,1.1fr)] lg:items-center lg:gap-14`}>
-        <div className="max-w-2xl">
-          <p className={marketingEyebrowOnDark}>NEXT PATH</p>
-          <h2 id="home-final-action-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} mt-4 text-white`}>필요한 경로에서<br />바로 시작하세요.</h2>
-          <p className="mt-5 text-base leading-relaxed text-[#BDC9DF] sm:text-lg">직접 운영하는 체육교육부터 SPOMOVE와 구독시스템까지 이어서 살펴볼 수 있습니다.</p>
-          <TrackedLink href={contact.href} trackLabel={contact.trackLabel} className={`${marketingButtonTextAction} mt-4 !text-[#AFC8FF]`}>{contact.label} →</TrackedLink>
+    <section id={section.id} className={`${homeSectionScrollMt} ${marketingBandNavy} ${marketingSectionPadCompact}`} aria-labelledby="home-final-action-heading">
+      <div className={`${marketingSectionInner} grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-16`}>
+        <div className="max-w-3xl">
+          <h2 id="home-final-action-heading" className={`${marketingSectionDisplay} ${styles.compactTitle} text-white`}>{section.title}</h2>
+          <p className="mt-4 max-w-2xl text-base leading-[1.75] text-[#CFDAEA] sm:text-[17px]">{section.lead}</p>
+          <nav className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[#AFC8FF]" aria-label="주요 서비스">
+            {section.nav.map((item, index) => (
+              <span key={item.trackLabel} className="inline-flex items-center gap-3">
+                {index > 0 ? <span aria-hidden>·</span> : null}
+                <TrackedLink href={item.href} trackLabel={item.trackLabel} className="font-semibold underline-offset-4 hover:text-white hover:underline">{item.label}</TrackedLink>
+              </span>
+            ))}
+          </nav>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[education, spomove, subscription].map((item, index) => (
-            <TrackedLink key={item.trackLabel} href={item.href} trackLabel={item.trackLabel} className={`${index === 0 ? marketingButtonPrimaryOnDark : marketingButtonSecondaryOnDark} min-h-14 text-center`}>{item.label}</TrackedLink>
-          ))}
-        </div>
+        <TrackedLink href={section.primaryCta.href} trackLabel={section.primaryCta.trackLabel} className={`${marketingButtonPrimaryOnDark} min-h-14 px-7 text-center`}>
+          {section.primaryCta.label}
+        </TrackedLink>
       </div>
     </section>
   );

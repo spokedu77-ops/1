@@ -32,7 +32,6 @@ export function MediaRenderer({
   strictPhoto = false,
   objectFit = 'cover',
 }: MediaRendererProps) {
-  void strictPhoto;
   const reducedMotion = useReducedMotion();
   const primarySrc = media.src;
   const [useImage, setUseImage] = useState(Boolean(primarySrc));
@@ -74,7 +73,7 @@ export function MediaRenderer({
       quality={priority ? 92 : 88}
       className={intensity === 'photo' ? fitClass : 'object-cover'}
       style={objectFit === 'cover' && media.objectPosition ? { objectPosition: media.objectPosition } : undefined}
-      onError={handleError}
+      onError={strictPhoto ? undefined : handleError}
     />
   );
 

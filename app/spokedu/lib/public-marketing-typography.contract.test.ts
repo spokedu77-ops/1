@@ -33,20 +33,21 @@ describe('public marketing typography contract', () => {
   it('owns the two font families in the marketing foundation', () => {
     expect(globals).toMatch(/@font-face\s*{[^}]*font-family:\s*"Cafe24SsurroundAir"[^}]*Cafe24SsurroundAir\.woff/);
     expect(existsSync(join(root, 'public/fonts/Cafe24SsurroundAir.woff'))).toBe(true);
-    expect(globals).toMatch(/--spokedu-marketing-font-display:\s*Pretendard/);
+    expect(globals).toMatch(/--spokedu-marketing-font-display:\s*"Cafe24SsurroundAir",\s*Pretendard/);
     expect(globals).toMatch(/--spokedu-marketing-font-body:\s*Pretendard,\s*"Noto Sans KR",\s*"Apple SD Gothic Neo",\s*"Malgun Gothic",\s*system-ui/);
     expect(globals).toMatch(/--spokedu-marketing-font-metric:\s*var\(--spokedu-marketing-font-display\)/);
     expect(globals).toMatch(/\.spokedu-marketing\s*{[^}]*font-family:\s*var\(--spokedu-marketing-font-body\)/);
   });
 
-  it('matches the V17 canonical display scales without Home drift', () => {
+  it('keeps the V17 hero scale and the approved Home major/compact hierarchy', () => {
     expect(utility(utilities, 'marketingHeroDisplay')).toContain('text-[clamp(44px,6vw,76px)]');
     expect(utility(utilities, 'marketingHeroDisplay')).toContain('max-[480px]:text-[38px]');
     expect(utility(utilities, 'marketingSectionDisplay')).toContain('text-[clamp(34px,5vw,58px)]');
 
     const home = read('app/spokedu/components/home/home-canonical.module.css');
     expect(home).toMatch(/\.heroTitle\s*{[^}]*font-size:\s*clamp\(44px,\s*6vw,\s*76px\)/);
-    expect(home).toMatch(/\.sectionTitle\s*{[^}]*font-size:\s*clamp\(34px,\s*5vw,\s*58px\)/);
+    expect(home).toMatch(/\.sectionTitle\s*{[^}]*font-size:\s*clamp\(36px,\s*4\.2vw,\s*52px\)/);
+    expect(home).toMatch(/\.compactTitle,[\s\S]*?\.bridgeTitle\s*{[^}]*font-size:\s*clamp\(32px,\s*3\.5vw,\s*44px\)/);
     expect(home).toMatch(/@media \(max-width:\s*480px\)\s*{[\s\S]*?\.heroTitle\s*{[^}]*font-size:\s*38px/);
     expect(home).toMatch(/@media \(max-width:\s*480px\)\s*{[\s\S]*?\.sectionTitle\s*{[^}]*font-size:\s*34px/);
   });
@@ -58,11 +59,11 @@ describe('public marketing typography contract', () => {
     expect(v17).toMatch(/\.root :global\(\.section-title\)\s*{[^}]*font-weight:\s*700/);
   });
 
-  it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s matches the rendered V17 heading fallback', (name) => {
+  it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s uses the approved Cafe24 400 display contract', (name) => {
     const value = utility(utilities, name);
     expect(value).toContain('[font-family:var(--spokedu-marketing-font-display)]');
-    expect(value).toContain('font-bold');
-    expect(value).not.toContain('[font-synthesis:none]');
+    expect(value).toContain('font-normal');
+    expect(value).toContain('[font-synthesis:none]');
   });
 
   it.each(['marketingCompactDisplay', 'marketingMetricDisplay'])('%s keeps its explicit lightweight display role', (name) => {

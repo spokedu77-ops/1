@@ -59,15 +59,18 @@ try {
 
       const displayOk = (value) =>
         value && value.family.includes('Cafe24SsurroundAir') && value.weight === '400' && value.synthesis === 'none';
+      const subscriptionV17DisplayOk = (value) =>
+        value && value.family.includes('Pretendard') && value.weight === '700';
+      const routeDisplayOk = route === '/subscription' ? subscriptionV17DisplayOk : displayOk;
       const bodyOk = (value) => !value || /Pretendard/.test(value.family);
       const controlOk = (value) => !value || (bodyOk(value) && value.radius === '14px');
       const pass = Boolean(
         response?.ok() &&
           !audit.overflowX &&
-          audit.fontLoaded &&
+          (route === '/subscription' || audit.fontLoaded) &&
           audit.fontAssetStatus === 200 &&
-          displayOk(audit.h1) &&
-          (!audit.h2 || displayOk(audit.h2)) &&
+          routeDisplayOk(audit.h1) &&
+          (!audit.h2 || routeDisplayOk(audit.h2)) &&
           bodyOk(audit.body) &&
           controlOk(audit.control),
       );

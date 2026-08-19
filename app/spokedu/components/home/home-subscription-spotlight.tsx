@@ -1,12 +1,10 @@
 'use client';
 
-import { curriculumPage } from '../../data/curriculum-page';
 import { homePage } from '../../data/home-page';
 import {
   homeSectionScrollMt,
   marketingBandWhite,
   marketingButtonPrimary,
-  marketingEyebrow,
   marketingSectionDisplay,
   marketingSectionInner,
   marketingSectionLead,
@@ -17,26 +15,23 @@ import { TrackedLink } from './tracked-link';
 import styles from './home-canonical.module.css';
 
 export function HomeSubscriptionSpotlight() {
-  const source = curriculumPage.subscription;
-  const action = homePage.services.subscription;
+  const section = homePage.subscription;
   return (
-    <section id="subscription" className={`${homeSectionScrollMt} ${marketingBandWhite} ${marketingSectionPad}`} aria-labelledby="home-subscription-heading">
-      <div className={`${marketingSectionInner} grid gap-10 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:items-center lg:gap-16`}>
-        <div>
-          <p className={marketingEyebrow}>SUBSCRIPTION SYSTEM</p>
-          <h2 id="home-subscription-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} mt-3 whitespace-pre-line`}>{source.how.title}</h2>
-          <p className={`${marketingSectionLead} mt-5`}>{source.hero.lead}</p>
-          <ol className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="구독시스템 운영 흐름">
-            {source.how.pillars.map((pillar, index) => (
-              <li key={pillar.title} className="border-t border-[#DCE3EE] pt-3">
-                <span className="text-xs font-bold text-[#245DFF]">0{index + 1}</span>
-                <strong className="mt-1 block text-sm text-[#14213A]">{pillar.title}</strong>
-              </li>
+    <section id={section.id} className={`${homeSectionScrollMt} ${marketingBandWhite} ${marketingSectionPad}`} aria-labelledby="home-subscription-heading">
+      <div className={`${marketingSectionInner} grid gap-10 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:items-center lg:gap-16`}>
+        <div className={`${styles.productFeature} lg:order-1`}>
+          <ProductVisualFrame src={section.visual.src} alt={section.visual.alt} emphasis="feature" aspectClassName="aspect-[16/10] min-h-[20rem]" />
+        </div>
+        <div className="lg:order-2">
+          <h2 id="home-subscription-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} whitespace-pre-line`}>{section.title}</h2>
+          <p className={`${marketingSectionLead} mt-5`}>{section.lead}</p>
+          <ol className={styles.subscriptionFlow} aria-label="구독시스템 이용 흐름">
+            {section.steps.map((step, index) => (
+              <li key={step}><span>0{index + 1}</span><strong>{step}</strong></li>
             ))}
           </ol>
-          <TrackedLink href={action.href} trackLabel={action.trackLabel} className={`${marketingButtonPrimary} mt-8`}>{action.ctaLabel}</TrackedLink>
+          <TrackedLink href={section.primaryCta.href} trackLabel={section.primaryCta.trackLabel} className={`${marketingButtonPrimary} mt-8`}>{section.primaryCta.label}</TrackedLink>
         </div>
-        <div className={styles.productFeature}><ProductVisualFrame {...source.tools.visual} emphasis="feature" aspectClassName="aspect-[16/9] min-h-[20rem]" /></div>
       </div>
     </section>
   );

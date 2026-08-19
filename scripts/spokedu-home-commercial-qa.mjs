@@ -5,8 +5,8 @@ import { chromium } from 'playwright';
 const baseUrl = process.argv[2] ?? 'http://localhost:3000';
 const outputDirectory = path.join(process.cwd(), '.qa-spokedu', 'home-commercial');
 const widths = [390, 768, 1024, 1440];
-const smokeRoutes = ['/education', '/spomove', '/subscription'];
-const expectedSections = ['hero', 'pillars', 'paths', 'spomove', 'subscription', 'cases', 'final-action'];
+const smokeRoutes = ['/private', '/dispatch', '/spomove', '/subscription'];
+const expectedSections = ['hero', 'class', 'bridge', 'spomove', 'subscription', 'cases', 'final-action'];
 
 await mkdir(outputDirectory, { recursive: true });
 const browser = await chromium.launch({ headless: true });
@@ -45,7 +45,7 @@ try {
     await page.screenshot({ path: path.join(outputDirectory, `home-${width}-full.jpg`), type: 'jpeg', quality: 68, fullPage: true });
     const audit = await page.evaluate(async (sectionIds) => {
       const heroPrimary = document.querySelector('[data-track-label="cta-home-education-hero"]');
-      const heroSecondary = document.querySelector('[data-track-label="cta-home-spomove-hero"]');
+      const heroSecondary = document.querySelector('[data-track-label="cta-home-hero-records"]');
       const sections = sectionIds.map((id) => document.getElementById(id));
       const images = [...document.querySelectorAll('main img')];
       const imageSources = images.map((image) => image.currentSrc || image.getAttribute('src') || '');
@@ -69,7 +69,9 @@ try {
         primaryHref: heroPrimary?.getAttribute('href') ?? null,
         secondaryHref: heroSecondary?.getAttribute('href') ?? null,
         primaryRadius: heroPrimary ? getComputedStyle(heroPrimary).borderRadius : null,
-        pathLinks: [...document.querySelectorAll('#paths a[data-track-label]')].map((link) => link.getAttribute('href')),
+        classLinks: [...document.querySelectorAll('#class a[data-track-label]')].map((link) => link.getAttribute('href')),
+        bridgeText: document.querySelector('#bridge')?.textContent?.trim().replace(/\s+/g, ' ') ?? '',
+        finalPrimaryHref: document.querySelector('#final-action [data-track-label="cta-home-final-contact"]')?.getAttribute('href') ?? null,
         brokenImages,
         duplicateImageSources,
       };
@@ -77,14 +79,16 @@ try {
     const pass = Boolean(
       response?.ok() &&
       !audit.overflowX &&
-      /아동·청소년 체육교육/.test(audit.h1) &&
+      /아동·청소년 체육수업/.test(audit.h1) &&
       audit.sectionOrder.join('|') === expectedSections.join('|') &&
       audit.primaryHref === '/education' &&
-      audit.secondaryHref === '/spomove' &&
+      audit.secondaryHref === '/records' &&
       audit.primaryRadius === '14px' &&
       audit.brokenImages.length === 0 &&
       audit.duplicateImageSources.length === 0 &&
-      ['/dispatch', '/private', '/subscription', '/contact'].every((href) => audit.pathLinks.includes(href))
+      ['/dispatch', '/private', '/education'].every((href) => audit.classLinks.includes(href)) &&
+      /FIELD.*CONTENT.*SYSTEM/.test(audit.bridgeText) &&
+      audit.finalPrimaryHref === '/contact'
     );
     home.push({ width, status: response?.status() ?? null, pass, ...audit });
   }

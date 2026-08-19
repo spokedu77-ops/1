@@ -4,7 +4,6 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { HOME_MEDIA } from '../../data/home-media';
 import { homePage } from '../../data/home-page';
 import {
-  brandFocusRing,
   homeHeroFullBleed,
   homeHeroFullBleedCopy,
   homeHeroFullBleedLead,
@@ -21,7 +20,7 @@ import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
 import styles from './home-canonical.module.css';
 
-/** 히어로: 브랜드 정의 · CTA 2개 · 사례 텍스트 링크 */
+/** 히어로: SPOKEDU를 직접 수업하는 브랜드로 정의 */
 export function HomeHero() {
   const media = HOME_MEDIA[homePage.hero.mediaKey];
   const [line1, line2] = homePage.hero.lines;
@@ -36,7 +35,7 @@ export function HomeHero() {
       <div className="absolute inset-0">
         <MediaPanel
           media={media}
-          className={`absolute inset-0 h-full w-full scale-[1.03] border-0 rounded-none ${homePhotoGrade}`}
+          className={`absolute inset-0 h-full w-full scale-[1.03] border-0 rounded-none lg:translate-x-[18%] lg:scale-[1.28] ${homePhotoGrade}`}
           sizes="full"
           photoPriority
           priority
@@ -59,7 +58,7 @@ export function HomeHero() {
 
             <h1 id="home-hero-heading" className={`${marketingHeroDisplay} ${styles.heroTitle} mt-4 text-white sm:mt-5`}>
               <span className="block">{line1}</span>
-              <span className="mt-1.5 block text-[#AFC8FF]">{line2}</span>
+              <span className="mt-1.5 block">{line2}</span>
             </h1>
 
             <p className={`${homeHeroFullBleedLead} mt-6 max-w-[39rem] sm:text-lg sm:leading-[1.75]`}>{homePage.hero.support}</p>
@@ -80,14 +79,6 @@ export function HomeHero() {
                 {homePage.hero.secondaryCta.label}
               </TrackedLink>
             </div>
-
-            <TrackedLink
-              href={homePage.hero.recordsLink.href}
-              trackLabel={homePage.hero.recordsLink.trackLabel}
-              className={`mt-4 inline-flex w-fit text-[14px] font-semibold text-[#C5D8FF] underline-offset-4 hover:text-white hover:underline ${brandFocusRing} ${koreanText}`}
-            >
-              {homePage.hero.recordsLink.label}
-            </TrackedLink>
           </motion.div>
         </div>
       </div>

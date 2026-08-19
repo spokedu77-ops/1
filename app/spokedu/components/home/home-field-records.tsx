@@ -12,8 +12,6 @@ import {
   koreanText,
   marketingBandSoft,
   marketingButtonSecondary,
-  marketingCardStatic,
-  marketingEyebrow,
   marketingSectionDisplay,
   marketingSectionInner,
   marketingSectionPad,
@@ -48,8 +46,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
           transition={{ duration: 0.45 }}
         >
           <div className="min-w-0 flex-1">
-            <p className={marketingEyebrow}>FIELD PROOF</p>
-            <h2 id="home-records-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} mt-3`}>{homePage.cases.title}</h2>
+            <h2 id="home-records-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} whitespace-pre-line`}>{homePage.cases.title}</h2>
             <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.cases.lead}
             </p>
@@ -65,7 +62,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
           </div>
         </motion.div>
 
-        <ul className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
+        <ul className={`${styles.caseEditorial} mt-10`}>
           {caseCards.map((card, index) => (
             <motion.li
               key={card.slug}
@@ -75,7 +72,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.45, delay: Math.min(index, 3) * 0.05 }}
             >
-              <CaseCard card={card} priority={index < 2} />
+              <CaseCard card={card} featured={index === 0} priority={index === 0} />
             </motion.li>
           ))}
         </ul>
@@ -92,10 +89,10 @@ export function mergeHomeCaseCards(resolved: HomeFieldRecordCardWithThumbnail[])
   });
 }
 
-function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
+function CaseCard({ card, featured, priority }: { card: CaseCardWithThumb; featured?: boolean; priority?: boolean }) {
   return (
     <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block h-full ${brandFocusRing}`}>
-      <article className={`${marketingCardStatic} ${styles.caseCard} grid h-full grid-rows-[13rem_1fr] overflow-hidden sm:grid-rows-[15rem_1fr]`}>
+      <article className={`${styles.caseCard} ${featured ? styles.caseFeatured : styles.caseCompact} grid h-full overflow-hidden border border-[#DCE3EE] bg-white`}>
         <div className="relative min-h-0 overflow-hidden">
           <CaseMedia card={card} priority={priority} />
           <div
@@ -103,7 +100,7 @@ function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: bool
             aria-hidden
           />
         </div>
-        <div className="grid grid-rows-[auto_auto_auto_1fr_auto] gap-0 p-5 sm:p-6">
+        <div className="grid content-start p-5 sm:p-6">
           <p className={`${homeCaption} font-semibold text-[#245DFF]`}>{card.programType}</p>
           <h3 className={`mt-2 line-clamp-1 text-xl font-extrabold leading-snug text-[#0B1F46] sm:text-[1.375rem] ${koreanText}`}>
             {card.programName}

@@ -61,7 +61,7 @@ export const HOME_MEDIA = {
     fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
     tone: 'sky',
     /** 지도자·아이 움직임이 카피 영역과 겹치지 않게 */
-    objectPosition: '50% 35%',
+    objectPosition: '50% 65%',
   }),
   homeHeroMovement: fromPhoto(SPOKEDU_IMAGES.home.heroMovement, {
     id: 'home-hero-movement',

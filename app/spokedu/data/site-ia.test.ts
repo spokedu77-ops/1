@@ -122,60 +122,39 @@ describe('spokedu site IA', () => {
     expect(homePage.sectionOrder).toHaveLength(7);
     expect([...homePage.sectionOrder]).toEqual([
       'hero',
-      'pillars',
-      'paths',
+      'class',
+      'bridge',
       'spomove',
       'subscription',
       'cases',
       'final-action',
     ]);
-    expect(homePage.hero.lines.join(' ')).toMatch(/아동·청소년|체육교육|콘텐츠|시스템/);
+    expect(homePage.hero.lines.join(' ')).toMatch(/아동·청소년|체육수업|직접|운영/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
     expect(homePage.hero.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/education`);
-    expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
-    expect(homePage.hero.recordsLink.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
-    expect(homePage.audienceGate.title).toMatch(/찾고/);
-    expect(homePage.audienceGate.items.map((item) => item.id)).toEqual([
-      'dispatch',
+    expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
+    expect(homePage.class.items.map((item) => item.id)).toEqual([
+      'institution',
       'private',
-      'curriculum',
-      'partner',
+      'event',
     ]);
-    expect(homePage.audienceGate.items.map((item) => item.href)).toEqual([
+    expect(homePage.class.items.map((item) => item.href)).toEqual([
       `${SPOKEDU_BASE_PATH}/dispatch`,
       `${SPOKEDU_BASE_PATH}/private`,
-      `${SPOKEDU_PATHS.subscription}`,
-      `${SPOKEDU_BASE_PATH}/contact`,
-    ]);
-    expect(homePage.audienceGate.items.map((item) => item.id)).not.toContain('spomove');
-    expect(homePage.pillars.items.map((item) => item.id)).toEqual(['education', 'spomove', 'curriculum']);
-    expect(homePage.pillars.items.find((item) => item.id === 'education')?.href).toBe(
       `${SPOKEDU_BASE_PATH}/education`,
-    );
-    expect(homePage.pillars.items.find((item) => item.id === 'spomove')?.href).toBe(
-      `${SPOKEDU_PATHS.spomove}`,
-    );
-    expect(homePage.pillars.items.find((item) => item.id === 'spomove')?.relationNote).toMatch(/공통/);
-    expect(homePage.cycle.processLine).toContain('현장');
-    expect(homePage.cycle.processLine).toContain('시스템');
-    expect(homePage.cycle.steps).toHaveLength(4);
-    expect(homePage.spomove.flowSteps).toHaveLength(4);
+    ]);
+    expect(homePage.class.items[1].title).toBe('개인·소그룹 체육수업');
+    expect(homePage.bridge.steps.map((step) => step.label)).toEqual(['FIELD', 'CONTENT', 'SYSTEM']);
     expect(homePage.spomove.primaryCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
-    expect(homePage.spomove.featuredCase.slug).toBe('dongjak-spomove');
     expect(homePage.spomove.lead).not.toMatch(/향상|개선|반드시 성장/);
-    expect(homePage.evidenceStrip.items).toHaveLength(4);
-    expect(homePage.evidenceStrip.items.some((item) => /\d+건|\d+년\+|15,?015|3,?000/.test(item.value))).toBe(
-      false,
-    );
-    expect(homePage.finalCta.items).toHaveLength(4);
-    expect(homePage.finalCta.items.map((item) => item.href)).toEqual([
+    expect(homePage.subscription.steps).toEqual(['찾기', '준비', '진행', '기록']);
+    expect(homePage.finalCta.nav.map((item) => item.href)).toEqual([
       `${SPOKEDU_PATHS.education}`,
       `${SPOKEDU_PATHS.spomove}`,
       `${SPOKEDU_PATHS.subscription}`,
-      `${SPOKEDU_PATHS.contact}`,
     ]);
+    expect(homePage.finalCta.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
     expect(JSON.stringify(homePage.hero)).not.toMatch(/SPO-MAT|9,900|15,015/);
-    expect(JSON.stringify(homePage.pillars)).not.toMatch(/3대 사업|SPO-MAT/);
     expect(JSON.stringify(homePage.finalCta)).not.toMatch(/onboarding|스포키듀 마스터/);
   });
 
@@ -191,19 +170,19 @@ describe('spokedu site IA', () => {
   });
 
   it('keeps Home media roles distinct and backed by approved assets', () => {
-    const educationVisual = homePage.pillars.items.find((item) => item.id === 'education')?.visual;
-    const spomoveVisual = homePage.pillars.items.find((item) => item.id === 'spomove')?.visual;
-    const subscriptionVisual = homePage.pillars.items.find((item) => item.id === 'curriculum')?.visual;
+    const classMedia = homePage.class.items.map((item) => HOME_MEDIA[item.mediaKey]);
     const spomoveDetail = HOME_MEDIA[homePage.spomove.mediaKey];
 
     expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.hero);
-    expect(educationVisual?.src).toBe(SPOKEDU_IMAGES.dispatch.kiwoomCenter.src);
-    expect(spomoveVisual?.src).toBe(SPOKEDU_IMAGES.programs.spomove.src);
-    expect(canUseSpokeduImageOnPage(SPOKEDU_IMAGES.programs.spomove, 'home')).toBe(true);
-    expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.home.heroSpomoveClass);
-    expect(spomoveVisual?.src).not.toBe(spomoveDetail.asset?.src);
-    expect(subscriptionVisual?.src).toBe('/images/spokedu/subscription/product-library.png');
-    expect(subscriptionVisual?.src).not.toBe(curriculumPage.subscription.tools.visual.src);
+    expect(classMedia.map((media) => media.src)).toEqual([
+      SPOKEDU_IMAGES.dispatch.kiwoomCenter.src,
+      SPOKEDU_IMAGES.private.oneToOne.src,
+      SPOKEDU_IMAGES.records.seodaemun.src,
+    ]);
+    expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.programs.spomoveHeroField);
+    expect(canUseSpokeduImageOnPage(spomoveDetail.asset!, 'home')).toBe(true);
+    expect(new Set([HOME_MEDIA[homePage.hero.mediaKey].src, ...classMedia.map((media) => media.src), spomoveDetail.src]).size).toBe(5);
+    expect(homePage.subscription.visual.src).toBe('/images/spokedu/subscription/product-lesson.png');
   });
 
   it('keeps home SEO aligned with the homepage positioning', () => {
@@ -553,8 +532,9 @@ describe('spokedu Phase 3 public-copy safety', () => {
     expect(homeSource).not.toMatch(/15,?015|PRIVATE_COUNTER|3,?000회/);
     expect(homeSource).not.toMatch(/9,900|28,900|20,900|15,900/);
     expect(homeLandingSource).not.toMatch(/HomePartnerReviews|HomeMediaRail/);
-    expect(homeLandingSource).toMatch(/HomeServices/);
-    expect(homeLandingSource).toMatch(/HomeAudienceGates/);
+    expect(homeLandingSource).toMatch(/HomeClassSection/);
+    expect(homeLandingSource).toMatch(/HomeFieldBridge/);
+    expect(homeLandingSource).not.toMatch(/HomeAudienceGates/);
     expect(homeLandingSource).not.toMatch(/HomeWhySpokedu/);
     expect(homeLandingSource).toMatch(/HomeFieldRecords/);
     expect(spomoveLandingSource).toMatch(/SpomoveProgramLanding|data-spokedu-spomove-sections/);
