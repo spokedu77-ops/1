@@ -23,6 +23,8 @@ import {
   coalescePushItems,
   excludeBlocksPendingSoftDelete,
   persistOpToPushItems,
+  applyOutboundContentPatchesToBlocks,
+  rewriteOutboundPatchContentBases,
 } from './notePersistOpToBlockOps';
 import { sealPassiveIncomingBlocks } from './noteDataIntegrity';
 import {
@@ -303,6 +305,9 @@ export class NoteSyncCoordinator {
 
   private lastAppliedSeq = 0;
 
+  /** open·push reject 시 patch baseContent rebase용 최신 서버 스냅샷 */
+  private lastServerBlocks: NoteBlock[] = [];
+
   /** LocalApply 직후 outbound enqueue 전 — pull/reconcile이 reorder를 덮지 않게 */
   private topologyIntentUntil = 0;
 
@@ -365,6 +370,7 @@ export class NoteSyncCoordinator {
     syncStateCache.set(this.documentId, { seq: lastSeq, fetchedAt: Date.now() });
 
     const serverBlocks = dedupeNoteBlocksById(initialBlocks);
+    this.lastServerBlocks = serverBlocks;
     releaseLeaveExcludeConfirmedAbsent(
       this.documentId,
       new Set(serverBlocks.map((block) => block.id)),
@@ -398,6 +404,12 @@ export class NoteSyncCoordinator {
       this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
     } else {
       this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
+    }
+
+    // ZERO LOSS: 미ack outbound 본문을 first-paint·IDB에 반영 (새로고침 후 서버 구버전만 보이는 구멍)
+    if (outbound.length > 0) {
+      this.blocks = applyOutboundContentPatchesToBlocks(this.blocks, outbound);
+      await rewriteOutboundPatchContentBases(this.documentId, outbound, serverBlocks);
     }
 
     // outbound 없고 병합 결과가 빈면 confirmed empty를 durable에 기록 — stale IDB 재오픈 좀비 차단
@@ -723,8 +735,17 @@ export class NoteSyncCoordinator {
         seq: result.lastSeq,
         fetchedAt: Date.now(),
       });
-      // rejected도 outbound에서 제거(재시도 루프 방지). draft clear는 OpQueue가 pushed=false로 스킵.
-      await removeOutboundOps(consumedClientOpIds);
+      // ZERO LOSS: rejected는 outbound에 남겨 재시도·open overlay — materialize≠ACK
+      const appliedClientOpIds = consumedClientOpIds.filter((id) => !rejectedIds.has(id));
+      await removeOutboundOps(appliedClientOpIds);
+      if (rejectedIds.size > 0) {
+        const remainingAfterReject = await listOutboundOps(this.documentId);
+        await rewriteOutboundPatchContentBases(
+          this.documentId,
+          remainingAfterReject,
+          this.lastServerBlocks,
+        );
+      }
       const consumedLeaveIds = collectLeaveIdsFromPushItems(
         safeReady.filter((op) => !rejectedIds.has(op.clientOpId)),
         this.documentId,

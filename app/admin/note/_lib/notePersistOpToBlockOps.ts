@@ -3,14 +3,16 @@ import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 import { noteBlockOpTypeFromPayload } from '@/app/lib/note/noteBlockOpTypes';
 import type { NoteLocalOutboundOp } from './noteLocalDb';
+import { appendOutboundOps } from './noteLocalDb';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
+import { readAuthorityBlockText } from './noteAuthority';
 import { LOCAL_ONLY_BLOCK_GRACE_MS } from './noteBlockStateMerge';
 import { sealPassiveIncomingBlock } from './noteDataIntegrity';
 import type { NoteBlock } from './types';
 
+/** open merge·선호 판정 — text 필드만 보면 title/html/body 편집이 서버에 덮인다 */
 function readBlockText(block: NoteBlock): string {
-  const text = block.content?.text;
-  return typeof text === 'string' ? text.trim() : '';
+  return readAuthorityBlockText(block.content);
 }
 
 function readBlockImageUrl(block: NoteBlock): string {
@@ -519,10 +521,65 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
 }
 
 /**
- * 같은 블록의 patch_content만 최신 content로 합친다.
- * create → patch 등 상대 순서는 유지. baseContent는 **최초(earliest)** 를 보존해
- * OT stale 판정이 깨지지 않게 한다.
+ * 미ack patch_content를 로컬 블록에 Intent로 덮는다.
+ * 새로고침·IDB stale 시에도 outbound 편집본이 first-paint에 살아야 한다 (ZERO LOSS).
  */
+export function applyOutboundContentPatchesToBlocks(
+  blocks: NoteBlock[],
+  outbound: ReadonlyArray<Pick<NoteLocalOutboundOp, 'payload'>>,
+): NoteBlock[] {
+  if (outbound.length === 0) return blocks;
+  const coalesced = coalescePushItems(
+    outbound.map(({ payload, ...rest }) => {
+      void rest;
+      return { clientOpId: 'overlay', opType: 'patch_content' as const, payload };
+    }),
+  );
+  const latestByBlock = new Map<string, Record<string, unknown>>();
+  for (const item of coalesced) {
+    if (item.payload.opType !== 'patch_content') continue;
+    latestByBlock.set(item.payload.blockId, item.payload.content);
+  }
+  if (latestByBlock.size === 0) return blocks;
+  return blocks.map((block) => {
+    const patch = latestByBlock.get(block.id);
+    if (!patch) return block;
+    const prev = (block.content ?? {}) as Record<string, unknown>;
+    return {
+      ...block,
+      content: { ...prev, ...patch },
+    };
+  });
+}
+
+/**
+ * stale base로 server reject된 patch_content — baseContent를 서버 스냅샷으로 맞춰 재시도 가능하게.
+ */
+export async function rewriteOutboundPatchContentBases(
+  documentId: string,
+  outbound: ReadonlyArray<NoteLocalOutboundOp>,
+  serverBlocks: ReadonlyArray<NoteBlock>,
+): Promise<void> {
+  if (outbound.length === 0 || serverBlocks.length === 0) return;
+  const serverById = new Map(serverBlocks.map((block) => [block.id, block]));
+  const rewrites: NoteBlockOpPushItem[] = [];
+  for (const row of outbound) {
+    if (row.payload.opType !== 'patch_content') continue;
+    const server = serverById.get(row.payload.blockId);
+    if (!server?.content || typeof server.content !== 'object') continue;
+    rewrites.push({
+      clientOpId: row.clientOpId,
+      opType: 'patch_content',
+      payload: {
+        ...row.payload,
+        baseContent: { ...(server.content as Record<string, unknown>) },
+      },
+    });
+  }
+  if (rewrites.length === 0) return;
+  await appendOutboundOps(documentId, rewrites);
+}
+
 export function coalescePushItems(items: NoteBlockOpPushItem[]): NoteBlockOpPushItem[] {
   const latestContentIndexByBlock = new Map<string, number>();
   const earliestBaseByBlock = new Map<string, Record<string, unknown> | undefined>();

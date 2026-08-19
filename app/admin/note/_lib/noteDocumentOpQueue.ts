@@ -10,6 +10,7 @@ import {
   assertPersistOpIsSafe,
   coalescePersistOpWithSiblingOrderRepair,
 } from './notePersistOpGuard';
+import { readAuthorityBlockText } from './noteAuthority';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
 
@@ -151,9 +152,9 @@ export class NoteDocumentOpQueue {
         const storeBlock = this.deps.getBlock(id);
         // leave/switch 레이스로 store가 비어도 pending content는 버리지 않음 (데이터 보존)
         const storeContent = storeBlock?.content as Record<string, unknown> | null | undefined;
-        const storeText = typeof storeContent?.text === 'string' ? storeContent.text : '';
-        const pendingText = typeof pending.content.text === 'string' ? pending.content.text : '';
-        const baseText = typeof pending.baseContent?.text === 'string' ? pending.baseContent.text : '';
+        const storeText = readAuthorityBlockText(storeContent);
+        const pendingText = readAuthorityBlockText(pending.content);
+        const baseText = readAuthorityBlockText(pending.baseContent);
         if (isEmptyBodyPatch(pending.content)) {
           const storeMatchesEmptyPatch = contentRecordsEqual(storeContent, pending.content);
           const explicitDelete = storeMatchesEmptyPatch && hasProtectableContent(pending.baseContent);

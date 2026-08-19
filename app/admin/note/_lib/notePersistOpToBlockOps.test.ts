@@ -8,6 +8,7 @@ import {
   filterStalePendingSoftDeletes,
   findOutboundOpsSupersededByServerRestore,
   planStripOutboundLeavesForRestoredIds,
+  applyOutboundContentPatchesToBlocks,
   mergeServerBlocksIntoLocalSnapshot,
   persistOpToPushItems,
   serverSnapshotHasBlocksMissingFrom,
@@ -724,5 +725,59 @@ describe('serverSnapshotHasBlocksMissingFrom', () => {
 
   it('detects empty local placeholder replaced on server', () => {
     expect(serverSnapshotHasBlocksMissingFrom([block('a', '')], [block('a', '복구')])).toBe(true);
+  });
+});
+
+describe('applyOutboundContentPatchesToBlocks', () => {
+  const baseBlock = (id: string, text: string): NoteBlock => ({
+    id,
+    document_id: 'doc-1',
+    type: 'text',
+    content: { text, html: `<p>${text}</p>` },
+    order_index: 0,
+    parent_block_id: null,
+    created_at: '',
+    updated_at: '2020-01-01T00:00:00.000Z',
+    version: 1,
+  });
+
+  it('overlays latest coalesced patch_content onto stale server/local blocks', () => {
+    const outbound = persistOpToPushItems({
+      type: 'patchContent',
+      updates: [{ id: 'a', content: { text: '사용자 수정본', html: '<p>사용자 수정본</p>' } }],
+    }).map((item, index) => ({
+      ...item,
+      documentId: 'doc-1',
+      createdAt: index,
+    })) as NoteLocalOutboundOp[];
+    const merged = applyOutboundContentPatchesToBlocks(
+      [baseBlock('a', '서버 구버전')],
+      outbound,
+    );
+    expect(merged[0].content?.text).toBe('사용자 수정본');
+  });
+});
+
+describe('mergeServerBlocksIntoLocalSnapshot — authority text', () => {
+  it('keeps local title-only edits over newer server version', () => {
+    const local: NoteBlock = {
+      id: 'page-1',
+      document_id: 'doc-1',
+      type: 'page',
+      order_index: 0,
+      parent_block_id: null,
+      content: { title: '최지훈 수정 제목' },
+      created_at: '',
+      updated_at: '2020-01-01T00:00:00.000Z',
+      version: 1,
+    };
+    const server: NoteBlock = {
+      ...local,
+      content: { title: '구 제목' },
+      version: 5,
+      updated_at: '2099-01-01T00:00:00.000Z',
+    };
+    const merged = mergeServerBlocksIntoLocalSnapshot([local], [server], new Set());
+    expect(merged[0].content?.title).toBe('최지훈 수정 제목');
   });
 });
