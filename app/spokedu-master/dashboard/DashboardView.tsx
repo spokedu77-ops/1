@@ -600,14 +600,9 @@ function ActivityPanel({
   if (compact) {
     return (
       <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[12px] border border-slate-200/80 bg-white/90 px-2.5 py-2.5 ${className}`}>
-        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">기록 루프</p>
-            <h2 id="activity-heading" className="mt-0.5 text-[14px] font-black text-slate-700">안내문 · 기록</h2>
-          </div>
-          <Link href="/spokedu-master/profile" className="inline-flex min-h-8 items-center rounded-md bg-slate-50 px-2.5 text-[11px] font-bold text-slate-500">
-            {status}
-          </Link>
+        <div className="mb-1.5">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">기록 루프</p>
+          <h2 id="activity-heading" className="mt-0.5 text-[14px] font-black text-slate-700">안내문 · 기록</h2>
         </div>
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1">
           {activities.map(({ label, value, href, Icon, action }) => (

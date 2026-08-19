@@ -6,6 +6,7 @@ type Block = {
   type: string;
   parent_block_id: string | null;
   order_index: number;
+  created_at?: string;
   content: Record<string, unknown>;
 };
 
@@ -14,7 +15,8 @@ const block = (
   type: string,
   parent_block_id: string | null,
   order_index: number,
-): Block => ({ id, type, parent_block_id, order_index, content: {} });
+  created_at?: string,
+): Block => ({ id, type, parent_block_id, order_index, created_at, content: {} });
 
 describe('sanitizeNoteBlockTree', () => {
   it('preserves nested page containers with todo and toggle children', () => {

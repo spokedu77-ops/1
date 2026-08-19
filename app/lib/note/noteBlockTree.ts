@@ -25,7 +25,7 @@ export function buildChildrenByParentBlock<T extends NoteBlockLike>(blocks: T[])
   return map;
 }
 
-/** order_index 우선. 동점은 입력 배열 만남 순서 유지(stable sort) — densify가 화면 순서를 바꾸지 않음 */
+/** order_index 우선. 동점은 입력 배열 만남 순서 유지(stable sort) — id/created_at 재섞기 금지 (ZERO LOSS #4) */
 export function compareSiblingOrder<T extends NoteBlockLike>(a: T, b: T): number {
   return a.order_index - b.order_index;
 }

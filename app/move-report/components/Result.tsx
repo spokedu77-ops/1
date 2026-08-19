@@ -70,10 +70,9 @@ export default function Result({
 
   const handleGoPrivateConsult = useCallback(() => {
     if (typeof window === 'undefined') return;
-    // Move Report → 개인 상담 자동 요약 삽입은 제거 (문의 폼에 영문 진단 요약이 붙던 잔여 연동)
     try {
-      window.localStorage.removeItem('private.moveReport.summary');
-      window.localStorage.removeItem('private.moveReport.shareUrl');
+      const summaryText = `[Move report 결과] ${displayName} · ${p.name} (${key})\n${axisLabelsJoined(key)} · ${p.tagline}`;
+      window.localStorage.setItem('private.moveReport.summary', summaryText);
     } catch {
       // ignore
     }
@@ -81,8 +80,8 @@ export default function Result({
       eventName: 'move_report_private_consult_clicked',
       meta: { profileKey: key },
     });
-    window.location.href = '/spokedu/contact?type=private';
-  }, [key]);
+    window.location.href = '/info/private#apply';
+  }, [key, displayName, p]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

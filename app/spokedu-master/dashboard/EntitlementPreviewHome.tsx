@@ -11,14 +11,11 @@ import {
   Timer,
 } from 'lucide-react';
 import { MASTER_PRODUCT_CATALOG } from '../lib/productCatalog';
-import { PROGRAMS } from '../lib/data';
 import {
   getEntitlementPaymentHref,
   getEntitlementPrimaryCtaLabel,
   type MasterAccessSnapshot,
 } from '../lib/masterAccessModel';
-
-const PREVIEW_PROGRAMS = PROGRAMS.slice(0, 1);
 
 const LITE_FEATURES = [
   '수업 라이브러리 열람',
@@ -35,24 +32,12 @@ const PREMIUM_FEATURES = [
   'SPOMAT 회원가 (연결 시)',
 ] as const;
 
-function PreviewProgramCard({ title, category }: { title: string; category: string }) {
-  return (
-    <article
-      className="rounded-[16px] border border-slate-200 bg-white p-4"
-      style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}
-    >
-      <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>
-        {category}
-      </p>
-      <h3 className="mt-2 text-[15px] font-black leading-snug" style={{ color: 'var(--spm-t)' }}>
-        {title}
-      </h3>
-      <p className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-        이용권 시작 후 전체 자료·영상·기록 흐름을 열 수 있습니다.
-      </p>
-    </article>
-  );
-}
+const LIBRARY_PREVIEW_CATEGORIES = [
+  { label: '민첩·반응', desc: '거리 판단, 반응 전환, SPOMOVE 연계' },
+  { label: '협동·팀빌딩', desc: '소통, 역할 분담, 팀 신뢰 활동' },
+  { label: '유연·균형', desc: '코어 조절, 정적 균형, 체형 인식' },
+  { label: '표현·리듬', desc: '리듬 감각, 신체 표현, 창의 동작' },
+] as const;
 
 export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSnapshot }) {
   const paymentHref = getEntitlementPaymentHref(snapshot);
@@ -94,14 +79,25 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
 
       <section>
         <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>
-          이번 주 추천 프로그램
+          이런 수업을 찾을 수 있어요
         </h2>
         <p className="mt-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-          무료로는 수업 도구를 먼저 써 보고, 추천 프로그램 미리보기 1개를 확인할 수 있습니다.
+          대표 수업 유형입니다. 이용권 시작 후 전체 라이브러리를 탐색할 수 있습니다.
         </p>
-        <div className="mt-4 grid gap-3 sm:max-w-[320px]">
-          {PREVIEW_PROGRAMS.map((program) => (
-            <PreviewProgramCard key={program.id} title={program.title} category={program.category} />
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {LIBRARY_PREVIEW_CATEGORIES.map(({ label, desc }) => (
+            <div
+              key={label}
+              className="rounded-[14px] border p-3.5"
+              style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}
+            >
+              <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>
+                {label}
+              </p>
+              <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+                {desc}
+              </p>
+            </div>
           ))}
         </div>
       </section>

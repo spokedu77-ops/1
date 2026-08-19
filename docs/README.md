@@ -39,6 +39,15 @@
 
 ### SPOKEDU / MASTER / 배포
 
+#### Product Foundation (SSOT — implementation 전 반드시 참조)
+
+| 문서 | 용도 |
+|------|------|
+| [SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md](SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md) | 제품 North Star, 가치 루프, Product Truth, 계약 위계 |
+| [SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md](SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md) | Audit → Decision Gate → Implementation, REPLACE/REMOVE 승인 경계 |
+| [SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md](SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md) | 현재 MASTER surface·journey·roadmap baseline |
+| [SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md](SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md) | 구현 Sprint Brief 템플릿 |
+
 - [spokedu-launch-checklist.md](spokedu-launch-checklist.md)
 - [spokedu-live-smoke-test.md](spokedu-live-smoke-test.md)
 - [spokedu-tv-display-and-remote.md](spokedu-tv-display-and-remote.md)

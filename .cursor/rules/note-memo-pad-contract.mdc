@@ -1,0 +1,40 @@
+---
+description: admin/note 메모장 계약 — Intent 없는 본문·순서 변경 금지 (ZERO LOSS 사용자-facing SSOT)
+globs: app/admin/note/**/*,app/lib/note/**/*,app/lib/server/noteOpLog/**/*,app/lib/server/loadNoteDocumentBlocks*.ts,app/lib/server/applyNoteBlockInvariantMigrations.ts,app/api/admin/note/**/*
+alwaysApply: true
+---
+
+# admin/note — 메모장 계약
+
+노트는 **메모장**이다. 사용자가 쓴 글·체크·목록 순서는 **Intent 없이 바뀌면 계약 위반(P0)**.
+
+코드 SSOT: `app/lib/note/noteMemoPadContract.ts`  
+데이터 불변식 상세: `note-data-preservation.mdc` (동치, 충돌 시 양쪽 모두 만족)
+
+## 불변식 (M1–M4)
+
+| ID | 메모장 약속 |
+|----|-------------|
+| **M1 본문** | text·체크·html — Intent·matching base 없이 침묵 변경 금지 → `noteContentAuthority` |
+| **M2 순서** | 형제 상대 순서 — DnD·explicit normalizeOrders·create persist(C1) **외** 변경 금지 |
+| **M3 서버 repair** | load/enforce/sanitize/op-normalize가 **`order_index`·`content` DB persist 금지** → `pickMemoPadServerStructuralPatch` |
+| **M4 정렬 금지** | created_at·id·본문 날짜 파싱으로 **표시 순서 재정렬 금지** — `order_index`(+ 사용자 Intent)만 |
+
+## Intent (순서가 바뀌는 유일한 경로)
+
+- 사용자 DnD / Tab indent (`planBlockDrop*` → topology outbound)
+- create persist `resolveCreateBlockPersistOrders` (C1)
+- 클라이언트가 보낸 `order_index`·`normalizeOrders` patch
+
+## 금지 (구멍 방지)
+
+- `applyNoteBlockInvariantMigrations` / `enforceDocumentBlockInvariants`에서 sanitize compaction으로 **order_index UPDATE**
+- `normalizeOpTransactionPayload*`가 sanitize 결과로 **client order_index 덮어쓰기**
+- passive merge / open / pull이 **서버 stale order**로 local topology 덮기 (topology outbound 없을 때만 server order)
+- hook·fetch tie-break·UI sort로 “이번만” 순서 복구
+
+## 수정 시
+
+1. M1–M4 중 어느 것인지 특정  
+2. `noteMemoPadContract` choke + 기존 SSOT(`noteContentAuthority`·`noteCommandReducer`)만 수정  
+3. `noteMemoPadContract.test.ts` 또는 해당 choke 테스트에 재현 추가

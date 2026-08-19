@@ -3,6 +3,7 @@ import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { NOTE_BLOCK_PATCH_BATCH_MAX } from '@/app/lib/note/noteBlockBatch';
 import { sanitizeNoteBlockTree } from '@/app/lib/note/noteBlockSanitize';
+import { pickMemoPadServerStructuralPatch } from '@/app/lib/note/noteMemoPadContract';
 
 type NoteBlock = {
   id: string;
@@ -261,18 +262,14 @@ async function auditBatchBlockUpdates(
   );
 }
 
+/** API write 후 DB 구조 수리 — Memo Pad M3 */
 function buildInvariantRepairPatch(before: NoteBlock, after: NoteBlock): Record<string, unknown> | null {
-  const patch: Record<string, unknown> = {};
-  if ((before.parent_block_id ?? null) !== (after.parent_block_id ?? null)) {
-    patch.parent_block_id = after.parent_block_id ?? null;
-  }
-  if (before.order_index !== after.order_index) {
-    patch.order_index = after.order_index;
-  }
-  if (before.type !== after.type) {
-    patch.type = after.type;
-  }
-  return Object.keys(patch).length > 0 ? patch : null;
+  return pickMemoPadServerStructuralPatch({
+    parent_block_id: (before.parent_block_id ?? null) !== (after.parent_block_id ?? null)
+      ? after.parent_block_id ?? null
+      : undefined,
+    type: before.type !== after.type ? after.type : undefined,
+  });
 }
 
 export async function enforceDocumentBlockInvariants(
@@ -289,6 +286,7 @@ export async function enforceDocumentBlockInvariants(
       .eq('document_id', documentId)
       .is('deleted_at', null)
       .order('order_index', { ascending: true })
+      .order('id', { ascending: true })
       .limit(5000);
     if (error) throw new Error(error.message);
     const before = (data ?? []) as NoteBlock[];
@@ -337,6 +335,7 @@ export async function GET(request: NextRequest) {
       .select(BLOCK_SELECT)
       .eq('document_id', documentId)
       .order('order_index', { ascending: true })
+      .order('id', { ascending: true })
       .range(offset, offset + limit - 1);
     if (!includeDeleted) {
       query.is('deleted_at', null);
@@ -397,6 +396,7 @@ export async function POST(request: NextRequest) {
       .eq('document_id', documentId)
       .is('deleted_at', null)
       .order('order_index', { ascending: true })
+      .order('id', { ascending: true })
       .limit(1);
     if (parentBlockId === null) minQuery.is('parent_block_id', null);
     if (typeof parentBlockId === 'string') minQuery.eq('parent_block_id', parentBlockId);
@@ -527,6 +527,8 @@ export async function PATCH(request: NextRequest) {
         .eq('document_id', nextDocumentId)
         .is('deleted_at', null)
         .order('order_index', { ascending: true })
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
         .limit(1)
         .maybeSingle();
       if (minError) {

@@ -1,19 +1,22 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { sanitizeNoteBlockTree } from '@/app/lib/note/noteBlockSanitize';
+import { pickMemoPadServerStructuralPatch } from '@/app/lib/note/noteMemoPadContract';
 import type { LoadedNoteBlock } from './loadNoteDocumentBlocks';
 
+/**
+ * load 시 DB에 쓸 구조 수리 — Memo Pad M3: parent/type만.
+ * order_index compaction은 in-memory 투영용, DB persist 금지.
+ */
 function structuralPatchFor(
   before: LoadedNoteBlock,
   after: LoadedNoteBlock,
-): { parent_block_id?: string | null; order_index?: number } | null {
-  const patch: { parent_block_id?: string | null; order_index?: number } = {};
-  if ((before.parent_block_id ?? null) !== (after.parent_block_id ?? null)) {
-    patch.parent_block_id = after.parent_block_id ?? null;
-  }
-  if (before.order_index !== after.order_index) {
-    patch.order_index = after.order_index;
-  }
-  return Object.keys(patch).length > 0 ? patch : null;
+): ReturnType<typeof pickMemoPadServerStructuralPatch> {
+  return pickMemoPadServerStructuralPatch({
+    parent_block_id: (before.parent_block_id ?? null) !== (after.parent_block_id ?? null)
+      ? after.parent_block_id ?? null
+      : undefined,
+    type: before.type !== after.type ? after.type : undefined,
+  });
 }
 
 export async function applyNoteBlockInvariantMigrations(
@@ -29,7 +32,7 @@ export async function applyNoteBlockInvariantMigrations(
       const patch = structuralPatchFor(before, block);
       return patch ? { id: block.id, patch } : null;
     })
-    .filter((item): item is { id: string; patch: { parent_block_id?: string | null; order_index?: number } } => !!item);
+    .filter((item): item is { id: string; patch: NonNullable<ReturnType<typeof pickMemoPadServerStructuralPatch>> } => !!item);
 
   if (patches.length === 0) return sanitized;
 

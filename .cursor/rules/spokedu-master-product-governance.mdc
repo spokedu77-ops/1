@@ -1,0 +1,58 @@
+---
+description: SPOKEDU MASTER product governance — Constitution, audit gate, approval boundary
+alwaysApply: true
+---
+
+# SPOKEDU MASTER — Product Governance
+
+## Before any MASTER product work
+
+1. Read [Product Constitution](../../docs/SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md)
+2. Read [Decision Protocol](../../docs/SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md)
+3. If implementing: require completed [Sprint Brief](../../docs/SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md)
+
+## Authority (non-negotiable)
+
+- **KEEP / explicit REFINE in brief** → may implement
+- **REPLACE / REMOVE / new product semantics** → **Product Owner approval first**
+- North Star or Constitution **does not** authorize silent contract changes
+
+## Workflow
+
+```
+Audit (read-only) → Decision Gate → Sprint Brief → Implementation → Cross-check
+```
+
+Mid-implementation conflict → **STOP**, report, wait for approval.
+
+## Runtime evidence
+
+- Do **not** infer behavior from URL or component name alone
+- Trace: callers, consumers, tests, state source, runtime transition, entitlement
+- **Session route entry ≠ autostart** — verify `entry`, briefing, confirmation, engine state
+
+## User segments
+
+Distinguish first vs returning user; Free/Lite/Premium; Team/Center (sales-led, ≠ Premium); Admin (internal, ≠ customer plan).
+
+## Scope discipline
+
+- Do not implement product behavior **outside Sprint Brief**
+- Do not expand scope for “improvement” or “unity” without approval
+- Pair with **preserve-existing-behavior**: unrequested behavior change forbidden
+- Pair with **work-principles**: think whole surface / journey before local patch
+- Pair with **cta-unity** for CTA visual/copy
+
+## Rule conflicts
+
+Do not pick arbitrarily. Report conflict; apply hierarchy in Constitution § Contract Hierarchy for **importance**, Decision Protocol for **change permission**.
+
+## Verification
+
+Respect **no-verify-shell**: no npm test/tsc/build unless user explicitly requests.
+
+## Core principle
+
+> **Think globally. Decide explicitly. Implement only approved scope.**
+
+This rule is **not** permission to refactor broadly. It separates product thinking from implementation authority.

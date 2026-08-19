@@ -3,6 +3,7 @@ import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { NOTE_BLOCK_PATCH_BATCH_MAX } from '@/app/lib/note/noteBlockBatch';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { sanitizeNoteBlockTree, type SanitizableNoteBlock } from '@/app/lib/note/noteBlockSanitize';
+import { mergeMemoPadTransactionPatchFromSanitize } from '@/app/lib/note/noteMemoPadContract';
 
 const BLOCK_SELECT = 'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by, version';
 
@@ -101,26 +102,14 @@ export function normalizeTransactionPayloadForInvariants({
   const normalizedUpdates = updates.map((update) => {
     const sanitizedBlock = sanitizedById.get(update.id);
     if (!sanitizedBlock) return update;
-    return {
-      ...update,
-      document_id: sanitizedBlock.document_id,
-      parent_block_id: sanitizedBlock.parent_block_id ?? null,
-      order_index: sanitizedBlock.order_index,
-      ...(sanitizedBlock.type !== undefined ? { type: sanitizedBlock.type } : {}),
-    };
+    return mergeMemoPadTransactionPatchFromSanitize(update, sanitizedBlock);
   });
 
   const normalizedCreates = creates.map((create) => {
     if (!create.id) return create;
     const sanitizedBlock = sanitizedById.get(create.id);
     if (!sanitizedBlock) return create;
-    return {
-      ...create,
-      document_id: sanitizedBlock.document_id,
-      parent_block_id: sanitizedBlock.parent_block_id ?? null,
-      order_index: sanitizedBlock.order_index,
-      type: sanitizedBlock.type,
-    };
+    return mergeMemoPadTransactionPatchFromSanitize(create, sanitizedBlock);
   });
 
   return { updates: normalizedUpdates, creates: normalizedCreates };

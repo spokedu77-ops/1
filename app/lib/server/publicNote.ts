@@ -18,6 +18,7 @@ export type PublicNoteBlock = {
   type: string;
   order_index: number;
   content: Record<string, unknown> | null;
+  created_at?: string;
 };
 
 export async function getPublicNoteByToken(token: string) {
@@ -36,10 +37,11 @@ export async function getPublicNoteByToken(token: string) {
 
   const { data: blocks, error: blocksError } = await supabase
     .from('note_blocks')
-      .select('id, parent_block_id, type, order_index, content')
+      .select('id, parent_block_id, type, order_index, content, created_at')
     .eq('document_id', document.id)
     .is('deleted_at', null)
-    .order('order_index', { ascending: true });
+    .order('order_index', { ascending: true })
+    .order('id', { ascending: true });
 
   if (blocksError) return null;
 

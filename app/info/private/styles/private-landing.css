@@ -1088,6 +1088,29 @@
   margin-bottom: 4px;
 }
 
+.pl-mr-desc--autofill {
+  color: var(--pl-primary);
+  font-weight: 700;
+}
+
+.pl-mr-autofill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pl-primary);
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.pl-mr-autofill-badge::before {
+  content: '✓';
+  font-weight: 900;
+}
+
 .pl-mr-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1119,9 +1142,15 @@
 }
 
 .pl-mr-summary-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.pl-mr-summary-actions .pl-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .pl-result-funnel-section {

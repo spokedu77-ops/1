@@ -18,6 +18,7 @@ export async function loadNoteDocumentBlocksRaw(
     .eq('document_id', documentId)
     .is('deleted_at', null)
     .order('order_index', { ascending: true })
+    .order('id', { ascending: true })
     .limit(1000);
 
   if (error) throw new Error(error.message);

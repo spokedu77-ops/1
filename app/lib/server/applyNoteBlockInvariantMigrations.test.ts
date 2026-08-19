@@ -65,12 +65,8 @@ describe('applyNoteBlockInvariantMigrations', () => {
         id: 'child',
         patch: expect.objectContaining({ parent_block_id: null }),
       },
-      {
-        table: 'note_blocks',
-        id: 'after',
-        patch: expect.objectContaining({ order_index: 2 }),
-      },
     ]));
+    expect(supabase.updates.some((item) => 'order_index' in (item.patch as object))).toBe(false);
   });
 
   it('does not write when the loaded tree already satisfies invariants', async () => {
@@ -102,6 +98,19 @@ describe('applyNoteBlockInvariantMigrations', () => {
     expect(supabase.updates).toEqual([]);
   });
 
+  it('never persists order_index from sanitize compaction (memo-pad contract)', async () => {
+    const supabase = supabaseMock();
+    await applyNoteBlockInvariantMigrations(
+      supabase.client as never,
+      [
+        block('a', 'todo', null, 0),
+        block('b', 'todo', null, 0),
+        block('c', 'todo', null, 0),
+      ],
+    );
+    expect(supabase.updates.some((item) => 'order_index' in (item.patch as object))).toBe(false);
+  });
+
   it('breaks cycles conservatively by promoting affected blocks to roots', async () => {
     const supabase = supabaseMock();
     const result = await applyNoteBlockInvariantMigrations(
@@ -115,5 +124,6 @@ describe('applyNoteBlockInvariantMigrations', () => {
     expect(result.every((item) => item.parent_block_id === null)).toBe(true);
     expect(result.map((item) => item.order_index)).toEqual([0, 1]);
     expect(supabase.updates.length).toBeGreaterThan(0);
+    expect(supabase.updates.some((item) => 'order_index' in (item.patch as object))).toBe(false);
   });
 });

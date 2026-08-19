@@ -37,6 +37,7 @@ export async function loadNoteDocumentBlocks(
       .eq('document_id', documentId)
       .is('deleted_at', null)
       .order('order_index', { ascending: true })
+      .order('id', { ascending: true })
       .limit(1000),
   ]);
 

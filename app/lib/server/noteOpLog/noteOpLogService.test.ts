@@ -136,13 +136,13 @@ describe('noteOpLogService transaction patch filtering', () => {
     expect(result.updates[0]).toMatchObject({
       id: 'child',
       parent_block_id: null,
-      // duplicate root densify preserves encounter (todo then child → child gets 1)
-      order_index: 1,
+      // client가 보낸 order_index는 sanitize compaction으로 덮지 않음
+      order_index: 0,
     });
     expect(result.creates[0]).toMatchObject({
       id: 'toggle-child',
       parent_block_id: null,
-      order_index: 2,
+      order_index: 1,
     });
   });
 

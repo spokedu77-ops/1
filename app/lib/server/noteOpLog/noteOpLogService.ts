@@ -11,6 +11,7 @@ import {
 } from '@/app/lib/note/noteContentAuthority';
 import { commitNoteBlockOp } from '@/app/lib/server/noteOpLog/noteCommitBlockOp';
 import { sanitizeNoteBlockTree, type SanitizableNoteBlock } from '@/app/lib/note/noteBlockSanitize';
+import { mergeMemoPadTransactionPatchFromSanitize } from '@/app/lib/note/noteMemoPadContract';
 
 export { shouldIgnoreRegressiveContentPatch } from '@/app/lib/note/noteContentAuthority';
 
@@ -106,25 +107,13 @@ export function normalizeOpTransactionPayloadForInvariants({
     updates: updates.map((patch) => {
       const block = sanitizedById.get(patch.id);
       if (!block) return patch;
-      return {
-        ...patch,
-        document_id: block.document_id,
-        parent_block_id: block.parent_block_id ?? null,
-        order_index: block.order_index,
-        type: block.type,
-      };
+      return mergeMemoPadTransactionPatchFromSanitize(patch, block);
     }),
     creates: creates.map((create) => {
       if (!create.id) return create;
       const block = sanitizedById.get(create.id);
       if (!block) return create;
-      return {
-        ...create,
-        document_id: block.document_id,
-        parent_block_id: block.parent_block_id ?? null,
-        order_index: block.order_index,
-        type: block.type,
-      };
+      return mergeMemoPadTransactionPatchFromSanitize(create, block);
     }),
   };
 }
@@ -176,6 +165,7 @@ async function fetchActiveDocumentBlocks(
       .eq('document_id', documentId)
       .is('deleted_at', null)
       .order('order_index', { ascending: true })
+      .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
     if (error) throw new Error(error.message);
     rows.push(...((data ?? []) as OpSanitizableBlock[]));

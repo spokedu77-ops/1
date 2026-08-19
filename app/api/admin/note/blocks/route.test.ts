@@ -32,7 +32,7 @@ describe('collectActiveSubtreeIds', () => {
 });
 
 describe('enforceDocumentBlockInvariants', () => {
-  it('repairs sibling order drift after direct writes', async () => {
+  it('does not persist order_index compaction for duplicate sibling orders alone', async () => {
     const rows = [
       block('todo', { type: 'todo', order_index: 0 }),
       block('child', { type: 'text', order_index: 0 }),
@@ -72,10 +72,7 @@ describe('enforceDocumentBlockInvariants', () => {
 
     await enforceDocumentBlockInvariants(supabase as never, ['doc'], 'actor', '2026-07-21T00:00:00.000Z');
 
-    expect(updates.map((item) => item.patch)).toEqual([
-      expect.objectContaining({ order_index: 1 }),
-      expect.objectContaining({ order_index: 2 }),
-    ]);
+    expect(updates).toEqual([]);
   });
 });
 

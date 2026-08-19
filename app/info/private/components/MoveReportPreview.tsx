@@ -17,9 +17,11 @@ export default function MoveReportPreview({
   onSummaryAction,
 }: MoveReportPreviewProps) {
   const [summaryInput, setSummaryInput] = useState('');
+  const [autoFilled, setAutoFilled] = useState(false);
 
   useEffect(() => {
     setSummaryInput(initialSummary);
+    if (initialSummary.trim()) setAutoFilled(true);
   }, [initialSummary]);
 
   const persistSummary = useCallback((summary: string) => {
@@ -40,6 +42,7 @@ export default function MoveReportPreview({
 
   const handleResetSummary = useCallback(() => {
     setSummaryInput('');
+    setAutoFilled(false);
     persistSummary('');
     onSummaryChange('');
     onSummaryAction('reset');
@@ -56,35 +59,53 @@ export default function MoveReportPreview({
           <div className="pl-mr-left">
             <div className="pl-mr-kicker">3분 · 12문항 · 무료 테스트</div>
             <h3 className="pl-mr-title">Move report로 수업 설계 힌트를 먼저 확인하세요</h3>
-            <p className="pl-mr-desc">
-              테스트 결과는 상담 전 아이 상태를 이해하는 참고자료입니다. 아래 순서대로 진행하면 됩니다.
-            </p>
-            <ol className="pl-mr-steps">
-              <li>새 탭에서 Move report를 완료합니다.</li>
-              <li>결과 화면의 핵심 문구를 복사합니다.</li>
-              <li>이 페이지로 돌아와 붙여넣고, 상담 폼을 작성합니다.</li>
-            </ol>
+            {autoFilled ? (
+              <p className="pl-mr-desc pl-mr-desc--autofill">
+                Move report 결과가 자동으로 반영됐습니다. 아래에서 내용을 확인하고 상담 폼으로 이동하세요.
+              </p>
+            ) : (
+              <>
+                <p className="pl-mr-desc">
+                  테스트를 완료하면 결과가 이 페이지에 자동으로 연결됩니다.
+                </p>
+                <ol className="pl-mr-steps">
+                  <li>아래 버튼으로 Move report를 시작합니다.</li>
+                  <li>결과 화면에서 "상담 신청하기"를 누르면 이 페이지로 돌아옵니다.</li>
+                  <li>결과 요약이 자동 반영된 상태로 상담 폼을 작성합니다.</li>
+                </ol>
+              </>
+            )}
             <div className="pl-mr-actions">
               <Link href="/move-report" className="pl-btn pl-btn-primary" target="_blank" rel="noopener noreferrer">
-                Move report 새 탭에서 시작하기
+                Move report 시작하기
               </Link>
+              {autoFilled ? (
+                <Link href="#apply" className="pl-btn pl-btn-primary">
+                  상담 폼으로 이동
+                </Link>
+              ) : null}
             </div>
           </div>
 
           <div className="pl-mr-right">
-            <div className="pl-result-label">상담 연동용 요약</div>
+            <div className="pl-result-label">
+              {autoFilled ? '자동 반영된 요약' : '상담 연동용 요약'}
+            </div>
+            {autoFilled ? (
+              <div className="pl-mr-autofill-badge">Move report 결과 자동 연결됨</div>
+            ) : null}
             <textarea
               className="pl-mr-summary"
               value={summaryInput}
-              onChange={(e) => setSummaryInput(e.target.value)}
-              placeholder="Move report 결과 핵심 내용을 붙여넣어 주세요."
+              onChange={(e) => { setSummaryInput(e.target.value); setAutoFilled(false); }}
+              placeholder="Move report를 완료하면 결과가 여기에 자동으로 채워집니다."
             />
             <div className="pl-mr-summary-actions">
               <button type="button" className="pl-btn pl-btn-primary" onClick={handleApplySummary}>
                 요약 반영
               </button>
               <button type="button" className="pl-btn pl-btn-outline" onClick={handleResetSummary}>
-                요약 초기화
+                초기화
               </button>
               <Link href="#apply" className="pl-btn pl-btn-outline">
                 상담 폼으로 이동
