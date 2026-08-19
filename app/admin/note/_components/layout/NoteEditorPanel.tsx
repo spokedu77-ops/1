@@ -273,6 +273,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
             </nav>
           </div>
           {loadingState === 'saving' && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-neutral-400" />}
+          {loadingState === 'syncing' && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-amber-500" />}
           {loadingState === 'saved' && <Check className="h-4 w-4 shrink-0 text-emerald-500" />}
         </div>
       )}
@@ -331,6 +332,13 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
               {loadingState === 'saving' && (
                 <span className="flex items-center gap-1 px-2 text-[12px] text-neutral-400">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span className="hidden sm:inline">저장 중…</span>
+                </span>
+              )}
+              {loadingState === 'syncing' && (
+                <span className="flex items-center gap-1 px-2 text-[12px] text-amber-500">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span className="hidden sm:inline">동기화 중…</span>
                 </span>
               )}
               {loadingState === 'saved' && lastSavedAt && (

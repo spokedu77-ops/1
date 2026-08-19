@@ -37,7 +37,14 @@ export type NoteBlock = {
   version?: number;
 };
 
-export type LoadingState = 'idle' | 'loading' | 'saving' | 'saved';
+/**
+ * idle    — 대기
+ * loading — 문서 로드 중
+ * saving  — content debounce / 서버 push 전
+ * syncing — 서버에 push 보냈으나 아직 outbound 잔여 있음 (재시도 포함)
+ * saved   — outbound 비워짐 · DB 반영 완료
+ */
+export type LoadingState = 'idle' | 'loading' | 'saving' | 'syncing' | 'saved';
 export type SortKey = 'recent' | 'title';
 
 export type NoteCollaborator = {
