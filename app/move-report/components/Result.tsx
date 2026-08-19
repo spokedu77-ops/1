@@ -71,7 +71,7 @@ export default function Result({
   const handleGoPrivateConsult = useCallback(() => {
     if (typeof window === 'undefined') return;
     try {
-      const summaryText = `[Move report 결과] ${displayName} · ${p.name} (${key})\n${axisLabelsJoined(key)} · ${p.tagline}`;
+      const summaryText = `[Move report 결과] ${displayName} · ${p.title} (${key})\n${axisLabelsJoined(key)} · ${p.catchcopy}`;
       window.localStorage.setItem('private.moveReport.summary', summaryText);
     } catch {
       // ignore
