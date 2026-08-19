@@ -60,10 +60,10 @@ export function getSpomoveDifficultyOptions(
       ];
     case 'colorTracker':
       return [
-        { value: '1', label: '보통', sub: '1패널 · 느림' },
-        { value: '2', label: '보통', sub: '1패널 · 빠름' },
-        { value: '3', label: '어려움', sub: '2패널 · 느림' },
-        { value: '4', label: '어려움', sub: '2패널 · 빠름' },
+        { value: '1', label: '보통', sub: '1패널 · 느림 · 9개' },
+        { value: '2', label: '보통', sub: '1패널 · 빠름 · 13개' },
+        { value: '3', label: '어려움', sub: '2패널 · 느림 · 9개' },
+        { value: '4', label: '어려움', sub: '2패널 · 빠름 · 13개' },
       ];
     case 'mole':
       return [

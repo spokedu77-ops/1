@@ -171,16 +171,16 @@ type TierParams = {
   scrambleFlash: boolean;
 };
 
-/** L1=구 L2, L2=구 L3, L3=구 L3+추적 중 전체 화면 간헐 플래시 */
+/** L1=구 L2(느림·9개), L2=구 L3(빠름·13개), L3=구 L3+추적 중 전체 화면 간헐 플래시 */
 function tierParams(tier: ColorTrackerTier): TierParams {
   if (tier === 1) {
     return {
-      ballCount: 1,
+      ballCount: 9,
       chaosAmp: 0.18,
       revealMs: 3700,
       scrambleMs: 9000,
       answerMs: 1600,
-      speedFactor: 2.35,
+      speedFactor: 1.57,
       wallChaos: 0.08,
       collisionPasses: 2,
       sepBoost: 1.08,
@@ -189,7 +189,7 @@ function tierParams(tier: ColorTrackerTier): TierParams {
   }
   if (tier === 2) {
     return {
-      ballCount: 2,
+      ballCount: 13,
       chaosAmp: 0.28,
       revealMs: 2350,
       scrambleMs: 12600,
@@ -202,7 +202,7 @@ function tierParams(tier: ColorTrackerTier): TierParams {
     };
   }
   return {
-      ballCount: 2,
+    ballCount: 13,
     chaosAmp: 0.32,
     revealMs: 2350,
     scrambleMs: 12600,
@@ -217,7 +217,9 @@ function tierParams(tier: ColorTrackerTier): TierParams {
 
 function tierBadge(tier: ColorTrackerTier, dualPanel: boolean): string {
   const difficulty = dualPanel ? '어려움 · 2패널' : '보통 · 1패널';
-  return `${difficulty} · 공 ${tier === 1 ? 1 : 2}개 · 빠름`;
+  const speed = tier === 1 ? '느림' : '빠름';
+  const balls = tier === 1 ? 9 : 13;
+  return `${difficulty} · 공 ${balls}개 · ${speed}`;
 }
 
 function buildFlashSchedule(scrambleMs: number): number[] {

@@ -1580,7 +1580,7 @@ function SettingsScreen({
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  보통은 1패널, 어려움은 2패널입니다. 각 난이도에서 추적 속도만 느림/빠름으로 나눕니다.
+                  보통은 1패널, 어려움은 2패널입니다. 느림은 공 9개, 빠름은 공 13개입니다. 흰 공 1개를 끝까지 추적합니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -1626,8 +1626,8 @@ function SettingsScreen({
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 1 as const, label: '느림', sub: '추적 속도 낮음' },
-                  { id: 3 as const, label: '빠름', sub: '추적 속도 높음' },
+                  { id: 1 as const, label: '느림', sub: '공 9개' },
+                  { id: 3 as const, label: '빠름', sub: '공 13개' },
                 ]).map((opt) => {
                   const active = (launch.colorTrackerTier === 3 ? 3 : 1) === opt.id;
                   return (

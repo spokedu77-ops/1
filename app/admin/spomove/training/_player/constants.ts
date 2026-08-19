@@ -98,7 +98,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 6, name: '두더지 잡기', enName: 'Mole', desc: '난이도 쉬움/보통. 쉬움은 1마리, 보통은 1마리 50%·2마리 50%로 등장합니다. 보너스타임 ON 시 본 활동 뒤 15초 동안 점점 빠르게 다중 등장합니다.' },
       { id: 10, name: '축구 : 골키퍼', enName: 'Soccer Goalkeeper', desc: '난이도 쉬움/보통. 쉬움은 공 1개, 보통은 공 1개 50%·2개 50%로 날아옵니다. 보너스타임 ON 시 본 활동 뒤 15초 동안 점점 빠르게 다중 슛이 날아옵니다.' },
       { id: 201, name: '손 따로, 발 따로', enName: 'Hand and Foot Separate', desc: '난이도 쉬움/보통/어려움. 기존 변형 4분할 프로그램을 시지각 반응으로 이관합니다.' },
-      { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '난이도 보통/어려움 뒤 공 1개 또는 2개를 선택합니다. 두 단계 모두 빠른 속도로 진행합니다.' },
+      { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '난이도 보통(1패널)/어려움(2패널)과 속도 느림(9개)/빠름(13개)을 고릅니다. 흰 공 1개를 검은 공들 속에서 추적합니다.' },
       { id: 8, name: '(보류) 숫자 연산 기차', enName: '(On Hold) Number Train', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
       { id: 12, name: '(보류) 색 기억 그리드', enName: '(On Hold) Color Memory Grid', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
       { id: 13, name: '(보류) 바이러스 폭증', enName: '(On Hold) Virus Outbreak', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },

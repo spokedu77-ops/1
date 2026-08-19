@@ -1905,29 +1905,32 @@ export default function MemoryGameApp({
 
                 {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 9 ? (
                   <div style={S.sec}>
-                    {stepNum(stepSpeed, 'Choose ball count')}
+                    {stepNum(stepSpeed, 'Choose speed')}
                     <p style={{ margin: '0 0 0.75rem', fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                      Both options use fast movement. Choose how many white balls to track.
+                      Slow uses 9 balls. Fast uses 13 balls plus a brief full-screen flash.
                     </p>
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      {([1, 2] as const).map((count) => (
+                      {([
+                        { id: 1 as const, label: '느림 · 공 9개' },
+                        { id: 3 as const, label: '빠름 · 공 13개' },
+                      ]).map((opt) => (
                         <button
-                          key={count}
+                          key={opt.id}
                           type="button"
-                          onClick={() => set('colorTrackerTier', count)}
+                          onClick={() => set('colorTrackerTier', opt.id)}
                           style={{
                             flex: 1,
                             padding: '0.65rem 0.75rem',
                             borderRadius: '0.75rem',
-                            border: `2px solid ${settings.colorTrackerTier === count ? '#F97316' : 'var(--border)'}`,
-                            background: settings.colorTrackerTier === count ? '#FFF7ED' : 'var(--card)',
+                            border: `2px solid ${(settings.colorTrackerTier === 3 ? 3 : 1) === opt.id ? '#F97316' : 'var(--border)'}`,
+                            background: (settings.colorTrackerTier === 3 ? 3 : 1) === opt.id ? '#FFF7ED' : 'var(--card)',
                             color: 'var(--text)',
                             fontWeight: 800,
                             cursor: 'pointer',
                             fontFamily: 'inherit',
                           }}
                         >
-                          공 {count}개 · 빠름
+                          {opt.label}
                         </button>
                       ))}
                     </div>
