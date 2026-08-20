@@ -85,6 +85,7 @@ export default function ActivityPage() {
             <div className="mt-4 grid gap-3">
               {records.slice(0, 8).map((record) => {
                 const isQuick = record.recordType === 'quick';
+                const isLessonNote = record.recordType === 'lesson_note';
                 const hasMemo = Boolean(record.memo?.trim() || record.parentNoteSnapshot?.trim());
                 const hasObservation = record.focusCount > 0 || record.skillCount > 0 || record.students.some((student) => Boolean(student.memo?.trim()));
                 return (
@@ -98,7 +99,9 @@ export default function ActivityPage() {
                     </h3>
                     <p className="mt-2 break-words text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
                       {record.classId}
-                      {isQuick
+                      {isLessonNote
+                        ? ' · 수업 메모'
+                        : isQuick
                         ? (hasMemo ? ' · 관찰 메모 있음' : ' · 관찰 메모 없음') + (record.focusCount > 0 ? ' · 집중 관찰 있음' : '')
                         : ` · 출석 ${record.present}명${hasMemo ? ' · 메모 있음' : hasObservation ? ' · 관찰 기록 있음' : ''}`}
                     </p>

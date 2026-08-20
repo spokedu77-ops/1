@@ -18,6 +18,7 @@ export function toStudentProfile(dto: MasterStudentDto): StudentProfile {
     name: dto.name,
     group: dto.group ?? '',
     meta: studentMetaToDisplay(dto.meta),
+    guidanceNote: dto.guidanceNote ?? '',
     level: '',
     attendance: 0,
     classes: 0,
@@ -49,8 +50,10 @@ export function toClassRecord(dto: MasterClassRecordDto): ClassRecord {
       focused: student.focused,
       skills: student.skills,
       memo: student.memo ?? undefined,
+      observationScore: student.observationScore ?? null,
     })),
     memo: dto.memo ?? undefined,
+    applicationIdea: dto.applicationIdea ?? undefined,
     parentNoteSnapshot: dto.parentNoteSnapshot ?? undefined,
     recordType: dto.recordType,
   };
@@ -67,6 +70,7 @@ export function classRecordToCreateInput(record: ClassRecord, serverStudents: Ma
     programTitle: record.programTitle || null,
     recordType: record.recordType ?? 'detailed',
     memo: record.memo ?? null,
+    applicationIdea: record.applicationIdea ?? null,
     parentNoteSnapshot: record.parentNoteSnapshot ?? null,
     students: record.students.map((student) => {
       const serverStudent = studentById.get(student.studentId);
@@ -78,6 +82,7 @@ export function classRecordToCreateInput(record: ClassRecord, serverStudents: Ma
         focused: student.focused,
         skills: student.skills,
         memo: student.memo ?? null,
+        observationScore: student.observationScore ?? null,
       };
     }),
   };

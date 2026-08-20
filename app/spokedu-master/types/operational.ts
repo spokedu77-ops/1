@@ -1,5 +1,6 @@
-export type ExistingRecordType = 'quick' | 'detailed';
+export type ExistingRecordType = 'quick' | 'detailed' | 'lesson_note';
 export type ExistingAttendanceStatus = 'pending' | 'present' | 'absent';
+export type ObservationScore = 1 | 2 | 3;
 export type MasterStudentMeta = string | Record<string, unknown>;
 
 export type MasterStudentDto = {
@@ -8,6 +9,7 @@ export type MasterStudentDto = {
   name: string;
   group: string | null;
   meta: MasterStudentMeta;
+  guidanceNote?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -21,6 +23,7 @@ export type MasterClassRecordStudentDto = {
   focused: boolean;
   skills: string[];
   memo: string | null;
+  observationScore?: ObservationScore | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -35,6 +38,7 @@ export type MasterClassRecordDto = {
   programTitle: string | null;
   recordType: ExistingRecordType;
   memo: string | null;
+  applicationIdea?: string | null;
   parentNoteSnapshot: string | null;
   present: number;
   absent: number;
@@ -50,12 +54,14 @@ export type CreateStudentInput = {
   name: string;
   group: string | null;
   meta: MasterStudentMeta;
+  guidanceNote?: string | null;
 };
 
 export type UpdateStudentInput = {
   name: string;
   group: string | null;
   meta: MasterStudentMeta;
+  guidanceNote?: string | null;
 };
 
 export type CreateClassRecordStudentInput = {
@@ -66,6 +72,7 @@ export type CreateClassRecordStudentInput = {
   focused: boolean;
   skills: string[];
   memo: string | null;
+  observationScore?: ObservationScore | null;
 };
 
 export type CreateClassRecordInput = {
@@ -77,6 +84,7 @@ export type CreateClassRecordInput = {
   programTitle: string | null;
   recordType: ExistingRecordType;
   memo: string | null;
+  applicationIdea?: string | null;
   parentNoteSnapshot: string | null;
   students: CreateClassRecordStudentInput[];
 };

@@ -21,6 +21,7 @@ const RECORD_SELECT = `
   program_title,
   record_type,
   memo,
+  application_idea,
   parent_note_snapshot,
   created_at,
   updated_at,
@@ -36,6 +37,7 @@ const RECORD_SELECT = `
     focused,
     skills,
     memo,
+    observation_score,
     created_at,
     updated_at
   )
@@ -104,7 +106,7 @@ export async function POST(request: Request) {
   const supabase = getServiceSupabase();
 
   const { data: createData, error: createError } = await supabase.rpc(
-    'spokedu_master_create_class_record',
+    'spokedu_master_create_class_record_v2',
     classRecordCreateRpcPayload(input, access.userId),
   );
   const createdRecord = firstCreateRpcRow(createData);
@@ -165,7 +167,7 @@ export async function PATCH(request: Request) {
 
   const supabase = getServiceSupabase();
   const { error: replaceError } = await supabase.rpc(
-    'spokedu_master_replace_class_record',
+    'spokedu_master_replace_class_record_v2',
     classRecordReplaceRpcPayload(input, access.userId, recordId),
   );
 

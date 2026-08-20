@@ -207,13 +207,13 @@ export const landingHeroCinematicCopy = homeHeroFullBleedCopy;
 /**
  * Public Marketing foundation
  * - 다음 페이지별 리팩토링에서 점진적으로 사용한다.
- * - Display roles match the approved V17 browser rendering: Cafe24 400.
+ * - Display roles match the approved V17 browser rendering: Pretendard bold.
  */
 export const marketingHeroDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-normal [font-synthesis:none] tracking-[-0.04em] ${koreanText} text-[clamp(44px,6vw,76px)] leading-[1.08] max-[480px]:text-[38px]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-bold tracking-[-0.04em] ${koreanText} text-[clamp(44px,6vw,76px)] leading-[1.08] max-[480px]:text-[38px]`;
 
 export const marketingSectionDisplay =
-  `[font-family:var(--spokedu-marketing-font-display)] font-normal [font-synthesis:none] tracking-[-0.03em] ${koreanText} text-[clamp(34px,5vw,58px)] leading-[1.16]`;
+  `[font-family:var(--spokedu-marketing-font-display)] font-bold tracking-[-0.03em] ${koreanText} text-[clamp(34px,5vw,58px)] leading-[1.16]`;
 
 export const marketingCompactDisplay =
   `[font-family:var(--spokedu-marketing-font-display)] font-normal tracking-[-0.03em] [font-synthesis:none] ${koreanText} text-[1.75rem] leading-[1.16] sm:text-[2.1rem] lg:text-[2.75rem]`;

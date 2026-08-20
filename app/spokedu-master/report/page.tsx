@@ -19,6 +19,7 @@ import {
   writeOwnerSaveDraft,
 } from '../lib/saveDraftStorage';
 import { toClassRecord } from '../lib/operationalDataAdapter';
+import { isParentReportRecordEligible } from '../lib/reportRecordPrivacy';
 import { spmChipClass } from '../lib/masterUiClasses';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
@@ -92,6 +93,7 @@ function buildStudentObservation(record: ClassRecord, studentId: string) {
 }
 
 function buildRecordDraft(record: ClassRecord, target: ReportTarget, studentId: string | null) {
+  if (!isParentReportRecordEligible(record)) return '';
   const parentNote = record.parentNoteSnapshot?.trim();
   // 빠른 기록에서 남긴 안내문 초안이 있으면 그 내용을 본문으로 우선 사용한다.
   if (parentNote) {
@@ -138,6 +140,7 @@ function getAudienceOutputTitle(audience: Audience) {
 }
 
 function buildRecordNote(record: ClassRecord): string {
+  if (!isParentReportRecordEligible(record)) return '';
   const parts: string[] = [];
   if (record.memo?.trim()) parts.push(record.memo.trim());
   if (record.recordType !== 'quick') {
@@ -360,7 +363,10 @@ function ReportContent() {
   const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
   const operationalError = operationalData.status === 'error';
   const operationalReady = operationalData.status === 'ready';
-  const classRecords = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
+  const classRecords = useMemo(
+    () => operationalData.classRecords.map(toClassRecord).filter(isParentReportRecordEligible),
+    [operationalData.classRecords],
+  );
   const programPool = useMemo(() => programs, [programs]);
   const { programId: queryProgramId, recordId: queryRecordId, savedId: savedExplanationId } = getReportQuery(searchParams);
   const initialProgramId = queryProgramId ?? programPool[0]?.id ?? '';

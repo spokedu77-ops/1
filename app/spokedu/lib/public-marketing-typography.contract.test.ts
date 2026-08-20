@@ -33,7 +33,7 @@ describe('public marketing typography contract', () => {
   it('owns the two font families in the marketing foundation', () => {
     expect(globals).toMatch(/@font-face\s*{[^}]*font-family:\s*"Cafe24SsurroundAir"[^}]*Cafe24SsurroundAir\.woff/);
     expect(existsSync(join(root, 'public/fonts/Cafe24SsurroundAir.woff'))).toBe(true);
-    expect(globals).toMatch(/--spokedu-marketing-font-display:\s*"Cafe24SsurroundAir",\s*Pretendard/);
+    expect(globals).toMatch(/--spokedu-marketing-font-display:\s*Pretendard/);
     expect(globals).toMatch(/--spokedu-marketing-font-body:\s*Pretendard,\s*"Noto Sans KR",\s*"Apple SD Gothic Neo",\s*"Malgun Gothic",\s*system-ui/);
     expect(globals).toMatch(/--spokedu-marketing-font-metric:\s*var\(--spokedu-marketing-font-display\)/);
     expect(globals).toMatch(/\.spokedu-marketing\s*{[^}]*font-family:\s*var\(--spokedu-marketing-font-body\)/);
@@ -59,11 +59,22 @@ describe('public marketing typography contract', () => {
     expect(v17).toMatch(/\.root :global\(\.section-title\)\s*{[^}]*font-weight:\s*700/);
   });
 
-  it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s uses the approved Cafe24 400 display contract', (name) => {
+  it.each(['marketingHeroDisplay', 'marketingSectionDisplay'])('%s uses the approved Pretendard 700 display contract', (name) => {
     const value = utility(utilities, name);
     expect(value).toContain('[font-family:var(--spokedu-marketing-font-display)]');
-    expect(value).toContain('font-normal');
-    expect(value).toContain('[font-synthesis:none]');
+    expect(value).toContain('font-bold');
+    expect(value).not.toContain('Cafe24SsurroundAir');
+    expect(value).not.toContain('font-normal');
+    expect(value).not.toContain('[font-synthesis:none]');
+  });
+
+  it('keeps Home heading CSS limited to page-specific scale', () => {
+    const home = read('app/spokedu/components/home/home-canonical.module.css');
+    const headingRule = home.match(/\.heroTitle,\s*\.sectionTitle,\s*\.compactTitle,\s*\.bridgeTitle\s*{[^}]*}/)?.[0] ?? '';
+    expect(headingRule).not.toContain('font-family: "Cafe24SsurroundAir"');
+    expect(headingRule).not.toMatch(/font-weight:\s*400/);
+    expect(home).not.toMatch(/\.(?:heroTitle|sectionTitle|compactTitle|bridgeTitle)\s*{[^}]*font-family:\s*"Cafe24SsurroundAir"/);
+    expect(home).not.toMatch(/\.(?:heroTitle|sectionTitle|compactTitle|bridgeTitle)\s*{[^}]*font-weight:\s*400/);
   });
 
   it.each(['marketingCompactDisplay', 'marketingMetricDisplay'])('%s keeps its explicit lightweight display role', (name) => {

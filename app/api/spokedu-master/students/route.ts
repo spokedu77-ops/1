@@ -9,7 +9,7 @@ import {
   type MasterStudentRow,
 } from '../operational-data';
 
-const STUDENT_SELECT = 'id,owner_id,legacy_id,name,group_name,meta,created_at,updated_at,deleted_at';
+const STUDENT_SELECT = 'id,owner_id,legacy_id,name,group_name,meta,guidance_note,created_at,updated_at,deleted_at';
 const STUDENT_SERVER_ERROR = '학생 정보를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 export const dynamic = 'force-dynamic';

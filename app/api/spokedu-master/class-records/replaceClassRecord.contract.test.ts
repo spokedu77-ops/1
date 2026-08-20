@@ -19,7 +19,7 @@ describe('atomic class record PATCH contract', () => {
 
   it('calls one replacement RPC and then reloads the existing DTO', () => {
     expect(patch.match(/\.rpc\(/g)).toHaveLength(1);
-    expect(patch).toContain("'spokedu_master_replace_class_record'");
+    expect(patch).toContain("'spokedu_master_replace_class_record_v2'");
     expect(patch).toContain('.select(RECORD_SELECT)');
     expect(patch).toContain('toClassRecordDto');
   });

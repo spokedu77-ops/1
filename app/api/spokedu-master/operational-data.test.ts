@@ -43,6 +43,7 @@ describe('SPOKEDU MASTER operational data contract', () => {
       name: '학생 A',
       group_name: 'A반',
       meta: { note: '8세' },
+      guidance_note: null,
     });
   });
 
@@ -137,6 +138,7 @@ describe('SPOKEDU MASTER operational data contract', () => {
         focused: false,
         skills: ['방향 전환'],
         memo: null,
+        observationScore: null,
       },
       'auth-user',
       'record-id',
@@ -153,6 +155,7 @@ describe('SPOKEDU MASTER operational data contract', () => {
       focused: false,
       skills: ['방향 전환'],
       memo: null,
+      observation_score: null,
     });
   });
 

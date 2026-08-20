@@ -28,18 +28,27 @@ describe('SPOKEDU MASTER day loop journey', () => {
     expect(detail.match(/data-detail-action=/g)).toHaveLength(3);
   });
 
-  it('keeps CompactOpsBar multi-lesson preparation and removal compact', () => {
+  it('keeps unfinished work visible above multi-lesson preparation and removal', () => {
     expect(homeOps).toContain("kind: 'today_lesson'");
     expect(homeOps).toContain("label: '준비'");
     expect(homeOps).toContain('`/spokedu-master/library/${encodeURIComponent(programId)}`');
     expect(homeOps).toContain("label: '기록'");
     expect(homeOps).toContain('`/spokedu-master/class-record?program=${encodeURIComponent(programId)}`');
     expect(opsBar).toContain('if (todayLessons.length > 0)');
+    expect(opsBar).toContain("anchor.kind === 'record_draft' || anchor.kind === 'report_draft'");
+    expect(opsBar).toContain('data-compact-ops-section="unfinished"');
+    expect(opsBar).toContain('data-compact-ops-section="today-lessons"');
+    expect(opsBar.indexOf('data-compact-ops-section="unfinished"')).toBeLessThan(
+      opsBar.indexOf('data-compact-ops-section="today-lessons"'),
+    );
     expect(opsBar).toContain('todayLessons.map');
     expect(opsBar).toContain('/spokedu-master/class-record?program=${lesson.programId}');
     expect(opsBar).toContain('max-h-[84px]');
     expect(opsBar).toContain('오늘 수업에서 제거');
     expect(opsBar).toContain('onRemoveTodayLesson(lesson.programId)');
+    expect(homeOps.indexOf('buildRecordDraftAnchor(input)')).toBeLessThan(
+      homeOps.indexOf('buildReportDraftAnchor(input)'),
+    );
   });
 
   it('closes record and report back to home with loop CTAs', () => {

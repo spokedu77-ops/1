@@ -4,6 +4,7 @@ import type {
   MasterClassRecordDto,
   MasterStudentDto,
   MasterStudentMeta,
+  ObservationScore,
 } from '@/app/spokedu-master/types/operational';
 
 export type MasterStudentRow = {
@@ -13,6 +14,7 @@ export type MasterStudentRow = {
   name: string;
   group_name: string | null;
   meta: MasterStudentMeta;
+  guidance_note?: string | null;
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
@@ -29,6 +31,7 @@ export type MasterClassRecordStudentRow = {
   focused: boolean;
   skills: string[];
   memo: string | null;
+  observation_score?: ObservationScore | null;
   created_at: string;
   updated_at: string;
 };
@@ -44,6 +47,7 @@ export type MasterClassRecordRow = {
   program_title: string | null;
   record_type: ExistingRecordType;
   memo: string | null;
+  application_idea?: string | null;
   parent_note_snapshot: string | null;
   created_at: string;
   updated_at: string;
@@ -56,6 +60,7 @@ export type NormalizedStudentInput = {
   name: string;
   group: string | null;
   meta: MasterStudentMeta;
+  guidanceNote?: string | null;
 };
 
 export type NormalizedClassRecordStudentInput = {
@@ -66,6 +71,7 @@ export type NormalizedClassRecordStudentInput = {
   focused: boolean;
   skills: string[];
   memo: string | null;
+  observationScore: ObservationScore | null;
 };
 
 export type NormalizedClassRecordInput = {
@@ -77,6 +83,7 @@ export type NormalizedClassRecordInput = {
   programTitle: string | null;
   recordType: ExistingRecordType;
   memo: string | null;
+  applicationIdea: string | null;
   parentNoteSnapshot: string | null;
   students: NormalizedClassRecordStudentInput[];
 };
@@ -129,6 +136,7 @@ export function normalizeStudentInput(body: unknown): NormalizedStudentInput {
     name,
     group: textOrNull(body.group),
     meta: normalizeMeta(body.meta),
+    ...(Object.hasOwn(body, 'guidanceNote') ? { guidanceNote: textOrNull(body.guidanceNote) } : {}),
   };
 }
 
@@ -148,8 +156,14 @@ function normalizeProgramId(value: unknown) {
 }
 
 function normalizeRecordType(value: unknown): ExistingRecordType {
-  if (value === 'quick' || value === 'detailed') return value;
+  if (value === 'quick' || value === 'detailed' || value === 'lesson_note') return value;
   throw new Error('recordType is invalid');
+}
+
+function normalizeObservationScore(value: unknown): ObservationScore | null {
+  if (value == null) return null;
+  if (value === 1 || value === 2 || value === 3) return value;
+  throw new Error('observationScore is invalid');
 }
 
 function normalizeAttendance(value: unknown): ExistingAttendanceStatus {
@@ -183,6 +197,7 @@ function normalizeRecordStudentInput(value: unknown): NormalizedClassRecordStude
     focused: value.focused === true,
     skills: normalizeSkills(value.skills),
     memo: textOrNull(value.memo),
+    observationScore: normalizeObservationScore(value.observationScore),
   };
 }
 
@@ -191,7 +206,7 @@ export function normalizeClassRecordInput(body: unknown): NormalizedClassRecordI
   const students = body.students;
   if (!Array.isArray(students)) throw new Error('students must be an array');
 
-  return {
+  const normalized = {
     legacyId: textOrNull(body.legacyId),
     date: normalizeDate(body.date),
     lessonTitle: textOrNull(body.lessonTitle),
@@ -200,9 +215,19 @@ export function normalizeClassRecordInput(body: unknown): NormalizedClassRecordI
     programTitle: textOrNull(body.programTitle),
     recordType: normalizeRecordType(body.recordType),
     memo: textOrNull(body.memo),
+    applicationIdea: textOrNull(body.applicationIdea),
     parentNoteSnapshot: textOrNull(body.parentNoteSnapshot),
     students: students.map(normalizeRecordStudentInput),
   };
+  if (normalized.recordType === 'lesson_note') {
+    if (!normalized.programId || !normalized.memo) {
+      throw new Error('lesson_note requires programId and memo');
+    }
+    if (normalized.students.length > 0) {
+      throw new Error('lesson_note students must be empty');
+    }
+  }
+  return normalized;
 }
 
 export function toStudentDto(row: MasterStudentRow): MasterStudentDto {
@@ -212,6 +237,7 @@ export function toStudentDto(row: MasterStudentRow): MasterStudentDto {
     name: row.name,
     group: row.group_name,
     meta: row.meta ?? {},
+    guidanceNote: row.guidance_note ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -227,6 +253,7 @@ export function toClassRecordDto(row: MasterClassRecordRow): MasterClassRecordDt
     focused: student.focused,
     skills: student.skills ?? [],
     memo: student.memo,
+    observationScore: student.observation_score ?? null,
     createdAt: student.created_at,
     updatedAt: student.updated_at,
   }));
@@ -241,6 +268,7 @@ export function toClassRecordDto(row: MasterClassRecordRow): MasterClassRecordDt
     programTitle: row.program_title,
     recordType: row.record_type,
     memo: row.memo,
+    applicationIdea: row.application_idea ?? null,
     parentNoteSnapshot: row.parent_note_snapshot,
     present: students.filter((student) => student.attendance === 'present').length,
     absent: students.filter((student) => student.attendance === 'absent').length,
@@ -259,6 +287,7 @@ export function studentInsertPayload(input: NormalizedStudentInput, ownerId: str
     name: input.name,
     group_name: input.group,
     meta: input.meta,
+    guidance_note: input.guidanceNote ?? null,
   };
 }
 
@@ -267,6 +296,7 @@ export function studentUpdatePayload(input: NormalizedStudentInput) {
     name: input.name,
     group_name: input.group,
     meta: input.meta,
+    ...(input.guidanceNote !== undefined ? { guidance_note: input.guidanceNote } : {}),
   };
 }
 
@@ -281,6 +311,7 @@ export function classRecordInsertPayload(input: NormalizedClassRecordInput, owne
     program_title: input.programTitle,
     record_type: input.recordType,
     memo: input.memo,
+    application_idea: input.applicationIdea,
     parent_note_snapshot: input.parentNoteSnapshot,
   };
 }
@@ -294,6 +325,7 @@ export function classRecordUpdatePayload(input: NormalizedClassRecordInput) {
     program_title: input.programTitle,
     record_type: input.recordType,
     memo: input.memo,
+    application_idea: input.applicationIdea,
     parent_note_snapshot: input.parentNoteSnapshot,
   };
 }
@@ -314,6 +346,7 @@ export function classRecordStudentInsertPayload(
     focused: student.focused,
     skills: student.skills,
     memo: student.memo,
+    observation_score: student.observationScore ?? null,
   };
 }
 
@@ -326,6 +359,7 @@ function classRecordRpcStudents(input: NormalizedClassRecordInput) {
     focused: student.focused,
     skills: student.skills,
     memo: student.memo,
+    observation_score: student.observationScore ?? null,
   }));
 }
 
@@ -340,6 +374,7 @@ export function classRecordCreateRpcPayload(input: NormalizedClassRecordInput, o
     p_program_title: input.programTitle,
     p_record_type: input.recordType,
     p_memo: input.memo,
+    p_application_idea: input.applicationIdea,
     p_parent_note_snapshot: input.parentNoteSnapshot,
     p_students: classRecordRpcStudents(input),
   };
@@ -360,6 +395,7 @@ export function classRecordReplaceRpcPayload(
     p_program_title: input.programTitle,
     p_record_type: input.recordType,
     p_memo: input.memo,
+    p_application_idea: input.applicationIdea,
     p_parent_note_snapshot: input.parentNoteSnapshot,
     p_students: classRecordRpcStudents(input),
   };

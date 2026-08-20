@@ -81,6 +81,7 @@ export interface StudentProfile {
   name: string;
   group: string;
   meta: string;
+  guidanceNote?: string;
   level: string;
   attendance: number;
   classes: number;
@@ -98,6 +99,7 @@ export interface ClassStudentRecord {
   focused: boolean;
   skills: string[];
   memo?: string;
+  observationScore?: 1 | 2 | 3 | null;
 }
 
 export interface ClassRecord {
@@ -115,8 +117,9 @@ export interface ClassRecord {
   kakaoSent: boolean;
   students: ClassStudentRecord[];
   memo?: string;
+  applicationIdea?: string;
   parentNoteSnapshot?: string;
-  recordType?: 'quick' | 'detailed';
+  recordType?: 'quick' | 'detailed' | 'lesson_note';
 }
 
 export interface Notification {

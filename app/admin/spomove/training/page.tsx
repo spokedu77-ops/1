@@ -917,6 +917,53 @@ function SettingsScreen({
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <style jsx>{`
+        .settings-body {
+          flex: 1;
+          padding: 30px 24px 48px;
+          display: flex;
+          justify-content: center;
+        }
+        .settings-shell {
+          width: 100%;
+          max-width: 1040px;
+        }
+        .settings-columns {
+          display: grid;
+          grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+          gap: clamp(16px, 3vw, 32px);
+          align-items: start;
+        }
+        .settings-column {
+          min-width: 0;
+        }
+        .theme-options {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        @media (max-width: 599px) {
+          .settings-body {
+            padding: 18px 12px 24px;
+          }
+          .settings-columns {
+            grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+            gap: 10px;
+          }
+          .theme-options {
+            gap: 5px;
+          }
+          .theme-option {
+            min-height: 32px;
+            padding: 6px 8px !important;
+            border-radius: 9px !important;
+          }
+          .theme-option span {
+            font-size: 11px !important;
+            line-height: 1.25;
+          }
+        }
+      `}</style>
       <header style={{
         height: 52, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12,
         padding: '0 24px', borderBottom: `1px solid ${T.border}`, background: T.bg,
@@ -937,8 +984,8 @@ function SettingsScreen({
         </span>
       </header>
 
-      <div style={{ flex: 1, padding: '42px 24px 80px', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 520 }}>
+      <div className="settings-body">
+        <div className="settings-shell">
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
             트레이닝 설정
           </h1>
@@ -1001,17 +1048,20 @@ function SettingsScreen({
             ) : null}
           </div>
 
-          <div style={{ height: 1, background: T.border, margin: '22px 0 26px' }} />
+          <div style={{ height: 1, background: T.border, margin: '18px 0 20px' }} />
+
+          <div className="settings-columns">
+            <div className="settings-column">
 
           {/* 세부 테마 */}
-          <section style={{ marginBottom: 22 }}>
+          <section style={{ marginBottom: 18 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
               <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>세부 테마</label>
               <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
                 {levelLabelKoEn(modeId, levelId)}
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="theme-options">
               {(m?.levels ?? []).map((lv) => {
                 const active =
                   modeId === 'basic'
@@ -1021,6 +1071,7 @@ function SettingsScreen({
                       : levelId === lv.id;
                 return (
                   <button
+                    className="theme-option"
                     key={lv.id}
                     type="button"
                     onClick={() => {
@@ -1103,6 +1154,7 @@ function SettingsScreen({
               })}
               {modeId === 'basic' && (
                 <button
+                  className="theme-option"
                   type="button"
                   onClick={() => setShowVariantAppendix((v) => !v)}
                   style={{
@@ -1129,6 +1181,9 @@ function SettingsScreen({
               <VariantAppendixFullscreen onClose={() => setShowVariantAppendix(false)} />
             )}
           </section>
+
+            </div>
+            <div className="settings-column">
 
           {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}
           {modeId === 'flanker' && levelId !== 1 && levelId !== 2 && levelId !== 3 && levelId !== 5 && levelId !== 6 ? (
@@ -2852,6 +2907,8 @@ function SettingsScreen({
           >
             훈련 시작 ▶
           </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

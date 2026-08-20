@@ -23,7 +23,7 @@ describe('atomic class record POST contract', () => {
 
   it('creates by one RPC transaction and reloads by authenticated owner plus returned id', () => {
     expect(post.match(/\.rpc\(/g)).toHaveLength(1);
-    expect(post).toContain("'spokedu_master_create_class_record'");
+    expect(post).toContain("'spokedu_master_create_class_record_v2'");
     expect(post).toContain('classRecordCreateRpcPayload(input, access.userId)');
     expect(post).toContain(".eq('owner_id', access.userId)");
     expect(post).toContain(".eq('id', createdRecord.record_id)");
@@ -84,6 +84,7 @@ describe('classRecordCreateRpcPayload', () => {
       p_program_title: 'Program',
       p_record_type: 'detailed',
       p_memo: 'Common memo',
+      p_application_idea: null,
       p_parent_note_snapshot: 'Parent note',
       p_students: [
         {
@@ -94,6 +95,7 @@ describe('classRecordCreateRpcPayload', () => {
           focused: true,
           skills: ['balance'],
           memo: 'Student memo',
+          observation_score: null,
         },
       ],
     });
