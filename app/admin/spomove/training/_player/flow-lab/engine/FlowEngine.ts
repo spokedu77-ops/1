@@ -14,6 +14,7 @@ import { FlowAudio } from './FlowAudio';
 import { AdaptiveQuality } from './AdaptiveQuality';
 import { ObstacleManager } from './entities/ObstacleManager';
 import { ColorGateManager, type ColorGateRuntimeInfo } from './entities/ColorGateManager';
+import type { ColorGateVariant } from './modules/colorGateGuides';
 import type { FlowBridge } from './entities/ObstacleManager';
 import {
   BridgeRenderer,
@@ -131,6 +132,8 @@ export interface FlowEngineOptions {
   panoramaHighUrl?:  string;
   panoramaLowUrl?:   string;
   panoramaYawDeg?:   number;
+  colorGateCueSeconds?: number;
+  colorGateVariant?: ColorGateVariant;
 }
 
 interface BridgeObj extends FlowBridge {
@@ -537,7 +540,7 @@ export class FlowEngine {
       this.colorGates.setScene(this.scene);
       return;
     }
-    this.colorGates = new ColorGateManager(staticPerfTier === 'low');
+    this.colorGates = new ColorGateManager(staticPerfTier === 'low', this.opts.colorGateCueSeconds, this.opts.colorGateVariant);
     this.colorGates.setScene(this.scene);
     void preloadColorGatePoseImages().then((imagesByPose) => {
       if (this.disposed || !this.colorGates) return;
@@ -874,10 +877,12 @@ export class FlowEngine {
       this.isChangingLane = false;
       this.targetX = 0;
       this.groundY = GROUND_Y;
+      // Existing signal seconds map to the complete gate approach duration.
+      const gateTravel = 3520 * dt / Math.max(1, this.opts.colorGateCueSeconds ?? 4);
       this.colorGates.update(
         PLAYER_Z,
         dt,
-        bridgeMove,
+        gateTravel,
         (gate) => {
           this.cb.onColorGateColor?.(gate?.gateColorId ?? null, gate?.pose ?? null);
         },

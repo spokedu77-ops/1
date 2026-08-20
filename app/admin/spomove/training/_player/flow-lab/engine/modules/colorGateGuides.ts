@@ -43,6 +43,22 @@ export type ColorGatePoseKey =
   | 'partner-squat'
   | 'partner-high-five';
 
+export type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy';
+
+/** One shared asset pack, split into option-specific pose pools by metadata. */
+export const COLOR_GATE_VARIANT_POSES: Record<ColorGateVariant, readonly ColorGatePoseKey[]> = {
+  'solo-easy': ['jump', 'kick', 'side-squat', 'lunge-reach', 'star'],
+  'solo-normal': [
+    'high-knee', 'single-leg-balance', 'side-lunge', 'bridge', 'plank', 'side-plank',
+    'bird-dog', 'v-sit', 'seated-toe-touch', 'downward-dog',
+  ],
+  'together-easy': ['partner-hold', 'partner-squat', 'partner-high-five'],
+};
+
+export function colorGatePosesForVariant(variant: ColorGateVariant): readonly ColorGatePoseKey[] {
+  return COLOR_GATE_VARIANT_POSES[variant];
+}
+
 export const COLOR_GATE_POSE_IMAGE_MAP: Record<ColorGatePoseKey, string> = {
   jump:                 '/spomove/dive/color-gate/jump.png',
   kick:                 '/spomove/dive/color-gate/kick.png',

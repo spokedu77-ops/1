@@ -163,7 +163,7 @@ function buildTodayLessonAnchor(input: HomeOpsInput): HomeAnchor | null {
     kind: 'today_lesson',
     status: '오늘',
     title,
-    primary: { label: '수업 준비', href: `/spokedu-master/library/${encodeURIComponent(programId)}` },
+    primary: { label: '준비', href: `/spokedu-master/library/${encodeURIComponent(programId)}` },
     secondary: {
       label: '기록',
       href: `/spokedu-master/class-record?program=${encodeURIComponent(programId)}`,

@@ -308,19 +308,22 @@ export function applyRestoreBlockSnapshots(
 
 /** 배치 content 저장(flushContentPatches) — useNoteBlockActions에서 등록 */
 let registeredContentFlush: (() => Promise<void>) | null = null;
-/** drain 완료까지 대기 — soft timeout으로 pending을 버리지 않음 */
+/** undo/redo·명시적 drain용 — soft timeout으로 pending을 버리지 않음 */
 const BEFORE_LEAVE_CONTENT_FLUSH_TIMEOUT_MS = 15_000;
 
 export function registerNoteContentFlush(fn: (() => Promise<void>) | null): void {
   registeredContentFlush = fn;
 }
 
-/** 문서 이탈 전 편집 내용을 최대한 보존 */
+/**
+ * 편집 본문을 스토어에 고정한 뒤 persist flush를 기다림.
+ * undo/redo처럼 **적용 전** 큐가 비어야 할 때만 사용.
+ * soft-timeout은 대기만 끊고 flush·emergency draft는 계속 (ZERO LOSS #5).
+ */
 export async function commitNoteDocumentBeforeLeave(): Promise<void> {
   commitActiveNoteEditorToStore();
   if (!registeredContentFlush) return;
   try {
-    // soft-timeout으로 pending을 버리지 않음 — timeout은 대기만 끊고 flush는 계속
     await Promise.race([
       registeredContentFlush(),
       new Promise<void>((resolve) => {
@@ -345,8 +348,20 @@ export function resetNoteDocumentEditorState(): void {
   store.hydrate([]);
 }
 
-/** 이탈 커밋 — 블록 스냅샷은 유지(SWR). 다음 open이 교체한다. */
+/**
+ * 사이드바·문서 전환용.
+ * - TipTap → store는 **동기** 커밋 (전환 전 본문 고정)
+ * - persist flush는 **await 하지 않음** (최대 15s 클릭 먹통 방지)
+ * - flush는 fire-and-forget + 파이프라인 unmount dispose(drain/emergency draft)가 담당
+ *   → pending 폐기 금지 (ZERO LOSS #5). UI 전환만 분리.
+ */
 export async function commitAndResetNoteDocumentBeforeSwitch(): Promise<void> {
-  await commitNoteDocumentBeforeLeave();
+  commitActiveNoteEditorToStore();
+  const flush = registeredContentFlush;
+  if (flush) {
+    void flush().catch(() => {
+      // 실패해도 store·draft·dispose 경로가 보존
+    });
+  }
   clearNoteDocumentEditorFocus();
 }

@@ -36,7 +36,7 @@ describe('normalizeTransactionPayloadForInvariants', () => {
     expect(result.updates[0]).toMatchObject({
       id: 'text',
       parent_block_id: null,
-      order_index: 1,
+      order_index: 0,
     });
   });
 

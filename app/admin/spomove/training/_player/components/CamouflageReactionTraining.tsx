@@ -12,10 +12,12 @@ import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import {
   camoShapeSize,
+  clampCamouflagePoint,
+  isCamoCssPointInPath,
   resolveCamouflagePosition,
   type CamouflagePlacementMode,
 } from '../lib/camouflagePlacement';
-import { pickCamoShapePath } from '../lib/camouflageShapes';
+import { buildCamoShapePath, pickCamoShapeIndex } from '../lib/camouflageShapes';
 
 /** 인덱스 순서: 빨 → 파 → 초 → 노 (다른 reactTrain 레벨과 동일) */
 const CAMO_COLORS = [
@@ -34,6 +36,10 @@ type Phase = 'NOISE' | 'REVEAL' | 'HOLD';
 
 type CamoTarget = {
   colorIdx: number;
+  shapeIdx: number;
+  /** 리사이즈 후에도 같은 상대 위치를 유지하기 위한 정규화 좌표 */
+  nx: number;
+  ny: number;
   shapePath: Path2D;
 };
 
@@ -47,6 +53,7 @@ type CamoGame = {
   laneCount: [number, number, number, number];
   W: number;
   H: number;
+  dpr: number;
   blockSize: number;
   edgeIdx: number;
   raf: number | null;
@@ -162,6 +169,7 @@ export function CamouflageReactionTraining({
       laneCount: [0, 0, 0, 0],
       W: 0,
       H: 0,
+      dpr: 1,
       blockSize: 20,
       edgeIdx: 0,
       raf: null,
@@ -169,16 +177,36 @@ export function CamouflageReactionTraining({
     };
     gRef.current = g;
 
+    const rebuildTargetPaths = () => {
+      if (g.W <= 0 || g.H <= 0 || g.targets.length === 0) return;
+      const size = camoShapeSize(g.W, g.H);
+      g.targets = g.targets.map((t) => {
+        const { cx, cy } = clampCamouflagePoint(g.W, g.H, t.nx * g.W, t.ny * g.H, size);
+        return {
+          ...t,
+          nx: g.W > 0 ? cx / g.W : 0.5,
+          ny: g.H > 0 ? cy / g.H : 0.5,
+          shapePath: buildCamoShapePath(t.shapeIdx, cx, cy, size),
+        };
+      });
+    };
+
     const calcLayout = () => {
       const w = play.clientWidth;
       const h = play.clientHeight;
       if (w <= 0 || h <= 0) return;
+      const prevW = g.W;
+      const prevH = g.H;
       const r = setupCanvas(cv, w, h);
       g.W = r.cssW;
       g.H = r.cssH;
+      g.dpr = r.dpr;
       // 도형 실루엣이 격자에 묻히지 않도록 항상 고운 블록을 쓴다.
       // navigator.hardwareConcurrency 기반 저사양 판정은 브라우저별 편차가 커서 신뢰하지 않는다.
       g.blockSize = g.W < 600 ? 9 : g.W > 1200 ? 15 : 12;
+      if (g.targets.length > 0 && (prevW !== g.W || prevH !== g.H)) {
+        rebuildTargetPaths();
+      }
     };
 
     const updateHudTime = () => {
@@ -191,6 +219,10 @@ export function CamouflageReactionTraining({
     if (hudRoundsRef.current) hudRoundsRef.current.textContent = '0';
 
     const newTargets = () => {
+      if (g.W <= 0 || g.H <= 0) {
+        g.targets = [];
+        return;
+      }
       const size = camoShapeSize(g.W, g.H);
       const count = concurrent === 2 ? 2 : 1;
       g.targets = Array.from({ length: count }, (_, idx) => {
@@ -202,9 +234,13 @@ export function CamouflageReactionTraining({
           edge,
           size,
         );
+        const shapeIdx = pickCamoShapeIndex();
         return {
           colorIdx: Math.floor(Math.random() * 4),
-          shapePath: pickCamoShapePath(cx, cy, size),
+          shapeIdx,
+          nx: cx / g.W,
+          ny: cy / g.H,
+          shapePath: buildCamoShapePath(shapeIdx, cx, cy, size),
         };
       });
       if (placementModeRef.current === 'variant') {
@@ -215,6 +251,14 @@ export function CamouflageReactionTraining({
     const startRound = () => {
       calcLayout();
       newTargets();
+      // 레이아웃이 아직 0이면 다음 프레임에 재시도 (TV/임베드 초기 레이아웃)
+      if (g.targets.length === 0) {
+        requestAnimationFrame(() => {
+          if (!gRef.current?.running) return;
+          calcLayout();
+          if (g.targets.length === 0) newTargets();
+        });
+      }
       g.phase = 'NOISE';
       g.phaseStartMs = performance.now();
       if (msgRef.current) {
@@ -249,7 +293,13 @@ export function CamouflageReactionTraining({
       if (g.phase === 'REVEAL') progress = Math.min(elapsed / revealMs, 1);
       else if (g.phase === 'HOLD') progress = 1;
 
+      if (g.W <= 0 || g.H <= 0) {
+        g.raf = requestAnimationFrame(loop);
+        return;
+      }
+
       const bs = g.blockSize;
+      const dpr = g.dpr;
       const cols = Math.ceil(g.W / bs);
       const rows = Math.ceil(g.H / bs);
       for (let row = 0; row < rows; row++) {
@@ -261,7 +311,7 @@ export function CamouflageReactionTraining({
           let targetColorIdx: number | null = null;
           if (g.phase !== 'NOISE') {
             for (const target of g.targets) {
-              if (ctx.isPointInPath(target.shapePath, cx, cy)) {
+              if (isCamoCssPointInPath(ctx, target.shapePath, cx, cy, dpr)) {
                 targetColorIdx = target.colorIdx;
                 break;
               }
@@ -302,7 +352,11 @@ export function CamouflageReactionTraining({
       onDone: beginGame,
     });
 
-    const unbindResize = bindViewportResize(play, () => calcLayout());
+    const unbindResize = bindViewportResize(play, () => {
+      calcLayout();
+      // 초기 레이아웃 지연(TV/임베드) 후에도 도형이 비어 있지 않게 채운다.
+      if (g.targets.length === 0 && g.W > 0 && g.H > 0) newTargets();
+    });
 
     return () => {
       stopCountdown();

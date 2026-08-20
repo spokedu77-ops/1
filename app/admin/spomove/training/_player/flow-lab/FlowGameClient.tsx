@@ -29,6 +29,8 @@ interface FlowGameClientProps {
   panoramaHighUrl?:  string;
   panoramaLowUrl?:   string;
   panoramaYawDeg?:   number;
+  colorGateCueSeconds?: number;
+  colorGateVariant?: import('./engine/modules/colorGateGuides').ColorGateVariant;
   onComplete:        (stats: FlowStats) => void;
   onExit:            () => void;
   onEngineReady?:    (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
@@ -63,6 +65,8 @@ export default function FlowGameClient({
   panoramaHighUrl,
   panoramaLowUrl,
   panoramaYawDeg,
+  colorGateCueSeconds,
+  colorGateVariant,
   onComplete,
   onExit,
   onEngineReady,
@@ -165,7 +169,7 @@ export default function FlowGameClient({
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, motionScale, bgmPath, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg },
+        { stages, motionScale, bgmPath, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateVariant },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -205,7 +209,7 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, motionScale, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
+  }, [stages.length, motionScale, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateVariant, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 
@@ -234,7 +238,6 @@ export default function FlowGameClient({
         cueWord={buildColorGateCue(gateColorId)}
         shortInstruction={buildColorGateInstruction(gateColorId, gatePose)}
         poseLabel={COLOR_GATE_POSE_LABELS[gatePose]}
-        remainingSec={phase === 'playing' ? timerSec : undefined}
         passCount={gatePassCount}
       />
     )
@@ -319,6 +322,23 @@ export default function FlowGameClient({
       )}
 
       {colorGateHud}
+
+      {/* 색 관문도 기존 Flow HUD와 같은 왼쪽 아래 타이머 + 하단 진행 바를 사용 */}
+      {phase === 'playing' && currentStage?.isColorGate && (
+        <>
+          <div style={{ position: 'absolute', bottom: 18, left: 16, zIndex: 30, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ fontSize: '0.65rem', color: '#38BDF8', fontWeight: 800, letterSpacing: '0.16em', padding: '0.2rem 0.65rem', borderRadius: '9999px', border: '1px solid rgba(56,189,248,0.55)', background: 'rgba(56,189,248,0.14)' }}>
+              MOTION GATE
+            </span>
+            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.72)', fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>
+              {Math.ceil(timerSec)}초
+            </span>
+          </div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30, height: 3, background: 'rgba(255,255,255,0.1)' }}>
+            <div style={{ height: '100%', width: `${totalProgress * 100}%`, background: '#38BDF8', transition: 'width 0.12s linear' }} />
+          </div>
+        </>
+      )}
 
       {/* ─── 스테이지 인트로 — 색 관문은 ColorGateHud, 그 외 중앙 팝업 ─ */}
       {phase === 'stage-intro' && currentStage && !currentStage.isColorGate && (
@@ -523,8 +543,19 @@ export default function FlowGameClient({
       {/* ─── 나가기 버튼 (항상) ──────────────────────────────────────────── */}
       {phase !== 'complete' && (
         <button
+          type="button"
           onClick={handleExit}
-          style={{ position: 'absolute', top: 10, right: 14, background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', borderRadius: '0.5rem', padding: '0.25rem 0.65rem', fontSize: '0.72rem', cursor: 'pointer' }}
+          style={{
+            position: 'absolute', top: 10, right: 14, zIndex: 40,
+            minWidth: 82, padding: '0.5rem 0.75rem',
+            background: 'rgba(15,23,42,0.88)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            color: '#fff', borderRadius: '0.7rem',
+            fontSize: '0.78rem', fontWeight: 800,
+            fontFamily: 'inherit', cursor: 'pointer',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(10px)',
+          }}
         >
           ✕ 나가기
         </button>

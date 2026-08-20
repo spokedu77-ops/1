@@ -43,7 +43,7 @@ export function violatesMemoPadSilentServerMutation(
 export function mergeMemoPadTransactionPatchFromSanitize<T extends Record<string, unknown>>(
   clientPatch: T,
   sanitized: { document_id?: string; parent_block_id?: string | null; type?: string },
-): T {
+): T & { document_id?: string; parent_block_id?: string | null; type?: string } {
   return {
     ...clientPatch,
     ...(sanitized.document_id !== undefined ? { document_id: sanitized.document_id } : {}),

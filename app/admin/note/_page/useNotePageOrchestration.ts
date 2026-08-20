@@ -25,7 +25,6 @@ import {
 } from '../_lib/noteDocumentParentClient';
 import { setNoteToggleBackspaceRuntime } from '../_lib/noteToggleBackspaceRuntime';
 import { commitNoteDocumentBeforeLeave } from '../_lib/noteBlockStateMerge';
-import { reportNoteDurableSave } from '../_lib/noteSaveTrust';
 import { isNoteContentSavePending } from '../_lib/notePendingSave';
 
 /** NotePageContext value 조립 — 문서·블록·선택·DnD 훅 wiring */
@@ -173,7 +172,9 @@ export function useNotePageOrchestration(): NotePageContextValue {
     triggerSaveRef,
     onAfterIdleReconcile: handleAfterIdleReconcile,
   });
-  documentEngineRef.current = blockData.documentEngine;
+  useEffect(() => {
+    documentEngineRef.current = blockData.documentEngine;
+  }, [blockData.documentEngine]);
   const editorFocus = useNoteEditorFocus({
     blocksRef: blockData.blocksRef,
     selectedBlockIdsRef,

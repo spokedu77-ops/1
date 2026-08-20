@@ -5,6 +5,7 @@ import { setActiveEditorBridge, clearActiveEditorBridge } from './noteActiveEdit
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   applyRestoreBlockSnapshots,
+  commitAndResetNoteDocumentBeforeSwitch,
   commitNoteDocumentBeforeLeave,
   LOCAL_ONLY_BLOCK_GRACE_MS,
   mergeBlocksWithStoreContent,
@@ -132,6 +133,50 @@ describe('commitNoteDocumentBeforeLeave', () => {
     });
     expect(flush).toHaveBeenCalledOnce();
     expect(order).toEqual(['editor', 'flush']);
+  });
+
+  it('ZERO LOSS switch: commits editor sync, starts flush, does not await slow flush', async () => {
+    const order: string[] = [];
+    let resolveFlush: () => void = () => {};
+    const onChange = vi.fn(() => order.push('editor'));
+    const flush = vi.fn(() => new Promise<void>((resolve) => {
+      order.push('flush-started');
+      resolveFlush = resolve;
+    }));
+    registerNoteEditor('active', {
+      isDestroyed: false,
+      getText: () => 'typed before switch',
+      getHTML: () => '<p>typed before switch</p>',
+    } as unknown as Editor);
+    setActiveEditorBridge({
+      blockId: 'active',
+      field: 'text',
+      slotElement: {} as HTMLElement,
+      getProps: () => ({
+        text: '',
+        content: {},
+        onChange,
+      } as never),
+    });
+    registerNoteContentFlush(flush);
+
+    const switched = await Promise.race([
+      commitAndResetNoteDocumentBeforeSwitch().then(() => 'switched'),
+      new Promise<'blocked'>((resolve) => {
+        globalThis.setTimeout(() => resolve('blocked'), 50);
+      }),
+    ]);
+
+    expect(switched).toBe('switched');
+    expect(onChange).toHaveBeenCalledWith({
+      text: 'typed before switch',
+      html: '<p>typed before switch</p>',
+    });
+    expect(flush).toHaveBeenCalledOnce();
+    expect(order).toEqual(['editor', 'flush-started']);
+    expect(useNoteBlockStore.getState().activeEditor).toBeNull();
+
+    resolveFlush();
   });
 });
 

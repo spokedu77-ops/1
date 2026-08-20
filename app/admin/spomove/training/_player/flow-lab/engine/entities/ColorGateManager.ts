@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import {
   COLOR_GATE_POSE_SEQUENCE,
+  colorGatePosesForVariant,
   GATE_COLORS,
   PLAYABLE_GATE_COLOR_IDS,
   buildColorGateSilhouetteCanvas,
   type ColorGatePoseKey,
+  type ColorGateVariant,
   type GateColorId,
 } from '../modules/colorGateGuides';
 
@@ -16,7 +18,6 @@ const GATE_CENTER_Y = 155;
 const GATE_SPAWN_Z = -2800;
 const GATE_DESPAWN_OFFSET_Z = 900;
 const FIRST_SPAWN_DELAY_SEC = 1.6;
-const SPAWN_INTERVAL_SEC = 4.25;
 const HUD_VISIBLE_DISTANCE = 3200;
 const APPROACH_Z = -520;
 const PASS_Z = 320;
@@ -73,7 +74,7 @@ export class ColorGateManager {
   private sameColorRunLength = 0;
   private poseBag: ColorGatePoseKey[] = [];
 
-  constructor(lowRes = false) {
+  constructor(lowRes = false, private readonly cueSeconds = 4, private readonly variant: ColorGateVariant = 'solo-easy') {
     this.lowRes = lowRes;
   }
 
@@ -130,7 +131,7 @@ export class ColorGateManager {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawn(this.pickNextGateColor());
-      this.spawnTimer += SPAWN_INTERVAL_SEC;
+      this.spawnTimer += Math.max(1, this.cueSeconds);
     }
 
     const lerpK = Math.min(1, dt * SCALE_LERP);
@@ -218,7 +219,7 @@ export class ColorGateManager {
 
   private pickNextPose(): ColorGatePoseKey {
     if (this.poseBag.length === 0) {
-      this.poseBag = [...COLOR_GATE_POSE_SEQUENCE];
+      this.poseBag = [...(colorGatePosesForVariant(this.variant) ?? COLOR_GATE_POSE_SEQUENCE)];
       for (let i = this.poseBag.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         const tmp = this.poseBag[i]!;

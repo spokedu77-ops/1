@@ -11,12 +11,12 @@ function structuralPatchFor(
   before: LoadedNoteBlock,
   after: LoadedNoteBlock,
 ): ReturnType<typeof pickMemoPadServerStructuralPatch> {
-  return pickMemoPadServerStructuralPatch({
-    parent_block_id: (before.parent_block_id ?? null) !== (after.parent_block_id ?? null)
-      ? after.parent_block_id ?? null
-      : undefined,
-    type: before.type !== after.type ? after.type : undefined,
-  });
+  const patch: Record<string, unknown> = {};
+  if ((before.parent_block_id ?? null) !== (after.parent_block_id ?? null)) {
+    patch.parent_block_id = after.parent_block_id ?? null;
+  }
+  if (before.type !== after.type) patch.type = after.type;
+  return pickMemoPadServerStructuralPatch(patch);
 }
 
 export async function applyNoteBlockInvariantMigrations(

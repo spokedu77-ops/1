@@ -75,7 +75,16 @@ export const CAMO_SHAPE_BUILDERS: Array<(cx: number, cy: number, size: number) =
   (cx, cy, size) => createHeartPath(cx, cy, size),
 ];
 
-export function pickCamoShapePath(cx: number, cy: number, size: number): Path2D {
-  const builder = CAMO_SHAPE_BUILDERS[Math.floor(Math.random() * CAMO_SHAPE_BUILDERS.length)]!;
+export function buildCamoShapePath(shapeIdx: number, cx: number, cy: number, size: number): Path2D {
+  const n = CAMO_SHAPE_BUILDERS.length;
+  const builder = CAMO_SHAPE_BUILDERS[((shapeIdx % n) + n) % n]!;
   return builder(cx, cy, size);
+}
+
+export function pickCamoShapeIndex(): number {
+  return Math.floor(Math.random() * CAMO_SHAPE_BUILDERS.length);
+}
+
+export function pickCamoShapePath(cx: number, cy: number, size: number): Path2D {
+  return buildCamoShapePath(pickCamoShapeIndex(), cx, cy, size);
 }

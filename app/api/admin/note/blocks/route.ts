@@ -264,12 +264,12 @@ async function auditBatchBlockUpdates(
 
 /** API write 후 DB 구조 수리 — Memo Pad M3 */
 function buildInvariantRepairPatch(before: NoteBlock, after: NoteBlock): Record<string, unknown> | null {
-  return pickMemoPadServerStructuralPatch({
-    parent_block_id: (before.parent_block_id ?? null) !== (after.parent_block_id ?? null)
-      ? after.parent_block_id ?? null
-      : undefined,
-    type: before.type !== after.type ? after.type : undefined,
-  });
+  const patch: Record<string, unknown> = {};
+  if ((before.parent_block_id ?? null) !== (after.parent_block_id ?? null)) {
+    patch.parent_block_id = after.parent_block_id ?? null;
+  }
+  if (before.type !== after.type) patch.type = after.type;
+  return pickMemoPadServerStructuralPatch(patch);
 }
 
 export async function enforceDocumentBlockInvariants(

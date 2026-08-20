@@ -296,6 +296,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
 }
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
+type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy';
 
 type LaunchSettings = {
   speed: number;
@@ -321,6 +322,7 @@ type LaunchSettings = {
   flowFeatures: FlowFeatureKey[];
   diveEnvironmentTheme: DiveThemeId;
   flowDuration: number;
+  colorGateVariant: ColorGateVariant;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 숫자 연산 기차(엔진 8) 전용: L1/L2/L3 */
@@ -376,6 +378,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowFeatures: [],
   diveEnvironmentTheme: 'space',
   flowDuration: 25,
+  colorGateVariant: 'solo-easy',
   reactTrainConcurrent: 2,
   numberCartTier: 2,
   colorTrackerTier: 1,
@@ -418,6 +421,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
     diveEnvironmentTheme: normalizeDiveThemeId(auto.diveEnvironmentTheme ?? fallback.diveEnvironmentTheme),
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
+    colorGateVariant: auto.colorGateVariant ?? fallback.colorGateVariant,
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
     numberCartTier: (auto.numberCartTier as 1 | 2 | 3 | undefined) ?? fallback.numberCartTier,
     colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
@@ -546,6 +550,7 @@ function TrainingPortal({
     flowFeatures: launch.flowFeatures,
     diveEnvironmentTheme: launch.diveEnvironmentTheme,
     flowDuration: launch.flowDuration,
+    colorGateVariant: launch.colorGateVariant,
     reactTrainConcurrent: launch.reactTrainConcurrent,
     numberCartTier: launch.numberCartTier,
     colorTrackerTier: launch.colorTrackerTier,
@@ -571,7 +576,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.colorGateVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -1908,15 +1913,17 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (DIVE·흰 공·순차기억 1·2번은 내부 타이밍) */}
-          {!isFlowOrChallenge && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {/* 속도 (모션 게이트는 관문이 화면을 통과하는 시간으로 직접 매핑) */}
+          {(!isFlowOrChallenge || isColorGateTheme) && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? '비행 시간' : '신호 속도'}
+                  {isColorGateTheme ? '게이트 통과 시간' : isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? '비행 시간' : '신호 속도'}
                 </label>
                 <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                  {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10
+                  {isColorGateTheme
+                    ? `${launch.speed.toFixed(1)}초 / 화면 통과`
+                    : isReactTrain && reactTrainEngineLevelForUi(levelId) === 10
                     ? `${launch.speed.toFixed(1)}초 / 스폰→히트`
                     : `${launch.speed.toFixed(1)}초 / 자극`}
                 </div>
@@ -2078,6 +2085,42 @@ function SettingsScreen({
                   (시지각 반응 전체 속도/스폰 간격 완화)
                 </span>
               </button>
+            </section>
+          ) : null}
+
+          {/* 모션 게이트 전용 옵션 */}
+          {isColorGateTheme ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>모션 게이트 옵션</label>
+                <p style={{ margin: '3px 0 0', fontSize: 10, color: T.textDim }}>참여 방식과 난이도에 맞는 포즈 이미지 묶음을 선택합니다.</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+                {([
+                  ['solo-easy', '솔로', '쉬움'],
+                  ['solo-normal', '솔로', '보통'],
+                  ['together-easy', '투게더', '쉬움'],
+                ] as const).map(([value, label, difficulty]) => {
+                  const active = launch.colorGateVariant === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, colorGateVariant: value }))}
+                      style={{
+                        minWidth: 0, padding: '11px 6px', borderRadius: 12,
+                        border: `1.5px solid ${active ? '#06B6D4' : T.border}`,
+                        background: active ? 'rgba(6,182,212,0.14)' : T.card,
+                        color: active ? '#22D3EE' : T.textDim,
+                        fontFamily: 'inherit', cursor: 'pointer', textAlign: 'center',
+                      }}
+                    >
+                      <span style={{ display: 'block', fontSize: 13, fontWeight: 900 }}>{active ? '✓ ' : ''}{label}</span>
+                      <span style={{ display: 'block', marginTop: 2, fontSize: 10, fontWeight: 700 }}>{difficulty}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </section>
           ) : null}
 

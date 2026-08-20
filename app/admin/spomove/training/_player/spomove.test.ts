@@ -1024,36 +1024,62 @@ describe('camouflage placement', () => {
       camoShapeSize,
       camoShapeRadius,
     } = await import('./lib/camouflagePlacement');
-    const w = 1280;
-    const h = 720;
-    const size = camoShapeSize(w, h);
-    const radius = camoShapeRadius(size);
+    const sizes = [
+      [1280, 720],
+      [800, 600],
+      [1920, 1080],
+      [400, 900],
+      [100, 80],
+    ] as const;
 
-    for (let edge = 0; edge < 4; edge += 1) {
-      const { cx, cy } = resolveCamouflagePosition('variant', w, h, edge, size);
-      expect(cx).toBeGreaterThanOrEqual(radius);
-      expect(cx).toBeLessThanOrEqual(w - radius);
-      expect(cy).toBeGreaterThanOrEqual(radius);
-      expect(cy).toBeLessThanOrEqual(h - radius);
+    for (const [w, h] of sizes) {
+      const size = camoShapeSize(w, h);
+      const radius = camoShapeRadius(size);
+      for (let edge = 0; edge < 4; edge += 1) {
+        const { cx, cy } = resolveCamouflagePosition('variant', w, h, edge, size);
+        expect(cx).toBeGreaterThanOrEqual(radius - 1e-6);
+        expect(cx).toBeLessThanOrEqual(w - radius + 1e-6);
+        expect(cy).toBeGreaterThanOrEqual(radius - 1e-6);
+        expect(cy).toBeLessThanOrEqual(h - radius + 1e-6);
+      }
     }
   });
 
-  test('variant mode uses pole edges in sequence', async () => {
-    const { pickCamouflageVariantPosition, camoShapeSize } = await import('./lib/camouflagePlacement');
+  test('variant mode clamps to in-bounds pole edges', async () => {
+    const {
+      pickCamouflageVariantPosition,
+      camoShapeSize,
+      camoShapeRadius,
+    } = await import('./lib/camouflagePlacement');
     const w = 1000;
     const h = 800;
     const size = camoShapeSize(w, h);
-    const margin = 0.2;
+    const radius = camoShapeRadius(size);
 
     const left = pickCamouflageVariantPosition(w, h, 0, size);
     const right = pickCamouflageVariantPosition(w, h, 1, size);
     const top = pickCamouflageVariantPosition(w, h, 2, size);
     const bottom = pickCamouflageVariantPosition(w, h, 3, size);
 
-    expect(left.cx / w).toBeLessThan(margin);
-    expect(right.cx / w).toBeGreaterThan(1 - margin);
-    expect(top.cy / h).toBeLessThan(margin);
-    expect(bottom.cy / h).toBeGreaterThan(1 - margin);
+    expect(left.cx).toBeCloseTo(radius, 5);
+    expect(right.cx).toBeCloseTo(w - radius, 5);
+    expect(top.cy).toBeCloseTo(radius, 5);
+    expect(bottom.cy).toBeCloseTo(h - radius, 5);
+  });
+
+  test('isCamoCssPointInPath scales CSS coords by dpr', async () => {
+    const { isCamoCssPointInPath } = await import('./lib/camouflagePlacement');
+    const calls: Array<[Path2D, number, number]> = [];
+    const path = {} as Path2D;
+    const ctx = {
+      isPointInPath(p: Path2D, x: number, y: number) {
+        calls.push([p, x, y]);
+        return true;
+      },
+    } as unknown as CanvasRenderingContext2D;
+
+    expect(isCamoCssPointInPath(ctx, path, 100, 50, 2)).toBe(true);
+    expect(calls[0]).toEqual([path, 200, 100]);
   });
 });
 

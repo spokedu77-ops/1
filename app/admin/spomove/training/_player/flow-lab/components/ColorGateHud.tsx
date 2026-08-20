@@ -7,7 +7,6 @@ interface ColorGateHudProps {
   cueWord: string;
   shortInstruction: string;
   poseLabel: string;
-  remainingSec?: number;
   passCount?: number;
 }
 
@@ -17,7 +16,6 @@ export default function ColorGateHud({
   cueWord,
   shortInstruction,
   poseLabel,
-  remainingSec,
   passCount,
 }: ColorGateHudProps) {
   const color = GATE_COLORS[gateColorId];
@@ -111,18 +109,6 @@ export default function ColorGateHud({
         </span>
       ) : null}
 
-      {remainingSec !== undefined ? (
-        <span style={{
-          position: 'absolute',
-          bottom: 8,
-          right: 16,
-          fontSize: '0.8rem',
-          fontFamily: 'monospace',
-          color: 'rgba(255,255,255,0.55)',
-        }}>
-          {Math.ceil(remainingSec)}s
-        </span>
-      ) : null}
     </div>
   );
 }

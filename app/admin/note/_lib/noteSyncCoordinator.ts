@@ -15,6 +15,7 @@ import {
   shouldForceResetLocalDocument,
   writeLocalDocument,
 } from './noteLocalDb';
+import { invalidateRememberedNoteDocumentBlocks } from './noteDocumentBlocksCache';
 import { applyRemoteOpRecords, mergeSnapshotPatches } from './noteOpReplay';
 import {
   collectPendingOutboundExcludedIds,
@@ -404,6 +405,11 @@ export class NoteSyncCoordinator {
       this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
     } else {
       this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
+    }
+
+    // PC마다 session/IDB 잔존으로 순서가 갈라지지 않게 — 서버 구조 채택 시 방문 캐시도 폐기
+    if (!hasTopologyOutbound) {
+      invalidateRememberedNoteDocumentBlocks(this.documentId);
     }
 
     // ZERO LOSS: 미ack outbound 본문을 first-paint·IDB에 반영 (새로고침 후 서버 구버전만 보이는 구멍)

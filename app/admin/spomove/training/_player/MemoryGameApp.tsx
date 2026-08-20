@@ -113,6 +113,7 @@ type Screen =
   | 'result';
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
+type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy';
 
 type Settings = {
   mode: string;
@@ -159,6 +160,7 @@ type Settings = {
   flowLayout: 'sequential' | 'random';
   /** sequential DIVE에서 BONUS 스테이지 포함 여부 */
   flowIncludeBonus: boolean;
+  colorGateVariant: ColorGateVariant;
   /** ????????????????????????1?? ??????????????????????????????????????????????*/
   reactTrainConcurrent: 1 | 2 | 3;
   /** ???????????????????????????????????????8???????? engine level 9) L1/L2/L3 */
@@ -222,6 +224,7 @@ const defaultSettings: Settings = {
   flowDuration: 25,
   flowLayout: 'sequential',
   flowIncludeBonus: true,
+  colorGateVariant: 'solo-easy',
   reactTrainConcurrent: 2,
   numberCartTier: 2,
   colorTrackerTier: 1,
@@ -276,6 +279,7 @@ export type MemoryGameAutoLaunch = {
   flowDuration?: number;
   flowLayout?: 'sequential' | 'random';
   flowIncludeBonus?: boolean;
+  colorGateVariant?: ColorGateVariant;
   /** ????????????????????????1?? ??????????????????????????????????????????????*/
   reactTrainConcurrent?: 1 | 2 | 3;
   /** ???????????????????????????????????????8???????? engine level 9) L1/L2/L3 */
@@ -344,6 +348,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       flowFeatures: [...s.flowFeatures],
       diveEnvironmentTheme: s.diveEnvironmentTheme,
       flowDuration: s.flowDuration,
+      colorGateVariant: s.colorGateVariant,
       reactTrainConcurrent: s.reactTrainConcurrent,
       numberCartTier: s.numberCartTier,
       colorTrackerTier: s.colorTrackerTier,
@@ -1836,6 +1841,24 @@ export default function MemoryGameApp({
                     </div>
                   </button>
                 </div>
+                {settings.flowFeatures.has('colorGate') && (
+                  <div style={S.sec}>
+                    {stepNum(5, '모션 게이트 옵션')}
+                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                      {([
+                        ['solo-easy', '솔로 · 쉬움', '기본 전신 동작 5개'],
+                        ['solo-normal', '솔로 · 보통', '균형·코어 동작 10개'],
+                        ['together-easy', '투게더 · 쉬움', '2인 협동 동작 3개'],
+                      ] as const).map(([value, label, detail]) => (
+                        <button key={value} type="button" onClick={() => setSettings((s) => ({ ...s, colorGateVariant: value }))}
+                          style={{ padding: '0.75rem', borderRadius: '0.8rem', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text)', border: `2px solid ${settings.colorGateVariant === value ? '#38BDF8' : 'var(--border)'}`, background: settings.colorGateVariant === value ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
+                          <strong>{label}</strong>
+                          <span style={{ display: 'block', marginTop: '0.2rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>{detail}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div style={S.sec}>
                   {stepNum(6, "Stage duration")}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
@@ -2356,6 +2379,8 @@ export default function MemoryGameApp({
         panoramaHighUrl={divePanorama.highUrl}
         panoramaLowUrl={divePanorama.lowUrl}
         panoramaYawDeg={divePanorama.yawDeg}
+        colorGateCueSeconds={settings.speed}
+        colorGateVariant={settings.colorGateVariant}
         onComplete={handleFlowDone}
         onExit={stop}
         onEngineReady={(api) => { flowEngineApiRef.current = api; }}
