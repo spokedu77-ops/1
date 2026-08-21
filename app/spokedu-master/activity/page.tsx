@@ -1,153 +1,225 @@
 'use client';
 
-import Link from 'next/link';
-import { BookOpen, ClipboardList, FileText, Loader2, UserPlus, UsersRound } from 'lucide-react';
-import { useMemo } from 'react';
-import { toClassRecord } from '../lib/operationalDataAdapter';
+import { addMinutes, format, isSameDay, startOfDay } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import {
+  CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Clock3,
+  Plus, Save, UsersRound, XCircle,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BottomSheet } from '../components/ui/BottomSheet';
 import { useOperationalData } from '../operational/OperationalDataProvider';
+import { useMasterStore } from '../store';
+import type { MasterSessionDto, MasterSessionStatus, SaveSessionInput } from '../types/operational';
 
-function formatDate(value?: string | null) {
-  if (!value) return '최근';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '최근';
-  return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(date);
+function toLocalInput(date: Date) {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-function ActivityLoadingState() {
-  return (
-    <div className="mt-4 flex items-center justify-center gap-2 rounded-[15px] p-8" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
-      <Loader2 size={18} className="animate-spin" color="var(--spm-acc)" />
-      <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>수업 기록을 불러오는 중입니다.</p>
-    </div>
+function statusLabel(status: MasterSessionStatus) {
+  return status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
+}
+
+function statusTone(status: MasterSessionStatus) {
+  if (status === 'completed') return 'bg-emerald-50 text-emerald-700 ring-emerald-200';
+  if (status === 'cancelled') return 'bg-slate-100 text-slate-500 ring-slate-200';
+  return 'bg-blue-50 text-blue-700 ring-blue-200';
+}
+
+type DraftProgram = SaveSessionInput['programs'][number];
+
+function SessionSheet({
+  session,
+  initialDate,
+  onClose,
+}: {
+  session: MasterSessionDto | null;
+  initialDate: Date;
+  onClose: () => void;
+}) {
+  const data = useOperationalData();
+  const libraryPrograms = useMasterStore((state) => state.programs);
+  const initialStart = session ? new Date(session.startAt) : new Date(initialDate.setHours(10, 0, 0, 0));
+  const [classId, setClassId] = useState(session?.classId ?? data.classes[0]?.id ?? '');
+  const [startAt, setStartAt] = useState(toLocalInput(initialStart));
+  const [endAt, setEndAt] = useState(toLocalInput(session ? new Date(session.endAt) : addMinutes(initialStart, 60)));
+  const [status, setStatus] = useState<MasterSessionStatus>(session?.status ?? 'scheduled');
+  const [memo, setMemo] = useState(session?.memo ?? '');
+  const [programs, setPrograms] = useState<DraftProgram[]>(
+    session?.programs.map((item) => ({
+      programId: item.programId, programTitle: item.programTitle,
+      sortOrder: item.sortOrder, isCompleted: item.isCompleted,
+    })) ?? [],
   );
-}
+  const [attendance, setAttendance] = useState<Record<string, 'present' | 'absent'>>(
+    Object.fromEntries(session?.attendance.map((item) => [item.studentId, item.status]) ?? []),
+  );
+  const [programId, setProgramId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const selectedClass = data.classes.find((item) => item.id === classId);
+  const roster = data.students.filter((student) => (student.group ?? '').trim() === (selectedClass?.name ?? '').trim());
+  const availablePrograms = libraryPrograms.filter((program) => !programs.some((item) => String(item.programId) === program.id));
+  const completedPrograms = programs.filter((item) => item.isCompleted).length;
 
-function ActivityErrorState({ onRetry }: { onRetry: () => void }) {
+  const addProgram = () => {
+    const program = libraryPrograms.find((item) => item.id === programId);
+    const numericId = Number(program?.id);
+    if (!program || !Number.isInteger(numericId)) return;
+    setPrograms((current) => [...current, {
+      programId: numericId, programTitle: program.title, sortOrder: current.length, isCompleted: false,
+    }]);
+    setProgramId('');
+  };
+
+  const moveProgram = (index: number, offset: number) => {
+    const target = index + offset;
+    if (target < 0 || target >= programs.length) return;
+    setPrograms((current) => {
+      const next = [...current];
+      [next[index], next[target]] = [next[target]!, next[index]!];
+      return next.map((item, sortOrder) => ({ ...item, sortOrder }));
+    });
+  };
+
+  const persist = async (nextStatus = status) => {
+    setSaving(true);
+    setError(null);
+    try {
+      await data.saveSession({
+        classId,
+        startAt: new Date(startAt).toISOString(),
+        endAt: new Date(endAt).toISOString(),
+        status: nextStatus,
+        memo: memo.trim() || null,
+        programs: programs.map((item, sortOrder) => ({ ...item, sortOrder })),
+        attendance: Object.entries(attendance).map(([studentId, value]) => ({ studentId, status: value })),
+      }, session?.id);
+      onClose();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Session을 저장하지 못했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="mt-4 rounded-[15px] p-5" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.22)' }}>
-      <p className="text-[13px] font-bold" style={{ color: 'var(--spm-red)' }}>수업 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
-      <button type="button" onClick={onRetry} className="mt-3 h-11 rounded-[10px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-red)' }}>
-        다시 시도
-      </button>
-    </div>
+    <BottomSheet open title={session ? 'Session 상세' : '수업 추가'} onClose={onClose}>
+      <div className="space-y-5 pb-4">
+        <section className="grid gap-3 sm:grid-cols-2">
+          <label className="text-xs font-black text-slate-600">Class
+            <select value={classId} onChange={(event) => { setClassId(event.target.value); setAttendance({}); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold">
+              {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
+          <label className="text-xs font-black text-slate-600">상태
+            <select value={status} onChange={(event) => setStatus(event.target.value as MasterSessionStatus)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold">
+              <option value="scheduled">예정</option><option value="completed">완료</option><option value="cancelled">취소</option>
+            </select>
+          </label>
+          <label className="text-xs font-black text-slate-600">시작
+            <input type="datetime-local" value={startAt} onChange={(event) => setStartAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />
+          </label>
+          <label className="text-xs font-black text-slate-600">종료
+            <input type="datetime-local" value={endAt} onChange={(event) => setEndAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />
+          </label>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-800">출석</h3><span className="text-xs font-bold text-slate-400">명단 {roster.length}명</span></div>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {roster.map((student) => (
+              <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
+                <span className="text-sm font-bold text-slate-700">{student.name}</span>
+                <div className="flex gap-1">
+                  {(['present', 'absent'] as const).map((value) => (
+                    <button key={value} type="button" onClick={() => setAttendance((current) => ({ ...current, [student.id]: value }))} className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${attendance[student.id] === value ? (value === 'present' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white') : 'bg-slate-100 text-slate-500'}`}>{value === 'present' ? '출석' : '결석'}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {!roster.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">이 Class에 연결된 학생 명단이 없습니다.</p> : null}
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-800">수업 구성</h3><span className="text-xs font-black text-emerald-700">진행 {completedPrograms} / 전체 {programs.length}</span></div>
+          <div className="mt-2 space-y-2">
+            {programs.map((program, index) => (
+              <div key={program.programId} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
+                <button type="button" onClick={() => setPrograms((current) => current.map((item) => item.programId === program.programId ? { ...item, isCompleted: !item.isCompleted } : item))} className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label="프로그램 진행 여부"><Check size={16} /></button>
+                <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{program.programTitle ?? `프로그램 ${program.programId}`}</span>
+                <button type="button" onClick={() => moveProgram(index, -1)} disabled={index === 0} className="p-1 text-slate-400 disabled:opacity-20"><ChevronUp size={16} /></button>
+                <button type="button" onClick={() => moveProgram(index, 1)} disabled={index === programs.length - 1} className="p-1 text-slate-400 disabled:opacity-20"><ChevronDown size={16} /></button>
+                <button type="button" onClick={() => setPrograms((current) => current.filter((item) => item.programId !== program.programId).map((item, sortOrder) => ({ ...item, sortOrder })))} className="p-1 text-rose-500">×</button>
+              </div>
+            ))}
+            {!programs.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">프로그램 미지정 — 이 상태로도 Session을 저장할 수 있습니다.</p> : null}
+          </div>
+          <div className="mt-2 flex gap-2">
+            <select value={programId} onChange={(event) => setProgramId(event.target.value)} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"><option value="">프로그램 선택</option>{availablePrograms.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
+            <button type="button" onClick={addProgram} disabled={!programId} className="h-10 rounded-xl bg-slate-800 px-3 text-xs font-black text-white disabled:opacity-40">+ 프로그램 추가</button>
+          </div>
+        </section>
+
+        <label className="block text-sm font-black text-slate-800">Session 메모
+          <textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none" />
+        </label>
+        {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
+        <div className="grid gap-2 sm:grid-cols-3">
+          <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />저장</button>
+          <button type="button" disabled={saving || !classId} onClick={() => { setStatus('cancelled'); void persist('cancelled'); }} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm font-black text-slate-600 disabled:opacity-40"><XCircle size={15} />수업 취소</button>
+          <button type="button" disabled={saving || !classId} onClick={() => { setStatus('completed'); void persist('completed'); }} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CheckCircle2 size={15} />수업 완료</button>
+        </div>
+      </div>
+    </BottomSheet>
   );
 }
 
 export default function ActivityPage() {
-  const operationalData = useOperationalData();
-  const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
-  const operationalError = operationalData.status === 'error';
-  const records = useMemo(
-    () =>
-      operationalData.classRecords
-        .map(toClassRecord)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-    [operationalData.classRecords],
-  );
+  const data = useOperationalData();
+  const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
+  const [editing, setEditing] = useState<MasterSessionDto | null | undefined>(undefined);
+  const daySessions = useMemo(() => data.sessions.filter((session) => isSameDay(new Date(session.startAt), selectedDate)), [data.sessions, selectedDate]);
+  const visibleDays = useMemo(() => Array.from({ length: 14 }, (_, index) => addMinutes(startOfDay(new Date()), index * 24 * 60)), []);
 
   return (
-    <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
-      <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
-      <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
-        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">수업 기록</p>
-        <h1 className="mt-1 text-[27px] font-black leading-tight text-[color:var(--spm-t)]">
-          수업 기록
-        </h1>
-        <p className="mt-2 max-w-[620px] text-[13px] font-semibold leading-6 text-slate-600">
-          빠른 기록과 보강된 상세 기록이 학생 이력·안내문 근거로 쌓입니다.
-        </p>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Link href="/spokedu-master/library" className="spm-btn-primary inline-flex h-10 items-center justify-center gap-2 rounded-[9px] px-4 text-[13px] font-black focus-visible:outline-none">
-            <BookOpen size={17} />
-            라이브러리에서 수업 고르기
-          </Link>
-          <Link href="/spokedu-master/students?add=1" className="inline-flex h-10 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-4 text-[13px] font-black text-slate-700">
-            <UserPlus size={16} />
-            학생 추가
-          </Link>
-        </div>
-      </header>
+    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
+      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
+        <header className="flex flex-wrap items-end justify-between gap-3">
+          <div><p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Session Calendar</p><h1 className="mt-1 text-2xl font-black text-slate-900">수업 운영 캘린더</h1><p className="mt-1 text-sm font-semibold text-slate-500">계획·출석·진행·메모가 하나의 Session에 이어집니다.</p></div>
+          <button type="button" onClick={() => setEditing(null)} disabled={!data.classes.length} className="flex h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white disabled:opacity-40"><Plus size={17} />수업 추가</button>
+        </header>
 
-      <main className="mt-4">
-        <section className="rounded-[16px] border border-slate-200 bg-white/86 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">기록</p>
-              <h2 className="mt-0.5 text-[18px] font-black leading-tight text-[color:var(--spm-t)]">최근 수업 기록</h2>
-            </div>
+        {!data.classes.length && data.status === 'ready' ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">학생 관리에서 Class(그룹)를 먼저 등록해 주세요. 기존 그룹은 자동으로 Class로 보존됩니다.</p> : null}
+
+        <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-sm font-black text-slate-800"><CalendarDays size={17} />날짜 선택</h2><input type="date" value={format(selectedDate, 'yyyy-MM-dd')} onChange={(event) => setSelectedDate(startOfDay(new Date(`${event.target.value}T00:00:00`)))} className="h-9 rounded-lg border border-slate-200 px-2 text-xs font-bold" /></div>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {visibleDays.map((day) => {
+              const active = isSameDay(day, selectedDate);
+              const count = data.sessions.filter((session) => isSameDay(new Date(session.startAt), day)).length;
+              return <button key={day.toISOString()} type="button" onClick={() => setSelectedDate(day)} className={`min-w-16 rounded-xl px-2 py-2 text-center ring-1 ${active ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'}`}><span className="block text-[10px] font-bold">{format(day, 'EEE', { locale: ko })}</span><strong className="block text-base">{format(day, 'd')}</strong><span className="block text-[10px]">{count ? `${count}개` : '—'}</span></button>;
+            })}
           </div>
-
-          {operationalLoading ? (
-            <ActivityLoadingState />
-          ) : operationalError ? (
-            <ActivityErrorState onRetry={() => void operationalData.reload()} />
-          ) : records.length ? (
-            <div className="mt-4 grid gap-3">
-              {records.slice(0, 8).map((record) => {
-                const isQuick = record.recordType === 'quick';
-                const isLessonNote = record.recordType === 'lesson_note';
-                const hasMemo = Boolean(record.memo?.trim() || record.parentNoteSnapshot?.trim());
-                const hasObservation = record.focusCount > 0 || record.skillCount > 0 || record.students.some((student) => Boolean(student.memo?.trim()));
-                return (
-                  <article key={record.id} className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2.5">
-                    <p className="text-[12px] font-black" style={{ color: 'var(--spm-t3)' }}>
-                      {formatDate(record.date)}
-                      {isLessonNote ? ' · 수업 메모' : isQuick ? ' · 빠른 기록' : ' · 상세 기록'}
-                    </p>
-                    <h3 className="mt-1 break-words text-[17px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
-                      {record.programTitle || record.lessonTitle}
-                    </h3>
-                    <p className="mt-2 break-words text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                      {record.classId}
-                      {isLessonNote
-                        ? ' · 수업 메모'
-                        : isQuick
-                        ? (hasMemo ? ' · 관찰 메모 있음' : ' · 관찰 메모 없음') + (record.focusCount > 0 ? ' · 집중 관찰 있음' : '')
-                        : ` · 출석 ${record.present}명${hasMemo ? ' · 메모 있음' : hasObservation ? ' · 관찰 기록 있음' : ''}`}
-                    </p>
-                    <div className={`mt-3 grid gap-2 ${isLessonNote ? '' : 'sm:grid-cols-2'}`}>
-                      <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="spm-btn-primary inline-flex h-9 items-center justify-center gap-2 rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
-                        <ClipboardList size={14} />
-                        {isQuick ? '이 기록 보강' : '기록 보기'}
-                      </Link>
-                      {!isLessonNote ? (
-                        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">
-                          <FileText size={14} />
-                          안내문 만들기
-                        </Link>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="mt-4 rounded-[12px] border border-dashed border-slate-200 bg-slate-50 p-5">
-              <div className="mx-auto max-w-[620px] text-center">
-                <h3 className="text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>아직 진행한 수업 기록이 없습니다.</h3>
-                <p className="mx-auto mt-2 max-w-[460px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  라이브러리에서 오늘 수업을 고르면 기록, 학생 이력, 안내문까지 이어집니다.
-                </p>
-              </div>
-              <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                <Link href={`/spokedu-master/library`} className="spm-btn-primary inline-flex h-10 items-center justify-center gap-2 rounded-[9px] px-5 text-[13px] font-black focus-visible:outline-none">
-                  <BookOpen size={16} />
-                  수업 라이브러리 열기
-                </Link>
-                <Link href="/spokedu-master/students?add=1" className="inline-flex h-10 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-5 text-[13px] font-black text-slate-700">
-                  <UserPlus size={16} />
-                  학생 추가
-                </Link>
-              </div>
-              <Link href="/spokedu-master/students" className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-4 text-[13px] font-black text-slate-600">
-                <UsersRound size={14} />
-                학생 명단 관리
-              </Link>
-            </div>
-          )}
         </section>
-      </main>
+
+        <section className="mt-4">
+          <div className="flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">{format(selectedDate, 'M월 d일 EEEE', { locale: ko })}</h2><span className="text-xs font-bold text-slate-400">Session {daySessions.length}개</span></div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {daySessions.map((session) => (
+              <button key={session.id} type="button" onClick={() => setEditing(session)} className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-px hover:shadow-md">
+                <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-sm font-black text-slate-800"><Clock3 size={15} />{format(new Date(session.startAt), 'HH:mm')}–{format(new Date(session.endAt), 'HH:mm')}</span><span className={`rounded-full px-2 py-1 text-[10px] font-black ring-1 ${statusTone(session.status)}`}>{statusLabel(session.status)}</span></div>
+                <h3 className="mt-2 text-base font-black text-slate-900">{session.className}</h3>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `프로그램 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '프로그램 미지정'} · 출석 {session.attendance.filter((item) => item.status === 'present').length}명</p>
+              </button>
+            ))}
+            {!daySessions.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><UsersRound className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">이 날짜에 Session이 없습니다.</p><button type="button" onClick={() => setEditing(null)} disabled={!data.classes.length} className="mt-3 text-sm font-black text-emerald-700 disabled:opacity-40">+ 수업 추가</button></div> : null}
+          </div>
+        </section>
       </div>
-    </div>
+      {editing !== undefined ? <SessionSheet key={editing?.id ?? `new-${selectedDate.toISOString()}`} session={editing} initialDate={new Date(selectedDate)} onClose={() => setEditing(undefined)} /> : null}
+    </main>
   );
 }

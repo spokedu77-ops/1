@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Bookmark, Clipboard, Copy, FileText } from 'lucide-react';
+import { ArrowLeft, Bookmark, Copy, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -17,9 +17,9 @@ import {
   getVideoEmbedUrl,
   isDirectVideoUrl,
 } from '../../lib/program-media';
-import { getActiveTodayLessons } from '../../lib/todayLesson';
 import { useIsPremium, useMasterStore } from '../../store';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
+import { AssignProgramToSessionButton } from '../../components/session/AssignProgramToSessionButton';
 import { getLibraryReturnHref } from '../libraryNavigation';
 import { selectRelatedLessonVideos } from '../relatedLessonVideos';
 
@@ -42,12 +42,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
   );
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
-  const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
-  const todayLessonByOwner = useMasterStore((state) => state.todayLessonByOwner);
-  const todayLessons = useMemo(
-    () => getActiveTodayLessons(todayLessonByOwner, ownerId),
-    [ownerId, todayLessonByOwner],
-  );
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const searchParams = useSearchParams();
   const openedProgramRef = useRef<string | null>(null);
@@ -67,9 +61,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
     id,
   ),
   [id, operationalData.classRecords]);
-  const isTodayLesson = Boolean(
-    program && todayLessons.some((assignment) => assignment.programId === program.id),
-  );
   const section = searchParams.get('section');
   const shouldAutoplayVideo = section === 'video' && searchParams.get('autoplay') === '1';
   const libraryReturnHref = getLibraryReturnHref(searchParams.get('libraryView'));
@@ -200,17 +191,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 {new Date(latestApplicationIdea.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} · {latestApplicationIdea.classId}
               </p>
               <p className="mt-2 whitespace-pre-wrap break-words text-[13px] font-bold leading-6" style={{ color: 'var(--spm-t2)' }}>{latestApplicationIdea.applicationIdea}</p>
-              <Link href={`/spokedu-master/class-record?record=${latestApplicationIdea.id}&program=${program.id}`} className="mt-2 inline-flex min-h-10 items-center text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>기록 보기</Link>
+              <Link href="/spokedu-master/activity" className="mt-2 inline-flex min-h-10 items-center text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>Session 기록 보기</Link>
             </aside>
           ) : null}
           actions={(
             <div data-detail-actions className="mx-auto grid w-full max-w-[740px] grid-cols-3 gap-1.5 sm:gap-2.5">
-              <Link data-detail-action="primary" href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-1 text-[12px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] transition duration-200 ease-out hover:-translate-y-px hover:brightness-[0.97] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
-                <Clipboard className="hidden h-4 w-4 shrink-0 sm:block" /> 수업 기록 시작
-              </Link>
-              <button data-detail-action="today" type="button" disabled={!ownerId || isTodayLesson} onClick={() => { if (ownerId && !isTodayLesson) setTodayLesson(ownerId, { id: program.id, title: program.title }); }} className={`inline-flex h-12 min-w-0 items-center justify-center whitespace-nowrap rounded-[12px] px-1 text-[12px] font-black shadow-sm ring-1 transition duration-200 ease-out motion-reduce:transform-none motion-reduce:transition-none sm:px-3 sm:text-[13px] ${isTodayLesson ? 'cursor-default bg-[var(--spm-acc-a10)] text-[var(--spm-acc)] ring-[var(--spm-acc-a28)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]' : ownerId ? 'bg-white/90 text-slate-800 ring-slate-300/90 hover:-translate-y-px hover:bg-white hover:shadow-md' : 'cursor-not-allowed bg-slate-100 text-slate-400 ring-slate-200'}`} aria-pressed={isTodayLesson}>
-                {isTodayLesson ? '✓ 오늘 수업 지정됨' : '오늘 수업으로 지정'}
-              </button>
+              <AssignProgramToSessionButton program={program} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-1 text-[12px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] sm:px-3 sm:text-[13px]" />
+              <Link data-detail-action="calendar" href="/spokedu-master/activity" className="inline-flex h-12 min-w-0 items-center justify-center rounded-[12px] bg-white/90 px-1 text-[12px] font-black text-slate-800 shadow-sm ring-1 ring-slate-300/90 sm:px-3 sm:text-[13px]">수업 캘린더</Link>
               <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-white/62 px-1 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition duration-200 ease-out hover:-translate-y-px hover:bg-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
                 <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
               </button>

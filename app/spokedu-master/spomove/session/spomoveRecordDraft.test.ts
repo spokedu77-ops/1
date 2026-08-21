@@ -33,7 +33,7 @@ describe('SPOMOVE record draft', () => {
     const href = buildSpomoveRecordHref('123', draft);
 
     expect(draft).toContain('중도 종료');
-    expect(href).toContain('/spokedu-master/class-record?');
+    expect(href).toContain('/spokedu-master/activity?');
     expect(href).toContain('program=123');
     expect(href).toContain('spomoveDraft=');
     expect(new URL(href, 'https://example.test').searchParams.get('spomoveDraft')).toContain('수업 기록용 일반 추정치');

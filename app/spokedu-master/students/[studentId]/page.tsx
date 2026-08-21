@@ -192,7 +192,7 @@ export default function StudentDetailPage() {
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
-                        href={`/spokedu-master/class-record?record=${record.id}&student=${student.id}&program=${record.programId}`}
+                        href="/spokedu-master/activity"
                         className="spm-btn-primary inline-flex h-9 items-center gap-1 rounded-[9px] px-3 text-[11px] font-black focus-visible:outline-none"
                       >
                         <ClipboardList size={12} />

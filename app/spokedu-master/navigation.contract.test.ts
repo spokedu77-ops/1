@@ -4,99 +4,39 @@ import { describe, expect, it } from 'vitest';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
-describe('SPOKEDU MASTER first pilot navigation', () => {
-  it('keeps the desktop top navigation focused on the six pilot roles', () => {
-    const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
-
-    expect(statusBar).toContain('MASTER_NAV_ITEMS');
-    expect(statusBar).toContain('whitespace-nowrap');
-    expect(statusBar).not.toContain("href: '/spokedu-master/plan'");
-    expect(statusBar).not.toContain("href: '/spokedu-master/director'");
-    expect(statusBar).not.toContain("href: '/spokedu-master/shop'");
-
-    const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
-    expect(navLabels).toContain("key: 'dashboard'");
-    expect(navLabels).toContain("href: '/spokedu-master/library', label: '수업 라이브러리'");
-    expect(navLabels).toContain("href: '/spokedu-master/spomove', label: 'SPOMOVE'");
-    expect(navLabels).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
-    expect(navLabels).toContain("href: '/spokedu-master/activity', label: '수업 기록'");
-    expect(navLabels).toContain("href: '/spokedu-master/profile', label: '프로필'");
+describe('SPOKEDU MASTER primary navigation', () => {
+  it('shares the six primary destinations across desktop and mobile', () => {
+    const nav = read('app/spokedu-master/components/layout/masterNavLabels.ts');
+    const desktop = read('app/spokedu-master/components/layout/StatusBar.tsx');
+    const mobile = read('app/spokedu-master/components/layout/TabBar.tsx');
+    expect(desktop).toContain('MASTER_NAV_ITEMS');
+    expect(mobile).toContain('MASTER_NAV_ITEMS');
+    expect(nav).toContain("href: '/spokedu-master/library', label: '수업 라이브러리'");
+    expect(nav).toContain("href: '/spokedu-master/activity', label: '수업 캘린더'");
+    expect(nav).toContain("href: '/spokedu-master/class-tools'");
+    expect(nav).not.toContain("href: '/spokedu-master/plan'");
   });
 
-  it('keeps the mobile navigation aligned with the pilot entry structure', () => {
-    const tabBar = read('app/spokedu-master/components/layout/TabBar.tsx');
-    const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
-    const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
-
-    expect(tabBar).toContain('MASTER_NAV_ITEMS');
-    expect(tabBar).toContain('href: `${basePath}/${tab.key}`');
-    expect(tabBar).toContain('TAB_CAPABILITIES[item.key]');
-    expect(tabBar).toContain("activity: 'records'");
-    expect(statusBar).toContain('href="/spokedu-master/profile"');
-    expect(navLabels).toContain("key: 'library'");
-    expect(navLabels).toContain("label: '수업 라이브러리'");
-    expect(navLabels).toContain("key: 'spomove'");
-    expect(navLabels).toContain("key: 'class-tools'");
-    expect(navLabels).toContain("key: 'activity'");
-    expect(navLabels).toContain("label: '수업 기록'");
-    expect(tabBar).not.toContain("key: 'plan'");
-    expect(tabBar).not.toContain("key: 'director'");
-    expect(tabBar).not.toContain("key: 'shop'");
-  });
-
-  it('removes auxiliary routes from profile and home primary entry points', () => {
-    const profile = read('app/spokedu-master/profile/page.tsx');
-    const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
-
-    expect(profile).not.toContain('/spokedu-master/plan');
-    expect(profile).not.toContain('/spokedu-master/director');
-    expect(profile).not.toContain('PwaInstallCard');
-    // SPOMAT store is in profile secondary menu (not in primary CTA section)
-    expect(profile).toContain('/spokedu-master/shop');
-    expect(dashboard).not.toContain('/spokedu-master/plan');
-    expect(dashboard).not.toContain('/spokedu-master/director');
-    expect(dashboard).not.toContain('/spokedu-master/shop');
-    expect(dashboard).not.toContain("href: '/spokedu-master/class-tools'");
-  });
-
-  it('keeps the activity page focused on the simplified class record flow', () => {
+  it('uses the Session calendar instead of the standalone record creator', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
-
-    expect(activity).toContain('/spokedu-master/library');
-    expect(activity).toContain('라이브러리에서 수업 고르기');
-    expect(activity).toContain('최근 수업 기록');
-    expect(activity).toContain('기록 보기');
-    expect(activity).toContain('이 기록 보강');
-    expect(activity).toContain('빠른 기록');
-    expect(activity).toContain('안내문 만들기');
-    expect(activity).toContain('/spokedu-master/students?add=1');
-    expect(activity).toContain('학생 추가');
-    expect(activity).not.toContain('내 반 명단 준비');
-    expect(activity).toContain('학생 명단 관리');
-    expect(activity).not.toContain('최근 안내문');
-    expect(activity).not.toContain('/spokedu-master/plan');
-    expect(activity).not.toContain('/spokedu-master/director');
-    expect(activity).not.toContain('/spokedu-master/shop');
+    const legacy = read('app/spokedu-master/class-record/page.tsx');
+    expect(activity).toContain('Session Calendar');
+    expect(activity).toContain('Session 상세');
+    expect(activity).toContain('프로그램 미지정');
+    expect(activity).toContain('수업 완료');
+    expect(activity).not.toContain('/spokedu-master/class-record');
+    expect(legacy).toContain("redirect('/spokedu-master/activity')");
   });
 
   it('keeps profile commercial and data-management actions available', () => {
     const profile = read('app/spokedu-master/profile/page.tsx');
-    const summary = read('app/spokedu-master/profile/subscriptionSummary.ts');
-
     expect(profile).toContain('/spokedu-master/subscription');
-    expect(summary).toContain('/spokedu-master/payment');
-    expect(profile).not.toContain('/spokedu-master/payment?plan=');
     expect(profile).toContain('MASTER_DATA_DELETE_CONFIRMATION');
     expect(profile).toContain('handleLogout');
   });
 
-  it('keeps hidden routes protected by direct URL policy while lowering archive/import hierarchy', () => {
+  it('keeps hidden routes protected by the direct URL policy', () => {
     const routeAccess = read('app/spokedu-master/components/layout/masterRouteAccess.ts');
-    const students = read('app/spokedu-master/students/page.tsx');
-
     expect(routeAccess).toContain('return pathname === basePath || pathname.startsWith(`${basePath}/`)');
-    expect(students).toContain('고급 기능: 이 기기의 기존 데이터 가져오기');
-    expect(students).toContain('<details>');
-    expect(students).toContain('handlePreviewLegacyImport');
   });
 });

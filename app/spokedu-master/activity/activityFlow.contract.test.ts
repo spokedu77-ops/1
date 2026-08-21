@@ -1,41 +1,25 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(join(process.cwd(), 'app/spokedu-master/activity/page.tsx'), 'utf8');
+const source = readFileSync('app/spokedu-master/activity/page.tsx', 'utf8');
 
-describe('activity class record flow', () => {
-  it('keeps activity as a library-result archive, not the primary lesson entry', () => {
-    expect(source).toContain('/spokedu-master/library');
-    expect(source).toContain('라이브러리에서 수업 고르기');
-    expect(source).toContain('수업 라이브러리 열기');
-    expect(source).toContain('최근 수업 기록');
-    expect(source).not.toContain('<RecordProgramPicker');
-    expect(source).not.toContain('최근 안내문');
-    expect(source).not.toContain('/spokedu-master/plan');
-    expect(source).not.toContain('/spokedu-master/director');
-    expect(source).not.toContain('/spokedu-master/shop');
+describe('activity Session flow', () => {
+  it('makes Calendar the primary Session entry', () => {
+    expect(source).toContain('Session Calendar');
+    expect(source).toContain('수업 추가');
+    expect(source).toContain('Session 상세');
+    expect(source).not.toContain('RecordProgramPicker');
   });
 
-  it('keeps student setup visible because records and class tools depend on the roster', () => {
-    expect(source).toContain('/spokedu-master/students?add=1');
-    expect(source).toContain('학생 추가');
-    expect(source).not.toContain('내 반 명단 준비');
-    expect(source).toContain('학생 명단 관리');
-    expect(source).toContain('학생 이력');
+  it('uses the existing class roster for Session attendance', () => {
+    expect(source).toContain('data.students.filter');
+    expect(source).toContain("'present' | 'absent'");
+    expect(source).not.toContain('observationScore');
   });
 
-  it('keeps recent record cards limited to record view and explanation creation', () => {
-    expect(source).toContain('/spokedu-master/class-record?record=${record.id}&program=${record.programId}');
-    expect(source).toContain('/spokedu-master/report?record=${record.id}&program=${record.programId}');
-    expect(source).toContain('기록 보기');
-    expect(source).toContain('안내문 만들기');
-    expect(source).not.toContain('class-record?from=');
-  });
-
-  it('presents private lesson notes truthfully without a report action', () => {
-    expect(source).toContain("isLessonNote ? ' · 수업 메모'");
-    expect(source).toContain('{!isLessonNote ? (');
-    expect(source).toContain('/spokedu-master/report?record=${record.id}&program=${record.programId}');
+  it('keeps Session and program completion independent', () => {
+    expect(source).toContain('isCompleted: !item.isCompleted');
+    expect(source).toContain("void persist('completed')");
+    expect(source).toContain('프로그램 미지정');
   });
 });

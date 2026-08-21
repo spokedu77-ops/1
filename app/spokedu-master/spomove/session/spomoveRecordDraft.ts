@@ -60,12 +60,12 @@ export function resolveSpomoveDraftFromQuery(
 
 export function buildSpomoveRecordHref(programId: string, draft: string, storage?: Pick<Storage, 'setItem'>) {
   const inlineParams = new URLSearchParams({ program: programId, spomoveDraft: draft });
-  const inlineHref = `/spokedu-master/class-record?${inlineParams.toString()}`;
+  const inlineHref = `/spokedu-master/activity?${inlineParams.toString()}`;
   if (inlineHref.length <= MAX_INLINE_DRAFT_HREF_LENGTH) {
     return inlineHref;
   }
 
   const draftKey = storeSpomoveRecordDraft(draft, storage ?? sessionStorage);
   const compactParams = new URLSearchParams({ program: programId, spomoveDraftKey: draftKey });
-  return `/spokedu-master/class-record?${compactParams.toString()}`;
+  return `/spokedu-master/activity?${compactParams.toString()}`;
 }

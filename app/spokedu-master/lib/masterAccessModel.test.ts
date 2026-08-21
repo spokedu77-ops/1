@@ -142,8 +142,7 @@ describe('commercial launch architecture contracts', () => {
 
     expect(dashboard).toContain('useHasPremiumEntitlement');
     expect(dashboard).not.toContain('canUseSpomove(');
-    expect(classRecord).toContain('canCreateClassRecordFromSnapshot');
-    expect(classRecord).not.toContain('canCreateClassRecord(');
+    expect(classRecord).toContain("redirect('/spokedu-master/activity')");
     expect(shop).toContain('useMasterCanBuySpomat');
     expect(shop).not.toContain('canBuySpomatAtMemberPrice');
     expect(provider).toContain('useMasterCanUseSpomove');

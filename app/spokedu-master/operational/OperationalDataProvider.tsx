@@ -7,8 +7,11 @@ import { useProfile } from '../store';
 import type {
   CreateClassRecordInput,
   CreateStudentInput,
+  MasterClassDto,
   MasterClassRecordDto,
+  MasterSessionDto,
   MasterStudentDto,
+  SaveSessionInput,
   UpdateClassRecordInput,
   UpdateStudentInput,
 } from '../types/operational';
@@ -16,6 +19,7 @@ import type {
 export type OperationalDataStatus = 'error' | 'idle' | 'loading' | 'ready';
 
 type OperationalDataContextValue = {
+  classes: MasterClassDto[];
   classRecords: MasterClassRecordDto[];
   createStudent: (input: CreateStudentInput) => Promise<MasterStudentDto>;
   deleteStudent: (studentId: string) => Promise<void>;
@@ -23,9 +27,11 @@ type OperationalDataContextValue = {
   error: string | null;
   ownerId: string | null;
   reload: () => Promise<void>;
+  saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
   saveClassRecord: (input: CreateClassRecordInput) => Promise<MasterClassRecordDto>;
   status: OperationalDataStatus;
   students: MasterStudentDto[];
+  sessions: MasterSessionDto[];
   updateClassRecord: (recordId: string, input: UpdateClassRecordInput) => Promise<MasterClassRecordDto>;
 };
 
@@ -56,11 +62,15 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<OperationalDataStatus>('idle');
   const [students, setStudents] = useState<MasterStudentDto[]>([]);
   const [classRecords, setClassRecords] = useState<MasterClassRecordDto[]>([]);
+  const [classes, setClasses] = useState<MasterClassDto[]>([]);
+  const [sessions, setSessions] = useState<MasterSessionDto[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const clearData = useCallback(() => {
     setStudents([]);
     setClassRecords([]);
+    setClasses([]);
+    setSessions([]);
   }, []);
 
   const reload = useCallback(async () => {
@@ -78,13 +88,16 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     setStatus('loading');
 
     try {
-      const [studentsJson, recordsJson] = await Promise.all([
+      const [studentsJson, recordsJson, sessionsJson] = await Promise.all([
         masterFetchJson<{ data?: MasterStudentDto[] }>('/api/spokedu-master/students'),
         masterFetchJson<{ data?: MasterClassRecordDto[] }>('/api/spokedu-master/class-records'),
+        masterFetchJson<{ data?: { classes?: MasterClassDto[]; sessions?: MasterSessionDto[] } }>('/api/spokedu-master/sessions'),
       ]);
       if (activeOwnerRef.current !== ownerId) return;
       setStudents(studentsJson.data ?? []);
       setClassRecords(recordsJson.data ?? []);
+      setClasses(sessionsJson.data?.classes ?? []);
+      setSessions(sessionsJson.data?.sessions ?? []);
       setStatus('ready');
     } catch (caught) {
       if (activeOwnerRef.current !== ownerId) return;
@@ -142,8 +155,19 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
+  const saveSession = useCallback(async (input: SaveSessionInput, sessionId?: string) => {
+    const json = await masterFetchJson<{ data: MasterSessionDto }>(
+      sessionId ? `/api/spokedu-master/sessions?id=${encodeURIComponent(sessionId)}` : '/api/spokedu-master/sessions',
+      { body: JSON.stringify(input), method: sessionId ? 'PATCH' : 'POST' },
+    );
+    setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()));
+    return json.data;
+  }, []);
+
   const value = useMemo<OperationalDataContextValue>(
     () => ({
+      classes,
       classRecords,
       createStudent,
       deleteStudent,
@@ -151,12 +175,14 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       error,
       ownerId,
       reload,
+      saveSession,
+      sessions,
       saveClassRecord,
       status,
       students,
       updateClassRecord,
     }),
-    [classRecords, createStudent, deleteStudent, error, ownerId, reload, saveClassRecord, status, students, updateClassRecord, updateStudent],
+    [classes, classRecords, createStudent, deleteStudent, error, ownerId, reload, saveClassRecord, saveSession, sessions, status, students, updateClassRecord, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

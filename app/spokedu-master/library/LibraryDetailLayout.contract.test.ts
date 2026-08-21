@@ -20,11 +20,11 @@ describe('SPOKEDU MASTER library detail final IA', () => {
   });
 
   it('renders exactly one three-column action group', () => {
-    expect(view.match(/data-detail-action=/g)).toHaveLength(3);
+    expect(view.match(/data-detail-action=/g)).toHaveLength(2);
     expect(view).toContain('data-detail-actions');
     expect(view).toContain('grid-cols-3');
-    expect(view).toContain('수업 기록 시작');
-    expect(view).toContain('오늘 수업으로 지정');
+    expect(view).toContain('AssignProgramToSessionButton');
+    expect(view).toContain('수업 캘린더');
     expect(view).toContain('지도안 복사');
     expect(view).not.toContain('data-detail-action="quick"');
   });

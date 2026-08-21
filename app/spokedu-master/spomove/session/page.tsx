@@ -348,7 +348,7 @@ function SpomoveSessionContent() {
         }),
       )
     : program
-      ? `/spokedu-master/class-record?program=${program.id}`
+      ? '/spokedu-master/activity'
       : null;
 
   const stopBgm = useCallback(() => {

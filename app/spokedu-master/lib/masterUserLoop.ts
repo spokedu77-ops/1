@@ -78,7 +78,7 @@ export function selectMasterLoopAction(input: MasterLoopStateInput): MasterLoopA
     return {
       key: 'start_record',
       label: '수업 기록 시작',
-      href: '/spokedu-master/class-record',
+      href: '/spokedu-master/activity',
       summary: '수업 기록으로 안내문·다음 준비에 다시 쓸 수 있습니다.',
     };
   }

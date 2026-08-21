@@ -100,8 +100,8 @@ function buildRecordDraftAnchor(input: HomeOpsInput): HomeAnchor | null {
   if (!hasMeaningfulClassRecordDraft(draft) || !draft) return null;
   const programId = draft.selectedProgramId?.trim() || undefined;
   const href = programId
-    ? `/spokedu-master/class-record?program=${encodeURIComponent(programId)}`
-    : '/spokedu-master/class-record';
+    ? `/spokedu-master/activity?program=${encodeURIComponent(programId)}`
+    : '/spokedu-master/activity';
   return {
     kind: 'record_draft',
     status: '이어 기록할 수업이 있어요',
@@ -144,7 +144,7 @@ function buildPrepDraftAnchor(input: HomeOpsInput): HomeAnchor | null {
     kind: 'prep_draft',
     status: '준비 중인 수업이 있어요',
     title: programTitle(input.programsById, programId, '준비 중인 수업'),
-    primary: { label: '수업 기록 시작', href: `/spokedu-master/class-record?program=${encodeURIComponent(programId)}` },
+    primary: { label: 'Session 열기', href: '/spokedu-master/activity' },
     secondary: { label: '상세 준비 열기', href: `/spokedu-master/library/${programId}` },
     programId,
     dedupeKey: `prep_draft:${programId}`,
@@ -166,7 +166,7 @@ function buildTodayLessonAnchor(input: HomeOpsInput): HomeAnchor | null {
     primary: { label: '준비', href: `/spokedu-master/library/${encodeURIComponent(programId)}` },
     secondary: {
       label: '기록',
-      href: `/spokedu-master/class-record?program=${encodeURIComponent(programId)}`,
+      href: '/spokedu-master/activity',
     },
     programId,
     dedupeKey: `today_lesson:${programId}`,

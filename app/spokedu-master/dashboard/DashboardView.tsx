@@ -115,7 +115,7 @@ function getFirstStartSteps(spomoveAvailable: boolean) {
   },
   {
     title: '기록 남기고 안내문 만들기',
-    href: '/spokedu-master/class-record',
+    href: '/spokedu-master/activity',
     Icon: FileText,
   },
   ] as const;
@@ -589,11 +589,11 @@ function ActivityPanel({
   }> = compact
     ? [
         { label: '안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
-        { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
+        { label: 'Session', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2 },
       ]
     : [
         { label: '안내문 보관', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
-        { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
+        { label: 'Session', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2 },
         { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
       ];
 
@@ -683,6 +683,7 @@ function EntitledDashboardView() {
   const {
     students: serverStudents,
     classRecords: serverClassRecords,
+    sessions: operationalSessions,
     status: operationalStatus,
   } = useOperationalData();
   const explanationData = useExplanationData();
@@ -978,7 +979,7 @@ function EntitledDashboardView() {
             </p>
           </div>
           <Link
-            href="/spokedu-master/class-record"
+            href="/spokedu-master/activity"
             className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 self-start text-[11px] font-bold text-slate-400 transition-colors hover:text-slate-700 sm:self-auto"
             title={loopAction.label}
           >
@@ -998,7 +999,7 @@ function EntitledDashboardView() {
 
       <CompactOpsBar
         anchor={homeAnchor}
-        recordCount={operationalStatus === 'ready' ? classRecords.length : null}
+        recordCount={operationalStatus === 'ready' ? operationalSessions.length : null}
         reportCount={explanationData.status === 'loading' ? null : explanationData.total}
         todayLessons={todayLessonAssignments}
         onRemoveTodayLesson={recentActivityOwnerId ? (programId) => removeTodayLesson(recentActivityOwnerId, programId) : undefined}
@@ -1138,7 +1139,7 @@ function EntitledDashboardView() {
           compact
           className="lg:h-full"
           reportCount={explanationData.status === 'loading' ? null : explanationData.total}
-          recordCount={operationalStatus === 'ready' ? classRecords.length : null}
+          recordCount={operationalStatus === 'ready' ? operationalSessions.length : null}
           studentMemoCount={operationalStatus === 'ready' ? studentMemoCount : null}
         />
       </section>

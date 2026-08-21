@@ -82,7 +82,7 @@ describe('LibraryView favorites contract', () => {
 
   it('does not expose record cloning as a default library action', () => {
     expect(source).not.toContain('class-record?from=');
-    expect(source).toContain('class-record?record=${record.id}&program=${program.id}');
+    expect(source).toContain('href="/spokedu-master/activity"');
     expect(source).toContain('기록 보기');
   });
 

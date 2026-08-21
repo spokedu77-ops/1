@@ -20,7 +20,7 @@ describe('library quick record save contracts', () => {
     expect(source).not.toContain('이 기록 보강');
     expect(source).not.toContain('기존 기록 보기');
     expect(source).not.toContain('recentEvidenceRecords');
-    expect(source).toContain('/spokedu-master/class-record?program=${program.id}');
+    expect(source).toContain('AssignProgramToSessionButton');
   });
 
   it('exposes lesson plan copy without print controls and keeps fixed export template', () => {

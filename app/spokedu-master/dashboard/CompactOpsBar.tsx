@@ -69,7 +69,7 @@ export function CompactOpsBar({
                   <span className="text-[11px] font-bold text-slate-500">준비 확인 →</span>
                 </Link>
                 <Link
-                  href={`/spokedu-master/class-record?program=${lesson.programId}`}
+                  href="/spokedu-master/activity"
                   className="inline-flex min-h-9 shrink-0 items-center rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 >
                   기록

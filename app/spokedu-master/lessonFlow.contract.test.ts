@@ -32,8 +32,8 @@ describe('lesson discovery and execution flow contract', () => {
   });
 
   it('declares the full lesson material hierarchy and primary CTA routes', () => {
-    expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
-    expect(detail).toContain('수업 기록 시작');
+    expect(detail).toContain('AssignProgramToSessionButton');
+    expect(detail).toContain('/spokedu-master/activity');
     expect(detail).not.toContain('getSpomoveSessionHref');
   });
 

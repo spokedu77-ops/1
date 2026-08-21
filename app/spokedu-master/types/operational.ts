@@ -2,6 +2,62 @@ export type ExistingRecordType = 'quick' | 'detailed' | 'lesson_note';
 export type ExistingAttendanceStatus = 'pending' | 'present' | 'absent';
 export type ObservationScore = 1 | 2 | 3;
 export type MasterStudentMeta = string | Record<string, unknown>;
+export type MasterSessionStatus = 'scheduled' | 'completed' | 'cancelled';
+export type MasterSessionAttendanceStatus = 'present' | 'absent';
+
+export type MasterClassDto = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MasterSessionProgramDto = {
+  id: string;
+  programId: number;
+  programTitle: string | null;
+  sortOrder: number;
+  isCompleted: boolean;
+};
+
+export type MasterSessionAttendanceDto = {
+  id: string;
+  studentId: string;
+  status: MasterSessionAttendanceStatus;
+};
+
+export type MasterSessionDto = {
+  id: string;
+  classId: string;
+  className: string;
+  startAt: string;
+  endAt: string;
+  status: MasterSessionStatus;
+  memo: string | null;
+  completedAt: string | null;
+  programs: MasterSessionProgramDto[];
+  attendance: MasterSessionAttendanceDto[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SaveSessionInput = {
+  classId: string;
+  startAt: string;
+  endAt: string;
+  status: MasterSessionStatus;
+  memo: string | null;
+  programs: Array<{
+    programId: number;
+    programTitle: string | null;
+    sortOrder: number;
+    isCompleted: boolean;
+  }>;
+  attendance: Array<{
+    studentId: string;
+    status: MasterSessionAttendanceStatus;
+  }>;
+};
 
 export type MasterStudentDto = {
   id: string;

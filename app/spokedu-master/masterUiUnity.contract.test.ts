@@ -34,7 +34,6 @@ describe('MASTER product UI unity', () => {
     const chipSurfaces = [
       join(ROOT, 'library', 'LibraryView.tsx'),
       join(ROOT, 'report', 'page.tsx'),
-      join(ROOT, 'class-record', 'page.tsx'),
       join(ROOT, 'spomove', 'SpomoveHubView.tsx'),
       join(ROOT, 'dashboard', 'DashboardView.tsx'),
     ];

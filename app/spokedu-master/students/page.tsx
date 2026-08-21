@@ -780,7 +780,7 @@ export default function StudentsPage() {
                           <BookOpen size={15} />
                           수업 라이브러리 열기
                         </Link>
-                        <Link href={`/spokedu-master/class-record?program=${selectedPreparationRecord.record.programId}`} className="flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[12px] font-black text-slate-700">
+                        <Link href="/spokedu-master/activity" className="flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[12px] font-black text-slate-700">
                           <ClipboardList size={15} />
                           같은 수업으로 기록 준비
                         </Link>
