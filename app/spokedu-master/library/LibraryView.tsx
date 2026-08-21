@@ -515,7 +515,7 @@ export default function LibraryView() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--spm-acc)]">
-                수업 라이브러리
+                놀이체육
               </p>
               <h1 className="mt-1 text-[23px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[27px]">
                 {isBrowseMode ? '바로 쓸 수업 고르기' : '맞는 수업 찾기'}

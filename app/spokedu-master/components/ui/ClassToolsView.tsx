@@ -108,7 +108,7 @@ function StopwatchTab() {
           type="button"
           onClick={() => setLaps((items) => [displayMs, ...items].slice(0, 12))}
           disabled={displayMs <= 0}
-          className="flex h-14 items-center gap-2 rounded-[14px] px-6 text-[14px] font-black disabled:opacity-40"
+          className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black transition hover:-translate-y-px disabled:translate-y-0 disabled:opacity-40"
           style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-grn-a28)', color: 'var(--spm-grn)' }}
         >
           <Timer size={16} />랩타임
@@ -120,7 +120,7 @@ function StopwatchTab() {
             setDisplayMs(0);
             setLaps([]);
           }}
-          className="flex h-14 items-center gap-2 rounded-[14px] px-6 text-[14px] font-black"
+          className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black transition hover:-translate-y-px"
           style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
         >
           <RotateCcw size={16} />초기화
@@ -155,7 +155,7 @@ const RETURN_TIMER_OPTIONS = [
   { label: '10분', value: 10 * 60 * 1000 },
 ] as const;
 
-const DEFAULT_RETURN_TIMER_DURATION_MS = 10 * 60 * 1000;
+const DEFAULT_RETURN_TIMER_DURATION_MS = 1 * 60 * 1000;
 const MAX_RETURN_TIMER_MINUTES = 99;
 
 type ReturnTimerStatus = 'idle' | 'running' | 'paused' | 'expired' | 'completed';
@@ -558,7 +558,7 @@ function ReturnTimerTab() {
               <button
                 type="button"
                 onClick={reset}
-                className="flex h-14 min-w-[132px] items-center justify-center gap-2 rounded-[14px] px-6 text-[14px] font-black"
+                className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black shadow-sm transition hover:-translate-y-px"
                 style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
               >
                 <RotateCcw size={16} />초기화
@@ -818,7 +818,7 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
         <ActionButton onClick={balance} disabled={!students.length} accent="#2563eb">
           <Users size={16} />균형 배분
         </ActionButton>
-        <button type="button" onClick={random} disabled={!students.length} className="flex h-14 items-center gap-2 rounded-[14px] px-6 text-[14px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+        <button type="button" onClick={random} disabled={!students.length} className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black transition hover:-translate-y-px disabled:translate-y-0 disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
           <Shuffle size={16} />무작위
         </button>
       </div>
@@ -950,10 +950,10 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
   const [rungs, setRungs] = useState<LadderRung[]>([]);
   const [revealed, setRevealed] = useState(false);
   const levelCount = Math.max(5, students.length * 2);
-  const ladderWidth = Math.max(520, students.length * 96);
-  const ladderHeight = 300;
+  const ladderWidth = Math.max(520, students.length * 120);
+  const ladderHeight = 380;
   const xAt = useCallback((index: number) => ((index + 0.5) * LADDER_VIEWBOX_WIDTH) / students.length, [students.length]);
-  const yAt = useCallback((level: number) => 24 + level * ((ladderHeight - 48) / (levelCount - 1)), [levelCount]);
+  const yAt = useCallback((level: number) => 56 + level * ((ladderHeight - 112) / (levelCount - 1)), [levelCount]);
 
   const createLadder = useCallback(() => {
     const nextRungs: LadderRung[] = [];
@@ -981,7 +981,7 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
 
   const pathPoints = useMemo(() => students.map((_, start) => {
     let column = start;
-    const points = [`${xAt(column)},16`];
+    const points = [`${xAt(column)},40`];
     for (let level = 0; level < levelCount; level += 1) {
       const y = yAt(level);
       points.push(`${xAt(column)},${y}`);
@@ -989,15 +989,15 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
       else if (rungs.some((rung) => rung.level === level && rung.left === column - 1)) column -= 1;
       points.push(`${xAt(column)},${y}`);
     }
-    points.push(`${xAt(column)},${ladderHeight - 16}`);
+    points.push(`${xAt(column)},${ladderHeight - 40}`);
     return points.join(' ');
   }), [levelCount, rungs, students, xAt, yAt]);
 
   return (
-    <div className="flex h-full flex-col items-center gap-5 overflow-y-auto px-6 py-8">
+    <div className="flex min-h-full flex-col items-center gap-5 px-4 py-6 sm:px-6 sm:py-8">
       <StudentModeNote usingSample={usingSample} />
       {!students.length ? <EmptyStudentsForTools /> : null}
-      <div className="flex w-full max-w-[760px] flex-wrap items-center justify-between gap-3">
+      <div className="flex w-full max-w-[960px] flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>사다리 · {students.length}명</p>
           <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>아래 결과 이름을 먼저 바꾼 뒤 사다리를 만드세요.</p>
@@ -1009,13 +1009,13 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
       </div>
       {students.length === 1 ? <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t3)' }}>사다리를 만들려면 학생이 2명 이상 필요합니다.</p> : null}
       {students.length >= 2 ? (
-        <div className="w-full max-w-[760px] overflow-x-auto rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <div className="w-full max-w-[960px] overflow-x-auto rounded-[20px] p-4 shadow-[0_10px_28px_rgba(15,23,42,0.05)] sm:p-6" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
           <div style={{ minWidth: ladderWidth }}>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
               {students.map((student) => <div key={student.id} className="truncate text-center text-[12px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</div>)}
             </div>
             <svg width="100%" height={ladderHeight} viewBox={`0 0 ${LADDER_VIEWBOX_WIDTH} ${ladderHeight}`} preserveAspectRatio="none" className="my-1 block" aria-label="사다리 선">
-              {students.map((student, index) => <line key={student.id} x1={xAt(index)} y1={16} x2={xAt(index)} y2={ladderHeight - 16} stroke="var(--spm-t3)" strokeWidth="3" opacity="0.55" />)}
+              {students.map((student, index) => <line key={student.id} x1={xAt(index)} y1={40} x2={xAt(index)} y2={ladderHeight - 40} stroke="var(--spm-t3)" strokeWidth="3" opacity="0.55" />)}
               {rungs.map((rung) => <line key={`${rung.level}-${rung.left}`} x1={xAt(rung.left)} y1={yAt(rung.level)} x2={xAt(rung.left + 1)} y2={yAt(rung.level)} stroke="var(--spm-acc)" strokeWidth="4" strokeLinecap="round" />)}
               {revealed ? pathPoints.map((points, index) => <polyline key={students[index]!.id} points={points} fill="none" stroke={LADDER_PATH_COLORS[index % LADDER_PATH_COLORS.length]} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />) : null}
             </svg>
@@ -1028,7 +1028,7 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
         </div>
       ) : null}
       {revealed ? (
-        <div className="grid w-full max-w-[760px] gap-2 sm:grid-cols-2">
+        <div className="grid w-full max-w-[960px] gap-2 sm:grid-cols-2">
           {students.map((student, index) => <div key={student.id} className="flex items-center justify-between rounded-[12px] px-4 py-3" style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-grn-a28)' }}><span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</span><span className="text-[13px] font-black" style={{ color: 'var(--spm-grn)' }}>{outcomes[destinations[index]!] || `결과 ${destinations[index]! + 1}`}</span></div>)}
         </div>
       ) : null}
@@ -1086,12 +1086,16 @@ export default function ClassToolsView() {
         })}
       </div>
 
-      <div data-class-tools-content className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-slate-50/70">
-        {tab === 'stopwatch' && <StopwatchTab />}
-        {tab === 'return-timer' && <ReturnTimerTab />}
-        {tab === 'scoreboard' && <ScoreboardTab />}
+      <div data-class-tools-content className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/70">
+        {!usesClassRoster ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {tab === 'stopwatch' && <StopwatchTab />}
+            {tab === 'return-timer' && <ReturnTimerTab />}
+            {tab === 'scoreboard' && <ScoreboardTab />}
+          </div>
+        ) : null}
         {usesClassRoster ? (
-          <div className="px-6 pt-5">
+          <div className="shrink-0 px-6 pt-5">
             <ClassSelector
               classKeys={classKeys}
               selectedClassKey={effectiveClassKey}
@@ -1100,11 +1104,15 @@ export default function ClassToolsView() {
             />
           </div>
         ) : null}
-        {tab === 'picker' && <PickerTab key={`picker-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-        {tab === 'teams' && <TeamsTab key={`teams-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-        {tab === 'order' && <OrderTab key={`order-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-        {tab === 'tournament' && <TournamentTab key={`tournament-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-        {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+        {usesClassRoster ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {tab === 'picker' && <PickerTab key={`picker-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+            {tab === 'teams' && <TeamsTab key={`teams-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+            {tab === 'order' && <OrderTab key={`order-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+            {tab === 'tournament' && <TournamentTab key={`tournament-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+            {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+          </div>
+        ) : null}
       </div>
 
       {usesClassRoster ? (

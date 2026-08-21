@@ -4,7 +4,7 @@
  */
 export const MASTER_NAV_ITEMS = [
   { key: 'dashboard', href: '/spokedu-master/dashboard', label: '홈', shortLabel: '홈' },
-  { key: 'library', href: '/spokedu-master/library', label: '수업 라이브러리', shortLabel: '수업' },
+  { key: 'library', href: '/spokedu-master/library', label: '놀이체육', shortLabel: '놀이체육' },
   { key: 'spomove', href: '/spokedu-master/spomove', label: 'SPOMOVE', shortLabel: '무브' },
   { key: 'class-tools', href: '/spokedu-master/class-tools', label: '수업 도구', shortLabel: '도구' },
   { key: 'activity', href: '/spokedu-master/activity', label: '수업 캘린더', shortLabel: '캘린더' },

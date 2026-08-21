@@ -11,7 +11,7 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const mobile = read('app/spokedu-master/components/layout/TabBar.tsx');
     expect(desktop).toContain('MASTER_NAV_ITEMS');
     expect(mobile).toContain('MASTER_NAV_ITEMS');
-    expect(nav).toContain("href: '/spokedu-master/library', label: '수업 라이브러리'");
+    expect(nav).toContain("href: '/spokedu-master/library', label: '놀이체육'");
     expect(nav).toContain("href: '/spokedu-master/activity', label: '수업 캘린더'");
     expect(nav).toContain("href: '/spokedu-master/class-tools'");
     expect(nav).not.toContain("href: '/spokedu-master/plan'");
