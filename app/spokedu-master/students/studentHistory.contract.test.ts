@@ -94,6 +94,21 @@ describe('student history flow contract', () => {
     expect(studentsList).toContain('customOptionLabel');
   });
 
+  it('creates, restores, updates, and clears the owner-scoped guidance note', () => {
+    expect(studentsList).toContain('반복 지도 참고');
+    expect(studentsList).toContain('다음 수업에서도 참고할 지도 방식만 적어 주세요.');
+    expect(studentsList).toContain('의료·건강정보나 진단·추정 내용은 입력하지 마세요.');
+    expect(studentsList).toContain('guidanceNote: newGuidanceNote.trim() || null');
+    expect(studentsList).toContain("setEditGuidanceNote(student.guidanceNote ?? '')");
+    expect(studentsList).toContain('guidanceNote: editGuidanceNote.trim() || null');
+  });
+
+  it('shows guidance only as read-only context in the selected student sheet', () => {
+    expect(classRecord).toContain('selectedStudent.guidanceNote?.trim()');
+    expect(classRecord).toContain('{selectedStudent.guidanceNote.trim()}');
+    expect(classRecord).not.toContain('setStudentMemos((prev) => ({ ...prev, [selectedStudent.id]: selectedStudent.guidanceNote');
+  });
+
   it('guards student deletion against accidental taps and duplicate requests', () => {
     expect(studentsList).toContain('const handleDeleteStudent');
     expect(studentsList).toContain('window.confirm(`${student.name} 학생을 삭제할까요?');

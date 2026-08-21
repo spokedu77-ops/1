@@ -404,12 +404,14 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
 export function DetailLessonGuide({
   model,
   actions,
+  continuity,
   video,
   relatedVideos,
   heroTitleRef,
 }: {
   model: LessonDisplayModel;
   actions: ReactNode;
+  continuity?: ReactNode;
   video: VideoProps;
   relatedVideos: RelatedLessonVideo[];
   heroTitleRef?: Ref<HTMLHeadingElement>;
@@ -444,6 +446,8 @@ export function DetailLessonGuide({
         ) : null}
         <div className="mt-6">{actions}</div>
       </header>
+
+      {continuity ? <div className="px-4 pb-4 sm:px-6">{continuity}</div> : null}
 
       <section
         data-detail-row="execution"

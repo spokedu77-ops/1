@@ -31,15 +31,17 @@ describe('class record entry flow contract', () => {
     expect(source).toContain('전체 선택');
     expect(source).toContain('전체 해제');
     expect(source).toContain('applyAttendanceToSelected');
-    expect(source).toContain('선택 출석');
-    expect(source).toContain('선택 결석');
-    expect(source).toContain('출석 초기화');
-    expect(source).toContain('선택 {selectedStudentCount}명 / 전체 {students.length}명 · 출석 {present} · 결석 {absent} · 관찰 {focusCount}');
+    expect(source).toContain('아래 작업은 선택 학생에게만 적용');
+    expect(source).toContain('출석 처리');
+    expect(source).toContain('결석 처리');
+    expect(source).toContain('미정 {Math.max(selectedStudentCount - present - absent, 0)}');
   });
 
-  it('keeps student attendance rows compact instead of nested cards', () => {
+  it('keeps student attendance states explicit without nested cards', () => {
     expect(source).toContain('function StudentRow');
-    expect(source).toContain('grid min-h-[58px] grid-cols-[minmax(0,1fr)_auto]');
+    expect(source).toContain('data-attendance-state={attendance}');
+    expect(source).toContain("attendance === 'present' ? '출석'");
+    expect(source).toContain('aria-pressed={attendance === \'present\'}');
     expect(source).toContain('aria-label={`${student.name} 참여`}');
     expect(source).toContain('<section className="grid gap-1.5">');
     expect(source).not.toContain('rounded-t-[18px]');
@@ -55,6 +57,8 @@ describe('class record entry flow contract', () => {
     expect(source).toContain('students: selectedStudents.map');
     expect(source).toContain("if (!next[student.id]?.trim()) next[student.id] = memo");
     expect(source).toContain('전체 학생에게 적용');
+    expect(source).toContain('bulkMemoAppliedCount');
+    expect(source).toContain('`${bulkMemoAppliedCount}명에게 적용됨`');
   });
 
   it('prevents duplicate submit and preserves explicit save labels', () => {
@@ -78,10 +82,11 @@ describe('class record entry flow contract', () => {
     expect(source).toContain('{operationalReady ? (');
   });
 
-  it('keeps report creation behind a saved record in the entry footer', () => {
-    expect(source).toContain('savedRecordId ? (');
-    expect(source).toContain('저장 후 안내문');
-    expect(source).toContain('aria-disabled="true"');
+  it('keeps report creation behind a successful save', () => {
+    expect(source).toContain('{savedOnly ? (');
+    expect(source).toContain('SAVED · 저장 완료');
+    expect(source).toContain('수업 기록 저장 완료');
+    expect(source).toContain('안내문 만들고 복사');
   });
 
   it('enriches quick records on the same record id and promotes to detailed', () => {
@@ -107,6 +112,16 @@ describe('class record entry flow contract', () => {
     expect(source).toContain('clearOwnerSaveDraft(CLASS_RECORD_DRAFT_KEY');
     expect(source).toContain('hasMeaningfulClassRecordDraft');
     expect(source).toContain('if (requestedProgramId && draft.selectedProgramId && draft.selectedProgramId !== requestedProgramId) return');
+    expect(source).toContain('applicationIdea: string');
+    expect(source).toContain('if (draft.applicationIdea) setApplicationIdea(draft.applicationIdea)');
+  });
+
+  it('roundtrips the optional next-lesson application idea without changing save readiness', () => {
+    expect(source).toContain('다음 수업에 적용할 점');
+    expect(source).toContain('setApplicationIdea(editingRecord.applicationIdea ?? \'\')');
+    expect(source).toContain('applicationIdea: applicationIdea.trim() || undefined');
+    expect(source).toContain("setApplicationIdea('')");
+    expect(source).not.toContain('Boolean(applicationIdea.trim())');
   });
 
   it('offers home loop CTA after successful save', () => {

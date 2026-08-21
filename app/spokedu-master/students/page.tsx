@@ -73,6 +73,7 @@ export default function StudentsPage() {
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('');
   const [newMeta, setNewMeta] = useState('');
+  const [newGuidanceNote, setNewGuidanceNote] = useState('');
   const [studentSaving, setStudentSaving] = useState(false);
   const [studentSaveError, setStudentSaveError] = useState<string | null>(null);
   const [studentDeletingId, setStudentDeletingId] = useState<string | null>(null);
@@ -81,6 +82,7 @@ export default function StudentsPage() {
   const [editName, setEditName] = useState('');
   const [editGroup, setEditGroup] = useState('');
   const [editMeta, setEditMeta] = useState('');
+  const [editGuidanceNote, setEditGuidanceNote] = useState('');
   const [studentEditing, setStudentEditing] = useState(false);
   const [studentEditError, setStudentEditError] = useState<string | null>(null);
   const [legacyPreviewAvailable, setLegacyPreviewAvailable] = useState(false);
@@ -140,12 +142,14 @@ export default function StudentsPage() {
         name: newName.trim(),
         group: newGroup.trim() || '미분류',
         meta: newMeta,
+        guidanceNote: newGuidanceNote.trim() || null,
       })
       .then((student) => {
         setSelectedId(student.id);
         setNewName('');
         setNewGroup('');
         setNewMeta('');
+        setNewGuidanceNote('');
         setAddOpen(false);
       })
       .catch(() => {
@@ -173,10 +177,11 @@ export default function StudentsPage() {
         setStudentDeletingId(null);
       });
   };
-  const openEditStudent = (student: { id: string; name: string; group: string; meta: string | Record<string, unknown> }) => {
+  const openEditStudent = (student: { id: string; name: string; group: string; meta: string | Record<string, unknown>; guidanceNote?: string }) => {
     setEditName(student.name);
     setEditGroup(student.group);
     setEditMeta(typeof student.meta === 'string' ? student.meta : '');
+    setEditGuidanceNote(student.guidanceNote ?? '');
     setStudentEditError(null);
     setEditOpen(true);
   };
@@ -189,6 +194,7 @@ export default function StudentsPage() {
         name: editName.trim(),
         group: editGroup.trim() || '미분류',
         meta: editMeta,
+        guidanceNote: editGuidanceNote.trim() || null,
       })
       .then(() => {
         setEditOpen(false);
@@ -885,6 +891,12 @@ export default function StudentsPage() {
             testId="spm-student-add-meta"
             name="studentMeta"
           />
+          <label className="block">
+            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반복 지도 참고 <span className="font-semibold">(선택)</span></span>
+            <textarea name="studentGuidanceNote" value={newGuidanceNote} onChange={(event) => setNewGuidanceNote(event.target.value)} placeholder="예: 설명을 짧게 나누면 참여가 안정적임" className="min-h-[88px] w-full rounded-[12px] border p-3 text-[13px] font-semibold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <span className="mt-1.5 block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>다음 수업에서도 참고할 지도 방식만 적어 주세요.</span>
+            <span className="block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-red)' }}>의료·건강정보나 진단·추정 내용은 입력하지 마세요.</span>
+          </label>
           {studentSaveError ? (
             <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
               {studentSaveError}
@@ -938,6 +950,12 @@ export default function StudentsPage() {
             placeholder="예: 8세 / 3개월차"
             name="editStudentMeta"
           />
+          <label className="block">
+            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반복 지도 참고 <span className="font-semibold">(선택)</span></span>
+            <textarea name="editStudentGuidanceNote" value={editGuidanceNote} onChange={(event) => setEditGuidanceNote(event.target.value)} placeholder="예: 설명을 짧게 나누면 참여가 안정적임" className="min-h-[88px] w-full rounded-[12px] border p-3 text-[13px] font-semibold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <span className="mt-1.5 block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>다음 수업에서도 참고할 지도 방식만 적어 주세요.</span>
+            <span className="block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-red)' }}>의료·건강정보나 진단·추정 내용은 입력하지 마세요.</span>
+          </label>
           {studentEditError ? (
             <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
               {studentEditError}

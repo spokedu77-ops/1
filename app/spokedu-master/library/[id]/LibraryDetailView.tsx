@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { DetailLessonGuide } from './components/DetailLessonGuide';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
+import { toClassRecord } from '../../lib/operationalDataAdapter';
+import { selectLatestApplicationIdea } from '../../lib/recordNextPrep';
 import { formatLessonPlanText } from '../../lib/lessonPlanExport';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
 import { prefersReducedMotion } from '../../lib/mediaPreferences';
@@ -17,6 +19,7 @@ import {
 } from '../../lib/program-media';
 import { getActiveTodayLessons } from '../../lib/todayLesson';
 import { useIsPremium, useMasterStore } from '../../store';
+import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { getLibraryReturnHref } from '../libraryNavigation';
 import { selectRelatedLessonVideos } from '../relatedLessonVideos';
 
@@ -29,6 +32,7 @@ function BookOpenFallback() {
 }
 
 export default function LibraryDetailView({ id }: { id: string }) {
+  const operationalData = useOperationalData();
   const programs = useMasterStore((state) => state.programs);
   const isPremium = useIsPremium();
   const profile = useMasterStore((state) => state.profile);
@@ -58,6 +62,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
     () => (program ? selectRelatedLessonVideos(program, programs) : []),
     [program, programs],
   );
+  const latestApplicationIdea = useMemo(() => selectLatestApplicationIdea(
+    operationalData.classRecords.map(toClassRecord),
+    id,
+  ),
+  [id, operationalData.classRecords]);
   const isTodayLesson = Boolean(
     program && todayLessons.some((assignment) => assignment.programId === program.id),
   );
@@ -184,6 +193,16 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <DetailLessonGuide
           model={model}
           heroTitleRef={heroTitleRef}
+          continuity={latestApplicationIdea ? (
+            <aside data-next-prep-continuity className="mx-auto w-full max-w-[740px] rounded-[14px] border border-slate-200 bg-white/72 px-4 py-3 text-left shadow-[0_6px_18px_rgba(15,23,42,0.035)]">
+              <p className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>지난 수업에서 남긴 다음 적용점</p>
+              <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+                {new Date(latestApplicationIdea.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} · {latestApplicationIdea.classId}
+              </p>
+              <p className="mt-2 whitespace-pre-wrap break-words text-[13px] font-bold leading-6" style={{ color: 'var(--spm-t2)' }}>{latestApplicationIdea.applicationIdea}</p>
+              <Link href={`/spokedu-master/class-record?record=${latestApplicationIdea.id}&program=${program.id}`} className="mt-2 inline-flex min-h-10 items-center text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>기록 보기</Link>
+            </aside>
+          ) : null}
           actions={(
             <div data-detail-actions className="mx-auto grid w-full max-w-[740px] grid-cols-3 gap-1.5 sm:gap-2.5">
               <Link data-detail-action="primary" href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-1 text-[12px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] transition duration-200 ease-out hover:-translate-y-px hover:brightness-[0.97] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">

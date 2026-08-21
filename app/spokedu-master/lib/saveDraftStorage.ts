@@ -73,11 +73,13 @@ export function clearOwnerSaveDraft(baseKey: string, ownerId: string | null | un
 
 export function hasMeaningfulClassRecordDraft(draft: {
   classMemo?: string;
+  applicationIdea?: string;
   classId?: string;
   attendance?: Record<string, string>;
 } | null): boolean {
   if (!draft) return false;
   if (draft.classMemo?.trim()) return true;
+  if (draft.applicationIdea?.trim()) return true;
   if (draft.classId?.trim() && draft.classId.trim() !== '수업') return true;
   if (draft.attendance && Object.values(draft.attendance).some((status) => status !== 'pending')) {
     return true;

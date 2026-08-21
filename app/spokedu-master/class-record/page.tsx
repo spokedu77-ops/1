@@ -52,6 +52,7 @@ type ClassRecordDraft = {
   recordDate: string;
   classId: string;
   classMemo: string;
+  applicationIdea: string;
   attendance: Record<string, AttendanceStatus>;
   focused: Record<string, boolean>;
   checkedSkills: Record<string, string[]>;
@@ -226,40 +227,52 @@ function StudentRow({
   onOpen: () => void;
   disabled: boolean;
 }) {
-  const dot = attendance === 'present' ? 'var(--spm-grn)' : attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)';
+  const attendanceLabel = attendance === 'present' ? '출석' : attendance === 'absent' ? '결석' : '미정';
+  const attendanceColor = attendance === 'present' ? 'var(--spm-grn)' : attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)';
   return (
-    <div data-student-row={student.id} className="grid min-h-[58px] grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[12px] border bg-white px-2.5 py-2" style={{ borderColor: selected ? 'var(--spm-acc-a42)' : 'var(--spm-br2)' }}>
+    <div
+      data-student-row={student.id}
+      data-selected={selected ? 'true' : 'false'}
+      data-attendance-state={attendance}
+      className="grid min-h-[92px] grid-cols-1 gap-2 rounded-[12px] border px-3 py-2.5 sm:min-h-[64px] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+      style={{
+        borderColor: selected ? 'var(--spm-acc-a42)' : 'var(--spm-br2)',
+        background: selected ? 'var(--spm-acc-a06)' : 'var(--spm-s1)',
+        opacity: selected ? 1 : 0.72,
+      }}
+    >
       <div className="flex min-w-0 items-center gap-2.5">
         <input
           type="checkbox"
           checked={selected}
           onChange={(event) => onSelected(event.target.checked)}
-          className="h-4 w-4 shrink-0"
+          className="h-5 w-5 shrink-0 accent-[var(--spm-acc)]"
           aria-label={`${student.name} 참여`}
         />
         <button type="button" onClick={onOpen} disabled={disabled} className="flex min-w-0 flex-1 items-center gap-2.5 text-left disabled:opacity-60">
-        <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-black text-white" style={{ background: selected ? 'var(--spm-acc)' : 'var(--spm-t3)', fontFamily: 'var(--spm-font-display)' }}>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-black text-white" style={{ background: selected ? 'var(--spm-acc)' : 'var(--spm-t3)', fontFamily: 'var(--spm-font-display)' }}>
           {student.name.slice(0, 1)}
-          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full" style={{ background: dot, border: '2px solid var(--spm-s2)' }} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5">
+          <span className="flex flex-wrap items-center gap-1.5">
             <strong className="truncate text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: `${attendanceColor}18`, color: attendanceColor }}>{attendanceLabel}</span>
+            {focused ? <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: 'var(--spm-amb-a16)', color: 'var(--spm-amb)' }}>집중 관찰</span> : null}
           </span>
           <span className="mt-1 block truncate text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.meta}</span>
         </span>
           <ChevronRight size={15} color="var(--spm-t3)" />
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
-        <button data-attendance="present" type="button" disabled={disabled} onClick={() => onAttendance('present')} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: attendance === 'present' ? 'var(--spm-grn-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 출석`}>
-          <UserCheck size={17} color={attendance === 'present' ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
+      <div className="grid grid-cols-3 gap-1.5" aria-label={`${student.name} 상태 지정`}>
+        <button data-attendance="present" type="button" disabled={disabled} aria-pressed={attendance === 'present'} onClick={() => onAttendance('present')} className="flex min-h-11 items-center justify-center gap-1 rounded-[9px] px-2 text-[11px] font-black disabled:opacity-35" style={{ background: attendance === 'present' ? 'var(--spm-grn-a16)' : 'var(--spm-s3)', color: attendance === 'present' ? 'var(--spm-grn)' : 'var(--spm-t3)', border: attendance === 'present' ? '1px solid var(--spm-grn-a24)' : '1px solid transparent' }} aria-label={`${student.name} 출석`}>
+          <UserCheck size={15} /> 출석
         </button>
-        <button data-attendance="absent" type="button" disabled={disabled} onClick={() => onAttendance('absent')} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: attendance === 'absent' ? 'rgba(239,68,68,0.15)' : 'var(--spm-s3)' }} aria-label={`${student.name} 결석`}>
-          <UserX size={17} color={attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)'} />
+        <button data-attendance="absent" type="button" disabled={disabled} aria-pressed={attendance === 'absent'} onClick={() => onAttendance('absent')} className="flex min-h-11 items-center justify-center gap-1 rounded-[9px] px-2 text-[11px] font-black disabled:opacity-35" style={{ background: attendance === 'absent' ? 'rgba(239,68,68,0.15)' : 'var(--spm-s3)', color: attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)', border: attendance === 'absent' ? '1px solid rgba(239,68,68,0.28)' : '1px solid transparent' }} aria-label={`${student.name} 결석`}>
+          <UserX size={15} /> 결석
         </button>
-        <button type="button" disabled={disabled} onClick={onFocus} className="flex h-9 w-9 items-center justify-center rounded-[9px] disabled:opacity-40" style={{ background: focused ? 'var(--spm-amb-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 집중 관찰`}>
-          <Star size={17} color={focused ? 'var(--spm-amb)' : 'var(--spm-t3)'} fill={focused ? 'var(--spm-amb)' : 'none'} />
+        <button type="button" disabled={disabled} aria-pressed={focused} onClick={onFocus} className="flex min-h-11 items-center justify-center gap-1 rounded-[9px] px-2 text-[11px] font-black disabled:opacity-35" style={{ background: focused ? 'var(--spm-amb-a16)' : 'var(--spm-s3)', color: focused ? 'var(--spm-amb)' : 'var(--spm-t3)', border: focused ? '1px solid var(--spm-amb-a24)' : '1px solid transparent' }} aria-label={`${student.name} 집중 관찰`}>
+          <Star size={15} fill={focused ? 'currentColor' : 'none'} /> 관찰
         </button>
       </div>
     </div>
@@ -302,10 +315,12 @@ function RecordEntryView() {
   const [recordDate, setRecordDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [classId, setClassId] = useState(defaultClassId);
   const [classMemo, setClassMemo] = useState('');
+  const [applicationIdea, setApplicationIdea] = useState('');
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
   const [savedOnly, setSavedOnly] = useState(false);
   const [recordSaving, setRecordSaving] = useState(false);
   const [recordSaveFeedback, setRecordSaveFeedback] = useState<SaveActionFeedback | null>(null);
+  const [bulkMemoAppliedCount, setBulkMemoAppliedCount] = useState<number | null>(null);
   const restoredRecordIdRef = useRef<string | null>(null);
   const draftHydratedRef = useRef(false);
   const canUseLocalDraft = !editingRecord && !sourceRecord && !requestedRecordId;
@@ -381,6 +396,7 @@ function RecordEntryView() {
     if (draft.recordDate) setRecordDate(draft.recordDate);
     if (draft.classId) setClassId(draft.classId);
     if (draft.classMemo) setClassMemo(draft.classMemo);
+    if (draft.applicationIdea) setApplicationIdea(draft.applicationIdea);
     if (draft.attendance) setAttendance((prev) => ({ ...prev, ...draft.attendance }));
     if (draft.focused) setFocused(draft.focused);
     if (draft.checkedSkills) setCheckedSkills(draft.checkedSkills);
@@ -398,6 +414,7 @@ function RecordEntryView() {
       recordDate,
       classId,
       classMemo,
+      applicationIdea,
       attendance,
       focused,
       checkedSkills,
@@ -407,6 +424,7 @@ function RecordEntryView() {
     } satisfies ClassRecordDraft);
   }, [
     attendance,
+    applicationIdea,
     bulkStudentMemo,
     canUseLocalDraft,
     checkedSkills,
@@ -449,6 +467,7 @@ function RecordEntryView() {
     setRecordDate(new Date(editingRecord.date).toISOString().slice(0, 10));
     setClassId(editingRecord.classId || defaultClassId);
     setClassMemo(editingRecord.memo ?? '');
+    setApplicationIdea(editingRecord.applicationIdea ?? '');
     setSavedRecordId(editingRecord.id);
     setSavedOnly(false);
     setSelectedStudentIds(Object.fromEntries(students.map((student) => [
@@ -481,6 +500,7 @@ function RecordEntryView() {
     setRecordDate(new Date().toISOString().slice(0, 10));
     setClassId(sourceRecord.classId || defaultClassId);
     setClassMemo('');
+    setApplicationIdea('');
     setSavedRecordId(null);
     setSavedOnly(false);
     setSelectedStudentIds(Object.fromEntries(students.map((student) => [student.id, true])));
@@ -525,6 +545,7 @@ function RecordEntryView() {
   const applyMemoToEmptyStudents = () => {
     const memo = bulkStudentMemo.trim();
     if (!memo) return;
+    const appliedCount = selectedStudents.filter((student) => !studentMemos[student.id]?.trim()).length;
     setStudentMemos((prev) => {
       const next = { ...prev };
       for (const student of selectedStudents) {
@@ -532,6 +553,7 @@ function RecordEntryView() {
       }
       return next;
     });
+    setBulkMemoAppliedCount(appliedCount);
   };
 
   const buildRecord = (): ClassRecord => ({
@@ -555,6 +577,7 @@ function RecordEntryView() {
       memo: studentMemos[student.id]?.trim() || undefined,
     })),
     memo: classMemo.trim() || undefined,
+    applicationIdea: applicationIdea.trim() || undefined,
     parentNoteSnapshot: editingRecord?.parentNoteSnapshot,
     // 출석·관찰 보강 저장 시 quick → detailed로 승격한다.
     recordType: 'detailed',
@@ -695,6 +718,7 @@ function RecordEntryView() {
               setStudentMemos({});
               setSelectedStudentIds(Object.fromEntries(students.map((student) => [student.id, true])));
               setClassMemo('');
+              setApplicationIdea('');
               setBulkStudentMemo('');
               setSelectedId(null);
             }}
@@ -718,19 +742,32 @@ function RecordEntryView() {
       </section>
 
       <div className="mb-2 mt-4">
-        <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>2. 참여 학생</h2>
-        <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
-          선택 {selectedStudentCount}명 / 전체 {students.length}명 · 출석 {present} · 결석 {absent} · 관찰 {focusCount}
-        </p>
+        <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>2. 참여 학생 및 출석</h2>
       </div>
 
       {hasStudents ? (
-        <div className="mb-3 flex flex-wrap gap-2">
-          <button type="button" onClick={selectAllStudents} className="h-9 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">전체 선택</button>
-          <button type="button" onClick={clearAllStudents} className="h-9 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">전체 해제</button>
-          <button type="button" onClick={() => applyAttendanceToSelected('present')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'var(--spm-grn-a16)', color: 'var(--spm-grn)', border: '1px solid var(--spm-grn-a24)' }}>선택 출석</button>
-          <button type="button" onClick={() => applyAttendanceToSelected('absent')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)', border: '1px solid rgba(239,68,68,0.22)' }}>선택 결석</button>
-          <button type="button" onClick={() => applyAttendanceToSelected('pending')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>출석 초기화</button>
+        <div className="mb-3 rounded-[14px] border border-slate-200 bg-white/86 p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]" aria-label="선택 학생 일괄 작업">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>선택 {selectedStudentCount}명</p>
+              <p className="mt-0.5 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>전체 {students.length}명 중 선택 · 아래 작업은 선택 학생에게만 적용</p>
+            </div>
+            <div className="flex gap-1.5">
+              <button type="button" onClick={selectAllStudents} disabled={selectedStudentCount === students.length} className="min-h-10 rounded-[9px] border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-700 disabled:opacity-40">전체 선택</button>
+              <button type="button" onClick={clearAllStudents} disabled={selectedStudentCount === 0} className="min-h-10 rounded-[9px] border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-700 disabled:opacity-40">전체 해제</button>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <button type="button" onClick={() => applyAttendanceToSelected('present')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-2 text-[12px] font-black disabled:opacity-35" style={{ background: 'var(--spm-grn-a16)', color: 'var(--spm-grn)', border: '1px solid var(--spm-grn-a24)' }}>출석 처리</button>
+            <button type="button" onClick={() => applyAttendanceToSelected('absent')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-2 text-[12px] font-black disabled:opacity-35" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)', border: '1px solid rgba(239,68,68,0.22)' }}>결석 처리</button>
+            <button type="button" onClick={() => applyAttendanceToSelected('pending')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-2 text-[12px] font-black disabled:opacity-35" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>초기화</button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-100 pt-2 text-[12px] font-black" aria-live="polite">
+            <span style={{ color: 'var(--spm-grn)' }}>출석 {present}</span>
+            <span style={{ color: 'var(--spm-red)' }}>결석 {absent}</span>
+            <span style={{ color: 'var(--spm-t3)' }}>미정 {Math.max(selectedStudentCount - present - absent, 0)}</span>
+            <span style={{ color: 'var(--spm-amb)' }}>집중 관찰 {focusCount}</span>
+          </div>
         </div>
       ) : null}
 
@@ -766,15 +803,25 @@ function RecordEntryView() {
       <section className="rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>공통 수업 메모</span>
-          <textarea value={classMemo} onChange={(event) => setClassMemo(event.target.value)} placeholder="수업 전체 흐름, 준비물, 다음 수업 참고 사항을 한 번만 적어 두세요." className="min-h-[88px] w-full rounded-[12px] border p-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+          <textarea value={classMemo} onChange={(event) => setClassMemo(event.target.value)} placeholder="이번 수업의 흐름이나 관찰 내용을 남겨 주세요." className="min-h-[88px] w-full rounded-[12px] border p-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+        </label>
+        <label className="mt-4 block">
+          <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>다음 수업에 적용할 점 <span className="font-semibold" style={{ color: 'var(--spm-t3)' }}>(선택)</span></span>
+          <textarea value={applicationIdea} onChange={(event) => setApplicationIdea(event.target.value)} placeholder="다음에 같은 수업을 진행할 때 바꾸거나 이어갈 점을 적어 두세요." className="min-h-[72px] w-full rounded-[12px] border p-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
         </label>
         <div className="mt-4 grid gap-2 md:grid-cols-[1fr_auto]">
           <label className="block">
             <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>학생별 메모 빠른 입력</span>
-            <input type="text" value={bulkStudentMemo} onChange={(event) => setBulkStudentMemo(event.target.value)} placeholder="비어 있는 선택 학생 메모에만 적용됩니다." className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <input type="text" value={bulkStudentMemo} onChange={(event) => { setBulkStudentMemo(event.target.value); setBulkMemoAppliedCount(null); }} placeholder="비어 있는 선택 학생 메모에만 적용됩니다." className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
           </label>
-          <button type="button" onClick={applyMemoToEmptyStudents} disabled={!bulkStudentMemo.trim() || selectedStudentCount === 0} className="min-h-11 self-end rounded-[12px] px-4 text-[13px] font-black disabled:opacity-50" style={{ background: 'var(--spm-acc)', color: '#fff' }}>전체 학생에게 적용</button>
+          <button type="button" onClick={applyMemoToEmptyStudents} disabled={!bulkStudentMemo.trim() || selectedStudentCount === 0} className="min-h-11 self-end rounded-[12px] px-4 text-[13px] font-black disabled:opacity-35" style={{ background: 'var(--spm-acc)', color: '#fff' }}>전체 학생에게 적용</button>
         </div>
+        <p className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>선택한 학생 중 기존 메모가 비어 있는 학생에게만 적용됩니다.</p>
+        {bulkMemoAppliedCount !== null ? (
+          <p className="mt-2 flex min-h-8 items-center rounded-[9px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }} role="status">
+            {bulkMemoAppliedCount > 0 ? `${bulkMemoAppliedCount}명에게 적용됨` : '적용할 빈 학생 메모가 없습니다.'}
+          </p>
+        ) : null}
       </section>
 
       <div className="mb-2 mt-5">
@@ -787,19 +834,22 @@ function RecordEntryView() {
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 마무리</p>
             <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>기록 저장</h2>
           </div>
-          <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-acc-a13)', color: 'var(--spm-acc)' }}>
-            출석 {present}명 · 결석 {absent}명 · 관찰 {focusCount}명
+          <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: savedOnly ? 'var(--spm-grn-a10)' : canSaveRecord ? 'var(--spm-grn-a10)' : 'var(--spm-s2)', color: savedOnly || canSaveRecord ? 'var(--spm-grn)' : 'var(--spm-t2)' }} aria-live="polite">
+            {savedOnly ? 'SAVED · 저장 완료' : recordSaving ? 'SAVING · 저장 중' : canSaveRecord ? 'READY · 저장 가능' : '준비 전'}
           </span>
         </div>
-        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 기록만 먼저 저장합니다. 안내문은 저장 후 필요한 경우 이어서 만듭니다.</p>
+        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+          선택 {selectedStudentCount}명 · 출석 {present}명 · 결석 {absent}명 · 관찰 {focusCount}명
+        </p>
         {savedOnly ? (
-          <div className="mt-4 rounded-[12px] p-3" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }}>
-            <p className="text-[12px] font-bold">수업 기록이 저장되었습니다.</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Link href={reportHref} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>안내문 만들고 복사</Link>
-              <Link href={savedRecordId && program ? `/spokedu-master/class-record?record=${savedRecordId}&program=${program.id}` : '/spokedu-master/class-record'} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>저장한 기록 보기</Link>
-              <Link href="/spokedu-master/dashboard" data-loop-action="home" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>홈으로</Link>
-              <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
+          <div className="mt-4 rounded-[12px] p-4" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)', border: '1px solid var(--spm-grn-a24)' }} role="status">
+            <p className="flex items-center gap-2 text-[14px] font-black"><Check size={17} />수업 기록 저장 완료</p>
+            <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t2)' }}>중복 저장할 필요가 없습니다. 필요한 다음 작업을 선택하세요.</p>
+            <Link href={reportHref} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] px-3 text-[13px] font-black text-white" style={{ background: 'var(--spm-grn)' }}><FileText size={15} />안내문 만들고 복사</Link>
+            <div className="mt-2 grid grid-cols-3 gap-1 text-center">
+              <Link href={savedRecordId && program ? `/spokedu-master/class-record?record=${savedRecordId}&program=${program.id}` : '/spokedu-master/class-record'} className="inline-flex min-h-10 items-center justify-center rounded-[9px] px-1 text-[10px] font-black" style={{ color: 'var(--spm-t2)' }}>저장 기록 보기</Link>
+              <Link href="/spokedu-master/activity" className="inline-flex min-h-10 items-center justify-center rounded-[9px] px-1 text-[10px] font-black" style={{ color: 'var(--spm-t2)' }}>기록 목록</Link>
+              <Link href="/spokedu-master/dashboard" data-loop-action="home" className="inline-flex min-h-10 items-center justify-center rounded-[9px] px-1 text-[10px] font-black" style={{ color: 'var(--spm-t2)' }}>홈</Link>
             </div>
           </div>
         ) : null}
@@ -814,18 +864,16 @@ function RecordEntryView() {
           </div>
         ) : null}
         {saveBlockerLabel && !savedOnly ? (
-          <p className="mt-4 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] font-bold text-amber-700">
-            {saveBlockerLabel}
+          <p className="mt-4 rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-[12px] font-bold text-slate-600" id="save-readiness-message">
+            저장하려면: {saveBlockerLabel}
           </p>
         ) : null}
-        <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr]">
-          <button type="button" onClick={() => persistRecord()} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="spm-btn-primary flex h-11 w-full items-center justify-center gap-2 rounded-[9px] text-[14px] font-black focus-visible:outline-none disabled:opacity-60"><Check size={16} />{recordSaving ? '저장 중...' : isEnrichingQuickRecord ? '보강 저장' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
-          {savedRecordId ? (
-            <Link href={reportHref} className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[14px] font-black text-slate-700"><FileText size={16} />안내문 만들고 복사</Link>
-          ) : (
-            <span className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-slate-50 text-[14px] font-black text-slate-400" aria-disabled="true"><FileText size={16} />저장 후 안내문</span>
-          )}
-        </div>
+        {!savedOnly ? (
+          <div className="mt-5">
+            <button type="button" onClick={() => persistRecord()} aria-describedby={saveBlockerLabel ? 'save-readiness-message' : undefined} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="spm-btn-primary flex min-h-12 w-full items-center justify-center gap-2 rounded-[11px] text-[14px] font-black focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"><Check size={16} />{recordSaving ? '저장 중...' : isEnrichingQuickRecord ? '보강 저장' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
+            <p className="mt-2 text-center text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{canSaveRecord ? '저장할 준비가 되었습니다.' : '조건이 충족되면 저장 버튼이 활성화됩니다.'}</p>
+          </div>
+        ) : null}
       </section>
 
         </>
@@ -841,6 +889,12 @@ function RecordEntryView() {
                 <p className="text-[12px]" style={{ color: 'var(--spm-t3)' }}>{selectedStudent.meta}</p>
               </div>
             </div>
+            {selectedStudent.guidanceNote?.trim() ? (
+              <div className="mb-4 rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>반복 지도 참고</p>
+                <p className="mt-1 whitespace-pre-wrap break-words text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{selectedStudent.guidanceNote.trim()}</p>
+              </div>
+            ) : null}
             <div className="grid grid-cols-2 gap-2">
               {skills.map((skill) => {
                 const checked = checkedSkills[selectedStudent.id]?.includes(skill) ?? false;

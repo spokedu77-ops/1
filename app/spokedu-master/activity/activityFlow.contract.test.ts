@@ -32,4 +32,10 @@ describe('activity class record flow', () => {
     expect(source).toContain('안내문 만들기');
     expect(source).not.toContain('class-record?from=');
   });
+
+  it('presents private lesson notes truthfully without a report action', () => {
+    expect(source).toContain("isLessonNote ? ' · 수업 메모'");
+    expect(source).toContain('{!isLessonNote ? (');
+    expect(source).toContain('/spokedu-master/report?record=${record.id}&program=${record.programId}');
+  });
 });

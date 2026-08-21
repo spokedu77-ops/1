@@ -92,7 +92,7 @@ export default function ActivityPage() {
                   <article key={record.id} className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2.5">
                     <p className="text-[12px] font-black" style={{ color: 'var(--spm-t3)' }}>
                       {formatDate(record.date)}
-                      {isQuick ? ' · 빠른 기록' : ' · 상세 기록'}
+                      {isLessonNote ? ' · 수업 메모' : isQuick ? ' · 빠른 기록' : ' · 상세 기록'}
                     </p>
                     <h3 className="mt-1 break-words text-[17px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
                       {record.programTitle || record.lessonTitle}
@@ -105,15 +105,17 @@ export default function ActivityPage() {
                         ? (hasMemo ? ' · 관찰 메모 있음' : ' · 관찰 메모 없음') + (record.focusCount > 0 ? ' · 집중 관찰 있음' : '')
                         : ` · 출석 ${record.present}명${hasMemo ? ' · 메모 있음' : hasObservation ? ' · 관찰 기록 있음' : ''}`}
                     </p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <div className={`mt-3 grid gap-2 ${isLessonNote ? '' : 'sm:grid-cols-2'}`}>
                       <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="spm-btn-primary inline-flex h-9 items-center justify-center gap-2 rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
                         <ClipboardList size={14} />
                         {isQuick ? '이 기록 보강' : '기록 보기'}
                       </Link>
-                      <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">
-                        <FileText size={14} />
-                        안내문 만들기
-                      </Link>
+                      {!isLessonNote ? (
+                        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">
+                          <FileText size={14} />
+                          안내문 만들기
+                        </Link>
+                      ) : null}
                     </div>
                   </article>
                 );
