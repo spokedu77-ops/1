@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, LayoutList, ListOrdered, Pause, Play, RotateCcw, Route, Shuffle, Timer, Trophy, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Coffee, LayoutList, ListOrdered, Pause, Play, RotateCcw, Route, Shuffle, Timer, Trophy, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -53,8 +53,8 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex h-12 min-w-[132px] items-center justify-center gap-2 rounded-[13px] px-6 text-[14px] font-black text-white transition-opacity disabled:opacity-40"
-      style={{ background: accent ?? 'var(--spm-acc)', boxShadow: '0 10px 22px rgba(15,23,42,0.16)' }}
+      className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] transition hover:-translate-y-px hover:brightness-[0.98] disabled:translate-y-0 disabled:opacity-40"
+      style={{ background: accent ?? 'var(--spm-acc)' }}
     >
       {children}
     </button>
@@ -91,7 +91,8 @@ function StopwatchTab() {
   }, [timerMs, timerRunning, timerStartedAt]);
 
   return (
-    <div className="flex h-full min-h-min flex-col items-center gap-8 p-6 py-8 sm:gap-10 sm:p-8">
+    <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+      <section className="flex w-full max-w-[920px] flex-col items-center gap-7 rounded-[20px] border border-slate-200 bg-white px-5 py-8 text-center shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:gap-9 sm:px-8 sm:py-10">
       <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>수업 진행 스탑워치</p>
       <div
         className="font-mono text-[clamp(4rem,20vw,9rem)] font-black tabular-nums leading-none"
@@ -143,6 +144,7 @@ function StopwatchTab() {
           </ol>
         </section>
       ) : null}
+      </section>
     </div>
   );
 }
@@ -413,9 +415,9 @@ function ReturnTimerTab() {
         : { accent: 'var(--spm-acc)', soft: 'var(--spm-acc-a09)', border: 'var(--spm-acc-a22)' };
 
   return (
-    <div className="h-full px-3 py-3 pb-4 sm:px-5 sm:py-4">
+    <div className="flex min-h-full items-center justify-center px-3 py-4 sm:px-5 sm:py-6">
       <div
-        className="mx-auto flex h-full w-full max-w-[1040px] flex-col items-center justify-between gap-4 overflow-hidden rounded-[24px] bg-white px-4 py-5 text-center shadow-[0_18px_46px_rgba(15,23,42,0.08)] ring-1 ring-slate-200 sm:px-7 sm:py-6"
+        className="mx-auto flex w-full max-w-[920px] flex-col items-center gap-5 rounded-[20px] border border-slate-200 bg-white px-4 py-6 text-center shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:gap-6 sm:px-8 sm:py-8"
       >
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -466,30 +468,37 @@ function ReturnTimerTab() {
         </div>
 
         <div className="flex w-full max-w-[760px] flex-col items-center gap-3">
-          <div className="flex w-full flex-wrap items-center justify-center gap-2 rounded-[18px] border border-slate-200 bg-slate-50 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-            <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="타이머 빠른 시간 선택">
-              {RETURN_TIMER_OPTIONS.map((option) => {
-                const active = selectedDurationMs === option.value;
-                return (
+          <div className="flex w-full flex-wrap items-center justify-center gap-2 rounded-[14px] border border-slate-200 bg-slate-50 p-2.5">
+            <details className="group relative">
+              <summary
+                onClick={(event) => { if (durationSelectDisabled) event.preventDefault(); }}
+                className={`flex h-11 cursor-pointer list-none items-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3.5 text-[12px] font-black text-slate-700 shadow-sm transition hover:border-slate-300 [&::-webkit-details-marker]:hidden ${durationSelectDisabled ? 'cursor-not-allowed opacity-45' : ''}`}
+                aria-label="쉬는 시간 선택"
+              >
+                <Coffee size={16} color="var(--spm-acc)" />
+                쉬는 시간
+                <ChevronDown size={15} className="transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="absolute left-0 top-[calc(100%+6px)] z-20 w-40 overflow-hidden rounded-[12px] border border-slate-200 bg-white p-1.5 shadow-[0_14px_32px_rgba(15,23,42,0.14)]" role="menu">
+                {RETURN_TIMER_OPTIONS.map((option) => (
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => selectDuration(option.value)}
-                    disabled={durationSelectDisabled}
-                    className="h-9 min-w-[58px] rounded-[11px] px-3 text-[12px] font-black transition-opacity disabled:opacity-45"
-                    style={{
-                      background: active ? tone.accent : 'var(--spm-s2)',
-                      border: active ? '1px solid transparent' : '1px solid var(--spm-br2)',
-                      color: active ? '#fff' : 'var(--spm-t2)',
+                    onClick={(event) => {
+                      selectDuration(option.value);
+                      event.currentTarget.closest('details')?.removeAttribute('open');
                     }}
-                    aria-pressed={active}
+                    className="flex h-10 w-full items-center justify-between rounded-[8px] px-3 text-[12px] font-black transition hover:bg-slate-100"
+                    style={{ color: selectedDurationMs === option.value ? 'var(--spm-acc)' : 'var(--spm-t2)' }}
+                    role="menuitem"
                   >
                     {option.label}
+                    {selectedDurationMs === option.value ? <CheckCircle2 size={15} /> : null}
                   </button>
-                );
-              })}
-            </div>
-            <label className="order-2 flex items-center gap-1.5 rounded-[12px] bg-white px-2 py-1 ring-1 ring-slate-200">
+                ))}
+              </div>
+            </details>
+            <label className="flex items-center gap-1.5 rounded-[10px] bg-white px-2 py-1 ring-1 ring-slate-200">
               <input
                 type="number"
                 min={0}
@@ -503,7 +512,7 @@ function ReturnTimerTab() {
               />
               <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>분</span>
             </label>
-            <label className="order-1 flex items-center gap-1.5 rounded-[12px] bg-white px-2 py-1 ring-1 ring-slate-200">
+            <label className="flex items-center gap-1.5 rounded-[10px] bg-white px-2 py-1 ring-1 ring-slate-200">
               <input
                 type="number"
                 min={0}
@@ -562,34 +571,80 @@ function ReturnTimerTab() {
   );
 }
 
-function ScorePanel({ label, score, tone, onPlus, onMinus }: { label: string; score: number; tone: 'red' | 'blue'; onPlus: () => void; onMinus: () => void }) {
-  const colors = tone === 'red'
-    ? { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.28)', text: 'var(--spm-red)' }
-    : { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.28)', text: '#60a5fa' };
+type ScoreTeam = { name: string; score: number };
+
+const SCORE_TEAM_COLORS = [
+  { bg: 'rgba(239,68,68,0.10)', border: 'rgba(239,68,68,0.25)', text: '#dc2626' },
+  { bg: 'rgba(59,130,246,0.10)', border: 'rgba(59,130,246,0.25)', text: '#2563eb' },
+  { bg: 'rgba(16,185,129,0.10)', border: 'rgba(16,185,129,0.25)', text: '#059669' },
+  { bg: 'rgba(245,158,11,0.11)', border: 'rgba(245,158,11,0.28)', text: '#d97706' },
+  { bg: 'rgba(139,92,246,0.10)', border: 'rgba(139,92,246,0.25)', text: '#7c3aed' },
+  { bg: 'rgba(236,72,153,0.10)', border: 'rgba(236,72,153,0.25)', text: '#db2777' },
+];
+
+function ScorePanel({ name, score, colorIndex, onNameChange, onPlus, onMinus }: { name: string; score: number; colorIndex: number; onNameChange: (name: string) => void; onPlus: () => void; onMinus: () => void }) {
+  const colors = SCORE_TEAM_COLORS[colorIndex % SCORE_TEAM_COLORS.length]!;
 
   return (
-    <div className="flex flex-col items-center gap-5 rounded-[22px] p-6" style={{ background: colors.bg, border: `1.5px solid ${colors.border}` }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: colors.text }}>{label}</p>
-      <div className="text-[clamp(4rem,16vw,8rem)] font-black tabular-nums leading-none" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{score}</div>
+    <div className="flex min-w-0 flex-col items-center gap-4 rounded-[18px] p-5" style={{ background: colors.bg, border: `1px solid ${colors.border}` }}>
+      <input
+        value={name}
+        onChange={(event) => onNameChange(event.target.value)}
+        maxLength={18}
+        className="h-10 w-full rounded-[9px] border bg-white/80 px-3 text-center text-[14px] font-black outline-none transition focus:bg-white"
+        style={{ borderColor: colors.border, color: colors.text }}
+        aria-label={`${colorIndex + 1}번 팀 이름`}
+      />
+      <div className="text-[clamp(3.5rem,10vw,6.5rem)] font-black tabular-nums leading-none" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{score}</div>
       <div className="flex gap-3">
-        <button type="button" onClick={onMinus} className="grid h-14 w-14 place-items-center rounded-full text-[24px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>-</button>
-        <button type="button" onClick={onPlus} className="grid h-14 w-14 place-items-center rounded-full text-[24px] font-black text-white" style={{ background: colors.text }}>+</button>
+        <button type="button" onClick={onMinus} aria-label={`${name || `${colorIndex + 1}번 팀`} 1점 빼기`} className="grid h-12 w-12 place-items-center rounded-full bg-white text-[22px] font-black text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-px">−</button>
+        <button type="button" onClick={onPlus} aria-label={`${name || `${colorIndex + 1}번 팀`} 1점 더하기`} className="grid h-12 w-12 place-items-center rounded-full text-[22px] font-black text-white shadow-sm transition hover:-translate-y-px" style={{ background: colors.text }}>+</button>
       </div>
     </div>
   );
 }
 
 function ScoreboardTab() {
-  const [red, setRed] = useState(0);
-  const [blue, setBlue] = useState(0);
+  const [teamCount, setTeamCount] = useState(2);
+  const [teams, setTeams] = useState<ScoreTeam[]>(() => Array.from({ length: 6 }, (_, index) => ({ name: `${String.fromCharCode(65 + index)}팀`, score: 0 })));
+
+  const updateTeam = (index: number, update: (team: ScoreTeam) => ScoreTeam) => {
+    setTeams((items) => items.map((team, teamIndex) => teamIndex === index ? update(team) : team));
+  };
 
   return (
-    <div className="flex h-full min-h-min flex-col items-center gap-4 p-6 py-8">
-      <div className="grid w-full max-w-[560px] grid-cols-2 gap-4">
-        <ScorePanel label="A팀" score={red} tone="red" onPlus={() => setRed((score) => score + 1)} onMinus={() => setRed((score) => Math.max(0, score - 1))} />
-        <ScorePanel label="B팀" score={blue} tone="blue" onPlus={() => setBlue((score) => score + 1)} onMinus={() => setBlue((score) => Math.max(0, score - 1))} />
-      </div>
-      <button type="button" onClick={() => { setRed(0); setBlue(0); }} className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>점수 초기화</button>
+    <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+      <section className="flex w-full max-w-[920px] flex-col items-center gap-5 rounded-[20px] border border-slate-200 bg-white p-5 shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:p-8">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <div className="text-left">
+            <h2 className="text-[18px] font-black text-slate-900">점수판</h2>
+            <p className="mt-1 text-[11px] font-bold text-slate-500">팀 이름을 누르면 바로 수정할 수 있습니다.</p>
+          </div>
+          <div className="flex items-center gap-1 rounded-[11px] bg-slate-100 p-1" aria-label="팀 개수 설정">
+            {[2, 3, 4, 5, 6].map((count) => (
+              <button key={count} type="button" onClick={() => setTeamCount(count)} className={`h-9 min-w-9 rounded-[8px] px-2 text-[12px] font-black transition ${teamCount === count ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} aria-pressed={teamCount === count}>
+                {count}팀
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid w-full gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(190px, 100%), 1fr))' }}>
+          {teams.slice(0, teamCount).map((team, index) => (
+            <ScorePanel
+              key={index}
+              name={team.name}
+              score={team.score}
+              colorIndex={index}
+              onNameChange={(name) => updateTeam(index, (item) => ({ ...item, name }))}
+              onPlus={() => updateTeam(index, (item) => ({ ...item, score: item.score + 1 }))}
+              onMinus={() => updateTeam(index, (item) => ({ ...item, score: Math.max(0, item.score - 1) }))}
+            />
+          ))}
+        </div>
+        <button type="button" onClick={() => setTeams((items) => items.map((team) => ({ ...team, score: 0 })))} className="mt-1 inline-flex h-10 items-center gap-2 rounded-[9px] border border-slate-200 bg-slate-50 px-4 text-[12px] font-black text-slate-600 transition hover:bg-white">
+          <RotateCcw size={14} />전체 점수 초기화
+        </button>
+      </section>
     </div>
   );
 }
@@ -887,15 +942,18 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
 
 type LadderRung = { level: number; left: number };
 
+const LADDER_VIEWBOX_WIDTH = 1000;
+const LADDER_PATH_COLORS = ['#0891b2', '#7c3aed', '#ea580c', '#16a34a', '#db2777', '#2563eb'];
+
 function LadderTab({ students, usingSample }: { students: StudentProfile[]; usingSample: boolean }) {
   const [outcomes, setOutcomes] = useState(() => students.map((_, index) => `결과 ${index + 1}`));
   const [rungs, setRungs] = useState<LadderRung[]>([]);
   const [revealed, setRevealed] = useState(false);
   const levelCount = Math.max(5, students.length * 2);
-  const ladderWidth = Math.max(520, (students.length - 1) * 96 + 80);
+  const ladderWidth = Math.max(520, students.length * 96);
   const ladderHeight = 300;
-  const xAt = (index: number) => ((index + 0.5) * ladderWidth) / students.length;
-  const yAt = (level: number) => 24 + level * ((ladderHeight - 48) / (levelCount - 1));
+  const xAt = useCallback((index: number) => ((index + 0.5) * LADDER_VIEWBOX_WIDTH) / students.length, [students.length]);
+  const yAt = useCallback((level: number) => 24 + level * ((ladderHeight - 48) / (levelCount - 1)), [levelCount]);
 
   const createLadder = useCallback(() => {
     const nextRungs: LadderRung[] = [];
@@ -921,6 +979,20 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
     return column;
   }), [levelCount, rungs, students]);
 
+  const pathPoints = useMemo(() => students.map((_, start) => {
+    let column = start;
+    const points = [`${xAt(column)},16`];
+    for (let level = 0; level < levelCount; level += 1) {
+      const y = yAt(level);
+      points.push(`${xAt(column)},${y}`);
+      if (rungs.some((rung) => rung.level === level && rung.left === column)) column += 1;
+      else if (rungs.some((rung) => rung.level === level && rung.left === column - 1)) column -= 1;
+      points.push(`${xAt(column)},${y}`);
+    }
+    points.push(`${xAt(column)},${ladderHeight - 16}`);
+    return points.join(' ');
+  }), [levelCount, rungs, students, xAt, yAt]);
+
   return (
     <div className="flex h-full flex-col items-center gap-5 overflow-y-auto px-6 py-8">
       <StudentModeNote usingSample={usingSample} />
@@ -939,16 +1011,17 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
       {students.length >= 2 ? (
         <div className="w-full max-w-[760px] overflow-x-auto rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <div style={{ minWidth: ladderWidth }}>
-            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
+            <div className="grid" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
               {students.map((student) => <div key={student.id} className="truncate text-center text-[12px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</div>)}
             </div>
-            <svg width={ladderWidth} height={ladderHeight} className="my-1 block" aria-label="사다리 선">
+            <svg width="100%" height={ladderHeight} viewBox={`0 0 ${LADDER_VIEWBOX_WIDTH} ${ladderHeight}`} preserveAspectRatio="none" className="my-1 block" aria-label="사다리 선">
               {students.map((student, index) => <line key={student.id} x1={xAt(index)} y1={16} x2={xAt(index)} y2={ladderHeight - 16} stroke="var(--spm-t3)" strokeWidth="3" opacity="0.55" />)}
               {rungs.map((rung) => <line key={`${rung.level}-${rung.left}`} x1={xAt(rung.left)} y1={yAt(rung.level)} x2={xAt(rung.left + 1)} y2={yAt(rung.level)} stroke="var(--spm-acc)" strokeWidth="4" strokeLinecap="round" />)}
+              {revealed ? pathPoints.map((points, index) => <polyline key={students[index]!.id} points={points} fill="none" stroke={LADDER_PATH_COLORS[index % LADDER_PATH_COLORS.length]} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />) : null}
             </svg>
-            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
+            <div className="grid" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
               {outcomes.map((outcome, index) => (
-                <input key={index} value={outcome} onChange={(event) => setOutcomes((items) => items.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="h-9 min-w-0 rounded-[9px] px-2 text-center text-[11px] font-black outline-none" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }} aria-label={`${index + 1}번 결과`} />
+                <input key={index} value={outcome} onChange={(event) => setOutcomes((items) => items.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="mx-1 h-9 min-w-0 rounded-[9px] px-2 text-center text-[11px] font-black outline-none" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }} aria-label={`${index + 1}번 결과`} />
               ))}
             </div>
           </div>
@@ -985,7 +1058,7 @@ export default function ClassToolsView() {
   const usingSample = false;
   return (
     <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
-      <div data-class-tools-tabs className="flex shrink-0 overflow-x-auto border-b" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
+      <div data-class-tools-tabs className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-200 bg-white px-2 py-2 shadow-[0_4px_14px_rgba(15,23,42,0.035)] sm:px-4">
         {TABS.map(({ id, label, icon: Icon }) => {
           const active = tab === id;
           const hasCount = (id === 'picker' || id === 'teams' || id === 'order' || id === 'tournament' || id === 'ladder') && selectedStudents.length > 0;
@@ -994,11 +1067,11 @@ export default function ClassToolsView() {
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className="flex min-h-[48px] shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-5 py-3 text-[13px] font-black transition-colors"
+              className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-[10px] px-3.5 text-[12px] font-black transition sm:px-4 sm:text-[13px]"
               style={{
-                borderColor: active ? 'var(--spm-acc)' : 'transparent',
                 color: active ? 'var(--spm-acc)' : 'var(--spm-t3)',
-                background: active ? 'var(--spm-acc-a06)' : 'transparent',
+                background: active ? 'var(--spm-acc-a09)' : 'transparent',
+                boxShadow: active ? 'inset 0 0 0 1px var(--spm-acc-a22)' : 'none',
               }}
             >
               <Icon size={15} />
@@ -1013,7 +1086,7 @@ export default function ClassToolsView() {
         })}
       </div>
 
-      <div data-class-tools-content className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+      <div data-class-tools-content className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-slate-50/70">
         {tab === 'stopwatch' && <StopwatchTab />}
         {tab === 'return-timer' && <ReturnTimerTab />}
         {tab === 'scoreboard' && <ScoreboardTab />}
@@ -1034,15 +1107,16 @@ export default function ClassToolsView() {
         {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
       </div>
 
-      <div className="shrink-0 border-t px-5 py-3" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
-        <Link
-          href="/spokedu-master/students"
-          className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black"
-          style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
-        >
-          <UserPlus size={14} />학생 명단 관리
-        </Link>
-      </div>
+      {usesClassRoster ? (
+        <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-2.5 sm:px-5">
+          <Link
+            href="/spokedu-master/students"
+            className="flex h-10 items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-slate-50 text-[12px] font-black text-slate-700 transition hover:border-slate-300 hover:bg-white"
+          >
+            <UserPlus size={14} />학생 명단 관리
+          </Link>
+        </div>
+      ) : null}
     </div>
   );
 }
