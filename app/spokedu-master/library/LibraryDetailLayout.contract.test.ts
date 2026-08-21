@@ -134,10 +134,10 @@ describe('SPOKEDU MASTER library detail final IA', () => {
   });
 
   it('shows the latest record-to-next-prep context as optional review-only continuity', () => {
-    expect(view).toContain('selectLatestApplicationIdea');
+    expect(view).toContain('operationalData.sessions');
     expect(view).toContain('data-next-prep-continuity');
     expect(view).toContain('지난 수업에서 남긴 다음 적용점');
-    expect(view).toContain('기록 보기');
+    expect(view).toContain('/spokedu-master/activity');
     expect(view).not.toContain('이번 수업에 적용됨');
     expect(view).not.toContain('추천');
   });

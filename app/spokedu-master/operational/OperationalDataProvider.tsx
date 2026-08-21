@@ -5,14 +5,12 @@ import { useMasterCanUseRecords } from '../access/MasterAccessProvider';
 import { getMasterRequestErrorMessage, masterFetchJson } from '../lib/masterRequestError';
 import { useProfile } from '../store';
 import type {
-  CreateClassRecordInput,
   CreateStudentInput,
   MasterClassDto,
-  MasterClassRecordDto,
   MasterSessionDto,
   MasterStudentDto,
   SaveSessionInput,
-  UpdateClassRecordInput,
+  MasterSessionAttendanceStatus,
   UpdateStudentInput,
 } from '../types/operational';
 
@@ -20,7 +18,6 @@ export type OperationalDataStatus = 'error' | 'idle' | 'loading' | 'ready';
 
 type OperationalDataContextValue = {
   classes: MasterClassDto[];
-  classRecords: MasterClassRecordDto[];
   createStudent: (input: CreateStudentInput) => Promise<MasterStudentDto>;
   deleteStudent: (studentId: string) => Promise<void>;
   updateStudent: (studentId: string, input: UpdateStudentInput) => Promise<MasterStudentDto>;
@@ -28,11 +25,14 @@ type OperationalDataContextValue = {
   ownerId: string | null;
   reload: () => Promise<void>;
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
-  saveClassRecord: (input: CreateClassRecordInput) => Promise<MasterClassRecordDto>;
+  addSessionProgram: (sessionId: string, programId: number, programTitle: string) => Promise<MasterSessionDto['programs'][number]>;
+  removeSessionProgram: (sessionId: string, sessionProgramId: string) => Promise<void>;
+  updateSessionProgram: (sessionId: string, sessionProgramId: string, isCompleted: boolean) => Promise<void>;
+  reorderSessionPrograms: (sessionId: string, sessionProgramIds: string[]) => Promise<void>;
+  saveSessionAttendance: (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<void>;
   status: OperationalDataStatus;
   students: MasterStudentDto[];
   sessions: MasterSessionDto[];
-  updateClassRecord: (recordId: string, input: UpdateClassRecordInput) => Promise<MasterClassRecordDto>;
 };
 
 const OperationalDataContext = createContext<OperationalDataContextValue | null>(null);
@@ -47,13 +47,6 @@ function getProviderErrorMessage(caught: unknown) {
   return getMasterRequestErrorMessage(caught);
 }
 
-export function mergeOperationalRecordById(
-  current: MasterClassRecordDto[],
-  next: MasterClassRecordDto,
-) {
-  return [next, ...current.filter((record) => record.id !== next.id)];
-}
-
 export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const profile = useProfile();
   const canUseRecords = useMasterCanUseRecords();
@@ -61,14 +54,12 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const activeOwnerRef = useRef<string | null>(null);
   const [status, setStatus] = useState<OperationalDataStatus>('idle');
   const [students, setStudents] = useState<MasterStudentDto[]>([]);
-  const [classRecords, setClassRecords] = useState<MasterClassRecordDto[]>([]);
   const [classes, setClasses] = useState<MasterClassDto[]>([]);
   const [sessions, setSessions] = useState<MasterSessionDto[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const clearData = useCallback(() => {
     setStudents([]);
-    setClassRecords([]);
     setClasses([]);
     setSessions([]);
   }, []);
@@ -88,14 +79,12 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     setStatus('loading');
 
     try {
-      const [studentsJson, recordsJson, sessionsJson] = await Promise.all([
+      const [studentsJson, sessionsJson] = await Promise.all([
         masterFetchJson<{ data?: MasterStudentDto[] }>('/api/spokedu-master/students'),
-        masterFetchJson<{ data?: MasterClassRecordDto[] }>('/api/spokedu-master/class-records'),
         masterFetchJson<{ data?: { classes?: MasterClassDto[]; sessions?: MasterSessionDto[] } }>('/api/spokedu-master/sessions'),
       ]);
       if (activeOwnerRef.current !== ownerId) return;
       setStudents(studentsJson.data ?? []);
-      setClassRecords(recordsJson.data ?? []);
       setClasses(sessionsJson.data?.classes ?? []);
       setSessions(sessionsJson.data?.sessions ?? []);
       setStatus('ready');
@@ -134,27 +123,6 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
-  const saveClassRecord = useCallback(async (input: CreateClassRecordInput) => {
-    const json = await masterFetchJson<{ data: MasterClassRecordDto }>('/api/spokedu-master/class-records', {
-      body: JSON.stringify(input),
-      method: 'POST',
-    });
-    setClassRecords((current) => mergeOperationalRecordById(current, json.data));
-    return json.data;
-  }, []);
-
-  const updateClassRecord = useCallback(async (recordId: string, input: UpdateClassRecordInput) => {
-    const json = await masterFetchJson<{ data: MasterClassRecordDto }>(
-      `/api/spokedu-master/class-records?id=${encodeURIComponent(recordId)}`,
-      {
-        body: JSON.stringify(input),
-        method: 'PATCH',
-      },
-    );
-    setClassRecords((current) => mergeOperationalRecordById(current, json.data));
-    return json.data;
-  }, []);
-
   const saveSession = useCallback(async (input: SaveSessionInput, sessionId?: string) => {
     const json = await masterFetchJson<{ data: MasterSessionDto }>(
       sessionId ? `/api/spokedu-master/sessions?id=${encodeURIComponent(sessionId)}` : '/api/spokedu-master/sessions',
@@ -165,10 +133,36 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
+  const addSessionProgram = useCallback(async (sessionId: string, programId: number, programTitle: string) => {
+    const json = await masterFetchJson<{ data: MasterSessionDto['programs'][number] }>(`/api/spokedu-master/sessions/${sessionId}/programs`, { method: 'POST', body: JSON.stringify({ programId, programTitle }) });
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: [...item.programs, json.data] } : item));
+    return json.data;
+  }, []);
+
+  const removeSessionProgram = useCallback(async (sessionId: string, sessionProgramId: string) => {
+    await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/programs/${sessionProgramId}`, { method: 'DELETE' });
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: item.programs.filter((program) => program.id !== sessionProgramId).map((program, sortOrder) => ({ ...program, sortOrder })) } : item));
+  }, []);
+
+  const updateSessionProgram = useCallback(async (sessionId: string, sessionProgramId: string, isCompleted: boolean) => {
+    await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/programs/${sessionProgramId}`, { method: 'PATCH', body: JSON.stringify({ isCompleted }) });
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: item.programs.map((program) => program.id === sessionProgramId ? { ...program, isCompleted } : program) } : item));
+  }, []);
+
+  const reorderSessionPrograms = useCallback(async (sessionId: string, sessionProgramIds: string[]) => {
+    await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/programs/reorder`, { method: 'PATCH', body: JSON.stringify({ sessionProgramIds }) });
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: sessionProgramIds.map((id, sortOrder) => ({ ...item.programs.find((program) => program.id === id)!, sortOrder })) } : item));
+  }, []);
+
+  const saveSessionAttendance = useCallback(async (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => {
+    await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance }) });
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, attendance: attendance.map((entry) => ({ id: item.attendance.find((old) => old.studentId === entry.studentId)?.id ?? entry.studentId, ...entry })) } : item));
+  }, []);
+
   const value = useMemo<OperationalDataContextValue>(
     () => ({
       classes,
-      classRecords,
+      addSessionProgram,
       createStudent,
       deleteStudent,
       updateStudent,
@@ -176,13 +170,15 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       ownerId,
       reload,
       saveSession,
+      saveSessionAttendance,
+      removeSessionProgram,
+      reorderSessionPrograms,
       sessions,
-      saveClassRecord,
       status,
       students,
-      updateClassRecord,
+      updateSessionProgram,
     }),
-    [classes, classRecords, createStudent, deleteStudent, error, ownerId, reload, saveClassRecord, saveSession, sessions, status, students, updateClassRecord, updateStudent],
+    [addSessionProgram, classes, createStudent, deleteStudent, error, ownerId, reload, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

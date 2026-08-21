@@ -9,7 +9,7 @@ describe('SPOKEDU MASTER Session day loop', () => {
     const assign = read('app/spokedu-master/components/session/AssignProgramToSessionButton.tsx');
     expect(detail).toContain('AssignProgramToSessionButton');
     expect(assign).toContain('assign(session.id)');
-    expect(assign).toContain('data.saveSession');
+    expect(assign).toContain('data.addSessionProgram');
   });
 
   it('routes home operational actions to the Calendar', () => {

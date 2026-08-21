@@ -23,7 +23,8 @@ describe('SPOKEDU MASTER Session workflow', () => {
     expect(api).toContain("p_session_id: sessionId");
     expect(api).toContain("'spokedu_master_save_session'");
     expect(calendar).toContain("status: nextStatus");
-    expect(calendar).toContain('isCompleted: !item.isCompleted');
+    expect(calendar).toContain('data.updateSessionProgram');
+    expect(calendar).toContain('data.saveSessionAttendance');
     expect(calendar).toContain("void persist('completed')");
     expect(calendar).not.toContain('프로그램별 메모');
   });
@@ -31,7 +32,8 @@ describe('SPOKEDU MASTER Session workflow', () => {
   it('assigns a library program only after an exact Session is selected', () => {
     const assign = read('app/spokedu-master/components/session/AssignProgramToSessionButton.tsx');
     expect(assign).toContain('assign(session.id)');
-    expect(assign).toContain('data.saveSession');
+    expect(assign).toContain('data.addSessionProgram');
+    expect(assign).toContain("session.status === 'scheduled'");
     expect(assign).toContain('session.id');
     expect(assign).not.toContain('sessions[0]');
   });

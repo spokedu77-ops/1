@@ -7,8 +7,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { DetailLessonGuide } from './components/DetailLessonGuide';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
-import { toClassRecord } from '../../lib/operationalDataAdapter';
-import { selectLatestApplicationIdea } from '../../lib/recordNextPrep';
 import { formatLessonPlanText } from '../../lib/lessonPlanExport';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
 import { prefersReducedMotion } from '../../lib/mediaPreferences';
@@ -56,11 +54,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
     () => (program ? selectRelatedLessonVideos(program, programs) : []),
     [program, programs],
   );
-  const latestApplicationIdea = useMemo(() => selectLatestApplicationIdea(
-    operationalData.classRecords.map(toClassRecord),
-    id,
-  ),
-  [id, operationalData.classRecords]);
+  const latestApplicationIdea = useMemo(() => operationalData.sessions
+    .filter((session) => session.programs.some((item) => String(item.programId) === id) && session.memo?.trim())
+    .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
+    .map((session) => ({ date: session.startAt, classId: session.className, applicationIdea: session.memo! }))[0] ?? null,
+  [id, operationalData.sessions]);
   const section = searchParams.get('section');
   const shouldAutoplayVideo = section === 'video' && searchParams.get('autoplay') === '1';
   const libraryReturnHref = getLibraryReturnHref(searchParams.get('libraryView'));

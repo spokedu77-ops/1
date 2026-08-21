@@ -113,9 +113,10 @@ describe('Record System V2 migration and privacy contract', () => {
     expect(migration).toContain('to service_role');
   });
 
-  it('filters lesson notes before selection and guards both report builders', () => {
-    expect(reportPage).toContain('.filter(isParentReportRecordEligible)');
-    expect(reportPage.match(/if \(!isParentReportRecordEligible\(record\)\) return '';/g)).toHaveLength(2);
+  it('builds reports from completed sessions without private guidance notes', () => {
+    expect(reportPage).toContain("session.status === 'completed'");
+    expect(reportPage).toContain('selected.memo');
+    expect(reportPage).not.toContain('classRecords');
     expect(reportPage).not.toContain('guidanceNote');
   });
 });

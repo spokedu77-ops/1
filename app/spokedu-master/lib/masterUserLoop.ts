@@ -1,4 +1,4 @@
-import type { ClassRecord, UserProfile } from '../types';
+import type { UserProfile } from '../types';
 import type { RecentProgramActivity } from './recentProgramActivity';
 
 export type MasterLoopEntitlement = {
@@ -25,7 +25,7 @@ export type MasterLoopStateInput = {
   entitlement?: MasterLoopEntitlement | null;
   recentLessonActivities: RecentProgramActivity[];
   recentSpomoveActivities: RecentProgramActivity[];
-  classRecords: ClassRecord[];
+  sessionCount: number;
   explanationCount: number;
 };
 
@@ -36,13 +36,13 @@ function resolveHasEntitlement(input: MasterLoopStateInput): boolean {
 
 export function isMasterFirstUser(input: {
   studentCount: number;
-  classRecords: ClassRecord[];
+  sessionCount: number;
   recentLessonActivities: RecentProgramActivity[];
   recentSpomoveActivities: RecentProgramActivity[];
 }) {
   return (
     input.studentCount === 0 &&
-    input.classRecords.length === 0 &&
+    input.sessionCount === 0 &&
     input.recentLessonActivities.length === 0 &&
     input.recentSpomoveActivities.length === 0
   );
@@ -52,8 +52,8 @@ export function selectMasterLoopAction(input: MasterLoopStateInput): MasterLoopA
   const hasLessonUseExperience = input.recentLessonActivities.length > 0;
   const hasSpomoveUseExperience = input.recentSpomoveActivities.length > 0;
   const hasUseExperience =
-    hasLessonUseExperience || hasSpomoveUseExperience || input.classRecords.length > 0;
-  const hasRecords = input.classRecords.length > 0;
+    hasLessonUseExperience || hasSpomoveUseExperience || input.sessionCount > 0;
+  const hasRecords = input.sessionCount > 0;
   const isPaid = resolveHasEntitlement(input);
 
   if (isPaid && hasRecords) {

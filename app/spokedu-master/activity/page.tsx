@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
-import type { MasterSessionDto, MasterSessionStatus, SaveSessionInput } from '../types/operational';
+import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
 
 function toLocalInput(date: Date) {
   const offset = date.getTimezoneOffset() * 60_000;
@@ -27,7 +27,7 @@ function statusTone(status: MasterSessionStatus) {
   return 'bg-blue-50 text-blue-700 ring-blue-200';
 }
 
-type DraftProgram = SaveSessionInput['programs'][number];
+type DraftProgram = { id?: string; programId: number; programTitle: string | null; sortOrder: number; isCompleted: boolean };
 
 function SessionSheet({
   session,
@@ -48,7 +48,7 @@ function SessionSheet({
   const [memo, setMemo] = useState(session?.memo ?? '');
   const [programs, setPrograms] = useState<DraftProgram[]>(
     session?.programs.map((item) => ({
-      programId: item.programId, programTitle: item.programTitle,
+      id: item.id, programId: item.programId, programTitle: item.programTitle,
       sortOrder: item.sortOrder, isCompleted: item.isCompleted,
     })) ?? [],
   );
@@ -59,56 +59,61 @@ function SessionSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectedClass = data.classes.find((item) => item.id === classId);
-  const roster = data.students.filter((student) => (student.group ?? '').trim() === (selectedClass?.name ?? '').trim());
+  const roster = data.students.filter((student) => selectedClass?.studentIds.includes(student.id));
   const availablePrograms = libraryPrograms.filter((program) => !programs.some((item) => String(item.programId) === program.id));
   const completedPrograms = programs.filter((item) => item.isCompleted).length;
 
-  const addProgram = () => {
+  const addProgram = async () => {
     const program = libraryPrograms.find((item) => item.id === programId);
     const numericId = Number(program?.id);
     if (!program || !Number.isInteger(numericId)) return;
-    setPrograms((current) => [...current, {
-      programId: numericId, programTitle: program.title, sortOrder: current.length, isCompleted: false,
-    }]);
-    setProgramId('');
+    if (!session || status !== 'scheduled') return;
+    setSaving(true);
+    try {
+      const added = await data.addSessionProgram(session.id, numericId, program.title);
+      setPrograms((current) => [...current, added]);
+      setProgramId('');
+    } finally { setSaving(false); }
   };
 
-  const moveProgram = (index: number, offset: number) => {
+  const moveProgram = async (index: number, offset: number) => {
     const target = index + offset;
     if (target < 0 || target >= programs.length) return;
-    setPrograms((current) => {
-      const next = [...current];
-      [next[index], next[target]] = [next[target]!, next[index]!];
-      return next.map((item, sortOrder) => ({ ...item, sortOrder }));
-    });
+    if (!session || programs.some((item) => !item.id)) return;
+    const next = [...programs];
+    [next[index], next[target]] = [next[target]!, next[index]!];
+    const ordered = next.map((item, sortOrder) => ({ ...item, sortOrder }));
+    setPrograms(ordered);
+    await data.reorderSessionPrograms(session.id, ordered.map((item) => item.id!));
   };
 
   const persist = async (nextStatus = status) => {
     setSaving(true);
     setError(null);
     try {
-      await data.saveSession({
+      const saved = await data.saveSession({
         classId,
         startAt: new Date(startAt).toISOString(),
         endAt: new Date(endAt).toISOString(),
         status: nextStatus,
         memo: memo.trim() || null,
-        programs: programs.map((item, sortOrder) => ({ ...item, sortOrder })),
-        attendance: Object.entries(attendance).map(([studentId, value]) => ({ studentId, status: value })),
       }, session?.id);
+      if (nextStatus !== 'cancelled') {
+        await data.saveSessionAttendance(saved.id, Object.entries(attendance).map(([studentId, value]) => ({ studentId, status: value })));
+      }
       onClose();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Session을 저장하지 못했습니다.');
+      setError(caught instanceof Error ? caught.message : '수업을 저장하지 못했습니다.');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <BottomSheet open title={session ? 'Session 상세' : '수업 추가'} onClose={onClose}>
+    <BottomSheet open title={session ? '수업 상세' : '수업 추가'} onClose={onClose}>
       <div className="space-y-5 pb-4">
         <section className="grid gap-3 sm:grid-cols-2">
-          <label className="text-xs font-black text-slate-600">Class
+          <label className="text-xs font-black text-slate-600">수업반
             <select value={classId} onChange={(event) => { setClassId(event.target.value); setAttendance({}); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold">
               {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
@@ -139,7 +144,7 @@ function SessionSheet({
                 </div>
               </div>
             ))}
-            {!roster.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">이 Class에 연결된 학생 명단이 없습니다.</p> : null}
+            {!roster.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">이 수업반에 등록된 학생이 없습니다.</p> : null}
           </div>
         </section>
 
@@ -148,22 +153,22 @@ function SessionSheet({
           <div className="mt-2 space-y-2">
             {programs.map((program, index) => (
               <div key={program.programId} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
-                <button type="button" onClick={() => setPrograms((current) => current.map((item) => item.programId === program.programId ? { ...item, isCompleted: !item.isCompleted } : item))} className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label="프로그램 진행 여부"><Check size={16} /></button>
+                <button type="button" disabled={!session || status === 'cancelled'} onClick={() => { if (!session || !program.id) return; const next = !program.isCompleted; setPrograms((current) => current.map((item) => item.id === program.id ? { ...item, isCompleted: next } : item)); void data.updateSessionProgram(session.id, program.id, next); }} className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label="프로그램 진행 여부"><Check size={16} /></button>
                 <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{program.programTitle ?? `프로그램 ${program.programId}`}</span>
                 <button type="button" onClick={() => moveProgram(index, -1)} disabled={index === 0} className="p-1 text-slate-400 disabled:opacity-20"><ChevronUp size={16} /></button>
                 <button type="button" onClick={() => moveProgram(index, 1)} disabled={index === programs.length - 1} className="p-1 text-slate-400 disabled:opacity-20"><ChevronDown size={16} /></button>
-                <button type="button" onClick={() => setPrograms((current) => current.filter((item) => item.programId !== program.programId).map((item, sortOrder) => ({ ...item, sortOrder })))} className="p-1 text-rose-500">×</button>
+                <button type="button" disabled={!session || status !== 'scheduled'} onClick={() => { if (!session || !program.id) return; setPrograms((current) => current.filter((item) => item.id !== program.id).map((item, sortOrder) => ({ ...item, sortOrder }))); void data.removeSessionProgram(session.id, program.id); }} className="p-1 text-rose-500 disabled:opacity-30">×</button>
               </div>
             ))}
-            {!programs.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">프로그램 미지정 — 이 상태로도 Session을 저장할 수 있습니다.</p> : null}
+            {!programs.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">프로그램 미지정 — 이 상태로도 수업을 저장할 수 있습니다.</p> : null}
           </div>
           <div className="mt-2 flex gap-2">
             <select value={programId} onChange={(event) => setProgramId(event.target.value)} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"><option value="">프로그램 선택</option>{availablePrograms.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
-            <button type="button" onClick={addProgram} disabled={!programId} className="h-10 rounded-xl bg-slate-800 px-3 text-xs font-black text-white disabled:opacity-40">+ 프로그램 추가</button>
+            <button type="button" onClick={() => void addProgram()} disabled={!programId || !session || status !== 'scheduled' || saving} className="h-10 rounded-xl bg-slate-800 px-3 text-xs font-black text-white disabled:opacity-40">+ 프로그램 추가</button>
           </div>
         </section>
 
-        <label className="block text-sm font-black text-slate-800">Session 메모
+        <label className="block text-sm font-black text-slate-800">수업 메모
           <textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none" />
         </label>
         {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
@@ -188,11 +193,11 @@ export default function ActivityPage() {
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
       <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
         <header className="flex flex-wrap items-end justify-between gap-3">
-          <div><p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">Session Calendar</p><h1 className="mt-1 text-2xl font-black text-slate-900">수업 운영 캘린더</h1><p className="mt-1 text-sm font-semibold text-slate-500">계획·출석·진행·메모가 하나의 Session에 이어집니다.</p></div>
+          <div><h1 className="mt-1 text-2xl font-black text-slate-900">수업 운영 캘린더</h1><p className="mt-1 text-sm font-semibold text-slate-500">계획·출석·진행·메모가 하나의 수업으로 이어집니다.</p></div>
           <button type="button" onClick={() => setEditing(null)} disabled={!data.classes.length} className="flex h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white disabled:opacity-40"><Plus size={17} />수업 추가</button>
         </header>
 
-        {!data.classes.length && data.status === 'ready' ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">학생 관리에서 Class(그룹)를 먼저 등록해 주세요. 기존 그룹은 자동으로 Class로 보존됩니다.</p> : null}
+        {!data.classes.length && data.status === 'ready' ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">학생 관리에서 수업반을 먼저 등록해 주세요. 기존 그룹은 자동으로 수업반으로 보존됩니다.</p> : null}
 
         <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
           <div className="flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-sm font-black text-slate-800"><CalendarDays size={17} />날짜 선택</h2><input type="date" value={format(selectedDate, 'yyyy-MM-dd')} onChange={(event) => setSelectedDate(startOfDay(new Date(`${event.target.value}T00:00:00`)))} className="h-9 rounded-lg border border-slate-200 px-2 text-xs font-bold" /></div>
@@ -206,7 +211,7 @@ export default function ActivityPage() {
         </section>
 
         <section className="mt-4">
-          <div className="flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">{format(selectedDate, 'M월 d일 EEEE', { locale: ko })}</h2><span className="text-xs font-bold text-slate-400">Session {daySessions.length}개</span></div>
+          <div className="flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">{format(selectedDate, 'M월 d일 EEEE', { locale: ko })}</h2><span className="text-xs font-bold text-slate-400">수업 {daySessions.length}개</span></div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {daySessions.map((session) => (
               <button key={session.id} type="button" onClick={() => setEditing(session)} className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-px hover:shadow-md">

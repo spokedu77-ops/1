@@ -22,7 +22,7 @@ describe('SPOKEDU MASTER raw error exposure cleanup', () => {
   it('uses the shared safe client error helper on payment, students archive, and report paths', () => {
     expect(read('app/spokedu-master/payment/page.tsx')).toContain('toMasterClientError(res.status, json.error)');
     expect(read('app/spokedu-master/students/page.tsx')).toContain("getSafeMasterErrorMessage('validation'");
-    expect(read('app/spokedu-master/report/page.tsx')).toContain('resolveSaveActionFeedback(caught, accessSnapshot)');
+    expect(read('app/spokedu-master/report/page.tsx')).not.toContain('saveClassRecord');
     expect(read('app/spokedu-master/lib/saveActionFeedback.ts')).toContain('GENERIC_SAVE_ERROR_MESSAGE');
   });
 

@@ -33,7 +33,6 @@ describe('MASTER product UI unity', () => {
   it('routes filter chips through masterUiClasses (no slate-950 chip hardcode)', () => {
     const chipSurfaces = [
       join(ROOT, 'library', 'LibraryView.tsx'),
-      join(ROOT, 'report', 'page.tsx'),
       join(ROOT, 'spomove', 'SpomoveHubView.tsx'),
       join(ROOT, 'dashboard', 'DashboardView.tsx'),
     ];

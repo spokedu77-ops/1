@@ -88,36 +88,12 @@ function normalizeInput(value: unknown): SaveSessionInput {
   if (status !== 'scheduled' && status !== 'completed' && status !== 'cancelled') {
     throw new Error('Invalid session status');
   }
-  if (!Array.isArray(value.programs) || !Array.isArray(value.attendance)) {
-    throw new Error('Programs and attendance must be arrays');
-  }
-  const programs = value.programs.map((item, index) => {
-    if (!isObject(item)) throw new Error('Invalid program');
-    const programId = Number(item.programId);
-    if (!Number.isInteger(programId) || programId < 1) throw new Error('Invalid program');
-    return {
-      programId,
-      programTitle: typeof item.programTitle === 'string' && item.programTitle.trim() ? item.programTitle.trim() : null,
-      sortOrder: index,
-      isCompleted: item.isCompleted === true,
-    };
-  });
-  if (new Set(programs.map((item) => item.programId)).size !== programs.length) throw new Error('Duplicate program');
-  const attendance = value.attendance.map((item) => {
-    if (!isObject(item) || typeof item.studentId !== 'string' || (item.status !== 'present' && item.status !== 'absent')) {
-      throw new Error('Invalid attendance');
-    }
-    return { studentId: item.studentId, status: item.status as 'present' | 'absent' };
-  });
-  if (new Set(attendance.map((item) => item.studentId)).size !== attendance.length) throw new Error('Duplicate attendance');
   return {
     classId,
     startAt: startAt.toISOString(),
     endAt: endAt.toISOString(),
     status,
     memo: typeof value.memo === 'string' && value.memo.trim() ? value.memo.trim() : null,
-    programs,
-    attendance,
   };
 }
 
@@ -136,13 +112,15 @@ export async function GET() {
   if (!access.ok) return withPrivateNoStore(access.response);
   const supabase = getServiceSupabase();
   const [{ data: classes, error: classError }, sessionsResult] = await Promise.all([
-    supabase.from('spokedu_master_classes').select('id,name,created_at,updated_at')
+    supabase.from('spokedu_master_classes').select('id,name,created_at,updated_at,spokedu_master_class_students(student_id)')
       .eq('owner_id', access.userId).is('deleted_at', null).order('name'),
     loadAggregate(access.userId),
   ]);
   if (classError) return privateNoStoreJson({ error: 'Classes could not be loaded' }, { status: 500 });
   const classDtos: MasterClassDto[] = (classes ?? []).map((item) => ({
-    id: item.id, name: item.name, createdAt: item.created_at, updatedAt: item.updated_at,
+    id: item.id, name: item.name,
+    studentIds: (item.spokedu_master_class_students ?? []).map((membership: { student_id: string }) => membership.student_id),
+    createdAt: item.created_at, updatedAt: item.updated_at,
   }));
   return privateNoStoreJson({ data: { classes: classDtos, sessions: sessionsResult } });
 }
@@ -162,8 +140,8 @@ async function save(request: Request, sessionId: string | null) {
     p_end_at: input.endAt,
     p_status: input.status,
     p_memo: input.memo,
-    p_programs: input.programs,
-    p_attendance: input.attendance,
+    p_programs: [],
+    p_attendance: [],
   });
   if (error || typeof savedId !== 'string') {
     if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: 'Invalid session data' }, { status: 400 });

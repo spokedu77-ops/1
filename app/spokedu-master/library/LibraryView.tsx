@@ -33,7 +33,6 @@ import {
   parseMasterSpaces,
   parseMasterTargets,
 } from '../lib/programDisplayTags';
-import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore } from '../store';
 import type { Program } from '../types';
@@ -258,8 +257,7 @@ export default function LibraryView() {
     () => getActiveTodayLessons(todayLessonByOwner, ownerId),
     [ownerId, todayLessonByOwner],
   );
-  const { classRecords: serverClassRecords } = useOperationalData();
-  const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
+  const { sessions } = useOperationalData();
   const isPremium = useIsPremium();
   const favoriteIds = useMemo(
     () => storedFavoriteIds ?? getFavoriteProgramIds(ownerId),
@@ -303,22 +301,29 @@ export default function LibraryView() {
   );
 
   const usedProgramIds = useMemo(
-    () => new Set(classRecords.map((record) => record.programId)),
-    [classRecords],
+    () => new Set(sessions.flatMap((session) => session.programs.map((item) => String(item.programId)))),
+    [sessions],
   );
   const recentProgramRecords = useMemo(() => {
     const programsById = new Map(pool.map((program) => [program.id, program]));
     const seen = new Set<string>();
-    return [...classRecords]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .flatMap((record) => {
-        const program = programsById.get(record.programId);
-        if (!program || seen.has(record.programId)) return [];
-        seen.add(record.programId);
-        return [{ program, record }];
+    return [...sessions]
+      .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
+      .flatMap((session) => session.programs.map((record) => ({ session, record })))
+      .flatMap(({ session, record }) => {
+        const program = programsById.get(String(record.programId));
+        if (!program || seen.has(String(record.programId))) return [];
+        seen.add(String(record.programId));
+        return [{ program, record: {
+          id: session.id, date: session.startAt, lessonTitle: session.className, classId: session.classId,
+          programId: String(record.programId), programTitle: record.programTitle ?? program.title,
+          present: session.attendance.filter((item) => item.status === 'present').length,
+          absent: session.attendance.filter((item) => item.status === 'absent').length,
+          focusCount: 0, skillCount: 0, kakaoSent: false, students: [],
+        } }];
       })
       .slice(0, 4);
-  }, [classRecords, pool]);
+  }, [sessions, pool]);
 
   const shelves = useMemo(() => buildLibraryShelves(viewPool), [viewPool]);
 

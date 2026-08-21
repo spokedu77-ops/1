@@ -8,6 +8,7 @@ export type MasterSessionAttendanceStatus = 'present' | 'absent';
 export type MasterClassDto = {
   id: string;
   name: string;
+  studentIds: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -47,17 +48,12 @@ export type SaveSessionInput = {
   endAt: string;
   status: MasterSessionStatus;
   memo: string | null;
-  programs: Array<{
-    programId: number;
-    programTitle: string | null;
-    sortOrder: number;
-    isCompleted: boolean;
-  }>;
-  attendance: Array<{
-    studentId: string;
-    status: MasterSessionAttendanceStatus;
-  }>;
 };
+
+export type SaveSessionAttendanceInput = Array<{
+  studentId: string;
+  status: MasterSessionAttendanceStatus;
+}>;
 
 export type MasterStudentDto = {
   id: string;

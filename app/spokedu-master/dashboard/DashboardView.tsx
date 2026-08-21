@@ -84,7 +84,6 @@ import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
 import { useHasMasterEntitlement, useHasPremiumEntitlement, useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { hasMasterEntitlement } from '../lib/masterAccessModel';
 import { EntitlementPreviewHome } from './EntitlementPreviewHome';
-import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
@@ -682,12 +681,10 @@ function EntitledDashboardView() {
   } = useMasterStore();
   const {
     students: serverStudents,
-    classRecords: serverClassRecords,
     sessions: operationalSessions,
     status: operationalStatus,
   } = useOperationalData();
   const explanationData = useExplanationData();
-  const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const profile = useProfile();
   const isPremium = useIsPremium();
   const recentActivityOwnerId = recentActivityOwnerResolved
@@ -708,7 +705,7 @@ function EntitledDashboardView() {
     operationalStatus === 'ready' &&
     isMasterFirstUser({
       studentCount: serverStudents.length,
-      classRecords,
+      sessionCount: operationalSessions.length,
       recentLessonActivities: validLessonActivities,
       recentSpomoveActivities: validSpomoveActivities,
     });
@@ -904,20 +901,17 @@ function EntitledDashboardView() {
       todayLessonAssignment,
     ],
   );
-  const studentMemoCount = useMemo(
-    () => classRecords.flatMap((record) => record.students).filter((student) => student.memo?.trim()).length,
-    [classRecords],
-  );
+  const studentMemoCount = useMemo(() => operationalSessions.filter((session) => session.memo?.trim()).length, [operationalSessions]);
   const loopAction = useMemo(
     () => selectMasterLoopAction({
       profile,
       entitlement: { hasEntitlement },
       recentLessonActivities: validLessonActivities,
       recentSpomoveActivities: validSpomoveActivities,
-      classRecords,
+      sessionCount: operationalSessions.length,
       explanationCount: explanationData.status === 'loading' ? 0 : explanationData.total,
     }),
-    [classRecords, explanationData.status, explanationData.total, hasEntitlement, profile, validLessonActivities, validSpomoveActivities],
+    [explanationData.status, explanationData.total, hasEntitlement, operationalSessions.length, profile, validLessonActivities, validSpomoveActivities],
   );
 
   useEffect(() => {

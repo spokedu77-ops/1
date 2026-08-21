@@ -20,8 +20,8 @@ describe('SPOKEDU MASTER primary navigation', () => {
   it('uses the Session calendar instead of the standalone record creator', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
     const legacy = read('app/spokedu-master/class-record/page.tsx');
-    expect(activity).toContain('Session Calendar');
-    expect(activity).toContain('Session 상세');
+    expect(activity).toContain('수업 운영 캘린더');
+    expect(activity).toContain('수업 상세');
     expect(activity).toContain('프로그램 미지정');
     expect(activity).toContain('수업 완료');
     expect(activity).not.toContain('/spokedu-master/class-record');

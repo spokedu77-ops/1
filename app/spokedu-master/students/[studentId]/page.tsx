@@ -5,7 +5,7 @@ import { CalendarDays, ClipboardList, FileText, Star, Users } from 'lucide-react
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { RecordProgramPicker } from '../../components/record/RecordProgramPicker';
-import { toClassRecord, toStudentProfile } from '../../lib/operationalDataAdapter';
+import { toStudentProfile } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { ClassRecord } from '../../types';
 
@@ -48,7 +48,16 @@ export default function StudentDetailPage() {
   const studentId = typeof params.studentId === 'string' ? params.studentId : '';
   const operationalData = useOperationalData();
   const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
-  const records = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
+  const records = useMemo(() => operationalData.sessions.map((session) => ({
+    id: session.id, date: session.startAt, lessonTitle: session.className,
+    classId: session.classId, programId: session.programs[0] ? String(session.programs[0].programId) : '',
+    programTitle: session.programs.map((item) => item.programTitle).filter(Boolean).join(', '),
+    memo: session.memo ?? '', parentNoteSnapshot: '', nextPrep: '', recordType: 'quick' as const,
+    present: session.attendance.filter((item) => item.status === 'present').length,
+    absent: session.attendance.filter((item) => item.status === 'absent').length,
+    focusCount: 0, skillCount: 0, kakaoSent: false,
+    students: session.attendance.map((item) => ({ studentId: item.studentId, attendance: item.status, focused: false, skills: [], memo: '' })),
+  })) as unknown as ClassRecord[], [operationalData.sessions]);
   const student = students.find((item) => item.id === studentId) ?? null;
   const entries = student ? getStudentEntries(records, student.id) : [];
   const latest = entries[0] ?? null;

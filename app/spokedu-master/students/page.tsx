@@ -25,7 +25,7 @@ import {
   readLegacyOperationalPreview,
   type LegacyOperationalImportPreview,
 } from '../lib/legacyOperationalImport';
-import { toClassRecord, toStudentProfile } from '../lib/operationalDataAdapter';
+import { toStudentProfile } from '../lib/operationalDataAdapter';
 import { getSafeMasterErrorMessage } from '../lib/clientErrors';
 import { getStudentRecordFacts } from '../lib/studentRecordFacts';
 import { useOperationalData } from '../operational/OperationalDataProvider';
@@ -64,7 +64,16 @@ export default function StudentsPage() {
   const profile = useMasterStore((state) => state.profile);
   const operationalData = useOperationalData();
   const students = operationalData.students.map(toStudentProfile);
-  const records = operationalData.classRecords.map(toClassRecord);
+  const records = operationalData.sessions.map((session) => ({
+    id: session.id, date: session.startAt, lessonTitle: session.className,
+    classId: session.classId, programId: session.programs[0] ? String(session.programs[0].programId) : '',
+    programTitle: session.programs.map((item) => item.programTitle).filter(Boolean).join(', '),
+    memo: session.memo ?? '', parentNoteSnapshot: '', nextPrep: '', recordType: 'quick' as const,
+    present: session.attendance.filter((item) => item.status === 'present').length,
+    absent: session.attendance.filter((item) => item.status === 'absent').length,
+    focusCount: 0, skillCount: 0, kakaoSent: false,
+    students: session.attendance.map((item) => ({ studentId: item.studentId, attendance: item.status, focused: false, skills: [], memo: '' })),
+  })) as unknown as ClassRecord[];
   const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
   const operationalReady = operationalData.status === 'ready';
   const operationalError = operationalData.status === 'error';

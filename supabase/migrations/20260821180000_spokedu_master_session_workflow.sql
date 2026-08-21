@@ -80,9 +80,15 @@ begin
   elsif not exists (select 1 from public.spokedu_master_sessions s where s.id = new.session_id and s.owner_id = new.owner_id) then
     raise exception using errcode = '23514', message = 'session aggregate owner mismatch';
   end if;
-  if tg_table_name = 'spokedu_master_session_attendance'
-     and not exists (select 1 from public.spokedu_master_students s where s.id = new.student_id and s.owner_id = new.owner_id) then
-    raise exception using errcode = '23514', message = 'attendance student owner mismatch';
+  if tg_table_name = 'spokedu_master_session_attendance' then
+    if not exists (
+      select 1
+      from public.spokedu_master_students s
+      where s.id = new.student_id
+        and s.owner_id = new.owner_id
+    ) then
+      raise exception using errcode = '23514', message = 'attendance student owner mismatch';
+    end if;
   end if;
   return new;
 end $$;
