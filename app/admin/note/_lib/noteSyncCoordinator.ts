@@ -26,14 +26,9 @@ import {
   persistOpToPushItems,
   applyOutboundContentPatchesToBlocks,
   rewriteOutboundPatchContentBases,
+  filterRegressivePatchContentOps,
 } from './notePersistOpToBlockOps';
 import { sealPassiveIncomingBlocks } from './noteDataIntegrity';
-import {
-  contentHasMediaPresence,
-  decideRegressiveContentOp,
-  readAuthorityBlockText,
-} from './noteAuthority';
-import { shouldIgnoreRegressiveContentPatch } from '@/app/lib/note/noteContentAuthority';
 import {
   mergeBlocksWithStoreContent,
   mergeReconciledBlocks,
@@ -75,57 +70,6 @@ const SYNC_STATE_CACHE_MS = 2_000;
 const LEADER_CHANNEL = 'spm-note-sync-leader-v1';
 const LEADER_LOCK_PREFIX = 'spm-note-sync-leader-lock';
 const MAX_PUSH_ATTEMPTS = 8;
-
-/** Authority: clear intent는 push, store/서버 기준 regressive patch만 drop */
-function filterRegressivePatchContentOps(
-  ops: NoteBlockOpPushItem[],
-  blocks: NoteBlock[],
-): { safeReady: NoteBlockOpPushItem[]; dropStaleIds: string[] } {
-  const blocksById = new Map(blocks.map((block) => [block.id, block]));
-  const safeReady: NoteBlockOpPushItem[] = [];
-  const dropStaleIds: string[] = [];
-  for (const op of ops) {
-    if (op.opType !== 'patch_content') {
-      safeReady.push(op);
-      continue;
-    }
-    const payload = op.payload;
-    if (payload.opType !== 'patch_content') {
-      safeReady.push(op);
-      continue;
-    }
-    const block = blocksById.get(payload.blockId);
-    const localText = block ? readAuthorityBlockText(block.content) : '';
-    const patchText = readAuthorityBlockText(payload.content);
-    // 사전 필터(빈 wipe/접두) — 최종 authority는 아래 shouldIgnoreRegressiveContentPatch
-    const decision = decideRegressiveContentOp({
-      localText,
-      patchText,
-      localHasMediaPresence: block
-        ? contentHasMediaPresence(block.content)
-        : false,
-      patchHasMediaPresence: contentHasMediaPresence(payload.content),
-    });
-    if (decision === 'drop_stale') {
-      dropStaleIds.push(op.clientOpId);
-      continue;
-    }
-    // SSOT: 동일길이·체크·html 등 (decideRegressiveContentOp가 통과시켜도 여기서 차단)
-    if (
-      block
-      && shouldIgnoreRegressiveContentPatch(
-        block.content,
-        payload.content,
-        payload.baseContent,
-      )
-    ) {
-      dropStaleIds.push(op.clientOpId);
-      continue;
-    }
-    safeReady.push(op);
-  }
-  return { safeReady, dropStaleIds };
-}
 
 export type NoteSyncCoordinatorCallbacks = {
   onBlocksUpdated: (
@@ -690,10 +634,17 @@ export class NoteSyncCoordinator {
         ready = leaveReady;
         deferred = [...contentDeferred, ...deferred];
       }
-      const { safeReady, dropStaleIds } = filterRegressivePatchContentOps(ready, this.blocks);
+      const { safeReady, dropStaleIds, rebasedOps } = filterRegressivePatchContentOps(
+        ready,
+        this.blocks,
+        this.lastServerBlocks,
+      );
+      if (rebasedOps.length > 0) {
+        // IDB outbound를 rebase 결과로 덮어 다음 재시도·open overlay와 일치
+        await appendOutboundOps(this.documentId, rebasedOps);
+      }
       if (dropStaleIds.length > 0) {
-        // Authority drop_stale만 outbound에서 제거 — clear intent는 절대 여기서 지우지 않음
-         
+        // true no-op·비보호만 제거 — protectable patch는 rebase 경로만
         await removeOutboundOps(dropStaleIds);
       }
 

@@ -5,7 +5,11 @@ import { noteBlockOpTypeFromPayload } from '@/app/lib/note/noteBlockOpTypes';
 import type { NoteLocalOutboundOp } from './noteLocalDb';
 import { appendOutboundOps } from './noteLocalDb';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
-import { readAuthorityBlockText } from './noteAuthority';
+import { readAuthorityBlockText, contentHasMediaPresence, decideRegressiveContentOp } from './noteAuthority';
+import {
+  noteContentHasProtectableUserPayload,
+  shouldIgnoreRegressiveContentPatch,
+} from '@/app/lib/note/noteContentAuthority';
 import { LOCAL_ONLY_BLOCK_GRACE_MS } from './noteBlockStateMerge';
 import { sealPassiveIncomingBlock } from './noteDataIntegrity';
 import type { NoteBlock } from './types';
@@ -518,6 +522,91 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
     return _exhaustive;
   }
   }
+}
+
+/**
+ * ZERO LOSS: protectable patch_content는 drop_stale로 outbound에서 지우지 않는다.
+ * stale base → outbound Intent 유지 + base를 서버로.
+ * store-ahead(truncate patch) → 화면 본문으로 content 교체.
+ */
+export function filterRegressivePatchContentOps(
+  ops: NoteBlockOpPushItem[],
+  blocks: NoteBlock[],
+  serverBlocks: NoteBlock[] = [],
+): { safeReady: NoteBlockOpPushItem[]; dropStaleIds: string[]; rebasedOps: NoteBlockOpPushItem[] } {
+  const blocksById = new Map(blocks.map((block) => [block.id, block]));
+  const serverById = new Map(serverBlocks.map((block) => [block.id, block]));
+  const safeReady: NoteBlockOpPushItem[] = [];
+  const dropStaleIds: string[] = [];
+  const rebasedOps: NoteBlockOpPushItem[] = [];
+
+  for (const op of ops) {
+    if (op.opType !== 'patch_content') {
+      safeReady.push(op);
+      continue;
+    }
+    const payload = op.payload;
+    if (payload.opType !== 'patch_content') {
+      safeReady.push(op);
+      continue;
+    }
+    const block = blocksById.get(payload.blockId);
+    if (!block) {
+      safeReady.push(op);
+      continue;
+    }
+
+    const localContent = (block.content ?? {}) as Record<string, unknown>;
+    const patchContent = payload.content;
+    const localText = readAuthorityBlockText(localContent);
+    const patchText = readAuthorityBlockText(patchContent);
+    const decision = decideRegressiveContentOp({
+      localText,
+      patchText,
+      localHasMediaPresence: contentHasMediaPresence(localContent),
+      patchHasMediaPresence: contentHasMediaPresence(patchContent),
+    });
+    const ignore = shouldIgnoreRegressiveContentPatch(
+      localContent,
+      patchContent,
+      payload.baseContent,
+    );
+
+    if (decision !== 'drop_stale' && !ignore) {
+      safeReady.push(op);
+      continue;
+    }
+
+    const protectable = noteContentHasProtectableUserPayload(localContent)
+      || noteContentHasProtectableUserPayload(patchContent);
+    if (!protectable) {
+      dropStaleIds.push(op.clientOpId);
+      continue;
+    }
+
+    const serverContent = serverById.get(payload.blockId)?.content;
+    const nextContent = decision === 'drop_stale'
+      ? { ...localContent }
+      : (localText.length > patchText.length ? { ...localContent } : { ...patchContent });
+    const nextBase = (
+      serverContent && typeof serverContent === 'object'
+        ? { ...(serverContent as Record<string, unknown>) }
+        : (typeof block.content === 'object' && block.content
+          ? { ...(block.content as Record<string, unknown>) }
+          : payload.baseContent)
+    );
+    const rebased: NoteBlockOpPushItem = {
+      ...op,
+      payload: {
+        ...payload,
+        content: nextContent,
+        ...(nextBase ? { baseContent: nextBase } : {}),
+      },
+    };
+    safeReady.push(rebased);
+    rebasedOps.push(rebased);
+  }
+  return { safeReady, dropStaleIds, rebasedOps };
 }
 
 /**

@@ -38,9 +38,7 @@ import {
   dispatchNoteCommandToStore,
   replaceNoteDocumentStoreView,
 } from '../_lib/noteDocumentPipeline';
-import { sanitizeNoteBlockTree } from '@/app/lib/note/noteBlockSanitize';
 import { readRememberedNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
-import { getStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import { registerNoteSaveTrustGate } from '../_lib/noteSaveTrust';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import {
@@ -341,22 +339,16 @@ export function useNoteBlockData(options: {
     previousDocumentIdRef.current = selectedId;
 
     const documentId = selectedId;
-    // remembered는 authoritative가 아님 — leave-exclude로만 걸러 provisional paint
-    const remembered = readRememberedNoteDocumentBlocks(documentId);
-    const excluded = getStructuralExcludeIds(documentId);
-    const provisional = sanitizeNoteBlockTree(
-      (remembered ?? []).filter(
-        (block) => block.document_id === documentId && !excluded.has(block.id),
-      ),
-    );
-    replaceNoteDocumentStoreView(documentId, provisional);
+    // ZERO LOSS / 교차 PC: remembered·session 캐시는 권위가 아님.
+    // stale provisional을 먼저 그리면 PC·탭마다 다른 본문이 보인다.
+    // openNoteDocument 완료 전엔 빈 셸 + loading만 표시.
+    replaceNoteDocumentStoreView(documentId, []);
     void ensureNoteLocalCacheVersion().catch((e) => {
       devLogger.warn('[Note] ensureNoteLocalCacheVersion failed', e);
     });
 
     setLoadSettledDocId(null, 'open:start');
-    // provisional이 있으면 빈 스켈레톤 대신 바로 보여 주고, open이 authoritative로 확정
-    setLoadingBlocks(provisional.length === 0, 'open:start');
+    setLoadingBlocks(true, 'open:start');
     setBlocksEmptyConfirmed(false, 'open:start');
     setBlocksSyncing(true, 'open:start');
   }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);

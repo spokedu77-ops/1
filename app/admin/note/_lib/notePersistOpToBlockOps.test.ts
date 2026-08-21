@@ -9,6 +9,7 @@ import {
   findOutboundOpsSupersededByServerRestore,
   planStripOutboundLeavesForRestoredIds,
   applyOutboundContentPatchesToBlocks,
+  filterRegressivePatchContentOps,
   mergeServerBlocksIntoLocalSnapshot,
   persistOpToPushItems,
   serverSnapshotHasBlocksMissingFrom,
@@ -725,6 +726,67 @@ describe('serverSnapshotHasBlocksMissingFrom', () => {
 
   it('detects empty local placeholder replaced on server', () => {
     expect(serverSnapshotHasBlocksMissingFrom([block('a', '')], [block('a', '복구')])).toBe(true);
+  });
+});
+
+describe('filterRegressivePatchContentOps (ZERO LOSS)', () => {
+  const block = (id: string, text: string): NoteBlock => ({
+    id,
+    document_id: 'doc-1',
+    type: 'text',
+    content: { text, html: `<p>${text}</p>` },
+    order_index: 0,
+    parent_block_id: null,
+    created_at: '',
+    updated_at: '',
+    version: 1,
+  });
+
+  it('does not drop protectable outbound when base is stale — rebases base and keeps content', () => {
+    const ops = persistOpToPushItems({
+      type: 'patchContent',
+      updates: [{
+        id: 'a',
+        content: { text: '사용자 최종본', html: '<p>사용자 최종본</p>' },
+        baseContent: { text: '아주 옛 베이스' },
+      }],
+    });
+    const { safeReady, dropStaleIds, rebasedOps } = filterRegressivePatchContentOps(
+      ops,
+      [block('a', '서버구버전')],
+      [block('a', '서버구버전')],
+    );
+    expect(dropStaleIds).toEqual([]);
+    expect(safeReady).toHaveLength(1);
+    expect(rebasedOps).toHaveLength(1);
+    const payload = safeReady[0]?.payload;
+    expect(payload?.opType).toBe('patch_content');
+    if (payload?.opType === 'patch_content') {
+      expect(payload.content).toMatchObject({ text: '사용자 최종본' });
+      expect(payload.baseContent).toMatchObject({ text: '서버구버전' });
+    }
+  });
+
+  it('when outbound truncates store, rebases content to store instead of deleting outbound', () => {
+    const ops = persistOpToPushItems({
+      type: 'patchContent',
+      updates: [{
+        id: 'a',
+        content: { text: '짧은', html: '<p>짧은</p>' },
+        baseContent: { text: '짧은' },
+      }],
+    });
+    const { safeReady, dropStaleIds } = filterRegressivePatchContentOps(
+      ops,
+      [block('a', '짧은 뒤에 더 긴 화면 본문')],
+      [block('a', '짧은')],
+    );
+    expect(dropStaleIds).toEqual([]);
+    const payload = safeReady[0]?.payload;
+    expect(payload?.opType).toBe('patch_content');
+    if (payload?.opType === 'patch_content') {
+      expect(payload.content).toMatchObject({ text: '짧은 뒤에 더 긴 화면 본문' });
+    }
   });
 });
 
