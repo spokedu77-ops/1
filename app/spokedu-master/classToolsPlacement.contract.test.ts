@@ -61,4 +61,27 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain('setCompletedMs(selectedDurationMs - nextRemainingMs)');
     expect(tools).not.toContain('setCompletedMs(RETURN_TIMER_DURATION_MS - nextRemainingMs)');
   });
+
+  it('filters the three roster tools by the selected class', () => {
+    const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
+
+    expect(tools).toContain('function ClassSelector');
+    expect(tools).toContain('진행할 반');
+    expect(tools).toContain('const [selectedClassKey, setSelectedClassKey]');
+    expect(tools).toContain('studentClassKey(student) === effectiveClassKey');
+    expect(tools).toContain('students={selectedStudents}');
+    expect(tools).toContain("tab === 'picker' || tab === 'teams' || tab === 'order'");
+  });
+
+  it('provides class-scoped tournament and ladder tools', () => {
+    const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
+
+    expect(tools).toContain("{ id: 'tournament', label: '토너먼트'");
+    expect(tools).toContain("{ id: 'ladder', label: '사다리타기'");
+    expect(tools).toContain('function TournamentTab');
+    expect(tools).toContain('function LadderTab');
+    expect(tools).toContain("tab === 'tournament' && <TournamentTab");
+    expect(tools).toContain("tab === 'ladder' && <LadderTab");
+    expect(tools).toContain("tab === 'tournament' || tab === 'ladder'");
+  });
 });

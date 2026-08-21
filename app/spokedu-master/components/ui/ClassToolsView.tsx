@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, LayoutList, ListOrdered, Pause, Play, RotateCcw, Shuffle, Timer, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
+import { CheckCircle2, LayoutList, ListOrdered, Pause, Play, RotateCcw, Route, Shuffle, Timer, Trophy, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -9,7 +9,13 @@ import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
 
-type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 'order';
+type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 'order' | 'tournament' | 'ladder';
+
+const UNASSIGNED_CLASS = '__unassigned__';
+
+function studentClassKey(student: StudentProfile) {
+  return student.group.trim() || UNASSIGNED_CLASS;
+}
 
 const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'stopwatch', label: '스탑워치', icon: Timer },
@@ -18,6 +24,8 @@ const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'picker', label: '무작위 선택', icon: Shuffle },
   { id: 'teams', label: '팀 나누기', icon: Users },
   { id: 'order', label: '진행 순서', icon: ListOrdered },
+  { id: 'tournament', label: '토너먼트', icon: Trophy },
+  { id: 'ladder', label: '사다리타기', icon: Route },
 ];
 
 function shuffleItems<T>(items: T[]) {
@@ -617,6 +625,44 @@ function EmptyStudentsForTools() {
   );
 }
 
+function ClassSelector({
+  classKeys,
+  selectedClassKey,
+  onChange,
+  studentCount,
+}: {
+  classKeys: string[];
+  selectedClassKey: string;
+  onChange: (classKey: string) => void;
+  studentCount: number;
+}) {
+  if (!classKeys.length) return null;
+
+  return (
+    <div className="mx-auto mb-1 flex w-full max-w-[560px] items-center gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <label htmlFor="class-tools-class" className="shrink-0 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>
+        진행할 반
+      </label>
+      <select
+        id="class-tools-class"
+        value={selectedClassKey}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 min-w-0 flex-1 rounded-[10px] px-3 text-[13px] font-black outline-none"
+        style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
+      >
+        {classKeys.map((classKey) => (
+          <option key={classKey} value={classKey}>
+            {classKey === UNASSIGNED_CLASS ? '반 미지정' : classKey}
+          </option>
+        ))}
+      </select>
+      <span className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black" style={{ background: 'var(--spm-grn-a18)', color: 'var(--spm-grn)' }}>
+        {studentCount}명
+      </span>
+    </div>
+  );
+}
+
 function PickerTab({ students, usingSample }: { students: StudentProfile[]; usingSample: boolean }) {
   const [picked, setPicked] = useState<StudentProfile | null>(null);
   const [spinning, setSpinning] = useState(false);
@@ -793,17 +839,156 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
   );
 }
 
+function TournamentTab({ students, usingSample }: { students: StudentProfile[]; usingSample: boolean }) {
+  const [matches, setMatches] = useState<Array<[StudentProfile, StudentProfile | null]>>([]);
+
+  const createBracket = useCallback(() => {
+    const shuffled = shuffleItems(students);
+    const nextMatches: Array<[StudentProfile, StudentProfile | null]> = [];
+    for (let index = 0; index < shuffled.length; index += 2) {
+      nextMatches.push([shuffled[index]!, shuffled[index + 1] ?? null]);
+    }
+    setMatches(nextMatches);
+  }, [students]);
+
+  return (
+    <div className="flex h-full flex-col items-center gap-5 overflow-y-auto px-6 py-8">
+      <StudentModeNote usingSample={usingSample} />
+      {!students.length ? <EmptyStudentsForTools /> : null}
+      <div className="flex w-full max-w-[680px] items-center justify-between gap-3">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>1라운드 대진 · {students.length}명</p>
+        <ActionButton onClick={createBracket} disabled={students.length < 2} accent="#7c3aed">
+          <Trophy size={17} />{matches.length ? '다시 만들기' : '대진 만들기'}
+        </ActionButton>
+      </div>
+      {students.length === 1 ? <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t3)' }}>대진을 만들려면 학생이 2명 이상 필요합니다.</p> : null}
+      {matches.length ? (
+        <div className="grid w-full max-w-[680px] gap-3 sm:grid-cols-2">
+          {matches.map(([first, second], index) => (
+            <section key={`${first.id}-${second?.id ?? 'bye'}`} className="overflow-hidden rounded-[16px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+              <div className="px-4 py-2 text-[11px] font-black" style={{ background: 'var(--spm-acc-a08)', color: 'var(--spm-acc)' }}>MATCH {index + 1}</div>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <span className="flex-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{first.name}</span>
+                <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>VS</span>
+                <span className="flex-1 text-right text-[14px] font-black" style={{ color: second ? 'var(--spm-t)' : 'var(--spm-grn)' }}>{second?.name ?? '부전승'}</span>
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : students.length >= 2 ? (
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <Trophy size={42} color="var(--spm-t3)" />
+          <p className="text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>학생을 섞어 1라운드 대진을 만듭니다.</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+type LadderRung = { level: number; left: number };
+
+function LadderTab({ students, usingSample }: { students: StudentProfile[]; usingSample: boolean }) {
+  const [outcomes, setOutcomes] = useState(() => students.map((_, index) => `결과 ${index + 1}`));
+  const [rungs, setRungs] = useState<LadderRung[]>([]);
+  const [revealed, setRevealed] = useState(false);
+  const levelCount = Math.max(5, students.length * 2);
+  const ladderWidth = Math.max(520, (students.length - 1) * 96 + 80);
+  const ladderHeight = 300;
+  const xAt = (index: number) => ((index + 0.5) * ladderWidth) / students.length;
+  const yAt = (level: number) => 24 + level * ((ladderHeight - 48) / (levelCount - 1));
+
+  const createLadder = useCallback(() => {
+    const nextRungs: LadderRung[] = [];
+    for (let level = 0; level < levelCount; level += 1) {
+      const used = new Set<number>();
+      for (let left = 0; left < students.length - 1; left += 1) {
+        if (used.has(left) || used.has(left + 1) || Math.random() > 0.36) continue;
+        nextRungs.push({ level, left });
+        used.add(left);
+        used.add(left + 1);
+      }
+    }
+    setRungs(nextRungs);
+    setRevealed(false);
+  }, [levelCount, students.length]);
+
+  const destinations = useMemo(() => students.map((_, start) => {
+    let column = start;
+    for (let level = 0; level < levelCount; level += 1) {
+      if (rungs.some((rung) => rung.level === level && rung.left === column)) column += 1;
+      else if (rungs.some((rung) => rung.level === level && rung.left === column - 1)) column -= 1;
+    }
+    return column;
+  }), [levelCount, rungs, students]);
+
+  return (
+    <div className="flex h-full flex-col items-center gap-5 overflow-y-auto px-6 py-8">
+      <StudentModeNote usingSample={usingSample} />
+      {!students.length ? <EmptyStudentsForTools /> : null}
+      <div className="flex w-full max-w-[760px] flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>사다리 · {students.length}명</p>
+          <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>아래 결과 이름을 먼저 바꾼 뒤 사다리를 만드세요.</p>
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setRevealed(true)} disabled={!rungs.length} className="h-12 rounded-[13px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>결과 공개</button>
+          <ActionButton onClick={createLadder} disabled={students.length < 2} accent="#0891b2"><Route size={17} />{rungs.length ? '다시 만들기' : '사다리 만들기'}</ActionButton>
+        </div>
+      </div>
+      {students.length === 1 ? <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t3)' }}>사다리를 만들려면 학생이 2명 이상 필요합니다.</p> : null}
+      {students.length >= 2 ? (
+        <div className="w-full max-w-[760px] overflow-x-auto rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <div style={{ minWidth: ladderWidth }}>
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
+              {students.map((student) => <div key={student.id} className="truncate text-center text-[12px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</div>)}
+            </div>
+            <svg width={ladderWidth} height={ladderHeight} className="my-1 block" aria-label="사다리 선">
+              {students.map((student, index) => <line key={student.id} x1={xAt(index)} y1={16} x2={xAt(index)} y2={ladderHeight - 16} stroke="var(--spm-t3)" strokeWidth="3" opacity="0.55" />)}
+              {rungs.map((rung) => <line key={`${rung.level}-${rung.left}`} x1={xAt(rung.left)} y1={yAt(rung.level)} x2={xAt(rung.left + 1)} y2={yAt(rung.level)} stroke="var(--spm-acc)" strokeWidth="4" strokeLinecap="round" />)}
+            </svg>
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
+              {outcomes.map((outcome, index) => (
+                <input key={index} value={outcome} onChange={(event) => setOutcomes((items) => items.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="h-9 min-w-0 rounded-[9px] px-2 text-center text-[11px] font-black outline-none" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }} aria-label={`${index + 1}번 결과`} />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {revealed ? (
+        <div className="grid w-full max-w-[760px] gap-2 sm:grid-cols-2">
+          {students.map((student, index) => <div key={student.id} className="flex items-center justify-between rounded-[12px] px-4 py-3" style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-grn-a28)' }}><span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</span><span className="text-[13px] font-black" style={{ color: 'var(--spm-grn)' }}>{outcomes[destinations[index]!] || `결과 ${destinations[index]! + 1}`}</span></div>)}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ClassToolsView() {
   const [tab, setTab] = useState<TabId>('stopwatch');
   const operationalData = useOperationalData();
   const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
+  const classKeys = useMemo(
+    () => Array.from(new Set(students.map(studentClassKey))).sort((a, b) => {
+      if (a === UNASSIGNED_CLASS) return 1;
+      if (b === UNASSIGNED_CLASS) return -1;
+      return a.localeCompare(b, 'ko');
+    }),
+    [students],
+  );
+  const [selectedClassKey, setSelectedClassKey] = useState('');
+  const effectiveClassKey = classKeys.includes(selectedClassKey) ? selectedClassKey : (classKeys[0] ?? '');
+  const selectedStudents = useMemo(
+    () => students.filter((student) => studentClassKey(student) === effectiveClassKey),
+    [effectiveClassKey, students],
+  );
+  const usesClassRoster = tab === 'picker' || tab === 'teams' || tab === 'order' || tab === 'tournament' || tab === 'ladder';
   const usingSample = false;
   return (
     <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
       <div data-class-tools-tabs className="flex shrink-0 overflow-x-auto border-b" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
         {TABS.map(({ id, label, icon: Icon }) => {
           const active = tab === id;
-          const hasCount = (id === 'picker' || id === 'teams' || id === 'order') && students.length > 0;
+          const hasCount = (id === 'picker' || id === 'teams' || id === 'order' || id === 'tournament' || id === 'ladder') && selectedStudents.length > 0;
           return (
             <button
               key={id}
@@ -820,7 +1005,7 @@ export default function ClassToolsView() {
               {label}
               {hasCount ? (
                 <span className="rounded-full px-1.5 py-0.5 text-[10px] font-black" style={{ background: 'var(--spm-grn-a18)', color: 'var(--spm-grn)' }}>
-                  {students.length}
+                  {selectedStudents.length}
                 </span>
               ) : null}
             </button>
@@ -832,9 +1017,21 @@ export default function ClassToolsView() {
         {tab === 'stopwatch' && <StopwatchTab />}
         {tab === 'return-timer' && <ReturnTimerTab />}
         {tab === 'scoreboard' && <ScoreboardTab />}
-        {tab === 'picker' && <PickerTab students={students} usingSample={usingSample} />}
-        {tab === 'teams' && <TeamsTab students={students} usingSample={usingSample} />}
-        {tab === 'order' && <OrderTab students={students} usingSample={usingSample} />}
+        {usesClassRoster ? (
+          <div className="px-6 pt-5">
+            <ClassSelector
+              classKeys={classKeys}
+              selectedClassKey={effectiveClassKey}
+              onChange={setSelectedClassKey}
+              studentCount={selectedStudents.length}
+            />
+          </div>
+        ) : null}
+        {tab === 'picker' && <PickerTab key={`picker-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+        {tab === 'teams' && <TeamsTab key={`teams-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+        {tab === 'order' && <OrderTab key={`order-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+        {tab === 'tournament' && <TournamentTab key={`tournament-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+        {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
       </div>
 
       <div className="shrink-0 border-t px-5 py-3" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
