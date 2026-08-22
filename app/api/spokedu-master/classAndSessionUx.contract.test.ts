@@ -21,9 +21,17 @@ describe('SPOKEDU MASTER class and Session operating UX', () => {
   });
 
   it('uses a searchable multi-select program picker with SPOMOVE discovery', () => {
+    const mutationRoute = read('app/api/spokedu-master/sessions/[sessionId]/programs/route.ts');
+    const sourceMigration = read('supabase/migrations/20260823010000_spokedu_master_session_program_sources.sql');
     expect(activity).toContain('프로그램명, 연령, 공간 검색');
     expect(activity).toContain("['spomove', 'SPOMOVE']");
-    expect(activity).toContain('selectedProgramIds');
+    expect(activity).toContain('OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset)');
+    expect(activity).toContain('selectedActivityKeys');
+    expect(activity).toContain('data.addSessionSpomove');
+    expect(mutationRoute).toContain('findOfficialSpomovePreset');
+    expect(mutationRoute).toContain('spokedu_master_add_session_spomove');
+    expect(sourceMigration).toContain("source_type = 'spomove'");
+    expect(sourceMigration).toContain('spomove_preset_id');
     expect(activity).not.toContain('<option value="">프로그램 선택</option>');
   });
 

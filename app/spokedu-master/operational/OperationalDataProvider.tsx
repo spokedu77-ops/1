@@ -28,6 +28,7 @@ type OperationalDataContextValue = {
   reload: () => Promise<void>;
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
   addSessionProgram: (sessionId: string, programId: number, programTitle: string) => Promise<MasterSessionDto['programs'][number]>;
+  addSessionSpomove: (sessionId: string, spomovePresetId: string) => Promise<MasterSessionDto['programs'][number]>;
   removeSessionProgram: (sessionId: string, sessionProgramId: string) => Promise<void>;
   updateSessionProgram: (sessionId: string, sessionProgramId: string, isCompleted: boolean) => Promise<void>;
   reorderSessionPrograms: (sessionId: string, sessionProgramIds: string[]) => Promise<void>;
@@ -158,7 +159,13 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addSessionProgram = useCallback(async (sessionId: string, programId: number, programTitle: string) => {
-    const json = await masterFetchJson<{ data: MasterSessionDto['programs'][number] }>(`/api/spokedu-master/sessions/${sessionId}/programs`, { method: 'POST', body: JSON.stringify({ programId, programTitle }) });
+    const json = await masterFetchJson<{ data: MasterSessionDto['programs'][number] }>(`/api/spokedu-master/sessions/${sessionId}/programs`, { method: 'POST', body: JSON.stringify({ sourceType: 'program', programId, programTitle }) });
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: [...item.programs, json.data] } : item));
+    return json.data;
+  }, []);
+
+  const addSessionSpomove = useCallback(async (sessionId: string, spomovePresetId: string) => {
+    const json = await masterFetchJson<{ data: MasterSessionDto['programs'][number] }>(`/api/spokedu-master/sessions/${sessionId}/programs`, { method: 'POST', body: JSON.stringify({ sourceType: 'spomove', spomovePresetId }) });
     setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: [...item.programs, json.data] } : item));
     return json.data;
   }, []);
@@ -199,6 +206,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       createClass,
       addClassStudent,
       addSessionProgram,
+      addSessionSpomove,
       createStudent,
       deleteStudent,
       updateStudent,
@@ -216,7 +224,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       updateSessionProgram,
       updateClass,
     }),
-    [addClassStudent, addSessionProgram, classes, createClass, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, addSessionSpomove, classes, createClass, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

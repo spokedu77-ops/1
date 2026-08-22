@@ -1,978 +1,115 @@
 'use client';
 
+import { ChevronRight, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import Link from 'next/link';
-import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Pencil, Plus, Trash2, Users } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { StudentFieldSelect } from '../components/ui/StudentFieldSelect';
 import { buildStudentAgeOptions } from '../lib/studentAddPresets';
-import {
-  canRunLegacyOperationalImport,
-  checkLegacyOperationalImportComplete,
-  importLegacyOperationalData,
-  verifyLegacyOperationalImportComplete,
-  type OperationalImportProgress,
-  type OperationalImportResult,
-} from '../lib/importLegacyOperationalData';
-import {
-  LEGACY_OPERATIONAL_ARCHIVE_KEY,
-  removeLegacyOperationalArchive,
-} from '../lib/legacyOperationalArchive';
-import {
-  buildLegacyOperationalBackupFileName,
-  buildLegacyOperationalBackupJson,
-  readLegacyOperationalPreview,
-  type LegacyOperationalImportPreview,
-} from '../lib/legacyOperationalImport';
-import { toStudentProfile } from '../lib/operationalDataAdapter';
-import { getSafeMasterErrorMessage } from '../lib/clientErrors';
+import { studentMetaToDisplay } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
-import { useMasterStore } from '../store';
-type StudentSessionHistory = {
-  id: string; date: string; lessonTitle: string; classId: string; programId: string; programTitle: string;
-  memo: string; parentNoteSnapshot: string; nextPrep: string; recordType: 'quick'; present: number; absent: number;
-  focusCount: number; skillCount: number; kakaoSent: boolean;
-  students: Array<{ studentId: string; attendance: 'present' | 'absent'; focused: boolean; skills: string[]; memo: string }>;
+import type { MasterStudentDto } from '../types/operational';
+
+type StudentDraft = {
+  name: string;
+  meta: string;
+  guidanceNote: string;
+  classIds: string[];
 };
-type StudentRecordEntry = { record: StudentSessionHistory; student: StudentSessionHistory['students'][number] };
 
-function getStudentRecordEntries(records: StudentSessionHistory[], studentId: string): StudentRecordEntry[] {
-  return records
-    .flatMap((record) => {
-      const student = record.students.find((item) => item.studentId === studentId);
-      return student ? [{ record, student }] : [];
-    })
-    .sort((a, b) => new Date(b.record.date).getTime() - new Date(a.record.date).getTime());
-}
+const EMPTY_DRAFT: StudentDraft = { name: '', meta: '', guidanceNote: '', classIds: [] };
 
-function getStudentSessionFacts(records: StudentSessionHistory[], studentId: string) {
-  const entries = getStudentRecordEntries(records, studentId);
-  return {
-    recordCount: entries.length,
-    presentCount: entries.filter((entry) => entry.student.attendance === 'present').length,
-    absentCount: entries.filter((entry) => entry.student.attendance === 'absent').length,
-    focusedCount: 0,
-    skillTags: [] as string[],
-  };
-}
-
-function formatStudentRecordDate(date: string): string {
-  return new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
-}
-
-function getSafeLegacyImportReason(reason: string): string {
-  return getSafeMasterErrorMessage('validation', reason);
-}
-
-function getAttendanceLabel(attendance: StudentRecordEntry['student']['attendance']): string {
-  if (attendance === 'present') return '출석';
-  if (attendance === 'absent') return '결석';
-  return '미확인';
+function MembershipPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
+  const data = useOperationalData();
+  if (!data.classes.length) return <p className="rounded-xl bg-amber-50 p-3 text-xs font-bold text-amber-800">수업 캘린더에서 수업반을 먼저 만들어 주세요.</p>;
+  return <fieldset><legend className="mb-2 text-xs font-bold text-slate-500">수업반 <span className="font-semibold">(여러 개 선택 가능)</span></legend><div className="grid gap-2 sm:grid-cols-2">{data.classes.map((item) => <label key={item.id} className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold ${value.includes(item.id) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'}`}><input type="checkbox" checked={value.includes(item.id)} onChange={() => onChange(value.includes(item.id) ? value.filter((id) => id !== item.id) : [...value, item.id])} />{item.name}</label>)}</div></fieldset>;
 }
 
 export default function StudentsPage() {
-  const profile = useMasterStore((state) => state.profile);
-  const operationalData = useOperationalData();
-  const students = operationalData.students.map(toStudentProfile);
-  const records = operationalData.sessions.map((session) => ({
-    id: session.id, date: session.startAt, lessonTitle: session.className,
-    classId: session.classId, programId: session.programs[0] ? String(session.programs[0].programId) : '',
-    programTitle: session.programs.map((item) => item.programTitle).filter(Boolean).join(', '),
-    memo: session.memo ?? '', parentNoteSnapshot: '', nextPrep: '', recordType: 'quick' as const,
-    present: session.attendance.filter((item) => item.status === 'present').length,
-    absent: session.attendance.filter((item) => item.status === 'absent').length,
-    focusCount: 0, skillCount: 0, kakaoSent: false,
-    students: session.attendance.map((item) => ({ studentId: item.studentId, attendance: item.status, focused: false, skills: [], memo: '' })),
-  })) satisfies StudentSessionHistory[];
-  const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
-  const operationalReady = operationalData.status === 'ready';
-  const operationalError = operationalData.status === 'error';
-  const classNamesForStudent = (studentId: string) => operationalData.classes.filter((item) => item.studentIds.includes(studentId)).map((item) => item.name);
-  const [selectedId, setSelectedId] = useState<string | null>(students[0]?.id ?? null);
+  const data = useOperationalData();
   const [addOpen, setAddOpen] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newGroup, setNewGroup] = useState('');
-  const [newMeta, setNewMeta] = useState('');
-  const [newGuidanceNote, setNewGuidanceNote] = useState('');
-  const [studentSaving, setStudentSaving] = useState(false);
-  const [studentSaveError, setStudentSaveError] = useState<string | null>(null);
-  const [studentDeletingId, setStudentDeletingId] = useState<string | null>(null);
-  const [studentDeleteError, setStudentDeleteError] = useState<string | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editGroup, setEditGroup] = useState('');
-  const [editMeta, setEditMeta] = useState('');
-  const [editGuidanceNote, setEditGuidanceNote] = useState('');
-  const [studentEditing, setStudentEditing] = useState(false);
-  const [studentEditError, setStudentEditError] = useState<string | null>(null);
-  const [legacyPreviewAvailable, setLegacyPreviewAvailable] = useState(false);
-  const [legacyPreview, setLegacyPreview] = useState<LegacyOperationalImportPreview | null>(null);
-  const [legacyOwnerConfirmed, setLegacyOwnerConfirmed] = useState(false);
-  const [legacyBackupConfirmed, setLegacyBackupConfirmed] = useState(false);
-  const [legacyImporting, setLegacyImporting] = useState(false);
-  const [legacyImportProgress, setLegacyImportProgress] = useState<OperationalImportProgress | null>(null);
-  const [legacyImportResult, setLegacyImportResult] = useState<OperationalImportResult | null>(null);
-  const [legacyImportComplete, setLegacyImportComplete] = useState(false);
-  const [legacyDeleteConfirmed, setLegacyDeleteConfirmed] = useState(false);
-  const [legacyDeleting, setLegacyDeleting] = useState(false);
-  const [legacyDeleteMessage, setLegacyDeleteMessage] = useState<string | null>(null);
-  const [legacyDeleteError, setLegacyDeleteError] = useState<string | null>(null);
-  const selected = students.find((student) => student.id === selectedId) ?? students[0];
-  const ageOptions = useMemo(
-    () => buildStudentAgeOptions(students.map((student) => (typeof student.meta === 'string' ? student.meta : null))),
-    [students],
-  );
+  const [editing, setEditing] = useState<MasterStudentDto | null>(null);
+  const [draft, setDraft] = useState<StudentDraft>(EMPTY_DRAFT);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const ageOptions = buildStudentAgeOptions(data.students.map((student) => studentMetaToDisplay(student.meta)));
 
   useEffect(() => {
-    if (selectedId && students.some((student) => student.id === selectedId)) return;
-    setSelectedId(students[0]?.id ?? null);
-  }, [selectedId, students]);
-
-  useEffect(() => {
-    try {
-      const preview = readLegacyOperationalPreview(window.localStorage);
-      setLegacyPreviewAvailable(preview.students.total > 0 || preview.records.total > 0);
-    } catch {
-      setLegacyPreviewAvailable(false);
-    }
+    if (new URLSearchParams(window.location.search).get('add') !== '1') return;
+    setDraft(EMPTY_DRAFT);
+    setAddOpen(true);
+    window.history.replaceState(window.history.state, '', window.location.pathname);
   }, []);
 
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('add') === '1') {
-      setStudentSaveError(null);
-      setAddOpen(true);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('add');
-      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-    }
-  }, []);
+  const classNames = (studentId: string) => data.classes.filter((item) => item.studentIds.includes(studentId)).map((item) => item.name);
+  const sessionCount = (studentId: string) => data.sessions.filter((session) => session.attendance.some((item) => item.studentId === studentId)).length;
 
-  const handleAdd = () => {
-    if (!newName.trim() || studentSaving) return;
-    const legacyId = crypto.randomUUID();
-    setStudentSaving(true);
-    setStudentSaveError(null);
-    void operationalData
-      .createStudent({
-        legacyId,
-        name: newName.trim(),
-        group: null,
-        meta: newMeta,
-        guidanceNote: newGuidanceNote.trim() || null,
-      })
-      .then(async (student) => {
-        if (newGroup) await operationalData.addClassStudent(newGroup, student.id);
-        setSelectedId(student.id);
-        setNewName('');
-        setNewGroup('');
-        setNewMeta('');
-        setNewGuidanceNote('');
-        setAddOpen(false);
-      })
-      .catch(() => {
-        setStudentSaveError('학생을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-      })
-      .finally(() => {
-        setStudentSaving(false);
-      });
+  const openEdit = (student: MasterStudentDto) => {
+    setEditing(student);
+    setDraft({
+      name: student.name,
+      meta: studentMetaToDisplay(student.meta),
+      guidanceNote: student.guidanceNote ?? '',
+      classIds: data.classes.filter((item) => item.studentIds.includes(student.id)).map((item) => item.id),
+    });
+    setError(null);
   };
-  const handleDeleteStudent = (student: { id: string; name: string }) => {
-    if (studentDeletingId) return;
-    const confirmed = window.confirm(`${student.name} 학생을 삭제할까요?\n연결된 수업 기록에서는 기존 이름 스냅샷이 보존됩니다.`);
-    if (!confirmed) return;
-    setStudentDeletingId(student.id);
-    setStudentDeleteError(null);
-    void operationalData
-      .deleteStudent(student.id)
-      .then(() => {
-        if (selectedId === student.id) setSelectedId(null);
-      })
-      .catch(() => {
-        setStudentDeleteError('학생을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-      })
-      .finally(() => {
-        setStudentDeletingId(null);
-      });
+
+  const syncMemberships = async (studentId: string, nextClassIds: string[]) => {
+    const previous = data.classes.filter((item) => item.studentIds.includes(studentId)).map((item) => item.id);
+    for (const classId of previous.filter((id) => !nextClassIds.includes(id))) await data.removeClassStudent(classId, studentId);
+    for (const classId of nextClassIds.filter((id) => !previous.includes(id))) await data.addClassStudent(classId, studentId);
   };
-  const openEditStudent = (student: { id: string; name: string; group: string; meta: string | Record<string, unknown>; guidanceNote?: string }) => {
-    setEditName(student.name);
-    setEditGroup(operationalData.classes.find((item) => item.studentIds.includes(student.id))?.id ?? '');
-    setEditMeta(typeof student.meta === 'string' ? student.meta : '');
-    setEditGuidanceNote(student.guidanceNote ?? '');
-    setStudentEditError(null);
-    setEditOpen(true);
-  };
-  const handleEditStudent = () => {
-    if (!selected || !editName.trim() || studentEditing) return;
-    setStudentEditing(true);
-    setStudentEditError(null);
-    void operationalData
-      .updateStudent(selected.id, {
-        name: editName.trim(),
-        group: selected.group || null,
-        meta: editMeta,
-        guidanceNote: editGuidanceNote.trim() || null,
-      })
-      .then(async () => {
-        const previousClassId = operationalData.classes.find((item) => item.studentIds.includes(selected.id))?.id ?? '';
-        if (previousClassId && previousClassId !== editGroup) await operationalData.removeClassStudent(previousClassId, selected.id);
-        if (editGroup && previousClassId !== editGroup) await operationalData.addClassStudent(editGroup, selected.id);
-        setEditOpen(false);
-      })
-      .catch(() => {
-        setStudentEditError('학생 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
-      })
-      .finally(() => {
-        setStudentEditing(false);
-      });
-  };
-  const selectedFacts = selected ? getStudentSessionFacts(records, selected.id) : null;
-  const selectedRecords = selected ? getStudentRecordEntries(records, selected.id) : [];
-  const selectedLatestRecord = selectedRecords[0] ?? null;
-  const selectedLatestMemoRecord = selectedRecords.find(({ student }) => student.memo?.trim()) ?? null;
-  const selectedPreparationRecord = selectedLatestMemoRecord ?? selectedLatestRecord;
-  const recordedStudentCount = students.filter((student) => records.some((record) => record.students.some((item) => item.studentId === student.id))).length;
-  const handlePreviewLegacyImport = async () => {
-    const preview = readLegacyOperationalPreview(window.localStorage);
-    setLegacyPreview(preview);
-    setLegacyBackupConfirmed(false);
-    setLegacyDeleteConfirmed(false);
-    setLegacyDeleteError(null);
-    setLegacyDeleteMessage(null);
-    setLegacyImportResult(null);
-    setLegacyImportProgress(null);
+
+  const saveNew = async () => {
+    if (!draft.name.trim() || saving) return;
+    setSaving(true); setError(null);
     try {
-      setLegacyImportComplete(await checkLegacyOperationalImportComplete(preview));
-    } catch {
-      setLegacyImportComplete(false);
-    }
+      const student = await data.createStudent({ legacyId: crypto.randomUUID(), name: draft.name.trim(), group: null, meta: draft.meta, guidanceNote: draft.guidanceNote.trim() || null });
+      await syncMemberships(student.id, draft.classIds);
+      setDraft(EMPTY_DRAFT); setAddOpen(false);
+    } catch { setError('학생을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
+    finally { setSaving(false); }
   };
-  const handleDownloadLegacyBackup = () => {
-    if (!legacyPreview?.rawBackup) return;
-    const blob = new Blob([buildLegacyOperationalBackupJson(legacyPreview)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = buildLegacyOperationalBackupFileName();
-    link.click();
-    URL.revokeObjectURL(url);
-    setLegacyBackupConfirmed(true);
-  };
-  const canImportLegacy = legacyPreview
-    ? canRunLegacyOperationalImport({
-        preview: legacyPreview,
-        ownerConfirmed: legacyOwnerConfirmed,
-        backupConfirmed: legacyBackupConfirmed,
-      }) && !legacyImporting
-    : false;
-  const hasLegacyDeletionWarning = legacyPreview
-    ? legacyPreview.students.invalid > 0
-      || legacyPreview.students.duplicate > 0
-      || legacyPreview.records.invalid > 0
-      || legacyPreview.records.duplicate > 0
-      || legacyPreview.records.excludedChildEntries > 0
-      || legacyPreview.records.orphanStudentEntries > 0
-      || legacyPreview.records.recordTypeDefaulted > 0
-      || legacyPreview.students.invalidMetaCoerced > 0
-    : false;
-  const canDeleteLegacyArchive = Boolean(
-    legacyPreview?.archiveReady
-      && legacyOwnerConfirmed
-      && legacyBackupConfirmed
-      && legacyImportComplete
-      && legacyDeleteConfirmed
-      && !legacyImporting
-      && !legacyDeleting,
-  );
-  const handleImportLegacy = async () => {
-    if (!legacyPreview || !canImportLegacy) return;
-    const confirmed = window.confirm(
-      `학생 ${legacyPreview.students.valid}명과 수업 기록 ${legacyPreview.records.valid}건을 현재 로그인 계정으로 가져옵니다.\n원본 브라우저 데이터는 삭제되지 않습니다.`,
-    );
-    if (!confirmed) return;
 
-    setLegacyImporting(true);
-    setLegacyImportResult(null);
+  const saveEdit = async () => {
+    if (!editing || !draft.name.trim() || saving) return;
+    setSaving(true); setError(null);
     try {
-      const result = await importLegacyOperationalData(
-        {
-          preview: legacyPreview,
-          ownerConfirmed: legacyOwnerConfirmed,
-          backupConfirmed: legacyBackupConfirmed,
-        },
-        { onProgress: setLegacyImportProgress },
-      );
-      setLegacyImportResult(result);
-      setLegacyImportComplete(result.status === 'success');
-      if (result.status === 'success' || result.status === 'partial') {
-        await operationalData.reload();
-      }
-    } finally {
-      setLegacyImporting(false);
-    }
-  };
-  const handleDeleteLegacyArchive = async () => {
-    if (!legacyPreview || !canDeleteLegacyArchive) return;
-    setLegacyDeleting(true);
-    setLegacyDeleteError(null);
-    setLegacyDeleteMessage(null);
-    try {
-      const latestPreview = readLegacyOperationalPreview(window.localStorage);
-      setLegacyPreview(latestPreview);
-      if (!latestPreview.archiveReady) {
-        throw new Error('유효한 이전 데이터 archive가 없습니다.');
-      }
-      if (!legacyOwnerConfirmed || !legacyBackupConfirmed || !legacyDeleteConfirmed) {
-        throw new Error('삭제 확인 조건이 완료되지 않았습니다.');
-      }
-
-      const verification = await verifyLegacyOperationalImportComplete(latestPreview);
-      if (!verification.ok) {
-        setLegacyImportComplete(false);
-        throw new Error(verification.reason ?? '서버 이전 검증에 실패했습니다.');
-      }
-
-      const confirmed = window.confirm(
-        '이 기기에 별도로 보관된 이전 학생·수업 기록 원본을 삭제합니다.\n\n서버에 저장된 데이터는 삭제되지 않습니다.\n다운로드한 백업 파일은 유지됩니다.\n이 작업은 이 브라우저에서 되돌릴 수 없습니다.\n\n이전 데이터 삭제',
-      );
-      if (!confirmed) return;
-
-      const result = removeLegacyOperationalArchive(window.localStorage);
-      if (!result.ok) {
-        throw new Error(result.reason);
-      }
-      if (window.localStorage.getItem(LEGACY_OPERATIONAL_ARCHIVE_KEY) !== null) {
-        throw new Error('archive key가 삭제되지 않았습니다.');
-      }
-
-      setLegacyPreview(null);
-      setLegacyPreviewAvailable(true);
-      setLegacyImportComplete(false);
-      setLegacyBackupConfirmed(false);
-      setLegacyDeleteConfirmed(false);
-      setLegacyDeleteMessage('이 기기의 이전 데이터 원본을 삭제했습니다. 서버에 저장된 학생·수업 기록은 유지됩니다.');
-    } catch (error) {
-      setLegacyDeleteError(getSafeMasterErrorMessage('validation', error instanceof Error ? error.message : null));
-    } finally {
-      setLegacyDeleting(false);
-    }
+      await data.updateStudent(editing.id, { name: draft.name.trim(), group: editing.group, meta: draft.meta, guidanceNote: draft.guidanceNote.trim() || null });
+      await syncMemberships(editing.id, draft.classIds);
+      setEditing(null); setDraft(EMPTY_DRAFT);
+    } catch { setError('학생 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
+    finally { setSaving(false); }
   };
 
-  return (
-    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
-      <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">학생 이력</p>
-            <h1 className="mt-1 text-[27px] font-black leading-tight text-[color:var(--spm-t)]">학생 이력</h1>
-            <p className="mt-2 max-w-[720px] text-[13px] font-semibold leading-6 text-slate-600">
-              수업 후 남긴 기록을 학생별로 모아 다음 수업 준비와 안내문 작성에 활용합니다.
-            </p>
-          </div>
-          <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="spm-btn-primary mt-1 flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[9px] px-4 text-[13px] font-black focus-visible:outline-none sm:w-auto">
-            <Plus size={15} />
-            학생 추가
-          </button>
-        </div>
-      </header>
+  const removeStudent = async (student: MasterStudentDto) => {
+    if (!window.confirm(`${student.name} 학생을 현재 명단에서 삭제할까요?\n과거 수업 이력은 보존됩니다.`)) return;
+    setDeletingId(student.id); setError(null);
+    try { await data.deleteStudent(student.id); }
+    catch { setError('학생을 삭제하지 못했습니다.'); }
+    finally { setDeletingId(null); }
+  };
 
-      <section className="my-4">
-        <div className="flex flex-wrap gap-x-5 gap-y-1.5 rounded-[16px] border border-slate-200 bg-white/80 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
-          {[
-            ['등록 학생', `${students.length || 0}명`],
-            ['기록된 학생', `${recordedStudentCount}/${students.length || 0}명`],
-            ['전체 수업 기록', `${records.length}건`],
-          ].map(([label, value]) => (
-            <p key={label} className="text-[12px] font-bold text-slate-500">
-              {label} <span className="font-black text-slate-800">{value}</span>
-            </p>
-          ))}
-        </div>
-      </section>
+  const form = (submit: () => Promise<void>) => <div className="space-y-4">
+    <label className="block"><span className="mb-2 block text-xs font-bold text-slate-500">이름 *</span><input value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold outline-none focus:border-emerald-500" /></label>
+    <StudentFieldSelect label="학년·연령" value={draft.meta} onChange={(meta) => setDraft((current) => ({ ...current, meta }))} options={ageOptions} />
+    <MembershipPicker value={draft.classIds} onChange={(classIds) => setDraft((current) => ({ ...current, classIds }))} />
+    <label className="block"><span className="mb-2 block text-xs font-bold text-slate-500">반복 지도 참고 <span className="font-semibold">(선택)</span></span><textarea value={draft.guidanceNote} onChange={(event) => setDraft((current) => ({ ...current, guidanceNote: event.target.value }))} className="min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm font-semibold outline-none" placeholder="다음 수업에서도 참고할 지도 방식" /></label>
+    {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
+    <button type="button" onClick={() => void submit()} disabled={!draft.name.trim() || saving} className="h-11 w-full rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40">{saving ? '저장 중…' : '저장'}</button>
+  </div>;
 
-      {operationalLoading ? (
-        <section className="mb-5 rounded-[16px] border border-slate-200 bg-white/86 p-4 text-[13px] font-bold text-slate-600">
-          학생 정보를 불러오는 중입니다.
-        </section>
-      ) : null}
-
-      {operationalError ? (
-        <section className="mb-5 rounded-[16px] border border-red-200 bg-red-50 p-4 text-[13px] font-bold text-red-700">
-          <p>학생 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
-          <button type="button" onClick={() => void operationalData.reload()} className="mt-3 h-10 rounded-[9px] bg-red-600 px-4 text-[12px] font-black text-white">
-            다시 시도
-          </button>
-        </section>
-      ) : null}
-
-      {profile && legacyPreviewAvailable ? (
-        <section className="mx-[22px] mb-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <details>
-            <summary className="cursor-pointer text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>
-              고급 기능: 이 기기의 기존 데이터 가져오기
-            </summary>
-            <div className="mt-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>기존 데이터</p>
-              <h2 className="mt-1 text-[20px] font-black" style={{ color: 'var(--spm-t)' }}>이 기기의 기존 데이터 가져오기</h2>
-              <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-                현재 브라우저에만 저장된 학생과 수업 기록을 확인합니다. 아직 서버에는 저장하지 않습니다.
-              </p>
-              {legacyPreview ? (
-                <p className="mt-2 text-[12px] font-bold" style={{ color: legacyPreview.archiveReady ? 'var(--spm-grn)' : 'var(--spm-red)' }}>
-                  {legacyPreview.archiveReady
-                    ? '원본 보존 상태: 별도 안전 보관 완료'
-                    : legacyPreview.archiveError
-                      ? '기존 데이터를 안전하게 보관하지 못했습니다. 브라우저 데이터를 삭제하거나 초기화하지 마세요.'
-                      : '원본 보존 상태: 별도 보관할 기존 데이터가 없습니다.'}
-                </p>
-              ) : null}
-            </div>
-            <button type="button" onClick={handlePreviewLegacyImport} className="spm-btn-primary h-10 shrink-0 rounded-[11px] px-4 text-[12px] font-black focus-visible:outline-none">
-              가져오기 내용 확인
-            </button>
-          </div>
-
-          {legacyPreview ? (
-            <div className="mt-4 space-y-4">
-              <div className="grid gap-2 sm:grid-cols-4">
-                {[
-                  ['학생 전체', `${legacyPreview.students.total}명`],
-                  ['학생 가능', `${legacyPreview.students.valid}명`],
-                  ['학생 중복', `${legacyPreview.students.duplicate}명`],
-                  ['학생 오류', `${legacyPreview.students.invalid}명`],
-                  ['기록 전체', `${legacyPreview.records.total}건`],
-                  ['기록 가능', `${legacyPreview.records.valid}건`],
-                  ['기록 중복', `${legacyPreview.records.duplicate}건`],
-                  ['기록 오류', `${legacyPreview.records.invalid}건`],
-                ].map(([label, value]) => (
-                  <div key={label} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
-                    <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-                    <p className="mt-1 text-[17px] font-black" style={{ color: 'var(--spm-t)' }}>{value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-3">
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  고아 학생 기록: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.records.orphanStudentEntries}건</strong>
-                </div>
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  제외 child: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.records.excludedChildEntries}건</strong>
-                </div>
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  제외 레거시 필드: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.excludedLegacyFields.length ? legacyPreview.excludedLegacyFields.join(', ') : '없음'}</strong>
-                </div>
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  문자열 meta 보존: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.students.stringMetaPreserved}명</strong>
-                </div>
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  object meta 보존: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.students.objectMetaPreserved}명</strong>
-                </div>
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  invalid meta 보정: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.students.invalidMetaCoerced}명</strong>
-                </div>
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  recordType 보정: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.records.recordTypeDefaulted}건</strong>
-                </div>
-              </div>
-
-              <details className="rounded-[12px] p-3" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                <summary className="cursor-pointer text-[12px] font-black" style={{ color: 'var(--spm-t)' }}>오류·경고 세부 보기</summary>
-                <div className="mt-3 space-y-2 text-[12px] font-semibold">
-                  {[...legacyPreview.students.issues, ...legacyPreview.records.issues].length ? (
-                    [...legacyPreview.students.issues, ...legacyPreview.records.issues].map((issue, index) => (
-                      <p key={`${issue.scope}-${issue.legacyId ?? 'none'}-${index}`}>
-                        [{issue.scope}] {issue.legacyId ? `${issue.legacyId}: ` : ''}{getSafeLegacyImportReason(issue.reason)}
-                      </p>
-                    ))
-                  ) : (
-                    <p>표시할 오류나 경고가 없습니다.</p>
-                  )}
-                </div>
-              </details>
-
-              <label className="flex items-start gap-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-acc-a10)', color: 'var(--spm-t2)' }}>
-                <input type="checkbox" checked={legacyOwnerConfirmed} onChange={(event) => setLegacyOwnerConfirmed(event.target.checked)} className="mt-1" />
-                <span>이 기기에 저장된 학생·수업 기록이 현재 로그인한 계정의 데이터임을 확인합니다.</span>
-              </label>
-
-              {hasLegacyDeletionWarning ? (
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-t2)' }}>
-                  <p style={{ color: 'var(--spm-t)' }}>일부 원본 항목은 서버 이전 대상에서 제외되었거나 정규화되었습니다.</p>
-                  <p className="mt-1">삭제 후에는 내려받은 백업 파일에서만 확인할 수 있습니다.</p>
-                </div>
-              ) : null}
-
-              {legacyPreview.archiveReady ? (
-                <label className="flex items-start gap-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--spm-t2)' }}>
-                  <input
-                    type="checkbox"
-                    checked={legacyDeleteConfirmed}
-                    onChange={(event) => setLegacyDeleteConfirmed(event.target.checked)}
-                    className="mt-1"
-                  />
-                  <span>서버에 저장된 학생·수업 기록을 확인했으며, 제외되거나 정규화된 원본은 내려받은 백업 파일에만 남는다는 점을 확인했습니다.</span>
-                </label>
-              ) : null}
-
-              {legacyImportComplete ? (
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-grn-a12)', color: 'var(--spm-grn)' }}>
-                  이 기기의 가져오기 가능한 데이터는 서버에 저장되어 있습니다.
-                </div>
-              ) : null}
-
-              {legacyImportProgress ? (
-                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  진행 단계: <strong style={{ color: 'var(--spm-t)' }}>{legacyImportProgress.stage}</strong>
-                  {' · '}
-                  {legacyImportProgress.current}/{legacyImportProgress.total}
-                  {' · 기존 '}
-                  {legacyImportProgress.existing}
-                  {' · 실패 '}
-                  {legacyImportProgress.failed}
-                </div>
-              ) : null}
-
-              {legacyImportResult ? (
-                <div className="space-y-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                  <p style={{ color: 'var(--spm-t)' }}>
-                    {legacyImportResult.status === 'success'
-                      ? '서버 가져오기가 완료되었습니다. 브라우저 원본 데이터는 아직 유지되고 있습니다.'
-                      : legacyImportResult.status === 'partial'
-                        ? '일부 데이터만 서버로 가져왔습니다. 실패 항목은 다시 시도할 수 있습니다.'
-                        : '서버 가져오기를 완료하지 못했습니다.'}
-                  </p>
-                  <p>학생 생성 {legacyImportResult.students.created}명 · 기존 {legacyImportResult.students.existing}명 · 실패 {legacyImportResult.students.failed}명</p>
-                  <p>기록 생성 {legacyImportResult.records.created}건 · 기존 {legacyImportResult.records.existing}건 · 보류 {legacyImportResult.records.blocked}건 · 실패 {legacyImportResult.records.failed}건</p>
-                  <p>현재 운영 화면은 서버 데이터를 사용합니다. 브라우저 원본은 가져오기·백업 안전망으로만 유지됩니다.</p>
-                  {[...legacyImportResult.students.failures, ...legacyImportResult.records.failures].length ? (
-                    <details>
-                      <summary className="cursor-pointer" style={{ color: 'var(--spm-t)' }}>실패 항목 보기</summary>
-                      <div className="mt-2 space-y-1">
-                        {[...legacyImportResult.students.failures, ...legacyImportResult.records.failures].map((failure, index) => (
-                          <p key={`${failure.legacyId}-${index}`}>{failure.legacyId}: {getSafeLegacyImportReason(failure.reason)}</p>
-                        ))}
-                      </div>
-                    </details>
-                  ) : null}
-                </div>
-              ) : null}
-
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <button type="button" onClick={handleDownloadLegacyBackup} className="h-10 rounded-[11px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-                  이 기기의 원본 데이터 백업
-                </button>
-                <button
-                  type="button"
-                  disabled={!canImportLegacy}
-                  onClick={handleImportLegacy}
-                  className="h-10 rounded-[11px] px-4 text-[12px] font-black text-white disabled:opacity-60"
-                  style={{ background: canImportLegacy ? 'var(--spm-acc)' : 'var(--spm-s3)', color: canImportLegacy ? '#fff' : 'var(--spm-t3)' }}
-                >
-                  {legacyImporting ? '서버로 가져오는 중...' : legacyImportResult?.status === 'partial' ? '실패 항목 다시 시도' : '확인한 데이터를 서버로 가져오기'}
-                </button>
-                {legacyPreview.archiveReady ? (
-                  <button
-                    type="button"
-                    disabled={!canDeleteLegacyArchive}
-                    onClick={handleDeleteLegacyArchive}
-                    className="h-10 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-60"
-                    style={{ background: canDeleteLegacyArchive ? 'rgba(239,68,68,0.14)' : 'var(--spm-s3)', color: canDeleteLegacyArchive ? 'var(--spm-red)' : 'var(--spm-t3)' }}
-                  >
-                    {legacyDeleting ? '삭제 확인 중...' : '이 기기의 이전 데이터 삭제'}
-                  </button>
-                ) : null}
-              </div>
-              {legacyDeleteMessage ? (
-                <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-grn-a12)', color: 'var(--spm-grn)' }}>
-                  {legacyDeleteMessage}
-                </p>
-              ) : null}
-              {legacyDeleteError ? (
-                <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--spm-red)' }}>
-                  이전 데이터 원본을 삭제하지 못했습니다. 브라우저 데이터를 직접 초기화하지 말고 다시 시도해 주세요. ({legacyDeleteError})
-                </p>
-              ) : null}
-              {legacyPreview.archiveError ? (
-                <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>
-                  archive 검증 실패로 서버 가져오기를 비활성화했습니다. 원본 백업을 먼저 보관해 주세요.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          {!legacyPreview && legacyDeleteMessage ? (
-            <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-grn-a12)', color: 'var(--spm-grn)' }}>
-              {legacyDeleteMessage}
-            </p>
-          ) : null}
-          {!legacyPreview && legacyDeleteError ? (
-            <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--spm-red)' }}>
-              이전 데이터 원본을 삭제하지 못했습니다. 브라우저 데이터를 직접 초기화하지 말고 다시 시도해 주세요. ({legacyDeleteError})
-            </p>
-          ) : null}
-            </div>
-          </details>
-        </section>
-      ) : null}
-
-      {operationalReady && students.length === 0 ? (
-        <section className="rounded-[16px] border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-[16px] bg-white text-slate-800 ring-1 ring-slate-200">
-            <Users size={24} />
-          </div>
-          <h2 className="mt-4 text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>아직 등록된 학생이 없습니다.</h2>
-          <p className="mx-auto mt-2 max-w-[520px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>
-            학생을 추가하면 수업 기록을 학생별로 관리할 수 있습니다.
-          </p>
-          <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-            <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="spm-btn-primary inline-flex h-10 items-center justify-center gap-2 rounded-[9px] px-5 text-[13px] font-black focus-visible:outline-none">
-              <Plus size={15} />
-              학생 추가
-            </button>
-          </div>
-        </section>
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
-        {studentDeleteError ? (
-          <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
-            {studentDeleteError}
-          </p>
-        ) : null}
-
-        {students.length > 0 ? <section className="space-y-2">
-          {students.map((student) => {
-            const studentRecordCount = getStudentRecordEntries(records, student.id).length;
-
-            return (
-              <div key={student.id} className={`flex items-center gap-1 rounded-[14px] border ${selectedId === student.id ? 'border-slate-950 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)]' : 'border-slate-200 bg-white/86'}`}>
-                <button type="button" onClick={() => setSelectedId(student.id)} className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-slate-950 text-[15px] font-black text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>
-                    {student.name.slice(0, 1)}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <strong className="truncate text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
-                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-600">누적 {studentRecordCount}건</span>
-                    </span>
-                    <span className="mt-1 block truncate text-[11px]" style={{ color: 'var(--spm-t3)' }}>{[classNamesForStudent(student.id).join(', '), student.meta].filter(Boolean).join(' / ') || '학년/수준 미입력'}</span>
-                  </span>
-                  <ChevronRight size={16} color="var(--spm-t3)" className="shrink-0" />
-                </button>
-                <button type="button" onClick={() => openEditStudent(student)} className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px]" style={{ color: 'var(--spm-t3)' }} aria-label={`${student.name} 수정`}>
-                  <Pencil size={14} />
-                </button>
-                <button type="button" onClick={() => handleDeleteStudent(student)} disabled={studentDeletingId === student.id} className="mr-2 grid h-11 w-11 shrink-0 place-items-center rounded-[10px] disabled:opacity-50" style={{ color: 'var(--spm-t3)' }} aria-label={`${student.name} 삭제`}>
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            );
-          })}
-        </section> : null}
-
-        {selected ? (
-          <section className="overflow-hidden rounded-[16px] border border-slate-200 bg-white/86 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-            <div className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">{classNamesForStudent(selected.id).join(', ') || '수업반 미지정'}</p>
-                  <h2 className="mt-1.5 text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{selected.name}</h2>
-                  {selected.meta ? <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{selected.meta}</p> : null}
-                </div>
-                <span className="grid h-11 w-11 place-items-center rounded-[12px] bg-slate-950 text-white">
-                  <ClipboardList size={20} />
-                </span>
-              </div>
-
-              <div className="mt-5">
-                <Link href="/spokedu-master/activity" className="spm-btn-primary flex h-10 items-center justify-center rounded-[9px] text-[13px] font-black">수업 캘린더 열기</Link>
-              </div>
-              <Link href={`/spokedu-master/students/${selected.id}`} className="mt-3 inline-block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>학생 기록 보기</Link>
-              <button type="button" onClick={() => openEditStudent(selected)} className="mt-3 ml-3 inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>
-                <Pencil size={13} />
-                학생 정보 수정
-              </button>
-            </div>
-
-            {selectedFacts && selectedFacts.recordCount > 0 ? (
-              <div className="space-y-5 border-t p-5" style={{ borderColor: 'var(--spm-br2)' }}>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {[
-                    ['수업 기록', `${selectedFacts.recordCount}건`],
-                    ['출석 체크', `${selectedFacts.presentCount}건`],
-                    ['결석 체크', `${selectedFacts.absentCount}건`],
-                    ['집중 관찰', `${selectedFacts.focusedCount}건`],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
-                      <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
-                      <p className="mt-1 text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <Link href="/spokedu-master/report" className="flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[12px] font-black text-slate-700">
-                  <FileText size={15} />
-                  안내문
-                </Link>
-
-                <div>
-                  <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
-                    <CalendarDays size={17} color="var(--spm-acc)" />
-                    최근 수업 요약
-                  </h3>
-                  {selectedLatestRecord ? (
-                    <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                      <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedLatestRecord.record.programTitle}</p>
-                      <p className="mt-1">
-                        {formatStudentRecordDate(selectedLatestRecord.record.date)} · {getAttendanceLabel(selectedLatestRecord.student.attendance)}
-                        {selectedLatestRecord.student.focused ? ' · 집중 관찰' : ''}
-                      </p>
-                      {selectedLatestRecord.student.skills.length ? (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {selectedLatestRecord.student.skills.map((skill) => (
-                            <span key={skill} className="rounded-full px-2 py-1 text-[11px] font-black" style={{ background: 'var(--spm-grn-a12)', color: 'var(--spm-grn)' }}>
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                      {selectedLatestRecord.student.memo ? (
-                        <p className="mt-2 max-h-24 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-                          학생 메모: {selectedLatestRecord.student.memo}
-                        </p>
-                      ) : null}
-                      {selectedLatestRecord.record.memo?.trim() ? (
-                        <p className="mt-2 max-h-24 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)' }}>
-                          수업 관찰: {selectedLatestRecord.record.memo.trim()}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-                <div>
-                  <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>최근 학생 메모</h3>
-                  {selectedLatestMemoRecord ? (
-                    <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                      <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedLatestMemoRecord.record.programTitle}</p>
-                      <p className="mt-1">
-                        {formatStudentRecordDate(selectedLatestMemoRecord.record.date)} · {getAttendanceLabel(selectedLatestMemoRecord.student.attendance)}
-                        {selectedLatestMemoRecord.student.focused ? ' · 집중 관찰' : ''}
-                      </p>
-                      <p className="mt-2 max-h-28 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-                        {selectedLatestMemoRecord.student.memo}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 학생별 메모가 없습니다.</p>
-                  )}
-                </div>
-                <div>
-                  <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
-                    <BookOpen size={17} color="var(--spm-acc)" />
-                    다음 수업 준비
-                  </h3>
-                  {selectedPreparationRecord ? (
-                    <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                      <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedPreparationRecord.record.programTitle}</p>
-                      <p className="mt-1">
-                        {formatStudentRecordDate(selectedPreparationRecord.record.date)}
-                        {selectedPreparationRecord.student.focused ? ' · 집중 관찰' : ''}
-                      </p>
-                      {selectedPreparationRecord.student.memo ? (
-                        <p className="mt-2 max-h-28 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-                          {selectedPreparationRecord.student.memo}
-                        </p>
-                      ) : null}
-                      {selectedPreparationRecord.student.skills.length ? (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {selectedPreparationRecord.student.skills.map((skill) => (
-                            <span key={skill} className="rounded-full px-2 py-1 text-[11px] font-black" style={{ background: 'var(--spm-grn-a12)', color: 'var(--spm-grn)' }}>
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <Link href={`/spokedu-master/library/${selectedPreparationRecord.record.programId}`} className="spm-btn-primary flex h-9 items-center justify-center gap-2 rounded-[9px] text-[12px] font-black focus-visible:outline-none">
-                          <BookOpen size={15} />
-                          수업 라이브러리 열기
-                        </Link>
-                        <Link href="/spokedu-master/activity" className="flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[12px] font-black text-slate-700">
-                          <ClipboardList size={15} />
-                          같은 수업으로 기록 준비
-                        </Link>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-                <div>
-                  <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>기록된 기능 태그</h3>
-                  {selectedFacts.skillTags.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedFacts.skillTags.map((skill) => (
-                        <span key={skill} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'var(--spm-grn-a12)', color: 'var(--spm-grn)' }}>{skill}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 기록된 기능 태그가 없습니다.</p>
-                  )}
-                </div>
-                <div>
-                  <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
-                    <CalendarDays size={17} color="var(--spm-acc)" />
-                    최근 수업 기록
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedRecords.slice(0, 8).map(({ record, student }) => (
-                      <div key={record.id} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                        <p className="font-black" style={{ color: 'var(--spm-t)' }}>{record.programTitle}</p>
-                        <p className="mt-1">
-                          {formatStudentRecordDate(record.date)} · {getAttendanceLabel(student.attendance)}
-                          {student.focused ? ' · 집중 관찰' : ''}
-                        </p>
-                        {student.skills.length ? (
-                          <p className="mt-1 line-clamp-2">
-                            기능 태그: {student.skills.join(', ')}
-                          </p>
-                        ) : null}
-                        {student.memo ? (
-                          <p className="mt-2 max-h-24 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-                            학생 메모: {student.memo}
-                          </p>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="border-t p-5" style={{ borderColor: 'var(--spm-br2)' }}>
-                <div className="rounded-[14px] p-5 text-center" style={{ background: 'var(--spm-s3)' }}>
-                  <p className="text-[13px] font-black leading-6" style={{ color: 'var(--spm-t)' }}>
-                    아직 이 학생의 수업 기록이 없습니다.
-                  </p>
-                  <p className="mt-2 text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t3)' }}>
-                    첫 수업 후 결과를 남기면 최근 변화, 학생 메모, 다음 수업 준비가 이곳에 정리됩니다.
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
-        ) : null}
-      </div>
-      </div>
-
-      <BottomSheet
-        open={addOpen}
-        title="학생 추가"
-        onClose={() => setAddOpen(false)}
-        initialFocusSelector="[data-spm-student-add-name]"
-      >
-        <div className="space-y-4">
-          <label className="block">
-            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름 *</span>
-            <input
-              data-spm-student-add-name
-              data-testid="spm-student-add-name"
-              name="studentName"
-              type="text"
-              value={newName}
-              onChange={(event) => setNewName(event.target.value)}
-              placeholder="예: 김민서"
-              autoComplete="off"
-              className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
-              style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
-            />
-          </label>
-          <label className="block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>수업반
-            <select value={newGroup} onChange={(event) => setNewGroup(event.target.value)} data-testid="spm-student-add-group" className="mt-2 h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
-              <option value="">수업반 미지정</option>{operationalData.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </label>
-          <StudentFieldSelect
-            key={`meta-${addOpen ? 'open' : 'closed'}`}
-            label="나이 / 학년"
-            value={newMeta}
-            onChange={setNewMeta}
-            options={ageOptions}
-            emptyLabel="나이·학년 선택"
-            customOptionLabel="직접 입력"
-            placeholder="예: 8세 / 3개월차"
-            testId="spm-student-add-meta"
-            name="studentMeta"
-          />
-          <label className="block">
-            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반복 지도 참고 <span className="font-semibold">(선택)</span></span>
-            <textarea name="studentGuidanceNote" value={newGuidanceNote} onChange={(event) => setNewGuidanceNote(event.target.value)} placeholder="예: 설명을 짧게 나누면 참여가 안정적임" className="min-h-[88px] w-full rounded-[12px] border p-3 text-[13px] font-semibold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
-            <span className="mt-1.5 block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>다음 수업에서도 참고할 지도 방식만 적어 주세요.</span>
-            <span className="block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-red)' }}>의료·건강정보나 진단·추정 내용은 입력하지 마세요.</span>
-          </label>
-          {studentSaveError ? (
-            <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
-              {studentSaveError}
-            </p>
-          ) : null}
-          <button type="button" onClick={handleAdd} disabled={!newName.trim() || studentSaving} className="spm-btn-primary h-10 w-full rounded-[9px] text-[13px] font-black focus-visible:outline-none disabled:opacity-50">
-            {studentSaving ? '추가 중...' : '추가'}
-          </button>
-        </div>
-      </BottomSheet>
-
-      <BottomSheet
-        open={editOpen}
-        title="학생 정보 수정"
-        onClose={() => setEditOpen(false)}
-        initialFocusSelector="[data-spm-student-edit-name]"
-      >
-        <div className="space-y-4">
-          <label className="block">
-            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름 *</span>
-            <input
-              data-spm-student-edit-name
-              name="editStudentName"
-              type="text"
-              value={editName}
-              onChange={(event) => setEditName(event.target.value)}
-              autoComplete="off"
-              className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
-              style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
-            />
-          </label>
-          <label className="block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>수업반
-            <select value={editGroup} onChange={(event) => setEditGroup(event.target.value)} className="mt-2 h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
-              <option value="">수업반 미지정</option>{operationalData.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </label>
-          <StudentFieldSelect
-            key={`edit-meta-${editOpen ? 'open' : 'closed'}`}
-            label="나이 / 학년"
-            value={editMeta}
-            onChange={setEditMeta}
-            options={ageOptions}
-            emptyLabel="나이·학년 선택"
-            customOptionLabel="직접 입력"
-            placeholder="예: 8세 / 3개월차"
-            name="editStudentMeta"
-          />
-          <label className="block">
-            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반복 지도 참고 <span className="font-semibold">(선택)</span></span>
-            <textarea name="editStudentGuidanceNote" value={editGuidanceNote} onChange={(event) => setEditGuidanceNote(event.target.value)} placeholder="예: 설명을 짧게 나누면 참여가 안정적임" className="min-h-[88px] w-full rounded-[12px] border p-3 text-[13px] font-semibold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
-            <span className="mt-1.5 block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>다음 수업에서도 참고할 지도 방식만 적어 주세요.</span>
-            <span className="block text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-red)' }}>의료·건강정보나 진단·추정 내용은 입력하지 마세요.</span>
-          </label>
-          {studentEditError ? (
-            <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
-              {studentEditError}
-            </p>
-          ) : null}
-          <button type="button" onClick={handleEditStudent} disabled={!editName.trim() || studentEditing} className="spm-btn-primary h-10 w-full rounded-[9px] text-[13px] font-black focus-visible:outline-none disabled:opacity-50">
-            {studentEditing ? '저장 중...' : '저장'}
-          </button>
-        </div>
-      </BottomSheet>
-    </div>
-  );
+  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8"><div className="mx-auto max-w-5xl px-4 py-5 sm:px-6">
+    <header className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-black text-emerald-700">명단 관리</p><h1 className="mt-1 text-2xl font-black text-slate-900">학생</h1><p className="mt-2 text-sm font-semibold text-slate-500">학생을 수업반에 등록하면 수업의 출석 명단으로 자동 연결됩니다.</p></div><button type="button" onClick={() => { setDraft(EMPTY_DRAFT); setError(null); setAddOpen(true); }} className="flex h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white"><Plus size={16} />학생 추가</button></header>
+    {data.status === 'loading' || data.status === 'idle' ? <p className="mt-5 rounded-2xl bg-white p-5 text-sm font-bold text-slate-500">학생 명단을 불러오는 중입니다.</p> : null}
+    {data.status === 'error' ? <div className="mt-5 rounded-2xl bg-rose-50 p-5 text-sm font-bold text-rose-700">학생 명단을 불러오지 못했습니다.<button type="button" onClick={() => void data.reload()} className="ml-2 underline">다시 시도</button></div> : null}
+    {error && !addOpen && !editing ? <p className="mt-4 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
+    <section className="mt-5 grid gap-3 sm:grid-cols-2">{data.students.map((student) => <article key={student.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-900 font-black text-white">{student.name.slice(0, 1)}</span><div className="min-w-0 flex-1"><h2 className="truncate text-base font-black text-slate-900">{student.name}</h2><p className="mt-1 truncate text-xs font-semibold text-slate-500">{[classNames(student.id).join(', '), studentMetaToDisplay(student.meta)].filter(Boolean).join(' · ') || '수업반 미지정'}</p></div><span className="text-xs font-black text-slate-400">수업 {sessionCount(student.id)}건</span></div><div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-2"><Link href={`/spokedu-master/students/${student.id}`} className="flex h-10 items-center justify-center gap-1 rounded-xl bg-blue-600 text-xs font-black text-white">이력 보기<ChevronRight size={14} /></Link><button type="button" onClick={() => openEdit(student)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-600" aria-label={`${student.name} 수정`}><Pencil size={15} /></button><button type="button" onClick={() => void removeStudent(student)} disabled={deletingId === student.id} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-rose-500 disabled:opacity-40" aria-label={`${student.name} 삭제`}><Trash2 size={15} /></button></div></article>)}</section>
+    {data.status === 'ready' && !data.students.length ? <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><Users size={24} className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-black text-slate-700">아직 등록된 학생이 없습니다.</p><p className="mt-2 text-xs font-semibold text-slate-500">학생을 추가하고 수업반을 선택해 주세요.</p></div> : null}
+  </div>
+  {addOpen ? <BottomSheet open title="학생 추가" onClose={() => setAddOpen(false)}>{form(saveNew)}</BottomSheet> : null}
+  {editing ? <BottomSheet open title="학생 정보 수정" onClose={() => setEditing(null)}>{form(saveEdit)}</BottomSheet> : null}
+  </main>;
 }

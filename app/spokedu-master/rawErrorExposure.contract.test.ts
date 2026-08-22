@@ -19,9 +19,9 @@ describe('SPOKEDU MASTER raw error exposure cleanup', () => {
     expect(report).not.toContain('Failed to save explanation');
   });
 
-  it('uses the shared safe client error helper on payment, students archive, and report paths', () => {
+  it('uses safe client feedback on reachable payment, student, and report paths', () => {
     expect(read('app/spokedu-master/payment/page.tsx')).toContain('toMasterClientError(res.status, json.error)');
-    expect(read('app/spokedu-master/students/page.tsx')).toContain("getSafeMasterErrorMessage('validation'");
+    expect(read('app/spokedu-master/students/page.tsx')).not.toContain('caught.message');
     expect(read('app/spokedu-master/report/page.tsx')).not.toContain('saveClassRecord');
     expect(read('app/spokedu-master/lib/saveActionFeedback.ts')).toContain('GENERIC_SAVE_ERROR_MESSAGE');
   });
@@ -71,13 +71,13 @@ describe('SPOKEDU MASTER raw error exposure cleanup', () => {
     expect(monitoredApis).not.toContain('window.location.search');
   });
 
-  it('documents archive/import as reachable from the students screen without completing new import behavior', () => {
+  it('keeps the historical importer for data preservation without exposing it in the daily roster runtime', () => {
     const students = read('app/spokedu-master/students/page.tsx');
     const importer = read('app/spokedu-master/lib/importLegacyOperationalData.ts');
 
-    expect(students).toContain('handlePreviewLegacyImport');
-    expect(students).toContain('handleImportLegacy');
-    expect(students).toContain('handleDeleteLegacyArchive');
+    expect(students).not.toContain('handlePreviewLegacyImport');
+    expect(students).not.toContain('handleImportLegacy');
+    expect(students).not.toContain('handleDeleteLegacyArchive');
     expect(importer).toContain('importLegacyOperationalData');
   });
 });

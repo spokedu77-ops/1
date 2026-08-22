@@ -29,6 +29,7 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/privacy/page.tsx',
   'app/spokedu-master/subscription/page.tsx',
   'app/spokedu-master/students/page.tsx',
+  'app/spokedu-master/students/[studentId]/page.tsx',
   'app/spokedu-master/error.tsx',
   'app/spokedu-master/components/ui/ClassToolsView.tsx',
 ] as const;

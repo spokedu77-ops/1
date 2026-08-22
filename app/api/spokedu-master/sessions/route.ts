@@ -15,7 +15,7 @@ export const revalidate = 0;
 const SESSION_SELECT = `
   id, class_id, start_at, end_at, status, memo, completed_at, created_at, updated_at,
   spokedu_master_classes!inner(name),
-  spokedu_master_session_programs(id, program_id, program_title_snapshot, sort_order, is_completed),
+  spokedu_master_session_programs(id, source_type, program_id, spomove_preset_id, program_title_snapshot, sort_order, is_completed),
   spokedu_master_session_attendance(id, student_id, status)
 `;
 
@@ -31,7 +31,8 @@ type SessionRow = {
   updated_at: string;
   spokedu_master_classes: { name: string } | Array<{ name: string }>;
   spokedu_master_session_programs: Array<{
-    id: string; program_id: number | string; program_title_snapshot: string | null;
+    id: string; source_type: 'program' | 'spomove'; program_id: number | string | null;
+    spomove_preset_id: string | null; program_title_snapshot: string | null;
     sort_order: number; is_completed: boolean;
   }>;
   spokedu_master_session_attendance: Array<{
@@ -59,7 +60,9 @@ function toSessionDto(row: SessionRow): MasterSessionDto {
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((item) => ({
         id: item.id,
-        programId: Number(item.program_id),
+        sourceType: item.source_type,
+        programId: item.program_id == null ? null : Number(item.program_id),
+        spomovePresetId: item.spomove_preset_id,
         programTitle: item.program_title_snapshot,
         sortOrder: item.sort_order,
         isCompleted: item.is_completed,

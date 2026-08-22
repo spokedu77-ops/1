@@ -13,7 +13,8 @@ import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
 import { seoulDateTimeInputToIso, toSeoulDateTimeInput } from '../lib/sessionDateTime';
 import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
-import type { Program } from '../types';
+import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
+import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
 
 function statusLabel(status: MasterSessionStatus) {
   return status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
@@ -25,13 +26,8 @@ function statusTone(status: MasterSessionStatus) {
   return 'bg-blue-50 text-blue-700 ring-blue-200';
 }
 
-type DraftProgram = { id?: string; programId: number; programTitle: string | null; sortOrder: number; isCompleted: boolean };
-type ProgramFilter = 'all' | 'lesson' | 'spomove';
-
-function isSpomoveProgram(program: Program) {
-  const terms = [program.category, program.title, ...program.tags].join(' ').toLowerCase();
-  return program.hasSpomoveConnection || terms.includes('spomove') || terms.includes('스포무브');
-}
+type DraftProgram = MasterSessionDto['programs'][number];
+type ProgramFilter = 'program' | 'spomove';
 
 function SessionSheet({
   session,
@@ -57,6 +53,7 @@ function SessionSheet({
   const [programs, setPrograms] = useState<DraftProgram[]>(
     session?.programs.map((item) => ({
       id: item.id, programId: item.programId, programTitle: item.programTitle,
+      sourceType: item.sourceType, spomovePresetId: item.spomovePresetId,
       sortOrder: item.sortOrder, isCompleted: item.isCompleted,
     })) ?? [],
   );
@@ -66,35 +63,40 @@ function SessionSheet({
   const [attendanceDirty, setAttendanceDirty] = useState(false);
   const [programPickerOpen, setProgramPickerOpen] = useState(false);
   const [programSearch, setProgramSearch] = useState('');
-  const [programFilter, setProgramFilter] = useState<ProgramFilter>('all');
-  const [selectedProgramIds, setSelectedProgramIds] = useState<string[]>([]);
+  const [programFilter, setProgramFilter] = useState<ProgramFilter>('program');
+  const [selectedActivityKeys, setSelectedActivityKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectedClass = data.classes.find((item) => item.id === classId);
   const roster = data.students.filter((student) => selectedClass?.studentIds.includes(student.id));
-  const availablePrograms = libraryPrograms.filter((program) => !programs.some((item) => String(item.programId) === program.id));
-  const visiblePrograms = availablePrograms.filter((program) => {
-    const spomove = isSpomoveProgram(program);
-    if (programFilter === 'spomove' && !spomove) return false;
-    if (programFilter === 'lesson' && spomove) return false;
-    const query = programSearch.trim().toLowerCase();
-    return !query || [program.title, program.category, program.grade, program.space, ...program.tags]
-      .join(' ').toLowerCase().includes(query);
-  });
+  const availablePrograms = libraryPrograms.filter((program) => !programs.some((item) => item.sourceType === 'program' && String(item.programId) === program.id));
+  const availableSpomove = OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset)
+    .filter((preset) => !programs.some((item) => item.sourceType === 'spomove' && item.spomovePresetId === preset.id));
+  const query = programSearch.trim().toLowerCase();
+  const visibleActivities = programFilter === 'program'
+    ? availablePrograms.filter((program) => !query || [program.title, program.category, program.grade, program.space].join(' ').toLowerCase().includes(query))
+      .map((program) => ({ key: `program:${program.id}`, title: program.title, description: [program.category, program.grade, program.space].filter(Boolean).join(' · ') }))
+    : availableSpomove.filter((preset) => !query || [preset.title, preset.programGroup, preset.description].join(' ').toLowerCase().includes(query))
+      .map((preset) => ({ key: `spomove:${preset.id}`, title: preset.title, description: preset.description || preset.recommendedUse }));
   const completedPrograms = programs.filter((item) => item.isCompleted).length;
 
   const addSelectedPrograms = async () => {
-    if (!activeSession || status !== 'scheduled' || !selectedProgramIds.length) return;
+    if (!activeSession || status !== 'scheduled' || !selectedActivityKeys.length) return;
     setSaving(true);
     setError(null);
     try {
-      for (const selectedId of selectedProgramIds) {
-        const program = libraryPrograms.find((item) => item.id === selectedId);
+      for (const key of selectedActivityKeys) {
+        const [sourceType, sourceId] = key.split(':', 2) as [ProgramFilter, string];
+        const program = sourceType === 'program' ? libraryPrograms.find((item) => item.id === sourceId) : null;
         const numericId = Number(program?.id);
-        if (!program || !Number.isInteger(numericId)) continue;
-        const added = await data.addSessionProgram(activeSession.id, numericId, program.title);
+        const added = sourceType === 'spomove'
+          ? await data.addSessionSpomove(activeSession.id, sourceId)
+          : program && Number.isInteger(numericId)
+            ? await data.addSessionProgram(activeSession.id, numericId, program.title)
+            : null;
+        if (!added) continue;
         setPrograms((current) => current.some((item) => item.id === added.id) ? current : [...current, added]);
-        setSelectedProgramIds((current) => current.filter((id) => id !== selectedId));
+        setSelectedActivityKeys((current) => current.filter((item) => item !== key));
       }
       setProgramPickerOpen(false);
       setProgramSearch('');
@@ -185,29 +187,26 @@ function SessionSheet({
           <input value={programSearch} onChange={(event) => setProgramSearch(event.target.value)} placeholder="프로그램명, 연령, 공간 검색" className="h-11 w-full rounded-xl border border-slate-200 pl-9 pr-3 text-sm font-semibold outline-none focus:border-emerald-500" autoFocus />
         </label>
         <div className="flex gap-2 overflow-x-auto">
-          {([['all', '전체'], ['lesson', '수업 프로그램'], ['spomove', 'SPOMOVE']] as const).map(([value, label]) => (
-            <button key={value} type="button" onClick={() => setProgramFilter(value)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${programFilter === value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}>{label}</button>
+          {([['program', '수업 프로그램'], ['spomove', 'SPOMOVE']] as const).map(([value, label]) => (
+            <button key={value} type="button" onClick={() => { setProgramFilter(value); setSelectedActivityKeys([]); }} className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-black ${programFilter === value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}>{label}</button>
           ))}
         </div>
         <div className="max-h-[48dvh] space-y-2 overflow-y-auto pr-1">
-          {!programsLoaded ? <p className="rounded-xl bg-slate-50 p-5 text-center text-xs font-bold text-slate-500">프로그램을 불러오는 중입니다.</p> : null}
-          {programsLoaded && programsError ? <div className="rounded-xl bg-rose-50 p-4 text-center text-xs font-bold text-rose-700"><p>프로그램을 불러오지 못했습니다.</p><button type="button" onClick={() => void reloadPrograms()} className="mt-2 underline">다시 시도</button></div> : null}
-          {visiblePrograms.map((program) => {
-            const selected = selectedProgramIds.includes(program.id);
+          {programFilter === 'program' && !programsLoaded ? <p className="rounded-xl bg-slate-50 p-5 text-center text-xs font-bold text-slate-500">프로그램을 불러오는 중입니다.</p> : null}
+          {programFilter === 'program' && programsLoaded && programsError ? <div className="rounded-xl bg-rose-50 p-4 text-center text-xs font-bold text-rose-700"><p>프로그램을 불러오지 못했습니다.</p><button type="button" onClick={() => void reloadPrograms()} className="mt-2 underline">다시 시도</button></div> : null}
+          {visibleActivities.map((activity) => {
+            const selected = selectedActivityKeys.includes(activity.key);
             return (
-              <button key={program.id} type="button" onClick={() => setSelectedProgramIds((current) => selected ? current.filter((id) => id !== program.id) : [...current, program.id])} className={`w-full rounded-xl border p-3 text-left ${selected ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
-                <div className="flex items-start justify-between gap-3"><strong className="text-sm text-slate-900">{program.title}</strong>{selected ? <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-black text-white">선택</span> : null}</div>
-                <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold text-slate-500">
-                  {isSpomoveProgram(program) ? <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">SPOMOVE</span> : null}
-                  {[program.category, program.grade, program.space].filter(Boolean).map((item) => <span key={item} className="rounded-full bg-slate-100 px-2 py-1">{item}</span>)}
-                </div>
+              <button key={activity.key} type="button" onClick={() => setSelectedActivityKeys((current) => selected ? current.filter((item) => item !== activity.key) : [...current, activity.key])} className={`w-full rounded-xl border p-3 text-left ${selected ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
+                <div className="flex items-start justify-between gap-3"><strong className="text-sm text-slate-900">{activity.title}</strong>{selected ? <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-black text-white">선택</span> : null}</div>
+                {activity.description ? <p className="mt-1 line-clamp-2 text-xs font-semibold text-slate-500">{activity.description}</p> : null}
               </button>
             );
           })}
-          {programsLoaded && !programsError && !visiblePrograms.length ? <p className="rounded-xl bg-slate-50 p-5 text-center text-xs font-bold text-slate-500">조건에 맞는 프로그램이 없습니다.</p> : null}
+          {(programFilter === 'spomove' || (programsLoaded && !programsError)) && !visibleActivities.length ? <p className="rounded-xl bg-slate-50 p-5 text-center text-xs font-bold text-slate-500">조건에 맞는 활동이 없습니다.</p> : null}
         </div>
         {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
-        <button type="button" disabled={!selectedProgramIds.length || saving} onClick={() => void addSelectedPrograms()} className="h-11 w-full rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40">선택한 프로그램 {selectedProgramIds.length}개 추가</button>
+        <button type="button" disabled={!selectedActivityKeys.length || saving} onClick={() => void addSelectedPrograms()} className="h-11 w-full rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40">선택한 활동 {selectedActivityKeys.length}개 추가</button>
       </div>
     </BottomSheet>
   );
@@ -255,7 +254,8 @@ function SessionSheet({
             {programs.map((program, index) => (
               <div key={program.programId} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
                 <button type="button" disabled={!activeSession || status === 'cancelled'} onClick={() => void toggleProgram(program)} className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label="프로그램 진행 여부"><Check size={16} /></button>
-                <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{program.programTitle ?? `프로그램 ${program.programId}`}</span>
+                <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}><span className="block">{program.programTitle ?? '이름 없는 활동'}</span>{program.sourceType === 'spomove' ? <span className="text-[10px] font-black text-blue-600">SPOMOVE</span> : null}</span>
+                {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) ? <Link href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!)} className="rounded-lg bg-blue-600 px-2 py-1.5 text-[10px] font-black text-white">실행</Link> : null}
                 <button type="button" onClick={() => moveProgram(index, -1)} disabled={status !== 'scheduled' || index === 0} className="p-1 text-slate-400 disabled:opacity-20"><ChevronUp size={16} /></button>
                 <button type="button" onClick={() => moveProgram(index, 1)} disabled={status !== 'scheduled' || index === programs.length - 1} className="p-1 text-slate-400 disabled:opacity-20"><ChevronDown size={16} /></button>
                 <button type="button" disabled={!activeSession || status !== 'scheduled'} onClick={() => void removeProgram(program)} className="p-1 text-rose-500 disabled:opacity-30">×</button>
@@ -263,7 +263,7 @@ function SessionSheet({
             ))}
             {!programs.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">프로그램 미지정 — 이 상태로도 수업을 저장할 수 있습니다.</p> : null}
           </div>
-          <button type="button" onClick={() => { setError(null); setSelectedProgramIds([]); setProgramPickerOpen(true); }} disabled={!activeSession || status !== 'scheduled' || saving} className="mt-2 h-10 w-full rounded-xl border border-slate-300 bg-white text-xs font-black text-slate-700 disabled:opacity-40">+ 프로그램 검색·추가</button>
+          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!activeSession || status !== 'scheduled' || saving} className="mt-2 h-10 w-full rounded-xl border border-slate-300 bg-white text-xs font-black text-slate-700 disabled:opacity-40">+ 수업 활동 추가</button>
         </section>
 
         <label className="block text-sm font-black text-slate-800">수업 메모
@@ -390,7 +390,7 @@ export default function ActivityPage() {
               <button key={session.id} type="button" onClick={() => setEditing(session)} className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-px hover:shadow-md">
                 <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-sm font-black text-slate-800"><Clock3 size={15} />{format(new Date(session.startAt), 'HH:mm')}–{format(new Date(session.endAt), 'HH:mm')}</span><span className={`rounded-full px-2 py-1 text-[10px] font-black ring-1 ${statusTone(session.status)}`}>{statusLabel(session.status)}</span></div>
                 <h3 className="mt-2 text-base font-black text-slate-900">{session.className}</h3>
-                <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `프로그램 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '프로그램 미지정'} · 출석 {session.attendance.filter((item) => item.status === 'present').length}명</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `활동 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '활동 미지정'} · 출석 {session.attendance.filter((item) => item.status === 'present').length}명</p>
               </button>
             ))}
             {!daySessions.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><UsersRound className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">이 날짜에 Session이 없습니다.</p><button type="button" onClick={() => setEditing(null)} disabled={!data.classes.length} className="mt-3 text-sm font-black text-emerald-700 disabled:opacity-40">+ 수업 추가</button></div> : null}

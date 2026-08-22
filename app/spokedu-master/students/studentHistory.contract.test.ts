@@ -6,9 +6,14 @@ const read = (path: string) => readFileSync(path, 'utf8');
 describe('student history after Session refactor', () => {
   it('keeps roster CRUD and reads history from sessions', () => {
     const students = read('app/spokedu-master/students/page.tsx');
-    expect(students).toContain('operationalData.students');
-    expect(students).toContain('operationalData.sessions');
-    expect(students).not.toContain('operationalData.classRecords');
+    const detail = read('app/spokedu-master/students/[studentId]/page.tsx');
+    expect(students).toContain('data.students.map');
+    expect(students).toContain('data.sessions.filter');
+    expect(detail).toContain('data.sessions');
+    expect(detail).not.toContain('StudentSessionHistory');
+    expect(detail).not.toContain('focused: false');
+    expect(detail).not.toContain('skills: []');
+    expect(students).not.toContain('classRecords');
   });
 
   it('routes new operational work to the Calendar', () => {

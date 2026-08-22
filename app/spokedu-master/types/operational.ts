@@ -15,7 +15,9 @@ export type MasterClassDto = {
 
 export type MasterSessionProgramDto = {
   id: string;
-  programId: number;
+  sourceType: 'program' | 'spomove';
+  programId: number | null;
+  spomovePresetId: string | null;
   programTitle: string | null;
   sortOrder: number;
   isCompleted: boolean;

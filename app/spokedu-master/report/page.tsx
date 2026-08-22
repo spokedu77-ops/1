@@ -4,21 +4,23 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { ClipboardCopy, FileText } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 
 export default function ReportPage() {
   const data = useOperationalData();
+  const searchParams = useSearchParams();
   const sessions = useMemo(() => [...data.sessions]
     .filter((session) => session.status === 'completed')
     .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime()), [data.sessions]);
-  const [selectedId, setSelectedId] = useState('');
+  const [selectedId, setSelectedId] = useState(() => searchParams.get('session') ?? '');
   const selected = sessions.find((session) => session.id === selectedId) ?? sessions[0] ?? null;
   const present = selected?.attendance.filter((item) => item.status === 'present').length ?? 0;
   const absent = selected?.attendance.filter((item) => item.status === 'absent').length ?? 0;
   const completedPrograms = selected?.programs.filter((item) => item.isCompleted) ?? [];
   const report = selected ? [
     `${format(new Date(selected.startAt), 'yyyy년 M월 d일 EEEE', { locale: ko })} ${selected.className} 수업 안내`,
-    completedPrograms.length ? `오늘은 ${completedPrograms.map((item) => item.programTitle ?? `프로그램 ${item.programId}`).join(', ')} 활동을 진행했습니다.` : '오늘 수업은 프로그램 기록 없이 진행되었습니다.',
+    completedPrograms.length ? `오늘은 ${completedPrograms.map((item) => item.programTitle ?? '이름 없는 활동').join(', ')} 활동을 진행했습니다.` : '오늘 수업은 활동 기록 없이 진행되었습니다.',
     `출석 ${present}명, 결석 ${absent}명입니다.`,
     selected.memo?.trim() ? `수업 메모: ${selected.memo.trim()}` : '',
   ].filter(Boolean).join('\n') : '';

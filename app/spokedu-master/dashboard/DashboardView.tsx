@@ -588,11 +588,11 @@ function ActivityPanel({
   }> = compact
     ? [
         { label: '안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
-        { label: 'Session', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2 },
+        { label: '수업', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2 },
       ]
     : [
         { label: '안내문 보관', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
-        { label: 'Session', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2 },
+        { label: '수업', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2 },
         { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
       ];
 
@@ -871,7 +871,7 @@ function EntitledDashboardView() {
   const todayLessonAssignments = useMemo(
     () => operationalSessions
       .filter((session) => session.status !== 'cancelled' && getSeoulSessionDay(session.startAt) === getSeoulSessionDay(new Date()))
-      .flatMap((session) => session.programs.map((program) => ({ programId: String(program.programId), programTitle: program.programTitle ?? `프로그램 ${program.programId}` }))),
+      .flatMap((session) => session.programs.filter((program) => program.sourceType === 'program' && program.programId != null).map((program) => ({ programId: String(program.programId), programTitle: program.programTitle ?? `프로그램 ${program.programId}` }))),
     [operationalSessions],
   );
   const todayLessonAssignment = todayLessonAssignments[0] ?? null;

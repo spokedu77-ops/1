@@ -15,6 +15,6 @@ describe('legacy class-record entry retirement', () => {
   it('removes the compatibility picker from runtime', () => {
     const students = read('app/spokedu-master/students/page.tsx');
     expect(students).not.toContain('RecordProgramPicker');
-    expect(students).toContain('href="/spokedu-master/activity"');
+    expect(students).not.toContain('saveClassRecord');
   });
 });

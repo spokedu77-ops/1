@@ -55,7 +55,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     [program, programs],
   );
   const latestApplicationIdea = useMemo(() => operationalData.sessions
-    .filter((session) => session.programs.some((item) => String(item.programId) === id) && session.memo?.trim())
+    .filter((session) => session.programs.some((item) => item.sourceType === 'program' && String(item.programId) === id) && session.memo?.trim())
     .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
     .map((session) => ({ date: session.startAt, classId: session.className, applicationIdea: session.memo! }))[0] ?? null,
   [id, operationalData.sessions]);
@@ -189,7 +189,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 {new Date(latestApplicationIdea.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} · {latestApplicationIdea.classId}
               </p>
               <p className="mt-2 whitespace-pre-wrap break-words text-[13px] font-bold leading-6" style={{ color: 'var(--spm-t2)' }}>{latestApplicationIdea.applicationIdea}</p>
-              <Link href="/spokedu-master/activity" className="mt-2 inline-flex min-h-10 items-center text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>Session 기록 보기</Link>
+              <Link href="/spokedu-master/activity" className="mt-2 inline-flex min-h-10 items-center text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>수업 기록 보기</Link>
             </aside>
           ) : null}
           actions={(

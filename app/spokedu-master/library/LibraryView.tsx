@@ -293,7 +293,7 @@ export default function LibraryView() {
   );
 
   const usedProgramIds = useMemo(
-    () => new Set(sessions.flatMap((session) => session.programs.map((item) => String(item.programId)))),
+    () => new Set(sessions.flatMap((session) => session.programs.filter((item) => item.sourceType === 'program' && item.programId != null).map((item) => String(item.programId)))),
     [sessions],
   );
   const recentProgramRecords = useMemo(() => {
@@ -301,7 +301,7 @@ export default function LibraryView() {
     const seen = new Set<string>();
     return [...sessions]
       .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
-      .flatMap((session) => session.programs.map((record) => ({ session, record })))
+      .flatMap((session) => session.programs.filter((record) => record.sourceType === 'program' && record.programId != null).map((record) => ({ session, record })))
       .flatMap(({ session, record }) => {
         const program = programsById.get(String(record.programId));
         if (!program || seen.has(String(record.programId))) return [];
