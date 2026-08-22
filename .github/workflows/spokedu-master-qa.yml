@@ -18,6 +18,9 @@ on:
       - 'scripts/smoke-spokedu-master-operational-data.mjs'
       - 'supabase/migrations/*spokedu_master*.sql'
       - 'docs/spokedu-master-commercial-runbook.md'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vitest.spokedu-master-*.config.ts'
       - '.github/workflows/spokedu-master-qa.yml'
   push:
     branches: [main, master, 'release/**', 'commercial/**']
@@ -31,6 +34,9 @@ on:
       - 'scripts/smoke-spokedu-master-operational-data.mjs'
       - 'supabase/migrations/*spokedu_master*.sql'
       - 'docs/spokedu-master-commercial-runbook.md'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vitest.spokedu-master-*.config.ts'
       - '.github/workflows/spokedu-master-qa.yml'
   workflow_dispatch:
     inputs:
@@ -98,30 +104,8 @@ jobs:
           scripts/spokedu-master-commercial-preflight.mjs
           --max-warnings 0
 
-      - name: MASTER contract Vitest
-        run: >
-          npx vitest run
-          app/lib/server/spokeduMasterEntitlement.test.ts
-          app/lib/server/spokeduMasterProxyAccess.contract.test.ts
-          app/lib/server/spokeduMasterPaymentApply.test.ts
-          app/lib/server/spokeduMasterPaymentRpcMigration.contract.test.ts
-          app/api/spokedu-master/payment/create-checkout/route.contract.test.ts
-          app/api/spokedu-master/payment/confirm/ownership.contract.test.ts
-          app/api/spokedu-master/payment/webhook/route.test.ts
-          app/api/spokedu-master/class-records/createClassRecord.contract.test.ts
-          app/api/spokedu-master/class-records/replaceClassRecord.contract.test.ts
-          app/api/spokedu-master/operational-data/route.test.ts
-          app/api/spokedu-master/apiRouteImports.contract.test.ts
-          app/api/spokedu-master/access/route.test.ts
-          app/api/spokedu-master/subscription/route.test.ts
-          app/api/spokedu-master/operational-routes.test.ts
-          app/spokedu-master/navigation.contract.test.ts
-          app/spokedu-master/lessonFlow.contract.test.ts
-          app/spokedu-master/terminology.contract.test.ts
-          app/spokedu-master/serviceTruthfulness.test.ts
-          app/spokedu-master/masterEntryCopy.contract.test.ts
-          app/spokedu-master/entryOnboardingAccess.contract.test.ts
-          app/spokedu-master/landing/landingBillingCopy.contract.test.ts
+      - name: MASTER core Vitest
+        run: npm run test:spokedu-master:core
 
       - name: git diff check
         run: git diff --check
