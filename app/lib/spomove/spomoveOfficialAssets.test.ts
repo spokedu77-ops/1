@@ -14,6 +14,8 @@ describe('spomoveOfficialAssets', () => {
           movementGuideStatus: 'draft',
           movementGuide: {
             movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
+            objective: ' React accurately. ',
+            teachingPoints: [' Accuracy first. ', '', 'Use a color cue.', 'Keep only three.', 'Dropped fourth.'],
             instruction: ' Move to the matching color. ',
           },
         },
@@ -27,6 +29,8 @@ describe('spomoveOfficialAssets', () => {
       movementGuideStatus: 'draft',
       movementGuide: {
         movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
+        objective: 'React accurately.',
+        teachingPoints: ['Accuracy first.', 'Use a color cue.', 'Keep only three.'],
         instruction: 'Move to the matching color.',
       },
     });

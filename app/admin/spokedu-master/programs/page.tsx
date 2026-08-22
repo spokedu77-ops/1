@@ -1464,12 +1464,38 @@ function SpomoveContentManager() {
                           </div>
                           <div className="mt-3 grid gap-2">
                             <label className="block text-[10px] font-black text-slate-400">
+                              활동 목표
+                              <textarea
+                                value={draft.movementGuide?.objective ?? ''}
+                                onChange={(event) => updateMovementGuide(preset.id, { objective: event.target.value })}
+                                placeholder="수업 시작 전에 확인할 활동 목표를 1~2문장으로 입력하세요."
+                                disabled={savingThis || deletingThis}
+                                className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                              />
+                            </label>
+                            <label className="block text-[10px] font-black text-slate-400">
                               진행 방법
                               <textarea
                                 value={draft.movementGuide?.instruction ?? ''}
                                 onChange={(event) => updateMovementGuide(preset.id, { instruction: event.target.value })}
                                 disabled={savingThis || deletingThis}
                                 className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                              />
+                            </label>
+                            <label className="block text-[10px] font-black text-slate-400">
+                              지도 포인트 (최대 3개, 한 줄에 하나)
+                              <textarea
+                                value={draft.movementGuide?.teachingPoints?.join('\n') ?? ''}
+                                onChange={(event) => updateMovementGuide(preset.id, {
+                                  teachingPoints: event.target.value
+                                    .split(/\r?\n/)
+                                    .map((item) => item.trim())
+                                    .filter(Boolean)
+                                    .slice(0, 3),
+                                })}
+                                placeholder="속도보다 방향의 정확성을 먼저 확인하세요."
+                                disabled={savingThis || deletingThis}
+                                className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
                               />
                             </label>
                             <label className="block text-[10px] font-black text-slate-400">

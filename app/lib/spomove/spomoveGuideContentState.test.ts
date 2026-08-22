@@ -28,6 +28,8 @@ describe('spomoveGuideContentState', () => {
         movementGuideStatus: 'published',
         movementGuide: {
           movement: { baseMovement: 'footTap', limbRule: 'free' },
+          objective: 'Respond to the correct direction.',
+          teachingPoints: ['Check accuracy before speed.'],
           instruction: 'Move to the matching color.',
           coachScript: 'Look first, then move.',
           focusTags: ['choiceReaction'],
@@ -39,6 +41,8 @@ describe('spomoveGuideContentState', () => {
 
     expect(state.structured).toBe('publishedValid');
     expect(state.publishedGuide?.instruction).toBe('Move to the matching color.');
+    expect(state.publishedGuide?.objective).toBe('Respond to the correct direction.');
+    expect(state.publishedGuide?.teachingPoints).toEqual(['Check accuracy before speed.']);
     expect(state.validationIssues).toEqual([]);
   });
 

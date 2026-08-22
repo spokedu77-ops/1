@@ -51,7 +51,7 @@ import {
 } from './spomovePresetDisplayModel';
 // Legacy sort helpers remain part of the hub contract; catalog sorting now also respects CMS order.
 // sortSpomovePresetsByDisplayTitle
-import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet } from './SpomoveGuidelineSheet';
+import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet, type SpomoveContentLoadState } from './SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
 import {
   getSpomoveHubHref,
@@ -891,6 +891,7 @@ export default function SpomoveHubView() {
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
   const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const [contentLoadState, setContentLoadState] = useState<SpomoveContentLoadState>('loading');
   const [assetPackError, setAssetPackError] = useState(false);
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
   const profile = useProfile();
@@ -961,8 +962,10 @@ export default function SpomoveHubView() {
       if (contentError && contentError.code !== 'PGRST116') {
         setAssetPackError(true);
         setContentOverrides({});
+        setContentLoadState('error');
       } else {
         setContentOverrides(normalizeSpomoveContentMap(contentData?.assets_json));
+        setContentLoadState('ready');
       }
     }).catch(() => {
       if (!alive) return;
@@ -971,6 +974,7 @@ export default function SpomoveHubView() {
       setThumbnailCacheBust(undefined);
       setGuideVideoUrls({});
       setContentOverrides({});
+      setContentLoadState('error');
     });
     return () => {
       alive = false;
@@ -1445,6 +1449,7 @@ export default function SpomoveHubView() {
           preset={previewPreset}
           guideVideoUrl={previewPreset ? guideVideoUrls[previewPreset.id] ?? '' : ''}
           contentOverride={previewPreset ? contentOverrides[previewPreset.id] : undefined}
+          contentLoadState={contentLoadState}
           hubView={hubView}
           onClose={() => setPreviewPreset(null)}
         />

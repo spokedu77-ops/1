@@ -104,9 +104,12 @@ describe('spomove preset display model', () => {
       preset: preset!,
       audience: 'public',
       contentOverride: {
+        displayTitle: 'CMS briefing title',
         movementGuideStatus: 'published',
         movementGuide: {
           movement: { baseMovement: 'twoLegJump', limbRule: 'free' },
+          objective: 'Recognize the direction and move accurately.',
+          teachingPoints: ['Check accuracy before speed.'],
           instruction: 'Move to the matching color.',
           coachScript: 'Look first, then jump together.',
           focusTags: ['choiceReaction', 'lowerBodyCoordination', 'landingControl'],
@@ -120,6 +123,9 @@ describe('spomove preset display model', () => {
     });
 
     expect(model.guideMode).toBe('published');
+    expect(model.title).toBe('CMS briefing title');
+    expect(model.objective).toBe('Recognize the direction and move accurately.');
+    expect(model.teachingPoints).toEqual(['Check accuracy before speed.']);
     expect(model.isOfficialGuide).toBe(true);
     expect(model.recommendedMovementLabel).toBeTruthy();
     expect(model.instruction).toBe('Move to the matching color.');

@@ -15,6 +15,7 @@ const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefi
 const setupShell = read('app/spokedu-master/spomove/session/SessionSetupShell.tsx');
 const cueSpeed = read('app/spokedu-master/spomove/spomoveCueSpeed.ts');
 const padLayoutView = read('app/spokedu-master/spomove/SpomovePadLayoutView.tsx');
+const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
 
 describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and start/settings actions on hub cards', () => {
@@ -56,6 +57,12 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
     expect(hub).toContain('SPOMOVE_CONTENT_PACK_ID');
     expect(hub).toContain('normalizeSpomoveContentMap');
+    expect(hub).toContain("useState<SpomoveContentLoadState>('loading')");
+    expect(hub).toContain("setContentLoadState('error')");
+    expect(hub).toContain('contentLoadState={contentLoadState}');
+    expect(dashboard).toContain("useState<SpomoveContentLoadState>('loading')");
+    expect(dashboard).toContain("setSpomoveContentLoadState('error')");
+    expect(dashboard).toContain('contentLoadState={spomoveContentLoadState}');
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
     expect(hub).toContain('parseSpomoveHubView');
     expect(hub).toContain('hubView={hubView}');
@@ -67,13 +74,18 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).toContain('data-preview-column="media"');
     expect(guidelineSheet).toContain('contentOverride');
     expect(guidelineSheet).toContain('buildSpomoveGuideDisplayModel');
-    expect(guidelineSheet).toContain('수업 핵심');
-    expect(guidelineSheet).toContain('추천동작');
-    expect(guidelineSheet).toContain('활용 요소');
-    expect(guidelineSheet).toContain('진행 방법');
-    expect(guidelineSheet).toContain('코치 스크립트');
-    expect(guidelineSheet).toContain('난이도 조절');
-    expect(guidelineSheet).toContain('변형 방법');
+    expect(guidelineSheet).toContain('활동 목표');
+    expect(guidelineSheet).toContain('준비');
+    expect(guidelineSheet).toContain('진행');
+    expect(guidelineSheet).toContain('지도 포인트');
+    expect(guidelineSheet).toContain('선택적 상세');
+    expect(guidelineSheet).toContain("contentLoadState === 'loading'");
+    expect(guidelineSheet).toContain("contentLoadState === 'error'");
+    expect(guidelineSheet).toContain('getSpomovePresetDisplayModel(preset, contentOverride)');
+    expect(guidelineSheet).not.toContain('세부 안내 예정');
+    expect(guidelineSheet).not.toContain('PublishedGuideContent');
+    expect(guidelineSheet).not.toContain('GuideModeNotice');
+    expect(guidelineSheet).not.toContain('PreparingGuideContent');
     expect(guidelineSheet).not.toContain('핵심 키워드');
     expect(guidelineSheet).not.toContain('매트 바로 밖');
     expect(guidelineSheet).not.toContain('소집단');

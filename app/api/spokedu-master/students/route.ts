@@ -4,7 +4,6 @@ import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   normalizeStudentInput,
-  studentInsertPayload,
   toStudentDto,
   type MasterStudentRow,
 } from '../operational-data';
@@ -75,29 +74,42 @@ export async function POST(request: Request) {
     }
 
     if (existing) {
+      const { data: memberships, error: membershipError } = await supabase
+        .from('spokedu_master_class_students').select('class_id')
+        .eq('owner_id', access.userId).eq('student_id', existing.id);
+      if (membershipError) return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
       return privateNoStoreJson({
         data: toStudentDto(existing as MasterStudentRow),
+        classIds: (memberships ?? []).map((item: { class_id: string }) => item.class_id),
         duplicate: true,
       });
     }
   }
 
-  const { data, error } = await supabase
-    .from('spokedu_master_students')
-    .insert(studentInsertPayload(input, access.userId))
-    .select(STUDENT_SELECT)
-    .single();
+  const { data: savedId, error } = await supabase.rpc('spokedu_master_save_student', {
+    p_owner_id: access.userId,
+    p_student_id: null,
+    p_legacy_id: input.legacyId,
+    p_name: input.name,
+    p_meta: input.meta,
+    p_guidance_note: input.guidanceNote ?? null,
+    p_class_ids: input.classIds,
+  });
 
   if (error) {
     await reportError(error, {
       context: 'spokedu_master.operational.students',
       tags: { method: 'POST', stage: 'insert', status: 500 },
     });
+    if (error.code === '22023' || error.code === '23505') return privateNoStoreJson({ error: '학생 정보 또는 수업반을 확인해 주세요.' }, { status: 400 });
     return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
   }
 
+  const { data, error: reloadError } = await supabase.from('spokedu_master_students')
+    .select(STUDENT_SELECT).eq('id', savedId).eq('owner_id', access.userId).single();
+  if (reloadError) return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
   return privateNoStoreJson(
-    { data: toStudentDto(data as MasterStudentRow), duplicate: false },
+    { data: toStudentDto(data as MasterStudentRow), classIds: input.classIds, duplicate: false },
     { status: 201 },
   );
 }

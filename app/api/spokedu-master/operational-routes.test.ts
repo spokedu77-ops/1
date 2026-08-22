@@ -129,6 +129,12 @@ function createSupabaseMock(options: {
           error: options.createRpcError ?? null,
         });
       }
+      if (name === 'spokedu_master_save_student') {
+        return Promise.resolve({ data: args.p_student_id ?? 'student-created', error: options.rpcError ?? null });
+      }
+      if (name === 'spokedu_master_soft_delete_student') {
+        return Promise.resolve({ data: null, error: options.rpcError ?? null });
+      }
       const missingRecord =
         Object.prototype.hasOwnProperty.call(options, 'existingRecord') &&
         options.existingRecord === null;
@@ -319,16 +325,12 @@ describe('SPOKEDU MASTER operational routes ownership contract', () => {
 
     expect(response.status).toBe(201);
     expect(calls).toContainEqual({
-      table: 'spokedu_master_students',
-      action: 'insert',
+      table: 'spokedu_master_save_student',
+      action: 'rpc',
       args: [
         {
-          owner_id: 'owner-a',
-          legacy_id: null,
-          name: 'Student A',
-          group_name: 'QA',
-          meta: {},
-          guidance_note: null,
+          p_owner_id: 'owner-a', p_student_id: null, p_legacy_id: null,
+          p_name: 'Student A', p_meta: {}, p_guidance_note: null, p_class_ids: [],
         },
       ],
     });
@@ -366,9 +368,8 @@ describe('SPOKEDU MASTER operational routes ownership contract', () => {
 
     expect(response.status).toBe(200);
     expect(calls).toContainEqual({
-      table: 'spokedu_master_students',
-      action: 'update',
-      args: [expect.objectContaining({ deleted_at: expect.any(String) })],
+      table: 'spokedu_master_soft_delete_student', action: 'rpc',
+      args: [{ p_owner_id: 'owner-a', p_student_id: 'student-a' }],
     });
     expect(calls).toContainEqual({
       table: 'spokedu_master_students',

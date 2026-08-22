@@ -69,6 +69,8 @@ type SpomoveGuideDisplayModelBase = {
   guideMode: SpomoveGuideDisplayMode;
   isOfficialGuide: boolean;
   recommendedMovementLabel: string | null;
+  objective: string | null;
+  teachingPoints: string[];
   instruction: string | null;
   legacyManual: SpomoveGuideLegacyManual | null;
   coachScript: string | null;
@@ -457,7 +459,7 @@ export function buildSpomoveGuideDisplayModel({
   matCount?: number;
   cueSeconds?: number;
 }): SpomoveGuideDisplayModel {
-  const display = getSpomovePresetDisplayModel(preset);
+  const display = getSpomovePresetDisplayModel(preset, contentOverride);
   const movementSummary = getPresetMovementSummary(preset);
   const state = resolveSpomoveGuideContentState({ preset, contentOverride });
   const guide =
@@ -496,6 +498,11 @@ export function buildSpomoveGuideDisplayModel({
     guideMode,
     isOfficialGuide: officialGuide,
     recommendedMovementLabel: movementLabel,
+    objective: officialGuide || audience === 'adminPreview' ? (guide?.objective ?? null) : null,
+    teachingPoints:
+      (officialGuide || audience === 'adminPreview') && guide?.teachingPoints?.length
+        ? [...guide.teachingPoints]
+        : [],
     instruction: officialGuide || audience === 'adminPreview' ? (guide?.instruction ?? null) : null,
     legacyManual: state.legacyManual,
     coachScript: officialGuide || audience === 'adminPreview' ? (guide?.coachScript ?? null) : null,

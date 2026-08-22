@@ -7,8 +7,11 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
   const access = await requireSpokeduMasterAccess();
   if (!access.ok) return withPrivateNoStore(access.response);
   const { sessionId } = await context.params;
-  const body = await request.json().catch(() => null) as { sourceType?: unknown; programId?: unknown; spomovePresetId?: unknown; programTitle?: unknown } | null;
-  const sourceType = body?.sourceType === 'spomove' ? 'spomove' : 'program';
+  const body = await request.json().catch(() => null) as { sourceType?: unknown; programId?: unknown; spomovePresetId?: unknown } | null;
+  if (body?.sourceType !== 'program' && body?.sourceType !== 'spomove') {
+    return privateNoStoreJson({ error: 'Invalid activity source' }, { status: 400 });
+  }
+  const sourceType = body.sourceType;
   const supabase = getServiceSupabase();
   if (sourceType === 'spomove') {
     const presetId = typeof body?.spomovePresetId === 'string' ? body.spomovePresetId : '';
@@ -22,9 +25,9 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
     return privateNoStoreJson({ data: { id: data!.id, sourceType: 'spomove', programId: null, spomovePresetId: data!.spomove_preset_id, programTitle: data!.program_title_snapshot, sortOrder: data!.sort_order, isCompleted: data!.is_completed } }, { status: 201 });
   }
   const programId = Number(body?.programId);
-  if (!Number.isInteger(programId) || programId < 1 || typeof body?.programTitle !== 'string') return privateNoStoreJson({ error: 'Invalid program' }, { status: 400 });
+  if (!Number.isInteger(programId) || programId < 1) return privateNoStoreJson({ error: 'Invalid program' }, { status: 400 });
   const { data: id, error } = await supabase.rpc('spokedu_master_add_session_program', {
-    p_owner_id: access.userId, p_session_id: sessionId, p_program_id: programId, p_program_title: body.programTitle,
+    p_owner_id: access.userId, p_session_id: sessionId, p_program_id: programId, p_program_title: null,
   });
   if (error) return privateNoStoreJson({ error: error.code === '22023' || error.code === '23505' ? 'Program cannot be assigned to this class' : 'Program could not be assigned' }, { status: error.code === '22023' || error.code === '23505' ? 400 : 500 });
   const { data } = await supabase.from('spokedu_master_session_programs').select('id,source_type,program_id,spomove_preset_id,program_title_snapshot,sort_order,is_completed').eq('id', id).eq('owner_id', access.userId).single();

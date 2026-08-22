@@ -4,18 +4,12 @@ import { CheckCircle2, ChevronDown, Coffee, LayoutList, ListOrdered, Pause, Play
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { toStudentProfile } from '../../lib/operationalDataAdapter';
+import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
 
 type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 'order' | 'tournament' | 'ladder';
-
-const UNASSIGNED_CLASS = '__unassigned__';
-
-function studentClassKey(student: StudentProfile) {
-  return student.group.trim() || UNASSIGNED_CLASS;
-}
 
 const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'stopwatch', label: '스탑워치', icon: Timer },
@@ -682,11 +676,13 @@ function EmptyStudentsForTools() {
 
 function ClassSelector({
   classKeys,
+  classLabels,
   selectedClassKey,
   onChange,
   studentCount,
 }: {
   classKeys: string[];
+  classLabels: Record<string, string>;
   selectedClassKey: string;
   onChange: (classKey: string) => void;
   studentCount: number;
@@ -707,7 +703,7 @@ function ClassSelector({
       >
         {classKeys.map((classKey) => (
           <option key={classKey} value={classKey}>
-            {classKey === UNASSIGNED_CLASS ? '반 미지정' : classKey}
+            {classLabels[classKey] ?? '수업반'}
           </option>
         ))}
       </select>
@@ -839,7 +835,6 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
                   {teams[key].map((student) => (
                     <div key={student.id} className="flex items-center justify-between rounded-[12px] px-3 py-2" style={{ background: 'rgba(0,0,0,0.12)' }}>
                       <span className="text-[13px] font-bold" style={{ color: 'var(--spm-t)' }}>{student.name}</span>
-                      <span className="text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.group}</span>
                     </div>
                   ))}
                 </div>
@@ -886,7 +881,6 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
           <li key={`${student.id}-${index}`} className="flex items-center gap-3 rounded-[13px] px-4 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-[13px] font-black text-white" style={{ background: 'var(--spm-amb)', fontFamily: 'var(--spm-font-display)' }}>{index + 1}</span>
             <span className="flex-1 text-[14px] font-bold" style={{ color: 'var(--spm-t)' }}>{student.name}</span>
-            <span className="text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.group}</span>
           </li>
         ))}
       </ol>
@@ -1039,20 +1033,18 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
 export default function ClassToolsView() {
   const [tab, setTab] = useState<TabId>('stopwatch');
   const operationalData = useOperationalData();
-  const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
-  const classKeys = useMemo(
-    () => Array.from(new Set(students.map(studentClassKey))).sort((a, b) => {
-      if (a === UNASSIGNED_CLASS) return 1;
-      if (b === UNASSIGNED_CLASS) return -1;
-      return a.localeCompare(b, 'ko');
-    }),
-    [students],
-  );
+  const students = useMemo<StudentProfile[]>(() => operationalData.students.map((student) => ({
+    id: student.id, name: student.name, group: '', meta: studentMetaToDisplay(student.meta),
+    guidanceNote: student.guidanceNote ?? '', level: '', attendance: 0, classes: 0, streak: 0,
+    risk: null, skills: [], badges: [], history: [],
+  })), [operationalData.students]);
+  const classKeys = useMemo(() => operationalData.classes.map((item) => item.id), [operationalData.classes]);
+  const classLabels = useMemo(() => Object.fromEntries(operationalData.classes.map((item) => [item.id, item.name])), [operationalData.classes]);
   const [selectedClassKey, setSelectedClassKey] = useState('');
   const effectiveClassKey = classKeys.includes(selectedClassKey) ? selectedClassKey : (classKeys[0] ?? '');
   const selectedStudents = useMemo(
-    () => students.filter((student) => studentClassKey(student) === effectiveClassKey),
-    [effectiveClassKey, students],
+    () => students.filter((student) => operationalData.classes.find((item) => item.id === effectiveClassKey)?.studentIds.includes(student.id)),
+    [effectiveClassKey, operationalData.classes, students],
   );
   const usesClassRoster = tab === 'picker' || tab === 'teams' || tab === 'order' || tab === 'tournament' || tab === 'ladder';
   const usingSample = false;
@@ -1098,6 +1090,7 @@ export default function ClassToolsView() {
           <div className="shrink-0 px-6 pt-5">
             <ClassSelector
               classKeys={classKeys}
+              classLabels={classLabels}
               selectedClassKey={effectiveClassKey}
               onChange={setSelectedClassKey}
               studentCount={selectedStudents.length}

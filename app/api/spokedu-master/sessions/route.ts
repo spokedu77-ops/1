@@ -13,15 +13,15 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const SESSION_SELECT = `
-  id, class_id, start_at, end_at, status, memo, completed_at, created_at, updated_at,
-  spokedu_master_classes!inner(name),
+  id, class_id, class_name_snapshot, start_at, end_at, status, memo, completed_at, created_at, updated_at,
   spokedu_master_session_programs(id, source_type, program_id, spomove_preset_id, program_title_snapshot, sort_order, is_completed),
-  spokedu_master_session_attendance(id, student_id, status)
+  spokedu_master_session_attendance(id, student_id, student_name_snapshot, status)
 `;
 
 type SessionRow = {
   id: string;
   class_id: string;
+  class_name_snapshot: string;
   start_at: string;
   end_at: string;
   status: MasterSessionStatus;
@@ -29,28 +29,21 @@ type SessionRow = {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
-  spokedu_master_classes: { name: string } | Array<{ name: string }>;
   spokedu_master_session_programs: Array<{
     id: string; source_type: 'program' | 'spomove'; program_id: number | string | null;
     spomove_preset_id: string | null; program_title_snapshot: string | null;
     sort_order: number; is_completed: boolean;
   }>;
   spokedu_master_session_attendance: Array<{
-    id: string; student_id: string; status: 'present' | 'absent';
+    id: string; student_id: string; student_name_snapshot: string; status: 'present' | 'absent';
   }>;
 };
-
-function className(row: SessionRow) {
-  return Array.isArray(row.spokedu_master_classes)
-    ? row.spokedu_master_classes[0]?.name ?? ''
-    : row.spokedu_master_classes.name;
-}
 
 function toSessionDto(row: SessionRow): MasterSessionDto {
   return {
     id: row.id,
     classId: row.class_id,
-    className: className(row),
+    className: row.class_name_snapshot,
     startAt: row.start_at,
     endAt: row.end_at,
     status: row.status,
@@ -68,7 +61,7 @@ function toSessionDto(row: SessionRow): MasterSessionDto {
         isCompleted: item.is_completed,
       })),
     attendance: (row.spokedu_master_session_attendance ?? []).map((item) => ({
-      id: item.id, studentId: item.student_id, status: item.status,
+      id: item.id, studentId: item.student_id, studentName: item.student_name_snapshot, status: item.status,
     })),
     createdAt: row.created_at,
     updatedAt: row.updated_at,

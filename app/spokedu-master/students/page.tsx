@@ -56,18 +56,11 @@ export default function StudentsPage() {
     setError(null);
   };
 
-  const syncMemberships = async (studentId: string, nextClassIds: string[]) => {
-    const previous = data.classes.filter((item) => item.studentIds.includes(studentId)).map((item) => item.id);
-    for (const classId of previous.filter((id) => !nextClassIds.includes(id))) await data.removeClassStudent(classId, studentId);
-    for (const classId of nextClassIds.filter((id) => !previous.includes(id))) await data.addClassStudent(classId, studentId);
-  };
-
   const saveNew = async () => {
     if (!draft.name.trim() || saving) return;
     setSaving(true); setError(null);
     try {
-      const student = await data.createStudent({ legacyId: crypto.randomUUID(), name: draft.name.trim(), group: null, meta: draft.meta, guidanceNote: draft.guidanceNote.trim() || null });
-      await syncMemberships(student.id, draft.classIds);
+      await data.createStudent({ legacyId: crypto.randomUUID(), name: draft.name.trim(), meta: draft.meta, guidanceNote: draft.guidanceNote.trim() || null, classIds: draft.classIds });
       setDraft(EMPTY_DRAFT); setAddOpen(false);
     } catch { setError('학생을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
     finally { setSaving(false); }
@@ -77,8 +70,7 @@ export default function StudentsPage() {
     if (!editing || !draft.name.trim() || saving) return;
     setSaving(true); setError(null);
     try {
-      await data.updateStudent(editing.id, { name: draft.name.trim(), group: editing.group, meta: draft.meta, guidanceNote: draft.guidanceNote.trim() || null });
-      await syncMemberships(editing.id, draft.classIds);
+      await data.updateStudent(editing.id, { name: draft.name.trim(), meta: draft.meta, guidanceNote: draft.guidanceNote.trim() || null, classIds: draft.classIds });
       setEditing(null); setDraft(EMPTY_DRAFT);
     } catch { setError('학생 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
     finally { setSaving(false); }

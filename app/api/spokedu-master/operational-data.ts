@@ -1,11 +1,10 @@
+import type { MasterStudentDto, MasterStudentMeta } from '@/app/spokedu-master/types/operational';
 import type {
   ExistingAttendanceStatus,
   ExistingRecordType,
   MasterClassRecordDto,
-  MasterStudentDto,
-  MasterStudentMeta,
   ObservationScore,
-} from '@/app/spokedu-master/types/operational';
+} from '@/app/spokedu-master/types/legacyOperational';
 
 export type MasterStudentRow = {
   id: string;
@@ -61,6 +60,7 @@ export type NormalizedStudentInput = {
   group: string | null;
   meta: MasterStudentMeta;
   guidanceNote?: string | null;
+  classIds: string[];
 };
 
 export type NormalizedClassRecordStudentInput = {
@@ -130,6 +130,11 @@ export function normalizeStudentInput(body: unknown): NormalizedStudentInput {
 
   const name = textOrNull(body.name);
   if (!name) throw new Error('name is required');
+  const classIds = body.classIds == null ? [] : body.classIds;
+  if (!Array.isArray(classIds) || classIds.some((id) => typeof id !== 'string' || !id.trim())) {
+    throw new Error('classIds must be an array of ids');
+  }
+  if (new Set(classIds).size !== classIds.length) throw new Error('classIds must not contain duplicates');
 
   return {
     legacyId: textOrNull(body.legacyId),
@@ -137,6 +142,7 @@ export function normalizeStudentInput(body: unknown): NormalizedStudentInput {
     group: textOrNull(body.group),
     meta: normalizeMeta(body.meta),
     ...(Object.hasOwn(body, 'guidanceNote') ? { guidanceNote: textOrNull(body.guidanceNote) } : {}),
+    classIds: classIds.map((id) => id.trim()),
   };
 }
 
@@ -235,7 +241,6 @@ export function toStudentDto(row: MasterStudentRow): MasterStudentDto {
     id: row.id,
     legacyId: row.legacy_id,
     name: row.name,
-    group: row.group_name,
     meta: row.meta ?? {},
     guidanceNote: row.guidance_note ?? null,
     createdAt: row.created_at,

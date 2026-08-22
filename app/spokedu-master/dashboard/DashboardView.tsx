@@ -76,7 +76,7 @@ import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
 } from '../spomove/officialSpomovePresets';
-import { SpomoveGuidelineSheet } from '../spomove/SpomoveGuidelineSheet';
+import { SpomoveGuidelineSheet, type SpomoveContentLoadState } from '../spomove/SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import { getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
@@ -716,6 +716,7 @@ function EntitledDashboardView() {
   const [spomoveThumbnailCacheBust, setSpomoveThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
   const [spomoveContentMap, setSpomoveContentMap] = useState<Record<string, import('@/app/lib/spomove/spomoveOfficialAssets').SpomovePresetContentOverride>>({});
+  const [spomoveContentLoadState, setSpomoveContentLoadState] = useState<SpomoveContentLoadState>('loading');
   const [featuredSpomoveSlotIds, setFeaturedSpomoveSlotIds] = useState<Array<string | null>>([
     null,
     null,
@@ -782,7 +783,13 @@ function EntitledDashboardView() {
         }
 
         const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
-        setSpomoveContentMap(contentError && contentError.code !== 'PGRST116' ? {} : normalizeSpomoveContentMap(contentData?.assets_json));
+        if (contentError && contentError.code !== 'PGRST116') {
+          setSpomoveContentMap({});
+          setSpomoveContentLoadState('error');
+        } else {
+          setSpomoveContentMap(normalizeSpomoveContentMap(contentData?.assets_json));
+          setSpomoveContentLoadState('ready');
+        }
 
         const { data: featuredData, error: featuredError } = featuredResult as {
           data: { assets_json?: unknown } | null;
@@ -800,6 +807,7 @@ function EntitledDashboardView() {
         setSpomoveThumbnailCacheBust(undefined);
         setGuideVideoUrls({});
         setSpomoveContentMap({});
+        setSpomoveContentLoadState('error');
         setFeaturedSpomoveSlotIds([null, null, null, null]);
       });
     return () => {
@@ -1159,6 +1167,7 @@ function EntitledDashboardView() {
       <SpomoveGuidelineSheet
         preset={previewSpomove}
         contentOverride={previewSpomove ? spomoveContentMap[previewSpomove.id] : undefined}
+        contentLoadState={spomoveContentLoadState}
         guideVideoUrl={previewSpomove ? guideVideoUrls[previewSpomove.id] ?? '' : ''}
         onClose={() => setPreviewSpomove(null)}
       />

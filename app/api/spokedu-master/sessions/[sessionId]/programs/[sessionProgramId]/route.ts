@@ -10,10 +10,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ sessi
   const { sessionId, sessionProgramId } = await context.params;
   const body = await request.json().catch(() => null) as { isCompleted?: unknown } | null;
   if (typeof body?.isCompleted !== 'boolean') return privateNoStoreJson({ error: 'Invalid program status' }, { status: 400 });
-  const current = await status(access.userId, sessionId);
-  if (!current.data || current.data.status === 'cancelled') return privateNoStoreJson({ error: 'Cancelled classes cannot be changed' }, { status: 400 });
-  const { error } = await getServiceSupabase().from('spokedu_master_session_programs').update({ is_completed: body.isCompleted }).eq('id', sessionProgramId).eq('session_id', sessionId).eq('owner_id', access.userId);
-  if (error) return privateNoStoreJson({ error: 'Program status could not be saved' }, { status: 500 });
+  const { error } = await getServiceSupabase().rpc('spokedu_master_update_session_program_completion', {
+    p_owner_id: access.userId, p_session_id: sessionId,
+    p_session_program_id: sessionProgramId, p_is_completed: body.isCompleted,
+  });
+  if (error) return privateNoStoreJson({ error: error.code === '22023' ? 'Activity progress cannot be changed' : 'Program status could not be saved' }, { status: error.code === '22023' ? 400 : 500 });
   return privateNoStoreJson({ ok: true });
 }
 export async function DELETE(_request: Request, context: { params: Promise<{ sessionId: string; sessionProgramId: string }> }) {

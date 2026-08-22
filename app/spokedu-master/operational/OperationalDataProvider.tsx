@@ -27,7 +27,7 @@ type OperationalDataContextValue = {
   ownerId: string | null;
   reload: () => Promise<void>;
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
-  addSessionProgram: (sessionId: string, programId: number, programTitle: string) => Promise<MasterSessionDto['programs'][number]>;
+  addSessionProgram: (sessionId: string, programId: number) => Promise<MasterSessionDto['programs'][number]>;
   addSessionSpomove: (sessionId: string, spomovePresetId: string) => Promise<MasterSessionDto['programs'][number]>;
   removeSessionProgram: (sessionId: string, sessionProgramId: string) => Promise<void>;
   updateSessionProgram: (sessionId: string, sessionProgramId: string, isCompleted: boolean) => Promise<void>;
@@ -106,25 +106,38 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, [reload]);
 
   const createStudent = useCallback(async (input: CreateStudentInput) => {
-    const json = await masterFetchJson<{ data: MasterStudentDto }>('/api/spokedu-master/students', {
+    const json = await masterFetchJson<{ data: MasterStudentDto; classIds: string[] }>('/api/spokedu-master/students', {
       body: JSON.stringify(input),
       method: 'POST',
     });
     setStudents((current) => [json.data, ...current.filter((student) => student.id !== json.data.id)]);
+    setClasses((current) => current.map((item) => ({
+      ...item,
+      studentIds: json.classIds.includes(item.id)
+        ? [...new Set([...item.studentIds, json.data.id])]
+        : item.studentIds.filter((id) => id !== json.data.id),
+    })));
     return json.data;
   }, []);
 
   const deleteStudent = useCallback(async (studentId: string) => {
     await masterFetchJson<{ ok: true }>(`/api/spokedu-master/students/${studentId}`, { method: 'DELETE' });
     setStudents((current) => current.filter((student) => student.id !== studentId));
+    setClasses((current) => current.map((item) => ({ ...item, studentIds: item.studentIds.filter((id) => id !== studentId) })));
   }, []);
 
   const updateStudent = useCallback(async (studentId: string, input: UpdateStudentInput) => {
-    const json = await masterFetchJson<{ data: MasterStudentDto }>(`/api/spokedu-master/students/${studentId}`, {
+    const json = await masterFetchJson<{ data: MasterStudentDto; classIds: string[] }>(`/api/spokedu-master/students/${studentId}`, {
       body: JSON.stringify(input),
       method: 'PATCH',
     });
     setStudents((current) => current.map((student) => (student.id === studentId ? json.data : student)));
+    setClasses((current) => current.map((item) => ({
+      ...item,
+      studentIds: json.classIds.includes(item.id)
+        ? [...new Set([...item.studentIds, studentId])]
+        : item.studentIds.filter((id) => id !== studentId),
+    })));
     return json.data;
   }, []);
 
@@ -154,12 +167,12 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     });
     setClasses((current) => current.map((item) => item.id === classId ? json.data : item)
       .sort((a, b) => a.name.localeCompare(b.name, 'ko')));
-    setSessions((current) => current.map((item) => item.classId === classId ? { ...item, className: json.data.name } : item));
+    setSessions((current) => current.map((item) => item.classId === classId && item.status === 'scheduled' ? { ...item, className: json.data.name } : item));
     return json.data;
   }, []);
 
-  const addSessionProgram = useCallback(async (sessionId: string, programId: number, programTitle: string) => {
-    const json = await masterFetchJson<{ data: MasterSessionDto['programs'][number] }>(`/api/spokedu-master/sessions/${sessionId}/programs`, { method: 'POST', body: JSON.stringify({ sourceType: 'program', programId, programTitle }) });
+  const addSessionProgram = useCallback(async (sessionId: string, programId: number) => {
+    const json = await masterFetchJson<{ data: MasterSessionDto['programs'][number] }>(`/api/spokedu-master/sessions/${sessionId}/programs`, { method: 'POST', body: JSON.stringify({ sourceType: 'program', programId }) });
     setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: [...item.programs, json.data] } : item));
     return json.data;
   }, []);
@@ -187,8 +200,13 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
 
   const saveSessionAttendance = useCallback(async (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => {
     await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance }) });
-    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, attendance: attendance.map((entry) => ({ id: item.attendance.find((old) => old.studentId === entry.studentId)?.id ?? entry.studentId, ...entry })) } : item));
-  }, []);
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, attendance: attendance.map((entry) => ({
+      id: item.attendance.find((old) => old.studentId === entry.studentId)?.id ?? entry.studentId,
+      studentName: item.attendance.find((old) => old.studentId === entry.studentId)?.studentName
+        ?? students.find((student) => student.id === entry.studentId)?.name ?? '이름 미확인 학생',
+      ...entry,
+    })) } : item));
+  }, [students]);
 
   const addClassStudent = useCallback(async (classId: string, studentId: string) => {
     await masterFetchJson(`/api/spokedu-master/classes/${classId}/students`, { method: 'POST', body: JSON.stringify({ studentId }) });

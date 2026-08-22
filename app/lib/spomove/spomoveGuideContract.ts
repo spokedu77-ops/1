@@ -38,6 +38,8 @@ export type SpomoveMovementGuideDraft = {
    * MovementPick: an official recommended movement
    */
   movement?: MovementPick | null;
+  objective?: string;
+  teachingPoints?: readonly string[];
   instruction?: string;
   coachScript?: string;
   focusTags?: readonly SpomoveFocusTag[];
@@ -50,6 +52,8 @@ export type SpomoveMovementGuideDraft = {
 
 export type SpomoveMovementGuide = {
   movement: MovementPick | null;
+  objective?: string;
+  teachingPoints?: readonly string[];
   instruction: string;
   coachScript: string;
   focusTags: readonly SpomoveFocusTag[];
@@ -126,6 +130,18 @@ function normalizeFocusTags(value: unknown): SpomoveFocusTag[] | undefined {
   return next.length > 0 ? next : undefined;
 }
 
+function normalizeTeachingPoints(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const next: string[] = [];
+  for (const item of value) {
+    const point = normalizeString(item);
+    if (!point || next.includes(point)) continue;
+    next.push(point);
+    if (next.length >= 3) break;
+  }
+  return next.length > 0 ? next : undefined;
+}
+
 function normalizeVariations(value: unknown): SpomoveMovementGuideVariations | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const source = value as Record<string, unknown>;
@@ -144,6 +160,12 @@ export function normalizeSpomoveMovementGuideDraft(value: unknown): SpomoveMovem
 
   const movement = normalizeMovementPick(source.movement);
   if (movement !== undefined) draft.movement = movement;
+
+  const objective = normalizeString(source.objective);
+  if (objective) draft.objective = objective;
+
+  const teachingPoints = normalizeTeachingPoints(source.teachingPoints);
+  if (teachingPoints) draft.teachingPoints = teachingPoints;
 
   const instruction = normalizeString(source.instruction);
   if (instruction) draft.instruction = instruction;
@@ -219,6 +241,8 @@ export function publishSpomoveMovementGuide(
 
   return {
     movement: normalized.movement,
+    objective: normalized.objective,
+    teachingPoints: normalized.teachingPoints,
     instruction: normalized.instruction,
     coachScript: normalized.coachScript,
     focusTags: normalized.focusTags,

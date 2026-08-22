@@ -1,7 +1,5 @@
 'use client';
 
-import { addMinutes, format, isSameDay, startOfDay } from 'date-fns';
-import { ko } from 'date-fns/locale';
 import {
   ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Clock3,
   Plus, Save, Search, Settings2, UsersRound, XCircle,
@@ -11,7 +9,7 @@ import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
-import { seoulDateTimeInputToIso, toSeoulDateTimeInput } from '../lib/sessionDateTime';
+import { addSeoulSessionDays, buildSessionDraftDateTimes, formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday, seoulDateTimeInputToIso, seoulDayToDate } from '../lib/sessionDateTime';
 import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
 import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
@@ -44,10 +42,10 @@ function SessionSheet({
   const programsLoaded = useMasterStore((state) => state.programsLoaded);
   const programsError = useMasterStore((state) => state.programsError);
   const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
-  const initialStart = session ? new Date(session.startAt) : new Date(initialDate.setHours(10, 0, 0, 0));
+  const initialDateTimes = buildSessionDraftDateTimes(initialDate, session ?? undefined);
   const [classId, setClassId] = useState(session?.classId ?? data.classes[0]?.id ?? '');
-  const [startAt, setStartAt] = useState(toSeoulDateTimeInput(initialStart));
-  const [endAt, setEndAt] = useState(toSeoulDateTimeInput(session ? new Date(session.endAt) : addMinutes(initialStart, 60)));
+  const [startAt, setStartAt] = useState(initialDateTimes.startAt);
+  const [endAt, setEndAt] = useState(initialDateTimes.endAt);
   const [status, setStatus] = useState<MasterSessionStatus>(session?.status ?? 'scheduled');
   const [memo, setMemo] = useState(session?.memo ?? '');
   const [programs, setPrograms] = useState<DraftProgram[]>(
@@ -68,7 +66,12 @@ function SessionSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectedClass = data.classes.find((item) => item.id === classId);
-  const roster = data.students.filter((student) => selectedClass?.studentIds.includes(student.id));
+  const currentRoster = data.students.filter((student) => selectedClass?.studentIds.includes(student.id));
+  const historicalRoster = status === 'completed'
+    ? (activeSession?.attendance ?? []).filter((entry) => !currentRoster.some((student) => student.id === entry.studentId))
+      .map((entry) => ({ id: entry.studentId, name: entry.studentName, historical: true }))
+    : [];
+  const roster = [...currentRoster.map((student) => ({ id: student.id, name: student.name, historical: false })), ...historicalRoster];
   const availablePrograms = libraryPrograms.filter((program) => !programs.some((item) => item.sourceType === 'program' && String(item.programId) === program.id));
   const availableSpomove = OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset)
     .filter((preset) => !programs.some((item) => item.sourceType === 'spomove' && item.spomovePresetId === preset.id));
@@ -84,6 +87,7 @@ function SessionSheet({
     if (!activeSession || status !== 'scheduled' || !selectedActivityKeys.length) return;
     setSaving(true);
     setError(null);
+    let addedCount = 0;
     try {
       for (const key of selectedActivityKeys) {
         const [sourceType, sourceId] = key.split(':', 2) as [ProgramFilter, string];
@@ -92,16 +96,20 @@ function SessionSheet({
         const added = sourceType === 'spomove'
           ? await data.addSessionSpomove(activeSession.id, sourceId)
           : program && Number.isInteger(numericId)
-            ? await data.addSessionProgram(activeSession.id, numericId, program.title)
+            ? await data.addSessionProgram(activeSession.id, numericId)
             : null;
         if (!added) continue;
+        addedCount += 1;
         setPrograms((current) => current.some((item) => item.id === added.id) ? current : [...current, added]);
         setSelectedActivityKeys((current) => current.filter((item) => item !== key));
       }
       setProgramPickerOpen(false);
       setProgramSearch('');
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '프로그램을 추가하지 못했습니다.');
+    } catch {
+      const failedCount = selectedActivityKeys.length - addedCount;
+      setError(addedCount > 0
+        ? `${addedCount}개 활동은 추가됐고 ${failedCount}개는 추가하지 못했습니다. 남은 항목을 다시 시도해 주세요.`
+        : '활동을 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setSaving(false);
     }
@@ -161,7 +169,7 @@ function SessionSheet({
       setStatus(saved.status);
       if (nextStatus !== 'cancelled' && attendanceDirty) {
         await data.saveSessionAttendance(saved.id, Object.entries(attendance)
-          .filter(([studentId]) => selectedClass?.studentIds.includes(studentId))
+          .filter(([studentId]) => roster.some((student) => student.id === studentId))
           .map(([studentId, value]) => ({ studentId, status: value })));
         setAttendanceDirty(false);
       }
@@ -236,7 +244,7 @@ function SessionSheet({
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {roster.map((student) => (
               <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
-                <span className="text-sm font-bold text-slate-700">{student.name}</span>
+                <span className="text-sm font-bold text-slate-700">{student.name}{student.historical ? <small className="ml-1 text-[10px] text-slate-400">과거 참여</small> : null}</span>
                 <div className="flex gap-1">
                   {(['present', 'absent'] as const).map((value) => (
                     <button key={value} type="button" disabled={status === 'cancelled'} onClick={() => { setAttendance((current) => ({ ...current, [student.id]: value })); setAttendanceDirty(true); }} className={`rounded-lg px-2.5 py-1.5 text-xs font-black disabled:opacity-40 ${attendance[student.id] === value ? (value === 'present' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white') : 'bg-slate-100 text-slate-500'}`}>{value === 'present' ? '출석' : '결석'}</button>
@@ -252,7 +260,7 @@ function SessionSheet({
           <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-800">수업 구성</h3><span className="text-xs font-black text-emerald-700">진행 {completedPrograms} / 전체 {programs.length}</span></div>
           <div className="mt-2 space-y-2">
             {programs.map((program, index) => (
-              <div key={program.programId} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
+              <div key={program.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
                 <button type="button" disabled={!activeSession || status === 'cancelled'} onClick={() => void toggleProgram(program)} className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label="프로그램 진행 여부"><Check size={16} /></button>
                 <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}><span className="block">{program.programTitle ?? '이름 없는 활동'}</span>{program.sourceType === 'spomove' ? <span className="text-[10px] font-black text-blue-600">SPOMOVE</span> : null}</span>
                 {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) ? <Link href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!)} className="rounded-lg bg-blue-600 px-2 py-1.5 text-[10px] font-black text-white">실행</Link> : null}
@@ -353,11 +361,11 @@ function ClassManagerSheet({ onClose }: { onClose: () => void }) {
 
 export default function ActivityPage() {
   const data = useOperationalData();
-  const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
+  const [selectedDay, setSelectedDay] = useState(getSeoulToday());
   const [editing, setEditing] = useState<MasterSessionDto | null | undefined>(undefined);
   const [classManagerOpen, setClassManagerOpen] = useState(false);
-  const daySessions = useMemo(() => data.sessions.filter((session) => isSameDay(new Date(session.startAt), selectedDate)), [data.sessions, selectedDate]);
-  const visibleDays = useMemo(() => Array.from({ length: 14 }, (_, index) => addMinutes(startOfDay(new Date()), index * 24 * 60)), []);
+  const daySessions = useMemo(() => data.sessions.filter((session) => getSeoulSessionDay(session.startAt) === selectedDay), [data.sessions, selectedDay]);
+  const visibleDays = useMemo(() => Array.from({ length: 14 }, (_, index) => addSeoulSessionDays(getSeoulToday(), index)), []);
 
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
@@ -373,22 +381,22 @@ export default function ActivityPage() {
         {!data.classes.length && data.status === 'ready' ? <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800"><p>수업을 만들기 전에 수업반을 등록해 주세요.</p><button type="button" onClick={() => setClassManagerOpen(true)} className="mt-2 text-sm font-black underline">수업반 만들기</button></div> : null}
 
         <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-sm font-black text-slate-800"><CalendarDays size={17} />날짜 선택</h2><input type="date" value={format(selectedDate, 'yyyy-MM-dd')} onChange={(event) => setSelectedDate(startOfDay(new Date(`${event.target.value}T00:00:00`)))} className="h-9 rounded-lg border border-slate-200 px-2 text-xs font-bold" /></div>
+          <div className="flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-sm font-black text-slate-800"><CalendarDays size={17} />날짜 선택</h2><input type="date" value={selectedDay} onChange={(event) => setSelectedDay(event.target.value)} className="h-9 rounded-lg border border-slate-200 px-2 text-xs font-bold" /></div>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {visibleDays.map((day) => {
-              const active = isSameDay(day, selectedDate);
-              const count = data.sessions.filter((session) => isSameDay(new Date(session.startAt), day)).length;
-              return <button key={day.toISOString()} type="button" onClick={() => setSelectedDate(day)} className={`min-w-16 rounded-xl px-2 py-2 text-center ring-1 ${active ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'}`}><span className="block text-[10px] font-bold">{format(day, 'EEE', { locale: ko })}</span><strong className="block text-base">{format(day, 'd')}</strong><span className="block text-[10px]">{count ? `${count}개` : '—'}</span></button>;
+              const active = day === selectedDay;
+              const count = data.sessions.filter((session) => getSeoulSessionDay(session.startAt) === day).length;
+              return <button key={day} type="button" onClick={() => setSelectedDay(day)} className={`min-w-16 rounded-xl px-2 py-2 text-center ring-1 ${active ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'}`}><span className="block text-[10px] font-bold">{formatSeoulSessionDay(day, { weekday: 'short' })}</span><strong className="block text-base">{formatSeoulSessionDay(day, { day: 'numeric' })}</strong><span className="block text-[10px]">{count ? `${count}개` : '—'}</span></button>;
             })}
           </div>
         </section>
 
         <section className="mt-4">
-          <div className="flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">{format(selectedDate, 'M월 d일 EEEE', { locale: ko })}</h2><span className="text-xs font-bold text-slate-400">수업 {daySessions.length}개</span></div>
+          <div className="flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">{formatSeoulSessionDay(selectedDay, { month: 'long', day: 'numeric', weekday: 'long' })}</h2><span className="text-xs font-bold text-slate-400">수업 {daySessions.length}개</span></div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {daySessions.map((session) => (
               <button key={session.id} type="button" onClick={() => setEditing(session)} className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-px hover:shadow-md">
-                <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-sm font-black text-slate-800"><Clock3 size={15} />{format(new Date(session.startAt), 'HH:mm')}–{format(new Date(session.endAt), 'HH:mm')}</span><span className={`rounded-full px-2 py-1 text-[10px] font-black ring-1 ${statusTone(session.status)}`}>{statusLabel(session.status)}</span></div>
+                <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-sm font-black text-slate-800"><Clock3 size={15} />{formatSeoulSessionTime(session.startAt)}–{formatSeoulSessionTime(session.endAt)}</span><span className={`rounded-full px-2 py-1 text-[10px] font-black ring-1 ${statusTone(session.status)}`}>{statusLabel(session.status)}</span></div>
                 <h3 className="mt-2 text-base font-black text-slate-900">{session.className}</h3>
                 <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `활동 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '활동 미지정'} · 출석 {session.attendance.filter((item) => item.status === 'present').length}명</p>
               </button>
@@ -397,7 +405,7 @@ export default function ActivityPage() {
           </div>
         </section>
       </div>
-      {editing !== undefined ? <SessionSheet key={editing?.id ?? `new-${selectedDate.toISOString()}`} session={editing} initialDate={new Date(selectedDate)} onClose={() => setEditing(undefined)} /> : null}
+      {editing !== undefined ? <SessionSheet key={editing?.id ?? `new-${selectedDay}`} session={editing} initialDate={seoulDayToDate(selectedDay)} onClose={() => setEditing(undefined)} /> : null}
       {classManagerOpen ? <ClassManagerSheet onClose={() => setClassManagerOpen(false)} /> : null}
     </main>
   );

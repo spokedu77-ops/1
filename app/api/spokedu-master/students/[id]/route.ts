@@ -4,7 +4,6 @@ import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/private
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import {
   normalizeStudentInput,
-  studentUpdatePayload,
   toStudentDto,
   type MasterStudentRow,
 } from '@/app/api/spokedu-master/operational-data';
@@ -29,7 +28,11 @@ export async function PATCH(
 
   let input;
   try {
-    input = normalizeStudentInput(await request.json());
+    const body = await request.json();
+    if (!body || typeof body !== 'object' || !Array.isArray((body as { classIds?: unknown }).classIds)) {
+      throw new Error('classIds is required');
+    }
+    input = normalizeStudentInput(body);
   } catch (error) {
     return privateNoStoreJson(
       { error: error instanceof Error ? error.message : 'Invalid student payload' },
@@ -57,23 +60,30 @@ export async function PATCH(
     return privateNoStoreJson({ error: 'student not found' }, { status: 404 });
   }
 
-  const { data, error } = await supabase
-    .from('spokedu_master_students')
-    .update(studentUpdatePayload(input))
-    .eq('owner_id', access.userId)
-    .eq('id', id)
-    .select(STUDENT_SELECT)
-    .single();
+  const { data: savedId, error } = await supabase.rpc('spokedu_master_save_student', {
+    p_owner_id: access.userId,
+    p_student_id: id,
+    p_legacy_id: existing.legacy_id,
+    p_name: input.name,
+    p_meta: input.meta,
+    p_guidance_note: input.guidanceNote ?? existing.guidance_note ?? null,
+    p_class_ids: input.classIds,
+  });
 
   if (error) {
     await reportError(error, {
       context: 'spokedu_master.operational.students',
       tags: { method: 'PATCH', stage: 'update', status: 500 },
     });
+    if (error.code === '22023') return privateNoStoreJson({ error: '학생 정보 또는 수업반을 확인해 주세요.' }, { status: 400 });
+    if (error.code === 'P0002') return privateNoStoreJson({ error: 'student not found' }, { status: 404 });
     return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
   }
 
-  return privateNoStoreJson({ data: toStudentDto(data as MasterStudentRow) });
+  const { data, error: reloadError } = await supabase.from('spokedu_master_students')
+    .select(STUDENT_SELECT).eq('id', savedId).eq('owner_id', access.userId).single();
+  if (reloadError) return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
+  return privateNoStoreJson({ data: toStudentDto(data as MasterStudentRow), classIds: input.classIds });
 }
 
 export async function DELETE(
@@ -108,11 +118,9 @@ export async function DELETE(
     return privateNoStoreJson({ error: 'student not found' }, { status: 404 });
   }
 
-  const { error } = await supabase
-    .from('spokedu_master_students')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('owner_id', access.userId)
-    .eq('id', id);
+  const { error } = await supabase.rpc('spokedu_master_soft_delete_student', {
+    p_owner_id: access.userId, p_student_id: id,
+  });
 
   if (error) {
     await reportError(error, {

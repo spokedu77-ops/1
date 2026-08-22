@@ -38,7 +38,8 @@ describe('student P0 guards', () => {
     expect(students).toContain('학생 정보 수정');
     expect(provider).toContain('updateStudent');
     expect(route).toContain('export async function PATCH');
-    expect(route).toContain('studentUpdatePayload');
+    expect(route).toContain("rpc('spokedu_master_save_student'");
+    expect(route).toContain('p_class_ids: input.classIds');
   });
 
   it('does not render parent share link creation controls', () => {

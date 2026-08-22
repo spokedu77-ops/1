@@ -68,7 +68,8 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain('function ClassSelector');
     expect(tools).toContain('진행할 반');
     expect(tools).toContain('const [selectedClassKey, setSelectedClassKey]');
-    expect(tools).toContain('studentClassKey(student) === effectiveClassKey');
+    expect(tools).toContain("item.id === effectiveClassKey)?.studentIds.includes(student.id)");
+    expect(tools).not.toContain('student.group');
     expect(tools).toContain('students={selectedStudents}');
     expect(tools).toContain("tab === 'picker' || tab === 'teams' || tab === 'order'");
   });
