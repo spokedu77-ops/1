@@ -172,14 +172,19 @@ async function handleDonePayment(
     return { status: 'rejected' as const, reason: 'amount_mismatch' };
   }
 
+  const { data: subscription } = await service
+    .from('spokedu_master_subscriptions')
+    .select('current_period_end,pending_billing_key_secret_id')
+    .eq('user_id', orderRow.user_id)
+    .maybeSingle();
+  const subscriptionRow = subscription as {
+    current_period_end?: string | null;
+    pending_billing_key_secret_id?: string | null;
+  } | null;
+
   let approvedAt = payment.approvedAt;
   if (payment.orderId.includes('-renewal-')) {
-    const { data: subscription } = await service
-      .from('spokedu_master_subscriptions')
-      .select('current_period_end')
-      .eq('user_id', orderRow.user_id)
-      .maybeSingle();
-    const currentPeriodEnd = (subscription as { current_period_end?: string | null } | null)?.current_period_end;
+    const currentPeriodEnd = subscriptionRow?.current_period_end;
     approvedAt = currentPeriodEnd ?? payment.approvedAt;
   }
 
@@ -192,6 +197,8 @@ async function handleDonePayment(
     approvedAt,
     eventKey,
     source: 'webhook',
+    providerCustomerKey: `spm_${orderRow.user_id.replaceAll('-', '')}`,
+    providerBillingKeySecretId: subscriptionRow?.pending_billing_key_secret_id ?? null,
     billingCycleKey: orderRow.billing_cycle_key ?? null,
   });
 
@@ -249,7 +256,11 @@ async function handleCanceledPayment(
     if (applied.status >= 500) throw new Error(applied.code);
     return { status: 'ignored' as const, reason: applied.code };
   }
-  return { status: 'processed' as const, cancelled: true };
+  return {
+    status: 'processed' as const,
+    cancelled: applied.cancelled === true,
+    reason: applied.reason,
+  };
 }
 
 async function lookupWebhookEvent(service: ReturnType<typeof getServiceSupabase>, eventKey: string) {

@@ -277,7 +277,7 @@ function PaymentContent() {
           </h2>
           <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             {paymentPageMode === 'liteUpgrade'
-              ? 'SPOMOVE·프리미엄 자료를 포함한 전체 기능을 이용할 수 있습니다. 결제수단 인증 후 차액 결제로 즉시 업그레이드됩니다.'
+              ? 'SPOMOVE·프리미엄 자료를 포함한 전체 기능을 이용할 수 있습니다. 결제수단 인증 후 프리미엄 정가 결제로 즉시 업그레이드됩니다.'
               : '결제수단 인증 후 첫 결제가 성공한 경우에만 구독이 활성화됩니다.'}
           </p>
         </section>
@@ -305,6 +305,9 @@ function PaymentContent() {
               <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
                 <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
                   현재 <strong>{subscriptionDisplay.planLabel}</strong> 이용 중입니다. 프리미엄으로 업그레이드하면 SPOMOVE와 프리미엄 자료를 바로 이용할 수 있습니다.
+                </p>
+                <p className="mt-2 text-[13px] font-black leading-6" style={{ color: 'var(--spm-t)' }}>
+                  이번 결제 금액은 28,900원입니다. 기존 라이트 잔여기간의 차감·환급 없이 결제 성공 시점부터 프리미엄 1개월과 새 결제주기가 시작됩니다.
                 </p>
               </section>
             ) : null}

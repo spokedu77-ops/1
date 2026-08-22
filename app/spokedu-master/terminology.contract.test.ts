@@ -13,7 +13,6 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/library/[id]/LibraryDetailView.tsx',
   'app/spokedu-master/activity/page.tsx',
   'app/spokedu-master/class-record/page.tsx',
-  'app/spokedu-master/components/record/RecordProgramPicker.tsx',
   'app/spokedu-master/components/lesson/LessonCatalogCard.tsx',
   'app/spokedu-master/components/lesson/ProgramPreviewModal.tsx',
   'app/spokedu-master/report/page.tsx',

@@ -33,7 +33,7 @@ import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { getActiveTodayLessons } from '../lib/todayLesson';
+import { getSeoulSessionDay } from '../lib/sessionDateTime';
 import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
 import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
@@ -868,14 +868,13 @@ function EntitledDashboardView() {
     () => (recentActivityOwnerId ? selectRecentSpomoveActivity(validSpomoveActivities, recentActivityOwnerId) : null),
     [recentActivityOwnerId, validSpomoveActivities],
   );
-  const todayLessonByOwner = useMasterStore((state) => state.todayLessonByOwner);
   const todayLessonAssignments = useMemo(
-    () => getActiveTodayLessons(todayLessonByOwner, recentActivityOwnerId),
-    [recentActivityOwnerId, todayLessonByOwner],
+    () => operationalSessions
+      .filter((session) => session.status !== 'cancelled' && getSeoulSessionDay(session.startAt) === getSeoulSessionDay(new Date()))
+      .flatMap((session) => session.programs.map((program) => ({ programId: String(program.programId), programTitle: program.programTitle ?? `프로그램 ${program.programId}` }))),
+    [operationalSessions],
   );
   const todayLessonAssignment = todayLessonAssignments[0] ?? null;
-  const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
-  const removeTodayLesson = useMasterStore((state) => state.removeTodayLesson);
   const programsById = useMemo(() => new Map(programs.map((program) => [program.id, program])), [programs]);
   const homeAnchor = useMemo(
     () =>
@@ -996,7 +995,6 @@ function EntitledDashboardView() {
         recordCount={operationalStatus === 'ready' ? operationalSessions.length : null}
         reportCount={explanationData.status === 'loading' ? null : explanationData.total}
         todayLessons={todayLessonAssignments}
-        onRemoveTodayLesson={recentActivityOwnerId ? (programId) => removeTodayLesson(recentActivityOwnerId, programId) : undefined}
       />
 
       <section
@@ -1143,14 +1141,6 @@ function EntitledDashboardView() {
           program={selectedProgram}
           autoplayVideo={previewAutoplay}
           isPremium={isPremium}
-          isTodayLesson={todayLessonAssignments.some((assignment) => assignment.programId === selectedProgram.id)}
-          onToggleTodayLesson={recentActivityOwnerId ? () => {
-            if (todayLessonAssignments.some((assignment) => assignment.programId === selectedProgram.id)) {
-              removeTodayLesson(recentActivityOwnerId, selectedProgram.id);
-              return;
-            }
-            setTodayLesson(recentActivityOwnerId, { id: selectedProgram.id, title: selectedProgram.title });
-          } : undefined}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({
               programId: selectedProgram.id,

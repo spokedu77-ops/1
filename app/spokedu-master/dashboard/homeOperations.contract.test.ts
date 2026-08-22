@@ -80,14 +80,14 @@ describe('home operations component contracts', () => {
     expect(sheet).not.toContain('autostart: true');
   });
 
-  it('renders and removes each accumulated today lesson', () => {
+  it('derives today lessons from Seoul-dated sessions', () => {
     expect(opsBar).toContain('todayLessons.map');
     expect(opsBar).toContain('onRemoveTodayLesson(lesson.programId)');
     expect(opsBar).toContain('오늘 수업에서 제거');
     expect(opsBar).toContain('/spokedu-master/library/${lesson.programId}');
-    expect(dashboard).toContain('removeTodayLesson');
-    expect(dashboard).toContain('getActiveTodayLessons(todayLessonByOwner, recentActivityOwnerId)');
-    expect(dashboard).not.toContain('state.getTodayLessons(recentActivityOwnerId)');
+    expect(dashboard).toContain('getSeoulSessionDay(session.startAt)');
+    expect(dashboard).toContain('operationalSessions');
+    expect(dashboard).not.toContain('todayLessonByOwner');
   });
 
   it('hides first-start guide when today lesson or drafts already exist', () => {

@@ -29,7 +29,7 @@ const vercelConfig = JSON.parse(readFileSync(
   'utf8',
 )) as { crons?: Array<{ path?: string; schedule?: string }> };
 const supabaseCronSql = readFileSync(
-  join(process.cwd(), 'supabase/migrations/20260630124000_spokedu_master_billing_supabase_cron.sql'),
+  join(process.cwd(), 'supabase/migrations/20260822191000_spokedu_master_billing_cron_observability.sql'),
   'utf8',
 );
 const envExample = readFileSync(
@@ -48,7 +48,7 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     }
   });
 
-  it('requires order claim, then billing key issue, first charge, vault store, then apply', () => {
+  it('requires order claim, then billing key issue, pending vault store, first charge, then apply', () => {
     const claim = issueRoute.indexOf('claimSpokeduMasterBillingOrder');
     const issue = issueRoute.lastIndexOf('billing = await issueSpokeduMasterBillingKey');
     const pay = issueRoute.lastIndexOf('payment = await paySpokeduMasterBillingKey');
@@ -57,8 +57,9 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     expect(claim).toBeGreaterThan(-1);
     expect(issue).toBeGreaterThan(claim);
     expect(pay).toBeGreaterThan(issue);
-    expect(store).toBeGreaterThan(pay);
-    expect(apply).toBeGreaterThan(store);
+    expect(store).toBeGreaterThan(issue);
+    expect(pay).toBeGreaterThan(store);
+    expect(apply).toBeGreaterThan(pay);
     expect(issueRoute).toContain('SPOKEDU_MASTER_PLAN_CONFIG[plan].amount');
     expect(issueRoute).toContain('body.amount !== amount');
   });
@@ -122,7 +123,7 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     }));
     expect(renewRoute).toContain('export async function POST');
     expect(renewRoute).not.toContain('export async function GET');
-    expect(renewRoute).toContain('return runRenewal(request)');
+    expect(renewRoute).toContain('return await runRenewal(request)');
   });
 
   it('connects Supabase Cron to the renew endpoint through Vault and pg_net', () => {
@@ -131,7 +132,7 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     expect(supabaseCronSql).toContain('CREATE OR REPLACE FUNCTION public.spokedu_master_run_billing_renewal_cron');
     expect(supabaseCronSql).toContain("WHERE name = 'spokedu_master_billing_renew_url'");
     expect(supabaseCronSql).toContain("WHERE name = 'spokedu_master_billing_cron_secret'");
-    expect(supabaseCronSql).toContain('PERFORM net.http_post');
+    expect(supabaseCronSql).toContain('SELECT net.http_post');
     expect(supabaseCronSql).not.toContain('PERFORM net.http_get');
     expect(supabaseCronSql).toContain("'Authorization', 'Bearer ' || trim(v_cron_secret)");
     expect(supabaseCronSql).toContain("'Content-Type', 'application/json'");
@@ -144,10 +145,11 @@ describe('SPOKEDU MASTER billing API contracts', () => {
 
   it('fails closed before the Supabase Cron HTTP request when Vault secrets are missing', () => {
     const missingSecretGuard = supabaseCronSql.indexOf('IF v_renew_url IS NULL');
-    const httpRequest = supabaseCronSql.indexOf('PERFORM net.http_post');
+    const httpRequest = supabaseCronSql.indexOf('SELECT net.http_post');
     expect(missingSecretGuard).toBeGreaterThan(-1);
     expect(httpRequest).toBeGreaterThan(missingSecretGuard);
-    expect(supabaseCronSql).toContain('RETURN;');
+    expect(supabaseCronSql).toContain("error_code = 'renew_url_missing'");
+    expect(supabaseCronSql).toContain("error_code = 'cron_secret_missing'");
   });
 
   it('returns only sanitized renewal counters', () => {

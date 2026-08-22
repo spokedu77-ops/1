@@ -18,7 +18,15 @@ const planConstraintFixSql = readFileSync(
   join(process.cwd(), 'supabase/migrations/20260705130000_fix_spokedu_master_subscription_plan_constraints.sql'),
   'utf8',
 );
-const sql = `${recurringSql}\n${vaultSql}\n${cronSql}\n${planConstraintFixSql}`;
+const phase1Sql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260822190000_spokedu_master_payment_integrity_phase1.sql'),
+  'utf8',
+);
+const observableCronSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260822191000_spokedu_master_billing_cron_observability.sql'),
+  'utf8',
+);
+const sql = `${recurringSql}\n${vaultSql}\n${cronSql}\n${planConstraintFixSql}\n${phase1Sql}\n${observableCronSql}`;
 
 describe('spokedu_master recurring billing migration contract', () => {
   it('defines recurring subscription state and Vault billing key reference', () => {
@@ -60,9 +68,11 @@ describe('spokedu_master recurring billing migration contract', () => {
     expect(sql).toContain('spm_payment_orders_cycle_unique');
   });
 
-  it('marks cancellation for period end instead of removing access immediately', () => {
-    expect(sql).toContain('cancel_at_period_end = true');
-    expect(sql).toContain('canceled_at = COALESCE(canceled_at, v_now)');
+  it('changes entitlement for a refund only when the current order and payment key both match', () => {
+    expect(phase1Sql).toContain('v_subscription.toss_order_id = p_order_id');
+    expect(phase1Sql).toContain('v_subscription.toss_payment_key = p_payment_key');
+    expect(phase1Sql).toContain("'historical_payment_cancelled'");
+    expect(phase1Sql).toContain("SET status = 'cancelled'");
   });
 
   it('revokes public execution and grants service_role only', () => {
@@ -85,6 +95,12 @@ describe('spokedu_master recurring billing migration contract', () => {
     expect(vaultSql).toContain('billing_key_secret_owner_mismatch');
   });
 
+  it('keeps a newly issued key pending until charged payment apply succeeds', () => {
+    expect(phase1Sql).toContain('pending_billing_key_secret_id');
+    expect(phase1Sql).toContain('v_subscription.pending_billing_key_secret_id IS DISTINCT FROM p_provider_billing_key_secret_id');
+    expect(phase1Sql).toContain('pending_billing_key_secret_id = NULL');
+  });
+
   it('removes plaintext billing key writes from the active apply RPC signature', () => {
     expect(vaultSql).toContain('DROP FUNCTION IF EXISTS public.spokedu_master_apply_payment');
     expect(vaultSql).toContain('p_provider_billing_key_secret_id uuid DEFAULT NULL');
@@ -94,19 +110,11 @@ describe('spokedu_master recurring billing migration contract', () => {
   });
 
   it('schedules hourly Supabase Cron renewal through Vault and pg_net', () => {
-    expect(cronSql).toContain('CREATE EXTENSION IF NOT EXISTS pg_cron');
-    expect(cronSql).toContain('CREATE EXTENSION IF NOT EXISTS pg_net');
-    expect(cronSql).toContain('CREATE OR REPLACE FUNCTION public.spokedu_master_run_billing_renewal_cron');
-    expect(cronSql).toContain("WHERE name = 'spokedu_master_billing_renew_url'");
-    expect(cronSql).toContain("WHERE name = 'spokedu_master_billing_cron_secret'");
-    expect(cronSql).toContain('PERFORM net.http_post');
-    expect(cronSql).not.toContain('PERFORM net.http_get');
-    expect(cronSql).toContain("'Authorization', 'Bearer ' || trim(v_cron_secret)");
-    expect(cronSql).toContain("'Content-Type', 'application/json'");
-    expect(cronSql).toContain("cron.unschedule('spokedu-master-billing-renew-hourly')");
-    expect(cronSql).toContain("'spokedu-master-billing-renew-hourly'");
-    expect(cronSql).toContain("'0 * * * *'");
-    expect(cronSql).toContain('FROM PUBLIC, anon, authenticated');
-    expect(cronSql).not.toContain('https://');
+    expect(observableCronSql).toContain('CREATE TABLE IF NOT EXISTS public.spokedu_master_billing_runs');
+    expect(observableCronSql).toContain('cron_http_transport_failed');
+    expect(observableCronSql).toContain('renew_url_missing');
+    expect(observableCronSql).toContain('cron_secret_missing');
+    expect(observableCronSql).toContain("'0 * * * *'");
+    expect(observableCronSql).not.toContain('https://');
   });
 });

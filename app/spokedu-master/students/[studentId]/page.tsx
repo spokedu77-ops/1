@@ -4,15 +4,15 @@ import Link from 'next/link';
 import { CalendarDays, ClipboardList, FileText, Star, Users } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
-import { RecordProgramPicker } from '../../components/record/RecordProgramPicker';
 import { toStudentProfile } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
-import type { ClassRecord } from '../../types';
-
-type StudentRecordEntry = {
-  record: ClassRecord;
-  student: ClassRecord['students'][number];
+type StudentSessionHistory = {
+  id: string; date: string; lessonTitle: string; classId: string; programId: string; programTitle: string;
+  memo: string; parentNoteSnapshot: string; nextPrep: string; recordType: 'quick'; present: number; absent: number;
+  focusCount: number; skillCount: number; kakaoSent: boolean;
+  students: Array<{ studentId: string; attendance: 'present' | 'absent'; focused: boolean; skills: string[]; memo: string }>;
 };
+type StudentRecordEntry = { record: StudentSessionHistory; student: StudentSessionHistory['students'][number] };
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
@@ -24,7 +24,7 @@ function getAttendanceLabel(attendance: StudentRecordEntry['student']['attendanc
   return '미확인';
 }
 
-function getStudentEntries(records: ClassRecord[], studentId: string): StudentRecordEntry[] {
+function getStudentEntries(records: StudentSessionHistory[], studentId: string): StudentRecordEntry[] {
   return records
     .flatMap((record) => {
       const student = record.students.find((item) => item.studentId === studentId);
@@ -57,8 +57,9 @@ export default function StudentDetailPage() {
     absent: session.attendance.filter((item) => item.status === 'absent').length,
     focusCount: 0, skillCount: 0, kakaoSent: false,
     students: session.attendance.map((item) => ({ studentId: item.studentId, attendance: item.status, focused: false, skills: [], memo: '' })),
-  })) as unknown as ClassRecord[], [operationalData.sessions]);
+  })) satisfies StudentSessionHistory[], [operationalData.sessions]);
   const student = students.find((item) => item.id === studentId) ?? null;
+  const classNames = operationalData.classes.filter((item) => item.studentIds.includes(studentId)).map((item) => item.name);
   const entries = student ? getStudentEntries(records, student.id) : [];
   const latest = entries[0] ?? null;
   const presentCount = entries.filter((entry) => entry.student.attendance === 'present').length;
@@ -103,7 +104,7 @@ export default function StudentDetailPage() {
       <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
         <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">학생 이력</p>
         <h1 className="mt-1 break-words text-[27px] font-black leading-tight text-[color:var(--spm-t)]">{student.name}</h1>
-        <p className="mt-2 text-[13px] font-bold text-slate-600">{[student.group, student.meta].filter(Boolean).join(' / ')}</p>
+        <p className="mt-2 text-[13px] font-bold text-slate-600">{[classNames.join(', '), student.meta].filter(Boolean).join(' / ')}</p>
         {entries.length > 0 ? (
           <p className="mt-2 text-[12px] font-semibold" style={{ color: 'var(--spm-grn)' }}>
             수업 증거 {evidenceCount}건 · 기록 {entries.length}건이 쌓여 있습니다.
@@ -116,7 +117,7 @@ export default function StudentDetailPage() {
           <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>1. 학생 기본 정보</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
             <Info label="이름" value={student.name} />
-            {student.group ? <Info label="반" value={student.group} /> : null}
+            {classNames.length ? <Info label="수업반" value={classNames.join(', ')} /> : null}
             {student.meta ? <Info label="메모" value={student.meta} /> : null}
           </div>
         </section>
@@ -124,7 +125,7 @@ export default function StudentDetailPage() {
         <section className="rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
           <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>2. 빠른 행동</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
-            <RecordProgramPicker label="수업 골라 기록" studentId={student.id} />
+            <Link href="/spokedu-master/activity" className="spm-btn-primary inline-flex h-10 items-center justify-center rounded-[9px] px-4 text-[13px] font-black">수업 캘린더 열기</Link>
             {latest ? (
               <Link href={`/spokedu-master/report?record=${latest.record.id}`} className="flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"><FileText size={15} />안내문 작성</Link>
             ) : (
@@ -220,7 +221,7 @@ export default function StudentDetailPage() {
               <p className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>아직 이 학생의 수업 기록이 없습니다.</p>
               <p className="mt-2 text-[12px] font-semibold leading-5">첫 수업 기록을 작성하면 참여 이력을 학생별로 확인할 수 있습니다.</p>
               <div className="mt-3">
-                <RecordProgramPicker label="수업 골라 기록" studentId={student.id} />
+                <Link href="/spokedu-master/activity" className="spm-btn-primary inline-flex h-10 items-center justify-center rounded-[9px] px-4 text-[13px] font-black">수업 캘린더 열기</Link>
               </div>
             </div>
           )}
@@ -262,7 +263,7 @@ export default function StudentDetailPage() {
               </Link>
             ) : (
               <div className="mt-3">
-                <RecordProgramPicker label="수업 골라 기록" studentId={student.id} />
+                <Link href="/spokedu-master/activity" className="spm-btn-primary inline-flex h-10 items-center justify-center rounded-[9px] px-4 text-[13px] font-black">수업 캘린더 열기</Link>
               </div>
             )}
           </div>

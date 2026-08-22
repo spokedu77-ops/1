@@ -7,7 +7,7 @@ function read(path: string) {
 }
 
 describe('SPOKEDU MASTER billing idempotency contracts', () => {
-  it('claims orders before charging and stores vault keys only after a successful charge', () => {
+  it('claims orders and stores a pending vault key before charging', () => {
     const source = read('app/api/spokedu-master/payment/billing/issue/route.ts');
     expect(source).toContain('billingCycleKey = `${billingMode}:${user.id}:${plan}`');
     expect(source).toContain('billingCycleKey = `${billingMode}:${user.id}:${plan}:${Date.now()}`');
@@ -20,7 +20,8 @@ describe('SPOKEDU MASTER billing idempotency contracts', () => {
     const store = source.lastIndexOf('billingKeySecretId = await storeSpokeduMasterBillingKey');
     expect(claim).toBeGreaterThan(-1);
     expect(pay).toBeGreaterThan(claim);
-    expect(store).toBeGreaterThan(pay);
+    expect(store).toBeGreaterThan(claim);
+    expect(pay).toBeGreaterThan(store);
   });
 
   it('reclaims stale processing and re-applies charged renewal orders without double charge', () => {

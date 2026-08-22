@@ -35,6 +35,7 @@ type BillingIssueBody = {
 type BillingIssueSubscriptionRow = SpokeduMasterSubscriptionRow & {
   current_period_end?: string | null;
   provider_billing_key_secret_id?: string | null;
+  pending_billing_key_secret_id?: string | null;
 };
 
 type ExistingCycleOrder = {
@@ -54,17 +55,10 @@ function normalizePaidPlan(plan: string | null | undefined): SpokeduMasterPaidPl
 }
 
 async function cleanupPendingBillingAttempt(input: {
-  service: ReturnType<typeof getServiceSupabase>;
   userId: string;
   secretId: string | null;
 }) {
   if (!input.secretId) return;
-  await input.service
-    .from('spokedu_master_subscriptions')
-    .update({ provider_billing_key_secret_id: null })
-    .eq('user_id', input.userId)
-    .eq('status', 'pending')
-    .eq('provider_billing_key_secret_id', input.secretId);
   await deleteSpokeduMasterBillingKey({ userId: input.userId, secretId: input.secretId });
 }
 
@@ -87,7 +81,7 @@ export async function POST(request: Request) {
   if (!isSpokeduMasterPaidPlan(requestedPlan)) {
     return fail(400, '직접 결제 가능한 상품이 아닙니다.');
   }
-  if (!body.authKey || !body.customerKey) {
+  if (!body.customerKey) {
     return fail(400, '자동결제 인증 정보가 필요합니다.');
   }
   const expectedCustomerKey = `spm_${user.id.replaceAll('-', '')}`;
@@ -110,7 +104,7 @@ export async function POST(request: Request) {
   const service = getServiceSupabase();
   const { data: subscription, error: subscriptionError } = await service
     .from('spokedu_master_subscriptions')
-    .select('plan,status,period_end,current_period_end,provider_billing_key_secret_id')
+    .select('plan,status,period_end,current_period_end,provider_billing_key_secret_id,pending_billing_key_secret_id')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -264,54 +258,52 @@ export async function POST(request: Request) {
     .maybeSingle();
   const claimedOrder = claimedOrderRow as ExistingCycleOrder | null;
 
+  // A process can die after Toss approval but before payment_key persistence.
+  // Recover by the immutable order id before asking for (or reusing) authKey.
+  let previouslyApprovedPayment: Awaited<ReturnType<typeof findSpokeduMasterPaymentByOrderId>> = null;
+  if (claimedOrder && !shouldReapplySpokeduMasterBillingOrder(claimedOrder)) {
+    try {
+      previouslyApprovedPayment = await findSpokeduMasterPaymentByOrderId({ orderId, amount });
+    } catch (error) {
+      await markSpokeduMasterBillingOrderFailed({
+        service,
+        orderId,
+        lastErrorCode: 'payment_recovery_lookup_failed',
+        recoverable: true,
+      });
+      await reportError(error, {
+        context: 'spokedu_master.billing.issue',
+        tags: { provider: 'tosspayments', stage: 'payment_recovery_lookup', plan, status: 502 },
+      });
+      return fail(502);
+    }
+    if (previouslyApprovedPayment) {
+      claimedOrder.payment_key = previouslyApprovedPayment.paymentKey;
+      await service
+        .from('spokedu_master_payment_orders')
+        .update({ payment_key: previouslyApprovedPayment.paymentKey })
+        .eq('order_id', orderId);
+    }
+  }
+
   // 이미 Toss 청구가 끝난 주문은 재청구하지 않고 apply만 재시도한다.
   if (shouldReapplySpokeduMasterBillingOrder(claimedOrder)) {
-    let billingKeySecretId = activeRow?.provider_billing_key_secret_id ?? null;
+    const billingKeySecretId = activeRow?.pending_billing_key_secret_id
+      ?? activeRow?.provider_billing_key_secret_id
+      ?? null;
     if (!billingKeySecretId) {
-      let billing;
-      try {
-        billing = await issueSpokeduMasterBillingKey({
-          authKey: body.authKey,
-          customerKey: body.customerKey,
-        });
-      } catch (error) {
-        await markSpokeduMasterBillingOrderFailed({
-          service,
-          orderId,
-          lastErrorCode: 'billing_key_issue_failed',
-          paymentKey: claimedOrder.payment_key,
-          recoverable: true,
-        });
-        await reportError(error, {
-          context: 'spokedu_master.billing.issue',
-          tags: { provider: 'tosspayments', stage: 'billing_key_issue_reapply', plan, status: 502 },
-        });
-        return fail(502);
-      }
-      if (!billing) {
-        await markSpokeduMasterBillingOrderFailed({
-          service,
-          orderId,
-          lastErrorCode: 'billing_key_issue_failed',
-          paymentKey: claimedOrder.payment_key,
-          recoverable: true,
-        });
-        return fail(400, '자동결제 수단을 등록하지 못했습니다.');
-      }
-      billingKeySecretId = await storeSpokeduMasterBillingKey({
-        userId: user.id,
-        billingKey: billing.billingKey,
+      await markSpokeduMasterBillingOrderFailed({
+        service,
+        orderId,
+        lastErrorCode: 'billing_key_missing_after_charge',
+        paymentKey: claimedOrder.payment_key,
+        recoverable: true,
       });
-      if (!billingKeySecretId) {
-        await markSpokeduMasterBillingOrderFailed({
-          service,
-          orderId,
-          lastErrorCode: 'billing_key_store_failed',
-          paymentKey: claimedOrder.payment_key,
-          recoverable: true,
-        });
-        return fail(503, '자동결제 설정 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-      }
+      return NextResponse.json({
+        error: '결제는 승인되었지만 자동결제 정보 복구가 필요합니다. 고객센터로 문의해 주세요.',
+        charged: true,
+        recoverable: true,
+      }, { status: 500 });
     }
 
     const applyResult = await applySpokeduMasterPayment({
@@ -348,6 +340,16 @@ export async function POST(request: Request) {
     });
   }
 
+  if (!body.authKey) {
+    await markSpokeduMasterBillingOrderFailed({
+      service,
+      orderId,
+      lastErrorCode: 'billing_auth_key_missing',
+      recoverable: true,
+    });
+    return fail(400, '자동결제 인증 정보가 필요합니다.');
+  }
+
   let billing;
   try {
     billing = await issueSpokeduMasterBillingKey({
@@ -375,9 +377,25 @@ export async function POST(request: Request) {
     return fail(400, '자동결제 수단을 등록하지 못했습니다.');
   }
 
+  // 새 키는 청구 전에 pending 슬롯에 저장한다. 업그레이드의 기존 정상 키는
+  // subscription apply가 성공해 새 키가 승격될 때까지 유지한다.
+  const billingKeySecretId = await storeSpokeduMasterBillingKey({
+    userId: user.id,
+    billingKey: billing.billingKey,
+  });
+  if (!billingKeySecretId) {
+    await markSpokeduMasterBillingOrderFailed({
+      service,
+      orderId,
+      lastErrorCode: 'billing_key_store_failed',
+      recoverable: true,
+    });
+    return fail(503, '자동결제 설정 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+
   let payment;
   try {
-    payment = await findSpokeduMasterPaymentByOrderId({ orderId, amount });
+    payment = previouslyApprovedPayment;
     if (!payment) {
       payment = await paySpokeduMasterBillingKey({
         billingKey: billing.billingKey,
@@ -396,6 +414,8 @@ export async function POST(request: Request) {
       lastErrorCode: 'initial_payment_exception',
       recoverable: true,
     });
+    // A timeout/transport exception can happen after Toss accepted the charge.
+    // Preserve the pending key so the next request can reconcile by orderId.
     await reportError(error, {
       context: 'spokedu_master.billing.issue',
       tags: {
@@ -415,6 +435,7 @@ export async function POST(request: Request) {
       orderId,
       lastErrorCode: 'initial_payment_failed',
     });
+    await cleanupPendingBillingAttempt({ userId: user.id, secretId: billingKeySecretId });
     return fail(400, '첫 결제가 승인되지 않았습니다.');
   }
 
@@ -423,22 +444,6 @@ export async function POST(request: Request) {
     .from('spokedu_master_payment_orders')
     .update({ payment_key: payment.paymentKey })
     .eq('order_id', orderId);
-
-  // Vault 저장은 청구 성공 이후 — 업그레이드 시 기존 키를 청구 전에 지우지 않는다.
-  const billingKeySecretId = await storeSpokeduMasterBillingKey({
-    userId: user.id,
-    billingKey: billing.billingKey,
-  });
-  if (!billingKeySecretId) {
-    await markSpokeduMasterBillingOrderFailed({
-      service,
-      orderId,
-      lastErrorCode: 'billing_key_store_failed',
-      paymentKey: payment.paymentKey,
-      recoverable: true,
-    });
-    return fail(503, '자동결제 설정 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-  }
 
   const applyResult = await applySpokeduMasterPayment({
     userId: user.id,
@@ -455,7 +460,7 @@ export async function POST(request: Request) {
   });
 
   if (!applyResult.ok) {
-    // 이미 청구·키 저장이 끝났으면 키를 지우지 않는다. webhook/재시도로 확정한다.
+    // 이미 청구·키 저장이 끝났으면 키를 지우지 않는다. payment_key로 apply만 재시도한다.
     await markSpokeduMasterBillingOrderFailed({
       service,
       orderId,
@@ -463,7 +468,6 @@ export async function POST(request: Request) {
       paymentKey: payment.paymentKey,
       recoverable: true,
     });
-    await cleanupPendingBillingAttempt({ service, userId: user.id, secretId: billingKeySecretId });
     await reportError(new Error(applyResult.code), {
       context: 'spokedu_master.billing.issue',
       tags: {

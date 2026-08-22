@@ -30,6 +30,8 @@ type OperationalDataContextValue = {
   updateSessionProgram: (sessionId: string, sessionProgramId: string, isCompleted: boolean) => Promise<void>;
   reorderSessionPrograms: (sessionId: string, sessionProgramIds: string[]) => Promise<void>;
   saveSessionAttendance: (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<void>;
+  addClassStudent: (classId: string, studentId: string) => Promise<void>;
+  removeClassStudent: (classId: string, studentId: string) => Promise<void>;
   status: OperationalDataStatus;
   students: MasterStudentDto[];
   sessions: MasterSessionDto[];
@@ -159,9 +161,20 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, attendance: attendance.map((entry) => ({ id: item.attendance.find((old) => old.studentId === entry.studentId)?.id ?? entry.studentId, ...entry })) } : item));
   }, []);
 
+  const addClassStudent = useCallback(async (classId: string, studentId: string) => {
+    await masterFetchJson(`/api/spokedu-master/classes/${classId}/students`, { method: 'POST', body: JSON.stringify({ studentId }) });
+    setClasses((current) => current.map((item) => item.id === classId && !item.studentIds.includes(studentId) ? { ...item, studentIds: [...item.studentIds, studentId] } : item));
+  }, []);
+
+  const removeClassStudent = useCallback(async (classId: string, studentId: string) => {
+    await masterFetchJson(`/api/spokedu-master/classes/${classId}/students/${studentId}`, { method: 'DELETE' });
+    setClasses((current) => current.map((item) => item.id === classId ? { ...item, studentIds: item.studentIds.filter((id) => id !== studentId) } : item));
+  }, []);
+
   const value = useMemo<OperationalDataContextValue>(
     () => ({
       classes,
+      addClassStudent,
       addSessionProgram,
       createStudent,
       deleteStudent,
@@ -172,13 +185,14 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       saveSession,
       saveSessionAttendance,
       removeSessionProgram,
+      removeClassStudent,
       reorderSessionPrograms,
       sessions,
       status,
       students,
       updateSessionProgram,
     }),
-    [addSessionProgram, classes, createStudent, deleteStudent, error, ownerId, reload, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, classes, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

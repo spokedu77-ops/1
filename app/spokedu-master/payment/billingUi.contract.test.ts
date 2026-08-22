@@ -63,11 +63,11 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(issueRoute).toContain('body.amount !== undefined && body.amount !== amount');
   });
 
-  it('cleans pending billing attempts when first payment activation fails', () => {
+  it('cleans pending keys only before a failed charge and preserves them after charge success', () => {
     expect(issueRoute).toContain('cleanupPendingBillingAttempt');
-    expect(issueRoute).toContain(".eq('status', 'pending')");
-    expect(issueRoute).toContain(".eq('provider_billing_key_secret_id', input.secretId)");
-    expect(issueRoute).toContain('await cleanupPendingBillingAttempt({ service, userId: user.id, secretId: billingKeySecretId })');
+    expect(issueRoute).toContain('await cleanupPendingBillingAttempt({ userId: user.id, secretId: billingKeySecretId })');
+    expect(issueRoute).toContain('이미 청구·키 저장이 끝났으면 키를 지우지 않는다');
+    expect(issueRoute).not.toContain('cleanupPendingBillingAttempt({ service');
   });
 
   it('keeps failure and cancel paths non-entitling, readable, and retryable', () => {

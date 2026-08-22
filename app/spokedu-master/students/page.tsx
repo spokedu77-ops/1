@@ -3,10 +3,9 @@
 import Link from 'next/link';
 import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { StudentFieldSelect } from '../components/ui/StudentFieldSelect';
-import { buildStudentAgeOptions, collectStudentGroupOptions } from '../lib/studentAddPresets';
+import { buildStudentAgeOptions } from '../lib/studentAddPresets';
 import {
   canRunLegacyOperationalImport,
   checkLegacyOperationalImportComplete,
@@ -27,23 +26,34 @@ import {
 } from '../lib/legacyOperationalImport';
 import { toStudentProfile } from '../lib/operationalDataAdapter';
 import { getSafeMasterErrorMessage } from '../lib/clientErrors';
-import { getStudentRecordFacts } from '../lib/studentRecordFacts';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
-import type { ClassRecord } from '../types';
-
-type StudentRecordEntry = {
-  record: ClassRecord;
-  student: ClassRecord['students'][number];
+type StudentSessionHistory = {
+  id: string; date: string; lessonTitle: string; classId: string; programId: string; programTitle: string;
+  memo: string; parentNoteSnapshot: string; nextPrep: string; recordType: 'quick'; present: number; absent: number;
+  focusCount: number; skillCount: number; kakaoSent: boolean;
+  students: Array<{ studentId: string; attendance: 'present' | 'absent'; focused: boolean; skills: string[]; memo: string }>;
 };
+type StudentRecordEntry = { record: StudentSessionHistory; student: StudentSessionHistory['students'][number] };
 
-function getStudentRecordEntries(records: ClassRecord[], studentId: string): StudentRecordEntry[] {
+function getStudentRecordEntries(records: StudentSessionHistory[], studentId: string): StudentRecordEntry[] {
   return records
     .flatMap((record) => {
       const student = record.students.find((item) => item.studentId === studentId);
       return student ? [{ record, student }] : [];
     })
     .sort((a, b) => new Date(b.record.date).getTime() - new Date(a.record.date).getTime());
+}
+
+function getStudentSessionFacts(records: StudentSessionHistory[], studentId: string) {
+  const entries = getStudentRecordEntries(records, studentId);
+  return {
+    recordCount: entries.length,
+    presentCount: entries.filter((entry) => entry.student.attendance === 'present').length,
+    absentCount: entries.filter((entry) => entry.student.attendance === 'absent').length,
+    focusedCount: 0,
+    skillTags: [] as string[],
+  };
 }
 
 function formatStudentRecordDate(date: string): string {
@@ -73,10 +83,11 @@ export default function StudentsPage() {
     absent: session.attendance.filter((item) => item.status === 'absent').length,
     focusCount: 0, skillCount: 0, kakaoSent: false,
     students: session.attendance.map((item) => ({ studentId: item.studentId, attendance: item.status, focused: false, skills: [], memo: '' })),
-  })) as unknown as ClassRecord[];
+  })) satisfies StudentSessionHistory[];
   const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
   const operationalReady = operationalData.status === 'ready';
   const operationalError = operationalData.status === 'error';
+  const classNamesForStudent = (studentId: string) => operationalData.classes.filter((item) => item.studentIds.includes(studentId)).map((item) => item.name);
   const [selectedId, setSelectedId] = useState<string | null>(students[0]?.id ?? null);
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -107,10 +118,6 @@ export default function StudentsPage() {
   const [legacyDeleteMessage, setLegacyDeleteMessage] = useState<string | null>(null);
   const [legacyDeleteError, setLegacyDeleteError] = useState<string | null>(null);
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
-  const groupOptions = useMemo(
-    () => collectStudentGroupOptions(students.map((student) => student.group)),
-    [students],
-  );
   const ageOptions = useMemo(
     () => buildStudentAgeOptions(students.map((student) => (typeof student.meta === 'string' ? student.meta : null))),
     [students],
@@ -149,11 +156,12 @@ export default function StudentsPage() {
       .createStudent({
         legacyId,
         name: newName.trim(),
-        group: newGroup.trim() || '미분류',
+        group: null,
         meta: newMeta,
         guidanceNote: newGuidanceNote.trim() || null,
       })
-      .then((student) => {
+      .then(async (student) => {
+        if (newGroup) await operationalData.addClassStudent(newGroup, student.id);
         setSelectedId(student.id);
         setNewName('');
         setNewGroup('');
@@ -188,7 +196,7 @@ export default function StudentsPage() {
   };
   const openEditStudent = (student: { id: string; name: string; group: string; meta: string | Record<string, unknown>; guidanceNote?: string }) => {
     setEditName(student.name);
-    setEditGroup(student.group);
+    setEditGroup(operationalData.classes.find((item) => item.studentIds.includes(student.id))?.id ?? '');
     setEditMeta(typeof student.meta === 'string' ? student.meta : '');
     setEditGuidanceNote(student.guidanceNote ?? '');
     setStudentEditError(null);
@@ -201,11 +209,14 @@ export default function StudentsPage() {
     void operationalData
       .updateStudent(selected.id, {
         name: editName.trim(),
-        group: editGroup.trim() || '미분류',
+        group: selected.group || null,
         meta: editMeta,
         guidanceNote: editGuidanceNote.trim() || null,
       })
-      .then(() => {
+      .then(async () => {
+        const previousClassId = operationalData.classes.find((item) => item.studentIds.includes(selected.id))?.id ?? '';
+        if (previousClassId && previousClassId !== editGroup) await operationalData.removeClassStudent(previousClassId, selected.id);
+        if (editGroup && previousClassId !== editGroup) await operationalData.addClassStudent(editGroup, selected.id);
         setEditOpen(false);
       })
       .catch(() => {
@@ -215,7 +226,7 @@ export default function StudentsPage() {
         setStudentEditing(false);
       });
   };
-  const selectedFacts = selected ? getStudentRecordFacts(records, selected.id) : null;
+  const selectedFacts = selected ? getStudentSessionFacts(records, selected.id) : null;
   const selectedRecords = selected ? getStudentRecordEntries(records, selected.id) : [];
   const selectedLatestRecord = selectedRecords[0] ?? null;
   const selectedLatestMemoRecord = selectedRecords.find(({ student }) => student.memo?.trim()) ?? null;
@@ -647,7 +658,7 @@ export default function StudentsPage() {
                       <strong className="truncate text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
                       <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-600">누적 {studentRecordCount}건</span>
                     </span>
-                    <span className="mt-1 block truncate text-[11px]" style={{ color: 'var(--spm-t3)' }}>{[student.group, student.meta].filter(Boolean).join(' / ') || '학년/수준 미입력'}</span>
+                    <span className="mt-1 block truncate text-[11px]" style={{ color: 'var(--spm-t3)' }}>{[classNamesForStudent(student.id).join(', '), student.meta].filter(Boolean).join(' / ') || '학년/수준 미입력'}</span>
                   </span>
                   <ChevronRight size={16} color="var(--spm-t3)" className="shrink-0" />
                 </button>
@@ -667,7 +678,7 @@ export default function StudentsPage() {
             <div className="p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">{selected.group}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">{classNamesForStudent(selected.id).join(', ') || '수업반 미지정'}</p>
                   <h2 className="mt-1.5 text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{selected.name}</h2>
                   {selected.meta ? <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{selected.meta}</p> : null}
                 </div>
@@ -677,7 +688,7 @@ export default function StudentsPage() {
               </div>
 
               <div className="mt-5">
-                <RecordProgramPicker label="수업 결과 기록" studentId={selected.id} />
+                <Link href="/spokedu-master/activity" className="spm-btn-primary flex h-10 items-center justify-center rounded-[9px] text-[13px] font-black">수업 캘린더 열기</Link>
               </div>
               <Link href={`/spokedu-master/students/${selected.id}`} className="mt-3 inline-block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>학생 기록 보기</Link>
               <button type="button" onClick={() => openEditStudent(selected)} className="mt-3 ml-3 inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>
@@ -876,18 +887,11 @@ export default function StudentsPage() {
               style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
             />
           </label>
-          <StudentFieldSelect
-            key={`group-${addOpen ? 'open' : 'closed'}`}
-            label="반 / 그룹"
-            value={newGroup}
-            onChange={setNewGroup}
-            options={groupOptions}
-            emptyLabel={groupOptions.length ? '반 선택' : '등록된 반이 없습니다'}
-            customOptionLabel={groupOptions.length ? '새 반 직접 입력' : '반 이름 입력'}
-            placeholder="예: 초등 A반 / 유아반"
-            testId="spm-student-add-group"
-            name="studentGroup"
-          />
+          <label className="block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>수업반
+            <select value={newGroup} onChange={(event) => setNewGroup(event.target.value)} data-testid="spm-student-add-group" className="mt-2 h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
+              <option value="">수업반 미지정</option>{operationalData.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
           <StudentFieldSelect
             key={`meta-${addOpen ? 'open' : 'closed'}`}
             label="나이 / 학년"
@@ -937,17 +941,11 @@ export default function StudentsPage() {
               style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
             />
           </label>
-          <StudentFieldSelect
-            key={`edit-group-${editOpen ? 'open' : 'closed'}`}
-            label="반 / 그룹"
-            value={editGroup}
-            onChange={setEditGroup}
-            options={groupOptions}
-            emptyLabel={groupOptions.length ? '반 선택' : '등록된 반이 없습니다'}
-            customOptionLabel={groupOptions.length ? '새 반 직접 입력' : '반 이름 입력'}
-            placeholder="예: 초등 A반 / 유아반"
-            name="editStudentGroup"
-          />
+          <label className="block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>수업반
+            <select value={editGroup} onChange={(event) => setEditGroup(event.target.value)} className="mt-2 h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
+              <option value="">수업반 미지정</option>{operationalData.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
           <StudentFieldSelect
             key={`edit-meta-${editOpen ? 'open' : 'closed'}`}
             label="나이 / 학년"

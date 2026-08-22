@@ -18,7 +18,6 @@ import {
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
-import { getActiveTodayLessons } from '../lib/todayLesson';
 import {
   LESSON_TAG_PREFIX,
   getLessonTheme,
@@ -250,13 +249,6 @@ export default function LibraryView() {
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
-  const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
-  const removeTodayLesson = useMasterStore((state) => state.removeTodayLesson);
-  const todayLessonByOwner = useMasterStore((state) => state.todayLessonByOwner);
-  const todayLessons = useMemo(
-    () => getActiveTodayLessons(todayLessonByOwner, ownerId),
-    [ownerId, todayLessonByOwner],
-  );
   const { sessions } = useOperationalData();
   const isPremium = useIsPremium();
   const favoriteIds = useMemo(
@@ -809,14 +801,6 @@ export default function LibraryView() {
           isPremium={isPremium}
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
           onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
-          isTodayLesson={todayLessons.some((assignment) => assignment.programId === selected.program.id)}
-          onToggleTodayLesson={ownerId ? () => {
-            if (todayLessons.some((assignment) => assignment.programId === selected.program.id)) {
-              removeTodayLesson(ownerId, selected.program.id);
-              return;
-            }
-            setTodayLesson(ownerId, { id: selected.program.id, title: selected.program.title });
-          } : undefined}
           sourceLibraryView={view}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({

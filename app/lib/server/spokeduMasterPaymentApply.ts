@@ -173,6 +173,7 @@ export async function applySpokeduMasterPayment(
       periodEnd: result.periodEnd ?? null,
       nextBillingAt: result.nextBillingAt ?? null,
       cancelled: result.cancelled,
+      reason: result.reason,
     };
   }
 

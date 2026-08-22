@@ -166,7 +166,12 @@ function SuccessContent() {
         const response = await fetch('/api/spokedu-master/payment/billing/issue', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ planId: plan, authKey, customerKey }),
+          body: JSON.stringify({
+            planId: plan,
+            authKey,
+            customerKey,
+            amount: MASTER_PRODUCT_CATALOG[plan].serverAmount,
+          }),
         });
         const json = await response.json().catch(() => null) as BillingIssueResponse | null;
 

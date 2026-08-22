@@ -107,7 +107,9 @@ function installMockSupabase(db: MockDb) {
             };
           }
 
-          const match = findSubscriptionByPaymentFilter(db, orFilter);
+          const match = filters.user_id
+            ? db.subscriptions.find((row) => row.user_id === filters.user_id)
+            : findSubscriptionByPaymentFilter(db, orFilter);
           return { data: match ?? null, error: null };
         },
         async insert(payload: Record<string, unknown>) {
@@ -191,17 +193,21 @@ function applyPaymentRpc(db: MockDb, args: Record<string, unknown>) {
     const subscription = db.subscriptions.find((row) => row.toss_order_id === orderId && row.toss_payment_key === paymentKey);
     if (subscription) {
       db.calls.subscriptionUpdate += 1;
-      subscription.cancel_at_period_end = true;
+      subscription.status = 'cancelled';
+      subscription.period_end = 'now';
+      subscription.current_period_end = 'now';
+      subscription.next_billing_at = null;
+      subscription.cancel_at_period_end = false;
       subscription.canceled_at = 'now';
     }
-    return { status: 'processed', cancelled: true };
+    return { status: 'processed', cancelled: Boolean(subscription), reason: subscription ? null : 'historical_payment_cancelled' };
   }
   const existing = db.subscriptions.find((row) => row.toss_order_id === orderId && row.toss_payment_key === paymentKey);
   if (existing && existing.status === 'active') {
     return { status: 'processed', alreadyApplied: true, periodEnd: existing.period_end };
   }
   db.calls.subscriptionUpsert += 1;
-  db.subscriptions.push({
+  const nextSubscription = {
     user_id: order.user_id,
     plan: order.plan,
     status: 'active',
@@ -210,7 +216,18 @@ function applyPaymentRpc(db: MockDb, args: Record<string, unknown>) {
     toss_order_id: orderId,
     period_start: args.p_period_start,
     period_end: args.p_period_end,
-  });
+    current_period_start: args.p_period_start,
+    current_period_end: args.p_period_end,
+    next_billing_at: args.p_next_billing_at,
+    current_amount: order.amount,
+    cancel_at_period_end: false,
+    provider_customer_key: args.p_provider_customer_key,
+    provider_billing_key_secret_id: args.p_provider_billing_key_secret_id,
+    pending_billing_key_secret_id: null,
+  };
+  const existingUserIndex = db.subscriptions.findIndex((row) => row.user_id === order.user_id);
+  if (existingUserIndex >= 0) db.subscriptions[existingUserIndex] = { ...db.subscriptions[existingUserIndex], ...nextSubscription };
+  else db.subscriptions.push(nextSubscription);
   db.calls.orderUpdate += 1;
   db.orders.set(orderId, { ...order, status: 'active', payment_key: paymentKey });
   return { status: 'processed', alreadyApplied: false, periodEnd: args.p_period_end };
@@ -307,6 +324,100 @@ describe('SPOKEDU MASTER payment webhook', () => {
       payment_key: PAYMENT_KEY,
       order_id: ORDER_ID,
       status: 'processed',
+    });
+  });
+
+  it('activates a new Lite payment with the same requested, order, and applied amount', async () => {
+    const liteOrderId = 'spm-lite-initial-new-payment';
+    const litePaymentKey = 'payment-key-lite-new';
+    db.orders.clear();
+    db.orders.set(liteOrderId, {
+      order_id: liteOrderId,
+      user_id: USER_ID,
+      plan: 'lite',
+      amount: 9900,
+      status: 'pending',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: litePaymentKey,
+      orderId: liteOrderId,
+      totalAmount: 9900,
+      balanceAmount: 9900,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: litePaymentKey, orderId: liteOrderId, status: 'DONE' },
+    }, 'lite-new-transmission'));
+
+    expect(response.status).toBe(200);
+    expect(db.orders.get(liteOrderId)).toMatchObject({ amount: 9900, status: 'active' });
+    expect(db.subscriptions[0]).toMatchObject({
+      plan: 'lite',
+      status: 'active',
+      current_amount: 9900,
+      toss_order_id: liteOrderId,
+      toss_payment_key: litePaymentKey,
+    });
+  });
+
+  it('promotes a pending Billing Key when webhook recovery applies the charged order first', async () => {
+    const pendingSecretId = '22222222-2222-4222-8222-222222222222';
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'lite',
+      status: 'pending',
+      period_end: null,
+      pending_billing_key_secret_id: pendingSecretId,
+      provider_billing_key_secret_id: null,
+    });
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: PAYMENT_KEY, orderId: ORDER_ID, status: 'DONE' },
+    }, 'webhook-apply-recovery'));
+
+    expect(response.status).toBe(200);
+    expect(db.subscriptions).toHaveLength(1);
+    expect(db.subscriptions[0]).toMatchObject({
+      status: 'active',
+      plan: 'premium',
+      provider_customer_key: `spm_${USER_ID.replaceAll('-', '')}`,
+      provider_billing_key_secret_id: pendingSecretId,
+      pending_billing_key_secret_id: null,
+    });
+  });
+
+  it('starts a fresh Premium month at 28,900 won when upgrading an active Lite subscription', async () => {
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'lite',
+      status: 'active',
+      period_start: '2026-06-01T00:00:00.000Z',
+      period_end: '2026-07-01T00:00:00.000Z',
+      current_period_end: '2026-07-01T00:00:00.000Z',
+      current_amount: 9900,
+      toss_order_id: 'spm-lite-initial-old',
+      toss_payment_key: 'payment-lite-old',
+      cancel_at_period_end: false,
+    });
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: PAYMENT_KEY, orderId: ORDER_ID, status: 'DONE' },
+    }, 'premium-upgrade-transmission'));
+
+    expect(response.status).toBe(200);
+    expect(db.orders.get(ORDER_ID)).toMatchObject({ amount: 28900, status: 'active' });
+    expect(db.subscriptions).toHaveLength(1);
+    expect(db.subscriptions[0]).toMatchObject({
+      plan: 'premium',
+      status: 'active',
+      current_amount: 28900,
+      period_start: '2026-06-21T03:00:00.000Z',
+      period_end: '2026-07-21T03:00:00.000Z',
+      toss_order_id: ORDER_ID,
+      toss_payment_key: PAYMENT_KEY,
     });
   });
 
@@ -438,8 +549,62 @@ describe('SPOKEDU MASTER payment webhook', () => {
       cancelled: true,
     });
     expect(db.calls.subscriptionUpdate).toBe(1);
-    expect(db.subscriptions[0].status).toBe('active');
-    expect(db.subscriptions[0].cancel_at_period_end).toBe(true);
+    expect(db.subscriptions[0].status).toBe('cancelled');
+    expect(db.subscriptions[0].cancel_at_period_end).toBe(false);
+  });
+
+  it('keeps the current Premium period unchanged when an older Lite payment is fully cancelled', async () => {
+    const liteOrderId = 'spm-lite-initial-older-payment';
+    const litePaymentKey = 'payment-key-lite-old';
+    db.orders.set(liteOrderId, {
+      order_id: liteOrderId,
+      user_id: USER_ID,
+      plan: 'lite',
+      amount: 9900,
+      status: 'active',
+      payment_key: litePaymentKey,
+    });
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'premium',
+      status: 'active',
+      period_end: '2026-08-21T03:00:00.000Z',
+      current_period_end: '2026-08-21T03:00:00.000Z',
+      cancel_at_period_end: false,
+      toss_payment_key: PAYMENT_KEY,
+      toss_order_id: ORDER_ID,
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: litePaymentKey,
+      orderId: liteOrderId,
+      status: 'CANCELED',
+      totalAmount: 9900,
+      balanceAmount: 0,
+      lastTransactionKey: 'cancel-old-lite',
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'CANCEL_STATUS_CHANGED',
+      data: { paymentKey: litePaymentKey, orderId: liteOrderId },
+    }, 'cancel-old-lite-transmission'));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      received: true,
+      status: 'processed',
+      cancelled: false,
+      reason: 'historical_payment_cancelled',
+    });
+    expect(db.orders.get(liteOrderId)?.status).toBe('cancelled');
+    expect(db.subscriptions[0]).toMatchObject({
+      plan: 'premium',
+      status: 'active',
+      period_end: '2026-08-21T03:00:00.000Z',
+      current_period_end: '2026-08-21T03:00:00.000Z',
+      cancel_at_period_end: false,
+      toss_payment_key: PAYMENT_KEY,
+      toss_order_id: ORDER_ID,
+    });
   });
 
   it('keeps access for a partial cancel until policy is decided', async () => {

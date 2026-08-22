@@ -96,15 +96,6 @@ export async function POST(request: Request) {
     return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
   }
 
-  if (input.group) {
-    let { data: classRow } = await supabase.from('spokedu_master_classes').select('id').eq('owner_id', access.userId).eq('name', input.group).is('deleted_at', null).maybeSingle();
-    if (!classRow) ({ data: classRow } = await supabase.from('spokedu_master_classes').insert({ owner_id: access.userId, name: input.group }).select('id').single());
-    if (classRow) await supabase.from('spokedu_master_class_students').upsert(
-      { owner_id: access.userId, class_id: classRow.id, student_id: data.id },
-      { onConflict: 'class_id,student_id' },
-    );
-  }
-
   return privateNoStoreJson(
     { data: toStudentDto(data as MasterStudentRow), duplicate: false },
     { status: 201 },

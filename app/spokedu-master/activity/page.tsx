@@ -10,12 +10,8 @@ import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
+import { seoulDateTimeInputToIso, toSeoulDateTimeInput } from '../lib/sessionDateTime';
 import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
-
-function toLocalInput(date: Date) {
-  const offset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
-}
 
 function statusLabel(status: MasterSessionStatus) {
   return status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
@@ -39,11 +35,12 @@ function SessionSheet({
   onClose: () => void;
 }) {
   const data = useOperationalData();
+  const [activeSession, setActiveSession] = useState(session);
   const libraryPrograms = useMasterStore((state) => state.programs);
   const initialStart = session ? new Date(session.startAt) : new Date(initialDate.setHours(10, 0, 0, 0));
   const [classId, setClassId] = useState(session?.classId ?? data.classes[0]?.id ?? '');
-  const [startAt, setStartAt] = useState(toLocalInput(initialStart));
-  const [endAt, setEndAt] = useState(toLocalInput(session ? new Date(session.endAt) : addMinutes(initialStart, 60)));
+  const [startAt, setStartAt] = useState(toSeoulDateTimeInput(initialStart));
+  const [endAt, setEndAt] = useState(toSeoulDateTimeInput(session ? new Date(session.endAt) : addMinutes(initialStart, 60)));
   const [status, setStatus] = useState<MasterSessionStatus>(session?.status ?? 'scheduled');
   const [memo, setMemo] = useState(session?.memo ?? '');
   const [programs, setPrograms] = useState<DraftProgram[]>(
@@ -55,6 +52,7 @@ function SessionSheet({
   const [attendance, setAttendance] = useState<Record<string, 'present' | 'absent'>>(
     Object.fromEntries(session?.attendance.map((item) => [item.studentId, item.status]) ?? []),
   );
+  const [attendanceDirty, setAttendanceDirty] = useState(false);
   const [programId, setProgramId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,24 +65,53 @@ function SessionSheet({
     const program = libraryPrograms.find((item) => item.id === programId);
     const numericId = Number(program?.id);
     if (!program || !Number.isInteger(numericId)) return;
-    if (!session || status !== 'scheduled') return;
+    if (!activeSession || status !== 'scheduled') return;
     setSaving(true);
     try {
-      const added = await data.addSessionProgram(session.id, numericId, program.title);
+      const added = await data.addSessionProgram(activeSession.id, numericId, program.title);
       setPrograms((current) => [...current, added]);
       setProgramId('');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '프로그램을 추가하지 못했습니다.');
     } finally { setSaving(false); }
   };
 
   const moveProgram = async (index: number, offset: number) => {
     const target = index + offset;
     if (target < 0 || target >= programs.length) return;
-    if (!session || programs.some((item) => !item.id)) return;
+    if (!activeSession || programs.some((item) => !item.id)) return;
     const next = [...programs];
     [next[index], next[target]] = [next[target]!, next[index]!];
     const ordered = next.map((item, sortOrder) => ({ ...item, sortOrder }));
-    setPrograms(ordered);
-    await data.reorderSessionPrograms(session.id, ordered.map((item) => item.id!));
+    try {
+      await data.reorderSessionPrograms(activeSession.id, ordered.map((item) => item.id!));
+      setPrograms(ordered);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '프로그램 순서를 저장하지 못했습니다.');
+    }
+  };
+
+  const toggleProgram = async (program: DraftProgram) => {
+    if (!activeSession || !program.id || status === 'cancelled') return;
+    setError(null);
+    try {
+      const isCompleted = !program.isCompleted;
+      await data.updateSessionProgram(activeSession.id, program.id, isCompleted);
+      setPrograms((current) => current.map((item) => item.id === program.id ? { ...item, isCompleted } : item));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '프로그램 진행 상태를 저장하지 못했습니다.');
+    }
+  };
+
+  const removeProgram = async (program: DraftProgram) => {
+    if (!activeSession || !program.id || status !== 'scheduled') return;
+    setError(null);
+    try {
+      await data.removeSessionProgram(activeSession.id, program.id);
+      setPrograms((current) => current.filter((item) => item.id !== program.id).map((item, sortOrder) => ({ ...item, sortOrder })));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '프로그램을 삭제하지 못했습니다.');
+    }
   };
 
   const persist = async (nextStatus = status) => {
@@ -93,13 +120,23 @@ function SessionSheet({
     try {
       const saved = await data.saveSession({
         classId,
-        startAt: new Date(startAt).toISOString(),
-        endAt: new Date(endAt).toISOString(),
+        startAt: seoulDateTimeInputToIso(startAt),
+        endAt: seoulDateTimeInputToIso(endAt),
         status: nextStatus,
         memo: memo.trim() || null,
-      }, session?.id);
-      if (nextStatus !== 'cancelled') {
-        await data.saveSessionAttendance(saved.id, Object.entries(attendance).map(([studentId, value]) => ({ studentId, status: value })));
+      }, activeSession?.id);
+      const wasNew = !activeSession;
+      setActiveSession(saved);
+      if (nextStatus !== 'cancelled' && attendanceDirty) {
+        await data.saveSessionAttendance(saved.id, Object.entries(attendance)
+          .filter(([studentId]) => selectedClass?.studentIds.includes(studentId))
+          .map(([studentId, value]) => ({ studentId, status: value })));
+        setAttendanceDirty(false);
+      }
+      if (wasNew) {
+        setPrograms(saved.programs);
+        setError(null);
+        return;
       }
       onClose();
     } catch (caught) {
@@ -110,11 +147,11 @@ function SessionSheet({
   };
 
   return (
-    <BottomSheet open title={session ? '수업 상세' : '수업 추가'} onClose={onClose}>
+    <BottomSheet open title={activeSession ? '수업 상세' : '수업 추가'} onClose={onClose}>
       <div className="space-y-5 pb-4">
         <section className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-black text-slate-600">수업반
-            <select value={classId} onChange={(event) => { setClassId(event.target.value); setAttendance({}); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold">
+            <select value={classId} disabled={Boolean(activeSession) && status !== 'scheduled'} onChange={(event) => { setClassId(event.target.value); setAttendance({}); setAttendanceDirty(true); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold disabled:bg-slate-50">
               {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
           </label>
@@ -124,10 +161,10 @@ function SessionSheet({
             </select>
           </label>
           <label className="text-xs font-black text-slate-600">시작
-            <input type="datetime-local" value={startAt} onChange={(event) => setStartAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />
+            <input type="datetime-local" disabled={Boolean(activeSession) && status !== 'scheduled'} value={startAt} onChange={(event) => setStartAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" />
           </label>
           <label className="text-xs font-black text-slate-600">종료
-            <input type="datetime-local" value={endAt} onChange={(event) => setEndAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />
+            <input type="datetime-local" disabled={Boolean(activeSession) && status !== 'scheduled'} value={endAt} onChange={(event) => setEndAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" />
           </label>
         </section>
 
@@ -139,7 +176,7 @@ function SessionSheet({
                 <span className="text-sm font-bold text-slate-700">{student.name}</span>
                 <div className="flex gap-1">
                   {(['present', 'absent'] as const).map((value) => (
-                    <button key={value} type="button" onClick={() => setAttendance((current) => ({ ...current, [student.id]: value }))} className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${attendance[student.id] === value ? (value === 'present' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white') : 'bg-slate-100 text-slate-500'}`}>{value === 'present' ? '출석' : '결석'}</button>
+                    <button key={value} type="button" disabled={status === 'cancelled'} onClick={() => { setAttendance((current) => ({ ...current, [student.id]: value })); setAttendanceDirty(true); }} className={`rounded-lg px-2.5 py-1.5 text-xs font-black disabled:opacity-40 ${attendance[student.id] === value ? (value === 'present' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white') : 'bg-slate-100 text-slate-500'}`}>{value === 'present' ? '출석' : '결석'}</button>
                   ))}
                 </div>
               </div>
@@ -153,27 +190,27 @@ function SessionSheet({
           <div className="mt-2 space-y-2">
             {programs.map((program, index) => (
               <div key={program.programId} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
-                <button type="button" disabled={!session || status === 'cancelled'} onClick={() => { if (!session || !program.id) return; const next = !program.isCompleted; setPrograms((current) => current.map((item) => item.id === program.id ? { ...item, isCompleted: next } : item)); void data.updateSessionProgram(session.id, program.id, next); }} className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label="프로그램 진행 여부"><Check size={16} /></button>
+                <button type="button" disabled={!activeSession || status === 'cancelled'} onClick={() => void toggleProgram(program)} className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label="프로그램 진행 여부"><Check size={16} /></button>
                 <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{program.programTitle ?? `프로그램 ${program.programId}`}</span>
                 <button type="button" onClick={() => moveProgram(index, -1)} disabled={index === 0} className="p-1 text-slate-400 disabled:opacity-20"><ChevronUp size={16} /></button>
                 <button type="button" onClick={() => moveProgram(index, 1)} disabled={index === programs.length - 1} className="p-1 text-slate-400 disabled:opacity-20"><ChevronDown size={16} /></button>
-                <button type="button" disabled={!session || status !== 'scheduled'} onClick={() => { if (!session || !program.id) return; setPrograms((current) => current.filter((item) => item.id !== program.id).map((item, sortOrder) => ({ ...item, sortOrder }))); void data.removeSessionProgram(session.id, program.id); }} className="p-1 text-rose-500 disabled:opacity-30">×</button>
+                <button type="button" disabled={!activeSession || status !== 'scheduled'} onClick={() => void removeProgram(program)} className="p-1 text-rose-500 disabled:opacity-30">×</button>
               </div>
             ))}
             {!programs.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">프로그램 미지정 — 이 상태로도 수업을 저장할 수 있습니다.</p> : null}
           </div>
           <div className="mt-2 flex gap-2">
             <select value={programId} onChange={(event) => setProgramId(event.target.value)} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"><option value="">프로그램 선택</option>{availablePrograms.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select>
-            <button type="button" onClick={() => void addProgram()} disabled={!programId || !session || status !== 'scheduled' || saving} className="h-10 rounded-xl bg-slate-800 px-3 text-xs font-black text-white disabled:opacity-40">+ 프로그램 추가</button>
+            <button type="button" onClick={() => void addProgram()} disabled={!programId || !activeSession || status !== 'scheduled' || saving} className="h-10 rounded-xl bg-slate-800 px-3 text-xs font-black text-white disabled:opacity-40">+ 프로그램 추가</button>
           </div>
         </section>
 
         <label className="block text-sm font-black text-slate-800">수업 메모
-          <textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none" />
+          <textarea value={memo} disabled={status === 'cancelled'} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none disabled:bg-slate-50" />
         </label>
         {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
         <div className="grid gap-2 sm:grid-cols-3">
-          <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />저장</button>
+          <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />{activeSession ? '변경사항 저장' : '수업 만들기'}</button>
           <button type="button" disabled={saving || !classId} onClick={() => { setStatus('cancelled'); void persist('cancelled'); }} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm font-black text-slate-600 disabled:opacity-40"><XCircle size={15} />수업 취소</button>
           <button type="button" disabled={saving || !classId} onClick={() => { setStatus('completed'); void persist('completed'); }} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CheckCircle2 size={15} />수업 완료</button>
         </div>
@@ -196,6 +233,9 @@ export default function ActivityPage() {
           <div><h1 className="mt-1 text-2xl font-black text-slate-900">수업 운영 캘린더</h1><p className="mt-1 text-sm font-semibold text-slate-500">계획·출석·진행·메모가 하나의 수업으로 이어집니다.</p></div>
           <button type="button" onClick={() => setEditing(null)} disabled={!data.classes.length} className="flex h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white disabled:opacity-40"><Plus size={17} />수업 추가</button>
         </header>
+
+        {data.status === 'loading' || data.status === 'idle' ? <p className="mt-5 rounded-2xl bg-white p-5 text-sm font-bold text-slate-500">수업 데이터를 불러오는 중입니다.</p> : null}
+        {data.status === 'error' ? <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-5"><p className="text-sm font-bold text-rose-700">수업 데이터를 불러오지 못했습니다.</p><button type="button" onClick={() => void data.reload()} className="mt-3 text-sm font-black text-rose-700">다시 시도</button></div> : null}
 
         {!data.classes.length && data.status === 'ready' ? <p className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">학생 관리에서 수업반을 먼저 등록해 주세요. 기존 그룹은 자동으로 수업반으로 보존됩니다.</p> : null}
 

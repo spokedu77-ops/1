@@ -26,7 +26,6 @@ describe('SPOKEDU MASTER craft + selection reasons', () => {
     const onboarding = read('app/spokedu-master/onboarding/page.tsx');
     const classTools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
     const classRecord = read('app/spokedu-master/class-record/page.tsx');
-    const picker = read('app/spokedu-master/components/record/RecordProgramPicker.tsx');
     const errorBoundary = read('app/spokedu-master/components/ui/ErrorBoundary.tsx');
     const students = read('app/spokedu-master/students/page.tsx');
 
@@ -34,7 +33,6 @@ describe('SPOKEDU MASTER craft + selection reasons', () => {
     expect(onboarding).not.toMatch(/시작하기[\s\S]{0,120}background:\s*'var\(--spm-acc\)'/);
     expect(classTools).toContain('spm-btn-primary inline-flex h-11 items-center gap-2');
     expect(classRecord).toContain("redirect('/spokedu-master/activity')");
-    expect(picker).toContain('spm-btn-primary');
     expect(errorBoundary).toContain('spm-btn-primary');
     expect(students).toContain('spm-btn-primary h-10 shrink-0');
   });

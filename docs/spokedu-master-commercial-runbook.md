@@ -97,7 +97,9 @@ When Toss sandbox real payment is intentionally deferred, treat the no-payment g
    - Writes `commercial-verification/release-automated-report.json`.
 4. Production cron (before live billing renew):
    - Set `CRON_SECRET` in Vercel/host env.
-   - Schedule daily `POST /api/spokedu-master/payment/billing/renew` with `Authorization: Bearer <CRON_SECRET>`.
+   - Apply the hourly Supabase Cron migration; `0 * * * *` is the scheduler SSOT.
+   - Cron calls `POST /api/spokedu-master/payment/billing/renew` with `Authorization: Bearer <CRON_SECRET>`.
+   - Monitor `spokedu_master_billing_runs`: the latest `succeeded`/`completed_with_errors` time, counts, and `error_code` must advance every hour. A `dispatched` row that remains unresolved into the next run is an incident.
 5. When ready for payment verification later:
    - Toss sandbox once per environment
    - `GET /api/spokedu-master/access`, subscription row, webhook event, reconcile

@@ -21,7 +21,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ ses
   const { sessionId, sessionProgramId } = await context.params;
   const current = await status(access.userId, sessionId);
   if (!current.data || current.data.status !== 'scheduled') return privateNoStoreJson({ error: 'Programs can only be removed from scheduled classes' }, { status: 400 });
-  const { error } = await getServiceSupabase().from('spokedu_master_session_programs').delete().eq('id', sessionProgramId).eq('session_id', sessionId).eq('owner_id', access.userId);
+  const { error } = await getServiceSupabase().rpc('spokedu_master_remove_session_program', { p_owner_id: access.userId, p_session_id: sessionId, p_program_id: sessionProgramId });
   if (error) return privateNoStoreJson({ error: 'Program could not be removed' }, { status: 500 });
   return privateNoStoreJson({ ok: true });
 }
