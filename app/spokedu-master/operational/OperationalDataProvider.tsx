@@ -18,6 +18,8 @@ export type OperationalDataStatus = 'error' | 'idle' | 'loading' | 'ready';
 
 type OperationalDataContextValue = {
   classes: MasterClassDto[];
+  createClass: (name: string) => Promise<MasterClassDto>;
+  updateClass: (classId: string, name: string) => Promise<MasterClassDto>;
   createStudent: (input: CreateStudentInput) => Promise<MasterStudentDto>;
   deleteStudent: (studentId: string) => Promise<void>;
   updateStudent: (studentId: string, input: UpdateStudentInput) => Promise<MasterStudentDto>;
@@ -135,6 +137,26 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
+  const createClass = useCallback(async (name: string) => {
+    const json = await masterFetchJson<{ data: MasterClassDto }>('/api/spokedu-master/classes', {
+      body: JSON.stringify({ name }),
+      method: 'POST',
+    });
+    setClasses((current) => [...current, json.data].sort((a, b) => a.name.localeCompare(b.name, 'ko')));
+    return json.data;
+  }, []);
+
+  const updateClass = useCallback(async (classId: string, name: string) => {
+    const json = await masterFetchJson<{ data: MasterClassDto }>(`/api/spokedu-master/classes/${classId}`, {
+      body: JSON.stringify({ name }),
+      method: 'PATCH',
+    });
+    setClasses((current) => current.map((item) => item.id === classId ? json.data : item)
+      .sort((a, b) => a.name.localeCompare(b.name, 'ko')));
+    setSessions((current) => current.map((item) => item.classId === classId ? { ...item, className: json.data.name } : item));
+    return json.data;
+  }, []);
+
   const addSessionProgram = useCallback(async (sessionId: string, programId: number, programTitle: string) => {
     const json = await masterFetchJson<{ data: MasterSessionDto['programs'][number] }>(`/api/spokedu-master/sessions/${sessionId}/programs`, { method: 'POST', body: JSON.stringify({ programId, programTitle }) });
     setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: [...item.programs, json.data] } : item));
@@ -174,6 +196,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<OperationalDataContextValue>(
     () => ({
       classes,
+      createClass,
       addClassStudent,
       addSessionProgram,
       createStudent,
@@ -191,8 +214,9 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       status,
       students,
       updateSessionProgram,
+      updateClass,
     }),
-    [addClassStudent, addSessionProgram, classes, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, classes, createClass, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

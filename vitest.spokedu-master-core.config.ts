@@ -27,6 +27,7 @@ export default defineConfig({
       'app/api/spokedu-master/access/route.test.ts',
       'app/api/spokedu-master/subscription/route.test.ts',
       'app/api/spokedu-master/sessionFoundation.contract.test.ts',
+      'app/api/spokedu-master/classAndSessionUx.contract.test.ts',
       'app/api/spokedu-master/sessionWorkflow.contract.test.ts',
       'app/spokedu-master/lib/operationalDataAdapter.test.ts',
       'app/spokedu-master/lib/sessionDateTime.test.ts',
