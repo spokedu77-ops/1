@@ -31,7 +31,8 @@ begin
     'spokedu_master_save_session',
     'spokedu_master_replace_session_attendance',
     'spokedu_master_add_session_program',
-    'spokedu_master_update_session_program_completion'
+    'spokedu_master_update_session_program_completion',
+    'spokedu_master_create_next_session'
   ] loop
     if not exists (
       select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -78,7 +79,8 @@ where n.nspname = 'public'
     'spokedu_master_save_session',
     'spokedu_master_replace_session_attendance',
     'spokedu_master_add_session_program',
-    'spokedu_master_update_session_program_completion'
+    'spokedu_master_update_session_program_completion',
+    'spokedu_master_create_next_session'
   )
 order by p.proname;
 
@@ -92,7 +94,7 @@ rollback;
 -- Expected:
 -- 1) both null snapshot counts are 0;
 -- 2) all four tables show rls_enabled = true;
--- 3) all six RPCs are present and security_definer = true;
+-- 3) all seven RPCs are present and security_definer = true;
 -- 4) scheduled sessions_with_class_snapshot_drift = 0.
 -- The following smoke writes only inside a transaction and always rolls back.
 -- Run it on local/staging only. It reuses one active owner/class and leaves no rows.

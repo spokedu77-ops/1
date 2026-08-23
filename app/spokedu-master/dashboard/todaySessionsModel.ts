@@ -7,7 +7,6 @@ export type TodaySessionCardModel = {
   activityCount: number;
   completedActivityCount: number;
   hasSpomove: boolean;
-  hasAttendance: boolean;
   ctaLabel: '수업 준비' | '수업 열기' | '수업 보기' | null;
   href: string;
 };
@@ -31,7 +30,6 @@ export function buildTodaySessionCards(
       activityCount: session.programs.length,
       completedActivityCount: session.programs.filter((item) => item.isCompleted).length,
       hasSpomove: session.programs.some((item) => item.sourceType === 'spomove'),
-      hasAttendance: session.attendance.length > 0,
       ctaLabel:
         session.status === 'cancelled'
           ? null

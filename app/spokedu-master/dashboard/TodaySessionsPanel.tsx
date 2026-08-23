@@ -53,7 +53,7 @@ export function TodaySessionsPanel({
 
       {!loading && !error && cards.length > 0 ? (
         <div className="mt-3 grid gap-2">
-          {cards.map(({ session, rosterCount, activityCount, completedActivityCount, hasAttendance, hasSpomove, ctaLabel, href }) => (
+          {cards.map(({ session, rosterCount, activityCount, completedActivityCount, hasSpomove, ctaLabel, href }) => (
             <article key={session.id} className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center ${session.status === 'cancelled' ? 'border-slate-200 bg-slate-50 opacity-70' : session.status === 'completed' ? 'border-slate-200 bg-slate-50/70' : 'border-slate-200 bg-white'}`}>
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <span className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 text-sm font-black text-slate-800"><Clock3 size={14} aria-hidden="true" />{formatSeoulSessionTime(session.startAt)}</span>
@@ -65,7 +65,6 @@ export function TodaySessionsPanel({
                   <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-slate-500">
                     <span>{activityCount ? `활동 ${activityCount}개 · 진행 ${completedActivityCount}/${activityCount}` : '활동 미지정'}</span>
                     <span className="inline-flex items-center gap-1"><UsersRound size={12} aria-hidden="true" />학생 {rosterCount}명</span>
-                    {hasAttendance ? <span>출석 기록 있음</span> : null}
                     {hasSpomove ? <span className="inline-flex items-center gap-1 text-blue-700"><MonitorPlay size={12} aria-hidden="true" />SPOMOVE 포함</span> : null}
                   </p>
                 </div>
