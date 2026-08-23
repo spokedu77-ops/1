@@ -83,6 +83,11 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).toContain("contentLoadState === 'error'");
     expect(guidelineSheet).toContain('getSpomovePresetDisplayModel(preset, contentOverride)');
     expect(guidelineSheet).not.toContain('세부 안내 예정');
+    expect(guidelineSheet).not.toContain('등록된 활동 목표 정보가 없습니다.');
+    expect(guidelineSheet).not.toContain('등록된 진행 안내가 없습니다.');
+    expect(guidelineSheet).not.toContain('등록된 지도 포인트가 없습니다.');
+    expect(guidelineSheet).toContain('기본 실행 정보만 제공됩니다.');
+    expect(guidelineSheet).toContain('resolveSpomoveBriefingReadiness');
     expect(guidelineSheet).not.toContain('PublishedGuideContent');
     expect(guidelineSheet).not.toContain('GuideModeNotice');
     expect(guidelineSheet).not.toContain('PreparingGuideContent');
@@ -96,6 +101,19 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).not.toContain('안내 더보기');
     expect(guidelineSheet).not.toContain('상세보기');
     expect(guidelineSheet).not.toContain('설정 변경');
+  });
+
+  it('keeps Public Hub free of editorial production-status filters and badges', () => {
+    expect(hub).not.toContain('세부 안내 예정');
+    expect(hub).not.toContain('공식 가이드');
+    expect(hub).not.toContain('기본 안내');
+    expect(hub).not.toContain('가이드 현황');
+    expect(hub).not.toContain('GUIDE_STATUS_FILTERS');
+    expect(hub).not.toContain('guideStatusFilter');
+    expect(hub).not.toContain('getGuideStatusBadge');
+    expect(hub).not.toContain('resolveGuideStatusFilter');
+    expect(dashboard).not.toContain('세부 안내 예정');
+    expect(dashboard).not.toContain('가이드 현황');
   });
 
   it('separates start (entry=start) from settings and keeps Public without autostart', () => {

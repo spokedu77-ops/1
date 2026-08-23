@@ -66,7 +66,7 @@ describe('official SPOMOVE preset guide contract', () => {
     expect(source).toContain("preset.programGroup === 'dive' || preset.programGroup === 'bonus'");
   });
 
-  it('renders thumbnail fallback, card display metadata, and briefing guide labels', () => {
+  it('renders thumbnail fallback, public card metadata, and briefing guide labels', () => {
     const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
     const session = read('app/spokedu-master/spomove/session/page.tsx');
     const startBriefing = read('app/spokedu-master/spomove/session/StartBriefing.tsx');
@@ -78,7 +78,8 @@ describe('official SPOMOVE preset guide contract', () => {
     expect(hub).toContain('onImageError={() => setImageFailed(true)}');
     expect(hub).toContain('onError={onImageError}');
     expect(hub).toContain('getSpomovePresetDisplayModel');
-    expect(hub).toContain('buildSpomoveGuideDisplayModel');
+    expect(hub).toContain('displayModel.supportMetaParts.slice(0, 3)');
+    expect(hub).not.toContain('buildSpomoveGuideDisplayModel');
     expect(`${startBriefing}\n${settingsBriefing}`).toContain('자극 속도');
     expect(`${startBriefing}\n${settingsBriefing}`).toContain('난이도');
     expect(`${startBriefing}\n${settingsBriefing}`).toContain('수업 시작');

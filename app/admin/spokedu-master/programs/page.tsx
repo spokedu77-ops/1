@@ -58,6 +58,11 @@ import {
   validateSpomoveMovementGuideDraft,
 } from '@/app/lib/spomove/spomoveGuideContract';
 import type { SpomovePublishedGuideSaveIssue } from '@/app/lib/spomove/validateSpomovePublishedGuidesForSave';
+import {
+  resolveSpomoveBriefingReadiness,
+  type SpomoveBriefingReadiness,
+} from '@/app/lib/spomove/spomoveBriefingReadiness';
+import { SPOMOVE_EDITORIAL_ADMIN_HELPER } from '@/app/lib/spomove/spomoveEditorialQualityContract';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
 import {
@@ -790,7 +795,20 @@ type ThinkAssetPackSaveResponse = {
   issues?: SpomovePublishedGuideSaveIssue[];
 };
 
-type SpomoveContentWorkFilter = 'all' | 'missingGuide' | 'draft' | 'published' | 'hasIssue';
+type SpomoveContentWorkFilter =
+  | 'all'
+  | 'missingGuide'
+  | 'draft'
+  | 'published'
+  | 'hasIssue'
+  | 'briefingReady'
+  | 'needsEditorial'
+  | 'legacy'
+  | 'missingBriefing'
+  | 'gapObjective'
+  | 'gapTeachingPoints'
+  | 'gapInstruction'
+  | 'gapFocusTags';
 
 const SPOMOVE_CONTENT_WORK_FILTERS: Array<{ id: SpomoveContentWorkFilter; label: string }> = [
   { id: 'all', label: '전체' },
@@ -799,6 +817,58 @@ const SPOMOVE_CONTENT_WORK_FILTERS: Array<{ id: SpomoveContentWorkFilter; label:
   { id: 'published', label: 'Published' },
   { id: 'hasIssue', label: '오류' },
 ];
+
+const SPOMOVE_BRIEFING_READINESS_FILTERS: Array<{ id: SpomoveContentWorkFilter; label: string }> = [
+  { id: 'briefingReady', label: 'Briefing Ready' },
+  { id: 'needsEditorial', label: 'Needs Editorial' },
+  { id: 'legacy', label: 'Legacy' },
+  { id: 'missingBriefing', label: 'Missing' },
+];
+
+const SPOMOVE_BRIEFING_GAP_FILTERS: Array<{ id: SpomoveContentWorkFilter; label: string }> = [
+  { id: 'gapObjective', label: 'objective 없음' },
+  { id: 'gapTeachingPoints', label: 'teachingPoints 없음' },
+  { id: 'gapInstruction', label: 'instruction 없음' },
+  { id: 'gapFocusTags', label: 'focusTags 없음' },
+];
+
+const BRIEFING_READINESS_LABELS: Record<SpomoveBriefingReadiness, string> = {
+  ready: 'Briefing Ready',
+  needsEditorial: 'Needs Editorial',
+  legacy: 'Legacy',
+  missing: 'Missing',
+};
+
+function matchesSpomoveContentWorkFilter({
+  filter,
+  preset,
+  draft,
+  issuePresetIds,
+}: {
+  filter: SpomoveContentWorkFilter;
+  preset: OfficialSpomovePreset;
+  draft: SpomovePresetContentOverride;
+  issuePresetIds: Set<string>;
+}): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'hasIssue') return issuePresetIds.has(preset.id);
+  if (filter === 'missingGuide') return !draft.movementGuide;
+  if (filter === 'draft' || filter === 'published') return draft.movementGuideStatus === filter;
+
+  const { readiness, gaps } = resolveSpomoveBriefingReadiness({
+    preset,
+    contentOverride: draft,
+  });
+  if (filter === 'briefingReady') return readiness === 'ready';
+  if (filter === 'needsEditorial') return readiness === 'needsEditorial';
+  if (filter === 'legacy') return readiness === 'legacy';
+  if (filter === 'missingBriefing') return readiness === 'missing';
+  if (filter === 'gapObjective') return gaps.missingObjective;
+  if (filter === 'gapTeachingPoints') return gaps.missingTeachingPoints;
+  if (filter === 'gapInstruction') return gaps.missingInstruction;
+  if (filter === 'gapFocusTags') return gaps.missingFocusTags;
+  return true;
+}
 
 function isSpomoveGuideSaveIssue(value: unknown): value is SpomovePublishedGuideSaveIssue {
   if (!value || typeof value !== 'object') return false;
@@ -1015,11 +1085,15 @@ function SpomoveContentManager() {
   );
   const matchesWorkFilter = useCallback(
     (presetId: string) => {
+      const preset = ADMIN_SPOMOVE_LIBRARY.find((item) => item.id === presetId);
+      if (!preset) return false;
       const draft = normalizeContentDraft(draftMap[presetId]);
-      if (workFilter === 'all') return true;
-      if (workFilter === 'hasIssue') return issuePresetIds.has(presetId);
-      if (workFilter === 'missingGuide') return !draft.movementGuide;
-      return draft.movementGuideStatus === workFilter;
+      return matchesSpomoveContentWorkFilter({
+        filter: workFilter,
+        preset,
+        draft,
+        issuePresetIds,
+      });
     },
     [draftMap, issuePresetIds, workFilter],
   );
@@ -1034,29 +1108,41 @@ function SpomoveContentManager() {
     }),
     [draftMap, matchesWorkFilter, searchQuery],
   );
-  const workFilterCounts = useMemo(
-    () =>
-      SPOMOVE_CONTENT_WORK_FILTERS.reduce<Record<SpomoveContentWorkFilter, number>>(
-        (counts, filter) => {
-          counts[filter.id] = ADMIN_SPOMOVE_LIBRARY.filter((preset) => {
-            const draft = normalizeContentDraft(draftMap[preset.id]);
-            if (filter.id === 'all') return true;
-            if (filter.id === 'hasIssue') return issuePresetIds.has(preset.id);
-            if (filter.id === 'missingGuide') return !draft.movementGuide;
-            return draft.movementGuideStatus === filter.id;
-          }).length;
-          return counts;
-        },
-        {
-          all: 0,
-          missingGuide: 0,
-          draft: 0,
-          published: 0,
-          hasIssue: 0,
-        },
-      ),
-    [draftMap, issuePresetIds],
-  );
+  const workFilterCounts = useMemo(() => {
+    const allFilters = [
+      ...SPOMOVE_CONTENT_WORK_FILTERS,
+      ...SPOMOVE_BRIEFING_READINESS_FILTERS,
+      ...SPOMOVE_BRIEFING_GAP_FILTERS,
+    ];
+    return allFilters.reduce<Record<SpomoveContentWorkFilter, number>>(
+      (counts, filter) => {
+        counts[filter.id] = ADMIN_SPOMOVE_LIBRARY.filter((preset) =>
+          matchesSpomoveContentWorkFilter({
+            filter: filter.id,
+            preset,
+            draft: normalizeContentDraft(draftMap[preset.id]),
+            issuePresetIds,
+          }),
+        ).length;
+        return counts;
+      },
+      {
+        all: 0,
+        missingGuide: 0,
+        draft: 0,
+        published: 0,
+        hasIssue: 0,
+        briefingReady: 0,
+        needsEditorial: 0,
+        legacy: 0,
+        missingBriefing: 0,
+        gapObjective: 0,
+        gapTeachingPoints: 0,
+        gapInstruction: 0,
+        gapFocusTags: 0,
+      },
+    );
+  }, [draftMap, issuePresetIds]);
   const guideCompletionSummary = useMemo(() => {
     let readyForReview = 0;
     let published = 0;
@@ -1071,6 +1157,23 @@ function SpomoveContentManager() {
     });
 
     return { readyForReview, published, needsWork };
+  }, [draftMap]);
+  const briefingReadinessSummary = useMemo(() => {
+    const counts: Record<SpomoveBriefingReadiness, number> = {
+      ready: 0,
+      needsEditorial: 0,
+      legacy: 0,
+      missing: 0,
+    };
+    ADMIN_SPOMOVE_LIBRARY.forEach((preset) => {
+      const draft = normalizeContentDraft(draftMap[preset.id]);
+      const { readiness } = resolveSpomoveBriefingReadiness({
+        preset,
+        contentOverride: draft,
+      });
+      counts[readiness] += 1;
+    });
+    return counts;
   }, [draftMap]);
   const visiblePresetCount = visibleContentPresets.length;
   const fillVisibleStarterDrafts = useCallback(() => {
@@ -1145,6 +1248,28 @@ function SpomoveContentManager() {
               <p className="mt-1 text-[18px] font-black text-amber-950">{guideCompletionSummary.needsWork}개</p>
             </div>
           </div>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[10px] font-black text-slate-500">전체 공개 활동</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{ADMIN_SPOMOVE_LIBRARY.length}개</p>
+            </div>
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+              <p className="text-[10px] font-black text-emerald-700">Briefing Ready</p>
+              <p className="mt-1 text-[18px] font-black text-emerald-950">{briefingReadinessSummary.ready}개</p>
+            </div>
+            <div className="rounded-lg border border-amber-100 bg-amber-50 p-3">
+              <p className="text-[10px] font-black text-amber-700">Needs Editorial</p>
+              <p className="mt-1 text-[18px] font-black text-amber-950">{briefingReadinessSummary.needsEditorial}개</p>
+            </div>
+            <div className="rounded-lg border border-sky-100 bg-sky-50 p-3">
+              <p className="text-[10px] font-black text-sky-700">Legacy</p>
+              <p className="mt-1 text-[18px] font-black text-sky-950">{briefingReadinessSummary.legacy}개</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-3">
+              <p className="text-[10px] font-black text-slate-500">Missing</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{briefingReadinessSummary.missing}개</p>
+            </div>
+          </div>
           <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <label className="relative min-w-0 flex-1">
@@ -1172,6 +1297,48 @@ function SpomoveContentManager() {
                     className={`h-8 rounded-full border px-3 text-[11px] font-black ${
                       active
                         ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                        : 'border-slate-200 bg-white text-slate-500'
+                    }`}
+                  >
+                    {filter.label}
+                    <span className="ml-1 text-[10px] opacity-60">{workFilterCounts[filter.id]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-[11px] font-black text-slate-600">Commercial Briefing Readiness (Admin QA)</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SPOMOVE_BRIEFING_READINESS_FILTERS.map((filter) => {
+                const active = workFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setWorkFilter(filter.id)}
+                    className={`h-8 rounded-full border px-3 text-[11px] font-black ${
+                      active
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                        : 'border-slate-200 bg-white text-slate-500'
+                    }`}
+                  >
+                    {filter.label}
+                    <span className="ml-1 text-[10px] opacity-60">{workFilterCounts[filter.id]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-[11px] font-black text-slate-600">결손 빠른 필터</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SPOMOVE_BRIEFING_GAP_FILTERS.map((filter) => {
+                const active = workFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setWorkFilter(filter.id)}
+                    className={`h-8 rounded-full border px-3 text-[11px] font-black ${
+                      active
+                        ? 'border-amber-500 bg-amber-50 text-amber-900'
                         : 'border-slate-200 bg-white text-slate-500'
                     }`}
                   >
@@ -1255,6 +1422,16 @@ function SpomoveContentManager() {
                     const dirty = JSON.stringify(normalizeContentDraft(saved)) !== JSON.stringify(draft);
                     const presetIssues = saveIssues.filter((issue) => issue.presetId === preset.id);
                     const guideCompletion = getMovementGuideCompletion(preset, draft.movementGuide);
+                    const briefing = resolveSpomoveBriefingReadiness({
+                      preset,
+                      contentOverride: draft,
+                    });
+                    const briefingGapLabels = [
+                      briefing.gaps.missingObjective ? 'objective' : null,
+                      briefing.gaps.missingTeachingPoints ? 'teachingPoints' : null,
+                      briefing.gaps.missingInstruction ? 'instruction' : null,
+                      briefing.gaps.missingFocusTags ? 'focusTags' : null,
+                    ].filter(Boolean);
 
                     return (
                       <details
@@ -1276,6 +1453,14 @@ function SpomoveContentManager() {
                               </p>
                               <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
                               <div className="mt-2 flex flex-wrap gap-1">
+                                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-emerald-700">
+                                  {BRIEFING_READINESS_LABELS[briefing.readiness]}
+                                </span>
+                                {briefingGapLabels.map((label) => (
+                                  <span key={label} className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                                    {label} 없음
+                                  </span>
+                                ))}
                                 {(draft.catalogTags ?? []).slice(0, 4).map((tag) => <span key={tag} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">{tag}</span>)}
                               </div>
                             </div>
@@ -1468,10 +1653,13 @@ function SpomoveContentManager() {
                               <textarea
                                 value={draft.movementGuide?.objective ?? ''}
                                 onChange={(event) => updateMovementGuide(preset.id, { objective: event.target.value })}
-                                placeholder="수업 시작 전에 확인할 활동 목표를 1~2문장으로 입력하세요."
+                                placeholder="화면에 제시되는 방향을 빠르게 구분하고 해당 위치로 정확하게 이동합니다."
                                 disabled={savingThis || deletingThis}
                                 className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
                               />
+                              <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">
+                                {SPOMOVE_EDITORIAL_ADMIN_HELPER.objective}
+                              </span>
                             </label>
                             <label className="block text-[10px] font-black text-slate-400">
                               진행 방법
@@ -1493,10 +1681,13 @@ function SpomoveContentManager() {
                                     .filter(Boolean)
                                     .slice(0, 3),
                                 })}
-                                placeholder="속도보다 방향의 정확성을 먼저 확인하세요."
+                                placeholder="속도보다 방향 선택의 정확성을 먼저 확인하세요."
                                 disabled={savingThis || deletingThis}
                                 className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
                               />
+                              <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">
+                                {SPOMOVE_EDITORIAL_ADMIN_HELPER.teachingPoints}
+                              </span>
                             </label>
                             <label className="block text-[10px] font-black text-slate-400">
                               교사 멘트

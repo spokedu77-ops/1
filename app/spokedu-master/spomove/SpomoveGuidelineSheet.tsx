@@ -16,6 +16,7 @@ import type { SpomoveHubViewMode } from './spomoveHubNavigation';
 import { getActivityFamily } from './movements/activityFamilies';
 import { buildDeclaredOperation, resolveRequiredMatGuidance } from './operations';
 import { resolveSessionCueSeconds } from './spomoveCueSpeed';
+import { resolveSpomoveBriefingReadiness } from '@/app/lib/spomove/spomoveBriefingReadiness';
 import { buildSpomoveGuideDisplayModel, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 
 export type SpomoveContentLoadState = 'loading' | 'ready' | 'error';
@@ -103,10 +104,12 @@ function BriefingContent({
   guideDisplay,
   prepLine,
   intervalLine,
+  briefingReadiness,
 }: {
   guideDisplay: ReturnType<typeof buildSpomoveGuideDisplayModel>;
   prepLine: string;
   intervalLine: string | null;
+  briefingReadiness: ReturnType<typeof resolveSpomoveBriefingReadiness>['readiness'];
 }) {
   const objective = guideDisplay.objective;
   const legacyConcept = guideDisplay.guideMode === 'legacy' ? guideDisplay.legacyManual?.activityConcept : null;
@@ -119,29 +122,44 @@ function BriefingContent({
     ['규칙 변형', guideDisplay.ruleVariation],
     ['운영 변형', guideDisplay.operationVariation],
   ].filter((row): row is [string, string] => Boolean(row[1]));
+  const hasObjectiveBlock = Boolean(objective || legacyConcept || guideDisplay.focusTags.length > 0);
+  const hasInstruction = Boolean(instruction);
+  const hasCoachingBlock =
+    guideDisplay.teachingPoints.length > 0 ||
+    Boolean(guideDisplay.coachScript) ||
+    Boolean(guideDisplay.successCriteria) ||
+    Boolean(guideDisplay.commonMistake);
   const hasOptionalDetails =
     variations.length > 0 ||
     (guideDisplay.teachingPoints.length > 0 && Boolean(guideDisplay.successCriteria || guideDisplay.commonMistake));
+  const showSparseNotice =
+    briefingReadiness !== 'ready' && (!hasObjectiveBlock || !hasInstruction || !hasCoachingBlock);
 
   return (
     <div className="divide-y divide-slate-100 [&>section]:py-4 [&>section:first-child]:pt-0 [&>section:last-child]:pb-0">
-      <BriefingSection title="활동 목표">
-        {objective ? <p>{objective}</p> : legacyConcept ? (
-          <div>
-            <p className="text-[11px] font-bold text-slate-400">활동 개념</p>
-            <p className="mt-1">{legacyConcept}</p>
-          </div>
-        ) : (
-          <p className="text-[12px] font-medium text-slate-400">등록된 활동 목표 정보가 없습니다.</p>
-        )}
-        {guideDisplay.focusTags.length > 0 ? (
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {guideDisplay.focusTags.slice(0, 3).map((tag) => (
-              <span key={tag} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">{tag}</span>
-            ))}
-          </div>
-        ) : null}
-      </BriefingSection>
+      {showSparseNotice ? (
+        <p className="pb-4 text-[12px] font-semibold leading-5 text-slate-500">
+          기본 실행 정보만 제공됩니다.
+        </p>
+      ) : null}
+
+      {hasObjectiveBlock ? (
+        <BriefingSection title="활동 목표">
+          {objective ? <p>{objective}</p> : legacyConcept ? (
+            <div>
+              <p className="text-[11px] font-bold text-slate-400">활동 개념</p>
+              <p className="mt-1">{legacyConcept}</p>
+            </div>
+          ) : null}
+          {guideDisplay.focusTags.length > 0 ? (
+            <div className={`${objective || legacyConcept ? 'mt-2.5' : ''} flex flex-wrap gap-1.5`}>
+              {guideDisplay.focusTags.slice(0, 3).map((tag) => (
+                <span key={tag} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">{tag}</span>
+              ))}
+            </div>
+          ) : null}
+        </BriefingSection>
+      ) : null}
 
       <BriefingSection title="준비">
         <p>{prepLine}</p>
@@ -149,31 +167,35 @@ function BriefingContent({
         {intervalLine ? <p className="mt-1 text-[12px] text-slate-500">{intervalLine}</p> : null}
       </BriefingSection>
 
-      <BriefingSection title="진행">
-        {instructionLines.length > 1 ? (
-          <ol className="space-y-1.5">
-            {instructionLines.map((line, index) => <li key={`${index}-${line}`} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-1.5"><span className="text-slate-400">{index + 1}.</span><span>{line}</span></li>)}
-          </ol>
-        ) : instruction ? <p>{instruction}</p> : <p className="text-[12px] font-medium text-slate-400">등록된 진행 안내가 없습니다.</p>}
-      </BriefingSection>
+      {hasInstruction ? (
+        <BriefingSection title="진행">
+          {instructionLines.length > 1 ? (
+            <ol className="space-y-1.5">
+              {instructionLines.map((line, index) => <li key={`${index}-${line}`} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-1.5"><span className="text-slate-400">{index + 1}.</span><span>{line}</span></li>)}
+            </ol>
+          ) : (
+            <p>{instruction}</p>
+          )}
+        </BriefingSection>
+      ) : null}
 
-      <BriefingSection title="지도 포인트">
-        {guideDisplay.teachingPoints.length > 0 ? (
-          <ul className="space-y-1.5">
-            {guideDisplay.teachingPoints.map((point) => <li key={point} className="flex gap-2"><span aria-hidden className="text-slate-400">•</span><span>{point}</span></li>)}
-          </ul>
-        ) : null}
-        {guideDisplay.coachScript ? (
-          <div className={`${guideDisplay.teachingPoints.length ? 'mt-3' : ''} rounded-xl bg-[var(--spm-acc-glow)] px-3 py-2.5`}>
-            <p className="text-[11px] font-black text-[var(--spm-acc)]">아이에게 하는 말</p>
-            <blockquote className="mt-1 text-[13px] font-bold leading-6 text-slate-800">{guideDisplay.coachScript}</blockquote>
-          </div>
-        ) : guideDisplay.teachingPoints.length === 0 && !guideDisplay.successCriteria && !guideDisplay.commonMistake ? (
-          <p className="text-[12px] font-medium text-slate-400">등록된 지도 포인트가 없습니다.</p>
-        ) : null}
-        {guideDisplay.teachingPoints.length === 0 && guideDisplay.successCriteria ? <p className="mt-2"><span className="mr-2 text-[11px] font-black text-slate-400">성공 기준</span>{guideDisplay.successCriteria}</p> : null}
-        {guideDisplay.teachingPoints.length === 0 && guideDisplay.commonMistake ? <p className="mt-2"><span className="mr-2 text-[11px] font-black text-slate-400">자주 놓치는 점</span>{guideDisplay.commonMistake}</p> : null}
-      </BriefingSection>
+      {hasCoachingBlock ? (
+        <BriefingSection title="지도 포인트">
+          {guideDisplay.teachingPoints.length > 0 ? (
+            <ul className="space-y-1.5">
+              {guideDisplay.teachingPoints.map((point) => <li key={point} className="flex gap-2"><span aria-hidden className="text-slate-400">•</span><span>{point}</span></li>)}
+            </ul>
+          ) : null}
+          {guideDisplay.coachScript ? (
+            <div className={`${guideDisplay.teachingPoints.length ? 'mt-3' : ''} rounded-xl bg-[var(--spm-acc-glow)] px-3 py-2.5`}>
+              <p className="text-[11px] font-black text-[var(--spm-acc)]">아이에게 하는 말</p>
+              <blockquote className="mt-1 text-[13px] font-bold leading-6 text-slate-800">{guideDisplay.coachScript}</blockquote>
+            </div>
+          ) : null}
+          {guideDisplay.teachingPoints.length === 0 && guideDisplay.successCriteria ? <p className="mt-2"><span className="mr-2 text-[11px] font-black text-slate-400">성공 기준</span>{guideDisplay.successCriteria}</p> : null}
+          {guideDisplay.teachingPoints.length === 0 && guideDisplay.commonMistake ? <p className="mt-2"><span className="mr-2 text-[11px] font-black text-slate-400">자주 놓치는 점</span>{guideDisplay.commonMistake}</p> : null}
+        </BriefingSection>
+      ) : null}
 
       {hasOptionalDetails ? (
         <section className="py-4 last:pb-0">
@@ -229,6 +251,7 @@ export function SpomoveGuidelineSheet({
     ? `${declaredOperation.timing.workSeconds}초 활동 · ${declaredOperation.timing.restSeconds}초 휴식 · ${declaredOperation.timing.sets}세트`
     : null;
   const guideDisplay = buildSpomoveGuideDisplayModel({ preset, contentOverride, audience: 'public', matCount, cueSeconds });
+  const { readiness: briefingReadiness } = resolveSpomoveBriefingReadiness({ preset, contentOverride });
 
   return (
     <BottomSheet open title={display.displayTitle} onClose={onClose} size="preview">
@@ -236,7 +259,7 @@ export function SpomoveGuidelineSheet({
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)] lg:items-stretch">
           <div data-preview-column="media" className="min-w-0 lg:flex"><SpomoveScreenPreview videoUrl={guideVideoUrl} /></div>
           <aside data-preview-column="content" data-preview-summary className="min-w-0 rounded-[14px] border border-slate-200 bg-white p-4 sm:p-5 lg:max-h-[min(620px,calc(100dvh-260px))] lg:overflow-y-auto [scrollbar-width:thin]">
-            {contentLoadState === 'loading' ? <ContentLoading /> : contentLoadState === 'error' ? <ContentError prepLine={prepLine} intervalLine={intervalLine} /> : <BriefingContent guideDisplay={guideDisplay} prepLine={prepLine} intervalLine={intervalLine} />}
+            {contentLoadState === 'loading' ? <ContentLoading /> : contentLoadState === 'error' ? <ContentError prepLine={prepLine} intervalLine={intervalLine} /> : <BriefingContent guideDisplay={guideDisplay} prepLine={prepLine} intervalLine={intervalLine} briefingReadiness={briefingReadiness} />}
           </aside>
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

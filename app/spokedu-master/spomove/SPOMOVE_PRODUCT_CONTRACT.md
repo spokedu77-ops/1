@@ -53,6 +53,9 @@ Phase 0은 SPOMOVE를 새로 설계하는 단계가 아니다. 즉시 실행·�
 - Hub 클릭으로 **Family 저장값 변경 금지** (`writeFamilyMovement` 없음)
 - `preset.description` 임시 미노출 · 임시 자동 카피 금지
 - 「사전 설정된 공식 조건으로 실행」 등 사실과 다른 헤더 문구 금지
+- Public Hub는 editorial production status(공식 가이드/기본 안내/세부 안내 예정)를 필터·배지·현황으로 노출하지 않음
+- CMS `published` validity와 commercial briefing readiness(`objective` + `teachingPoints`)는 분리 — readiness 라벨은 Admin QA 전용
+- Public briefing Sheet는 있는 section만 표시. DB 결손 placeholder 반복·roadmap 문구 금지
 
 ### Setup state
 

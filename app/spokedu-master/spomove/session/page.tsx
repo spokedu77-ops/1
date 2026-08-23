@@ -643,6 +643,7 @@ function SpomoveSessionContent() {
           flankerExtremeMode={officialPreset.engine.flankerExtremeMode}
           flankerArrowMode={officialPreset.engine.flankerArrowMode}
           stroopWordMode={officialPreset.engine.stroopWordMode}
+          handFootDifficulty={officialPreset.engine.handFootDifficulty}
           intervalLaunch={
             effectiveOperation?.timing.pattern === 'interval'
               ? {

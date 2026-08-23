@@ -252,7 +252,14 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(vr.filter((preset) => preset.engine.level === 6 && preset.engine.mode === 'reactTrain')).toHaveLength(2);
     expect(vr.filter((preset) => preset.engine.level === 5 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
     expect(vr.filter((preset) => preset.engine.level === 4 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
-    expect(vr.filter((preset) => preset.engine.level === 7 && preset.engine.mode === 'reactTrain')).toHaveLength(3);
+    expect(vr.filter((preset) => preset.engine.level === 7 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
+    expect(vr.filter((preset) => preset.engine.level === 7 && preset.engine.mode === 'basic')).toHaveLength(3);
+    expect(
+      vr
+        .filter((preset) => preset.engine.handFootDifficulty)
+        .map((preset) => preset.engine.handFootDifficulty)
+        .sort(),
+    ).toEqual(['easy', 'hard', 'normal']);
 
     expect(findOfficialSpomovePreset('visual-reaction-number-cart-l2')?.engine.numberCartTier).toBe(1);
     expect(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')?.catalogStatus).toBe('hold');

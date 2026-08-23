@@ -126,6 +126,8 @@ type Props = {
   flankerExtremeMode?: 'theme' | 'arrow';
   flankerArrowMode?: 'lr' | 'udlr';
   stroopWordMode?: 'bg' | 'missing';
+  /** basic L7 손 따로/발 따로 (visual-reaction hand-foot presets) */
+  handFootDifficulty?: 'easy' | 'normal' | 'hard';
   /** O4 — Operation timing.interval → MemoryGame intervalMode */
   intervalLaunch?: {
     workSeconds: number;
@@ -184,6 +186,7 @@ export function EngineRouter({
   flankerExtremeMode,
   flankerArrowMode,
   stroopWordMode,
+  handFootDifficulty,
   intervalLaunch = null,
   onComplete,
   onExit,
@@ -275,6 +278,11 @@ export function EngineRouter({
             flankerArrowMode,
             stroopWordMode: (mode === 'stroop' && level === 5) || stroopWordMode === 'missing' ? 'missing' : 'bg',
             simonPoleCount: effectiveSimonPole,
+            ...(handFootDifficulty === 'easy' ||
+            handFootDifficulty === 'normal' ||
+            handFootDifficulty === 'hard'
+              ? { handFootDifficulty }
+              : {}),
             ...(intervalLaunch
               ? {
                   intervalMode: true,

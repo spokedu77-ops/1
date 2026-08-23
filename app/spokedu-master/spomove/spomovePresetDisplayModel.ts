@@ -205,6 +205,8 @@ function displayModeId(preset: OfficialSpomovePreset): keyof typeof MODES | null
 }
 
 function catalogLevelId(preset: OfficialSpomovePreset, modeId: keyof typeof MODES): number {
+  // visual-reaction hand-foot: Admin catalog id 201 (basic L7 + handFootDifficulty)
+  if (preset.engine.handFootDifficulty) return 201;
   if (modeId === 'basic') return catalogBasicUiLevel(preset.engine.level);
   if (modeId === 'spatial') return catalogSpatialUiLevel(preset.engine.level);
   if (modeId === 'flanker' && preset.engine.level === 6) return 2;
