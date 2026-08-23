@@ -52,7 +52,7 @@ export function StatusBar() {
           aria-label="SPOKEDU MASTER 데스크톱 메뉴"
         >
           {APP_LINKS.map(({ href, label, Icon }) => {
-            const active = isActivePath(pathname, href);
+            const active = isActivePath(pathname, href) || (href.endsWith('/activity') && isActivePath(pathname, '/spokedu-master/classes'));
             return (
               <Link
                 key={href}

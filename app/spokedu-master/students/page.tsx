@@ -21,7 +21,7 @@ const EMPTY_DRAFT: StudentDraft = { name: '', meta: '', guidanceNote: '', classI
 
 function MembershipPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
   const data = useOperationalData();
-  if (!data.classes.length) return <p className="rounded-xl bg-amber-50 p-3 text-xs font-bold text-amber-800">수업 캘린더에서 수업반을 먼저 만들어 주세요.</p>;
+  if (!data.classes.length) return <p className="rounded-xl bg-amber-50 p-3 text-xs font-bold text-amber-800">수업 관리에서 수업반을 먼저 만들어 주세요.</p>;
   return <fieldset><legend className="mb-2 text-xs font-bold text-slate-500">수업반 <span className="font-semibold">(여러 개 선택 가능)</span></legend><div className="grid gap-2 sm:grid-cols-2">{data.classes.map((item) => <label key={item.id} className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold ${value.includes(item.id) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'}`}><input type="checkbox" checked={value.includes(item.id)} onChange={() => onChange(value.includes(item.id) ? value.filter((id) => id !== item.id) : [...value, item.id])} />{item.name}</label>)}</div></fieldset>;
 }
 

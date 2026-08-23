@@ -30,6 +30,8 @@ export function getMasterRouteRequirement(pathname: string, basePath = '/spokedu
   if (
     pathname === `${basePath}/activity` ||
     pathname.startsWith(`${basePath}/activity/`) ||
+    pathname === `${basePath}/classes` ||
+    pathname.startsWith(`${basePath}/classes/`) ||
     pathname === `${basePath}/class-record` ||
     pathname.startsWith(`${basePath}/class-record/`) ||
     pathname === `${basePath}/students` ||
@@ -54,6 +56,7 @@ const SAFE_MASTER_RETURN_PREFIXES = [
   '/spokedu-master/students',
   '/spokedu-master/report',
   '/spokedu-master/activity',
+  '/spokedu-master/classes',
   '/spokedu-master/spomove',
   '/spokedu-master/profile',
   '/spokedu-master/subscription',

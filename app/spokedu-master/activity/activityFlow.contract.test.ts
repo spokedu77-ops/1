@@ -5,7 +5,7 @@ const source = readFileSync('app/spokedu-master/activity/page.tsx', 'utf8');
 
 describe('activity Session flow', () => {
   it('makes Calendar the primary Session entry', () => {
-    expect(source).toContain('수업 운영 캘린더');
+    expect(source).toContain('수업 관리');
     expect(source).toContain('수업 추가');
     expect(source).toContain('수업 상세');
     expect(source).not.toContain('RecordProgramPicker');

@@ -44,6 +44,8 @@ describe('SPOKEDU MASTER route access policy', () => {
     ['/spokedu-master/library/42', 'library'],
     ['/spokedu-master/class-tools', 'classTools'],
     ['/spokedu-master/activity', 'records'],
+    ['/spokedu-master/classes', 'records'],
+    ['/spokedu-master/classes/class-a', 'records'],
     ['/spokedu-master/class-record', 'records'],
     ['/spokedu-master/students', 'records'],
     ['/spokedu-master/report', 'records'],

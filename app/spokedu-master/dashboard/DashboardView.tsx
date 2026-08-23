@@ -920,7 +920,7 @@ function EntitledDashboardView() {
             className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 self-start text-[11px] font-bold text-slate-400 transition-colors hover:text-slate-700 sm:self-auto"
             title={loopAction.label}
           >
-            수업 캘린더
+            수업 관리
             <ArrowRight size={12} />
           </Link>
         </div>

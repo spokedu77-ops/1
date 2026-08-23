@@ -195,7 +195,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           actions={(
             <div data-detail-actions className="mx-auto grid w-full max-w-[740px] grid-cols-3 gap-1.5 sm:gap-2.5">
               <AssignProgramToSessionButton program={program} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-1 text-[12px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] sm:px-3 sm:text-[13px]" />
-              <Link data-detail-action="calendar" href="/spokedu-master/activity" className="inline-flex h-12 min-w-0 items-center justify-center rounded-[12px] bg-white/90 px-1 text-[12px] font-black text-slate-800 shadow-sm ring-1 ring-slate-300/90 sm:px-3 sm:text-[13px]">수업 캘린더</Link>
+              <Link data-detail-action="calendar" href="/spokedu-master/activity" className="inline-flex h-12 min-w-0 items-center justify-center rounded-[12px] bg-white/90 px-1 text-[12px] font-black text-slate-800 shadow-sm ring-1 ring-slate-300/90 sm:px-3 sm:text-[13px]">수업 관리</Link>
               <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-white/62 px-1 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition duration-200 ease-out hover:-translate-y-px hover:bg-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
                 <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
               </button>

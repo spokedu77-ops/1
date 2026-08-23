@@ -1,0 +1,65 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
+
+describe('MASTER Class and attendance management contracts', () => {
+  const activity = read('app/spokedu-master/activity/page.tsx');
+  const list = read('app/spokedu-master/classes/page.tsx');
+  const detail = read('app/spokedu-master/classes/[classId]/page.tsx');
+  const tabs = read('app/spokedu-master/components/lesson/LessonManagementTabs.tsx');
+  const desktopNav = read('app/spokedu-master/components/layout/StatusBar.tsx');
+  const mobileNav = read('app/spokedu-master/components/layout/TabBar.tsx');
+
+  it('keeps one primary management destination with Schedule and Class tabs', () => {
+    expect(tabs).toContain('/spokedu-master/activity');
+    expect(tabs).toContain('/spokedu-master/classes');
+    expect(tabs).toContain('일정');
+    expect(tabs).toContain('수업반');
+    expect(desktopNav).toContain("href.endsWith('/activity') && isActivePath(pathname, '/spokedu-master/classes')");
+    expect(mobileNav).toContain('`${basePath}/classes`');
+  });
+
+  it('removes Class management from Calendar and routes the empty state to Classes', () => {
+    expect(activity).not.toContain('ClassManagerSheet');
+    expect(activity).not.toContain('ClassNameRow');
+    expect(activity).not.toContain('수업반 관리</button>');
+    expect(activity).toContain('/spokedu-master/classes?create=1');
+    expect(activity).toContain("setCreateClassId(resolution.classId)");
+    expect(activity).toContain('잘못된 수업반입니다.');
+  });
+
+  it('creates Classes with one field and routes to the exact new Class', () => {
+    expect(list).toContain("await data.createClass(name.trim())");
+    expect(list).toContain('router.push(`/spokedu-master/classes/${created.id}`)');
+    expect(list).toContain("searchParams.get('create') !== '1'");
+  });
+
+  it('keeps roster mutations Class-scoped and does not soft-delete Students', () => {
+    expect(detail).toContain('await data.addClassStudent(classId, student.id)');
+    expect(detail).toContain('await data.removeClassStudent(classItem.id, student.id)');
+    expect(detail).toContain('classIds: [classId]');
+    expect(detail).not.toContain('deleteStudent(');
+    expect(detail).toContain('과거 출석 및 수업 이력은 유지됩니다.');
+    expect(detail).toContain("const results = query.trim() ?");
+  });
+
+  it('renders attendance as a completed Session projection without an attendance-book object', () => {
+    expect(detail).toContain('buildClassAttendanceView');
+    expect(detail).toContain("status === 'present' ? '✓ 출석' : status === 'absent' ? '결석' : '—'");
+    expect(detail).toContain('overflow-x-auto');
+    expect(detail).toContain('sticky left-0');
+    expect(detail).toContain('/spokedu-master/activity?session=${encodeURIComponent(session.id)}');
+    expect(detail).not.toContain('AttendanceBook');
+    expect(detail).not.toContain('출석부 만들기');
+  });
+
+  it('supports fast current-roster attendance without blocking Session completion', () => {
+    expect(activity).toContain('const markAllPresent');
+    expect(activity).toContain("currentRoster.map((student) => [student.id, 'present' as const])");
+    expect(activity).toContain('setAttendanceDirty(true)');
+    expect(activity).toContain('미체크 {uncheckedRosterCount}명');
+    expect(activity).not.toContain('uncheckedRosterCount === 0');
+  });
+});

@@ -75,8 +75,8 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).toContain('수업 기록');
     expect(source).toContain('안내문 작성·복사');
     expect(source).toContain('즐겨찾기');
-    expect(source).toContain('수업 캘린더 열기');
-    expect(source).toContain('수업 운영 캘린더');
+    expect(source).toContain('수업 관리 열기');
+    expect(source).toContain('수업 관리');
     expect(source).toContain('구독 선택');
     expect(source).toContain('프리미엄');
   });

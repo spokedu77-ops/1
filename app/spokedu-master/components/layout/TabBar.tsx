@@ -87,6 +87,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
           {primaryTabs.map(({ href, label, shortLabel, Icon, capability }) => {
             const active =
               isActivePath(pathname, href) ||
+              (href.endsWith('/activity') && isActivePath(pathname, `${basePath}/classes`)) ||
               (href.endsWith('/activity') && isActivePath(pathname, `${basePath}/class-record`));
             const locked = !canUseTab(accessContext?.snapshot, capability);
             return (

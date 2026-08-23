@@ -12,7 +12,8 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(desktop).toContain('MASTER_NAV_ITEMS');
     expect(mobile).toContain('MASTER_NAV_ITEMS');
     expect(nav).toContain("href: '/spokedu-master/library', label: '놀이체육'");
-    expect(nav).toContain("href: '/spokedu-master/activity', label: '수업 캘린더'");
+    expect(nav).toContain("href: '/spokedu-master/activity', label: '수업 관리'");
+    expect(nav.match(/href:/g)).toHaveLength(6);
     expect(nav).toContain("href: '/spokedu-master/class-tools'");
     expect(nav).not.toContain("href: '/spokedu-master/plan'");
   });
@@ -20,11 +21,13 @@ describe('SPOKEDU MASTER primary navigation', () => {
   it('uses the Session calendar instead of the standalone record creator', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
     const legacy = read('app/spokedu-master/class-record/page.tsx');
-    expect(activity).toContain('수업 운영 캘린더');
+    expect(activity).toContain('수업 관리');
+    expect(activity).toContain('LessonManagementTabs');
     expect(activity).toContain('수업 상세');
     expect(activity).toContain('아직 수업 활동이 없습니다');
     expect(activity).toContain('수업 완료');
     expect(activity).not.toContain('/spokedu-master/class-record');
+    expect(activity).not.toContain('ClassManagerSheet');
     expect(legacy).toContain("redirect('/spokedu-master/activity')");
   });
 

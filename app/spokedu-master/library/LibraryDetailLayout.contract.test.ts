@@ -24,7 +24,7 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(view).toContain('data-detail-actions');
     expect(view).toContain('grid-cols-3');
     expect(view).toContain('AssignProgramToSessionButton');
-    expect(view).toContain('수업 캘린더');
+    expect(view).toContain('수업 관리');
     expect(view).toContain('지도안 복사');
     expect(view).not.toContain('data-detail-action="quick"');
   });

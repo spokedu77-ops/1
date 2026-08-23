@@ -49,7 +49,7 @@ export default function StudentDetailPage() {
           <div className="mt-5 grid grid-cols-3 gap-2">
             {[[`${history.length}건`, '참여 수업'], [`${presentCount}건`, '출석'], [`${absentCount}건`, '결석']].map(([value, label]) => <div key={label} className="rounded-xl bg-slate-50 p-3 text-center"><strong className="block text-lg text-slate-900">{value}</strong><span className="text-[11px] font-bold text-slate-500">{label}</span></div>)}
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2"><Link href="/spokedu-master/activity" className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-black text-white"><CalendarDays size={15} />수업 캘린더 열기</Link>{history[0] ? <Link href={`/spokedu-master/report?session=${history[0].session.id}`} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />최근 수업 안내문</Link> : null}</div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2"><Link href="/spokedu-master/activity" className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-black text-white"><CalendarDays size={15} />수업 관리 열기</Link>{history[0] ? <Link href={`/spokedu-master/report?session=${history[0].session.id}`} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />최근 수업 안내문</Link> : null}</div>
         </header>
 
         <section className="mt-5">
@@ -62,7 +62,7 @@ export default function StudentDetailPage() {
                 {session.memo?.trim() ? <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">{session.memo.trim()}</p> : null}
               </article>
             ))}
-            {!history.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><p className="text-sm font-black text-slate-700">아직 출석이 기록된 수업이 없습니다.</p><p className="mt-2 text-xs font-semibold text-slate-500">수업에서 출석을 저장하면 이곳에 자동으로 쌓입니다.</p><Link href="/spokedu-master/activity" className="mt-4 inline-block text-sm font-black text-emerald-700">수업 캘린더 열기</Link></div> : null}
+            {!history.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><p className="text-sm font-black text-slate-700">아직 출석이 기록된 수업이 없습니다.</p><p className="mt-2 text-xs font-semibold text-slate-500">수업에서 출석을 저장하면 이곳에 자동으로 쌓입니다.</p><Link href="/spokedu-master/activity" className="mt-4 inline-block text-sm font-black text-emerald-700">수업 관리 열기</Link></div> : null}
           </div>
         </section>
       </div>

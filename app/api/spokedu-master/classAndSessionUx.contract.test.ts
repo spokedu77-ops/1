@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 const activity = read('app/spokedu-master/activity/page.tsx');
+const classes = read('app/spokedu-master/classes/page.tsx');
+const classDetail = read('app/spokedu-master/classes/[classId]/page.tsx');
 
 describe('SPOKEDU MASTER class and Session operating UX', () => {
   it('creates and renames classes by id without introducing a Session title', () => {
@@ -11,7 +13,9 @@ describe('SPOKEDU MASTER class and Session operating UX', () => {
     expect(createRoute).toContain("from('spokedu_master_classes')");
     expect(updateRoute).toContain(".eq('id', classId)");
     expect(updateRoute).toContain(".eq('owner_id', access.userId)");
-    expect(activity).toContain('수업반 이름은 캘린더의 수업명으로 표시됩니다.');
+    expect(classes).toContain('await data.createClass(name.trim())');
+    expect(classDetail).toContain('await data.updateClass(classItem.id, editName.trim())');
+    expect(activity).not.toContain('ClassManagerSheet');
   });
 
   it('directs an empty roster to ID-based membership management', () => {
