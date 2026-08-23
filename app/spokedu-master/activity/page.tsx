@@ -2,7 +2,7 @@
 
 import {
   ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Clock3,
-  Plus, Save, Search, Settings2, UsersRound, XCircle,
+  FileText, Plus, Save, Search, Settings2, UsersRound, Wrench, XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -354,6 +354,7 @@ function SessionSheet({
         {!activeSession ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><Save size={15} />수업 만들기</button> : null}
         {activeSession && status === 'scheduled' ? <div className="space-y-2">
           <button type="button" disabled={saving || !classId} onClick={() => void persist('completed')} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CheckCircle2 size={16} />수업 완료</button>
+          <Link target="_blank" rel="noreferrer" href={`/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}`} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><Wrench size={15} />수업도구</Link>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button>
             <button type="button" disabled={saving || !classId} onClick={() => void persist('cancelled')} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm font-black text-slate-500 disabled:opacity-40"><XCircle size={15} />수업 취소</button>
@@ -361,6 +362,7 @@ function SessionSheet({
         </div> : null}
         {activeSession && status === 'completed' ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button> : null}
         {status === 'cancelled' ? <p className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-500">취소된 수업은 조회만 할 수 있습니다.</p> : null}
+        {activeSession && status === 'completed' ? <Link href={`/spokedu-master/report?session=${encodeURIComponent(activeSession.id)}`} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />수업 안내문</Link> : null}
         {activeSession && status === 'completed' ? <button type="button" disabled={saving} onClick={() => { setError(null); setNextDraft(buildNextSessionDraft(activeSession)); setCopyPrograms(false); setNextSessionOpen(true); }} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CalendarDays size={17} />다음 수업 만들기</button> : null}
       </div>
     </BottomSheet>

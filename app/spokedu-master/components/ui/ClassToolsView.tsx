@@ -2,10 +2,12 @@
 
 import { CheckCircle2, ChevronDown, Coffee, LayoutList, ListOrdered, Pause, Play, RotateCcw, Route, Shuffle, Timer, Trophy, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
+import { findExactSession } from '../../lib/sessionContext';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
 
@@ -680,12 +682,14 @@ function ClassSelector({
   selectedClassKey,
   onChange,
   studentCount,
+  locked = false,
 }: {
   classKeys: string[];
   classLabels: Record<string, string>;
   selectedClassKey: string;
   onChange: (classKey: string) => void;
   studentCount: number;
+  locked?: boolean;
 }) {
   if (!classKeys.length) return null;
 
@@ -694,19 +698,25 @@ function ClassSelector({
       <label htmlFor="class-tools-class" className="shrink-0 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>
         진행할 반
       </label>
-      <select
-        id="class-tools-class"
-        value={selectedClassKey}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-10 min-w-0 flex-1 rounded-[10px] px-3 text-[13px] font-black outline-none"
-        style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
-      >
-        {classKeys.map((classKey) => (
-          <option key={classKey} value={classKey}>
-            {classLabels[classKey] ?? '수업반'}
-          </option>
-        ))}
-      </select>
+      {locked ? (
+        <div id="class-tools-class" className="flex h-10 min-w-0 flex-1 items-center rounded-[10px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <span className="truncate">{classLabels[selectedClassKey] ?? '수업반'}</span>
+        </div>
+      ) : (
+        <select
+          id="class-tools-class"
+          value={selectedClassKey}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-10 min-w-0 flex-1 rounded-[10px] px-3 text-[13px] font-black outline-none"
+          style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
+        >
+          {classKeys.map((classKey) => (
+            <option key={classKey} value={classKey}>
+              {classLabels[classKey] ?? '수업반'}
+            </option>
+          ))}
+        </select>
+      )}
       <span className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black" style={{ background: 'var(--spm-grn-a18)', color: 'var(--spm-grn)' }}>
         {studentCount}명
       </span>
@@ -1033,6 +1043,11 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
 export default function ClassToolsView() {
   const [tab, setTab] = useState<TabId>('stopwatch');
   const operationalData = useOperationalData();
+  const searchParams = useSearchParams();
+  const requestedSessionId = searchParams.get('session');
+  const sessionContext = findExactSession(operationalData.sessions, requestedSessionId);
+  const hasSessionContext = Boolean(requestedSessionId);
+  const invalidSessionContext = hasSessionContext && operationalData.status === 'ready' && !sessionContext;
   const students = useMemo<StudentProfile[]>(() => operationalData.students.map((student) => ({
     id: student.id, name: student.name, group: '', meta: studentMetaToDisplay(student.meta),
     guidanceNote: student.guidanceNote ?? '', level: '', attendance: 0, classes: 0, streak: 0,
@@ -1041,7 +1056,9 @@ export default function ClassToolsView() {
   const classKeys = useMemo(() => operationalData.classes.map((item) => item.id), [operationalData.classes]);
   const classLabels = useMemo(() => Object.fromEntries(operationalData.classes.map((item) => [item.id, item.name])), [operationalData.classes]);
   const [selectedClassKey, setSelectedClassKey] = useState('');
-  const effectiveClassKey = classKeys.includes(selectedClassKey) ? selectedClassKey : (classKeys[0] ?? '');
+  const effectiveClassKey = hasSessionContext
+    ? (sessionContext?.classId ?? '')
+    : classKeys.includes(selectedClassKey) ? selectedClassKey : (classKeys[0] ?? '');
   const selectedStudents = useMemo(
     () => students.filter((student) => operationalData.classes.find((item) => item.id === effectiveClassKey)?.studentIds.includes(student.id)),
     [effectiveClassKey, operationalData.classes, students],
@@ -1079,6 +1096,23 @@ export default function ClassToolsView() {
       </div>
 
       <div data-class-tools-content className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/70">
+        {invalidSessionContext ? (
+          <div className="m-5 rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-black text-rose-700">
+            수업을 찾을 수 없습니다.
+          </div>
+        ) : null}
+        {hasSessionContext && sessionContext ? (
+          <div className="shrink-0 px-6 pt-5">
+            <ClassSelector
+              classKeys={classKeys}
+              classLabels={classLabels}
+              selectedClassKey={effectiveClassKey}
+              onChange={setSelectedClassKey}
+              studentCount={selectedStudents.length}
+              locked
+            />
+          </div>
+        ) : null}
         {!usesClassRoster ? (
           <div className="min-h-0 flex-1 overflow-hidden">
             {tab === 'stopwatch' && <StopwatchTab />}
@@ -1086,7 +1120,7 @@ export default function ClassToolsView() {
             {tab === 'scoreboard' && <ScoreboardTab />}
           </div>
         ) : null}
-        {usesClassRoster ? (
+        {usesClassRoster && !hasSessionContext ? (
           <div className="shrink-0 px-6 pt-5">
             <ClassSelector
               classKeys={classKeys}
