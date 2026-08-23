@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useOperationalData } from '../operational/OperationalDataProvider';
@@ -15,6 +16,7 @@ import type { MasterSessionDto, MasterSessionStatus } from '../types/operational
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
 import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
 import { resolveActivityQuery } from './activityQuery';
+import { buildNextSessionDateTimes, buildNextSessionDraft } from './nextSession';
 
 function statusLabel(status: MasterSessionStatus) {
   return status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
@@ -39,6 +41,7 @@ function SessionSheet({
   onClose: () => void;
 }) {
   const data = useOperationalData();
+  const router = useRouter();
   const [activeSession, setActiveSession] = useState(session);
   const libraryPrograms = useMasterStore((state) => state.programs);
   const programsLoaded = useMasterStore((state) => state.programsLoaded);
@@ -67,6 +70,9 @@ function SessionSheet({
   const [selectedActivityKeys, setSelectedActivityKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nextSessionOpen, setNextSessionOpen] = useState(false);
+  const [nextDraft, setNextDraft] = useState(() => session ? buildNextSessionDraft(session) : null);
+  const [copyPrograms, setCopyPrograms] = useState(false);
   const selectedClass = data.classes.find((item) => item.id === classId);
   const currentRoster = data.students.filter((student) => selectedClass?.studentIds.includes(student.id));
   const historicalRoster = status === 'completed'
@@ -84,6 +90,25 @@ function SessionSheet({
     : availableSpomove.filter((preset) => !query || [preset.title, preset.programGroup, preset.description].join(' ').toLowerCase().includes(query))
       .map((preset) => ({ key: `spomove:${preset.id}`, title: preset.title, description: preset.description || preset.recommendedUse }));
   const completedPrograms = programs.filter((item) => item.isCompleted).length;
+
+  const createNextSession = async () => {
+    if (!activeSession || activeSession.status !== 'completed' || !nextDraft) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const values = buildNextSessionDateTimes(nextDraft);
+      const nextSession = await data.createNextSession(activeSession.id, {
+        startAt: seoulDateTimeInputToIso(values.startAt),
+        endAt: seoulDateTimeInputToIso(values.endAt),
+        copyPrograms,
+      });
+      router.push(`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '다음 수업을 만들지 못했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const addSelectedPrograms = async () => {
     if (!activeSession || status !== 'scheduled' || !selectedActivityKeys.length) return;
@@ -188,6 +213,34 @@ function SessionSheet({
     }
   };
 
+  if (nextSessionOpen && activeSession?.status === 'completed' && nextDraft) return (
+    <BottomSheet open title="다음 수업 만들기" onClose={() => setNextSessionOpen(false)}>
+      <div className="space-y-4 pb-3">
+        <div className="rounded-xl bg-slate-50 p-3">
+          <p className="text-xs font-bold text-slate-500">수업반</p>
+          <p className="mt-1 truncate text-sm font-black text-slate-900" title={activeSession.className}>{activeSession.className}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="text-xs font-black text-slate-600">날짜
+            <input type="date" value={nextDraft.day} onChange={(event) => setNextDraft((current) => current ? { ...current, day: event.target.value } : current)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />
+          </label>
+          <label className="text-xs font-black text-slate-600">시작
+            <input type="time" value={nextDraft.startTime} onChange={(event) => setNextDraft((current) => current ? { ...current, startTime: event.target.value } : current)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />
+          </label>
+          <label className="text-xs font-black text-slate-600">종료
+            <input type="time" value={nextDraft.endTime} onChange={(event) => setNextDraft((current) => current ? { ...current, endTime: event.target.value, endDayOffset: event.target.value <= current.startTime ? 1 : 0 } : current)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />
+          </label>
+        </div>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700">
+          <input type="checkbox" checked={copyPrograms} onChange={(event) => setCopyPrograms(event.target.checked)} className="h-5 w-5 accent-emerald-600" />
+          이번 수업 활동 그대로 가져오기
+        </label>
+        {error ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
+        <button type="button" disabled={saving || !nextDraft.day || !nextDraft.startTime || !nextDraft.endTime} onClick={() => void createNextSession()} className="h-11 w-full rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40">{saving ? '만드는 중…' : '다음 수업 생성'}</button>
+      </div>
+    </BottomSheet>
+  );
+
   if (programPickerOpen) return (
     <BottomSheet open title="프로그램 추가" onClose={() => setProgramPickerOpen(false)}>
       <div className="space-y-4 pb-3">
@@ -286,6 +339,7 @@ function SessionSheet({
           {activeSession && status === 'scheduled' ? <button type="button" disabled={saving || !classId} onClick={() => void persist('cancelled')} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm font-black text-slate-600 disabled:opacity-40"><XCircle size={15} />수업 취소</button> : null}
           {activeSession && status === 'scheduled' ? <button type="button" disabled={saving || !classId} onClick={() => void persist('completed')} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CheckCircle2 size={15} />수업 완료</button> : null}
         </div>
+        {activeSession && status === 'completed' ? <button type="button" disabled={saving} onClick={() => { setError(null); setNextDraft(buildNextSessionDraft(activeSession)); setCopyPrograms(false); setNextSessionOpen(true); }} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CalendarDays size={17} />다음 수업 만들기</button> : null}
       </div>
     </BottomSheet>
   );

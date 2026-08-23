@@ -27,6 +27,7 @@ type OperationalDataContextValue = {
   ownerId: string | null;
   reload: () => Promise<void>;
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
+  createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms: boolean }) => Promise<MasterSessionDto>;
   addSessionProgram: (sessionId: string, programId: number) => Promise<MasterSessionDto['programs'][number]>;
   addSessionSpomove: (sessionId: string, spomovePresetId: string) => Promise<MasterSessionDto['programs'][number]>;
   removeSessionProgram: (sessionId: string, sessionProgramId: string) => Promise<void>;
@@ -151,6 +152,16 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
+  const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms: boolean }) => {
+    const json = await masterFetchJson<{ data: MasterSessionDto }>(`/api/spokedu-master/sessions/${sourceSessionId}/next`, {
+      body: JSON.stringify(input),
+      method: 'POST',
+    });
+    setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()));
+    return json.data;
+  }, []);
+
   const createClass = useCallback(async (name: string) => {
     const json = await masterFetchJson<{ data: MasterClassDto }>('/api/spokedu-master/classes', {
       body: JSON.stringify({ name }),
@@ -222,6 +233,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     () => ({
       classes,
       createClass,
+      createNextSession,
       addClassStudent,
       addSessionProgram,
       addSessionSpomove,
@@ -242,7 +254,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       updateSessionProgram,
       updateClass,
     }),
-    [addClassStudent, addSessionProgram, addSessionSpomove, classes, createClass, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, addSessionSpomove, classes, createClass, createNextSession, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;
