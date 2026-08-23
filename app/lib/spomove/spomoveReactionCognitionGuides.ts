@@ -1,20 +1,20 @@
 import { FULL_THEME_SEEDS } from '@/app/spokedu-master/spomove/operations/fullThemeSeed';
 import type { MovementPick } from '@/app/spokedu-master/spomove/movements/movementTypes';
 
-import type { SpomoveMovementGuideDraft, SpomoveFocusTag } from './spomoveGuideContract';
-import type { SpomovePresetContentOverride } from './spomoveOfficialAssets';
+import type { SpomoveFocusTag } from './spomoveGuideContract';
+import { mergeSpomoveGuideSeedOverride, type SpomoveGuideSeedBase } from './spomoveGuideSeedMerge';
 
 /**
  * Reaction-cognition commercial guides (Batch 04).
  * Public runtime must NOT import this as fallback — CMS is SSOT after Admin save.
  */
 
-export type SpomoveGuideSeedEntry = {
-  presetId: string;
+export type SpomoveGuideSeedEntry = SpomoveGuideSeedBase & {
   cluster: 'L1-space' | 'L2-quad' | 'L3-full' | 'L4-split';
   theme?: 'color' | 'fruit' | 'animal' | 'food' | 'nature' | 'vehicle' | 'mix' | 'color-arrow';
-  movementGuide: SpomoveMovementGuideDraft;
 };
+
+export { mergeSpomoveGuideSeedOverride };
 
 type ThemeId = 'color' | 'fruit' | 'animal' | 'food' | 'nature' | 'vehicle' | 'mix';
 
@@ -221,31 +221,3 @@ export const SPOMOVE_REACTION_COGNITION_GUIDE_SEEDS: readonly SpomoveGuideSeedEn
 export const SPOMOVE_REACTION_COGNITION_SEED_PRESET_IDS = SPOMOVE_REACTION_COGNITION_GUIDE_SEEDS.map(
   (entry) => entry.presetId,
 );
-
-function isBlankGuideValue(value: unknown): boolean {
-  if (value === undefined || value === null) return true;
-  if (typeof value === 'string') return !value.trim();
-  if (Array.isArray(value)) return value.length === 0;
-  return false;
-}
-
-/** Merge seed guide into existing override — existing non-blank wins. */
-export function mergeSpomoveGuideSeedOverride(
-  current: SpomovePresetContentOverride | undefined,
-  seed: SpomoveGuideSeedEntry,
-): SpomovePresetContentOverride {
-  const existingGuide = current?.movementGuide ?? {};
-  const mergedGuide: SpomoveMovementGuideDraft = { ...existingGuide };
-  for (const [key, value] of Object.entries(seed.movementGuide) as Array<
-    [keyof SpomoveMovementGuideDraft, SpomoveMovementGuideDraft[keyof SpomoveMovementGuideDraft]]
-  >) {
-    if (isBlankGuideValue(mergedGuide[key])) {
-      (mergedGuide as Record<string, unknown>)[key] = value;
-    }
-  }
-  return {
-    ...current,
-    movementGuide: mergedGuide,
-    movementGuideStatus: current?.movementGuideStatus ?? 'draft',
-  };
-}

@@ -1,9 +1,9 @@
 import type { SpomoveMovementGuideStatus } from './spomoveGuideContract';
 import type { SpomovePresetContentOverride } from './spomoveOfficialAssets';
+import { mergeSpomoveGuideSeedOverride, type SpomoveGuideSeedBase } from './spomoveGuideSeedMerge';
 import {
   SPOMOVE_REACTION_COGNITION_GUIDE_SEEDS,
   SPOMOVE_REACTION_COGNITION_SEED_PRESET_IDS,
-  mergeSpomoveGuideSeedOverride,
   type SpomoveGuideSeedEntry,
 } from './spomoveReactionCognitionGuides';
 
@@ -19,8 +19,8 @@ function entryFingerprint(entry: SpomovePresetContentOverride | undefined): stri
 }
 
 /**
- * Merge selected reaction-cognition seeds into CMS map.
- * Only listed seed preset IDs may change. Other programGroup entries must stay identical.
+ * Merge selected guide seeds into CMS map.
+ * Only listed seed preset IDs may change. Other entries must stay identical.
  */
 export function applySpomoveGuideSeedBatch({
   current,
@@ -29,7 +29,7 @@ export function applySpomoveGuideSeedBatch({
   allowedPresetIds,
 }: {
   current: Record<string, SpomovePresetContentOverride | undefined>;
-  seeds: readonly SpomoveGuideSeedEntry[];
+  seeds: readonly SpomoveGuideSeedBase[];
   status: SpomoveMovementGuideStatus;
   allowedPresetIds: readonly string[];
 }): SpomoveGuideBatchApplyResult {

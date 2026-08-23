@@ -62,11 +62,18 @@ import {
   resolveSpomoveBriefingReadiness,
   type SpomoveBriefingReadiness,
 } from '@/app/lib/spomove/spomoveBriefingReadiness';
+import {
+  preserveSourceBaselineFields,
+  resolveSpomoveGuideSourceIntegrity,
+  withPublishedSourceBaseline,
+  type SpomoveGuideSourceIntegrityStatus,
+} from '@/app/lib/spomove/spomoveGuideSourceIntegrity';
 import { SPOMOVE_EDITORIAL_ADMIN_HELPER } from '@/app/lib/spomove/spomoveEditorialQualityContract';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
+  findOfficialSpomovePreset,
   type OfficialSpomovePreset,
   type OfficialSpomoveProgramGroup,
 } from '@/app/spokedu-master/spomove/officialSpomovePresets';
@@ -694,6 +701,9 @@ function normalizeContentDraft(value: SpomovePresetContentOverride | undefined):
     activityConcept: value?.activityConcept ?? '',
     movementGuide: value?.movementGuide,
     movementGuideStatus: value?.movementGuideStatus,
+    sourceFingerprint: value?.sourceFingerprint,
+    sourceFingerprintVersion: value?.sourceFingerprintVersion,
+    sourceReviewedAt: value?.sourceReviewedAt,
   };
 }
 
@@ -808,7 +818,10 @@ type SpomoveContentWorkFilter =
   | 'gapObjective'
   | 'gapTeachingPoints'
   | 'gapInstruction'
-  | 'gapFocusTags';
+  | 'gapFocusTags'
+  | 'sourceCurrent'
+  | 'sourceChanged'
+  | 'sourceUntracked';
 
 const SPOMOVE_CONTENT_WORK_FILTERS: Array<{ id: SpomoveContentWorkFilter; label: string }> = [
   { id: 'all', label: '전체' },
@@ -825,6 +838,12 @@ const SPOMOVE_BRIEFING_READINESS_FILTERS: Array<{ id: SpomoveContentWorkFilter; 
   { id: 'missingBriefing', label: 'Missing' },
 ];
 
+const SPOMOVE_SOURCE_INTEGRITY_FILTERS: Array<{ id: SpomoveContentWorkFilter; label: string }> = [
+  { id: 'sourceCurrent', label: 'Source Current' },
+  { id: 'sourceChanged', label: 'Review Required' },
+  { id: 'sourceUntracked', label: 'Source Untracked' },
+];
+
 const SPOMOVE_BRIEFING_GAP_FILTERS: Array<{ id: SpomoveContentWorkFilter; label: string }> = [
   { id: 'gapObjective', label: 'objective 없음' },
   { id: 'gapTeachingPoints', label: 'teachingPoints 없음' },
@@ -837,6 +856,12 @@ const BRIEFING_READINESS_LABELS: Record<SpomoveBriefingReadiness, string> = {
   needsEditorial: 'Needs Editorial',
   legacy: 'Legacy',
   missing: 'Missing',
+};
+
+const SOURCE_INTEGRITY_LABELS: Record<SpomoveGuideSourceIntegrityStatus, string> = {
+  current: 'Source Current',
+  changed: 'Source Changed',
+  untracked: 'Source Untracked',
 };
 
 function matchesSpomoveContentWorkFilter({
@@ -867,6 +892,14 @@ function matchesSpomoveContentWorkFilter({
   if (filter === 'gapTeachingPoints') return gaps.missingTeachingPoints;
   if (filter === 'gapInstruction') return gaps.missingInstruction;
   if (filter === 'gapFocusTags') return gaps.missingFocusTags;
+
+  const source = resolveSpomoveGuideSourceIntegrity({
+    preset,
+    contentOverride: draft,
+  });
+  if (filter === 'sourceCurrent') return source.status === 'current';
+  if (filter === 'sourceChanged') return source.status === 'changed';
+  if (filter === 'sourceUntracked') return source.status === 'untracked';
   return true;
 }
 
@@ -1024,7 +1057,9 @@ function SpomoveContentManager() {
 
   const saveContent = useCallback(async (presetId: string) => {
     const draft = normalizeContentDraft(draftMap[presetId]);
-    const nextEntry: SpomovePresetContentOverride = {
+    const previous = contentRef.current[presetId];
+    const preset = findOfficialSpomovePreset(presetId);
+    let nextEntry: SpomovePresetContentOverride = {
       displayTitle: draft.displayTitle?.trim() ?? '',
       shortDescription: draft.shortDescription?.trim() ?? '',
       variantLabel: draft.variantLabel?.trim() ?? '',
@@ -1037,6 +1072,12 @@ function SpomoveContentManager() {
       movementGuide: draft.movementGuide,
       movementGuideStatus: draft.movementGuideStatus,
     };
+    // Draft save keeps baseline; Published confirm refreshes fingerprint.
+    if (draft.movementGuideStatus === 'published' && preset) {
+      nextEntry = withPublishedSourceBaseline(preset, nextEntry);
+    } else {
+      nextEntry = preserveSourceBaselineFields(previous, nextEntry);
+    }
     const next = { ...contentRef.current };
     if (contentDraftIsEmpty(nextEntry)) delete next[presetId];
     else next[presetId] = nextEntry;
@@ -1112,6 +1153,7 @@ function SpomoveContentManager() {
     const allFilters = [
       ...SPOMOVE_CONTENT_WORK_FILTERS,
       ...SPOMOVE_BRIEFING_READINESS_FILTERS,
+      ...SPOMOVE_SOURCE_INTEGRITY_FILTERS,
       ...SPOMOVE_BRIEFING_GAP_FILTERS,
     ];
     return allFilters.reduce<Record<SpomoveContentWorkFilter, number>>(
@@ -1136,6 +1178,9 @@ function SpomoveContentManager() {
         needsEditorial: 0,
         legacy: 0,
         missingBriefing: 0,
+        sourceCurrent: 0,
+        sourceChanged: 0,
+        sourceUntracked: 0,
         gapObjective: 0,
         gapTeachingPoints: 0,
         gapInstruction: 0,
@@ -1172,6 +1217,22 @@ function SpomoveContentManager() {
         contentOverride: draft,
       });
       counts[readiness] += 1;
+    });
+    return counts;
+  }, [draftMap]);
+  const sourceIntegritySummary = useMemo(() => {
+    const counts: Record<SpomoveGuideSourceIntegrityStatus, number> = {
+      current: 0,
+      changed: 0,
+      untracked: 0,
+    };
+    ADMIN_SPOMOVE_LIBRARY.forEach((preset) => {
+      const draft = normalizeContentDraft(draftMap[preset.id]);
+      const { status } = resolveSpomoveGuideSourceIntegrity({
+        preset,
+        contentOverride: draft,
+      });
+      counts[status] += 1;
     });
     return counts;
   }, [draftMap]);
@@ -1270,6 +1331,20 @@ function SpomoveContentManager() {
               <p className="mt-1 text-[18px] font-black text-slate-950">{briefingReadinessSummary.missing}개</p>
             </div>
           </div>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg border border-emerald-100 bg-emerald-50/70 p-3">
+              <p className="text-[10px] font-black text-emerald-700">Source Current</p>
+              <p className="mt-1 text-[18px] font-black text-emerald-950">{sourceIntegritySummary.current}개</p>
+            </div>
+            <div className="rounded-lg border border-orange-100 bg-orange-50 p-3">
+              <p className="text-[10px] font-black text-orange-700">Review Required</p>
+              <p className="mt-1 text-[18px] font-black text-orange-950">{sourceIntegritySummary.changed}개</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[10px] font-black text-slate-500">Source Untracked</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{sourceIntegritySummary.untracked}개</p>
+            </div>
+          </div>
           <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <label className="relative min-w-0 flex-1">
@@ -1318,6 +1393,27 @@ function SpomoveContentManager() {
                     className={`h-8 rounded-full border px-3 text-[11px] font-black ${
                       active
                         ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                        : 'border-slate-200 bg-white text-slate-500'
+                    }`}
+                  >
+                    {filter.label}
+                    <span className="ml-1 text-[10px] opacity-60">{workFilterCounts[filter.id]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-[11px] font-black text-slate-600">Source Integrity (Admin QA)</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {SPOMOVE_SOURCE_INTEGRITY_FILTERS.map((filter) => {
+                const active = workFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setWorkFilter(filter.id)}
+                    className={`h-8 rounded-full border px-3 text-[11px] font-black ${
+                      active
+                        ? 'border-orange-500 bg-orange-50 text-orange-800'
                         : 'border-slate-200 bg-white text-slate-500'
                     }`}
                   >
@@ -1426,6 +1522,10 @@ function SpomoveContentManager() {
                       preset,
                       contentOverride: draft,
                     });
+                    const sourceIntegrity = resolveSpomoveGuideSourceIntegrity({
+                      preset,
+                      contentOverride: draft,
+                    });
                     const briefingGapLabels = [
                       briefing.gaps.missingObjective ? 'objective' : null,
                       briefing.gaps.missingTeachingPoints ? 'teachingPoints' : null,
@@ -1456,6 +1556,17 @@ function SpomoveContentManager() {
                                 <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-emerald-700">
                                   {BRIEFING_READINESS_LABELS[briefing.readiness]}
                                 </span>
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                                    sourceIntegrity.status === 'changed'
+                                      ? 'bg-orange-50 text-orange-800'
+                                      : sourceIntegrity.status === 'current'
+                                        ? 'bg-white text-slate-600'
+                                        : 'bg-slate-100 text-slate-500'
+                                  }`}
+                                >
+                                  {SOURCE_INTEGRITY_LABELS[sourceIntegrity.status]}
+                                </span>
                                 {briefingGapLabels.map((label) => (
                                   <span key={label} className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                                     {label} 없음
@@ -1467,7 +1578,33 @@ function SpomoveContentManager() {
                             <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-black text-indigo-700">상세 편집</span>
                           </div>
                         </summary>
-                        <p className="text-[13px] font-black text-slate-950">{getSpomovePresetDisplayModel(preset).displayTitle}</p>
+                        {sourceIntegrity.status === 'changed' ? (
+                          <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5">
+                            <p className="text-[12px] font-black text-orange-900">Source Changed · 재검수 필요</p>
+                            <p className="mt-1 text-[11px] font-semibold leading-4 text-orange-800">
+                              마지막 가이드 검수 이후 실행 원본이 변경되었습니다.
+                            </p>
+                            {sourceIntegrity.sourceReviewedAt ? (
+                              <p className="mt-1.5 text-[10px] font-bold text-orange-700/90">
+                                Reviewed:{' '}
+                                {sourceIntegrity.sourceReviewedAt.slice(0, 10)}
+                              </p>
+                            ) : null}
+                            <p className="mt-2 text-[10px] font-semibold text-orange-700/80">
+                              가이드를 확인한 뒤 Published로 다시 저장하면 Source Current로 갱신됩니다.
+                              (내용이 같아도 재승인 가능)
+                            </p>
+                          </div>
+                        ) : null}
+                        {sourceIntegrity.status === 'untracked' ? (
+                          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                            <p className="text-[12px] font-black text-slate-700">Source Untracked</p>
+                            <p className="mt-1 text-[11px] font-semibold leading-4 text-slate-600">
+                              아직 원본 fingerprint baseline이 없습니다. Published 저장 시 등록됩니다.
+                            </p>
+                          </div>
+                        ) : null}
+                        <p className="mt-3 text-[13px] font-black text-slate-950">{getSpomovePresetDisplayModel(preset).displayTitle}</p>
                         <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
                         <section className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
                           <p className="text-[11px] font-black text-indigo-900">구독자 카드 정보</p>

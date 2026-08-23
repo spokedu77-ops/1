@@ -42,6 +42,10 @@ export type SpomovePresetContentOverride = {
   activityConcept?: string;
   movementGuide?: SpomoveMovementGuideDraft;
   movementGuideStatus?: SpomoveMovementGuideStatus;
+  /** Guide source drift baseline (Admin Source Integrity). Not Public-facing. */
+  sourceFingerprint?: string;
+  sourceFingerprintVersion?: number;
+  sourceReviewedAt?: string;
 };
 export type {
   SpomoveFocusTag,
@@ -116,6 +120,18 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
       normalized.movementGuide = movementGuide;
       if (movementGuideStatus) normalized.movementGuideStatus = movementGuideStatus;
     }
+    const sourceFingerprint =
+      typeof entry.sourceFingerprint === 'string' ? entry.sourceFingerprint.trim() : '';
+    if (sourceFingerprint) normalized.sourceFingerprint = sourceFingerprint;
+    if (
+      typeof entry.sourceFingerprintVersion === 'number' &&
+      Number.isFinite(entry.sourceFingerprintVersion)
+    ) {
+      normalized.sourceFingerprintVersion = Math.trunc(entry.sourceFingerprintVersion);
+    }
+    const sourceReviewedAt =
+      typeof entry.sourceReviewedAt === 'string' ? entry.sourceReviewedAt.trim() : '';
+    if (sourceReviewedAt) normalized.sourceReviewedAt = sourceReviewedAt;
     if (Object.keys(normalized).length > 0) next[presetId] = normalized;
   }
 

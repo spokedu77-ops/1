@@ -318,8 +318,8 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
   it('스트룹 4개 공식 제목과 순서를 유지한다', () => {
     expect(byGroup('stroop').sort((a, b) => a.sortOrder - b.sortOrder).map((preset) => preset.title)).toEqual([
       '색상화살표 · 보통 (기본)',
-      '색상화살표 · 어려움 (배경간섭 추가)',
-      '단어 · 보통 (기본)',
+      '단어 · 보통 (의미/잉크 전환)',
+      '단어 · 보통+ (의미/잉크·역전)',
       '단어 · 어려움 (배경간섭 추가)',
     ]);
   });
