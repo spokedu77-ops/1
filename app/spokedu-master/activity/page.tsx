@@ -5,7 +5,8 @@ import {
   Plus, Save, Search, Settings2, UsersRound, XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
@@ -13,6 +14,7 @@ import { addSeoulSessionDays, buildSessionDraftDateTimes, formatSeoulSessionDay,
 import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
 import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
+import { resolveActivityQuery } from './activityQuery';
 
 function statusLabel(status: MasterSessionStatus) {
   return status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
@@ -261,17 +263,18 @@ function SessionSheet({
           <div className="mt-2 space-y-2">
             {programs.map((program, index) => (
               <div key={program.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2">
-                <button type="button" disabled={!activeSession || status === 'cancelled'} onClick={() => void toggleProgram(program)} className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label="프로그램 진행 여부"><Check size={16} /></button>
-                <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}><span className="block">{program.programTitle ?? '이름 없는 활동'}</span>{program.sourceType === 'spomove' ? <span className="text-[10px] font-black text-blue-600">SPOMOVE</span> : null}</span>
-                {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) ? <Link href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!)} className="rounded-lg bg-blue-600 px-2 py-1.5 text-[10px] font-black text-white">실행</Link> : null}
+                <button type="button" disabled={!activeSession || status === 'cancelled'} onClick={() => void toggleProgram(program)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label={`${program.programTitle ?? '활동'} 진행 여부`}><Check size={18} /></button>
+                <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}><span className="block truncate" title={program.programTitle ?? '이름 없는 활동'}>{program.programTitle ?? '이름 없는 활동'}</span>{program.sourceType === 'spomove' ? <span className="text-[10px] font-black text-blue-600">SPOMOVE</span> : null}</span>
+                {program.sourceType === 'program' && program.programId ? <Link href={`/spokedu-master/library/${program.programId}`} className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-black text-slate-700">보기</Link> : null}
+                {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) ? <Link href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!)} className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white">실행</Link> : null}
                 <button type="button" onClick={() => moveProgram(index, -1)} disabled={status !== 'scheduled' || index === 0} className="p-1 text-slate-400 disabled:opacity-20"><ChevronUp size={16} /></button>
                 <button type="button" onClick={() => moveProgram(index, 1)} disabled={status !== 'scheduled' || index === programs.length - 1} className="p-1 text-slate-400 disabled:opacity-20"><ChevronDown size={16} /></button>
                 <button type="button" disabled={!activeSession || status !== 'scheduled'} onClick={() => void removeProgram(program)} className="p-1 text-rose-500 disabled:opacity-30">×</button>
               </div>
             ))}
-            {!programs.length ? <p className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500">프로그램 미지정 — 이 상태로도 수업을 저장할 수 있습니다.</p> : null}
+            {!programs.length ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">아직 수업 활동이 없습니다. 아래에서 프로그램이나 SPOMOVE를 추가해 수업을 준비하세요.</p> : null}
           </div>
-          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!activeSession || status !== 'scheduled' || saving} className="mt-2 h-10 w-full rounded-xl border border-slate-300 bg-white text-xs font-black text-slate-700 disabled:opacity-40">+ 수업 활동 추가</button>
+          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!activeSession || status !== 'scheduled' || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length && activeSession && status === 'scheduled' ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
         </section>
 
         <label className="block text-sm font-black text-slate-800">수업 메모
@@ -361,11 +364,34 @@ function ClassManagerSheet({ onClose }: { onClose: () => void }) {
 
 export default function ActivityPage() {
   const data = useOperationalData();
+  const searchParams = useSearchParams();
   const [selectedDay, setSelectedDay] = useState(getSeoulToday());
   const [editing, setEditing] = useState<MasterSessionDto | null | undefined>(undefined);
   const [classManagerOpen, setClassManagerOpen] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
+  const handledQuery = useRef<string | null>(null);
   const daySessions = useMemo(() => data.sessions.filter((session) => getSeoulSessionDay(session.startAt) === selectedDay), [data.sessions, selectedDay]);
   const visibleDays = useMemo(() => Array.from({ length: 14 }, (_, index) => addSeoulSessionDays(getSeoulToday(), index)), []);
+
+  useEffect(() => {
+    if (data.status !== 'ready') return;
+    const queryKey = searchParams.toString();
+    if (!queryKey || handledQuery.current === queryKey) return;
+    handledQuery.current = queryKey;
+    const resolution = resolveActivityQuery(searchParams, data.sessions);
+    if (resolution.kind === 'session') {
+      setRouteError(null);
+      setSelectedDay(getSeoulSessionDay(resolution.session.startAt));
+      setEditing(resolution.session);
+    } else if (resolution.kind === 'missing-session') {
+      setEditing(undefined);
+      setRouteError('수업을 찾을 수 없습니다.');
+    } else if (resolution.kind === 'create') {
+      setRouteError(null);
+      setSelectedDay(resolution.day);
+      setEditing(null);
+    }
+  }, [data.sessions, data.status, searchParams]);
 
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
@@ -377,6 +403,7 @@ export default function ActivityPage() {
 
         {data.status === 'loading' || data.status === 'idle' ? <p className="mt-5 rounded-2xl bg-white p-5 text-sm font-bold text-slate-500">수업 데이터를 불러오는 중입니다.</p> : null}
         {data.status === 'error' ? <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-5"><p className="text-sm font-bold text-rose-700">수업 데이터를 불러오지 못했습니다.</p><button type="button" onClick={() => void data.reload()} className="mt-3 text-sm font-black text-rose-700">다시 시도</button></div> : null}
+        {routeError ? <div role="alert" className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{routeError}</div> : null}
 
         {!data.classes.length && data.status === 'ready' ? <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800"><p>수업을 만들기 전에 수업반을 등록해 주세요.</p><button type="button" onClick={() => setClassManagerOpen(true)} className="mt-2 text-sm font-black underline">수업반 만들기</button></div> : null}
 
@@ -401,7 +428,7 @@ export default function ActivityPage() {
                 <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `활동 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '활동 미지정'} · 출석 {session.attendance.filter((item) => item.status === 'present').length}명</p>
               </button>
             ))}
-            {!daySessions.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><UsersRound className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">이 날짜에 Session이 없습니다.</p><button type="button" onClick={() => setEditing(null)} disabled={!data.classes.length} className="mt-3 text-sm font-black text-emerald-700 disabled:opacity-40">+ 수업 추가</button></div> : null}
+            {!daySessions.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><UsersRound className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">이 날짜에 수업이 없습니다.</p><button type="button" onClick={() => setEditing(null)} disabled={!data.classes.length} className="mt-3 min-h-11 rounded-xl px-4 text-sm font-black text-emerald-700 disabled:opacity-40">+ 수업 추가</button></div> : null}
           </div>
         </section>
       </div>

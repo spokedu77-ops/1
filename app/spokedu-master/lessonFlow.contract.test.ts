@@ -37,18 +37,18 @@ describe('lesson discovery and execution flow contract', () => {
     expect(detail).not.toContain('getSpomoveSessionHref');
   });
 
-  it('keeps photo-first home with CompactOpsBar only for ops', () => {
-    const opsBar = read('app/spokedu-master/dashboard/CompactOpsBar.tsx');
-    const model = read('app/spokedu-master/dashboard/homeOpsModel.ts');
-    const opsBarIndex = dashboard.indexOf('CompactOpsBar');
+  it('keeps Session operations ahead of discovery content', () => {
+    const todayPanel = read('app/spokedu-master/dashboard/TodaySessionsPanel.tsx');
+    const todayModel = read('app/spokedu-master/dashboard/todaySessionsModel.ts');
+    const opsBarIndex = dashboard.indexOf('TodaySessionsPanel');
     const featuredIndex = dashboard.indexOf('data-dashboard-section="featured-flow"');
     const weeklyIndex = dashboard.indexOf('data-dashboard-section="weekly"');
     const spomoveIndex = dashboard.indexOf('data-dashboard-section="spomove"');
     const contextIndex = dashboard.indexOf('data-dashboard-section="context-programs"');
 
     expect(dashboard).not.toContain('HomeOpsBoard');
-    expect(dashboard).toContain('CompactOpsBar');
-    expect(dashboard).toContain('resolveHomeAnchor');
+    expect(dashboard).toContain('TodaySessionsPanel');
+    expect(dashboard).not.toContain('resolveHomeAnchor');
     expect(dashboard).toContain('ContextProgramRow');
     expect(dashboard).toContain('WeeklyProgramCard');
     expect(dashboard).not.toContain('WeeklyFeaturedCard');
@@ -59,16 +59,13 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).toContain('data-spm-spomove-card-action="start"');
     expect(dashboard).not.toContain('바로 실행');
     expect(dashboard).toContain('spm-btn-primary');
-    expect(opsBar).toContain('data-dashboard-section="compact-ops-bar"');
-    expect(opsBar).toContain('max-h-[84px]');
+    expect(todayPanel).toContain('data-dashboard-section="today-sessions"');
+    expect(todayModel).toContain('/spokedu-master/activity?session=');
     expect(opsBarIndex).toBeGreaterThanOrEqual(0);
     expect(featuredIndex).toBeGreaterThan(opsBarIndex);
     expect(weeklyIndex).toBeGreaterThan(featuredIndex);
     expect(spomoveIndex).toBeGreaterThan(weeklyIndex);
     expect(contextIndex).toBeGreaterThan(spomoveIndex);
-    expect(model).toContain('getHomeAnchorIntensity');
-    expect(model).toContain("kind: 'record_draft'");
-    expect(model).toContain('lesson_opened / video_started / 미리보기 금지');
     expect(dashboard).not.toContain('function ContinueSection');
     expect(dashboard).not.toContain('data-dashboard-section="ops-anchor"');
     expect(dashboard).not.toContain('data-dashboard-section="billboard"');

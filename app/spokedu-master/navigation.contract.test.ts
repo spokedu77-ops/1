@@ -22,7 +22,7 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const legacy = read('app/spokedu-master/class-record/page.tsx');
     expect(activity).toContain('수업 운영 캘린더');
     expect(activity).toContain('수업 상세');
-    expect(activity).toContain('프로그램 미지정');
+    expect(activity).toContain('아직 수업 활동이 없습니다');
     expect(activity).toContain('수업 완료');
     expect(activity).not.toContain('/spokedu-master/class-record');
     expect(legacy).toContain("redirect('/spokedu-master/activity')");

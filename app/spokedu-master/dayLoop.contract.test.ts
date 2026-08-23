@@ -14,9 +14,9 @@ describe('SPOKEDU MASTER Session day loop', () => {
 
   it('routes home operational actions to the Calendar', () => {
     const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
-    const ops = read('app/spokedu-master/dashboard/CompactOpsBar.tsx');
-    expect(dashboard).toContain('/spokedu-master/activity');
-    expect(ops).toContain('href="/spokedu-master/activity"');
+    const todaySessions = read('app/spokedu-master/dashboard/todaySessionsModel.ts');
+    expect(dashboard).toContain('TodaySessionsPanel');
+    expect(todaySessions).toContain('/spokedu-master/activity?session=');
   });
 
   it('keeps SPOMOVE linked to Session operation', () => {

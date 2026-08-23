@@ -20,6 +20,6 @@ describe('activity Session flow', () => {
   it('keeps Session and program completion independent', () => {
     expect(source).toContain('data.updateSessionProgram');
     expect(source).toContain("void persist('completed')");
-    expect(source).toContain('프로그램 미지정');
+    expect(source).toContain('아직 수업 활동이 없습니다');
   });
 });

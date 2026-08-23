@@ -37,9 +37,8 @@ describe('SPOKEDU MASTER craft + selection reasons', () => {
     expect(students).toContain('bg-emerald-600');
   });
 
-  it('keeps CompactOpsBar height contract while craft work lands', () => {
-    const opsBar = read('app/spokedu-master/dashboard/CompactOpsBar.tsx');
-    expect(opsBar).toContain('max-h-[84px]');
-    expect(opsBar).not.toContain('min-h-[140px]');
+  it('keeps Today Sessions ahead of discovery content', () => {
+    const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
+    expect(dashboard.indexOf('TodaySessionsPanel')).toBeLessThan(dashboard.indexOf('data-dashboard-section="featured-flow"'));
   });
 });

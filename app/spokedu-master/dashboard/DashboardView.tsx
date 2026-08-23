@@ -33,7 +33,7 @@ import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { getSeoulSessionDay } from '../lib/sessionDateTime';
+import { getSeoulToday } from '../lib/sessionDateTime';
 import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
 import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
@@ -54,24 +54,8 @@ import {
   getRecentActivityOwnerId,
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
-  selectRecentSpomoveActivity,
 } from '../lib/recentProgramActivity';
-import {
-  CLASS_RECORD_DRAFT_KEY,
-  QUICK_RECORD_DRAFT_KEY,
-  REPORT_DRAFT_KEY,
-  hasMeaningfulClassRecordDraft,
-  readOwnerSaveDraft,
-} from '../lib/saveDraftStorage';
-import { CompactOpsBar } from './CompactOpsBar';
-import {
-  hasMeaningfulPrepDraft,
-  hasMeaningfulReportDraft,
-  resolveHomeAnchor,
-  type ClassRecordDraftSnapshot,
-  type QuickRecordDraftSnapshot,
-  type ReportDraftSnapshot,
-} from './homeOpsModel';
+import { TodaySessionsPanel } from './TodaySessionsPanel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
@@ -681,8 +665,10 @@ function EntitledDashboardView() {
   } = useMasterStore();
   const {
     students: serverStudents,
+    classes: operationalClasses,
     sessions: operationalSessions,
     status: operationalStatus,
+    reload: reloadOperationalData,
   } = useOperationalData();
   const explanationData = useExplanationData();
   const profile = useProfile();
@@ -725,24 +711,10 @@ function EntitledDashboardView() {
   ]);
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
   const [contextTab, setContextTab] = useState<ContextProgramTab>('classroom');
-  const [classRecordDraft, setClassRecordDraft] = useState<ClassRecordDraftSnapshot | null>(null);
-  const [reportDraft, setReportDraft] = useState<ReportDraftSnapshot | null>(null);
-  const [quickRecordDraft, setQuickRecordDraft] = useState<QuickRecordDraftSnapshot | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    const refreshDrafts = () => {
-      setClassRecordDraft(readOwnerSaveDraft<ClassRecordDraftSnapshot>(CLASS_RECORD_DRAFT_KEY, recentActivityOwnerId));
-      setReportDraft(readOwnerSaveDraft<ReportDraftSnapshot>(REPORT_DRAFT_KEY, recentActivityOwnerId));
-      setQuickRecordDraft(readOwnerSaveDraft<QuickRecordDraftSnapshot>(QUICK_RECORD_DRAFT_KEY, recentActivityOwnerId));
-    };
-    refreshDrafts();
-    window.addEventListener('focus', refreshDrafts);
-    return () => window.removeEventListener('focus', refreshDrafts);
-  }, [recentActivityOwnerId]);
 
   useEffect(() => {
     let alive = true;
@@ -872,42 +844,6 @@ function EntitledDashboardView() {
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
-  const recentSpomove = useMemo(
-    () => (recentActivityOwnerId ? selectRecentSpomoveActivity(validSpomoveActivities, recentActivityOwnerId) : null),
-    [recentActivityOwnerId, validSpomoveActivities],
-  );
-  const todayLessonAssignments = useMemo(
-    () => operationalSessions
-      .filter((session) => session.status !== 'cancelled' && getSeoulSessionDay(session.startAt) === getSeoulSessionDay(new Date()))
-      .flatMap((session) => session.programs.filter((program) => program.sourceType === 'program' && program.programId != null).map((program) => ({ programId: String(program.programId), programTitle: program.programTitle ?? `프로그램 ${program.programId}` }))),
-    [operationalSessions],
-  );
-  const todayLessonAssignment = todayLessonAssignments[0] ?? null;
-  const programsById = useMemo(() => new Map(programs.map((program) => [program.id, program])), [programs]);
-  const homeAnchor = useMemo(
-    () =>
-      resolveHomeAnchor({
-        classRecordDraft,
-        reportDraft,
-        quickRecordDraft,
-        todayLesson: todayLessonAssignment
-          ? {
-              programId: todayLessonAssignment.programId,
-              programTitle: todayLessonAssignment.programTitle,
-            }
-          : null,
-        recentSpomove,
-        programsById,
-      }),
-    [
-      classRecordDraft,
-      programsById,
-      quickRecordDraft,
-      recentSpomove,
-      reportDraft,
-      todayLessonAssignment,
-    ],
-  );
   const studentMemoCount = useMemo(() => operationalSessions.filter((session) => session.memo?.trim()).length, [operationalSessions]);
   const loopAction = useMemo(
     () => selectMasterLoopAction({
@@ -935,7 +871,7 @@ function EntitledDashboardView() {
 
   if (!mounted || !programsLoaded) return <DashboardSkeleton />;
 
-  if (programPool.length === 0) {
+  if (programPool.length === 0 && operationalStatus === 'error') {
     const isUnauthorized = programsError === 'unauthorized';
     const isForbidden = programsError === 'forbidden';
     const message = isUnauthorized
@@ -964,7 +900,7 @@ function EntitledDashboardView() {
 
   return (
     <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-4 overflow-y-auto px-4 pb-28 pt-4 sm:gap-5 sm:px-6 sm:pt-5 lg:gap-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-      {/* P1: 헤더는 브랜드만 — CompactOpsBar·사진보다 무겁지 않게 */}
+      {/* 브랜드 소개 다음에 오늘의 실제 수업을 가장 먼저 배치한다. */}
       <header className="relative px-0.5 pt-0.5 sm:px-1">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0">
@@ -984,25 +920,24 @@ function EntitledDashboardView() {
             className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 self-start text-[11px] font-bold text-slate-400 transition-colors hover:text-slate-700 sm:self-auto"
             title={loopAction.label}
           >
-            기록
+            수업 캘린더
             <ArrowRight size={12} />
           </Link>
         </div>
       </header>
 
       {isFirstUser
-      && !todayLessonAssignment
-      && !hasMeaningfulClassRecordDraft(classRecordDraft)
-      && !hasMeaningfulReportDraft(reportDraft)
-      && !hasMeaningfulPrepDraft(quickRecordDraft)
+      && operationalSessions.length === 0
         ? <FirstStartGuide spomoveAvailable={spomoveAvailable} />
         : null}
 
-      <CompactOpsBar
-        anchor={homeAnchor}
-        recordCount={operationalStatus === 'ready' ? operationalSessions.length : null}
-        reportCount={explanationData.status === 'loading' ? null : explanationData.total}
-        todayLessons={todayLessonAssignments}
+      <TodaySessionsPanel
+        sessions={operationalSessions}
+        classes={operationalClasses}
+        seoulDay={getSeoulToday()}
+        loading={operationalStatus === 'idle' || operationalStatus === 'loading'}
+        error={operationalStatus === 'error'}
+        onRetry={() => void reloadOperationalData()}
       />
 
       <section
