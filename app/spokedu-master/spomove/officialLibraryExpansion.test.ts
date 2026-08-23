@@ -62,7 +62,11 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
   it('변형 사분할은 1~3단계이며 easy 고정이다', () => {
     const variantQuadrants = OFFICIAL_SPOMOVE_LIBRARY.filter(
-      (preset) => preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 9,
+      (preset) =>
+        preset.engine.mode === 'basic' &&
+        preset.engine.level >= 7 &&
+        preset.engine.level <= 9 &&
+        !preset.engine.handFootDifficulty,
     );
     expect(variantQuadrants).toHaveLength(3);
     for (const level of [7, 8, 9]) {
