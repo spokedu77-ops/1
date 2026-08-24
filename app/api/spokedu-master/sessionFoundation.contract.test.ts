@@ -29,8 +29,9 @@ describe('SPOKEDU MASTER Session foundation', () => {
   it('keeps a newly created class open for child mutations', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
     expect(activity).toContain('setActiveSession(saved)');
-    expect(activity).toContain("!activeSession ? <button");
+    expect(activity).toContain("!activeSession ? <div");
     expect(activity).toContain('수업 만들기</button>');
+    expect(activity).toContain('setPrograms(saved.programs)');
   });
 
   it('applies program UI state only after mutation success', () => {

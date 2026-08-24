@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, BookOpen, Check, Clipboard, MonitorPlay, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react';
+import { ArrowRight, BookOpen, CalendarDays, Check, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOptionalMasterAccessContext } from '../access/MasterAccessProvider';
@@ -11,9 +11,9 @@ const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등
 const PROGRAM_TYPES = ['대근육 활동', 'SPOMOVE', '민첩성', '협동 활동', '체력'];
 const STEP_LABELS = ['환경', '프로필', '흐름', '시작'];
 const FLOW_ITEMS = [
-  { icon: BookOpen, title: '수업 전', desc: '홈, 수업 라이브러리, 수업 미리보기에서 오늘 쓸 수업을 확인합니다.' },
-  { icon: MonitorPlay, title: '수업 중', desc: '수업 도구와 연결된 활동 화면으로 현장 진행을 돕습니다.' },
-  { icon: Clipboard, title: '수업 후', desc: '빠른 기록으로 관찰을 남기고, 같은 기록을 보강한 뒤 안내문으로 이어갑니다.' },
+  { icon: UsersRound, title: '수업반 등록', desc: '먼저 수업반을 만들고 학생 명단을 등록합니다.' },
+  { icon: CalendarDays, title: '첫 수업 만들기', desc: '일정에서 날짜와 시간을 정해 첫 수업을 만듭니다.' },
+  { icon: BookOpen, title: '수업 활동 찾기', desc: '일반 프로그램과 SPOMOVE 활동을 수업에 담아 준비합니다.' },
 ] as const;
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
@@ -103,7 +103,7 @@ export default function OnboardingPage() {
           programTypes,
           onboardingDone: true,
         });
-        router.replace('/spokedu-master/dashboard');
+        router.replace('/spokedu-master/classes?create=1');
       })
       .catch(() => {
         setSaveError('시작 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
@@ -120,7 +120,7 @@ export default function OnboardingPage() {
           <div className="mb-8">
             <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
             <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 흐름에 맞게 시작하세요</h1>
-            <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>기본 정보를 저장하면 수업 전 준비, 수업 중 진행, 수업 후 기록 흐름으로 바로 들어갈 수 있습니다.</p>
+            <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>기본 정보를 저장한 뒤 수업반을 만들고 첫 수업을 시작할 수 있습니다.</p>
           </div>
 
           <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -186,10 +186,10 @@ export default function OnboardingPage() {
                   <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'var(--spm-grn-a14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-grn)' }}>준비 완료</p>
-                    <h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>대시보드에서 시작하세요</h2>
+                    <h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>첫 수업반을 만들어 보세요</h2>
                   </div>
                 </div>
-                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 홈에서 수업 라이브러리, 수업 도구, 기록 흐름을 확인할 수 있습니다. 이용권이 필요한 기능은 해당 화면에서 안내됩니다.</p>
+                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업반에 학생을 등록한 뒤 일정에서 첫 수업을 만들면 준비부터 완료까지 한 흐름으로 이어집니다.</p>
                 {saveError ? (
                   <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
                     {saveError}
@@ -219,7 +219,7 @@ export default function OnboardingPage() {
 
         <aside className="rounded-[22px] p-5" style={{ background: 'linear-gradient(180deg, var(--spm-acc-a16), var(--spm-grn-a08))', border: '1px solid var(--spm-br2)' }}>
           <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>시작하기</p>
-          <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 흐름을 먼저 익히세요</h2>
+          <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>첫 수업까지 세 단계면 충분합니다</h2>
           <div className="mt-5 space-y-3">
             {FLOW_ITEMS.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="flex items-center gap-3 rounded-[15px] p-3" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>

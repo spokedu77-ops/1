@@ -11,13 +11,16 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { LessonManagementTabs } from '../components/lesson/LessonManagementTabs';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
-import { addSeoulSessionDays, buildSessionDraftDateTimes, formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday, seoulDateTimeInputToIso, seoulDayToDate } from '../lib/sessionDateTime';
+import { buildSessionDraftDateTimes, formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday, seoulDateTimeInputToIso, seoulDayToDate } from '../lib/sessionDateTime';
 import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
 import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
 import { resolveActivityQuery } from './activityQuery';
 import { buildNextSessionDateTimes, buildNextSessionDraft } from './nextSession';
 import { getSessionActionPolicy } from './sessionActionPolicy';
+import { MonthSessionCalendar } from './MonthSessionCalendar';
+import { changeSessionEnd, changeSessionStart, createSessionTimeDraft, sessionTimeDraftToInputs } from './sessionDraftTime';
+import { getMonthKey } from './monthCalendar';
 
 function statusLabel(status: MasterSessionStatus) {
   return status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
@@ -51,6 +54,7 @@ function SessionSheet({
   const programsError = useMasterStore((state) => state.programsError);
   const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
   const initialDateTimes = buildSessionDraftDateTimes(initialDate, session ?? undefined);
+  const [timeDraft, setTimeDraft] = useState(() => createSessionTimeDraft(getSeoulSessionDay(initialDate), initialDateTimes.startAt.slice(11, 16), 60));
   const [classId, setClassId] = useState(session?.classId ?? data.classes.find((item) => item.id === initialClassId)?.id ?? data.classes[0]?.id ?? '');
   const [startAt, setStartAt] = useState(initialDateTimes.startAt);
   const [endAt, setEndAt] = useState(initialDateTimes.endAt);
@@ -96,6 +100,13 @@ function SessionSheet({
   const presentRosterCount = currentRoster.filter((student) => attendance[student.id] === 'present').length;
   const uncheckedRosterCount = currentRoster.filter((student) => !attendance[student.id]).length;
   const actions = getSessionActionPolicy(status);
+  const formDirty = Boolean(activeSession) && (
+    classId !== activeSession!.classId
+    || startAt !== buildSessionDraftDateTimes(initialDate, activeSession!).startAt
+    || endAt !== buildSessionDraftDateTimes(initialDate, activeSession!).endAt
+    || memo !== (activeSession!.memo ?? '')
+    || attendanceDirty
+  );
 
   const markAllPresent = () => {
     if (!actions.markAllPresent) return;
@@ -126,7 +137,25 @@ function SessionSheet({
   };
 
   const addSelectedPrograms = async () => {
-    if (!activeSession || !actions.addActivities || !selectedActivityKeys.length) return;
+    if (!actions.addActivities || !selectedActivityKeys.length) return;
+    if (!activeSession) {
+      const draftItems: DraftProgram[] = [];
+      selectedActivityKeys.forEach((key, index) => {
+        const [sourceType, sourceId] = key.split(':', 2) as [ProgramFilter, string];
+        if (sourceType === 'program') {
+          const program = libraryPrograms.find((item) => item.id === sourceId);
+          if (program) draftItems.push({ id: `draft:${key}`, sourceType, programId: Number(program.id), spomovePresetId: null, programTitle: program.title, sortOrder: programs.length + index, isCompleted: false });
+          return;
+        }
+        const preset = findOfficialSpomovePreset(sourceId);
+        if (preset) draftItems.push({ id: `draft:${key}`, sourceType, programId: null, spomovePresetId: preset.id, programTitle: preset.title, sortOrder: programs.length + index, isCompleted: false });
+      });
+      setPrograms((current) => [...current, ...draftItems].map((item, sortOrder) => ({ ...item, sortOrder })));
+      setSelectedActivityKeys([]);
+      setProgramPickerOpen(false);
+      setProgramSearch('');
+      return;
+    }
     setSaving(true);
     setError(null);
     let addedCount = 0;
@@ -160,10 +189,14 @@ function SessionSheet({
   const moveProgram = async (index: number, offset: number) => {
     const target = index + offset;
     if (target < 0 || target >= programs.length) return;
-    if (!activeSession || programs.some((item) => !item.id)) return;
     const next = [...programs];
     [next[index], next[target]] = [next[target]!, next[index]!];
     const ordered = next.map((item, sortOrder) => ({ ...item, sortOrder }));
+    if (!activeSession) {
+      setPrograms(ordered);
+      return;
+    }
+    if (programs.some((item) => !item.id)) return;
     try {
       const savedPrograms = await data.reorderSessionPrograms(activeSession.id, ordered.map((item) => item.id!));
       setPrograms(savedPrograms);
@@ -185,7 +218,11 @@ function SessionSheet({
   };
 
   const removeProgram = async (program: DraftProgram) => {
-    if (!activeSession || !program.id || !actions.removeActivities) return;
+    if (!program.id || !actions.removeActivities) return;
+    if (!activeSession) {
+      setPrograms((current) => current.filter((item) => item.id !== program.id).map((item, sortOrder) => ({ ...item, sortOrder })));
+      return;
+    }
     setError(null);
     try {
       await data.removeSessionProgram(activeSession.id, program.id);
@@ -201,10 +238,11 @@ function SessionSheet({
     try {
       const sessionInput = (inputStatus: MasterSessionStatus) => ({
         classId,
-        startAt: seoulDateTimeInputToIso(startAt),
-        endAt: seoulDateTimeInputToIso(endAt),
+        startAt: seoulDateTimeInputToIso(activeSession ? startAt : sessionTimeDraftToInputs(timeDraft).startAt),
+        endAt: seoulDateTimeInputToIso(activeSession ? endAt : sessionTimeDraftToInputs(timeDraft).endAt),
         status: inputStatus,
         memo: memo.trim() || null,
+        programs: activeSession ? undefined : programs.map((item) => ({ sourceType: item.sourceType, programId: item.programId, spomovePresetId: item.spomovePresetId })),
       });
       const attendanceInput = () => Object.entries(attendance)
         .filter(([studentId]) => roster.some((student) => student.id === studentId))
@@ -303,24 +341,24 @@ function SessionSheet({
   return (
     <BottomSheet open title={activeSession ? '수업 상세' : '수업 추가'} onClose={onClose}>
       <div className="space-y-5 pb-4">
-        <section className="grid gap-3 sm:grid-cols-2">
+        {activeSession ? <div className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-3"><div className="min-w-0"><h3 className="truncate text-base font-black text-slate-900" title={activeSession.className}>{activeSession.className}</h3><p className="mt-1 text-xs font-bold text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(activeSession.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(activeSession.startAt)}–{formatSeoulSessionTime(activeSession.endAt)}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ring-1 ${statusTone(status)}`}>{statusLabel(status)}</span></div> : null}
+        <section className={`grid gap-3 ${activeSession ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
           <label className="text-xs font-black text-slate-600">수업반
             <select value={classId} disabled={Boolean(activeSession) && !actions.editSchedule} onChange={(event) => { setClassId(event.target.value); setAttendance({}); setAttendanceDirty(true); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold disabled:bg-slate-50">
               {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
+            {!activeSession && selectedClass ? <span className="mt-1 block text-[11px] font-semibold text-slate-400">학생 {selectedClass.studentIds.length}명</span> : null}
           </label>
-          <div className="text-xs font-black text-slate-600">상태
-            <div className={`mt-1 flex h-11 items-center rounded-xl px-3 text-sm ring-1 ${statusTone(status)}`}>{statusLabel(status)}</div>
-          </div>
-          <label className="text-xs font-black text-slate-600">시작
-            <input type="datetime-local" disabled={Boolean(activeSession) && !actions.editSchedule} value={startAt} onChange={(event) => setStartAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" />
-          </label>
-          <label className="text-xs font-black text-slate-600">종료
-            <input type="datetime-local" disabled={Boolean(activeSession) && !actions.editSchedule} value={endAt} onChange={(event) => setEndAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" />
-          </label>
+          {!activeSession ? <>
+            <label className="text-xs font-black text-slate-600">날짜<input type="date" value={timeDraft.day} onChange={(event) => setTimeDraft((current) => ({ ...current, day: event.target.value }))} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" /></label>
+            <div className="grid grid-cols-2 gap-2"><label className="text-xs font-black text-slate-600">시작<input type="time" value={timeDraft.startTime} onChange={(event) => setTimeDraft((current) => changeSessionStart(current, event.target.value))} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-2 text-sm font-bold" /></label><label className="text-xs font-black text-slate-600">종료<input type="time" value={timeDraft.endTime} onChange={(event) => setTimeDraft((current) => changeSessionEnd(current, event.target.value))} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-2 text-sm font-bold" /></label></div>
+          </> : <>
+            <label className="text-xs font-black text-slate-600">시작<input type="datetime-local" disabled={!actions.editSchedule} value={startAt} onChange={(event) => setStartAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" /></label>
+            <label className="text-xs font-black text-slate-600">종료<input type="datetime-local" disabled={!actions.editSchedule} value={endAt} onChange={(event) => setEndAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" /></label>
+          </>}
         </section>
 
-        <section>
+        {activeSession ? <section>
           <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-black text-slate-800">출석 <span className="text-xs text-emerald-700">{presentRosterCount} / {currentRoster.length}</span></h3>{uncheckedRosterCount ? <p className="mt-1 text-[11px] font-bold text-amber-600">미체크 {uncheckedRosterCount}명</p> : null}</div>{actions.markAllPresent && currentRoster.length ? <button type="button" onClick={markAllPresent} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-700">전체 출석</button> : null}</div>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {roster.map((student) => (
@@ -335,7 +373,7 @@ function SessionSheet({
             ))}
             {!roster.length ? <div className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500"><p>이 수업반에 등록된 학생이 없습니다.</p><Link href={`/spokedu-master/classes/${encodeURIComponent(classId)}`} className="mt-2 inline-block font-black text-emerald-700">이 수업반 명단 관리하기 →</Link></div> : null}
           </div>
-        </section>
+        </section> : null}
 
         <section>
           <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-800">수업 구성</h3><span className="text-xs font-black text-emerald-700">진행 {completedPrograms} / 전체 {programs.length}</span></div>
@@ -352,29 +390,26 @@ function SessionSheet({
                 {actions.reorderActivities || actions.removeActivities ? <div className="mt-2 flex justify-end gap-1 border-t border-slate-100 pt-2">
                   <button type="button" onClick={() => moveProgram(index, -1)} disabled={index === 0 || saving} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-xs font-bold text-slate-500 disabled:opacity-30" aria-label={`${program.programTitle ?? '활동'} 순서 위로`}><ChevronUp size={16} />위로</button>
                   <button type="button" onClick={() => moveProgram(index, 1)} disabled={index === programs.length - 1 || saving} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-xs font-bold text-slate-500 disabled:opacity-30" aria-label={`${program.programTitle ?? '활동'} 순서 아래로`}><ChevronDown size={16} />아래로</button>
-                  <button type="button" disabled={!activeSession || saving} onClick={() => void removeProgram(program)} className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-bold text-rose-600 disabled:opacity-30" aria-label={`${program.programTitle ?? '활동'} 삭제`}>삭제</button>
+                  <button type="button" disabled={saving} onClick={() => void removeProgram(program)} className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-bold text-rose-600 disabled:opacity-30" aria-label={`${program.programTitle ?? '활동'} 삭제`}>삭제</button>
                 </div> : null}
               </div>
             ))}
-            {!programs.length ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">아직 수업 활동이 없습니다. 아래에서 프로그램이나 SPOMOVE를 추가해 수업을 준비하세요.</p> : null}
+            {!programs.length ? <p className="rounded-xl bg-slate-50 p-4 text-center text-xs font-bold text-slate-500">아직 추가한 활동이 없습니다.</p> : null}
           </div>
-          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!activeSession || !actions.addActivities || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length && activeSession && actions.addActivities ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
+          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!actions.addActivities || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
         </section>
 
         <label className="block text-sm font-black text-slate-800">수업 메모
           <textarea value={memo} disabled={!actions.editMemo} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none disabled:bg-slate-50" />
         </label>
         {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
-        {!activeSession ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><Save size={15} />수업 만들기</button> : null}
+        {!activeSession ? <div><p className="mb-2 text-center text-[11px] font-semibold text-slate-400">활동은 나중에도 추가할 수 있습니다.</p><button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><Save size={15} />수업 만들기</button></div> : null}
         {activeSession && status === 'scheduled' ? <div className="space-y-2">
           <button type="button" disabled={saving || !classId} onClick={() => void persist('completed')} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CheckCircle2 size={16} />수업 완료</button>
-          <Link target="_blank" rel="noreferrer" href={`/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}`} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><Wrench size={15} />수업도구</Link>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button>
-            <button type="button" disabled={saving || !classId} onClick={() => void persist('cancelled')} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 text-sm font-black text-slate-500 disabled:opacity-40"><XCircle size={15} />수업 취소</button>
-          </div>
+          {formDirty ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button> : null}
+          <div className="flex items-center justify-between gap-2"><Link target="_blank" rel="noreferrer" href={`/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}`} className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-black text-slate-600"><Wrench size={15} />수업도구</Link><button type="button" disabled={saving || !classId} onClick={() => void persist('cancelled')} className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-bold text-rose-600 disabled:opacity-40"><XCircle size={14} />수업 취소</button></div>
         </div> : null}
-        {activeSession && status === 'completed' ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button> : null}
+        {activeSession && status === 'completed' && formDirty ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button> : null}
         {status === 'cancelled' ? <div className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-500"><p>취소 기록은 보존되며 다시 예정으로 되돌릴 수 없습니다.</p><Link href={`/spokedu-master/activity?date=${encodeURIComponent(startAt.slice(0, 10))}&create=1&class=${encodeURIComponent(classId)}`} className="mt-2 inline-flex min-h-11 items-center justify-center px-3 font-black text-slate-700 underline underline-offset-2">대체 수업 만들기</Link></div> : null}
         {activeSession && status === 'completed' ? <Link href={`/spokedu-master/report?session=${encodeURIComponent(activeSession.id)}`} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />수업 안내문</Link> : null}
         {activeSession && status === 'completed' ? <button type="button" disabled={saving} onClick={() => { setError(null); setNextDraft(buildNextSessionDraft(activeSession)); setCopyPrograms(false); setNextSessionOpen(true); }} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CalendarDays size={17} />다음 수업 만들기</button> : null}
@@ -391,8 +426,13 @@ export default function ActivityPage() {
   const [createClassId, setCreateClassId] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
   const handledQuery = useRef<string | null>(null);
-  const daySessions = useMemo(() => data.sessions.filter((session) => getSeoulSessionDay(session.startAt) === selectedDay), [data.sessions, selectedDay]);
-  const visibleDays = useMemo(() => Array.from({ length: 14 }, (_, index) => addSeoulSessionDays(getSeoulToday(), index)), []);
+  const [visibleMonth, setVisibleMonth] = useState(() => getMonthKey(selectedDay));
+  const daySessions = useMemo(() => data.sessions
+    .filter((session) => getSeoulSessionDay(session.startAt) === selectedDay)
+    .sort((a, b) => {
+      const priority = { scheduled: 0, completed: 1, cancelled: 2 } as const;
+      return priority[a.status] - priority[b.status] || a.startAt.localeCompare(b.startAt);
+    }), [data.sessions, selectedDay]);
 
   useEffect(() => {
     if (data.status !== 'ready') return;
@@ -403,6 +443,7 @@ export default function ActivityPage() {
     if (resolution.kind === 'session') {
       setRouteError(null);
       setSelectedDay(getSeoulSessionDay(resolution.session.startAt));
+      setVisibleMonth(getMonthKey(getSeoulSessionDay(resolution.session.startAt)));
       setEditing(resolution.session);
     } else if (resolution.kind === 'missing-session') {
       setEditing(undefined);
@@ -410,6 +451,7 @@ export default function ActivityPage() {
     } else if (resolution.kind === 'create') {
       setRouteError(null);
       setSelectedDay(resolution.day);
+      setVisibleMonth(getMonthKey(resolution.day));
       setCreateClassId(resolution.classId);
       setEditing(null);
     } else if (resolution.kind === 'missing-class') {
@@ -434,15 +476,17 @@ export default function ActivityPage() {
 
         {!data.classes.length && data.status === 'ready' ? <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800"><p>수업을 만들기 전에 수업반을 먼저 만들어 주세요.</p><Link href="/spokedu-master/classes?create=1" className="mt-2 inline-flex min-h-11 items-center text-sm font-black underline">수업반 만들기</Link></div> : null}
 
-        <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 text-sm font-black text-slate-800"><CalendarDays size={17} />날짜 선택</h2><input type="date" value={selectedDay} onChange={(event) => setSelectedDay(event.target.value)} className="h-9 rounded-lg border border-slate-200 px-2 text-xs font-bold" /></div>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {visibleDays.map((day) => {
-              const active = day === selectedDay;
-              const count = data.sessions.filter((session) => getSeoulSessionDay(session.startAt) === day).length;
-              return <button key={day} type="button" onClick={() => setSelectedDay(day)} className={`min-w-16 rounded-xl px-2 py-2 text-center ring-1 ${active ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-600 ring-slate-200'}`}><span className="block text-[10px] font-bold">{formatSeoulSessionDay(day, { weekday: 'short' })}</span><strong className="block text-base">{formatSeoulSessionDay(day, { day: 'numeric' })}</strong><span className="block text-[10px]">{count ? `${count}개` : '—'}</span></button>;
-            })}
-          </div>
+        <section className="mt-5">
+          <MonthSessionCalendar
+            month={visibleMonth}
+            selectedDay={selectedDay}
+            sessions={data.sessions}
+            onMonthChange={setVisibleMonth}
+            onDaySelect={(day) => {
+              setSelectedDay(day);
+              setVisibleMonth(getMonthKey(day));
+            }}
+          />
         </section>
 
         <section className="mt-4">
@@ -452,10 +496,10 @@ export default function ActivityPage() {
               <button key={session.id} type="button" onClick={() => setEditing(session)} className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-px hover:shadow-md">
                 <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-sm font-black text-slate-800"><Clock3 size={15} />{formatSeoulSessionTime(session.startAt)}–{formatSeoulSessionTime(session.endAt)}</span><span className={`rounded-full px-2 py-1 text-[10px] font-black ring-1 ${statusTone(session.status)}`}>{statusLabel(session.status)}</span></div>
                 <h3 className="mt-2 text-base font-black text-slate-900">{session.className}</h3>
-                <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `활동 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '활동 미지정'} · 출석 {session.attendance.filter((item) => item.status === 'present').length}명</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `활동 ${session.programs.length}개 · 진행 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '활동 미지정'} · {statusLabel(session.status)}</p>
               </button>
             ))}
-            {!daySessions.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><UsersRound className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">이 날짜에 수업이 없습니다.</p><button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} disabled={!data.classes.length} className="mt-3 min-h-11 rounded-xl px-4 text-sm font-black text-emerald-700 disabled:opacity-40">+ 수업 추가</button></div> : null}
+            {!daySessions.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><UsersRound className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">이 날짜에 예정된 수업이 없습니다.</p></div> : null}
           </div>
         </section>
       </div>

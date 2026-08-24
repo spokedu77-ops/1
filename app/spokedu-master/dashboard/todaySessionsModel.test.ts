@@ -39,6 +39,19 @@ describe('Today Sessions operations model', () => {
     expect(cards.map((item) => item.session.id)).toEqual(['one', 'two']);
   });
 
+  it('keeps upcoming work ahead of completed and cancelled lessons', () => {
+    const cards = buildTodaySessionCards([
+      session('completed-morning', '2026-08-23T00:00:00.000Z', { status: 'completed' }),
+      session('scheduled-afternoon', '2026-08-23T05:00:00.000Z'),
+      session('cancelled-early', '2026-08-23T01:00:00.000Z', { status: 'cancelled' }),
+    ], [classItem], '2026-08-23');
+    expect(cards.map((item) => item.session.id)).toEqual([
+      'scheduled-afternoon',
+      'completed-morning',
+      'cancelled-early',
+    ]);
+  });
+
   it('does not flatten four activities into four lessons', () => {
     const cards = buildTodaySessionCards([
       session('one', '2026-08-23T01:00:00.000Z', { programs: [program('1'), program('2'), program('3'), program('4')] }),

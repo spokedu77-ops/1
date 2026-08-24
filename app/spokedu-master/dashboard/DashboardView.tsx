@@ -49,7 +49,7 @@ import {
   isProgramHomeRecommendationEligible,
 } from '../lib/program-meta';
 import { sortProgramsByAgeGroupPreference } from '../lib/homeAgePreference';
-import { isMasterFirstUser, selectMasterLoopAction } from '../lib/masterUserLoop';
+import { isMasterFirstUser } from '../lib/masterUserLoop';
 import {
   getRecentActivityOwnerId,
   reconcileRecentProgramActivities,
@@ -65,7 +65,7 @@ import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import { getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
-import { useHasMasterEntitlement, useHasPremiumEntitlement, useMasterAccessSnapshot } from '../access/MasterAccessProvider';
+import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { hasMasterEntitlement } from '../lib/masterAccessModel';
 import { EntitlementPreviewHome } from './EntitlementPreviewHome';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
@@ -84,22 +84,22 @@ type SpomoveGuideVideoPackQueryResult = {
 };
 type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
 
-function getFirstStartSteps(spomoveAvailable: boolean) {
+function getFirstStartSteps() {
   return [
   {
-    title: '오늘 수업 고르기',
+    title: '수업반 등록하기',
+    href: '/spokedu-master/classes',
+    Icon: UsersRound,
+  },
+  {
+    title: '첫 수업 만들기',
+    href: `/spokedu-master/activity?date=${getSeoulToday()}&create=1`,
+    Icon: CheckCircle2,
+  },
+  {
+    title: '수업 활동 찾아보기',
     href: '/spokedu-master/library',
     Icon: BookOpen,
-  },
-  {
-    title: spomoveAvailable ? 'SPOMOVE 실행하기' : '프리미엄 SPOMOVE 보기',
-    href: spomoveAvailable ? '/spokedu-master/spomove' : '/spokedu-master/payment?plan=premium',
-    Icon: MonitorPlay,
-  },
-  {
-    title: '기록 남기고 안내문 만들기',
-    href: '/spokedu-master/activity',
-    Icon: FileText,
   },
   ] as const;
 }
@@ -205,21 +205,17 @@ function selectContextPrograms(programs: Program[], tab: ContextProgramTab, week
   const selected: Program[] = [];
   const usedIds = new Set<string>();
   const usedTitles = new Set<string>();
-  const matched = programs.filter((program) => matchesContextTab(program, tab));
-  const tiers = [
-    matched.filter((program) => !weeklyIds.has(program.id)).sort(compareContextPrograms),
-    matched.filter((program) => weeklyIds.has(program.id)).sort(compareContextPrograms),
-  ];
+  const matched = programs
+    .filter((program) => matchesContextTab(program, tab) && !weeklyIds.has(program.id))
+    .sort(compareContextPrograms);
 
-  for (const tier of tiers) {
-    for (const program of tier) {
-      if (selected.length >= 4) return selected;
-      const titleKey = normalizeTitle(getProgramTitle(program));
-      if (!titleKey || usedIds.has(program.id) || usedTitles.has(titleKey)) continue;
-      selected.push(program);
-      usedIds.add(program.id);
-      usedTitles.add(titleKey);
-    }
+  for (const program of matched) {
+    if (selected.length >= 3) return selected;
+    const titleKey = normalizeTitle(getProgramTitle(program));
+    if (!titleKey || usedIds.has(program.id) || usedTitles.has(titleKey)) continue;
+    selected.push(program);
+    usedIds.add(program.id);
+    usedTitles.add(titleKey);
   }
   return selected;
 }
@@ -398,8 +394,8 @@ function ContextProgramRow({
   );
 }
 
-function FirstStartGuide({ spomoveAvailable }: { spomoveAvailable: boolean }) {
-  const firstStartSteps = getFirstStartSteps(spomoveAvailable);
+function FirstStartGuide() {
+  const firstStartSteps = getFirstStartSteps();
   return (
     <section
       data-dashboard-section="first-start"
@@ -409,10 +405,10 @@ function FirstStartGuide({ spomoveAvailable }: { spomoveAvailable: boolean }) {
       <div>
         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">처음이라면</p>
         <h2 id="first-start-heading" className="mt-1 text-[17px] font-black tracking-[-0.02em] text-[color:var(--spm-t)]">
-          오늘 수업부터 이어서
+          첫 수업을 시작해 보세요
         </h2>
         <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-          수업을 고르고{spomoveAvailable ? ', SPOMOVE로 화면 활동을 시작한 뒤' : ' 준비한 뒤'} 기록까지 이어가세요.
+          수업반을 등록하고 일정을 만들면, 활동을 담아 바로 운영할 수 있습니다.
         </p>
       </div>
       <div className="mt-3 grid gap-1.5 md:grid-cols-3">
@@ -584,8 +580,8 @@ function ActivityPanel({
     return (
       <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[12px] border border-slate-200/80 bg-white/90 px-2.5 py-2.5 ${className}`}>
         <div className="mb-1.5">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">기록 루프</p>
-          <h2 id="activity-heading" className="mt-0.5 text-[14px] font-black text-slate-700">안내문 · 기록</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">운영 이력</p>
+          <h2 id="activity-heading" className="mt-0.5 text-[14px] font-black text-slate-700">수업 · 안내문</h2>
         </div>
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1">
           {activities.map(({ label, value, href, Icon, action }) => (
@@ -614,7 +610,7 @@ function ActivityPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="activity-heading" className="text-[18px] font-black text-[color:var(--spm-t)]">수업 기록</h2>
-          <p className="mt-1 text-[13px] font-semibold text-[color:var(--spm-t2)]">빠른 기록·보강 기록과 안내문을 한곳에서 이어가세요.</p>
+          <p className="mt-1 text-[13px] font-semibold text-[color:var(--spm-t2)]">완료한 수업의 안내문과 학생 이력을 확인하세요.</p>
         </div>
         <Link href="/spokedu-master/profile" className="inline-flex min-h-9 items-center rounded-full bg-[var(--spm-acc-glow)] px-3 text-[12px] font-black text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]">
           {status}
@@ -652,8 +648,6 @@ export default function DashboardView() {
 }
 
 function EntitledDashboardView() {
-  const spomoveAvailable = useHasPremiumEntitlement();
-  const hasEntitlement = useHasMasterEntitlement();
   const {
     programs,
     programsLoaded,
@@ -689,6 +683,8 @@ function EntitledDashboardView() {
   }, [recentActivityOwnerId, recentProgramActivities]);
   const isFirstUser =
     operationalStatus === 'ready' &&
+    programsLoaded &&
+    recentActivityOwnerResolved &&
     isMasterFirstUser({
       studentCount: serverStudents.length,
       sessionCount: operationalSessions.length,
@@ -845,17 +841,6 @@ function EntitledDashboardView() {
     setSelectedProgram(program);
   };
   const studentMemoCount = useMemo(() => operationalSessions.filter((session) => session.memo?.trim()).length, [operationalSessions]);
-  const loopAction = useMemo(
-    () => selectMasterLoopAction({
-      profile,
-      entitlement: { hasEntitlement },
-      recentLessonActivities: validLessonActivities,
-      recentSpomoveActivities: validSpomoveActivities,
-      sessionCount: operationalSessions.length,
-      explanationCount: explanationData.status === 'loading' ? 0 : explanationData.total,
-    }),
-    [explanationData.status, explanationData.total, hasEntitlement, operationalSessions.length, profile, validLessonActivities, validSpomoveActivities],
-  );
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
@@ -869,9 +854,9 @@ function EntitledDashboardView() {
     }
   }, [programPool.length, programsLoaded, weeklyPrograms.length, weeklySelection.slotConflicts, weeklySelection.slotDiagnostics]);
 
-  if (!mounted || !programsLoaded) return <DashboardSkeleton />;
+  if (!mounted) return <DashboardSkeleton />;
 
-  if (programPool.length === 0 && operationalStatus === 'error') {
+  if (programsLoaded && programPool.length === 0 && operationalStatus === 'error') {
     const isUnauthorized = programsError === 'unauthorized';
     const isForbidden = programsError === 'forbidden';
     const message = isUnauthorized
@@ -918,7 +903,6 @@ function EntitledDashboardView() {
           <Link
             href="/spokedu-master/activity"
             className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 self-start text-[11px] font-bold text-slate-400 transition-colors hover:text-slate-700 sm:self-auto"
-            title={loopAction.label}
           >
             수업 관리
             <ArrowRight size={12} />
@@ -926,19 +910,18 @@ function EntitledDashboardView() {
         </div>
       </header>
 
-      {isFirstUser
-      && operationalSessions.length === 0
-        ? <FirstStartGuide spomoveAvailable={spomoveAvailable} />
-        : null}
-
-      <TodaySessionsPanel
-        sessions={operationalSessions}
-        classes={operationalClasses}
-        seoulDay={getSeoulToday()}
-        loading={operationalStatus === 'idle' || operationalStatus === 'loading'}
-        error={operationalStatus === 'error'}
-        onRetry={() => void reloadOperationalData()}
-      />
+      {isFirstUser && operationalSessions.length === 0 ? (
+        <FirstStartGuide />
+      ) : (
+        <TodaySessionsPanel
+          sessions={operationalSessions}
+          classes={operationalClasses}
+          seoulDay={getSeoulToday()}
+          loading={operationalStatus === 'idle' || operationalStatus === 'loading'}
+          error={operationalStatus === 'error'}
+          onRetry={() => void reloadOperationalData()}
+        />
+      )}
 
       <section
         data-dashboard-section="featured-flow"
@@ -957,7 +940,9 @@ function EntitledDashboardView() {
             href="/spokedu-master/library"
             action="수업 더 보기"
           />
-          {weeklyPrograms.length > 0 ? (
+          {!programsLoaded ? (
+            <p className="rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
+          ) : weeklyPrograms.length > 0 ? (
             <div className="relative -mx-3.5 flex snap-x gap-3.5 overflow-x-auto px-3.5 pb-2 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
               {weeklyPrograms.map((program, index) => (
                 <div key={program.id} className="w-[78vw] max-w-[310px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
@@ -968,6 +953,11 @@ function EntitledDashboardView() {
                   />
                 </div>
               ))}
+            </div>
+          ) : programsError ? (
+            <div className="rounded-xl bg-rose-50 p-4 text-center">
+              <p className="text-sm font-bold text-rose-700">수업 콘텐츠를 불러오지 못했습니다.</p>
+              <button type="button" onClick={() => void reloadPrograms()} className="mt-2 min-h-11 px-3 text-sm font-black text-rose-700 underline underline-offset-2">다시 시도</button>
             </div>
           ) : (
             <div className="rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-5 text-center">

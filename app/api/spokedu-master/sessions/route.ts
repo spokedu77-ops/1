@@ -8,6 +8,7 @@ import type {
   MasterSessionStatus,
   SaveSessionInput,
 } from '@/app/spokedu-master/types/operational';
+import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -90,6 +91,17 @@ function normalizeInput(value: unknown): SaveSessionInput {
     endAt: endAt.toISOString(),
     status,
     memo: typeof value.memo === 'string' && value.memo.trim() ? value.memo.trim() : null,
+    programs: Array.isArray(value.programs) ? value.programs.map((item) => {
+      if (!isObject(item) || (item.sourceType !== 'program' && item.sourceType !== 'spomove')) throw new Error('Invalid activity');
+      if (item.sourceType === 'program') {
+        const programId = Number(item.programId);
+        if (!Number.isInteger(programId) || programId < 1) throw new Error('Invalid program');
+        return { sourceType: 'program' as const, programId, spomovePresetId: null };
+      }
+      const spomovePresetId = typeof item.spomovePresetId === 'string' ? item.spomovePresetId.trim() : '';
+      if (!spomovePresetId) throw new Error('Invalid SPOMOVE activity');
+      return { sourceType: 'spomove' as const, programId: null, spomovePresetId };
+    }) : [],
   };
 }
 
@@ -128,25 +140,36 @@ async function save(request: Request, sessionId: string | null) {
   try { input = normalizeInput(await request.json()); }
   catch (error) { return privateNoStoreJson({ error: error instanceof Error ? error.message : 'Invalid session' }, { status: 400 }); }
   const supabase = getServiceSupabase();
-  const { data: savedId, error } = await supabase.rpc('spokedu_master_save_session', {
-    p_owner_id: access.userId,
-    p_session_id: sessionId,
-    p_class_id: input.classId,
-    p_start_at: input.startAt,
-    p_end_at: input.endAt,
-    p_status: input.status,
-    p_memo: input.memo,
-    p_programs: [],
-    p_attendance: [],
-  });
+  let result: { data: unknown; error: { code?: string } | null };
+  try {
+    const canonicalActivities = (input.programs ?? []).map((item) => {
+      if (item.sourceType === 'program') return item;
+      const preset = findOfficialSpomovePreset(item.spomovePresetId ?? '');
+      if (!preset?.isReady || preset.catalogStatus === 'hold') throw new Error('Invalid SPOMOVE activity');
+      return { ...item, programTitle: preset.title };
+    });
+    result = sessionId
+      ? await supabase.rpc('spokedu_master_save_session', {
+          p_owner_id: access.userId, p_session_id: sessionId, p_class_id: input.classId,
+          p_start_at: input.startAt, p_end_at: input.endAt, p_status: input.status,
+          p_memo: input.memo, p_programs: [], p_attendance: [],
+        })
+      : await supabase.rpc('spokedu_master_create_session_with_activities', {
+          p_owner_id: access.userId, p_class_id: input.classId, p_start_at: input.startAt,
+          p_end_at: input.endAt, p_memo: input.memo, p_activities: canonicalActivities,
+        });
+  } catch {
+    return privateNoStoreJson({ error: 'Invalid session activity' }, { status: 400 });
+  }
+  const { data: savedId, error } = result;
   if (error || typeof savedId !== 'string') {
     if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: 'Invalid session data' }, { status: 400 });
     if (error?.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
     await reportError(error ?? new Error('Session RPC returned no id'), { context: 'spokedu_master.sessions' });
     return privateNoStoreJson({ error: 'Session could not be saved' }, { status: 500 });
   }
-  const [result] = await loadAggregate(access.userId, savedId);
-  return privateNoStoreJson({ data: result }, { status: sessionId ? 200 : 201 });
+  const [aggregate] = await loadAggregate(access.userId, savedId);
+  return privateNoStoreJson({ data: aggregate }, { status: sessionId ? 200 : 201 });
 }
 
 export async function POST(request: Request) { return save(request, null); }

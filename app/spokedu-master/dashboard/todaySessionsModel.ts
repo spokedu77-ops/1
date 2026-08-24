@@ -21,8 +21,10 @@ export function buildTodaySessionCards(
   return sessions
     .filter((session) => getSeoulSessionDay(session.startAt) === seoulDay)
     .sort((left, right) => {
-      const cancelledOrder = Number(left.status === 'cancelled') - Number(right.status === 'cancelled');
-      return cancelledOrder || left.startAt.localeCompare(right.startAt) || left.id.localeCompare(right.id);
+      const statusOrder = { scheduled: 0, completed: 1, cancelled: 2 } as const;
+      return statusOrder[left.status] - statusOrder[right.status]
+        || left.startAt.localeCompare(right.startAt)
+        || left.id.localeCompare(right.id);
     })
     .map((session) => ({
       session,

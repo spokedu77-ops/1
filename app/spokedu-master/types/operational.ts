@@ -49,6 +49,11 @@ export type SaveSessionInput = {
   endAt: string;
   status: MasterSessionStatus;
   memo: string | null;
+  programs?: Array<{
+    sourceType: 'program' | 'spomove';
+    programId: number | null;
+    spomovePresetId: string | null;
+  }>;
 };
 
 export type SaveSessionAttendanceInput = Array<{

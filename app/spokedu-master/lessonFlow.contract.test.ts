@@ -75,5 +75,17 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).not.toContain('favoritePrograms');
     expect(dashboard).not.toContain('recentLessonPrograms');
     expect(dashboard).not.toContain('function RailRowHeader');
+    expect(dashboard).toContain('if (!mounted) return <DashboardSkeleton />');
+    expect(dashboard).not.toContain('if (!mounted || !programsLoaded)');
+    expect(dashboard).toContain('&& !weeklyIds.has(program.id)');
+  });
+
+  it('starts a new teacher with the existing operational prerequisites in order', () => {
+    const classStep = dashboard.indexOf('수업반 등록하기');
+    const sessionStep = dashboard.indexOf('첫 수업 만들기');
+    const contentStep = dashboard.indexOf('수업 활동 찾아보기');
+    expect(classStep).toBeGreaterThan(-1);
+    expect(sessionStep).toBeGreaterThan(classStep);
+    expect(contentStep).toBeGreaterThan(sessionStep);
   });
 });

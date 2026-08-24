@@ -20,7 +20,7 @@ describe('activity Session flow', () => {
   it('keeps Session and program completion independent', () => {
     expect(source).toContain('data.updateSessionProgram');
     expect(source).toContain("void persist('completed')");
-    expect(source).toContain('아직 수업 활동이 없습니다');
+    expect(source).toContain('아직 추가한 활동이 없습니다');
   });
 
   it('keeps unsaved field work in place while opening activity references', () => {

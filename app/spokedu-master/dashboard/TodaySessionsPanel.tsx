@@ -70,7 +70,7 @@ export function TodaySessionsPanel({
                 </div>
               </div>
               {ctaLabel ? (
-                <Link href={href} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 text-sm font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900 focus-visible:outline-offset-2">
+                <Link href={href} className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900 focus-visible:outline-offset-2 ${session.status === 'scheduled' ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-600'}`}>
                   {ctaLabel}<ArrowRight size={15} aria-hidden="true" />
                 </Link>
               ) : (

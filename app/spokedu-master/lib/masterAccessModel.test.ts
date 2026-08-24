@@ -140,7 +140,8 @@ describe('commercial launch architecture contracts', () => {
     const shop = read('app/spokedu-master/shop/page.tsx');
     const provider = read('app/spokedu-master/access/MasterAccessProvider.tsx');
 
-    expect(dashboard).toContain('useHasPremiumEntitlement');
+    expect(dashboard).toContain('useMasterAccessSnapshot');
+    expect(dashboard).toContain('hasMasterEntitlement(accessSnapshot)');
     expect(dashboard).not.toContain('canUseSpomove(');
     expect(classRecord).toContain("redirect('/spokedu-master/activity')");
     expect(shop).toContain('useMasterCanBuySpomat');
