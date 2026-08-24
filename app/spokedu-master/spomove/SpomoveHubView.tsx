@@ -581,6 +581,7 @@ function CardVisual({
   onImageError,
   title,
   label,
+  showProgramLabel,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
@@ -588,12 +589,13 @@ function CardVisual({
   onImageError: () => void;
   title: string;
   label: string;
+  showProgramLabel: boolean;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
   const fitClass = stretch
     ? 'object-fill object-center'
-    : 'object-cover object-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.03]';
+    : 'object-cover object-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.015]';
 
   return (
     <div className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-slate-200 bg-white">
@@ -623,16 +625,35 @@ function CardVisual({
           </span>
         </div>
       )}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
-        <p className="max-w-[76%] truncate text-[11px] font-black text-white/82 drop-shadow">
-          {label}
-        </p>
-        <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-black leading-5 text-white drop-shadow">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-14">
+        {showProgramLabel ? (
+          <p
+            data-spm-spomove-card-program-label="true"
+            className="max-w-[78%] truncate text-[11px] font-black leading-4 tracking-[0.01em] text-white/78 drop-shadow"
+          >
+            {label}
+          </p>
+        ) : null}
+        <h3
+          className={`line-clamp-2 max-w-[94%] text-[17px] font-black leading-[1.2] text-white drop-shadow ${
+            showProgramLabel ? 'mt-1' : 'mt-0'
+          }`}
+        >
           {title}
         </h3>
       </div>
     </div>
   );
+}
+
+function cardBadgeClass(slot: string) {
+  if (slot === 'responseType') {
+    return 'border-slate-300 bg-white text-slate-800';
+  }
+  if (slot === 'adjustable' || slot === 'difficulty') {
+    return 'border-slate-200/90 bg-slate-50/90 text-slate-500';
+  }
+  return 'border-slate-200 bg-slate-50 text-slate-600';
 }
 
 function CardInfo({
@@ -659,13 +680,17 @@ function CardInfo({
   };
 
   return (
-    <div className="flex shrink-0 flex-col gap-2 p-3 text-left">
-      <div className="flex min-h-7 min-w-0 flex-wrap items-center gap-1.5 overflow-hidden" aria-label="활동 정보">
+    <div className="flex shrink-0 flex-col gap-2.5 p-3 pt-2.5 text-left">
+      <div
+        className="flex min-h-[28px] min-w-0 flex-wrap content-start items-center gap-1.5 overflow-hidden"
+        aria-label="활동 정보"
+        data-spm-spomove-card-meta-row="true"
+      >
         {card.badges.map((badge) => (
           <span
             key={`${badge.slot}-${badge.value}`}
             data-spm-spomove-card-meta={badge.slot}
-            className="inline-flex max-w-full items-center truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-slate-600"
+            className={`inline-flex max-w-full items-center truncate rounded-full border px-2 py-0.5 text-[11px] font-bold leading-4 ${cardBadgeClass(badge.slot)}`}
           >
             {badge.value}
           </span>
@@ -673,13 +698,13 @@ function CardInfo({
       </div>
 
       {isReady ? (
-        <div className="flex gap-2">
+        <div className="mt-auto flex gap-2">
           <button
             type="button"
             data-spm-spomove-card-action="start"
             data-spm-spomove-start-mode="guide"
             onClick={onGuide}
-            className="spm-btn-primary inline-flex h-9 min-w-0 flex-[1.6] items-center justify-center rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none"
+            className="spm-btn-primary inline-flex h-9 min-w-0 flex-[1.6] items-center justify-center whitespace-nowrap rounded-[9px] px-1.5 text-[12px] font-black focus-visible:outline-none sm:px-2 sm:text-[13px]"
           >
             활동 준비
           </button>
@@ -689,14 +714,14 @@ function CardInfo({
               data-spm-spomove-card-action="start"
               data-spm-spomove-start-mode="settings"
               onClick={() => router.push(hrefForSettings())}
-              className="inline-flex h-9 min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+              className="inline-flex h-9 min-w-0 flex-1 items-center justify-center overflow-hidden whitespace-nowrap rounded-[9px] border border-slate-200 bg-white px-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 sm:px-3 sm:text-[12px]"
             >
               시작 설정
             </button>
           ) : null}
         </div>
       ) : (
-        <div className="border-t border-slate-100 pt-2">
+        <div className="mt-auto border-t border-slate-100 pt-2">
           <span className="inline-flex items-center justify-center gap-1 text-[11px] font-bold text-slate-400">
             <Lock className="h-3 w-3" />
             제공 예정
@@ -714,6 +739,7 @@ function PresetCard({
   favoriteEnabled,
   hubView,
   contentOverride,
+  showProgramLabel,
   onPreview,
   onFavorite,
 }: {
@@ -723,6 +749,7 @@ function PresetCard({
   favoriteEnabled: boolean;
   hubView: SpomoveHubViewMode;
   contentOverride?: SpomovePresetContentOverride;
+  showProgramLabel: boolean;
   onPreview: () => void;
   onFavorite: () => void;
 }) {
@@ -771,6 +798,7 @@ function PresetCard({
           onImageError={() => setImageFailed(true)}
           title={displayModel.displayTitle}
           label={displayModel.programLabel}
+          showProgramLabel={showProgramLabel}
         />
       </button>
       <CardInfo
@@ -785,14 +813,14 @@ function PresetCard({
 
   if (!preset.isReady) {
     return (
-      <article className="relative flex h-full min-h-[324px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white opacity-75 shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
+      <article className="relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white opacity-75 shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
         {inner}
       </article>
     );
   }
 
   return (
-    <article className="group relative flex h-full min-h-[324px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)] focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
+    <article className="group relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)] focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
       {inner}
     </article>
   );
@@ -965,6 +993,8 @@ export default function SpomoveHubView() {
     showSavedOnly,
   ]);
   const showProgramGroupSections = activeProgramGroup === 'all';
+  /** 여러 programGroup이 섞일 때만 eyebrow 표시 — 단일 필터에서는 반복 제거 */
+  const showProgramLabel = activeProgramGroup === 'all';
   const activeFilterLabel =
     [
       activeProgramGroup === 'all' ? null : PROGRAM_GROUP_LABELS[activeProgramGroup],
@@ -981,6 +1011,8 @@ export default function SpomoveHubView() {
   const renderPresetGrid = (presets: OfficialSpomovePreset[], gridId?: string) => (
     <div
       id={gridId}
+      data-spm-spomove-card-grid="true"
+      data-spm-spomove-show-program-label={showProgramLabel ? 'true' : 'false'}
       className="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4"
     >
       {presets.map((preset) => (
@@ -992,6 +1024,7 @@ export default function SpomoveHubView() {
           favoriteEnabled={ownerId != null && preset.isReady}
           hubView={hubView}
           contentOverride={contentOverrides[preset.id]}
+          showProgramLabel={showProgramLabel}
           onPreview={() => setPreviewPreset(preset)}
           onFavorite={() => toggleFavoriteProgram(ownerId, preset.id)}
         />
