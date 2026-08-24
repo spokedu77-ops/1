@@ -8,6 +8,7 @@ describe('MASTER Class and attendance management contracts', () => {
   const activity = read('app/spokedu-master/activity/page.tsx');
   const list = read('app/spokedu-master/classes/page.tsx');
   const detail = read('app/spokedu-master/classes/[classId]/page.tsx');
+  const rosterSheet = read('app/spokedu-master/classes/[classId]/ClassRosterSheet.tsx');
   const tabs = read('app/spokedu-master/components/lesson/LessonManagementTabs.tsx');
   const desktopNav = read('app/spokedu-master/components/layout/StatusBar.tsx');
   const mobileNav = read('app/spokedu-master/components/layout/TabBar.tsx');
@@ -37,12 +38,22 @@ describe('MASTER Class and attendance management contracts', () => {
   });
 
   it('keeps roster mutations Class-scoped and does not soft-delete Students', () => {
-    expect(detail).toContain('await data.addClassStudent(classId, student.id)');
+    expect(rosterSheet).toContain('await data.addClassStudent(classId, studentId)');
     expect(detail).toContain('await data.removeClassStudent(classItem.id, student.id)');
-    expect(detail).toContain('classIds: [classId]');
+    expect(rosterSheet).toContain('classIds: [classId]');
     expect(detail).not.toContain('deleteStudent(');
     expect(detail).toContain('과거 출석 및 수업 이력은 유지됩니다.');
-    expect(detail).toContain("const results = query.trim() ?");
+    expect(rosterSheet).toContain('resolveClassRosterCandidates');
+  });
+
+  it('supports search multi-add, no-result prefill, bulk preview, and honest partial failures', () => {
+    expect(rosterSheet).toContain('type="checkbox"');
+    expect(rosterSheet).toContain('선택한 학생 추가');
+    expect(rosterSheet).toContain('openNew(query.trim())');
+    expect(rosterSheet).toContain('여러 명 빠르게 등록');
+    expect(rosterSheet).toContain('parseRosterPaste');
+    expect(rosterSheet).toContain('자동으로 합치지 않습니다.');
+    expect(rosterSheet).toContain('명 등록 완료 ·');
   });
 
   it('renders attendance as a completed Session projection without an attendance-book object', () => {
@@ -50,6 +61,7 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(detail).toContain("status === 'present' ? '✓ 출석' : status === 'absent' ? '결석' : '—'");
     expect(detail).toContain('overflow-x-auto');
     expect(detail).toContain('sticky left-0');
+    expect(detail).toContain('shiftAttendanceMonth');
     expect(detail).toContain('/spokedu-master/activity?session=${encodeURIComponent(session.id)}');
     expect(detail).not.toContain('AttendanceBook');
     expect(detail).not.toContain('출석부 만들기');
@@ -60,6 +72,13 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(activity).toContain("currentRoster.map((student) => [student.id, 'present' as const])");
     expect(activity).toContain('setAttendanceDirty(true)');
     expect(activity).toContain('미체크 {uncheckedRosterCount}명');
+    expect(activity).toContain("status !== 'cancelled' && currentRoster.length");
     expect(activity).not.toContain('uncheckedRosterCount === 0');
+  });
+
+  it('surfaces incomplete attendance and keeps every repair link Session-exact', () => {
+    expect(detail).toContain('buildIncompleteAttendanceSessions');
+    expect(detail).toContain('출석 미기록 {incompleteSessions.length}건');
+    expect(detail).toContain('session=${encodeURIComponent(incompleteSessions[0]!.id)}');
   });
 });

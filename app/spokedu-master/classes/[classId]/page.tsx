@@ -1,18 +1,17 @@
 'use client';
 
-import { CalendarDays, ChevronLeft, ChevronRight, Pencil, Plus, UserMinus, Users } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, MoreHorizontal, Pencil, Plus, UserMinus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { LessonManagementTabs } from '../../components/lesson/LessonManagementTabs';
 import { BottomSheet } from '../../components/ui/BottomSheet';
-import { StudentFieldSelect } from '../../components/ui/StudentFieldSelect';
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
-import { buildStudentAgeOptions } from '../../lib/studentAddPresets';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday } from '../../lib/sessionDateTime';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { MasterStudentDto } from '../../types/operational';
-import { buildClassAttendanceView, selectLatestCompletedClassSession, selectNextClassSession } from '../classManagementModel';
+import { buildClassAttendanceView, buildIncompleteAttendanceSessions, resolveInitialAttendanceMonth, selectNextClassSession, selectRecentCompletedClassSessions, shiftAttendanceMonth } from '../classManagementModel';
+import { ClassRosterSheet } from './ClassRosterSheet';
 
 type DetailTab = 'roster' | 'attendance';
 
@@ -23,42 +22,6 @@ function SessionSummary({ label, session, empty, emptyHref }: { label: string; s
   </section>;
 }
 
-function AddStudentSheet({ classId, className, onClose }: { classId: string; className: string; onClose: () => void }) {
-  const data = useOperationalData();
-  const [query, setQuery] = useState('');
-  const [newMode, setNewMode] = useState(false);
-  const [name, setName] = useState('');
-  const [meta, setMeta] = useState('');
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const classItem = data.classes.find((item) => item.id === classId);
-  const ageOptions = buildStudentAgeOptions(data.students.map((student) => studentMetaToDisplay(student.meta)));
-  const results = query.trim() ? data.students.filter((student) => !classItem?.studentIds.includes(student.id) && student.name.toLocaleLowerCase('ko').includes(query.trim().toLocaleLowerCase('ko'))).slice(0, 8) : [];
-
-  const addExisting = async (student: MasterStudentDto) => {
-    setSavingId(student.id); setError(null);
-    try { await data.addClassStudent(classId, student.id); }
-    catch { setError('학생을 명단에 추가하지 못했습니다.'); }
-    finally { setSavingId(null); }
-  };
-  const createStudent = async () => {
-    if (!name.trim() || savingId) return;
-    setSavingId('new'); setError(null);
-    try {
-      await data.createStudent({ legacyId: crypto.randomUUID(), name: name.trim(), meta, guidanceNote: null, classIds: [classId] });
-      onClose();
-    } catch { setError('학생을 등록하지 못했습니다.'); }
-    finally { setSavingId(null); }
-  };
-
-  return <BottomSheet open title={`학생 추가 · ${className}`} onClose={onClose}><div className="space-y-4 pb-3">
-    {!newMode ? <><div><label className="block text-xs font-black text-slate-600">기존 학생 검색<input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름 검색" className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold outline-none focus:border-emerald-500" /></label><p className="mt-2 text-xs font-semibold text-slate-500">이미 등록된 학생이 있다면 이름으로 검색해 주세요.</p></div>
-      {query.trim() ? <div className="space-y-2">{results.map((student) => <div key={student.id} className="flex min-h-14 items-center gap-3 rounded-xl border border-slate-200 p-3"><div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-slate-800">{student.name}</p><p className="text-xs font-semibold text-slate-500">{studentMetaToDisplay(student.meta) || '학년·연령 미입력'}</p></div><button type="button" disabled={Boolean(savingId)} onClick={() => void addExisting(student)} className="min-h-11 rounded-xl bg-emerald-600 px-4 text-xs font-black text-white disabled:opacity-40">추가</button></div>)}{!results.length ? <p className="rounded-xl bg-slate-50 p-4 text-center text-xs font-bold text-slate-500">검색 결과가 없습니다.</p> : null}</div> : null}
-      <button type="button" onClick={() => setNewMode(true)} className="min-h-11 w-full rounded-xl border border-slate-200 text-sm font-black text-slate-700">+ 새 학생 등록</button></> : <><label className="block text-xs font-black text-slate-600">이름 *<input autoFocus value={name} onChange={(event) => setName(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold outline-none focus:border-emerald-500" /></label><StudentFieldSelect label="학년·연령" value={meta} onChange={setMeta} options={ageOptions} /><button type="button" disabled={!name.trim() || Boolean(savingId)} onClick={() => void createStudent()} className="min-h-11 w-full rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40">등록하고 명단에 추가</button><button type="button" onClick={() => setNewMode(false)} className="min-h-11 w-full text-sm font-black text-slate-500">기존 학생 검색으로 돌아가기</button></>}
-    {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
-  </div></BottomSheet>;
-}
-
 export default function ClassDetailPage() {
   const { classId } = useParams<{ classId: string }>();
   const data = useOperationalData();
@@ -66,14 +29,19 @@ export default function ClassDetailPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
+  const [attendanceMonth, setAttendanceMonth] = useState<string | null>(null);
+  const [incompleteOpen, setIncompleteOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const classItem = data.classes.find((item) => item.id === classId) ?? null;
   const roster = useMemo(() => classItem ? data.students.filter((student) => classItem.studentIds.includes(student.id)) : [], [classItem, data.students]);
   const nextSession = useMemo(() => selectNextClassSession(data.sessions, classId, new Date()), [classId, data.sessions]);
-  const recentSession = useMemo(() => selectLatestCompletedClassSession(data.sessions, classId), [classId, data.sessions]);
+  const recentSessions = useMemo(() => selectRecentCompletedClassSessions(data.sessions, classId), [classId, data.sessions]);
+  const incompleteSessions = useMemo(() => buildIncompleteAttendanceSessions(data.sessions, classId), [classId, data.sessions]);
   const completedCount = data.sessions.filter((session) => session.classId === classId && session.status === 'completed').length;
-  const attendanceView = useMemo(() => classItem ? buildClassAttendanceView(classItem, data.sessions, data.students) : { completedSessions: [], rows: [] }, [classItem, data.sessions, data.students]);
+  const initialAttendanceMonth = useMemo(() => resolveInitialAttendanceMonth(data.sessions, classId, getSeoulToday()), [classId, data.sessions]);
+  const selectedAttendanceMonth = attendanceMonth ?? initialAttendanceMonth;
+  const attendanceView = useMemo(() => classItem ? buildClassAttendanceView(classItem, data.sessions, data.students, selectedAttendanceMonth) : { completedSessions: [], rows: [] }, [classItem, data.sessions, data.students, selectedAttendanceMonth]);
 
   if (data.status === 'loading' || data.status === 'idle') return <main className="p-6 text-sm font-bold text-slate-500">수업반을 불러오는 중입니다.</main>;
   if (data.status === 'error') return <main className="grid h-full place-items-center bg-[var(--spm-bg)] p-6"><div className="text-center"><p className="text-lg font-black text-rose-700">수업반을 불러오지 못했습니다.</p><button type="button" onClick={() => void data.reload()} className="mt-4 min-h-11 rounded-xl bg-slate-900 px-4 text-sm font-black text-white">다시 시도</button></div></main>;
@@ -94,15 +62,52 @@ export default function ClassDetailPage() {
     finally { setSaving(false); }
   };
 
-  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8"><div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
-    <header><Link href="/spokedu-master/classes" className="inline-flex min-h-11 items-center gap-1 text-sm font-black text-slate-500"><ChevronLeft size={16} />수업반</Link><div className="mt-2 flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h1 className="truncate text-2xl font-black text-slate-900" title={classItem.name}>{classItem.name}</h1><p className="mt-2 text-sm font-bold text-slate-500">학생 {classItem.studentIds.length}명 · 완료 수업 {completedCount}회</p></div><button type="button" onClick={() => { setEditName(classItem.name); setEditOpen(true); }} className="flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700"><Pencil size={15} />이름 수정</button></div><div className="mt-4"><LessonManagementTabs /></div></header>
-    <div className="mt-5 grid gap-3 sm:grid-cols-2"><SessionSummary label="다음 수업" session={nextSession} empty="다음 예정 수업이 없습니다." emptyHref={`/spokedu-master/activity?date=${getSeoulToday()}&create=1&class=${encodeURIComponent(classItem.id)}`} /><SessionSummary label="최근 수업" session={recentSession} empty="아직 완료된 수업이 없습니다." /></div>
-    {error ? <p className="mt-4 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
-    <div className="mt-5 flex rounded-xl bg-slate-100 p-1" role="tablist" aria-label="수업반 정보"><button type="button" role="tab" aria-selected={tab === 'roster'} onClick={() => setTab('roster')} className={`min-h-11 flex-1 rounded-lg text-sm font-black ${tab === 'roster' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>명단</button><button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => setTab('attendance')} className={`min-h-11 flex-1 rounded-lg text-sm font-black ${tab === 'attendance' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>출석부</button></div>
-    {tab === 'roster' ? <section className="mt-4"><div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black text-slate-900">명단 <span className="text-sm text-slate-400">학생 {roster.length}명</span></h2><button type="button" onClick={() => setAddOpen(true)} className="flex min-h-11 items-center gap-1 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white"><Plus size={15} />학생 추가</button></div><div className="mt-3 space-y-2">{roster.map((student) => <article key={student.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-900 font-black text-white">{student.name.slice(0, 1)}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-slate-900">{student.name}</p><p className="mt-1 truncate text-xs font-semibold text-slate-500">{studentMetaToDisplay(student.meta) || '학년·연령 미입력'}{student.guidanceNote ? ' · 지도 참고 있음' : ''}</p></div><Link href={`/spokedu-master/students/${student.id}`} className="flex min-h-11 items-center rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700">이력 보기</Link><button type="button" disabled={saving} onClick={() => void removeFromClass(student)} className="flex min-h-11 items-center gap-1 rounded-xl border border-rose-200 px-3 text-xs font-black text-rose-600 disabled:opacity-40"><UserMinus size={14} />반에서 제외</button></article>)}{!roster.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><Users className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">이 수업반에 등록된 학생이 없습니다.</p></div> : null}</div></section> : null}
-    {tab === 'attendance' ? <section className="mt-4"><h2 className="text-lg font-black text-slate-900">출석부</h2>{attendanceView.completedSessions.length ? <div className="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="min-w-max border-separate border-spacing-0 text-sm"><thead><tr><th className="sticky left-0 z-20 min-w-36 border-b border-r border-slate-200 bg-slate-50 px-4 py-3 text-left font-black text-slate-700">학생</th>{attendanceView.completedSessions.map((session) => <th key={session.id} className="min-w-24 border-b border-slate-200 bg-slate-50 px-3 py-2 text-center"><Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="block min-h-11 font-black text-slate-700" title={`${formatSeoulSessionTime(session.startAt)} 수업 열기`}>{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'numeric', day: 'numeric' })}<small className="block text-[10px] font-bold text-slate-400">{formatSeoulSessionTime(session.startAt)}</small>{!session.attendance.length ? <small className="block text-[9px] font-bold text-amber-600">출석 미기록</small> : null}</Link></th>)}</tr></thead><tbody>{attendanceView.rows.map((row) => <tr key={row.studentId}><th className="sticky left-0 z-10 border-b border-r border-slate-100 bg-white px-4 py-3 text-left"><span className="block max-w-32 truncate font-black text-slate-800" title={row.studentName}>{row.studentName}</span>{!row.current ? <small className="text-[10px] font-bold text-slate-400">과거 참여</small> : null}</th>{attendanceView.completedSessions.map((session) => { const status = row.attendanceBySessionId[session.id]; return <td key={session.id} className="border-b border-slate-100 px-3 py-3 text-center font-black"><span className={status === 'present' ? 'text-emerald-700' : status === 'absent' ? 'text-rose-600' : 'text-slate-300'}>{status === 'present' ? '✓ 출석' : status === 'absent' ? '결석' : '—'}</span></td>; })}</tr>)}</tbody></table></div> : <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><CalendarDays className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-black text-slate-700">아직 누적된 출석 기록이 없습니다.</p><p className="mt-2 text-xs font-semibold text-slate-500">수업을 완료하면 이곳에 출석 기록이 자동으로 쌓입니다.</p></div>}</section> : null}
-  </div>
-  {addOpen ? <AddStudentSheet classId={classItem.id} className={classItem.name} onClose={() => setAddOpen(false)} /> : null}
-  {editOpen ? <BottomSheet open title="수업반 이름 수정" onClose={() => setEditOpen(false)}><div className="space-y-4 pb-3"><input autoFocus value={editName} onChange={(event) => setEditName(event.target.value)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={!editName.trim() || saving} onClick={() => void updateName()} className="min-h-11 w-full rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40">이름 저장</button></div></BottomSheet> : null}
+  const createSessionHref = `/spokedu-master/activity?date=${getSeoulToday()}&create=1&class=${encodeURIComponent(classItem.id)}`;
+
+  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
+    <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
+      <header>
+        <Link href="/spokedu-master/classes" className="inline-flex min-h-11 items-center gap-1 text-sm font-black text-slate-500"><ChevronLeft size={16} />수업반</Link>
+        <div className="mt-2 flex items-start justify-between gap-3">
+          <div className="min-w-0"><h1 className="truncate text-2xl font-black text-slate-900" title={classItem.name}>{classItem.name}</h1><p className="mt-2 text-sm font-bold text-slate-500">학생 {classItem.studentIds.length}명 · 완료 수업 {completedCount}회</p></div>
+          <button type="button" aria-label="수업반 이름 수정" title="수업반 이름 수정" onClick={() => { setEditName(classItem.name); setEditOpen(true); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-white"><Pencil size={17} /></button>
+        </div>
+        <div className="mt-4"><LessonManagementTabs /></div>
+      </header>
+
+      {!roster.length ? <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
+        <Users className="text-emerald-600" size={24} /><h2 className="mt-3 text-lg font-black text-slate-900">아직 등록된 학생이 없습니다.</h2><p className="mt-1 text-sm font-semibold leading-6 text-slate-500">학생을 추가하면 수업 출석 명단으로 자동 연결됩니다.</p>
+        <button type="button" onClick={() => setAddOpen(true)} className="mt-4 min-h-11 w-full rounded-xl bg-emerald-600 px-4 text-sm font-black text-white"><Plus size={16} className="mr-1 inline" />학생 추가</button>
+        {nextSession ? <Link href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`} className="mt-2 flex min-h-11 items-center justify-center text-sm font-black text-slate-600">예정 수업 열기</Link> : <Link href={createSessionHref} className="mt-2 flex min-h-11 items-center justify-center text-sm font-black text-slate-600">첫 수업 일정 만들기</Link>}
+      </section> : <div className="mt-5"><SessionSummary label="다음 수업" session={nextSession} empty="다음 예정 수업이 없습니다." emptyHref={createSessionHref} /></div>}
+
+      {incompleteSessions.length ? <section className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3">
+        <div><p className="text-sm font-black text-amber-900">출석 미기록 {incompleteSessions.length}건</p>{incompleteSessions.length === 1 ? <p className="mt-1 text-xs font-semibold text-amber-700">{formatSeoulSessionDay(getSeoulSessionDay(incompleteSessions[0]!.startAt), { month: 'long', day: 'numeric' })} {formatSeoulSessionTime(incompleteSessions[0]!.startAt)}</p> : null}</div>
+        {incompleteSessions.length === 1 ? <Link href={`/spokedu-master/activity?session=${encodeURIComponent(incompleteSessions[0]!.id)}`} className="flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-black text-amber-800">출석 기록하기</Link> : <button type="button" onClick={() => setIncompleteOpen(true)} className="min-h-11 rounded-xl bg-white px-4 text-sm font-black text-amber-800">확인</button>}
+      </section> : null}
+
+      {error ? <p className="mt-4 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
+      <div className="mt-5 flex rounded-xl bg-slate-100 p-1" role="tablist" aria-label="수업반 정보"><button type="button" role="tab" aria-selected={tab === 'roster'} onClick={() => setTab('roster')} className={`min-h-11 flex-1 rounded-lg text-sm font-black ${tab === 'roster' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>명단</button><button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => setTab('attendance')} className={`min-h-11 flex-1 rounded-lg text-sm font-black ${tab === 'attendance' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>출석부</button></div>
+
+      {tab === 'roster' ? <section className="mt-4">
+        <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-black text-slate-900">명단 <span className="text-sm text-slate-400">{roster.length}명</span></h2>{roster.length ? <button type="button" onClick={() => setAddOpen(true)} className="flex min-h-11 items-center gap-1 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white"><Plus size={15} />학생 추가</button> : null}</div>
+        {roster.length ? <div className="mt-3 divide-y divide-slate-100 overflow-visible rounded-2xl bg-white px-4 shadow-sm">{roster.map((student) => <article key={student.id} className="flex min-h-16 items-center gap-3 py-2">
+          <Link href={`/spokedu-master/students/${student.id}`} className="min-w-0 flex-1 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"><strong className="block truncate text-sm text-slate-900">{student.name}</strong><small className="mt-1 block truncate font-semibold text-slate-500">{studentMetaToDisplay(student.meta) || '학년·연령 미입력'}{student.guidanceNote ? ' · 지도 참고 있음' : ''}</small></Link>
+          <Link href={`/spokedu-master/students/${student.id}`} className="hidden min-h-11 items-center px-3 text-xs font-black text-slate-600 sm:flex">이력 보기</Link>
+          <details className="relative"><summary aria-label={`${student.name} 학생 메뉴`} className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-xl text-slate-500 hover:bg-slate-100"><MoreHorizontal size={20} /></summary><div className="absolute right-0 z-30 mt-1 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"><button type="button" disabled={saving} onClick={() => void removeFromClass(student)} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-xs font-black text-rose-600 disabled:opacity-40"><UserMinus size={14} />반에서 제외</button></div></details>
+        </article>)}</div> : null}
+      </section> : null}
+
+      {tab === 'attendance' ? <section className="mt-4">
+        <div className="flex items-center justify-between gap-3"><button type="button" aria-label="이전 달" onClick={() => setAttendanceMonth(shiftAttendanceMonth(selectedAttendanceMonth, -1))} className="grid h-11 w-11 place-items-center rounded-xl text-slate-600 hover:bg-white"><ChevronLeft size={19} /></button><h2 className="text-lg font-black text-slate-900">{selectedAttendanceMonth.slice(0, 4)}년 {Number(selectedAttendanceMonth.slice(5))}월</h2><button type="button" aria-label="다음 달" onClick={() => setAttendanceMonth(shiftAttendanceMonth(selectedAttendanceMonth, 1))} className="grid h-11 w-11 place-items-center rounded-xl text-slate-600 hover:bg-white"><ChevronRight size={19} /></button></div>
+        {attendanceView.completedSessions.length ? <div className="mt-3 overflow-x-auto rounded-2xl border border-slate-200 bg-white"><table className="min-w-max border-separate border-spacing-0 text-sm"><thead><tr><th className="sticky left-0 z-20 min-w-32 border-b border-r border-slate-200 bg-slate-50 px-3 py-3 text-left font-black text-slate-700">학생</th>{attendanceView.completedSessions.map((session) => <th key={session.id} className="min-w-24 border-b border-slate-200 bg-slate-50 px-3 py-2 text-center"><Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="block min-h-11 font-black text-slate-700" title={`${formatSeoulSessionTime(session.startAt)} 수업 열기`}>{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'numeric', day: 'numeric' })}<small className="block text-[10px] font-bold text-slate-400">{formatSeoulSessionTime(session.startAt)}</small>{!session.attendance.length ? <small className="block text-[9px] font-bold text-amber-600">미기록</small> : null}</Link></th>)}</tr></thead><tbody>{attendanceView.rows.map((row) => <tr key={row.studentId}><th className="sticky left-0 z-10 border-b border-r border-slate-100 bg-white px-3 py-3 text-left">{row.current ? <Link href={`/spokedu-master/students/${row.studentId}`} className="block max-w-28 truncate font-black text-slate-800" title={row.studentName}>{row.studentName}</Link> : <><span className="block max-w-28 truncate font-black text-slate-800" title={row.studentName}>{row.studentName}</span><small className="text-[10px] font-bold text-slate-400">과거 참여</small></>}</th>{attendanceView.completedSessions.map((session) => { const status = row.attendanceBySessionId[session.id]; return <td key={session.id} className="border-b border-slate-100 px-3 py-3 text-center font-black"><span className={status === 'present' ? 'text-emerald-700' : status === 'absent' ? 'text-rose-600' : 'text-slate-300'}>{status === 'present' ? '✓ 출석' : status === 'absent' ? '결석' : '—'}</span></td>; })}</tr>)}</tbody></table></div> : <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><CalendarDays className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-black text-slate-700">이 달에 완료된 수업이 없습니다.</p><p className="mt-2 text-xs font-semibold text-slate-500">월 이동 버튼으로 다른 달의 기록을 확인할 수 있습니다.</p></div>}
+      </section> : null}
+
+      {recentSessions.length ? <section className="mt-7"><div className="flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">최근 수업</h2><Link href="/spokedu-master/activity" className="flex min-h-11 items-center text-xs font-black text-slate-500">전체 일정 보기</Link></div><div className="divide-y divide-slate-100 rounded-2xl bg-white px-4 shadow-sm">{recentSessions.map((session) => <Link key={session.id} href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex min-h-16 items-center gap-3 py-2"><div className="min-w-0 flex-1"><p className="text-sm font-black text-slate-800">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric' })} {formatSeoulSessionTime(session.startAt)}</p><p className="mt-1 text-xs font-semibold text-slate-500">완료 활동 {session.programs.filter((item) => item.isCompleted).length}개 · {session.attendance.length ? `출석 ${session.attendance.length}명` : '출석 미기록'}</p></div><ChevronRight size={17} className="text-slate-400" /></Link>)}</div></section> : <section className="mt-7 rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center"><p className="text-sm font-black text-slate-700">아직 완료된 수업이 없습니다.</p><p className="mt-1 text-xs font-semibold text-slate-500">수업을 완료하면 출석 기록이 자동으로 쌓입니다.</p></section>}
+    </div>
+
+    {addOpen ? <ClassRosterSheet classId={classItem.id} className={classItem.name} onClose={() => setAddOpen(false)} /> : null}
+    {incompleteOpen ? <BottomSheet open title={`출석 미기록 ${incompleteSessions.length}건`} onClose={() => setIncompleteOpen(false)}><div className="space-y-2 pb-3">{incompleteSessions.map((session) => <div key={session.id} className="flex min-h-14 items-center gap-3 rounded-xl border border-slate-200 p-3"><div className="min-w-0 flex-1"><p className="text-sm font-black text-slate-800">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric' })}</p><p className="text-xs font-semibold text-slate-500">{formatSeoulSessionTime(session.startAt)}</p></div><Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex min-h-11 items-center rounded-xl bg-amber-100 px-4 text-xs font-black text-amber-900">기록</Link></div>)}</div></BottomSheet> : null}
+    {editOpen ? <BottomSheet open title="수업반 이름 수정" onClose={() => setEditOpen(false)}><div className="space-y-4 pb-3"><input autoFocus value={editName} onChange={(event) => setEditName(event.target.value)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={!editName.trim() || saving} onClick={() => void updateName()} className="min-h-11 w-full rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40">이름 저장</button></div></BottomSheet> : null}
   </main>;
 }

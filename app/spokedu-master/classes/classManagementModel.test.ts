@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { MasterClassDto, MasterSessionDto, MasterStudentDto } from '../types/operational';
-import { buildClassAttendanceView, buildClassCards, selectLatestCompletedClassSession, selectNextClassSession } from './classManagementModel';
+import {
+  buildClassAttendanceView,
+  buildClassCards,
+  buildIncompleteAttendanceSessions,
+  parseRosterPaste,
+  resolveClassRosterCandidates,
+  resolveInitialAttendanceMonth,
+  selectLatestCompletedClassSession,
+  selectNextClassSession,
+  selectRecentCompletedClassSessions,
+  shiftAttendanceMonth,
+} from './classManagementModel';
 
 const classes: MasterClassDto[] = [
   { id: 'class-a', name: '같은 이름', studentIds: ['student-current'], createdAt: '', updatedAt: '' },
@@ -48,5 +59,36 @@ describe('MASTER Class management model', () => {
     expect(view.rows[0]?.attendanceBySessionId['a-old']).toBe('present');
     expect(view.rows[1]).toMatchObject({ studentName: '과거 학생', current: false });
     expect(view.rows[1]?.attendanceBySessionId['a-old']).toBe('absent');
+  });
+
+  it('derives incomplete attendance only from completed Sessions with no attendance', () => {
+    expect(buildIncompleteAttendanceSessions(sessions, 'class-a').map((item) => item.id)).toEqual(['a-recent']);
+    expect(buildClassCards(classes, sessions, '2026-08-24T00:00:00Z')[1]?.incompleteAttendanceCount).toBe(1);
+  });
+
+  it('filters the attendance projection by Seoul month and preserves exact same-day Sessions', () => {
+    const sameDay = session('a-same-day', 'class-a', 'completed', '2026-08-02T05:00:00Z');
+    const september = session('a-september', 'class-a', 'completed', '2026-09-02T01:00:00Z');
+    const augustView = buildClassAttendanceView(classes[0]!, [...sessions, sameDay, september], students, '2026-08');
+    expect(augustView.completedSessions.map((item) => item.id)).toEqual(['a-same-day', 'a-recent', 'a-old']);
+    expect(resolveInitialAttendanceMonth([...sessions, september], 'class-a', '2026-10-01')).toBe('2026-09');
+    expect(shiftAttendanceMonth('2026-12', 1)).toBe('2027-01');
+  });
+
+  it('normalizes pasted roster names without blank or duplicate rows', () => {
+    expect(parseRosterPaste(' 김민수 \n\n이지우\t초2\n김민수\n 박준서\t3학년 ')).toEqual(['김민수', '이지우', '박준서']);
+  });
+
+  it('searches only non-members and keeps multi-Class membership candidates available', () => {
+    const candidates = resolveClassRosterCandidates([
+      ...students,
+      { id: 'student-other', legacyId: null, name: '현재 학생 둘', meta: '', createdAt: '', updatedAt: '' },
+    ], classes[0]!.studentIds, '현재');
+    expect(candidates.map((item) => item.id)).toEqual(['student-other']);
+    expect(resolveClassRosterCandidates(students, [], '')).toEqual([]);
+  });
+
+  it('returns only the latest completed Sessions for compact recent history', () => {
+    expect(selectRecentCompletedClassSessions(sessions, 'class-a', 1).map((item) => item.id)).toEqual(['a-recent']);
   });
 });

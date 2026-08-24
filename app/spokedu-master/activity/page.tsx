@@ -321,7 +321,7 @@ function SessionSheet({
         </section>
 
         <section>
-          <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-black text-slate-800">출석 <span className="text-xs text-emerald-700">{presentRosterCount} / {currentRoster.length}</span></h3>{uncheckedRosterCount ? <p className="mt-1 text-[11px] font-bold text-amber-600">미체크 {uncheckedRosterCount}명</p> : null}</div>{status === 'scheduled' && currentRoster.length ? <button type="button" onClick={markAllPresent} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-700">전체 출석</button> : null}</div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-black text-slate-800">출석 <span className="text-xs text-emerald-700">{presentRosterCount} / {currentRoster.length}</span></h3>{uncheckedRosterCount ? <p className="mt-1 text-[11px] font-bold text-amber-600">미체크 {uncheckedRosterCount}명</p> : null}</div>{status !== 'cancelled' && currentRoster.length ? <button type="button" onClick={markAllPresent} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-700">전체 출석</button> : null}</div>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {roster.map((student) => (
               <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
@@ -333,7 +333,7 @@ function SessionSheet({
                 </div>
               </div>
             ))}
-            {!roster.length ? <div className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500"><p>이 수업반에 등록된 학생이 없습니다.</p><Link href="/spokedu-master/students" className="mt-2 inline-block font-black text-emerald-700">명단 관리하기 →</Link></div> : null}
+            {!roster.length ? <div className="rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-500"><p>이 수업반에 등록된 학생이 없습니다.</p><Link href={`/spokedu-master/classes/${encodeURIComponent(classId)}`} className="mt-2 inline-block font-black text-emerald-700">이 수업반 명단 관리하기 →</Link></div> : null}
           </div>
         </section>
 

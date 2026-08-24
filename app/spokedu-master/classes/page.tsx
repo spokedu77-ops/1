@@ -63,7 +63,8 @@ export default function ClassesPage() {
             <p className="text-xs font-black text-slate-500">다음 수업</p>
             {card.nextSession ? <p className="mt-1 text-sm font-black text-slate-800"><CalendarDays size={14} className="mr-1 inline" />{formatSeoulSessionDay(getSeoulSessionDay(card.nextSession.startAt), { month: 'long', day: 'numeric' })} {formatSeoulSessionTime(card.nextSession.startAt)}</p> : <p className="mt-1 text-sm font-bold text-slate-400">다음 예정 수업 없음</p>}
           </div>
-          <Link href={`/spokedu-master/classes/${card.classItem.id}`} className="mt-4 flex min-h-11 items-center justify-center gap-1 rounded-xl border border-slate-200 text-sm font-black text-slate-700">수업반 보기<ChevronRight size={15} /></Link>
+          {card.incompleteAttendanceCount ? <p className="mt-3 text-xs font-black text-amber-700">출석 미기록 {card.incompleteAttendanceCount}건</p> : null}
+          <Link href={`/spokedu-master/classes/${card.classItem.id}`} className="mt-4 flex min-h-11 items-center justify-center gap-1 rounded-xl bg-slate-900 text-sm font-black text-white">열기<ChevronRight size={15} /></Link>
         </article>)}
       </section>
       {data.status === 'ready' && !cards.length ? <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><Users className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-black text-slate-700">아직 만든 수업반이 없습니다.</p><button type="button" onClick={() => setCreateOpen(true)} className="mt-3 min-h-11 rounded-xl px-4 text-sm font-black text-emerald-700">+ 수업반 만들기</button></div> : null}

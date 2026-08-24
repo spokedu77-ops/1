@@ -20,6 +20,7 @@ export default function StudentDetailPage() {
   const classes = data.classes.filter((item) => item.studentIds.includes(studentId));
   const history = useMemo(() => data.sessions
     .flatMap((session) => {
+      if (session.status !== 'completed') return [];
       const attendance = session.attendance.find((item) => item.studentId === studentId);
       return attendance ? [{ session, attendance }] : [];
     })
@@ -43,7 +44,7 @@ export default function StudentDetailPage() {
         <Link href="/spokedu-master/students" className="inline-flex items-center gap-1 text-xs font-black text-slate-500"><ArrowLeft size={15} />학생 목록</Link>
         <header className="mt-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
-            <div><p className="text-xs font-black text-emerald-700">학생 이력</p><h1 className="mt-1 text-2xl font-black text-slate-900">{student.name}</h1><p className="mt-2 text-sm font-semibold text-slate-500">{[classes.map((item) => item.name).join(', '), studentMetaToDisplay(student.meta)].filter(Boolean).join(' · ') || '수업반 미지정'}</p></div>
+            <div><p className="text-xs font-black text-emerald-700">학생 이력</p><h1 className="mt-1 text-2xl font-black text-slate-900">{student.name}</h1><div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-500">{classes.length ? classes.map((item) => <Link key={item.id} href={`/spokedu-master/classes/${item.id}`} className="rounded-lg bg-slate-100 px-2 py-1 font-black text-slate-700 hover:bg-slate-200">{item.name}</Link>) : <span>수업반 미지정</span>}{studentMetaToDisplay(student.meta) ? <span>· {studentMetaToDisplay(student.meta)}</span> : null}</div></div>
             <span className="grid h-12 w-12 place-items-center rounded-xl bg-slate-900 text-white"><UserRound size={22} /></span>
           </div>
           <div className="mt-5 grid grid-cols-3 gap-2">

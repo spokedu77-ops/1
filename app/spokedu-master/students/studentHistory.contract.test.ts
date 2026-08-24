@@ -10,6 +10,8 @@ describe('student history after Session refactor', () => {
     expect(students).toContain('data.students.map');
     expect(students).toContain('data.sessions.filter');
     expect(detail).toContain('data.sessions');
+    expect(detail).toContain("session.status !== 'completed'");
+    expect(detail).toContain('/spokedu-master/classes/${item.id}');
     expect(detail).not.toContain('StudentSessionHistory');
     expect(detail).not.toContain('focused: false');
     expect(detail).not.toContain('skills: []');
