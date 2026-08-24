@@ -66,8 +66,12 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
     expect(hub).toContain('parseSpomoveHubView');
     expect(hub).toContain('hubView={hubView}');
-    expect(hub).toContain('showFavoritesProgramGroupSections');
+    expect(hub).toContain('showProgramGroupSections');
     expect(hub).toContain('buildSpomoveProgramGroupSections');
+    expect(hub).toContain('sortSpomovePresetsByCatalogOrder');
+    expect(hub).not.toContain('contentOverride?.sortOrder ?? preset.sortOrder');
+    expect(hub).not.toContain('showAxisSections');
+    expect(hub).not.toContain('SPOMOVE_AXIS_ORDER');
     expect(guidelineSheet).not.toContain('SpomovePadLayoutView');
     expect(guidelineSheet).toContain('SpomoveScreenPreview');
     expect(guidelineSheet).toContain('size="preview"');

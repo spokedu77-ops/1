@@ -17,6 +17,11 @@ import {
   type OfficialFlowFeatureKey,
 
 } from './officialSpomovePresets';
+import {
+  SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER,
+  SPOMOVE_PUBLIC_CATALOG_ORDER,
+  SPOMOVE_PUBLIC_PROGRAM_GROUP_ORDER,
+} from './spomovePublicCatalogOrder';
 
 
 
@@ -137,6 +142,16 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(activeLibrary.some((preset) => preset.engine.mode === 'basic' && preset.engine.level === 6)).toBe(false);
     expect(activeLibrary.some((preset) => preset.engine.mode === 'reactTrain' && preset.engine.level === 9)).toBe(false);
 
+  });
+
+  it('공개 72개 preset ID 순서가 SPOMOVE_PUBLIC_CATALOG_ORDER와 일치한다', () => {
+    expect(activeLibrary.map((preset) => preset.id)).toEqual([...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER]);
+
+    for (const group of SPOMOVE_PUBLIC_PROGRAM_GROUP_ORDER) {
+      expect(byGroup(group).map((preset) => preset.id)).toEqual([
+        ...SPOMOVE_PUBLIC_CATALOG_ORDER[group],
+      ]);
+    }
   });
 
 
@@ -303,11 +318,31 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
 
   it('플랭커를 화살표 2 + 랜덤 자극 7 + 극단 8로 공개한다', () => {
-    const flanker = byGroup('flanker').sort((a, b) => a.sortOrder - b.sortOrder);
+    const flanker = byGroup('flanker');
     expect(flanker).toHaveLength(17);
+    expect(flanker.map((preset) => preset.id)).toEqual([...SPOMOVE_PUBLIC_CATALOG_ORDER.flanker]);
     expect(flanker.filter((preset) => preset.title.startsWith('화살표 ·'))).toHaveLength(2);
     expect(flanker.filter((preset) => preset.title.startsWith('랜덤 자극 ·'))).toHaveLength(7);
     expect(flanker.filter((preset) => preset.title.startsWith('극단 ·'))).toHaveLength(8);
+    expect(flanker.slice(2, 9).map((preset) => preset.title)).toEqual([
+      '랜덤 자극 · 색상',
+      '랜덤 자극 · 과일',
+      '랜덤 자극 · 동물',
+      '랜덤 자극 · 음식',
+      '랜덤 자극 · 자연',
+      '랜덤 자극 · 탈 것',
+      '랜덤 자극 · 믹스',
+    ]);
+    expect(flanker.slice(9).map((preset) => preset.title)).toEqual([
+      '극단 · 색상',
+      '극단 · 과일',
+      '극단 · 동물',
+      '극단 · 음식',
+      '극단 · 자연',
+      '극단 · 탈 것',
+      '극단 · 믹스',
+      '극단 · 화살표 · 어려움',
+    ]);
     expect(flanker.some((preset) => preset.title.includes('원 속의 원'))).toBe(false);
     expect(flanker.some((preset) => preset.title === '극단')).toBe(false);
     expect(flanker.filter((preset) => preset.engine.flankerStimulusType === 'number')).toHaveLength(0);
@@ -316,7 +351,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
   });
 
   it('스트룹 4개 공식 제목과 순서를 유지한다', () => {
-    expect(byGroup('stroop').sort((a, b) => a.sortOrder - b.sortOrder).map((preset) => preset.title)).toEqual([
+    expect(byGroup('stroop').map((preset) => preset.title)).toEqual([
       '색상화살표 · 보통 (기본)',
       '단어 · 보통 (의미/잉크 전환)',
       '단어 · 보통+ (의미/잉크·역전)',
@@ -325,7 +360,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
   });
 
   it('순차 기억 6개 공식 제목과 순서를 유지한다', () => {
-    expect(byGroup('sequential-memory').sort((a, b) => a.sortOrder - b.sortOrder).map((preset) => preset.title)).toEqual([
+    expect(byGroup('sequential-memory').map((preset) => preset.title)).toEqual([
       '순서 기억 · 쉬움 (3개)',
       '순서 기억 · 보통 (5개)',
       '순서 기억 · 쉬움 → 보통 → 어려움 (3~7개)',

@@ -13,6 +13,7 @@ import type {
   ActivityOperationConfig,
   ActivityOperationPatch,
 } from './operations/operationTypes';
+import { withPublicCatalogOrder } from './spomovePublicCatalogOrder';
 
 export type OfficialSpomoveAxis = SpomoveAxis;
 
@@ -1448,16 +1449,16 @@ const FLANKER_PUBLIC_CATALOG: Record<string, {
 }> = {
   'flanker-uniform-07': { order: 1, title: '화살표 · 보통 (좌우)', level: 5, arrowMode: 'lr' },
   'flanker-arrow-udlr-exp': { order: 2, title: '화살표 · 어려움 (상하좌우)', level: 5, arrowMode: 'udlr' },
-  'flanker-theme-06': { order: 3, title: '랜덤 자극 · 과일', level: 2, theme: 'fruit' },
-  'flanker-theme-animal-skeleton': { order: 4, title: '랜덤 자극 · 동물', level: 2, theme: 'animal' },
-  'flanker-theme-color-skeleton': { order: 5, title: '랜덤 자극 · 색상', level: 2, theme: 'color' },
+  'flanker-theme-color-skeleton': { order: 3, title: '랜덤 자극 · 색상', level: 2, theme: 'color' },
+  'flanker-theme-06': { order: 4, title: '랜덤 자극 · 과일', level: 2, theme: 'fruit' },
+  'flanker-theme-animal-skeleton': { order: 5, title: '랜덤 자극 · 동물', level: 2, theme: 'animal' },
   'flanker-theme-food-skeleton': { order: 6, title: '랜덤 자극 · 음식', level: 2, theme: 'food' },
   'flanker-theme-nature-skeleton': { order: 7, title: '랜덤 자극 · 자연', level: 2, theme: 'nature' },
   'flanker-theme-vehicle-skeleton': { order: 8, title: '랜덤 자극 · 탈 것', level: 2, theme: 'vehicle' },
   'flanker-theme-mix-skeleton': { order: 9, title: '랜덤 자극 · 믹스', level: 2, theme: 'mix' },
-  'flanker-random-43': { order: 10, title: '극단 · 과일', level: 3, theme: 'fruit', extremeMode: 'theme' },
-  'flanker-5circle-46': { order: 11, title: '극단 · 동물', level: 3, theme: 'animal', extremeMode: 'theme' },
-  'flanker-nested-circles-04': { order: 12, title: '극단 · 색상', level: 3, theme: 'color', extremeMode: 'theme' },
+  'flanker-nested-circles-04': { order: 10, title: '극단 · 색상', level: 3, theme: 'color', extremeMode: 'theme' },
+  'flanker-random-43': { order: 11, title: '극단 · 과일', level: 3, theme: 'fruit', extremeMode: 'theme' },
+  'flanker-5circle-46': { order: 12, title: '극단 · 동물', level: 3, theme: 'animal', extremeMode: 'theme' },
   'flanker-arrow-05': { order: 13, title: '극단 · 음식', level: 3, theme: 'food', extremeMode: 'theme' },
   'flanker-uniform-number-exp': { order: 14, title: '극단 · 자연', level: 3, theme: 'nature', extremeMode: 'theme' },
   'flanker-random-number-exp': { order: 15, title: '극단 · 탈 것', level: 3, theme: 'vehicle', extremeMode: 'theme' },
@@ -1521,7 +1522,9 @@ function withCanonicalNamedCatalogs(presets: OfficialSpomovePreset[]): OfficialS
 /** family/profile enrichment 완료본 — Hub·세션·테스트 SSOT */
 export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] =
   applyFullThemeSeedsToLibrary(enrichOfficialSpomoveLibrary(assignSequentialSortOrders(
-    withCanonicalNamedCatalogs(withCanonicalFlankerCatalog(OFFICIAL_SPOMOVE_LIBRARY_RAW)),
+    withPublicCatalogOrder(
+      withCanonicalNamedCatalogs(withCanonicalFlankerCatalog(OFFICIAL_SPOMOVE_LIBRARY_RAW)),
+    ),
   )));
 
 export const OFFICIAL_SPOMOVE_LIBRARY_SIZE = OFFICIAL_SPOMOVE_LIBRARY.length;

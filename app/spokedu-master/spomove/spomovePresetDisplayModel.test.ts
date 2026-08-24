@@ -54,12 +54,11 @@ describe('spomove preset display model', () => {
     expect(getSpomovePresetDisplayModel(sequenceFive!).displayTitle).toBe('순서 기억 · 보통 (5개)');
   });
 
-  it('sortSpomovePresetsByCatalogOrder keeps official catalog order', () => {
-    const sample = OFFICIAL_SPOMOVE_LIBRARY.slice(0, 12);
-    const shuffled = [...sample].reverse();
+  it('sortSpomovePresetsByCatalogOrder keeps official public catalog order', () => {
+    const publicPresets = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.catalogStatus !== 'hold');
+    const shuffled = [...publicPresets].reverse();
     const sorted = sortSpomovePresetsByCatalogOrder(shuffled);
-    const orders = sorted.map((preset) => preset.sortOrder);
-    expect([...orders].sort((a, b) => a - b)).toEqual(orders);
+    expect(sorted.map((preset) => preset.id)).toEqual(publicPresets.map((preset) => preset.id));
   });
 
   it('buildSpomoveProgramGroupSections groups favorites by activity category', () => {

@@ -21,7 +21,6 @@ import {
   SPOMOVE_THUMBNAIL_PACK_ID,
   type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
-import { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER } from '@/app/lib/spomove/spomoveAxisMeta';
 import { useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 import { spmChipClass } from '../lib/masterUiClasses';
@@ -47,8 +46,9 @@ import {
 import {
   buildSpomoveProgramGroupSections,
   getSpomovePresetDisplayModel,
+  sortSpomovePresetsByCatalogOrder,
 } from './spomovePresetDisplayModel';
-// Legacy sort helpers remain part of the hub contract; catalog sorting now also respects CMS order.
+// Legacy sort helpers remain part of the hub contract; official catalog uses SPOMOVE_PUBLIC_CATALOG_ORDER.
 // sortSpomovePresetsByDisplayTitle
 import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet, type SpomoveContentLoadState } from './SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
@@ -560,10 +560,6 @@ function filterOfficialPresets(programGroup: ProgramGroupTab, thinkingLevel: Thi
   );
 }
 
-function catalogOrder(preset: OfficialSpomovePreset, contentOverride?: SpomovePresetContentOverride) {
-  return contentOverride?.sortOrder ?? preset.sortOrder;
-}
-
 function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
   if (!path) return '';
   try {
@@ -973,13 +969,7 @@ export default function SpomoveHubView() {
         return true;
       });
     }
-    return [...presets].sort((a, b) =>
-      catalogOrder(a, contentOverrides[a.id]) - catalogOrder(b, contentOverrides[b.id]) ||
-      getSpomovePresetDisplayModel(a, contentOverrides[a.id]).displayTitle.localeCompare(
-        getSpomovePresetDisplayModel(b, contentOverrides[b.id]).displayTitle,
-        'ko',
-      ),
-    );
+    return sortSpomovePresetsByCatalogOrder(presets);
   }, [
     activeProgramGroup,
     activeThinkingLevel,
@@ -989,10 +979,7 @@ export default function SpomoveHubView() {
     movementLayerEnabled,
     showSavedOnly,
   ]);
-  const showFavoritesProgramGroupSections =
-    showSavedOnly && activeProgramGroup === 'all' && activeThinkingLevel === 'all';
-  const showAxisSections =
-    activeProgramGroup === 'all' && activeThinkingLevel === 'all' && !showSavedOnly;
+  const showProgramGroupSections = activeProgramGroup === 'all';
   const activeFilterLabel =
     [
       activeProgramGroup === 'all' ? null : PROGRAM_GROUP_LABELS[activeProgramGroup],
@@ -1002,17 +989,9 @@ export default function SpomoveHubView() {
       .filter(Boolean)
       .join(' · ') || '전체';
   const programGroupSections = useMemo(() => {
-    if (!showFavoritesProgramGroupSections) return [];
+    if (!showProgramGroupSections) return [];
     return buildSpomoveProgramGroupSections(filteredPresets);
-  }, [filteredPresets, showFavoritesProgramGroupSections]);
-  const axisSections = useMemo(() => {
-    if (!showAxisSections) return [];
-    return SPOMOVE_AXIS_ORDER.map((axis) => ({
-      axis,
-      meta: SPOMOVE_AXIS_META[axis],
-      presets: filteredPresets.filter((preset) => preset.axis === axis),
-    })).filter((section) => section.presets.length > 0);
-  }, [filteredPresets, showAxisSections]);
+  }, [filteredPresets, showProgramGroupSections]);
 
   const renderPresetGrid = (presets: OfficialSpomovePreset[], gridId?: string) => (
     <div
@@ -1229,7 +1208,7 @@ export default function SpomoveHubView() {
         </section>
         {/* 카드 그리드 */}
         {filteredPresets.length > 0 ? (
-          showFavoritesProgramGroupSections ? (
+          showProgramGroupSections ? (
             <div id="spomove-program-list" className="mt-4 space-y-8">
               {programGroupSections.map((section) => (
                 <section key={section.programGroup}>
@@ -1243,26 +1222,6 @@ export default function SpomoveHubView() {
                       </p>
                     </div>
                     <p className="text-[12px] font-bold text-slate-400">{section.presets.length}개 활동</p>
-                  </header>
-                  <div className="mt-5">
-                    {renderPresetGrid(section.presets)}
-                  </div>
-                </section>
-              ))}
-            </div>
-          ) : showAxisSections ? (
-            <div id="spomove-program-list" className="mt-4 space-y-8">
-              {axisSections.map((section) => (
-                <section key={section.axis}>
-                  <header className="flex flex-col gap-1 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                      <p className="text-[11px] font-black tracking-[0.08em] text-slate-400">
-                        {section.meta.enTitle}
-                      </p>
-                      <h2 className="mt-1 text-xl font-black text-slate-950">{section.meta.title}</h2>
-                      <p className="mt-1 text-[13px] font-medium text-slate-500">{section.meta.tabSub}</p>
-                    </div>
-                    <p className="text-[12px] font-bold text-slate-400">{section.presets.length}개 프리셋</p>
                   </header>
                   <div className="mt-5">
                     {renderPresetGrid(section.presets)}

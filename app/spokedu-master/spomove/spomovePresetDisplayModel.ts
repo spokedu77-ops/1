@@ -22,6 +22,10 @@ import type { OfficialSpomovePreset, OfficialSpomoveProgramGroup } from './offic
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import { MOVEMENT_REGISTRY } from './movements/movementRegistry';
 import { getSpomovePadLayoutVariant } from './spomovePadLayout';
+import {
+  SPOMOVE_PUBLIC_PROGRAM_GROUP_ORDER,
+  sortPresetsByPublicCatalogOrder,
+} from './spomovePublicCatalogOrder';
 
 export type SpomovePresetDisplayModel = {
   displayTitle: string;
@@ -337,15 +341,7 @@ export function sortSpomovePresetsByDisplayTitle(presets: readonly OfficialSpomo
   );
 }
 
-export const SPOMOVE_PROGRAM_GROUP_SECTION_ORDER = [
-  'reaction-cognition',
-  'visual-reaction',
-  'simon',
-  'flanker',
-  'stroop',
-  'sequential-memory',
-  'dive',
-] as const;
+export const SPOMOVE_PROGRAM_GROUP_SECTION_ORDER = SPOMOVE_PUBLIC_PROGRAM_GROUP_ORDER;
 
 export type SpomoveProgramGroupSectionId = (typeof SPOMOVE_PROGRAM_GROUP_SECTION_ORDER)[number];
 
@@ -358,7 +354,7 @@ export function resolveSpomoveProgramGroupSection(
 export function sortSpomovePresetsByCatalogOrder(
   presets: readonly OfficialSpomovePreset[],
 ): OfficialSpomovePreset[] {
-  return [...presets].sort((a, b) => a.sortOrder - b.sortOrder);
+  return sortPresetsByPublicCatalogOrder(presets);
 }
 
 export function buildSpomoveProgramGroupSections(presets: readonly OfficialSpomovePreset[]): Array<{
