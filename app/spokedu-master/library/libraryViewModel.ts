@@ -17,6 +17,53 @@ export type LibraryActiveFilter = {
 
 export const LIBRARY_PAGE_SIZE = 12;
 
+export type LibrarySearchFields = {
+  title: string;
+  category: string;
+  structured: string[];
+  body: string[];
+};
+
+function normalizeSearchValue(value: string) {
+  return value.trim().toLocaleLowerCase('ko');
+}
+
+export function rankLibraryPrograms<T>(
+  programs: T[],
+  query: string,
+  getFields: (program: T) => LibrarySearchFields,
+): T[] {
+  const phrase = normalizeSearchValue(query);
+  if (!phrase) return programs;
+  const terms = [...new Set(phrase.split(/\s+/).filter(Boolean))];
+
+  return programs.flatMap((program, index) => {
+    const fields = getFields(program);
+    const title = normalizeSearchValue(fields.title);
+    const category = normalizeSearchValue(fields.category);
+    const structured = fields.structured.map(normalizeSearchValue).filter(Boolean);
+    const body = fields.body.map(normalizeSearchValue).filter(Boolean);
+    const searchable = [title, category, ...structured, ...body];
+    if (!terms.every((term) => searchable.some((value) => value.includes(term)))) return [];
+
+    let score = title === phrase ? 1200 : title.startsWith(phrase) ? 900 : title.includes(phrase) ? 700 : 0;
+    if (category === phrase) score += 500;
+    else if (category.includes(phrase)) score += 350;
+    if (structured.some((value) => value === phrase)) score += 400;
+    else if (structured.some((value) => value.includes(phrase))) score += 260;
+    if (body.some((value) => value.includes(phrase))) score += 80;
+
+    for (const term of terms) {
+      if (title.includes(term)) score += 100;
+      else if (category.includes(term)) score += 60;
+      else if (structured.some((value) => value.includes(term))) score += 40;
+      else if (body.some((value) => value.includes(term))) score += 10;
+    }
+    return [{ program, score, index }];
+  }).sort((left, right) => right.score - left.score || left.index - right.index)
+    .map(({ program }) => program);
+}
+
 export function parseLibraryView(value: string | null): LibraryViewMode {
   return value === 'favorites' ? 'favorites' : 'all';
 }

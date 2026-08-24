@@ -61,6 +61,7 @@ import {
   LIBRARY_PAGE_SIZE,
   matchesLibraryFilters,
   paginateLibraryPrograms,
+  rankLibraryPrograms,
   type LibraryActiveFilter,
   type LibraryFilterGroupKey,
   type LibraryViewMode,
@@ -119,24 +120,27 @@ function getHeroImage(program: Program) {
   return resolveProgramHero(program);
 }
 
-function getSearchText(program: Program) {
-  return [
-    program.title,
-    program.category,
-    program.description,
-    program.grade,
-    program.space,
-    ...(program.tags ?? []),
-    ...(program.equipment ?? []),
-    ...(program.steps ?? []),
-    program.lessonDetail?.objective,
-    program.lessonDetail?.developmentFocus,
-    program.lessonDetail?.recommendedAge,
-    program.lessonDetail?.recommendedPlayers,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+function getProgramSearchFields(program: Program) {
+  const structuredGroups: FilterGroupKey[] = ['target', 'space', 'participant', 'function', 'movement', 'theme'];
+  return {
+    title: program.title,
+    category: [program.category, getLessonTheme(program)].filter(Boolean).join(' '),
+    structured: [
+      ...structuredGroups.flatMap((group) => getStructuredValues(program, group)),
+      ...(program.tags ?? []),
+      ...(program.equipment ?? []),
+      program.grade,
+      program.space,
+      program.lessonDetail?.recommendedAge,
+      program.lessonDetail?.recommendedPlayers,
+    ].filter((value): value is string => Boolean(value)),
+    body: [
+      program.description,
+      ...(program.steps ?? []),
+      program.lessonDetail?.objective,
+      program.lessonDetail?.developmentFocus,
+    ].filter((value): value is string => Boolean(value)),
+  };
 }
 
 function parseReasonId(value: string | null): LibrarySelectionReasonId | null {
@@ -293,15 +297,17 @@ export default function LibraryView() {
   );
 
   const usedProgramIds = useMemo(
-    () => new Set(sessions.flatMap((session) => session.programs.filter((item) => item.sourceType === 'program' && item.programId != null).map((item) => String(item.programId)))),
+    () => new Set(sessions.filter((session) => session.status === 'completed').flatMap((session) => session.programs
+      .filter((item) => item.sourceType === 'program' && item.programId != null && item.isCompleted)
+      .map((item) => String(item.programId)))),
     [sessions],
   );
   const recentProgramRecords = useMemo(() => {
     const programsById = new Map(pool.map((program) => [program.id, program]));
     const seen = new Set<string>();
-    return [...sessions]
+    return sessions.filter((session) => session.status === 'completed')
       .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
-      .flatMap((session) => session.programs.filter((record) => record.sourceType === 'program' && record.programId != null).map((record) => ({ session, record })))
+      .flatMap((session) => session.programs.filter((record) => record.sourceType === 'program' && record.programId != null && record.isCompleted).map((record) => ({ session, record })))
       .flatMap(({ session, record }) => {
         const program = programsById.get(String(record.programId));
         if (!program || seen.has(String(record.programId))) return [];
@@ -319,11 +325,7 @@ export default function LibraryView() {
 
   const shelves = useMemo(() => buildLibraryShelves(viewPool), [viewPool]);
 
-  useEffect(() => {
-    setVisibleCount(LIBRARY_PAGE_SIZE);
-  }, [query, filters, view, shelfId, reasonId]);
-
-  useEffect(() => {
+  const sourceLibrarySearch = useMemo(() => {
     const params = new URLSearchParams();
     const trimmedQuery = query.trim();
     if (trimmedQuery) params.set('q', trimmedQuery);
@@ -333,22 +335,33 @@ export default function LibraryView() {
     params.set('view', view);
     if (shelfId) params.set('shelf', shelfId);
     if (reasonId) params.set('reason', reasonId);
-    const next = params.toString();
+    return params.toString();
+  }, [filters, query, view, shelfId, reasonId]);
+
+  useEffect(() => {
+    setVisibleCount(LIBRARY_PAGE_SIZE);
+  }, [query, filters, view, shelfId, reasonId]);
+
+  useEffect(() => {
+    const next = sourceLibrarySearch;
     const current = searchParams.toString();
     if (next === current) return;
     router.replace(next ? `/spokedu-master/library?${next}` : '/spokedu-master/library', { scroll: false });
-  }, [filters, query, view, shelfId, reasonId, router, searchParams]);
+  }, [sourceLibrarySearch, router, searchParams]);
 
   const filteredPrograms = useMemo(() => {
     const base = filterLibraryPrograms(
       viewPool,
-      query,
-      (program, normalizedQuery) => getSearchText(program).includes(normalizedQuery),
+      '',
+      () => true,
       (program) => matchesLibraryFilters(program, filters, getStructuredValues),
     );
-    if (shelfId) return filterProgramsByShelf(base, shelfId);
-    if (reasonId) return filterProgramsByReason(base, reasonId);
-    return base;
+    const constrained = shelfId
+      ? filterProgramsByShelf(base, shelfId)
+      : reasonId
+        ? filterProgramsByReason(base, reasonId)
+        : base;
+    return rankLibraryPrograms(constrained, query, getProgramSearchFields);
   }, [filters, viewPool, query, shelfId, reasonId]);
 
   const visiblePrograms = useMemo(
@@ -601,6 +614,7 @@ export default function LibraryView() {
                       isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
                       favoriteEnabled={ownerId != null}
                       sourceLibraryView={view}
+                      sourceLibrarySearch={sourceLibrarySearch}
                       usedProgramIds={usedProgramIds}
                       toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
                       setSelected={setSelected}
@@ -741,6 +755,7 @@ export default function LibraryView() {
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
             favoriteEnabled={ownerId != null}
             sourceLibraryView={view}
+            sourceLibrarySearch={sourceLibrarySearch}
             usedProgramIds={usedProgramIds}
             toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
             setSelected={setSelected}
@@ -802,6 +817,7 @@ export default function LibraryView() {
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
           onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
           sourceLibraryView={view}
+          sourceLibrarySearch={sourceLibrarySearch}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({
               programId: selected.program.id,
@@ -823,6 +839,7 @@ function ProgramGrid({
   isFavorite,
   favoriteEnabled,
   sourceLibraryView,
+  sourceLibrarySearch,
   usedProgramIds,
   toggleFavorite,
   setSelected,
@@ -832,6 +849,7 @@ function ProgramGrid({
   isFavorite: (programId: string) => boolean;
   favoriteEnabled: boolean;
   sourceLibraryView: LibraryViewMode;
+  sourceLibrarySearch: string;
   usedProgramIds: Set<string>;
   toggleFavorite: (id: string) => void;
   setSelected: (selection: { program: Program; autoplayVideo: boolean }) => void;
@@ -845,7 +863,7 @@ function ProgramGrid({
           locked={program.isPro && !isPremium}
           favorite={isFavorite(program.id)}
           favoriteEnabled={favoriteEnabled}
-          detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView)}
+          detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
           used={usedProgramIds.has(program.id)}
           priority={index < 4}
           onFavorite={() => toggleFavorite(program.id)}

@@ -123,28 +123,41 @@ function l2Quad(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
 function l3Full(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
   const cue = cueNoun(theme);
   const moveLabel = L3_MOVEMENT_LABEL[theme];
+  const signalNoun = theme === 'color' ? '색' : cue.replace(/ 신호$/, '');
   const imageDelta =
     theme === 'mix'
-      ? '이미지 종류가 바뀌어도 “전체 화면의 한 신호 → 연결 패드” 규칙만 유지하게 하세요.'
+      ? '이미지 종류가 바뀌어도 “전체 화면의 한 신호 → 연결 색 패드” 규칙만 유지하게 합니다.'
       : isImageTheme(theme)
-        ? '이미지 세부보다 신호가 가리키는 연결 색/패드를 먼저 확인하게 하세요.'
-        : '전체 화면 색을 확인한 뒤 같은 색 패드로 바로 연결하게 하세요.';
+        ? '이미지 세부보다 신호가 가리키는 연결 색 패드를 먼저 확인하게 합니다.'
+        : '신호를 확인한 뒤 바로 해당 색 패드로 연결하는지 봅니다.';
+  const landingPoint =
+    theme === 'color' || theme === 'animal' || theme === 'fruit'
+      ? '두 발이 함께 패드에 착지하는지 확인합니다.'
+      : `신호 확인 후 ${moveLabel}로 패드를 연결하는지 관찰합니다.`;
 
   return {
     presetId,
     cluster: 'L3-full',
     theme,
+    overwriteGuideFields: true,
     movementGuide: {
       movement: l3Movement(theme),
-      objective: `전체 화면에 크게 나타난 ${cue}를 확인하고 연결된 SPOMAT 패드로 ${moveLabel}합니다.`,
+      objective: `전체 화면의 ${cue}를 확인하고 같은 색 SPOMAT 패드로 ${moveLabel}합니다.`,
       teachingPoints: [
-        '화면을 네 칸처럼 나누어 찾지 말고, 하나의 큰 신호를 확인하게 하세요.',
+        theme === 'color'
+          ? '화면을 네 칸처럼 찾지 말고 하나의 큰 색 신호로 보게 합니다.'
+          : '화면을 네 칸처럼 찾지 말고 하나의 큰 신호로 보게 합니다.',
         imageDelta,
-        `신호 확인 후 ${moveLabel}로 패드를 연결하는지 관찰하세요.`,
+        landingPoint,
       ].slice(0, 3),
       instruction:
-        `전체형 화면에 나타난 ${cue}를 확인합니다.\n연결된 색 패드로 ${moveLabel}합니다.\n칸 위치를 찾는 활동이 아니라 단일 신호에 반응합니다.`,
-      coachScript: `화면 전체를 보고, 같은 패드로 ${moveLabel}!`,
+        theme === 'color'
+          ? `전체 화면의 색을 확인합니다.\n같은 색 패드로 ${moveLabel}합니다.\n기준 위치로 돌아와 다음 신호를 기다립니다.`
+          : `전체 화면의 ${cue}를 확인합니다.\n같은 색 패드로 ${moveLabel}합니다.\n기준 위치로 돌아와 다음 신호를 기다립니다.`,
+      coachScript:
+        theme === 'color'
+          ? '색 보고, 같은 색 패드로 양발 점프!'
+          : `${signalNoun} 보고, 같은 색 패드로 ${moveLabel}!`,
       focusTags: l3FocusTags(theme),
       easier: `동작을 ${moveLabel} 대신 가볍게 밟기로 바꾸고, 자극 시간을 늘립니다.`,
       harder: '자극 시간을 줄이고, 말 없이 신호→이동만 이어지게 합니다.',

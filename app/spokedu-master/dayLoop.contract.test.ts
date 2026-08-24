@@ -10,6 +10,8 @@ describe('SPOKEDU MASTER Session day loop', () => {
     expect(detail).toContain('AssignProgramToSessionButton');
     expect(assign).toContain('assign(session.id)');
     expect(assign).toContain('data.addSessionProgram');
+    expect(assign).toContain('upcomingSessions');
+    expect(assign).toContain('다른 날짜 찾기');
   });
 
   it('routes home operational actions to the Calendar', () => {

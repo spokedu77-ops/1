@@ -17,6 +17,12 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain('...(program.steps ?? [])');
     expect(source).toContain('...(program.tags ?? [])');
     expect(source).not.toContain('return program.title.toLowerCase()');
+    expect(source).toContain('rankLibraryPrograms(constrained, query, getProgramSearchFields)');
+  });
+
+  it('counts recent usage only from activities actually completed in completed lessons', () => {
+    expect(source).toContain("session.status === 'completed'");
+    expect(source).toContain('record.isCompleted');
   });
 
   it('uses the owner-scoped canonical selectors and action', () => {

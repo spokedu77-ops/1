@@ -10,8 +10,28 @@ import {
   matchesLibraryFilters,
   paginateLibraryPrograms,
   parseLibraryView,
+  rankLibraryPrograms,
   selectLibraryBasePrograms,
 } from './libraryViewModel';
+
+describe('library relevance ranking', () => {
+  const searchable = [
+    { id: 'body', title: '공 활용 놀이', category: '협동', structured: ['좁은 공간'], body: ['피구 수업에서 응용'] },
+    { id: 'title', title: '변형 피구', category: '경쟁', structured: ['공'], body: ['팀 활동'] },
+    { id: 'tag', title: '함께 옮기기', category: '협동', structured: ['피구', '2인 1조'], body: ['공을 옮깁니다'] },
+  ];
+  const fields = (program: typeof searchable[number]) => program;
+
+  it('ranks title matches ahead of structured and body-only matches', () => {
+    expect(rankLibraryPrograms(searchable, '피구', fields).map((item) => item.id))
+      .toEqual(['title', 'tag', 'body']);
+  });
+
+  it('matches multi-word intent across structured fields', () => {
+    expect(rankLibraryPrograms(searchable, '협동 좁은 공간 공', fields).map((item) => item.id))
+      .toEqual(['body']);
+  });
+});
 
 const programs = [
   { id: 'p1', title: 'Balance', target: 'child' },

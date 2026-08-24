@@ -61,7 +61,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
   [id, operationalData.sessions]);
   const section = searchParams.get('section');
   const shouldAutoplayVideo = section === 'video' && searchParams.get('autoplay') === '1';
-  const libraryReturnHref = getLibraryReturnHref(searchParams.get('libraryView'));
+  const libraryReturnHref = getLibraryReturnHref(
+    searchParams.get('libraryView'),
+    searchParams.get('libraryReturn'),
+  );
 
   useEffect(() => {
     const heroTitle = heroTitleRef.current;

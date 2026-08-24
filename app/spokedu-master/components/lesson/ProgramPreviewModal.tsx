@@ -24,6 +24,7 @@ export function ProgramPreviewModal({
   isTodayLesson = false,
   onToggleTodayLesson,
   sourceLibraryView,
+  sourceLibrarySearch,
   onPlaybackStarted,
   onClose,
 }: {
@@ -35,6 +36,7 @@ export function ProgramPreviewModal({
   isTodayLesson?: boolean;
   onToggleTodayLesson?: () => void;
   sourceLibraryView?: LibraryViewMode;
+  sourceLibrarySearch?: string;
   onPlaybackStarted?: () => void;
   onClose: () => void;
 }) {
@@ -117,7 +119,7 @@ export function ProgramPreviewModal({
               </Link>
             ) : (
               <Link
-                href={getLibraryProgramDetailHref(program.id, sourceLibraryView)}
+                href={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
                 className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none sm:h-10 sm:w-[168px]"
               >
                 <BookOpen className="h-4 w-4" />

@@ -45,14 +45,15 @@ describe('library card and preview favorite synchronization', () => {
 describe('preview and detail navigation context', () => {
   it('passes the current library view into the modal and direct card detail href', () => {
     expect(librarySource).toContain('sourceLibraryView={view}');
+    expect(librarySource).toContain('sourceLibrarySearch={sourceLibrarySearch}');
     expect(librarySource).toContain(
-      'detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView)}',
+      'detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}',
     );
   });
 
   it('builds the preview detail href from the limited library view prop', () => {
     expect(previewSource).toContain(
-      'href={getLibraryProgramDetailHref(program.id, sourceLibraryView)}',
+      'href={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}',
     );
   });
 });
@@ -76,8 +77,8 @@ describe('detail favorite source of truth and return context', () => {
   });
 
   it('uses one validated return href for all library return actions', () => {
-    expect(detailSource).toContain(
-      "getLibraryReturnHref(searchParams.get('libraryView'))",
+    expect(detailSource).toMatch(
+      /getLibraryReturnHref\(\s*searchParams\.get\('libraryView'\),\s*searchParams\.get\('libraryReturn'\),?\s*\)/,
     );
     expect(detailSource.match(/href=\{libraryReturnHref\}/g)).toHaveLength(2);
   });
