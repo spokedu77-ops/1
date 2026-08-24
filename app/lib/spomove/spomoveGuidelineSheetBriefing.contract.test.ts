@@ -76,6 +76,35 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).not.toContain('divide-y divide-slate-100');
     expect(sheet).toContain('sticky bottom-0');
   });
+
+  it('keeps video preview full-frame contain (IMAGE hub crop stays separate)', () => {
+    const preview = sheet.slice(
+      sheet.indexOf('function SpomoveScreenPreview'),
+      sheet.indexOf('function BriefingSection'),
+    );
+    expect(preview).toContain('SPOMOVE_VIDEO_POSTER_OBJECT_FIT');
+    expect(preview).toContain('posterObjectFit={SPOMOVE_VIDEO_POSTER_OBJECT_FIT}');
+    expect(preview).toContain('SPOMOVE_VIDEO_FRAME_ASPECT_CLASS');
+    expect(preview).not.toContain('aspect-auto');
+    expect(preview).not.toContain('lg:h-full');
+  });
+
+  it('locks premium visual surface hooks without changing briefing IA', () => {
+    expect(sheet).toContain('data-spm-spomove-surface="stage"');
+    expect(sheet).toContain('data-spm-spomove-surface="media"');
+    expect(sheet).toContain('data-spm-spomove-surface="briefing"');
+    expect(sheet).toContain('data-spm-spomove-section-rail="true"');
+    expect(sheet).toContain('data-spm-spomove-prep-stats="true"');
+    expect(sheet).toContain('data-spm-spomove-progress-timeline="true"');
+    expect(sheet).toContain('data-spm-spomove-teaching-markers="true"');
+    expect(sheet).toContain('data-spm-spomove-coach-cue="true"');
+    expect(sheet).toContain('data-spm-spomove-details-control="true"');
+    expect(sheet).toContain('data-spm-spomove-action-rail="true"');
+    expect(sheet).toContain('CoachCueCard');
+    expect(sheet).toContain('PrepMetaRow');
+    expect(sheet).toContain('ProgressTimeline');
+    expect(sheet).toContain('MessageCircle');
+  });
 });
 
 describe('L3 full editorial refine seeds', () => {

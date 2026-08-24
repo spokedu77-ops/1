@@ -51,7 +51,7 @@ function PosterStill({
       data-video-poster
       src={current}
       alt=""
-      className={`absolute inset-0 h-full w-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'}`}
+      className={`absolute inset-0 h-full w-full ${objectFit === 'contain' ? 'object-contain object-center' : 'object-cover object-center'}`}
       loading="lazy"
       decoding="async"
       onError={advance}

@@ -593,12 +593,16 @@ function CardVisual({
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
+  // IMAGE thumb FROZEN (P1): object-cover + aspect-[6/5]. Do not apply video contain here.
   const fitClass = stretch
     ? 'object-fill object-center'
     : 'object-cover object-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.015]';
 
   return (
-    <div className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-slate-200 bg-white">
+    <div
+      data-spm-spomove-media="image-thumb"
+      className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-slate-200 bg-white"
+    >
       {showThumbnail ? (
         <Image
           src={thumbnailUrl}
