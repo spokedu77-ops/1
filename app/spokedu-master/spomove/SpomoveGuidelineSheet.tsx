@@ -38,8 +38,10 @@ function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
   const embed = parseVideoEmbedUrl(videoUrl);
   useEffect(() => setLiteMedia(preferLiteMedia()), []);
 
-  const frameClassName = 'mx-auto h-full w-full overflow-hidden rounded-xl border border-slate-200 bg-black sm:rounded-2xl';
-  const ratioClassName = 'aspect-video min-h-[220px] w-full sm:min-h-[320px] lg:aspect-auto lg:h-full lg:min-h-full';
+  // Keep 16:9 always — stretching to match the guide column crops left/right with object-cover.
+  const frameClassName =
+    'mx-auto w-full overflow-hidden rounded-xl border border-slate-200 bg-black sm:rounded-2xl';
+  const ratioClassName = 'aspect-video w-full';
   if (!embed) {
     return (
       <div className={`${frameClassName} ${ratioClassName} flex items-center justify-center border-dashed bg-slate-50 px-4 text-center`}>
@@ -55,6 +57,7 @@ function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
           title="SPOMOVE 화면 미리보기"
           className="h-full w-full"
           posterCandidates={getVideoThumbnailCandidates(videoUrl, { lite: liteMedia })}
+          posterObjectFit="contain"
           deferUntilPlay
         />
       </div>
@@ -256,10 +259,27 @@ export function SpomoveGuidelineSheet({
   return (
     <BottomSheet open title={display.displayTitle} onClose={onClose} size="preview">
       <div className="flex flex-col gap-3" data-spm-spomove-launch-confirm="">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)] lg:items-stretch">
-          <div data-preview-column="media" className="min-w-0 lg:flex"><SpomoveScreenPreview videoUrl={guideVideoUrl} /></div>
-          <aside data-preview-column="content" data-preview-summary className="min-w-0 rounded-[14px] border border-slate-200 bg-white p-4 sm:p-5 lg:max-h-[min(620px,calc(100dvh-260px))] lg:overflow-y-auto [scrollbar-width:thin]">
-            {contentLoadState === 'loading' ? <ContentLoading /> : contentLoadState === 'error' ? <ContentError prepLine={prepLine} intervalLine={intervalLine} /> : <BriefingContent guideDisplay={guideDisplay} prepLine={prepLine} intervalLine={intervalLine} briefingReadiness={briefingReadiness} />}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(340px,0.95fr)] lg:items-start">
+          <div data-preview-column="media" className="min-w-0">
+            <SpomoveScreenPreview videoUrl={guideVideoUrl} />
+          </div>
+          <aside
+            data-preview-column="content"
+            data-preview-summary
+            className="min-w-0 rounded-[14px] border border-slate-200 bg-white p-4 sm:p-5"
+          >
+            {contentLoadState === 'loading' ? (
+              <ContentLoading />
+            ) : contentLoadState === 'error' ? (
+              <ContentError prepLine={prepLine} intervalLine={intervalLine} />
+            ) : (
+              <BriefingContent
+                guideDisplay={guideDisplay}
+                prepLine={prepLine}
+                intervalLine={intervalLine}
+                briefingReadiness={briefingReadiness}
+              />
+            )}
           </aside>
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

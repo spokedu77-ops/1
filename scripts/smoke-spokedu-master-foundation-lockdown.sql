@@ -62,10 +62,6 @@ begin
     v_owner, null, v_class_a, now() + interval '1 day', now() + interval '2 hours 1 day',
     'scheduled', 'verification', '[]'::jsonb, '[]'::jsonb
   );
-  perform public.spokedu_master_replace_session_attendance(
-    v_owner, v_session,
-    jsonb_build_array(jsonb_build_object('studentId', v_student::text, 'status', 'present'))
-  );
   insert into public.spokedu_master_session_programs(
     owner_id,session_id,source_type,program_id,spomove_preset_id,
     program_title_snapshot,sort_order,is_completed
@@ -77,9 +73,10 @@ begin
   ) values (v_owner,v_session,'spomove',null,'foundation-preset-b','Foundation activity B',1,false)
   returning id into v_activity_b;
   perform public.spokedu_master_update_session_program_completion(v_owner, v_session, v_activity_a, true);
-  perform public.spokedu_master_save_session(
+  perform public.spokedu_master_complete_session(
     v_owner, v_session, v_class_a, now() + interval '1 day', now() + interval '2 hours 1 day',
-    'completed', 'verification complete', '[]'::jsonb, '[]'::jsonb
+    'verification complete',
+    jsonb_build_array(jsonb_build_object('studentId', v_student::text, 'status', 'present'))
   );
   if not exists (
     select 1 from public.spokedu_master_sessions

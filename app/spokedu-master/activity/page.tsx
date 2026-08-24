@@ -17,6 +17,7 @@ import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSess
 import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
 import { resolveActivityQuery } from './activityQuery';
 import { buildNextSessionDateTimes, buildNextSessionDraft } from './nextSession';
+import { getSessionActionPolicy } from './sessionActionPolicy';
 
 function statusLabel(status: MasterSessionStatus) {
   return status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
@@ -94,9 +95,10 @@ function SessionSheet({
   const completedPrograms = programs.filter((item) => item.isCompleted).length;
   const presentRosterCount = currentRoster.filter((student) => attendance[student.id] === 'present').length;
   const uncheckedRosterCount = currentRoster.filter((student) => !attendance[student.id]).length;
+  const actions = getSessionActionPolicy(status);
 
   const markAllPresent = () => {
-    if (status !== 'scheduled') return;
+    if (!actions.markAllPresent) return;
     setAttendance((current) => ({
       ...current,
       ...Object.fromEntries(currentRoster.map((student) => [student.id, 'present' as const])),
@@ -124,7 +126,7 @@ function SessionSheet({
   };
 
   const addSelectedPrograms = async () => {
-    if (!activeSession || status !== 'scheduled' || !selectedActivityKeys.length) return;
+    if (!activeSession || !actions.addActivities || !selectedActivityKeys.length) return;
     setSaving(true);
     setError(null);
     let addedCount = 0;
@@ -163,15 +165,15 @@ function SessionSheet({
     [next[index], next[target]] = [next[target]!, next[index]!];
     const ordered = next.map((item, sortOrder) => ({ ...item, sortOrder }));
     try {
-      await data.reorderSessionPrograms(activeSession.id, ordered.map((item) => item.id!));
-      setPrograms(ordered);
+      const savedPrograms = await data.reorderSessionPrograms(activeSession.id, ordered.map((item) => item.id!));
+      setPrograms(savedPrograms);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '프로그램 순서를 저장하지 못했습니다.');
     }
   };
 
   const toggleProgram = async (program: DraftProgram) => {
-    if (!activeSession || !program.id || status === 'cancelled') return;
+    if (!activeSession || !program.id || !actions.toggleActivityCompletion) return;
     setError(null);
     try {
       const isCompleted = !program.isCompleted;
@@ -183,7 +185,7 @@ function SessionSheet({
   };
 
   const removeProgram = async (program: DraftProgram) => {
-    if (!activeSession || !program.id || status !== 'scheduled') return;
+    if (!activeSession || !program.id || !actions.removeActivities) return;
     setError(null);
     try {
       await data.removeSessionProgram(activeSession.id, program.id);
@@ -211,9 +213,7 @@ function SessionSheet({
       let saved: MasterSessionDto;
 
       if (activeSession && status === 'scheduled' && nextStatus === 'completed') {
-        const prepared = await data.saveSession(sessionInput('scheduled'), activeSession.id);
-        if (attendanceDirty) await data.saveSessionAttendance(prepared.id, attendanceInput());
-        saved = await data.saveSession(sessionInput('completed'), prepared.id);
+        saved = await data.completeSession(activeSession.id, sessionInput('completed'), attendanceInput());
       } else {
         if (activeSession && status === 'completed' && attendanceDirty) {
           await data.saveSessionAttendance(activeSession.id, attendanceInput());
@@ -305,7 +305,7 @@ function SessionSheet({
       <div className="space-y-5 pb-4">
         <section className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-black text-slate-600">수업반
-            <select value={classId} disabled={Boolean(activeSession) && status !== 'scheduled'} onChange={(event) => { setClassId(event.target.value); setAttendance({}); setAttendanceDirty(true); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold disabled:bg-slate-50">
+            <select value={classId} disabled={Boolean(activeSession) && !actions.editSchedule} onChange={(event) => { setClassId(event.target.value); setAttendance({}); setAttendanceDirty(true); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold disabled:bg-slate-50">
               {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
           </label>
@@ -313,22 +313,22 @@ function SessionSheet({
             <div className={`mt-1 flex h-11 items-center rounded-xl px-3 text-sm ring-1 ${statusTone(status)}`}>{statusLabel(status)}</div>
           </div>
           <label className="text-xs font-black text-slate-600">시작
-            <input type="datetime-local" disabled={Boolean(activeSession) && status !== 'scheduled'} value={startAt} onChange={(event) => setStartAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" />
+            <input type="datetime-local" disabled={Boolean(activeSession) && !actions.editSchedule} value={startAt} onChange={(event) => setStartAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" />
           </label>
           <label className="text-xs font-black text-slate-600">종료
-            <input type="datetime-local" disabled={Boolean(activeSession) && status !== 'scheduled'} value={endAt} onChange={(event) => setEndAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" />
+            <input type="datetime-local" disabled={Boolean(activeSession) && !actions.editSchedule} value={endAt} onChange={(event) => setEndAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" />
           </label>
         </section>
 
         <section>
-          <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-black text-slate-800">출석 <span className="text-xs text-emerald-700">{presentRosterCount} / {currentRoster.length}</span></h3>{uncheckedRosterCount ? <p className="mt-1 text-[11px] font-bold text-amber-600">미체크 {uncheckedRosterCount}명</p> : null}</div>{status !== 'cancelled' && currentRoster.length ? <button type="button" onClick={markAllPresent} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-700">전체 출석</button> : null}</div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-black text-slate-800">출석 <span className="text-xs text-emerald-700">{presentRosterCount} / {currentRoster.length}</span></h3>{uncheckedRosterCount ? <p className="mt-1 text-[11px] font-bold text-amber-600">미체크 {uncheckedRosterCount}명</p> : null}</div>{actions.markAllPresent && currentRoster.length ? <button type="button" onClick={markAllPresent} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-700">전체 출석</button> : null}</div>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {roster.map((student) => (
               <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2">
                 <span className="text-sm font-bold text-slate-700">{student.name}{student.historical ? <small className="ml-1 text-[10px] text-slate-400">과거 참여</small> : null}</span>
                 <div className="flex gap-1">
                   {(['present', 'absent'] as const).map((value) => (
-                    <button key={value} type="button" disabled={status === 'cancelled'} onClick={() => { setAttendance((current) => ({ ...current, [student.id]: value })); setAttendanceDirty(true); }} className={`min-h-11 rounded-lg px-3 text-xs font-black disabled:opacity-40 ${attendance[student.id] === value ? (value === 'present' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white') : 'bg-slate-100 text-slate-500'}`}>{value === 'present' ? '출석' : '결석'}</button>
+                    <button key={value} type="button" disabled={!actions.editAttendance} onClick={() => { setAttendance((current) => ({ ...current, [student.id]: value })); setAttendanceDirty(true); }} className={`min-h-11 rounded-lg px-3 text-xs font-black disabled:opacity-40 ${attendance[student.id] === value ? (value === 'present' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white') : 'bg-slate-100 text-slate-500'}`}>{value === 'present' ? '출석' : '결석'}</button>
                   ))}
                 </div>
               </div>
@@ -344,12 +344,12 @@ function SessionSheet({
               <div key={program.id} className="rounded-xl border border-slate-200 p-2.5">
                 <div className="flex items-center gap-2">
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-black text-slate-500" aria-label={`${index + 1}번째 활동`}>{index + 1}</span>
-                  <button type="button" disabled={!activeSession || status === 'cancelled'} onClick={() => void toggleProgram(program)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label={`${program.programTitle ?? '활동'} 진행 여부`}><Check size={18} /></button>
+                  <button type="button" disabled={!activeSession || !actions.toggleActivityCompletion} onClick={() => void toggleProgram(program)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label={`${program.programTitle ?? '활동'} 진행 여부`}><Check size={18} /></button>
                   <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}><span className="block truncate" title={program.programTitle ?? '이름 없는 활동'}>{program.programTitle ?? '이름 없는 활동'}</span>{program.sourceType === 'spomove' ? <span className="text-[10px] font-black text-blue-600">SPOMOVE</span> : null}</span>
                   {program.sourceType === 'program' && program.programId ? <Link target="_blank" rel="noreferrer" href={`/spokedu-master/library/${program.programId}`} className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-black text-slate-700" aria-label={`${program.programTitle ?? '프로그램'} 새 탭에서 보기`}>보기</Link> : null}
                   {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) ? <Link target="_blank" rel="noreferrer" href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!)} className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white" aria-label={`${program.programTitle ?? 'SPOMOVE'} 새 탭에서 실행`}>실행</Link> : null}
                 </div>
-                {status === 'scheduled' ? <div className="mt-2 flex justify-end gap-1 border-t border-slate-100 pt-2">
+                {actions.reorderActivities || actions.removeActivities ? <div className="mt-2 flex justify-end gap-1 border-t border-slate-100 pt-2">
                   <button type="button" onClick={() => moveProgram(index, -1)} disabled={index === 0 || saving} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-xs font-bold text-slate-500 disabled:opacity-30" aria-label={`${program.programTitle ?? '활동'} 순서 위로`}><ChevronUp size={16} />위로</button>
                   <button type="button" onClick={() => moveProgram(index, 1)} disabled={index === programs.length - 1 || saving} className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-xs font-bold text-slate-500 disabled:opacity-30" aria-label={`${program.programTitle ?? '활동'} 순서 아래로`}><ChevronDown size={16} />아래로</button>
                   <button type="button" disabled={!activeSession || saving} onClick={() => void removeProgram(program)} className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-bold text-rose-600 disabled:opacity-30" aria-label={`${program.programTitle ?? '활동'} 삭제`}>삭제</button>
@@ -358,11 +358,11 @@ function SessionSheet({
             ))}
             {!programs.length ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">아직 수업 활동이 없습니다. 아래에서 프로그램이나 SPOMOVE를 추가해 수업을 준비하세요.</p> : null}
           </div>
-          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!activeSession || status !== 'scheduled' || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length && activeSession && status === 'scheduled' ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
+          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!activeSession || !actions.addActivities || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length && activeSession && actions.addActivities ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
         </section>
 
         <label className="block text-sm font-black text-slate-800">수업 메모
-          <textarea value={memo} disabled={status === 'cancelled'} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none disabled:bg-slate-50" />
+          <textarea value={memo} disabled={!actions.editMemo} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none disabled:bg-slate-50" />
         </label>
         {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
         {!activeSession ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><Save size={15} />수업 만들기</button> : null}
@@ -375,7 +375,7 @@ function SessionSheet({
           </div>
         </div> : null}
         {activeSession && status === 'completed' ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button> : null}
-        {status === 'cancelled' ? <p className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-500">취소된 수업은 조회만 할 수 있습니다.</p> : null}
+        {status === 'cancelled' ? <div className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-500"><p>취소 기록은 보존되며 다시 예정으로 되돌릴 수 없습니다.</p><Link href={`/spokedu-master/activity?date=${encodeURIComponent(startAt.slice(0, 10))}&create=1&class=${encodeURIComponent(classId)}`} className="mt-2 inline-flex min-h-11 items-center justify-center px-3 font-black text-slate-700 underline underline-offset-2">대체 수업 만들기</Link></div> : null}
         {activeSession && status === 'completed' ? <Link href={`/spokedu-master/report?session=${encodeURIComponent(activeSession.id)}`} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />수업 안내문</Link> : null}
         {activeSession && status === 'completed' ? <button type="button" disabled={saving} onClick={() => { setError(null); setNextDraft(buildNextSessionDraft(activeSession)); setCopyPrograms(false); setNextSessionOpen(true); }} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CalendarDays size={17} />다음 수업 만들기</button> : null}
       </div>

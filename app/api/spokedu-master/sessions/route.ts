@@ -155,3 +155,48 @@ export async function PATCH(request: Request) {
   if (!id) return privateNoStoreJson({ error: 'Session id is required' }, { status: 400 });
   return save(request, id);
 }
+
+export async function PUT(request: Request) {
+  const access = await requireSpokeduMasterAccess();
+  if (!access.ok) return access.response;
+  const body = await request.json().catch(() => null) as {
+    id?: unknown;
+    session?: unknown;
+    attendance?: unknown;
+  } | null;
+  if (typeof body?.id !== 'string' || !Array.isArray(body.attendance)) {
+    return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
+  }
+  let input: ReturnType<typeof normalizeInput>;
+  try {
+    input = normalizeInput(body.session);
+  } catch {
+    return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
+  }
+  if (input.status !== 'completed' || body.attendance.some((item: unknown) => {
+    if (!isObject(item)) return true;
+    return typeof item.studentId !== 'string' || (item.status !== 'present' && item.status !== 'absent');
+  })) {
+    return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
+  }
+
+  const supabase = getServiceSupabase();
+  const { data: savedId, error } = await supabase.rpc('spokedu_master_complete_session', {
+    p_owner_id: access.userId,
+    p_session_id: body.id,
+    p_class_id: input.classId,
+    p_start_at: input.startAt,
+    p_end_at: input.endAt,
+    p_memo: input.memo,
+    p_attendance: body.attendance,
+  });
+  if (error || !savedId) {
+    if (error?.code === '22023') return privateNoStoreJson({ error: '수업 완료 정보를 확인해 주세요.' }, { status: 400 });
+    if (error?.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
+    await reportError(error ?? new Error('Session completion RPC returned no id'), { context: 'spokedu_master.sessions.complete' });
+    return privateNoStoreJson({ error: '수업을 완료하지 못했습니다.' }, { status: 500 });
+  }
+  const result = await loadAggregate(access.userId, savedId);
+  if (!result[0]) return privateNoStoreJson({ error: '완료된 수업을 불러오지 못했습니다.' }, { status: 500 });
+  return privateNoStoreJson({ data: result[0] });
+}

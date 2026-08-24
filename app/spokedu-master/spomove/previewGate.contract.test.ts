@@ -72,7 +72,7 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
   });
 
   it('2c) Hub 활동 준비·썸네일은 같은 확인 모달 루트', () => {
-    expect(hub).toContain('<span>활동 준비</span>');
+    expect(hub).toContain('활동 준비');
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('onClick={onGuide}');
     expect(hub).toContain('활동 준비 열기');

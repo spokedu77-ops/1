@@ -77,8 +77,8 @@ describe('official SPOMOVE preset guide contract', () => {
     expect(hub).toContain('thumbnailUrl');
     expect(hub).toContain('onImageError={() => setImageFailed(true)}');
     expect(hub).toContain('onError={onImageError}');
-    expect(hub).toContain('getSpomovePresetDisplayModel');
-    expect(hub).toContain('displayModel.supportMetaParts.slice(0, 3)');
+    expect(hub).toContain('getSpomoveCardDisplayModel');
+    expect(hub).not.toContain('displayModel.supportMetaParts.slice(0, 3)');
     expect(hub).not.toContain('buildSpomoveGuideDisplayModel');
     expect(`${startBriefing}\n${settingsBriefing}`).toContain('자극 속도');
     expect(`${startBriefing}\n${settingsBriefing}`).toContain('난이도');

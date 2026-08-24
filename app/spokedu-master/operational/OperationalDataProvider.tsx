@@ -27,12 +27,13 @@ type OperationalDataContextValue = {
   ownerId: string | null;
   reload: () => Promise<void>;
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
+  completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<MasterSessionDto>;
   createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms: boolean }) => Promise<MasterSessionDto>;
   addSessionProgram: (sessionId: string, programId: number) => Promise<MasterSessionDto['programs'][number]>;
   addSessionSpomove: (sessionId: string, spomovePresetId: string) => Promise<MasterSessionDto['programs'][number]>;
   removeSessionProgram: (sessionId: string, sessionProgramId: string) => Promise<void>;
   updateSessionProgram: (sessionId: string, sessionProgramId: string, isCompleted: boolean) => Promise<void>;
-  reorderSessionPrograms: (sessionId: string, sessionProgramIds: string[]) => Promise<void>;
+  reorderSessionPrograms: (sessionId: string, sessionProgramIds: string[]) => Promise<MasterSessionDto['programs']>;
   saveSessionAttendance: (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<void>;
   addClassStudent: (classId: string, studentId: string) => Promise<void>;
   removeClassStudent: (classId: string, studentId: string) => Promise<void>;
@@ -152,6 +153,16 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
+  const completeSession = useCallback(async (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => {
+    const json = await masterFetchJson<{ data: MasterSessionDto }>('/api/spokedu-master/sessions', {
+      body: JSON.stringify({ id: sessionId, session: { ...input, status: 'completed' }, attendance }),
+      method: 'PUT',
+    });
+    setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
+      .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()));
+    return json.data;
+  }, []);
+
   const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms: boolean }) => {
     const json = await masterFetchJson<{ data: MasterSessionDto }>(`/api/spokedu-master/sessions/${sourceSessionId}/next`, {
       body: JSON.stringify(input),
@@ -205,8 +216,9 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const reorderSessionPrograms = useCallback(async (sessionId: string, sessionProgramIds: string[]) => {
-    await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/programs/reorder`, { method: 'PATCH', body: JSON.stringify({ sessionProgramIds }) });
-    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: sessionProgramIds.map((id, sortOrder) => ({ ...item.programs.find((program) => program.id === id)!, sortOrder })) } : item));
+    const json = await masterFetchJson<{ data: MasterSessionDto['programs'] }>(`/api/spokedu-master/sessions/${sessionId}/programs/reorder`, { method: 'PATCH', body: JSON.stringify({ sessionProgramIds }) });
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, programs: json.data } : item));
+    return json.data;
   }, []);
 
   const saveSessionAttendance = useCallback(async (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => {
@@ -232,6 +244,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<OperationalDataContextValue>(
     () => ({
       classes,
+      completeSession,
       createClass,
       createNextSession,
       addClassStudent,
@@ -254,7 +267,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       updateSessionProgram,
       updateClass,
     }),
-    [addClassStudent, addSessionProgram, addSessionSpomove, classes, createClass, createNextSession, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, addSessionSpomove, classes, completeSession, createClass, createNextSession, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

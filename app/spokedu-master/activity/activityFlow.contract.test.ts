@@ -29,11 +29,9 @@ describe('activity Session flow', () => {
     expect(source).toContain('새 탭에서 실행');
   });
 
-  it('saves scheduled attendance before committing completion', () => {
-    const attendanceIndex = source.indexOf('await data.saveSessionAttendance(prepared.id');
-    const completionIndex = source.indexOf("data.saveSession(sessionInput('completed')");
-    expect(attendanceIndex).toBeGreaterThanOrEqual(0);
-    expect(completionIndex).toBeGreaterThan(attendanceIndex);
+  it('commits final fields, attendance, and completion through one command', () => {
+    expect(source).toContain("data.completeSession(activeSession.id, sessionInput('completed'), attendanceInput())");
+    expect(source).not.toContain('await data.saveSessionAttendance(prepared.id');
   });
 
   it('keeps field controls touchable and makes completion the single primary action', () => {

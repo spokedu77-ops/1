@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Bookmark, Lock, MonitorPlay, Play } from 'lucide-react';
+import { Bookmark, Lock, MonitorPlay } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -45,6 +45,7 @@ import {
 } from './officialSpomovePresetGuides';
 import {
   buildSpomoveProgramGroupSections,
+  getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
   sortSpomovePresetsByCatalogOrder,
 } from './spomovePresetDisplayModel';
@@ -615,16 +616,6 @@ function CardVisual({
       ) : (
         <SpomoveProgramVisual preset={preset} />
       )}
-      {preset.isReady ? (
-        <span className="pointer-events-none absolute left-2.5 top-2.5">
-          <span
-            aria-hidden="true"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-105"
-          >
-            <Play className="h-3.5 w-3.5 fill-current" />
-          </span>
-        </span>
-      ) : null}
       {!preset.isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-[1px]">
           <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-black text-white">
@@ -658,8 +649,7 @@ function CardInfo({
   onGuide: () => void;
 }) {
   const router = useRouter();
-  const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
-  const supportMetaParts = displayModel.supportMetaParts.slice(0, 3);
+  const card = getSpomoveCardDisplayModel(preset, contentOverride);
   const showSettings =
     supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
 
@@ -671,17 +661,13 @@ function CardInfo({
   return (
     <div className="flex shrink-0 flex-col gap-2 p-3 text-left">
       <div className="flex min-h-7 min-w-0 flex-wrap items-center gap-1.5 overflow-hidden" aria-label="활동 정보">
-        {[
-          displayModel.variantLabel,
-          displayModel.difficultyLabel,
-          displayModel.targetLabel,
-          ...supportMetaParts,
-        ].filter(Boolean).slice(0, 4).map((part, index) => (
+        {card.badges.map((badge) => (
           <span
-            key={`${part}-${index}`}
-            className="inline-flex max-w-full items-center truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-slate-600 after:content-['·'] last:after:content-['']"
+            key={`${badge.slot}-${badge.value}`}
+            data-spm-spomove-card-meta={badge.slot}
+            className="inline-flex max-w-full items-center truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-slate-600"
           >
-            {part}
+            {badge.value}
           </span>
         ))}
       </div>
@@ -693,10 +679,9 @@ function CardInfo({
             data-spm-spomove-card-action="start"
             data-spm-spomove-start-mode="guide"
             onClick={onGuide}
-            className="spm-btn-primary inline-flex h-9 min-w-0 flex-[1.6] items-center justify-center gap-1.5 rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none"
+            className="spm-btn-primary inline-flex h-9 min-w-0 flex-[1.6] items-center justify-center rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none"
           >
-            <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden />
-            <span>활동 준비</span>
+            활동 준비
           </button>
           {showSettings ? (
             <button
@@ -758,13 +743,13 @@ function PresetCard({
         aria-pressed={favorite}
         aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
         title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-        className={`absolute right-3 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-70 ${
+        className={`absolute right-2.5 top-2.5 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
           favorite
-            ? 'bg-amber-50 text-amber-600'
-            : 'bg-white/90 text-slate-500 hover:bg-white hover:text-slate-900'
+            ? 'bg-amber-50 text-amber-600 shadow-sm ring-1 ring-amber-200/80'
+            : 'bg-white/70 text-slate-400 hover:bg-white/90 hover:text-slate-600'
         }`}
       >
-        <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+        <Bookmark className={`h-3.5 w-3.5 ${favorite ? 'fill-current' : ''}`} />
       </button>
       <button
         type="button"

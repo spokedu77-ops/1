@@ -882,14 +882,15 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       >
         <div
           style={{
-            width: 'min(96vw, 1680px)',
+            width: 'min(98vw, 1800px)',
             maxWidth: '100%',
-            maxHeight: '78dvh',
+            maxHeight: '88dvh',
             display: 'grid',
             gridTemplateColumns: columnWeights,
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 'clamp(1px, 0.45vmin, 8px)',
+            /* viewBox가 칸 밖으로 안 넘치므로, 분리만 될 최소 간격 */
+            gap: 'clamp(8px, 1.8vmin, 22px)',
             boxSizing: 'border-box',
             overflow: 'visible',
           }}
@@ -906,17 +907,19 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  overflow: 'visible',
+                  overflow: 'hidden',
+                  boxSizing: 'border-box',
                 }}
               >
+                {/* 정사각 viewBox: 좌·우 회전 시 옆 칸 침범 방지. maxWidth ≈ 이전 대비 2배 */}
                 <svg
-                  viewBox="0 0 100 130"
+                  viewBox="0 0 130 130"
                   preserveAspectRatio="xMidYMid meet"
                   style={{
                     width: '100%',
                     height: 'auto',
-                    maxWidth: hasVariedSizes ? '100%' : isCenter ? 'min(100%, 31vmin)' : 'min(100%, 28vmin)',
-                    maxHeight: '76dvh',
+                    maxWidth: hasVariedSizes ? '100%' : isCenter ? 'min(100%, 56vmin)' : 'min(100%, 52vmin)',
+                    maxHeight: 'min(85dvh, 56vmin)',
                     flex: '0 0 auto',
                     opacity: isCenter ? 1 : 0.92,
                     filter: isCenter ? 'drop-shadow(0 0 18px rgba(255,255,255,0.32))' : undefined,
@@ -924,14 +927,17 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                   }}
                   aria-hidden
                 >
-                  <g transform={`rotate(${rot} 50 67)`}>
-                    <path
-                      d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
-                      fill={fill}
-                      stroke="rgba(255,255,255,0.26)"
-                      strokeWidth={5}
-                      strokeLinejoin="round"
-                    />
+                  <g transform={`rotate(${rot} 65 65)`}>
+                    {/* 여백을 줄여 같은 칸 안에서 글리프를 더 크게 */}
+                    <g transform="translate(65 65) scale(1.14) translate(-65 -65)">
+                      <path
+                        d="M 65 12 L 103 66 L 77 66 L 77 118 L 53 118 L 53 66 L 27 66 Z"
+                        fill={fill}
+                        stroke="rgba(255,255,255,0.26)"
+                        strokeWidth={4.4}
+                        strokeLinejoin="round"
+                      />
+                    </g>
                   </g>
                 </svg>
               </div>

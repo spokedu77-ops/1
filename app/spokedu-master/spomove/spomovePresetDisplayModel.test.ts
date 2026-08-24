@@ -5,6 +5,7 @@ import {
   buildSpomoveCardTags,
   buildSpomoveGuideDisplayModel,
   buildSpomoveProgramGroupSections,
+  getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
   sortSpomovePresetsByCatalogOrder,
   sortSpomovePresetsByDisplayTitle,
@@ -19,13 +20,12 @@ describe('spomove preset display model', () => {
 
     const dive = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'dive-random');
     expect(dive).toBeTruthy();
-    expect(getSpomovePresetDisplayModel(dive!).durationLabel.length).toBeGreaterThan(0);
+    expect(getSpomovePresetDisplayModel(dive!).durationLabel).toBeTruthy();
 
     for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
-      const settingTag = buildSpomoveCardTags(preset).find((tag) => tag.key === 'setting');
-      const bodyFunctionTag = buildSpomoveCardTags(preset).find((tag) => tag.key === 'bodyFunction');
-      expect(settingTag?.value).not.toMatch(/BGM/i);
-      expect((bodyFunctionTag?.value.split(' · ') ?? []).filter(Boolean).length).toBeLessThanOrEqual(2);
+      const card = getSpomoveCardDisplayModel(preset);
+      expect(card.badges.length).toBeGreaterThan(0);
+      expect(card.badges.length).toBeLessThanOrEqual(3);
       const display = getSpomovePresetDisplayModel(preset);
       expect(display.displayTitle.length).toBeGreaterThan(0);
       expect(display.supportMetaParts.length).toBeLessThanOrEqual(3);
@@ -42,16 +42,24 @@ describe('spomove preset display model', () => {
 
     expect(getSpomovePresetDisplayModel(quadFruit!).programLabel).toBe('반응 인지');
     expect(getSpomovePresetDisplayModel(quadFruit!).displayTitle).toBe('4분할 자극 · 과일');
-    expect(getSpomovePresetDisplayModel(quadFruit!).supportMetaParts[0]).toBe('과일');
+    expect(getSpomoveCardDisplayModel(quadFruit!).meta.trainingFocus).toBe('선택 반응');
+    expect(getSpomoveCardDisplayModel(quadFruit!).meta.responseType).toBe('단순 반응');
     expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).displayTitle).toBe('4분할 자극 · 동물');
-    expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).supportMetaParts[0]).toBe('동물');
 
     expect(getSpomovePresetDisplayModel(moleNormal!).programLabel).toBe('시지각 반응');
     expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기 · 보통');
-    expect(getSpomovePresetDisplayModel(moleNormal!).supportMeta).not.toMatch(/1·2마리|50%/);
+    expect(getSpomoveCardDisplayModel(moleNormal!).badges.some((badge) => badge.value === '보통')).toBe(false);
 
     expect(getSpomovePresetDisplayModel(sequenceFive!).programLabel).toBe('순차 기억');
     expect(getSpomovePresetDisplayModel(sequenceFive!).displayTitle).toBe('순서 기억 · 보통 (5개)');
+  });
+
+  it('buildSpomoveCardTags mirrors semantic card badges', () => {
+    const simon = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'simon-pole-shape-06');
+    expect(simon).toBeTruthy();
+    const card = getSpomoveCardDisplayModel(simon!);
+    expect(buildSpomoveCardTags(simon!).map((tag) => tag.value)).toEqual(card.badges.map((badge) => badge.value));
+    expect(card.badges.map((badge) => badge.value)).toEqual(['선택 반응', '간섭 억제', '시간 조절']);
   });
 
   it('sortSpomovePresetsByCatalogOrder keeps official public catalog order', () => {

@@ -26,6 +26,8 @@ import {
   SPOMOVE_PUBLIC_PROGRAM_GROUP_ORDER,
   sortPresetsByPublicCatalogOrder,
 } from './spomovePublicCatalogOrder';
+import { supportsCueSpeedOverride } from './spomoveCueSpeed';
+import { getSpomoveDifficultyKind } from './spomoveDifficulty';
 
 export type SpomovePresetDisplayModel = {
   displayTitle: string;
@@ -43,6 +45,31 @@ export type SpomovePresetDisplayModel = {
   padLayoutVariant: ReturnType<typeof getSpomovePadLayoutVariant>;
   isAvailable: boolean;
 };
+
+/** Public Hub 카드 metadata — flat string[] 금지, slot별 의미만 허용 */
+export type SpomoveCardMeta = {
+  difficulty?: string;
+  responseType?: string;
+  trainingFocus?: string;
+  audience?: string;
+  adaptation?: string;
+  adjustable?: string;
+};
+
+export type SpomoveCardMetaSlot = keyof SpomoveCardMeta;
+
+export type SpomoveCardBadge = {
+  slot: SpomoveCardMetaSlot;
+  value: string;
+};
+
+export type SpomoveCardDisplayModel = {
+  programLabel: string;
+  title: string;
+  meta: SpomoveCardMeta;
+  badges: SpomoveCardBadge[];
+};
+
 
 export type SpomoveGuideContentReadiness =
   | 'incomplete'
@@ -134,15 +161,44 @@ export const SPOMOVE_FOCUS_TAG_LABELS: Record<SpomoveFocusTag, string> = {
 
 function buildTargetLabel(groups: SpomoveTargetGroup[]): string {
   if (groups.length === 0) return '';
+  const { audience, adaptation } = resolveAudienceAdaptation(groups);
+  return [audience, adaptation].filter(Boolean).join(' · ');
+}
+
+/** 연령/학교급 vs 적용 맥락을 분리한다. '초등 전학년·특수' 단일 atomic 필드 금지. */
+export function resolveAudienceAdaptation(groups: SpomoveTargetGroup[]): {
+  audience?: string;
+  adaptation?: string;
+} {
+  if (groups.length === 0) return {};
   const s = new Set(groups);
-  if (s.size >= 4) return '전 연령';
-  if (s.has('preschool') && s.has('elementaryLower') && s.has('elementaryUpper')) return '미취학·초등';
-  if (s.has('elementaryLower') && s.has('elementaryUpper') && s.has('specialSupport')) return '초등 전학년·특수';
-  if (s.has('preschool') && s.has('elementaryLower') && s.has('specialSupport')) return '미취학·초등 저학년·특수';
-  if (s.has('preschool') && s.has('elementaryLower')) return '미취학·초등 저학년';
-  if (s.has('elementaryLower') && s.has('elementaryUpper')) return '초등 전학년';
-  if (s.has('elementaryUpper') && s.has('specialSupport')) return '초등 고학년·특수';
-  return groups.slice(0, 2).map((g) => SPOMOVE_TARGET_GROUP_LABELS[g]).join('·');
+  const adaptation = s.has('specialSupport') ? '특수체육 활용' : undefined;
+  const ageGroups = groups.filter((group) => group !== 'specialSupport');
+  const age = new Set(ageGroups);
+
+  let audience: string | undefined;
+  if (age.size === 0) {
+    audience = undefined;
+  } else if (age.has('preschool') && age.has('elementaryLower') && age.has('elementaryUpper')) {
+    audience = '미취학·초등';
+  } else if (age.has('elementaryLower') && age.has('elementaryUpper')) {
+    audience = '초등 전학년';
+  } else if (age.has('preschool') && age.has('elementaryLower')) {
+    audience = '미취학·초등 저학년';
+  } else if (age.has('elementaryUpper') && !age.has('elementaryLower')) {
+    audience = '초등 고학년';
+  } else if (age.has('elementaryLower') && !age.has('elementaryUpper')) {
+    audience = '초등 저학년';
+  } else if (age.has('preschool')) {
+    audience = '미취학';
+  } else {
+    audience = ageGroups
+      .slice(0, 2)
+      .map((group) => SPOMOVE_TARGET_GROUP_LABELS[group])
+      .join(' · ');
+  }
+
+  return { audience, adaptation };
 }
 
 function stripBgmCopy(value: string): string {
@@ -304,16 +360,127 @@ function buildSupportMetaParts(preset: OfficialSpomovePreset): string[] {
   return Array.from(new Set(parts)).slice(0, 3);
 }
 
+const TITLE_DIFFICULTY_PATTERN = /쉬움|보통|어려움/u;
+const CARD_BADGE_SLOT_PRIORITY: SpomoveCardMetaSlot[] = [
+  'responseType',
+  'trainingFocus',
+  'adjustable',
+  'difficulty',
+  'audience',
+  'adaptation',
+];
+
+export function titleIncludesDifficulty(title: string): boolean {
+  return TITLE_DIFFICULTY_PATTERN.test(title);
+}
+
+/** Pair scan용: 제목에서 난이도 suffix를 제거한 base */
+export function resolveSpomoveCardPairKey(title: string): string {
+  return title
+    .replace(/\s*·\s*(쉬움|보통|어려움)(?:\s*\([^)]*\))?\s*$/u, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resolveCardResponseType(preset: OfficialSpomovePreset): string {
+  return preset.axisTitle;
+}
+
+function resolveCardTrainingFocus(preset: OfficialSpomovePreset, title: string): string {
+  const pairKey = resolveSpomoveCardPairKey(title);
+  switch (preset.programGroup) {
+    case 'reaction-cognition':
+      return preset.engine.level === 1 ? '방향 변별' : '선택 반응';
+    case 'visual-reaction':
+      if (preset.engine.handFootDifficulty) return '상하지 협응';
+      return '시각 탐색';
+    case 'simon':
+      if (pairKey.includes('풍선')) return '위치 간섭 조절';
+      if (pairKey.includes('카모플라쥬')) return '시각 탐색';
+      if (pairKey.includes('랜덤')) return '혼합 자극 처리';
+      return '간섭 억제';
+    case 'flanker':
+      if (preset.engine.flankerExtremeMode) return '위치 간섭 조절';
+      return '간섭 억제';
+    case 'stroop':
+      return '간섭 억제';
+    case 'sequential-memory':
+      return '순차 기억';
+    case 'dive':
+    case 'bonus':
+      return preset.engine.flowFeatures?.includes('colorGate') ? '규칙 전환' : '연속 반응';
+    default:
+      return '반응 훈련';
+  }
+}
+
+function resolveCardAdjustable(preset: OfficialSpomovePreset): string | undefined {
+  if (supportsCueSpeedOverride(preset)) return '시간 조절';
+  if (getSpomoveDifficultyKind(preset)) return '난이도 조절';
+  return undefined;
+}
+
+export function resolveSpomoveCardBadges(meta: SpomoveCardMeta): SpomoveCardBadge[] {
+  const seen = new Set<string>();
+  const badges: SpomoveCardBadge[] = [];
+  for (const slot of CARD_BADGE_SLOT_PRIORITY) {
+    const value = meta[slot]?.trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    badges.push({ slot, value });
+    if (badges.length >= 3) break;
+  }
+  return badges;
+}
+
+function buildCardMeta(
+  preset: OfficialSpomovePreset,
+  title: string,
+  options?: { includeAudienceAdaptation?: boolean },
+): SpomoveCardMeta {
+  const guide = getOfficialSpomovePresetGuide(preset);
+  const { audience, adaptation } = resolveAudienceAdaptation(guide.targetGroups);
+  const meta: SpomoveCardMeta = {
+    responseType: resolveCardResponseType(preset),
+    trainingFocus: resolveCardTrainingFocus(preset, title),
+    adjustable: resolveCardAdjustable(preset),
+  };
+
+  if (!titleIncludesDifficulty(title)) {
+    meta.difficulty = `난이도 ${SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}`;
+  }
+
+  if (options?.includeAudienceAdaptation) {
+    if (audience) meta.audience = audience;
+    if (adaptation) meta.adaptation = adaptation;
+  }
+
+  return meta;
+}
+
+/** CMS catalogTags는 public card badge로 직접 소비하지 않는다. */
+export function getSpomoveCardDisplayModel(
+  preset: OfficialSpomovePreset,
+  _contentOverride?: SpomovePresetContentOverride,
+): SpomoveCardDisplayModel {
+  const base = getSpomovePresetDisplayModel(preset, _contentOverride);
+  const meta = buildCardMeta(preset, base.displayTitle, { includeAudienceAdaptation: false });
+  return {
+    programLabel: base.programLabel,
+    title: base.displayTitle,
+    meta,
+    badges: resolveSpomoveCardBadges(meta),
+  };
+}
+
 export function getSpomovePresetDisplayModel(
   preset: OfficialSpomovePreset,
   contentOverride?: SpomovePresetContentOverride,
 ): SpomovePresetDisplayModel {
   const guide = getOfficialSpomovePresetGuide(preset);
   const durationLabel = buildDurationLabel(preset);
+  // Public card는 catalogTags를 직접 쓰지 않는다. supportMeta는 레거시 진단용만 유지.
   const supportMetaParts = buildSupportMetaParts(preset);
-  const effectiveSupportMetaParts = contentOverride?.catalogTags?.length
-    ? contentOverride.catalogTags
-    : supportMetaParts;
   return {
     displayTitle: buildDisplayTitle(preset, contentOverride),
     shortDescription: contentOverride?.shortDescription?.trim() || preset.description,
@@ -325,7 +492,7 @@ export function getSpomovePresetDisplayModel(
     settingLabel: durationLabel,
     bodyFunctionLabel: buildBodyFunctionLabel(preset),
     supportMeta: supportMetaParts.join(' · '),
-    supportMetaParts: effectiveSupportMetaParts,
+    supportMetaParts,
     durationLabel,
     padLayoutVariant: getSpomovePadLayoutVariant(preset),
     isAvailable: preset.isReady,
@@ -371,19 +538,27 @@ export function buildSpomoveProgramGroupSections(presets: readonly OfficialSpomo
 }
 
 export type SpomoveCardTag = {
-  key: 'difficulty' | 'target' | 'setting' | 'bodyFunction';
+  key: SpomoveCardMetaSlot;
   label: string;
   value: string;
 };
 
+const CARD_TAG_LABELS: Record<SpomoveCardMetaSlot, string> = {
+  difficulty: '난이도',
+  responseType: '반응 유형',
+  trainingFocus: '훈련 요소',
+  audience: '대상',
+  adaptation: '적용',
+  adjustable: '설정',
+};
+
+/** @deprecated Prefer getSpomoveCardDisplayModel().badges — semantic card SSOT */
 export function buildSpomoveCardTags(preset: OfficialSpomovePreset): SpomoveCardTag[] {
-  const display = getSpomovePresetDisplayModel(preset);
-  return [
-    { key: 'difficulty', label: '난이도', value: display.difficultyLabel || '-' },
-    { key: 'target', label: '대상', value: display.targetLabel || '-' },
-    { key: 'setting', label: '설정', value: display.settingLabel || '-' },
-    { key: 'bodyFunction', label: '신체기능', value: display.bodyFunctionLabel || '-' },
-  ];
+  return getSpomoveCardDisplayModel(preset).badges.map((badge) => ({
+    key: badge.slot,
+    label: CARD_TAG_LABELS[badge.slot],
+    value: badge.value,
+  }));
 }
 
 function fallbackFocusTags(preset: OfficialSpomovePreset): string[] {

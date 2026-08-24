@@ -19,9 +19,11 @@ function withAutoplay(src: string): string {
 function PosterStill({
   posterUrl,
   posterCandidates,
+  objectFit = 'cover',
 }: {
   posterUrl?: string;
   posterCandidates?: string[];
+  objectFit?: 'cover' | 'contain';
 }) {
   const candidates = useMemo(() => {
     const list = [...(posterCandidates ?? []), ...(posterUrl ? [posterUrl] : [])];
@@ -49,7 +51,7 @@ function PosterStill({
       data-video-poster
       src={current}
       alt=""
-      className="absolute inset-0 h-full w-full object-cover"
+      className={`absolute inset-0 h-full w-full ${objectFit === 'contain' ? 'object-contain' : 'object-cover'}`}
       loading="lazy"
       decoding="async"
       onError={advance}
@@ -69,6 +71,7 @@ export function TrackedVideoIframe({
   onPlaybackStarted,
   posterUrl,
   posterCandidates,
+  posterObjectFit = 'cover',
   deferUntilPlay = false,
 }: {
   src: string;
@@ -79,6 +82,8 @@ export function TrackedVideoIframe({
   posterUrl?: string;
   /** Prefer high-res first; falls back on load error (YouTube maxres gaps). */
   posterCandidates?: string[];
+  /** Guide previews prefer contain so activity framing is not side-cropped. */
+  posterObjectFit?: 'cover' | 'contain';
   /** Do not mount the YouTube iframe until the user taps play (low-end friendly). */
   deferUntilPlay?: boolean;
 }) {
@@ -146,7 +151,11 @@ export function TrackedVideoIframe({
         onClick={() => setActive(true)}
         aria-label={`${title} 재생`}
       >
-        <PosterStill posterUrl={posterUrl} posterCandidates={posterCandidates} />
+        <PosterStill
+          posterUrl={posterUrl}
+          posterCandidates={posterCandidates}
+          objectFit={posterObjectFit}
+        />
         <span className="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-white/95 text-[var(--spm-acc)] shadow-lg ring-4 ring-white/30">
           <Play className="ml-0.5 h-5 w-5 fill-current" />
         </span>

@@ -56,9 +56,10 @@ describe('MovementConfigurator contract', () => {
     expect(session).not.toContain('onMovementPickChange');
   });
 
-  it('Hub 카드 하단은 MASTER 카드 문법의 짧은 support meta만 노출한다', () => {
-    expect(hub).toContain('supportMetaParts');
-    expect(hub).toContain("after:content-['·']");
+  it('Hub 카드 하단은 semantic card metadata만 노출한다', () => {
+    expect(hub).toContain('getSpomoveCardDisplayModel');
+    expect(hub).toContain('data-spm-spomove-card-meta');
+    expect(hub).not.toContain("after:content-['·']");
     expect(hub).not.toContain('활용 요소');
     expect(hub).not.toContain('최근 설정');
     expect(hub).not.toContain('빠른 시작');

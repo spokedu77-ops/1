@@ -14,7 +14,7 @@ export const SPOMOVE_GUIDE_SOURCE_DIGESTS: SpomoveGuideSourceDigestMap = {
   simonBalloon: '2c83618f061051e6',
   flankerSignals: '26ae437df8329eb5',
   stroopSignals: 'db2cd265b5437f1e',
-  sequentialMemoryGame: '549208e68ef3f50e',
+  sequentialMemoryGame: '426f5d4fef6b3ae4',
   sequentialMemoryL4: '0dc4f695a28fa3a3',
   sequentialMemoryL5: '1969a5501a4df618',
   diveFlow: '6af550be8016ab6a',

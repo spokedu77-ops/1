@@ -291,21 +291,31 @@ export function MemoryGame({
           <div style={{ color: 'rgba(255,255,255,0.42)', fontSize: '0.82rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{round + 1}번 정답</div>
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
               gap: 'clamp(0.35rem,1.5vw,0.8rem)',
               width: '100%',
               maxWidth: 'min(100%, 42rem)',
-              justifyItems: 'center',
             }}
           >
             {currentPattern.map((color, index) => (
-              <div key={index} style={{ display: 'flex', width: '100%', flexDirection: 'column', alignItems: 'center', gap: '0.45rem' }}>
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  width: 'clamp(48px,11vw,88px)',
+                  flex: '0 0 auto',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                }}
+              >
                 <div
                   style={{
                     display: 'flex',
                     width: '100%',
-                    maxWidth: 'clamp(48px,11vw,88px)',
                     aspectRatio: '1',
                     flexDirection: 'column',
                     alignItems: 'center',
