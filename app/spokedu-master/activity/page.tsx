@@ -2,12 +2,13 @@
 
 import {
   ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Clock3,
-  FileText, Plus, Save, Search, UsersRound, Wrench, XCircle,
+  FileText, Plus, RotateCcw, Save, Search, Trash2, UsersRound, Wrench, XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { useMasterCanUseRecords } from '../access/MasterAccessProvider';
 import { LessonManagementTabs } from '../components/lesson/LessonManagementTabs';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
@@ -47,6 +48,7 @@ function SessionSheet({
   onClose: () => void;
 }) {
   const data = useOperationalData();
+  const canUseRecords = useMasterCanUseRecords();
   const router = useRouter();
   const [activeSession, setActiveSession] = useState(session);
   const libraryPrograms = useMasterStore((state) => state.programs);
@@ -78,6 +80,8 @@ function SessionSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nextSessionOpen, setNextSessionOpen] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [nextDraft, setNextDraft] = useState(() => session ? buildNextSessionDraft(session) : null);
   const [copyPrograms, setCopyPrograms] = useState(false);
   const selectedClass = data.classes.find((item) => item.id === classId);
@@ -131,6 +135,21 @@ function SessionSheet({
       router.push(`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '다음 수업을 만들지 못했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteCancelledSession = async () => {
+    if (!activeSession || activeSession.status !== 'cancelled') return;
+    setSaving(true);
+    setError(null);
+    try {
+      await data.deleteCancelledSession(activeSession.id);
+      setDeleteConfirmOpen(false);
+      onClose();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '취소 수업을 삭제하지 못했습니다.');
     } finally {
       setSaving(false);
     }
@@ -305,6 +324,26 @@ function SessionSheet({
     </BottomSheet>
   );
 
+  if (cancelConfirmOpen && activeSession?.status === 'scheduled') return (
+    <BottomSheet open title="수업 취소" onClose={() => setCancelConfirmOpen(false)}>
+      <div className="space-y-4 pb-3">
+        <p className="text-sm font-semibold leading-6 text-slate-600">수업을 취소해도 일정과 구성은 기록으로 남습니다. 실수로 취소한 경우 나중에 취소를 해제할 수 있습니다.</p>
+        <button type="button" disabled={saving} onClick={() => void persist('cancelled')} className="h-11 w-full rounded-xl bg-rose-600 text-sm font-black text-white disabled:opacity-40">{saving ? '취소 처리 중…' : '수업 취소 확정'}</button>
+        <button type="button" disabled={saving} onClick={() => setCancelConfirmOpen(false)} className="h-11 w-full rounded-xl text-sm font-black text-slate-600">돌아가기</button>
+      </div>
+    </BottomSheet>
+  );
+
+  if (deleteConfirmOpen && activeSession?.status === 'cancelled') return (
+    <BottomSheet open title="취소 수업 영구 삭제" onClose={() => setDeleteConfirmOpen(false)}>
+      <div className="space-y-4 pb-3">
+        <div className="rounded-xl bg-rose-50 p-4"><p className="text-sm font-black text-rose-800">삭제하면 복구할 수 없습니다.</p><p className="mt-1 text-xs font-semibold leading-5 text-rose-700">실수로 취소했다면 삭제 대신 취소 해제를 사용해 주세요.</p></div>
+        <button type="button" disabled={saving} onClick={() => void deleteCancelledSession()} className="h-11 w-full rounded-xl bg-rose-600 text-sm font-black text-white disabled:opacity-40">{saving ? '삭제 중…' : '영구 삭제'}</button>
+        <button type="button" disabled={saving} onClick={() => setDeleteConfirmOpen(false)} className="h-11 w-full rounded-xl text-sm font-black text-slate-600">돌아가기</button>
+      </div>
+    </BottomSheet>
+  );
+
   if (programPickerOpen) return (
     <BottomSheet open title="프로그램 추가" onClose={() => setProgramPickerOpen(false)}>
       <div className="space-y-4 pb-3">
@@ -342,7 +381,7 @@ function SessionSheet({
     <BottomSheet open title={activeSession ? '수업 상세' : '수업 추가'} onClose={onClose}>
       <div className="space-y-5 pb-4">
         {activeSession ? <div className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-3"><div className="min-w-0"><h3 className="truncate text-base font-black text-slate-900" title={activeSession.className}>{activeSession.className}</h3><p className="mt-1 text-xs font-bold text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(activeSession.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(activeSession.startAt)}–{formatSeoulSessionTime(activeSession.endAt)}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ring-1 ${statusTone(status)}`}>{statusLabel(status)}</span></div> : null}
-        <section className={`grid gap-3 ${activeSession ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
+        {(!activeSession || actions.editSchedule) ? <section className={`grid gap-3 ${activeSession ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
           <label className="text-xs font-black text-slate-600">수업반
             <select value={classId} disabled={Boolean(activeSession) && !actions.editSchedule} onChange={(event) => { setClassId(event.target.value); setAttendance({}); setAttendanceDirty(true); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold disabled:bg-slate-50">
               {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
@@ -356,7 +395,7 @@ function SessionSheet({
             <label className="text-xs font-black text-slate-600">시작<input type="datetime-local" disabled={!actions.editSchedule} value={startAt} onChange={(event) => setStartAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" /></label>
             <label className="text-xs font-black text-slate-600">종료<input type="datetime-local" disabled={!actions.editSchedule} value={endAt} onChange={(event) => setEndAt(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold disabled:bg-slate-50" /></label>
           </>}
-        </section>
+        </section> : null}
 
         {activeSession ? <section>
           <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-black text-slate-800">출석 <span className="text-xs text-emerald-700">{presentRosterCount} / {currentRoster.length}</span></h3>{uncheckedRosterCount ? <p className="mt-1 text-[11px] font-bold text-amber-600">미체크 {uncheckedRosterCount}명</p> : null}</div>{actions.markAllPresent && currentRoster.length ? <button type="button" onClick={markAllPresent} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-700">전체 출석</button> : null}</div>
@@ -399,19 +438,19 @@ function SessionSheet({
           <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!actions.addActivities || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
         </section>
 
-        <label className="block text-sm font-black text-slate-800">수업 메모
+        {canUseRecords && actions.editMemo ? <label className="block text-sm font-black text-slate-800">수업 메모
           <textarea value={memo} disabled={!actions.editMemo} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none disabled:bg-slate-50" />
-        </label>
+        </label> : canUseRecords ? <section className="rounded-xl bg-slate-50 p-4"><h3 className="text-sm font-black text-slate-800">수업 메모</h3><p className="mt-2 whitespace-pre-wrap text-sm font-medium leading-6 text-slate-600">{memo || '남긴 메모가 없습니다.'}</p></section> : <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-black text-slate-800">수업 메모와 누적 기록</p><p className="mt-1 text-xs font-semibold leading-5 text-slate-500">출석은 Lite에서 저장됩니다. 메모·학생 히스토리·안내문은 Premium에서 다음 수업에 재사용할 기록으로 쌓입니다.</p><Link href="/spokedu-master/payment?plan=premium" className="mt-2 inline-flex min-h-11 items-center text-xs font-black text-[var(--spm-acc)]">Premium 기능 보기</Link></div>}
         {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
         {!activeSession ? <div><p className="mb-2 text-center text-[11px] font-semibold text-slate-400">활동은 나중에도 추가할 수 있습니다.</p><button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><Save size={15} />수업 만들기</button></div> : null}
         {activeSession && status === 'scheduled' ? <div className="space-y-2">
           <button type="button" disabled={saving || !classId} onClick={() => void persist('completed')} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CheckCircle2 size={16} />수업 완료</button>
           {formDirty ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button> : null}
-          <div className="flex items-center justify-between gap-2"><Link target="_blank" rel="noreferrer" href={`/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}`} className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-black text-slate-600"><Wrench size={15} />수업도구</Link><button type="button" disabled={saving || !classId} onClick={() => void persist('cancelled')} className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-bold text-rose-600 disabled:opacity-40"><XCircle size={14} />수업 취소</button></div>
+          <div className="flex items-center justify-between gap-2"><Link target="_blank" rel="noreferrer" href={`/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}`} className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-black text-slate-600"><Wrench size={15} />수업도구</Link><button type="button" disabled={saving || !classId} onClick={() => setCancelConfirmOpen(true)} className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-bold text-rose-600 disabled:opacity-40"><XCircle size={14} />수업 취소</button></div>
         </div> : null}
         {activeSession && status === 'completed' && formDirty ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700 disabled:opacity-40"><Save size={15} />변경사항 저장</button> : null}
-        {status === 'cancelled' ? <div className="rounded-xl bg-slate-100 p-3 text-center text-xs font-bold text-slate-500"><p>취소 기록은 보존되며 다시 예정으로 되돌릴 수 없습니다.</p><Link href={`/spokedu-master/activity?date=${encodeURIComponent(startAt.slice(0, 10))}&create=1&class=${encodeURIComponent(classId)}`} className="mt-2 inline-flex min-h-11 items-center justify-center px-3 font-black text-slate-700 underline underline-offset-2">대체 수업 만들기</Link></div> : null}
-        {activeSession && status === 'completed' ? <Link href={`/spokedu-master/report?session=${encodeURIComponent(activeSession.id)}`} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />수업 안내문</Link> : null}
+        {status === 'cancelled' ? <div className="rounded-xl bg-slate-100 p-4 text-xs font-bold text-slate-500"><p className="text-center">취소 기록은 보존됩니다. 상황에 맞는 다음 행동을 선택해 주세요.</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button type="button" disabled={saving} onClick={() => void persist('scheduled')} className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-3 font-black text-slate-700 disabled:opacity-40"><RotateCcw size={14} />취소 해제</button><Link href={`/spokedu-master/activity?date=${encodeURIComponent(startAt.slice(0, 10))}&create=1&class=${encodeURIComponent(classId)}`} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 font-black text-slate-700">대체 수업 만들기</Link></div><button type="button" disabled={saving} onClick={() => setDeleteConfirmOpen(true)} className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-1 text-rose-600 disabled:opacity-40"><Trash2 size={14} />영구 삭제</button></div> : null}
+        {activeSession && status === 'completed' && canUseRecords ? <Link href={`/spokedu-master/report?session=${encodeURIComponent(activeSession.id)}`} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />수업 안내문</Link> : null}
         {activeSession && status === 'completed' ? <button type="button" disabled={saving} onClick={() => { setError(null); setNextDraft(buildNextSessionDraft(activeSession)); setCopyPrograms(false); setNextSessionOpen(true); }} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40"><CalendarDays size={17} />다음 수업 만들기</button> : null}
       </div>
     </BottomSheet>

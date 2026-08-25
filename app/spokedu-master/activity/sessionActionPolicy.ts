@@ -14,6 +14,8 @@ export type SessionActionPolicy = {
   createNextSession: boolean;
   complete: boolean;
   cancel: boolean;
+  restore: boolean;
+  deletePermanently: boolean;
 };
 
 const POLICIES: Record<MasterSessionStatus, SessionActionPolicy> = {
@@ -31,6 +33,8 @@ const POLICIES: Record<MasterSessionStatus, SessionActionPolicy> = {
     createNextSession: false,
     complete: true,
     cancel: true,
+    restore: false,
+    deletePermanently: false,
   },
   completed: {
     editSchedule: false,
@@ -46,6 +50,8 @@ const POLICIES: Record<MasterSessionStatus, SessionActionPolicy> = {
     createNextSession: true,
     complete: false,
     cancel: false,
+    restore: false,
+    deletePermanently: false,
   },
   cancelled: {
     editSchedule: false,
@@ -61,6 +67,8 @@ const POLICIES: Record<MasterSessionStatus, SessionActionPolicy> = {
     createNextSession: false,
     complete: false,
     cancel: false,
+    restore: true,
+    deletePermanently: true,
   },
 };
 

@@ -115,7 +115,10 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     expect(getMasterRouteRequirement('/spokedu-master/library').capability).toBe('library');
     expect(getMasterRouteRequirement('/spokedu-master/class-tools').capability).toBe('classTools');
     expect(getMasterRouteRequirement('/spokedu-master/class-record').capability).toBe('records');
-    expect(getMasterRouteRequirement('/spokedu-master/students').capability).toBe('records');
+    expect(getMasterRouteRequirement('/spokedu-master/activity').capability).toBe('attendance');
+    expect(getMasterRouteRequirement('/spokedu-master/classes').capability).toBe('attendance');
+    expect(getMasterRouteRequirement('/spokedu-master/students').capability).toBe('attendance');
+    expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('records');
     expect(getMasterRouteRequirement('/spokedu-master/report').capability).toBe('records');
     expect(getMasterRouteRequirement('/spokedu-master/spomove').capability).toBe('spomove');
     expect(getMasterRouteRequirement('/spokedu-master/dashboard').capability).toBe('authenticated');
@@ -130,6 +133,8 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
       expect(source).toContain('snapshot.canUseLibrary');
       expect(source).toContain("capability === 'classTools'");
       expect(source).toContain('snapshot.canUseClassTools');
+      expect(source).toContain("capability === 'attendance'");
+      expect(source).toContain('snapshot.canUseAttendance');
       expect(source).toContain("capability === 'records'");
       expect(source).toContain('snapshot.canUseRecords');
       expect(source).toContain('snapshot.canUseSpomove');
@@ -152,6 +157,6 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     expect(liteBlock.length).toBeGreaterThan(20);
     expect(liteBlock).not.toContain("'수업 기록·학생 명단'");
     expect(liteBlock).not.toContain("'안내문 작성·복사'");
-    expect(landing).toMatch(/id: 'premium'[\s\S]*?'수업 기록·학생 명단'/);
+    expect(landing).toMatch(/id: 'premium'[\s\S]*?'수업 기록·학생 히스토리'/);
   });
 });

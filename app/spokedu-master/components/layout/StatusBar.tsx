@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CircleUserRound, FileText, Home, Search, Tv, Wifi, WifiOff, Wrench } from 'lucide-react';
+import { BookOpen, CircleUserRound, FileText, Home, Tv, Wifi, WifiOff, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
@@ -12,7 +12,6 @@ const NAV_ICONS = {
   spomove: Tv,
   'class-tools': Wrench,
   activity: FileText,
-  profile: CircleUserRound,
 } as const;
 
 const APP_LINKS = MASTER_NAV_ITEMS.map((item) => ({
@@ -69,13 +68,6 @@ export function StatusBar() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <Link
-            href="/spokedu-master/library"
-            className="grid h-11 w-11 place-items-center rounded-[12px] border border-slate-200 bg-white text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
-            aria-label="라이브러리"
-          >
-            <Search size={17} />
-          </Link>
           <span
             className="hidden min-h-9 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-black sm:inline-flex"
             style={{ background: operational.online ? 'var(--spm-grn-a11)' : 'var(--spm-amb-a12)', color: operational.online ? 'var(--spm-grn-strong)' : 'var(--spm-amb-strong)' }}

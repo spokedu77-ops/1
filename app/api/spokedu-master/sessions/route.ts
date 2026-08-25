@@ -1,6 +1,6 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import type {
   MasterClassDto,
@@ -116,7 +116,7 @@ async function loadAggregate(ownerId: string, sessionId?: string) {
 }
 
 export async function GET() {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
   const supabase = getServiceSupabase();
   const [{ data: classes, error: classError }, sessionsResult] = await Promise.all([
@@ -130,15 +130,23 @@ export async function GET() {
     studentIds: (item.spokedu_master_class_students ?? []).map((membership: { student_id: string }) => membership.student_id),
     createdAt: item.created_at, updatedAt: item.updated_at,
   }));
-  return privateNoStoreJson({ data: { classes: classDtos, sessions: sessionsResult } });
+  return privateNoStoreJson({
+    data: {
+      classes: classDtos,
+      sessions: sessionsResult.map((session) => access.plan === 'lite' ? { ...session, memo: null } : session),
+    },
+  });
 }
 
 async function save(request: Request, sessionId: string | null) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
   let input: SaveSessionInput;
   try { input = normalizeInput(await request.json()); }
   catch (error) { return privateNoStoreJson({ error: error instanceof Error ? error.message : 'Invalid session' }, { status: 400 }); }
+  if (access.plan === 'lite' && input.memo) {
+    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Premium에서 사용할 수 있습니다.' }, { status: 403 });
+  }
   const supabase = getServiceSupabase();
   let result: { data: unknown; error: { code?: string } | null };
   try {
@@ -169,7 +177,7 @@ async function save(request: Request, sessionId: string | null) {
     return privateNoStoreJson({ error: 'Session could not be saved' }, { status: 500 });
   }
   const [aggregate] = await loadAggregate(access.userId, savedId);
-  return privateNoStoreJson({ data: aggregate }, { status: sessionId ? 200 : 201 });
+  return privateNoStoreJson({ data: access.plan === 'lite' ? { ...aggregate, memo: null } : aggregate }, { status: sessionId ? 200 : 201 });
 }
 
 export async function POST(request: Request) { return save(request, null); }
@@ -180,7 +188,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return access.response;
   const body = await request.json().catch(() => null) as {
     id?: unknown;
@@ -195,6 +203,9 @@ export async function PUT(request: Request) {
     input = normalizeInput(body.session);
   } catch {
     return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
+  }
+  if (access.plan === 'lite' && input.memo) {
+    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Premium에서 사용할 수 있습니다.' }, { status: 403 });
   }
   if (input.status !== 'completed' || body.attendance.some((item: unknown) => {
     if (!isObject(item)) return true;
@@ -221,5 +232,24 @@ export async function PUT(request: Request) {
   }
   const result = await loadAggregate(access.userId, savedId);
   if (!result[0]) return privateNoStoreJson({ error: '완료된 수업을 불러오지 못했습니다.' }, { status: 500 });
-  return privateNoStoreJson({ data: result[0] });
+  return privateNoStoreJson({ data: access.plan === 'lite' ? { ...result[0], memo: null } : result[0] });
+}
+
+export async function DELETE(request: Request) {
+  const access = await requireSpokeduMasterCapability('attendance');
+  if (!access.ok) return withPrivateNoStore(access.response);
+  const id = new URL(request.url).searchParams.get('id')?.trim();
+  if (!id) return privateNoStoreJson({ error: 'Session id is required' }, { status: 400 });
+  const { data, error } = await getServiceSupabase()
+    .from('spokedu_master_sessions')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('owner_id', access.userId)
+    .eq('status', 'cancelled')
+    .is('deleted_at', null)
+    .select('id')
+    .maybeSingle();
+  if (error) return privateNoStoreJson({ error: '수업을 삭제하지 못했습니다.' }, { status: 500 });
+  if (!data) return privateNoStoreJson({ error: '삭제할 수 있는 취소 수업을 찾지 못했습니다.' }, { status: 404 });
+  return privateNoStoreJson({ ok: true });
 }

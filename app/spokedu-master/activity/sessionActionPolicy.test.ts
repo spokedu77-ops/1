@@ -16,7 +16,11 @@ describe('Session action policy', () => {
     });
   });
 
-  it('keeps cancelled sessions immutable', () => {
-    expect(Object.values(getSessionActionPolicy('cancelled')).some(Boolean)).toBe(false);
+  it('keeps cancelled content immutable while allowing lifecycle recovery or deletion', () => {
+    const policy = getSessionActionPolicy('cancelled');
+    expect(policy.restore).toBe(true);
+    expect(policy.deletePermanently).toBe(true);
+    expect(policy.editSchedule).toBe(false);
+    expect(policy.editAttendance).toBe(false);
   });
 });

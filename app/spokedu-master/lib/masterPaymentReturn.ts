@@ -31,6 +31,7 @@ const POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> = {
 
 export const MASTER_INTENT_FALLBACKS: Record<MasterGateIntentKind, string> = {
   open_library: '/spokedu-master/library',
+  use_attendance: '/spokedu-master/activity',
   start_spomove: '/spokedu-master/spomove',
   continue_record: '/spokedu-master/class-record',
 };

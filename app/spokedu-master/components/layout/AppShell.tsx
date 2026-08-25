@@ -37,6 +37,7 @@ function hasRouteCapability(snapshot: MasterAccessSnapshot | null, capability: M
   if (capability === 'authenticated') return snapshot.authenticated;
   if (capability === 'library') return snapshot.canUseLibrary;
   if (capability === 'classTools') return snapshot.canUseClassTools;
+  if (capability === 'attendance') return snapshot.canUseAttendance;
   if (capability === 'records') return snapshot.canUseRecords;
   return snapshot.canUseSpomove;
 }

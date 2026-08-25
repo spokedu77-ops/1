@@ -1,6 +1,6 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   normalizeStudentInput,
@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
@@ -41,7 +41,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
 
   let input;

@@ -27,6 +27,12 @@ const FEATURE_COPY = {
     desc: '로그인 직후 무료로 써볼 수 있는 수업 도구는 이용 기간이 끝나면 활성 이용권이 필요합니다.',
     access: '수업 도구',
   },
+  attendance: {
+    icon: ClipboardList,
+    title: '수업반과 출석부를 사용하려면 이용권이 필요합니다.',
+    desc: 'Lite부터 수업반, 학생 명단, 일정과 출석 체크를 함께 사용할 수 있습니다.',
+    access: '수업반, 일정, 학생 명단 및 출석부',
+  },
   records: {
     icon: FileText,
     title: '기록 누적은 프리미엄에서 이용할 수 있습니다.',

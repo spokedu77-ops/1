@@ -1,6 +1,6 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 import type { MasterClassDto } from '@/app/spokedu-master/types/operational';
 
 function readName(value: unknown) {
@@ -12,7 +12,7 @@ function readName(value: unknown) {
 }
 
 export async function POST(request: Request) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
   const name = readName(await request.json().catch(() => null));
   if (!name) return privateNoStoreJson({ error: '수업반 이름을 입력해 주세요.' }, { status: 400 });

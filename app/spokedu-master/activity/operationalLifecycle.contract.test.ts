@@ -20,9 +20,11 @@ describe('MASTER operational lifecycle integrity', () => {
     expect(provider).not.toContain('item.programs.find((program) => program.id === id)!');
   });
 
-  it('keeps cancelled sessions immutable and offers replacement creation', () => {
-    expect(activity).toContain('취소 기록은 보존되며 다시 예정으로 되돌릴 수 없습니다.');
+  it('keeps cancelled content immutable and offers recovery, replacement, and deletion', () => {
+    expect(activity).toContain('취소 기록은 보존됩니다. 상황에 맞는 다음 행동을 선택해 주세요.');
+    expect(activity).toContain('취소 해제');
     expect(activity).toContain('대체 수업 만들기');
+    expect(activity).toContain('영구 삭제');
     expect(activity).toContain('create=1&class=');
   });
 });

@@ -3,12 +3,13 @@ import { findOfficialSpomovePreset } from '../spomove/officialSpomovePresets';
 import type { MasterCapability } from '../components/layout/masterRouteAccess';
 import { getFallbackForMasterIntent, getSafeMasterPostPaymentPath } from './masterPaymentReturn';
 
-export type MasterGateIntentKind = 'open_library' | 'start_spomove' | 'continue_record';
+export type MasterGateIntentKind = 'open_library' | 'use_attendance' | 'start_spomove' | 'continue_record';
 export type MasterGateSurface =
   | 'library'
   | 'library_detail'
   | 'spomove_hub'
   | 'spomove_session'
+  | 'attendance'
   | 'records';
 export type MasterPaidPlanId = 'lite' | 'premium';
 
@@ -54,7 +55,7 @@ export type MasterGateDisplayModel = {
 };
 
 export function resolveMasterIntentAccessPlan(intent: MasterGateIntentKind): MasterIntentAccessPlan {
-  if (intent === 'open_library') {
+  if (intent === 'open_library' || intent === 'use_attendance') {
     return { minimumPlan: 'lite', allowedPlans: ['lite', 'premium'] };
   }
   return { minimumPlan: 'premium', allowedPlans: ['premium'] };
@@ -68,7 +69,7 @@ function createJourneyId() {
 }
 
 export function normalizeMasterGateIntent(value: string | null | undefined): MasterGateIntentKind | null {
-  if (value === 'open_library' || value === 'start_spomove' || value === 'continue_record') return value;
+  if (value === 'open_library' || value === 'use_attendance' || value === 'start_spomove' || value === 'continue_record') return value;
   return null;
 }
 
@@ -81,6 +82,7 @@ export function resolveMasterGateIntentFromRoute(
   capability: Exclude<MasterCapability, 'authenticated'>,
 ): MasterGateIntentKind | null {
   if (capability === 'library') return 'open_library';
+  if (capability === 'attendance') return 'use_attendance';
   if (capability === 'spomove') return 'start_spomove';
   if (capability === 'records') return 'continue_record';
   return null;
@@ -91,6 +93,7 @@ export function resolveMasterGateSurface(pathname: string): MasterGateSurface | 
   if (pathname === '/spokedu-master/library') return 'library';
   if (pathname.startsWith('/spokedu-master/spomove/session')) return 'spomove_session';
   if (pathname.startsWith('/spokedu-master/spomove')) return 'spomove_hub';
+  if (pathname.startsWith('/spokedu-master/activity') || pathname.startsWith('/spokedu-master/classes') || pathname === '/spokedu-master/students') return 'attendance';
   if (
     pathname.startsWith('/spokedu-master/class-record') ||
     pathname.startsWith('/spokedu-master/report') ||
@@ -210,6 +213,24 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
         { label: '권한', value: 'Premium' },
       ],
       ctaLabel: 'Premium으로 기록 계속하기',
+      paymentHref,
+    };
+  }
+
+  if (context.intent === 'use_attendance') {
+    return {
+      intent: context.intent,
+      minimumPlan: context.minimumPlan,
+      eyebrow: '방금 하려던 작업',
+      title: '수업반과 출석부를 이어서 사용하려고 했습니다.',
+      description: 'Lite부터 수업반, 학생 명단, 일정과 출석 체크를 한 흐름으로 운영할 수 있습니다.',
+      resourceTitle,
+      evidence: [
+        { label: '복귀 위치', value: '방금 보던 수업 운영 화면' },
+        { label: '포함', value: '수업반, 일정, 학생 명단, 출석부' },
+        { label: '최소 권한', value: 'Lite' },
+      ],
+      ctaLabel: 'Lite로 수업 운영 계속하기',
       paymentHref,
     };
   }

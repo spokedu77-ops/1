@@ -32,6 +32,7 @@ export default function StudentsPage() {
   const [draft, setDraft] = useState<StudentDraft>(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingArchive, setPendingArchive] = useState<MasterStudentDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ageOptions = buildStudentAgeOptions(data.students.map((student) => studentMetaToDisplay(student.meta)));
 
@@ -77,10 +78,9 @@ export default function StudentsPage() {
   };
 
   const removeStudent = async (student: MasterStudentDto) => {
-    if (!window.confirm(`${student.name} 학생을 현재 명단에서 삭제할까요?\n과거 수업 이력은 보존됩니다.`)) return;
     setDeletingId(student.id); setError(null);
-    try { await data.deleteStudent(student.id); }
-    catch { setError('학생을 삭제하지 못했습니다.'); }
+    try { await data.deleteStudent(student.id); setPendingArchive(null); }
+    catch { setError('학생을 명단에서 보관 처리하지 못했습니다.'); }
     finally { setDeletingId(null); }
   };
 
@@ -98,10 +98,11 @@ export default function StudentsPage() {
     {data.status === 'loading' || data.status === 'idle' ? <p className="mt-5 rounded-2xl bg-white p-5 text-sm font-bold text-slate-500">학생 명단을 불러오는 중입니다.</p> : null}
     {data.status === 'error' ? <div className="mt-5 rounded-2xl bg-rose-50 p-5 text-sm font-bold text-rose-700">학생 명단을 불러오지 못했습니다.<button type="button" onClick={() => void data.reload()} className="ml-2 underline">다시 시도</button></div> : null}
     {error && !addOpen && !editing ? <p className="mt-4 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
-    <section className="mt-5 grid gap-3 sm:grid-cols-2">{data.students.map((student) => <article key={student.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-900 font-black text-white">{student.name.slice(0, 1)}</span><div className="min-w-0 flex-1"><h2 className="truncate text-base font-black text-slate-900">{student.name}</h2><p className="mt-1 truncate text-xs font-semibold text-slate-500">{[classNames(student.id).join(', '), studentMetaToDisplay(student.meta)].filter(Boolean).join(' · ') || '수업반 미지정'}</p></div><span className="text-xs font-black text-slate-400">수업 {sessionCount(student.id)}건</span></div><div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-2"><Link href={`/spokedu-master/students/${student.id}`} className="flex h-10 items-center justify-center gap-1 rounded-xl bg-blue-600 text-xs font-black text-white">이력 보기<ChevronRight size={14} /></Link><button type="button" onClick={() => openEdit(student)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-600" aria-label={`${student.name} 수정`}><Pencil size={15} /></button><button type="button" onClick={() => void removeStudent(student)} disabled={deletingId === student.id} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-rose-500 disabled:opacity-40" aria-label={`${student.name} 삭제`}><Trash2 size={15} /></button></div></article>)}</section>
+    <section className="mt-5 grid gap-3 sm:grid-cols-2">{data.students.map((student) => <article key={student.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-900 font-black text-white">{student.name.slice(0, 1)}</span><div className="min-w-0 flex-1"><h2 className="truncate text-base font-black text-slate-900">{student.name}</h2><p className="mt-1 truncate text-xs font-semibold text-slate-500">{[classNames(student.id).join(', '), studentMetaToDisplay(student.meta)].filter(Boolean).join(' · ') || '수업반 미지정'}</p></div><span className="text-xs font-black text-slate-400">수업 {sessionCount(student.id)}건</span></div><div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-2"><Link href={`/spokedu-master/students/${student.id}`} className="flex h-10 items-center justify-center gap-1 rounded-xl bg-slate-900 text-xs font-black text-white">이력 보기<ChevronRight size={14} /></Link><button type="button" onClick={() => openEdit(student)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-600" aria-label={`${student.name} 수정`}><Pencil size={15} /></button><button type="button" onClick={() => setPendingArchive(student)} disabled={deletingId === student.id} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-400 disabled:opacity-40" aria-label={`${student.name} 명단에서 보관`}><Trash2 size={15} /></button></div></article>)}</section>
     {data.status === 'ready' && !data.students.length ? <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><Users size={24} className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-black text-slate-700">아직 등록된 학생이 없습니다.</p><p className="mt-2 text-xs font-semibold text-slate-500">학생을 추가하고 수업반을 선택해 주세요.</p></div> : null}
   </div>
   {addOpen ? <BottomSheet open title="학생 추가" onClose={() => setAddOpen(false)}>{form(saveNew)}</BottomSheet> : null}
   {editing ? <BottomSheet open title="학생 정보 수정" onClose={() => setEditing(null)}>{form(saveEdit)}</BottomSheet> : null}
+  {pendingArchive ? <BottomSheet open title="학생 명단에서 보관" onClose={() => setPendingArchive(null)}><div className="space-y-4 pb-3"><p className="text-sm font-semibold leading-6 text-slate-600"><strong className="text-slate-900">{pendingArchive.name}</strong> 학생을 현재 명단에서 숨깁니다. 과거 수업과 출석 이력은 그대로 보존됩니다.</p>{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={Boolean(deletingId)} onClick={() => void removeStudent(pendingArchive)} className="min-h-11 w-full rounded-xl bg-rose-600 text-sm font-black text-white disabled:opacity-40">{deletingId ? '보관 중…' : '명단에서 보관'}</button><button type="button" disabled={Boolean(deletingId)} onClick={() => setPendingArchive(null)} className="min-h-11 w-full text-sm font-black text-slate-600">돌아가기</button></div></BottomSheet> : null}
   </main>;
 }

@@ -31,6 +31,7 @@ export default function ClassDetailPage() {
   const [editName, setEditName] = useState('');
   const [attendanceMonth, setAttendanceMonth] = useState<string | null>(null);
   const [incompleteOpen, setIncompleteOpen] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<MasterStudentDto | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const classItem = data.classes.find((item) => item.id === classId) ?? null;
@@ -48,9 +49,8 @@ export default function ClassDetailPage() {
   if (!classItem) return <main className="grid h-full place-items-center bg-[var(--spm-bg)] p-6"><div className="text-center"><p className="text-lg font-black text-slate-800">수업반을 찾을 수 없습니다.</p><Link href="/spokedu-master/classes" className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-4 text-sm font-black text-white">수업반 목록으로</Link></div></main>;
 
   const removeFromClass = async (student: MasterStudentDto) => {
-    if (!window.confirm(`${student.name} 학생을 '${classItem.name}' 명단에서 제외할까요?\n과거 출석 및 수업 이력은 유지됩니다.`)) return;
     setSaving(true); setError(null);
-    try { await data.removeClassStudent(classItem.id, student.id); }
+    try { await data.removeClassStudent(classItem.id, student.id); setPendingRemove(null); }
     catch { setError('학생을 반에서 제외하지 못했습니다.'); }
     finally { setSaving(false); }
   };
@@ -94,7 +94,7 @@ export default function ClassDetailPage() {
         {roster.length ? <div className="mt-3 divide-y divide-slate-100 overflow-visible rounded-2xl bg-white px-4 shadow-sm">{roster.map((student) => <article key={student.id} className="flex min-h-16 items-center gap-3 py-2">
           <Link href={`/spokedu-master/students/${student.id}`} className="min-w-0 flex-1 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"><strong className="block truncate text-sm text-slate-900">{student.name}</strong><small className="mt-1 block truncate font-semibold text-slate-500">{studentMetaToDisplay(student.meta) || '학년·연령 미입력'}{student.guidanceNote ? ' · 지도 참고 있음' : ''}</small></Link>
           <Link href={`/spokedu-master/students/${student.id}`} className="hidden min-h-11 items-center px-3 text-xs font-black text-slate-600 sm:flex">이력 보기</Link>
-          <details className="relative"><summary aria-label={`${student.name} 학생 메뉴`} className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-xl text-slate-500 hover:bg-slate-100"><MoreHorizontal size={20} /></summary><div className="absolute right-0 z-30 mt-1 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"><button type="button" disabled={saving} onClick={() => void removeFromClass(student)} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-xs font-black text-rose-600 disabled:opacity-40"><UserMinus size={14} />반에서 제외</button></div></details>
+          <details className="relative"><summary aria-label={`${student.name} 학생 메뉴`} className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-xl text-slate-500 hover:bg-slate-100"><MoreHorizontal size={20} /></summary><div className="absolute right-0 z-30 mt-1 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"><button type="button" disabled={saving} onClick={() => setPendingRemove(student)} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-xs font-black text-rose-600 disabled:opacity-40"><UserMinus size={14} />반에서 제외</button></div></details>
         </article>)}</div> : null}
       </section> : null}
 
@@ -109,5 +109,6 @@ export default function ClassDetailPage() {
     {addOpen ? <ClassRosterSheet classId={classItem.id} className={classItem.name} onClose={() => setAddOpen(false)} /> : null}
     {incompleteOpen ? <BottomSheet open title={`출석 미기록 ${incompleteSessions.length}건`} onClose={() => setIncompleteOpen(false)}><div className="space-y-2 pb-3">{incompleteSessions.map((session) => <div key={session.id} className="flex min-h-14 items-center gap-3 rounded-xl border border-slate-200 p-3"><div className="min-w-0 flex-1"><p className="text-sm font-black text-slate-800">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric' })}</p><p className="text-xs font-semibold text-slate-500">{formatSeoulSessionTime(session.startAt)}</p></div><Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex min-h-11 items-center rounded-xl bg-amber-100 px-4 text-xs font-black text-amber-900">기록</Link></div>)}</div></BottomSheet> : null}
     {editOpen ? <BottomSheet open title="수업반 이름 수정" onClose={() => setEditOpen(false)}><div className="space-y-4 pb-3"><input autoFocus value={editName} onChange={(event) => setEditName(event.target.value)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={!editName.trim() || saving} onClick={() => void updateName()} className="min-h-11 w-full rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-40">이름 저장</button></div></BottomSheet> : null}
+    {pendingRemove ? <BottomSheet open title="반에서 제외" onClose={() => setPendingRemove(null)}><div className="space-y-4 pb-3"><p className="text-sm font-semibold leading-6 text-slate-600"><strong className="text-slate-900">{pendingRemove.name}</strong> 학생을 <strong className="text-slate-900">{classItem.name}</strong> 명단에서 제외합니다. 학생과 과거 출석·수업 이력은 유지됩니다.</p>{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={saving} onClick={() => void removeFromClass(pendingRemove)} className="min-h-11 w-full rounded-xl bg-rose-600 text-sm font-black text-white disabled:opacity-40">{saving ? '제외 중…' : '반에서 제외'}</button><button type="button" disabled={saving} onClick={() => setPendingRemove(null)} className="min-h-11 w-full text-sm font-black text-slate-600">돌아가기</button></div></BottomSheet> : null}
   </main>;
 }

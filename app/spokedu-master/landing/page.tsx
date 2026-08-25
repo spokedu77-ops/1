@@ -25,9 +25,9 @@ const FEATURES = [
     icon: Timer,
     color: 'var(--spm-amb-a14)',
     ic: 'var(--spm-amb)',
-    title: '수업 도구',
-    desc: '수업 중 바로 꺼내 쓰는 타이머, 팀 나누기, 학생 뽑기, 점수판이 한 곳에 있습니다. 수업 흐름을 끊지 않고 진행을 도와줍니다.',
-    items: ['스탑워치 · 점수판', '팀 나누기 · 학생 뽑기', '수업 모드 전체화면 실행'],
+    title: '수업 운영',
+    desc: '수업반, 학생 명단, 일정과 출석을 한 Session에 연결합니다. 프리미엄에서는 메모와 안내문이 다음 수업 준비에 다시 쓰이는 기록으로 쌓입니다.',
+    items: ['수업반 · 일정 · 출석', '타이머 · 팀 나누기 · 점수판', '기록 · 안내문 · 다음 수업 연결'],
   },
 ] as const;
 
@@ -51,8 +51,8 @@ const PRICING = [
     badge: '가장 인기',
     price: MASTER_PRODUCT_CATALOG.premium.priceLabel.replace(/원$/, ''),
     period: MASTER_PRODUCT_CATALOG.premium.billingCycleLabel,
-    desc: '전문 강사가 매주 쓰는 수업 준비 환경',
-    includes: ['라이트의 모든 기능', '수업 기록·학생 명단', '안내문 작성·복사', 'SPOMOVE 큰 화면 실행', 'Pro 수업 상세 자료', 'SPOMAT 회원가 (연결 시)'],
+    desc: '매주 수업 기록이 쌓이고 다음 준비로 이어지는 전체 운영 환경',
+    includes: ['라이트의 모든 기능', '수업 기록·학생 히스토리', '메모·안내문 작성과 재사용', 'SPOMOVE 큰 화면 실행', 'Pro 수업 상세 자료', 'SPOMAT 회원가 (연결 시)'],
     accent: 'var(--spm-acc-a18)',
     border: 'var(--spm-acc-a42)',
     badgeColor: 'var(--spm-acc)',
@@ -75,27 +75,27 @@ const PRICING = [
 
 const STATS = [
   { label: '수업 프로그램', value: '라이브러리', caption: '연령·환경별 수업', Icon: BookOpen },
-  { label: 'SPOMOVE 공식 활동', value: '51+', caption: '큰 화면 반응 활동', Icon: Zap },
+  { label: 'SPOMOVE 공식 활동', value: '프리미엄', caption: '큰 화면 반응 활동', Icon: Zap },
   { label: '연령 대상', value: '유아~중등', caption: '현장 수업 기준', Icon: Users },
   { label: '수업 공간', value: '실내 · 실외', caption: '환경별 자료 구분', Icon: MapPin },
 ];
 
 const FLOW = [
-  { num: '1', label: '수업 라이브러리에서 고르기', caption: '태그와 검색으로 오늘 쓸 수업을 빠르게 찾습니다', color: 'var(--spm-acc-a14)', accent: 'var(--spm-acc)' },
-  { num: '2', label: 'SPOMOVE 큰 화면 실행 (프리미엄)', caption: '프로젝터·TV에 연결해 아이들이 화면 신호를 보고 움직입니다', color: 'var(--spm-grn-a12)', accent: 'var(--spm-grn)' },
-  { num: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'var(--spm-amb-a12)', accent: 'var(--spm-amb)' },
+  { num: '1', label: '오늘 수업 결정', caption: '오늘 일정과 수업반을 보고 라이브러리에서 활동을 고릅니다', color: 'var(--spm-acc-a14)', accent: 'var(--spm-acc)' },
+  { num: '2', label: '현장에서 바로 운영', caption: '출석, 활동, SPOMOVE와 수업 도구를 한 Session에서 사용합니다', color: 'var(--spm-grn-a12)', accent: 'var(--spm-grn)' },
+  { num: '3', label: '기록하고 다음 수업 연결', caption: '완료한 활동과 메모, 안내문을 남겨 다음 준비를 더 빠르게 시작합니다', color: 'var(--spm-amb-a12)', accent: 'var(--spm-amb)' },
 ] as const;
 
 const HERO_PROOF = [
-  { label: 'SPOMOVE 활용', value: '별도 실행', caption: '일부 수업은 활동과 함께 활용 가능' },
-  { label: '수업 준비 흐름', value: '3단계', caption: '고르기, 실행하기, 설명하기' },
-  { label: '바로 쓰는 자료', value: '4종', caption: '영상, 준비물, 세팅, 문구' },
+  { label: '가입 이유', value: '콘텐츠', caption: '오늘 쓸 활동을 빠르게 결정' },
+  { label: '매일 쓰는 이유', value: '운영', caption: '일정, 출석, 도구를 한 흐름으로' },
+  { label: '계속 쓰는 이유', value: '누적 기록', caption: '다음 수업 준비에 다시 활용' },
 ] as const;
 
 const SITE_URL = getSpokeduSiteUrl();
 
 const LANDING_DESCRIPTION =
-  '수업 라이브러리와 영상, 안내문을 제공하는 체육교육 월 구독 서비스입니다. 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 이용할 수 있습니다.';
+  '체육 수업 콘텐츠와 수업반·일정·출석·기록을 하나의 Session으로 연결하는 체육수업 운영 서비스입니다.';
 
 export const metadata = {
   title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
@@ -150,16 +150,16 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.5fr)] lg:items-end">
           <div className="max-w-[720px]">
             <span className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em]" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', color: '#dbeafe' }}>
-              체육교육 OTT · 월 구독
+              체육 수업 콘텐츠 · 수업 운영 시스템
             </span>
             <h1 className="mt-5 text-[46px] font-black leading-[0.98] md:text-[76px]" style={{ fontFamily: 'var(--spm-font-display)', color: '#fff', letterSpacing: 0, wordBreak: 'keep-all' }}>
               SPOKEDU<br />MASTER
             </h1>
             <p className="mt-6 max-w-[640px] text-[19px] font-black leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
-              수업 라이브러리와 영상, 안내문을 이용하고 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 연결합니다.
+              오늘 수업을 준비하고, 현장에서 바로 쓰고, 기록을 다음 수업으로 연결합니다.
             </p>
             <p className="mt-4 max-w-[620px] text-[14px] font-semibold leading-7 md:text-[15px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
-              오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육수업 운영 서비스입니다.
+              콘텐츠는 시작을 빠르게 하고, 일정·출석·도구는 현장 운영을 매끄럽게 하며, 누적 기록은 다음 수업 준비를 더 쉽게 만듭니다.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black focus-visible:outline-none sm:w-auto sm:min-w-[200px]">
@@ -202,7 +202,7 @@ export default function LandingPage() {
       <section className="px-[22px] py-[80px] sm:px-10">
         <div className="mx-auto max-w-[960px]">
           <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>수업 루프</p>
-          <h2 className="mb-12 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>오늘 수업이 3단계로 완성됩니다</h2>
+          <h2 className="mb-12 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>한 번의 수업이 다음 준비로 이어집니다</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {FLOW.map(({ num, label, caption, color, accent }) => (
               <div key={num} className="rounded-[20px] p-6" style={{ background: color, border: `1px solid ${color}` }}>
@@ -219,7 +219,7 @@ export default function LandingPage() {
       <section className="border-t px-[22px] py-[80px] sm:px-10" style={{ borderColor: 'var(--spm-br2)' }}>
         <div className="mx-auto max-w-[960px]">
           <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>핵심 기능</p>
-          <h2 className="mb-14 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 준비의 모든 단계</h2>
+          <h2 className="mb-14 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>콘텐츠와 운영이 한 서비스 안에서</h2>
           <div className="grid gap-6 md:grid-cols-3">
             {FEATURES.map(({ icon: Icon, color, ic, title, desc, items }) => (
               <div key={title} className="rounded-[22px] p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>

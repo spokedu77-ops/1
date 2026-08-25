@@ -8,7 +8,6 @@ export const MASTER_NAV_ITEMS = [
   { key: 'spomove', href: '/spokedu-master/spomove', label: 'SPOMOVE', shortLabel: '무브' },
   { key: 'class-tools', href: '/spokedu-master/class-tools', label: '수업 도구', shortLabel: '도구' },
   { key: 'activity', href: '/spokedu-master/activity', label: '수업 관리', shortLabel: '수업' },
-  { key: 'profile', href: '/spokedu-master/profile', label: '프로필', shortLabel: '프로필' },
 ] as const;
 
 export type MasterNavKey = (typeof MASTER_NAV_ITEMS)[number]['key'];

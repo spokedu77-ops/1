@@ -7,6 +7,7 @@ const { getServiceSupabase, requireSpokeduMasterAccess } = vi.hoisted(() => ({
 
 vi.mock('@/app/lib/server/spokeduMasterAccess', () => ({
   requireSpokeduMasterAccess,
+  requireSpokeduMasterCapability: requireSpokeduMasterAccess,
 }));
 
 vi.mock('@/app/lib/server/adminAuth', () => ({

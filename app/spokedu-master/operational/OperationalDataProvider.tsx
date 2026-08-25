@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useMasterCanUseRecords } from '../access/MasterAccessProvider';
+import { useMasterCanUseAttendance } from '../access/MasterAccessProvider';
 import { getMasterRequestErrorMessage, masterFetchJson } from '../lib/masterRequestError';
 import { useProfile } from '../store';
 import type {
@@ -28,6 +28,7 @@ type OperationalDataContextValue = {
   reload: () => Promise<void>;
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
   completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<MasterSessionDto>;
+  deleteCancelledSession: (sessionId: string) => Promise<void>;
   createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms: boolean }) => Promise<MasterSessionDto>;
   addSessionProgram: (sessionId: string, programId: number) => Promise<MasterSessionDto['programs'][number]>;
   addSessionSpomove: (sessionId: string, spomovePresetId: string) => Promise<MasterSessionDto['programs'][number]>;
@@ -56,7 +57,7 @@ function getProviderErrorMessage(caught: unknown) {
 
 export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const profile = useProfile();
-  const canUseRecords = useMasterCanUseRecords();
+  const canUseAttendance = useMasterCanUseAttendance();
   const ownerId = getProfileOwnerId(profile);
   const activeOwnerRef = useRef<string | null>(null);
   const [status, setStatus] = useState<OperationalDataStatus>('idle');
@@ -72,7 +73,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const reload = useCallback(async () => {
-    if (!ownerId || !canUseRecords) {
+    if (!ownerId || !canUseAttendance) {
       activeOwnerRef.current = null;
       clearData();
       setError(null);
@@ -101,7 +102,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       setError(getProviderErrorMessage(caught));
       setStatus('error');
     }
-  }, [canUseRecords, clearData, ownerId]);
+  }, [canUseAttendance, clearData, ownerId]);
 
   useEffect(() => {
     void reload();
@@ -161,6 +162,11 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()));
     return json.data;
+  }, []);
+
+  const deleteCancelledSession = useCallback(async (sessionId: string) => {
+    await masterFetchJson(`/api/spokedu-master/sessions?id=${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
+    setSessions((current) => current.filter((session) => session.id !== sessionId));
   }, []);
 
   const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms: boolean }) => {
@@ -247,6 +253,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       completeSession,
       createClass,
       createNextSession,
+      deleteCancelledSession,
       addClassStudent,
       addSessionProgram,
       addSessionSpomove,
@@ -267,7 +274,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       updateSessionProgram,
       updateClass,
     }),
-    [addClassStudent, addSessionProgram, addSessionSpomove, classes, completeSession, createClass, createNextSession, createStudent, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, addSessionSpomove, classes, completeSession, createClass, createNextSession, createStudent, deleteCancelledSession, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

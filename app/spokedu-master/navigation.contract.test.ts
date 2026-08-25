@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('SPOKEDU MASTER primary navigation', () => {
-  it('shares the six primary destinations across desktop and mobile', () => {
+  it('shares five product destinations and keeps profile as an account utility', () => {
     const nav = read('app/spokedu-master/components/layout/masterNavLabels.ts');
     const desktop = read('app/spokedu-master/components/layout/StatusBar.tsx');
     const mobile = read('app/spokedu-master/components/layout/TabBar.tsx');
@@ -13,7 +13,9 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(mobile).toContain('MASTER_NAV_ITEMS');
     expect(nav).toContain("href: '/spokedu-master/library', label: '놀이체육'");
     expect(nav).toContain("href: '/spokedu-master/activity', label: '수업 관리'");
-    expect(nav.match(/href:/g)).toHaveLength(6);
+    expect(nav.match(/href:/g)).toHaveLength(5);
+    expect(nav).not.toContain("href: '/spokedu-master/profile'");
+    expect(desktop).toContain('href="/spokedu-master/profile"');
     expect(nav).toContain("href: '/spokedu-master/class-tools'");
     expect(nav).not.toContain("href: '/spokedu-master/plan'");
   });

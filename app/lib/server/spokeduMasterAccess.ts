@@ -48,6 +48,17 @@ export type MasterAccessSnapshotResult =
   | { ok: true; userId: string; snapshot: SpokeduMasterAccessSnapshot }
   | MasterAccessFail;
 
+export type SpokeduMasterServerCapability = 'library' | 'classTools' | 'attendance' | 'records' | 'spomove';
+
+const CAPABILITY_FIELD: Record<SpokeduMasterServerCapability, keyof Pick<SpokeduMasterAccessSnapshot,
+  'canUseLibrary' | 'canUseClassTools' | 'canUseAttendance' | 'canUseRecords' | 'canUseSpomove'>> = {
+  library: 'canUseLibrary',
+  classTools: 'canUseClassTools',
+  attendance: 'canUseAttendance',
+  records: 'canUseRecords',
+  spomove: 'canUseSpomove',
+};
+
 export type SpokeduMasterSubscriptionRow = {
   plan: string | null;
   status: string | null;
@@ -427,4 +438,26 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
       response: NextResponse.json({ error: 'Server error' }, { status: 500 }),
     };
   }
+}
+
+export async function requireSpokeduMasterCapability(
+  capability: SpokeduMasterServerCapability,
+): Promise<MasterAccessResult> {
+  const access = await getSpokeduMasterAccessSnapshot();
+  if (!access.ok) return access;
+  if (!access.snapshot[CAPABILITY_FIELD[capability]]) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: capability === 'records' || capability === 'spomove' ? 'Premium 이용권이 필요한 기능입니다.' : EXPIRED_ACCESS_MESSAGE },
+        { status: 403 },
+      ),
+    };
+  }
+  return {
+    ok: true,
+    userId: access.userId,
+    isAdmin: access.snapshot.isAdmin,
+    plan: access.snapshot.isAdmin ? 'admin' : access.snapshot.plan as MasterPlan,
+  };
 }

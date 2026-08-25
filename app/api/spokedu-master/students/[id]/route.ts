@@ -1,7 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 import {
   normalizeStudentInput,
   toStudentDto,
@@ -18,7 +18,7 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
 
   const { id } = await context.params;
@@ -90,7 +90,7 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
 
   const { id } = await context.params;
