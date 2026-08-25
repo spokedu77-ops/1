@@ -1,7 +1,7 @@
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess, requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability, type MasterAccessResult } from '@/app/lib/server/spokeduMasterAccess';
 import type { Program } from '@/app/spokedu-master/types';
 import { pickBestHeroUrl } from '@/app/spokedu-master/lib/program-visual';
 import {
@@ -151,7 +151,7 @@ function normalizeProgramForMaster(program: Program): Program {
   };
 }
 
-function canAccessProProgramDetails(access: Awaited<ReturnType<typeof requireSpokeduMasterAccess>>): boolean {
+function canAccessProProgramDetails(access: MasterAccessResult): boolean {
   return access.ok && (access.isAdmin || access.plan === 'premium' || access.plan === 'team' || access.plan === 'admin');
 }
 

@@ -1,7 +1,9 @@
 'use client';
 
 import { CalendarPlus } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { SPM_PRIMARY_BTN } from '../../lib/masterActionGrammar';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday } from '../../lib/sessionDateTime';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { Program } from '../../types';
@@ -13,6 +15,7 @@ export function AssignProgramToSessionButton({ program, className }: { program: 
   const [date, setDate] = useState(getSeoulToday());
   const [showDateSearch, setShowDateSearch] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [assignedSessionId, setAssignedSessionId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const dateSessions = useMemo(() => data.sessions.filter((session) => (
     session.status === 'scheduled' && getSeoulSessionDay(session.startAt) === date
@@ -35,11 +38,13 @@ export function AssignProgramToSessionButton({ program, className }: { program: 
     setMessage(null);
     try {
       await data.addSessionProgram(session.id, numericProgramId);
+      setAssignedSessionId(session.id);
       setMessage({
         tone: 'success',
         text: `${formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'numeric', day: 'numeric' })} ${formatSeoulSessionTime(session.startAt)} · ${session.className} 수업에 추가했습니다.`,
       });
     } catch {
+      setAssignedSessionId(null);
       setMessage({ tone: 'error', text: '프로그램을 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.' });
     } finally {
       setSavingId(null);
@@ -47,7 +52,7 @@ export function AssignProgramToSessionButton({ program, className }: { program: 
   };
 
   return <>
-    <button type="button" disabled={!Number.isInteger(numericProgramId)} onClick={() => { setOpen(true); setShowDateSearch(false); setMessage(null); }} className={className ?? 'inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[var(--spm-acc)] px-4 text-sm font-black text-white disabled:opacity-40'}>
+    <button type="button" disabled={!Number.isInteger(numericProgramId)} onClick={() => { setOpen(true); setShowDateSearch(false); setAssignedSessionId(null); setMessage(null); }} className={className ?? `${SPM_PRIMARY_BTN} h-12`}>
       <CalendarPlus size={16} />수업에 배정
     </button>
     {open ? <BottomSheet open title="수업에 배정" onClose={() => setOpen(false)}>
@@ -63,11 +68,16 @@ export function AssignProgramToSessionButton({ program, className }: { program: 
         <div className="mt-4 space-y-2">
           {sessions.map((session) => <button key={session.id} type="button" disabled={savingId !== null} onClick={() => void assign(session.id)} className="flex min-h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 text-left disabled:opacity-40">
             <span><strong className="block text-sm text-slate-800">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'numeric', day: 'numeric' })} {formatSeoulSessionTime(session.startAt)} · {session.className}</strong><small className="text-slate-500">활동 {session.programs.length}개 · 예정</small></span>
-            <span className="text-xs font-black text-emerald-700">선택</span>
+            <span className="text-xs font-black text-slate-700">선택</span>
           </button>)}
           {!sessions.length ? <p className="rounded-xl bg-slate-50 p-4 text-center text-xs font-semibold text-slate-500">{showDateSearch ? '이 날짜에 배정 가능한 예정 수업이 없습니다.' : '다가오는 예정 수업이 없습니다. 다른 날짜를 찾아보세요.'}</p> : null}
         </div>
         {message ? <p role="status" className={`mt-3 rounded-xl p-3 text-xs font-bold ${message.tone === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-700'}`}>{message.text}</p> : null}
+        {assignedSessionId && message?.tone === 'success' ? (
+          <Link href={`/spokedu-master/activity?session=${encodeURIComponent(assignedSessionId)}`} className={`mt-3 ${SPM_PRIMARY_BTN} w-full`}>
+            수업 열기
+          </Link>
+        ) : null}
       </div>
     </BottomSheet> : null}
   </>;

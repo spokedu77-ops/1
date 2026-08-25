@@ -5,7 +5,7 @@
  * SECONDARY: 흐름을 돕는 저장/대체 행동 → border + slate
  * OPEN / VIEW: 현재 작업 열기 → slate-900
  * HISTORY: 누적 기록 읽기
- * DESTRUCTIVE: 제외 / 취소 / 영구 삭제 / 해지 — 낮은 emphasis, rose만 확정 버튼
+ * DESTRUCTIVE: 제외 / 취소 / 수업 삭제 / 해지 — 낮은 emphasis, rose만 확정 버튼
  * STATUS: 예정·완료·취소·출석 — input이 아니라 badge/tone
  */
 
@@ -39,7 +39,7 @@ export const MASTER_ACTION_COPY = {
   cancelSession: '수업 취소',
   restoreSession: '취소 해제',
   replaceSession: '대체 수업 만들기',
-  deleteSession: '영구 삭제',
+  deleteSession: '수업 삭제',
   removeFromClass: '반에서 제외',
   archiveStudent: '명단에서 보관',
 } as const;

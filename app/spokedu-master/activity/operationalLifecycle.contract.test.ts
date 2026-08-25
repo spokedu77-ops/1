@@ -22,9 +22,16 @@ describe('MASTER operational lifecycle integrity', () => {
 
   it('keeps cancelled content immutable and offers recovery, replacement, and deletion', () => {
     expect(activity).toContain('취소 기록은 보존됩니다. 상황에 맞는 다음 행동을 선택해 주세요.');
-    expect(activity).toContain('취소 해제');
-    expect(activity).toContain('대체 수업 만들기');
-    expect(activity).toContain('영구 삭제');
+    expect(activity).toContain('MASTER_ACTION_COPY.restoreSession');
+    expect(activity).toContain('MASTER_ACTION_COPY.replaceSession');
+    expect(activity).toContain('MASTER_ACTION_COPY.deleteSession');
     expect(activity).toContain('create=1&class=');
+    expect(activity).toContain('Keep the sheet open so complete / restore / cancel recovery stay in one continuous flow.');
+  });
+
+  it('allows cancelled to scheduled restore in the foundation migration chain', () => {
+    const restore = readFileSync('supabase/migrations/20260826120000_spokedu_master_session_restore.sql', 'utf8');
+    expect(restore).toContain("old.status='cancelled' and new.status='scheduled'");
+    expect(restore).toContain("v_old.status='cancelled' and p_status='scheduled'");
   });
 });

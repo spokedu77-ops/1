@@ -37,7 +37,7 @@ describe('MASTER commercial cohesion contracts', () => {
     expect(MASTER_ACTION_COPY.removeFromClass).toBe('반에서 제외');
     expect(MASTER_ACTION_COPY.archiveStudent).toBe('명단에서 보관');
     expect(MASTER_ACTION_COPY.cancelSession).toBe('수업 취소');
-    expect(MASTER_ACTION_COPY.deleteSession).toBe('영구 삭제');
+    expect(MASTER_ACTION_COPY.deleteSession).toBe('수업 삭제');
     const students = read('app/spokedu-master/students/page.tsx');
     const classes = read('app/spokedu-master/classes/[classId]/page.tsx');
     const activity = read('app/spokedu-master/activity/page.tsx');
@@ -56,7 +56,8 @@ describe('MASTER commercial cohesion contracts', () => {
       'app/spokedu-master/activity/page.tsx',
       'app/spokedu-master/dashboard/TodaySessionsPanel.tsx',
     ]) {
-      expect(read(path)).toContain('spm-btn-primary');
+      const source = read(path);
+      expect(source.includes('spm-btn-primary') || source.includes('SPM_PRIMARY_BTN')).toBe(true);
     }
     expect(read('app/spokedu-master/components/ui/SubscriptionGateWall.tsx')).not.toContain('text-red-600');
   });

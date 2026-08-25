@@ -38,5 +38,19 @@ describe('master post-payment return path', () => {
     expect(getFallbackForMasterIntent('start_spomove')).toBe('/spokedu-master/spomove');
     expect(getFallbackForMasterIntent('continue_record')).toBe('/spokedu-master/class-record');
   });
+
+  it('preserves exact Session and schedule context after payment', () => {
+    expect(
+      getSafeMasterPostPaymentPath(
+        '/spokedu-master/activity?session=sess-1&date=2026-08-26&create=1&class=class-a&plan=premium',
+      ),
+    ).toBe('/spokedu-master/activity?session=sess-1&date=2026-08-26&create=1&class=class-a');
+    expect(getSafeMasterPostPaymentPath('/spokedu-master/report?session=sess-1&plan=premium')).toBe(
+      '/spokedu-master/report?session=sess-1',
+    );
+    expect(getSafeMasterPostPaymentPath('/spokedu-master/students/student-a?plan=premium')).toBe(
+      '/spokedu-master/students/student-a',
+    );
+  });
 });
 

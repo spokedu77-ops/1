@@ -57,7 +57,6 @@ import {
   getSpomoveHubHref,
   parseSpomoveHubUrlState,
   serializeSpomoveHubUrlState,
-  parseSpomoveHubView,
   type SpomoveHubViewMode,
 } from './spomoveHubNavigation';
 
@@ -549,24 +548,6 @@ function matchesThinkingLevel(preset: OfficialSpomovePreset, tab: ThinkingLevelT
   return getOfficialSpomovePresetGuide(preset).thinkingLevel === tab;
 }
 
-function programGroupCount(tab: ProgramGroupTab, thinkingLevel: ThinkingLevelTab = 'all') {
-  return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => isHubListedPreset(preset) && matchesProgramGroup(preset, tab) && matchesThinkingLevel(preset, thinkingLevel),
-  ).length;
-}
-
-function thinkingLevelCount(tab: ThinkingLevelTab, programGroup: ProgramGroupTab = 'all') {
-  return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => isHubListedPreset(preset) && matchesThinkingLevel(preset, tab) && matchesProgramGroup(preset, programGroup),
-  ).length;
-}
-
-function filterOfficialPresets(programGroup: ProgramGroupTab, thinkingLevel: ThinkingLevelTab) {
-  return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => isHubListedPreset(preset) && matchesProgramGroup(preset, programGroup) && matchesThinkingLevel(preset, thinkingLevel),
-  );
-}
-
 function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
   if (!path) return '';
   try {
@@ -670,12 +651,14 @@ function CardInfo({
   preset,
   isReady,
   hubView,
+  hubReturnHref,
   contentOverride,
   onGuide,
 }: {
   preset: OfficialSpomovePreset;
   isReady: boolean;
   hubView: SpomoveHubViewMode;
+  hubReturnHref: string;
   contentOverride?: SpomovePresetContentOverride;
   onGuide: () => void;
 }) {
@@ -686,7 +669,7 @@ function CardInfo({
 
   const hrefForSettings = () => {
     const hubViewOption = hubView === 'favorites' ? { hubView: 'favorites' as const } : {};
-    return publicOfficialPresetSessionHref(preset, { entry: 'settings', ...hubViewOption });
+    return publicOfficialPresetSessionHref(preset, { entry: 'settings', hubReturn: hubReturnHref, ...hubViewOption });
   };
 
   return (
@@ -748,6 +731,7 @@ function PresetCard({
   favorite,
   favoriteEnabled,
   hubView,
+  hubReturnHref,
   contentOverride,
   showProgramLabel,
   onPreview,
@@ -758,6 +742,7 @@ function PresetCard({
   favorite: boolean;
   favoriteEnabled: boolean;
   hubView: SpomoveHubViewMode;
+  hubReturnHref: string;
   contentOverride?: SpomovePresetContentOverride;
   showProgramLabel: boolean;
   onPreview: () => void;
@@ -815,6 +800,7 @@ function PresetCard({
         preset={preset}
         isReady={preset.isReady}
         hubView={hubView}
+        hubReturnHref={hubReturnHref}
         contentOverride={contentOverride}
         onGuide={onPreview}
       />
@@ -851,6 +837,7 @@ export default function SpomoveHubView() {
   const movementFilter = urlState.movement as MovementQuickFilter | 'all';
   const searchQuery = urlState.q;
   const hubView = urlState.view;
+  const hubReturnHref = serializeSpomoveHubUrlState(urlState);
   const showSavedOnly = hubView === 'favorites';
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
@@ -1006,6 +993,8 @@ export default function SpomoveHubView() {
       matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, activeThinkingLevel) &&
       matchesMovement(preset, movementFilter) && matchesSearch(preset) && matchesFavorites(preset));
     return sortSpomovePresetsByCatalogOrder(presets);
+  // Filter helpers close over search/favorite state already listed below.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- matches* recreate each render; inputs above are the true deps
   }, [
     activeProgramGroup,
     activeThinkingLevel,
@@ -1014,6 +1003,7 @@ export default function SpomoveHubView() {
     movementFilter,
     movementLayerEnabled,
     showSavedOnly,
+    searchQuery,
   ]);
   const programGroupFacetCount = (tab: ProgramGroupTab) => visiblePresets.filter((preset) =>
     matchesGroup(preset, tab) && matchesDifficulty(preset, activeThinkingLevel) &&
@@ -1057,6 +1047,7 @@ export default function SpomoveHubView() {
           favorite={isFavoriteProgram(ownerId, preset.id)}
           favoriteEnabled={ownerId != null && preset.isReady}
           hubView={hubView}
+          hubReturnHref={hubReturnHref}
           contentOverride={contentOverrides[preset.id]}
           showProgramLabel={showProgramLabel}
           onPreview={() => setPreviewPreset(preset)}
@@ -1331,6 +1322,7 @@ export default function SpomoveHubView() {
           contentOverride={previewPreset ? contentOverrides[previewPreset.id] : undefined}
           contentLoadState={contentLoadState}
           hubView={hubView}
+          hubReturnHref={hubReturnHref}
           onClose={() => setPreviewPreset(null)}
         />
       </div>

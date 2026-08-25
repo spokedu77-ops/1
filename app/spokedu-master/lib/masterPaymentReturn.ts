@@ -13,8 +13,10 @@ const BLOCKED_POST_PAYMENT_PATHS = new Set([
 const POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> = {
   '/spokedu-master/library': ['from'],
   '/spokedu-master/class-record': ['program', 'record'],
-  '/spokedu-master/report': ['program', 'record'],
-  '/spokedu-master/activity': ['program', 'record'],
+  '/spokedu-master/report': ['session', 'program', 'record'],
+  '/spokedu-master/activity': ['session', 'date', 'create', 'class', 'program', 'record'],
+  '/spokedu-master/students': [],
+  '/spokedu-master/classes': ['create'],
   '/spokedu-master/spomove': ['view'],
   '/spokedu-master/spomove/session': [
     'preset',
@@ -49,6 +51,10 @@ function resolveAllowedQueryKeys(pathname: string) {
   if (pathname.startsWith('/spokedu-master/class-record')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/class-record'];
   if (pathname.startsWith('/spokedu-master/report')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/report'];
   if (pathname.startsWith('/spokedu-master/activity')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/activity'];
+  if (pathname.startsWith('/spokedu-master/students/')) return [];
+  if (pathname.startsWith('/spokedu-master/students')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/students'];
+  if (pathname.startsWith('/spokedu-master/classes/')) return [];
+  if (pathname.startsWith('/spokedu-master/classes')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/classes'];
   if (pathname === '/spokedu-master/library') return POST_PAYMENT_QUERY_KEYS['/spokedu-master/library'];
   return [];
 }
