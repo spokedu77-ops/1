@@ -1359,6 +1359,7 @@ function LessonPlanTab({
   const [lessonPlanScope, setLessonPlanScope] = useState<'private' | 'center'>('private');
   const [sessions, setSessions] = useState<LessonPlanSession[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState('all');
+  const [selectedPrivateWeekday, setSelectedPrivateWeekday] = useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<LessonPlanSession | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1396,15 +1397,35 @@ function LessonPlanTab({
     fetchSessions();
   }, [selectedTeacher, lessonPlanScope, excludedAdminCoachIds]);
 
+  const privateWeekdayGroups = useMemo(() => {
+    const labels = ['월', '화', '수', '목', '금', '토', '일'];
+    return labels.map((label, dayIndex) => ({
+      dayIndex,
+      label,
+      sessions: sessions.filter((session) => {
+        const startAt = String(session.start_at ?? '');
+        const startTime = new Date(startAt).getTime();
+        if (Number.isNaN(startTime)) return false;
+        const kst = new Date(startTime + 9 * 60 * 60 * 1000);
+        return (kst.getUTCDay() + 6) % 7 === dayIndex;
+      }),
+    }));
+  }, [sessions]);
+
+  const visibleSessions = useMemo(() => {
+    if (lessonPlanScope !== 'private' || selectedPrivateWeekday === 'all') return sessions;
+    return privateWeekdayGroups[selectedPrivateWeekday]?.sessions ?? [];
+  }, [lessonPlanScope, privateWeekdayGroups, selectedPrivateWeekday, sessions]);
+
   const groupedByTeacher = useMemo(() => {
     const groups: Record<string, LessonPlanSession[]> = {};
-    sessions.forEach(session => {
+    visibleSessions.forEach(session => {
       const teacherName = (session.users as { name?: string } | null)?.name || coaches.find(c => c.id === session.created_by)?.name || '미정';
       if (!groups[teacherName]) groups[teacherName] = [];
       groups[teacherName].push(session);
     });
     return groups;
-  }, [sessions, coaches]);
+  }, [visibleSessions, coaches]);
 
   return (
     <>
@@ -1436,6 +1457,32 @@ function LessonPlanTab({
         </select>
         <span className="text-sm text-slate-500">이번 주 (월요일~일요일, KST)</span>
       </div>
+
+      {lessonPlanScope === 'private' && !loading && (
+        <div className="mb-6 grid grid-cols-8 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+          {[
+            { dayIndex: 'all' as const, label: '전체', sessions },
+            ...privateWeekdayGroups,
+          ].map((item) => {
+            const selected = selectedPrivateWeekday === item.dayIndex;
+            return (
+              <button
+                key={String(item.dayIndex)}
+                type="button"
+                onClick={() => setSelectedPrivateWeekday(item.dayIndex)}
+                className={`min-w-0 rounded-xl px-1 py-2.5 text-xs font-black transition-colors ${
+                  selected ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
+                }`}
+              >
+                <span className="block truncate">{item.label}</span>
+                <span className={`mt-0.5 block text-[9px] ${selected ? 'text-slate-300' : 'text-slate-400'}`}>
+                  {item.sessions.length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {loading ? (
         <div className="py-40 text-center text-slate-400 font-bold animate-pulse">Loading...</div>
