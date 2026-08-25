@@ -1,12 +1,10 @@
 'use client';
 
-import { ClipboardList, Maximize, Minimize, X } from 'lucide-react';
+import { Maximize, Minimize, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { TrainingResultScreen } from '@/app/admin/spomove/training/_player/components/TrainingResultScreen';
-import { resultLevelLabel } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
@@ -16,14 +14,13 @@ import { useMasterStore } from '../../store';
 import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import { EngineRouter, type EngineCompletePayload } from './EngineRouter';
 import { lockViewportScroll } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
-import { officialPresetToTrainingResultConfig } from './sessionResultModel';
 import {
   findOfficialSpomovePreset,
   publicOfficialPresetSessionHref,
   standardSpomoveDurationSec,
 } from '../officialSpomovePresets';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
-import { getSpomoveHubReturnHref } from '../spomoveHubNavigation';
+import { parseSpomoveHubReturnHref } from '../spomoveHubNavigation';
 import {
   applySpomoveDifficulty,
   getSpomoveDifficultyKind,
@@ -43,6 +40,7 @@ import { getActivityFamily } from '../movements/activityFamilies';
 import { SessionSetupShell } from './SessionSetupShell';
 import { StartBriefing } from './StartBriefing';
 import { SettingsBriefing } from './SettingsBriefing';
+import { MasterSessionResult } from './MasterSessionResult';
 import {
   isInteractiveKeyTarget,
   parseSessionEntryMode,
@@ -302,6 +300,7 @@ function SpomoveSessionContent() {
   const startLockedRef = useRef(false);
   const sessionStartedAtRef = useRef<number | null>(null);
   const [sessionResult, setSessionResult] = useState<EngineCompletePayload | null>(null);
+  const [exitConfirmationOpen, setExitConfirmationOpen] = useState(false);
 
   useEffect(() => {
     if (!officialPreset) return;
@@ -537,15 +536,7 @@ function SpomoveSessionContent() {
   const leaveSession = useCallback(() => {
     stopBgm();
     exitFullscreenAfterSession();
-    const hubReturnHref = getSpomoveHubReturnHref(searchParams.get('hubView'));
-    if (searchParams.get('hubView') === 'favorites') {
-      router.push(hubReturnHref);
-      return;
-    }
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      router.back();
-      return;
-    }
+    const hubReturnHref = parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'));
     router.push(hubReturnHref);
   }, [exitFullscreenAfterSession, router, searchParams, stopBgm]);
 
@@ -567,6 +558,7 @@ function SpomoveSessionContent() {
           ? operationCandidate
           : null,
       hubView: searchParams.get('hubView') === 'favorites' ? 'favorites' : undefined,
+      hubReturn: parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView')),
     });
     router.replace(href);
   }, [
@@ -587,6 +579,15 @@ function SpomoveSessionContent() {
     operationLayerStatus !== 'legacyDisabled' && effectiveOperation
       ? operationSummaryLine(effectiveOperation)
       : null;
+  const hubReturnHref = parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'));
+  const difficultyLabel = difficultyKind
+    ? getSpomoveDifficultyOptions(difficultyKind).find((option) => option.value === difficultyValue)?.label ?? null
+    : null;
+  const openSettings = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('entry', 'settings');
+    router.replace(`/spokedu-master/spomove/session?${params.toString()}`);
+  }, [router, searchParams]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -653,26 +654,30 @@ function SpomoveSessionContent() {
                 }
               : null
           }
-          onExit={() => {
-            finishSession('ended');
-          }}
+          onExit={() => setExitConfirmationOpen(true)}
           onComplete={(payload) => {
             finishSession('done', payload);
           }}
         />
         {activationBlocked ? (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
-            <button
-              type="button"
-              onClick={unlockActivation}
-              className="inline-flex min-h-14 items-center justify-center rounded-2xl bg-white px-6 text-[16px] font-black text-black shadow-xl"
-            >
-              {activationBlocked === 'audioBlocked'
-                ? '소리 켜기'
-                : activationBlocked === 'fullscreenBlocked'
-                  ? '전체화면 켜기'
-                  : '전체화면과 소리 켜기'}
-            </button>
+          <div className="absolute inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-50 mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-white/15 bg-black/80 p-3 text-white shadow-xl backdrop-blur">
+            <p className="min-w-0 flex-1 text-[13px] font-bold leading-5">
+              {activationBlocked === 'audioBlocked' ? '소리를 사용할 수 없어 화면은 계속 실행됩니다.' : activationBlocked === 'fullscreenBlocked' ? '전체화면을 사용할 수 없어 일반 화면으로 실행합니다.' : '전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.'}
+            </p>
+            <button type="button" onClick={unlockActivation} className="min-h-11 shrink-0 rounded-xl bg-white px-3 text-xs font-black text-black">다시 시도</button>
+            <button type="button" onClick={() => setActivationBlocked(null)} aria-label="안내 닫기" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white/70"><X className="h-4 w-4" /></button>
+          </div>
+        ) : null}
+        {exitConfirmationOpen ? (
+          <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/70 px-5" role="dialog" aria-modal="true" aria-labelledby="spomove-exit-title">
+            <section className="w-full max-w-sm rounded-[22px] border border-white/15 bg-slate-950 p-5 text-white shadow-2xl">
+              <h2 id="spomove-exit-title" className="text-xl font-black">수업을 종료할까요?</h2>
+              <p className="mt-2 text-sm font-semibold text-white/60">지금까지 진행한 시간은 중도 종료로 남길 수 있습니다.</p>
+              <div className="mt-5 grid gap-2">
+                <button type="button" autoFocus onClick={() => setExitConfirmationOpen(false)} className="min-h-12 rounded-xl bg-white text-sm font-black text-slate-950">계속하기</button>
+                <button type="button" onClick={() => { setExitConfirmationOpen(false); finishSession('ended'); }} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">수업 종료</button>
+              </div>
+            </section>
           </div>
         ) : null}
       </div>
@@ -703,6 +708,7 @@ function SpomoveSessionContent() {
         <SessionSetupShell
           programLabel={displayModel?.programLabel ?? officialPreset.title}
           displayTitle={displayModel?.displayTitle ?? officialPreset.title}
+          compact={entryMode === 'start'}
         >
           {entryMode === 'settings' ? (
             <SettingsBriefing
@@ -725,9 +731,14 @@ function SpomoveSessionContent() {
             <StartBriefing
               preset={officialPreset}
               cueSeconds={effectiveCueSeconds}
-              onCueSecondsChange={handleCueSecondsChange}
-              cueFloorNotice={cueFloorNotice}
+              difficultyLabel={difficultyLabel}
+              matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}
+              movementSummary={operationSummary}
+              mode={launchMode}
+              soundEnabled={soundEnabled}
+              canChangeSettings={supportsCueSpeedOverride(officialPreset) || Boolean(difficultyKind)}
               startDisabled={bgmLoading || !canStartSession}
+              onSettings={openSettings}
               onStart={beginConfiguredSession}
             />
           )}
@@ -735,47 +746,13 @@ function SpomoveSessionContent() {
       ) : null}
 
       {(state === 'done' || state === 'ended') && sessionResult ? (
-        <div className="absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-[#F1F5F9]">
-          <TrainingResultScreen
-            cfg={officialPresetToTrainingResultConfig(officialPreset)}
-            elapsedMs={sessionResult.elapsedMs ?? 0}
-            colorCounts={sessionResult.colorCounts ?? null}
-            levelLabel={resultLevelLabel(sessionResult.engineMode, sessionResult.engineLevel)}
-            programTitle={officialPreset.title}
-            title={state === 'done' ? '훈련 완료' : '훈련 종료'}
-            statusBadge={state === 'done' ? '완료' : '중도 종료'}
-            retryLabel="같은 설정으로 시작"
-            onBack={leaveSession}
-            onRetry={reopenStartConfirmation}
-            sessionSettings={
-              {
-                title: '수업 설정',
-                primary: operationSummary ?? displayModel?.durationLabel ?? `자극 ${effectiveCueSeconds}초`,
-                secondary: [
-                  matGuidance ? `매트 ${matGuidance.recommended}장` : '매트 1장',
-                  `자극 ${effectiveCueSeconds}초`,
-                ]
-                  .filter(Boolean)
-                  .join(' · '),
-              }
-            }
-            footer={(
-              <div className="grid grid-cols-1 gap-1.5 min-[420px]:grid-cols-3">
-                {recordProgramHref ? (
-                  <Link href={recordProgramHref} className="flex h-9 items-center justify-center rounded-xl bg-[#1E293B] px-2 text-xs font-black text-white">
-                    <ClipboardList size={12} className="mr-1" />
-                    기록
-                  </Link>
-                ) : null}
-                <Link href={getSpomoveHubReturnHref(searchParams.get('hubView'))} className="flex h-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-xs font-bold text-[#1E293B]">
-                  다른 프로그램
-                </Link>
-                <Link href="/spokedu-master/activity" className="flex h-9 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-xs font-bold text-[#1E293B]">
-                  수업 기록
-                </Link>
-              </div>
-            )}
-          />
+        <div className="absolute inset-0 min-h-0 overflow-hidden bg-[#F1F5F9]">
+          <MasterSessionResult status={state} activityTitle={displayModel?.displayTitle ?? officialPreset.title} elapsedMs={sessionResult.elapsedMs ?? 0} settings={[
+            `SPOMAT ${matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}장`,
+            `자극 ${effectiveCueSeconds}초`,
+            difficultyLabel,
+            operationSummary,
+          ].filter(Boolean) as string[]} recordHref={recordProgramHref} hubHref={hubReturnHref} onRetry={reopenStartConfirmation} />
         </div>
       ) : null}
 

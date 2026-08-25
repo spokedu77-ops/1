@@ -405,6 +405,7 @@ export function SpomoveGuidelineSheet({
   contentOverride,
   contentLoadState = 'ready',
   hubView = 'all',
+  hubReturnHref = '/spokedu-master/spomove',
   onClose,
 }: {
   preset: OfficialSpomovePreset | null;
@@ -412,6 +413,7 @@ export function SpomoveGuidelineSheet({
   contentOverride?: SpomovePresetContentOverride;
   contentLoadState?: SpomoveContentLoadState;
   hubView?: SpomoveHubViewMode;
+  hubReturnHref?: string;
   onClose: () => void;
 }) {
   const launchMode = usePreferredLaunchMode();
@@ -435,6 +437,7 @@ export function SpomoveGuidelineSheet({
     entry: 'start',
     operation: declaredOperation,
     hubView: hubView === 'favorites' ? 'favorites' : undefined,
+    hubReturn: hubReturnHref,
   });
   const matCount = matGuidance?.recommended ?? family?.matRequirement.minMats ?? 1;
   const intervalLine =

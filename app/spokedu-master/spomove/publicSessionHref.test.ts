@@ -42,6 +42,15 @@ describe('public SPOMOVE session links', () => {
     expect(href).toContain('hubView=favorites');
   });
 
+  it('carries the complete Hub exploration return URL', () => {
+    const href = publicOfficialPresetSessionHref(preset, {
+      entry: 'start',
+      hubReturn: '/spokedu-master/spomove?group=stroop&difficulty=normal&q=화살표',
+    });
+    expect(new URL(href, 'https://example.test').searchParams.get('hubReturn'))
+      .toBe('/spokedu-master/spomove?group=stroop&difficulty=normal&q=화살표');
+  });
+
   it('keeps legacy official href autostart support', () => {
     const href = officialPresetSessionHref(preset, { autostart: true });
     expect(href).toContain('autostart=1');

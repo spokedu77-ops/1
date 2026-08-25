@@ -55,3 +55,18 @@ export function serializeSpomoveHubUrlState(state: SpomoveHubUrlState): string {
 export function getSpomoveHubReturnHref(hubView: string | null | undefined): string {
   return getSpomoveHubHref(parseSpomoveHubView(hubView));
 }
+
+export function parseSpomoveHubReturnHref(
+  value: string | null | undefined,
+  hubView?: string | null,
+): string {
+  if (value) {
+    try {
+      const decoded = decodeURIComponent(value);
+      if (decoded === '/spokedu-master/spomove' || decoded.startsWith('/spokedu-master/spomove?')) return decoded;
+    } catch {
+      // Invalid external input falls back to the legacy view contract.
+    }
+  }
+  return getSpomoveHubReturnHref(hubView);
+}

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getSpomoveHubHref,
   getSpomoveHubReturnHref,
+  parseSpomoveHubReturnHref,
   parseSpomoveHubUrlState,
   parseSpomoveHubView,
   serializeSpomoveHubUrlState,
@@ -36,5 +37,12 @@ describe('spomove hub navigation', () => {
       .toBe('/spokedu-master/spomove');
     expect(serializeSpomoveHubUrlState({ view: 'favorites', group: 'stroop', difficulty: 'normal', movement: 'feet', q: ' 화살표 ' }))
       .toBe('/spokedu-master/spomove?view=favorites&group=stroop&difficulty=normal&movement=feet&q=%ED%99%94%EC%82%B4%ED%91%9C');
+  });
+
+  it('accepts only a local SPOMOVE Hub return URL', () => {
+    expect(parseSpomoveHubReturnHref('/spokedu-master/spomove?group=stroop&q=화살표'))
+      .toBe('/spokedu-master/spomove?group=stroop&q=화살표');
+    expect(parseSpomoveHubReturnHref('https://evil.example/path', 'favorites'))
+      .toBe('/spokedu-master/spomove?view=favorites');
   });
 });

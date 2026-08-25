@@ -1553,6 +1553,7 @@ export function officialPresetSessionHref(
     operation?: ActivityOperationConfig | ActivityOperationPatch | null;
     /** 세션 종료 시 SPOMOVE 허브 복귀 맥락 */
     hubView?: 'favorites';
+    hubReturn?: string;
   },
 ) {
   const params = new URLSearchParams({
@@ -1563,6 +1564,7 @@ export function officialPresetSessionHref(
   });
   if (options?.entry) params.set('entry', options.entry);
   if (options?.hubView === 'favorites') params.set('hubView', 'favorites');
+  if (options?.hubReturn?.startsWith('/spokedu-master/spomove')) params.set('hubReturn', options.hubReturn);
   if (options?.cueSeconds != null) params.set('cueSeconds', String(options.cueSeconds));
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');
@@ -1592,6 +1594,7 @@ export function publicOfficialPresetSessionHref(
     difficulty: options?.difficulty,
     operation: options?.operation,
     hubView: options?.hubView,
+    hubReturn: options?.hubReturn,
     bgmPath: options?.bgmPath,
     autostart: false,
   });

@@ -79,7 +79,11 @@ export function SettingsBriefing({
   const padLayoutVariant = getSpomovePadLayoutVariant(preset);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-spm-session-settings-screen="true">
+      <div className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3">
+        <p className="text-[12px] font-black tracking-[0.08em] text-white/45">설정 변경</p>
+        <p className="mt-1 text-[13px] font-semibold text-white/65">필요한 값만 바꾼 뒤 바로 실행합니다.</p>
+      </div>
       <SpomovePadLayoutView
         variant={padLayoutVariant}
         compact
@@ -155,6 +159,15 @@ export function SettingsBriefing({
           </div>
         </div>
       ) : null}
+
+      <div className="rounded-[18px] border border-white/10 bg-black/25 px-4 py-3" aria-live="polite">
+        <p className="text-[11px] font-black tracking-[0.08em] text-white/45">적용될 설정</p>
+        <p className="mt-1.5 text-[14px] font-black text-white/85">
+          {[showCueSpeed ? `자극 ${cueSeconds}초` : null, difficultyOptions.find((option) => option.value === difficultyValue)?.label, prepLine]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      </div>
 
       <button
         type="button"
