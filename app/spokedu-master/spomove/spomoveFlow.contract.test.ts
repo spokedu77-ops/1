@@ -86,14 +86,14 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).not.toContain('선택적 상세');
     expect(guidelineSheet).toContain('교사 Cue');
     expect(guidelineSheet).not.toContain('아이에게 하는 말');
-    expect(guidelineSheet).toContain('min-[1100px]:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]');
+    expect(guidelineSheet).toContain('min-[1024px]:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]');
     expect(guidelineSheet).not.toContain('1.55fr');
-    expect(guidelineSheet).toContain('items-stretch');
+    expect(guidelineSheet).toContain('items-start');
     expect(guidelineSheet).not.toContain('lg:overflow-y-auto');
     expect(guidelineSheet).toContain('sticky bottom-0');
     expect(guidelineSheet).toContain('spm-btn-primary');
     expect(guidelineSheet).toContain('활동 예시 영상');
-    expect(guidelineSheet).toContain('실제 준비 수량은 오른쪽 기준을 따릅니다.');
+    expect(guidelineSheet).toContain('실제 운영 예시 영상입니다.');
     expect(guidelineSheet).toContain('활동 요소');
     expect(guidelineSheet).toContain("contentLoadState === 'loading'");
     expect(guidelineSheet).toContain("contentLoadState === 'error'");

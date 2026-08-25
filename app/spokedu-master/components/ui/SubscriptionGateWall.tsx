@@ -60,10 +60,10 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
   return (
     <div data-subscription-gate={requirement} className="grid h-full place-items-center overflow-y-auto p-6" style={{ background: 'var(--spm-bg)' }}>
       <section className="w-full max-w-[440px] rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px] border border-red-200 bg-red-50">
-          <Lock size={24} className="text-red-600" />
+        <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px] border border-slate-200 bg-slate-50">
+          <Lock size={24} className="text-slate-700" />
         </div>
-        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-red-600">
+        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
           {model?.eyebrow ?? (subscriptionBlockedFeature ? 'Premium 필요' : '이용권 필요')}
         </p>
         <h2 className="mt-2 text-[27px] font-black leading-tight text-slate-950">

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Bookmark, Lock, MonitorPlay } from 'lucide-react';
+import { Bookmark, Lock, MonitorPlay, Search, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -55,6 +55,8 @@ import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet, type SpomoveConte
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
 import {
   getSpomoveHubHref,
+  parseSpomoveHubUrlState,
+  serializeSpomoveHubUrlState,
   parseSpomoveHubView,
   type SpomoveHubViewMode,
 } from './spomoveHubNavigation';
@@ -70,6 +72,10 @@ type SpomoveGuideVideoPackQueryResult = SpomoveThumbnailPackQueryResult;
 type SpomoveContentPackQueryResult = SpomoveThumbnailPackQueryResult;
 
 const THINKING_LEVEL_TABS: ThinkingLevelTab[] = ['all', 'easy', 'normal', 'hard'];
+const MOVEMENT_FILTERS = [
+  ['all', '전체'], ['singleMat', '매트 1장'], ['feet', '발 중심'], ['hands', '손 중심'],
+  ['balance', '균형'], ['lowImpact', '낮은 강도'],
+] as const;
 
 const THINKING_LEVEL_FILTER_LABELS: Record<ThinkingLevelTab, string> = {
   all: '전체',
@@ -708,7 +714,7 @@ function CardInfo({
             data-spm-spomove-card-action="start"
             data-spm-spomove-start-mode="guide"
             onClick={onGuide}
-            className="spm-btn-primary inline-flex h-9 min-w-0 flex-[1.6] items-center justify-center whitespace-nowrap rounded-[9px] px-1.5 text-[12px] font-black focus-visible:outline-none sm:px-2 sm:text-[13px]"
+            className="spm-btn-primary inline-flex h-11 min-w-0 flex-[1.6] items-center justify-center whitespace-nowrap rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none sm:h-9"
           >
             활동 준비
           </button>
@@ -718,7 +724,7 @@ function CardInfo({
               data-spm-spomove-card-action="start"
               data-spm-spomove-start-mode="settings"
               onClick={() => router.push(hrefForSettings())}
-              className="inline-flex h-9 min-w-0 flex-1 items-center justify-center overflow-hidden whitespace-nowrap rounded-[9px] border border-slate-200 bg-white px-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 sm:px-3 sm:text-[12px]"
+              className="inline-flex h-11 min-w-0 flex-1 items-center justify-center overflow-hidden whitespace-nowrap rounded-[9px] border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 sm:h-9 sm:px-3"
             >
               시작 설정
             </button>
@@ -774,7 +780,7 @@ function PresetCard({
         aria-pressed={favorite}
         aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
         title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-        className={`absolute right-2.5 top-2.5 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`absolute right-1 top-1 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:right-2.5 sm:top-2.5 sm:h-8 sm:w-8 ${
           favorite
             ? 'bg-amber-50 text-amber-600 shadow-sm ring-1 ring-amber-200/80'
             : 'bg-white/70 text-slate-400 hover:bg-white/90 hover:text-slate-600'
@@ -835,11 +841,17 @@ function PresetCard({
 export default function SpomoveHubView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
-  const [activeThinkingLevel, setActiveThinkingLevel] = useState<ThinkingLevelTab>('all');
-  const hubView = parseSpomoveHubView(searchParams.get('view'));
+  const urlState = parseSpomoveHubUrlState(searchParams, {
+    groups: PROGRAM_GROUP_TABS,
+    difficulties: THINKING_LEVEL_TABS,
+    movements: MOVEMENT_FILTERS.map(([id]) => id),
+  });
+  const activeProgramGroup = urlState.group as ProgramGroupTab;
+  const activeThinkingLevel = urlState.difficulty as ThinkingLevelTab;
+  const movementFilter = urlState.movement as MovementQuickFilter | 'all';
+  const searchQuery = urlState.q;
+  const hubView = urlState.view;
   const showSavedOnly = hubView === 'favorites';
-  const [movementFilter, setMovementFilter] = useState<MovementQuickFilter | 'all'>('all');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
@@ -944,58 +956,74 @@ export default function SpomoveHubView() {
     [profile?.id, profile?.isAdmin],
   );
 
-  const replaceHubParams = (mutate: (params: URLSearchParams) => void) => {
-    const params = new URLSearchParams(searchParams.toString());
-    mutate(params);
-    const qs = params.toString();
-    router.push(qs ? `/spokedu-master/spomove?${qs}` : getSpomoveHubHref('all'), { scroll: false });
+  const updateHubState = (patch: Partial<typeof urlState>, replace = false) => {
+    const href = serializeSpomoveHubUrlState({ ...urlState, ...patch });
+    if (replace) router.replace(href, { scroll: false });
+    else router.push(href, { scroll: false });
   };
 
   const toggleSavedOnly = () => {
-    replaceHubParams((params) => {
-      if (parseSpomoveHubView(params.get('view')) === 'favorites') {
-        params.delete('view');
-      } else {
-        params.set('view', 'favorites');
-      }
-    });
+    updateHubState({ view: showSavedOnly ? 'all' : 'favorites' });
   };
 
   const clearHubFilters = () => {
-    setActiveProgramGroup('all');
-    setActiveThinkingLevel('all');
-    setMovementFilter('all');
-    replaceHubParams((params) => {
-      params.delete('view');
-    });
+    router.push(getSpomoveHubHref('all'), { scroll: false });
   };
 
+  const visiblePresets = useMemo(
+    () => OFFICIAL_SPOMOVE_LIBRARY.filter(isHubListedPreset).filter((preset) => contentOverrides[preset.id]?.isVisible !== false),
+    [contentOverrides],
+  );
+  const normalizedQuery = searchQuery.toLocaleLowerCase('ko-KR');
+  const matchesSearch = (preset: OfficialSpomovePreset) => {
+    if (!normalizedQuery) return true;
+    const display = getSpomovePresetDisplayModel(preset, contentOverrides[preset.id]);
+    const card = getSpomoveCardDisplayModel(preset, contentOverrides[preset.id]);
+    return [display.displayTitle, display.programLabel, ...card.badges.map((badge) => badge.value)]
+      .join(' ')
+      .toLocaleLowerCase('ko-KR')
+      .includes(normalizedQuery);
+  };
+  const matchesMovement = (preset: OfficialSpomovePreset, value: MovementQuickFilter | 'all') => {
+    if (!movementLayerEnabled || value === 'all') return true;
+    const summary = getPresetMovementSummary(preset);
+    if (!summary) return false;
+    if (value === 'singleMat') return summary.minMats === 1;
+    if (value === 'feet') return summary.feet;
+    if (value === 'hands') return summary.hands;
+    if (value === 'balance') return summary.balance;
+    if (value === 'lowImpact') return summary.lowImpact;
+    return false;
+  };
+  const matchesGroup = (preset: OfficialSpomovePreset, value: ProgramGroupTab) =>
+    matchesProgramGroup(preset, value);
+  const matchesDifficulty = (preset: OfficialSpomovePreset, value: ThinkingLevelTab) =>
+    matchesThinkingLevel(preset, value);
+  const matchesFavorites = (preset: OfficialSpomovePreset) => !showSavedOnly || favoriteSpomoveIds.has(preset.id);
+
   const filteredPresets = useMemo(() => {
-    let presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
-    presets = presets.filter((preset) => contentOverrides[preset.id]?.isVisible !== false);
-    if (showSavedOnly) presets = presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
-    if (movementLayerEnabled && movementFilter !== 'all') {
-      presets = presets.filter((preset) => {
-        const summary = getPresetMovementSummary(preset);
-        if (!summary) return false;
-        if (movementFilter === 'singleMat') return summary.minMats === 1;
-        if (movementFilter === 'feet') return summary.feet;
-        if (movementFilter === 'hands') return summary.hands;
-        if (movementFilter === 'balance') return summary.balance;
-        if (movementFilter === 'lowImpact') return summary.lowImpact;
-        return true;
-      });
-    }
+    const presets = visiblePresets.filter((preset) =>
+      matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, activeThinkingLevel) &&
+      matchesMovement(preset, movementFilter) && matchesSearch(preset) && matchesFavorites(preset));
     return sortSpomovePresetsByCatalogOrder(presets);
   }, [
     activeProgramGroup,
     activeThinkingLevel,
-    contentOverrides,
+    visiblePresets,
     favoriteSpomoveIds,
     movementFilter,
     movementLayerEnabled,
     showSavedOnly,
   ]);
+  const programGroupFacetCount = (tab: ProgramGroupTab) => visiblePresets.filter((preset) =>
+    matchesGroup(preset, tab) && matchesDifficulty(preset, activeThinkingLevel) &&
+    matchesMovement(preset, movementFilter) && matchesSearch(preset) && matchesFavorites(preset)).length;
+  const difficultyFacetCount = (tab: ThinkingLevelTab) => visiblePresets.filter((preset) =>
+    matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, tab) &&
+    matchesMovement(preset, movementFilter) && matchesSearch(preset) && matchesFavorites(preset)).length;
+  const movementFacetCount = (tab: MovementQuickFilter | 'all') => visiblePresets.filter((preset) =>
+    matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, activeThinkingLevel) &&
+    matchesMovement(preset, tab) && matchesSearch(preset) && matchesFavorites(preset)).length;
   const showProgramGroupSections = activeProgramGroup === 'all';
   /** 여러 programGroup이 섞일 때만 eyebrow 표시 — 단일 필터에서는 반복 제거 */
   const showProgramLabel = activeProgramGroup === 'all';
@@ -1003,6 +1031,8 @@ export default function SpomoveHubView() {
     [
       activeProgramGroup === 'all' ? null : PROGRAM_GROUP_LABELS[activeProgramGroup],
       activeThinkingLevel === 'all' ? null : THINKING_LEVEL_FILTER_LABELS[activeThinkingLevel],
+      movementFilter === 'all' ? null : MOVEMENT_FILTERS.find(([id]) => id === movementFilter)?.[1],
+      searchQuery ? `“${searchQuery}”` : null,
       showSavedOnly ? '즐겨찾기' : null,
     ]
       .filter(Boolean)
@@ -1017,7 +1047,7 @@ export default function SpomoveHubView() {
       id={gridId}
       data-spm-spomove-card-grid="true"
       data-spm-spomove-show-program-label={showProgramLabel ? 'true' : 'false'}
-      className="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4"
+      className="grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4"
     >
       {presets.map((preset) => (
         <PresetCard
@@ -1119,6 +1149,29 @@ export default function SpomoveHubView() {
         </section>
 
         <section className="mt-4 rounded-[16px] border border-slate-200 bg-white/80 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+        <div className="relative mb-3">
+          <label htmlFor="spomove-search" className="sr-only">활동명 또는 키워드 검색</label>
+          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            id="spomove-search"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => updateHubState({ q: event.target.value }, true)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && searchQuery) {
+                event.preventDefault();
+                updateHubState({ q: '' }, true);
+              }
+            }}
+            placeholder="활동명 또는 키워드 검색"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-11 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400 focus:border-[var(--spm-acc)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--spm-acc)_18%,transparent)]"
+          />
+          {searchQuery ? (
+            <button type="button" onClick={() => updateHubState({ q: '' }, true)} aria-label="검색어 지우기" className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-xl text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)]">
+              <X aria-hidden className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
         {/* 저장한 활동 */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] font-black text-slate-950">활동 필터</p>
@@ -1126,7 +1179,7 @@ export default function SpomoveHubView() {
             type="button"
             onClick={toggleSavedOnly}
             aria-pressed={showSavedOnly}
-            className={`inline-flex h-8 items-center gap-2 rounded-full px-3 text-[12px] font-black transition ${
+            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-[12px] font-black transition sm:min-h-8 ${
               showSavedOnly
                 ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
                 : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950'
@@ -1147,12 +1200,13 @@ export default function SpomoveHubView() {
             <div className="flex flex-wrap gap-2">
               {PROGRAM_GROUP_TABS.map((tab) => {
                 const active = activeProgramGroup === tab;
-                const count = programGroupCount(tab, activeThinkingLevel);
+                const count = programGroupFacetCount(tab);
                 return (
                   <button
                     key={tab}
                     type="button"
-                    onClick={() => setActiveProgramGroup(tab)}
+                    onClick={() => updateHubState({ group: tab })}
+                    aria-pressed={active}
                     className={spmChipClass(active, 'gap-1.5 font-bold')}
                   >
                     {PROGRAM_GROUP_LABELS[tab]}
@@ -1173,12 +1227,13 @@ export default function SpomoveHubView() {
             <div className="flex flex-wrap gap-2">
               {THINKING_LEVEL_TABS.map((tab) => {
                 const active = activeThinkingLevel === tab;
-                const count = thinkingLevelCount(tab, activeProgramGroup);
+                const count = difficultyFacetCount(tab);
                 return (
                   <button
                     key={tab}
                     type="button"
-                    onClick={() => setActiveThinkingLevel(tab)}
+                    onClick={() => updateHubState({ difficulty: tab })}
+                    aria-pressed={active}
                     className={spmChipClass(active, 'gap-1.5 font-bold')}
                   >
                     {THINKING_LEVEL_FILTER_LABELS[tab]}
@@ -1196,25 +1251,19 @@ export default function SpomoveHubView() {
                 움직임
               </span>
               <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    ['all', '전체'],
-                    ['singleMat', '매트 1장'],
-                    ['feet', '발 중심'],
-                    ['hands', '손 중심'],
-                    ['balance', '균형'],
-                    ['lowImpact', '낮은 강도'],
-                  ] as const
-                ).map(([id, label]) => {
+                {MOVEMENT_FILTERS.map(([id, label]) => {
                   const active = movementFilter === id;
+                  const count = movementFacetCount(id);
                   return (
                     <button
                       key={id}
                       type="button"
-                      onClick={() => setMovementFilter(id)}
-                      className={spmChipClass(active, 'font-bold')}
+                      onClick={() => updateHubState({ movement: id })}
+                      aria-pressed={active}
+                      className={spmChipClass(active, 'gap-1.5 font-bold')}
                     >
                       {label}
+                      <span className="text-[10px] font-semibold opacity-60">{count}</span>
                     </button>
                   );
                 })}
@@ -1222,11 +1271,12 @@ export default function SpomoveHubView() {
             </div>
           </div>
         ) : null}
-        <p className="mt-3 border-t border-slate-100 pt-2 text-[12px] font-bold text-slate-500">
-          현재 조건: <span className="text-slate-800">{activeFilterLabel}</span>{' '}
-          <span className="text-slate-300">/</span>{' '}
-          <span className="text-slate-800">{filteredPresets.length}개 활동</span>
-        </p>
+        <div className="mt-3 flex min-h-11 flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[12px] font-bold text-slate-500">
+          <p>현재 조건: <span className="text-slate-800">{activeFilterLabel}</span>{' '}<span className="text-slate-300">/</span>{' '}
+            <span aria-live="polite" aria-atomic="true" className="text-slate-800">{filteredPresets.length}개 활동</span>
+          </p>
+          {activeFilterLabel !== '전체' ? <button type="button" onClick={clearHubFilters} className="min-h-11 rounded-lg px-3 font-black text-[var(--spm-acc)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] sm:min-h-8">초기화</button> : null}
+        </div>
         </section>
         {/* 카드 그리드 */}
         {filteredPresets.length > 0 ? (

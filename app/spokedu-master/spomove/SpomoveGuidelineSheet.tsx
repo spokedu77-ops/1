@@ -130,14 +130,14 @@ function PrepMetaRow({
 
   return (
     <div className="space-y-2" data-spm-spomove-prep-stats="true">
-      <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {items.map((item) => (
           <div
             key={item.label}
             className="min-w-0 rounded-xl border border-slate-200/80 bg-slate-50/90 px-3 py-2"
           >
             <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">{item.label}</p>
-            <p className="mt-0.5 truncate text-[13.5px] font-bold leading-5 text-slate-900">{item.value}</p>
+            <p className="mt-0.5 break-words text-[13.5px] font-bold leading-5 text-slate-900">{item.value}</p>
           </div>
         ))}
       </div>
@@ -318,7 +318,7 @@ function BriefingContent({
               <li key={point} className="flex gap-2.5">
                 <span
                   aria-hidden
-                  className="mt-1.5 h-4 w-[3px] shrink-0 rounded-full bg-[var(--spm-acc)]"
+                  className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--spm-acc)]"
                 />
                 <span className="text-[14px] font-medium leading-[1.55] text-slate-700">{point}</span>
               </li>
@@ -389,7 +389,7 @@ function ExecutionSummary({
 }) {
   const parts = [`SPOMAT ${matCount}장`, `${cueSeconds}초`, movementLabel].filter(Boolean);
   return (
-    <p className="truncate text-[12.5px] font-semibold text-slate-600">
+    <p className="text-[12.5px] font-semibold text-slate-600">
       <span className="font-medium text-slate-400">실행 요약</span>
       <span className="mx-1.5 text-slate-300" aria-hidden>
         ·
@@ -460,12 +460,11 @@ export function SpomoveGuidelineSheet({
         data-spm-spomove-launch-confirm=""
         data-spm-spomove-surface="stage"
       >
-        {/* Guide-first but video usable: ~48/52. Stretch columns so left is not short-empty. */}
-        <div className="grid grid-cols-1 gap-4 min-[1100px]:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] min-[1100px]:items-stretch min-[1100px]:gap-5">
-          <div data-preview-column="media" className="min-w-0 min-[1100px]:h-full">
+        <div className="grid grid-cols-1 items-start gap-4 min-[1024px]:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] min-[1024px]:gap-5">
+          <div data-preview-column="media" className="min-w-0">
             <div
               data-spm-spomove-surface="media"
-              className={`flex h-full min-h-0 flex-col ${PANEL_RADIUS} ${SOFT_BORDER} bg-white/95 p-3 sm:p-4 ${MEDIA_SHADOW}`}
+              className={`${PANEL_RADIUS} ${SOFT_BORDER} bg-white/95 p-3 sm:p-4 ${MEDIA_SHADOW}`}
             >
               <p className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold tracking-wide text-slate-500">
                 <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--spm-acc)]" />
@@ -475,25 +474,20 @@ export function SpomoveGuidelineSheet({
                 <SpomoveScreenPreview videoUrl={guideVideoUrl} />
               </div>
               <p className="mt-2 shrink-0 text-[12px] font-medium leading-5 text-slate-500">
-                실제 준비 수량은 오른쪽 기준을 따릅니다.
+                실제 운영 예시 영상입니다.
               </p>
               {coachScript ? (
                 <div className="mt-3 shrink-0">
                   <CoachCueCard script={coachScript} />
                 </div>
               ) : null}
-              <div className="mt-auto hidden min-[1100px]:block pt-5">
-                <p className="border-t border-slate-100/90 pt-3 text-[11px] font-medium leading-5 text-slate-400">
-                  실행 전 오른쪽 준비·진행 기준을 확인하세요.
-                </p>
-              </div>
             </div>
           </div>
           <aside
             data-preview-column="content"
             data-preview-summary
             data-spm-spomove-surface="briefing"
-            className={`min-w-0 min-[1100px]:h-full ${PANEL_RADIUS} border border-slate-200/55 bg-white p-4 sm:p-5 ${BRIEFING_SHADOW}`}
+            className={`min-w-0 ${PANEL_RADIUS} border border-slate-200/55 bg-white p-4 sm:p-5 ${BRIEFING_SHADOW}`}
           >
             {contentLoadState === 'loading' ? (
               <ContentLoading />
@@ -521,14 +515,14 @@ export function SpomoveGuidelineSheet({
           className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-slate-200/60 bg-white/90 px-4 pb-[max(0px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_16px_rgba(15,23,42,0.04)] backdrop-blur-sm sm:-mx-5 sm:px-5"
         >
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-            <div className="hidden min-w-0 sm:block">
+            <div className="hidden min-w-0 md:block min-[1024px]:hidden">
               <ExecutionSummary matCount={matCount} cueSeconds={cueSeconds} movementLabel={movementLabel} />
             </div>
-            <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+            <div className="grid w-full grid-cols-[minmax(88px,0.7fr)_minmax(0,1.3fr)] gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
               <button
                 type="button"
                 onClick={onClose}
-                className="hidden h-11 min-w-[72px] items-center justify-center rounded-[10px] px-3 text-[13px] font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 sm:inline-flex"
+                className="inline-flex h-11 min-w-[72px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
               >
                 닫기
               </button>

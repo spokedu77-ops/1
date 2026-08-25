@@ -28,8 +28,8 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).toContain('minmax(420px,1.05fr)');
     expect(sheet).not.toContain('1.55fr');
     expect(sheet).not.toContain('0.85fr');
-    expect(sheet).toContain('items-stretch');
-    expect(sheet).toContain('mt-auto');
+    expect(sheet).toContain('items-start');
+    expect(sheet).not.toContain('mt-auto');
   });
 
   it('uses 난이도 조절 · 관찰 기준 and drops 선택적 상세', () => {

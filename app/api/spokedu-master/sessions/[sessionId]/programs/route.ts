@@ -1,10 +1,10 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 
 export async function POST(request: Request, context: { params: Promise<{ sessionId: string }> }) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
   const { sessionId } = await context.params;
   const body = await request.json().catch(() => null) as { sourceType?: unknown; programId?: unknown; spomovePresetId?: unknown } | null;

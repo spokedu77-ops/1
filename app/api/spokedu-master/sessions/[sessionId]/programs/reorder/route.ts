@@ -1,9 +1,9 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 
 export async function PATCH(request: Request, context: { params: Promise<{ sessionId: string }> }) {
-  const access = await requireSpokeduMasterAccess(); if (!access.ok) return withPrivateNoStore(access.response);
+  const access = await requireSpokeduMasterCapability('attendance'); if (!access.ok) return withPrivateNoStore(access.response);
   const { sessionId } = await context.params;
   const body = await request.json().catch(() => null) as { sessionProgramIds?: unknown } | null;
   if (!Array.isArray(body?.sessionProgramIds) || body.sessionProgramIds.some((id) => typeof id !== 'string')) return privateNoStoreJson({ error: 'Invalid program order' }, { status: 400 });

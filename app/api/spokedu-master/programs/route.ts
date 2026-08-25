@@ -1,7 +1,7 @@
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterAccess, requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 import type { Program } from '@/app/spokedu-master/types';
 import { pickBestHeroUrl } from '@/app/spokedu-master/lib/program-visual';
 import {
@@ -377,7 +377,7 @@ async function reportInvalidMasterPrograms(invalid: Array<{ curriculumId: number
 }
 
 export async function GET() {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('library');
   if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();

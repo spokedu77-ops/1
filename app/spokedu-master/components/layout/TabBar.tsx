@@ -23,19 +23,18 @@ const TAB_CAPABILITIES = {
   spomove: 'spomove',
 } as const satisfies Record<keyof typeof TAB_ICONS, MasterCapability>;
 
-const PRIMARY_TABS = MASTER_NAV_ITEMS.filter(
-  (item): item is (typeof MASTER_NAV_ITEMS)[number] & { key: keyof typeof TAB_ICONS } =>
-    item.key in TAB_ICONS,
-).map((item) => ({
-  key: item.key,
-  label: item.label,
-  shortLabel: item.shortLabel,
-  Icon: TAB_ICONS[item.key],
-  capability: TAB_CAPABILITIES[item.key],
-}));
-
-function withHref<T extends { key: string }>(tabs: readonly T[], basePath: string) {
-  return tabs.map((tab) => ({ ...tab, href: `${basePath}/${tab.key}` }));
+function buildPrimaryTabs(basePath: string) {
+  return MASTER_NAV_ITEMS.filter(
+    (item): item is (typeof MASTER_NAV_ITEMS)[number] & { key: keyof typeof TAB_ICONS } =>
+      item.key in TAB_ICONS,
+  ).map((item) => ({
+    key: item.key,
+    href: item.href.replace('/spokedu-master', basePath),
+    label: item.label,
+    shortLabel: item.shortLabel,
+    Icon: TAB_ICONS[item.key],
+    capability: TAB_CAPABILITIES[item.key],
+  }));
 }
 
 function isActivePath(pathname: string, href: string) {
@@ -56,7 +55,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
   const pathname = usePathname();
   const router = useRouter();
   const accessContext = useOptionalMasterAccessContext();
-  const primaryTabs = withHref(PRIMARY_TABS, basePath);
+  const primaryTabs = buildPrimaryTabs(basePath);
 
   const go = (href: string) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(8);

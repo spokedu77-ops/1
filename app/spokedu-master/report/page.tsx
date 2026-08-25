@@ -4,6 +4,7 @@ import { ClipboardCopy, FileText } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useOperationalData } from '../operational/OperationalDataProvider';
+import { SPM_PRIMARY_BTN } from '../lib/masterActionGrammar';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
 import { resolveReportSession } from '../lib/sessionContext';
 
@@ -40,7 +41,7 @@ export default function ReportPage() {
             {sessions.map((session) => <option key={session.id} value={session.id}>{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric' })} {formatSeoulSessionTime(session.startAt)} · {session.className}</option>)}
           </select>
         </label> : null}
-        {selected ? <><pre className="mt-5 whitespace-pre-wrap rounded-xl bg-slate-50 p-4 font-sans text-sm font-semibold leading-7 text-slate-700">{report}</pre><button type="button" onClick={() => void navigator.clipboard.writeText(report)} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white"><ClipboardCopy size={15} />안내문 복사</button></> : invalidRequestedSession ? <p className="mt-5 rounded-xl bg-rose-50 p-5 text-center text-sm font-bold text-rose-700">완료된 수업을 찾을 수 없습니다.</p> : <p className="mt-5 rounded-xl bg-slate-50 p-5 text-center text-sm font-semibold text-slate-500">완료된 수업이 없습니다.</p>}
+        {selected ? <><pre className="mt-5 whitespace-pre-wrap rounded-xl bg-slate-50 p-4 font-sans text-sm font-semibold leading-7 text-slate-700">{report}</pre><button type="button" onClick={() => void navigator.clipboard.writeText(report)} className={`mt-3 ${SPM_PRIMARY_BTN}`}><ClipboardCopy size={15} />안내문 복사</button></> : invalidRequestedSession ? <p className="mt-5 rounded-xl bg-rose-50 p-5 text-center text-sm font-bold text-rose-700">완료된 수업을 찾을 수 없습니다.</p> : <p className="mt-5 rounded-xl bg-slate-50 p-5 text-center text-sm font-semibold text-slate-500">완료된 수업이 없습니다.</p>}
       </section>
     </div>
   </main>;

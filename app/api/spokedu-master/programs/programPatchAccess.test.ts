@@ -37,7 +37,7 @@ describe('SPOKEDU MASTER program PATCH authorization contract', () => {
       source.indexOf('export async function GET'),
       source.indexOf('export async function PATCH'),
     );
-    expect(getBlock).toContain('requireSpokeduMasterAccess()');
+    expect(getBlock).toContain("requireSpokeduMasterCapability('library')");
     expect(getBlock).not.toContain('requireAdmin()');
   });
 });

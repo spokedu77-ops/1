@@ -6,7 +6,7 @@
 
 /** 필터·탭 칩 공통 */
 export const SPM_CHIP =
-  'inline-flex h-8 shrink-0 items-center rounded-full px-3 text-[11px] font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
+  'inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-[11px] font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] sm:min-h-8';
 
 export const SPM_CHIP_ACTIVE = 'bg-[var(--spm-acc)] text-white shadow-sm';
 

@@ -3,6 +3,7 @@
 import { ArrowRight, CalendarPlus, Clock3, MonitorPlay, UsersRound } from 'lucide-react';
 import Link from 'next/link';
 
+import { SPM_PRIMARY_BTN } from '../lib/masterActionGrammar';
 import { formatSeoulSessionTime } from '../lib/sessionDateTime';
 import type { MasterClassDto, MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { buildTodaySessionCards } from './todaySessionsModel';
@@ -45,7 +46,7 @@ export function TodaySessionsPanel({
       {!loading && !error && cards.length === 0 ? (
         <div className="mt-3 flex flex-col gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:flex-row sm:items-center">
           <p className="min-w-0 flex-1 text-sm font-bold text-slate-600">오늘 예정된 수업이 없습니다.</p>
-          <Link href={`/spokedu-master/activity?date=${seoulDay}&create=1`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-700">
+          <Link href={`/spokedu-master/activity?date=${seoulDay}&create=1`} className={SPM_PRIMARY_BTN}>
             <CalendarPlus size={16} aria-hidden="true" />수업 추가
           </Link>
         </div>

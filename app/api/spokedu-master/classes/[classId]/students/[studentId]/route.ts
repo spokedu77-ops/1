@@ -1,9 +1,9 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 
 export async function DELETE(_request: Request, context: { params: Promise<{ classId: string; studentId: string }> }) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
   const { classId, studentId } = await context.params;
   const { error } = await getServiceSupabase().from('spokedu_master_class_students').delete()

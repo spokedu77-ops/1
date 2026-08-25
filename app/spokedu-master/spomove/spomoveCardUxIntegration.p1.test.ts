@@ -90,8 +90,8 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('spm-btn-primary');
     expect(hub).not.toContain('<Play ');
-    expect(hub).toMatch(/import \{ Bookmark, Lock, MonitorPlay \} from 'lucide-react'/);
-    expect(hub).toContain('h-8 w-8');
+    expect(hub).toMatch(/import \{ Bookmark, Lock, MonitorPlay, Search, X \} from 'lucide-react'/);
+    expect(hub).toContain('h-11 w-11');
   });
 
   it('shows settings CTA only when cue/difficulty override exists (contract source)', () => {
@@ -109,7 +109,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
 
   it('keeps desktop 4-col grid and responsive breakpoints (no silent 3-col desktop)', () => {
     expect(hub).toContain(
-      'grid grid-cols-1 gap-4 min-[380px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4',
+      'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4',
     );
     expect(hub).not.toContain('xl:grid-cols-3');
     expect(hub).toContain('min-h-[300px]');

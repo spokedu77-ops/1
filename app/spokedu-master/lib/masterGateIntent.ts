@@ -93,12 +93,17 @@ export function resolveMasterGateSurface(pathname: string): MasterGateSurface | 
   if (pathname === '/spokedu-master/library') return 'library';
   if (pathname.startsWith('/spokedu-master/spomove/session')) return 'spomove_session';
   if (pathname.startsWith('/spokedu-master/spomove')) return 'spomove_hub';
-  if (pathname.startsWith('/spokedu-master/activity') || pathname.startsWith('/spokedu-master/classes') || pathname === '/spokedu-master/students') return 'attendance';
+  if (
+    pathname.startsWith('/spokedu-master/activity') ||
+    pathname.startsWith('/spokedu-master/classes') ||
+    pathname === '/spokedu-master/students'
+  ) {
+    return 'attendance';
+  }
   if (
     pathname.startsWith('/spokedu-master/class-record') ||
     pathname.startsWith('/spokedu-master/report') ||
-    pathname.startsWith('/spokedu-master/activity') ||
-    pathname.startsWith('/spokedu-master/students')
+    pathname.startsWith('/spokedu-master/students/')
   ) {
     return 'records';
   }

@@ -1,6 +1,6 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import type { MasterSessionDto, MasterSessionStatus } from '@/app/spokedu-master/types/operational';
 
@@ -9,7 +9,7 @@ spokedu_master_session_programs(id,source_type,program_id,spomove_preset_id,prog
 spokedu_master_session_attendance(id,student_id,student_name_snapshot,status)`;
 
 export async function POST(request: Request, context: { params: Promise<{ sessionId: string }> }) {
-  const access = await requireSpokeduMasterAccess();
+  const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
   const { sessionId } = await context.params;
   const body = await request.json().catch(() => null) as { startAt?: unknown; endAt?: unknown; copyPrograms?: unknown } | null;
