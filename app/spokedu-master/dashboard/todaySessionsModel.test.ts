@@ -7,6 +7,9 @@ const classItem: MasterClassDto = {
   id: 'class-a', name: '양화초 늘봄체육', studentIds: ['s1', 's2'], createdAt: '', updatedAt: '',
 };
 
+/** Mid-morning KST on 2026-08-23 — keeps same-day sessions from looking overdue. */
+const nowOnDay = new Date('2026-08-23T01:30:00.000Z');
+
 function session(id: string, startAt: string, overrides: Partial<MasterSessionDto> = {}): MasterSessionDto {
   return {
     id, classId: classItem.id, className: classItem.name, startAt,
@@ -16,10 +19,10 @@ function session(id: string, startAt: string, overrides: Partial<MasterSessionDt
   };
 }
 
-const program = (id: string, sourceType: 'program' | 'spomove' = 'program') => ({
+const program = (id: string, sourceType: 'program' | 'spomove' = 'program', isCompleted = false) => ({
   id, sourceType, programId: sourceType === 'program' ? Number(id.replace(/\D/g, '')) || 1 : null,
   spomovePresetId: sourceType === 'spomove' ? `preset-${id}` : null,
-  programTitle: `활동 ${id}`, sortOrder: 0, isCompleted: false,
+  programTitle: `활동 ${id}`, sortOrder: 0, isCompleted,
 });
 
 describe('Today Sessions operations model', () => {
@@ -27,7 +30,7 @@ describe('Today Sessions operations model', () => {
     const cards = buildTodaySessionCards([
       session('late', '2026-08-23T14:30:00.000Z'),
       session('early', '2026-08-23T15:30:00.000Z'),
-    ], [classItem], '2026-08-23');
+    ], [classItem], '2026-08-23', nowOnDay);
     expect(cards.map((item) => item.session.id)).toEqual(['late']);
   });
 
@@ -35,16 +38,16 @@ describe('Today Sessions operations model', () => {
     const cards = buildTodaySessionCards([
       session('one', '2026-08-23T01:00:00.000Z'),
       session('two', '2026-08-23T05:00:00.000Z'),
-    ], [classItem], '2026-08-23');
+    ], [classItem], '2026-08-23', nowOnDay);
     expect(cards.map((item) => item.session.id)).toEqual(['one', 'two']);
   });
 
-  it('keeps upcoming work ahead of completed and cancelled lessons', () => {
+  it('keeps scheduled ahead of completed and cancelled on the same day', () => {
     const cards = buildTodaySessionCards([
       session('completed-morning', '2026-08-23T00:00:00.000Z', { status: 'completed' }),
       session('scheduled-afternoon', '2026-08-23T05:00:00.000Z'),
       session('cancelled-early', '2026-08-23T01:00:00.000Z', { status: 'cancelled' }),
-    ], [classItem], '2026-08-23');
+    ], [classItem], '2026-08-23', nowOnDay);
     expect(cards.map((item) => item.session.id)).toEqual([
       'scheduled-afternoon',
       'completed-morning',
@@ -55,7 +58,7 @@ describe('Today Sessions operations model', () => {
   it('does not flatten four activities into four lessons', () => {
     const cards = buildTodaySessionCards([
       session('one', '2026-08-23T01:00:00.000Z', { programs: [program('1'), program('2'), program('3'), program('4')] }),
-    ], [classItem], '2026-08-23');
+    ], [classItem], '2026-08-23', nowOnDay);
     expect(cards).toHaveLength(1);
     expect(cards[0].activityCount).toBe(4);
   });
@@ -63,7 +66,7 @@ describe('Today Sessions operations model', () => {
   it('treats a SPOMOVE-only session as a lesson', () => {
     const [card] = buildTodaySessionCards([
       session('spomove', '2026-08-23T01:00:00.000Z', { programs: [program('x', 'spomove')] }),
-    ], [classItem], '2026-08-23');
+    ], [classItem], '2026-08-23', nowOnDay);
     expect(card.hasSpomove).toBe(true);
     expect(card.ctaLabel).toBe('수업 열기');
   });
@@ -71,13 +74,43 @@ describe('Today Sessions operations model', () => {
   it.each([
     ['scheduled', 0, '수업 준비'],
     ['scheduled', 1, '수업 열기'],
-    ['completed', 1, '수업 보기'],
+    ['completed', 1, '출석 기록하기'],
     ['cancelled', 1, null],
-  ] as const)('derives the %s CTA without adding status', (status, activityCount, label) => {
+  ] as const)('derives the %s CTA from Session work state', (status, activityCount, label) => {
     const [card] = buildTodaySessionCards([
-      session('target', '2026-08-23T01:00:00.000Z', { status, programs: Array.from({ length: activityCount }, (_, index) => program(String(index + 1))) }),
-    ], [classItem], '2026-08-23');
+      session('target', '2026-08-23T01:00:00.000Z', {
+        status,
+        programs: Array.from({ length: activityCount }, (_, index) => program(String(index + 1))),
+      }),
+    ], [classItem], '2026-08-23', nowOnDay);
     expect(card.ctaLabel).toBe(label);
     expect(card.href).toBe('/spokedu-master/activity?session=target');
+  });
+
+  it('shows 수업 보기 when completed attendance already exists', () => {
+    const [card] = buildTodaySessionCards([
+      session('done', '2026-08-23T01:00:00.000Z', {
+        status: 'completed',
+        programs: [program('1')],
+        attendance: [{ id: 'att-1', studentId: 's1', status: 'present', studentName: '학생' }],
+      }),
+    ], [classItem], '2026-08-23', nowOnDay);
+    expect(card.ctaLabel).toBe('수업 보기');
+  });
+
+  it('uses continue / wrap labels from activity progress', () => {
+    const [continueCard] = buildTodaySessionCards([
+      session('mid', '2026-08-23T01:00:00.000Z', {
+        programs: [program('1', 'program', true), program('2')],
+      }),
+    ], [classItem], '2026-08-23', nowOnDay);
+    expect(continueCard.ctaLabel).toBe('수업 계속하기');
+
+    const [wrapCard] = buildTodaySessionCards([
+      session('wrap', '2026-08-23T01:00:00.000Z', {
+        programs: [program('1', 'program', true)],
+      }),
+    ], [classItem], '2026-08-23', nowOnDay);
+    expect(wrapCard.ctaLabel).toBe('수업 마무리');
   });
 });

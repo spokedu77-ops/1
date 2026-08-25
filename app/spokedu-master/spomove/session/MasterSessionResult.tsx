@@ -14,7 +14,9 @@ export function MasterSessionResult({
   recordHref,
   hubHref,
   sessionReturnHref,
-  scheduledCompletionStatus = 'idle',
+  canMarkComplete = false,
+  markCompleteStatus = 'idle',
+  onMarkCompleteAndReturn,
   onRetry,
 }: {
   status: 'done' | 'ended';
@@ -23,13 +25,17 @@ export function MasterSessionResult({
   settings: string[];
   recordHref: string | null;
   hubHref: string;
-  /** Session operating origin — Primary return when present (no auto-complete). */
+  /** Session operating origin — Primary return when present. */
   sessionReturnHref?: string | null;
-  scheduledCompletionStatus?: 'idle' | 'saving' | 'saved' | 'error';
+  /** Explicit teacher action only — never auto from engine done. */
+  canMarkComplete?: boolean;
+  markCompleteStatus?: 'idle' | 'saving' | 'error';
+  onMarkCompleteAndReturn?: () => void;
   onRetry: () => void;
 }) {
   const done = status === 'done';
   const fromSession = Boolean(sessionReturnHref);
+  const marking = markCompleteStatus === 'saving';
   return (
     <main className="flex h-dvh items-center justify-center overflow-y-auto bg-slate-100 px-4 py-[max(1rem,env(safe-area-inset-top))] text-slate-950">
       <section className="w-full max-w-xl rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.14)] sm:p-7">
@@ -55,22 +61,31 @@ export function MasterSessionResult({
           <p className="mt-2 break-words text-[15px] font-bold leading-6 text-slate-800">{settings.filter(Boolean).join(' · ')}</p>
         </section>
         <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">
-          {fromSession && done && scheduledCompletionStatus === 'saved'
-            ? '수업 활동을 완료로 반영했습니다. 수업으로 돌아가 다음 활동을 이어가세요.'
-            : fromSession && done && scheduledCompletionStatus === 'saving'
-              ? '수업 진행 상태에 완료를 반영하고 있습니다.'
-              : fromSession && done && scheduledCompletionStatus === 'error'
-                ? '실행은 완료됐지만 수업 진행 상태를 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.'
-                : fromSession
-                  ? '중도 종료한 활동은 수업 진행 상태를 자동으로 완료하지 않습니다.'
+          {fromSession
+            ? '실행 종료와 수업 활동 완료 기록은 별개입니다. 수업 화면에서 진행 체크하거나, 아래에서 완료로 표시할 수 있습니다.'
             : '표시된 정보는 실행 시간과 사용 설정이며, 수행 능력을 자동 채점한 결과가 아닙니다.'}
         </p>
+        {fromSession && markCompleteStatus === 'error' ? (
+          <p role="status" className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
+            완료 기록을 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.
+          </p>
+        ) : null}
 
         <div className="mt-6 grid gap-2">
           {sessionReturnHref ? (
             <Link href={sessionReturnHref} className={`${SPM_PRIMARY_BTN} min-h-12 w-full`}>
               수업으로 돌아가기
             </Link>
+          ) : null}
+          {fromSession && canMarkComplete && onMarkCompleteAndReturn ? (
+            <button
+              type="button"
+              disabled={marking}
+              onClick={onMarkCompleteAndReturn}
+              className={`${SPM_SECONDARY_BTN} min-h-11 w-full disabled:opacity-55`}
+            >
+              {marking ? '기록 중…' : '완료로 표시하고 수업으로'}
+            </button>
           ) : null}
           {recordHref && !fromSession ? (
             <Link href={recordHref} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 text-[15px] font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">

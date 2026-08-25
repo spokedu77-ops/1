@@ -36,12 +36,14 @@ const sessions = [
 ];
 
 describe('MASTER Class management model', () => {
-  it('builds one classId-scoped card per Class and sorts the nearest scheduled Session first', () => {
-    const cards = buildClassCards(classes, sessions, '2026-08-24T00:00:00Z');
+  it('builds one classId-scoped card per Class and prioritizes actionable Session work', () => {
+    const cards = buildClassCards(classes, sessions, '2026-08-10T00:00:00Z');
     expect(cards).toHaveLength(2);
-    expect(cards.map((card) => card.classItem.id)).toEqual(['class-b', 'class-a']);
+    // class-a has completed attendance gap → higher work priority than class-b upcoming-only.
+    expect(cards.map((card) => card.classItem.id)).toEqual(['class-a', 'class-b']);
     expect(cards.find((card) => card.classItem.id === 'class-a')).toMatchObject({ rosterCount: 1, completedSessionCount: 2 });
     expect(cards.find((card) => card.classItem.id === 'class-a')?.nextSession?.id).toBe('a-next');
+    expect(cards.find((card) => card.classItem.id === 'class-a')?.priorityWorkState?.attention.attendanceMissing).toBe(true);
   });
 
   it('selects next and latest Sessions by exact classId and status', () => {
@@ -62,8 +64,8 @@ describe('MASTER Class management model', () => {
   });
 
   it('derives incomplete attendance only from completed Sessions with no attendance', () => {
-    expect(buildIncompleteAttendanceSessions(sessions, 'class-a').map((item) => item.id)).toEqual(['a-recent']);
-    expect(buildClassCards(classes, sessions, '2026-08-24T00:00:00Z')[1]?.incompleteAttendanceCount).toBe(1);
+    expect(buildIncompleteAttendanceSessions(sessions, classes[0]!).map((item) => item.id)).toEqual(['a-recent']);
+    expect(buildClassCards(classes, sessions, '2026-08-10T00:00:00Z')[0]?.incompleteAttendanceCount).toBe(1);
   });
 
   it('filters the attendance projection by Seoul month and preserves exact same-day Sessions', () => {

@@ -1,5 +1,6 @@
 import { getSeoulSessionDay } from '../lib/sessionDateTime';
 import type { MasterClassDto, MasterSessionDto } from '../types/operational';
+import { deriveMasterSessionWorkState, type MasterSessionWorkState } from '../lib/masterSessionWorkState';
 
 export type TodaySessionCardModel = {
   session: MasterSessionDto;
@@ -7,14 +8,20 @@ export type TodaySessionCardModel = {
   activityCount: number;
   completedActivityCount: number;
   hasSpomove: boolean;
-  ctaLabel: '수업 준비' | '수업 열기' | '수업 보기' | null;
+  ctaLabel: string | null;
   href: string;
+  workState: MasterSessionWorkState;
 };
 
+/**
+ * Home "오늘 수업" keeps calendar-day scope (seoulDay).
+ * WorkState supplies CTA/label grammar without expanding into a multi-day queue.
+ */
 export function buildTodaySessionCards(
   sessions: MasterSessionDto[],
   classes: MasterClassDto[],
   seoulDay: string,
+  now = new Date(),
 ): TodaySessionCardModel[] {
   const classesById = new Map(classes.map((item) => [item.id, item]));
 
@@ -26,20 +33,18 @@ export function buildTodaySessionCards(
         || left.startAt.localeCompare(right.startAt)
         || left.id.localeCompare(right.id);
     })
-    .map((session) => ({
-      session,
-      rosterCount: classesById.get(session.classId)?.studentIds.length ?? 0,
-      activityCount: session.programs.length,
-      completedActivityCount: session.programs.filter((item) => item.isCompleted).length,
-      hasSpomove: session.programs.some((item) => item.sourceType === 'spomove'),
-      ctaLabel:
-        session.status === 'cancelled'
-          ? null
-          : session.status === 'completed'
-            ? '수업 보기'
-            : session.programs.length > 0
-              ? '수업 열기'
-              : '수업 준비',
-      href: `/spokedu-master/activity?session=${encodeURIComponent(session.id)}`,
-    }));
+    .map((session) => {
+      const classItem = classesById.get(session.classId) ?? null;
+      const workState = deriveMasterSessionWorkState(session, classItem, now);
+      return {
+        session,
+        rosterCount: classItem?.studentIds.length ?? 0,
+        activityCount: workState.progress.total,
+        completedActivityCount: workState.progress.completed,
+        hasSpomove: session.programs.some((item) => item.sourceType === 'spomove'),
+        ctaLabel: workState.primaryLabel,
+        href: workState.href,
+        workState,
+      };
+    });
 }

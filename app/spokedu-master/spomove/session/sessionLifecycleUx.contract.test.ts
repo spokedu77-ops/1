@@ -39,9 +39,19 @@ describe('SPOMOVE session lifecycle UX', () => {
     expect(result).toContain('sessionReturnHref');
     expect(result).toContain('수업으로 돌아가기');
     expect(result).toContain('같은 설정으로 다시 실행');
-    expect(result).toContain('수업 활동의 진행 체크는 수업 화면에서');
+    expect(result).toContain('완료로 표시하고 수업으로');
+    expect(result).toContain('실행 종료와 수업 활동 완료 기록은 별개입니다');
+    expect(result).not.toContain('scheduledCompletionStatus');
     expect(result).not.toContain('오늘 느낌');
     expect(result).not.toContain('스스로 점검');
+  });
+
+  it('does not auto-PATCH SessionProgram on engine done', () => {
+    const finishStart = page.indexOf('const finishSession = useCallback');
+    const finishEnd = page.indexOf('const beginConfiguredSession');
+    const finishBody = page.slice(finishStart, finishEnd);
+    expect(finishBody).not.toContain('isCompleted');
+    expect(page).toContain('markCompleteAndReturn');
   });
 
   it('preserves retry settings and Session/Hub return context', () => {

@@ -9,7 +9,7 @@ import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { Program } from '../../types';
 import { BottomSheet } from '../ui/BottomSheet';
 
-export function AssignProgramToSessionButton({ program, className }: { program: Program; className?: string }) {
+export function AssignProgramToSessionButton({ program, className, targetSessionId }: { program: Program; className?: string; targetSessionId?: string | null }) {
   const data = useOperationalData();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(getSeoulToday());
@@ -26,6 +26,8 @@ export function AssignProgramToSessionButton({ program, className }: { program: 
     .slice(0, 8), [data.sessions]);
   const sessions = showDateSearch ? dateSessions : upcomingSessions;
   const numericProgramId = Number(program.id);
+  const targetSession = targetSessionId ? data.sessions.find((session) => session.id === targetSessionId) : null;
+  const alreadyAssigned = Boolean(targetSession?.programs.some((item) => item.sourceType === 'program' && item.programId === numericProgramId));
 
   const assign = async (sessionId: string) => {
     const session = data.sessions.find((item) => item.id === sessionId);
@@ -52,10 +54,14 @@ export function AssignProgramToSessionButton({ program, className }: { program: 
   };
 
   return <>
-    <button type="button" disabled={!Number.isInteger(numericProgramId)} onClick={() => { setOpen(true); setShowDateSearch(false); setAssignedSessionId(null); setMessage(null); }} className={className ?? `${SPM_PRIMARY_BTN} h-12`}>
-      <CalendarPlus size={16} />수업에 배정
+    <button type="button" disabled={!Number.isInteger(numericProgramId) || savingId !== null || alreadyAssigned} onClick={() => {
+      if (targetSessionId) void assign(targetSessionId);
+      else { setOpen(true); setShowDateSearch(false); setAssignedSessionId(null); setMessage(null); }
+    }} className={className ?? `${SPM_PRIMARY_BTN} h-12`}>
+      <CalendarPlus size={16} />{alreadyAssigned ? '추가됨' : '수업에 추가'}
     </button>
-    {open ? <BottomSheet open title="수업에 배정" onClose={() => setOpen(false)}>
+    {targetSessionId && message ? <p role="status" className={`mt-2 text-xs font-bold ${message.tone === 'success' ? 'text-emerald-700' : 'text-rose-700'}`}>{message.text}</p> : null}
+    {open ? <BottomSheet open title="수업에 추가" onClose={() => setOpen(false)}>
       <div className="pb-4">
         <p className="text-sm font-black text-slate-800">{program.title}</p>
         <div className="mt-4 flex items-center justify-between gap-3">
@@ -70,7 +76,7 @@ export function AssignProgramToSessionButton({ program, className }: { program: 
             <span><strong className="block text-sm text-slate-800">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'numeric', day: 'numeric' })} {formatSeoulSessionTime(session.startAt)} · {session.className}</strong><small className="text-slate-500">활동 {session.programs.length}개 · 예정</small></span>
             <span className="text-xs font-black text-slate-700">선택</span>
           </button>)}
-          {!sessions.length ? <p className="rounded-xl bg-slate-50 p-4 text-center text-xs font-semibold text-slate-500">{showDateSearch ? '이 날짜에 배정 가능한 예정 수업이 없습니다.' : '다가오는 예정 수업이 없습니다. 다른 날짜를 찾아보세요.'}</p> : null}
+          {!sessions.length ? <p className="rounded-xl bg-slate-50 p-4 text-center text-xs font-semibold text-slate-500">{showDateSearch ? '이 날짜에 추가 가능한 예정 수업이 없습니다.' : '다가오는 예정 수업이 없습니다. 다른 날짜를 찾아보세요.'}</p> : null}
         </div>
         {message ? <p role="status" className={`mt-3 rounded-xl p-3 text-xs font-bold ${message.tone === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-700'}`}>{message.text}</p> : null}
         {assignedSessionId && message?.tone === 'success' ? (

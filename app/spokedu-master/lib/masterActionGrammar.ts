@@ -28,6 +28,12 @@ export const SPM_DESTRUCTIVE_BTN =
   'inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-rose-600 text-sm font-black text-white disabled:opacity-40';
 
 export const MASTER_ACTION_COPY = {
+  prepareSession: '수업 준비',
+  openSession: '수업 열기',
+  continueSession: '수업 계속하기',
+  wrapSession: '수업 마무리',
+  recordAttendance: '출석 기록하기',
+  viewSession: '수업 보기',
   open: '열기',
   history: '이력 보기',
   execute: '실행',

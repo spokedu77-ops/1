@@ -1,23 +1,27 @@
 /**
  * MASTER navigation / payment context SSOT.
  *
- * Object: session, class, student, program, preset, sessionProgram
- * Discovery: view, group, difficulty, movement, q, from
- * Work: entry, mode, cueSeconds, sound, rounds, difficulty
- * Return: hubReturn (SPOMOVE exploration), returnTo (Session / general work)
+ * Categories (ad-hoc query names outside this map are forbidden for continuity):
  *
- * Payment and in-app returns must use the same allowlists.
+ * OBJECT: session, sessionProgram, class, student, program, preset
+ * DISCOVERY: view, group, difficulty, movement, q, from
+ * WORK: date, create, entry, mode, cueSeconds, sound, rounds, difficulty
+ * RETURN: returnTo (Session / work), hubReturn (SPOMOVE exploration)
+ * COMMERCIAL: intent / next / journeyId live on Gate/Payment routes, not here
+ *
+ * Payment (`masterPaymentReturn`) and in-app returns must use the same allowlists.
  */
 
 export const MASTER_CONTEXT_ORIGIN = 'https://spokedu.local';
 
 export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> = {
-  '/spokedu-master/library': ['from'],
+  '/spokedu-master/library': ['from', 'session', 'sessionProgram', 'returnTo', 'source'],
   '/spokedu-master/class-record': ['program', 'record'],
   '/spokedu-master/report': ['session', 'program', 'record'],
   '/spokedu-master/activity': ['session', 'date', 'create', 'class', 'program', 'record'],
   '/spokedu-master/students': [],
   '/spokedu-master/classes': ['create'],
+  '/spokedu-master/class-tools': ['session', 'returnTo', 'source'],
   '/spokedu-master/spomove': ['view', 'group', 'difficulty', 'movement', 'q'],
   '/spokedu-master/spomove/session': [
     'preset',
@@ -45,6 +49,7 @@ export function resolveMasterContextQueryKeys(pathname: string): readonly string
   if (pathname.startsWith('/spokedu-master/spomove/session')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/spomove/session'];
   if (pathname.startsWith('/spokedu-master/spomove')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/spomove'];
   if (pathname.startsWith('/spokedu-master/class-record')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/class-record'];
+  if (pathname.startsWith('/spokedu-master/class-tools')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/class-tools'];
   if (pathname.startsWith('/spokedu-master/report')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/report'];
   if (pathname.startsWith('/spokedu-master/activity')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/activity'];
   if (pathname.startsWith('/spokedu-master/students/')) return [];
@@ -83,6 +88,8 @@ export function parseMasterWorkReturnHref(
       || decoded === '/spokedu-master/spomove'
       || decoded.startsWith('/spokedu-master/spomove?')
       || decoded.startsWith('/spokedu-master/classes/')
+      || decoded.startsWith('/spokedu-master/library')
+      || decoded.startsWith('/spokedu-master/class-tools')
       || decoded.startsWith('/spokedu-master/report')
     ) {
       return decoded;

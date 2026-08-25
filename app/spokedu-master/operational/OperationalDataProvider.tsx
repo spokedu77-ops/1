@@ -108,6 +108,21 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     void reload();
   }, [reload]);
 
+  // Execution tools may run in a second tab. Refresh the operating cockpit when
+  // the instructor returns so scheduled progress is never stale.
+  useEffect(() => {
+    if (!ownerId || !canUseAttendance) return;
+    const refreshOnReturn = () => {
+      if (document.visibilityState === 'visible') void reload();
+    };
+    window.addEventListener('focus', refreshOnReturn);
+    document.addEventListener('visibilitychange', refreshOnReturn);
+    return () => {
+      window.removeEventListener('focus', refreshOnReturn);
+      document.removeEventListener('visibilitychange', refreshOnReturn);
+    };
+  }, [canUseAttendance, ownerId, reload]);
+
   const createStudent = useCallback(async (input: CreateStudentInput) => {
     const json = await masterFetchJson<{ data: MasterStudentDto; classIds: string[] }>('/api/spokedu-master/students', {
       body: JSON.stringify(input),

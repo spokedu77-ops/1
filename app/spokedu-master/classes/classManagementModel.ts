@@ -1,5 +1,6 @@
 import type { MasterClassDto, MasterSessionAttendanceStatus, MasterSessionDto, MasterStudentDto } from '../types/operational';
 import { getSeoulSessionDay } from '../lib/sessionDateTime';
+import { buildMasterWorkQueue, deriveMasterSessionWorkState, getMasterWorkQueuePriority, type MasterSessionWorkState } from '../lib/masterSessionWorkState';
 
 export type ClassCardModel = {
   classItem: MasterClassDto;
@@ -7,11 +8,14 @@ export type ClassCardModel = {
   completedSessionCount: number;
   incompleteAttendanceCount: number;
   nextSession: MasterSessionDto | null;
+  prioritySession: MasterSessionDto | null;
+  priorityWorkState: MasterSessionWorkState | null;
 };
 
-export function buildIncompleteAttendanceSessions(sessions: MasterSessionDto[], classId: string) {
+export function buildIncompleteAttendanceSessions(sessions: MasterSessionDto[], classItem: MasterClassDto, now: Date | string = new Date()) {
+  const current = new Date(now);
   return sessions
-    .filter((session) => session.classId === classId && session.status === 'completed' && session.attendance.length === 0)
+    .filter((session) => session.classId === classItem.id && deriveMasterSessionWorkState(session, classItem, current).attention.attendanceMissing)
     .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime());
 }
 
@@ -36,13 +40,23 @@ export function selectLatestCompletedClassSession(sessions: MasterSessionDto[], 
 }
 
 export function buildClassCards(classes: MasterClassDto[], sessions: MasterSessionDto[], now: Date | string) {
-  return classes.map<ClassCardModel>((classItem) => ({
-    classItem,
-    rosterCount: classItem.studentIds.length,
-    completedSessionCount: sessions.filter((session) => session.classId === classItem.id && session.status === 'completed').length,
-    incompleteAttendanceCount: buildIncompleteAttendanceSessions(sessions, classItem.id).length,
-    nextSession: selectNextClassSession(sessions, classItem.id, now),
-  })).sort((a, b) => {
+  const current = new Date(now);
+  return classes.map<ClassCardModel>((classItem) => {
+    const priority = buildMasterWorkQueue({ sessions: sessions.filter((session) => session.classId === classItem.id), classes: [classItem], now: current })[0] ?? null;
+    return {
+      classItem,
+      rosterCount: classItem.studentIds.length,
+      completedSessionCount: sessions.filter((session) => session.classId === classItem.id && session.status === 'completed').length,
+      incompleteAttendanceCount: buildIncompleteAttendanceSessions(sessions, classItem, current).length,
+      nextSession: selectNextClassSession(sessions, classItem.id, current),
+      prioritySession: priority?.session ?? null,
+      priorityWorkState: priority?.workState ?? null,
+    };
+  }).sort((a, b) => {
+    if (a.priorityWorkState && b.priorityWorkState) return getMasterWorkQueuePriority(a.priorityWorkState) - getMasterWorkQueuePriority(b.priorityWorkState)
+      || new Date(a.prioritySession!.startAt).getTime() - new Date(b.prioritySession!.startAt).getTime();
+    if (a.priorityWorkState) return -1;
+    if (b.priorityWorkState) return 1;
     if (a.nextSession && b.nextSession) return new Date(a.nextSession.startAt).getTime() - new Date(b.nextSession.startAt).getTime();
     if (a.nextSession) return -1;
     if (b.nextSession) return 1;

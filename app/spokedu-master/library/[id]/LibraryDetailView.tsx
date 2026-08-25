@@ -19,6 +19,7 @@ import { useIsPremium, useMasterStore } from '../../store';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { AssignProgramToSessionButton } from '../../components/session/AssignProgramToSessionButton';
 import { getLibraryReturnHref } from '../libraryNavigation';
+import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../../lib/masterNavigationContext';
 import { selectRelatedLessonVideos } from '../relatedLessonVideos';
 
 function BookOpenFallback() {
@@ -64,6 +65,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const libraryReturnHref = getLibraryReturnHref(
     searchParams.get('libraryView'),
     searchParams.get('libraryReturn'),
+  );
+  const sessionId = searchParams.get('session')?.trim() || null;
+  const fromSession = searchParams.get('source') === 'session' && Boolean(sessionId);
+  const workReturnHref = parseMasterWorkReturnHref(
+    searchParams.get('returnTo'),
+    null,
+    null,
+    sessionId ? buildActivitySessionHref(sessionId) : libraryReturnHref,
   );
 
   useEffect(() => {
@@ -169,9 +178,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
       }}
     >
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200/70 bg-[color-mix(in_srgb,var(--spm-s1)_91%,transparent)] px-3 shadow-[0_6px_24px_rgba(15,23,42,0.035)] backdrop-blur-2xl sm:gap-3 sm:px-6 lg:px-8">
-        <Link href={libraryReturnHref} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-[11px] px-1 text-sm font-black text-[color:var(--spm-t2)] transition-colors duration-200 hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transition-none sm:justify-start sm:px-2" aria-label="라이브러리로 돌아가기">
+        <Link href={fromSession ? workReturnHref : libraryReturnHref} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-[11px] px-1 text-sm font-black text-[color:var(--spm-t2)] transition-colors duration-200 hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transition-none sm:justify-start sm:px-2" aria-label={fromSession ? '수업으로 돌아가기' : '라이브러리로 돌아가기'}>
           <ArrowLeft className="h-4 w-4 shrink-0" />
-          <span className="hidden sm:inline">라이브러리로</span>
+          <span className="hidden sm:inline">{fromSession ? '수업으로' : '라이브러리로'}</span>
         </Link>
         <p data-detail-sticky-title aria-hidden={isHeroTitleVisible} className={`min-w-0 truncate text-center text-[13px] font-black text-[color:var(--spm-t)] transition-opacity duration-150 motion-reduce:transition-none sm:text-[14px] ${isHeroTitleVisible ? 'invisible opacity-0' : 'visible opacity-100'}`}>
           {model.title}
@@ -197,7 +206,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           ) : null}
           actions={(
             <div data-detail-actions className="mx-auto grid w-full max-w-[740px] grid-cols-3 gap-1.5 sm:gap-2.5">
-              <AssignProgramToSessionButton program={program} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-1 text-[12px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] sm:px-3 sm:text-[13px]" />
+              <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-1 text-[12px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] disabled:opacity-55 sm:px-3 sm:text-[13px]" />
               <Link data-detail-action="calendar" href="/spokedu-master/activity" className="inline-flex h-12 min-w-0 items-center justify-center rounded-[12px] bg-white/90 px-1 text-[12px] font-black text-slate-800 shadow-sm ring-1 ring-slate-300/90 sm:px-3 sm:text-[13px]">수업 관리</Link>
               <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-white/62 px-1 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition duration-200 ease-out hover:-translate-y-px hover:bg-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
                 <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}

@@ -305,8 +305,7 @@ function SpomoveSessionContent() {
   const startLockedRef = useRef(false);
   const sessionStartedAtRef = useRef<number | null>(null);
   const [sessionResult, setSessionResult] = useState<EngineCompletePayload | null>(null);
-  const [scheduledCompletionStatus, setScheduledCompletionStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const completedSessionProgramRef = useRef<string | null>(null);
+  const [markCompleteStatus, setMarkCompleteStatus] = useState<'idle' | 'saving' | 'error'>('idle');
   const [exitConfirmationOpen, setExitConfirmationOpen] = useState(false);
 
   useEffect(() => {
@@ -512,33 +511,12 @@ function SpomoveSessionContent() {
       maxCombo: payload?.maxCombo,
     });
     setState(nextState);
-    const origin = readSpomoveSessionOrigin(searchParams);
-    if (
-      nextState === 'done'
-      && origin.sessionId
-      && origin.sessionProgramId
-      && completedSessionProgramRef.current !== origin.sessionProgramId
-    ) {
-      completedSessionProgramRef.current = origin.sessionProgramId;
-      setScheduledCompletionStatus('saving');
-      void fetch(`/api/spokedu-master/sessions/${encodeURIComponent(origin.sessionId)}/programs/${encodeURIComponent(origin.sessionProgramId)}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ isCompleted: true }),
-      }).then((response) => {
-        if (!response.ok) throw new Error('scheduled completion failed');
-        setScheduledCompletionStatus('saved');
-      }).catch(() => {
-        completedSessionProgramRef.current = null;
-        setScheduledCompletionStatus('error');
-      });
-    } else if (nextState === 'ended') {
-      setScheduledCompletionStatus('idle');
-    }
+    // Product truth: SPOMOVE engine done ≠ SessionProgram completed.
+    // Lesson activity completion is teacher-explicit only (Result CTA or Session checkbox).
+    setMarkCompleteStatus('idle');
   }, [
     exitFullscreenAfterSession,
     officialPreset,
-    searchParams,
     stopBgm,
   ]);
 
@@ -575,6 +553,28 @@ function SpomoveSessionContent() {
     router.push(workReturnHref);
   }, [exitFullscreenAfterSession, router, searchParams, stopBgm]);
 
+  const markCompleteAndReturn = useCallback(() => {
+    const origin = readSpomoveSessionOrigin(searchParams);
+    if (!origin.sessionId || !origin.sessionProgramId || markCompleteStatus === 'saving') return;
+    const returnHref = parseMasterWorkReturnHref(
+      origin.returnTo,
+      null,
+      null,
+      buildActivitySessionHref(origin.sessionId),
+    );
+    setMarkCompleteStatus('saving');
+    void fetch(`/api/spokedu-master/sessions/${encodeURIComponent(origin.sessionId)}/programs/${encodeURIComponent(origin.sessionProgramId)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ isCompleted: true }),
+    }).then((response) => {
+      if (!response.ok) throw new Error('mark complete failed');
+      router.push(returnHref);
+    }).catch(() => {
+      setMarkCompleteStatus('error');
+    });
+  }, [markCompleteStatus, router, searchParams]);
+
   /** Result 재실행 → Start 확인 화면 (즉시 Engine 금지) */
   const reopenStartConfirmation = useCallback(() => {
     if (!officialPreset) return;
@@ -582,7 +582,7 @@ function SpomoveSessionContent() {
     exitFullscreenAfterSession();
     startLockedRef.current = false;
     setSessionResult(null);
-    setScheduledCompletionStatus('idle');
+    setMarkCompleteStatus('idle');
     setState('idle');
     const origin = readSpomoveSessionOrigin(searchParams);
     const href = publicOfficialPresetSessionHref(officialPreset, {
@@ -801,7 +801,7 @@ function SpomoveSessionContent() {
             `자극 ${effectiveCueSeconds}초`,
             difficultyLabel,
             operationSummary,
-          ].filter(Boolean) as string[]} recordHref={recordProgramHref} hubHref={hubReturnHref} sessionReturnHref={sessionReturnHref} scheduledCompletionStatus={scheduledCompletionStatus} onRetry={reopenStartConfirmation} />
+          ].filter(Boolean) as string[]} recordHref={recordProgramHref} hubHref={hubReturnHref} sessionReturnHref={sessionReturnHref} canMarkComplete={Boolean(sessionOrigin.sessionId && sessionOrigin.sessionProgramId && state === 'done')} markCompleteStatus={markCompleteStatus} onMarkCompleteAndReturn={markCompleteAndReturn} onRetry={reopenStartConfirmation} />
         </div>
       ) : null}
 

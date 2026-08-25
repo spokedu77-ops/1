@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { findExactSession } from '../../lib/sessionContext';
+import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../../lib/masterNavigationContext';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
 
@@ -1046,6 +1047,12 @@ export default function ClassToolsView() {
   const searchParams = useSearchParams();
   const requestedSessionId = searchParams.get('session');
   const sessionContext = findExactSession(operationalData.sessions, requestedSessionId);
+  const sessionReturnHref = parseMasterWorkReturnHref(
+    searchParams.get('returnTo'),
+    null,
+    null,
+    requestedSessionId ? buildActivitySessionHref(requestedSessionId) : '/spokedu-master/activity',
+  );
   const hasSessionContext = Boolean(requestedSessionId);
   const invalidSessionContext = hasSessionContext && operationalData.status === 'ready' && !sessionContext;
   const students = useMemo<StudentProfile[]>(() => operationalData.students.map((student) => ({
@@ -1102,7 +1109,11 @@ export default function ClassToolsView() {
           </div>
         ) : null}
         {hasSessionContext && sessionContext ? (
-          <div className="shrink-0 px-6 pt-5">
+          <div className="shrink-0 px-4 pt-4 sm:px-6 sm:pt-5">
+            <div className="mb-3 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3">
+              <p className="min-w-0 truncate text-xs font-black text-blue-900">{sessionContext.className} 수업 도구 사용 중</p>
+              <Link href={sessionReturnHref} className="inline-flex min-h-11 shrink-0 items-center text-xs font-black text-blue-700">수업으로 돌아가기</Link>
+            </div>
             <ClassSelector
               classKeys={classKeys}
               classLabels={classLabels}

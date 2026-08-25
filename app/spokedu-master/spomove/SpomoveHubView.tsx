@@ -23,6 +23,9 @@ import {
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
+import { useOperationalData } from '../operational/OperationalDataProvider';
+import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../lib/masterNavigationContext';
+import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { spmChipClass } from '../lib/masterUiClasses';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { isHubListedPreset } from './movements/isHubVisiblePreset';
@@ -736,6 +739,9 @@ function PresetCard({
   showProgramLabel,
   onPreview,
   onFavorite,
+  onAddToSession,
+  addedToSession,
+  addingToSession,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
@@ -747,6 +753,9 @@ function PresetCard({
   showProgramLabel: boolean;
   onPreview: () => void;
   onFavorite: () => void;
+  onAddToSession?: () => void;
+  addedToSession?: boolean;
+  addingToSession?: boolean;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
@@ -804,6 +813,13 @@ function PresetCard({
         contentOverride={contentOverride}
         onGuide={onPreview}
       />
+      {onAddToSession ? (
+        <div className="border-t border-slate-100 px-3 pb-3 pt-2">
+          <button type="button" onClick={onAddToSession} disabled={addedToSession || addingToSession} className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-black text-blue-700 disabled:border-emerald-200 disabled:bg-emerald-50 disabled:text-emerald-700">
+            {addedToSession ? '추가됨' : addingToSession ? '추가 중' : '수업에 추가'}
+          </button>
+        </div>
+      ) : null}
     </>
   );
 
@@ -827,6 +843,13 @@ function PresetCard({
 export default function SpomoveHubView() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const operationalData = useOperationalData();
+  const sessionId = searchParams.get('session')?.trim() || null;
+  const sessionContext = sessionId ? operationalData.sessions.find((session) => session.id === sessionId && session.status === 'scheduled') : null;
+  const sessionWorkState = sessionContext ? deriveMasterSessionWorkState(sessionContext, null, new Date()) : null;
+  const returnTo = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-master/activity');
+  const [addingPresetId, setAddingPresetId] = useState<string | null>(null);
+  const [sessionAddError, setSessionAddError] = useState<string | null>(null);
   const urlState = parseSpomoveHubUrlState(searchParams, {
     groups: PROGRAM_GROUP_TABS,
     difficulties: THINKING_LEVEL_TABS,
@@ -837,7 +860,15 @@ export default function SpomoveHubView() {
   const movementFilter = urlState.movement as MovementQuickFilter | 'all';
   const searchQuery = urlState.q;
   const hubView = urlState.view;
-  const hubReturnHref = serializeSpomoveHubUrlState(urlState);
+  const appendSessionContext = (href: string) => {
+    if (!sessionContext) return href;
+    const url = new URL(href, 'https://spokedu.local');
+    url.searchParams.set('session', sessionContext.id);
+    url.searchParams.set('returnTo', returnTo);
+    url.searchParams.set('source', 'session');
+    return `${url.pathname}?${url.searchParams.toString()}`;
+  };
+  const hubReturnHref = appendSessionContext(serializeSpomoveHubUrlState(urlState));
   const showSavedOnly = hubView === 'favorites';
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
@@ -944,9 +975,22 @@ export default function SpomoveHubView() {
   );
 
   const updateHubState = (patch: Partial<typeof urlState>, replace = false) => {
-    const href = serializeSpomoveHubUrlState({ ...urlState, ...patch });
+    const href = appendSessionContext(serializeSpomoveHubUrlState({ ...urlState, ...patch }));
     if (replace) router.replace(href, { scroll: false });
     else router.push(href, { scroll: false });
+  };
+
+  const addPresetToSession = async (preset: OfficialSpomovePreset) => {
+    if (!sessionContext || addingPresetId) return;
+    setAddingPresetId(preset.id);
+    setSessionAddError(null);
+    try {
+      await operationalData.addSessionSpomove(sessionContext.id, preset.id);
+    } catch {
+      setSessionAddError('활동을 수업에 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setAddingPresetId(null);
+    }
   };
 
   const toggleSavedOnly = () => {
@@ -1052,6 +1096,9 @@ export default function SpomoveHubView() {
           showProgramLabel={showProgramLabel}
           onPreview={() => setPreviewPreset(preset)}
           onFavorite={() => toggleFavoriteProgram(ownerId, preset.id)}
+          onAddToSession={sessionContext ? () => void addPresetToSession(preset) : undefined}
+          addedToSession={Boolean(sessionContext?.programs.some((program) => program.sourceType === 'spomove' && program.spomovePresetId === preset.id))}
+          addingToSession={addingPresetId === preset.id}
         />
       ))}
     </div>
@@ -1060,6 +1107,13 @@ export default function SpomoveHubView() {
   return (
     <main className="h-full overflow-y-auto" style={{ background: 'var(--spm-bg)' }}>
       <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-16">
+        {sessionContext ? (
+          <div className="mb-4 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
+            <p className="min-w-0 truncate text-xs font-black text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
+            <Link href={returnTo} className="inline-flex min-h-11 shrink-0 items-center text-xs font-black text-blue-700">수업으로 돌아가기</Link>
+          </div>
+        ) : null}
+        {sessionAddError ? <p role="alert" className="mb-3 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
         {assetPackError ? (
           <div role="status" className="mb-3 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-bold leading-5 text-amber-800">
             일부 활동 이미지·가이드가 일시적으로 불러와지지 않았습니다. 활동 실행은 계속할 수 있습니다.

@@ -33,6 +33,8 @@ import {
   parseMasterTargets,
 } from '../lib/programDisplayTags';
 import { useOperationalData } from '../operational/OperationalDataProvider';
+import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../lib/masterNavigationContext';
+import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { useIsPremium, useMasterStore } from '../store';
 import type { Program } from '../types';
 import {
@@ -254,6 +256,10 @@ export default function LibraryView() {
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const { sessions } = useOperationalData();
+  const sessionId = searchParams.get('session')?.trim() || null;
+  const sessionContext = sessionId ? sessions.find((session) => session.id === sessionId && session.status === 'scheduled') : null;
+  const sessionWorkState = sessionContext ? deriveMasterSessionWorkState(sessionContext, null, new Date()) : null;
+  const sessionReturnHref = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-master/activity');
   const isPremium = useIsPremium();
   const favoriteIds = useMemo(
     () => storedFavoriteIds ?? getFavoriteProgramIds(ownerId),
@@ -335,8 +341,13 @@ export default function LibraryView() {
     params.set('view', view);
     if (shelfId) params.set('shelf', shelfId);
     if (reasonId) params.set('reason', reasonId);
+    if (sessionContext) {
+      params.set('session', sessionContext.id);
+      params.set('returnTo', sessionReturnHref);
+      params.set('source', 'session');
+    }
     return params.toString();
-  }, [filters, query, view, shelfId, reasonId]);
+  }, [filters, query, view, shelfId, reasonId, sessionContext, sessionReturnHref]);
 
   useEffect(() => {
     setVisibleCount(LIBRARY_PAGE_SIZE);
@@ -521,6 +532,10 @@ export default function LibraryView() {
   return (
     <>
       <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-5 overflow-y-auto px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+        {sessionContext ? <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
+          <p className="min-w-0 truncate text-xs font-black text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
+          <Link href={sessionReturnHref} className="inline-flex min-h-11 shrink-0 items-center text-xs font-black text-blue-700">수업으로 돌아가기</Link>
+        </div> : null}
         <header className="rounded-[20px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">

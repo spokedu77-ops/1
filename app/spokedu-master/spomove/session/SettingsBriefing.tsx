@@ -82,7 +82,7 @@ export function SettingsBriefing({
     <div className="space-y-4" data-spm-session-settings-screen="true">
       <div className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3">
         <p className="text-[12px] font-black tracking-[0.08em] text-white/45">설정 변경</p>
-        <p className="mt-1 text-[13px] font-semibold text-white/65">필요한 값만 바꾼 뒤 바로 실행합니다.</p>
+        <p className="mt-1 text-[13px] font-semibold text-white/65">필요한 값만 바꾼 뒤 시작합니다.</p>
       </div>
       <SpomovePadLayoutView
         variant={padLayoutVariant}

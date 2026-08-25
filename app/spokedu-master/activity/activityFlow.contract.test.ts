@@ -23,10 +23,11 @@ describe('activity Session flow', () => {
     expect(source).toContain('아직 추가한 활동이 없습니다');
   });
 
-  it('keeps unsaved field work in place while opening activity references', () => {
+  it('preserves exact Session context for activity preparation and SPOMOVE execution', () => {
     expect(source).toContain('target="_blank" rel="noreferrer"');
-    expect(source).toContain('새 탭에서 보기');
-    expect(source).toContain('새 탭에서 실행');
+    expect(source).toContain('sessionProgram=${encodeURIComponent(program.id)}');
+    expect(source).toContain('returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}');
+    expect(source).toContain("sessionProgram: program.id");
   });
 
   it('commits final fields, attendance, and completion through one command', () => {
@@ -34,10 +35,11 @@ describe('activity Session flow', () => {
     expect(source).not.toContain('await data.saveSessionAttendance(prepared.id');
   });
 
-  it('keeps field controls touchable and makes completion the single primary action', () => {
+  it('keeps field controls touchable and derives completion meaning from WorkState', () => {
     expect(source).toContain('min-h-11 rounded-lg px-3');
     expect(source).toContain('aria-label={`${index + 1}번째 활동`}');
-    expect(source).toContain('h-12 w-full items-center justify-center');
-    expect(source).toContain('수업 완료</button>');
+    expect(source).toContain('deriveMasterSessionWorkState');
+    expect(source).toContain("workState?.stage === 'ready-to-wrap'");
+    expect(source).toContain("'수업 마무리'");
   });
 });

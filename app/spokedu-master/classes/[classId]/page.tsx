@@ -8,6 +8,7 @@ import { LessonManagementTabs } from '../../components/lesson/LessonManagementTa
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { SPM_DESTRUCTIVE_BTN, SPM_PRIMARY_BTN, SPM_PRIMARY_BTN_FULL, MASTER_ACTION_COPY } from '../../lib/masterActionGrammar';
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
+import { buildMasterWorkQueue, type MasterSessionWorkState } from '../../lib/masterSessionWorkState';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday } from '../../lib/sessionDateTime';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { MasterStudentDto } from '../../types/operational';
@@ -16,10 +17,10 @@ import { ClassRosterSheet } from './ClassRosterSheet';
 
 type DetailTab = 'roster' | 'attendance';
 
-function SessionSummary({ label, session, empty, emptyHref }: { label: string; session: ReturnType<typeof selectNextClassSession>; empty: string; emptyHref?: string }) {
+function SessionSummary({ label, session, workState, empty, emptyHref }: { label: string; session: ReturnType<typeof selectNextClassSession>; workState?: MasterSessionWorkState | null; empty: string; emptyHref?: string }) {
   return <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
     <p className="text-xs font-black text-slate-500">{label}</p>
-    {session ? <div className="mt-2 flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-black text-slate-900">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} {formatSeoulSessionTime(session.startAt)}</p><p className="mt-1 text-xs font-semibold text-slate-500">활동 {session.status === 'completed' ? session.programs.filter((item) => item.isCompleted).length : session.programs.length}개{session.status === 'completed' ? ` · 출석 기록 ${session.attendance.length}명` : ''}</p></div><Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex min-h-11 items-center gap-1 rounded-xl bg-slate-900 px-4 text-sm font-black text-white">{session.status === 'completed' ? '수업 보기' : '수업 열기'}<ChevronRight size={14} /></Link></div> : <div className="mt-2 flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-bold text-slate-400">{empty}</p>{emptyHref ? <Link href={emptyHref} className="flex min-h-11 items-center rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-700">수업 추가</Link> : null}</div>}
+    {session ? <div className="mt-2 flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-black text-slate-900">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} {formatSeoulSessionTime(session.startAt)}</p><p className="mt-1 text-xs font-semibold text-slate-500">활동 {workState?.progress.completed ?? session.programs.filter((item) => item.isCompleted).length}/{workState?.progress.total ?? session.programs.length}</p>{workState ? <p className="mt-1 text-xs font-black text-amber-700">{workState.operationalLabel}</p> : null}</div><Link href={workState?.href ?? `/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex min-h-11 items-center gap-1 rounded-xl bg-slate-900 px-4 text-sm font-black text-white">{workState?.primaryLabel ?? (session.status === 'completed' ? '수업 보기' : '수업 열기')}<ChevronRight size={14} /></Link></div> : <div className="mt-2 flex flex-wrap items-center justify-between gap-3"><p className="text-sm font-bold text-slate-400">{empty}</p>{emptyHref ? <Link href={emptyHref} className="flex min-h-11 items-center rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-700">수업 추가</Link> : null}</div>}
   </section>;
 }
 
@@ -38,8 +39,9 @@ export default function ClassDetailPage() {
   const classItem = data.classes.find((item) => item.id === classId) ?? null;
   const roster = useMemo(() => classItem ? data.students.filter((student) => classItem.studentIds.includes(student.id)) : [], [classItem, data.students]);
   const nextSession = useMemo(() => selectNextClassSession(data.sessions, classId, new Date()), [classId, data.sessions]);
+  const priorityWork = useMemo(() => classItem ? buildMasterWorkQueue({ sessions: data.sessions.filter((session) => session.classId === classId), classes: [classItem], now: new Date() })[0] ?? null : null, [classId, classItem, data.sessions]);
   const recentSessions = useMemo(() => selectRecentCompletedClassSessions(data.sessions, classId), [classId, data.sessions]);
-  const incompleteSessions = useMemo(() => buildIncompleteAttendanceSessions(data.sessions, classId), [classId, data.sessions]);
+  const incompleteSessions = useMemo(() => classItem ? buildIncompleteAttendanceSessions(data.sessions, classItem) : [], [classItem, data.sessions]);
   const completedCount = data.sessions.filter((session) => session.classId === classId && session.status === 'completed').length;
   const initialAttendanceMonth = useMemo(() => resolveInitialAttendanceMonth(data.sessions, classId, getSeoulToday()), [classId, data.sessions]);
   const selectedAttendanceMonth = attendanceMonth ?? initialAttendanceMonth;
@@ -80,7 +82,7 @@ export default function ClassDetailPage() {
         <Users className="text-emerald-600" size={24} /><h2 className="mt-3 text-lg font-black text-slate-900">아직 등록된 학생이 없습니다.</h2><p className="mt-1 text-sm font-semibold leading-6 text-slate-500">학생을 추가하면 수업 출석 명단으로 자동 연결됩니다.</p>
         <button type="button" onClick={() => setAddOpen(true)} className={`mt-4 ${SPM_PRIMARY_BTN_FULL}`}><Plus size={16} />{MASTER_ACTION_COPY.addStudent}</button>
         {nextSession ? <Link href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`} className="mt-2 flex min-h-11 items-center justify-center text-sm font-black text-slate-600">예정 수업 열기</Link> : <Link href={createSessionHref} className="mt-2 flex min-h-11 items-center justify-center text-sm font-black text-slate-600">첫 수업 일정 만들기</Link>}
-      </section> : <div className="mt-5"><SessionSummary label="다음 수업" session={nextSession} empty="다음 예정 수업이 없습니다." emptyHref={createSessionHref} /></div>}
+      </section> : <div className="mt-5"><SessionSummary label={priorityWork ? '다음 운영 작업' : '다음 수업'} session={priorityWork?.session ?? nextSession} workState={priorityWork?.workState} empty="다음 예정 수업이 없습니다." emptyHref={createSessionHref} /></div>}
 
       {incompleteSessions.length ? <section className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3">
         <div><p className="text-sm font-black text-amber-900">출석 미기록 {incompleteSessions.length}건</p>{incompleteSessions.length === 1 ? <p className="mt-1 text-xs font-semibold text-amber-700">{formatSeoulSessionDay(getSeoulSessionDay(incompleteSessions[0]!.startAt), { month: 'long', day: 'numeric' })} {formatSeoulSessionTime(incompleteSessions[0]!.startAt)}</p> : null}</div>

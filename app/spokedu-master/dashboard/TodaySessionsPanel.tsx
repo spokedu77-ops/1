@@ -29,7 +29,7 @@ export function TodaySessionsPanel({
   error: boolean;
   onRetry: () => void;
 }) {
-  const cards = buildTodaySessionCards(sessions, classes, seoulDay);
+  const cards = buildTodaySessionCards(sessions, classes, seoulDay, new Date());
 
   return (
     <section data-dashboard-section="today-sessions" aria-labelledby="today-sessions-heading" className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4">
@@ -54,7 +54,7 @@ export function TodaySessionsPanel({
 
       {!loading && !error && cards.length > 0 ? (
         <div className="mt-3 grid gap-2">
-          {cards.map(({ session, rosterCount, activityCount, completedActivityCount, hasSpomove, ctaLabel, href }) => (
+          {cards.map(({ session, rosterCount, activityCount, completedActivityCount, hasSpomove, ctaLabel, href, workState }) => (
             <article key={session.id} className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center ${session.status === 'cancelled' ? 'border-slate-200 bg-slate-50 opacity-70' : session.status === 'completed' ? 'border-slate-200 bg-slate-50/70' : 'border-slate-200 bg-white'}`}>
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <span className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 text-sm font-black text-slate-800"><Clock3 size={14} aria-hidden="true" />{formatSeoulSessionTime(session.startAt)}</span>
@@ -68,6 +68,7 @@ export function TodaySessionsPanel({
                     <span className="inline-flex items-center gap-1"><UsersRound size={12} aria-hidden="true" />학생 {rosterCount}명</span>
                     {hasSpomove ? <span className="inline-flex items-center gap-1 text-blue-700"><MonitorPlay size={12} aria-hidden="true" />SPOMOVE 포함</span> : null}
                   </p>
+                  <p className={`mt-1 text-xs font-black ${workState.attention.overdue || workState.attention.attendanceMissing ? 'text-amber-700' : 'text-emerald-700'}`}>{workState.operationalLabel}</p>
                 </div>
               </div>
               {ctaLabel ? (
