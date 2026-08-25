@@ -1,6 +1,12 @@
 import type { MasterGateIntentKind } from './masterGateIntent';
+import {
+  MASTER_CONTEXT_ORIGIN,
+  MASTER_CONTEXT_SIMPLE_VALUE_MAX,
+  MASTER_CONTEXT_VALUE_MAX,
+  isMasterNestedReturnKey,
+  resolveMasterContextQueryKeys,
+} from './masterNavigationContext';
 
-const MASTER_ORIGIN = 'https://spokedu.local';
 const DEFAULT_FALLBACK = '/spokedu-master/dashboard';
 const MAX_RETURN_VALUE_LENGTH = 1200;
 
@@ -9,27 +15,6 @@ const BLOCKED_POST_PAYMENT_PATHS = new Set([
   '/spokedu-master/payment/success',
   '/spokedu-master/payment/cancel',
 ]);
-
-const POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> = {
-  '/spokedu-master/library': ['from'],
-  '/spokedu-master/class-record': ['program', 'record'],
-  '/spokedu-master/report': ['session', 'program', 'record'],
-  '/spokedu-master/activity': ['session', 'date', 'create', 'class', 'program', 'record'],
-  '/spokedu-master/students': [],
-  '/spokedu-master/classes': ['create'],
-  '/spokedu-master/spomove': ['view'],
-  '/spokedu-master/spomove/session': [
-    'preset',
-    'rounds',
-    'mode',
-    'sound',
-    'entry',
-    'program',
-    'hubView',
-    'cueSeconds',
-    'difficulty',
-  ],
-};
 
 export const MASTER_INTENT_FALLBACKS: Record<MasterGateIntentKind, string> = {
   open_library: '/spokedu-master/library',
@@ -42,21 +27,6 @@ function isBlockedReturnPath(pathname: string) {
   return Array.from(BLOCKED_POST_PAYMENT_PATHS).some(
     (blocked) => pathname === blocked || pathname.startsWith(`${blocked}/`),
   );
-}
-
-function resolveAllowedQueryKeys(pathname: string) {
-  if (pathname.startsWith('/spokedu-master/library/')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/library'];
-  if (pathname.startsWith('/spokedu-master/spomove/session')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/spomove/session'];
-  if (pathname.startsWith('/spokedu-master/spomove')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/spomove'];
-  if (pathname.startsWith('/spokedu-master/class-record')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/class-record'];
-  if (pathname.startsWith('/spokedu-master/report')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/report'];
-  if (pathname.startsWith('/spokedu-master/activity')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/activity'];
-  if (pathname.startsWith('/spokedu-master/students/')) return [];
-  if (pathname.startsWith('/spokedu-master/students')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/students'];
-  if (pathname.startsWith('/spokedu-master/classes/')) return [];
-  if (pathname.startsWith('/spokedu-master/classes')) return POST_PAYMENT_QUERY_KEYS['/spokedu-master/classes'];
-  if (pathname === '/spokedu-master/library') return POST_PAYMENT_QUERY_KEYS['/spokedu-master/library'];
-  return [];
 }
 
 function sanitizeHash(hash: string) {
@@ -79,21 +49,22 @@ export function getSafeMasterPostPaymentPath(
 
   let parsed: URL;
   try {
-    parsed = new URL(value, MASTER_ORIGIN);
+    parsed = new URL(value, MASTER_CONTEXT_ORIGIN);
   } catch {
     return safeFallback;
   }
 
-  if (parsed.origin !== MASTER_ORIGIN) return safeFallback;
+  if (parsed.origin !== MASTER_CONTEXT_ORIGIN) return safeFallback;
   if (!parsed.pathname.startsWith('/spokedu-master')) return safeFallback;
   if (parsed.pathname.startsWith('/spokedu-master/class-mode')) return safeFallback;
   if (isBlockedReturnPath(parsed.pathname)) return safeFallback;
 
-  const allowedKeys = resolveAllowedQueryKeys(parsed.pathname);
+  const allowedKeys = resolveMasterContextQueryKeys(parsed.pathname);
   const nextParams = new URLSearchParams();
   for (const key of allowedKeys) {
     for (const valueForKey of parsed.searchParams.getAll(key)) {
-      if (valueForKey.length <= 180) nextParams.append(key, valueForKey);
+      const max = isMasterNestedReturnKey(key) ? MASTER_CONTEXT_VALUE_MAX : MASTER_CONTEXT_SIMPLE_VALUE_MAX;
+      if (valueForKey.length <= max) nextParams.append(key, valueForKey);
     }
   }
 
@@ -101,4 +72,3 @@ export function getSafeMasterPostPaymentPath(
   const hash = sanitizeHash(parsed.hash);
   return `${parsed.pathname}${query ? `?${query}` : ''}${hash}`;
 }
-

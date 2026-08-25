@@ -52,5 +52,28 @@ describe('master post-payment return path', () => {
       '/spokedu-master/students/student-a',
     );
   });
+
+  it('preserves SPOMOVE Hub discovery and Session origin through payment', () => {
+    expect(
+      getSafeMasterPostPaymentPath(
+        '/spokedu-master/spomove?view=favorites&group=stroop&difficulty=normal&movement=visualSearch&q=%ED%99%94%EC%82%B4%ED%91%9C',
+      ),
+    ).toBe('/spokedu-master/spomove?view=favorites&group=stroop&difficulty=normal&movement=visualSearch&q=%ED%99%94%EC%82%B4%ED%91%9C');
+    expect(
+      getSafeMasterPostPaymentPath(
+        '/spokedu-master/spomove/session?preset=simon-basic&session=sess-1&sessionProgram=prog-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&hubReturn=%2Fspokedu-master%2Fspomove%3Fgroup%3Dstroop',
+      ),
+    ).toContain('session=sess-1');
+    expect(
+      getSafeMasterPostPaymentPath(
+        '/spokedu-master/spomove/session?preset=simon-basic&session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&hubReturn=%2Fspokedu-master%2Fspomove%3Fgroup%3Dstroop',
+      ),
+    ).toContain('returnTo=');
+    expect(
+      getSafeMasterPostPaymentPath(
+        '/spokedu-master/spomove/session?preset=simon-basic&hubReturn=%2Fspokedu-master%2Fspomove%3Fgroup%3Dstroop',
+      ),
+    ).toContain('hubReturn=');
+  });
 });
 

@@ -36,18 +36,21 @@ describe('SPOMOVE session lifecycle UX', () => {
   });
 
   it('shows only measured operational facts and a context-aware action hierarchy', () => {
-    expect(result).toContain('수행 능력을 자동 채점한 결과가 아닙니다.');
-    expect(result).toContain('수업 기록 남기기');
+    expect(result).toContain('sessionReturnHref');
+    expect(result).toContain('수업으로 돌아가기');
     expect(result).toContain('같은 설정으로 다시 실행');
-    expect(result).toContain('활동 목록으로');
+    expect(result).toContain('수업 활동의 진행 체크는 수업 화면에서');
     expect(result).not.toContain('오늘 느낌');
     expect(result).not.toContain('스스로 점검');
   });
 
-  it('preserves retry settings and the full Hub return query', () => {
+  it('preserves retry settings and Session/Hub return context', () => {
     expect(page).toContain('cueSeconds: effectiveCueSeconds');
     expect(page).toContain('difficulty: difficultyKind ? difficultyValue : undefined');
     expect(page).toContain('operationCandidate');
     expect(page).toContain('hubReturn: parseSpomoveHubReturnHref');
+    expect(page).toContain('returnTo: origin.returnTo');
+    expect(page).toContain('session: origin.sessionId');
+    expect(page).toContain('parseMasterWorkReturnHref');
   });
 });

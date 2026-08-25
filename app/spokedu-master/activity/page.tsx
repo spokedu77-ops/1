@@ -16,6 +16,7 @@ import { SPM_DESTRUCTIVE_BTN, SPM_PRIMARY_BTN, SPM_PRIMARY_BTN_FULL, SPM_PRIMARY
 import { buildSessionDraftDateTimes, formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday, seoulDateTimeInputToIso, seoulDayToDate } from '../lib/sessionDateTime';
 import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
+import { buildActivitySessionHref } from '../lib/masterNavigationContext';
 import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
 import { resolveActivityQuery } from './activityQuery';
 import { buildNextSessionDateTimes, buildNextSessionDraft } from './nextSession';
@@ -425,7 +426,7 @@ function SessionSheet({
                   <button type="button" disabled={!activeSession || !actions.toggleActivityCompletion} onClick={() => void toggleProgram(program)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label={`${program.programTitle ?? '활동'} 진행 여부`}><Check size={18} /></button>
                   <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}><span className="block truncate" title={program.programTitle ?? '이름 없는 활동'}>{program.programTitle ?? '이름 없는 활동'}</span>{program.sourceType === 'spomove' ? <span className="text-[10px] font-black text-blue-600">SPOMOVE</span> : null}</span>
                   {program.sourceType === 'program' && program.programId ? <Link target="_blank" rel="noreferrer" href={`/spokedu-master/library/${program.programId}`} className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-black text-slate-700" aria-label={`${program.programTitle ?? '프로그램'} 새 탭에서 보기`}>보기</Link> : null}
-                  {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) ? <Link target="_blank" rel="noreferrer" href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!)} className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white" aria-label={`${program.programTitle ?? 'SPOMOVE'} 새 탭에서 실행`}>실행</Link> : null}
+                  {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) && activeSession ? <Link target="_blank" rel="noreferrer" href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!, { entry: 'start', session: activeSession.id, sessionProgram: program.id, returnTo: buildActivitySessionHref(activeSession.id) })} className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-3 text-[11px] font-black text-white" aria-label={`${program.programTitle ?? 'SPOMOVE'} 새 탭에서 실행`}>실행</Link> : null}
                 </div>
                 {actions.reorderActivities || actions.removeActivities ? (
                   <details className="mt-2 border-t border-slate-100 pt-1">

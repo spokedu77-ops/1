@@ -22,6 +22,11 @@ import {
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 import { parseSpomoveHubReturnHref } from '../spomoveHubNavigation';
 import {
+  buildActivitySessionHref,
+  parseMasterWorkReturnHref,
+  readSpomoveSessionOrigin,
+} from '../../lib/masterNavigationContext';
+import {
   applySpomoveDifficulty,
   getSpomoveDifficultyKind,
   getSpomoveDifficultyOptions,
@@ -300,6 +305,8 @@ function SpomoveSessionContent() {
   const startLockedRef = useRef(false);
   const sessionStartedAtRef = useRef<number | null>(null);
   const [sessionResult, setSessionResult] = useState<EngineCompletePayload | null>(null);
+  const [scheduledCompletionStatus, setScheduledCompletionStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const completedSessionProgramRef = useRef<string | null>(null);
   const [exitConfirmationOpen, setExitConfirmationOpen] = useState(false);
 
   useEffect(() => {
@@ -505,9 +512,33 @@ function SpomoveSessionContent() {
       maxCombo: payload?.maxCombo,
     });
     setState(nextState);
+    const origin = readSpomoveSessionOrigin(searchParams);
+    if (
+      nextState === 'done'
+      && origin.sessionId
+      && origin.sessionProgramId
+      && completedSessionProgramRef.current !== origin.sessionProgramId
+    ) {
+      completedSessionProgramRef.current = origin.sessionProgramId;
+      setScheduledCompletionStatus('saving');
+      void fetch(`/api/spokedu-master/sessions/${encodeURIComponent(origin.sessionId)}/programs/${encodeURIComponent(origin.sessionProgramId)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ isCompleted: true }),
+      }).then((response) => {
+        if (!response.ok) throw new Error('scheduled completion failed');
+        setScheduledCompletionStatus('saved');
+      }).catch(() => {
+        completedSessionProgramRef.current = null;
+        setScheduledCompletionStatus('error');
+      });
+    } else if (nextState === 'ended') {
+      setScheduledCompletionStatus('idle');
+    }
   }, [
     exitFullscreenAfterSession,
     officialPreset,
+    searchParams,
     stopBgm,
   ]);
 
@@ -536,8 +567,12 @@ function SpomoveSessionContent() {
   const leaveSession = useCallback(() => {
     stopBgm();
     exitFullscreenAfterSession();
-    const hubReturnHref = parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'));
-    router.push(hubReturnHref);
+    const workReturnHref = parseMasterWorkReturnHref(
+      searchParams.get('returnTo'),
+      searchParams.get('hubReturn'),
+      searchParams.get('hubView'),
+    );
+    router.push(workReturnHref);
   }, [exitFullscreenAfterSession, router, searchParams, stopBgm]);
 
   /** Result 재실행 → Start 확인 화면 (즉시 Engine 금지) */
@@ -547,7 +582,9 @@ function SpomoveSessionContent() {
     exitFullscreenAfterSession();
     startLockedRef.current = false;
     setSessionResult(null);
+    setScheduledCompletionStatus('idle');
     setState('idle');
+    const origin = readSpomoveSessionOrigin(searchParams);
     const href = publicOfficialPresetSessionHref(officialPreset, {
       entry: 'start',
       mode: launchMode,
@@ -559,6 +596,9 @@ function SpomoveSessionContent() {
           : null,
       hubView: searchParams.get('hubView') === 'favorites' ? 'favorites' : undefined,
       hubReturn: parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView')),
+      returnTo: origin.returnTo ?? undefined,
+      session: origin.sessionId ?? undefined,
+      sessionProgram: origin.sessionProgramId ?? undefined,
     });
     router.replace(href);
   }, [
@@ -579,7 +619,16 @@ function SpomoveSessionContent() {
     operationLayerStatus !== 'legacyDisabled' && effectiveOperation
       ? operationSummaryLine(effectiveOperation)
       : null;
+  const sessionOrigin = readSpomoveSessionOrigin(searchParams);
   const hubReturnHref = parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'));
+  const sessionReturnHref = sessionOrigin.isSessionOrigin
+    ? parseMasterWorkReturnHref(
+      sessionOrigin.returnTo,
+      null,
+      null,
+      sessionOrigin.sessionId ? buildActivitySessionHref(sessionOrigin.sessionId) : '/spokedu-master/activity',
+    )
+    : null;
   const difficultyLabel = difficultyKind
     ? getSpomoveDifficultyOptions(difficultyKind).find((option) => option.value === difficultyValue)?.label ?? null
     : null;
@@ -752,7 +801,7 @@ function SpomoveSessionContent() {
             `자극 ${effectiveCueSeconds}초`,
             difficultyLabel,
             operationSummary,
-          ].filter(Boolean) as string[]} recordHref={recordProgramHref} hubHref={hubReturnHref} onRetry={reopenStartConfirmation} />
+          ].filter(Boolean) as string[]} recordHref={recordProgramHref} hubHref={hubReturnHref} sessionReturnHref={sessionReturnHref} scheduledCompletionStatus={scheduledCompletionStatus} onRetry={reopenStartConfirmation} />
         </div>
       ) : null}
 

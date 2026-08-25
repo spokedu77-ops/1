@@ -4,6 +4,7 @@ import { ClipboardList, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 import { formatElapsedSeconds } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
+import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
 
 export function MasterSessionResult({
   status,
@@ -12,6 +13,8 @@ export function MasterSessionResult({
   settings,
   recordHref,
   hubHref,
+  sessionReturnHref,
+  scheduledCompletionStatus = 'idle',
   onRetry,
 }: {
   status: 'done' | 'ended';
@@ -20,9 +23,13 @@ export function MasterSessionResult({
   settings: string[];
   recordHref: string | null;
   hubHref: string;
+  /** Session operating origin — Primary return when present (no auto-complete). */
+  sessionReturnHref?: string | null;
+  scheduledCompletionStatus?: 'idle' | 'saving' | 'saved' | 'error';
   onRetry: () => void;
 }) {
   const done = status === 'done';
+  const fromSession = Boolean(sessionReturnHref);
   return (
     <main className="flex h-dvh items-center justify-center overflow-y-auto bg-slate-100 px-4 py-[max(1rem,env(safe-area-inset-top))] text-slate-950">
       <section className="w-full max-w-xl rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.14)] sm:p-7">
@@ -47,19 +54,34 @@ export function MasterSessionResult({
           <h2 className="text-xs font-black tracking-wide text-slate-500">사용한 설정</h2>
           <p className="mt-2 break-words text-[15px] font-bold leading-6 text-slate-800">{settings.filter(Boolean).join(' · ')}</p>
         </section>
-        <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">표시된 정보는 실행 시간과 사용 설정이며, 수행 능력을 자동 채점한 결과가 아닙니다.</p>
+        <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">
+          {fromSession && done && scheduledCompletionStatus === 'saved'
+            ? '수업 활동을 완료로 반영했습니다. 수업으로 돌아가 다음 활동을 이어가세요.'
+            : fromSession && done && scheduledCompletionStatus === 'saving'
+              ? '수업 진행 상태에 완료를 반영하고 있습니다.'
+              : fromSession && done && scheduledCompletionStatus === 'error'
+                ? '실행은 완료됐지만 수업 진행 상태를 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.'
+                : fromSession
+                  ? '중도 종료한 활동은 수업 진행 상태를 자동으로 완료하지 않습니다.'
+            : '표시된 정보는 실행 시간과 사용 설정이며, 수행 능력을 자동 채점한 결과가 아닙니다.'}
+        </p>
 
         <div className="mt-6 grid gap-2">
-          {recordHref ? (
+          {sessionReturnHref ? (
+            <Link href={sessionReturnHref} className={`${SPM_PRIMARY_BTN} min-h-12 w-full`}>
+              수업으로 돌아가기
+            </Link>
+          ) : null}
+          {recordHref && !fromSession ? (
             <Link href={recordHref} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 text-[15px] font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">
               <ClipboardList className="mr-2 h-4 w-4" /> 수업 기록 남기기
             </Link>
           ) : null}
-          <button type="button" onClick={onRetry} className={`inline-flex min-h-12 items-center justify-center rounded-xl px-4 text-[14px] font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 ${recordHref ? 'border border-slate-300 bg-white text-slate-800' : 'bg-slate-950 text-white'}`}>
+          <button type="button" onClick={onRetry} className={`${fromSession || recordHref ? SPM_SECONDARY_BTN : SPM_PRIMARY_BTN} min-h-12 w-full`}>
             <RefreshCw className="mr-2 h-4 w-4" /> 같은 설정으로 다시 실행
           </button>
           <Link href={hubHref} className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-[14px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
-            활동 목록으로
+            {fromSession ? 'SPOMOVE 활동 목록' : '활동 목록으로'}
           </Link>
         </div>
       </section>

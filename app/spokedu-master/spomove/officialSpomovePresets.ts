@@ -1554,6 +1554,11 @@ export function officialPresetSessionHref(
     /** 세션 종료 시 SPOMOVE 허브 복귀 맥락 */
     hubView?: 'favorites';
     hubReturn?: string;
+    /** Session operating surface return (activity?session=...) */
+    returnTo?: string;
+    /** Origin Session / SessionProgram for MASTER operating continuity */
+    session?: string;
+    sessionProgram?: string;
   },
 ) {
   const params = new URLSearchParams({
@@ -1565,6 +1570,9 @@ export function officialPresetSessionHref(
   if (options?.entry) params.set('entry', options.entry);
   if (options?.hubView === 'favorites') params.set('hubView', 'favorites');
   if (options?.hubReturn?.startsWith('/spokedu-master/spomove')) params.set('hubReturn', options.hubReturn);
+  if (options?.returnTo?.startsWith('/spokedu-master/activity')) params.set('returnTo', options.returnTo);
+  if (options?.session?.trim()) params.set('session', options.session.trim());
+  if (options?.sessionProgram?.trim()) params.set('sessionProgram', options.sessionProgram.trim());
   if (options?.cueSeconds != null) params.set('cueSeconds', String(options.cueSeconds));
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');
@@ -1595,6 +1603,9 @@ export function publicOfficialPresetSessionHref(
     operation: options?.operation,
     hubView: options?.hubView,
     hubReturn: options?.hubReturn,
+    returnTo: options?.returnTo,
+    session: options?.session,
+    sessionProgram: options?.sessionProgram,
     bgmPath: options?.bgmPath,
     autostart: false,
   });
