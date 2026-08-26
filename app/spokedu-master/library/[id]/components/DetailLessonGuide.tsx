@@ -404,14 +404,14 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
 export function DetailLessonGuide({
   model,
   actions,
-  continuity,
+  personalizedContext,
   video,
   relatedVideos,
   heroTitleRef,
 }: {
   model: LessonDisplayModel;
   actions: ReactNode;
-  continuity?: ReactNode;
+  personalizedContext?: ReactNode;
   video: VideoProps;
   relatedVideos: RelatedLessonVideo[];
   heroTitleRef?: Ref<HTMLHeadingElement>;
@@ -447,8 +447,6 @@ export function DetailLessonGuide({
         <div className="mt-6">{actions}</div>
       </header>
 
-      {continuity ? <div className="px-4 pb-4 sm:px-6">{continuity}</div> : null}
-
       <section
         data-detail-row="execution"
         className={`${DETAIL_ROW_CLASS} bg-white min-[900px]:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)]`}
@@ -466,6 +464,12 @@ export function DetailLessonGuide({
           {hasPhysicalPreparation ? <SetupPanel model={model} /> : null}
           {hasOverview ? <OverviewPanel model={model} /> : null}
         </section>
+      ) : null}
+
+      {personalizedContext ? (
+        <div data-detail-personalized-context className="mx-auto mt-10 w-full max-w-[980px] px-1 sm:mt-12">
+          {personalizedContext}
+        </div>
       ) : null}
 
       <RelatedVideosSection videos={relatedVideos} />

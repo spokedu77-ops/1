@@ -131,7 +131,7 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
     expect(hub).toContain('getSpomoveCardDisplayModel');
     expect(hub).toContain('data-spm-spomove-card-meta');
-    expect(hub).toContain('활동 준비');
+    expect(hub).toContain('활동 살펴보기');
     expect(hub).not.toContain("after:content-['·']");
     expect(hub).not.toContain('supportMetaParts.slice');
     expect(hub).not.toContain('displayModel.variantLabel');

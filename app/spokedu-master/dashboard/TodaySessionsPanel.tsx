@@ -10,6 +10,7 @@ import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { summarizePastOperationalDebt } from '../lib/masterTemporalContract';
 import type { MasterClassDto, MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { buildTodaySessionCards } from './todaySessionsModel';
+import { SystemDecisionBanner } from '../components/information/SystemDecisionBanner';
 
 const STATUS_LABEL: Record<MasterSessionStatus, string> = {
   scheduled: '예정',
@@ -104,10 +105,17 @@ export function HomeFollowUpPanel({ sessions, classes, seoulDay }: {
       ? `/spokedu-master/classes/${encodeURIComponent(pastDebt.leadClassId)}`
       : `/spokedu-master/activity?date=${encodeURIComponent(seoulDay)}`;
   return (
-    <section data-dashboard-section="follow-up" aria-labelledby="follow-up-heading" className="rounded-[16px] border border-amber-200 bg-amber-50 p-3.5 sm:p-4">
-      <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-amber-700">Follow-up</p><h2 id="follow-up-heading" className="mt-1 text-base font-black text-amber-950">이어 할 일</h2></div><span className="text-xs font-black text-amber-800">{pastDebt.count}건</span></div>
-      <Link href={href} className="mt-2 flex min-h-11 items-center justify-between rounded-xl bg-white px-3 text-sm font-bold text-amber-950 ring-1 ring-amber-200"><span>지난 수업 상태와 출석 확인</span><span className="inline-flex items-center gap-1 text-xs font-black">확인<ArrowRight size={14} aria-hidden="true" /></span></Link>
-    </section>
+    <div data-dashboard-section="follow-up">
+      <SystemDecisionBanner
+        eyebrow="Follow-up"
+        title="지난 수업에서 이어 할 일이 있습니다"
+        description="완료 상태와 출석을 확인하면 다음 수업 준비에 정확한 기록이 이어집니다."
+        meta={`${pastDebt.count}건`}
+        href={href}
+        actionLabel="지난 수업 확인하기"
+        tone="attention"
+      />
+    </div>
   );
 }
 

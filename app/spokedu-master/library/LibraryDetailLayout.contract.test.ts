@@ -19,12 +19,13 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain('flex-wrap justify-center');
   });
 
-  it('renders exactly one three-column action group', () => {
+  it('renders one primary action above two quieter support actions', () => {
     expect(view.match(/data-detail-action=/g)).toHaveLength(2);
     expect(view).toContain('data-detail-actions');
-    expect(view).toContain('grid-cols-3');
+    expect(view).toContain('data-detail-support-actions');
+    expect(view).toContain('grid-cols-2');
     expect(view).toContain('AssignProgramToSessionButton');
-    expect(view).toContain('수업 관리');
+    expect(view).toContain('수업 일정 관리');
     expect(view).toContain('지도안 복사');
     expect(view).not.toContain('data-detail-action="quick"');
   });
@@ -133,12 +134,20 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(view).toContain("prefersReducedMotion() ? 'auto' : 'smooth'");
   });
 
-  it('shows the latest record-to-next-prep context as optional review-only continuity', () => {
-    expect(view).toContain('operationalData.sessions');
-    expect(view).toContain('data-next-prep-continuity');
-    expect(view).toContain('지난 수업에서 남긴 다음 적용점');
-    expect(view).toContain('/spokedu-master/activity');
-    expect(view).not.toContain('이번 수업에 적용됨');
-    expect(view).not.toContain('추천');
+  it('shows explicit Capture memory after core preparation with an exact Session deep link', () => {
+    expect(view).toContain('selectLatestProgramMemory');
+    expect(view).toContain('fetchSessionCaptures');
+    expect(view).toContain('PersonalizedNote');
+    expect(view).toContain('지난 수업에서 이어갈 점');
+    expect(view).toContain('session=${encodeURIComponent(latestProgramMemory.sessionId)}&capture=1');
+    expect(view).not.toContain('applicationIdea: session.memo');
+    expect(view).not.toContain('지난 수업에서 남긴 다음 적용점');
+    const execution = guide.indexOf('data-detail-row="execution"');
+    const preparation = guide.indexOf('data-detail-row="preparation"');
+    const personalized = guide.indexOf('data-detail-personalized-context');
+    const related = guide.indexOf('<RelatedVideosSection');
+    expect(personalized).toBeGreaterThan(execution);
+    expect(personalized).toBeGreaterThan(preparation);
+    expect(personalized).toBeLessThan(related);
   });
 });

@@ -37,7 +37,10 @@ export async function POST(request: Request) {
   const sessionId = typeof body?.sessionId === 'string' ? body.sessionId.trim() : '';
   const nextSessionNote = typeof body?.nextSessionNote === 'string' ? body.nextSessionNote.trim() : '';
   const observations = Array.isArray(body?.observations) ? body.observations : [];
-  if (!sessionId || observations.some((item) => !item || typeof item !== 'object' || typeof (item as { studentId?: unknown }).studentId !== 'string' || typeof (item as { memo?: unknown }).memo !== 'string')) {
+  if (!sessionId || nextSessionNote.length > 500 || observations.some((item) => !item || typeof item !== 'object'
+    || typeof (item as { studentId?: unknown }).studentId !== 'string'
+    || typeof (item as { memo?: unknown }).memo !== 'string'
+    || (item as { memo: string }).memo.trim().length > 1000)) {
     return privateNoStoreJson({ error: 'Invalid Session Capture payload' }, { status: 400 });
   }
   const students = observations.map((item) => ({ student_id: (item as { studentId: string }).studentId.trim(), memo: (item as { memo: string }).memo.trim() }));

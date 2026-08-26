@@ -63,7 +63,7 @@ describe('MovementConfigurator contract', () => {
     expect(hub).not.toContain('활용 요소');
     expect(hub).not.toContain('최근 설정');
     expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('시작 설정');
+    expect(hub).toContain('실행 설정');
   });
 
   it('Selectable Family 허용분만 그룹에 들어가고 추천은 하나다', () => {

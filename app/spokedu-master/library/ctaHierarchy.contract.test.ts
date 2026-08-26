@@ -18,7 +18,7 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   it('assigns a program to an exact Session from detail', () => {
     expect(detail).toContain('AssignProgramToSessionButton');
     expect(detail).toContain('/spokedu-master/activity');
-    expect(detail).toContain('수업 관리');
+    expect(detail).toContain('수업 일정 관리');
     expect(detail).toContain('지도안 복사');
     expect(detail).not.toContain('/spokedu-master/class-record?program=${program.id}');
     expect(detail).not.toContain('오늘 수업으로 지정');

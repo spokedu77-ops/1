@@ -83,9 +83,9 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(pairs).toBeGreaterThanOrEqual(5);
   });
 
-  it('keeps P0 action grammar: 활동 준비 primary, settings secondary, no Play', () => {
-    expect(hub).toContain('활동 준비');
-    expect(hub).toContain('시작 설정');
+  it('keeps result-based action grammar: activity review primary, settings secondary, no Play', () => {
+    expect(hub).toContain('활동 살펴보기');
+    expect(hub).toContain('실행 설정');
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('spm-btn-primary');

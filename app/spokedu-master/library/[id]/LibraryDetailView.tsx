@@ -21,6 +21,10 @@ import { AssignProgramToSessionButton } from '../../components/session/AssignPro
 import { getLibraryReturnHref } from '../libraryNavigation';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../../lib/masterNavigationContext';
 import { selectRelatedLessonVideos } from '../relatedLessonVideos';
+import { fetchSessionCaptures } from '../../lib/sessionCaptureClient';
+import type { MasterClassRecordDto } from '../../types/legacyOperational';
+import { PersonalizedNote } from '../../components/information/PersonalizedNote';
+import { selectLatestProgramMemory } from '../programMemory';
 
 function BookOpenFallback() {
   return (
@@ -48,6 +52,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const heroTitleRef = useRef<HTMLHeadingElement | null>(null);
   const [isHeroTitleVisible, setIsHeroTitleVisible] = useState(true);
   const [planCopyStatus, setPlanCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [sessionCaptures, setSessionCaptures] = useState<MasterClassRecordDto[]>([]);
   const copyFeedbackTimerRef = useRef<number | null>(null);
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
@@ -55,11 +60,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
     () => (program ? selectRelatedLessonVideos(program, programs) : []),
     [program, programs],
   );
-  const latestApplicationIdea = useMemo(() => operationalData.sessions
-    .filter((session) => session.programs.some((item) => item.sourceType === 'program' && String(item.programId) === id) && session.memo?.trim())
-    .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
-    .map((session) => ({ date: session.startAt, classId: session.className, applicationIdea: session.memo! }))[0] ?? null,
-  [id, operationalData.sessions]);
+  const latestProgramMemory = useMemo(() => selectLatestProgramMemory({
+    programId: id,
+    sessions: operationalData.sessions,
+    captures: sessionCaptures,
+  }), [id, operationalData.sessions, sessionCaptures]);
   const section = searchParams.get('section');
   const shouldAutoplayVideo = section === 'video' && searchParams.get('autoplay') === '1';
   const libraryReturnHref = getLibraryReturnHref(
@@ -74,6 +79,19 @@ export default function LibraryDetailView({ id }: { id: string }) {
     null,
     sessionId ? buildActivitySessionHref(sessionId) : libraryReturnHref,
   );
+
+  useEffect(() => {
+    if (!isPremium) {
+      setSessionCaptures([]);
+      return;
+    }
+    let active = true;
+    void fetchSessionCaptures('limit=100').then((result) => {
+      if (!active) return;
+      setSessionCaptures(result.status === 'loaded' ? result.data : []);
+    });
+    return () => { active = false; };
+  }, [isPremium]);
 
   useEffect(() => {
     const heroTitle = heroTitleRef.current;
@@ -194,23 +212,25 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <DetailLessonGuide
           model={model}
           heroTitleRef={heroTitleRef}
-          continuity={latestApplicationIdea ? (
-            <aside data-next-prep-continuity className="mx-auto w-full max-w-[740px] rounded-[14px] border border-slate-200 bg-white/72 px-4 py-3 text-left shadow-[0_6px_18px_rgba(15,23,42,0.035)]">
-              <p className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>지난 수업에서 남긴 다음 적용점</p>
-              <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-                {new Date(latestApplicationIdea.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} · {latestApplicationIdea.classId}
-              </p>
-              <p className="mt-2 whitespace-pre-wrap break-words text-[13px] font-bold leading-6" style={{ color: 'var(--spm-t2)' }}>{latestApplicationIdea.applicationIdea}</p>
-              <Link href="/spokedu-master/activity" className="mt-2 inline-flex min-h-10 items-center text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>수업 기록 보기</Link>
-            </aside>
+          personalizedContext={latestProgramMemory ? (
+            <PersonalizedNote
+              label="지난 수업에서 이어갈 점"
+              date={new Date(latestProgramMemory.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+              context={latestProgramMemory.className}
+              preview={latestProgramMemory.nextSessionNote}
+              href={`/spokedu-master/activity?session=${encodeURIComponent(latestProgramMemory.sessionId)}&capture=1`}
+              actionLabel="지난 수업 기록 열기"
+            />
           ) : null}
           actions={(
-            <div data-detail-actions className="mx-auto grid w-full max-w-[740px] grid-cols-3 gap-1.5 sm:gap-2.5">
-              <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-1 text-[12px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] disabled:opacity-55 sm:px-3 sm:text-[13px]" />
-              <Link data-detail-action="calendar" href="/spokedu-master/activity" className="inline-flex h-12 min-w-0 items-center justify-center rounded-[12px] bg-white/90 px-1 text-[12px] font-black text-slate-800 shadow-sm ring-1 ring-slate-300/90 sm:px-3 sm:text-[13px]">수업 관리</Link>
-              <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex h-12 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-white/62 px-1 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition duration-200 ease-out hover:-translate-y-px hover:bg-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:gap-2 sm:px-3 sm:text-[13px]">
-                <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
-              </button>
+            <div data-detail-actions className="mx-auto w-full max-w-[740px] space-y-2.5">
+              <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] disabled:opacity-55" />
+              <div data-detail-support-actions className="grid grid-cols-2 gap-2">
+                <Link data-detail-action="calendar" href="/spokedu-master/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[12px] bg-white/90 px-2 text-[12px] font-black text-slate-700 ring-1 ring-slate-300/90 sm:px-3 sm:text-[13px]">수업 일정 관리</Link>
+                <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-transparent px-2 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] sm:gap-2 sm:px-3 sm:text-[13px]">
+                  <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
+                </button>
+              </div>
             </div>
           )}
           video={{ embedUrl: videoEmbedUrl, directUrl: directVideoUrl, externalUrl: externalVideoUrl, sourceUrl: videoUrl, autoplay: shouldAutoplayVideo, onPlaybackStarted: recordVideoStarted }}

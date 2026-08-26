@@ -657,6 +657,7 @@ function CardInfo({
   hubReturnHref,
   contentOverride,
   onGuide,
+  sessionAssignment = false,
 }: {
   preset: OfficialSpomovePreset;
   isReady: boolean;
@@ -664,6 +665,7 @@ function CardInfo({
   hubReturnHref: string;
   contentOverride?: SpomovePresetContentOverride;
   onGuide: () => void;
+  sessionAssignment?: boolean;
 }) {
   const router = useRouter();
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
@@ -700,9 +702,9 @@ function CardInfo({
             data-spm-spomove-card-action="start"
             data-spm-spomove-start-mode="guide"
             onClick={onGuide}
-            className="spm-btn-primary inline-flex h-11 min-w-0 flex-[1.6] items-center justify-center whitespace-nowrap rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none sm:h-9"
+            className={`inline-flex h-11 min-w-0 flex-[1.6] items-center justify-center whitespace-nowrap rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none sm:h-9 ${sessionAssignment ? 'border border-slate-200 bg-white text-slate-700' : 'spm-btn-primary'}`}
           >
-            활동 준비
+            활동 살펴보기
           </button>
           {showSettings ? (
             <button
@@ -712,7 +714,7 @@ function CardInfo({
               onClick={() => router.push(hrefForSettings())}
               className="inline-flex h-11 min-w-0 flex-1 items-center justify-center overflow-hidden whitespace-nowrap rounded-[9px] border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 sm:h-9 sm:px-3"
             >
-              시작 설정
+              실행 설정
             </button>
           ) : null}
         </div>
@@ -792,7 +794,7 @@ function PresetCard({
           if (!preset.isReady) return;
           onPreview();
         }}
-        aria-label={`${displayModel.displayTitle} 활동 준비 열기`}
+        aria-label={`${displayModel.displayTitle} 활동 살펴보기 열기`}
         className="relative flex min-h-0 w-full flex-1 cursor-pointer flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
       >
         <CardVisual
@@ -812,11 +814,12 @@ function PresetCard({
         hubReturnHref={hubReturnHref}
         contentOverride={contentOverride}
         onGuide={onPreview}
+        sessionAssignment={Boolean(onAddToSession)}
       />
       {onAddToSession ? (
         <div className="border-t border-slate-100 px-3 pb-3 pt-2">
-          <button type="button" onClick={onAddToSession} disabled={addedToSession || addingToSession} className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-black text-blue-700 disabled:border-emerald-200 disabled:bg-emerald-50 disabled:text-emerald-700">
-            {addedToSession ? '추가됨' : addingToSession ? '추가 중' : '수업에 추가'}
+          <button type="button" onClick={onAddToSession} disabled={addedToSession || addingToSession} className="spm-btn-primary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-3 text-sm font-black disabled:bg-emerald-100 disabled:text-emerald-700">
+            {addedToSession ? '이 수업에 추가됨' : addingToSession ? '추가 중' : '이 수업에 추가'}
           </button>
         </div>
       ) : null}

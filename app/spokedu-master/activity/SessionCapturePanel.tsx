@@ -174,6 +174,7 @@ export function SessionCapturePanel({
                     }}
                     className="min-h-20 w-full rounded-lg border border-slate-200 p-2 text-sm"
                     placeholder="오늘 관찰한 사실을 짧게 적어주세요."
+                    maxLength={1000}
                   />
                   {student.guidanceNote ? <p className="mt-1 text-xs font-semibold text-amber-700">지도 참고사항: {student.guidanceNote}</p> : null}
                 </>
@@ -189,7 +190,10 @@ export function SessionCapturePanel({
                 setDirty(true);
               }}
               className="mt-1 min-h-20 w-full rounded-lg border border-slate-200 p-2 text-sm"
+              placeholder="예: 2단계 설명을 짧게 하고 시범을 먼저 보여주기"
+              maxLength={500}
             />
+            <span className="mt-1 block text-right text-[11px] font-semibold text-slate-400">{nextNote.length}/500</span>
           </label>
           {saveError ? <p role="alert" className="rounded-lg bg-rose-50 p-2 text-xs font-bold text-rose-700">기록을 저장하지 못했습니다. 작성한 내용은 그대로 유지됩니다.</p> : null}
           <button type="button" disabled={!dirty || saving} onClick={() => void save()} className={SPM_PRIMARY_BTN}>
