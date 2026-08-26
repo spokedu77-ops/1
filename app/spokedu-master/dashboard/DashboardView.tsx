@@ -55,7 +55,7 @@ import {
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
 } from '../lib/recentProgramActivity';
-import { TodaySessionsPanel } from './TodaySessionsPanel';
+import { HomeFollowUpPanel, TodaySessionsPanel } from './TodaySessionsPanel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
@@ -912,7 +912,8 @@ function EntitledDashboardView() {
 
       {isFirstUser && operationalSessions.length === 0 ? (
         <FirstStartGuide />
-      ) : (
+      ) : (<>
+        <HomeFollowUpPanel sessions={operationalSessions} classes={operationalClasses} seoulDay={getSeoulToday()} />
         <TodaySessionsPanel
           sessions={operationalSessions}
           classes={operationalClasses}
@@ -921,7 +922,7 @@ function EntitledDashboardView() {
           error={operationalStatus === 'error'}
           onRetry={() => void reloadOperationalData()}
         />
-      )}
+      </>)}
 
       <section
         data-dashboard-section="featured-flow"

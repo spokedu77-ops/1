@@ -37,6 +37,7 @@ export type MasterClassRecordStudentRow = {
 
 export type MasterClassRecordRow = {
   id: string;
+  session_id?: string | null;
   owner_id: string;
   legacy_id: string | null;
   class_date: string;
@@ -265,6 +266,7 @@ export function toClassRecordDto(row: MasterClassRecordRow): MasterClassRecordDt
 
   return {
     id: row.id,
+    sessionId: row.session_id ?? null,
     legacyId: row.legacy_id,
     date: row.class_date,
     lessonTitle: row.lesson_title,

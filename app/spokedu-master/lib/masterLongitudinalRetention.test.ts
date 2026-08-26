@@ -118,6 +118,16 @@ describe('MASTER Longitudinal Retention — temporal / debt', () => {
     expect(todayCards.every((card) => card.session.id !== 'overdue-old')).toBe(true);
     expect(summarizePastOperationalDebt({ sessions, classes: [classItem], now }).count).toBeGreaterThan(0);
   });
+
+  it('Home follow-up excludes unresolved Sessions on the current Seoul day', () => {
+    const now = new Date('2026-08-26T07:30:00.000Z');
+    const todayOverdue = makeSession({ id: 'today-overdue', startAt: '2026-08-26T05:00:00.000Z', endAt: '2026-08-26T06:00:00.000Z', programs: programs(0, 1) });
+    expect(summarizePastOperationalDebt({ sessions: [todayOverdue], classes: [classItem], now })).toEqual({
+      count: 0,
+      leadSessionId: null,
+      leadClassId: null,
+    });
+  });
 });
 
 describe('MASTER Longitudinal Retention — roster drift / history', () => {

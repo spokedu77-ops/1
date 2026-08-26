@@ -15,6 +15,7 @@ import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { MasterStudentDto } from '../../types/operational';
 import { buildClassAttendanceView, buildIncompleteAttendanceSessions, resolveInitialAttendanceMonth, selectNextClassSession, selectRecentCompletedClassSessions, shiftAttendanceMonth } from '../classManagementModel';
 import { ClassRosterSheet } from './ClassRosterSheet';
+import { ClassMemoryPanel } from '../../components/records/CaptureProjections';
 
 type DetailTab = 'roster' | 'attendance';
 
@@ -78,6 +79,7 @@ export default function ClassDetailPage() {
         </div>
         <div className="mt-4"><LessonManagementTabs /></div>
       </header>
+      <ClassMemoryPanel classId={classId} />
 
       {!roster.length ? <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
         <Users className="text-emerald-600" size={24} /><h2 className="mt-3 text-lg font-black text-slate-900">아직 등록된 학생이 없습니다.</h2><p className="mt-1 text-sm font-semibold leading-6 text-slate-500">학생을 추가하면 수업 출석 명단으로 자동 연결됩니다.</p>
