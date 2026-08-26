@@ -11,6 +11,7 @@ import {
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
 import { SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
+import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 
 const NON_BILLING_CANCEL_MESSAGE = '자동결제 해지 대상이 아닙니다. 고객센터로 문의해 주세요.';
 
@@ -192,7 +193,13 @@ export default function SubscriptionPage() {
             </button>
           </section>
         ) : (
-          <SubscriptionStatusCard display={display} onCancel={() => setConfirmOpen(true)} />
+          <div className="space-y-4">
+            <SubscriptionStatusCard display={display} onCancel={() => setConfirmOpen(true)} />
+            <MasterValueEvidencePanel
+              plan={data?.plan === 'pro' ? 'premium' : data?.plan === 'premium' || data?.plan === 'lite' || data?.plan === 'team' ? data.plan : 'free'}
+              retryVisible
+            />
+          </div>
         )}
       </main>
 

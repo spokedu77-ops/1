@@ -132,7 +132,7 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
       createdAt: '',
       updatedAt: '',
     };
-    const draft = buildNextSessionDraft(session);
+    const draft = buildNextSessionDraft(session, new Date('2026-08-25T00:00:00.000Z'));
     expect(draft.day).toBe('2026-08-26');
     expect(draft.startTime).toBeTruthy();
     expect(draft.endTime).toBeTruthy();
@@ -148,7 +148,7 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
     expect(payment).toContain('buildMasterGateDisplayModel');
     expect(payment).toContain('gateDisplay');
     expect(activity).toContain('다음 수업 만들기');
-    expect(activity).toContain('이번 수업 활동을 다음 일정 준비의 시작점으로');
+    expect(activity).toContain('지난 기록을 참고하고 이어갈 활동을 직접 선택합니다.');
     expect(activity).not.toContain('Premium modal');
     expect(home).not.toContain('Premium 업그레이드');
     expect(home).not.toContain('프리미엄 배너');

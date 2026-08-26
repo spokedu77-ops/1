@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const source = readFileSync('app/spokedu-master/activity/page.tsx', 'utf8');
+const capture = readFileSync('app/spokedu-master/activity/SessionCapturePanel.tsx', 'utf8');
 
 describe('Session workspace structural contract', () => {
   it('keeps create schedule fields separate from existing Session schedule disclosure', () => {
@@ -36,5 +37,23 @@ describe('Session workspace structural contract', () => {
     expect(source).toContain('다음 수업 준비');
     expect(source).toContain('다음 수업 보기');
     expect(source).toContain('openNextPlanner');
+  });
+
+  it('drives section order and capture from workspace composition', () => {
+    expect(source).toContain('sessionSectionOrderClass');
+    expect(source).toContain('workspace?.sectionOrder');
+    expect(source).toContain('captureMode={workspace?.captureMode');
+    expect(source).toContain('showInlinePremiumUpsell={Boolean(workspace?.showInlinePremiumUpsell)}');
+    expect(source).toContain("workspace?.presentationKind !== 'RECOVERY'");
+    expect(source).toContain('attendanceDefaultOpen');
+  });
+
+  it('keeps capture progressive by mode and hides lite gates outside wrap/review', () => {
+    expect(capture).toContain("captureMode === 'memory'");
+    expect(capture).toContain("captureMode === 'hidden'");
+    expect(capture).toContain('showInlinePremiumUpsell');
+    expect(capture).toContain('지난 수업에서 이어갈 점');
+    expect(capture).toContain('오늘 관찰을 남기면 다음 준비에 이어집니다');
+    expect(capture).not.toContain('presentationKind');
   });
 });

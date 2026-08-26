@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useMasterCanUseAttendance } from '../access/MasterAccessProvider';
 import { getMasterRequestErrorMessage, masterFetchJson } from '../lib/masterRequestError';
 import { useProfile } from '../store';
+import { invalidateMasterValueSummary } from '../lib/masterValueSummaryEvents';
 import type {
   CreateStudentInput,
   MasterClassDto,
@@ -168,6 +169,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     );
     setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()));
+    invalidateMasterValueSummary();
     return json.data;
   }, []);
 
@@ -178,6 +180,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     });
     setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()));
+    invalidateMasterValueSummary();
     return json.data;
   }, []);
 
@@ -193,6 +196,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     });
     setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()));
+    invalidateMasterValueSummary();
     return json.data;
   }, []);
 
@@ -260,6 +264,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
         ?? students.find((student) => student.id === entry.studentId)?.name ?? '이름 미확인 학생',
       ...entry,
     })) } : item));
+    invalidateMasterValueSummary();
   }, [students]);
 
   const addClassStudent = useCallback(async (classId: string, studentId: string) => {

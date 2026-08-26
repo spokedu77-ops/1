@@ -16,6 +16,7 @@ import {
   getEntitlementPrimaryCtaLabel,
   type MasterAccessSnapshot,
 } from '../lib/masterAccessModel';
+import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 
 const LITE_FEATURES = [
   '오늘 수업을 찾고 현장에서 운영',
@@ -74,6 +75,8 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
           </Link>
         </div>
       </header>
+
+      {isLapsed ? <MasterValueEvidencePanel plan={snapshot.plan} preservedContext /> : null}
 
       <section>
         <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>

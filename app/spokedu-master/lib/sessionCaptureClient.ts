@@ -1,4 +1,5 @@
 import type { MasterClassRecordDto } from '../types/legacyOperational';
+import { invalidateMasterValueSummary } from './masterValueSummaryEvents';
 
 export type CaptureLoadResult = { status: 'loaded'; data: MasterClassRecordDto[] } | { status: 'error'; message: string };
 const inFlight = new Map<string, Promise<CaptureLoadResult>>();
@@ -25,5 +26,6 @@ export async function saveSessionCapture(input: { sessionId: string; nextSession
   if (!response.ok) throw new Error('기록을 저장하지 못했습니다.');
   const result = await response.json() as { data: MasterClassRecordDto };
   invalidateSessionCaptureCache();
+  invalidateMasterValueSummary();
   return result.data;
 }

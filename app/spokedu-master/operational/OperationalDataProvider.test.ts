@@ -58,13 +58,14 @@ describe('OperationalDataProvider server-first contract', () => {
 describe('student soft delete route contract', () => {
   const source = () => readSource('app/api/spokedu-master/students/[id]/route.ts');
 
-  it('requires MASTER access and soft deletes only current owner rows', () => {
+  it('requires MASTER attendance capability and soft deletes only current owner rows', () => {
     const text = source();
 
-    expect(text).toContain('requireSpokeduMasterAccess');
+    expect(text).toContain("requireSpokeduMasterCapability('attendance')");
     expect(text).toContain(".eq('owner_id', access.userId)");
     expect(text).toContain(".eq('id', id)");
     expect(text).toContain('deleted_at');
-    expect(text).not.toContain('delete()');
+    expect(text).toContain('spokedu_master_soft_delete_student');
+    expect(text).not.toContain('.delete()');
   });
 });

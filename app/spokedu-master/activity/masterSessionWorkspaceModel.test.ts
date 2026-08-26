@@ -42,3 +42,73 @@ describe('Session workspace presentation orchestration', () => {
     expect(presentation(session({ status: 'completed', programs: programs(1, 3) })).nextPendingProgramId).toBeNull();
   });
 });
+
+describe('Operating rhythm composition contract', () => {
+  it('PREP-01: memory capture, collapsed attendance, no premium upsell, activity prep primary', () => {
+    const view = presentation(session());
+    expect(view).toMatchObject({
+      presentationKind: 'PREP',
+      phaseLabel: '준비',
+      captureMode: 'memory',
+      attendanceMode: 'collapsed',
+      attendanceDefaultOpen: false,
+      memoMode: 'hidden',
+      showInlinePremiumUpsell: false,
+      primarySurfaceIntent: 'add-activity',
+    });
+    expect(view.sectionOrder.capture).toBeLessThan(view.sectionOrder.attendance);
+    expect(view.sectionOrder.activities).toBeLessThan(view.sectionOrder.attendance);
+  });
+
+  it('RUN-01: activities lead, capture collapsed secondary', () => {
+    const view = presentation(session({ programs: programs(1, 3) }));
+    expect(view).toMatchObject({
+      presentationKind: 'RUN',
+      captureMode: 'collapsed',
+      attendanceMode: 'summary',
+      memoMode: 'collapsed',
+      showInlinePremiumUpsell: false,
+      primarySurfaceIntent: 'run-next-activity',
+    });
+    expect(view.sectionOrder.activities).toBeLessThan(view.sectionOrder.capture);
+    expect(view.sectionOrder.activities).toBeLessThan(view.sectionOrder.memo);
+  });
+
+  it('WRAP-01: attendance/capture/memo surfaced, complete primary, premium upsell allowed', () => {
+    const view = presentation(session({ programs: programs(3, 3) }));
+    expect(view).toMatchObject({
+      presentationKind: 'WRAP',
+      captureMode: 'emphasized',
+      attendanceMode: 'attention',
+      attendanceDefaultOpen: true,
+      memoMode: 'emphasized',
+      showInlinePremiumUpsell: true,
+      primarySurfaceIntent: 'wrap-session',
+    });
+    expect(view.sectionOrder.attendance).toBeLessThan(view.sectionOrder.activities);
+    expect(view.sectionOrder.primary).toBeLessThan(view.sectionOrder.activities);
+  });
+
+  it('REVIEW-01: readable history surfaces, next primary, no schedule edit', () => {
+    const view = presentation(session({ status: 'completed', programs: programs(3, 3) }));
+    expect(view).toMatchObject({
+      presentationKind: 'REVIEW',
+      captureMode: 'review',
+      memoMode: 'review',
+      showInlinePremiumUpsell: true,
+      scheduleEditingAvailable: false,
+      primarySurfaceIntent: 'post-session',
+    });
+    expect(view.sectionOrder.primary).toBeLessThan(view.sectionOrder.capture);
+  });
+
+  it('RECOVERY hides capture and memo dump', () => {
+    expect(presentation(session({ status: 'cancelled' }))).toMatchObject({
+      presentationKind: 'RECOVERY',
+      captureMode: 'hidden',
+      memoMode: 'hidden',
+      showInlinePremiumUpsell: false,
+      primarySurfaceIntent: 'recover-session',
+    });
+  });
+});
