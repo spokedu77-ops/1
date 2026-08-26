@@ -34,6 +34,7 @@ describe('MASTER Session connections', () => {
     expect(report).toContain('resolveReportSession(sessions, requestedSessionId, selectedId)');
     expect(report).toContain('완료된 수업을 찾을 수 없습니다.');
     expect(report).not.toContain('sessions.find((session) => session.id === selectedId) ?? sessions[0]');
-    expect(report).toContain('!requestedSessionId ? <label');
+    expect(report).toContain('{!requestedSessionId ? (');
+    expect(report).toContain('<label className="text-xs font-black text-slate-600">');
   });
 });

@@ -198,6 +198,7 @@ export default function SubscriptionPage() {
             <MasterValueEvidencePanel
               plan={data?.plan === 'pro' ? 'premium' : data?.plan === 'premium' || data?.plan === 'lite' || data?.plan === 'team' ? data.plan : 'free'}
               retryVisible
+              surface="subscription"
             />
           </div>
         )}

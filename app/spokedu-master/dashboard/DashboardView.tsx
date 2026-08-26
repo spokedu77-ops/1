@@ -55,7 +55,7 @@ import {
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
 } from '../lib/recentProgramActivity';
-import { HomeFollowUpPanel, TodaySessionsPanel } from './TodaySessionsPanel';
+import { HomeFollowUpPanel, TodaySessionsPanel, UpcomingPreparationPanel } from './TodaySessionsPanel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
@@ -73,7 +73,6 @@ import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
 import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
-import { resolveMasterActivationNeed } from '../lib/masterSubscriberValueEvidence';
 
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
@@ -849,10 +848,6 @@ function EntitledDashboardView() {
     setSelectedProgram(program);
   };
   const studentMemoCount = useMemo(() => operationalSessions.filter((session) => session.memo?.trim()).length, [operationalSessions]);
-  const activationNeed = useMemo(
-    () => resolveMasterActivationNeed({ classCount: operationalClasses.length, sessions: operationalSessions }),
-    [operationalClasses.length, operationalSessions],
-  );
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
@@ -934,11 +929,8 @@ function EntitledDashboardView() {
           error={operationalStatus === 'error'}
           onRetry={() => void reloadOperationalData()}
         />
+        <UpcomingPreparationPanel sessions={operationalSessions} classes={operationalClasses} />
       </>)}
-
-      {operationalStatus === 'ready' ? (
-        <MasterValueEvidencePanel plan={accessSnapshot.plan} activation={isFirstUser ? 'none' : activationNeed} />
-      ) : null}
 
       <section
         data-dashboard-section="featured-flow"
@@ -1020,6 +1012,10 @@ function EntitledDashboardView() {
 
       {/* P1: 하단은 3순위 — 얇은 구분 + 조용한 면 */}
       <div aria-hidden="true" className="border-t border-slate-200/80" />
+
+      {operationalStatus === 'ready' ? (
+        <MasterValueEvidencePanel plan={accessSnapshot.plan} surface="home" activation="none" />
+      ) : null}
 
       <section
         data-dashboard-section="operations-flow"

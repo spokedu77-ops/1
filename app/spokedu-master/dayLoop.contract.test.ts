@@ -19,7 +19,8 @@ describe('SPOKEDU MASTER Session day loop', () => {
     const todaySessions = read('app/spokedu-master/dashboard/todaySessionsModel.ts');
     const workState = read('app/spokedu-master/lib/masterSessionWorkState.ts');
     expect(dashboard).toContain('TodaySessionsPanel');
-    expect(todaySessions).toContain('/spokedu-master/activity?session=');
+    expect(todaySessions).toContain('href: workState.href');
+    expect(workState).toContain('buildActivitySessionHref(session.id)');
   });
 
   it('keeps SPOMOVE linked to Session operation', () => {

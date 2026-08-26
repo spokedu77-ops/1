@@ -76,7 +76,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         </div>
       </header>
 
-      {isLapsed ? <MasterValueEvidencePanel plan={snapshot.plan} preservedContext /> : null}
+      {isLapsed ? <MasterValueEvidencePanel plan={snapshot.plan} preservedContext surface="preserved" /> : null}
 
       <section>
         <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>

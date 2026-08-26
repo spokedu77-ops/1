@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 
 import { SPM_PRIMARY_BTN } from '../lib/masterActionGrammar';
-import { formatSeoulSessionTime } from '../lib/sessionDateTime';
+import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
+import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { summarizePastOperationalDebt } from '../lib/masterTemporalContract';
 import type { MasterClassDto, MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { buildTodaySessionCards } from './todaySessionsModel';
@@ -108,4 +109,19 @@ export function HomeFollowUpPanel({ sessions, classes, seoulDay }: {
       <Link href={href} className="mt-2 flex min-h-11 items-center justify-between rounded-xl bg-white px-3 text-sm font-bold text-amber-950 ring-1 ring-amber-200"><span>지난 수업 상태와 출석 확인</span><span className="inline-flex items-center gap-1 text-xs font-black">확인<ArrowRight size={14} aria-hidden="true" /></span></Link>
     </section>
   );
+}
+
+export function UpcomingPreparationPanel({ sessions, classes }: { sessions: MasterSessionDto[]; classes: MasterClassDto[] }) {
+  const now = useMemo(() => new Date(), []);
+  const classMap = useMemo(() => new Map(classes.map((item) => [item.id, item])), [classes]);
+  const items = useMemo(() => sessions
+    .filter((session) => session.status === 'scheduled' && new Date(session.startAt).getTime() > now.getTime())
+    .map((session) => ({ session, state: deriveMasterSessionWorkState(session, classMap.get(session.classId), now) }))
+    .filter(({ state }) => state.stage === 'needs-preparation')
+    .sort((a, b) => a.session.startAt.localeCompare(b.session.startAt)).slice(0, 3), [classMap, now, sessions]);
+  if (!items.length) return null;
+  return <section data-dashboard-section="upcoming-prep" className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4">
+    <div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-blue-700">Preparation</p><h2 className="mt-1 text-base font-black text-slate-950">다가오는 수업 준비</h2></div><Link href="/spokedu-master/activity" className="min-h-11 px-2 text-xs font-black text-slate-500">전체 일정</Link></div>
+    <div className="mt-2 grid gap-2">{items.map(({ session, state }) => <Link key={session.id} href={state.href} className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-slate-50 px-3"><span className="min-w-0"><strong className="block truncate text-sm text-slate-900">{session.className}</strong><small className="text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(session.startAt)}</small></span><span className="shrink-0 text-xs font-black text-blue-700">수업 준비</span></Link>)}</div>
+  </section>;
 }

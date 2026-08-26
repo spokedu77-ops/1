@@ -37,27 +37,46 @@ export function resolveMasterActivationNeed(input: {
   return 'run-first-session';
 }
 
-export type MasterValueLine = { label: string; value: number };
+export type MasterValueLine = { label: string; value: number; kind: 'continuity' | 'memory' | 'usage' };
 
+/**
+ * Retention evidence priority:
+ * NEXT PREPARED / MEMORY > continuity upcoming > raw usage counts.
+ */
 export function buildMasterSubscriberValueView(input: {
   evidence: MasterSubscriberValueEvidence;
   plan: 'free' | 'lite' | 'premium' | 'team';
 }) {
   const { evidence, plan } = input;
-  const operating: MasterValueLine[] = [
-    { label: '완료 수업', value: evidence.operating.completedSessions },
-    { label: '출석 기록 수업', value: evidence.operating.sessionsWithAttendance },
-    { label: '다음 예정', value: evidence.operating.upcomingSessions },
+  const continuity: MasterValueLine[] = [
+    { label: '다음 예정', value: evidence.operating.upcomingSessions, kind: 'continuity' },
   ];
   const memory: MasterValueLine[] = plan === 'premium' || plan === 'team'
     ? [
-        { label: '학생 관찰', value: evidence.memory.studentObservations },
-        { label: '다음 수업 메모', value: evidence.memory.nextSessionNotes },
+        { label: '다음 수업 메모', value: evidence.memory.nextSessionNotes, kind: 'memory' },
+        { label: '학생 관찰', value: evidence.memory.studentObservations, kind: 'memory' },
       ]
     : [];
-  return { lines: [...operating, ...(evidence.memory.available ? memory : [])].filter((line) => line.value > 0).slice(0, 4) };
+  const usage: MasterValueLine[] = [
+    { label: '출석 기록 수업', value: evidence.operating.sessionsWithAttendance, kind: 'usage' },
+    { label: '완료 수업', value: evidence.operating.completedSessions, kind: 'usage' },
+  ];
+  const ordered = [
+    ...(evidence.memory.available ? memory : []),
+    ...continuity,
+    ...usage,
+  ];
+  return { lines: ordered.filter((line) => line.value > 0).slice(0, 4) };
 }
 
 export function hasMasterValueEvidence(evidence: MasterSubscriberValueEvidence) {
-  return evidence.operating.completedSessions > 0 || evidence.operating.sessionsWithAttendance > 0 || evidence.operating.upcomingSessions > 0;
+  return evidence.operating.completedSessions > 0
+    || evidence.operating.sessionsWithAttendance > 0
+    || evidence.operating.upcomingSessions > 0
+    || evidence.memory.nextSessionNotes > 0
+    || evidence.memory.studentObservations > 0;
+}
+
+export function hasMasterPreservedContext(evidence: MasterSubscriberValueEvidence) {
+  return evidence.preserved.totalClasses > 0 || evidence.preserved.totalSessions > 0;
 }

@@ -15,6 +15,7 @@ import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { MasterStudentDto } from '../../types/operational';
 import { buildClassAttendanceView, buildIncompleteAttendanceSessions, resolveInitialAttendanceMonth, selectNextClassSession, selectRecentCompletedClassSessions, shiftAttendanceMonth } from '../classManagementModel';
 import { ClassRosterSheet } from './ClassRosterSheet';
+import { RegularSchedulePanel } from './RegularSchedulePanel';
 import { ClassMemoryPanel } from '../../components/records/CaptureProjections';
 import { resolveSessionContinuity } from '../../activity/masterSessionContinuity';
 
@@ -81,6 +82,7 @@ export default function ClassDetailPage() {
         </div>
         <div className="mt-4"><LessonManagementTabs /></div>
       </header>
+      <RegularSchedulePanel classId={classItem.id} sessions={data.sessions} onCreated={() => data.reload('soft')} />
       <ClassMemoryPanel classId={classId} />
 
       {!roster.length ? <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">

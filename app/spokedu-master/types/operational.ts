@@ -41,6 +41,7 @@ export type MasterSessionDto = {
   attendance: MasterSessionAttendanceDto[];
   createdAt: string;
   updatedAt: string;
+  scheduleRuleId?: string | null;
 };
 
 export type SaveSessionInput = {

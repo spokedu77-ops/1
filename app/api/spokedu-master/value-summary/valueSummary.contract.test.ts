@@ -19,7 +19,9 @@ describe('value summary API contract', () => {
     expect(route).toContain('available: false');
   });
   it('keeps value below operational Home surfaces and has no generic upgrade banner', () => {
-    expect(home.indexOf('TodaySessionsPanel')).toBeLessThan(home.indexOf('MasterValueEvidencePanel'));
+    expect(home.indexOf('TodaySessionsPanel')).toBeLessThan(home.indexOf('surface="home"'));
+    expect(home.indexOf('data-dashboard-section="featured-flow"')).toBeLessThan(home.indexOf('surface="home"'));
+    expect(home).toContain('activation="none"');
     expect(home).not.toContain('Premium 업그레이드');
   });
 });

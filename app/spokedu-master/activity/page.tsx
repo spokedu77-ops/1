@@ -21,7 +21,6 @@ import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
 import { resolveActivityQuery } from './activityQuery';
 import { buildNextSessionDateTimes, buildNextSessionDraft } from './nextSession';
-import { resolvePreviousSessionCarryover } from './previousSessionMemory';
 import { getSessionActionPolicy } from './sessionActionPolicy';
 import { MonthSessionCalendar } from './MonthSessionCalendar';
 import { changeSessionEnd, changeSessionStart, createSessionTimeDraft, sessionTimeDraftToInputs } from './sessionDraftTime';
@@ -127,6 +126,20 @@ function SessionSheet({
     new Date(),
   ) : null;
   const actions = getSessionActionPolicy(status);
+  const workspace = workState ? resolveSessionWorkspacePresentation({ workState, actions, programs }) : null;
+  const continuity = activeSession
+    ? resolveSessionContinuity({ sourceSession: activeSession, classSessions: data.sessions, classItem: selectedClass, now: new Date() })
+    : { kind: 'none' as const };
+  const availableLibraryIds = new Set(
+    libraryPrograms.filter((program) => !program.isPro || canUseRecords).map((program) => Number(program.id)),
+  );
+  const unavailableCarryoverIds = new Set(programs.filter((program) => (
+    program.sourceType === 'program'
+      ? program.programId == null || !availableLibraryIds.has(program.programId)
+      : !canUseSpomove
+        || !findOfficialSpomovePreset(program.spomovePresetId ?? '')
+        || !isHubRunnablePreset(findOfficialSpomovePreset(program.spomovePresetId ?? '')!)
+  )).map((program) => program.id));
   const formDirty = Boolean(activeSession) && (
     classId !== activeSession!.classId
     || startAt !== buildSessionDraftDateTimes(initialDate, activeSession!).startAt
@@ -519,9 +532,62 @@ function SessionSheet({
           <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!actions.addActivities || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length ? 'spm-btn-primary' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
         </section>
 
-        {canUseRecords && actions.editMemo ? <label className="block text-sm font-black text-slate-800">수업 메모
-          <textarea value={memo} disabled={!actions.editMemo} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none disabled:bg-slate-50" />
-        </label> : canUseRecords ? <section className="rounded-xl bg-slate-50 p-4"><h3 className="text-sm font-black text-slate-800">수업 메모</h3><p className="mt-2 whitespace-pre-wrap text-sm font-medium leading-6 text-slate-600">{memo || '남긴 메모가 없습니다.'}</p></section> : <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-black text-slate-800">수업 메모와 누적 기록</p><p className="mt-1 text-xs font-semibold leading-5 text-slate-500">출석은 Lite에서 저장됩니다. 메모·학생 히스토리·안내문은 Premium에서 다음 수업에 재사용할 기록으로 쌓입니다.</p><Link href={`/spokedu-master/payment?plan=premium&intent=continue_record&next=${encodeURIComponent(activeSession ? `/spokedu-master/activity?session=${activeSession.id}` : '/spokedu-master/activity')}&journeyId=${encodeURIComponent(`memo_${activeSession?.id ?? 'new'}`)}`} className="mt-2 inline-flex min-h-11 items-center text-xs font-black text-[var(--spm-acc)]">Premium으로 기록 이어가기</Link></div>}
+        {activeSession ? (
+          <SessionCapturePanel
+            session={activeSession}
+            sessions={data.sessions}
+            students={data.students}
+            classStudentIds={selectedClass?.studentIds ?? []}
+            canUseRecords={canUseRecords}
+            captureMode={workspace?.captureMode ?? 'collapsed'}
+            showInlinePremiumUpsell={Boolean(workspace?.showInlinePremiumUpsell)}
+            order={workspace?.sectionOrder.capture ?? 5}
+          />
+        ) : null}
+        {activeSession && workspace?.presentationKind === 'PREP' ? (
+          <div className={sessionSectionOrderClass(workspace.sectionOrder.primary)}>
+            <PreviousActivityCarryover
+              target={{ ...activeSession, programs }}
+              availableProgramIds={availableLibraryIds}
+              canUseSpomove={canUseSpomove}
+              onImported={setPrograms}
+            />
+          </div>
+        ) : null}
+        {canUseRecords && workspace?.memoMode !== 'hidden' ? (
+          <section
+            data-session-memo
+            data-memo-mode={workspace?.memoMode}
+            className={`${sessionSectionOrderClass(workspace?.sectionOrder.memo ?? 6)} rounded-xl border border-slate-200 bg-white p-3`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-800">수업 메모</h3>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{memo.trim() ? '작성됨' : '메모 없음'}</p>
+              </div>
+              {actions.editMemo ? (
+                <button
+                  type="button"
+                  onClick={() => setRecordEditorOpen((open) => !open)}
+                  aria-expanded={recordEditorOpen}
+                  className="min-h-11 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-600"
+                >
+                  {recordEditorOpen ? '접기' : memo.trim() ? '수정' : '메모 남기기'}
+                </button>
+              ) : null}
+            </div>
+            {recordEditorOpen && actions.editMemo ? (
+              <textarea
+                value={memo}
+                onChange={(event) => setMemo(event.target.value)}
+                placeholder="수업 전체 메모"
+                className="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none"
+              />
+            ) : memo.trim() && workspace?.presentationKind === 'REVIEW' ? (
+              <p className="mt-3 whitespace-pre-wrap text-sm font-medium leading-6 text-slate-600">{memo}</p>
+            ) : null}
+          </section>
+        ) : null}
         {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
         {!activeSession ? <div><p className="mb-2 text-center text-[11px] font-semibold text-slate-400">활동은 나중에도 추가할 수 있습니다.</p><button type="button" disabled={saving || !classId} onClick={() => void persist()} className={SPM_PRIMARY_BTN_TALL}><Save size={15} />{MASTER_ACTION_COPY.createSession}</button></div> : null}
 
