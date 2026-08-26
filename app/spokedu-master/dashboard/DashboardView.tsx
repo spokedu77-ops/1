@@ -567,8 +567,8 @@ function ActivityPanel({
     action?: string;
   }> = compact
     ? [
-        { label: '안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
-        { label: '수업', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2 },
+        { label: '안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText, action: '안내문 보기' },
+        { label: '수업 일정', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2, action: '수업 관리' },
       ]
     : [
         { label: '안내문 보관', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
@@ -578,26 +578,31 @@ function ActivityPanel({
 
   if (compact) {
     return (
-      <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[12px] border border-slate-200/80 bg-white/90 px-2.5 py-2.5 ${className}`}>
+      <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[12px] border border-slate-200/70 bg-slate-50/60 px-2.5 py-2 ${className}`}>
         <div className="mb-1.5">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">운영 이력</p>
-          <h2 id="activity-heading" className="mt-0.5 text-[14px] font-black text-slate-700">수업 · 안내문</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">참고</p>
+          <h2 id="activity-heading" className="mt-0.5 text-[13px] font-black text-slate-600">기록 · 안내문</h2>
         </div>
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1">
           {activities.map(({ label, value, href, Icon, action }) => (
             <Link
               key={label}
               href={href}
-              className="flex min-h-11 items-center gap-2 rounded-[9px] border border-slate-100 bg-slate-50/70 px-2.5 transition-colors hover:border-slate-200 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
+              className="flex min-h-11 items-center gap-2 rounded-[9px] border border-slate-100/80 bg-white/80 px-2.5 transition-colors hover:border-slate-200 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
             >
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-white text-emerald-700 shadow-sm"><Icon size={14} /></span>
-              <span className="min-w-0">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-slate-50 text-slate-500"><Icon size={14} /></span>
+              <span className="min-w-0 flex-1">
                 <span className="block text-[11px] font-bold text-slate-500">{label}</span>
-                <span className="mt-0.5 inline-flex items-center gap-1 text-[14px] font-black text-slate-800">
-                  {action ?? (value === null ? '확인 중' : `${value}개`)}
-                  {action ? <ArrowRight size={13} className="text-slate-400" /> : null}
+                <span className="mt-0.5 inline-flex items-center gap-1 text-[13px] font-bold text-slate-700">
+                  {action}
+                  <ArrowRight size={12} className="text-slate-400" />
                 </span>
               </span>
+              {value !== null ? (
+                <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-400" aria-label={`${label} ${value}개`}>
+                  {value}
+                </span>
+              ) : null}
             </Link>
           ))}
         </div>

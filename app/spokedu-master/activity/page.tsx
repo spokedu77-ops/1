@@ -21,6 +21,7 @@ import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
 import { resolveActivityQuery } from './activityQuery';
 import { buildNextSessionDateTimes, buildNextSessionDraft } from './nextSession';
+import { resolvePreviousSessionCarryover } from './previousSessionMemory';
 import { getSessionActionPolicy } from './sessionActionPolicy';
 import { MonthSessionCalendar } from './MonthSessionCalendar';
 import { changeSessionEnd, changeSessionStart, createSessionTimeDraft, sessionTimeDraftToInputs } from './sessionDraftTime';
@@ -112,6 +113,12 @@ function SessionSheet({
     new Date(),
   ) : null;
   const actions = getSessionActionPolicy(status);
+  const previousCarryover = useMemo(
+    () => (classId && status === 'scheduled' && canUseRecords
+      ? resolvePreviousSessionCarryover(data.sessions, classId, activeSession?.id ?? null)
+      : null),
+    [activeSession?.id, canUseRecords, classId, data.sessions, status],
+  );
   const formDirty = Boolean(activeSession) && (
     classId !== activeSession!.classId
     || startAt !== buildSessionDraftDateTimes(initialDate, activeSession!).startAt
@@ -460,6 +467,15 @@ function SessionSheet({
           <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!actions.addActivities || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length ? 'spm-btn-primary' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
         </section>
 
+        {canUseRecords && status === 'scheduled' && previousCarryover ? (
+          <section
+            data-session-memory="previous-carryover"
+            className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3"
+          >
+            <p className="text-[11px] font-black text-slate-500">지난 수업에서 이어갈 점</p>
+            <p className="mt-1.5 whitespace-pre-wrap text-sm font-medium leading-6 text-slate-600">{previousCarryover.memo}</p>
+          </section>
+        ) : null}
         {canUseRecords && actions.editMemo ? <label className="block text-sm font-black text-slate-800">수업 메모
           <textarea value={memo} disabled={!actions.editMemo} onChange={(event) => setMemo(event.target.value)} placeholder="수업 전체 메모" className="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none disabled:bg-slate-50" />
         </label> : canUseRecords ? <section className="rounded-xl bg-slate-50 p-4"><h3 className="text-sm font-black text-slate-800">수업 메모</h3><p className="mt-2 whitespace-pre-wrap text-sm font-medium leading-6 text-slate-600">{memo || '남긴 메모가 없습니다.'}</p></section> : <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-black text-slate-800">수업 메모와 누적 기록</p><p className="mt-1 text-xs font-semibold leading-5 text-slate-500">출석은 Lite에서 저장됩니다. 메모·학생 히스토리·안내문은 Premium에서 다음 수업에 재사용할 기록으로 쌓입니다.</p><Link href={`/spokedu-master/payment?plan=premium&intent=continue_record&next=${encodeURIComponent(activeSession ? `/spokedu-master/activity?session=${activeSession.id}` : '/spokedu-master/activity')}&journeyId=${encodeURIComponent(`memo_${activeSession?.id ?? 'new'}`)}`} className="mt-2 inline-flex min-h-11 items-center text-xs font-black text-[var(--spm-acc)]">Premium으로 기록 이어가기</Link></div>}
