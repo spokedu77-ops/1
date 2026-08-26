@@ -11,13 +11,13 @@ const source: MasterSessionDto = {
 
 describe('next Session draft', () => {
   it('suggests Seoul day +7 while preserving start/end time', () => {
-    expect(buildNextSessionDraft(source)).toEqual({
+    expect(buildNextSessionDraft(source, new Date('2026-08-26T00:00:00Z'))).toEqual({
       day: '2026-08-30', startTime: '10:00', endTime: '11:30', endDayOffset: 0,
     });
   });
 
   it('allows changing the suggested day', () => {
-    const draft = { ...buildNextSessionDraft(source), day: '2026-09-02' };
+    const draft = { ...buildNextSessionDraft(source, new Date('2026-08-26T00:00:00Z')), day: '2026-09-02' };
     expect(buildNextSessionDateTimes(draft)).toEqual({
       startAt: '2026-09-02T10:00', endAt: '2026-09-02T11:30',
     });
@@ -25,8 +25,12 @@ describe('next Session draft', () => {
 
   it('preserves an overnight duration boundary', () => {
     const overnight = { ...source, startAt: '2026-08-23T14:30:00.000Z', endAt: '2026-08-23T15:30:00.000Z' };
-    const draft = buildNextSessionDraft(overnight);
+    const draft = buildNextSessionDraft(overnight, new Date('2026-08-26T00:00:00Z'));
     expect(draft).toMatchObject({ day: '2026-08-30', startTime: '23:30', endTime: '00:30', endDayOffset: 1 });
     expect(buildNextSessionDateTimes(draft).endAt).toBe('2026-08-31T00:30');
+  });
+
+  it('advances an old Session to the next future same-weekday occurrence', () => {
+    expect(buildNextSessionDraft(source, new Date('2026-09-01T00:00:00Z')).day).toBe('2026-09-06');
   });
 });

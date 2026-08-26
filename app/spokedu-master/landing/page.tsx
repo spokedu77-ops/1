@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { BookOpen, CheckCircle2, ChevronRight, Clock, MapPin, Play, Shield, Timer, Users, Zap } from 'lucide-react';
 import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
-import { MASTER_PRODUCT_CATALOG, MASTER_BUSINESS_INFO, MASTER_CUSTOMER_SERVICE_HREF, MASTER_CENTER_INQUIRY_HREF } from '../lib/productCatalog';
+import { MASTER_PRODUCT_CATALOG, MASTER_BUSINESS_INFO, MASTER_CUSTOMER_SERVICE_HREF, MASTER_CENTER_INQUIRY_HREF, getMasterProductPaymentDescription, getMasterProductPaymentFeatureLabels } from '../lib/productCatalog';
 import { LandingLoggedInBanner } from './LandingLoggedInBanner';
 
 const FEATURES = [
@@ -38,8 +38,8 @@ const PRICING = [
     badge: '수업 운영 기본',
     price: MASTER_PRODUCT_CATALOG.lite.priceLabel.replace(/원$/, ''),
     period: MASTER_PRODUCT_CATALOG.lite.billingCycleLabel,
-    desc: '라이브러리·수업 도구·출석부로 수업 운영을 시작하는 기본',
-    includes: ['라이브러리 전체', '수업 도구 전체', '출석부', '기록·안내문은 프리미엄'],
+    desc: getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite),
+    includes: getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite),
     accent: 'var(--spm-s2)',
     border: 'var(--spm-br2)',
     badgeColor: 'var(--spm-t3)',
@@ -51,8 +51,8 @@ const PRICING = [
     badge: '가장 인기',
     price: MASTER_PRODUCT_CATALOG.premium.priceLabel.replace(/원$/, ''),
     period: MASTER_PRODUCT_CATALOG.premium.billingCycleLabel,
-    desc: '매주 수업 기록이 쌓이고 다음 준비로 이어지는 전체 운영 환경',
-    includes: ['라이트의 모든 기능', '수업 기록·학생 히스토리', '메모·안내문 작성과 재사용', 'SPOMOVE 큰 화면 실행', 'Pro 수업 상세 자료', 'SPOMAT 회원가 (연결 시)'],
+    desc: getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium),
+    includes: getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium),
     accent: 'var(--spm-acc-a18)',
     border: 'var(--spm-acc-a42)',
     badgeColor: 'var(--spm-acc)',
@@ -82,7 +82,7 @@ const STATS = [
 
 const FLOW = [
   { num: '1', label: '오늘 수업 결정', caption: '오늘 일정과 수업반을 보고 라이브러리에서 활동을 고릅니다', color: 'var(--spm-acc-a14)', accent: 'var(--spm-acc)' },
-  { num: '2', label: '현장에서 바로 운영', caption: '출석, 활동, SPOMOVE와 수업 도구를 한 Session에서 사용합니다', color: 'var(--spm-grn-a12)', accent: 'var(--spm-grn)' },
+  { num: '2', label: '현장에서 바로 운영', caption: '출석·활동·수업 도구를 한 Session에서 사용하고, Premium에서는 SPOMOVE까지 이어갑니다', color: 'var(--spm-grn-a12)', accent: 'var(--spm-grn)' },
   { num: '3', label: '기록하고 다음 수업 연결', caption: '완료한 활동과 메모, 안내문을 남겨 다음 준비를 더 빠르게 시작합니다', color: 'var(--spm-amb-a12)', accent: 'var(--spm-amb)' },
 ] as const;
 

@@ -10,6 +10,7 @@ import {
   type SubscriptionDisplaySummary,
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
+import { SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
 
 const NON_BILLING_CANCEL_MESSAGE = '자동결제 해지 대상이 아닙니다. 고객센터로 문의해 주세요.';
 
@@ -53,9 +54,20 @@ function SubscriptionStatusCard({
         {display.description}
       </p>
 
+      {display.valueWorkflow.length ? (
+        <ul className="mt-4 space-y-2" aria-label="이 이용권으로 이어가는 운영">
+          {display.valueWorkflow.map((line) => (
+            <li key={line} className="flex gap-2 text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--spm-grn)' }} aria-hidden="true" />
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {display.canUseSpomatMemberPrice ? (
         <p className="mt-3 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
-          SPOMAT 회원가 구매 대상
+          SPOMAT 회원가 {SPOMAT_PRODUCT_CONTRACT.premiumPrice.toLocaleString('ko-KR')}원 (정가 대비 {SPOMAT_PRODUCT_CONTRACT.discountAmount.toLocaleString('ko-KR')}원)
         </p>
       ) : null}
 
@@ -194,8 +206,11 @@ export default function SubscriptionPage() {
             구독을 해지하시겠어요?
           </p>
           <p className="text-[13px] font-semibold leading-6" style={{ color: '#475569' }}>
-            해지 후에도 <strong>{cancelEndDate ?? '현재 이용 기간 종료일'}</strong>까지 이용할 수 있으며<br />
+            해지 후에도 <strong>{cancelEndDate ?? '현재 이용 기간 종료일'}</strong>까지 이용할 수 있으며
             다음 결제일부터는 자동결제되지 않습니다.
+            {data?.plan === 'premium' || data?.plan === 'pro'
+              ? ' 종료 후에도 수업·출석 데이터는 유지되며, Premium 기록·SPOMOVE 접근만 종료일 이후 제한됩니다.'
+              : ' 종료 후에도 수업·출석 데이터는 유지됩니다.'}
           </p>
           {cancelError ? (
             <p className="rounded-[10px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626' }}>

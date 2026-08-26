@@ -15,15 +15,17 @@ describe('OperationalDataProvider server-first contract', () => {
     expect(text).toContain('UUID_PATTERN');
     expect(text).toContain("profile?.id");
     expect(text).toContain("? profile.id : null");
-    expect(text).toContain("if (!ownerId || !canUseRecords)");
+    expect(text).toContain("if (!ownerId || !canUseAttendance)");
   });
 
-  it('clears previous owner data before loading and on logout', () => {
+  it('clears previous owner data on hard reload and logout, soft-refreshes on field return', () => {
     const text = source();
 
     expect(text).toContain('const clearData = useCallback');
-    expect(text.match(/clearData\(\)/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
+    expect(text).toContain("reload('hard')");
+    expect(text).toContain("reload('soft')");
     expect(text).toContain('activeOwnerRef.current = null');
+    expect(text).toContain("mode === 'hard'");
   });
 
   it('uses only server operational APIs and never falls back to legacy storage', () => {

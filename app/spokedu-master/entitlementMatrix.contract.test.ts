@@ -5,7 +5,7 @@ import {
   buildSpokeduMasterAccessSnapshot,
   type SpokeduMasterSubscriptionRow,
 } from '@/app/lib/server/spokeduMasterAccess';
-import { MASTER_PRODUCT_CATALOG } from './lib/productCatalog';
+import { MASTER_PRODUCT_CATALOG, getMasterProductPaymentFeatureLabels } from './lib/productCatalog';
 import { getMasterRouteRequirement } from './components/layout/masterRouteAccess';
 
 function row(overrides: Partial<SpokeduMasterSubscriptionRow>): SpokeduMasterSubscriptionRow {
@@ -152,11 +152,15 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
 
   it('keeps landing Lite includes honest to the matrix (no records on Lite)', () => {
     const landing = read('app/spokedu-master/landing/page.tsx');
-    expect(landing).toContain("'기록·안내문은 프리미엄'");
-    const liteBlock = landing.match(/id:\s*'lite'[\s\S]*?(?=id:\s*'premium'|id:\s*'center'|$)/)?.[0] ?? '';
-    expect(liteBlock.length).toBeGreaterThan(20);
-    expect(liteBlock).not.toContain("'수업 기록·학생 명단'");
-    expect(liteBlock).not.toContain("'안내문 작성·복사'");
-    expect(landing).toMatch(/id: 'premium'[\s\S]*?'수업 기록·학생 히스토리'/);
+    expect(landing).toContain('getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite)');
+    expect(landing).toContain('getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium)');
+
+    const lite = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' ');
+    const premium = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' ');
+    expect(lite).toContain('출석');
+    expect(lite).not.toContain('안내문 작성·복사');
+    expect(lite).not.toContain('SPOMOVE');
+    expect(premium).toContain('안내문 작성·복사');
+    expect(premium).toContain('SPOMOVE');
   });
 });

@@ -674,11 +674,11 @@ export default function LibraryView() {
                       </p>
                       <h3 className="mt-1 line-clamp-2 text-[14px] font-black leading-tight text-[color:var(--spm-t)]">{program.title}</h3>
                       <div className="mt-3 grid gap-2">
-                        <Link href="/spokedu-master/activity" className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
-                          기록 보기
+                        <Link href={`/spokedu-master/activity?session=${encodeURIComponent(record.id)}`} className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
+                          지난 수업 보기
                         </Link>
                         <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-9 items-center justify-center rounded-[9px] bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
-                          수업 라이브러리 열기
+                          수업 다시 준비
                         </Link>
                       </div>
                     </article>

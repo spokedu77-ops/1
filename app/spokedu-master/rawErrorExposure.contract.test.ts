@@ -5,10 +5,11 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('SPOKEDU MASTER raw error exposure cleanup', () => {
-  it('does not render caught.message on reachable payment, students, or report screens', () => {
+  it('does not render caught.message on reachable payment, students, report, or activity screens', () => {
     const payment = read('app/spokedu-master/payment/page.tsx');
     const students = read('app/spokedu-master/students/page.tsx');
     const report = read('app/spokedu-master/report/page.tsx');
+    const activity = read('app/spokedu-master/activity/page.tsx');
 
     expect(payment).not.toContain('authError.message');
     expect(payment).not.toContain('setError(json.error');
@@ -17,6 +18,8 @@ describe('SPOKEDU MASTER raw error exposure cleanup', () => {
     expect(students).not.toContain('{failure.reason}');
     expect(report).not.toContain('setSaveError(caught instanceof Error ? caught.message');
     expect(report).not.toContain('Failed to save explanation');
+    expect(activity).not.toContain('caught instanceof Error ? caught.message');
+    expect(activity).toContain('getMasterRequestErrorMessage');
   });
 
   it('uses safe client feedback on reachable payment, student, and report paths', () => {

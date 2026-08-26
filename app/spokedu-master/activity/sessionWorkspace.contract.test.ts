@@ -29,4 +29,12 @@ describe('Session workspace structural contract', () => {
     expect(source).toContain('data-session-primary-action');
     expect(source).not.toContain("workState?.stage === 'ready-to-wrap' || workState?.attention.overdue ? '수업 마무리' : MASTER_ACTION_COPY.completeSession");
   });
+
+  it('uses the continuity target before offering timeline-end creation', () => {
+    expect(source).toContain('resolveSessionContinuity');
+    expect(source).toContain("continuity.kind === 'existing-upcoming'");
+    expect(source).toContain('다음 수업 준비');
+    expect(source).toContain('다음 수업 보기');
+    expect(source).toContain('openNextPlanner');
+  });
 });

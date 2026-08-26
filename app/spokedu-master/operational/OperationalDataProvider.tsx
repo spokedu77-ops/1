@@ -25,11 +25,12 @@ type OperationalDataContextValue = {
   updateStudent: (studentId: string, input: UpdateStudentInput) => Promise<MasterStudentDto>;
   error: string | null;
   ownerId: string | null;
-  reload: () => Promise<void>;
+  reload: (mode?: 'hard' | 'soft') => Promise<void>;
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
   completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<MasterSessionDto>;
   deleteCancelledSession: (sessionId: string) => Promise<void>;
-  createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms: boolean }) => Promise<MasterSessionDto>;
+  createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms?: boolean; sourceSessionProgramIds?: string[] }) => Promise<MasterSessionDto>;
+  carryoverSessionPrograms: (targetSessionId: string, sourceSessionId: string, sourceSessionProgramIds: string[]) => Promise<MasterSessionDto['programs']>;
   addSessionProgram: (sessionId: string, programId: number) => Promise<MasterSessionDto['programs'][number]>;
   addSessionSpomove: (sessionId: string, spomovePresetId: string) => Promise<MasterSessionDto['programs'][number]>;
   removeSessionProgram: (sessionId: string, sessionProgramId: string) => Promise<void>;
@@ -72,7 +73,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     setSessions([]);
   }, []);
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (mode: 'hard' | 'soft' = 'hard') => {
     if (!ownerId || !canUseAttendance) {
       activeOwnerRef.current = null;
       clearData();
@@ -82,9 +83,11 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     }
 
     activeOwnerRef.current = ownerId;
-    clearData();
     setError(null);
-    setStatus('loading');
+    if (mode === 'hard') {
+      clearData();
+      setStatus('loading');
+    }
 
     try {
       const [studentsJson, sessionsJson] = await Promise.all([
@@ -98,22 +101,21 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       setStatus('ready');
     } catch (caught) {
       if (activeOwnerRef.current !== ownerId) return;
-      clearData();
+      if (mode === 'hard') clearData();
       setError(getProviderErrorMessage(caught));
       setStatus('error');
     }
   }, [canUseAttendance, clearData, ownerId]);
 
   useEffect(() => {
-    void reload();
+    void reload('hard');
   }, [reload]);
 
-  // Execution tools may run in a second tab. Refresh the operating cockpit when
-  // the instructor returns so scheduled progress is never stale.
+  // Second-tab SPOMOVE / field return: soft refresh keeps lists visible (no blank cockpit).
   useEffect(() => {
     if (!ownerId || !canUseAttendance) return;
     const refreshOnReturn = () => {
-      if (document.visibilityState === 'visible') void reload();
+      if (document.visibilityState === 'visible') void reload('soft');
     };
     window.addEventListener('focus', refreshOnReturn);
     document.addEventListener('visibilitychange', refreshOnReturn);
@@ -184,13 +186,21 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     setSessions((current) => current.filter((session) => session.id !== sessionId));
   }, []);
 
-  const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms: boolean }) => {
+  const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms?: boolean; sourceSessionProgramIds?: string[] }) => {
     const json = await masterFetchJson<{ data: MasterSessionDto }>(`/api/spokedu-master/sessions/${sourceSessionId}/next`, {
       body: JSON.stringify(input),
       method: 'POST',
     });
     setSessions((current) => [...current.filter((session) => session.id !== json.data.id), json.data]
       .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()));
+    return json.data;
+  }, []);
+
+  const carryoverSessionPrograms = useCallback(async (targetSessionId: string, sourceSessionId: string, sourceSessionProgramIds: string[]) => {
+    const json = await masterFetchJson<{ data: MasterSessionDto['programs'] }>(`/api/spokedu-master/sessions/${targetSessionId}/programs/carryover`, {
+      body: JSON.stringify({ sourceSessionId, sourceSessionProgramIds }), method: 'POST',
+    });
+    setSessions((current) => current.map((session) => session.id === targetSessionId ? { ...session, programs: json.data } : session));
     return json.data;
   }, []);
 
@@ -268,6 +278,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       completeSession,
       createClass,
       createNextSession,
+      carryoverSessionPrograms,
       deleteCancelledSession,
       addClassStudent,
       addSessionProgram,
@@ -289,7 +300,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       updateSessionProgram,
       updateClass,
     }),
-    [addClassStudent, addSessionProgram, addSessionSpomove, classes, completeSession, createClass, createNextSession, createStudent, deleteCancelledSession, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, addSessionSpomove, carryoverSessionPrograms, classes, completeSession, createClass, createNextSession, createStudent, deleteCancelledSession, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, status, students, updateClass, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

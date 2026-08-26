@@ -69,6 +69,8 @@ function createJourneyId() {
 }
 
 export function normalizeMasterGateIntent(value: string | null | undefined): MasterGateIntentKind | null {
+  // session_capture is the Session Capture panel alias for continue_record (same Premium memory value).
+  if (value === 'session_capture') return 'continue_record';
   if (value === 'open_library' || value === 'use_attendance' || value === 'start_spomove' || value === 'continue_record') return value;
   return null;
 }

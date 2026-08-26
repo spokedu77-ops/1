@@ -16,6 +16,7 @@ import type { MasterStudentDto } from '../../types/operational';
 import { buildClassAttendanceView, buildIncompleteAttendanceSessions, resolveInitialAttendanceMonth, selectNextClassSession, selectRecentCompletedClassSessions, shiftAttendanceMonth } from '../classManagementModel';
 import { ClassRosterSheet } from './ClassRosterSheet';
 import { ClassMemoryPanel } from '../../components/records/CaptureProjections';
+import { resolveSessionContinuity } from '../../activity/masterSessionContinuity';
 
 type DetailTab = 'roster' | 'attendance';
 
@@ -40,9 +41,10 @@ export default function ClassDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const classItem = data.classes.find((item) => item.id === classId) ?? null;
   const roster = useMemo(() => classItem ? data.students.filter((student) => classItem.studentIds.includes(student.id)) : [], [classItem, data.students]);
-  const nextSession = useMemo(() => selectNextClassSession(data.sessions, classId, new Date()), [classId, data.sessions]);
   const priorityWork = useMemo(() => classItem ? buildClassPriorityWork({ sessions: data.sessions, classItem, now: new Date() }) : null, [classItem, data.sessions]);
   const recentSessions = useMemo(() => selectRecentCompletedClassSessions(data.sessions, classId), [classId, data.sessions]);
+  const classContinuity = useMemo(() => recentSessions[0] ? resolveSessionContinuity({ sourceSession: recentSessions[0], classSessions: data.sessions, classItem, now: new Date() }) : null, [classItem, data.sessions, recentSessions]);
+  const nextSession = useMemo(() => classContinuity && 'targetSession' in classContinuity ? classContinuity.targetSession : selectNextClassSession(data.sessions, classId, new Date()), [classContinuity, classId, data.sessions]);
   const incompleteSessions = useMemo(() => classItem ? buildIncompleteAttendanceSessions(data.sessions, classItem) : [], [classItem, data.sessions]);
   const initialAttendanceMonth = useMemo(() => resolveInitialAttendanceMonth(data.sessions, classId, getSeoulToday()), [classId, data.sessions]);
   const selectedAttendanceMonth = attendanceMonth ?? initialAttendanceMonth;

@@ -18,7 +18,7 @@ export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> =
   '/spokedu-master/library': ['from', 'session', 'sessionProgram', 'returnTo', 'source'],
   '/spokedu-master/class-record': ['program', 'record'],
   '/spokedu-master/report': ['session', 'program', 'record'],
-  '/spokedu-master/activity': ['session', 'date', 'create', 'class', 'program', 'record'],
+  '/spokedu-master/activity': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
   '/spokedu-master/students': [],
   '/spokedu-master/classes': ['create'],
   '/spokedu-master/class-tools': ['session', 'returnTo', 'source'],

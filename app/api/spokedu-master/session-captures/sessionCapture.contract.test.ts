@@ -31,4 +31,10 @@ describe('exact Session Capture persistence', () => {
     expect(route).not.toContain('body?.attendance');
     expect(route).not.toContain('sessionMemo');
   });
+  it('applies student history filtering in the database and separates query limits', () => {
+    expect(route).toContain("spokedu_master_class_record_students${studentFilter ? '!inner' : ''}");
+    expect(route).toContain("query.eq('spokedu_master_class_record_students.student_id', studentId)");
+    expect(route).toContain('if (!studentId) query = query.limit');
+    expect(route).not.toContain('.filter((capture) => !studentId');
+  });
 });

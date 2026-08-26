@@ -25,7 +25,7 @@ import {
   normalizeSubscriptionSummary,
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
-import { readMasterGateContextFromSearchParams, type MasterGateContext } from '../lib/masterGateIntent';
+import { buildMasterGateDisplayModel, readMasterGateContextFromSearchParams, type MasterGateContext } from '../lib/masterGateIntent';
 
 declare global {
   interface Window {
@@ -143,6 +143,10 @@ function PlanCard({
 function PaymentContent() {
   const params = useSearchParams();
   const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
+  const gateDisplay = useMemo(
+    () => (gateContext.mode === 'gated' && gateContext.intent ? buildMasterGateDisplayModel(gateContext) : null),
+    [gateContext],
+  );
   const requestedPlan = isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : 'lite';
   const initialPlan = gateContext.allowedPlans.includes(requestedPlan) ? requestedPlan : gateContext.minimumPlan;
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanId>(initialPlan);
@@ -249,11 +253,18 @@ function PaymentContent() {
     appendGateContext(failUrl.searchParams, gateContext);
 
     setWorkingPlan(plan);
-    window.TossPayments(clientKey).requestBillingAuth('카드', {
-      customerKey,
-      successUrl: successUrl.toString(),
-      failUrl: failUrl.toString(),
-    });
+    try {
+      window.TossPayments(clientKey).requestBillingAuth('카드', {
+        customerKey,
+        successUrl: successUrl.toString(),
+        failUrl: failUrl.toString(),
+      });
+    } catch {
+      setError('결제창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      // Toss auth UI is non-blocking; clear lock so cancel/return can retry.
+      window.setTimeout(() => setWorkingPlan(null), 1200);
+    }
   };
 
   return (
@@ -264,23 +275,37 @@ function PaymentContent() {
         </Link>
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
-          <h1 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>구독 선택</h1>
+          <h1 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
+            {paymentPageMode === 'liteUpgrade' ? '운영 환경 업그레이드' : gateDisplay ? '운영 환경 선택' : '구독 선택'}
+          </h1>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-[1080px] space-y-5 px-5 pb-16 sm:px-8">
-        <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <h2 className="text-[28px] font-black leading-tight sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
-            {paymentPageMode === 'liteUpgrade'
-              ? '프리미엄으로 업그레이드하세요.'
-              : '라이트와 프리미엄 중 필요한 구독을 선택하세요.'}
-          </h2>
-          <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-            {paymentPageMode === 'liteUpgrade'
-              ? 'SPOMOVE·프리미엄 자료를 포함한 전체 기능을 이용할 수 있습니다. 결제수단 인증 후 프리미엄 정가 결제로 즉시 업그레이드됩니다.'
-              : '결제수단 인증 후 첫 결제가 성공한 경우에만 구독이 활성화됩니다.'}
-          </p>
-        </section>
+        {gateDisplay ? (
+          <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{gateDisplay.eyebrow}</p>
+            <h2 className="mt-2 text-[22px] font-black leading-tight sm:text-[26px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
+              {gateDisplay.title}
+            </h2>
+            <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+              {gateDisplay.description}
+            </p>
+          </section>
+        ) : (
+          <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <h2 className="text-[28px] font-black leading-tight sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
+              {paymentPageMode === 'liteUpgrade'
+                ? '기록 재사용과 SPOMOVE까지 이어가려면 Premium'
+                : '어떤 운영 환경을 유지할까요?'}
+            </h2>
+            <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+              {paymentPageMode === 'liteUpgrade'
+                ? '라이트 운영은 유지한 채, 지난 기록이 다음 준비로 이어지고 SPOMOVE를 같은 흐름에서 쓸 수 있습니다. 결제수단 인증 후 프리미엄 정가 결제로 즉시 전환됩니다.'
+                : 'Lite는 매주 수업 준비·일정·출석 운영, Premium은 그 위에 기록 재사용과 SPOMOVE가 이어지는 전체 운영 환경입니다.'}
+            </p>
+          </section>
+        )}
 
         {loading ? (
           <section className="flex h-28 items-center justify-center rounded-[18px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -304,7 +329,7 @@ function PaymentContent() {
             {paymentPageMode === 'liteUpgrade' ? (
               <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
                 <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  현재 <strong>{subscriptionDisplay.planLabel}</strong> 이용 중입니다. 프리미엄으로 업그레이드하면 SPOMOVE와 프리미엄 자료를 바로 이용할 수 있습니다.
+                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 매주 운영 중입니다. Premium으로 올리면 기록이 다음 준비로 이어지고 SPOMOVE를 같은 Session에서 이어갈 수 있습니다.
                 </p>
                 <p className="mt-2 text-[13px] font-black leading-6" style={{ color: 'var(--spm-t)' }}>
                   이번 결제 금액은 28,900원입니다. 기존 라이트 잔여기간의 차감·환급 없이 결제 성공 시점부터 프리미엄 1개월과 새 결제주기가 시작됩니다.
@@ -329,9 +354,11 @@ function PaymentContent() {
                         : undefined
                     }
                     disabledHint={
-                      paymentPageMode === 'liteUpgrade' && planId === 'lite'
-                        ? '현재 라이트 이용 중입니다.'
-                        : undefined
+                      !planAllowedForIntent
+                        ? '지금 이어가려던 작업은 Premium이 필요합니다.'
+                        : paymentPageMode === 'liteUpgrade' && planId === 'lite'
+                          ? '현재 라이트 이용 중입니다.'
+                          : undefined
                     }
                     onSelect={() => startBillingAuth(planId)}
                   />

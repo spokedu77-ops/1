@@ -7,6 +7,7 @@ import type { MasterClassRecordDto } from '../types/legacyOperational';
 import type { MasterSessionDto, MasterStudentDto } from '../types/operational';
 import { resolvePreviousSessionMemory } from '../lib/sessionMemory';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
+import { fetchSessionCaptures, saveSessionCapture } from '../lib/sessionCaptureClient';
 
 export function SessionCapturePanel({ session, sessions, students, classStudentIds, canUseRecords, presentationKind }: {
   session: MasterSessionDto;
@@ -24,33 +25,31 @@ export function SessionCapturePanel({ session, sessions, students, classStudentI
   const [nextNote, setNextNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const roster = useMemo(() => students.filter((student) => classStudentIds.includes(student.id) || session.attendance.some((entry) => entry.studentId === student.id)), [classStudentIds, session.attendance, students]);
   const capture = captures.find((item) => item.sessionId === session.id) ?? null;
   const previous = resolvePreviousSessionMemory({ currentSession: session, classSessions: sessions, captures });
 
   useEffect(() => {
     if (!canUseRecords) return;
-    void fetch(`/api/spokedu-master/session-captures?class=${encodeURIComponent(session.classId)}`, { cache: 'no-store' })
-      .then((response) => response.ok ? response.json() : Promise.reject(new Error('capture load failed')))
-      .then((json: { data: MasterClassRecordDto[] }) => {
-        setCaptures(json.data);
-        const current = json.data.find((item) => item.sessionId === session.id);
+    void fetchSessionCaptures(`class=${encodeURIComponent(session.classId)}&limit=100`).then((result) => {
+      if (result.status === 'error') { setLoadError(true); return; }
+        setLoadError(false); setCaptures(result.data);
+        const current = result.data.find((item) => item.sessionId === session.id);
         setNextNote(current?.applicationIdea ?? '');
         setObservations(Object.fromEntries(current?.students.map((student) => [student.studentId, student.memo ?? '']).filter(([id]) => id) ?? []));
-      }).catch(() => undefined);
+      });
   }, [canUseRecords, session.classId, session.id]);
 
   async function save() {
     setSaving(true);
-    const response = await fetch('/api/spokedu-master/session-captures', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
-      sessionId: session.id, nextSessionNote: nextNote,
-      observations: Object.entries(observations).filter(([, memo]) => memo.trim()).map(([studentId, memo]) => ({ studentId, memo })),
-    }) });
-    if (response.ok) {
-      const json = await response.json() as { data: MasterClassRecordDto };
-      setCaptures((items) => [...items.filter((item) => item.sessionId !== session.id), json.data]);
+    setSaveError(false);
+    try {
+      const saved = await saveSessionCapture({ sessionId: session.id, nextSessionNote: nextNote, observations: Object.entries(observations).filter(([, memo]) => memo.trim()).map(([studentId, memo]) => ({ studentId, memo })) });
+      setCaptures((items) => [...items.filter((item) => item.sessionId !== session.id), saved]);
       setDirty(false); setOpen(false);
-    }
+    } catch { setSaveError(true); }
     setSaving(false);
   }
 
@@ -59,14 +58,16 @@ export function SessionCapturePanel({ session, sessions, students, classStudentI
     setOpen((value) => !value);
   }
 
-  if (!canUseRecords) return <section className="order-5 rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-sm font-black text-slate-800">개별 관찰과 다음 수업 메모</p><Link href={`/spokedu-master/payment?plan=premium&intent=session_capture&next=${encodeURIComponent(`/spokedu-master/activity?session=${session.id}&capture=1`)}&journeyId=${encodeURIComponent(`capture_${session.id}`)}`} className="mt-2 inline-flex min-h-11 items-center text-xs font-black text-blue-700">수업 기록 사용하기</Link></section>;
+  if (!canUseRecords) return <section className="order-5 rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-sm font-black text-slate-800">개별 관찰과 다음 수업 메모</p><p className="mt-1 text-xs font-semibold leading-5 text-slate-500">출석은 Lite에서 이어가고, 메모·관찰은 Premium에서 다음 준비에 다시 쓰입니다.</p><Link href={`/spokedu-master/payment?plan=premium&intent=continue_record&next=${encodeURIComponent(`/spokedu-master/activity?session=${session.id}&capture=1`)}&journeyId=${encodeURIComponent(`capture_${session.id}`)}`} className="mt-2 inline-flex min-h-11 items-center text-xs font-black text-blue-700">Premium으로 기록 이어가기</Link></section>;
 
   return <section data-session-capture className="order-5 rounded-xl border border-slate-200 bg-white p-3">
+    {loadError ? <p role="status" className="mb-2 text-xs font-bold text-amber-700">지난 수업 기록을 불러오지 못했습니다. 수업 진행은 계속할 수 있습니다.</p> : null}
     {presentationKind === 'PREP' && previous?.capture.applicationIdea ? <div className="mb-3 rounded-lg bg-emerald-50 p-3"><p className="text-[11px] font-black text-emerald-700">지난 수업에서 이어갈 점</p><p className="mt-1 text-sm font-semibold text-emerald-900">{previous.capture.applicationIdea}</p></div> : null}
     <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-black text-slate-800">개별 관찰</h3><p className="mt-1 text-xs font-semibold text-slate-500">{capture?.students.filter((student) => student.memo).length ?? 0}명 기록 · 다음 수업 메모 {capture?.applicationIdea ? '있음' : '없음'}</p></div><button type="button" onClick={toggleEditor} className={SPM_SECONDARY_BTN}>{open ? '닫기' : capture ? '기록 보기/수정' : '관찰 메모'}</button></div>
     {open ? <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
       {roster.map((student) => <div key={student.id} className="rounded-lg border border-slate-200 p-2"><button type="button" onClick={() => setActiveStudentId(activeStudentId === student.id ? null : student.id)} className="flex min-h-11 w-full items-center justify-between text-left text-sm font-black text-slate-700"><span>{student.name}{student.guidanceNote ? <small className="ml-2 text-amber-700">지도 참고사항 있음</small> : null}</span><span>{observations[student.id]?.trim() ? '기록됨' : '메모 추가'}</span></button>{activeStudentId === student.id ? <><textarea value={observations[student.id] ?? ''} onChange={(event) => { setObservations((items) => ({ ...items, [student.id]: event.target.value })); setDirty(true); }} className="min-h-20 w-full rounded-lg border border-slate-200 p-2 text-sm" placeholder="오늘 관찰한 사실을 짧게 적어주세요." />{student.guidanceNote ? <p className="mt-1 text-xs font-semibold text-amber-700">지도 참고사항: {student.guidanceNote}</p> : null}</> : null}</div>)}
       <label className="block text-xs font-black text-slate-600">다음 수업에 이어갈 점<textarea value={nextNote} onChange={(event) => { setNextNote(event.target.value); setDirty(true); }} className="mt-1 min-h-20 w-full rounded-lg border border-slate-200 p-2 text-sm" /></label>
+      {saveError ? <p role="alert" className="rounded-lg bg-rose-50 p-2 text-xs font-bold text-rose-700">기록을 저장하지 못했습니다. 작성한 내용은 그대로 유지됩니다.</p> : null}
       <button type="button" disabled={!dirty || saving} onClick={() => void save()} className={SPM_PRIMARY_BTN}>{saving ? '저장 중' : '기록 저장'}</button>
     </div> : null}
   </section>;
