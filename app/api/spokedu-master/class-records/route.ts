@@ -12,6 +12,7 @@ import {
 
 const RECORD_SELECT = `
   id,
+  session_id,
   owner_id,
   legacy_id,
   class_date,

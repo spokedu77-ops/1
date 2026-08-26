@@ -41,7 +41,7 @@ describe('applyRemoteOpRecords', () => {
     expect((next[0].content as { text?: string }).text).toBe('hello world');
   });
 
-  it('does not apply non-extension remote patch_content over filled local text', () => {
+  it('applies remote patch_content rewrite — ACK Intent materialize (cross-PC)', () => {
     const blocks = [baseBlock('a', 'hello')];
     const next = applyRemoteOpRecords(blocks, [
       opRecord(1, {
@@ -50,10 +50,10 @@ describe('applyRemoteOpRecords', () => {
         content: { text: 'world' },
       }),
     ]);
-    expect((next[0].content as { text?: string }).text).toBe('hello');
+    expect((next[0].content as { text?: string }).text).toBe('world');
   });
 
-  it('does not apply empty remote patch_content over longer local text', () => {
+  it('applies remote empty patch_content when other PC cleared — ACK Intent', () => {
     const blocks = [baseBlock('a', 'keep local')];
     const next = applyRemoteOpRecords(blocks, [
       opRecord(1, {
@@ -62,7 +62,22 @@ describe('applyRemoteOpRecords', () => {
         content: { text: '' },
       }),
     ]);
-    expect((next[0].content as { text?: string }).text).toBe('keep local');
+    expect((next[0].content as { text?: string }).text).toBe('');
+  });
+
+  it('applies remote todo check — same login must match across PCs', () => {
+    const blocks = [baseBlock('t', '할 일', {
+      type: 'todo',
+      content: { text: '할 일', checked: false },
+    })];
+    const next = applyRemoteOpRecords(blocks, [
+      opRecord(1, {
+        opType: 'patch_content',
+        blockId: 't',
+        content: { text: '할 일', checked: true },
+      }),
+    ]);
+    expect((next[0].content as { checked?: boolean }).checked).toBe(true);
   });
 
   it('soft deletes blocks by removing them from the active set', () => {
@@ -205,7 +220,7 @@ describe('mergeSnapshotPatches', () => {
     expect(next.map((block) => block.id)).toEqual(['b']);
   });
 
-  it('preserves local content when snapshot has server content', () => {
+  it('ACK snapshot materializes server content (cross-PC SSOT)', () => {
     const blocks = [baseBlock('a', 'local typing')];
     const snapshots: NoteBlockSnapshot[] = [{
       id: 'a',
@@ -218,7 +233,7 @@ describe('mergeSnapshotPatches', () => {
       updated_at: '2026-01-03T00:00:00.000Z',
     }];
     const next = mergeSnapshotPatches(blocks, snapshots);
-    expect((next[0].content as { text?: string }).text).toBe('local typing');
+    expect((next[0].content as { text?: string }).text).toBe('server');
     expect(next[0].version).toBe(2);
   });
 
@@ -285,7 +300,7 @@ describe('mergeSnapshotPatches', () => {
     expect(next.map((block) => block.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
     expect(next.map((block) => block.order_index)).toEqual([0, 1, 2]);
     expect((next.find((block) => block.id === 'todo-a')?.content as { text?: string }).text)
-      .toBe('A local');
+      .toBe('A server');
     expect(next.find((block) => block.id === 'todo-a')?.version).toBe(3);
   });
 });

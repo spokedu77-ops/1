@@ -116,9 +116,9 @@ describe('syncSnapshot during active typing', () => {
       },
       { documentId: 'doc-1', activeBlockId: null, storeContentById: {} },
     );
-    // idle → incoming order; non-extension rewrite still sealed
+    // idle → incoming order + 본문 SSOT (다른 탭/PC ACK)
     expect(blocks.map((item) => item.id)).toEqual(['b', 'a']);
-    expect(blocks.find((item) => item.id === 'b')?.content?.text).toBe('old');
+    expect(blocks.find((item) => item.id === 'b')?.content?.text).toBe('from other tab');
     expect(blocks.find((item) => item.id === 'a')?.content?.text).toBe('keep');
   });
 });

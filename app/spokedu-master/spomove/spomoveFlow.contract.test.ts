@@ -65,7 +65,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(dashboard).toContain("setSpomoveContentLoadState('error')");
     expect(dashboard).toContain('contentLoadState={spomoveContentLoadState}');
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
-    expect(hub).toContain('parseSpomoveHubView');
+    expect(hub).toContain('parseSpomoveHubUrlState');
     expect(hub).toContain('hubView={hubView}');
     expect(hub).toContain('showProgramGroupSections');
     expect(hub).toContain('buildSpomoveProgramGroupSections');

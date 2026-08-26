@@ -1,12 +1,17 @@
 import type { MasterClassDto, MasterSessionAttendanceStatus, MasterSessionDto, MasterStudentDto } from '../types/operational';
 import { getSeoulSessionDay } from '../lib/sessionDateTime';
-import { buildMasterWorkQueue, deriveMasterSessionWorkState, getMasterWorkQueuePriority, type MasterSessionWorkState } from '../lib/masterSessionWorkState';
+import { buildClassPriorityWork, buildOperationalDebtQueue } from '../lib/masterTemporalContract';
+import { deriveMasterSessionWorkState, getMasterWorkQueuePriority, type MasterSessionWorkState } from '../lib/masterSessionWorkState';
 
 export type ClassCardModel = {
   classItem: MasterClassDto;
   rosterCount: number;
+  /** REFERENCE only — not an actionable CTA target. */
   completedSessionCount: number;
+  /** ACTIONABLE — links to exact incomplete Sessions. */
   incompleteAttendanceCount: number;
+  /** ACTIONABLE — overdue scheduled + attendance gaps (no horizon). */
+  operationalDebtCount: number;
   nextSession: MasterSessionDto | null;
   prioritySession: MasterSessionDto | null;
   priorityWorkState: MasterSessionWorkState | null;
@@ -42,12 +47,14 @@ export function selectLatestCompletedClassSession(sessions: MasterSessionDto[], 
 export function buildClassCards(classes: MasterClassDto[], sessions: MasterSessionDto[], now: Date | string) {
   const current = new Date(now);
   return classes.map<ClassCardModel>((classItem) => {
-    const priority = buildMasterWorkQueue({ sessions: sessions.filter((session) => session.classId === classItem.id), classes: [classItem], now: current })[0] ?? null;
+    const scoped = sessions.filter((session) => session.classId === classItem.id);
+    const priority = buildClassPriorityWork({ sessions: scoped, classItem, now: current });
     return {
       classItem,
       rosterCount: classItem.studentIds.length,
-      completedSessionCount: sessions.filter((session) => session.classId === classItem.id && session.status === 'completed').length,
+      completedSessionCount: scoped.filter((session) => session.status === 'completed').length,
       incompleteAttendanceCount: buildIncompleteAttendanceSessions(sessions, classItem, current).length,
+      operationalDebtCount: buildOperationalDebtQueue({ sessions: scoped, classes: [classItem], now: current }).length,
       nextSession: selectNextClassSession(sessions, classItem.id, current),
       prioritySession: priority?.session ?? null,
       priorityWorkState: priority?.workState ?? null,
@@ -123,6 +130,12 @@ export function buildClassAttendanceView(
   const studentIds = new Set([...classItem.studentIds, ...historicalNames.keys()]);
   const rows = [...studentIds].map<ClassAttendanceRow>((studentId) => {
     const activeStudent = activeStudents.get(studentId);
+    /**
+     * Name display contract:
+     * - CURRENT roster row label → live student name (identity continuity)
+     * - HISTORICAL-only participant → attendance snapshot name
+     * Session/Report/안내문 keep per-row snapshot fields separately.
+     */
     return {
       studentId,
       studentName: activeStudent?.name ?? historicalNames.get(studentId) ?? '이름 미상',

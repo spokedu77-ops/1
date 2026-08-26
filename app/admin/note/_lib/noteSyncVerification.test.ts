@@ -209,7 +209,7 @@ describe('1) 구조 변경 insert/delete/DnD → reducer', () => {
       id: 'todo',
       type: 'todo',
       version: 2,
-      content: { text: 'local', checked: false },
+      content: { text: 'server content' },
     });
   });
 });
@@ -418,7 +418,7 @@ describe('5) legacy reconcile → syncSnapshot', () => {
     expect((blocks[0].content as { text: string }).text).toContain('typed content');
   });
 
-  it('integrity: inactive checklist text survives empty syncSnapshot', () => {
+  it('integrity: idle syncSnapshot applies empty remote text — login SSOT', () => {
     const local = [
       block('todo-1', {
         type: 'todo',
@@ -451,12 +451,12 @@ describe('5) legacy reconcile → syncSnapshot', () => {
       ctx(null),
     );
     expect(blocks.find((b) => b.id === 'todo-1')?.content).toMatchObject({
-      text: 'do not wipe me',
+      text: '',
       checked: true,
     });
   });
 
-  it('integrity: stale prefix truncation does not rewrite inactive block', () => {
+  it('integrity: idle syncSnapshot applies remote truncation — login SSOT', () => {
     const local = [block('a', { content: { text: 'hello world' } })];
     useNoteBlockStore.getState().hydrate(local);
     const { blocks } = applyNoteCommand(
@@ -464,6 +464,6 @@ describe('5) legacy reconcile → syncSnapshot', () => {
       { type: 'syncSnapshot', blocks: [block('a', { content: { text: 'hello' } })] },
       ctx(null),
     );
-    expect((blocks[0].content as { text: string }).text).toBe('hello world');
+    expect((blocks[0].content as { text: string }).text).toBe('hello');
   });
 });

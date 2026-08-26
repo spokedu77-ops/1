@@ -28,6 +28,7 @@ describe('completed Session next action contract', () => {
     expect(migration).toContain('source_type, program_id, spomove_preset_id');
     expect(api).toContain("spokedu_master_create_next_session");
     expect(activity).toContain('session=${encodeURIComponent(nextSession.id)}');
-    expect(activity).toContain('이번 수업 활동 그대로 가져오기');
+    expect(activity).toContain('sourceSessionProgramIds: selectedCarryoverIds');
+    expect(read('app/spokedu-master/activity/NextSessionPlanner.tsx')).toContain('이번 수업 활동 가져오기');
   });
 });

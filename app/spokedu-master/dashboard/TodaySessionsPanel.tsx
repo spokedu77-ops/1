@@ -2,9 +2,11 @@
 
 import { ArrowRight, CalendarPlus, Clock3, MonitorPlay, UsersRound } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 import { SPM_PRIMARY_BTN } from '../lib/masterActionGrammar';
 import { formatSeoulSessionTime } from '../lib/sessionDateTime';
+import { summarizePastOperationalDebt } from '../lib/masterTemporalContract';
 import type { MasterClassDto, MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { buildTodaySessionCards } from './todaySessionsModel';
 
@@ -29,7 +31,8 @@ export function TodaySessionsPanel({
   error: boolean;
   onRetry: () => void;
 }) {
-  const cards = buildTodaySessionCards(sessions, classes, seoulDay, new Date());
+  const now = useMemo(() => new Date(), []);
+  const cards = buildTodaySessionCards(sessions, classes, seoulDay, now);
 
   return (
     <section data-dashboard-section="today-sessions" aria-labelledby="today-sessions-heading" className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4">
@@ -82,6 +85,27 @@ export function TodaySessionsPanel({
           ))}
         </div>
       ) : null}
+    </section>
+  );
+}
+
+export function HomeFollowUpPanel({ sessions, classes, seoulDay }: {
+  sessions: MasterSessionDto[];
+  classes: MasterClassDto[];
+  seoulDay: string;
+}) {
+  const now = useMemo(() => new Date(), []);
+  const pastDebt = useMemo(() => summarizePastOperationalDebt({ sessions, classes, now }), [sessions, classes, now]);
+  if (pastDebt.count === 0) return null;
+  const href = pastDebt.leadSessionId
+    ? `/spokedu-master/activity?session=${encodeURIComponent(pastDebt.leadSessionId)}`
+    : pastDebt.leadClassId
+      ? `/spokedu-master/classes/${encodeURIComponent(pastDebt.leadClassId)}`
+      : `/spokedu-master/activity?date=${encodeURIComponent(seoulDay)}`;
+  return (
+    <section data-dashboard-section="follow-up" aria-labelledby="follow-up-heading" className="rounded-[16px] border border-amber-200 bg-amber-50 p-3.5 sm:p-4">
+      <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-amber-700">Follow-up</p><h2 id="follow-up-heading" className="mt-1 text-base font-black text-amber-950">이어 할 일</h2></div><span className="text-xs font-black text-amber-800">{pastDebt.count}건</span></div>
+      <Link href={href} className="mt-2 flex min-h-11 items-center justify-between rounded-xl bg-white px-3 text-sm font-bold text-amber-950 ring-1 ring-amber-200"><span>지난 수업 상태와 출석 확인</span><span className="inline-flex items-center gap-1 text-xs font-black">확인<ArrowRight size={14} aria-hidden="true" /></span></Link>
     </section>
   );
 }

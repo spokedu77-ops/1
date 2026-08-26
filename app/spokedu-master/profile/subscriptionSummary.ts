@@ -1,4 +1,4 @@
-import { MASTER_PRODUCT_CATALOG, buildMasterSupportMailto } from '../lib/productCatalog';
+import { MASTER_PRODUCT_CATALOG, buildMasterSupportMailto, getMasterPlanValueWorkflowLines, getMasterProductPaymentDescription } from '../lib/productCatalog';
 
 export type SubscriptionSummaryPlan = 'free' | 'lite' | 'premium' | 'pro' | 'team';
 
@@ -41,6 +41,8 @@ export type SubscriptionDisplaySummary = {
   dateText: string | null;
   amountText: string | null;
   description: string;
+  /** Operating value lines for current plan (not usage metrics). */
+  valueWorkflow: string[];
   warningText: string | null;
   isDirectBillingPlan: boolean;
   canCancel: boolean;
@@ -183,6 +185,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       dateText: null,
       amountText: null,
       description: '이용권 정보를 확인하고 있습니다.',
+      valueWorkflow: [],
       warningText: null,
       isDirectBillingPlan: false,
       canCancel: false,
@@ -207,6 +210,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       dateText: null,
       amountText: null,
       description: '관리자 또는 기관에서 관리하는 이용권입니다.',
+      valueWorkflow: [],
       warningText: null,
       isDirectBillingPlan: false,
       canCancel: false,
@@ -222,8 +226,8 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     if (summary.cancelAtPeriodEnd) {
       const cancelDescription =
         summary.plan === 'lite'
-          ? `${endDate}까지 이용할 수 있으며 이후 자동결제되지 않습니다. 해지 예약 중에는 이용권 변경이 제한됩니다. 프리미엄 이용을 원하시면 고객센터로 문의해 주세요.`
-          : `${endDate}까지 이용할 수 있으며 이후 자동결제되지 않습니다.`;
+          ? `${endDate}까지 라이트 운영(수업 찾기·일정·출석)을 그대로 이용할 수 있으며 이후 자동결제되지 않습니다. 해지 예약 중에는 이용권 변경이 제한됩니다.`
+          : `${endDate}까지 프리미엄 운영·기록·SPOMOVE를 그대로 이용할 수 있으며 이후 자동결제되지 않습니다. 종료 후에도 수업·출석 데이터는 유지되며, Premium 기록·SPOMOVE 접근만 제한됩니다.`;
       return {
         state: 'cancelScheduled',
         planLabel,
@@ -234,6 +238,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
         dateText: endDate,
         amountText: getAmountText(summary.plan),
         description: cancelDescription,
+        valueWorkflow: getMasterPlanValueWorkflowLines(summary.plan === 'pro' ? 'premium' : summary.plan),
         warningText: null,
         isDirectBillingPlan: true,
         canCancel: false,
@@ -242,6 +247,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       };
     }
 
+    const planKey = summary.plan === 'pro' ? 'premium' as const : summary.plan;
     return {
       state: 'active',
       planLabel,
@@ -252,10 +258,9 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       dateText: formatSubscriptionEndDate(summary.nextBillingAt),
       amountText: getAmountText(summary.plan),
       description: summary.canCancelAutoBilling
-        ? summary.plan === 'lite'
-          ? '라이트 이용 중입니다. SPOMOVE·프리미엄 자료는 프리미엄에서 이용할 수 있습니다.'
-          : '매월 결제일에 자동 결제됩니다.'
+        ? getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG[planKey])
         : '수동 발급 또는 기관 관리 이용권입니다. 변경이 필요하면 고객센터로 문의해 주세요.',
+      valueWorkflow: summary.canCancelAutoBilling ? getMasterPlanValueWorkflowLines(planKey) : [],
       warningText: renewalWarning,
       isDirectBillingPlan: summary.canCancelAutoBilling,
       canCancel: summary.canCancelAutoBilling,
@@ -274,7 +279,8 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       dateLabel: '이용 종료일',
       dateText: formatSubscriptionEndDate(getPeriodEnd(summary)),
       amountText: getAmountText(summary.plan),
-      description: '이용권이 종료되었습니다.',
+      description: '이용권이 종료되었습니다. 기존 수업·출석 데이터는 유지되며, 다시 구독하면 이전 운영 맥락을 이어갈 수 있습니다.',
+      valueWorkflow: [],
       warningText: null,
       isDirectBillingPlan: false,
       canCancel: false,
@@ -293,6 +299,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     dateText: null,
     amountText: null,
     description: '현재 이용 중인 이용권이 없습니다.',
+    valueWorkflow: [],
     warningText: null,
     isDirectBillingPlan: false,
     canCancel: false,

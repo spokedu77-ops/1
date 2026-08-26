@@ -59,12 +59,12 @@ export default function ClassesPage() {
       <section className="mt-5 grid gap-3 sm:grid-cols-2">
         {cards.map((card) => <article key={card.classItem.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="truncate text-lg font-black text-slate-900" title={card.classItem.name}>{card.classItem.name}</h2>
-          <p className="mt-2 flex items-center gap-2 text-sm font-bold text-slate-500"><Users size={15} />학생 {card.rosterCount}명 · 완료 수업 {card.completedSessionCount}회</p>
+          <p className="mt-2 flex items-center gap-2 text-sm font-bold text-slate-500"><Users size={15} />학생 {card.rosterCount}명</p>
           <div className="mt-4 rounded-xl bg-slate-50 p-3">
             <p className="text-xs font-black text-slate-500">{card.prioritySession ? '다음 운영 작업' : '다음 수업'}</p>
             {card.prioritySession && card.priorityWorkState ? <><p className="mt-1 text-sm font-black text-slate-800"><CalendarDays size={14} className="mr-1 inline" />{formatSeoulSessionDay(getSeoulSessionDay(card.prioritySession.startAt), { month: 'long', day: 'numeric' })} {formatSeoulSessionTime(card.prioritySession.startAt)}</p><p className="mt-1 text-xs font-black text-amber-700">{card.priorityWorkState.operationalLabel} · {card.priorityWorkState.primaryLabel}</p></> : card.nextSession ? <p className="mt-1 text-sm font-black text-slate-800"><CalendarDays size={14} className="mr-1 inline" />{formatSeoulSessionDay(getSeoulSessionDay(card.nextSession.startAt), { month: 'long', day: 'numeric' })} {formatSeoulSessionTime(card.nextSession.startAt)}</p> : <p className="mt-1 text-sm font-bold text-slate-400">다음 예정 수업 없음</p>}
           </div>
-          {card.incompleteAttendanceCount ? <p className="mt-3 text-xs font-black text-amber-700">출석 미기록 {card.incompleteAttendanceCount}건</p> : null}
+          {card.operationalDebtCount ? <p className="mt-3 text-xs font-black text-amber-700">정리 필요 {card.operationalDebtCount}건{card.incompleteAttendanceCount ? ` · 출석 미기록 ${card.incompleteAttendanceCount}건` : ''}</p> : card.incompleteAttendanceCount ? <p className="mt-3 text-xs font-black text-amber-700">출석 미기록 {card.incompleteAttendanceCount}건</p> : null}
           <Link href={`/spokedu-master/classes/${card.classItem.id}`} className={`mt-4 ${SPM_OPEN_BTN}`}>{MASTER_ACTION_COPY.open}<ChevronRight size={15} /></Link>
         </article>)}
       </section>

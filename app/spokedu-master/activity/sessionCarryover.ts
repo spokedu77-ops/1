@@ -1,0 +1,5 @@
+import type { MasterSessionDto } from '../types/operational';
+type SessionProgram = MasterSessionDto['programs'][number];
+export function isCarryoverProgramAvailable(program: SessionProgram, availableProgramIds: Set<number>, canUseSpomove: boolean) { return program.sourceType === 'program' ? program.programId != null && availableProgramIds.has(program.programId) : canUseSpomove; }
+export function isCarryoverDuplicate(program: SessionProgram, targetPrograms: MasterSessionDto['programs']) { return targetPrograms.some((target) => program.sourceType === 'program' ? target.sourceType === 'program' && target.programId === program.programId : target.sourceType === 'spomove' && target.spomovePresetId === program.spomovePresetId); }
+export function selectableCarryoverIds(sourcePrograms: MasterSessionDto['programs'], targetPrograms: MasterSessionDto['programs'], availableProgramIds: Set<number>, canUseSpomove: boolean) { return sourcePrograms.filter((program) => isCarryoverProgramAvailable(program, availableProgramIds, canUseSpomove) && !isCarryoverDuplicate(program, targetPrograms)).map((program) => program.id); }

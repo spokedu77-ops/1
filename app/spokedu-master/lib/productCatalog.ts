@@ -145,24 +145,37 @@ export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
   return product.billingCycleLabel;
 }
 
+/**
+ * VALUE PROMISE SSOT — outcome first, features as evidence.
+ * Lite = weekly operate. Premium = operate + connected memory (+ SPOMOVE).
+ * Do not rephrase differently on Landing / Payment / Gate / Subscription.
+ */
 export function getMasterProductPaymentFeatureLabels(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return ['오늘 수업을 찾고 운영하는 기본', '라이브러리 · 수업 도구 · 출석부', '누적 기록·안내문·SPOMOVE는 프리미엄'];
+    return ['오늘 수업을 찾고 현장에서 운영', '라이브러리 · 수업반 · 일정', '출석 기록과 다음 수업 이어가기'];
   }
   if (product.id === 'premium') {
-    return ['매주 기록이 쌓이고 다음 준비로 이어짐', '라이트 전체 + 히스토리·메모·안내문', 'SPOMOVE 공식 활동', 'SPOMAT 회원가 구매'];
+    return ['지난 수업이 다음 준비로 이어짐', '메모 · 학생 이력 · 안내문 작성·복사', 'SPOMOVE 공식 활동', 'SPOMAT 회원가'];
   }
   return ['별도 문의', '직접 결제 없음'];
 }
 
 export function getMasterProductPaymentDescription(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return '오늘 수업을 찾고 현장에서 운영하는 데 필요한 기본입니다. 기록 누적과 SPOMOVE는 프리미엄에서 열립니다.';
+    return '오늘 수업을 찾고 현장에서 운영하는 기본입니다.';
   }
   if (product.id === 'premium') {
-    return '매주 수업 기록이 쌓이고 다음 수업 준비까지 이어지는 전체 운영 환경입니다.';
+    return '매주 기록이 쌓이고 다음 수업 준비까지 이어지는 전체 운영 환경입니다.';
   }
   return '이용 인원과 운영 방식에 맞춰 별도로 안내합니다.';
+}
+
+/** Short workflow lines for Subscription "what I keep paying for" — not usage stats. */
+export function getMasterPlanValueWorkflowLines(plan: 'lite' | 'premium' | 'pro') {
+  if (plan === 'lite') {
+    return getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite);
+  }
+  return getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium);
 }
 
 export function canPurchaseDirectly(product: MasterProductCatalogItem) {

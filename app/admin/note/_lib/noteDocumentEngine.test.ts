@@ -77,8 +77,8 @@ describe('noteDocumentEngine', () => {
 
     expect(getEngineBlock(next, 'a')?.content?.text).toBe('local');
     expect(getEngineBlock(next, 'a')?.version).toBe(5);
-    // non-extension rewrite of inactive filled text must not wipe
-    expect(getEngineBlock(next, 'b')?.content?.text).toBe('other');
+    // inactive: 서버 ACK 본문 materialize (로그인 SSOT)
+    expect(getEngineBlock(next, 'b')?.content?.text).toBe('server-b');
     expect(getEngineBlock(next, 'b')?.version).toBe(3);
   });
 

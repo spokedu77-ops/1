@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../../lib/sessionDateTime';
+import { StudentSessionObservation } from '../../components/records/CaptureProjections';
 
 function attendanceLabel(status: 'present' | 'absent') {
   return status === 'present' ? '출석' : '결석';
@@ -58,7 +59,7 @@ export default function StudentDetailPage() {
           <div className="mt-3 space-y-3">
             {history.map(({ session, attendance }) => (
               <article key={session.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} {formatSeoulSessionTime(session.startAt)}</p><h3 className="mt-1 text-base font-black text-slate-900">{session.className}</h3></div><span className={`rounded-full px-2.5 py-1 text-xs font-black ${attendance.status === 'present' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{attendanceLabel(attendance.status)}</span></div>
+                <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} {formatSeoulSessionTime(session.startAt)}</p><h3 className="mt-1 text-base font-black text-slate-900">{session.className}</h3></div><span className={`rounded-full px-2.5 py-1 text-xs font-black ${attendance.status === 'present' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{attendanceLabel(attendance.status)}</span></div><StudentSessionObservation studentId={studentId} sessionId={session.id} />
                 <div className="mt-3 flex flex-wrap gap-1.5">{session.programs.length ? session.programs.map((program) => <span key={program.id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{program.isCompleted ? <CheckCircle2 size={12} className="text-emerald-600" /> : null}{program.programTitle ?? '이름 없는 활동'}{program.sourceType === 'spomove' ? ' · SPOMOVE' : ''}</span>) : <span className="text-xs font-semibold text-slate-400">등록된 활동 없음</span>}</div>
                 {session.memo?.trim() ? <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">{session.memo.trim()}</p> : null}
               </article>

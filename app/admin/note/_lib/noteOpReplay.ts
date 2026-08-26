@@ -2,7 +2,6 @@ import type { NoteBlock } from './types';
 import type { NoteBlockOpRecord, NoteBlockSnapshot } from '@/app/lib/note/noteBlockOpTypes';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
-import { sealPassiveIncomingBlock } from './noteDataIntegrity';
 
 export function snapshotToNoteBlock(snapshot: NoteBlockSnapshot): NoteBlock {
   return ensureNoteBlockVersion({
@@ -38,14 +37,14 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
   const payload = op.payload;
   switch (payload.opType) {
   case 'patch_content': {
+    // 서버 op-log = ACK된 remote Intent. seal 없이 materialize (교차 PC 체크/본문 SSOT).
     return blocks.map((block) => {
       if (block.id !== payload.blockId) return block;
-      const incoming = ensureNoteBlockVersion({
+      return ensureNoteBlockVersion({
         ...block,
         content: payload.content,
         updated_at: op.createdAt,
       });
-      return sealPassiveIncomingBlock(block, incoming);
     });
   }
   case 'patch_fields': {
@@ -53,7 +52,7 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
     return blocks.map((block) => {
       const patch = patchMap.get(block.id);
       if (!patch) return block;
-      const incoming = ensureNoteBlockVersion({
+      return ensureNoteBlockVersion({
         ...block,
         ...(patch.type !== undefined ? { type: patch.type } : {}),
         ...(patch.order_index !== undefined ? { order_index: patch.order_index } : {}),
@@ -62,9 +61,6 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
         ...(patch.content !== undefined ? { content: patch.content } : {}),
         updated_at: op.createdAt,
       });
-      return patch.content !== undefined
-        ? sealPassiveIncomingBlock(block, incoming)
-        : incoming;
     });
   }
   case 'soft_delete': {
@@ -161,12 +157,9 @@ export function mergeSnapshotPatches(
       continue;
     }
     const serverBlock = snapshotToNoteBlock(snapshot);
-    const sealed = sealPassiveIncomingBlock(block, serverBlock);
-    // ZERO LOSS: content/meta ACK 스냅샷이 형제 순서를 침묵 덮지 않음.
-    // topology는 LocalApply·remote op로만 바뀐다. 서버 stale order를 한 칸씩 섞으면
-    // duplicate → densify 춤이 난다.
+    // ACK ≡ materialize: 서버 본문·체크 채택. 형제 순서만 로컬 유지 (topology Intent 별도).
     next.push({
-      ...sealed,
+      ...serverBlock,
       document_id: block.document_id,
       parent_block_id: block.parent_block_id ?? null,
       type: block.type,

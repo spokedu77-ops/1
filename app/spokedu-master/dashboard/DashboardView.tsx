@@ -55,7 +55,7 @@ import {
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
 } from '../lib/recentProgramActivity';
-import { TodaySessionsPanel } from './TodaySessionsPanel';
+import { HomeFollowUpPanel, TodaySessionsPanel } from './TodaySessionsPanel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
@@ -72,6 +72,8 @@ import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
+import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
+import { resolveMasterActivationNeed } from '../lib/masterSubscriberValueEvidence';
 
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
@@ -653,6 +655,7 @@ export default function DashboardView() {
 }
 
 function EntitledDashboardView() {
+  const accessSnapshot = useMasterAccessSnapshot();
   const {
     programs,
     programsLoaded,
@@ -846,6 +849,10 @@ function EntitledDashboardView() {
     setSelectedProgram(program);
   };
   const studentMemoCount = useMemo(() => operationalSessions.filter((session) => session.memo?.trim()).length, [operationalSessions]);
+  const activationNeed = useMemo(
+    () => resolveMasterActivationNeed({ classCount: operationalClasses.length, sessions: operationalSessions }),
+    [operationalClasses.length, operationalSessions],
+  );
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
@@ -917,7 +924,8 @@ function EntitledDashboardView() {
 
       {isFirstUser && operationalSessions.length === 0 ? (
         <FirstStartGuide />
-      ) : (
+      ) : (<>
+        <HomeFollowUpPanel sessions={operationalSessions} classes={operationalClasses} seoulDay={getSeoulToday()} />
         <TodaySessionsPanel
           sessions={operationalSessions}
           classes={operationalClasses}
@@ -926,7 +934,11 @@ function EntitledDashboardView() {
           error={operationalStatus === 'error'}
           onRetry={() => void reloadOperationalData()}
         />
-      )}
+      </>)}
+
+      {operationalStatus === 'ready' ? (
+        <MasterValueEvidencePanel plan={accessSnapshot.plan} activation={isFirstUser ? 'none' : activationNeed} />
+      ) : null}
 
       <section
         data-dashboard-section="featured-flow"

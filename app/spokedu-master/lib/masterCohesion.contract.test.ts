@@ -29,7 +29,7 @@ describe('MASTER commercial cohesion contracts', () => {
   it('sells outcomes instead of a stale feature count', () => {
     expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('오늘 수업을 찾고');
     expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('다음 수업 준비');
-    expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' ')).toContain('출석부');
+    expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' ')).toContain('출석');
     expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' ')).toContain('SPOMOVE');
   });
 

@@ -842,4 +842,74 @@ describe('mergeServerBlocksIntoLocalSnapshot — authority text', () => {
     const merged = mergeServerBlocksIntoLocalSnapshot([local], [server], new Set());
     expect(merged[0].content?.title).toBe('최지훈 수정 제목');
   });
+
+  it('preferServerContent: other-PC todo check wins over stale IDB uncheck', () => {
+    const local: NoteBlock = {
+      id: 'todo-1',
+      document_id: 'doc-1',
+      type: 'todo',
+      order_index: 0,
+      parent_block_id: null,
+      content: { text: '센터 수업료 입금 확인', checked: false },
+      created_at: '',
+      updated_at: '2020-01-01T00:00:00.000Z',
+      version: 1,
+    };
+    const server: NoteBlock = {
+      ...local,
+      content: { text: '센터 수업료 입금 확인', checked: true },
+      version: 4,
+      updated_at: '2099-01-01T00:00:00.000Z',
+    };
+    const sealedDefault = mergeServerBlocksIntoLocalSnapshot(
+      [local],
+      [server],
+      new Set(),
+      { preferServerStructure: true },
+    );
+    expect(sealedDefault[0].content?.checked).toBe(false);
+
+    const openMerge = mergeServerBlocksIntoLocalSnapshot(
+      [local],
+      [server],
+      new Set(),
+      { preferServerStructure: true, preferServerContent: true },
+    );
+    expect(openMerge[0].content?.checked).toBe(true);
+    expect(openMerge[0].content?.text).toBe('센터 수업료 입금 확인');
+  });
+
+  it('preferServerContent + outbound overlay keeps unacked local check Intent', () => {
+    const local: NoteBlock = {
+      id: 'todo-1',
+      document_id: 'doc-1',
+      type: 'todo',
+      order_index: 0,
+      parent_block_id: null,
+      content: { text: '할 일', checked: false },
+      created_at: '',
+      updated_at: '',
+      version: 1,
+    };
+    const server: NoteBlock = {
+      ...local,
+      content: { text: '할 일', checked: false },
+      version: 2,
+    };
+    const merged = mergeServerBlocksIntoLocalSnapshot(
+      [local],
+      [server],
+      new Set(),
+      { preferServerStructure: true, preferServerContent: true },
+    );
+    const painted = applyOutboundContentPatchesToBlocks(merged, [{
+      payload: {
+        opType: 'patch_content',
+        blockId: 'todo-1',
+        content: { text: '할 일', checked: true },
+        baseContent: { text: '할 일', checked: false },
+      },
+    }]);
+    expect(painted[0].content?.checked).toBe(true);
+  });
 });

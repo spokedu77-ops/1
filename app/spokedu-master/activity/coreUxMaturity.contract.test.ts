@@ -16,7 +16,8 @@ describe('MASTER core operating UX contracts', () => {
 
   it('keeps premature attendance controls out of new Session mode', () => {
     const page = read('app/spokedu-master/activity/page.tsx');
-    expect(page).toContain('{activeSession ? <section>');
+    expect(page).toContain("data-session-workspace={workspace?.presentationKind ?? 'CREATE'}");
+    expect(page).toContain('data-session-create-schedule');
     expect(page).toContain("title={activeSession ? '수업 상세' : '수업 추가'}");
     expect(page).toContain('수업 만들기');
   });

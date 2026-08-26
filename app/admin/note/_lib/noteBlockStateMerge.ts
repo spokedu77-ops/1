@@ -92,6 +92,11 @@ export function resolveBlockTextCaretOffset(block: NoteBlock): number {
 export type MergeReconciledBlocksOptions = {
   /** 기본 incoming — 미ack topology 시 local로 reorder 보호 */
   structureAuthority?: 'local' | 'incoming';
+  /**
+   * incoming = ACK/원격/open 스냅샷 본문·체크 채택 (교차 PC SSOT).
+   * local = 미전송 로컬 보호 seal (기본 아님 — open/pull/remote는 incoming).
+   */
+  contentAuthority?: 'local' | 'incoming';
   /** soft delete·타문서 이동 등 — remoteOnly 되살림 금지 */
   excludedIds?: ReadonlySet<string>;
 };
@@ -103,6 +108,7 @@ export function mergeReconciledBlocks(
   options?: MergeReconciledBlocksOptions,
 ): NoteBlock[] {
   const structureAuthority = options?.structureAuthority ?? 'incoming';
+  const contentAuthority = options?.contentAuthority ?? 'incoming';
   const excludedIds = options?.excludedIds;
   const filteredReconciled = excludedIds && excludedIds.size > 0
     ? reconciledBlocks.filter((block) => !excludedIds.has(block.id))
@@ -127,10 +133,12 @@ export function mergeReconciledBlocks(
       | null
       | undefined;
 
-    // Integrity: passive merge never clears/truncates local user text with stale incoming
-    const protectedContent = incoming
-      ? mergePassiveIncomingContent(localContent, incomingContent ?? {})
-      : localContent;
+    // contentAuthority incoming: ACK/원격 Intent materialize — IDB·store stale seal로 교차 PC 분기 금지
+    const protectedContent = !incoming
+      ? localContent
+      : (contentAuthority === 'local'
+        ? mergePassiveIncomingContent(localContent, incomingContent ?? {})
+        : (incomingContent ?? {}));
 
     const nextBlock = structureAuthority === 'local'
       ? {
@@ -152,12 +160,11 @@ export function mergeReconciledBlocks(
       | null
       | undefined;
     const storeContent = fromStore.content as Record<string, unknown>;
-    const serverText = typeof serverContent?.text === 'string' ? serverContent.text : '';
-    const storeText = typeof storeContent.text === 'string' ? storeContent.text : '';
-    const storeAhead = storeText.length > serverText.length && storeText.startsWith(serverText);
     const isActive = block.id === activeId;
 
-    if (!storeAhead && !isActive) return nextBlock;
+    // 활성 에디터만 store 보호. inactive storeAhead는 outbound 없는 IDB/store 잔상으로
+    // 다른 PC ACK Intent(체크·본문)를 되돌려 로그인 SSOT를 깨뜨림.
+    if (!isActive) return nextBlock;
 
     return {
       ...nextBlock,

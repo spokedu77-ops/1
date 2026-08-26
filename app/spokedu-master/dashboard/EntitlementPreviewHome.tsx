@@ -16,18 +16,17 @@ import {
   getEntitlementPrimaryCtaLabel,
   type MasterAccessSnapshot,
 } from '../lib/masterAccessModel';
+import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 
 const LITE_FEATURES = [
-  '수업 라이브러리 열람',
-  '수업 도구 (타이머·팀 나누기 등)',
-  '출석부',
-  '기록 저장·누적은 프리미엄',
+  '오늘 수업을 찾고 현장에서 운영',
+  '라이브러리 · 수업반 · 일정',
+  '출석 기록과 다음 수업 이어가기',
 ] as const;
 
 const PREMIUM_FEATURES = [
-  '라이트 전체',
-  '수업 기록 누적·학생 히스토리',
-  '안내문 작성·복사',
+  '지난 수업이 다음 준비로 이어짐',
+  '메모 · 학생 이력 · 안내문 작성·복사',
   'SPOMOVE 큰 화면 실행',
   'SPOMAT 회원가 (연결 시)',
 ] as const;
@@ -76,6 +75,8 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
           </Link>
         </div>
       </header>
+
+      {isLapsed ? <MasterValueEvidencePanel plan={snapshot.plan} preservedContext /> : null}
 
       <section>
         <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>

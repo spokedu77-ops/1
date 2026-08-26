@@ -60,7 +60,8 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).not.toContain('바로 실행');
     expect(dashboard).toContain('spm-btn-primary');
     expect(todayPanel).toContain('data-dashboard-section="today-sessions"');
-    expect(todayModel).toContain('/spokedu-master/activity?session=');
+    expect(todayModel).toContain('deriveMasterSessionWorkState');
+    expect(todayModel).toContain('href: workState.href');
     expect(opsBarIndex).toBeGreaterThanOrEqual(0);
     expect(featuredIndex).toBeGreaterThan(opsBarIndex);
     expect(weeklyIndex).toBeGreaterThan(featuredIndex);

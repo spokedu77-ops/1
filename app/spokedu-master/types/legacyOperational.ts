@@ -11,7 +11,7 @@ export type MasterClassRecordStudentDto = {
 };
 
 export type MasterClassRecordDto = {
-  id: string; legacyId: string | null; date: string; lessonTitle: string | null;
+  id: string; sessionId?: string | null; legacyId: string | null; date: string; lessonTitle: string | null;
   classId: string | null; programId: number | null; programTitle: string | null;
   recordType: ExistingRecordType; memo: string | null; applicationIdea?: string | null;
   parentNoteSnapshot: string | null; present: number; absent: number; focusCount: number;

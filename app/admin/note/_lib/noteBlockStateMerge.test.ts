@@ -198,29 +198,52 @@ describe('mergeReconciledBlocks', () => {
     expect(merged[0].content?.text).toBe('typing');
   });
 
-  it('keeps non-empty local text when inactive block gets empty incoming reconcile', () => {
+  it('applies empty incoming for inactive block — ACK/remote SSOT (cross-PC)', () => {
     const current = [block('todo-1', 'keep this checklist')];
     useNoteBlockStore.getState().hydrate(current);
     const reconciled = [block('todo-1', '')];
     const merged = mergeReconciledBlocks(current, reconciled);
+    expect(merged[0].content?.text).toBe('');
+  });
+
+  it('contentAuthority local still seals empty wipe of authored text', () => {
+    const current = [block('todo-1', 'keep this checklist')];
+    useNoteBlockStore.getState().hydrate(current);
+    const reconciled = [block('todo-1', '')];
+    const merged = mergeReconciledBlocks(current, reconciled, { contentAuthority: 'local' });
     expect(merged[0].content?.text).toBe('keep this checklist');
   });
 
-  it('keeps local text when incoming is a stale prefix truncation', () => {
+  it('applies incoming truncation for inactive block — remote Intent wins', () => {
     const current = [block('a', 'hello world')];
     useNoteBlockStore.getState().hydrate(current);
     const reconciled = [block('a', 'hello')];
     const merged = mergeReconciledBlocks(current, reconciled);
-    expect(merged[0].content?.text).toBe('hello world');
+    expect(merged[0].content?.text).toBe('hello');
   });
 
-  it('keeps local text when incoming is a non-extension rewrite', () => {
+  it('applies remote rewrite for inactive block — same login must match', () => {
     const current = [block('a', 'old')];
     useNoteBlockStore.getState().hydrate(current);
     useNoteBlockStore.getState().patchContent('a', { text: 'stale store' });
     const reconciled = [block('a', 'from server')];
     const merged = mergeReconciledBlocks(current, reconciled);
-    expect(merged[0].content?.text).toBe('old');
+    expect(merged[0].content?.text).toBe('from server');
+  });
+
+  it('applies remote todo check over stale local uncheck', () => {
+    const current = [block('t', '할 일', {
+      type: 'todo',
+      content: { text: '할 일', checked: false },
+    })];
+    useNoteBlockStore.getState().hydrate(current);
+    const reconciled = [block('t', '할 일', {
+      type: 'todo',
+      content: { text: '할 일', checked: true },
+      version: 3,
+    })];
+    const merged = mergeReconciledBlocks(current, reconciled);
+    expect(merged[0].content?.checked).toBe(true);
   });
 
   it('accepts strict extension of local text for inactive blocks', () => {
@@ -247,8 +270,8 @@ describe('mergeReconciledBlocks', () => {
       content: { text: '- from server' },
     }];
     const merged = mergeReconciledBlocks(current, reconciled);
-    // non-extension rewrite: keep local body; list marker strip still applies to accepted text
-    expect(merged[0].content?.text).toBe('item');
+    // incoming SSOT + list marker normalize
+    expect(merged[0].content?.text).toBe('from server');
   });
 
   it('does not resurrect deleted toggle children from legacyBody during reconcile', () => {

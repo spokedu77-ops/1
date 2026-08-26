@@ -39,7 +39,7 @@ describe('activity Session flow', () => {
     expect(source).toContain('min-h-11 rounded-lg px-3');
     expect(source).toContain('aria-label={`${index + 1}번째 활동`}');
     expect(source).toContain('deriveMasterSessionWorkState');
-    expect(source).toContain("workState?.stage === 'ready-to-wrap'");
-    expect(source).toContain("'수업 마무리'");
+    expect(source).toContain("workspace?.presentationKind === 'WRAP'");
+    expect(source).toContain('수업 마무리');
   });
 });
