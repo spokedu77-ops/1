@@ -6,7 +6,7 @@ import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 const DB_NAME = 'spm-note-oplog-v1';
 const DB_VERSION = 1;
 /** 올리면 전 PC IndexedDB·outbound를 비우고 서버 스냅샷으로 재동기화 */
-const FORCED_LOCAL_RESET_VERSION = '2026-08-20-order-unify-jihun-1';
+const FORCED_LOCAL_RESET_VERSION = '2026-08-26-cross-pc-checklist-server-ssot';
 const FORCED_GLOBAL_LOCAL_RESET_KEY = 'spm-note-global-local-reset';
 
 export type NoteLocalDocumentRecord = {

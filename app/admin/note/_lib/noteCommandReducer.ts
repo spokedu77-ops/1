@@ -144,23 +144,21 @@ function unionLocalOnlyBlocks(
   return dedupeNoteBlocksById([...merged, ...localOnly]);
 }
 
-/** active editor·store content를 incoming 위에 병합 */
+/** active editor만 incoming 위에 병합 — stale store checked/text로 교차 PC Intent 덮지 않음 */
 function preserveStoreContent(
   blocks: NoteBlock[],
   ctx: NoteCommandContext,
 ): NoteBlock[] {
   return blocks.map((block) => {
+    if (block.id !== ctx.activeBlockId) return block;
     const fromStore = ctx.storeContentById[block.id];
     if (!fromStore) return block;
-    if (block.id === ctx.activeBlockId || fromStore !== block.content) {
-      const merged = mergeBlockContentWithStore(
-        block.content as Record<string, unknown> | null | undefined,
-        fromStore,
-      );
-      if (!merged || merged === block.content) return block;
-      return { ...block, content: merged };
-    }
-    return block;
+    const merged = mergeBlockContentWithStore(
+      block.content as Record<string, unknown> | null | undefined,
+      fromStore,
+    );
+    if (!merged || merged === block.content) return block;
+    return { ...block, content: merged };
   });
 }
 
@@ -184,9 +182,15 @@ function mergeAuthorityOptions(
   localBlocks: NoteBlock[],
   incomingBlocks: NoteBlock[],
   ctx: NoteCommandContext,
-): { structureAuthority: 'local' | 'incoming'; excludedIds?: ReadonlySet<string> } {
+): {
+  structureAuthority: 'local' | 'incoming';
+  contentAuthority: 'incoming';
+  excludedIds?: ReadonlySet<string>;
+} {
   return {
     structureAuthority: resolveStructureAuthority(localBlocks, incomingBlocks, ctx),
+    // open/pull/syncSnapshot: coordinator가 준 스냅샷 본문·체크가 로그인 SSOT
+    contentAuthority: 'incoming',
     ...(ctx.pendingLeaveIds && ctx.pendingLeaveIds.size > 0
       ? { excludedIds: ctx.pendingLeaveIds }
       : {}),
@@ -289,12 +293,8 @@ export function applyNoteCommand(
   }
   case 'applyRemoteOps': {
     const docBlocks = normalizeCommandBlocks(previous, ctx);
+    // remote op-log = ACK Intent — seal/mergePassive로 교차 PC 체크·본문을 되돌리지 않음
     let next = normalizeCommandBlocks(applyRemoteOpRecords(docBlocks, command.ops), ctx);
-    next = mergeReconciledBlocks(
-      docBlocks,
-      next,
-      mergeAuthorityOptions(docBlocks, next, ctx),
-    );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };

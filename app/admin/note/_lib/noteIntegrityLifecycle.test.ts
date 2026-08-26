@@ -99,7 +99,8 @@ describe('integrity lifecycle (edit → flush → switch → reload)', () => {
       },
       { documentId: 'doc-1', activeBlockId: null, storeContentById: {} },
     );
-    expect(afterSwitch.find((item) => item.id === 'a')?.content?.text).toBe('작성본문');
+    // idle syncSnapshot = ACK/원격 SSOT (같은 로그인 어디서나 동일)
+    expect(afterSwitch.find((item) => item.id === 'a')?.content?.text).toBe('다른탭덮어쓰기');
   });
 
   it('delete Intent drops local IDB + drafts so reload cannot resurrect', () => {

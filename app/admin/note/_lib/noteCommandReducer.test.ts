@@ -86,8 +86,8 @@ describe('applyNoteCommand', () => {
 
     expect(blocks.map((item) => item.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
     expect(blocks.map((item) => item.order_index)).toEqual([0, 1, 2]);
-    // 짧은 로컬("A") strict-extension 오인 거부 — "A server"로 덮지 않음
-    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A' });
+    // 순서는 로컬 유지, 본문은 ACK 스냅샷 materialize (로그인 SSOT)
+    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A server' });
   });
 
   it('syncSnapshot keeps a just-created child-page todo missing from stale server snapshot', () => {
@@ -210,7 +210,11 @@ describe('applyNoteCommand', () => {
     const { blocks } = applyNoteCommand(
       previous,
       { type: 'hydrate', blocks: incoming },
-      { ...ctx, storeContentById: { a: { text: 'typed', html: '<p>typed</p>' } } },
+      {
+        ...ctx,
+        activeBlockId: 'a',
+        storeContentById: { a: { text: 'typed', html: '<p>typed</p>' } },
+      },
     );
     expect((blocks[0].content as { text: string }).text).toBe('typed');
   });
@@ -415,8 +419,8 @@ describe('applyNoteCommand', () => {
 
     // idle → incoming order 투영
     expect(blocks.map((item) => item.id)).toEqual(['heading', 'todo-a', 'todo-b', 'todo-c']);
-    // non-extension remote rewrite must not wipe local edited text
-    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A edited' });
+    // idle syncSnapshot: 서버/원격 본문이 로그인 SSOT
+    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A server' });
   });
 
   it('syncSnapshot preserves local page-link identity over empty incoming content', () => {
@@ -433,6 +437,7 @@ describe('applyNoteCommand', () => {
       { type: 'syncSnapshot', blocks: incoming },
       {
         ...ctx,
+        activeBlockId: 'page-link',
         storeContentById: {
           'page-link': { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
         },

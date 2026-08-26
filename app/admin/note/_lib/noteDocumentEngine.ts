@@ -1,7 +1,6 @@
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
-import { sealPassiveIncomingBlock } from './noteDataIntegrity';
 import type { NoteDocumentEngineState, NoteDocumentOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
 
@@ -61,12 +60,12 @@ function syncBlocksFromServer(
         updated_at: server.updated_at,
       });
     }
-    const incoming = ensureNoteBlockVersion({
+    // inactive: 서버 ACK 본문·체크 materialize (로그인 SSOT)
+    return ensureNoteBlockVersion({
       ...block,
       ...server,
       content: server.content ?? block.content,
     });
-    return sealPassiveIncomingBlock(block, incoming);
   });
 }
 

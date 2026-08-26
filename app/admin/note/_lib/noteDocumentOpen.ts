@@ -12,7 +12,6 @@ import {
 import {
   mergeBlocksWithStoreContent,
 } from './noteBlockStateMerge';
-import { sealPassiveIncomingBlocks } from './noteDataIntegrity';
 import { shouldKeepLocalOverEmptyServerAuthority } from './noteAuthority';
 import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
 import { readLocalDocumentMemory } from './noteLocalDb';
@@ -131,12 +130,8 @@ export async function applyOpenServerSnapshot(
   if (engine.isOplogSyncEnabled()) {
     await engine.syncWithServer(normalized, { emptyConfirmed });
   } else {
-    // non-oplog도 raw replace 금지 — 로컬 보호 본문을 서버 스냅샷에 봉인
-    const localBefore = readLocalBlocksForOpen(documentId);
-    const sealed = localBefore.length > 0
-      ? sealPassiveIncomingBlocks(localBefore, normalized)
-      : normalized;
-    engine.replaceBlocks(sealed);
+    // non-oplog도 로그인 SSOT = 서버 스냅샷 (로컬 seal로 교차 PC 분기 금지)
+    engine.replaceBlocks(normalized);
   }
 
   if (serverForDoc.length === 0 && shouldKeepLocalOverEmptyServer(readLocalBlocksForOpen(documentId), serverForDoc, documentId)) {

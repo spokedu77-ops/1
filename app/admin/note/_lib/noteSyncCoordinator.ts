@@ -28,7 +28,6 @@ import {
   rewriteOutboundPatchContentBases,
   filterRegressivePatchContentOps,
 } from './notePersistOpToBlockOps';
-import { sealPassiveIncomingBlocks } from './noteDataIntegrity';
 import {
   mergeBlocksWithStoreContent,
   mergeReconciledBlocks,
@@ -332,9 +331,13 @@ export class NoteSyncCoordinator {
     });
     const hasTopologyOutbound = outboundHasUnpublishedTopology(outboundItems);
     const protectCreates = collectCreateIdsFromOutbound(outboundItems);
-    // ZERO LOSS: outbound에 content만 있어도 서버에 없는 July 좀비를 prune.
-    // topology outbound가 없을 때는 서버 형제 순서를 따름 (정리한 순서가 IDB에 덮이지 않게).
-    if (local && local.blocks.length > 0) {
+    // ZERO LOSS + cross-PC SSOT:
+    // - 미ack outbound가 없으면 IDB는 캐시일 뿐 → 서버 ACK 스냅샷이 로그인 기준 진실
+    // - IDB stale seal로 다른 PC 체크/본문을 막으면 PC마다 체크리스트가 갈라짐 (계약 위반)
+    // - 미ack 편집만 outbound overlay로 first-paint에 복구
+    if (outbound.length === 0) {
+      this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
+    } else if (local && local.blocks.length > 0) {
       this.blocks = mergeServerBlocksIntoLocalSnapshot(
         local.blocks,
         serverBlocks,
@@ -343,9 +346,10 @@ export class NoteSyncCoordinator {
           pruneLocalOnlyNotOnServer: true,
           protectLocalOnlyIds: protectCreates,
           preferServerStructure: !hasTopologyOutbound,
+          preferServerContent: true,
         },
       );
-    } else if (outbound.length > 0 && shouldTrustEmptyLocalWithOutbound(outbound, serverBlocks)) {
+    } else if (shouldTrustEmptyLocalWithOutbound(outbound, serverBlocks)) {
       this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
     } else {
       this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
@@ -951,8 +955,8 @@ export class NoteSyncCoordinator {
           const excluded = getStructuralExcludeIds(this.documentId);
           const incoming = (data.blocks as NoteBlock[])
             .filter((block) => block.document_id === this.documentId);
-          const sealed = sealPassiveIncomingBlocks(this.blocks, incoming);
-          let next = excludeBlocksPendingSoftDelete(sealed, excluded)
+          // leader state = 동기화된 스냅샷 — seal로 체크/본문 Intent를 탭마다 갈라놓지 않음
+          let next = excludeBlocksPendingSoftDelete(incoming, excluded)
             .filter((block) => block.document_id === this.documentId);
           const storeBlocks = useNoteBlockStore.getState().getBlocksArray()
             .filter((block) => block.document_id === this.documentId);

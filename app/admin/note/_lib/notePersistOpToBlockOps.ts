@@ -95,7 +95,20 @@ function mergeServerBlockIntoLocal(
   local: NoteBlock,
   server: NoteBlock,
   preferServerStructure = false,
+  preferServerContent = false,
 ): NoteBlock {
+  // open: ACK된 서버 본문·체크가 SSOT. IDB 잔상 seal로 다른 PC Intent를 막지 않는다.
+  // 미ack 편집은 syncWithServer가 applyOutboundContentPatchesToBlocks로만 덮는다.
+  if (preferServerContent) {
+    if (preferServerStructure) return server;
+    return {
+      ...server,
+      document_id: local.document_id,
+      parent_block_id: local.parent_block_id ?? null,
+      type: local.type,
+      order_index: local.order_index,
+    };
+  }
   if (preferServerStructure) {
     // open #6: topology outbound 없을 때만 서버 형제 순서·골격 채택
     return sealPassiveIncomingBlock(local, server);
@@ -323,13 +336,19 @@ export function mergeServerBlocksIntoLocalSnapshot(
     protectLocalOnlyIds?: ReadonlySet<string>;
     /**
      * 미ack topology가 없을 때 서버 order/parent·형제 순서를 따름.
-     * 본문은 seal로 보호.
+     * 본문은 seal로 보호(preferServerContent가 아닐 때).
      */
     preferServerStructure?: boolean;
+    /**
+     * open first-paint: 서버 ACK 본문·체크 채택.
+     * IDB는 캐시일 뿐 Intent가 아님 — 미ack 편집은 outbound overlay로만 복구.
+     */
+    preferServerContent?: boolean;
   },
 ): NoteBlock[] {
   const prune = options?.pruneLocalOnlyNotOnServer !== false;
   const preferServerStructure = options?.preferServerStructure === true;
+  const preferServerContent = options?.preferServerContent === true;
   const protectLocalOnlyIds = options?.protectLocalOnlyIds ?? new Set<string>();
 
   // soft-delete 대기 id는 로컬 스냅샷에서도 즉시 제거 — 서버 skip만으로는 IDB 부활을 못 막음
@@ -345,7 +364,12 @@ export function mergeServerBlocksIntoLocalSnapshot(
       order.push(serverBlock.id);
       continue;
     }
-    const nextBlock = mergeServerBlockIntoLocal(local, serverBlock, preferServerStructure);
+    const nextBlock = mergeServerBlockIntoLocal(
+      local,
+      serverBlock,
+      preferServerStructure,
+      preferServerContent,
+    );
     if (nextBlock === local) continue;
     byId.set(serverBlock.id, nextBlock);
   }
