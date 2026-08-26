@@ -2,9 +2,11 @@
 
 import { ArrowRight, CalendarPlus, Clock3, MonitorPlay, UsersRound } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 import { SPM_PRIMARY_BTN } from '../lib/masterActionGrammar';
 import { formatSeoulSessionTime } from '../lib/sessionDateTime';
+import { summarizePastOperationalDebt } from '../lib/masterTemporalContract';
 import type { MasterClassDto, MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { buildTodaySessionCards } from './todaySessionsModel';
 
@@ -29,7 +31,14 @@ export function TodaySessionsPanel({
   error: boolean;
   onRetry: () => void;
 }) {
-  const cards = buildTodaySessionCards(sessions, classes, seoulDay, new Date());
+  const now = useMemo(() => new Date(), []);
+  const cards = buildTodaySessionCards(sessions, classes, seoulDay, now);
+  const pastDebt = useMemo(() => summarizePastOperationalDebt({ sessions, classes, now }), [sessions, classes, now]);
+  const debtHref = pastDebt.leadSessionId
+    ? `/spokedu-master/activity?session=${encodeURIComponent(pastDebt.leadSessionId)}`
+    : pastDebt.leadClassId
+      ? `/spokedu-master/classes/${encodeURIComponent(pastDebt.leadClassId)}`
+      : '/spokedu-master/activity';
 
   return (
     <section data-dashboard-section="today-sessions" aria-labelledby="today-sessions-heading" className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4">
@@ -40,6 +49,17 @@ export function TodaySessionsPanel({
         </div>
         {!loading && cards.length > 0 ? <span className="text-xs font-bold text-slate-500">수업 {cards.length}개</span> : null}
       </div>
+
+      {!loading && !error && pastDebt.count > 0 ? (
+        <Link
+          href={debtHref}
+          data-dashboard-section="past-operational-debt"
+          className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900"
+        >
+          <span>정리되지 않은 지난 수업 {pastDebt.count}건</span>
+          <span className="inline-flex items-center gap-1 text-xs font-black">확인<ArrowRight size={14} aria-hidden="true" /></span>
+        </Link>
+      ) : null}
 
       {loading ? <p className="mt-3 rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">오늘 수업을 불러오는 중입니다.</p> : null}
       {error ? <div role="alert" className="mt-3 rounded-xl bg-rose-50 p-4 text-sm font-bold text-rose-700">오늘 수업을 불러오지 못했습니다.<button type="button" onClick={onRetry} className="ml-2 min-h-11 px-2 underline underline-offset-2">다시 시도</button></div> : null}

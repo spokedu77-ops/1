@@ -34,6 +34,8 @@ export const MASTER_ACTION_COPY = {
   wrapSession: '수업 마무리',
   recordAttendance: '출석 기록하기',
   viewSession: '수업 보기',
+  /** Overdue scheduled — confirm/complete/cancel; not "open as if today". */
+  reviewSessionStatus: '수업 상태 확인',
   open: '열기',
   history: '이력 보기',
   execute: '실행',

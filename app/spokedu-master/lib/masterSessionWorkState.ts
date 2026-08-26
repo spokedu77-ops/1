@@ -61,7 +61,7 @@ function derivePrimary(stage: MasterSessionWorkStage, timeRelation: SessionTimeR
     ? { intent: 'record-attendance', label: MASTER_ACTION_COPY.recordAttendance } as const
     : { intent: 'view-session', label: MASTER_ACTION_COPY.viewSession } as const;
   if (timeRelation === 'overdue' && stage !== 'ready-to-wrap') {
-    return { intent: 'view-session', label: '수업 상태 확인' } as const;
+    return { intent: 'view-session', label: MASTER_ACTION_COPY.reviewSessionStatus } as const;
   }
   if (stage === 'needs-preparation') return { intent: 'prepare-session', label: MASTER_ACTION_COPY.prepareSession } as const;
   if (stage === 'ready') return { intent: 'open-session', label: MASTER_ACTION_COPY.openSession } as const;
@@ -139,6 +139,11 @@ export function getMasterWorkQueuePriority(state: MasterSessionWorkState) {
   return QUEUE_PRIORITY.completed;
 }
 
+/**
+ * Home-adjacent / noise-limited actionable queue.
+ * `overdueHorizonDays` (default 14) limits queue noise — it does NOT extinguish debt.
+ * Class / Calendar / past-debt continuity use `masterTemporalContract` (full history).
+ */
 export function buildMasterWorkQueue({ sessions, classes, now = new Date(), overdueHorizonDays = 14 }: {
   sessions: MasterSessionDto[];
   classes: MasterClassDto[];
@@ -146,7 +151,9 @@ export function buildMasterWorkQueue({ sessions, classes, now = new Date(), over
   overdueHorizonDays?: number;
 }): MasterWorkQueueItem[] {
   const classesById = new Map(classes.map((item) => [item.id, item]));
-  const horizon = now.getTime() - overdueHorizonDays * 24 * 60 * 60 * 1000;
+  const horizon = Number.isFinite(overdueHorizonDays)
+    ? now.getTime() - overdueHorizonDays * 24 * 60 * 60 * 1000
+    : Number.NEGATIVE_INFINITY;
   return sessions.flatMap((session) => {
     if (session.status === 'cancelled') return [];
     const classItem = classesById.get(session.classId) ?? null;

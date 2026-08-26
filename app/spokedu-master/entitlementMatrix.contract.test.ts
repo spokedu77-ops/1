@@ -144,7 +144,7 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
   it('keeps GateWall copy honest for Lite→Premium records/SPOMOVE and expired renewals', () => {
     const gate = read('app/spokedu-master/components/ui/SubscriptionGateWall.tsx');
     expect(gate).toContain('기록 누적은 프리미엄에서 이용할 수 있습니다');
-    expect(gate).toContain('라이트에서는 출석부까지만');
+    expect(gate).toContain('이미 쌓인 기록은 유지됩니다');
     expect(gate).toContain('SPOMOVE는 프리미엄에서 이용할 수 있습니다');
     expect(gate).toContain('수업 도구를 다시 쓰려면 이용권이 필요합니다');
     expect(gate).toContain('spm-btn-primary');

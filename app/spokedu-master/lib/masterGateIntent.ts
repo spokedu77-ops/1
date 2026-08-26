@@ -210,7 +210,7 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
       minimumPlan: context.minimumPlan,
       eyebrow: '방금 하려던 작업',
       title: resourceTitle ? `${resourceTitle} 기록을 이어가려고 했습니다.` : '수업 기록을 이어가려고 했습니다.',
-      description: 'Premium에서는 수업 기록, 학생별 메모, 안내문 흐름을 결제 후 같은 화면에서 이어갈 수 있습니다.',
+      description: '기존 수업 기록은 유지됩니다. Premium에서 메모·안내문·상세 이력을 같은 흐름으로 다시 확인할 수 있습니다.',
       resourceTitle,
       evidence: [
         { label: '복귀 위치', value: '기록 작성 화면' },

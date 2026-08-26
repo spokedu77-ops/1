@@ -544,6 +544,7 @@ export default function ActivityPage() {
             month={visibleMonth}
             selectedDay={selectedDay}
             sessions={data.sessions}
+            classes={data.classes}
             onMonthChange={setVisibleMonth}
             onDaySelect={(day) => {
               setSelectedDay(day);
@@ -555,13 +556,17 @@ export default function ActivityPage() {
         <section className="mt-4">
           <div className="flex items-center justify-between"><h2 className="text-lg font-black text-slate-900">{formatSeoulSessionDay(selectedDay, { month: 'long', day: 'numeric', weekday: 'long' })}</h2><span className="text-xs font-bold text-slate-400">수업 {daySessions.length}개</span></div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {daySessions.map((session) => (
-              <button key={session.id} type="button" onClick={() => setEditing(session)} className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-px hover:shadow-md">
-                <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-sm font-black text-slate-800"><Clock3 size={15} />{formatSeoulSessionTime(session.startAt)}–{formatSeoulSessionTime(session.endAt)}</span><span className={`rounded-full px-2 py-1 text-[10px] font-black ring-1 ${statusTone(session.status)}`}>{statusLabel(session.status)}</span></div>
+            {daySessions.map((session) => {
+              const classItem = data.classes.find((item) => item.id === session.classId) ?? null;
+              const workState = deriveMasterSessionWorkState(session, classItem);
+              const debt = workState.attention.overdue || workState.attention.attendanceMissing;
+              return (
+              <button key={session.id} type="button" onClick={() => setEditing(session)} className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-px hover:shadow-md ${debt ? 'border-amber-200' : 'border-slate-200'}`}>
+                <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-sm font-black text-slate-800"><Clock3 size={15} />{formatSeoulSessionTime(session.startAt)}–{formatSeoulSessionTime(session.endAt)}</span><span className={`rounded-full px-2 py-1 text-[10px] font-black ring-1 ${debt ? 'bg-amber-50 text-amber-800 ring-amber-200' : statusTone(session.status)}`}>{debt ? workState.operationalLabel : statusLabel(session.status)}</span></div>
                 <h3 className="mt-2 text-base font-black text-slate-900">{session.className}</h3>
-                <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `활동 ${session.programs.length}개 · 진행 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '활동 미지정'} · {statusLabel(session.status)}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{session.programs.length ? `활동 ${session.programs.length}개 · 진행 ${session.programs.filter((item) => item.isCompleted).length}/${session.programs.length}` : '활동 미지정'}{debt && workState.primaryLabel ? ` · ${workState.primaryLabel}` : ''}</p>
               </button>
-            ))}
+            );})}
             {!daySessions.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><UsersRound className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-500">이 날짜에 예정된 수업이 없습니다.</p><button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} disabled={!data.classes.length} className={`mt-4 ${SPM_PRIMARY_BTN}`}><Plus size={16} />이 날짜에 수업 추가</button></div> : null}
           </div>
         </section>
