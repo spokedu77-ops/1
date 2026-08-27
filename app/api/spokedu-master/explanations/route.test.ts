@@ -11,6 +11,7 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
 
 vi.mock('@/app/lib/server/spokeduMasterAccess', () => ({
   requireSpokeduMasterAccess,
+  requireSpokeduMasterCapability: requireSpokeduMasterAccess,
 }));
 
 import { GET, POST } from './route';

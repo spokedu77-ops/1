@@ -41,7 +41,8 @@ describe('MASTER OS consistency journeys', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
     const migration = read('supabase/migrations/20260823120000_spokedu_master_create_next_session.sql');
     expect(activity).toContain('다음 수업 만들기');
-    expect(activity).toContain('setCopyPrograms(true)');
+    expect(activity).toContain('sourceSessionProgramIds: selectedCarryoverIds');
+    expect(activity).toContain('setSelectedCarryoverIds');
     expect(migration).toContain('program_title_snapshot, sort_order, false');
     expect(migration).not.toContain('spokedu_master_session_attendance');
   });

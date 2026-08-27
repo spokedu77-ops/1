@@ -21,7 +21,7 @@ describe('SPOKEDU MASTER owner isolation (P4)', () => {
       for (const needle of marker.mustInclude) {
         expect(source, `${marker.file} missing ${needle}`).toContain(needle);
       }
-      expect(source).toMatch(/requireSpokeduMaster(Access|Session)/);
+      expect(source).toMatch(/requireSpokeduMaster(Access|Capability|Session)/);
     }
   });
 

@@ -28,14 +28,13 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(detail).not.toContain('/spokedu-master/class-tools');
   });
 
-  it('ClassToolsView operates as standalone tool without lesson context', () => {
+  it('ClassToolsView supports standalone use and validated Session return context', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
 
-    expect(tools).not.toContain('returnTo');
-    expect(tools).not.toContain('classContextReturnHref');
-    expect(tools).not.toContain('전체 수업 자료로 돌아가기');
-    expect(tools).not.toContain("returnTo?.startsWith('/spokedu-master/class-mode/')");
-    expect(tools).not.toContain("returnTo?.startsWith('/spokedu-master/library/')");
+    expect(tools).toContain('parseMasterWorkReturnHref');
+    expect(tools).toContain("searchParams.get('returnTo')");
+    expect(tools).toContain("requestedSessionId ? buildActivitySessionHref(requestedSessionId) : '/spokedu-master/activity'");
+    expect(tools).toContain('invalidSessionContext');
     expect(tools).not.toContain('window.location.href');
     expect(tools).not.toContain('TOOL_STATUS');
     expect(tools).not.toContain('TOOL_HELP');

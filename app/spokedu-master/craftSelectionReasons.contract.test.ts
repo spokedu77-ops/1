@@ -34,7 +34,7 @@ describe('SPOKEDU MASTER craft + selection reasons', () => {
     expect(classTools).toContain('spm-btn-primary inline-flex h-11 items-center gap-2');
     expect(classRecord).toContain("redirect('/spokedu-master/activity')");
     expect(errorBoundary).toContain('spm-btn-primary');
-    expect(students).toContain('spm-btn-primary');
+    expect(students).toContain('SPM_PRIMARY_BTN');
     expect(students).not.toContain('bg-emerald-600');
   });
 

@@ -42,8 +42,7 @@ function attachListSummary(row: ConsultDbRow) {
   });
 
   // 목록: content 원문 제외. fallback parsing은 서버 summary에 반영됨.
-  const { content: _omit, ...rest } = row;
-  return { ...rest, content: '', summary };
+  return { ...row, content: '', summary };
 }
 
 export async function GET(req: NextRequest) {

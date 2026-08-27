@@ -226,7 +226,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     if (summary.cancelAtPeriodEnd) {
       const cancelDescription =
         summary.plan === 'lite'
-          ? `${endDate}까지 라이트 운영(수업 찾기·일정·출석)을 그대로 이용할 수 있으며 이후 자동결제되지 않습니다. 해지 예약 중에는 이용권 변경이 제한됩니다.`
+          ? `${endDate}까지 라이트 운영(수업 찾기·일정·출석)을 그대로 이용할 수 있으며 이후 자동결제되지 않습니다. 해지 예약 중에는 이용권 변경이 제한됩니다. 변경이 필요하면 고객센터로 문의해 주세요.`
           : `${endDate}까지 프리미엄 운영·기록·SPOMOVE를 그대로 이용할 수 있으며 이후 자동결제되지 않습니다. 종료 후에도 수업·출석 데이터는 유지되며, Premium 기록·SPOMOVE 접근만 제한됩니다.`;
       return {
         state: 'cancelScheduled',

@@ -80,6 +80,7 @@ describe('detail favorite source of truth and return context', () => {
     expect(detailSource).toMatch(
       /getLibraryReturnHref\(\s*searchParams\.get\('libraryView'\),\s*searchParams\.get\('libraryReturn'\),?\s*\)/,
     );
-    expect(detailSource.match(/href=\{libraryReturnHref\}/g)).toHaveLength(2);
+    expect(detailSource).toContain('href={fromSession ? workReturnHref : libraryReturnHref}');
+    expect(detailSource.match(/href=\{libraryReturnHref\}/g)).toHaveLength(1);
   });
 });

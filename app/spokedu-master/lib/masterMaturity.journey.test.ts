@@ -24,7 +24,7 @@ describe('MASTER whole-product maturity journeys', () => {
   it('PREM-01 connects complete → report → next with session context', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
     const report = read('app/spokedu-master/report/page.tsx');
-    expect(activity).toContain('setCopyPrograms(true)');
+    expect(activity).toContain('sourceSessionProgramIds: selectedCarryoverIds');
     expect(report).toContain('backToSessionHref');
     expect(report).toContain('SPM_SECONDARY_BTN');
     expect(getSafeMasterPostPaymentPath('/spokedu-master/report?session=abc')).toContain('session=abc');

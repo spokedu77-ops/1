@@ -103,13 +103,13 @@ describe('commercial launch architecture contracts', () => {
     expect(appShell).toContain('hasMasterEntitlement');
   });
 
-  it('skips entitled content loading and operational fetches without records access', () => {
+  it('loads operational data from Lite attendance access while gating entitled content centrally', () => {
     const appShell = read('app/spokedu-master/components/layout/AppShell.tsx');
     const operational = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
 
     expect(appShell).toContain('canLoadEntitledContent');
-    expect(operational).toContain('useMasterCanUseRecords');
-    expect(operational).toContain('!canUseRecords');
+    expect(operational).toContain('useMasterCanUseAttendance');
+    expect(operational).toContain('!canUseAttendance');
   });
 
   it('allows logged-in users to delete operational data without active entitlement', () => {
@@ -131,7 +131,8 @@ describe('commercial launch architecture contracts', () => {
     expect(landing).toContain("id: 'lite'");
     expect(landing).not.toContain('100여 개');
     expect(landing).not.toContain('30초 안에');
-    expect(landing).toContain('51+');
+    expect(landing).toContain("id: 'premium'");
+    expect(landing).toContain('getMasterProductPaymentFeatureLabels');
   });
 
   it('routes user-facing entitlement checks through access snapshot hooks', () => {

@@ -14,6 +14,7 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
 
 vi.mock('@/app/lib/server/spokeduMasterAccess', () => ({
   requireSpokeduMasterAccess: vi.fn(async () => ({ ok: true, userId: 'user-1' })),
+  requireSpokeduMasterCapability: vi.fn(async () => ({ ok: true, userId: 'user-1' })),
 }));
 
 type QueryResult = {
