@@ -24,7 +24,21 @@ export function spmChipClass(active: boolean, extra = ''): string {
 }
 
 export function spmSegClass(active: boolean, extra = ''): string {
-  return `min-h-8 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] ${
+  return `min-h-11 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] sm:min-h-8 ${
     active ? SPM_SEG_ACTIVE : SPM_SEG_IDLE
   }${extra ? ` ${extra}` : ''}`;
 }
+
+/** Repeated collection geometry: content decides meaning, never footer position. */
+export const SPM_COLLECTION_CARD =
+  'flex h-full min-h-[220px] flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-slate-300 focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2';
+
+export const SPM_COLLECTION_CARD_BODY = 'min-h-0 flex-1';
+
+export const SPM_COLLECTION_CARD_FOOTER = 'mt-auto grid gap-2 pt-4';
+
+export const SPM_STATE_PANEL =
+  'rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold leading-6 text-slate-600';
+
+export const SPM_EMPTY_PANEL =
+  'rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center';

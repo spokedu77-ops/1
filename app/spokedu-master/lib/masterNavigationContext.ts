@@ -22,7 +22,7 @@ export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> =
   '/spokedu-master/students': [],
   '/spokedu-master/classes': ['create'],
   '/spokedu-master/class-tools': ['session', 'returnTo', 'source'],
-  '/spokedu-master/spomove': ['view', 'group', 'difficulty', 'movement', 'q'],
+  '/spokedu-master/spomove': ['view', 'group', 'difficulty', 'movement', 'q', 'session', 'returnTo', 'source'],
   '/spokedu-master/spomove/session': [
     'preset',
     'rounds',
@@ -35,6 +35,7 @@ export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> =
     'difficulty',
     'hubReturn',
     'returnTo',
+    'source',
     'session',
     'sessionProgram',
   ],

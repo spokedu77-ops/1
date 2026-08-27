@@ -1,4 +1,4 @@
-import { isCenterSessionType } from "@/app/admin/classes-v2/lib/sessionTypeCategory";
+import { isCenterSessionType } from "@/app/admin/classes/lib/sessionTypeCategory";
 import {
   computeTier,
   effectiveFees,

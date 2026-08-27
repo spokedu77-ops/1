@@ -39,7 +39,7 @@ import {
 import {
   CENTER_SESSION_TYPE_VALUES,
   isCenterSessionType,
-} from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+} from '@/app/admin/classes/lib/sessionTypeCategory';
 
 interface Session {
   id: string;

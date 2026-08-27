@@ -178,6 +178,11 @@ export function buildMasterPaymentHref(context: Pick<MasterGateContext, 'intent'
     journeyId: context.journeyId,
   });
   if (context.gateSurface) params.set('gateSurface', context.gateSurface);
+  const nextUrl = new URL(context.next, 'https://spokedu.local');
+  for (const key of ['session', 'returnTo', 'source', 'preset'] as const) {
+    const value = nextUrl.searchParams.get(key)?.trim();
+    if (value) params.set(key, value);
+  }
   return `/spokedu-master/payment?${params.toString()}`;
 }
 
@@ -194,7 +199,7 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
       minimumPlan: context.minimumPlan,
       eyebrow: '방금 하려던 작업',
       title: resourceTitle ? `${resourceTitle} 활동을 준비하려고 했습니다.` : 'SPOMOVE 활동을 준비하려고 했습니다.',
-      description: 'Premium에서는 공식 진행 가이드와 전체 화면 실행을 결제 후 같은 활동으로 이어갈 수 있습니다.',
+      description: 'SPOMOVE는 수업을 다양하게 만드는 디지털 움직임 콘텐츠입니다. Premium 결제 후 선택한 활동과 수업 맥락을 잃지 않고 그대로 이어갑니다.',
       resourceTitle,
       evidence: [
         { label: '복귀 위치', value: 'SPOMOVE 실행 화면' },
@@ -212,7 +217,7 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
       minimumPlan: context.minimumPlan,
       eyebrow: '방금 하려던 작업',
       title: resourceTitle ? `${resourceTitle} 기록을 이어가려고 했습니다.` : '수업 기록을 이어가려고 했습니다.',
-      description: '기존 수업 기록은 유지됩니다. Premium에서 메모·안내문·상세 이력을 같은 흐름으로 다시 확인할 수 있습니다.',
+      description: '기존 수업 기록은 유지됩니다. Premium에서 지난 메모와 학생 맥락을 다음 수업 준비에 다시 활용하고, 하던 기록으로 돌아갑니다.',
       resourceTitle,
       evidence: [
         { label: '복귀 위치', value: '기록 작성 화면' },
@@ -230,7 +235,7 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
       minimumPlan: context.minimumPlan,
       eyebrow: '방금 하려던 작업',
       title: '수업반과 출석부를 이어서 사용하려고 했습니다.',
-      description: 'Lite부터 수업반, 학생 명단, 일정과 출석 체크를 한 흐름으로 운영할 수 있습니다.',
+      description: 'Lite에서 수업반, 학생 명단, 일정과 출석을 이어 사용해 매주 같은 운영 정보를 다시 만들지 않습니다.',
       resourceTitle,
       evidence: [
         { label: '복귀 위치', value: '방금 보던 수업 운영 화면' },
@@ -247,7 +252,7 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
     minimumPlan: context.minimumPlan,
     eyebrow: '방금 하려던 작업',
     title: resourceTitle ? `${resourceTitle}을 열려고 했습니다.` : '수업 라이브러리를 열려고 했습니다.',
-    description: 'Lite부터 수업 라이브러리를 열 수 있고, 결제 후 방금 보려던 수업으로 바로 돌아갑니다.',
+    description: 'Lite에서 좋은 놀이체육 콘텐츠를 자유롭게 찾고 판단할 수 있습니다. 결제 후 방금 보려던 활동으로 바로 돌아갑니다.',
     resourceTitle,
     evidence: [
       { label: '복귀 위치', value: '수업 라이브러리' },

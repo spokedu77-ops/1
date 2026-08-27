@@ -50,6 +50,23 @@ describe('MASTER product UI unity', () => {
     expect(tokens).toContain('--spm-acc');
   });
 
+  it('shares collection geometry and loading/empty/error grammar across operational lists', () => {
+    const tokens = readFileSync(join(ROOT, 'lib', 'masterUiClasses.ts'), 'utf8');
+    const statePanel = readFileSync(join(ROOT, 'components', 'ui', 'MasterStatePanel.tsx'), 'utf8');
+    const classes = readFileSync(join(ROOT, 'classes', 'page.tsx'), 'utf8');
+    const students = readFileSync(join(ROOT, 'students', 'page.tsx'), 'utf8');
+    expect(tokens).toContain('SPM_COLLECTION_CARD_FOOTER');
+    expect(tokens).toContain('mt-auto grid gap-2 pt-4');
+    expect(statePanel).toContain('data-master-state={kind}');
+    for (const source of [classes, students]) {
+      expect(source).toContain('SPM_COLLECTION_CARD_BODY');
+      expect(source).toContain('SPM_COLLECTION_CARD_FOOTER');
+      expect(source).toContain('<MasterStatePanel kind="loading"');
+      expect(source).toContain('<MasterStatePanel kind="error"');
+      expect(source).toContain('<MasterStatePanel kind="empty"');
+    }
+  });
+
   it('uses spm-btn-primary for subscription gate and payment success primary CTAs', () => {
     const gate = readFileSync(join(ROOT, 'components', 'ui', 'SubscriptionGateWall.tsx'), 'utf8');
     const preview = readFileSync(join(ROOT, 'dashboard', 'EntitlementPreviewHome.tsx'), 'utf8');

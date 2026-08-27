@@ -224,7 +224,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           ) : null}
           actions={(
             <div data-detail-actions className="mx-auto w-full max-w-[740px] space-y-2.5">
-              <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] disabled:opacity-55" />
+              <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} returnHref={fromSession ? workReturnHref : null} className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] disabled:opacity-55" />
               <div data-detail-support-actions className="grid grid-cols-2 gap-2">
                 <Link data-detail-action="calendar" href="/spokedu-master/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[12px] bg-white/90 px-2 text-[12px] font-black text-slate-700 ring-1 ring-slate-300/90 sm:px-3 sm:text-[13px]">수업 일정 관리</Link>
                 <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-transparent px-2 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] sm:gap-2 sm:px-3 sm:text-[13px]">

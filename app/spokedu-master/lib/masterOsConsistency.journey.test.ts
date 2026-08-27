@@ -16,12 +16,22 @@ describe('MASTER OS consistency journeys', () => {
       'difficulty',
       'movement',
       'q',
+      'session',
+      'returnTo',
+      'source',
     ]);
     expect(
       getSafeMasterPostPaymentPath(
         '/spokedu-master/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction',
       ),
     ).toBe('/spokedu-master/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction');
+    expect(
+      getSafeMasterPostPaymentPath(
+        '/spokedu-master/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session',
+      ),
+    ).toBe(
+      '/spokedu-master/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session',
+    );
   });
 
   it('SPOMOVE-SESSION-01 keeps Session origin and separates engine vs lesson record', () => {

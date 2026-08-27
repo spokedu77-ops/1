@@ -1,5 +1,5 @@
-﻿import { redirect } from 'next/navigation';
+﻿import { redirect } from "next/navigation";
 
 export default function LegacyClassesCreateRedirectPage() {
-  redirect('/admin/classes-v2/list?create=1');
+  redirect("/admin/classes/list?create=1");
 }

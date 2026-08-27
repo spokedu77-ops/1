@@ -48,10 +48,11 @@ export default function StudentDetailPage() {
             <div><p className="text-xs font-black text-emerald-700">학생 이력</p><h1 className="mt-1 text-2xl font-black text-slate-900">{student.name}</h1><div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-500">{classes.length ? classes.map((item) => <Link key={item.id} href={`/spokedu-master/classes/${item.id}`} className="rounded-lg bg-slate-100 px-2 py-1 font-black text-slate-700 hover:bg-slate-200">{item.name}</Link>) : <span>수업반 미지정</span>}{studentMetaToDisplay(student.meta) ? <span>· {studentMetaToDisplay(student.meta)}</span> : null}</div></div>
             <span className="grid h-12 w-12 place-items-center rounded-xl bg-slate-900 text-white"><UserRound size={22} /></span>
           </div>
+          {student.guidanceNote?.trim() ? <div className="mt-4 rounded-xl bg-blue-50 p-3"><p className="text-xs font-black text-blue-700">반복 지도 참고</p><p className="mt-1 text-sm font-semibold leading-6 text-blue-950">{student.guidanceNote.trim()}</p></div> : null}
           <div className="mt-5 grid grid-cols-3 gap-2">
             {[[`${history.length}건`, '참여 수업'], [`${presentCount}건`, '출석'], [`${absentCount}건`, '결석']].map(([value, label]) => <div key={label} className="rounded-xl bg-slate-50 p-3 text-center"><strong className="block text-lg text-slate-900">{value}</strong><span className="text-[11px] font-bold text-slate-500">{label}</span></div>)}
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2"><Link href="/spokedu-master/activity" className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-black text-white"><CalendarDays size={15} />수업 관리 열기</Link>{history[0] ? <Link href={`/spokedu-master/report?session=${history[0].session.id}`} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />최근 수업 안내문</Link> : null}</div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2"><Link href={classes[0] ? `/spokedu-master/classes/${classes[0].id}` : '/spokedu-master/activity'} className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-black text-white"><CalendarDays size={15} />{classes[0] ? '소속 반 수업 이어가기' : '수업 일정 보기'}</Link>{history[0] ? <Link href={`/spokedu-master/report?session=${history[0].session.id}`} className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-black text-slate-700"><FileText size={15} />최근 수업 안내문 보기</Link> : null}</div>
         </header>
 
         <section className="mt-5">
@@ -64,7 +65,7 @@ export default function StudentDetailPage() {
                 {session.memo?.trim() ? <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm font-semibold leading-6 text-slate-600">{session.memo.trim()}</p> : null}
               </article>
             ))}
-            {!history.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><p className="text-sm font-black text-slate-700">아직 출석이 기록된 수업이 없습니다.</p><p className="mt-2 text-xs font-semibold text-slate-500">수업에서 출석을 저장하면 이곳에 자동으로 쌓입니다.</p><Link href="/spokedu-master/activity" className="mt-4 inline-block text-sm font-black text-emerald-700">수업 관리 열기</Link></div> : null}
+            {!history.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><p className="text-sm font-black text-slate-700">아직 출석이 기록된 수업이 없습니다.</p><p className="mt-2 text-xs font-semibold text-slate-500">수업에서 출석을 저장하면 이곳에 자동으로 쌓입니다.</p><Link href="/spokedu-master/activity" className="mt-4 inline-block text-sm font-black text-emerald-700">수업 일정 보기</Link></div> : null}
           </div>
         </section>
       </div>

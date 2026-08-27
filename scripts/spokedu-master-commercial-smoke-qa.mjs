@@ -1206,6 +1206,51 @@ async function runSpomoveSessionAccessBoundarySmoke(browser) {
   await context.close();
 }
 
+async function runAuthenticatedGateReturnContextSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const session = 'qa-session-context';
+  const returnTo = `/spokedu-master/activity?session=${session}`;
+  const source = 'session-prep';
+  const query = new URLSearchParams({
+    preset: 'reaction-cognition-space-direction-01',
+    session,
+    returnTo,
+    source,
+  });
+  await gotoPage(page, `/spokedu-master/spomove/session?${query}`);
+  const gate = page.locator('[data-subscription-gate="spomove"]');
+  try {
+    await gate.waitFor({ state: 'visible', timeout: 15_000 });
+  } catch (error) {
+    const body = await page.locator('body').innerText().catch(() => '');
+    throw new Error(`Lite SPOMOVE Gate missing (url=${page.url()}, body=${body.slice(0, 400).replace(/\s+/g, ' ')}): ${safeErrorMessage(error)}`);
+  }
+  const paymentHref = await gate.locator('a[href*="/spokedu-master/payment"]').first().getAttribute('href');
+  assert(paymentHref, 'SPOMOVE Gate did not expose a Payment CTA');
+  const paymentUrl = new URL(paymentHref, BASE);
+  assert(paymentUrl.searchParams.get('session') === session, `Gate lost session context (${paymentHref})`);
+  assert(paymentUrl.searchParams.get('returnTo') === returnTo, 'Gate lost returnTo context');
+  assert(paymentUrl.searchParams.get('source') === source, 'Gate lost source context');
+  const next = paymentUrl.searchParams.get('next');
+  assert(next?.startsWith('/spokedu-master/spomove/session?'), 'Gate lost the current SPOMOVE action in next');
+  const nextUrl = new URL(next, BASE);
+  assert(nextUrl.searchParams.get('session') === session, 'Gate next lost session context');
+  assert(nextUrl.searchParams.get('returnTo') === returnTo, 'Gate next lost returnTo context');
+  assert(paymentUrl.searchParams.get('journeyId'), 'Gate lost journeyId context');
+  await page.goto(paymentUrl.toString(), { waitUntil: 'domcontentloaded' });
+  const current = new URL(page.url());
+  assert(current.searchParams.get('session') === session, 'Payment route lost session context');
+  assert(current.searchParams.get('returnTo') === returnTo, 'Payment route lost returnTo context');
+  assert(current.searchParams.get('source') === source, 'Payment route lost source context');
+  await page.getByRole('link', { name: '이전 작업으로 돌아가기' }).click();
+  await page.waitForURL(/\/spokedu-master\/spomove\/session/, { timeout: 10_000 });
+  assert(new URL(page.url()).pathname === '/spokedu-master/spomove/session', `Payment back navigation lost the gated route (${page.url()})`);
+  await context.close();
+}
+
 async function markAlicePresent(page) {
   await page.evaluate(() => {
     const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
@@ -1483,13 +1528,26 @@ async function openWithTier(browser, tier, route) {
 
 async function runEntitlementMatrixSmoke(browser) {
   {
-    const { context, page } = await openWithTier(browser, 'lite', '/spokedu-master/class-record');
-    assert(await page.locator('[data-subscription-gate="records"]').count() === 1, 'lite class-record did not show Premium GateWall');
+    const { context, page } = await openWithTier(browser, 'lite', '/spokedu-master/library');
+    assert(await page.locator('[data-subscription-gate]').count() === 0, 'lite unexpectedly gated on Library');
     await context.close();
   }
   {
     const { context, page } = await openWithTier(browser, 'lite', '/spokedu-master/class-tools');
     assert(await page.locator('[data-subscription-gate]').count() === 0, 'lite unexpectedly gated on class-tools');
+    await context.close();
+  }
+  {
+    const { context, page } = await openWithTier(browser, 'lite', '/spokedu-master/spomove');
+    assert(await page.locator('[data-subscription-gate]').count() === 0, 'lite unexpectedly gated on SPOMOVE discovery');
+    await context.close();
+  }
+  {
+    const { context, page, body } = await openWithTier(browser, 'lite', '/spokedu-master/spomove/session?preset=reaction-cognition-space-direction-01');
+    assert(
+      await page.locator('[data-subscription-gate="spomove"]').count() === 1,
+      `lite SPOMOVE runtime did not show Premium GateWall (url=${page.url()}, body=${body.slice(0, 300).replace(/\s+/g, ' ')})`,
+    );
     await context.close();
   }
   {
@@ -1905,6 +1963,7 @@ async function main() {
       ['day loop', () => runDayLoopSmoke(browser)],
       ['owner isolation', () => runOwnerIsolationSmoke(browser)],
       ['spomove session access boundary', () => runSpomoveSessionAccessBoundarySmoke(browser)],
+      ['authenticated gate return context', () => runAuthenticatedGateReturnContextSmoke(browser)],
       ['student next lesson preparation', () => runStudentPreparationSmoke(browser)],
       ['record correction to report', () => runRecordCorrectionSmoke(browser)],
       ['library discovery roster reuse', () => runLibraryDiscoveryReuseSmoke(browser)],

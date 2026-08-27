@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { CENTER_SESSION_TYPE_VALUES } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { CENTER_SESSION_TYPE_VALUES } from '@/app/admin/classes/lib/sessionTypeCategory';
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
 
 export const CENTER_SESSION_FILES_BUCKET = 'session-files';

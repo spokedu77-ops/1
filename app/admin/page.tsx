@@ -25,6 +25,35 @@ interface IClassSession {
   roundDisplay?: string;
 }
 
+type ClassTimeBucket = 'postponed' | 'cancelled' | 'done' | 'ongoing' | 'upcoming';
+
+/** 오늘 서머리: status(finished)가 아니라 실제 시각으로 예정/진행/완료를 나눈다. */
+function getClassTimeBucket(cls: IClassSession): ClassTimeBucket {
+  if (cls.isPostponed) return 'postponed';
+  if (cls.isCancelled) return 'cancelled';
+  const now = Date.now();
+  const start = new Date(cls.startAt).getTime();
+  const end = new Date(cls.endAt).getTime();
+  if (Number.isFinite(end) && now > end) return 'done';
+  if (Number.isFinite(start) && now >= start) return 'ongoing';
+  return 'upcoming';
+}
+
+const CLASS_BUCKET_SORT_ORDER: Record<ClassTimeBucket, number> = {
+  ongoing: 0,
+  upcoming: 1,
+  done: 2,
+  postponed: 3,
+  cancelled: 4,
+};
+
+function compareTodayClasses(a: IClassSession, b: IClassSession) {
+  const ba = getClassTimeBucket(a);
+  const bb = getClassTimeBucket(b);
+  if (ba !== bb) return CLASS_BUCKET_SORT_ORDER[ba] - CLASS_BUCKET_SORT_ORDER[bb];
+  return new Date(a.startAt).getTime() - new Date(b.startAt).getTime();
+}
+
 interface PostponeNotice {
   id: string;
   notice_date: string;
@@ -303,14 +332,7 @@ export default function SpokeduHQDashboard() {
 
       const formattedClasses = rawClasses
         .map((c) => formatSession(c, groupPlannedTotals))
-        .sort((a: IClassSession, b: IClassSession) => {
-          const timeA = new Date(a.startAt).getTime();
-          const timeB = new Date(b.startAt).getTime();
-          if (timeA !== timeB) return timeA - timeB;
-          if (a.isPostponed || a.isCancelled) return 1;
-          if (b.isPostponed || b.isCancelled) return -1;
-          return 0;
-        });
+        .sort(compareTodayClasses);
 
       const formattedUpcomingPostponedClasses = rawUpcomingPostponedClasses
         .map((c) => formatSession(c, upcomingPostponedGroupPlannedTotals));
@@ -545,12 +567,6 @@ export default function SpokeduHQDashboard() {
     return diff <= 1;
   };
 
-  const isClassFinished = (cls: IClassSession) => {
-    if (cls.isPostponed || cls.isCancelled) return false;
-    if (cls.status === 'finished') return true;
-    return new Date() > new Date(cls.endAt);
-  };
-
   if (loading && !fetchError) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-white">
@@ -617,21 +633,31 @@ export default function SpokeduHQDashboard() {
                 <div className="flex items-center gap-2">
                   <Calendar size={14} className="text-slate-400 shrink-0" />
                   <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
+                  <Link
+                    href="/admin/classes/calendar"
+                    className="text-[9px] font-bold text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline"
+                  >
+                    캘린더
+                  </Link>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
-                    완료 {todayClasses.filter(c => isClassFinished(c)).length} /
-                    진행중 {todayClasses.filter(c => !isClassFinished(c) && !c.isPostponed && !c.isCancelled).length} /
-                    연기 {todayClasses.filter(c => c.isPostponed).length}
+                    완료 {todayClasses.filter((c) => getClassTimeBucket(c) === 'done').length} /
+                    진행중 {todayClasses.filter((c) => getClassTimeBucket(c) === 'ongoing').length} /
+                    예정 {todayClasses.filter((c) => getClassTimeBucket(c) === 'upcoming').length} /
+                    연기 {todayClasses.filter((c) => c.isPostponed).length}
                   </span>
                 </div>
               </div>
               <div className="border-t border-slate-100 divide-y divide-slate-50 overflow-x-auto rounded-lg border border-slate-100">
-                {todayClasses.length > 0 ? todayClasses.map((cls) => (
+                {todayClasses.length > 0 ? todayClasses.map((cls) => {
+                  const bucket = getClassTimeBucket(cls);
+                  return (
                   <div key={cls.id} className={`py-3 flex flex-wrap items-center justify-between gap-2 min-w-0 px-1 ${
-                    isClassFinished(cls) ? 'opacity-20 grayscale' :
-                    cls.isPostponed ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
-                    cls.isCancelled ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' : ''
+                    bucket === 'done' ? 'opacity-20 grayscale' :
+                    bucket === 'postponed' ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
+                    bucket === 'cancelled' ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' :
+                    bucket === 'ongoing' ? 'bg-emerald-50/70 border-l-4 border-emerald-400 pl-3' : ''
                   }`}>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0 flex-1">
                       <span className="text-[11px] font-bold tabular-nums text-slate-400 w-20 sm:w-24 shrink-0">{cls.time} - {cls.endTime}</span>
@@ -639,16 +665,26 @@ export default function SpokeduHQDashboard() {
                         <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded uppercase shrink-0">{cls.roundDisplay}</span>
                       )}
                       <span className="text-[12px] font-bold text-slate-800 truncate min-w-0">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
-                      {cls.isPostponed && (
+                      {bucket === 'ongoing' && (
+                        <span className="text-[8px] font-black text-emerald-700 bg-emerald-100 px-2 py-1 rounded uppercase">진행중</span>
+                      )}
+                      {bucket === 'upcoming' && (
+                        <span className="text-[8px] font-black text-sky-700 bg-sky-100 px-2 py-1 rounded uppercase">예정</span>
+                      )}
+                      {bucket === 'done' && (
+                        <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-1 rounded uppercase">완료</span>
+                      )}
+                      {bucket === 'postponed' && (
                         <span className="text-[8px] font-black text-purple-600 bg-purple-100 px-2 py-1 rounded uppercase">연기됨</span>
                       )}
-                      {cls.isCancelled && (
+                      {bucket === 'cancelled' && (
                         <span className="text-[8px] font-black text-red-600 bg-red-100 px-2 py-1 rounded uppercase">취소됨</span>
                       )}
                     </div>
                     <span className="text-[9px] font-black text-slate-300 uppercase tracking-tighter shrink-0">{cls.teacher}</span>
                   </div>
-                )) : <p className="py-4 text-[11px] text-slate-300 italic px-2">No classes scheduled.</p>}
+                  );
+                }) : <p className="py-4 text-[11px] text-slate-300 italic px-2">No classes scheduled.</p>}
               </div>
             </div>
 

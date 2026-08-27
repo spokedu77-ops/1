@@ -276,7 +276,7 @@ function PaymentContent() {
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
           <h1 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            {paymentPageMode === 'liteUpgrade' ? '운영 환경 업그레이드' : gateDisplay ? '운영 환경 선택' : '구독 선택'}
+            {paymentPageMode === 'liteUpgrade' ? 'Premium으로 이어가기' : gateDisplay ? '하던 작업 이어가기' : '구독 선택'}
           </h1>
         </div>
       </header>
@@ -291,18 +291,21 @@ function PaymentContent() {
             <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
               {gateDisplay.description}
             </p>
+            <Link href={gateContext.next} className="mt-3 inline-flex min-h-11 items-center text-[13px] font-black" style={{ color: 'var(--spm-acc)' }}>
+              이전 작업으로 돌아가기
+            </Link>
           </section>
         ) : (
           <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <h2 className="text-[28px] font-black leading-tight sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
               {paymentPageMode === 'liteUpgrade'
-                ? '기록 재사용과 SPOMOVE까지 이어가려면 Premium'
-                : '어떤 운영 환경을 유지할까요?'}
+                ? '새로운 콘텐츠와 지난 수업 맥락을 함께 이어가세요'
+                : '좋은 콘텐츠를 찾고, 실제 수업과 다음 수업까지 이어가세요'}
             </h2>
             <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
               {paymentPageMode === 'liteUpgrade'
-                ? '라이트 운영은 유지한 채, 지난 기록이 다음 준비로 이어지고 SPOMOVE를 같은 흐름에서 쓸 수 있습니다. 결제수단 인증 후 프리미엄 정가 결제로 즉시 전환됩니다.'
-                : 'Lite는 매주 수업 준비·일정·출석 운영, Premium은 그 위에 기록 재사용과 SPOMOVE가 이어지는 전체 운영 환경입니다.'}
+                ? 'Lite의 완전한 수업 운영은 그대로 유지됩니다. Premium에서는 SPOMOVE로 활동 선택을 넓히고, 지난 기록과 학생 맥락을 다음 준비에 다시 활용합니다.'
+                : 'Lite는 콘텐츠 발견부터 수업 구성·운영까지 완결됩니다. Premium은 SPOMOVE와 더 깊은 기록 재사용으로 다음 수업에서 다시 찾고 판단하는 일을 줄입니다.'}
             </p>
           </section>
         )}
@@ -329,7 +332,7 @@ function PaymentContent() {
             {paymentPageMode === 'liteUpgrade' ? (
               <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
                 <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 매주 운영 중입니다. Premium으로 올리면 기록이 다음 준비로 이어지고 SPOMOVE를 같은 Session에서 이어갈 수 있습니다.
+                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 콘텐츠 발견부터 수업 운영까지 완결되어 있습니다. Premium으로 올리면 SPOMOVE로 활동을 넓히고 지난 기록을 다음 준비에 다시 활용할 수 있습니다.
                 </p>
                 <p className="mt-2 text-[13px] font-black leading-6" style={{ color: 'var(--spm-t)' }}>
                   이번 결제 금액은 28,900원입니다. 기존 라이트 잔여기간의 차감·환급 없이 결제 성공 시점부터 프리미엄 1개월과 새 결제주기가 시작됩니다.
@@ -378,9 +381,9 @@ function PaymentContent() {
                 ))}
               </ul>
               <p className="mt-4 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-acc)' }}>이용약관</Link>
+                <Link href="/spokedu-master/terms" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>이용약관</Link>
                 <span className="mx-1">및</span>
-                <Link href="/spokedu-master/privacy" style={{ color: 'var(--spm-acc)' }}>개인정보처리방침</Link>
+                <Link href="/spokedu-master/privacy" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>개인정보처리방침</Link>
                 <span>을 확인해 주세요.</span>
               </p>
             </section>

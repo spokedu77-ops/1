@@ -79,7 +79,7 @@ export function monthRowToneClassesForSessionType(type: string | null | undefine
   }
 }
 
-/** FullCalendar 등에서 쓰는 단색 — 특강은 샛노란 */
+/** 캘린더·목록 등에서 쓰는 단색 — 특강은 샛노란 */
 export function themeColorHexForSessionType(type: string | null | undefined): string {
   const cat = getSessionTypeCategory(type);
   switch (cat) {

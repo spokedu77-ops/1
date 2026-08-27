@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, FileText, Home, Lock, Tv, Wrench } from 'lucide-react';
+import { BookOpen, CalendarDays, Home, Lock, Tv, UsersRound, Wrench } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
@@ -11,7 +11,8 @@ const TAB_ICONS = {
   dashboard: Home,
   library: BookOpen,
   'class-tools': Wrench,
-  activity: FileText,
+  classes: UsersRound,
+  activity: CalendarDays,
   spomove: Tv,
 } as const;
 
@@ -19,6 +20,7 @@ const TAB_CAPABILITIES = {
   dashboard: 'authenticated',
   library: 'library',
   'class-tools': 'classTools',
+  classes: 'attendance',
   activity: 'attendance',
   spomove: 'spomove',
 } as const satisfies Record<keyof typeof TAB_ICONS, MasterCapability>;
@@ -75,7 +77,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
         aria-label="SPOKEDU MASTER 주요 메뉴"
       >
         <div
-          className="mx-auto grid h-[62px] w-full max-w-[620px] grid-cols-5 rounded-[18px] border"
+          className="mx-auto grid h-[62px] w-full max-w-[720px] grid-cols-6 rounded-[18px] border"
           style={{
             background: 'rgba(255,255,255,0.97)',
             borderColor: '#e2e8f0',
@@ -85,7 +87,6 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
           {primaryTabs.map(({ href, label, shortLabel, Icon, capability }) => {
             const active =
               isActivePath(pathname, href) ||
-              (href.endsWith('/activity') && isActivePath(pathname, `${basePath}/classes`)) ||
               (href.endsWith('/activity') && isActivePath(pathname, `${basePath}/class-record`));
             const locked = !canUseTab(accessContext?.snapshot, capability);
             return (

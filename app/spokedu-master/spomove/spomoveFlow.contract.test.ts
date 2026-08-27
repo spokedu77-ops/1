@@ -28,6 +28,8 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).not.toContain('바로 실행');
     expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('최근 SPOMOVE');
+    expect(hub).toContain('resolveMasterContentMode');
+    expect(hub).toContain('getMasterContentPrimaryAction');
   });
 
   it('keeps normal program cards separate from recent rerun actions', () => {
@@ -241,6 +243,12 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(masterResult).toContain('같은 설정으로 다시 실행');
     expect(session).toContain('reopenStartConfirmation');
     expect(masterResult).toContain('활동 목록으로');
+  });
+
+  it('returns an exact Session build to its preserved work context without creating a Session', () => {
+    expect(hub).toContain('await operationalData.addSessionSpomove(sessionContext.id, preset.id)');
+    expect(hub).toContain('router.push(returnTo)');
+    expect(hub).not.toContain('createSession(');
   });
 
   it('keeps SPOMOVE class-record drafts as general estimates, not sensor-precise metrics', () => {

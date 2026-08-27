@@ -3,6 +3,7 @@ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import {
   buildEnvelopeOrThrow,
   createConsultLead,
+  isConsultSchemaCompatibilityError,
   LeadEnvelopeValidationError,
   parseAcquisitionFromBody,
 } from '@/app/lib/server/leadEnvelope';
@@ -118,11 +119,55 @@ export async function POST(req: NextRequest) {
     ].join('\n');
 
     const supabase = getServiceSupabase();
+    const parentName = `${organization} / ${manager}`;
+
+    // 짧은 시간 동일 기관·연락처·핵심 payload 중복 제출 방지 (더블클릭/재전송)
+    {
+      const dedupeSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      let dedupeQuery = supabase
+        .from('consultations')
+        .select('id, source_lead_id, content')
+        .eq('consult_type', 'center')
+        .eq('parent_name', parentName)
+        .gte('created_at', dedupeSince)
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      if (phone) {
+        dedupeQuery = dedupeQuery.eq('phone', phone);
+      }
+
+      const progMarker = `희망 프로그램: ${programs.length ? programs.join(', ') : '-'}`;
+      const locMarker = `기관 소재지: ${location || '-'}`;
+      const inquiryMarker = (inquiry || '-').slice(0, 80);
+
+      const { data: recent } = await dedupeQuery;
+      const duplicate = (recent ?? []).find((row) => {
+        const c = typeof row.content === 'string' ? row.content : '';
+        if (!c.includes(progMarker) || !c.includes(locMarker)) return false;
+        if (inquiryMarker !== '-' && !c.includes(inquiryMarker)) return false;
+        if (phone) return true;
+        if (email) return c.includes(`이메일: ${email}`);
+        return false;
+      });
+
+      if (duplicate?.id) {
+        return NextResponse.json({
+          ok: true,
+          duplicate: true,
+          consultId: duplicate.id,
+          leadId: duplicate.id,
+          detailId: duplicate.source_lead_id ?? null,
+          detailStatus: duplicate.source_lead_id ? 'synced' : 'detail_failed',
+          mirrorStatus: duplicate.source_lead_id ? 'synced' : 'detail_failed',
+        });
+      }
+    }
 
     // 1) CRM SoT — consultations 먼저
     const created = await createConsultLead(supabase, {
       envelope,
-      parentName: `${organization} / ${manager}`,
+      parentName,
       phone: phone || null,
       content: consultContent,
       consultType: 'center',
@@ -160,7 +205,9 @@ export async function POST(req: NextRequest) {
     {
       const primary = await supabase.from('dispatch_leads').insert(detailPayload).select('id').single();
 
-      if (primary.error || !primary.data?.id) {
+      if (!primary.error && primary.data?.id) {
+        detailId = primary.data.id;
+      } else if (isConsultSchemaCompatibilityError(primary.error)) {
         // mirror_* 컬럼 없는 레거시: 최소 컬럼으로 재시도
         const fallback = await supabase
           .from('dispatch_leads')
@@ -189,7 +236,8 @@ export async function POST(req: NextRequest) {
           detailId = fallback.data.id;
         }
       } else {
-        detailId = primary.data.id;
+        console.error('[dispatch/leads] detail insert failed after CRM save', primary.error);
+        detailStatus = 'detail_failed';
       }
     }
 

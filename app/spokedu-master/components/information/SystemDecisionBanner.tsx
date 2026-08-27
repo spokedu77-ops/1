@@ -38,7 +38,7 @@ export function SystemDecisionBanner({
         </div>
         <Link
           href={href}
-          className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-white px-3 text-xs font-black ring-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${attention ? 'text-amber-950 ring-amber-200 focus-visible:outline-amber-700' : 'text-emerald-950 ring-emerald-200 focus-visible:outline-emerald-700'}`}
+          className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-white px-3 text-xs font-black ring-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${attention ? 'text-amber-950 ring-amber-200 focus-visible:outline-amber-700' : 'text-emerald-950 ring-emerald-200 focus-visible:outline-emerald-700'}`}
         >
           {actionLabel}<ArrowRight aria-hidden className="h-3.5 w-3.5" />
         </Link>

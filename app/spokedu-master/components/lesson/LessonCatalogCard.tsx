@@ -136,6 +136,9 @@ export type LessonCatalogCardProps = {
   variant?: LessonCatalogCardVariant;
   dataAttrs?: Record<string, string | undefined>;
   sizes?: string;
+  primaryActionLabel?: string;
+  onPrimaryAction?: () => void;
+  primaryActionDisabled?: boolean;
 };
 
 export function LessonCatalogCard({
@@ -157,6 +160,9 @@ export function LessonCatalogCard({
   variant = 'library',
   dataAttrs,
   sizes = '(min-width: 1280px) 300px, (min-width: 768px) 45vw, 82vw',
+  primaryActionLabel = '활동 살펴보기',
+  onPrimaryAction,
+  primaryActionDisabled = false,
 }: LessonCatalogCardProps) {
   const articleProps = Object.fromEntries(
     Object.entries(dataAttrs ?? {}).filter((entry): entry is [string, string] => Boolean(entry[1])),
@@ -239,7 +245,7 @@ export function LessonCatalogCard({
               event.stopPropagation();
               onFavorite?.();
             }}
-            className={`absolute right-2.5 top-2.5 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:w-9 ${
               favorite
                 ? 'bg-white text-amber-500 shadow-sm'
                 : 'bg-white/90 text-slate-600 shadow-sm hover:bg-white hover:text-slate-900'
@@ -287,7 +293,7 @@ export function LessonCatalogCard({
         </div>
       </div>
 
-      <div className="flex h-[88px] shrink-0 flex-col gap-2 bg-white p-3">
+      <div className="flex h-[96px] shrink-0 flex-col gap-2 bg-white p-3">
         <div className="flex h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
           {descriptionParts.length > 0 ? descriptionParts.map((part, index) => (
             <span
@@ -306,18 +312,31 @@ export function LessonCatalogCard({
           >
             프리미엄 자료
           </Link>
+        ) : onPrimaryAction ? (
+          <button
+            type="button"
+            onClick={onPrimaryAction}
+            disabled={primaryActionDisabled}
+            className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none disabled:opacity-55"
+          >
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <BookOpen size={15} />
+              {primaryActionLabel}
+            </span>
+            <ArrowRight size={14} />
+          </button>
         ) : (
           <Link
             href={detailHref}
             className={
               variant === 'home'
-                ? 'inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
-                : 'spm-btn-primary inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] px-3 text-[13px] font-black focus-visible:outline-none'
+                ? 'inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
+                : 'spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none'
             }
           >
             <span className="inline-flex min-w-0 items-center gap-2">
               <BookOpen size={variant === 'home' ? 14 : 15} />
-              수업 준비
+              {primaryActionLabel}
             </span>
             <ArrowRight size={14} />
           </Link>

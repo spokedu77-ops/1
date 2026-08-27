@@ -76,8 +76,40 @@ export type CreateConsultLeadResult =
   | { ok: false; error: string };
 
 /**
+ * structured insert 실패가 "구조화 컬럼 미적용 DB"인지 판별.
+ * schema compatibility가 아니면 legacy fallback을 하지 않는다.
+ */
+export function isConsultSchemaCompatibilityError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { code?: unknown; message?: unknown; details?: unknown; hint?: unknown };
+  const code = typeof err.code === 'string' ? err.code : '';
+  const message = typeof err.message === 'string' ? err.message : '';
+  const details = typeof err.details === 'string' ? err.details : '';
+  const hint = typeof err.hint === 'string' ? err.hint : '';
+  const blob = `${code} ${message} ${details} ${hint}`.toLowerCase();
+
+  // Postgres undefined_column
+  if (code === '42703') return true;
+
+  // PostgREST / Supabase schema cache · missing column
+  if (
+    /could not find .* column/i.test(blob) ||
+    /column .* does not exist/i.test(blob) ||
+    /schema cache/i.test(blob) ||
+    /could not find the '.+' column of/i.test(blob)
+  ) {
+    return true;
+  }
+
+  // PGRST204: column not in schema cache
+  if (code === 'PGRST204') return true;
+
+  return false;
+}
+
+/**
  * CRM Source of Truth — consultations 단일 저장.
- * 구조화 컬럼 미적용 DB에서는 legacy 컬럼만으로 fallback.
+ * legacy fallback은 구조화 컬럼이 없는 schema compatibility 오류일 때만 허용.
  */
 export async function createConsultLead(
   supabase: ServiceSupabase,
@@ -101,6 +133,15 @@ export async function createConsultLead(
   }
 
   console.error('[createConsultLead] structured insert failed', primary.error);
+
+  if (!isConsultSchemaCompatibilityError(primary.error)) {
+    return {
+      ok: false,
+      error: primary.error?.message ?? 'DB 저장에 실패했습니다.',
+    };
+  }
+
+  console.warn('[createConsultLead] schema compatibility — attempting legacy insert');
   const fallback = await supabase
     .from(tableName)
     .insert({

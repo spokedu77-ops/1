@@ -272,7 +272,7 @@ export default function CenterTbdEventPanel({
           </div>
 
           <p className="text-xs text-slate-500 rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2">
-            관리자 간 공유됩니다. 수업 관리(classes-v2) DB와는 연동되지 않습니다.
+            관리자 간 공유됩니다. 수업 관리(classes) DB와는 연동되지 않습니다.
           </p>
         </div>
 

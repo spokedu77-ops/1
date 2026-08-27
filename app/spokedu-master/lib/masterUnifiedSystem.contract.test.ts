@@ -19,6 +19,9 @@ describe('MASTER unified navigation context', () => {
       'difficulty',
       'movement',
       'q',
+      'session',
+      'returnTo',
+      'source',
     ]);
     expect(
       getSafeMasterPostPaymentPath('/spokedu-master/spomove?group=dive&difficulty=hard&q=reaction'),

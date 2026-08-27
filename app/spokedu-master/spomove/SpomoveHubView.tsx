@@ -26,6 +26,7 @@ import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../lib/masterNavigationContext';
 import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
+import { getMasterContentPrimaryAction, resolveMasterContentMode } from '../lib/masterProductTruth';
 import { spmChipClass } from '../lib/masterUiClasses';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { isHubListedPreset } from './movements/isHubVisiblePreset';
@@ -702,7 +703,7 @@ function CardInfo({
             data-spm-spomove-card-action="start"
             data-spm-spomove-start-mode="guide"
             onClick={onGuide}
-            className={`inline-flex h-11 min-w-0 flex-[1.6] items-center justify-center whitespace-nowrap rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none sm:h-9 ${sessionAssignment ? 'border border-slate-200 bg-white text-slate-700' : 'spm-btn-primary'}`}
+            className={`inline-flex h-11 min-w-0 flex-[1.6] items-center justify-center whitespace-nowrap rounded-[10px] px-2 text-[13px] font-black focus-visible:outline-none ${sessionAssignment ? 'border border-slate-200 bg-white text-slate-700' : 'spm-btn-primary'}`}
           >
             활동 살펴보기
           </button>
@@ -712,7 +713,7 @@ function CardInfo({
               data-spm-spomove-card-action="start"
               data-spm-spomove-start-mode="settings"
               onClick={() => router.push(hrefForSettings())}
-              className="inline-flex h-11 min-w-0 flex-1 items-center justify-center overflow-hidden whitespace-nowrap rounded-[9px] border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 sm:h-9 sm:px-3"
+              className="inline-flex h-11 min-w-0 flex-1 items-center justify-center overflow-hidden whitespace-nowrap rounded-[10px] border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 sm:px-3"
             >
               실행 설정
             </button>
@@ -744,6 +745,7 @@ function PresetCard({
   onAddToSession,
   addedToSession,
   addingToSession,
+  sessionBuildAction,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
@@ -758,6 +760,7 @@ function PresetCard({
   onAddToSession?: () => void;
   addedToSession?: boolean;
   addingToSession?: boolean;
+  sessionBuildAction: string;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
@@ -819,7 +822,7 @@ function PresetCard({
       {onAddToSession ? (
         <div className="border-t border-slate-100 px-3 pb-3 pt-2">
           <button type="button" onClick={onAddToSession} disabled={addedToSession || addingToSession} className="spm-btn-primary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-3 text-sm font-black disabled:bg-emerald-100 disabled:text-emerald-700">
-            {addedToSession ? '이 수업에 추가됨' : addingToSession ? '추가 중' : '이 수업에 추가'}
+            {addedToSession ? '이 수업에 추가됨' : addingToSession ? '추가 중' : sessionBuildAction}
           </button>
         </div>
       ) : null}
@@ -851,6 +854,8 @@ export default function SpomoveHubView() {
   const sessionContext = sessionId ? operationalData.sessions.find((session) => session.id === sessionId && session.status === 'scheduled') : null;
   const sessionWorkState = sessionContext ? deriveMasterSessionWorkState(sessionContext, null, new Date()) : null;
   const returnTo = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-master/activity');
+  const contentMode = resolveMasterContentMode({ requestedSessionId: sessionId, hasExactScheduledSession: Boolean(sessionContext) });
+  const sessionBuildAction = getMasterContentPrimaryAction(contentMode);
   const [addingPresetId, setAddingPresetId] = useState<string | null>(null);
   const [sessionAddError, setSessionAddError] = useState<string | null>(null);
   const urlState = parseSpomoveHubUrlState(searchParams, {
@@ -989,6 +994,7 @@ export default function SpomoveHubView() {
     setSessionAddError(null);
     try {
       await operationalData.addSessionSpomove(sessionContext.id, preset.id);
+      router.push(returnTo);
     } catch {
       setSessionAddError('활동을 수업에 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
@@ -1102,6 +1108,7 @@ export default function SpomoveHubView() {
           onAddToSession={sessionContext ? () => void addPresetToSession(preset) : undefined}
           addedToSession={Boolean(sessionContext?.programs.some((program) => program.sourceType === 'spomove' && program.spomovePresetId === preset.id))}
           addingToSession={addingPresetId === preset.id}
+          sessionBuildAction={sessionBuildAction}
         />
       ))}
     </div>
@@ -1144,7 +1151,7 @@ export default function SpomoveHubView() {
               <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">최근 SPOMOVE</p>
               <h2 className="mt-0.5 text-[18px] font-black leading-tight text-slate-950">최근 사용한 활동</h2>
             </div>
-            <a href="#spomove-program-list" className="text-sm font-black text-slate-950">활동 선택</a>
+            <a href="#spomove-program-list" className="inline-flex min-h-11 items-center text-sm font-black text-slate-950 sm:min-h-9">활동 선택</a>
           </div>
           {recentSpomoveActivities.length ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -1179,7 +1186,7 @@ export default function SpomoveHubView() {
                         href={recentHref}
                         data-spm-spomove-recent-action="rerun"
                         data-spm-spomove-recent-reproduce={canReproduce ? '1' : '0'}
-                        className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none"
+                        className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none"
                       >
                         {canReproduce ? '같은 설정으로 시작' : '이 활동으로 시작'}
                       </Link>
@@ -1191,7 +1198,7 @@ export default function SpomoveHubView() {
           ) : (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5">
               <p className="text-sm font-bold text-slate-600">아직 실행한 SPOMOVE 활동이 없습니다.</p>
-              <a href="#spomove-program-list" className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">활동 선택</a>
+              <a href="#spomove-program-list" className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">활동 선택</a>
             </div>
           )}
         </section>

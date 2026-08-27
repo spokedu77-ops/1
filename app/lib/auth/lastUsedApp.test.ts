@@ -17,7 +17,7 @@ describe('lastUsedApp', () => {
   it('infers app family from pathname', () => {
     expect(inferLastUsedAppFromPath('/spokedu-master/dashboard')).toBe('master');
     expect(inferLastUsedAppFromPath('/teacher/my-classes')).toBe('teacher');
-    expect(inferLastUsedAppFromPath('/admin/classes-v2/calendar')).toBe('admin');
+    expect(inferLastUsedAppFromPath('/admin/classes/calendar')).toBe('admin');
     expect(inferLastUsedAppFromPath('/login')).toBeNull();
   });
 

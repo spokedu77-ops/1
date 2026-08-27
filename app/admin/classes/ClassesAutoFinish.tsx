@@ -10,10 +10,10 @@ function isTransientFetchError(error: unknown): boolean {
 }
 
 /**
- * classes-v2 레이아웃에서만 마운트: v1 classes/page autoFinishSessions와 동일 주기로
+ * ?? ?? ??????? ???: ?????
  * POST /api/sessions/auto-finish (finished + session_count_logs).
  */
-export default function ClassesV2AutoFinish() {
+export default function ClassesAutoFinish() {
   useEffect(() => {
     let cancelled = false;
     let activeController: AbortController | null = null;
@@ -33,11 +33,11 @@ export default function ClassesV2AutoFinish() {
         if (cancelled || controller.signal.aborted) return;
         if (!res.ok) {
           const t = await res.text().catch(() => "");
-          devLogger.error("classes-v2 auto-finish failed", res.status, t);
+          devLogger.error("classes auto-finish failed", res.status, t);
         }
       } catch (e) {
         if (cancelled || controller.signal.aborted || isTransientFetchError(e)) return;
-        devLogger.error("classes-v2 auto-finish error", e);
+        devLogger.error("classes auto-finish error", e);
       }
     };
 

@@ -19,7 +19,7 @@ describe('lesson discovery and execution flow contract', () => {
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
     const catalogCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
     expect(catalogCard).toContain('event.stopPropagation()');
-    expect(catalogCard).toContain('수업 준비');
+    expect(catalogCard).toContain("primaryActionLabel = '활동 살펴보기'");
   });
 
   it('keeps preview focused on quick suitability information', () => {
@@ -37,7 +37,7 @@ describe('lesson discovery and execution flow contract', () => {
     expect(detail).not.toContain('getSpomoveSessionHref');
   });
 
-  it('keeps Session operations ahead of discovery content', () => {
+  it('lets current user need choose between operations, today, and discovery', () => {
     const todayPanel = read('app/spokedu-master/dashboard/TodaySessionsPanel.tsx');
     const todayModel = read('app/spokedu-master/dashboard/todaySessionsModel.ts');
     const opsBarIndex = dashboard.indexOf('TodaySessionsPanel');
@@ -63,7 +63,10 @@ describe('lesson discovery and execution flow contract', () => {
     expect(todayModel).toContain('deriveMasterSessionWorkState');
     expect(todayModel).toContain('href: workState.href');
     expect(opsBarIndex).toBeGreaterThanOrEqual(0);
-    expect(featuredIndex).toBeGreaterThan(opsBarIndex);
+    expect(dashboard).toContain('resolveMasterHomePriority');
+    expect(dashboard).toContain('data-home-priority={homePriority}');
+    expect(dashboard).toContain("homePriority !== 'discovery' ? homeOperationalEntry");
+    expect(dashboard).toContain("homePriority === 'discovery' ? homeOperationalEntry");
     expect(weeklyIndex).toBeGreaterThan(featuredIndex);
     expect(spomoveIndex).toBeGreaterThan(weeklyIndex);
     expect(contextIndex).toBeGreaterThan(spomoveIndex);
@@ -81,12 +84,9 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).toContain('&& !weeklyIds.has(program.id)');
   });
 
-  it('starts a new teacher with the existing operational prerequisites in order', () => {
-    const classStep = dashboard.indexOf('수업반 등록하기');
-    const sessionStep = dashboard.indexOf('첫 수업 만들기');
-    const contentStep = dashboard.indexOf('수업 활동 찾아보기');
-    expect(classStep).toBeGreaterThan(-1);
-    expect(sessionStep).toBeGreaterThan(classStep);
-    expect(contentStep).toBeGreaterThan(sessionStep);
+  it('offers content-first and Session-first entry as peer paths', () => {
+    expect(dashboard).toContain('좋은 활동부터 찾아보기');
+    expect(dashboard).toContain('수업부터 만들기');
+    expect(dashboard).toContain('콘텐츠부터 찾아도, 수업부터 만들어도');
   });
 });

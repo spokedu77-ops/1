@@ -15,7 +15,7 @@ import {
   FEEDBACK_TEXT_FIELD_KEYS,
   isFieldValid,
 } from '@/app/lib/feedbackValidation';
-import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { compressImageForUpload } from '@/app/lib/admin/assets/imageOptimizer';
 import { compressDocumentEmbeddedImages } from '@/app/lib/client/compressDocumentEmbeddedImages';

@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CircleUserRound, FileText, Home, Tv, Wifi, WifiOff, Wrench } from 'lucide-react';
+import { BookOpen, CalendarDays, CircleUserRound, Home, Tv, UsersRound, Wifi, WifiOff, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
@@ -11,7 +11,8 @@ const NAV_ICONS = {
   library: BookOpen,
   spomove: Tv,
   'class-tools': Wrench,
-  activity: FileText,
+  classes: UsersRound,
+  activity: CalendarDays,
 } as const;
 
 const APP_LINKS = MASTER_NAV_ITEMS.map((item) => ({
@@ -51,7 +52,7 @@ export function StatusBar() {
           aria-label="SPOKEDU MASTER 데스크톱 메뉴"
         >
           {APP_LINKS.map(({ href, label, Icon }) => {
-            const active = isActivePath(pathname, href) || (href.endsWith('/activity') && isActivePath(pathname, '/spokedu-master/classes'));
+            const active = isActivePath(pathname, href);
             return (
               <Link
                 key={href}

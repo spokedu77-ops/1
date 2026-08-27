@@ -19,15 +19,15 @@ import {
   isoRangeFromDateTimeInputs,
   mergeSessionScheduleDraft,
   type SessionScheduleDraft,
-} from "@/app/admin/classes-v2/lib/sessionScheduleDraftUtils";
-import { SESSION_TYPE_OPTIONS } from "@/app/admin/classes-v2/lib/sessionTypeCategory";
+} from "@/app/admin/classes/lib/sessionScheduleDraftUtils";
+import { SESSION_TYPE_OPTIONS } from "@/app/admin/classes/lib/sessionTypeCategory";
 import {
   dominantSessionType,
   resolveDefaultAssistSessionPrice,
   resolveDefaultSessionPrice,
   shiftSessionToWeekday,
   type TeacherFeeRow,
-} from "@/app/admin/classes-v2/lib/bulkSessionDefaults";
+} from "@/app/admin/classes/lib/bulkSessionDefaults";
 import { cloneTierFeeMap, HARD_CODED_TIER_FEES, type TierFeeMap } from "@/app/lib/teacherTierSchedule";
 import { fetchTeacherTierFeeMap } from "@/app/lib/teacherTierFeesStore";
 import { fetchTeacherLogCounts } from "@/app/admin/users/fetchTeacherLogCounts";
@@ -267,7 +267,7 @@ function isPastCycleGroup(list: SessionRow[]): boolean {
 
 type ToolPanelKey = "extend" | "shrink" | "restart";
 
-export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onClose, onChanged }: Props) {
+export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClose, onChanged }: Props) {
   const [supabase] = useState(() =>
     typeof window !== "undefined" ? getSupabaseBrowserClient() : null
   );
@@ -327,14 +327,6 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
   bundleBulkRef.current = { teacher: bulkTeacherIdByGroup, price: bulkPriceByGroup };
 
-  const [bundleTab, setBundleTab] = useState<"rounds" | "info">("rounds");
-  const [infoAddress, setInfoAddress] = useState("");
-  const [infoPhone, setInfoPhone] = useState("");
-  const [infoChild, setInfoChild] = useState("");
-  const [infoTuitionPaid, setInfoTuitionPaid] = useState(false);
-  const [infoNotes, setInfoNotes] = useState("");
-  const [infoLoading, setInfoLoading] = useState(false);
-  const [infoSaving, setInfoSaving] = useState(false);
 
   const [sessionTypePanelOpen, setSessionTypePanelOpen] = useState(false);
   const [bundleSessionTypeDraft, setBundleSessionTypeDraft] = useState("regular_private");
@@ -345,6 +337,11 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   const [toolPanelOpenByGroup, setToolPanelOpenByGroup] = useState<
     Record<string, Partial<Record<ToolPanelKey, boolean>>>
   >({});
+
+  /** 일괄 적용 블록 — 현재 사이클에서 기본 펼침 */
+  const [bulkOpenByGroup, setBulkOpenByGroup] = useState<Record<string, boolean>>({});
+  /** 사이클 도구(재정렬·확장·축소·재시작) 접기(기본 접힘) */
+  const [cycleToolsOpenByGroup, setCycleToolsOpenByGroup] = useState<Record<string, boolean>>({});
 
   /** prop groupIds와 재시작으로 붙은 localGroupIds 합집합 — 첫 오픈 시 loadAll 레이스 방지 */
   const effectiveGroupIds = useMemo(() => {
@@ -366,88 +363,6 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
   useEffect(() => {
     setScheduleDraftBySessionId({});
   }, [bundleKey, visible]);
-
-  useEffect(() => {
-    if (!visible) {
-      setBundleTab("rounds");
-    }
-  }, [visible]);
-
-  useEffect(() => {
-    if (!visible || bundleTab !== "info" || !bundleKey) return;
-    let cancelled = false;
-    (async () => {
-      setInfoLoading(true);
-      try {
-        const res = await fetch(
-          `/api/admin/class-bundle-info?bundleKey=${encodeURIComponent(bundleKey)}`,
-          { credentials: "include" }
-        );
-        const data = (await res.json()) as {
-          error?: string;
-          info?: {
-            address: string | null;
-            phone: string | null;
-            childInfo: string | null;
-            tuitionPaid: boolean;
-            notes: string | null;
-          } | null;
-        };
-        if (cancelled) return;
-        if (!res.ok) throw new Error(data.error || "불러오기 실패");
-        const inf = data.info;
-        if (inf) {
-          setInfoAddress(inf.address ?? "");
-          setInfoPhone(inf.phone ?? "");
-          setInfoChild(inf.childInfo ?? "");
-          setInfoTuitionPaid(!!inf.tuitionPaid);
-          setInfoNotes(inf.notes ?? "");
-        } else {
-          setInfoAddress("");
-          setInfoPhone("");
-          setInfoChild("");
-          setInfoTuitionPaid(false);
-          setInfoNotes("");
-        }
-      } catch (err) {
-        devLogger.error(err);
-        toast.error("수업 정보를 불러오지 못했습니다. (class_bundle_info 테이블·API 확인)");
-      } finally {
-        if (!cancelled) setInfoLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [visible, bundleTab, bundleKey]);
-
-  const handleSaveBundleInfo = useCallback(async () => {
-    if (!bundleKey) return;
-    setInfoSaving(true);
-    try {
-      const res = await fetch("/api/admin/class-bundle-info", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          bundleKey,
-          address: infoAddress.trim() || null,
-          phone: infoPhone.trim() || null,
-          childInfo: infoChild.trim() || null,
-          tuitionPaid: infoTuitionPaid,
-          notes: infoNotes.trim() || null,
-        }),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error || "저장 실패");
-      toast.success("수업 정보가 저장되었습니다.");
-    } catch (err) {
-      devLogger.error(err);
-      toast.error(err instanceof Error ? err.message : "저장에 실패했습니다.");
-    } finally {
-      setInfoSaving(false);
-    }
-  }, [bundleKey, infoAddress, infoPhone, infoChild, infoTuitionPaid, infoNotes]);
 
   const loadAll = useCallback(async () => {
     if (!supabase) return;
@@ -555,8 +470,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         return n;
       });
 
-      // 기본 오픈: 예정/진행 사이클만 펼침. 지난 사이클(완료)은 접어 둠.
-      // 단, 진행·예정 사이클이 하나도 없으면(전부 지난 사이클) 아카이브+각 사이클을 펼쳐 회차 확장·재시작 등이 보이게 함.
+      // 기본 오픈: 예정/진행 사이클만 펼침. 지난 사이클은 아카이브에 두고, 아카이브는 지난 사이클이 있으면 열어 둔다.
       const nextOpen: Record<string, boolean> = {};
       for (const gid of effectiveGroupIds) {
         const list = map[gid] || [];
@@ -567,24 +481,18 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         const list = map[gid] || [];
         return list.length > 0 && !isPastCycleGroup(list);
       });
+      const hasPastCycle = effectiveGroupIds.some((gid) => {
+        const list = map[gid] || [];
+        return list.length > 0 && isPastCycleGroup(list);
+      });
       const hasAnySessions = effectiveGroupIds.some((gid) => (map[gid] || []).length > 0);
       if (hasAnySessions && !hasCurrentCycle) {
         for (const gid of effectiveGroupIds) {
           const list = map[gid] || [];
           if (list.length > 0) nextOpen[gid] = true;
         }
-        setPastArchiveOpen(true);
-        setToolPanelOpenByGroup((prev) => {
-          const next = { ...prev };
-          for (const gid of effectiveGroupIds) {
-            if ((map[gid] || []).length === 0) continue;
-            next[gid] = { ...next[gid], extend: true };
-          }
-          return next;
-        });
-      } else {
-        setPastArchiveOpen(false);
       }
+      setPastArchiveOpen(hasPastCycle);
       setOpenGroupIds(nextOpen);
 
       // 기본값(확장/축소/재시작) 초기화
@@ -1478,6 +1386,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         return tname === "미정";
       });
     const isSpecialLectureGroup = dominantSessionType(rows) === "special_lecture";
+    const isPastCycle = isPastCycleGroup(rows);
     return (
       <section key={gid} className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
                     <button
@@ -1496,7 +1405,25 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
                     {open && (
                       <div className="p-4 space-y-3">
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                        {!isPastCycle ? (
+<div className="border border-slate-200 rounded-2xl overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setBulkOpenByGroup((prev) => ({ ...prev, [gid]: !(prev[gid] ?? true) }))
+                            }
+                            className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between gap-2"
+                          >
+                            <span className="text-xs font-black text-slate-700">그룹 설정 · 일괄 적용</span>
+                            {(bulkOpenByGroup[gid] ?? true) ? (
+                              <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                            )}
+                          </button>
+                          {(bulkOpenByGroup[gid] ?? true) ? (
+                            <div className="border-t border-slate-100 p-4 pt-3">
+<div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
                           <h4 className="text-sm font-black text-slate-800">그룹 설정</h4>
                           <p className="text-xs text-slate-500 font-bold mt-1">
                             수업명은 상단에서 번들 전체로 변경합니다. 아래 일괄 적용은 회차 목록의{" "}
@@ -1666,26 +1593,14 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                             ) : null}
                           </div>
                         </div>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="text-xs font-black text-slate-700">회차 목록</div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              className={`px-3 py-1.5 rounded-full text-[11px] font-black border ${
-                                reindexingByGroup[gid]
-                                  ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
-                                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                              }`}
-                              disabled={!!reindexingByGroup[gid]}
-                              onClick={() => void handleReindexRounds(gid)}
-                            >
-                              {reindexingByGroup[gid] ? "정렬 중..." : "회차 재정렬"}
-                            </button>
-                          </div>
+                            </div>
+                          ) : null}
                         </div>
+                        ) : null}
 
-                        <div
+                        <div className="text-xs font-black text-slate-700">회차 목록</div>
+
+<div
                           className={
                             cycleMainUndecided
                               ? "rounded-2xl border-2 border-red-500 bg-red-50/70 overflow-hidden shadow-sm shadow-red-100"
@@ -1717,10 +1632,11 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                               {rows
                                 .filter((r) => {
                                   if (r.status === "deleted") return false;
-                                  if (r.status === "cancelled") return roundView === "all";
-                                  if (roundView === "all") return true;
+                                  const view = isPastCycle ? "all" : roundView;
+                                  if (r.status === "cancelled") return view === "all";
+                                  if (view === "all") return true;
                                   const s = getTimeStatusLabel(r);
-                                  if (roundView === "completed") {
+                                  if (view === "completed") {
                                     return r.status === "postponed" || s.isCompletedByTime;
                                   }
                                   if (r.status === "postponed") return false;
@@ -1927,7 +1843,42 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                           </table>
                         </div>
 
-                        <div className="mt-3 border-t border-slate-100 pt-2">
+                        {!isPastCycle ? (
+<div className="border border-slate-200 rounded-2xl overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCycleToolsOpenByGroup((prev) => ({
+                                ...prev,
+                                [gid]: !prev[gid],
+                              }))
+                            }
+                            className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between gap-2"
+                          >
+                            <span className="text-xs font-black text-slate-700">사이클 도구</span>
+                            {cycleToolsOpenByGroup[gid] ? (
+                              <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                            )}
+                          </button>
+                          {cycleToolsOpenByGroup[gid] ? (
+                            <div className="border-t border-slate-100 p-4 space-y-3">
+                              <div className="flex justify-end">
+<button
+                              type="button"
+                              className={`px-3 py-1.5 rounded-full text-[11px] font-black border ${
+                                reindexingByGroup[gid]
+                                  ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
+                                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                              }`}
+                              disabled={!!reindexingByGroup[gid]}
+                              onClick={() => void handleReindexRounds(gid)}
+                            >
+                              {reindexingByGroup[gid] ? "정렬 중..." : "회차 재정렬"}
+                            </button>
+                              </div>
+<div className="mt-3 border-t border-slate-100 pt-2">
                           <button
                             type="button"
                             onClick={() => toggleToolPanel(gid, "extend")}
@@ -2160,6 +2111,11 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
                             </div>
                           ) : null}
                         </div>
+                            </div>
+                          ) : null}
+                        </div>
+                        ) : null}
+
                       </div>
                     )}
                   </section>
@@ -2179,7 +2135,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
       >
         <header className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1 space-y-2">
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Class Bundle (V2)</p>
+            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">수업 번들</p>
             {!editingTitle ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -2274,32 +2230,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
           </button>
         </header>
 
-        <div className="flex gap-1 px-4 sm:px-6 border-b border-slate-100 shrink-0 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setBundleTab("rounds")}
-            className={`px-4 py-2.5 text-xs font-black rounded-t-lg border-b-2 -mb-px transition-colors ${
-              bundleTab === "rounds"
-                ? "border-blue-600 text-blue-700 bg-white"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            회차 / 강사
-          </button>
-          <button
-            type="button"
-            onClick={() => setBundleTab("info")}
-            className={`px-4 py-2.5 text-xs font-black rounded-t-lg border-b-2 -mb-px transition-colors ${
-              bundleTab === "info"
-                ? "border-blue-600 text-blue-700 bg-white"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            수업 정보
-          </button>
-        </div>
 
-        {bundleTab === "rounds" ? (
           <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-4 min-h-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-xs font-black text-slate-600 min-w-0">
@@ -2378,78 +2309,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
               </div>
             )}
           </div>
-        ) : (
-          <div className="flex-1 overflow-auto p-4 sm:p-6 min-h-0">
-            {!bundleKey ? (
-              <p className="text-sm font-bold text-slate-500">사이클(그룹)이 없어 수업 정보를 저장할 수 없습니다.</p>
-            ) : infoLoading ? (
-              <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">불러오는 중...</div>
-            ) : (
-              <div className="max-w-xl space-y-4">
-                <p className="text-xs font-bold text-slate-500">
-                  이 번들({effectiveGroupIds.length}개 사이클)에 공통으로 쓰는 연락·주소 정보입니다. DB에 `bundle_key`로
-                  저장됩니다.
-                </p>
-                <label className="block space-y-1">
-                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-wide">주소</span>
-                  <textarea
-                    className="w-full min-h-[72px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800"
-                    value={infoAddress}
-                    onChange={(e) => setInfoAddress(e.target.value)}
-                    placeholder="도로명 / 상세 주소"
-                  />
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-wide">연락처</span>
-                  <input
-                    type="text"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800"
-                    value={infoPhone}
-                    onChange={(e) => setInfoPhone(e.target.value)}
-                    placeholder="010-0000-0000"
-                  />
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-wide">아이 정보</span>
-                  <textarea
-                    className="w-full min-h-[80px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800"
-                    value={infoChild}
-                    onChange={(e) => setInfoChild(e.target.value)}
-                    placeholder="이름, 학년, 특이사항 등"
-                  />
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    checked={infoTuitionPaid}
-                    onChange={(e) => setInfoTuitionPaid(e.target.checked)}
-                  />
-                  <span className="text-sm font-bold text-slate-800">수업료 납부 완료</span>
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-wide">메모</span>
-                  <input
-                    type="text"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800"
-                    value={infoNotes}
-                    onChange={(e) => setInfoNotes(e.target.value)}
-                    placeholder="운영 메모"
-                  />
-                </label>
-                <button
-                  type="button"
-                  disabled={infoSaving}
-                  onClick={() => void handleSaveBundleInfo()}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {infoSaving ? "저장 중..." : "저장"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </aside>
+        </aside>
 
       <SessionMileageModal
         open={!!mileageModal}

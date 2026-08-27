@@ -12,14 +12,17 @@ describe('MASTER Class and attendance management contracts', () => {
   const tabs = read('app/spokedu-master/components/lesson/LessonManagementTabs.tsx');
   const desktopNav = read('app/spokedu-master/components/layout/StatusBar.tsx');
   const mobileNav = read('app/spokedu-master/components/layout/TabBar.tsx');
+  const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
 
-  it('keeps one primary management destination with Schedule and Class tabs', () => {
+  it('keeps Schedule and Classes as clear operating destinations with local cross-navigation', () => {
     expect(tabs).toContain('/spokedu-master/activity');
     expect(tabs).toContain('/spokedu-master/classes');
     expect(tabs).toContain('일정');
     expect(tabs).toContain('수업반');
-    expect(desktopNav).toContain("href.endsWith('/activity') && isActivePath(pathname, '/spokedu-master/classes')");
-    expect(mobileNav).toContain('`${basePath}/classes`');
+    expect(navLabels).toContain("href: '/spokedu-master/activity', label: '수업 일정'");
+    expect(navLabels).toContain("href: '/spokedu-master/classes', label: '수업반'");
+    expect(desktopNav).toContain('MASTER_NAV_ITEMS');
+    expect(mobileNav).toContain('MASTER_NAV_ITEMS');
   });
 
   it('removes Class management from Calendar and routes the empty state to Classes', () => {
@@ -35,6 +38,29 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(list).toContain("await data.createClass(name.trim())");
     expect(list).toContain('router.push(`/spokedu-master/classes/${created.id}`)');
     expect(list).toContain("searchParams.get('create') !== '1'");
+  });
+
+  it('uses state-based Class actions instead of an abstract open action', () => {
+    expect(list).toContain('card.priorityWorkState?.primaryLabel');
+    expect(list).toContain('다음 수업 준비하기');
+    expect(list).toContain('다음 수업 만들기');
+    expect(list).toContain('반 흐름 보기');
+    expect(list).not.toContain('MASTER_ACTION_COPY.open');
+  });
+
+  it('orders Class Detail by current work, context, history, memory, then schedule management', () => {
+    const currentWork = detail.indexOf('<SessionSummary label=');
+    const rosterTabs = detail.indexOf('role="tablist"');
+    const recentHistory = detail.indexOf('최근 완료 수업');
+    const memory = detail.indexOf('<ClassMemoryPanel');
+    const schedule = detail.indexOf('<RegularSchedulePanel');
+    expect(currentWork).toBeGreaterThan(-1);
+    expect(rosterTabs).toBeGreaterThan(currentWork);
+    expect(recentHistory).toBeGreaterThan(rosterTabs);
+    expect(memory).toBeGreaterThan(recentHistory);
+    expect(schedule).toBeGreaterThan(memory);
+    expect(detail).not.toContain('다음 운영 작업');
+    expect(detail).toContain('미기록 수업 선택');
   });
 
   it('keeps roster mutations Class-scoped and does not soft-delete Students', () => {

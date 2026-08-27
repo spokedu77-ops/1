@@ -14,7 +14,7 @@ import { sessionFileDisplayName } from '@/app/lib/feedbackValidation';
 import {
   CENTER_SESSION_TYPE_VALUES,
   isCenterSessionType,
-} from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+} from '@/app/admin/classes/lib/sessionTypeCategory';
 import {
   formatFeedbackFieldsForDisplay,
   formatWeeklyBestFeedbackText,

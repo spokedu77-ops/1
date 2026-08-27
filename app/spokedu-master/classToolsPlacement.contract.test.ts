@@ -15,14 +15,17 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(preview).not.toContain('/spokedu-master/class-tools');
   });
 
-  it('adds class tools to primary navigation', () => {
+  it('keeps TEACH tools directly accessible while preserving contextual Session access', () => {
     const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
     const tabBar = read('app/spokedu-master/components/layout/TabBar.tsx');
     const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
     const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 
     expect(statusBar).toContain('MASTER_NAV_ITEMS');
-    expect(navLabels).toContain('/spokedu-master/class-tools');
+    expect(navLabels).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
+    expect(navLabels).toContain("href: '/spokedu-master/classes', label: '수업반'");
+    expect(tabBar).toContain("classes: UsersRound");
+    expect(tabBar).toContain("classes: 'attendance'");
     expect(tabBar).toContain("'class-tools': Wrench");
     expect(tabBar).toContain("'class-tools': 'classTools'");
     expect(detail).not.toContain('/spokedu-master/class-tools');
@@ -41,6 +44,8 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).not.toContain('수업 중 바로 꺼내 쓰는 진행 콘솔');
     expect(tools).toContain('data-class-tools-tabs');
     expect(tools).toContain('data-class-tools-content');
+    expect(tools).toContain('수업 생성 없이 사용 가능');
+    expect(tools).toContain('타이머·점수판·팀 편성을 현장에서 바로 사용합니다.');
   });
 
   it('lets teachers use quick presets and custom minutes/seconds for the timer', () => {

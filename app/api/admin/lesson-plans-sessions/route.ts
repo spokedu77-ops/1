@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { CENTER_SESSION_TYPE_VALUES } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { CENTER_SESSION_TYPE_VALUES } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 

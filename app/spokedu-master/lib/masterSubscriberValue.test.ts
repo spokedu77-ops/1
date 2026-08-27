@@ -42,9 +42,9 @@ describe('MASTER Subscriber Value — VALUE PROMISE SSOT', () => {
   it('keeps Lite outcome free of Premium exclusion dumps and Premium as connected memory', () => {
     const lite = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' · ');
     const premium = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' · ');
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('현장에서 운영');
+    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('콘텐츠를 찾아 실제 수업으로 구성');
     expect(lite).not.toMatch(/프리미엄|SPOMOVE|안내문/);
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('다음 수업 준비');
+    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('지난 기록과 학생 맥락');
     expect(premium).toContain('다음 준비');
     expect(premium).toContain('SPOMOVE');
     expect(getMasterPlanValueWorkflowLines('lite')).toEqual(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite));

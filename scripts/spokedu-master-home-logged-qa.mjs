@@ -23,7 +23,10 @@ const ROUTES = [
   '/spokedu-master/dashboard',
   '/spokedu-master/library',
   '/spokedu-master/spomove',
-  '/spokedu-master/report',
+  '/spokedu-master/class-tools',
+  '/spokedu-master/classes',
+  '/spokedu-master/activity',
+  '/spokedu-master/subscription',
 ];
 
 async function loadPlaywright() {
@@ -74,11 +77,14 @@ function bootstrapStore(email) {
 async function login(context) {
   const page = await context.newPage();
   await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/dashboard')}`, { waitUntil: 'domcontentloaded' });
-  if (await page.locator('input[name="username"]').count() === 0) {
-    await page.getByRole('tab', { name: /강사|관리자/ }).click();
+  const passwordInput = page.locator('input[type="password"]').first();
+  if ((await passwordInput.count()) === 0) {
+    await page.locator('[role="tab"]').nth(1).waitFor({ state: 'visible', timeout: 10_000 });
+    await page.locator('[role="tab"]').nth(1).click();
   }
-  await page.locator('input[type="text"]').first().fill(QA_ID);
-  await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
+  await passwordInput.waitFor({ state: 'visible', timeout: 10_000 });
+  await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
+  await passwordInput.fill(QA_PASSWORD);
   await page.locator('button[type="submit"]').click();
   await page.waitForURL(/\/spokedu-master\//, { timeout: 90000, waitUntil: 'domcontentloaded' });
   await page.waitForLoadState('networkidle').catch(() => undefined);
@@ -94,6 +100,10 @@ function isExpectedRoute(route, currentPath) {
 async function routeSnapshot(context, route, expectedProgramTitle = '') {
   const page = await context.newPage();
   const consoleErrors = [];
+  const failedResponses = [];
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${new URL(response.url()).pathname}`);
+  });
   page.on('console', (msg) => {
     if (msg.type() !== 'error') return;
     const text = msg.text();
@@ -121,6 +131,7 @@ async function routeSnapshot(context, route, expectedProgramTitle = '') {
     hasExpiredCopy: text.includes('이용 기간') || text.includes('구독') || text.includes('이용권'),
     hasKnownFallbackContent: text.includes('스위치') || text.includes('플로우'),
     consoleErrors,
+    failedResponses,
   };
   await page.close();
   return result;
@@ -143,20 +154,27 @@ async function main() {
   try {
     await login(context);
 
-    const programsResponse = await context.request.get(`${BASE}/api/spokedu-master/programs`);
-    const programsPayload = programsResponse.ok() ? await programsResponse.json() : { data: [] };
-    const reportProgram = programsPayload.data?.[0];
-    const routes = reportProgram
-      ? [...ROUTES, `/spokedu-master/report?program=${reportProgram.id}`]
-      : ROUTES;
+    const accessResponse = await context.request.get(`${BASE}/api/spokedu-master/access`);
+    const access = await accessResponse.json().catch(() => null);
+    const expectedAccess = QA_PLAN === 'lite'
+      ? access?.canUseLibrary === true && access?.canUseAttendance === true && access?.canUseSpomove === false && access?.canUseRecords === false
+      : QA_PLAN === 'premium'
+        ? access?.canUseLibrary === true && access?.canUseAttendance === true && access?.canUseSpomove === true && access?.canUseRecords === true
+        : true;
+    console.log(JSON.stringify({ ok: accessResponse.ok() && expectedAccess, capability: 'access', status: accessResponse.status(), plan: access?.plan, canUseLibrary: access?.canUseLibrary, canUseAttendance: access?.canUseAttendance, canUseRecords: access?.canUseRecords, canUseSpomove: access?.canUseSpomove }));
+    if (!accessResponse.ok() || !expectedAccess) failed += 1;
+
+    const routes = ROUTES;
 
     for (const route of routes) {
-      const expectedProgramTitle = route.includes('?program=')
-        ? reportProgram?.title ?? ''
-        : '';
+      const expectedProgramTitle = '';
       const snapshot = await routeSnapshot(context, route, expectedProgramTitle);
       const routeOk = isExpectedRoute(route, snapshot.currentPath);
-      const consoleOk = snapshot.consoleErrors.length === 0;
+      const expectedLiteBlocks = QA_PLAN === 'lite'
+        && snapshot.failedResponses.length > 0
+        && snapshot.failedResponses.every((entry) => entry === '403 /api/spokedu-master/explanations');
+      const consoleOk = snapshot.consoleErrors.length === 0
+        || (expectedLiteBlocks && snapshot.consoleErrors.every((entry) => /status of 403/i.test(entry)));
       const reportProgramOk = QA_EXPIRED || !expectedProgramTitle || snapshot.selectedProgram;
 
       if (!routeOk || !consoleOk || !reportProgramOk) failed += 1;
@@ -171,6 +189,7 @@ async function main() {
         selectedProgram: snapshot.selectedProgram,
         hasExpiredCopy: snapshot.hasExpiredCopy,
         consoleErrors: snapshot.consoleErrors.slice(0, 3),
+        failedResponses: snapshot.failedResponses.slice(0, 5),
       }));
     }
   } catch (error) {

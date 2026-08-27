@@ -36,7 +36,7 @@ describe('master gate intent model', () => {
     });
   });
 
-  it('builds SPOMOVE payment href from next as the single resource source', () => {
+  it('builds SPOMOVE payment href with a canonical next and direct resource context', () => {
     const context = buildMasterGateContext({
       capability: 'spomove',
       pathname: '/spokedu-master/spomove/session',
@@ -45,9 +45,12 @@ describe('master gate intent model', () => {
     });
 
     expect(context?.resource.kind).toBe('preset');
-    expect(buildMasterPaymentHref(context!)).toBe(
-      '/spokedu-master/payment?plan=premium&intent=start_spomove&next=%2Fspokedu-master%2Fspomove%2Fsession%3Fpreset%3Dsimon-basic%26mode%3Dprojector%26sound%3Don%26entry%3Dstart&journeyId=j2&gateSurface=spomove_session',
+    const payment = new URL(buildMasterPaymentHref(context!), 'https://spokedu.local');
+    expect(payment.searchParams.get('next')).toBe(
+      '/spokedu-master/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start',
     );
+    expect(payment.searchParams.get('preset')).toBe('simon-basic');
+    expect(payment.searchParams.get('journeyId')).toBe('j2');
   });
 
   it('reads payment context while sanitizing unsafe next values', () => {

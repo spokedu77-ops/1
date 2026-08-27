@@ -2,6 +2,7 @@
 
 import { CalendarPlus } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { SPM_PRIMARY_BTN } from '../../lib/masterActionGrammar';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday } from '../../lib/sessionDateTime';
@@ -9,7 +10,8 @@ import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { Program } from '../../types';
 import { BottomSheet } from '../ui/BottomSheet';
 
-export function AssignProgramToSessionButton({ program, className, targetSessionId }: { program: Program; className?: string; targetSessionId?: string | null }) {
+export function AssignProgramToSessionButton({ program, className, targetSessionId, returnHref }: { program: Program; className?: string; targetSessionId?: string | null; returnHref?: string | null }) {
+  const router = useRouter();
   const data = useOperationalData();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(getSeoulToday());
@@ -45,6 +47,7 @@ export function AssignProgramToSessionButton({ program, className, targetSession
         tone: 'success',
         text: `${formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'numeric', day: 'numeric' })} ${formatSeoulSessionTime(session.startAt)} · ${session.className} 수업에 추가했습니다.`,
       });
+      if (targetSessionId && returnHref) router.push(returnHref);
     } catch {
       setAssignedSessionId(null);
       setMessage({ tone: 'error', text: '프로그램을 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.' });

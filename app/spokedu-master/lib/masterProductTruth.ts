@@ -1,54 +1,79 @@
 /**
- * MASTER Product Truth — lifecycle semantics SSOT.
+ * SPOKEDU MASTER Level 0 product contract.
  *
- * Surfaces must not redefine these meanings locally.
+ * Implementation shape protects this truth; implementation shape is not the
+ * product truth itself. Lower contracts are read in the authority order below.
  */
+export const MASTER_CONTRACT_AUTHORITY = [
+  'product',
+  'domain-safety',
+  'flow-ux',
+  'implementation',
+  'legacy-regression',
+] as const;
 
-/** Class = 반복해서 운영되는 수업 그룹 */
-export const MASTER_TRUTH_CLASS =
-  '반복해서 운영되는 수업 그룹';
+export const MASTER_PRODUCT_FLOW = ['DISCOVER', 'BUILD', 'TEACH', 'CAPTURE', 'REUSE'] as const;
 
-/** Session = 날짜·시간이 정해진 실제 한 번의 수업 */
-export const MASTER_TRUTH_SESSION =
-  '날짜·시간이 정해진 실제 한 번의 수업';
+export const MASTER_PRODUCT_VALUES = {
+  CONTENT: '수업을 더 풍성하게 만든다.',
+  CONTINUITY: '한 번 한 일을 다시 하지 않는다.',
+} as const;
 
-/** Activity = Session에서 사용할 Program 또는 SPOMOVE */
-export const MASTER_TRUTH_ACTIVITY =
-  'Session에서 사용할 Program 또는 SPOMOVE';
+export const MASTER_DOMAIN_ROLES = {
+  content: {
+    library: '현장 놀이체육 콘텐츠를 발견하고 판단하는 Library',
+    spomove: '디지털 기반 움직임 콘텐츠를 발견하고 판단하는 Library',
+    flow: ['DISCOVER', 'REVIEW', 'SELECT', 'BUILD'],
+    independentDiscovery: true,
+  },
+  session: '실제로 구성되고 진행되는 한 번의 수업의 canonical object',
+  class: '같은 대상과 반복 수업을 이어가는 context',
+  captureMemory: '끝난 수업을 다음 수업에서 재사용하기 위한 입력',
+  home: '현재 사용자에게 가장 유용한 다음 행동을 보여주는 재진입 surface',
+} as const;
 
-/**
- * Activity completed = 교사가 수업에서 실제로 진행했다고 기록한 상태.
- * Program / SPOMOVE 동일 grammar. 엔진 종료와 무관.
- */
-export const MASTER_TRUTH_ACTIVITY_COMPLETED =
-  '교사가 수업에서 실제로 진행했다고 기록한 상태';
+export const MASTER_PRODUCT_CONTRACT = {
+  purpose: '좋은 체육 수업 콘텐츠를 발견하고 실제 수업으로 구성해 사용하고, 간단히 정리한 뒤 다음 수업에서 다시 활용하게 한다.',
+  flow: MASTER_PRODUCT_FLOW,
+  values: MASTER_PRODUCT_VALUES,
+  domains: MASTER_DOMAIN_ROLES,
+  authority: MASTER_CONTRACT_AUTHORITY,
+} as const;
 
-/**
- * SPOMOVE engine done = 실행 엔진이 정상 종료된 상태.
- * SessionProgram.isCompleted 를 자동으로 true 로 바꾸지 않는다.
- */
-export const MASTER_TRUTH_SPOMOVE_ENGINE_DONE =
-  'SPOMOVE 실행 엔진이 정상 종료된 상태 (수업 활동 완료 기록과 분리)';
+export type MasterContentMode = 'discovery' | 'session-build';
 
-/** Session completed = 그날 전체 수업을 종료한 상태 */
-export const MASTER_TRUTH_SESSION_COMPLETED =
-  '그날 전체 수업을 종료한 상태';
+/** Session context changes the action, never the content item's discovery value. */
+export function resolveMasterContentMode(input: {
+  requestedSessionId?: string | null;
+  hasExactScheduledSession: boolean;
+}): MasterContentMode {
+  return input.requestedSessionId && input.hasExactScheduledSession ? 'session-build' : 'discovery';
+}
 
-/** Cancelled = 예정 수업을 취소했지만 기록은 남아 있는 상태 */
-export const MASTER_TRUTH_CANCELLED =
-  '예정 수업을 취소했지만 기록은 남아 있는 상태';
+export function getMasterContentPrimaryAction(mode: MasterContentMode) {
+  return mode === 'session-build' ? '이 수업에 추가' : '활동 살펴보기';
+}
 
-/** Deleted = 일반 운영 화면에서 제거된 soft-delete 상태 */
-export const MASTER_TRUTH_DELETED =
-  '일반 운영 화면에서 제거된 soft-delete 상태';
+export type MasterHomePriority = 'operational' | 'today' | 'discovery';
 
-/** History = 별도 객체가 아니라 완료 Session의 축적 */
-export const MASTER_TRUTH_HISTORY =
-  '완료 Session의 축적 (별도 domain 객체 아님)';
+export function resolveMasterHomePriority(input: {
+  hasUrgentOperationalWork: boolean;
+  hasTodaySession: boolean;
+}): MasterHomePriority {
+  if (input.hasUrgentOperationalWork) return 'operational';
+  if (input.hasTodaySession) return 'today';
+  return 'discovery';
+}
 
 export type MasterActivityCompletionSource = 'teacher_explicit';
 
-/** Engine finish must never be treated as lesson-record completion. */
+/** Level 1 lifecycle truths retained under the Level 0 product contract. */
+export const MASTER_TRUTH_ACTIVITY_COMPLETED =
+  '교사가 수업에서 실제로 진행했다고 명시한 활동 상태';
+export const MASTER_TRUTH_SPOMOVE_ENGINE_DONE =
+  'SPOMOVE 실행 엔진 종료 상태이며 교사의 수업 활동 완료 기록과 분리';
+
+/** Engine finish and a teacher's lesson-record completion remain separate. */
 export function isEngineDoneLessonRecord(autoCompleteOnEngineDone: boolean): boolean {
   return autoCompleteOnEngineDone === false;
 }

@@ -49,7 +49,12 @@ describe('LibraryView favorites contract', () => {
     expect(catalogCard).toContain('aria-label={`${title} 수업 미리보기`}');
     expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
     expect(catalogCard).not.toMatch(/>\s*수업 미리보기\s*</);
-    expect(catalogCard).toContain('수업 준비');
+    expect(catalogCard).toContain("primaryActionLabel = '활동 살펴보기'");
+    expect(source).toContain('resolveMasterContentMode');
+    expect(source).toContain('getMasterContentPrimaryAction');
+    expect(source).toContain('await operationalData.addSessionProgram(sessionContext.id, programId)');
+    expect(source).toContain('router.push(sessionReturnHref)');
+    expect(source).toContain("if (sessionId && operationalStatus !== 'ready') return;");
     expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(source).toContain('autoplayVideo: programHasPlayableVideo(program)');
     expect(source).toContain('바로 쓸 수업 고르기');

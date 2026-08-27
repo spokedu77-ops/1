@@ -1,6 +1,6 @@
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
 import { sessionFileDisplayName } from '@/app/lib/feedbackValidation';
-import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 
 export type WeeklyBestFeedbackSession = {
   session_type?: string | null;

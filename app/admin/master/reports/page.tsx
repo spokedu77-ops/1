@@ -94,7 +94,7 @@ type ReportTeacher = {
   adjs: SettlementRow[];
 };
 
-/** classes-v2 캘린더/리스트와 동일하게 회차 토큰 제거 후 제목 표시 */
+/** 수업 관리 캘린더/리스트와 동일하게 회차 토큰 제거 후 제목 표시 */
 function displaySessionTitle(title?: string): string {
   const raw = String(title || '').trim();
   if (!raw) return '';

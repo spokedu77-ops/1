@@ -6,7 +6,7 @@ import { parseExtraTeachers } from '../lib/sessionUtils';
 import { ADMIN_NAMES } from '../constants/admins';
 import { buildGroupPlannedTotals } from '../lib/plannedRoundTotal';
 import { clampRoundIndex } from '../lib/roundFields';
-import { themeColorHexForSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { themeColorHexForSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 
 function assertUpdatedRow(data: { id?: string } | null, error: unknown, fallback: string) {
   if (error) throw error;
@@ -19,18 +19,17 @@ export function useClassManagement() {
   const [filteredEvents, setFilteredEvents] = useState<SessionEvent[]>([]);
   const [teacherList, setTeacherList] = useState<{id: string; name: string}[]>([]);
   const [filterTeacher, setFilterTeacher] = useState('ALL');
-  const [currentView, setCurrentView] = useState('rollingFourDay');
 
   const fetchSessions = useCallback(async () => {
     if (!supabase) return;
-    // V2 번들 매칭·과거 월 조회: ±6개월은 누락이 잦아 관리 캘린더는 넓게 잡음
+    // V2 ë²ë¤ ë§¤ì¹­Â·ê³¼ê±° ì ì¡°í: Â±6ê°ìì ëë½ì´ ì¦ì ê´ë¦¬ ìºë¦°ëë ëê² ì¡ì
     const rangeStart = new Date();
     rangeStart.setMonth(rangeStart.getMonth() - 24);
     const rangeEnd = new Date();
     rangeEnd.setMonth(rangeEnd.getMonth() + 24);
     const rangeStartIso = rangeStart.toISOString();
     const rangeEndIso = rangeEnd.toISOString();
-    /** PostgREST 기본 max_rows(보통 1000) 초과 시 뒷구간 일정이 잘리지 않도록 페이지네이션 */
+    /** PostgREST ê¸°ë³¸ max_rows(ë³´íµ 1000) ì´ê³¼ ì ë·êµ¬ê° ì¼ì ì´ ìë¦¬ì§ ìëë¡ íì´ì§ë¤ì´ì */
     const PAGE = 1000;
 
     const sessionsInRange = () =>
@@ -98,15 +97,15 @@ export function useClassManagement() {
         const title = s.title ?? '';
         const gid = s.group_id;
         const total = gid ? groupTotals[gid] : undefined;
-        // 1.5(가중치) 제거: 화면 표시 분모/표시는 round_index/round_total(=정수) 기준으로만 만듭니다.
-        // round_display가 있어도 그대로 쓰지 않습니다.
+        // 1.5(ê°ì¤ì¹) ì ê±°: íë©´ íì ë¶ëª¨/íìë round_index/round_total(=ì ì) ê¸°ì¤ì¼ë¡ë§ ë§ë­ëë¤.
+        // round_displayê° ìì´ë ê·¸ëë¡ ì°ì§ ììµëë¤.
         const roundIndex = typeof s.round_index === 'number' ? s.round_index : undefined;
         let roundStr: string | undefined =
           typeof roundIndex === 'number' && typeof total === 'number' && Number.isFinite(roundIndex) && Number.isFinite(total) && total > 0
             ? `${clampRoundIndex(roundIndex, total)}/${total}`
             : undefined;
 
-        // round_index가 비어있는 데이터만 최소 fallback(정수 패턴만) 처리
+        // round_indexê° ë¹ì´ìë ë°ì´í°ë§ ìµì fallback(ì ì í¨í´ë§) ì²ë¦¬
         if (!roundStr) {
           const roundMatch = title.match(/(\d+)\/(\d+)/);
           if (roundMatch) roundStr = `${Number(roundMatch[1])}/${Number(roundMatch[2])}`;
@@ -120,7 +119,7 @@ export function useClassManagement() {
           }
         }
 
-        let displayTeacher = s.users?.name || '미정';
+        let displayTeacher = s.users?.name || 'ë¯¸ì ';
         const { extraTeachers } = parseExtraTeachers(s.memo || '');
         const extraTeacherIds = extraTeachers
           .map((ex: { id?: string }) => (ex.id ? String(ex.id).trim() : ''))
@@ -200,16 +199,14 @@ export function useClassManagement() {
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
-  return { 
+  return {
     allEvents,
-    filteredEvents, 
-    teacherList, 
-    filterTeacher, 
-    setFilterTeacher, 
-    currentView, 
-    setCurrentView, 
-    fetchSessions, 
+    filteredEvents,
+    teacherList,
+    filterTeacher,
+    setFilterTeacher,
+    fetchSessions,
     updateMileageOnly,
-    supabase 
+    supabase,
   };
 }

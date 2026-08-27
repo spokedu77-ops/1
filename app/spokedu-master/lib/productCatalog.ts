@@ -152,20 +152,20 @@ export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
  */
 export function getMasterProductPaymentFeatureLabels(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return ['오늘 수업을 찾고 현장에서 운영', '라이브러리 · 수업반 · 일정', '출석 기록과 다음 수업 이어가기'];
+    return ['놀이체육 Library에서 활동 찾기', '수업반 · 일정 · 출석 이어 쓰기', '찾은 활동을 실제 수업에 구성하기'];
   }
   if (product.id === 'premium') {
-    return ['지난 수업이 다음 준비로 이어짐', '메모 · 학생 이력 · 안내문 작성·복사', 'SPOMOVE 공식 활동', 'SPOMAT 회원가'];
+    return ['놀이체육 Library + SPOMOVE 디지털 움직임 콘텐츠', '다음 수업 메모 · 학생 기록 · 안내문 작성·복사', '지난 수업의 맥락을 다음 준비로 이어가기', 'SPOMAT 회원가'];
   }
   return ['별도 문의', '직접 결제 없음'];
 }
 
 export function getMasterProductPaymentDescription(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return '오늘 수업을 찾고 현장에서 운영하는 기본입니다.';
+    return '좋은 놀이체육 콘텐츠를 찾아 실제 수업으로 구성하고, 반·일정·출석을 다음 수업에도 이어 쓰는 완전한 기본 흐름입니다.';
   }
   if (product.id === 'premium') {
-    return '매주 기록이 쌓이고 다음 수업 준비까지 이어지는 전체 운영 환경입니다.';
+    return '놀이체육과 SPOMOVE로 수업을 더 다양하게 구성하고, 지난 기록과 학생 맥락을 다음 준비에 다시 활용합니다.';
   }
   return '이용 인원과 운영 방식에 맞춰 별도로 안내합니다.';
 }

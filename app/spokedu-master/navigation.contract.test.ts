@@ -5,18 +5,21 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('SPOKEDU MASTER primary navigation', () => {
-  it('shares five product destinations and keeps profile as an account utility', () => {
+  it('shares semantic product destinations and keeps profile as an account utility', () => {
     const nav = read('app/spokedu-master/components/layout/masterNavLabels.ts');
     const desktop = read('app/spokedu-master/components/layout/StatusBar.tsx');
     const mobile = read('app/spokedu-master/components/layout/TabBar.tsx');
     expect(desktop).toContain('MASTER_NAV_ITEMS');
     expect(mobile).toContain('MASTER_NAV_ITEMS');
     expect(nav).toContain("href: '/spokedu-master/library', label: '놀이체육'");
-    expect(nav).toContain("href: '/spokedu-master/activity', label: '수업 관리'");
-    expect(nav.match(/href:/g)).toHaveLength(5);
+    expect(nav).toContain("href: '/spokedu-master/classes', label: '수업반'");
+    expect(nav).toContain("href: '/spokedu-master/activity', label: '수업 일정'");
+    expect(nav).toContain("key: 'library'");
+    expect(nav).toContain("key: 'spomove'");
+    expect(nav).toContain("key: 'activity'");
     expect(nav).not.toContain("href: '/spokedu-master/profile'");
     expect(desktop).toContain('href="/spokedu-master/profile"');
-    expect(nav).toContain("href: '/spokedu-master/class-tools'");
+    expect(nav).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
     expect(nav).not.toContain("href: '/spokedu-master/plan'");
   });
 

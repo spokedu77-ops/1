@@ -23,4 +23,14 @@ describe('student history after Session refactor', () => {
     expect(detail).toContain('href="/spokedu-master/activity"');
     expect(detail).not.toContain('RecordProgramPicker');
   });
+
+  it('keeps guidance and reusable history ahead of profile editing', () => {
+    const students = read('app/spokedu-master/students/page.tsx');
+    const detail = read('app/spokedu-master/students/[studentId]/page.tsx');
+    expect(students).toContain('학생 기록 보기');
+    expect(students).toContain('학생 정보 수정');
+    expect(detail).toContain('반복 지도 참고');
+    expect(detail).toContain('소속 반 수업 이어가기');
+    expect(detail).not.toContain('수업 관리 열기');
+  });
 });

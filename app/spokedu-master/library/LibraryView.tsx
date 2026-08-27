@@ -35,6 +35,7 @@ import {
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../lib/masterNavigationContext';
 import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
+import { getMasterContentPrimaryAction, resolveMasterContentMode } from '../lib/masterProductTruth';
 import { useIsPremium, useMasterStore } from '../store';
 import type { Program } from '../types';
 import {
@@ -173,6 +174,9 @@ function ProgramCard({
   favoriteEnabled,
   detailHref,
   priority = false,
+  primaryActionLabel,
+  onPrimaryAction,
+  primaryActionDisabled,
 }: {
   program: Program;
   locked: boolean;
@@ -183,6 +187,9 @@ function ProgramCard({
   favoriteEnabled: boolean;
   detailHref: string;
   priority?: boolean;
+  primaryActionLabel: string;
+  onPrimaryAction?: () => void;
+  primaryActionDisabled?: boolean;
 }) {
   const decisionMeta = getLessonTheme(program) || program.category || '체육 수업';
   const supportMeta = formatProgramSelectionReasons(program);
@@ -205,6 +212,9 @@ function ProgramCard({
       onFavorite={onFavorite}
       priority={priority}
       sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw"
+      primaryActionLabel={primaryActionLabel}
+      onPrimaryAction={onPrimaryAction}
+      primaryActionDisabled={primaryActionDisabled}
     />
   );
 }
@@ -255,11 +265,14 @@ export default function LibraryView() {
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
-  const { sessions } = useOperationalData();
+  const operationalData = useOperationalData();
+  const { sessions, status: operationalStatus } = operationalData;
   const sessionId = searchParams.get('session')?.trim() || null;
   const sessionContext = sessionId ? sessions.find((session) => session.id === sessionId && session.status === 'scheduled') : null;
   const sessionWorkState = sessionContext ? deriveMasterSessionWorkState(sessionContext, null, new Date()) : null;
   const sessionReturnHref = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-master/activity');
+  const contentMode = resolveMasterContentMode({ requestedSessionId: sessionId, hasExactScheduledSession: Boolean(sessionContext) });
+  const primaryActionLabel = getMasterContentPrimaryAction(contentMode);
   const isPremium = useIsPremium();
   const favoriteIds = useMemo(
     () => storedFavoriteIds ?? getFavoriteProgramIds(ownerId),
@@ -290,6 +303,23 @@ export default function LibraryView() {
   const reasonId = parseReasonId(searchParams.get('reason'));
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [addingProgramId, setAddingProgramId] = useState<string | null>(null);
+  const [sessionAddError, setSessionAddError] = useState<string | null>(null);
+
+  const addProgramToSession = async (program: Program) => {
+    if (!sessionContext || addingProgramId) return;
+    const programId = Number(program.id);
+    if (!Number.isInteger(programId)) return;
+    setAddingProgramId(program.id);
+    setSessionAddError(null);
+    try {
+      await operationalData.addSessionProgram(sessionContext.id, programId);
+      router.push(sessionReturnHref);
+    } catch {
+      setSessionAddError('활동을 수업에 추가하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      setAddingProgramId(null);
+    }
+  };
 
   const pool = programs;
 
@@ -354,11 +384,14 @@ export default function LibraryView() {
   }, [query, filters, view, shelfId, reasonId]);
 
   useEffect(() => {
+    // Preserve Session-mode context until the canonical Session list is ready.
+    // Normalizing while it is still empty would race away session/returnTo/source.
+    if (sessionId && operationalStatus !== 'ready') return;
     const next = sourceLibrarySearch;
     const current = searchParams.toString();
     if (next === current) return;
     router.replace(next ? `/spokedu-master/library?${next}` : '/spokedu-master/library', { scroll: false });
-  }, [sourceLibrarySearch, router, searchParams]);
+  }, [operationalStatus, sessionId, sourceLibrarySearch, router, searchParams]);
 
   const filteredPrograms = useMemo(() => {
     const base = filterLibraryPrograms(
@@ -536,6 +569,7 @@ export default function LibraryView() {
           <p className="min-w-0 truncate text-xs font-black text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
           <Link href={sessionReturnHref} className="inline-flex min-h-11 shrink-0 items-center text-xs font-black text-blue-700">수업으로 돌아가기</Link>
         </div> : null}
+        {sessionAddError ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
         <header className="rounded-[20px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
@@ -563,12 +597,12 @@ export default function LibraryView() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="수업명·준비물·키워드 검색"
-                className="h-10 w-full rounded-xl border border-[color:var(--spm-br2)] bg-white pl-10 pr-4 text-sm font-semibold text-[color:var(--spm-t)] outline-none placeholder:text-[color:var(--spm-t3)] focus:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200"
+                className="h-11 w-full rounded-xl border border-[color:var(--spm-br2)] bg-white pl-10 pr-4 text-sm font-semibold text-[color:var(--spm-t)] outline-none placeholder:text-[color:var(--spm-t3)] focus:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200 sm:h-10"
               />
             </label>
             <div className="flex flex-wrap items-center gap-2">
               <div
-                className="grid min-h-10 grid-cols-2 items-center rounded-xl border border-[color:var(--spm-br2)] bg-white p-1"
+                className="grid min-h-11 grid-cols-2 items-center rounded-xl border border-[color:var(--spm-br2)] bg-white p-1 sm:min-h-10"
                 aria-label="라이브러리 보기"
               >
                 <button
@@ -618,7 +652,7 @@ export default function LibraryView() {
                       <button
                         type="button"
                         onClick={() => openShelf(shelf.id)}
-                        className="text-[12px] font-black text-[var(--spm-acc)]"
+                        className="inline-flex min-h-11 items-center px-2 text-[12px] font-black text-[var(--spm-acc)] sm:min-h-9"
                       >
                         더 보기 ({total})
                       </button>
@@ -633,6 +667,9 @@ export default function LibraryView() {
                       usedProgramIds={usedProgramIds}
                       toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
                       setSelected={setSelected}
+                      primaryActionLabel={primaryActionLabel}
+                      onAddToSession={sessionContext ? (program) => void addProgramToSession(program) : undefined}
+                      addingProgramId={addingProgramId}
                     />
                   </div>
                 ))}
@@ -746,7 +783,7 @@ export default function LibraryView() {
             <button
               type="button"
               onClick={() => setShowAdvanced((prev) => !prev)}
-              className="flex min-h-9 w-full items-center justify-between gap-3 rounded-[12px] border border-slate-200 bg-white/72 px-3 py-2 text-left text-[12px] font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[12px] border border-slate-200 bg-white/72 px-3 py-2 text-left text-[12px] font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
             >
               <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -772,9 +809,12 @@ export default function LibraryView() {
             sourceLibraryView={view}
             sourceLibrarySearch={sourceLibrarySearch}
             usedProgramIds={usedProgramIds}
-            toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
-            setSelected={setSelected}
-          />
+          toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
+          setSelected={setSelected}
+          primaryActionLabel={primaryActionLabel}
+          onAddToSession={sessionContext ? (program) => void addProgramToSession(program) : undefined}
+          addingProgramId={addingProgramId}
+        />
           {hasMorePrograms ? (
             <div className="mt-4 flex justify-center">
               <button
@@ -858,6 +898,9 @@ function ProgramGrid({
   usedProgramIds,
   toggleFavorite,
   setSelected,
+  primaryActionLabel,
+  onAddToSession,
+  addingProgramId,
 }: {
   programs: Program[];
   isPremium: boolean;
@@ -868,6 +911,9 @@ function ProgramGrid({
   usedProgramIds: Set<string>;
   toggleFavorite: (id: string) => void;
   setSelected: (selection: { program: Program; autoplayVideo: boolean }) => void;
+  primaryActionLabel: string;
+  onAddToSession?: (program: Program) => void;
+  addingProgramId: string | null;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -888,6 +934,9 @@ function ProgramGrid({
               autoplayVideo: programHasPlayableVideo(program),
             })
           }
+          primaryActionLabel={primaryActionLabel}
+          onPrimaryAction={onAddToSession ? () => onAddToSession(program) : undefined}
+          primaryActionDisabled={addingProgramId !== null || program.isPro && !isPremium}
         />
       ))}
     </div>

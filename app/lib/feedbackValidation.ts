@@ -108,7 +108,7 @@ export interface CompletionStatus {
   completion_rate: number;
 }
 
-import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 
 export interface SessionWithFeedback {
   feedback_fields?: FeedbackFields;

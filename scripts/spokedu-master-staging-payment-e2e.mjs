@@ -186,7 +186,12 @@ async function runMockActivation(context, plan) {
     `${BASE}/spokedu-master/payment/success?plan=${plan}&authKey=auth_mock_no_toss&customerKey=spm_mock_no_toss`,
     { waitUntil: 'domcontentloaded' },
   );
-  await page.getByText('결제가 완료되었습니다').waitFor({ state: 'visible', timeout: 15_000 });
+  try {
+    await page.getByRole('heading', { name: '결제가 완료되었습니다' }).waitFor({ state: 'visible', timeout: 15_000 });
+  } catch (error) {
+    const body = await page.locator('body').innerText().catch(() => '');
+    throw new Error(`payment success UI missing (url=${page.url()}, body=${body.slice(0, 500).replace(/\s+/g, ' ')}): ${error instanceof Error ? error.message : error}`);
+  }
   assert(billingCalls === 1, `billing/issue mock was called ${billingCalls} times`);
   assert(accessCalls >= 2, `access polling mock was called ${accessCalls} times`);
 

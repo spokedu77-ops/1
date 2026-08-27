@@ -10,6 +10,28 @@ function assertMutationApplied(data: { id?: string } | null, error: unknown, fal
   if (!data?.id) throw new Error(fallback);
 }
 
+/**
+ * 연기/복구로 슬롯이 미래로 밀릴 때, 이미 auto-finish 등으로 finished|verified 인 회차는
+ * 날짜만 바뀌고 상태가 남아 관리홈에서 "미진행 완료"로 보이는 구멍이 난다.
+ * 새 end_at 이 아직 안 지났으면 opened 로 되돌린다.
+ */
+export function buildPostponeShiftPatch(
+  row: { status?: string | null },
+  newStartAt: string,
+  newEndAt: string,
+  nowMs: number = Date.now()
+): { start_at: string; end_at: string; status?: string } {
+  const patch: { start_at: string; end_at: string; status?: string } = {
+    start_at: newStartAt,
+    end_at: newEndAt,
+  };
+  const st = String(row.status ?? '');
+  if ((st === 'finished' || st === 'verified') && new Date(newEndAt).getTime() > nowMs) {
+    patch.status = 'opened';
+  }
+  return patch;
+}
+
 async function loadGroupSessionsForRounds(
   supabase: any,
   groupId: string
@@ -123,7 +145,7 @@ export async function postponeCascade(
         const ne = new Date(newStartMs + durationMs).toISOString();
         const { data, error } = await supabase
           .from('sessions')
-          .update({ start_at: ns, end_at: ne })
+          .update(buildPostponeShiftPatch(s, ns, ne))
           .eq('id', s.id)
           .select('id')
           .maybeSingle();
@@ -211,7 +233,7 @@ export async function undoPostponeCascade(
         const ne = new Date(newStartMs + durationMs).toISOString();
         const { data, error } = await supabase
           .from('sessions')
-          .update({ start_at: ns, end_at: ne })
+          .update(buildPostponeShiftPatch(s, ns, ne))
           .eq('id', s.id)
           .select('id')
           .maybeSingle();

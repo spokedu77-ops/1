@@ -1,5 +1,5 @@
-﻿import { redirect } from 'next/navigation';
+import { redirect } from "next/navigation";
 
-export default function LegacyClassesRedirectPage() {
-  redirect('/admin/classes-v2/calendar');
+export default function ClassesIndexPage() {
+  redirect("/admin/classes/calendar");
 }

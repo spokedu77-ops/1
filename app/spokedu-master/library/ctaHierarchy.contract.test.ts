@@ -13,10 +13,13 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
     expect(library).toContain('LessonCatalogCard');
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
+    expect(catalogCard).toContain('primaryActionLabel');
+    expect(catalogCard).toContain('onPrimaryAction');
   });
 
   it('assigns a program to an exact Session from detail', () => {
     expect(detail).toContain('AssignProgramToSessionButton');
+    expect(detail).toContain('returnHref={fromSession ? workReturnHref : null}');
     expect(detail).toContain('/spokedu-master/activity');
     expect(detail).toContain('수업 일정 관리');
     expect(detail).toContain('지도안 복사');

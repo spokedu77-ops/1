@@ -32,7 +32,7 @@ import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { getSeoulToday } from '../lib/sessionDateTime';
+import { getSeoulSessionDay, getSeoulToday } from '../lib/sessionDateTime';
 import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
 import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
@@ -72,6 +72,7 @@ import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
 import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
+import { resolveMasterHomePriority } from '../lib/masterProductTruth';
 
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
@@ -84,23 +85,10 @@ type SpomoveGuideVideoPackQueryResult = {
 };
 type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
 
-function getFirstStartSteps() {
+function getFirstStartPaths() {
   return [
-  {
-    title: '수업반 등록하기',
-    href: '/spokedu-master/classes',
-    Icon: UsersRound,
-  },
-  {
-    title: '첫 수업 만들기',
-    href: `/spokedu-master/activity?date=${getSeoulToday()}&create=1`,
-    Icon: CheckCircle2,
-  },
-  {
-    title: '수업 활동 찾아보기',
-    href: '/spokedu-master/library',
-    Icon: BookOpen,
-  },
+    { title: '좋은 활동부터 찾아보기', description: 'Library에서 아이디어를 고른 뒤 수업에 연결합니다.', href: '/spokedu-master/library', Icon: BookOpen },
+    { title: '수업부터 만들기', description: '반과 일정을 만든 뒤 Library에서 활동을 담습니다.', href: '/spokedu-master/classes', Icon: UsersRound },
   ] as const;
 }
 
@@ -280,10 +268,10 @@ function SectionHeader({
       ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]'
       : 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]';
   const actionClass = tone === 'dark'
-    ? 'inline-flex min-h-9 shrink-0 items-center gap-1 text-[12px] font-bold text-white/75 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white'
+    ? 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[12px] font-bold text-white/75 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:min-h-9'
     : tone === 'feature'
-      ? 'inline-flex min-h-9 shrink-0 items-center gap-1 text-[12px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900'
-      : 'inline-flex min-h-9 shrink-0 items-center gap-1 text-[12px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900';
+      ? 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[12px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900 sm:min-h-9'
+      : 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[12px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900 sm:min-h-9';
 
   return (
     <div className="mb-2.5 flex flex-col items-start justify-between gap-1.5 sm:mb-3 sm:flex-row sm:items-end sm:gap-3">
@@ -306,7 +294,7 @@ function SectionHeader({
       {href && action ? (
         <Link
           href={href}
-          className={`${actionClass} -mt-0.5 min-h-8 text-[11px] sm:mt-0 sm:min-h-9 sm:text-[12px]`}
+          className={`${actionClass} -mt-0.5 text-[11px] sm:mt-0 sm:text-[12px]`}
         >
           {action}
           <ArrowRight size={13} />
@@ -387,7 +375,7 @@ function ContextProgramRow({
         <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500">{meta}</span>
       </span>
       <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-bold text-slate-500">
-        보기
+        활동 살펴보기
         <ArrowRight size={13} />
       </span>
     </button>
@@ -395,7 +383,7 @@ function ContextProgramRow({
 }
 
 function FirstStartGuide() {
-  const firstStartSteps = getFirstStartSteps();
+  const firstStartPaths = getFirstStartPaths();
   return (
     <section
       data-dashboard-section="first-start"
@@ -408,21 +396,18 @@ function FirstStartGuide() {
           첫 수업을 시작해 보세요
         </h2>
         <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-          수업반을 등록하고 일정을 만들면, 활동을 담아 바로 운영할 수 있습니다.
+          콘텐츠부터 찾아도, 수업부터 만들어도 같은 준비 흐름으로 이어집니다.
         </p>
       </div>
-      <div className="mt-3 grid gap-1.5 md:grid-cols-3">
-        {firstStartSteps.map(({ title, href, Icon }, index) => (
+      <div className="mt-3 grid gap-2 md:grid-cols-2">
+        {firstStartPaths.map(({ title, description, href, Icon }) => (
           <Link
             key={href}
             href={href}
-            className="flex min-h-10 items-center gap-2.5 rounded-[12px] border border-slate-200 bg-slate-50 px-3 text-[12px] font-black text-[color:var(--spm-t)] transition-colors hover:border-slate-300 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+            className="flex min-h-11 items-center gap-2.5 rounded-[12px] border border-slate-200 bg-slate-50 px-3 text-[12px] font-black text-[color:var(--spm-t)] transition-colors hover:border-slate-300 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
           >
-            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-900 text-[11px] text-white">
-              {index + 1}
-            </span>
-            <Icon size={14} className="shrink-0 text-slate-500" aria-hidden="true" />
-            <span className="min-w-0 flex-1 break-keep">{title}</span>
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-900 text-white"><Icon size={14} aria-hidden="true" /></span>
+            <span className="min-w-0 flex-1"><strong className="block break-keep">{title}</strong><small className="mt-0.5 block font-semibold text-slate-500">{description}</small></span>
             <ArrowRight size={13} className="shrink-0 text-slate-400" aria-hidden="true" />
           </Link>
         ))}
@@ -500,7 +485,7 @@ function SpomoveCard({
           </h3>
         </div>
       </button>
-      <div className="flex h-[88px] shrink-0 flex-col gap-2 bg-white p-3">
+      <div className="flex h-[96px] shrink-0 flex-col gap-2 bg-white p-3">
         <div className="flex h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]" aria-label="활동 정보">
           {[
             displayModel.variantLabel,
@@ -519,7 +504,7 @@ function SpomoveCard({
           type="button"
           data-spm-spomove-card-action="start"
           onClick={() => onOpenGuide(preset)}
-          className="inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span>활동 준비</span>
           <ArrowRight size={14} aria-hidden />
@@ -560,7 +545,7 @@ function ActivityPanel({
   }> = compact
     ? [
         { label: '안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText, action: '안내문 보기' },
-        { label: '수업 일정', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2, action: '수업 관리' },
+        { label: '수업 일정', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2, action: '수업 일정 보기' },
       ]
     : [
         { label: '안내문 보관', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
@@ -839,6 +824,19 @@ function EntitledDashboardView() {
     setSelectedProgram(program);
   };
   const studentMemoCount = useMemo(() => operationalSessions.filter((session) => session.memo?.trim()).length, [operationalSessions]);
+  const homePriority = useMemo(() => {
+    const today = getSeoulToday();
+    const now = Date.now();
+    const classById = new Map(operationalClasses.map((item) => [item.id, item]));
+    return resolveMasterHomePriority({
+      hasUrgentOperationalWork: operationalStatus !== 'ready' || operationalSessions.some((session) =>
+        session.status === 'scheduled' && new Date(session.endAt).getTime() < now
+        || session.status === 'completed'
+          && Boolean(classById.get(session.classId)?.studentIds.length)
+          && session.attendance.length === 0),
+      hasTodaySession: operationalSessions.some((session) => getSeoulSessionDay(session.startAt) === today),
+    });
+  }, [operationalClasses, operationalSessions, operationalStatus]);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
@@ -881,9 +879,24 @@ function EntitledDashboardView() {
     );
   }
 
+  const homeOperationalEntry = isFirstUser && operationalSessions.length === 0 ? (
+    <FirstStartGuide />
+  ) : (<>
+    <HomeFollowUpPanel sessions={operationalSessions} classes={operationalClasses} seoulDay={getSeoulToday()} />
+    <TodaySessionsPanel
+      sessions={operationalSessions}
+      classes={operationalClasses}
+      seoulDay={getSeoulToday()}
+      loading={operationalStatus === 'idle' || operationalStatus === 'loading'}
+      error={operationalStatus === 'error'}
+      onRetry={() => void reloadOperationalData()}
+    />
+    <UpcomingPreparationPanel sessions={operationalSessions} classes={operationalClasses} />
+  </>);
+
   return (
-    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-4 overflow-y-auto px-4 pb-28 pt-4 sm:gap-5 sm:px-6 sm:pt-5 lg:gap-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-      {/* 브랜드 소개 다음에 오늘의 실제 수업을 가장 먼저 배치한다. */}
+    <main data-home-priority={homePriority} className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-4 overflow-y-auto px-4 pb-28 pt-4 sm:gap-5 sm:px-6 sm:pt-5 lg:gap-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+      {/* Home priority follows current user need; operations are not inherently above discovery. */}
       <header className="relative px-0.5 pt-0.5 sm:px-1">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0">
@@ -900,28 +913,15 @@ function EntitledDashboardView() {
           </div>
           <Link
             href="/spokedu-master/activity"
-            className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 self-start text-[11px] font-bold text-slate-400 transition-colors hover:text-slate-700 sm:self-auto"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 self-start text-[11px] font-bold text-slate-400 transition-colors hover:text-slate-700 sm:min-h-8 sm:self-auto"
           >
-            수업 관리
+            수업 일정 보기
             <ArrowRight size={12} />
           </Link>
         </div>
       </header>
 
-      {isFirstUser && operationalSessions.length === 0 ? (
-        <FirstStartGuide />
-      ) : (<>
-        <HomeFollowUpPanel sessions={operationalSessions} classes={operationalClasses} seoulDay={getSeoulToday()} />
-        <TodaySessionsPanel
-          sessions={operationalSessions}
-          classes={operationalClasses}
-          seoulDay={getSeoulToday()}
-          loading={operationalStatus === 'idle' || operationalStatus === 'loading'}
-          error={operationalStatus === 'error'}
-          onRetry={() => void reloadOperationalData()}
-        />
-        <UpcomingPreparationPanel sessions={operationalSessions} classes={operationalClasses} />
-      </>)}
+      {isFirstUser || homePriority !== 'discovery' ? homeOperationalEntry : null}
 
       <section
         data-dashboard-section="featured-flow"
@@ -1000,6 +1000,8 @@ function EntitledDashboardView() {
           ))}
         </div>
       </section>
+
+      {!isFirstUser && homePriority === 'discovery' ? homeOperationalEntry : null}
 
       {/* P1: 하단은 3순위 — 얇은 구분 + 조용한 면 */}
       <div aria-hidden="true" className="border-t border-slate-200/80" />

@@ -7,7 +7,8 @@ export const MASTER_NAV_ITEMS = [
   { key: 'library', href: '/spokedu-master/library', label: '놀이체육', shortLabel: '놀이체육' },
   { key: 'spomove', href: '/spokedu-master/spomove', label: 'SPOMOVE', shortLabel: '무브' },
   { key: 'class-tools', href: '/spokedu-master/class-tools', label: '수업 도구', shortLabel: '도구' },
-  { key: 'activity', href: '/spokedu-master/activity', label: '수업 관리', shortLabel: '수업' },
+  { key: 'classes', href: '/spokedu-master/classes', label: '수업반', shortLabel: '수업반' },
+  { key: 'activity', href: '/spokedu-master/activity', label: '수업 일정', shortLabel: '일정' },
 ] as const;
 
 export type MasterNavKey = (typeof MASTER_NAV_ITEMS)[number]['key'];

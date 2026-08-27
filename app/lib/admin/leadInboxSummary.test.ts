@@ -114,3 +114,91 @@ describe('parseConsultSubject', () => {
     expect(s.meta).toContain('남');
   });
 });
+
+describe('legacy CRM compatibility shapes', () => {
+  it('A: structured private envelope', () => {
+    const summary = summarizeLeadRow({
+      lead_route: 'private',
+      consult_type: 'tutoring',
+      private_start_direction: 'confidence',
+      private_preferred_format: 'one-to-one',
+      lead_context: {
+        schemaVersion: 1,
+        route: 'private',
+        acquisition: { entrySurface: 'home', utmSource: 'naver' },
+        selection: {
+          route: 'private',
+          startDirection: 'confidence',
+          preferredFormat: 'one-to-one',
+          region: '마포',
+          schedule: '평일 저녁',
+          sport: '축구',
+        },
+        ctaIntentId: 'private_fit_consult',
+      },
+      content: '',
+    });
+    expect(summary.route).toBe('private');
+    expect(summary.facts.location).toContain('마포');
+    expect(summary.facts.preferredTime).toContain('평일');
+    expect(summary.subtitle).toBeTruthy();
+  });
+
+  it('B: structured dispatch envelope', () => {
+    const summary = summarizeLeadRow({
+      lead_route: 'dispatch',
+      consult_type: 'center',
+      lead_context: {
+        schemaVersion: 1,
+        route: 'dispatch',
+        acquisition: { entrySurface: 'programs' },
+        selection: {
+          route: 'dispatch',
+          programs: ['월간 스포츠'],
+          targetAges: ['초등'],
+          organizationName: '테스트센터',
+          location: '서울 광진구',
+          headcount: '20',
+        },
+        ctaIntentId: 'dispatch_proposal',
+      },
+      content: '',
+    });
+    expect(summary.route).toBe('dispatch');
+    expect(summary.facts.location).toContain('광진');
+    expect(summary.tags.some((t) => t.includes('월간'))).toBe(true);
+  });
+
+  it('C: consult_type only (no lead_context)', () => {
+    expect(resolveLeadRoute({ consult_type: 'tutoring', content: '문의' })).toBe('private');
+    expect(resolveLeadRoute({ consult_type: 'center', content: '문의' })).toBe('dispatch');
+  });
+
+  it('D: region/time only in content', () => {
+    const summary = summarizeLeadRow({
+      consult_type: 'tutoring',
+      content: [
+        '4. 방문 지역/장소 : 서울시 도봉구 창동 근처',
+        '5. 가능 시간대 : 토, 일 오전',
+      ].join('\n'),
+    });
+    expect(summary.facts.location).toBe('도봉구 창동');
+    expect(summary.facts.preferredTime).toBe('토·일 오전');
+  });
+
+  it('E: source_lead_id dispatch still routes and summarizes from content', () => {
+    const summary = summarizeLeadRow({
+      consult_type: 'center',
+      lead_route: null,
+      content: [
+        '[기관 맞춤 제안서 요청]',
+        '기관명/센터명: 레거시기관',
+        '기관 소재지: 부산 해운대',
+        '희망 프로그램: 스포무브',
+        'source_lead_id: abc-123',
+      ].join('\n'),
+    });
+    expect(summary.route).toBe('dispatch');
+    expect(summary.facts.location).toContain('해운대');
+  });
+});

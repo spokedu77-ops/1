@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, Receipt, Calendar } from 'lucide-react';
-import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useTeacherMaterialsAccess } from '@/app/hooks/useTeacherMaterialsAccess';

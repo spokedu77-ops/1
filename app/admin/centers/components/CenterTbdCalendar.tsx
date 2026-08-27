@@ -380,7 +380,7 @@ export default function CenterTbdCalendar() {
         </div>
       ) : (
         <div className="rounded-lg mx-4 sm:mx-6 mt-3 mb-1 border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
-          수업·메모는 서버에 저장되어 관리자 간 공유됩니다. 수업 관리(classes-v2)와는 연동되지 않습니다.
+          수업·메모는 서버에 저장되어 관리자 간 공유됩니다. 수업 관리(classes)와는 연동되지 않습니다.
         </div>
       )}
 

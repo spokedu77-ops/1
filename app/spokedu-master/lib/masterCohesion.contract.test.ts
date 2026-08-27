@@ -27,8 +27,8 @@ describe('MASTER commercial cohesion contracts', () => {
   });
 
   it('sells outcomes instead of a stale feature count', () => {
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('오늘 수업을 찾고');
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('다음 수업 준비');
+    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('콘텐츠를 찾아 실제 수업으로 구성');
+    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('지난 기록과 학생 맥락');
     expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' ')).toContain('출석');
     expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' ')).toContain('SPOMOVE');
   });

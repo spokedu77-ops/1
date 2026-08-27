@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { CENTER_SESSION_FILES_BUCKET } from '@/app/lib/server/centerSessionFileStorage';
 import { canTeacherEditSession } from '@/app/lib/server/teacherSessionAccess';

@@ -33,6 +33,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const ALLOWED_EMAIL_RE = /^spm\.qa\.[a-z0-9._+-]+@(?:spokedu\.test|spokedu\.com)$/i;
 const DEFAULT_EMAILS = {
   trial: 'spm.qa.trial@spokedu.test',
+  lite: 'spm.qa.lite@spokedu.test',
   pro: 'spm.qa.pro@spokedu.test',
   team: 'spm.qa.center@spokedu.test',
   expired: 'spm.qa.expired@spokedu.test',
@@ -69,6 +70,19 @@ function planForFixtures(now = new Date()) {
       email: env.SPM_QA_TRIAL_EMAIL || DEFAULT_EMAILS.trial,
       subscription: null,
       expected: 'subscription=free+trialEndsAt, programs/drills=200, payment=available',
+    },
+    {
+      key: 'lite',
+      email: env.SPM_QA_LITE_EMAIL || DEFAULT_EMAILS.lite,
+      subscription: {
+        plan: 'lite',
+        plan_id: 'lite',
+        status: 'active',
+        pg_provider: 'manual_qa',
+        period_start: iso(now),
+        period_end: iso(new Date(now.getTime() + 30 * DAY_MS)),
+      },
+      expected: 'subscription=lite active, Library/attendance/class tools=200, SPOMOVE runtime/records=403',
     },
     {
       key: 'pro',

@@ -1,4 +1,4 @@
-import { getBundleTitleKey } from '@/app/admin/classes-v2/lib/v2BundleResolve';
+import { getBundleTitleKey } from '@/app/admin/classes/lib/v2BundleResolve';
 
 export type SlotConflictRow = {
   id: string;
