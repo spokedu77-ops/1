@@ -168,7 +168,7 @@ export function LessonCatalogCard({
   const cornerText = variant === 'home' ? cornerLabel?.replace(/^추천\s*/u, '') : cornerLabel;
   const showUsed = variant === 'library' && used;
   const showFavorite = variant === 'library' && Boolean(onFavorite);
-  const cardMinHeight = 'min-h-[324px]';
+  const cardGeometry = 'h-[345px] min-h-[345px]';
   const mediaAspect = 'aspect-[6/5]';
   const cardSurface =
     variant === 'home'
@@ -180,7 +180,7 @@ export function LessonCatalogCard({
   return (
     <article
       {...articleProps}
-      className={`group flex h-full ${cardMinHeight} flex-col overflow-hidden rounded-[14px] transition duration-200 ${cardSurface}`}
+      className={`group flex ${cardGeometry} flex-col overflow-hidden rounded-[14px] transition-[border-color,box-shadow,transform] duration-150 active:translate-y-0 ${cardSurface}`}
     >
       {/* Opt-1: 남는 높이는 미디어가 흡수 — 푸터 흰 공백 금지 (App Store형) */}
       <div
@@ -287,8 +287,8 @@ export function LessonCatalogCard({
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col gap-2 bg-white p-3">
-        <div className="flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
+      <div className="flex h-[88px] shrink-0 flex-col gap-2 bg-white p-3">
+        <div className="flex h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
           {descriptionParts.length > 0 ? descriptionParts.map((part, index) => (
             <span
               key={`${part}-${index}`}

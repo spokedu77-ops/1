@@ -4,6 +4,7 @@ import {
   deriveConsultColumns,
   getLeadResponseChecklist,
   isAllowedCtaIntent,
+  normalizeAcquisition,
 } from './lead-envelope';
 
 describe('lead envelope contract', () => {
@@ -62,5 +63,21 @@ describe('lead envelope contract', () => {
       privateStartDirection: 'confidence',
     });
     expect(privateCheck.items.some((i) => i.includes('지도자'))).toBe(true);
+  });
+
+  it('normalizes optional acquisition path fields', () => {
+    const acq = normalizeAcquisition({
+      entrySurface: 'record',
+      entryPath: '/records/foo',
+      submitPath: '/private?utm_source=naver',
+      utmSource: 'naver',
+      utmCampaign: 'private_2026',
+      referrer: 'https://blog.naver.com/',
+    });
+    expect(acq.entryPath).toBe('/records/foo');
+    expect(acq.submitPath).toContain('/private');
+    expect(acq.utmSource).toBe('naver');
+    expect(acq.utmCampaign).toBe('private_2026');
+    expect(acq.referrer).toContain('naver');
   });
 });

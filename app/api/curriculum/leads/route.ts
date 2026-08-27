@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import {
   buildEnvelopeOrThrow,
-  consultInsertFromEnvelope,
+  createConsultLead,
   LeadEnvelopeValidationError,
   parseAcquisitionFromBody,
 } from '@/app/lib/server/leadEnvelope';
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     ].join('\n');
 
     const supabase = getServiceSupabase();
-    const insertRow = consultInsertFromEnvelope({
+    const created = await createConsultLead(supabase, {
       envelope,
       parentName: nameOrOrg,
       phone,
@@ -135,33 +135,11 @@ export async function POST(req: NextRequest) {
       consultType: 'center',
     });
 
-    const { data: inserted, error } = await supabase
-      .from('consultations')
-      .insert(insertRow)
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error('[curriculum/leads] insert error', error);
-      const { data: fallback, error: fallbackError } = await supabase
-        .from('consultations')
-        .insert({
-          parent_name: nameOrOrg,
-          phone,
-          child_age: targetAge,
-          content,
-          consult_type: 'center',
-          status: 'pending',
-        })
-        .select('id')
-        .single();
-      if (fallbackError) {
-        return NextResponse.json({ ok: false, message: 'DB 저장에 실패했습니다.' }, { status: 500 });
-      }
-      return NextResponse.json({ ok: true, lead_mode: leadMode, leadId: fallback?.id });
+    if (!created.ok) {
+      return NextResponse.json({ ok: false, message: 'DB 저장에 실패했습니다.' }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, lead_mode: leadMode, leadId: inserted?.id });
+    return NextResponse.json({ ok: true, lead_mode: leadMode, leadId: created.id });
   } catch (error) {
     console.error('[curriculum/leads] unexpected', error);
     return NextResponse.json({ ok: false, message: '서버 처리 중 오류가 발생했습니다.' }, { status: 500 });

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import {
   buildEnvelopeOrThrow,
-  consultInsertFromEnvelope,
+  createConsultLead,
   LeadEnvelopeValidationError,
   parseAcquisitionFromBody,
 } from '@/app/lib/server/leadEnvelope';
@@ -16,6 +16,10 @@ function normalizePhone(raw: string): string {
   return raw.replace(/\D/g, '');
 }
 
+/**
+ * 기관 문의: consultations = CRM SoT, dispatch_leads = 상세 부가 저장.
+ * consultations 실패 시 요청 실패. 상세 실패 시에도 CRM에는 노출.
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -91,32 +95,73 @@ export async function POST(req: NextRequest) {
       throw e;
     }
 
+    const consultContent = [
+      '[기관 맞춤 제안서 요청]',
+      `[lead_route] dispatch`,
+      `기관명/센터명: ${organization || '-'}`,
+      `담당자: ${manager || '-'}`,
+      `연락처: ${phone || '-'}`,
+      `이메일: ${email || '-'}`,
+      `기관 소재지: ${location || '-'}`,
+      `파견 희망 시작일: ${startDate || '-'}`,
+      `파견 희망 종료일: ${endDate || '-'}`,
+      `희망 프로그램: ${programs.length ? programs.join(', ') : '-'}`,
+      `대상 연령: ${targetAge.length ? targetAge.join(', ') : '-'}`,
+      `인원: ${headcount || '-'}`,
+      `특수 아동 참여 유무: ${specialNeeds || '-'}`,
+      `문의 type: dispatch`,
+      '',
+      '[희망 수업 내용/방향성]',
+      inquiry || '-',
+      '',
+      `유입 경로: ${source || '-'}`,
+    ].join('\n');
+
     const supabase = getServiceSupabase();
-    let dispatchLead: { id: string } | null = null;
+
+    // 1) CRM SoT — consultations 먼저
+    const created = await createConsultLead(supabase, {
+      envelope,
+      parentName: `${organization} / ${manager}`,
+      phone: phone || null,
+      content: consultContent,
+      consultType: 'center',
+    });
+
+    if (!created.ok) {
+      return NextResponse.json({ ok: false, error: '접수 저장 중 오류가 발생했습니다.' }, { status: 500 });
+    }
+
+    const consultId = created.id;
+
+    // 2) 기관 상세 — 실패해도 CRM 문의는 유지
+    let detailId: string | null = null;
+    let detailStatus: 'synced' | 'detail_failed' = 'synced';
+
+    const detailPayload = {
+      organization_name: organization,
+      manager_name: manager,
+      phone: phone || null,
+      email: email || null,
+      location: location || null,
+      start_date: startDate || null,
+      end_date: endDate || null,
+      programs,
+      target_ages: targetAge,
+      headcount: headcount || null,
+      special_needs: specialNeeds || null,
+      inquiry: inquiry || null,
+      source,
+      mirror_status: 'synced' as const,
+      mirror_consult_id: consultId,
+      mirror_error: null as string | null,
+    };
+
     {
-      const primary = await supabase
-        .from('dispatch_leads')
-        .insert({
-          organization_name: organization,
-          manager_name: manager,
-          phone: phone || null,
-          email: email || null,
-          location: location || null,
-          start_date: startDate || null,
-          end_date: endDate || null,
-          programs,
-          target_ages: targetAge,
-          headcount: headcount || null,
-          special_needs: specialNeeds || null,
-          inquiry: inquiry || null,
-          source,
-          mirror_status: 'pending',
-        })
-        .select('id')
-        .single();
+      const primary = await supabase.from('dispatch_leads').insert(detailPayload).select('id').single();
 
       if (primary.error || !primary.data?.id) {
-        // 마이그레이션 전: mirror_status 없이 재시도
+        // mirror_* 컬럼 없는 레거시: 최소 컬럼으로 재시도
         const fallback = await supabase
           .from('dispatch_leads')
           .insert({
@@ -136,88 +181,52 @@ export async function POST(req: NextRequest) {
           })
           .select('id')
           .single();
+
         if (fallback.error || !fallback.data?.id) {
-          console.error('[dispatch/leads]', primary.error ?? fallback.error);
-          return NextResponse.json({ ok: false, error: '접수 저장 중 오류가 발생했습니다.' }, { status: 500 });
+          console.error('[dispatch/leads] detail insert failed after CRM save', primary.error ?? fallback.error);
+          detailStatus = 'detail_failed';
+        } else {
+          detailId = fallback.data.id;
         }
-        dispatchLead = fallback.data;
       } else {
-        dispatchLead = primary.data;
+        detailId = primary.data.id;
       }
     }
 
-    if (!dispatchLead?.id) {
-      return NextResponse.json({ ok: false, error: '접수 저장 중 오류가 발생했습니다.' }, { status: 500 });
-    }
+    // 3) CRM ↔ 상세 연결 (source_lead_id). 실패해도 CRM 행은 유효.
+    if (detailId) {
+      const link = await supabase
+        .from('consultations')
+        .update({ source_lead_id: detailId })
+        .eq('id', consultId);
+      if (link.error) {
+        console.warn('[dispatch/leads] source_lead_id link failed', link.error);
+      }
 
-    const consultContent = [
-      '[기관 맞춤 제안서 요청]',
-      `기관명/센터명: ${organization || '-'}`,
-      `담당자: ${manager || '-'}`,
-      `연락처: ${phone || '-'}`,
-      `이메일: ${email || '-'}`,
-      `기관 소재지: ${location || '-'}`,
-      `파견 희망 시작일: ${startDate || '-'}`,
-      `파견 희망 종료일: ${endDate || '-'}`,
-      `희망 프로그램: ${programs.length ? programs.join(', ') : '-'}`,
-      `대상 연령: ${targetAge.length ? targetAge.join(', ') : '-'}`,
-      `인원: ${headcount || '-'}`,
-      `특수 아동 참여 유무: ${specialNeeds || '-'}`,
-      `문의 type: dispatch`,
-      `source_lead_id: ${dispatchLead.id}`,
-      '',
-      '[희망 수업 내용/방향성]',
-      inquiry || '-',
-      '',
-      `유입 경로: ${source || '-'}`,
-    ].join('\n');
-
-    const insertRow = consultInsertFromEnvelope({
-      envelope,
-      parentName: `${organization} / ${manager}`,
-      phone: phone || null,
-      content: consultContent,
-      consultType: 'center',
-      sourceLeadId: dispatchLead.id,
-    });
-
-    const { data: consultRow, error: consultError } = await supabase
-      .from('consultations')
-      .insert(insertRow)
-      .select('id')
-      .single();
-
-    if (consultError) {
-      console.error('[dispatch/leads] consultations mirror insert failed', consultError);
+      // content에 detail id 보강 (운영 확인용, 실패 무시)
       await supabase
-        .from('dispatch_leads')
+        .from('consultations')
         .update({
-          mirror_status: 'failed',
-          mirror_error: consultError.message?.slice(0, 500) ?? 'mirror failed',
+          content: `${consultContent}\nsource_lead_id: ${detailId}\n`,
         })
-        .eq('id', dispatchLead.id);
-      // 본체(dispatch_leads) 성공이 우선 — 요청은 성공
-      return NextResponse.json({
-        ok: true,
-        leadId: dispatchLead.id,
-        mirrorStatus: 'failed',
-      });
+        .eq('id', consultId);
+    } else {
+      await supabase
+        .from('consultations')
+        .update({
+          content: `${consultContent}\n[detail_status] detail_failed\n`,
+        })
+        .eq('id', consultId);
     }
-
-    await supabase
-      .from('dispatch_leads')
-      .update({
-        mirror_status: 'synced',
-        mirror_consult_id: consultRow?.id ?? null,
-        mirror_error: null,
-      })
-      .eq('id', dispatchLead.id);
 
     return NextResponse.json({
       ok: true,
-      leadId: dispatchLead.id,
-      consultId: consultRow?.id,
-      mirrorStatus: 'synced',
+      consultId,
+      leadId: consultId,
+      detailId,
+      detailStatus,
+      /** @deprecated 레거시 클라이언트 호환 — CRM id */
+      mirrorStatus: detailStatus === 'synced' ? 'synced' : 'detail_failed',
     });
   } catch (error) {
     console.error('[dispatch/leads] unexpected', error);

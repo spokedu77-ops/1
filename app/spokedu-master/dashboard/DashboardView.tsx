@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   FileText,
   MonitorPlay,
-  Play,
   UsersRound,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -454,7 +453,7 @@ function SpomoveCard({
   return (
     <article
       data-spomove-preset={preset.id}
-      className="group flex h-full min-h-[324px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white text-[color:var(--spm-t)] shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition-[border-color,box-shadow] duration-200 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)]"
+      className="group flex h-[345px] min-h-[345px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white text-[color:var(--spm-t)] shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition-[border-color,box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)] active:translate-y-0"
     >
       <button
         type="button"
@@ -492,14 +491,6 @@ function SpomoveCard({
           </div>
         )}
         <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-150 group-hover:bg-black/[0.07]" />
-        <span className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5">
-          <span
-            aria-hidden="true"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 transition-transform duration-150 group-hover:scale-105"
-          >
-            <Play className="h-3.5 w-3.5 fill-current" />
-          </span>
-        </span>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
           <p className="max-w-[76%] truncate text-[11px] font-black text-white/82 drop-shadow">
             {displayModel.programLabel}
@@ -509,8 +500,8 @@ function SpomoveCard({
           </h3>
         </div>
       </button>
-      <div className="flex shrink-0 flex-col gap-2 bg-white p-3">
-        <div className="flex min-h-7 min-w-0 flex-wrap items-center gap-1.5 overflow-hidden" aria-label="활동 정보">
+      <div className="flex h-[88px] shrink-0 flex-col gap-2 bg-white p-3">
+        <div className="flex h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]" aria-label="활동 정보">
           {[
             displayModel.variantLabel,
             displayModel.difficultyLabel,
@@ -518,7 +509,7 @@ function SpomoveCard({
           ].filter(Boolean).slice(0, 3).map((part, index) => (
             <span
               key={`${part}-${index}`}
-              className="inline-flex max-w-full truncate rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold leading-4 text-[color:var(--spm-t2)]"
+              className="min-w-0 truncate after:mx-1.5 after:text-[color:var(--spm-t3)] after:content-['·'] last:after:content-none"
             >
               {part}
             </span>
@@ -528,10 +519,10 @@ function SpomoveCard({
           type="button"
           data-spm-spomove-card-action="start"
           onClick={() => onOpenGuide(preset)}
-          className="spm-btn-primary inline-flex h-9 w-full items-center justify-center gap-2 rounded-[9px] px-3 text-[13px] font-black hover:brightness-100 focus-visible:outline-none"
+          className="inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Play className="h-3.5 w-3.5 fill-current" aria-hidden />
           <span>활동 준비</span>
+          <ArrowRight size={14} aria-hidden />
         </button>
       </div>
     </article>
@@ -952,9 +943,9 @@ function EntitledDashboardView() {
           {!programsLoaded ? (
             <p className="rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
           ) : weeklyPrograms.length > 0 ? (
-            <div className="relative -mx-3.5 flex snap-x gap-3.5 overflow-x-auto px-3.5 pb-2 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+            <div className="relative -mx-3.5 flex snap-x items-stretch gap-3.5 overflow-x-auto px-3.5 pb-2 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
               {weeklyPrograms.map((program, index) => (
-                <div key={program.id} className="w-[78vw] max-w-[310px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
+                <div key={program.id} className="h-full w-[78vw] max-w-[310px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
                   <WeeklyProgramCard
                     program={program}
                     onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
@@ -997,7 +988,7 @@ function EntitledDashboardView() {
         />
         <div className="relative -mx-3.5 flex snap-x items-stretch gap-3.5 overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
           {featuredSpomove.map((preset, index) => (
-            <div key={preset.id} className="h-full w-[74vw] max-w-[300px] shrink-0 snap-start md:w-auto md:max-w-none">
+            <div key={preset.id} className="h-full w-[78vw] max-w-[310px] shrink-0 snap-start md:w-auto md:max-w-none">
               <SpomoveCard
                 preset={preset}
                 thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}

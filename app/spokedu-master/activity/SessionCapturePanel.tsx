@@ -46,6 +46,18 @@ export function SessionCapturePanel({
   );
   const capture = captures.find((item) => item.sessionId === session.id) ?? null;
   const previous = resolvePreviousSessionMemory({ currentSession: session, classSessions: sessions, captures });
+  const currentRosterIds = useMemo(() => new Set(classStudentIds), [classStudentIds]);
+  const previousObservations = previous?.capture?.students.filter((student) => (
+    Boolean(student.studentId && currentRosterIds.has(student.studentId) && student.memo?.trim())
+  )) ?? [];
+  const guidanceStudents = students.filter((student) => currentRosterIds.has(student.id) && Boolean(student.guidanceNote?.trim()));
+  const previousActivities = previous?.session.programs ?? [];
+  const hasPreviousMemory = Boolean(
+    previous?.capture?.applicationIdea?.trim()
+    || previousObservations.length
+    || guidanceStudents.length
+    || previousActivities.length
+  );
   const recordedCount = capture?.students.filter((student) => student.memo).length ?? 0;
   const orderClass = sessionSectionOrderClass(order);
   const needsCaptureData = canUseRecords && captureMode !== 'hidden';
@@ -117,14 +129,28 @@ export function SessionCapturePanel({
   }
 
   if (captureMode === 'memory') {
-    if (!previous?.capture.applicationIdea && !loadError) return null;
+    if (!hasPreviousMemory && !loadError) return null;
     return (
       <section data-session-capture data-capture-mode="memory" className={`${orderClass} rounded-xl border border-emerald-200 bg-emerald-50 p-3`}>
         {loadError ? <p role="status" className="text-xs font-bold text-amber-700">지난 수업 기록을 불러오지 못했습니다. 수업 준비는 계속할 수 있습니다.</p> : null}
-        {previous?.capture.applicationIdea ? (
+        {hasPreviousMemory ? (
           <>
             <p className="text-[11px] font-black text-emerald-700">지난 수업에서 이어갈 점</p>
-            <p className="mt-1 text-sm font-semibold text-emerald-900">{previous.capture.applicationIdea}</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-xs font-bold text-emerald-900">
+              <span>다음 수업 메모 {previous?.capture?.applicationIdea?.trim() ? '있음' : '없음'}</span>
+              <span>학생 관찰 {previousObservations.length}명</span>
+              <span>지도 참고 {guidanceStudents.length}명</span>
+              <span>지난 활동 {previousActivities.length}개</span>
+            </div>
+            <details className="mt-2 border-t border-emerald-200 pt-2">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center text-xs font-black text-emerald-800">상세 보기</summary>
+              <div className="space-y-2 pb-1 text-sm text-emerald-950">
+                {previous?.capture?.applicationIdea?.trim() ? <p className="whitespace-pre-wrap font-semibold">{previous.capture.applicationIdea}</p> : null}
+                {previousObservations.map((observation) => <p key={observation.id}><strong>{observation.studentName}</strong> · {observation.memo}</p>)}
+                {guidanceStudents.map((student) => <p key={student.id}><strong>{student.name}</strong> 지도 참고 · {student.guidanceNote}</p>)}
+                {previousActivities.length ? <p>지난 활동 · {previousActivities.map((activity) => activity.programTitle ?? (activity.sourceType === 'spomove' ? 'SPOMOVE' : '이름 없는 활동')).join(', ')}</p> : null}
+              </div>
+            </details>
           </>
         ) : null}
       </section>

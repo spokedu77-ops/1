@@ -244,7 +244,7 @@ export function PrivateApplyForm() {
           instructor_preference: instructorPreference.trim() || undefined,
           region: region.trim(),
           schedule: schedule.trim(),
-          acquisition: getAcquisitionContext(),
+          acquisition: getAcquisitionContext({ submitPath: typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search || ''}` : '/private' }),
           cta_intent_id: 'private_fit_consult',
           conversion_evidence_slug: conversionEvidenceSlug ?? undefined,
         }),
@@ -271,8 +271,7 @@ export function PrivateApplyForm() {
       setSubmitted(true);
       setStatus({
         tone: 'ok',
-        message:
-          '접수가 완료되었습니다. 이어서 카카오 채널에 학생 이름으로 문의 남겨 주셨다는 메시지를 꼭 남겨 주세요.',
+        message: '접수가 완료되었습니다. 담당자가 확인 후 연락드립니다.',
       });
     } catch {
       setStatus({ tone: 'error', message: '네트워크 오류로 접수에 실패했습니다.' });
@@ -309,8 +308,8 @@ export function PrivateApplyForm() {
       <ol className="grid gap-2.5 sm:grid-cols-3">
         {[
           { step: '01', title: '조건 입력', desc: '방향·형태·일정' },
-          { step: '02', title: '접수·카카오', desc: '채널에 문의 남기기' },
-          { step: '03', title: '강사 배정', desc: '적합 확인 후 시작' },
+          { step: '02', title: '온라인 접수', desc: '상담 내용 저장' },
+          { step: '03', title: '담당자 연락', desc: '배정·일정 안내' },
         ].map((item) => (
           <li
             key={item.step}
@@ -533,23 +532,6 @@ export function PrivateApplyForm() {
             </p>
           ) : null}
 
-          <aside
-            className="mt-6 rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-4 sm:px-5"
-            aria-labelledby="private-must-read-heading"
-          >
-            <p
-              id="private-must-read-heading"
-              className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-900/80"
-            >
-              필독 사항
-            </p>
-            <p className={`mt-2 text-sm leading-relaxed text-amber-950 ${koreanLineBreak}`}>
-              작성 후, 학생 이름으로 수업 문의 남겨 주셨다고{' '}
-              <strong className="font-bold">꼭 카카오 채널 채팅방에 남겨 주셔야 합니다!</strong>
-            </p>
-            <p className="mt-1.5 text-xs text-amber-900/70">(예시 : 지훈이 수업 문의 남겼습니다)</p>
-          </aside>
-
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
               type="button"
@@ -566,7 +548,7 @@ export function PrivateApplyForm() {
                 rel="noopener noreferrer"
                 className={marketingButtonSecondary}
               >
-                카카오 채널 열기
+                카카오로 빠르게 상담 이어가기
               </a>
             ) : null}
             <Link href="#instructors" className={`${marketingButtonSecondary} text-center`}>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import { summarizeLeadRow } from '@/app/lib/admin/leadInboxSummary';
 
 const ALLOWED_STATUS = new Set(['pending', 'done']);
 
@@ -9,31 +10,85 @@ const CONSULT_SELECT =
 const CONSULT_SELECT_LEGACY =
   'id, parent_name, phone, child_age, content, consult_type, status, created_at';
 
-export async function GET() {
+type ConsultDbRow = {
+  id: string;
+  parent_name: string;
+  phone: string | null;
+  child_age: string | null;
+  content?: string | null;
+  consult_type: string;
+  status: string;
+  created_at: string;
+  lead_route?: string | null;
+  lead_context?: unknown;
+  curriculum_mode?: string | null;
+  private_start_direction?: string | null;
+  private_preferred_format?: string | null;
+  conversion_evidence_slug?: string | null;
+  source_lead_id?: string | null;
+};
+
+function attachListSummary(row: ConsultDbRow) {
+  const content = typeof row.content === 'string' ? row.content : '';
+  const summary = summarizeLeadRow({
+    lead_route: row.lead_route ?? null,
+    curriculum_mode: row.curriculum_mode ?? null,
+    private_start_direction: row.private_start_direction ?? null,
+    private_preferred_format: row.private_preferred_format ?? null,
+    conversion_evidence_slug: row.conversion_evidence_slug ?? null,
+    lead_context: (row.lead_context as never) ?? null,
+    content,
+    consult_type: row.consult_type,
+  });
+
+  // 목록: content 원문 제외. fallback parsing은 서버 summary에 반영됨.
+  const { content: _omit, ...rest } = row;
+  return { ...rest, content: '', summary };
+}
+
+export async function GET(req: NextRequest) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
   try {
+    const url = req.nextUrl;
+    const limitRaw = Number(url.searchParams.get('limit') ?? '200');
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(Math.floor(limitRaw), 1), 500) : 200;
+    const status = url.searchParams.get('status')?.trim() || '';
+
     const supabase = getServiceSupabase();
-    const primary = await supabase
+
+    let query = supabase
       .from('consultations')
       .select(CONSULT_SELECT)
       .order('created_at', { ascending: false })
-      .limit(500);
+      .limit(limit);
+
+    if (status && ALLOWED_STATUS.has(status)) {
+      query = query.eq('status', status);
+    }
+
+    const primary = await query;
 
     if (primary.error) {
-      const fallback = await supabase
+      let legacyQuery = supabase
         .from('consultations')
         .select(CONSULT_SELECT_LEGACY)
         .order('created_at', { ascending: false })
-        .limit(500);
+        .limit(limit);
+      if (status && ALLOWED_STATUS.has(status)) {
+        legacyQuery = legacyQuery.eq('status', status);
+      }
+      const fallback = await legacyQuery;
       if (fallback.error) {
         return NextResponse.json({ ok: false, error: fallback.error.message }, { status: 500 });
       }
-      return NextResponse.json({ ok: true, rows: fallback.data ?? [], structured: false });
+      const rows = ((fallback.data ?? []) as ConsultDbRow[]).map(attachListSummary);
+      return NextResponse.json({ ok: true, rows, structured: false });
     }
 
-    return NextResponse.json({ ok: true, rows: primary.data ?? [], structured: true });
+    const rows = ((primary.data ?? []) as ConsultDbRow[]).map(attachListSummary);
+    return NextResponse.json({ ok: true, rows, structured: true });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Internal Server Error';
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });

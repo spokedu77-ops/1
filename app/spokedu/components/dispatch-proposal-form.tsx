@@ -120,7 +120,12 @@ export function DispatchProposalForm() {
             specialNeeds,
             inquiry: inquiry.trim(),
             source: 'spokedu-dispatch-proposal',
-            acquisition: getAcquisitionContext(),
+            acquisition: getAcquisitionContext({
+              submitPath:
+                typeof window !== 'undefined'
+                  ? `${window.location.pathname}${window.location.search || ''}`
+                  : '/dispatch',
+            }),
             cta_intent_id: 'dispatch_proposal',
             conversion_evidence_slug: conversionEvidenceSlug ?? undefined,
           }),

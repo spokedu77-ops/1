@@ -34,7 +34,12 @@ function inferSurfaceFromPath(pathname: string): AcquisitionEntrySurface {
   return 'direct';
 }
 
-/** 세션 내 유입 귀속 — URL/utm은 최초 1회 고정 */
+function currentPathWithQuery(): string {
+  const { pathname, search } = window.location;
+  return `${pathname}${search || ''}`;
+}
+
+/** 세션 내 유입 귀속 — URL/utm/entryPath는 최초 1회 고정 */
 export function captureAcquisitionFromLocation(): AcquisitionContext {
   if (typeof window === 'undefined') return { entrySurface: 'direct' };
   const existing = readStored();
@@ -55,12 +60,27 @@ export function captureAcquisitionFromLocation(): AcquisitionContext {
     entryId,
     utmSource,
     utmCampaign,
+    entryPath: currentPathWithQuery(),
+    referrer: document.referrer?.trim() || undefined,
   };
   writeStored(ctx);
   return ctx;
 }
 
-export function getAcquisitionContext(): AcquisitionContext {
+/**
+ * 제출 시점 acquisition.
+ * entry* / utm은 세션 고정, submitPath·referrer는 제출 페이지 기준 보강.
+ */
+export function getAcquisitionContext(opts?: { submitPath?: string }): AcquisitionContext {
   if (typeof window === 'undefined') return { entrySurface: 'direct' };
-  return readStored() ?? captureAcquisitionFromLocation();
+  const base = readStored() ?? captureAcquisitionFromLocation();
+  const submitPath =
+    opts?.submitPath?.trim() ||
+    `${window.location.pathname}${window.location.search || ''}` ||
+    undefined;
+  return {
+    ...base,
+    submitPath: submitPath || base.submitPath,
+    referrer: base.referrer || document.referrer?.trim() || undefined,
+  };
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import {
   buildEnvelopeOrThrow,
-  consultInsertFromEnvelope,
+  createConsultLead,
   LeadEnvelopeValidationError,
   parseAcquisitionFromBody,
 } from '@/app/lib/server/leadEnvelope';
@@ -201,13 +201,6 @@ export async function POST(req: NextRequest) {
 
     const tableName = process.env.PRIVATE_LEADS_TABLE?.trim() || 'consultations';
     const supabase = getServiceSupabase();
-    const insertRow = consultInsertFromEnvelope({
-      envelope,
-      parentName: name,
-      phone,
-      content: storedContent,
-      consultType: 'tutoring',
-    });
 
     const dedupeSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     const { data: existing } = await supabase
@@ -231,37 +224,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { data: inserted, error } = await supabase
-      .from(tableName)
-      .insert(insertRow)
-      .select('id')
-      .single();
+    const created = await createConsultLead(supabase, {
+      envelope,
+      parentName: name,
+      phone,
+      content: storedContent,
+      consultType: 'tutoring',
+      tableName,
+    });
 
-    if (error) {
-      // 마이그레이션 전 환경: 구조화 컬럼 없이 재시도
-      console.error('[private/leads] insert error', error);
-      const { data: fallback, error: fallbackError } = await supabase
-        .from(tableName)
-        .insert({
-          parent_name: name,
-          phone,
-          child_age: null,
-          content: storedContent,
-          consult_type: 'tutoring',
-          status: 'pending',
-        })
-        .select('id')
-        .single();
-      if (fallbackError) {
-        return NextResponse.json({ ok: false, message: 'DB 저장에 실패했습니다.' }, { status: 500 });
-      }
-      return NextResponse.json({
-        ok: true,
-        emailSent: false,
-        leadId: fallback?.id,
-        message: '접수가 저장되었습니다.',
-      });
+    if (!created.ok) {
+      return NextResponse.json({ ok: false, message: 'DB 저장에 실패했습니다.' }, { status: 500 });
     }
+
+    const inserted = { id: created.id };
 
     const webhookUrl = process.env.PRIVATE_LEADS_WEBHOOK_URL?.trim();
     if (webhookUrl) {

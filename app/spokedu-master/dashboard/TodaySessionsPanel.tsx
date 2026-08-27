@@ -109,7 +109,6 @@ export function HomeFollowUpPanel({ sessions, classes, seoulDay }: {
       <SystemDecisionBanner
         eyebrow="Follow-up"
         title="지난 수업에서 이어 할 일이 있습니다"
-        description="완료 상태와 출석을 확인하면 다음 수업 준비에 정확한 기록이 이어집니다."
         meta={`${pastDebt.count}건`}
         href={href}
         actionLabel="지난 수업 확인하기"

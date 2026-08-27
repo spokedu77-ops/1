@@ -160,7 +160,12 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
             teacher_training: teacherTraining,
             partnership_type: partnershipType,
             extra: extra.trim(),
-            acquisition: getAcquisitionContext(),
+            acquisition: getAcquisitionContext({
+              submitPath:
+                typeof window !== 'undefined'
+                  ? `${window.location.pathname}${window.location.search || ''}`
+                  : undefined,
+            }),
             cta_intent_id: ctaIntentId,
             conversion_evidence_slug: conversionEvidenceSlug ?? undefined,
           }),

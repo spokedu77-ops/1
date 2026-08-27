@@ -25,11 +25,11 @@ export function resolvePreviousSessionMemory({ currentSession, classSessions, ca
   captures: MasterClassRecordDto[];
 }) {
   const bySession = new Map(captures.filter((capture) => capture.sessionId).map((capture) => [capture.sessionId!, capture]));
-  return classSessions
+  const session = classSessions
     .filter((session) => session.classId === currentSession.classId && session.status === 'completed')
     .filter((session) => new Date(session.startAt).getTime() < new Date(currentSession.startAt).getTime())
-    .filter((session) => bySession.has(session.id))
     .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime() || b.id.localeCompare(a.id))
-    .map((session) => ({ session, capture: bySession.get(session.id)! }))
-    .find(({ capture }) => Boolean(capture.applicationIdea?.trim())) ?? null;
+    [0] ?? null;
+  if (!session) return null;
+  return { session, capture: bySession.get(session.id) ?? null };
 }

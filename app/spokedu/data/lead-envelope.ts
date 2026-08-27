@@ -10,6 +10,11 @@ export type AcquisitionContext = {
   entryId?: string;
   utmSource?: string;
   utmCampaign?: string;
+  /** 최초 유입 path (세션 고정) */
+  entryPath?: string;
+  /** 실제 제출 페이지 path */
+  submitPath?: string;
+  referrer?: string;
 };
 
 export type PrivateRouteSelection = {
@@ -104,12 +109,18 @@ export function normalizeAcquisition(raw: unknown): AcquisitionContext {
     typeof obj.entrySurface === 'string' && isAcquisitionEntrySurface(obj.entrySurface)
       ? obj.entrySurface
       : 'direct';
+  const opt = (key: string): string | undefined => {
+    const v = obj[key];
+    return typeof v === 'string' && v.trim() ? v.trim() : undefined;
+  };
   return {
     entrySurface: surface,
-    entryId: typeof obj.entryId === 'string' && obj.entryId.trim() ? obj.entryId.trim() : undefined,
-    utmSource: typeof obj.utmSource === 'string' && obj.utmSource.trim() ? obj.utmSource.trim() : undefined,
-    utmCampaign:
-      typeof obj.utmCampaign === 'string' && obj.utmCampaign.trim() ? obj.utmCampaign.trim() : undefined,
+    entryId: opt('entryId'),
+    utmSource: opt('utmSource'),
+    utmCampaign: opt('utmCampaign'),
+    entryPath: opt('entryPath'),
+    submitPath: opt('submitPath'),
+    referrer: opt('referrer'),
   };
 }
 
@@ -218,12 +229,14 @@ export function getLeadResponseChecklist(args: {
 
   if (route === 'private') {
     return {
-      title: '개인수업 첫 통화 체크리스트',
+      title: '첫 통화 체크리스트',
       items: [
-        '시작 방향·수업 형태 재확인',
-        '지역·가능 시간·방문 장소',
-        '지도자 희망(성별·종목 경험)',
-        '첫 수업 후 적합성 재점검 안내',
+        '원하는 수업 방향 확인',
+        '수업 가능 지역 확인',
+        '가능 요일 및 시간 확인',
+        '수업 장소 확인',
+        '지도자 조건 확인',
+        '첫 수업 및 적합성 안내',
       ],
     };
   }
