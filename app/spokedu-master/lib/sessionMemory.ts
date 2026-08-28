@@ -33,3 +33,9 @@ export function resolvePreviousSessionMemory({ currentSession, classSessions, ca
   if (!session) return null;
   return { session, capture: bySession.get(session.id) ?? null };
 }
+
+export function selectCurrentRosterObservations(capture: MasterClassRecordDto | null, currentRosterIds: ReadonlySet<string>) {
+  return capture?.students.filter((student) => Boolean(
+    student.studentId && currentRosterIds.has(student.studentId) && student.memo?.trim(),
+  )) ?? [];
+}

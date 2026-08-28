@@ -5,8 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import type { MasterClassRecordDto } from '../types/legacyOperational';
 import type { MasterSessionDto, MasterStudentDto } from '../types/operational';
-import { resolvePreviousSessionMemory } from '../lib/sessionMemory';
+import { resolvePreviousSessionMemory, selectCurrentRosterObservations } from '../lib/sessionMemory';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
+import { SPM_JOURNEY_EYEBROW, SPM_JOURNEY_FIELD, SPM_JOURNEY_META, SPM_JOURNEY_SURFACE } from '../lib/masterUiClasses';
 import { fetchSessionCaptures, saveSessionCapture } from '../lib/sessionCaptureClient';
 import type { SessionCaptureSurfaceMode } from './masterSessionWorkspaceModel';
 import { sessionSectionOrderClass } from './masterSessionWorkspaceModel';
@@ -53,9 +54,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
   const capture = captures.find((item) => item.sessionId === session.id) ?? null;
   const previous = resolvePreviousSessionMemory({ currentSession: session, classSessions: sessions, captures });
   const currentRosterIds = useMemo(() => new Set(classStudentIds), [classStudentIds]);
-  const previousObservations = previous?.capture?.students.filter((student) => (
-    Boolean(student.studentId && currentRosterIds.has(student.studentId) && student.memo?.trim())
-  )) ?? [];
+  const previousObservations = selectCurrentRosterObservations(previous?.capture ?? null, currentRosterIds);
   const guidanceStudents = students.filter((student) => currentRosterIds.has(student.id) && Boolean(student.guidanceNote?.trim()));
   const previousActivities = previous?.session.programs ?? [];
   const hasPreviousMemory = Boolean(
@@ -141,25 +140,21 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
 
   if (captureMode === 'memory') {
     if (!hasPreviousMemory && !loadError) return null;
+    const nextSessionNote = previous?.capture?.applicationIdea?.trim() ?? '';
     return (
-      <section data-session-capture data-capture-mode="memory" className={`${orderClass} rounded-xl border border-emerald-200 bg-emerald-50 p-3`}>
+      <section data-session-capture data-capture-mode="memory" className={`${orderClass} ${SPM_JOURNEY_SURFACE} p-4`}>
         {loadError ? <p role="status" className="text-xs font-bold text-amber-700">지난 수업 기록을 불러오지 못했습니다. 수업 준비는 계속할 수 있습니다.</p> : null}
         {hasPreviousMemory ? (
           <>
-            <p className="text-[11px] font-black text-emerald-700">지난 수업에서 이어갈 점</p>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-xs font-bold text-emerald-900">
-              <span>다음 수업 메모 {previous?.capture?.applicationIdea?.trim() ? '있음' : '없음'}</span>
-              <span>학생 관찰 {previousObservations.length}명</span>
-              <span>지도 참고 {guidanceStudents.length}명</span>
-              <span>지난 활동 {previousActivities.length}개</span>
-            </div>
-            <details className="mt-2 border-t border-emerald-200 pt-2">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center text-xs font-black text-emerald-800">상세 보기</summary>
-              <div className="space-y-2 pb-1 text-sm text-emerald-950">
-                {previous?.capture?.applicationIdea?.trim() ? <p className="whitespace-pre-wrap font-semibold">{previous.capture.applicationIdea}</p> : null}
-                {previousObservations.map((observation) => <p key={observation.id}><strong>{observation.studentName}</strong> · {observation.memo}</p>)}
-                {guidanceStudents.map((student) => <p key={student.id}><strong>{student.name}</strong> 지도 참고 · {student.guidanceNote}</p>)}
-                {previousActivities.length ? <p>지난 활동 · {previousActivities.map((activity) => activity.programTitle ?? (activity.sourceType === 'spomove' ? 'SPOMOVE' : '이름 없는 활동')).join(', ')}</p> : null}
+            <p className={SPM_JOURNEY_EYEBROW}>지난 수업에서 이어갈 점</p>
+            {nextSessionNote ? <p className="mt-2 whitespace-pre-wrap text-base font-semibold leading-6 text-slate-900">{nextSessionNote}</p> : null}
+            <p className={`mt-3 ${SPM_JOURNEY_META}`}>학생 기록 {previousObservations.length}명 · 지난 활동 {previousActivities.length}개{guidanceStudents.length ? ` · 지도 참고 ${guidanceStudents.length}명` : ''}</p>
+            <details className="mt-2 border-t border-slate-100 pt-1">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center text-xs font-medium text-slate-600">지난 수업 자세히 보기</summary>
+              <div className="space-y-4 pb-2 text-sm text-slate-700">
+                {previousObservations.length ? <div><p className="text-xs font-bold text-slate-500">학생 기록</p><div className="mt-2 space-y-2">{previousObservations.map((observation) => <p key={observation.id}><strong>{observation.studentName}</strong> · {observation.memo}</p>)}</div></div> : null}
+                {previousActivities.length ? <div><p className="text-xs font-bold text-slate-500">지난 활동</p><p className="mt-2 font-medium">{previousActivities.map((activity) => activity.programTitle ?? (activity.sourceType === 'spomove' ? 'SPOMOVE' : '이름 없는 활동')).join(', ')}</p></div> : null}
+                {guidanceStudents.length ? <div><p className="text-xs font-bold text-slate-500">지도 참고</p><div className="mt-2 space-y-2">{guidanceStudents.map((student) => <p key={student.id}><strong>{student.name}</strong> · {student.guidanceNote}</p>)}</div></div> : null}
               </div>
             </details>
           </>
@@ -172,22 +167,22 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
     return (
       <section data-session-capture data-capture-mode="emphasized" className={`${orderClass} divide-y divide-slate-200`}>
         <div className="pb-4">
-          <p className="text-xs font-bold text-emerald-700">다음 수업을 위해 뭘 남겨둘까요?</p>
-          <label className="mt-3 block text-sm font-bold text-slate-800">
+          <p className={SPM_JOURNEY_EYEBROW}>다음 수업을 위해 뭘 남겨둘까요?</p>
+          <label className="mt-3 block text-sm font-semibold text-slate-800">
             오늘 기억해둘 점 <span className="font-medium text-slate-400">· 선택</span>
-            <textarea value={memo} onChange={(event) => onMemoChange(event.target.value)} className="mt-2 min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none focus:border-emerald-400" placeholder="오늘 수업에서 기억할 만한 일이 있었나요?" maxLength={2000} />
+            <textarea value={memo} onChange={(event) => onMemoChange(event.target.value)} className={`mt-2 min-h-20 ${SPM_JOURNEY_FIELD}`} placeholder="오늘 수업에서 기억할 만한 일이 있었나요?" maxLength={2000} />
           </label>
         </div>
         {canUseRecords ? <div className="py-4">
-          <label className="block text-sm font-bold text-slate-800">
+          <label className="block text-sm font-semibold text-slate-800">
             다음 시간에 이어갈 점 <span className="font-medium text-slate-400">· 선택</span>
-            <textarea value={nextNote} onChange={(event) => { setNextNote(event.target.value); setDirty(true); }} className="mt-2 min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none focus:border-emerald-400" placeholder="다음 시간에는 공의 거리를 조금 늘려보기" maxLength={500} />
+            <textarea value={nextNote} onChange={(event) => { setNextNote(event.target.value); setDirty(true); }} className={`mt-2 min-h-20 ${SPM_JOURNEY_FIELD}`} placeholder="다음 시간에는 공의 거리를 조금 늘려보기" maxLength={500} />
           </label>
         </div> : null}
         {canUseRecords ? <details className="py-2" open={open || undefined} onToggle={(event) => setOpen(event.currentTarget.open)}>
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-sm font-bold text-slate-700"><span>학생별 기록</span><span className="text-xs font-medium text-slate-400">{Object.values(observations).filter((value) => value.trim()).length}/{roster.length}명</span></summary>
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-sm font-medium text-slate-700"><span>학생별 기록</span><span className={SPM_JOURNEY_META}>{Object.values(observations).filter((value) => value.trim()).length}/{roster.length}명</span></summary>
           <div className="space-y-3 pb-3">
-            {roster.map((student) => <label key={student.id} className="block text-sm font-bold text-slate-700">{student.name}<textarea value={observations[student.id] ?? ''} onChange={(event) => { setObservations((items) => ({ ...items, [student.id]: event.target.value })); setDirty(true); }} className="mt-1 min-h-16 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium" placeholder="짧은 관찰 기록" maxLength={1000} /></label>)}
+            {roster.map((student) => <label key={student.id} className="block text-sm font-medium text-slate-700">{student.name}<textarea value={observations[student.id] ?? ''} onChange={(event) => { setObservations((items) => ({ ...items, [student.id]: event.target.value })); setDirty(true); }} className={`mt-1 min-h-16 ${SPM_JOURNEY_FIELD}`} placeholder="짧은 관찰 기록" maxLength={1000} /></label>)}
             {!roster.length ? <p className="text-sm font-medium text-slate-400">현재 수업반 학생이 없습니다.</p> : null}
           </div>
         </details> : null}

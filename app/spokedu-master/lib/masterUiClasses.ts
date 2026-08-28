@@ -42,3 +42,14 @@ export const SPM_STATE_PANEL =
 
 export const SPM_EMPTY_PANEL =
   'rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center';
+
+/** Phase 9A: Core Journey visual roles. Keep these semantic and deliberately small. */
+export const SPM_JOURNEY_STACK = 'flex flex-col gap-6 pb-4';
+export const SPM_JOURNEY_CONTEXT = 'rounded-xl bg-slate-50 px-4 py-3';
+export const SPM_JOURNEY_SURFACE = 'rounded-xl border border-slate-200 bg-white';
+export const SPM_JOURNEY_SECTION = 'border-t border-slate-200 pt-5';
+export const SPM_JOURNEY_EYEBROW = 'text-xs font-medium text-slate-500';
+export const SPM_JOURNEY_HEADING = 'text-lg font-semibold text-slate-900';
+export const SPM_JOURNEY_META = 'text-xs font-normal text-slate-500';
+export const SPM_JOURNEY_FIELD =
+  'w-full rounded-xl border border-transparent bg-slate-50 p-3 text-sm font-normal outline-none transition focus:border-slate-300 focus:bg-white';

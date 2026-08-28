@@ -27,6 +27,14 @@ export const SPM_SECONDARY_BTN =
 export const SPM_DESTRUCTIVE_BTN =
   'inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-rose-600 text-sm font-black text-white disabled:opacity-40';
 
+/** Core Journey controls: one clear primary, restrained supporting actions. */
+export const SPM_JOURNEY_PRIMARY =
+  'spm-btn-primary inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-40';
+export const SPM_JOURNEY_SECONDARY =
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 disabled:opacity-40';
+export const SPM_JOURNEY_QUIET =
+  'inline-flex min-h-11 items-center justify-center gap-1 px-2 text-xs font-medium text-slate-500 disabled:opacity-40';
+
 export const MASTER_ACTION_COPY = {
   prepareSession: '수업 준비',
   openSession: '수업 열기',

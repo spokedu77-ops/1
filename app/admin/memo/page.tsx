@@ -7,6 +7,7 @@ import {
   Download,
   GripVertical,
   LayoutDashboard,
+  ListChecks,
   Plus,
   Printer,
   Search,
@@ -14,11 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { MemoPageRow } from '@/app/lib/admin/memo/types';
-import {
-  extractChecklistLines,
-  filterPagesByQuery,
-  toggleChecklistLine,
-} from '@/app/lib/admin/memo/memoChecklist';
+import { filterPagesByQuery, insertAtCursor } from '@/app/lib/admin/memo/memoChecklist';
 import { readRecentPageIds, rememberRecentPage } from '@/app/lib/admin/memo/memoRecent';
 
 const SAVE_DEBOUNCE_MS = 300;
@@ -113,6 +110,7 @@ function AdminMemoPageContent() {
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [draggingPageId, setDraggingPageId] = useState<string | null>(null);
+  const [editorKey, setEditorKey] = useState(0);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraft = useRef({ title: '', body: '' });
@@ -122,7 +120,7 @@ function AdminMemoPageContent() {
 
   saveStateRef.current = saveState;
 
-  const checklistItems = useMemo(() => extractChecklistLines(body), [body]);
+  const getEditorBody = useCallback(() => bodyRef.current?.value ?? body, [body]);
 
   const filteredPages = useMemo(
     () => filterPagesByQuery(pages, searchQuery),
@@ -161,6 +159,9 @@ function AdminMemoPageContent() {
       setSaveState('error');
       toast.error('오프라인 상태입니다. 연결 후 다시 저장해 주세요.');
       return;
+    }
+    if (bodyRef.current) {
+      latestDraft.current.body = bodyRef.current.value;
     }
     const draft = latestDraft.current;
     setSaveState('saving');
@@ -207,10 +208,12 @@ function AdminMemoPageContent() {
           `/api/admin/memo/pages/${encodeURIComponent(pageId)}`,
         );
         setTitle(data.page.title);
-        setBody(data.page.body ?? '');
-        latestDraft.current = { title: data.page.title, body: data.page.body ?? '' };
+        const loadedBody = data.page.body ?? '';
+        setBody(loadedBody);
+        latestDraft.current = { title: data.page.title, body: loadedBody };
         setUpdatedByName(data.page.updated_by_name ?? null);
         setRecentIds(rememberRecentPage(pageId));
+        setEditorKey((k) => k + 1);
         requestAnimationFrame(() => bodyRef.current?.focus());
       } catch (e) {
         toast.error(e instanceof Error ? e.message : '페이지를 불러오지 못했습니다.');
@@ -227,15 +230,26 @@ function AdminMemoPageContent() {
     if (selectedId) scheduleSave(selectedId);
   };
 
-  const updateBody = (value: string) => {
-    setBody(value);
-    latestDraft.current = { ...latestDraft.current, body: value };
-    if (selectedId) scheduleSave(selectedId);
+  const syncFromTextarea = (schedule = true) => {
+    const el = bodyRef.current;
+    if (!el) return;
+    latestDraft.current.body = el.value;
+    if (schedule && selectedId) scheduleSave(selectedId);
   };
 
-  const toggleChecklist = (lineIndex: number) => {
-    const next = toggleChecklistLine(body, lineIndex);
-    updateBody(next);
+  const insertChecklistLine = () => {
+    const el = bodyRef.current;
+    if (!el) return;
+    insertAtCursor(el, '- [ ] \n');
+    syncFromTextarea();
+  };
+
+  const insertSectionLine = () => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const pos = insertAtCursor(el, '## \n');
+    el.setSelectionRange(pos - 1, pos - 1);
+    syncFromTextarea();
   };
 
   useEffect(() => {
@@ -577,7 +591,7 @@ function AdminMemoPageContent() {
                         type="button"
                         className="rounded p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                         title="TXT 다운로드"
-                        onClick={() => downloadText(`${safeFilename}.txt`, `${title}\n\n${body}`)}
+                        onClick={() => downloadText(`${safeFilename}.txt`, `${title}\n\n${getEditorBody()}`)}
                       >
                         <Download className="h-4 w-4" />
                       </button>
@@ -585,7 +599,7 @@ function AdminMemoPageContent() {
                         type="button"
                         className="rounded px-2 py-2 text-xs text-slate-400 hover:bg-slate-50 hover:text-slate-700"
                         title="MD 다운로드"
-                        onClick={() => downloadText(`${safeFilename}.md`, `# ${title}\n\n${body}`)}
+                        onClick={() => downloadText(`${safeFilename}.md`, `# ${title}\n\n${getEditorBody()}`)}
                       >
                         MD
                       </button>
@@ -601,41 +615,37 @@ function AdminMemoPageContent() {
                   </div>
                 </div>
 
-                {checklistItems.length > 0 ? (
-                  <div className="memo-no-print shrink-0 border-b border-slate-100 bg-slate-50/80 px-6 py-3">
-                    <p className="mb-2 text-xs font-medium text-slate-500">
-                      체크리스트 ({checklistItems.filter((i) => i.checked).length}/{checklistItems.length})
-                    </p>
-                    <ul className="space-y-1">
-                      {checklistItems.map((item) => (
-                        <li key={item.lineIndex}>
-                          <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
-                            <input
-                              type="checkbox"
-                              className="mt-0.5 h-4 w-4 rounded border-slate-300"
-                              checked={item.checked}
-                              onChange={() => toggleChecklist(item.lineIndex)}
-                            />
-                            <span className={item.checked ? 'text-slate-400 line-through' : ''}>
-                              {item.label || '(빈 항목)'}
-                            </span>
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
+                <div className="memo-no-print flex shrink-0 items-center gap-2 border-b border-slate-100 px-6 py-2">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-600 hover:bg-slate-50"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => insertChecklistLine()}
+                  >
+                    <ListChecks className="h-3.5 w-3.5" />
+                    체크
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-600 hover:bg-slate-50"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => insertSectionLine()}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    섹션
+                  </button>
+                  <span className="text-xs text-slate-400">
+                    체크 <code className="text-slate-500">- [ ]</code> · 섹션 <code className="text-slate-500">##</code>
+                  </span>
+                </div>
 
                 <textarea
+                  key={`${selectedId}-${editorKey}`}
                   ref={bodyRef}
-                  className="min-h-0 flex-1 resize-none border-0 px-6 py-4 font-mono text-[15px] leading-relaxed text-slate-800 outline-none placeholder:text-slate-300"
-                  placeholder={`여기에 자유롭게 작성하세요.
-
-체크리스트:
-- [ ] 할 일
-- [x] 완료`}
-                  value={body}
-                  onChange={(e) => updateBody(e.target.value)}
+                  className="min-h-0 flex-1 resize-none border-0 px-6 py-4 text-[15px] leading-relaxed text-slate-800 outline-none placeholder:text-slate-300"
+                  defaultValue={body}
+                  onInput={() => syncFromTextarea()}
+                  placeholder="여기에 자유롭게 작성하세요."
                   spellCheck
                 />
 
@@ -648,12 +658,8 @@ function AdminMemoPageContent() {
                     {showShortcuts ? '단축키 숨기기' : '단축키 보기'}
                   </button>
                   {showShortcuts ? (
-                    <p className="mt-1 leading-relaxed">
-                      Ctrl+S 저장 · Ctrl+P 인쇄 · 체크는 위 패널 클릭 또는 <code>- [ ]</code> / <code>- [x]</code> 직접 편집
-                    </p>
-                  ) : (
-                    <p className="mt-1">체크: <code>- [ ]</code> / <code>- [x]</code> · 자동 저장</p>
-                  )}
+                    <p className="mt-1 leading-relaxed">Ctrl+S 저장 · Ctrl+P 인쇄</p>
+                  ) : null}
                 </div>
               </>
             )}

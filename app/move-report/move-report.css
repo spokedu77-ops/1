@@ -2908,3 +2908,90 @@ a.mr-result-share-card-link {
     font-size: clamp(14px, 3.6vw, 15px);
   }
 }
+
+/* MOVE TRACK (Phase 1) */
+.mr-track-page .mr-track-header {
+  margin-bottom: 28px;
+}
+
+.mr-track-title {
+  font-size: clamp(1.5rem, 5vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 8px 0 12px;
+}
+
+.mr-track-sub {
+  color: var(--mr-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.mr-track-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.mr-track-primary {
+  text-decoration: none;
+  justify-content: center;
+  text-align: center;
+}
+
+.mr-track-secondary {
+  text-decoration: none;
+  justify-content: center;
+  text-align: center;
+}
+
+.mr-track-program-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mr-track-program-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--mr-border);
+  border-radius: 12px;
+  background: var(--mr-card);
+  text-decoration: none;
+  color: inherit;
+}
+
+.mr-track-program-name {
+  font-weight: 700;
+}
+
+.mr-track-program-meta {
+  font-size: 0.85rem;
+  color: var(--mr-dim);
+}
+
+.mr-track-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 28px 0 8px;
+}
+
+.mr-track-foot {
+  font-size: 0.8rem;
+  color: var(--mr-dim);
+}
+
+.mr-track-link {
+  color: #ffb020;
+}
+
+.mr-track-error {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+}

@@ -103,7 +103,7 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(activity).toContain('const markAllPresent');
     expect(activity).toContain("currentRoster.map((student) => [student.id, 'present' as const])");
     expect(activity).toContain('setAttendanceDirty(true)');
-    expect(activity).toContain('미체크 {uncheckedRosterCount}명');
+    expect(activity).toContain('미확인 {uncheckedRosterCount}명');
     expect(activity).toContain('actions.markAllPresent && currentRoster.length');
     expect(activity).not.toContain('uncheckedRosterCount === 0');
   });

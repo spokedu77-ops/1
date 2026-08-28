@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MasterClassRecordDto } from '../types/legacyOperational';
 import type { MasterSessionDto } from '../types/operational';
-import { buildSessionMemoryView, resolvePreviousSessionMemory } from './sessionMemory';
+import { buildSessionMemoryView, resolvePreviousSessionMemory, selectCurrentRosterObservations } from './sessionMemory';
 
 const session = (id: string, startAt: string, status: MasterSessionDto['status'] = 'completed'): MasterSessionDto => ({
   id, classId: 'c1', className: 'A', startAt, startedAt: null, endAt: startAt, status, memo: 'session memo', completedAt: startAt,
@@ -39,5 +39,12 @@ describe('Session memory projection', () => {
     const view = buildSessionMemoryView(session('s1', '2026-08-26T08:00:00Z'), capture('s1'));
     expect(view.sessionMemo).toBe('session memo');
     expect(view.nextSessionNote).toBe('repeat');
+  });
+  it('shows previous observations only for the current Class roster', () => {
+    const previousCapture = { ...capture('s1'), students: [
+      { id: 'one', studentId: 'current', studentLegacyId: null, studentName: '현재 학생', attendance: 'pending' as const, focused: false, skills: [], memo: '이어볼 점', observationScore: null, createdAt: '', updatedAt: '' },
+      { id: 'two', studentId: 'removed', studentLegacyId: null, studentName: '제외 학생', attendance: 'pending' as const, focused: false, skills: [], memo: '노출 금지', observationScore: null, createdAt: '', updatedAt: '' },
+    ] };
+    expect(selectCurrentRosterObservations(previousCapture, new Set(['current'])).map((item) => item.studentId)).toEqual(['current']);
   });
 });
