@@ -20,10 +20,15 @@ function presentation(input: MasterSessionDto) {
   return resolveSessionWorkspacePresentation({ workState, actions: getSessionActionPolicy(input.status), programs: input.programs });
 }
 
+function teachingPresentation(input: MasterSessionDto) {
+  const workState = deriveMasterSessionWorkState(input, classItem, now);
+  return resolveSessionWorkspacePresentation({ workState, actions: getSessionActionPolicy(input.status), programs: input.programs, teachingStarted: true });
+}
+
 describe('Session workspace presentation orchestration', () => {
   it.each([
     ['needs-preparation', session(), 'PREP', 'add-activity'],
-    ['ready', session({ programs: programs(0, 3) }), 'RUN', 'run-next-activity'],
+    ['ready', session({ programs: programs(0, 3) }), 'PREP', 'start-session'],
     ['in-progress', session({ programs: programs(1, 3) }), 'RUN', 'run-next-activity'],
     ['ready-to-wrap', session({ programs: programs(3, 3) }), 'WRAP', 'wrap-session'],
     ['completed', session({ status: 'completed', programs: programs(3, 3) }), 'REVIEW', 'post-session'],
@@ -44,7 +49,7 @@ describe('Session workspace presentation orchestration', () => {
 });
 
 describe('Operating rhythm composition contract', () => {
-  it('PREP-01: memory capture, collapsed attendance, no premium upsell, activity prep primary', () => {
+  it('PREP-01: activities lead, memory is brief, and attendance stays below the start action', () => {
     const view = presentation(session());
     expect(view).toMatchObject({
       presentationKind: 'PREP',
@@ -58,15 +63,19 @@ describe('Operating rhythm composition contract', () => {
     });
     expect(view.sectionOrder.capture).toBeLessThan(view.sectionOrder.attendance);
     expect(view.sectionOrder.activities).toBeLessThan(view.sectionOrder.attendance);
+    expect(view.sectionOrder.activities).toBeLessThan(view.sectionOrder.capture);
+    expect(view.sectionOrder.primary).toBeLessThan(view.sectionOrder.attendance);
+    expect(presentation(session({ programs: programs(0, 3) })).primarySurfaceIntent).toBe('start-session');
+    expect(teachingPresentation(session({ programs: programs(0, 3) }))).toMatchObject({ presentationKind: 'RUN', primarySurfaceIntent: 'run-next-activity', nextPendingProgramId: 'p1' });
   });
 
-  it('RUN-01: activities lead, capture collapsed secondary', () => {
+  it('RUN-01: activities lead while capture and memo wait for wrap', () => {
     const view = presentation(session({ programs: programs(1, 3) }));
     expect(view).toMatchObject({
       presentationKind: 'RUN',
-      captureMode: 'collapsed',
+      captureMode: 'hidden',
       attendanceMode: 'summary',
-      memoMode: 'collapsed',
+      memoMode: 'hidden',
       showInlinePremiumUpsell: false,
       primarySurfaceIntent: 'run-next-activity',
     });

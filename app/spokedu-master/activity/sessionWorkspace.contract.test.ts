@@ -16,6 +16,9 @@ describe('Session workspace structural contract', () => {
     expect(source).toContain('workspace?.nextPendingProgramId');
     expect(source).toContain('다음 활동');
     expect(source).toContain('data-session-program={program.id}');
+    expect(source).toContain('data-session-teach');
+    expect(source).toContain('완료하고 다음으로');
+    expect(source).toContain('완료하고 수업 마무리');
   });
 
   it('keeps explicit teacher completion and exact navigation context', () => {

@@ -2,7 +2,7 @@
 
 import {
   ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Clock3,
-  FileText, Plus, RotateCcw, Save, Search, Trash2, UsersRound, Wrench, XCircle,
+  FileText, Play, Plus, RotateCcw, Save, Search, Trash2, UsersRound, Wrench, XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -99,6 +99,8 @@ function SessionSheet({
   const [scheduleEditorOpen, setScheduleEditorOpen] = useState(false);
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [recordEditorOpen, setRecordEditorOpen] = useState(false);
+  const [teachingStarted, setTeachingStarted] = useState(() => Boolean(session?.programs.some((program) => program.isCompleted)));
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
   const [nextDraft, setNextDraft] = useState(() => session ? buildNextSessionDraft(session) : null);
   const [selectedCarryoverIds, setSelectedCarryoverIds] = useState<string[]>([]);
   const selectedClass = data.classes.find((item) => item.id === classId);
@@ -126,13 +128,20 @@ function SessionSheet({
     new Date(),
   ) : null;
   const actions = getSessionActionPolicy(status);
-  const workspace = workState ? resolveSessionWorkspacePresentation({ workState, actions, programs }) : null;
+  const workspace = workState ? resolveSessionWorkspacePresentation({ workState, actions, programs, teachingStarted }) : null;
   const continuity = activeSession
     ? resolveSessionContinuity({ sourceSession: activeSession, classSessions: data.sessions, classItem: selectedClass, now: new Date() })
     : { kind: 'none' as const };
   const availableLibraryIds = new Set(
     libraryPrograms.filter((program) => !program.isPro || canUseRecords).map((program) => Number(program.id)),
   );
+  const firstPreparedProgram = programs.find((program) => !program.isCompleted) ?? null;
+  const nextPreparedProgram = firstPreparedProgram ? programs.find((program) => !program.isCompleted && program.id !== firstPreparedProgram.id) ?? null : null;
+  const firstPreparedProgramHref = activeSession && firstPreparedProgram?.sourceType === 'program' && firstPreparedProgram.programId
+    ? `/spokedu-master/library/${firstPreparedProgram.programId}?session=${encodeURIComponent(activeSession.id)}&sessionProgram=${encodeURIComponent(firstPreparedProgram.id)}&returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}&source=session`
+    : activeSession && firstPreparedProgram?.sourceType === 'spomove' && firstPreparedProgram.spomovePresetId && findOfficialSpomovePreset(firstPreparedProgram.spomovePresetId)
+      ? officialPresetSessionHref(findOfficialSpomovePreset(firstPreparedProgram.spomovePresetId)!, { entry: 'start', session: activeSession.id, sessionProgram: firstPreparedProgram.id, returnTo: buildActivitySessionHref(activeSession.id) })
+      : null;
   const unavailableCarryoverIds = new Set(programs.filter((program) => (
     program.sourceType === 'program'
       ? program.programId == null || !availableLibraryIds.has(program.programId)
@@ -167,6 +176,11 @@ function SessionSheet({
   useEffect(() => {
     if (workspace?.attendanceDefaultOpen) setAttendanceOpen(true);
   }, [workspace?.attendanceDefaultOpen, workspace?.presentationKind]);
+
+  useEffect(() => {
+    if (!teachingStarted || workspace?.presentationKind !== 'RUN') return;
+    workspaceRef.current?.parentElement?.scrollTo({ top: 0 });
+  }, [teachingStarted, workspace?.presentationKind]);
 
   // Soft provider refresh (second-tab SPOMOVE): reconcile sheet when user has no local edits.
   useEffect(() => {
@@ -461,8 +475,8 @@ function SessionSheet({
   );
 
   return (
-    <BottomSheet open title={activeSession ? '수업 상세' : '수업 추가'} onClose={requestClose}>
-      <div data-session-workspace={workspace?.presentationKind ?? 'CREATE'} data-session-phase={workspace?.phaseLabel ?? 'create'} className="flex flex-col gap-5 pb-4">
+    <BottomSheet open title={activeSession ? workspace?.presentationKind === 'PREP' ? '수업 준비' : workspace?.presentationKind === 'RUN' ? '수업 진행' : '수업 상세' : '수업 추가'} onClose={requestClose}>
+      <div ref={workspaceRef} data-session-workspace={workspace?.presentationKind ?? 'CREATE'} data-session-phase={workspace?.phaseLabel ?? 'create'} className="flex flex-col gap-5 pb-4">
         {activeSession ? <div className={`${sessionSectionOrderClass(workspace?.sectionOrder.context ?? 1)} rounded-xl p-3 ${workState?.attention.overdue ? 'border border-amber-200 bg-amber-50' : 'bg-slate-50'}`}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate text-base font-black text-slate-900" title={activeSession.className}>{activeSession.className}</h3>{workspace?.phaseLabel ? <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-black text-slate-600 ring-1 ring-slate-200">{workspace.phaseLabel}</span> : null}</div><p className="mt-1 text-xs font-bold text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(activeSession.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(activeSession.startAt)}–{formatSeoulSessionTime(activeSession.endAt)}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ring-1 ${statusTone(status)}`}>{statusLabel(status)}</span></div>{workState ? <p className={`mt-2 text-sm font-black ${workState.attention.overdue ? 'text-amber-700' : 'text-emerald-700'}`}>{workState.operationalLabel}{workState.progress.total ? ` · 진행 ${workState.progress.completed}/${workState.progress.total}` : ''}</p> : null}{workState?.attention.overdue ? <p className="mt-1 text-xs font-semibold leading-5 text-amber-700">수업 시간이 지났습니다. 실제 진행 내용을 확인한 뒤 완료 또는 취소를 선택하세요.</p> : null}</div> : null}
         {!activeSession ? <section data-session-create-schedule className="grid gap-3 sm:grid-cols-3">
           <label className="text-xs font-black text-slate-600">수업반
@@ -484,7 +498,7 @@ function SessionSheet({
           </div> : null}
         </section> : null}
 
-        {activeSession && workspace?.presentationKind !== 'RECOVERY' ? <section id="session-attendance" data-attendance-mode={workspace?.attendanceMode} className={`${sessionSectionOrderClass(workspace?.sectionOrder.attendance ?? 4)} rounded-xl border border-slate-200 bg-white p-3`}>
+        {activeSession && workspace?.presentationKind !== 'RECOVERY' && (workspace?.presentationKind !== 'RUN' || attendanceOpen) ? <section id="session-attendance" data-attendance-mode={workspace?.attendanceMode} className={`${sessionSectionOrderClass(workspace?.sectionOrder.attendance ?? 4)} rounded-xl border border-slate-200 bg-white p-3`}>
           <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-black text-slate-800">출석 <span className="text-xs text-emerald-700">{presentRosterCount} / {currentRoster.length}</span></h3>{uncheckedRosterCount ? <p className="mt-1 text-[11px] font-bold text-amber-600">미체크 {uncheckedRosterCount}명</p> : <p className="mt-1 text-[11px] font-bold text-slate-400">모두 확인됨</p>}</div><button type="button" onClick={() => setAttendanceOpen((open) => !open)} aria-expanded={attendanceOpen} className="min-h-11 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-600">{attendanceOpen ? '명단 닫기' : '출석 확인'}</button></div>
           {attendanceOpen ? <><div className="mt-2 flex justify-end">{actions.markAllPresent && currentRoster.length ? <button type="button" onClick={markAllPresent} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-700">전체 출석</button> : null}</div><div className="mt-2 grid gap-2 sm:grid-cols-2">
             {roster.map((student) => (
@@ -501,8 +515,27 @@ function SessionSheet({
           </div></> : null}
         </section> : null}
 
-        <section className={activeSession ? sessionSectionOrderClass(workspace?.sectionOrder.activities ?? 2) : ''}>
-          <div className="flex items-center justify-between"><h3 className="text-sm font-black text-slate-800">수업 구성</h3><span className="text-xs font-black text-emerald-700">진행 {completedPrograms} / 전체 {programs.length}</span></div>
+        {workspace?.presentationKind === 'RUN' && activeSession && firstPreparedProgram ? <section data-session-teach className={sessionSectionOrderClass(workspace.sectionOrder.activities)}>
+          <p className="text-xs font-bold text-emerald-700">지금 할 활동</p>
+          <div className="mt-2 rounded-2xl bg-slate-900 p-5 text-white">
+            <div className="flex items-center gap-2"><span className="rounded-full bg-emerald-400/15 px-2 py-1 text-[10px] font-bold text-emerald-300">{firstPreparedProgram.sourceType === 'spomove' ? 'SPOMOVE' : '놀이체육'}</span><span className="text-xs font-medium text-slate-400">{completedPrograms + 1}/{programs.length}</span></div>
+            <h3 className="mt-3 text-xl font-bold leading-7">{firstPreparedProgram.programTitle ?? '이름 없는 활동'}</h3>
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              {firstPreparedProgramHref ? <Link href={firstPreparedProgramHref} target={firstPreparedProgram.sourceType === 'spomove' ? '_blank' : undefined} rel={firstPreparedProgram.sourceType === 'spomove' ? 'noreferrer' : undefined} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-4 text-sm font-bold text-slate-900">{firstPreparedProgram.sourceType === 'spomove' ? 'SPOMOVE 실행' : '활동 준비 보기'}</Link> : null}
+              <button type="button" disabled={saving} onClick={() => void toggleProgram(firstPreparedProgram)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 text-sm font-bold text-slate-950 disabled:opacity-40"><Check size={18} />{nextPreparedProgram ? '완료하고 다음으로' : '완료하고 수업 마무리'}</button>
+            </div>
+          </div>
+          {nextPreparedProgram ? <div className="mt-3 flex min-h-12 items-center gap-3 px-1"><span className="text-xs font-bold text-slate-400">다음</span><span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{nextPreparedProgram.programTitle ?? '이름 없는 활동'}</span></div> : <p className="mt-3 px-1 text-sm font-medium text-slate-500">이 활동을 마치면 수업 마무리로 이어집니다.</p>}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link target="_blank" rel="noreferrer" href={`/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}&returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700"><Clock3 size={15} />타이머·수업 도구</Link>
+            <button type="button" onClick={() => { setAttendanceOpen(true); requestAnimationFrame(() => document.getElementById('session-attendance')?.scrollIntoView({ behavior: 'smooth', block: 'start' })); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700"><UsersRound size={15} />{uncheckedRosterCount ? `출석 미확인 ${uncheckedRosterCount}명` : '출석 확인됨'}</button>
+          </div>
+          <details className="mt-3 rounded-xl border border-slate-200/70 bg-white/60">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-3 text-xs font-bold text-slate-500">전체 활동 순서 <span>{completedPrograms}/{programs.length}</span></summary>
+            <ol className="space-y-2 border-t border-slate-100 p-3">{programs.map((program, index) => <li key={program.id} className="flex items-center gap-3 text-sm"><span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${program.isCompleted ? 'bg-emerald-100 text-emerald-700' : program.id === firstPreparedProgram.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'}`}>{program.isCompleted ? '✓' : index + 1}</span><span className={program.isCompleted ? 'text-slate-400 line-through' : 'font-medium text-slate-700'}>{program.programTitle ?? '이름 없는 활동'}</span></li>)}</ol>
+          </details>
+        </section> : <section className={activeSession ? sessionSectionOrderClass(workspace?.sectionOrder.activities ?? 2) : ''}>
+          <div className="flex items-end justify-between gap-3"><div><p className="text-xs font-bold text-emerald-700">오늘 뭐 하지?</p><h3 className="mt-1 text-lg font-bold text-slate-900">오늘 활동 순서</h3></div>{workspace?.presentationKind !== 'PREP' ? <span className="text-xs font-bold text-slate-500">진행 {completedPrograms}/{programs.length}</span> : null}</div>
           <div className="mt-2 space-y-2">
             {programs.map((program, index) => (
               <div key={program.id} data-session-program={program.id} className={`rounded-xl border p-2.5 ${program.id === workspace?.nextPendingProgramId ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200'} ${program.isCompleted ? 'bg-slate-50/70' : ''}`}>
@@ -510,8 +543,8 @@ function SessionSheet({
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-black text-slate-500" aria-label={`${index + 1}번째 활동`}>{index + 1}</span>
                   <button type="button" disabled={!activeSession || !actions.toggleActivityCompletion} onClick={() => void toggleProgram(program)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label={`${program.programTitle ?? '활동'} 진행 여부`}><Check size={18} /></button>
                   <span className={`min-w-0 flex-1 text-sm font-bold ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}><span className="block truncate" title={program.programTitle ?? '이름 없는 활동'}>{program.programTitle ?? '이름 없는 활동'}</span><span className="flex items-center gap-1.5">{program.sourceType === 'spomove' ? <span className="text-[10px] font-black text-blue-600">SPOMOVE</span> : <span className="text-[10px] font-black text-slate-400">놀이체육</span>}{program.id === workspace?.nextPendingProgramId ? <span className="text-[10px] font-black text-emerald-700">다음 활동</span> : null}</span></span>
-                  {program.sourceType === 'program' && program.programId && activeSession ? <Link href={`/spokedu-master/library/${program.programId}?session=${encodeURIComponent(activeSession.id)}&sessionProgram=${encodeURIComponent(program.id)}&returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}&source=session`} className={`inline-flex min-h-11 items-center rounded-lg px-3 text-[11px] font-black ${program.id === workspace?.nextPendingProgramId ? 'bg-slate-900 text-white' : 'border border-slate-200 text-slate-700'}`} aria-label={`${program.programTitle ?? '프로그램'} 활동 준비`}>활동 준비</Link> : null}
-                  {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) && activeSession ? <Link target="_blank" rel="noreferrer" href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!, { entry: 'start', session: activeSession.id, sessionProgram: program.id, returnTo: buildActivitySessionHref(activeSession.id) })} className={`inline-flex min-h-11 items-center rounded-lg px-3 text-[11px] font-black ${program.id === workspace?.nextPendingProgramId ? 'bg-blue-600 text-white' : 'border border-blue-200 text-blue-700'}`} aria-label={`${program.programTitle ?? 'SPOMOVE'} 새 탭에서 실행`}>SPOMOVE 실행</Link> : null}
+                  {program.sourceType === 'program' && program.programId && activeSession ? <Link href={`/spokedu-master/library/${program.programId}?session=${encodeURIComponent(activeSession.id)}&sessionProgram=${encodeURIComponent(program.id)}&returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}&source=session`} className={`inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-bold text-slate-700 ${workspace?.presentationKind === 'RUN' && program.id === workspace.nextPendingProgramId ? 'bg-slate-900 text-white' : 'bg-white'}`} aria-label={`${program.programTitle ?? '프로그램'} 활동 준비`}>활동 준비</Link> : null}
+                  {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) && activeSession ? <Link target="_blank" rel="noreferrer" href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!, { entry: 'start', session: activeSession.id, sessionProgram: program.id, returnTo: buildActivitySessionHref(activeSession.id) })} className={`inline-flex min-h-11 items-center rounded-lg border border-blue-200 px-3 text-[11px] font-bold text-blue-700 ${workspace?.presentationKind === 'RUN' && program.id === workspace.nextPendingProgramId ? 'bg-blue-600 text-white' : 'bg-white'}`} aria-label={`${program.programTitle ?? 'SPOMOVE'} 새 탭에서 실행`}>SPOMOVE 실행</Link> : null}
                 </div>
                 {actions.reorderActivities || actions.removeActivities ? (
                   <details className="mt-2 border-t border-slate-100 pt-1">
@@ -527,10 +560,10 @@ function SessionSheet({
                 ) : null}
               </div>
             ))}
-            {!programs.length ? <p className="rounded-xl bg-slate-50 p-4 text-center text-xs font-bold text-slate-500">아직 추가한 활동이 없습니다.</p> : null}
+            {!programs.length ? <p className="py-3 text-sm font-medium text-slate-500">오늘 할 활동을 하나 추가해 주세요.</p> : null}
           </div>
-          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!actions.addActivities || saving} className={`mt-2 h-11 w-full rounded-xl text-sm font-black disabled:opacity-40 ${!programs.length ? 'spm-btn-primary' : 'border border-slate-300 bg-white text-slate-700'}`}>+ 수업 활동 추가</button>
-        </section>
+          <button type="button" onClick={() => { setError(null); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} disabled={!actions.addActivities || saving} className="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-700 disabled:opacity-40">+ 활동 추가</button>
+        </section>}
 
         {activeSession ? (
           <SessionCapturePanel
@@ -545,7 +578,7 @@ function SessionSheet({
           />
         ) : null}
         {activeSession && workspace?.presentationKind === 'PREP' ? (
-          <div className={sessionSectionOrderClass(workspace.sectionOrder.primary)}>
+          <div className={`${sessionSectionOrderClass(workspace.sectionOrder.capture)} space-y-3`}>
             <PreviousActivityCarryover
               target={{ ...activeSession, programs }}
               availableProgramIds={availableLibraryIds}
@@ -553,6 +586,12 @@ function SessionSheet({
               onImported={setPrograms}
             />
           </div>
+        ) : null}
+        {activeSession && workspace?.presentationKind === 'PREP' ? (
+          <section data-session-primary-action className={`${sessionSectionOrderClass(workspace.sectionOrder.primary)} border-t border-slate-200 pt-4`}>
+            {firstPreparedProgramHref ? <button type="button" onClick={() => setTeachingStarted(true)} className={SPM_PRIMARY_BTN_TALL}><Play size={17} />수업 시작</button> : <button type="button" disabled className={`${SPM_PRIMARY_BTN_TALL} opacity-40`}><Play size={17} />수업 시작</button>}
+            {!firstPreparedProgramHref ? <p className="mt-2 text-center text-xs font-medium text-slate-500">활동을 추가하면 수업을 시작할 수 있습니다.</p> : null}
+          </section>
         ) : null}
         {canUseRecords && workspace?.memoMode !== 'hidden' ? (
           <section
@@ -601,7 +640,7 @@ function SessionSheet({
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-3 text-xs font-black text-slate-600">수업 관리<ChevronDown size={16} /></summary>
           <div className="grid gap-2 border-t border-slate-100 p-3 sm:grid-cols-2">
             {formDirty ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className={SPM_SECONDARY_BTN}><Save size={15} />변경사항 저장</button> : null}
-            <Link target="_blank" rel="noreferrer" href={`/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}&returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}`} className={SPM_SECONDARY_BTN}><Wrench size={15} />수업도구</Link>
+            {workspace?.presentationKind !== 'RUN' ? <Link target="_blank" rel="noreferrer" href={`/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}&returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}`} className={SPM_SECONDARY_BTN}><Wrench size={15} />수업도구</Link> : null}
             <button type="button" disabled={saving || !classId} onClick={() => setCancelConfirmOpen(true)} className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl text-xs font-bold text-rose-600 disabled:opacity-40"><XCircle size={14} />수업 취소</button>
           </div>
         </details> : null}

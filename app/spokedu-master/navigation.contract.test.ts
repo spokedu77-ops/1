@@ -29,7 +29,9 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(activity).toContain('수업 관리');
     expect(activity).toContain('LessonManagementTabs');
     expect(activity).toContain('수업 상세');
-    expect(activity).toContain('아직 추가한 활동이 없습니다');
+    expect(activity).toContain('오늘 할 활동을 하나 추가해 주세요.');
+    expect(activity).toContain('오늘 뭐 하지?');
+    expect(activity).toContain('수업 시작');
     expect(activity).toContain('deriveMasterSessionWorkState');
     expect(activity).toContain("workspace?.presentationKind === 'WRAP'");
     expect(activity).not.toContain('/spokedu-master/class-record');

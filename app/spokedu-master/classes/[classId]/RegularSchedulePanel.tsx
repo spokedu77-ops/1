@@ -3,7 +3,7 @@
 import { CalendarDays, Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BottomSheet } from '../../components/ui/BottomSheet';
-import { SPM_PRIMARY_BTN, SPM_PRIMARY_BTN_FULL, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
+import { SPM_PRIMARY_BTN_FULL, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
 import { buildScheduleOccurrencePreview, occurrenceOverlaps, type MasterScheduleCadence, type MasterScheduleRule } from '../../lib/recurringSchedule';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulToday } from '../../lib/sessionDateTime';
 import type { MasterSessionDto } from '../../types/operational';
@@ -33,9 +33,11 @@ export function RegularSchedulePanel({ classId, sessions, onCreated }: { classId
     catch (caught) { setError(caught instanceof Error ? caught.message : '정기 일정을 종료하지 못했습니다.'); } finally { setSaving(false); }
   };
   const activeRules = rules.filter((rule) => rule.active);
-  return <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-black text-slate-500">정기 수업 일정</p><h2 className="mt-1 text-lg font-black text-slate-900">{activeRules.length ? activeRules.map((rule) => `${rule.cadence === 'biweekly' ? '격주' : '매주'} ${WEEKDAYS[rule.weekday]} · ${rule.startTime}`).join(' / ') : '설정된 일정 없음'}</h2></div><button type="button" onClick={() => setOpen(true)} className={activeRules.length ? SPM_SECONDARY_BTN : SPM_PRIMARY_BTN}><Plus size={16} />정기 일정 설정</button></div>
-    <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">일정은 명시적으로 생성합니다. 개별 수업 변경·취소는 정기 일정에 영향을 주지 않습니다.</p>
+  return <details className="mt-5 rounded-xl border border-slate-200/70 bg-white/60">
+    <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-bold text-slate-600"><span>반 설정과 정기 일정</span><span className="text-xs font-medium text-slate-400">선택</span></summary>
+    <section className="border-t border-slate-100 p-4">
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold text-slate-500">정기 수업 일정</p><h2 className="mt-1 text-base font-bold text-slate-800">{activeRules.length ? activeRules.map((rule) => `${rule.cadence === 'biweekly' ? '격주' : '매주'} ${WEEKDAYS[rule.weekday]} · ${rule.startTime}`).join(' / ') : '설정된 일정 없음'}</h2></div><button type="button" onClick={() => setOpen(true)} className={SPM_SECONDARY_BTN}><Plus size={16} />정기 일정 설정</button></div>
+    <p className="mt-2 text-xs font-medium leading-5 text-slate-500">매주 같은 시간이라면 자동으로 다음 수업을 잡을 수 있습니다.</p>
     {activeRules.length ? <div className="mt-3 space-y-2">{activeRules.map((rule) => <div key={rule.id} className="flex min-h-11 items-center justify-between rounded-xl bg-slate-50 px-3"><span className="text-xs font-bold text-slate-600">이미 만든 미래 수업은 유지됩니다.</span><button type="button" disabled={saving} onClick={() => void endRule(rule.id)} className="min-h-11 px-2 text-xs font-black text-rose-600">정기 일정 종료</button></div>)}</div> : null}
     {open ? <BottomSheet open title="앞으로 4주 수업 일정 만들기" onClose={() => setOpen(false)}><div className="space-y-4 pb-3">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4"><label className="text-xs font-black text-slate-600">주기<select value={cadence} onChange={(e) => setCadence(e.target.value as MasterScheduleCadence)} className="mt-1 h-11 w-full rounded-xl border px-3"><option value="weekly">매주</option><option value="biweekly">격주</option></select></label><label className="text-xs font-black text-slate-600">요일<select value={weekday} onChange={(e) => setWeekday(Number(e.target.value))} className="mt-1 h-11 w-full rounded-xl border px-3">{WEEKDAYS.map((label, index) => <option key={label} value={index}>{label}요일</option>)}</select></label><label className="text-xs font-black text-slate-600">시작<input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1 h-11 w-full rounded-xl border px-3" /></label><label className="text-xs font-black text-slate-600">시간<select value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="mt-1 h-11 w-full rounded-xl border px-3"><option value={40}>40분</option><option value={50}>50분</option><option value={60}>60분</option><option value={90}>90분</option></select></label></div>
@@ -43,5 +45,6 @@ export function RegularSchedulePanel({ classId, sessions, onCreated }: { classId
       <div><p className="text-sm font-black text-slate-800">생성 전 확인</p><div className="mt-2 space-y-2">{rows.map((row) => <div key={row.startAt} className={`flex min-h-11 items-center justify-between rounded-xl px-3 text-sm font-bold ${row.conflict ? 'bg-amber-50 text-amber-800' : 'bg-slate-50 text-slate-700'}`}><span><CalendarDays size={14} className="mr-2 inline" />{formatSeoulSessionDay(row.day, { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(row.startAt)}</span><span className="text-xs">{row.conflict ? '기존 일정 있음 · 건너뜀' : '생성 예정'}</span></div>)}</div></div>
       {error ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={saving || !rows.some((row) => !row.conflict)} onClick={() => void create()} className={SPM_PRIMARY_BTN_FULL}>{saving ? '만드는 중…' : `앞으로 ${rows.filter((row) => !row.conflict).length}개 수업 만들기`}</button>
     </div></BottomSheet> : null}
-  </section>;
+    </section>
+  </details>;
 }

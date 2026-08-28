@@ -6,6 +6,7 @@ export type SessionWorkspacePresentationKind = 'PREP' | 'RUN' | 'WRAP' | 'ATTENT
 export type SessionWorkspaceEmphasis = 'secondary' | 'summary' | 'attention' | 'review' | 'recovery';
 export type SessionWorkspacePrimaryIntent =
   | 'add-activity'
+  | 'start-session'
   | 'run-next-activity'
   | 'wrap-session'
   | 'review-status'
@@ -58,7 +59,7 @@ const PHASE_LABEL: Record<SessionWorkspacePresentationKind, string> = {
 
 function sectionOrderFor(kind: SessionWorkspacePresentationKind): SessionWorkspaceSectionOrder {
   if (kind === 'PREP') {
-    return { context: 1, capture: 2, activities: 3, primary: 3, attendance: 4, memo: 5, manage: 7, schedule: 6 };
+    return { context: 1, activities: 2, capture: 3, primary: 4, attendance: 6, memo: 7, manage: 9, schedule: 8 };
   }
   if (kind === 'RUN') {
     return { context: 1, activities: 2, attendance: 3, primary: 4, capture: 5, memo: 6, manage: 7, schedule: 8 };
@@ -76,10 +77,12 @@ export function resolveSessionWorkspacePresentation({
   workState,
   actions,
   programs,
+  teachingStarted = false,
 }: {
   workState: MasterSessionWorkState;
   actions: SessionActionPolicy;
   programs: MasterSessionDto['programs'];
+  teachingStarted?: boolean;
 }): SessionWorkspacePresentation {
   const presentationKind: SessionWorkspacePresentationKind = workState.stage === 'cancelled'
     ? 'RECOVERY'
@@ -87,12 +90,12 @@ export function resolveSessionWorkspacePresentation({
       ? 'REVIEW'
       : workState.attention.overdue
         ? 'ATTENTION'
-        : workState.stage === 'needs-preparation'
+        : workState.stage === 'needs-preparation' || (workState.stage === 'ready' && !teachingStarted)
           ? 'PREP'
           : workState.stage === 'ready-to-wrap'
             ? 'WRAP'
             : 'RUN';
-  const nextPendingProgramId = presentationKind === 'RUN'
+  const nextPendingProgramId = presentationKind === 'RUN' || presentationKind === 'PREP'
     ? programs.find((program) => !program.isCompleted)?.id ?? null
     : null;
 
@@ -104,17 +107,17 @@ export function resolveSessionWorkspacePresentation({
         ? 'summary'
         : 'collapsed';
 
-  const captureMode: SessionCaptureSurfaceMode = presentationKind === 'RECOVERY'
+  const captureMode: SessionCaptureSurfaceMode = presentationKind === 'RECOVERY' || presentationKind === 'RUN'
     ? 'hidden'
     : presentationKind === 'PREP'
       ? 'memory'
-      : presentationKind === 'WRAP' || presentationKind === 'ATTENTION'
+        : presentationKind === 'WRAP' || presentationKind === 'ATTENTION'
         ? 'emphasized'
         : presentationKind === 'REVIEW'
           ? 'review'
           : 'collapsed';
 
-  const memoMode: SessionMemoSurfaceMode = presentationKind === 'RECOVERY' || presentationKind === 'PREP'
+  const memoMode: SessionMemoSurfaceMode = presentationKind === 'RECOVERY' || presentationKind === 'PREP' || presentationKind === 'RUN'
     ? 'hidden'
     : presentationKind === 'WRAP' || presentationKind === 'ATTENTION'
       ? 'emphasized'
@@ -147,7 +150,7 @@ export function resolveSessionWorkspacePresentation({
             ? 'summary'
             : 'secondary',
     primarySurfaceIntent: presentationKind === 'PREP'
-      ? 'add-activity'
+      ? programs.length ? 'start-session' : 'add-activity'
       : presentationKind === 'RUN'
         ? 'run-next-activity'
         : presentationKind === 'WRAP'
@@ -167,5 +170,13 @@ export function resolveSessionWorkspacePresentation({
 }
 
 export function sessionSectionOrderClass(order: number) {
-  return `order-${order}`;
+  if (order === 1) return 'order-1';
+  if (order === 2) return 'order-2';
+  if (order === 3) return 'order-3';
+  if (order === 4) return 'order-4';
+  if (order === 5) return 'order-5';
+  if (order === 6) return 'order-6';
+  if (order === 7) return 'order-7';
+  if (order === 8) return 'order-8';
+  return 'order-9';
 }

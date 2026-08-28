@@ -1388,23 +1388,46 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     const isSpecialLectureGroup = dominantSessionType(rows) === "special_lecture";
     const isPastCycle = isPastCycleGroup(rows);
     return (
-      <section key={gid} className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
+      <section
+        key={gid}
+        className={
+          isPastCycle
+            ? "border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/80"
+            : "border border-slate-100 rounded-2xl overflow-hidden bg-white"
+        }
+      >
                     <button
                       type="button"
                       onClick={() => toggleGroup(gid)}
-                      className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between"
+                      className={
+                        isPastCycle
+                          ? "w-full px-4 py-3 bg-slate-100/90 hover:bg-slate-100 flex items-center justify-between"
+                          : "w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between"
+                      }
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         {open ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
                         <span className="text-xs font-black text-slate-700 truncate">
                           사이클 {cycleNum} · {label}
                         </span>
+                        {isPastCycle ? (
+                          <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-black text-slate-600">
+                            종료
+                          </span>
+                        ) : null}
                       </div>
                       <span className="text-[11px] font-black text-slate-400">{gid.slice(0, 8)}</span>
                     </button>
 
                     {open && (
                       <div className="p-4 space-y-3">
+                        {isPastCycle ? (
+                          <p className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-[11px] font-bold leading-relaxed text-slate-600">
+                            종료된 사이클입니다. 일괄 적용·사이클 도구·연기·회차 취소는 제공하지 않으며, 아래 표에는{" "}
+                            <span className="text-slate-800">전체 회차</span>가 표시됩니다. 강사·일정·마일리지 등
+                            회차별 수정은 필요할 때만 사용하세요.
+                          </p>
+                        ) : null}
                         {!isPastCycle ? (
 <div className="border border-slate-200 rounded-2xl overflow-hidden">
                           <button
@@ -1598,11 +1621,16 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                         </div>
                         ) : null}
 
-                        <div className="text-xs font-black text-slate-700">회차 목록</div>
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <div className="text-xs font-black text-slate-700">회차 목록</div>
+                          {isPastCycle ? (
+                            <span className="text-[10px] font-bold text-slate-500">전체 회차 · 필터 미적용</span>
+                          ) : null}
+                        </div>
 
 <div
                           className={
-                            cycleMainUndecided
+                            cycleMainUndecided && !isPastCycle
                               ? "rounded-2xl border-2 border-red-500 bg-red-50/70 overflow-hidden shadow-sm shadow-red-100"
                               : "rounded-2xl border border-slate-100 overflow-hidden"
                           }
@@ -1797,7 +1825,9 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                         </span>
                                       </td>
                                       <td className="px-2 py-2 text-center">
-                                        {r.status === "cancelled" || r.status === "deleted" ? null : (
+                                        {isPastCycle ||
+                                        r.status === "cancelled" ||
+                                        r.status === "deleted" ? null : (
                                           <div className="flex flex-col items-stretch gap-1 max-w-[68px] mx-auto">
                                             {r.status === "postponed" ? (
                                               <button
@@ -2249,21 +2279,26 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                 >
                   {mergingByBundle ? "합치는 중..." : "회차 합치기"}
                 </button>
-                <select
-                  className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-black text-slate-700 min-w-[10rem]"
-                  value={roundView}
-                  onChange={(e) => setRoundView(e.target.value as RoundView)}
-                >
-                  <optgroup label="예정">
-                    <option value="active">진행·예정 (연기 제외)</option>
-                  </optgroup>
-                  <optgroup label="전체">
-                    <option value="all">모든 회차</option>
-                  </optgroup>
-                  <optgroup label="연기 및 완료">
-                    <option value="completed">연기·시간 완료</option>
-                  </optgroup>
-                </select>
+                <div className="flex flex-col items-stretch gap-0.5">
+                  <select
+                    className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-black text-slate-700 min-w-[10rem]"
+                    value={roundView}
+                    onChange={(e) => setRoundView(e.target.value as RoundView)}
+                  >
+                    <optgroup label="예정">
+                      <option value="active">진행·예정 (연기 제외)</option>
+                    </optgroup>
+                    <optgroup label="전체">
+                      <option value="all">모든 회차</option>
+                    </optgroup>
+                    <optgroup label="연기 및 완료">
+                      <option value="completed">연기·시간 완료</option>
+                    </optgroup>
+                  </select>
+                  <span className="text-[10px] font-bold text-slate-400 text-right">
+                    현재 사이클 회차 목록에만 적용
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -2295,7 +2330,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                           <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
                         )}
                         <span className="text-xs font-black text-slate-700 truncate">
-                          지난 사이클 ({pastGroupIds.length}개)
+                          지난 사이클 ({pastGroupIds.length}개) · 종료된 회차 조회
                         </span>
                       </div>
                     </button>

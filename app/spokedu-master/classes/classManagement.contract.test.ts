@@ -49,9 +49,9 @@ describe('MASTER Class and attendance management contracts', () => {
   });
 
   it('orders Class Detail by current work, context, history, memory, then schedule management', () => {
-    const currentWork = detail.indexOf('<SessionSummary label=');
+    const currentWork = detail.indexOf('<SessionSummary session=');
     const rosterTabs = detail.indexOf('role="tablist"');
-    const recentHistory = detail.indexOf('최근 완료 수업');
+    const recentHistory = detail.indexOf('지난 수업</h2>');
     const memory = detail.indexOf('<ClassMemoryPanel');
     const schedule = detail.indexOf('<RegularSchedulePanel');
     expect(currentWork).toBeGreaterThan(-1);
@@ -61,6 +61,12 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(schedule).toBeGreaterThan(memory);
     expect(detail).not.toContain('다음 운영 작업');
     expect(detail).toContain('미기록 수업 선택');
+    expect(detail).toContain('지금 해야 할 일');
+    expect(detail).toContain('지난 수업 마무리하기');
+    expect(detail).toContain('수업 준비 이어가기');
+    expect(detail).toContain('다음 수업 만들기');
+    expect(detail).toContain('아직 지난 수업이 없습니다.');
+    expect(detail).not.toContain('border border-dashed');
   });
 
   it('keeps roster mutations Class-scoped and does not soft-delete Students', () => {
