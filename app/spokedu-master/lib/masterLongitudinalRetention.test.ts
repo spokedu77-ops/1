@@ -19,6 +19,7 @@ const makeSession = (input: Partial<MasterSessionDto> & { id: string }): MasterS
   classId: 'c1',
   className: 'A반',
   startAt: '2026-08-26T07:00:00.000Z',
+  startedAt: null,
   endAt: '2026-08-26T08:00:00.000Z',
   status: 'scheduled',
   memo: null,

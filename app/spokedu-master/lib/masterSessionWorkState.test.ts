@@ -4,7 +4,7 @@ import { buildMasterWorkQueue, deriveMasterSessionWorkState } from './masterSess
 
 const classItem: MasterClassDto = { id: 'c1', name: 'A반', studentIds: ['student'], createdAt: '', updatedAt: '' };
 const makeSession = (input: Partial<MasterSessionDto> & { id: string }): MasterSessionDto => ({
-  classId: 'c1', className: 'A반', startAt: '2026-08-26T07:00:00.000Z', endAt: '2026-08-26T08:00:00.000Z',
+  classId: 'c1', className: 'A반', startAt: '2026-08-26T07:00:00.000Z', startedAt: null, endAt: '2026-08-26T08:00:00.000Z',
   status: 'scheduled', memo: null, completedAt: null, programs: [], attendance: [], createdAt: '', updatedAt: '', ...input,
 });
 const programs = (done: number, total: number) => Array.from({ length: total }, (_, index) => ({

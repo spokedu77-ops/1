@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MasterSessionDto } from '../types/operational';
 import { resolvePreviousCompletedSession, resolveSessionContinuity } from './masterSessionContinuity';
 
-const make = (id: string, startAt: string, status: MasterSessionDto['status'] = 'completed', classId = 'c1'): MasterSessionDto => ({ id, classId, className: 'A', startAt, endAt: startAt, status, memo: null, completedAt: status === 'completed' ? startAt : null, programs: [], attendance: [], createdAt: '', updatedAt: '' });
+const make = (id: string, startAt: string, status: MasterSessionDto['status'] = 'completed', classId = 'c1'): MasterSessionDto => ({ id, classId, className: 'A', startAt, startedAt: null, endAt: startAt, status, memo: null, completedAt: status === 'completed' ? startAt : null, programs: [], attendance: [], createdAt: '', updatedAt: '' });
 const now = new Date('2026-08-26T08:00:00Z');
 
 describe('Session continuity target', () => {

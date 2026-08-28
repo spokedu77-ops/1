@@ -4,7 +4,7 @@ import { buildNextSessionDateTimes, buildNextSessionDraft } from './nextSession'
 
 const source: MasterSessionDto = {
   id: 'source', classId: 'class-a', className: '양화초',
-  startAt: '2026-08-23T01:00:00.000Z', endAt: '2026-08-23T02:30:00.000Z',
+  startAt: '2026-08-23T01:00:00.000Z', startedAt: null, endAt: '2026-08-23T02:30:00.000Z',
   status: 'completed', memo: '과거 메모', completedAt: '2026-08-23T02:30:00.000Z',
   programs: [], attendance: [], createdAt: '', updatedAt: '',
 };

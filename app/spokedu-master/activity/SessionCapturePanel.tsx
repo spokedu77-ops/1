@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import type { MasterClassRecordDto } from '../types/legacyOperational';
 import type { MasterSessionDto, MasterStudentDto } from '../types/operational';
 import { resolvePreviousSessionMemory } from '../lib/sessionMemory';
@@ -11,16 +11,9 @@ import { fetchSessionCaptures, saveSessionCapture } from '../lib/sessionCaptureC
 import type { SessionCaptureSurfaceMode } from './masterSessionWorkspaceModel';
 import { sessionSectionOrderClass } from './masterSessionWorkspaceModel';
 
-export function SessionCapturePanel({
-  session,
-  sessions,
-  students,
-  classStudentIds,
-  canUseRecords,
-  captureMode,
-  showInlinePremiumUpsell,
-  order = 5,
-}: {
+export type SessionCaptureHandle = { save: () => Promise<boolean> };
+
+export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
   session: MasterSessionDto;
   sessions: MasterSessionDto[];
   students: MasterStudentDto[];
@@ -29,7 +22,20 @@ export function SessionCapturePanel({
   captureMode: SessionCaptureSurfaceMode;
   showInlinePremiumUpsell: boolean;
   order?: number;
-}) {
+  memo: string;
+  onMemoChange: (value: string) => void;
+}>(function SessionCapturePanel({
+  session,
+  sessions,
+  students,
+  classStudentIds,
+  canUseRecords,
+  captureMode,
+  showInlinePremiumUpsell,
+  order = 5,
+  memo,
+  onMemoChange,
+}, ref) {
   const searchParams = useSearchParams();
   const [captures, setCaptures] = useState<MasterClassRecordDto[]>([]);
   const [open, setOpen] = useState(() => searchParams.get('capture') === '1');
@@ -41,8 +47,8 @@ export function SessionCapturePanel({
   const [loadError, setLoadError] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const roster = useMemo(
-    () => students.filter((student) => classStudentIds.includes(student.id) || session.attendance.some((entry) => entry.studentId === student.id)),
-    [classStudentIds, session.attendance, students],
+    () => students.filter((student) => classStudentIds.includes(student.id)),
+    [classStudentIds, students],
   );
   const capture = captures.find((item) => item.sessionId === session.id) ?? null;
   const previous = resolvePreviousSessionMemory({ currentSession: session, classSessions: sessions, captures });
@@ -79,8 +85,8 @@ export function SessionCapturePanel({
   }, [needsCaptureData, captureMode, session.classId, session.id]);
 
   useEffect(() => {
-    if (captureMode === 'emphasized' && searchParams.get('capture') !== '0') {
-      setOpen(true);
+    if (captureMode === 'emphasized') {
+      setOpen(searchParams.get('capture') === '1');
     }
     if (captureMode === 'memory' || captureMode === 'collapsed') {
       if (searchParams.get('capture') !== '1') setOpen(false);
@@ -88,6 +94,7 @@ export function SessionCapturePanel({
   }, [captureMode, searchParams]);
 
   async function save() {
+    if (!dirty) return true;
     setSaving(true);
     setSaveError(false);
     try {
@@ -98,12 +105,16 @@ export function SessionCapturePanel({
       });
       setCaptures((items) => [...items.filter((item) => item.sessionId !== session.id), saved]);
       setDirty(false);
-      setOpen(false);
+      setSaving(false);
+      return true;
     } catch {
       setSaveError(true);
+      setSaving(false);
+      return false;
     }
-    setSaving(false);
   }
+
+  useImperativeHandle(ref, () => ({ save }));
 
   function toggleEditor() {
     if (open && dirty && !window.confirm('저장하지 않은 수업 기록이 있습니다. 닫을까요?')) return;
@@ -157,9 +168,37 @@ export function SessionCapturePanel({
     );
   }
 
-  const tone = captureMode === 'emphasized'
-    ? 'border-emerald-200 bg-emerald-50/40'
-    : 'border-slate-200 bg-white';
+  if (captureMode === 'emphasized') {
+    return (
+      <section data-session-capture data-capture-mode="emphasized" className={`${orderClass} divide-y divide-slate-200`}>
+        <div className="pb-4">
+          <p className="text-xs font-bold text-emerald-700">다음 수업을 위해 뭘 남겨둘까요?</p>
+          <label className="mt-3 block text-sm font-bold text-slate-800">
+            오늘 기억해둘 점 <span className="font-medium text-slate-400">· 선택</span>
+            <textarea value={memo} onChange={(event) => onMemoChange(event.target.value)} className="mt-2 min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none focus:border-emerald-400" placeholder="오늘 수업에서 기억할 만한 일이 있었나요?" maxLength={2000} />
+          </label>
+        </div>
+        {canUseRecords ? <div className="py-4">
+          <label className="block text-sm font-bold text-slate-800">
+            다음 시간에 이어갈 점 <span className="font-medium text-slate-400">· 선택</span>
+            <textarea value={nextNote} onChange={(event) => { setNextNote(event.target.value); setDirty(true); }} className="mt-2 min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium outline-none focus:border-emerald-400" placeholder="다음 시간에는 공의 거리를 조금 늘려보기" maxLength={500} />
+          </label>
+        </div> : null}
+        {canUseRecords ? <details className="py-2" open={open || undefined} onToggle={(event) => setOpen(event.currentTarget.open)}>
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-sm font-bold text-slate-700"><span>학생별 기록</span><span className="text-xs font-medium text-slate-400">{Object.values(observations).filter((value) => value.trim()).length}/{roster.length}명</span></summary>
+          <div className="space-y-3 pb-3">
+            {roster.map((student) => <label key={student.id} className="block text-sm font-bold text-slate-700">{student.name}<textarea value={observations[student.id] ?? ''} onChange={(event) => { setObservations((items) => ({ ...items, [student.id]: event.target.value })); setDirty(true); }} className="mt-1 min-h-16 w-full rounded-xl border border-slate-200 p-3 text-sm font-medium" placeholder="짧은 관찰 기록" maxLength={1000} /></label>)}
+            {!roster.length ? <p className="text-sm font-medium text-slate-400">현재 수업반 학생이 없습니다.</p> : null}
+          </div>
+        </details> : null}
+        {loadError ? <p role="status" className="py-3 text-xs font-medium text-amber-700">기존 기록을 불러오지 못했습니다. 메모 없이 마무리할 수 있습니다.</p> : null}
+        {saveError ? <p role="alert" className="py-3 text-xs font-bold text-rose-700">기록을 저장하지 못했습니다. 입력 내용은 유지됩니다.</p> : null}
+        {saving ? <p className="py-3 text-center text-xs font-medium text-slate-400">기록 저장 중…</p> : null}
+      </section>
+    );
+  }
+
+  const tone = 'border-slate-200 bg-white';
   const title = captureMode === 'review' ? '오늘 남긴 기록' : '오늘 관찰';
   const openLabel = open ? '닫기' : captureMode === 'review' ? (capture ? '보기/수정' : '기록 없음') : capture ? '기록 보기/수정' : '관찰 남기기';
 
@@ -229,4 +268,4 @@ export function SessionCapturePanel({
       ) : null}
     </section>
   );
-}
+});

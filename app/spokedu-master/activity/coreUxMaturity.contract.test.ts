@@ -18,8 +18,10 @@ describe('MASTER core operating UX contracts', () => {
     const page = read('app/spokedu-master/activity/page.tsx');
     expect(page).toContain("data-session-workspace={workspace?.presentationKind ?? 'CREATE'}");
     expect(page).toContain('data-session-create-schedule');
-    expect(page).toContain("title={activeSession ? '수업 상세' : '수업 추가'}");
-    expect(page).toContain('수업 만들기');
+    expect(page).toContain("workspace?.presentationKind === 'PREP' ? '수업 준비'");
+    expect(page).toContain(": '수업 추가'} onClose={requestClose}");
+    expect(page).toContain('MASTER_ACTION_COPY.createSession');
+    expect(page).toContain("activeSession && workspace?.presentationKind !== 'RECOVERY'");
   });
 
   it('creates a Session and its selected activities through one transaction command', () => {

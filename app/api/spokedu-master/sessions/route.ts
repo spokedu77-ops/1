@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const SESSION_SELECT = `
-  id, class_id, class_name_snapshot, start_at, end_at, status, memo, completed_at, schedule_rule_id, created_at, updated_at,
+  id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, completed_at, schedule_rule_id, created_at, updated_at,
   spokedu_master_session_programs(id, source_type, program_id, spomove_preset_id, program_title_snapshot, sort_order, is_completed),
   spokedu_master_session_attendance(id, student_id, student_name_snapshot, status)
 `;
@@ -24,6 +24,7 @@ type SessionRow = {
   class_id: string;
   class_name_snapshot: string;
   start_at: string;
+  started_at: string | null;
   end_at: string;
   status: MasterSessionStatus;
   memo: string | null;
@@ -47,6 +48,7 @@ function toSessionDto(row: SessionRow): MasterSessionDto {
     classId: row.class_id,
     className: row.class_name_snapshot,
     startAt: row.start_at,
+    startedAt: row.started_at,
     endAt: row.end_at,
     status: row.status,
     memo: row.memo,

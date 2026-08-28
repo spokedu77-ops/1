@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { nextPageOrderIndex, resolveUserDisplayNames } from '@/app/lib/admin/memo/memoDb';
-import type { MemoPageRow } from '@/app/lib/admin/memo/types';
+import { MEMO_PAGE_SELECT, type MemoPageRow } from '@/app/lib/admin/memo/types';
 
 export async function GET() {
   const auth = await requireAdmin();
@@ -11,7 +11,7 @@ export async function GET() {
     const supabase = getServiceSupabase();
     const { data, error } = await supabase
       .from('admin_memos')
-      .select('id, parent_id, title, order_index, created_by, updated_by, created_at, updated_at')
+      .select(MEMO_PAGE_SELECT)
       .order('order_index', { ascending: true });
 
     if (error) {
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         updated_by: auth.userId,
         updated_at: now,
       })
-      .select('id, parent_id, title, order_index, created_by, updated_by, created_at, updated_at')
+      .select(MEMO_PAGE_SELECT)
       .single();
 
     if (error) {

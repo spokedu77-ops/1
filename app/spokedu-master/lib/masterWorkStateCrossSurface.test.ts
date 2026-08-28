@@ -6,7 +6,7 @@ import { deriveMasterSessionWorkState } from './masterSessionWorkState';
 
 const classItem: MasterClassDto = { id: 'c', name: 'A반', studentIds: ['s'], createdAt: '', updatedAt: '' };
 const session: MasterSessionDto = {
-  id: 'session', classId: 'c', className: 'A반', startAt: '2026-08-26T07:00:00Z', endAt: '2026-08-26T08:00:00Z',
+  id: 'session', classId: 'c', className: 'A반', startAt: '2026-08-26T07:00:00Z', startedAt: null, endAt: '2026-08-26T08:00:00Z',
   status: 'scheduled', memo: null, completedAt: null, attendance: [], createdAt: '', updatedAt: '',
   programs: [
     { id: 'one', sourceType: 'spomove', programId: null, spomovePresetId: 'preset', programTitle: 'SPOMOVE', sortOrder: 0, isCompleted: true },

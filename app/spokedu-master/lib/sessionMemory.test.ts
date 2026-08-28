@@ -4,7 +4,7 @@ import type { MasterSessionDto } from '../types/operational';
 import { buildSessionMemoryView, resolvePreviousSessionMemory } from './sessionMemory';
 
 const session = (id: string, startAt: string, status: MasterSessionDto['status'] = 'completed'): MasterSessionDto => ({
-  id, classId: 'c1', className: 'A', startAt, endAt: startAt, status, memo: 'session memo', completedAt: startAt,
+  id, classId: 'c1', className: 'A', startAt, startedAt: null, endAt: startAt, status, memo: 'session memo', completedAt: startAt,
   programs: [], attendance: [], createdAt: '', updatedAt: '',
 });
 const capture = (sessionId: string, note = 'repeat'): MasterClassRecordDto => ({

@@ -33,6 +33,7 @@ export type MasterSessionDto = {
   classId: string;
   className: string;
   startAt: string;
+  startedAt: string | null;
   endAt: string;
   status: MasterSessionStatus;
   memo: string | null;

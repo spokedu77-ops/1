@@ -27,7 +27,7 @@ import { changeSessionEnd, changeSessionStart, createSessionTimeDraft, sessionTi
 import { getMonthKey } from './monthCalendar';
 import { getMasterRequestErrorMessage } from '../lib/masterRequestError';
 import { resolveSessionWorkspacePresentation, sessionSectionOrderClass } from './masterSessionWorkspaceModel';
-import { SessionCapturePanel } from './SessionCapturePanel';
+import { SessionCapturePanel, type SessionCaptureHandle } from './SessionCapturePanel';
 import { resolveSessionContinuity } from './masterSessionContinuity';
 import { NextSessionPlanner } from './NextSessionPlanner';
 import { PreviousActivityCarryover } from './PreviousActivityCarryover';
@@ -99,8 +99,8 @@ function SessionSheet({
   const [scheduleEditorOpen, setScheduleEditorOpen] = useState(false);
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [recordEditorOpen, setRecordEditorOpen] = useState(false);
-  const [teachingStarted, setTeachingStarted] = useState(() => Boolean(session?.programs.some((program) => program.isCompleted)));
   const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const captureRef = useRef<SessionCaptureHandle | null>(null);
   const [nextDraft, setNextDraft] = useState(() => session ? buildNextSessionDraft(session) : null);
   const [selectedCarryoverIds, setSelectedCarryoverIds] = useState<string[]>([]);
   const selectedClass = data.classes.find((item) => item.id === classId);
@@ -128,7 +128,7 @@ function SessionSheet({
     new Date(),
   ) : null;
   const actions = getSessionActionPolicy(status);
-  const workspace = workState ? resolveSessionWorkspacePresentation({ workState, actions, programs, teachingStarted }) : null;
+  const workspace = workState ? resolveSessionWorkspacePresentation({ workState, actions, programs, startedAt: activeSession?.startedAt ?? null }) : null;
   const continuity = activeSession
     ? resolveSessionContinuity({ sourceSession: activeSession, classSessions: data.sessions, classItem: selectedClass, now: new Date() })
     : { kind: 'none' as const };
@@ -178,9 +178,23 @@ function SessionSheet({
   }, [workspace?.attendanceDefaultOpen, workspace?.presentationKind]);
 
   useEffect(() => {
-    if (!teachingStarted || workspace?.presentationKind !== 'RUN') return;
+    if (workspace?.presentationKind !== 'RUN') return;
     workspaceRef.current?.parentElement?.scrollTo({ top: 0 });
-  }, [teachingStarted, workspace?.presentationKind]);
+  }, [workspace?.presentationKind]);
+
+  const startTeaching = async () => {
+    if (!activeSession || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const started = await data.startSession(activeSession.id);
+      setActiveSession(started);
+    } catch (caught) {
+      setError(sessionMutationError(caught, '수업을 시작하지 못했습니다. 다시 시도해 주세요.'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Soft provider refresh (second-tab SPOMOVE): reconcile sheet when user has no local edits.
   useEffect(() => {
@@ -213,14 +227,6 @@ function SessionSheet({
       ...Object.fromEntries(currentRoster.map((student) => [student.id, 'present' as const])),
     }));
     setAttendanceDirty(true);
-  };
-
-  const openNextPlanner = () => {
-    if (!activeSession) return;
-    setError(null);
-    setNextDraft(buildNextSessionDraft(activeSession));
-    setSelectedCarryoverIds(programs.filter((program) => !unavailableCarryoverIds.has(program.id)).map((program) => program.id));
-    setNextSessionOpen(true);
   };
 
   const createNextSession = async () => {
@@ -382,6 +388,8 @@ function SessionSheet({
       let saved: MasterSessionDto;
 
       if (activeSession && status === 'scheduled' && nextStatus === 'completed') {
+        const captureSaved = await captureRef.current?.save() ?? true;
+        if (!captureSaved) throw new Error('수업 기록을 저장하지 못했습니다.');
         saved = await data.completeSession(activeSession.id, sessionInput('completed'), attendanceInput());
       } else {
         if (activeSession && status === 'completed' && attendanceDirty) {
@@ -475,7 +483,7 @@ function SessionSheet({
   );
 
   return (
-    <BottomSheet open title={activeSession ? workspace?.presentationKind === 'PREP' ? '수업 준비' : workspace?.presentationKind === 'RUN' ? '수업 진행' : '수업 상세' : '수업 추가'} onClose={requestClose}>
+    <BottomSheet open title={activeSession ? workspace?.presentationKind === 'PREP' ? '수업 준비' : workspace?.presentationKind === 'RUN' ? '수업 진행' : workspace?.presentationKind === 'WRAP' || workspace?.presentationKind === 'ATTENTION' ? '수업 마무리' : '수업 상세' : '수업 추가'} onClose={requestClose}>
       <div ref={workspaceRef} data-session-workspace={workspace?.presentationKind ?? 'CREATE'} data-session-phase={workspace?.phaseLabel ?? 'create'} className="flex flex-col gap-5 pb-4">
         {activeSession ? <div className={`${sessionSectionOrderClass(workspace?.sectionOrder.context ?? 1)} rounded-xl p-3 ${workState?.attention.overdue ? 'border border-amber-200 bg-amber-50' : 'bg-slate-50'}`}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate text-base font-black text-slate-900" title={activeSession.className}>{activeSession.className}</h3>{workspace?.phaseLabel ? <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-black text-slate-600 ring-1 ring-slate-200">{workspace.phaseLabel}</span> : null}</div><p className="mt-1 text-xs font-bold text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(activeSession.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(activeSession.startAt)}–{formatSeoulSessionTime(activeSession.endAt)}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ring-1 ${statusTone(status)}`}>{statusLabel(status)}</span></div>{workState ? <p className={`mt-2 text-sm font-black ${workState.attention.overdue ? 'text-amber-700' : 'text-emerald-700'}`}>{workState.operationalLabel}{workState.progress.total ? ` · 진행 ${workState.progress.completed}/${workState.progress.total}` : ''}</p> : null}{workState?.attention.overdue ? <p className="mt-1 text-xs font-semibold leading-5 text-amber-700">수업 시간이 지났습니다. 실제 진행 내용을 확인한 뒤 완료 또는 취소를 선택하세요.</p> : null}</div> : null}
         {!activeSession ? <section data-session-create-schedule className="grid gap-3 sm:grid-cols-3">
@@ -567,6 +575,7 @@ function SessionSheet({
 
         {activeSession ? (
           <SessionCapturePanel
+            ref={captureRef}
             session={activeSession}
             sessions={data.sessions}
             students={data.students}
@@ -575,6 +584,8 @@ function SessionSheet({
             captureMode={workspace?.captureMode ?? 'collapsed'}
             showInlinePremiumUpsell={Boolean(workspace?.showInlinePremiumUpsell)}
             order={workspace?.sectionOrder.capture ?? 5}
+            memo={memo}
+            onMemoChange={setMemo}
           />
         ) : null}
         {activeSession && workspace?.presentationKind === 'PREP' ? (
@@ -589,7 +600,7 @@ function SessionSheet({
         ) : null}
         {activeSession && workspace?.presentationKind === 'PREP' ? (
           <section data-session-primary-action className={`${sessionSectionOrderClass(workspace.sectionOrder.primary)} border-t border-slate-200 pt-4`}>
-            {firstPreparedProgramHref ? <button type="button" onClick={() => setTeachingStarted(true)} className={SPM_PRIMARY_BTN_TALL}><Play size={17} />수업 시작</button> : <button type="button" disabled className={`${SPM_PRIMARY_BTN_TALL} opacity-40`}><Play size={17} />수업 시작</button>}
+            {firstPreparedProgramHref ? <button type="button" disabled={saving} onClick={() => void startTeaching()} className={SPM_PRIMARY_BTN_TALL}><Play size={17} />{saving ? '시작하는 중…' : '수업 시작'}</button> : <button type="button" disabled className={`${SPM_PRIMARY_BTN_TALL} opacity-40`}><Play size={17} />수업 시작</button>}
             {!firstPreparedProgramHref ? <p className="mt-2 text-center text-xs font-medium text-slate-500">활동을 추가하면 수업을 시작할 수 있습니다.</p> : null}
           </section>
         ) : null}
@@ -630,10 +641,9 @@ function SessionSheet({
         {error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
         {!activeSession ? <div><p className="mb-2 text-center text-[11px] font-semibold text-slate-400">활동은 나중에도 추가할 수 있습니다.</p><button type="button" disabled={saving || !classId} onClick={() => void persist()} className={SPM_PRIMARY_BTN_TALL}><Save size={15} />{MASTER_ACTION_COPY.createSession}</button></div> : null}
 
-        {activeSession && (workspace?.presentationKind === 'WRAP' || workspace?.presentationKind === 'ATTENTION') ? <section data-session-primary-action className={`${sessionSectionOrderClass(workspace.sectionOrder.primary)} rounded-xl p-3 ${workspace.presentationKind === 'ATTENTION' ? 'border border-amber-200 bg-amber-50' : 'bg-emerald-50'}`}>
-          <p className={`text-sm font-black ${workspace.presentationKind === 'ATTENTION' ? 'text-amber-900' : 'text-emerald-800'}`}>{workspace.presentationKind === 'ATTENTION' ? '실제 수업 상태를 확인해 주세요.' : '모든 활동을 진행했습니다.'}</p>
-          <p className={`mt-1 text-xs font-semibold ${workspace.presentationKind === 'ATTENTION' ? 'text-amber-700' : 'text-emerald-700'}`}>활동 {completedPrograms}/{programs.length} · 출석 {presentRosterCount}명 확인{uncheckedRosterCount ? ` · 미확인 ${uncheckedRosterCount}명` : ''} · 메모 {memo.trim() ? '작성됨' : '없음'}</p>
-          <button type="button" disabled={saving || !classId} onClick={() => void persist('completed')} className={`mt-3 ${SPM_PRIMARY_BTN_TALL}`}><CheckCircle2 size={16} />수업 마무리</button>
+        {activeSession && (workspace?.presentationKind === 'WRAP' || workspace?.presentationKind === 'ATTENTION') ? <section data-session-primary-action className={`${sessionSectionOrderClass(workspace.sectionOrder.primary)} border-t border-slate-200 pt-4`}>
+          <p className="text-center text-xs font-medium text-slate-500">특이사항이 없다면 기록 없이 바로 마무리해도 됩니다.</p>
+          <button type="button" disabled={saving || !classId} onClick={() => void persist('completed')} className={`mt-3 ${SPM_PRIMARY_BTN_TALL}`}><CheckCircle2 size={16} />수업 마무리 완료</button>
         </section> : null}
 
         {activeSession && status === 'scheduled' ? <details className={`${sessionSectionOrderClass(workspace?.sectionOrder.manage ?? 7)} rounded-xl border border-slate-200 bg-white`}>
@@ -648,7 +658,7 @@ function SessionSheet({
         {activeSession && status === 'completed' ? <section data-session-review-actions className={`${sessionSectionOrderClass(workspace?.sectionOrder.primary ?? 3)} grid gap-2`}>
           {workState?.attention.attendanceMissing ? <button type="button" onClick={() => { setAttendanceOpen(true); requestAnimationFrame(() => document.getElementById('session-attendance')?.scrollIntoView({ behavior: 'smooth', block: 'start' })); }} className={SPM_PRIMARY_BTN_TALL}><UsersRound size={17} />{MASTER_ACTION_COPY.recordAttendance}</button>
             : continuity.kind === 'existing-upcoming' || continuity.kind === 'existing-unresolved' || continuity.kind === 'historical-next' ? <><p className="text-center text-xs font-semibold leading-5 text-slate-500">다음 수업 · {formatSeoulSessionDay(getSeoulSessionDay(continuity.targetSession.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} {formatSeoulSessionTime(continuity.targetSession.startAt)}</p><Link href={buildActivitySessionHref(continuity.targetSession.id)} className={SPM_PRIMARY_BTN_TALL}><CalendarDays size={17} />{continuity.kind === 'existing-unresolved' ? '수업 상태 확인' : continuity.kind === 'historical-next' ? '다음 수업 보기' : '다음 수업 준비'}</Link></>
-              : <><p className="text-center text-xs font-semibold leading-5 text-slate-500">지난 기록을 참고하고 이어갈 활동을 직접 선택합니다.</p><button type="button" disabled={saving} onClick={openNextPlanner} className={SPM_PRIMARY_BTN_TALL}><CalendarDays size={17} />다음 수업 만들기</button></>}
+              : <Link href={`/spokedu-master/classes/${encodeURIComponent(activeSession.classId)}`} className={SPM_PRIMARY_BTN_TALL}><UsersRound size={17} />수업반으로 돌아가기</Link>}
           {canUseRecords ? <Link href={`/spokedu-master/report?session=${encodeURIComponent(activeSession.id)}`} className={SPM_SECONDARY_BTN}><FileText size={15} />수업 안내문 보기</Link> : null}
           {formDirty ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className={SPM_SECONDARY_BTN}><Save size={15} />변경사항 저장</button> : null}
         </section> : null}

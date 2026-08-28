@@ -13,6 +13,7 @@ const nowOnDay = new Date('2026-08-23T01:30:00.000Z');
 function session(id: string, startAt: string, overrides: Partial<MasterSessionDto> = {}): MasterSessionDto {
   return {
     id, classId: classItem.id, className: classItem.name, startAt,
+    startedAt: null,
     endAt: new Date(new Date(startAt).getTime() + 3_600_000).toISOString(),
     status: 'scheduled', memo: null, completedAt: null, programs: [], attendance: [], createdAt: '', updatedAt: '',
     ...overrides,

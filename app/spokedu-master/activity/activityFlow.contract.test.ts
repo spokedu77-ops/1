@@ -20,7 +20,7 @@ describe('activity Session flow', () => {
   it('keeps Session and program completion independent', () => {
     expect(source).toContain('data.updateSessionProgram');
     expect(source).toContain("void persist('completed')");
-    expect(source).toContain('아직 추가한 활동이 없습니다');
+    expect(source).toContain('오늘 할 활동을 하나 추가해 주세요.');
   });
 
   it('preserves exact Session context for activity preparation and SPOMOVE execution', () => {
@@ -32,6 +32,8 @@ describe('activity Session flow', () => {
 
   it('commits final fields, attendance, and completion through one command', () => {
     expect(source).toContain("data.completeSession(activeSession.id, sessionInput('completed'), attendanceInput())");
+    expect(source).toContain('const captureSaved = await captureRef.current?.save() ?? true');
+    expect(source).toContain("if (!captureSaved) throw new Error('수업 기록을 저장하지 못했습니다.')");
     expect(source).not.toContain('await data.saveSessionAttendance(prepared.id');
   });
 

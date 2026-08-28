@@ -26,6 +26,10 @@ describe('Session workspace structural contract', () => {
     expect(source).toContain('sessionProgram=${encodeURIComponent(program.id)}');
     expect(source).toContain('returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}');
     expect(source).toContain('target="_blank" rel="noreferrer"');
+    expect(source).toContain('await captureRef.current?.save()');
+    expect(source).toContain('수업 마무리 완료');
+    expect(capture).not.toContain("classStudentIds.includes(student.id) || session.attendance.some");
+    expect(capture).toContain('다음 시간에 이어갈 점');
   });
 
   it('only renders the wrap primary surface for WRAP or ATTENTION', () => {
@@ -34,12 +38,12 @@ describe('Session workspace structural contract', () => {
     expect(source).not.toContain("workState?.stage === 'ready-to-wrap' || workState?.attention.overdue ? '수업 마무리' : MASTER_ACTION_COPY.completeSession");
   });
 
-  it('uses the continuity target before offering timeline-end creation', () => {
+  it('uses the continuity target and otherwise returns to the Class', () => {
     expect(source).toContain('resolveSessionContinuity');
     expect(source).toContain("continuity.kind === 'existing-upcoming'");
     expect(source).toContain('다음 수업 준비');
     expect(source).toContain('다음 수업 보기');
-    expect(source).toContain('openNextPlanner');
+    expect(source).toContain('수업반으로 돌아가기');
   });
 
   it('drives section order and capture from workspace composition', () => {

@@ -1,8 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { wouldCreatePageCycle } from '@/app/lib/admin/memo/memoDb';
+import { wouldCreatePageCycle, resolveUserDisplayNames } from '@/app/lib/admin/memo/memoDb';
+import { MEMO_PAGE_SELECT } from '@/app/lib/admin/memo/types';
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+export async function GET(_req: NextRequest, context: RouteContext) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
+  try {
+    const { id } = await context.params;
+    const supabase = getServiceSupabase();
+    const { data, error } = await supabase
+      .from('admin_memos')
+      .select(MEMO_PAGE_SELECT)
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    }
+    if (!data) {
+      return NextResponse.json({ ok: false, error: '페이지를 찾을 수 없습니다.' }, { status: 404 });
+    }
+
+    let updated_by_name: string | null = null;
+    if (data.updated_by) {
+      const nameMap = await resolveUserDisplayNames(supabase, [data.updated_by]);
+      updated_by_name = nameMap.get(data.updated_by) ?? null;
+    }
+
+    return NextResponse.json({ ok: true, page: { ...data, updated_by_name } });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Internal Server Error';
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+  }
+}
 
 export async function PATCH(req: NextRequest, context: RouteContext) {
   const auth = await requireAdmin();
@@ -12,6 +46,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     const body = (await req.json().catch(() => null)) as {
       title?: unknown;
+      body?: unknown;
       parentId?: unknown;
     } | null;
 
@@ -22,6 +57,10 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
 
     if (typeof body?.title === 'string') {
       updates.title = body.title;
+    }
+
+    if (typeof body?.body === 'string') {
+      updates.body = body.body;
     }
 
     if (body && 'parentId' in body) {
@@ -37,7 +76,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       updates.parent_id = parentId;
     }
 
-    if (!('title' in updates) && !('parent_id' in updates)) {
+    if (!('title' in updates) && !('body' in updates) && !('parent_id' in updates)) {
       return NextResponse.json({ ok: false, error: '수정할 필드가 없습니다.' }, { status: 400 });
     }
 
@@ -46,7 +85,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       .from('admin_memos')
       .update(updates)
       .eq('id', id)
-      .select('id, parent_id, title, order_index, created_by, updated_by, created_at, updated_at')
+      .select(MEMO_PAGE_SELECT)
       .maybeSingle();
 
     if (error) {

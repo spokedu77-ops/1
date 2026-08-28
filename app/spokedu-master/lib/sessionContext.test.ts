@@ -8,6 +8,7 @@ function session(id: string, classId: string, status: MasterSessionDto['status']
     classId,
     className: classId,
     startAt: '2026-08-24T01:00:00.000Z',
+    startedAt: null,
     endAt: '2026-08-24T02:00:00.000Z',
     status,
     memo: null,

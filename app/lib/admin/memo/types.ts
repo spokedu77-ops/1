@@ -1,9 +1,8 @@
-export type MemoBlockType = 'text' | 'checklist' | 'toggle';
-
 export type MemoPageRow = {
   id: string;
   parent_id: string | null;
   title: string;
+  body: string;
   order_index: number;
   created_by: string | null;
   updated_by: string | null;
@@ -12,17 +11,7 @@ export type MemoPageRow = {
   updated_by_name?: string | null;
 };
 
-export type MemoBlockRow = {
-  id: string;
-  memo_id: string;
-  parent_block_id: string | null;
-  type: MemoBlockType;
-  content: string;
-  checked: boolean;
-  collapsed: boolean;
-  order_index: number;
-  created_by: string | null;
-  updated_by: string | null;
-  created_at: string;
-  updated_at: string;
-};
+const PAGE_SELECT =
+  'id, parent_id, title, body, order_index, created_by, updated_by, created_at, updated_at';
+
+export const MEMO_PAGE_SELECT = PAGE_SELECT;

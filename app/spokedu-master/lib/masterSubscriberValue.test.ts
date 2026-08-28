@@ -121,6 +121,7 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
       classId: 'class-a',
       className: 'A반',
       startAt: '2026-08-19T01:00:00.000Z',
+      startedAt: null,
       endAt: '2026-08-19T02:00:00.000Z',
       status: 'completed',
       memo: 'keep local',
@@ -148,7 +149,8 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
     expect(payment).toContain('buildMasterGateDisplayModel');
     expect(payment).toContain('gateDisplay');
     expect(activity).toContain('다음 수업 만들기');
-    expect(activity).toContain('지난 기록을 참고하고 이어갈 활동을 직접 선택합니다.');
+    expect(activity).toContain('<PreviousActivityCarryover');
+    expect(activity).toContain('sourceSessionProgramIds: selectedCarryoverIds');
     expect(activity).not.toContain('Premium modal');
     expect(home).not.toContain('Premium 업그레이드');
     expect(home).not.toContain('프리미엄 배너');

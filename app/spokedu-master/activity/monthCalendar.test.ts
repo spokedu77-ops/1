@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MasterSessionDto } from '../types/operational';
 import { buildMonthCalendar, moveMonth } from './monthCalendar';
 
-const session = (id: string, startAt: string): MasterSessionDto => ({ id, classId: 'c', className: 'A반', startAt, endAt: startAt, status: 'scheduled', memo: null, completedAt: null, programs: [], attendance: [], createdAt: '', updatedAt: '' });
+const session = (id: string, startAt: string): MasterSessionDto => ({ id, classId: 'c', className: 'A반', startAt, startedAt: null, endAt: startAt, status: 'scheduled', memo: null, completedAt: null, programs: [], attendance: [], createdAt: '', updatedAt: '' });
 
 describe('month Session calendar', () => {
   it('builds a Monday-first six-week grid', () => {

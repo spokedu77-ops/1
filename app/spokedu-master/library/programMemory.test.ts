@@ -8,6 +8,7 @@ const session = (id: string, startAt: string, programId: number, memo = '일반 
   classId: 'class-1',
   className: '초등반',
   startAt,
+  startedAt: null,
   endAt: startAt,
   status: 'completed',
   memo,

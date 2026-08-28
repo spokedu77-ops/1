@@ -12,17 +12,17 @@ const programs = (done: number, total: number): MasterSessionDto['programs'] => 
 }));
 const session = (overrides: Partial<MasterSessionDto> = {}): MasterSessionDto => ({
   id: 's1', classId: 'c1', className: 'A반', startAt: '2026-08-26T07:00:00.000Z', endAt: '2026-08-26T08:00:00.000Z',
-  status: 'scheduled', memo: null, completedAt: null, programs: [], attendance: [], createdAt: '', updatedAt: '', ...overrides,
+  startedAt: null, status: 'scheduled', memo: null, completedAt: null, programs: [], attendance: [], createdAt: '', updatedAt: '', ...overrides,
 });
 
 function presentation(input: MasterSessionDto) {
   const workState = deriveMasterSessionWorkState(input, classItem, now);
-  return resolveSessionWorkspacePresentation({ workState, actions: getSessionActionPolicy(input.status), programs: input.programs });
+  return resolveSessionWorkspacePresentation({ workState, actions: getSessionActionPolicy(input.status), programs: input.programs, startedAt: input.startedAt });
 }
 
 function teachingPresentation(input: MasterSessionDto) {
   const workState = deriveMasterSessionWorkState(input, classItem, now);
-  return resolveSessionWorkspacePresentation({ workState, actions: getSessionActionPolicy(input.status), programs: input.programs, teachingStarted: true });
+  return resolveSessionWorkspacePresentation({ workState, actions: getSessionActionPolicy(input.status), programs: input.programs, startedAt: '2026-08-26T07:05:00.000Z' });
 }
 
 describe('Session workspace presentation orchestration', () => {
@@ -33,9 +33,13 @@ describe('Session workspace presentation orchestration', () => {
     ['ready-to-wrap', session({ programs: programs(3, 3) }), 'WRAP', 'wrap-session'],
     ['completed', session({ status: 'completed', programs: programs(3, 3) }), 'REVIEW', 'post-session'],
     ['cancelled', session({ status: 'cancelled' }), 'RECOVERY', 'recover-session'],
-    ['overdue', session({ startAt: '2026-08-20T07:00:00.000Z', endAt: '2026-08-20T08:00:00.000Z', programs: programs(1, 3) }), 'ATTENTION', 'review-status'],
+    ['overdue with explicit activity completion', session({ startAt: '2026-08-20T07:00:00.000Z', endAt: '2026-08-20T08:00:00.000Z', programs: programs(1, 3) }), 'RUN', 'run-next-activity'],
   ] as const)('%s maps to %s', (_label, input, kind, intent) => {
     expect(presentation(input)).toMatchObject({ presentationKind: kind, primarySurfaceIntent: intent, showScheduleEditor: false });
+  });
+
+  it('does not infer TEACH from schedule time alone', () => {
+    expect(presentation(session({ startAt: '2026-08-20T07:00:00.000Z', endAt: '2026-08-20T08:00:00.000Z', programs: programs(0, 2) }))).toMatchObject({ presentationKind: 'PREP' });
   });
 
   it('selects the first incomplete ordered activity deterministically', () => {
@@ -89,8 +93,8 @@ describe('Operating rhythm composition contract', () => {
       presentationKind: 'WRAP',
       captureMode: 'emphasized',
       attendanceMode: 'attention',
-      attendanceDefaultOpen: true,
-      memoMode: 'emphasized',
+      attendanceDefaultOpen: false,
+      memoMode: 'hidden',
       showInlinePremiumUpsell: true,
       primarySurfaceIntent: 'wrap-session',
     });

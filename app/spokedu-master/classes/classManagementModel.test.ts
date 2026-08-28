@@ -21,7 +21,7 @@ const students: MasterStudentDto[] = [
   { id: 'student-current', legacyId: null, name: '현재 학생', meta: '초2', createdAt: '', updatedAt: '' },
 ];
 function session(id: string, classId: string, status: MasterSessionDto['status'], startAt: string, attendance: MasterSessionDto['attendance'] = []): MasterSessionDto {
-  return { id, classId, className: 'snapshot', startAt, endAt: new Date(new Date(startAt).getTime() + 3600000).toISOString(), status, memo: null, completedAt: status === 'completed' ? startAt : null, programs: [], attendance, createdAt: '', updatedAt: '' };
+  return { id, classId, className: 'snapshot', startAt, startedAt: null, endAt: new Date(new Date(startAt).getTime() + 3600000).toISOString(), status, memo: null, completedAt: status === 'completed' ? startAt : null, programs: [], attendance, createdAt: '', updatedAt: '' };
 }
 const sessions = [
   session('a-old', 'class-a', 'completed', '2026-08-01T01:00:00Z', [
