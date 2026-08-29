@@ -28,16 +28,13 @@ describe('VALUE / Connected Memory continuity', () => {
     expect(activity).toContain('buildNextSessionDraft');
   });
 
-  it('VALUE-01: Home keeps Today above value evidence and renders evidence as quiet secondary', () => {
-    const todayIdx = dashboard.indexOf('<TodaySessionsPanel');
+  it('VALUE-01: Home keeps one continuity action alongside Weekly curation', () => {
+    const continuityIdx = dashboard.indexOf('<HomeContinuityPanel');
     const featuredIdx = dashboard.indexOf('data-dashboard-section="featured-flow"');
-    const evidenceIdx = dashboard.indexOf('surface="home"');
-    const opsIdx = dashboard.indexOf('data-dashboard-section="operations-flow"');
-    expect(todayIdx).toBeGreaterThan(-1);
-    expect(featuredIdx).toBeGreaterThan(todayIdx);
-    expect(evidenceIdx).toBeGreaterThan(featuredIdx);
-    expect(opsIdx).toBeGreaterThan(evidenceIdx);
-    expect(dashboard).toContain('activation="none"');
+    expect(continuityIdx).toBeGreaterThan(-1);
+    expect(featuredIdx).toBeGreaterThan(-1);
+    expect(dashboard).not.toContain('data-dashboard-section="operations-flow"');
+    expect(dashboard).not.toContain('surface="home"');
     expect(panel).toContain("surface === 'home'");
     expect(panel).toContain('구독에서 운영 환경 확인');
   });

@@ -1,31 +1,48 @@
-'use client';
-
-import Link from 'next/link';
-import { use } from 'react';
+import { notFound } from 'next/navigation';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { canAccessProgram, requireMoveReportTrackInstructor } from '@/app/lib/server/moveReportAuth';
+import ChildRecordClient from '../../../../components/ChildRecordClient';
 
 type Props = { params: Promise<{ id: string; childId: string }> };
 
-/** Phase 1 — SM-02 band → structured fields 입력 UI (다음 구현) */
-export default function MoveTrackChildRecordPage({ params }: Props) {
-  const { id, childId } = use(params);
+export default async function MoveTrackChildRecordPage({ params }: Props) {
+  const { id: sessionId, childId } = await params;
+  const auth = await requireMoveReportTrackInstructor();
+  if (!auth.ok) notFound();
+
+  const supabase = getServiceSupabase();
+  const { data: session } = await supabase
+    .from('mr_track_sessions')
+    .select('id, program_id, session_number')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (!session) notFound();
+
+  const allowed = await canAccessProgram(auth.userId, session.program_id, {
+    isAdmin: auth.isAdmin,
+    allowViewer: false,
+  });
+  if (!allowed) notFound();
+
+  const { data: enrollments } = await supabase
+    .from('mr_program_children')
+    .select('child_id')
+    .eq('program_id', session.program_id)
+    .order('enrolled_at', { ascending: true });
+
+  const childIds = (enrollments ?? []).map((e) => e.child_id);
+  if (!childIds.includes(childId)) notFound();
 
   return (
-    <main className="mr-page mr-track-page">
+    <main className="mr-page mr-track-page mr-track-page--record">
       <div className="grain" aria-hidden />
-      <div className="mr-page-inner mr-content-max">
-        <Link href={`/move-report/track/sessions/${id}`} className="btn-ghost mr-coach-back" style={{ textDecoration: 'none', marginBottom: 20 }}>
-          ← 아동 목록
-        </Link>
-        <h1 className="mr-track-title" style={{ fontSize: '1.35rem' }}>
-          MOVE TRACK 입력
-        </h1>
-        <p className="mr-track-sub">
-          출석 → 참여기회 band → Participation / Support / Independent Initiation / Self Re-engagement / FRW /
-          Movement Domains / Observation Note (Scoring Manual v0.1 순서)
-        </p>
-        <p className="mr-track-sub" style={{ marginTop: 12, fontSize: '0.8rem' }}>
-          session {id.slice(0, 8)}… · child {childId.slice(0, 8)}…
-        </p>
+      <div className="mr-page-inner mr-content-max mr-track-record-shell">
+        <ChildRecordClient
+          sessionId={sessionId}
+          childId={childId}
+          childIds={childIds}
+          sessionNumber={session.session_number}
+        />
       </div>
     </main>
   );

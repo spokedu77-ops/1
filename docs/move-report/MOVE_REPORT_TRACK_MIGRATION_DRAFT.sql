@@ -2,7 +2,8 @@
 -- MOVE REPORT TRACK — Migration SQL DRAFT (Governance Rev.1)
 -- =============================================================================
 -- Sprint: MOVE-TRACK-FOUNDATION-01
--- Status: DRAFT — DO NOT APPLY until Scoring Manual v0.1 approved
+-- Status: **HISTORICAL / REFERENCE ONLY** — DO NOT APPLY
+-- SSOT (applied): supabase/migrations/20260829130000_move_report_track_core.sql
 --
 -- Rev.1 changes:
 --   - voluntary_initiation → independent_initiation + self_reengagement

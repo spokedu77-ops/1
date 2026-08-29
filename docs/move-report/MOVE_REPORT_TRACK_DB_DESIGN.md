@@ -1,8 +1,10 @@
 # MOVE REPORT TRACK — DB Design (수정본)
 
-**Status:** Draft — Migration 미적용
-**Revision:** Governance Rev.1 + Scoring Manual v0.1 sync
-**Companion:** [Sprint Brief](./MOVE_REPORT_TRACK_SPRINT_BRIEF.md) · [Migration SQL Draft](./MOVE_REPORT_TRACK_MIGRATION_DRAFT.sql) · [Scoring Manual v0.1](./MOVE_REPORT_SCORING_MANUAL_v0.1.md)
+**Status:** **Migration 적용됨** — SSOT: [`supabase/migrations/20260829130000_move_report_track_core.sql`](../../supabase/migrations/20260829130000_move_report_track_core.sql)
+**Revision:** Governance Rev.1 + Scoring Manual v0.1 sync + Field Capture v0.1
+**Companion:** [Sprint Brief](./MOVE_REPORT_TRACK_SPRINT_BRIEF.md) · [Migration Draft (historical/reference)](./MOVE_REPORT_TRACK_MIGRATION_DRAFT.sql) · [Scoring Manual v0.1](./MOVE_REPORT_SCORING_MANUAL_v0.1.md)
+
+> **Draft SQL** (`MOVE_REPORT_TRACK_MIGRATION_DRAFT.sql`)는 Rev.2 설계 과정의 **historical reference**입니다. 스키마·RLS·ENUM의 **단일 진실 공급원(SSOT)** 은 위 정식 migration 파일입니다.
 
 ---
 
@@ -235,10 +237,12 @@ LATE  = sessions in [N - floor(N*0.25) + 1, N]
 
 ---
 
-## 8. RLS 정책표 (unchanged pattern)
+## 8. RLS 정책표
+
+Migration SSOT [`20260829130000_move_report_track_core.sql`](../../supabase/migrations/20260829130000_move_report_track_core.sql) 적용.
 
 Server API + service_role write; authenticated read via `mr_can_read_program`.
-See migration draft for policies.
+Viewer: `mr_children` direct SELECT 불가 — `mr_children_impact_safe` view 사용.
 
 ---
 

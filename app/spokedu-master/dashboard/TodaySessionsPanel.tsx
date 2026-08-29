@@ -132,3 +132,69 @@ export function UpcomingPreparationPanel({ sessions, classes }: { sessions: Mast
     <div className="mt-2 grid gap-2">{items.map(({ session, state }) => <Link key={session.id} href={state.href} className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-slate-50 px-3"><span className="min-w-0"><strong className="block truncate text-sm text-slate-900">{session.className}</strong><small className="text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(session.startAt)}</small></span><span className="shrink-0 text-xs font-black text-blue-700">수업 준비</span></Link>)}</div>
   </section>;
 }
+
+export function HomeContinuityPanel({ sessions, classes, loading, error, onRetry }: {
+  sessions: MasterSessionDto[];
+  classes: MasterClassDto[];
+  loading: boolean;
+  error: boolean;
+  onRetry: () => void;
+}) {
+  const now = useMemo(() => new Date(), []);
+  const item = useMemo(() => {
+    const classMap = new Map(classes.map((classItem) => [classItem.id, classItem]));
+    const candidates = sessions
+      .filter((session) => session.status !== 'cancelled')
+      .map((session) => ({ session, state: deriveMasterSessionWorkState(session, classMap.get(session.classId), now) }))
+      .filter(({ state }) => state.stage !== 'completed' || state.attention.attendanceMissing)
+      .sort((left, right) => {
+        const rank = ({ session, state }: typeof left) => {
+          if (state.stage === 'ready-to-wrap') return 0;
+          if (session.startedAt || state.stage === 'in-progress') return 1;
+          if (state.attention.attendanceMissing || state.attention.overdue) return 2;
+          return 3;
+        };
+        return rank(left) - rank(right)
+          || new Date(left.session.startAt).getTime() - new Date(right.session.startAt).getTime();
+      });
+    return candidates[0] ?? null;
+  }, [classes, now, sessions]);
+
+  if (loading) return <p className="text-sm text-slate-500">다음 수업을 확인하고 있습니다.</p>;
+  if (error) return <p role="alert" className="text-sm text-rose-700">수업 흐름을 불러오지 못했습니다. <button type="button" onClick={onRetry} className="min-h-11 underline underline-offset-2">다시 시도</button></p>;
+  if (!item) return null;
+
+  const urgent = Boolean(item.session.startedAt)
+    || item.state.stage === 'in-progress'
+    || item.state.stage === 'ready-to-wrap'
+    || item.state.attention.overdue
+    || item.state.attention.attendanceMissing;
+  const action = item.state.stage === 'ready-to-wrap'
+    ? '수업 마무리하기'
+    : item.session.startedAt || item.state.stage === 'in-progress'
+      ? '수업 계속하기'
+      : item.state.attention.attendanceMissing
+        ? '출석 확인하기'
+        : '수업 준비 이어가기';
+
+  return (
+    <section
+      data-dashboard-section="continuity"
+      data-continuity-priority={urgent ? 'resume' : 'next'}
+      aria-labelledby="home-continuity-heading"
+      className={`flex flex-col gap-3 rounded-[16px] border px-4 py-3 sm:flex-row sm:items-center ${urgent ? 'border-amber-200 bg-amber-50/60' : 'border-slate-200 bg-white'}`}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold text-slate-500">{urgent ? '이어갈 수업' : '내 다음 수업'}</p>
+        <h2 id="home-continuity-heading" className="mt-0.5 truncate text-base font-semibold text-slate-950">{item.session.className}</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          {formatSeoulSessionDay(getSeoulSessionDay(item.session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(item.session.startAt)}
+          {item.state.progress.total > 0 ? ` · 활동 ${item.state.progress.completed}/${item.state.progress.total}` : ''}
+        </p>
+      </div>
+      <Link href={item.state.href} className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-[10px] px-4 text-sm font-semibold ${urgent ? 'bg-slate-950 text-white' : 'border border-slate-300 bg-white text-slate-800'}`}>
+        {action}<ArrowRight size={15} aria-hidden="true" />
+      </Link>
+    </section>
+  );
+}

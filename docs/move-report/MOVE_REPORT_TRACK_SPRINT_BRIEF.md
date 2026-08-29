@@ -1,8 +1,8 @@
 # MOVE REPORT TRACK — Sprint Brief (수정본)
 
-**Sprint ID:** `MOVE-TRACK-FOUNDATION-01`
-**Status:** PO 승인 + Governance Rev.1 + **Scoring Manual v0.1 (Field Pilot)** — Migration/UI 미착수
-**Companion:** [DB Design](./MOVE_REPORT_TRACK_DB_DESIGN.md) · [Migration SQL Draft](./MOVE_REPORT_TRACK_MIGRATION_DRAFT.sql) · [Scoring Manual v0.1](./MOVE_REPORT_SCORING_MANUAL_v0.1.md)
+**Sprint ID:** `MOVE-TRACK-FIELD-CAPTURE-v0.1`
+**Status:** **Field Capture v0.1 완료 · MOVE REPORT 개발 동결** (커밋 `979128b` 이후 범위)
+**Companion:** [DB Design](./MOVE_REPORT_TRACK_DB_DESIGN.md) · [Migration SSOT](../../supabase/migrations/20260829130000_move_report_track_core.sql) · [Migration Draft (historical)](./MOVE_REPORT_TRACK_MIGRATION_DRAFT.sql) · [Scoring Manual v0.1](./MOVE_REPORT_SCORING_MANUAL_v0.1.md)
 
 ---
 
@@ -206,15 +206,42 @@ observation_note   →  Meaningful Change
 
 ---
 
-## CURRENT STATE (Gap — unchanged)
+## CURRENT STATE (2026-08-29 · 커밋 `979128b` 기준)
 
 | 축 | 현재 |
 |----|------|
 | MOVE PROFILE | ✅ `/move-report`, submissions, coach, educator beta |
-| MOVE TRACK | ❌ mr_* 없음 |
-| MOVE IMPACT | ❌ |
+| MOVE TRACK DB | ✅ `mr_*` — Migration `20260829130000_move_report_track_core.sql` **적용됨** (smoke 통과) |
+| Phase 0 alias/auth | ✅ `/move-report/profile` alias · `requireMoveReportTrackInstructor()` · Track layout instructor/admin only |
+| Track skeleton | ✅ `/move-report/track/*` — programs, session new, session detail, child record |
+| **Field Capture v0.1** | ✅ 회기 생성 + 아동 기록 + autosave + prev/next + 미기록/기록중/완료 |
+| MOVE IMPACT | ❌ **동결** (Field Data 축적 후 재개) |
 
 Profile 테이블·URL **변경 없음** (Phase 0–2).
+
+### Field Capture v0.1 — 구현 범위 (완료)
+
+| 영역 | 내용 |
+|------|------|
+| 회기 생성 | program · session number · date · main activities · `[회기 시작]` |
+| 아동 기록 | attendance · observation_opportunity_band · participation · support · independent_initiation · self_reengagement · SPOMOVE/FRW · movement domains · observation_note |
+| API | `POST /api/move-report/track/sessions` · `GET/PUT .../sessions/:sessionId/records/:childId` (movement_experiences 포함) |
+| Validation | SM-08: `frw_status=observed_stable` → `observation_opportunity_band=three_plus` only (blocking) |
+| UX | autosave 700ms · 이전/다음 아동 · 아동별 미기록/기록중/완료 · 모바일 우선 sticky bar |
+
+### MOVE REPORT 개발 동결 (이번 Sprint 이후 구현 금지)
+
+아래 기능은 **Field Data 축적 + ESG Core Deck + Pilot 요구 확정** 전까지 보류:
+
+- MOVE IMPACT Dashboard
+- 기업 Dashboard
+- PDF Report · AI Summary · Case Study Builder
+- External Assessment UI · Viewer UI · Parent Report · Benchmark
+- `/move-report` 허브 REPLACE (CC-MR-03)
+
+**Definition of Done (달성):**
+
+> **현재 운영 중인 특수체육 현장에서 강사가 실제 회기 데이터를 MOVE TRACK에 누적할 수 있다.**
 
 ---
 
@@ -225,19 +252,36 @@ Phase 3: 허브 REPLACE (Pending `CC-MR-03`)
 
 ---
 
-## API ENDPOINT DRAFT
+## API ENDPOINT (Field Capture v0.1)
 
-Base: `/api/move-report/track/` — Server API + `service_role`, `requireMoveReportAuth()`
+Base: `/api/move-report/track/` — Server API + `service_role`, `requireMoveReportTrackInstructor()`
 
-Record PUT body reflects revised fields: `independent_initiation`, `self_reengagement`, `frw_seconds`, `frw_status`, per-field NULL.
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/programs` | 강사 접근 가능 사업 목록 |
+| POST | `/sessions` | 회기 생성 |
+| GET | `/sessions/:sessionId` | 회기 메타 |
+| GET | `/sessions/:sessionId/records/:childId` | 아동 + record + movement_experiences |
+| PUT | `/sessions/:sessionId/records/:childId` | upsert; `is_draft` true=임시저장, false=완료 |
 
-Completed session PATCH requires `change_reason` (enum) when `status = locked`.
+Record PUT body: `independent_initiation`, `self_reengagement`, `frw_seconds`, `frw_status`, per-field NULL, `movement_experiences[]`.
+
+Completed session PATCH (`status = locked`) + `change_reason` — **v0.1 미구현** (동결).
 
 ---
 
-## PHASE 1 SCREENS (unchanged routes)
+## PHASE 1 SCREENS (Field Capture v0.1 — shipped)
 
-P1-08 입력 화면: NULL `[이번 회기 평가하지 않음]` per field, FRW seconds + status, initiation + reengagement 분리.
+| Route | Screen |
+|-------|--------|
+| `/move-report/track` | Track hub |
+| `/move-report/track/programs` | 사업 목록 |
+| `/move-report/track/programs/[id]` | 사업 상세 · 회기 시작 CTA |
+| `/move-report/track/sessions/new` | 회기 생성 |
+| `/move-report/track/sessions/[id]` | 아동 목록 (미기록/기록중/완료) |
+| `/move-report/track/sessions/[id]/children/[childId]` | 아동 기록 (autosave) |
+
+P1-08 입력: NULL `[이번 회기 평가하지 않음]` per field, FRW seconds + status, initiation + reengagement 분리.
 
 ---
 
@@ -282,6 +326,8 @@ P1-08 입력 화면: NULL `[이번 회기 평가하지 않음]` per field, FRW s
 
 ## NEXT STEPS
 
-1. ~~Scoring Manual v0.1 본문~~ → **Field Pilot 확정** ([Manual](./MOVE_REPORT_SCORING_MANUAL_v0.1.md))
-2. Migration draft (Rev.2, Manual sync) → PO 확인 → `supabase/migrations/` 적용
-3. Phase 0 alias + auth → Phase 1 UI
+1. ~~Scoring Manual v0.1~~ → **Field Pilot 확정** ([Manual](./MOVE_REPORT_SCORING_MANUAL_v0.1.md))
+2. ~~Migration Rev.2~~ → **적용 완료** ([SSOT](../../supabase/migrations/20260829130000_move_report_track_core.sql))
+3. ~~Phase 0 alias + auth~~ → **완료**
+4. ~~Field Capture v0.1~~ → **완료**
+5. **MOVE REPORT 개발 동결** — 현장 Field Data 축적 · Pilot 일치도(SM-17) · ESG Deck 확정 후 IMPACT/Viewer 등 재개 여부 PO 결정

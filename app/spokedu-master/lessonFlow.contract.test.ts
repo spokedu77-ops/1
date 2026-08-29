@@ -37,39 +37,31 @@ describe('lesson discovery and execution flow contract', () => {
     expect(detail).not.toContain('getSpomoveSessionHref');
   });
 
-  it('lets current user need choose between operations, today, and discovery', () => {
+  it('keeps Weekly curation and one continuity action without catalog duplication', () => {
     const todayPanel = read('app/spokedu-master/dashboard/TodaySessionsPanel.tsx');
     const todayModel = read('app/spokedu-master/dashboard/todaySessionsModel.ts');
-    const opsBarIndex = dashboard.indexOf('TodaySessionsPanel');
     const featuredIndex = dashboard.indexOf('data-dashboard-section="featured-flow"');
     const weeklyIndex = dashboard.indexOf('data-dashboard-section="weekly"');
-    const spomoveIndex = dashboard.indexOf('data-dashboard-section="spomove"');
-    const contextIndex = dashboard.indexOf('data-dashboard-section="context-programs"');
 
     expect(dashboard).not.toContain('HomeOpsBoard');
-    expect(dashboard).toContain('TodaySessionsPanel');
+    expect(dashboard).toContain('HomeContinuityPanel');
     expect(dashboard).not.toContain('resolveHomeAnchor');
-    expect(dashboard).toContain('ContextProgramRow');
     expect(dashboard).toContain('WeeklyProgramCard');
     expect(dashboard).not.toContain('WeeklyFeaturedCard');
     expect(dashboard).not.toContain('data-weekly-featured');
-    expect(dashboard).toContain('현장에서 바로 쓰는 수업과 화면 활동을 이어서 준비하세요.');
-    expect(dashboard).toContain('현장에서 바로 펼칠 수업');
-    expect(dashboard).toContain('활동 준비 열기');
-    expect(dashboard).toContain('data-spm-spomove-card-action="start"');
-    expect(dashboard).not.toContain('바로 실행');
-    expect(dashboard).toContain('spm-btn-primary');
-    expect(todayPanel).toContain('data-dashboard-section="today-sessions"');
+    expect(dashboard).toContain('이번 주 SPOKEDU 추천');
+    expect(dashboard).toContain('!program.isPro');
+    expect(dashboard).toContain('data-dashboard-section="spomove-extension"');
+    expect(dashboard).toContain('data-dashboard-section="spomove-discovery"');
+    expect(dashboard).not.toContain('data-dashboard-section="context-programs"');
+    expect(todayPanel).toContain('data-dashboard-section="continuity"');
     expect(todayModel).toContain('deriveMasterSessionWorkState');
     expect(todayModel).toContain('href: workState.href');
-    expect(opsBarIndex).toBeGreaterThanOrEqual(0);
     expect(dashboard).toContain('resolveMasterHomePriority');
     expect(dashboard).toContain('data-home-priority={homePriority}');
-    expect(dashboard).toContain("homePriority !== 'discovery' ? homeOperationalEntry");
-    expect(dashboard).toContain("homePriority === 'discovery' ? homeOperationalEntry");
+    expect(dashboard).toContain("homePriority !== 'discovery' ? continuityEntry");
+    expect(dashboard).toContain("homePriority === 'discovery' ? continuityEntry");
     expect(weeklyIndex).toBeGreaterThan(featuredIndex);
-    expect(spomoveIndex).toBeGreaterThan(weeklyIndex);
-    expect(contextIndex).toBeGreaterThan(spomoveIndex);
     expect(dashboard).not.toContain('function ContinueSection');
     expect(dashboard).not.toContain('data-dashboard-section="ops-anchor"');
     expect(dashboard).not.toContain('data-dashboard-section="billboard"');
@@ -81,7 +73,6 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).not.toContain('function RailRowHeader');
     expect(dashboard).toContain('if (!mounted) return <DashboardSkeleton />');
     expect(dashboard).not.toContain('if (!mounted || !programsLoaded)');
-    expect(dashboard).toContain('&& !weeklyIds.has(program.id)');
   });
 
   it('offers content-first and Session-first entry as peer paths', () => {

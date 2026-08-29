@@ -19,6 +19,7 @@ export type SessionChildRecordInput = {
   frw_seconds?: number | null;
   frw_status?: FrwStatus | null;
   observation_note?: string | null;
+  movement_experiences?: Array<{ domain: string; subtag: string }>;
 };
 
 export type ValidationIssue = { field: string; message: string; code: string };
@@ -107,6 +108,17 @@ export function validateSessionChildRecord(input: SessionChildRecordInput): Vali
     }
     if (input.frw_seconds != null && (input.frw_seconds < 1 || input.frw_seconds > 6)) {
       issues.push({ field: 'frw_seconds', code: 'frw_range', message: 'frw_seconds는 1-6입니다.' });
+    }
+    // SM-08: observed_stable requires three_plus meaningful participation opportunities
+    if (
+      input.frw_status === 'observed_stable'
+      && input.observation_opportunity_band !== 'three_plus'
+    ) {
+      issues.push({
+        field: 'frw_status',
+        code: 'frw_stable_requires_three_plus',
+        message: 'Observed Stable은 참여기회 3회 이상일 때만 선택할 수 있습니다.',
+      });
     }
   }
 

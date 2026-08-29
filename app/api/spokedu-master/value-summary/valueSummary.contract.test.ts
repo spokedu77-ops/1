@@ -18,10 +18,10 @@ describe('value summary API contract', () => {
     expect(route).toContain("stage: 'memory_optional'");
     expect(route).toContain('available: false');
   });
-  it('keeps value below operational Home surfaces and has no generic upgrade banner', () => {
-    expect(home.indexOf('TodaySessionsPanel')).toBeLessThan(home.indexOf('surface="home"'));
-    expect(home.indexOf('data-dashboard-section="featured-flow"')).toBeLessThan(home.indexOf('surface="home"'));
-    expect(home).toContain('activation="none"');
-    expect(home).not.toContain('Premium 업그레이드');
+  it('keeps Home focused on Weekly curation and one continuity action', () => {
+    expect(home).toContain('HomeContinuityPanel');
+    expect(home).toContain('data-dashboard-section="featured-flow"');
+    expect(home).not.toContain('surface="home"');
+    expect(home).not.toContain('data-dashboard-section="operations-flow"');
   });
 });

@@ -17,6 +17,16 @@ export type MoveReportTrackAuthFail = { ok: false; response: NextResponse };
 
 export type MoveReportTrackAuthResult = MoveReportTrackAuthOk | MoveReportTrackAuthFail;
 
+/** Field Capture — instructor or admin only (no viewer writes) */
+export async function requireMoveReportTrackInstructor(): Promise<MoveReportTrackAuthResult> {
+  const auth = await requireMoveReportTrackSession();
+  if (!auth.ok) return auth;
+  if (auth.role === 'viewer') {
+    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
+  }
+  return auth;
+}
+
 function isInvalidRefreshTokenError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const candidate = error as { code?: unknown; message?: unknown };

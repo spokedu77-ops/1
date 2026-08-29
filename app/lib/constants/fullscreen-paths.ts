@@ -11,7 +11,6 @@ export const FULLSCREEN_PATH_PREFIXES = [
   '/info',
   '/admin/camera',
   '/admin/note',
-  '/admin/memo',
   '/admin/spomove/training/_player',
   '/pro',
   '/spokedu-master',

@@ -41,9 +41,7 @@ import {
   resolveProgramHero,
 } from '../lib/program-media';
 import { formatLibraryCardEquipmentName } from '../library/libraryViewModel';
-import { spmChipClass } from '../lib/masterUiClasses';
 import {
-  getSupportedOfficialSpomovePresets,
   getProgramHomeReadiness,
   isProgramHomeRecommendationEligible,
 } from '../lib/program-meta';
@@ -54,7 +52,7 @@ import {
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
 } from '../lib/recentProgramActivity';
-import { HomeFollowUpPanel, TodaySessionsPanel, UpcomingPreparationPanel } from './TodaySessionsPanel';
+import { HomeContinuityPanel } from './TodaySessionsPanel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
@@ -67,11 +65,9 @@ import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { hasMasterEntitlement } from '../lib/masterAccessModel';
 import { EntitlementPreviewHome } from './EntitlementPreviewHome';
-import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
-import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 import { resolveMasterHomePriority } from '../lib/masterProductTruth';
 
 type SpomoveThumbnailPackQueryResult = {
@@ -150,62 +146,6 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
 
 function shouldStretchSpomoveThumbnail(_width: number, _height: number, src: string) {
   return /\.svg(\?|#|$)/i.test(src);
-}
-
-type ContextProgramTab = 'classroom' | 'preschool';
-
-const CONTEXT_PROGRAM_TABS: Array<{ key: ContextProgramTab; label: string }> = [
-  { key: 'classroom', label: '교실 체육' },
-  { key: 'preschool', label: '미취학 체육' },
-];
-
-const isClassroomProgram = (program: Program) =>
-  parseMasterSpaces(program.space).includes('교실');
-
-const isPreschoolProgram = (program: Program) => {
-  const target =
-    program.lessonDetail?.recommendedAge ||
-    program.grade ||
-    '';
-
-  return parseMasterTargets(target).includes('미취학');
-};
-
-function matchesContextTab(program: Program, tab: ContextProgramTab) {
-  return tab === 'classroom'
-    ? isClassroomProgram(program)
-    : isPreschoolProgram(program);
-}
-
-function compareContextPrograms(a: Program, b: Program) {
-  return (
-    Number(isProgramHomeRecommendationEligible(b)) - Number(isProgramHomeRecommendationEligible(a)) ||
-    Number(b.isHot) - Number(a.isHot) ||
-    getHomeSortOrder(a) - getHomeSortOrder(b) ||
-    getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
-    Number(Boolean(getHeroImage(b))) - Number(Boolean(getHeroImage(a))) ||
-    Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
-    Number(b.isNew) - Number(a.isNew)
-  );
-}
-
-function selectContextPrograms(programs: Program[], tab: ContextProgramTab, weeklyIds: Set<string>) {
-  const selected: Program[] = [];
-  const usedIds = new Set<string>();
-  const usedTitles = new Set<string>();
-  const matched = programs
-    .filter((program) => matchesContextTab(program, tab) && !weeklyIds.has(program.id))
-    .sort(compareContextPrograms);
-
-  for (const program of matched) {
-    if (selected.length >= 3) return selected;
-    const titleKey = normalizeTitle(getProgramTitle(program));
-    if (!titleKey || usedIds.has(program.id) || usedTitles.has(titleKey)) continue;
-    selected.push(program);
-    usedIds.add(program.id);
-    usedTitles.add(titleKey);
-  }
-  return selected;
 }
 
 /** 추천 슬롯을 최대 4개까지 풀에서 보충한다. */
@@ -317,7 +257,6 @@ function WeeklyProgramCard({
   const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
   const selectionMeta = formatProgramSelectionReasons(program);
   const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
-  const linkedSpomoveCount = getSupportedOfficialSpomovePresets(program).length;
 
   return (
     <LessonCatalogCard
@@ -330,7 +269,6 @@ function WeeklyProgramCard({
       detailHref={`/spokedu-master/library/${program.id}`}
       decisionMeta={model.theme || '체육 수업'}
       supportMeta={supportMeta}
-      cornerLabel={linkedSpomoveCount > 0 ? 'SPOMOVE 연계' : undefined}
       priority={priority}
       dataAttrs={{
         'data-weekly-program': program.id,
@@ -630,7 +568,6 @@ export default function DashboardView() {
 }
 
 function EntitledDashboardView() {
-  const accessSnapshot = useMasterAccessSnapshot();
   const {
     programs,
     programsLoaded,
@@ -647,7 +584,6 @@ function EntitledDashboardView() {
     status: operationalStatus,
     reload: reloadOperationalData,
   } = useOperationalData();
-  const explanationData = useExplanationData();
   const profile = useProfile();
   const isPremium = useIsPremium();
   const recentActivityOwnerId = recentActivityOwnerResolved
@@ -689,7 +625,6 @@ function EntitledDashboardView() {
     null,
   ]);
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
-  const [contextTab, setContextTab] = useState<ContextProgramTab>('classroom');
 
   useEffect(() => {
     setMounted(true);
@@ -769,7 +704,7 @@ function EntitledDashboardView() {
   const weeklySelection = useMemo(
     () =>
       selectWeeklyRecommendationSlots(programs, {
-        isRecommendationEligible: isProgramHomeRecommendationEligible,
+        isRecommendationEligible: (program) => !program.isPro && isProgramHomeRecommendationEligible(program),
         compareFallback: (a, b) =>
           Number(b.isHot) - Number(a.isHot) ||
           getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
@@ -781,7 +716,7 @@ function EntitledDashboardView() {
       }),
     [programs],
   );
-  const programPool = useMemo(() => uniquePrograms(programs).sort(compareHomePrograms), [programs]);
+  const programPool = useMemo(() => uniquePrograms(programs.filter((program) => !program.isPro)).sort(compareHomePrograms), [programs]);
   const weeklyPrograms = useMemo(
     () =>
       sortProgramsByAgeGroupPreference(
@@ -790,47 +725,26 @@ function EntitledDashboardView() {
       ),
     [programPool, profile?.ageGroups, weeklySelection.programs],
   );
-  const weeklyIds = useMemo(() => new Set(weeklyPrograms.map((program) => program.id)), [weeklyPrograms]);
   const featuredSpomove = useMemo(
     () => resolveHomeFeaturedSpomove(featuredSpomoveSlotIds),
     [featuredSpomoveSlotIds],
   );
-  const contextPrograms = useMemo(() => {
-    const tab = CONTEXT_PROGRAM_TABS.find((item) => item.key === contextTab) ?? CONTEXT_PROGRAM_TABS[0];
-    return selectContextPrograms(programs, tab.key, weeklyIds);
-  }, [contextTab, programs, weeklyIds]);
-  const contextProgramCounts = useMemo(
-    () =>
-      CONTEXT_PROGRAM_TABS.map((tab) => ({
-        ...tab,
-        count: selectContextPrograms(programs, tab.key, weeklyIds).length,
-      })),
-    [programs, weeklyIds],
-  );
-  const availableContextTabs = contextProgramCounts.filter((tab) => tab.count > 0);
-  const contextTabsToDisplay = profile?.isAdmin
-    ? CONTEXT_PROGRAM_TABS
-    : availableContextTabs;
-  const showContextTypeControl = contextTabsToDisplay.length > 1;
-
-  useEffect(() => {
-    if (availableContextTabs.length === 1 && contextTab !== availableContextTabs[0].key) {
-      setContextTab(availableContextTabs[0].key);
-    }
-  }, [availableContextTabs, contextTab]);
 
   const openPreview = (program: Program, autoplayVideo = false) => {
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
-  const studentMemoCount = useMemo(() => operationalSessions.filter((session) => session.memo?.trim()).length, [operationalSessions]);
   const homePriority = useMemo(() => {
     const today = getSeoulToday();
     const now = Date.now();
     const classById = new Map(operationalClasses.map((item) => [item.id, item]));
     return resolveMasterHomePriority({
       hasUrgentOperationalWork: operationalStatus !== 'ready' || operationalSessions.some((session) =>
-        session.status === 'scheduled' && new Date(session.endAt).getTime() < now
+        session.status === 'scheduled' && (
+          Boolean(session.startedAt)
+          || session.programs.some((program) => program.isCompleted)
+          || new Date(session.endAt).getTime() < now
+        )
         || session.status === 'completed'
           && Boolean(classById.get(session.classId)?.studentIds.length)
           && session.attendance.length === 0),
@@ -879,20 +793,15 @@ function EntitledDashboardView() {
     );
   }
 
-  const homeOperationalEntry = isFirstUser && operationalSessions.length === 0 ? (
-    <FirstStartGuide />
-  ) : (<>
-    <HomeFollowUpPanel sessions={operationalSessions} classes={operationalClasses} seoulDay={getSeoulToday()} />
-    <TodaySessionsPanel
+  const continuityEntry = isFirstUser && operationalSessions.length === 0 ? null : (
+    <HomeContinuityPanel
       sessions={operationalSessions}
       classes={operationalClasses}
-      seoulDay={getSeoulToday()}
       loading={operationalStatus === 'idle' || operationalStatus === 'loading'}
       error={operationalStatus === 'error'}
       onRetry={() => void reloadOperationalData()}
     />
-    <UpcomingPreparationPanel sessions={operationalSessions} classes={operationalClasses} />
-  </>);
+  );
 
   return (
     <main data-home-priority={homePriority} className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-4 overflow-y-auto px-4 pb-28 pt-4 sm:gap-5 sm:px-6 sm:pt-5 lg:gap-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
@@ -900,7 +809,7 @@ function EntitledDashboardView() {
       <header className="relative px-0.5 pt-0.5 sm:px-1">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">오늘 수업</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">매주 새로운 수업</p>
             <h1
               className="mt-1 text-[22px] font-black leading-none tracking-[-0.03em] text-[color:var(--spm-t)] sm:text-[26px]"
               style={{ fontFamily: 'var(--spm-font-display, inherit)' }}
@@ -908,7 +817,7 @@ function EntitledDashboardView() {
               SPOKEDU MASTER
             </h1>
             <p className="mt-1.5 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]">
-              현장에서 바로 쓰는 수업과 화면 활동을 이어서 준비하세요.
+              이번 주 추천을 받고, 하던 수업은 바로 이어가세요.
             </p>
           </div>
           <Link
@@ -921,7 +830,7 @@ function EntitledDashboardView() {
         </div>
       </header>
 
-      {isFirstUser || homePriority !== 'discovery' ? homeOperationalEntry : null}
+      {!isFirstUser && homePriority !== 'discovery' ? continuityEntry : null}
 
       <section
         data-dashboard-section="featured-flow"
@@ -930,13 +839,13 @@ function EntitledDashboardView() {
       >
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading" className="relative">
           <SectionHeader
-            eyebrow="수업 라이브러리"
+            eyebrow="SPOKEDU WEEKLY PICK"
             eyebrowIcon={<BookOpen size={14} />}
-            title="현장에서 바로 펼칠 수업"
+            title="이번 주 SPOKEDU 추천"
             titleId="weekly-heading"
             size="lg"
             tone="feature"
-            description="고르고 준비하면, 오늘 수업에 바로 씁니다."
+            description="SPOKEDU가 직접 고른, Lite만으로 모두 실행 가능한 프로그램 4개입니다."
             href="/spokedu-master/library"
             action="수업 더 보기"
           />
@@ -970,110 +879,37 @@ function EntitledDashboardView() {
         </section>
       </section>
 
-      <section
-        data-dashboard-section="spomove"
-        aria-labelledby="spomove-heading"
-        className="relative overflow-hidden rounded-[16px] border border-slate-200/90 bg-white p-3 sm:p-3.5"
-      >
-        <SectionHeader
-          eyebrow="화면 활동"
-          eyebrowIcon={<MonitorPlay size={14} />}
-          title="SPOMOVE"
-          titleId="spomove-heading"
-          size="lg"
-          tone="feature"
-          description="수업 앞뒤에 붙이는 화면 반응 활동입니다."
-          href="/spokedu-master/spomove"
-          action="활동 더 보기"
-        />
-        <div className="relative -mx-3.5 flex snap-x items-stretch gap-3.5 overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
-          {featuredSpomove.map((preset, index) => (
-            <div key={preset.id} className="h-full w-[78vw] max-w-[310px] shrink-0 snap-start md:w-auto md:max-w-none">
-              <SpomoveCard
-                preset={preset}
-                thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}
-                contentOverride={spomoveContentMap[preset.id]}
-                onOpenGuide={setPreviewSpomove}
-                priority={index < 2}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+      {isFirstUser ? <FirstStartGuide /> : homePriority === 'discovery' ? continuityEntry : null}
 
-      {!isFirstUser && homePriority === 'discovery' ? homeOperationalEntry : null}
-
-      {/* P1: 하단은 3순위 — 얇은 구분 + 조용한 면 */}
-      <div aria-hidden="true" className="border-t border-slate-200/80" />
-
-      {operationalStatus === 'ready' ? (
-        <MasterValueEvidencePanel plan={accessSnapshot.plan} surface="home" activation="none" />
-      ) : null}
-
-      <section
-        data-dashboard-section="operations-flow"
-        aria-label="보조 추천과 기록"
-        className="relative grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]"
-      >
-        {availableContextTabs.length > 0 || profile?.isAdmin ? (
-          <section data-dashboard-section="context-programs" className="rounded-[12px] border border-slate-200/70 bg-white p-3">
-            <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">추천</p>
-                <h2 className="mt-0.5 text-[14px] font-black text-slate-700">상황별 수업</h2>
-              </div>
-              <Link
-                href="/spokedu-master/library"
-                className="inline-flex min-h-8 items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-800"
-              >
-                수업 라이브러리에서 찾기
-                <ArrowRight size={12} />
-              </Link>
-            </div>
-            {showContextTypeControl ? (
-              <div className="mb-2.5 flex gap-1.5" role="group" aria-label="현장 맞춤 프로그램 유형">
-                {contextTabsToDisplay.map((tab) => {
-                  const active = contextTab === tab.key;
-                  return (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => setContextTab(tab.key)}
-                      className={spmChipClass(active)}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-            {contextPrograms.length > 0 ? (
-              <div className="grid gap-1.5 sm:grid-cols-3">
-                {contextPrograms.slice(0, 3).map((program) => (
-                  <ContextProgramRow
-                    key={program.id}
-                    program={program}
-                    cornerLabel={contextTab === 'classroom' ? '교실 체육' : '미취학 체육'}
-                    onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
-                  />
-                ))}
-              </div>
-            ) : profile?.isAdmin ? (
-              <p className="rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-500">
-                교실체육 또는 미취학 태그가 저장된 프로그램을 확인해 주세요.
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-        <ActivityPanel
-          compact
-          className="lg:h-full"
-          reportCount={explanationData.status === 'loading' ? null : explanationData.total}
-          recordCount={operationalStatus === 'ready' ? operationalSessions.length : null}
-          studentMemoCount={operationalStatus === 'ready' ? studentMemoCount : null}
-        />
-      </section>
+      {isPremium ? (
+        <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="border-t border-slate-200 pt-4">
+          <SectionHeader
+            eyebrow="PREMIUM EXTENSION"
+            eyebrowIcon={<MonitorPlay size={14} />}
+            title="SPOMOVE로 확장하기"
+            titleId="spomove-heading"
+            description="이번 주 수업에 화면 반응 활동을 더해 보세요."
+            href="/spokedu-master/spomove"
+            action="SPOMOVE 더 보기"
+          />
+          <div className="grid gap-2 sm:grid-cols-2">
+            {featuredSpomove.slice(0, 2).map((preset) => {
+              const model = getSpomovePresetDisplayModel(preset, spomoveContentMap[preset.id]);
+              const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
+              return <button key={preset.id} type="button" onClick={() => setPreviewSpomove(preset)} className="flex min-h-16 items-center gap-3 rounded-[12px] border border-slate-200 bg-white p-2 text-left hover:border-slate-300">
+                <span className="relative h-12 w-16 shrink-0 overflow-hidden rounded-[8px] bg-slate-900">{thumbnail ? <Image src={thumbnail} alt="" fill sizes="64px" className="object-cover" /> : null}</span>
+                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{model.displayTitle}</span><span className="mt-0.5 block text-xs text-slate-500">수업에 활동 더하기</span></span>
+                <ArrowRight size={15} className="shrink-0 text-slate-400" />
+              </button>;
+            })}
+          </div>
+        </section>
+      ) : (
+        <section data-dashboard-section="spomove-discovery" className="flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div><p className="text-sm font-semibold text-slate-800">SPOMOVE로 수업을 더 확장할 수 있습니다.</p><p className="mt-0.5 text-xs text-slate-500">Weekly 4개는 그대로 완결되고, Premium은 화면 활동을 더합니다.</p></div>
+          <Link href="/spokedu-master/subscription" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-600">Premium 알아보기<ArrowRight size={14} /></Link>
+        </section>
+      )}
 
       {selectedProgram ? (
         <ProgramPreviewModal

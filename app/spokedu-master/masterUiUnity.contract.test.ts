@@ -34,7 +34,6 @@ describe('MASTER product UI unity', () => {
     const chipSurfaces = [
       join(ROOT, 'library', 'LibraryView.tsx'),
       join(ROOT, 'spomove', 'SpomoveHubView.tsx'),
-      join(ROOT, 'dashboard', 'DashboardView.tsx'),
     ];
     for (const file of chipSurfaces) {
       const text = readFileSync(file, 'utf8');

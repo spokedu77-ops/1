@@ -18,7 +18,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Sparkles,
-  StickyNote,
   User,
   Users,
   X,
@@ -132,7 +131,6 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       group: '운영 관리',
       items: [
         { name: '노트', href: '/admin/note', icon: ClipboardList },
-        { name: '메모장', href: '/admin/memo', icon: StickyNote },
         { name: '수업 관리', href: '/admin/classes/calendar', icon: Calendar },
         { name: '피드백 관리', href: '/admin/teachers-classes', icon: CheckCircle },
         { name: '센터 관리', href: '/admin/centers', icon: Building2 },
