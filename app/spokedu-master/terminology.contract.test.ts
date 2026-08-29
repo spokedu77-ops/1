@@ -201,7 +201,8 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     const userFacingSource = spomoveUserFacingSource();
 
     expect(copySource).toContain('공식 활동');
-    expect(copySource).toContain('큰 화면');
+    expect(copySource).toContain('SPOMOVE 프로그램');
+    expect(copySource).toContain('활동 준비');
 
     expect(userFacingSource).not.toContain('공식 프로그램');
     expect(userFacingSource).not.toContain('구독자 공식 라이브러리');

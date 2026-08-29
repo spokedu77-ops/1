@@ -21,7 +21,7 @@ const masterResult = read('app/spokedu-master/spomove/session/MasterSessionResul
 describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and start/settings actions on hub cards', () => {
     expect(hub).toContain('sortSpomovePresetsByDisplayTitle');
-    expect(hub).toContain('활동 살펴보기 열기');
+    expect(hub).toContain('활동 준비 열기');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('가이드 보기');
@@ -69,8 +69,8 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
     expect(hub).toContain('parseSpomoveHubUrlState');
     expect(hub).toContain('hubView={hubView}');
-    expect(hub).toContain('showProgramGroupSections');
-    expect(hub).toContain('buildSpomoveProgramGroupSections');
+    expect(hub).toContain('SPOMOVE_CATALOG_FAMILIES');
+    expect(hub).toContain('filterPresetsByCatalogFamily');
     expect(hub).toContain('sortSpomovePresetsByCatalogOrder');
     expect(hub).not.toContain('contentOverride?.sortOrder ?? preset.sortOrder');
     expect(hub).not.toContain('showAxisSections');
@@ -140,7 +140,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="dive"');
     expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('실행 설정');
+    expect(hub).toContain('시작 설정');
     expect(hub).toContain('hrefForSettings');
     expect(hub).not.toContain("hrefForOfficial('start')");
     expect(hub).not.toContain('writeFamilyMovement');

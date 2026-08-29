@@ -55,7 +55,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const [sessionCaptures, setSessionCaptures] = useState<MasterClassRecordDto[]>([]);
   const copyFeedbackTimerRef = useRef<number | null>(null);
 
-  const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
+  const program = useMemo(() => programs.find((item) => String(item.id) === id), [id, programs]);
   const relatedVideos = useMemo(
     () => (program ? selectRelatedLessonVideos(program, programs) : []),
     [program, programs],

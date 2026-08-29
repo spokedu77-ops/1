@@ -32,7 +32,7 @@ function getProviderErrorMessage(caught: unknown) {
   return getMasterRequestErrorMessage(caught);
 }
 
-export function ExplanationDataProvider({ children }: { children: ReactNode }) {
+export function ExplanationDataProvider({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) {
   const { ownerId } = useOperationalData();
   const activeOwnerRef = useRef<string | null>(null);
   const [status, setStatus] = useState<ExplanationDataStatus>('idle');
@@ -46,7 +46,7 @@ export function ExplanationDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const reload = useCallback(async () => {
-    if (!ownerId) {
+    if (!ownerId || !enabled) {
       activeOwnerRef.current = null;
       clearData();
       setError(null);
@@ -73,7 +73,7 @@ export function ExplanationDataProvider({ children }: { children: ReactNode }) {
       setError(getProviderErrorMessage(caught));
       setStatus('error');
     }
-  }, [clearData, ownerId]);
+  }, [clearData, enabled, ownerId]);
 
   useEffect(() => {
     void reload();

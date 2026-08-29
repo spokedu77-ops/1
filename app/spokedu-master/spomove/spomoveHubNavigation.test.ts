@@ -26,17 +26,18 @@ describe('spomove hub navigation', () => {
   });
 
   it('parses and validates the complete exploration state', () => {
-    const params = new URLSearchParams('view=favorites&group=stroop&difficulty=normal&movement=feet&q=%ED%99%94%EC%82%B4%ED%91%9C');
+    const params = new URLSearchParams('view=favorites&family=conflict-choice&group=stroop&difficulty=normal&movement=feet&q=%ED%99%94%EC%82%B4%ED%91%9C');
     expect(parseSpomoveHubUrlState(params, {
+      families: ['all', 'conflict-choice'],
       groups: ['all', 'stroop'], difficulties: ['all', 'normal'], movements: ['all', 'feet'],
-    })).toEqual({ view: 'favorites', group: 'stroop', difficulty: 'normal', movement: 'feet', q: '화살표' });
+    })).toEqual({ view: 'favorites', family: 'conflict-choice', group: 'stroop', difficulty: 'normal', movement: 'feet', q: '화살표' });
   });
 
   it('serializes defaults away and preserves non-default filters', () => {
-    expect(serializeSpomoveHubUrlState({ view: 'all', group: 'all', difficulty: 'all', movement: 'all', q: '' }))
+    expect(serializeSpomoveHubUrlState({ view: 'all', family: 'all', group: 'all', difficulty: 'all', movement: 'all', q: '' }))
       .toBe('/spokedu-master/spomove');
-    expect(serializeSpomoveHubUrlState({ view: 'favorites', group: 'stroop', difficulty: 'normal', movement: 'feet', q: ' 화살표 ' }))
-      .toBe('/spokedu-master/spomove?view=favorites&group=stroop&difficulty=normal&movement=feet&q=%ED%99%94%EC%82%B4%ED%91%9C');
+    expect(serializeSpomoveHubUrlState({ view: 'favorites', family: 'conflict-choice', group: 'stroop', difficulty: 'normal', movement: 'feet', q: ' 화살표 ' }))
+      .toBe('/spokedu-master/spomove?view=favorites&family=conflict-choice&group=stroop&difficulty=normal&movement=feet&q=%ED%99%94%EC%82%B4%ED%91%9C');
   });
 
   it('accepts only a local SPOMOVE Hub return URL', () => {

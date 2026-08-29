@@ -1,0 +1,433 @@
+/* FIELD-BUILT EDITORIAL — Home visual system */
+
+.page {
+  --he-content: 1200px;
+  --he-wide: 1320px;
+  --he-measure: 640px;
+  --he-photo-radius: 14px;
+  --he-product-radius: 14px;
+  color: var(--spokedu-marketing-color-navy);
+  background: var(--spokedu-marketing-color-paper);
+}
+
+.shell {
+  width: min(var(--he-content), 100%);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.shellWide {
+  width: min(var(--he-wide), 100%);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.measure {
+  max-width: var(--he-measure);
+}
+
+.flowRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.flowRow li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.flowArrow {
+  color: var(--spokedu-marketing-color-muted);
+  opacity: 0.72;
+}
+
+/* —— Hero —— */
+.hero {
+  position: relative;
+  min-height: min(88svh, 760px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--spokedu-marketing-color-navy);
+}
+
+.heroMedia {
+  position: absolute;
+  inset: 0;
+}
+
+.heroScrim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(8, 17, 38, 0.82) 0%,
+    rgba(8, 17, 38, 0.52) 42%,
+    rgba(8, 17, 38, 0.18) 68%,
+    rgba(8, 17, 38, 0.38) 100%
+  );
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding-block: clamp(5.5rem, 14vh, 8.5rem);
+}
+
+.heroLead {
+  margin-top: 1.5rem;
+  max-width: 36rem;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: #d5dfed;
+}
+
+.heroActions {
+  margin-top: 2.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* —— Choice —— */
+.choice {
+  padding-block: clamp(4.5rem, 8vw, 6.5rem);
+  background: var(--spokedu-marketing-color-white);
+}
+
+.choiceSplit {
+  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+
+.choiceColumn {
+  min-width: 0;
+}
+
+.choiceDivider {
+  display: none;
+}
+
+.choiceLabel {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.choiceTagline {
+  margin-top: 0.75rem;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.choiceBody {
+  margin-top: 1rem;
+  max-width: 22rem;
+  font-size: 1rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.choiceDirect {
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--spokedu-marketing-color-muted);
+}
+
+/* —— Why —— */
+.why {
+  padding-block: clamp(3.5rem, 6vw, 4.75rem);
+  background: var(--spokedu-marketing-color-paper);
+}
+
+.whyGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  align-items: center;
+}
+
+.whyPhoto {
+  max-width: 22rem;
+  border-radius: var(--he-photo-radius);
+  overflow: hidden;
+}
+
+/* —— SPOMOVE —— */
+.spomove {
+  padding-block: clamp(4.5rem, 7vw, 6rem);
+  background: #081126;
+  color: #fff;
+}
+
+.spomoveGrid {
+  display: grid;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.spomoveLabel {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #afc8ff;
+}
+
+.spomoveBody {
+  margin-top: 1.25rem;
+  max-width: 22rem;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: #cfdaea;
+}
+
+.spomoveFlow {
+  margin-top: 1.5rem;
+  color: #afc8ff;
+}
+
+.spomoveFlow .flowArrow {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.spomoveVisual {
+  position: relative;
+  min-height: 18rem;
+  border-radius: var(--he-photo-radius);
+  overflow: hidden;
+}
+
+/* —— Subscription —— */
+.subscription {
+  padding-block: clamp(5rem, 8vw, 7.5rem);
+  background: var(--spokedu-marketing-color-white);
+}
+
+.subscriptionGrid {
+  display: grid;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.subscriptionFlow {
+  margin-top: 1.25rem;
+  color: var(--spokedu-marketing-color-blue);
+}
+
+.productStage {
+  width: 100%;
+  border-radius: var(--he-product-radius);
+  overflow: hidden;
+  box-shadow: 0 28px 72px rgba(11, 31, 70, 0.14);
+  background: #fff;
+}
+
+.productImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* —— Cases —— */
+.cases {
+  padding-block: clamp(4.5rem, 7vw, 6rem);
+  background: var(--spokedu-marketing-color-paper);
+}
+
+.casesHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: clamp(2rem, 4vw, 2.75rem);
+}
+
+.casesGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.caseLink {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.casePhoto {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--he-photo-radius);
+  background: #e8edf4;
+}
+
+.caseFeatured .casePhoto {
+  aspect-ratio: 4 / 5;
+  min-height: 16rem;
+}
+
+.caseCompact .casePhoto {
+  aspect-ratio: 16 / 10;
+}
+
+.caseMeta {
+  margin-top: 1rem;
+}
+
+.caseVenue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.caseAudience {
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.caseProgram {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--spokedu-marketing-color-muted);
+}
+
+.caseCta {
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--spokedu-marketing-color-blue);
+}
+
+/* —— Final —— */
+.final {
+  padding-block: clamp(4rem, 6vw, 5.5rem);
+  background: var(--spokedu-marketing-color-white);
+  border-top: 1px solid var(--spokedu-marketing-color-border);
+}
+
+.finalBody {
+  margin-top: 1rem;
+  max-width: 28rem;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.finalActions {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.finalTertiary {
+  margin-top: 1.25rem;
+  font-size: 0.9375rem;
+}
+
+@media (min-width: 1024px) {
+  .choiceSplit {
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    gap: 0;
+    align-items: stretch;
+  }
+
+  .choiceColumn:first-child {
+    padding-right: 3rem;
+  }
+
+  .choiceColumn:last-child {
+    padding-left: 3rem;
+  }
+
+  .choiceDivider {
+    display: block;
+    width: 1px;
+    background: var(--spokedu-marketing-color-border);
+  }
+
+  .whyGrid {
+    grid-template-columns: minmax(0, 1.72fr) minmax(0, 0.78fr);
+    gap: 3.5rem;
+  }
+
+  .whyPhoto {
+    max-width: none;
+  }
+
+  .spomoveGrid {
+    grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
+    gap: 3.5rem;
+  }
+
+  .spomoveVisual {
+    min-height: 26rem;
+  }
+
+  .subscriptionGrid {
+    grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
+    gap: 3rem;
+  }
+
+  .casesHeader {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .casesGrid {
+    grid-template-columns: minmax(0, 1.28fr) minmax(0, 0.72fr);
+    grid-template-rows: auto auto;
+    gap: 1.75rem 1.5rem;
+  }
+
+  .caseFeatured {
+    grid-row: 1 / 3;
+  }
+
+  .caseFeatured .casePhoto {
+    min-height: 28rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .casesGrid {
+    gap: 2.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

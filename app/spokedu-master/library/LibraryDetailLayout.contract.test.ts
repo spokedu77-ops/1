@@ -9,6 +9,10 @@ describe('SPOKEDU MASTER library detail final IA', () => {
   const guide = read('app/spokedu-master/library/[id]/components/DetailLessonGuide.tsx');
   const related = read('app/spokedu-master/library/relatedLessonVideos.ts');
 
+  it('resolves API numeric program ids after direct navigation or refresh', () => {
+    expect(view).toContain('String(item.id) === id');
+  });
+
   it('splits the display title safely and keeps public tags below it', () => {
     expect(guide).toContain('export function splitLessonTitle');
     expect(guide).toContain('if (!match) return { koreanTitle: value, englishTitle: null }');

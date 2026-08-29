@@ -131,13 +131,13 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
     expect(hub).toContain('getSpomoveCardDisplayModel');
     expect(hub).toContain('data-spm-spomove-card-meta');
-    expect(hub).toContain('활동 살펴보기');
+    expect(hub).toContain('활동 준비');
     expect(hub).not.toContain("after:content-['·']");
     expect(hub).not.toContain('supportMetaParts.slice');
     expect(hub).not.toContain('displayModel.variantLabel');
     expect(hub).not.toContain('catalogTags');
     expect(hub).not.toContain('<Play ');
-    expect(hub).toMatch(/import \{ Bookmark, Lock, MonitorPlay, Search, X \} from 'lucide-react'/);
+    expect(hub).toContain("import { Bookmark, ChevronDown, Lock, MonitorPlay, Search, X } from 'lucide-react'");
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('h-11 w-11');

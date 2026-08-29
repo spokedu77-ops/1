@@ -30,6 +30,15 @@ describe('SPOKEDU MASTER provider error sanitization contract', () => {
     expect(helper).not.toContain('`HTTP ${response.status}`');
   });
 
+  it('does not request Premium explanation data when the active plan cannot use records', () => {
+    const provider = read('app/spokedu-master/explanations/ExplanationDataProvider.tsx');
+    const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
+
+    expect(provider).toContain('enabled = true');
+    expect(provider).toContain('if (!ownerId || !enabled)');
+    expect(shell).toContain('enabled={accessGuard.snapshot.canUseRecords}');
+  });
+
   it('keeps 400, 401, 403, server, and network wording centralized', () => {
     const helper = read('app/spokedu-master/lib/clientErrors.ts');
 

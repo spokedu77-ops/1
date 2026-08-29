@@ -43,9 +43,11 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).not.toContain('TOOL_HELP');
     expect(tools).not.toContain('수업 중 바로 꺼내 쓰는 진행 콘솔');
     expect(tools).toContain('data-class-tools-tabs');
+    expect(tools).toContain('data-class-tools-dock');
     expect(tools).toContain('data-class-tools-content');
-    expect(tools).toContain('수업 생성 없이 사용 가능');
-    expect(tools).toContain('타이머·점수판·팀 편성을 현장에서 바로 사용합니다.');
+    expect(tools).toContain('현장에서 바로 사용하는 도구');
+    expect(tools).toContain('수업으로 돌아가기');
+    expect(tools).toContain('aria-pressed={active}');
   });
 
   it('lets teachers use quick presets and custom minutes/seconds for the timer', () => {

@@ -9,6 +9,7 @@ const provider = read('app/spokedu-master/operational/OperationalDataProvider.ts
 const sessions = read('app/api/spokedu-master/sessions/route.ts');
 const programRoute = read('app/api/spokedu-master/sessions/[sessionId]/programs/route.ts');
 const activity = read('app/spokedu-master/activity/page.tsx');
+const weeklyAgenda = read('app/spokedu-master/activity/weeklyAgenda.ts');
 
 describe('SPOKEDU MASTER final foundation lockdown', () => {
   it('saves a student and all class memberships in one database transaction', () => {
@@ -97,7 +98,8 @@ describe('SPOKEDU MASTER final foundation lockdown', () => {
   it('uses Seoul business days for both 23:30 and 00:30 Sessions', () => {
     expect(getSeoulSessionDay('2026-08-23T14:30:00.000Z')).toBe('2026-08-23');
     expect(getSeoulSessionDay('2026-08-22T15:30:00.000Z')).toBe('2026-08-23');
-    expect(activity).toContain('getSeoulSessionDay(session.startAt) === selectedDay');
+    expect(weeklyAgenda).toContain('daySet.has(getSeoulSessionDay(session.startAt))');
+    expect(weeklyAgenda).toContain('getSeoulSessionDay(session.startAt) === agendaDay');
   });
 
   it('keeps completed class labels on snapshots while refreshing scheduled Sessions', () => {

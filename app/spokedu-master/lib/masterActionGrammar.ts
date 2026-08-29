@@ -10,22 +10,22 @@
  */
 
 export const SPM_PRIMARY_BTN =
-  'spm-btn-primary inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-black disabled:opacity-40';
+  'spm-btn-primary inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-40';
 
 export const SPM_PRIMARY_BTN_FULL =
-  'spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-black disabled:opacity-40';
+  'spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-40';
 
 export const SPM_PRIMARY_BTN_TALL =
-  'spm-btn-primary inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-black disabled:opacity-40';
+  'spm-btn-primary inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold disabled:opacity-40';
 
 export const SPM_OPEN_BTN =
-  'inline-flex min-h-11 items-center justify-center gap-1 rounded-xl bg-slate-900 text-sm font-black text-white';
+  'inline-flex min-h-11 items-center justify-center gap-1 rounded-xl bg-slate-900 text-sm font-semibold text-white';
 
 export const SPM_SECONDARY_BTN =
-  'inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700 disabled:opacity-40';
+  'inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 disabled:opacity-40';
 
 export const SPM_DESTRUCTIVE_BTN =
-  'inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-rose-600 text-sm font-black text-white disabled:opacity-40';
+  'inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-rose-600 text-sm font-semibold text-white disabled:opacity-40';
 
 /** Core Journey controls: one clear primary, restrained supporting actions. */
 export const SPM_JOURNEY_PRIMARY =

@@ -105,8 +105,8 @@ function FloatingTimerPill() {
 function MasterAccessCheckingState({ error = false, onRetry }: { error?: boolean; onRetry?: () => void }) {
   return (
     <div className="grid min-h-full place-items-center px-6 py-12">
-      <div className="w-full max-w-[420px] rounded-[24px] border border-slate-200 bg-white p-6 text-center shadow-sm">
-        <p className="text-[13px] font-black text-slate-900">
+      <div className="w-full max-w-[420px] rounded-xl border border-slate-200 bg-white p-5 text-center">
+        <p className="text-[13px] font-semibold text-slate-900">
           {error ? '이용 권한을 확인하지 못했습니다.' : '로그인 상태를 확인하는 중입니다.'}
         </p>
         <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-500">
@@ -116,7 +116,7 @@ function MasterAccessCheckingState({ error = false, onRetry }: { error?: boolean
           <button
             type="button"
             onClick={onRetry}
-            className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-full px-4 text-[13px] font-black focus-visible:outline-none"
+            className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-[13px] font-semibold focus-visible:outline-none"
           >
             다시 시도
           </button>
@@ -130,11 +130,11 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="h-full overflow-y-auto px-5 py-10 sm:px-8">
       <div className="mx-auto flex min-h-full w-full max-w-[520px] items-center">
-        <section className="w-full rounded-[28px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--spm-acc)]">
+        <section className="w-full rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--spm-acc)]">
             SPOKEDU MASTER
           </p>
-          <h1 className="mt-3 text-[28px] font-black leading-tight text-slate-950 sm:text-[34px]">
+          <h1 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-[32px]">
             SPOKEDU MASTER 이용 권한이 필요합니다.
           </h1>
           <p className="mt-3 text-[14px] font-semibold leading-6 text-slate-500">
@@ -144,7 +144,7 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
           <div className="mt-6 grid gap-2">
             <Link
               href="/spokedu-master/payment"
-              className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none"
+              className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-xl px-4 text-[13px] font-semibold focus-visible:outline-none"
             >
               구독 선택
             </Link>
@@ -154,13 +154,13 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex h-11 items-center justify-center rounded-[10px] bg-slate-100 px-3 text-[13px] font-black text-slate-700"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-100 px-3 text-[13px] font-medium text-slate-700"
             >
               권한 다시 확인
             </button>
             <Link
               href="/spokedu-master/landing"
-              className="inline-flex h-11 items-center justify-center rounded-[10px] px-3 text-[13px] font-black text-slate-500"
+              className="inline-flex h-11 items-center justify-center rounded-xl px-3 text-[13px] font-medium text-slate-500"
             >
               소개 페이지로 이동
             </Link>
@@ -503,7 +503,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
                     spomatShopAvailable={accessGuard.spomatShopAvailable}
                   >
                     <OperationalDataProvider>
-                      <ExplanationDataProvider>{children}</ExplanationDataProvider>
+                      <ExplanationDataProvider enabled={accessGuard.snapshot.canUseRecords}>{children}</ExplanationDataProvider>
                     </OperationalDataProvider>
                   </MasterAccessProvider>
                 ) : (

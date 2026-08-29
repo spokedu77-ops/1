@@ -27,7 +27,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
 
   it('gates programLabel via Hub context prop (not URL reads inside Card)', () => {
     expect(hub).toContain('showProgramLabel={showProgramLabel}');
-    expect(hub).toContain('const showProgramLabel = activeProgramGroup === \'all\'');
+    expect(hub).toContain('const showProgramLabel = selectedFamilyId === null');
     expect(hub).toContain('data-spm-spomove-show-program-label={showProgramLabel ? \'true\' : \'false\'}');
     expect(hub).toContain('data-spm-spomove-card-program-label="true"');
     expect(hub).toContain('showProgramLabel ? (');
@@ -36,9 +36,9 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
 
   it('documents programLabel visibility matrix in Hub context', () => {
     // 전체 / 즐겨찾기 전체 → all → label on
-    expect(hub).toMatch(/activeProgramGroup === 'all'/);
-    // 특정 programGroup 필터·즐겨찾기+그룹 → label off (same expression)
-    expect(hub).toContain("const showProgramLabel = activeProgramGroup === 'all'");
+    expect(hub).toContain('selectedFamilyId === null');
+    // Family 안에서는 상위 Family 이름을 카드마다 반복하지 않는다.
+    expect(hub).toContain('const showProgramLabel = selectedFamilyId === null');
   });
 
   it('keeps P0 semantic badge contract for all public cards', () => {
@@ -84,13 +84,13 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
   });
 
   it('keeps result-based action grammar: activity review primary, settings secondary, no Play', () => {
-    expect(hub).toContain('활동 살펴보기');
-    expect(hub).toContain('실행 설정');
+    expect(hub).toContain('활동 준비');
+    expect(hub).toContain('시작 설정');
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('spm-btn-primary');
     expect(hub).not.toContain('<Play ');
-    expect(hub).toMatch(/import \{ Bookmark, Lock, MonitorPlay, Search, X \} from 'lucide-react'/);
+    expect(hub).toContain("import { Bookmark, ChevronDown, Lock, MonitorPlay, Search, X } from 'lucide-react'");
     expect(hub).toContain('h-11 w-11');
   });
 
@@ -107,11 +107,11 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(withoutSettings).toBeGreaterThan(0);
   });
 
-  it('keeps desktop 4-col grid and responsive breakpoints (no silent 3-col desktop)', () => {
+  it('uses a commercially readable 3-column preset grid after Family selection', () => {
     expect(hub).toContain(
-      'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4',
+      'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-3',
     );
-    expect(hub).not.toContain('xl:grid-cols-3');
+    expect(hub).not.toContain('xl:grid-cols-4');
     expect(hub).toContain('min-h-[300px]');
     expect(hub).toContain('aspect-[6/5]');
   });

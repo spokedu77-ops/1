@@ -6,15 +6,15 @@
 
 /** 필터·탭 칩 공통 */
 export const SPM_CHIP =
-  'inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-[11px] font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] sm:min-h-8';
+  'inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] sm:min-h-8';
 
-export const SPM_CHIP_ACTIVE = 'bg-[var(--spm-acc)] text-white shadow-sm';
+export const SPM_CHIP_ACTIVE = 'bg-[var(--spm-acc)] text-white';
 
 export const SPM_CHIP_IDLE =
   'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900';
 
 /** 세그먼트(전체/즐겨찾기 등) — 모서리는 부모가 잡음 */
-export const SPM_SEG_ACTIVE = 'bg-[var(--spm-acc)] text-white shadow-sm';
+export const SPM_SEG_ACTIVE = 'bg-[var(--spm-acc)] text-white';
 
 export const SPM_SEG_IDLE =
   'text-[color:var(--spm-t2)] hover:text-[color:var(--spm-t)]';
@@ -24,24 +24,33 @@ export function spmChipClass(active: boolean, extra = ''): string {
 }
 
 export function spmSegClass(active: boolean, extra = ''): string {
-  return `min-h-11 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] sm:min-h-8 ${
+  return `min-h-11 rounded-xl px-3 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] sm:min-h-8 ${
     active ? SPM_SEG_ACTIVE : SPM_SEG_IDLE
   }${extra ? ` ${extra}` : ''}`;
 }
 
 /** Repeated collection geometry: content decides meaning, never footer position. */
 export const SPM_COLLECTION_CARD =
-  'flex h-full min-h-[220px] flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-slate-300 focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2';
+  'flex h-full min-h-[220px] flex-col rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2';
 
 export const SPM_COLLECTION_CARD_BODY = 'min-h-0 flex-1';
 
 export const SPM_COLLECTION_CARD_FOOTER = 'mt-auto grid gap-2 pt-4';
 
 export const SPM_STATE_PANEL =
-  'rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold leading-6 text-slate-600';
+  'rounded-xl border border-slate-200 bg-white p-4 text-sm font-normal leading-6 text-slate-600';
 
 export const SPM_EMPTY_PANEL =
-  'rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center';
+  'rounded-xl border border-slate-200 bg-white px-4 py-5 text-center text-sm text-slate-500';
+
+/** Visual System v1 foundations shared across all MASTER surface families. */
+export const SPM_PAGE_TITLE = 'text-2xl font-semibold leading-tight text-slate-950';
+export const SPM_SECTION_HEADING = 'text-lg font-semibold text-slate-900';
+export const SPM_CONTENT_TITLE = 'text-base font-semibold text-slate-900';
+export const SPM_BODY_TEXT = 'text-sm font-normal text-slate-700';
+export const SPM_META_TEXT = 'text-xs font-normal text-slate-500';
+export const SPM_STANDARD_SURFACE = 'rounded-xl border border-slate-200 bg-white';
+export const SPM_QUIET_ROW = 'border-b border-slate-200 py-3 last:border-b-0';
 
 /** Phase 9A: Core Journey visual roles. Keep these semantic and deliberately small. */
 export const SPM_JOURNEY_STACK = 'flex flex-col gap-6 pb-4';

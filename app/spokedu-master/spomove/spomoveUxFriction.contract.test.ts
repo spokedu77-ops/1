@@ -11,9 +11,9 @@ describe('SPOMOVE user-friction hardening contracts', () => {
     expect(hub).toContain('활동명 또는 키워드 검색');
     expect(hub).toContain('parseSpomoveHubUrlState');
     expect(hub).toContain('serializeSpomoveHubUrlState');
-    expect(hub).toContain('aria-pressed={active}');
-    expect(hub).toContain('aria-live="polite"');
-    expect(hub).toContain('>초기화</button>');
+    expect(hub).toContain('data-spm-spomove-catalog-family={family.id}');
+    expect(hub).toContain('aria-expanded={filtersOpen}');
+    expect(hub).toContain('전체 프로그램 보기');
   });
 
   it('keeps one card column through 430px and mobile action targets usable', () => {

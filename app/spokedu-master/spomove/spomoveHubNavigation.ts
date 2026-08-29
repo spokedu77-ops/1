@@ -2,6 +2,7 @@ export type SpomoveHubViewMode = 'all' | 'favorites';
 
 export type SpomoveHubUrlState = {
   view: SpomoveHubViewMode;
+  family: string;
   group: string;
   difficulty: string;
   movement: string;
@@ -10,6 +11,7 @@ export type SpomoveHubUrlState = {
 
 export const DEFAULT_SPOMOVE_HUB_URL_STATE: SpomoveHubUrlState = {
   view: 'all',
+  family: 'all',
   group: 'all',
   difficulty: 'all',
   movement: 'all',
@@ -26,7 +28,7 @@ export function getSpomoveHubHref(view: SpomoveHubViewMode = 'all'): string {
 
 export function parseSpomoveHubUrlState(
   params: Pick<URLSearchParams, 'get'>,
-  allowed: { groups: readonly string[]; difficulties: readonly string[]; movements: readonly string[] },
+  allowed: { families?: readonly string[]; groups: readonly string[]; difficulties: readonly string[]; movements: readonly string[] },
 ): SpomoveHubUrlState {
   const valueOrAll = (key: string, values: readonly string[]) => {
     const value = params.get(key);
@@ -34,6 +36,7 @@ export function parseSpomoveHubUrlState(
   };
   return {
     view: parseSpomoveHubView(params.get('view')),
+    family: valueOrAll('family', allowed.families ?? ['all']),
     group: valueOrAll('group', allowed.groups),
     difficulty: valueOrAll('difficulty', allowed.difficulties),
     movement: valueOrAll('movement', allowed.movements),
@@ -44,6 +47,7 @@ export function parseSpomoveHubUrlState(
 export function serializeSpomoveHubUrlState(state: SpomoveHubUrlState): string {
   const params = new URLSearchParams();
   if (state.view === 'favorites') params.set('view', 'favorites');
+  if (state.family !== 'all') params.set('family', state.family);
   if (state.group !== 'all') params.set('group', state.group);
   if (state.difficulty !== 'all') params.set('difficulty', state.difficulty);
   if (state.movement !== 'all') params.set('movement', state.movement);
