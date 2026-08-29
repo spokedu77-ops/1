@@ -19,13 +19,13 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain('flex-wrap justify-center');
   });
 
-  it('renders one primary action above two quieter support actions', () => {
-    expect(view.match(/data-detail-action=/g)).toHaveLength(2);
+  it('renders one primary Session action above one quiet resource action', () => {
+    expect(view.match(/data-detail-action=/g)).toHaveLength(1);
     expect(view).toContain('data-detail-actions');
     expect(view).toContain('data-detail-support-actions');
-    expect(view).toContain('grid-cols-2');
+    expect(view).toContain('flex justify-center');
     expect(view).toContain('AssignProgramToSessionButton');
-    expect(view).toContain('수업 일정 관리');
+    expect(view).not.toContain('수업 일정 관리');
     expect(view).toContain('지도안 복사');
     expect(view).not.toContain('data-detail-action="quick"');
   });

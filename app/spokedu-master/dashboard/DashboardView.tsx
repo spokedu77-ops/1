@@ -60,7 +60,6 @@ import {
 import { SpomoveGuidelineSheet, type SpomoveContentLoadState } from '../spomove/SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import { getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
-import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { hasMasterEntitlement } from '../lib/masterAccessModel';
@@ -275,48 +274,6 @@ function WeeklyProgramCard({
       }}
       sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw"
     />
-  );
-}
-
-/** 하단 보조 추천 행 — 메인 수업 선반보다 낮은 밀도의 컴팩트 리스트 */
-function ContextProgramRow({
-  program,
-  cornerLabel,
-  onPreview,
-}: {
-  program: Program;
-  cornerLabel: string;
-  onPreview: (program: Program) => void;
-}) {
-  const model = buildLessonDisplayModel(program);
-  const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const selectionMeta = formatProgramSelectionReasons(program);
-  const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
-  const meta = [cornerLabel, supportMeta].filter(Boolean).join(' · ');
-  const hero = model.heroImageUrl?.trim() || '';
-
-  return (
-    <button
-      type="button"
-      data-context-program={program.id}
-      onClick={() => onPreview(program)}
-      className="flex w-full min-h-12 items-center gap-2.5 rounded-[10px] border border-slate-100 bg-slate-50/70 px-2 py-1.5 text-left transition-colors hover:border-slate-200 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
-    >
-      <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-[8px] bg-slate-100">
-        {hero ? (
-          // eslint-disable-next-line @next/next/no-img-element -- mixed local/remote program heroes
-          <img src={hero} alt="" className="h-full w-full object-cover" loading="lazy" />
-        ) : null}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[12px] font-black text-[color:var(--spm-t)]">{model.title}</span>
-        <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500">{meta}</span>
-      </span>
-      <span className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-bold text-slate-500">
-        활동 살펴보기
-        <ArrowRight size={13} />
-      </span>
-    </button>
   );
 }
 
@@ -558,6 +515,10 @@ function ActivityPanel({
     </section>
   );
 }
+
+// Retained temporarily as reusable legacy primitives while Home IA is frozen.
+void SpomoveCard;
+void ActivityPanel;
 
 export default function DashboardView() {
   const accessSnapshot = useMasterAccessSnapshot();

@@ -20,9 +20,10 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain('rankLibraryPrograms(constrained, query, getProgramSearchFields)');
   });
 
-  it('counts recent usage only from activities actually completed in completed lessons', () => {
-    expect(source).toContain("session.status === 'completed'");
-    expect(source).toContain('record.isCompleted');
+  it('keeps the Lite resource catalog complete and separate from operational history', () => {
+    expect(source).toContain('programs.filter((program) => !program.isPro)');
+    expect(source).not.toContain('recentProgramRecords');
+    expect(source).not.toContain('usedProgramIds');
   });
 
   it('uses the owner-scoped canonical selectors and action', () => {
@@ -57,15 +58,16 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain("if (sessionId && operationalStatus !== 'ready') return;");
     expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(source).toContain('autoplayVideo: programHasPlayableVideo(program)');
-    expect(source).toContain('바로 쓸 수업 고르기');
+    expect(source).toContain('SPOKEDU RESOURCE LIBRARY');
   });
 
   it('keeps the library search controls compact and purpose-led', () => {
-    expect(source).toContain('바로 쓸 수업 고르기');
+    expect(source).toContain('수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요.');
     expect(source).toContain('전체에서 찾기');
     expect(source).toContain('상황별 바로 고르기');
-    expect(source).toContain('전체 {pool.length}개 수업');
-    expect(source).toContain('placeholder="수업명·준비물·키워드 검색"');
+    expect(source).not.toContain('전체 {pool.length}개 수업');
+    expect(source).toContain('placeholder="피구, 협동, 풍선, 저학년, 실내…"');
+    expect(source).toContain('aria-label="놀이체육 활동 검색"');
     expect(source).toContain('...(program.equipment ?? [])');
     expect(source).not.toContain('조건에 맞는 수업 찾기');
     expect(source).not.toContain('전체 수업 ${filteredPrograms.length}개');
@@ -91,10 +93,10 @@ describe('LibraryView favorites contract', () => {
     expect(source).not.toContain('entry.reasonId');
   });
 
-  it('does not expose record cloning as a default library action', () => {
+  it('does not expose operational history or record cloning as a default library action', () => {
     expect(source).not.toContain('class-record?from=');
-    expect(source).toContain('activity?session=${encodeURIComponent(record.id)}');
-    expect(source).toContain('지난 수업 보기');
+    expect(source).not.toContain('최근에 쓴 수업');
+    expect(source).not.toContain('지난 수업 보기');
   });
 
   it('returns the existing loading skeleton before rendering favorites empty states', () => {

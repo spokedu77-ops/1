@@ -29,8 +29,11 @@ export default function SessionNewClient() {
         if (!res.ok) throw new Error(json.error || '불러오기 실패');
         const list = (json.data ?? []) as ProgramRow[];
         setPrograms(list);
-        if (!programId && list.length === 1) setProgramId(list[0].id);
-        else if (presetProgramId) setProgramId(presetProgramId);
+        setProgramId((current) => {
+          if (presetProgramId) return presetProgramId;
+          if (!current && list.length === 1) return list[0].id;
+          return current;
+        });
       } catch (e) {
         setError(e instanceof Error ? e.message : '불러오기 실패');
       } finally {

@@ -24,13 +24,6 @@ export type SessionChildRecordInput = {
 
 export type ValidationIssue = { field: string; message: string; code: string };
 
-const STRUCTURED_OBSERVED_FIELDS = [
-  'participation_level',
-  'support_level',
-  'independent_initiation',
-  'self_reengagement',
-] as const;
-
 function hasStructuredObservedValue(input: SessionChildRecordInput): boolean {
   return (
     input.participation_level != null

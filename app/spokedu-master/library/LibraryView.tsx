@@ -2,7 +2,6 @@
 
 import {
   Bookmark,
-  BookOpen,
   ChevronDown,
   Lock,
   Search,
@@ -60,7 +59,6 @@ import {
   parseLibraryView,
   selectLibraryBasePrograms,
   buildLibraryFilterGroups,
-  formatRecentRecordSubtitle,
   LIBRARY_PAGE_SIZE,
   matchesLibraryFilters,
   paginateLibraryPrograms,
@@ -168,7 +166,6 @@ function ProgramCard({
   program,
   locked,
   favorite,
-  used,
   onPreview,
   onFavorite,
   favoriteEnabled,
@@ -181,7 +178,6 @@ function ProgramCard({
   program: Program;
   locked: boolean;
   favorite: boolean;
-  used: boolean;
   onPreview: () => void;
   onFavorite: () => void;
   favoriteEnabled: boolean;
@@ -206,7 +202,6 @@ function ProgramCard({
       decisionMeta={decisionMeta}
       supportMeta={supportMeta}
       locked={locked}
-      used={used}
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
       onFavorite={onFavorite}
@@ -321,7 +316,8 @@ export default function LibraryView() {
     }
   };
 
-  const pool = programs;
+  // The physical-activity Library is a complete Lite catalog. Premium content lives in SPOMOVE.
+  const pool = useMemo(() => programs.filter((program) => !program.isPro), [programs]);
 
   const viewPool = useMemo(
     () => selectLibraryBasePrograms(pool, favoriteIds, view),
@@ -331,33 +327,6 @@ export default function LibraryView() {
     () => countValidFavoritePrograms(pool, favoriteIds),
     [pool, favoriteIds],
   );
-
-  const usedProgramIds = useMemo(
-    () => new Set(sessions.filter((session) => session.status === 'completed').flatMap((session) => session.programs
-      .filter((item) => item.sourceType === 'program' && item.programId != null && item.isCompleted)
-      .map((item) => String(item.programId)))),
-    [sessions],
-  );
-  const recentProgramRecords = useMemo(() => {
-    const programsById = new Map(pool.map((program) => [program.id, program]));
-    const seen = new Set<string>();
-    return sessions.filter((session) => session.status === 'completed')
-      .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime())
-      .flatMap((session) => session.programs.filter((record) => record.sourceType === 'program' && record.programId != null && record.isCompleted).map((record) => ({ session, record })))
-      .flatMap(({ session, record }) => {
-        const program = programsById.get(String(record.programId));
-        if (!program || seen.has(String(record.programId))) return [];
-        seen.add(String(record.programId));
-        return [{ program, record: {
-          id: session.id, date: session.startAt, lessonTitle: session.className, classId: session.classId,
-          programId: String(record.programId), programTitle: record.programTitle ?? program.title,
-          present: session.attendance.filter((item) => item.status === 'present').length,
-          absent: session.attendance.filter((item) => item.status === 'absent').length,
-          focusCount: 0, skillCount: 0, kakaoSent: false, students: [],
-        } }];
-      })
-      .slice(0, 4);
-  }, [sessions, pool]);
 
   const shelves = useMemo(() => buildLibraryShelves(viewPool), [viewPool]);
 
@@ -515,19 +484,16 @@ export default function LibraryView() {
   );
 
   const basicGroups = useMemo(
-    () =>
-      filterGroups.filter((g) =>
-        (['target', 'space', 'participant'] as FilterGroupKey[]).includes(g.key),
-      ),
+    () => filterGroups.filter((g) => (['target', 'space'] as FilterGroupKey[]).includes(g.key)),
     [filterGroups],
   );
   const advancedGroups = useMemo(
-    () => filterGroups.filter((g) => (['function', 'movement', 'theme'] as FilterGroupKey[]).includes(g.key)),
+    () => filterGroups.filter((g) => (['participant', 'function', 'movement', 'theme'] as FilterGroupKey[]).includes(g.key)),
     [filterGroups],
   );
 
   const advancedHasActive =
-    filters.some((filter) => (['function', 'movement', 'theme'] as FilterGroupKey[]).includes(filter.group));
+    filters.some((filter) => (['participant', 'function', 'movement', 'theme'] as FilterGroupKey[]).includes(filter.group));
   const isAdvancedOpen = showAdvanced || advancedHasActive;
 
   if (pool.length === 0) {
@@ -570,24 +536,19 @@ export default function LibraryView() {
           <Link href={sessionReturnHref} className="inline-flex min-h-11 shrink-0 items-center text-xs font-black text-blue-700">수업으로 돌아가기</Link>
         </div> : null}
         {sessionAddError ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
-        <header className="rounded-[20px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:p-5">
+        <header className="border-b border-slate-200 pb-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--spm-acc)]">
-                놀이체육
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                SPOKEDU RESOURCE LIBRARY
               </p>
-              <h1 className="mt-1 text-[23px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[27px]">
-                {isBrowseMode ? '바로 쓸 수업 고르기' : '맞는 수업 찾기'}
+              <h1 className="mt-1 text-[24px] font-semibold leading-tight text-slate-950 sm:text-[28px]">
+                놀이체육
               </h1>
-              <p className="mt-1 text-[13px] font-semibold text-slate-600">
-                {isBrowseMode
-                  ? '편집된 수업부터 보고, 필요할 때 전체에서 검색하세요.'
-                  : '검색과 조건으로 원하는 수업을 좁히세요.'}
+              <p className="mt-1 text-[13px] font-normal text-slate-600">
+                수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요.
               </p>
             </div>
-            <p className="text-[11px] font-bold text-slate-500">
-              전체 {pool.length}개 수업
-            </p>
           </div>
 
           <div className="mt-3 grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -596,8 +557,9 @@ export default function LibraryView() {
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="수업명·준비물·키워드 검색"
-                className="h-11 w-full rounded-xl border border-[color:var(--spm-br2)] bg-white pl-10 pr-4 text-sm font-semibold text-[color:var(--spm-t)] outline-none placeholder:text-[color:var(--spm-t3)] focus:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200 sm:h-10"
+                placeholder="피구, 협동, 풍선, 저학년, 실내…"
+                aria-label="놀이체육 활동 검색"
+                className="h-13 w-full rounded-[12px] border border-slate-300 bg-white pl-11 pr-4 text-base font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-200"
               />
             </label>
             <div className="flex flex-wrap items-center gap-2">
@@ -640,7 +602,7 @@ export default function LibraryView() {
                   <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">컬렉션</p>
                   <h2 className="mt-1 text-[22px] font-black leading-tight text-[color:var(--spm-t)]">상황별 바로 고르기</h2>
                 </div>
-                {shelves.map(({ shelf, programs: shelfPrograms, total }) => (
+                {shelves.slice(0, 1).map(({ shelf, programs: shelfPrograms, total }) => (
                   <div key={shelf.id} className="rounded-[18px] border border-slate-200 bg-white/90 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)] sm:p-4">
                     <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
                       <div>
@@ -664,7 +626,6 @@ export default function LibraryView() {
                       favoriteEnabled={ownerId != null}
                       sourceLibraryView={view}
                       sourceLibrarySearch={sourceLibrarySearch}
-                      usedProgramIds={usedProgramIds}
                       toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
                       setSelected={setSelected}
                       primaryActionLabel={primaryActionLabel}
@@ -697,36 +658,10 @@ export default function LibraryView() {
               </div>
             </section>
 
-            {recentProgramRecords.length > 0 ? (
-              <section className="rounded-[16px] border border-slate-200 bg-white/80 p-3">
-                <div className="mb-2">
-                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">최근 사용</p>
-                  <h2 className="mt-0.5 text-[16px] font-black leading-tight text-[color:var(--spm-t)]">최근에 쓴 수업</h2>
-                </div>
-                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-                  {recentProgramRecords.map(({ program, record }) => (
-                    <article key={program.id} className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2.5">
-                      <p className="text-[11px] font-bold text-[color:var(--spm-t3)]">
-                        {formatRecentRecordSubtitle(record)}
-                      </p>
-                      <h3 className="mt-1 line-clamp-2 text-[14px] font-black leading-tight text-[color:var(--spm-t)]">{program.title}</h3>
-                      <div className="mt-3 grid gap-2">
-                        <Link href={`/spokedu-master/activity?session=${encodeURIComponent(record.id)}`} className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
-                          지난 수업 보기
-                        </Link>
-                        <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-9 items-center justify-center rounded-[9px] bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
-                          수업 다시 준비
-                        </Link>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ) : null}
           </>
         ) : null}
 
-        <section id="library-catalog">
+        {!isBrowseMode ? <section id="library-catalog">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <SectionTitle
               eyebrow={isBrowseMode ? '전체 검색' : '수업 목록'}
@@ -788,7 +723,7 @@ export default function LibraryView() {
               <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 {isBrowseMode ? '더 많은 조건' : '세부 조건'}
-                <span className="text-[11px] font-bold text-[color:var(--spm-t3)]">신체 기능 · 움직임 · 테마</span>
+                <span className="text-[11px] font-normal text-[color:var(--spm-t3)]">참여 형태 · 신체 기능 · 움직임 · 테마</span>
               </span>
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -808,7 +743,6 @@ export default function LibraryView() {
             favoriteEnabled={ownerId != null}
             sourceLibraryView={view}
             sourceLibrarySearch={sourceLibrarySearch}
-            usedProgramIds={usedProgramIds}
           toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
           setSelected={setSelected}
           primaryActionLabel={primaryActionLabel}
@@ -843,25 +777,21 @@ export default function LibraryView() {
                 </button>
               </div>
             ) : (
-              <div className="rounded-[18px] border border-dashed border-[color:var(--spm-br3)] bg-[var(--spm-s1)] p-8 text-center">
-                <BookOpen className="mx-auto h-10 w-10 text-[color:var(--spm-t2)]" />
-                <h3 className="mt-4 text-lg font-black text-[color:var(--spm-t)]">
+              <div className="flex flex-col gap-3 border-t border-slate-200 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-sm font-medium text-slate-600">
                   {view === 'favorites' ? '조건에 맞는 즐겨찾기 수업이 없습니다.' : '조건에 맞는 수업이 없습니다.'}
                 </h3>
-                <p className="mt-2 text-sm font-semibold text-[color:var(--spm-t2)]">
-                  검색어를 줄이거나 선택한 조건을 해제해 보세요.
-                </p>
                 <button
                   type="button"
                   onClick={clearAllSearch}
-                  className="spm-btn-primary mt-4 inline-flex h-11 items-center rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none"
+                  className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-700"
                 >
-                  검색·필터 초기화
+                  전체 활동 보기
                 </button>
               </div>
             )
           ) : null}
-        </section>
+        </section> : null}
       </main>
 
       {selected ? (
@@ -895,7 +825,6 @@ function ProgramGrid({
   favoriteEnabled,
   sourceLibraryView,
   sourceLibrarySearch,
-  usedProgramIds,
   toggleFavorite,
   setSelected,
   primaryActionLabel,
@@ -908,7 +837,6 @@ function ProgramGrid({
   favoriteEnabled: boolean;
   sourceLibraryView: LibraryViewMode;
   sourceLibrarySearch: string;
-  usedProgramIds: Set<string>;
   toggleFavorite: (id: string) => void;
   setSelected: (selection: { program: Program; autoplayVideo: boolean }) => void;
   primaryActionLabel: string;
@@ -916,7 +844,7 @@ function ProgramGrid({
   addingProgramId: string | null;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {programs.map((program, index) => (
         <ProgramCard
           key={program.id}
@@ -925,7 +853,6 @@ function ProgramGrid({
           favorite={isFavorite(program.id)}
           favoriteEnabled={favoriteEnabled}
           detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
-          used={usedProgramIds.has(program.id)}
           priority={index < 4}
           onFavorite={() => toggleFavorite(program.id)}
           onPreview={() =>
