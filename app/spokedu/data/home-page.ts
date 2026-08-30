@@ -48,7 +48,7 @@ function buildHomeCaseCard(slug: FieldRecordSlug): HomeCaseCard {
 }
 
 export const homePage = {
-  sectionOrder: ['hero', 'choice', 'why', 'spomove', 'subscription', 'cases', 'final-action'] as const,
+  sectionOrder: ['hero', 'choice', 'why', 'spomove', 'subscription', 'cases', 'contact'] as const,
 
   hero: {
     id: 'hero',
@@ -58,7 +58,7 @@ export const homePage = {
     mediaKey: 'homeHero' as HomeMediaKey,
     brand: 'SPOKEDU',
     primaryCta: {
-      label: '체육교육 알아보기',
+      label: '체육수업 알아보기',
       href: SPOKEDU_PATHS.education,
       trackLabel: 'cta-home-education-hero',
     },
@@ -78,31 +78,19 @@ export const homePage = {
     id: 'choice',
     title: '수업을 맡기거나, 직접 운영하세요.',
     education: {
-      headline: '체육교육',
-      tagline: 'SPOKEDU가 직접 운영합니다.',
-      body: '학교·기관·개인의 조건에 맞춰 체육수업을 설계하고 진행합니다.',
+      headline: '체육수업',
+      tagline: 'SPOKEDU가 직접 수업합니다.',
+      body: '학교·기관·개인·소그룹의 대상과 환경에 맞춰 수업을 구성하고 운영합니다.',
       primaryCta: {
-        label: '체육교육 알아보기',
+        label: '체육수업 알아보기',
         href: SPOKEDU_PATHS.education,
         trackLabel: 'cta-home-choice-education',
       },
-      links: [
-        {
-          label: '기관수업',
-          href: SPOKEDU_PATHS.dispatch,
-          trackLabel: 'cta-home-choice-dispatch',
-        },
-        {
-          label: '개인·소그룹',
-          href: SPOKEDU_PATHS.private,
-          trackLabel: 'cta-home-choice-private',
-        },
-      ] as const,
     },
     subscription: {
       headline: '구독시스템',
-      tagline: '지도자가 직접 운영할 수 있도록 제공합니다.',
-      body: '놀이체육 콘텐츠와 SPOMOVE를 선택하고 수업을 준비·진행·기록할 수 있습니다.',
+      tagline: '지도자가 직접 수업할 수 있도록 돕습니다.',
+      body: '놀이체육 콘텐츠와 SPOMOVE를 활용해 수업을 준비하고 진행하고 기록할 수 있습니다.',
       primaryCta: {
         label: '구독시스템 알아보기',
         href: SPOKEDU_PATHS.subscription,
@@ -114,7 +102,8 @@ export const homePage = {
   why: {
     id: 'why',
     title: '직접 수업하며 만듭니다.',
-    body: '실제 체육수업에서 활동을 사용하고 수정하면서 수업에 필요한 프로그램과 콘텐츠를 정리합니다.',
+    body:
+      '실제 수업에서 필요한 활동을 직접 만들고 사용합니다. 현장에서 다듬은 활동을 프로그램과 콘텐츠로 이어갑니다.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
     primaryCta: {
       label: '운영 사례 보기',
@@ -126,10 +115,11 @@ export const homePage = {
   spomove: {
     id: 'spomove',
     label: 'SPOMOVE',
-    title: '보고, 판단하고, 움직입니다.',
-    body: '화면의 정보를 확인하고 판단한 뒤 실제 움직임으로 반응하는 SPOKEDU의 자체 신체활동 콘텐츠입니다.',
+    title: '보고, 판단하고,\n움직입니다.',
+    body:
+      '화면의 정보를 확인하고 판단한 뒤 실제 움직임으로 반응하는 SPOKEDU의 자체 신체활동 콘텐츠입니다.',
     flow: ['화면 확인', '규칙 판단', '움직임'] as const,
-    mediaKey: 'spomoveHeroField' as HomeMediaKey,
+    mediaKey: 'homeHeroWide' as HomeMediaKey,
     primaryCta: {
       label: 'SPOMOVE 자세히 보기',
       href: SPOKEDU_PATHS.spomove,
@@ -140,7 +130,7 @@ export const homePage = {
   subscription: {
     id: 'subscription',
     title: '오늘 수업을 찾고, 준비하고, 바로 운영하세요.',
-    lead: '놀이체육 콘텐츠와 SPOMOVE를 선택하고 수업 준비부터 진행·기록까지 이어서 사용할 수 있습니다.',
+    lead: '놀이체육 콘텐츠와 SPOMOVE를 활용해 수업 준비부터 진행과 기록까지 이어서 사용할 수 있습니다.',
     flow: ['찾기', '준비', '진행', '기록'] as const,
     visual: {
       src: '/images/spokedu/subscription/product-lesson.png',
@@ -156,7 +146,7 @@ export const homePage = {
   cases: {
     id: 'cases',
     title: '실제 운영 현장',
-    lead: 'SPOKEDU가 직접 운영한 수업과 프로그램 기록입니다.',
+    lead: 'SPOKEDU가 직접 운영한\n수업과 프로그램 기록입니다.',
     recordsCta: {
       label: '운영 사례 전체 보기',
       href: SPOKEDU_PATHS.records,
@@ -169,24 +159,20 @@ export const homePage = {
     ],
   },
 
-  finalCta: {
-    id: 'final-action',
-    title: '필요한 방식으로 시작하세요.',
-    lead: 'SPOKEDU에 수업을 맡기거나, 구독시스템으로 직접 운영할 수 있습니다.',
+  contact: {
+    id: 'contact',
+    title: '수업이나 도입이 필요하신가요?',
+    lead:
+      '기관·학교 체육수업부터 SPOMOVE와 구독시스템 활용까지\n필요한 내용을 확인하고 안내합니다.',
     primaryCta: {
-      label: '체육교육 알아보기',
-      href: SPOKEDU_PATHS.education,
-      trackLabel: 'cta-home-final-education',
+      label: '문의하기',
+      href: SPOKEDU_PATHS.contact,
+      trackLabel: 'cta-home-contact-primary',
     },
     secondaryCta: {
-      label: '구독시스템 알아보기',
-      href: SPOKEDU_PATHS.subscription,
-      trackLabel: 'cta-home-final-subscription',
-    },
-    tertiaryCta: {
-      label: '문의·협업',
-      href: SPOKEDU_PATHS.contact,
-      trackLabel: 'cta-home-final-contact',
+      label: '운영 사례 더 보기',
+      href: SPOKEDU_PATHS.records,
+      trackLabel: 'cta-home-contact-records',
     },
   },
 } as const;

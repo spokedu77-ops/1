@@ -127,13 +127,16 @@ describe('spokedu site IA', () => {
       'spomove',
       'subscription',
       'cases',
-      'final-action',
+      'contact',
     ]);
     expect(homePage.hero.lines.join(' ')).toMatch(/아동·청소년|체육수업|직접|운영/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
     expect(homePage.hero.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/education`);
+    expect(homePage.hero.primaryCta.label).toBe('체육수업 알아보기');
     expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/subscription`);
     expect(homePage.hero.tertiaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
+    expect(homePage.choice.education.headline).toBe('체육수업');
+    expect(homePage.choice.education.primaryCta.label).toBe('체육수업 알아보기');
     expect(homePage.choice.education.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/education`);
     expect(homePage.choice.subscription.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/subscription`);
     expect(JSON.stringify(homePage)).not.toMatch(/FIELD|CONTENT|SYSTEM/);
@@ -141,11 +144,13 @@ describe('spokedu site IA', () => {
     expect(homePage.spomove.flow).toEqual(['화면 확인', '규칙 판단', '움직임']);
     expect(homePage.spomove.body).not.toMatch(/향상|개선|반드시 성장/);
     expect(homePage.subscription.flow).toEqual(['찾기', '준비', '진행', '기록']);
-    expect(homePage.finalCta.primaryCta.href).toBe(`${SPOKEDU_PATHS.education}`);
-    expect(homePage.finalCta.secondaryCta.href).toBe(`${SPOKEDU_PATHS.subscription}`);
-    expect(homePage.finalCta.tertiaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
+    expect(homePage.contact.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
+    expect(homePage.contact.primaryCta.label).toBe('문의하기');
+    expect(homePage.contact.secondaryCta.href).toBe(`${SPOKEDU_PATHS.records}`);
+    expect(homePage.contact.secondaryCta.label).toBe('운영 사례 더 보기');
+    expect(JSON.stringify(homePage.contact)).not.toMatch(/onboarding|스포키듀 마스터/);
+    expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기/);
     expect(JSON.stringify(homePage.hero)).not.toMatch(/SPO-MAT|9,900|15,015/);
-    expect(JSON.stringify(homePage.finalCta)).not.toMatch(/onboarding|스포키듀 마스터/);
   });
 
   it('uses the verified field cases on the home proof section', () => {
@@ -169,7 +174,7 @@ describe('spokedu site IA', () => {
 
     expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.hero);
     expect(whyMedia.asset).toBe(SPOKEDU_IMAGES.dispatch.kiwoomCenter);
-    expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.programs.spomoveHeroField);
+    expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.home.heroSpomoveClass);
     expect(canUseSpokeduImageOnPage(spomoveDetail.asset!, 'home')).toBe(true);
     expect(
       new Set([HOME_MEDIA[homePage.hero.mediaKey].src, whyMedia.src, spomoveDetail.src]).size,

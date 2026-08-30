@@ -103,19 +103,22 @@
 
 /* —— Choice —— */
 .choice {
-  padding-block: clamp(4.5rem, 8vw, 6.5rem);
+  padding-block: clamp(4rem, 7vw, 5.75rem);
   background: var(--spokedu-marketing-color-white);
 }
 
 .choiceSplit {
-  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+  margin-top: clamp(2.25rem, 4.5vw, 3rem);
   display: grid;
   grid-template-columns: 1fr;
   gap: 2.5rem;
 }
 
 .choiceColumn {
+  display: flex;
   min-width: 0;
+  min-height: 100%;
+  flex-direction: column;
 }
 
 .choiceDivider {
@@ -140,48 +143,55 @@
 
 .choiceBody {
   margin-top: 1rem;
-  max-width: 22rem;
+  max-width: 24rem;
   font-size: 1rem;
   line-height: 1.72;
   color: var(--spokedu-marketing-color-body);
 }
 
-.choiceDirect {
-  margin-top: 1.25rem;
-  font-size: 0.875rem;
-  color: var(--spokedu-marketing-color-muted);
+.choiceCta {
+  margin-top: auto;
+  padding-top: 1.75rem;
 }
 
 /* —— Why —— */
 .why {
-  padding-block: clamp(3.5rem, 6vw, 4.75rem);
+  padding-block: clamp(3rem, 5vw, 4rem);
   background: var(--spokedu-marketing-color-paper);
 }
 
 .whyGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 2rem;
+  gap: 1.75rem;
   align-items: center;
 }
 
+.whyBody {
+  margin-top: 1.25rem;
+  max-width: 32rem;
+  font-size: 1rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
 .whyPhoto {
-  max-width: 22rem;
+  max-width: 20rem;
   border-radius: var(--he-photo-radius);
   overflow: hidden;
 }
 
 /* —— SPOMOVE —— */
 .spomove {
-  padding-block: clamp(4.5rem, 7vw, 6rem);
+  padding-block: clamp(5rem, 8vw, 7rem);
   background: #081126;
   color: #fff;
 }
 
 .spomoveGrid {
   display: grid;
-  gap: 2.5rem;
-  align-items: center;
+  gap: 2rem;
+  align-items: stretch;
 }
 
 .spomoveLabel {
@@ -209,11 +219,27 @@
   color: rgba(255, 255, 255, 0.35);
 }
 
+.spomoveCta {
+  margin-top: 2rem;
+}
+
 .spomoveVisual {
   position: relative;
-  min-height: 18rem;
+  width: 100%;
+  min-height: clamp(18rem, 36vw, 32rem);
+  aspect-ratio: 16 / 10;
   border-radius: var(--he-photo-radius);
   overflow: hidden;
+  background: #132245;
+}
+
+.spomoveMedia {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
 }
 
 /* —— Subscription —— */
@@ -222,29 +248,55 @@
   background: var(--spokedu-marketing-color-white);
 }
 
-.subscriptionGrid {
-  display: grid;
-  gap: 2.5rem;
-  align-items: center;
+.productStageLayout {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.75rem, 3.5vw, 2.75rem);
 }
 
-.subscriptionFlow {
+.productStageIntro {
+  max-width: 36rem;
+}
+
+.subscriptionLead {
   margin-top: 1.25rem;
-  color: var(--spokedu-marketing-color-blue);
+  max-width: 32rem;
+  font-size: 1rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
 }
 
-.productStage {
+.productStageVisual {
   width: 100%;
   border-radius: var(--he-product-radius);
   overflow: hidden;
-  box-shadow: 0 28px 72px rgba(11, 31, 70, 0.14);
-  background: #fff;
+  border: 1px solid var(--spokedu-marketing-color-border);
+  background: #eef2f7;
+  box-shadow: 0 24px 64px rgba(11, 31, 70, 0.1);
 }
 
-.productImage {
-  display: block;
+.productStageFrame {
+  position: relative;
   width: 100%;
-  height: auto;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #eef2f7;
+}
+
+.productImageFocal {
+  object-fit: cover;
+  object-position: 38% 10%;
+}
+
+.productStageFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.subscriptionFlow {
+  color: var(--spokedu-marketing-color-blue);
 }
 
 /* —— Cases —— */
@@ -260,6 +312,15 @@
   margin-bottom: clamp(2rem, 4vw, 2.75rem);
 }
 
+.casesLead {
+  margin-top: 0.75rem;
+  max-width: 28rem;
+  font-size: 1rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+  white-space: pre-line;
+}
+
 .casesGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -270,9 +331,18 @@
 }
 
 .caseLink {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   color: inherit;
   text-decoration: none;
+}
+
+.caseLink article {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 .casePhoto {
@@ -283,16 +353,20 @@
 }
 
 .caseFeatured .casePhoto {
-  aspect-ratio: 4 / 5;
-  min-height: 16rem;
+  flex: 1 1 0;
+  min-height: 14rem;
+  aspect-ratio: auto;
 }
 
 .caseCompact .casePhoto {
-  aspect-ratio: 16 / 10;
+  flex: 1 1 0;
+  min-height: 9.5rem;
+  aspect-ratio: auto;
 }
 
 .caseMeta {
-  margin-top: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.875rem;
 }
 
 .caseVenue {
@@ -318,37 +392,34 @@
 }
 
 .caseCta {
-  margin-top: 0.75rem;
+  margin-top: 0.625rem;
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--spokedu-marketing-color-blue);
 }
 
-/* —— Final —— */
-.final {
+/* —— Contact Conversion —— */
+.contact {
   padding-block: clamp(4rem, 6vw, 5.5rem);
   background: var(--spokedu-marketing-color-white);
   border-top: 1px solid var(--spokedu-marketing-color-border);
 }
 
-.finalBody {
+.contactBody {
   margin-top: 1rem;
-  max-width: 28rem;
+  max-width: 32rem;
   font-size: 1.0625rem;
   line-height: 1.72;
   color: var(--spokedu-marketing-color-body);
+  white-space: pre-line;
 }
 
-.finalActions {
+.contactActions {
   margin-top: 2rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.finalTertiary {
-  margin-top: 1.25rem;
-  font-size: 0.9375rem;
+  align-items: center;
+  gap: 1rem 1.5rem;
 }
 
 @media (min-width: 1024px) {
@@ -373,8 +444,8 @@
   }
 
   .whyGrid {
-    grid-template-columns: minmax(0, 1.72fr) minmax(0, 0.78fr);
-    gap: 3.5rem;
+    grid-template-columns: minmax(0, 1.78fr) minmax(0, 0.72fr);
+    gap: 3rem;
   }
 
   .whyPhoto {
@@ -382,17 +453,23 @@
   }
 
   .spomoveGrid {
-    grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
-    gap: 3.5rem;
-  }
-
-  .spomoveVisual {
-    min-height: 26rem;
-  }
-
-  .subscriptionGrid {
-    grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
+    grid-template-columns: minmax(0, 0.38fr) minmax(0, 0.62fr);
     gap: 3rem;
+  }
+
+  .productStageFrame {
+    aspect-ratio: 16 / 8.5;
+  }
+
+  .productImageFocal {
+    object-position: 36% 8%;
+  }
+
+  .productStageFooter {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
   }
 
   .casesHeader {
@@ -402,21 +479,38 @@
   }
 
   .casesGrid {
-    grid-template-columns: minmax(0, 1.28fr) minmax(0, 0.72fr);
-    grid-template-rows: auto auto;
-    gap: 1.75rem 1.5rem;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-rows: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: stretch;
   }
 
   .caseFeatured {
-    grid-row: 1 / 3;
+    grid-row: 1 / span 2;
+    display: flex;
+  }
+
+  .caseCompact {
+    display: flex;
   }
 
   .caseFeatured .casePhoto {
-    min-height: 28rem;
+    min-height: 0;
+  }
+
+  .caseCompact .casePhoto {
+    min-height: 0;
   }
 }
 
 @media (max-width: 1023px) {
+  .choiceDivider {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: var(--spokedu-marketing-color-border);
+  }
+
   .casesGrid {
     gap: 2.25rem;
   }

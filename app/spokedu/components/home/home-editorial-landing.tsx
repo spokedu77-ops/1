@@ -7,7 +7,6 @@ import { homePage, type HomeCaseCard } from '../../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../../lib/resolve-field-records';
 import {
   brandFocusRing,
-  brandLink,
   homePhotoGrade,
   homeSkipLink,
   koreanText,
@@ -68,11 +67,11 @@ function TextCta({
       className={
         dark
           ? 'inline-flex min-h-11 items-center text-[15px] font-semibold text-[#afc8ff] underline-offset-4 transition hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
-          : `${brandLink} inline-flex min-h-11 items-center gap-1 text-[15px] underline-offset-4 hover:underline`
+          : `${brandFocusRing} inline-flex min-h-11 items-center gap-1 text-[15px] font-semibold [color:var(--spokedu-marketing-color-blue)] underline-offset-4 hover:underline`
       }
     >
       {children}
-      {!dark ? <span aria-hidden>→</span> : null}
+      <span aria-hidden>→</span>
     </TrackedLink>
   );
 }
@@ -159,7 +158,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               <p className={styles.choiceLabel}>{homePage.choice.education.headline}</p>
               <p className={`${styles.choiceTagline} ${koreanText}`}>{homePage.choice.education.tagline}</p>
               <p className={`${styles.choiceBody} ${koreanText}`}>{homePage.choice.education.body}</p>
-              <div className="mt-7">
+              <div className={styles.choiceCta}>
                 <TextCta
                   href={homePage.choice.education.primaryCta.href}
                   trackLabel={homePage.choice.education.primaryCta.trackLabel}
@@ -167,23 +166,13 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
                   {homePage.choice.education.primaryCta.label}
                 </TextCta>
               </div>
-              <p className={`${styles.choiceDirect} ${koreanText}`}>
-                {homePage.choice.education.links.map((link, index) => (
-                  <span key={link.trackLabel}>
-                    {index > 0 ? <span aria-hidden> · </span> : null}
-                    <TrackedLink href={link.href} trackLabel={link.trackLabel} className={brandLink}>
-                      {link.label}
-                    </TrackedLink>
-                  </span>
-                ))}
-              </p>
             </div>
             <div className={styles.choiceDivider} aria-hidden />
             <div className={styles.choiceColumn}>
               <p className={styles.choiceLabel}>{homePage.choice.subscription.headline}</p>
               <p className={`${styles.choiceTagline} ${koreanText}`}>{homePage.choice.subscription.tagline}</p>
               <p className={`${styles.choiceBody} ${koreanText}`}>{homePage.choice.subscription.body}</p>
-              <div className="mt-7">
+              <div className={styles.choiceCta}>
                 <TextCta
                   href={homePage.choice.subscription.primaryCta.href}
                   trackLabel={homePage.choice.subscription.primaryCta.trackLabel}
@@ -204,9 +193,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               <h2 id="editorial-why-heading" className={`${marketingSectionDisplay} max-w-xl`}>
                 {homePage.why.title}
               </h2>
-              <p className={`mt-5 max-w-lg text-base leading-[1.72] text-[var(--spokedu-marketing-color-body)] sm:text-[17px] ${koreanText}`}>
-                {homePage.why.body}
-              </p>
+              <p className={`${styles.whyBody} ${koreanText}`}>{homePage.why.body}</p>
               <div className="mt-7">
                 <TextCta href={homePage.why.primaryCta.href} trackLabel={homePage.why.primaryCta.trackLabel}>
                   {homePage.why.primaryCta.label}
@@ -231,25 +218,26 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
           <div className={styles.spomoveGrid}>
             <div className="min-w-0">
               <p className={styles.spomoveLabel}>{homePage.spomove.label}</p>
-              <h2 id="editorial-spomove-heading" className={`${marketingSectionDisplay} mt-3 text-white`}>
+              <h2 id="editorial-spomove-heading" className={`${marketingSectionDisplay} mt-3 whitespace-pre-line text-white`}>
                 {homePage.spomove.title}
               </h2>
               <p className={`${styles.spomoveBody} ${koreanText}`}>{homePage.spomove.body}</p>
               <FlowSteps steps={homePage.spomove.flow} className={styles.spomoveFlow} arrowClassName={styles.flowArrow} />
-              <div className="mt-8">
-                <TrackedLink
+              <div className={styles.spomoveCta}>
+                <TextCta
                   href={homePage.spomove.primaryCta.href}
                   trackLabel={homePage.spomove.primaryCta.trackLabel}
-                  className={marketingButtonPrimaryOnDark}
+                  dark
                 >
                   {homePage.spomove.primaryCta.label}
-                </TrackedLink>
+                </TextCta>
               </div>
             </div>
             <div className={styles.spomoveVisual}>
               <MediaPanel
                 media={spomoveMedia}
-                className={`absolute inset-0 h-full w-full border-0 ${homePhotoGrade}`}
+                photoPriority
+                className={`${styles.spomoveMedia} border-0 ${homePhotoGrade}`}
                 sizes="(min-width: 1024px) 58vw, 92vw"
                 objectFit="cover"
               />
@@ -258,37 +246,37 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
         </div>
       </section>
 
-      {/* 05 Subscription */}
+      {/* 05 Subscription — Product Stage */}
       <section id={homePage.subscription.id} className={styles.subscription} aria-labelledby="editorial-subscription-heading">
         <div className={styles.shellWide}>
-          <div className={styles.subscriptionGrid}>
-            <div className="min-w-0 lg:order-1">
-              <h2 id="editorial-subscription-heading" className={`${marketingSectionDisplay} max-w-lg`}>
+          <div className={styles.productStageLayout}>
+            <header className={styles.productStageIntro}>
+              <h2 id="editorial-subscription-heading" className={`${marketingSectionDisplay} max-w-2xl`}>
                 {homePage.subscription.title}
               </h2>
-              <p className={`mt-5 max-w-md text-base leading-[1.72] text-[var(--spokedu-marketing-color-body)] sm:text-[17px] ${koreanText}`}>
-                {homePage.subscription.lead}
-              </p>
+              <p className={`${styles.subscriptionLead} ${koreanText}`}>{homePage.subscription.lead}</p>
+            </header>
+            <div className={styles.productStageVisual}>
+              <div className={styles.productStageFrame}>
+                <Image
+                  src={homePage.subscription.visual.src}
+                  alt={homePage.subscription.visual.alt}
+                  fill
+                  className={styles.productImageFocal}
+                  sizes="(min-width: 1024px) 88vw, 92vw"
+                  priority={false}
+                />
+              </div>
+            </div>
+            <footer className={styles.productStageFooter}>
               <FlowSteps steps={homePage.subscription.flow} className={styles.subscriptionFlow} />
-              <TrackedLink
+              <TextCta
                 href={homePage.subscription.primaryCta.href}
                 trackLabel={homePage.subscription.primaryCta.trackLabel}
-                className={`${marketingButtonPrimary} mt-8`}
               >
                 {homePage.subscription.primaryCta.label}
-              </TrackedLink>
-            </div>
-            <div className={`${styles.productStage} lg:order-2`}>
-              <Image
-                src={homePage.subscription.visual.src}
-                alt={homePage.subscription.visual.alt}
-                width={1600}
-                height={1000}
-                className={styles.productImage}
-                sizes="(min-width: 1024px) 58vw, 92vw"
-                priority={false}
-              />
-            </div>
+              </TextCta>
+            </footer>
           </div>
         </div>
       </section>
@@ -301,9 +289,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               <h2 id="editorial-cases-heading" className={marketingSectionDisplay}>
                 {homePage.cases.title}
               </h2>
-              <p className={`mt-3 max-w-xl text-base leading-[1.72] text-[var(--spokedu-marketing-color-body)] sm:text-[17px] ${koreanText}`}>
-                {homePage.cases.lead}
-              </p>
+              <p className={`${styles.casesLead} ${koreanText}`}>{homePage.cases.lead}</p>
             </div>
             <TrackedLink
               href={homePage.cases.recordsCta.href}
@@ -323,34 +309,28 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
         </div>
       </section>
 
-      {/* 07 Final Action */}
-      <section id={homePage.finalCta.id} className={styles.final} aria-labelledby="editorial-final-heading">
+      {/* 07 Contact Conversion */}
+      <section id={homePage.contact.id} className={styles.contact} aria-labelledby="editorial-contact-heading">
         <div className={styles.shell}>
-          <h2 id="editorial-final-heading" className={`${marketingSectionDisplay} max-w-2xl`}>
-            {homePage.finalCta.title}
+          <h2 id="editorial-contact-heading" className={`${marketingSectionDisplay} max-w-2xl`}>
+            {homePage.contact.title}
           </h2>
-          <p className={`${styles.finalBody} ${koreanText}`}>{homePage.finalCta.lead}</p>
-          <div className={styles.finalActions}>
+          <p className={`${styles.contactBody} ${koreanText}`}>{homePage.contact.lead}</p>
+          <div className={styles.contactActions}>
             <TrackedLink
-              href={homePage.finalCta.primaryCta.href}
-              trackLabel={homePage.finalCta.primaryCta.trackLabel}
+              href={homePage.contact.primaryCta.href}
+              trackLabel={homePage.contact.primaryCta.trackLabel}
               className={marketingButtonPrimary}
             >
-              {homePage.finalCta.primaryCta.label}
+              {homePage.contact.primaryCta.label}
             </TrackedLink>
-            <TrackedLink
-              href={homePage.finalCta.secondaryCta.href}
-              trackLabel={homePage.finalCta.secondaryCta.trackLabel}
-              className={marketingButtonSecondary}
+            <TextCta
+              href={homePage.contact.secondaryCta.href}
+              trackLabel={homePage.contact.secondaryCta.trackLabel}
             >
-              {homePage.finalCta.secondaryCta.label}
-            </TrackedLink>
-          </div>
-          <p className={styles.finalTertiary}>
-            <TextCta href={homePage.finalCta.tertiaryCta.href} trackLabel={homePage.finalCta.tertiaryCta.trackLabel}>
-              {homePage.finalCta.tertiaryCta.label}
+              {homePage.contact.secondaryCta.label}
             </TextCta>
-          </p>
+          </div>
         </div>
       </section>
     </div>

@@ -13,19 +13,18 @@ import {
   programDetailBlocks,
 } from './program-details';
 import { programRegistry } from './programs-catalog';
-import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
+import { SPOKEDU_PATHS } from './site';
 
 describe('acquisition leak closure', () => {
-  it('keeps home class paths on marketing routes without query noise', () => {
-    expect(homePage.choice.education.links.map((item) => item.href)).toEqual([
-      `${SPOKEDU_BASE_PATH}/dispatch`,
-      `${SPOKEDU_BASE_PATH}/private`,
-    ]);
-    for (const item of homePage.choice.education.links) {
-      expect(item.href).not.toMatch(/[?#]/);
-      expect(item.href).not.toContain('/spokedu-master');
-      expect(item.href).not.toContain('onboarding');
-    }
+  it('keeps home choice focused on two commercial paths without sub-navigation', () => {
+    expect(homePage.choice.education.headline).toBe('체육수업');
+    expect(homePage.choice.subscription.tagline).toMatch(/직접 수업/);
+    expect('links' in homePage.choice.education).toBe(false);
+    expect(JSON.stringify(homePage.choice)).not.toContain('/dispatch');
+    expect(JSON.stringify(homePage.choice)).not.toContain('/private');
+    expect(homePage.hero.primaryCta.label).toBe('체육수업 알아보기');
+    expect(homePage.contact.primaryCta.label).toBe('문의하기');
+    expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기/);
   });
 
   it('removes contact type links from program commercial CTAs', () => {
@@ -75,13 +74,13 @@ describe('acquisition leak closure', () => {
     }
   });
 
-  it('routes home commercial CTAs into structured landings', () => {
+  it('routes home commercial CTAs into structured landings without repeating choice at contact', () => {
     expect(homePage.spomove.primaryCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
     expect(homePage.hero.primaryCta.href).toBe(`${SPOKEDU_PATHS.education}`);
     expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_PATHS.subscription}`);
-    expect(homePage.finalCta.primaryCta.href).toBe(`${SPOKEDU_PATHS.education}`);
-    expect(homePage.finalCta.secondaryCta.href).toBe(`${SPOKEDU_PATHS.subscription}`);
-    expect(homePage.finalCta.tertiaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
-    expect(JSON.stringify(homePage.finalCta)).not.toMatch(/onboarding/);
+    expect(homePage.contact.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
+    expect(homePage.contact.secondaryCta.href).toBe(`${SPOKEDU_PATHS.records}`);
+    expect(JSON.stringify(homePage.contact)).not.toMatch(/onboarding/);
+    expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기/);
   });
 });
