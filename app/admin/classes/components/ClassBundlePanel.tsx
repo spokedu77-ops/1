@@ -256,13 +256,38 @@ function getCycleCalendarBounds(list: SessionRow[]): { startDayMs: number; endDa
   return { startDayMs, endDayMs };
 }
 
-/** 마지막 회차일이 오늘 0시 이전이면 지난 사이클(완료)로 묶음 */
+/** 마지막 회차일이 오늘 0시 이전이면 캘린더상 종료 */
 function isPastCycleGroup(list: SessionRow[]): boolean {
   const bounds = getCycleCalendarBounds(list);
   if (!bounds) return false;
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   return bounds.endDayMs < startOfToday.getTime();
+}
+
+/** 번들 내 가장 최근(마지막) 사이클 group_id */
+function getLatestGroupIdWithSessions(
+  sortedGroupIds: string[],
+  sessionsByGroupId: Record<string, SessionRow[]>
+): string | null {
+  for (let i = sortedGroupIds.length - 1; i >= 0; i--) {
+    const gid = sortedGroupIds[i]!;
+    if ((sessionsByGroupId[gid] || []).length > 0) return gid;
+  }
+  return null;
+}
+
+/**
+ * 지난 사이클 아카이브·읽기 전용.
+ * 시범 1회만 등록 후 연장 대기처럼 번들의 최신 사이클은 날짜가 지나도 도구를 유지한다.
+ */
+function isArchivedPastCycleGroup(
+  list: SessionRow[],
+  gid: string,
+  latestGid: string | null
+): boolean {
+  if (latestGid && gid === latestGid) return false;
+  return isPastCycleGroup(list);
 }
 
 type ToolPanelKey = "extend" | "shrink" | "restart";
@@ -470,20 +495,29 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         return n;
       });
 
+      const sortedForLoad = [...effectiveGroupIds].sort((a, b) => {
+        const ar = map[a] || [];
+        const br = map[b] || [];
+        const aMin = ar.length ? Math.min(...ar.map((s) => new Date(s.start_at).getTime())) : Number.POSITIVE_INFINITY;
+        const bMin = br.length ? Math.min(...br.map((s) => new Date(s.start_at).getTime())) : Number.POSITIVE_INFINITY;
+        return aMin - bMin;
+      });
+      const latestGidOnLoad = getLatestGroupIdWithSessions(sortedForLoad, map);
+
       // 기본 오픈: 예정/진행 사이클만 펼침. 지난 사이클은 아카이브에 두고, 아카이브는 지난 사이클이 있으면 열어 둔다.
       const nextOpen: Record<string, boolean> = {};
       for (const gid of effectiveGroupIds) {
         const list = map[gid] || [];
         if (list.length === 0) continue;
-        nextOpen[gid] = !isPastCycleGroup(list);
+        nextOpen[gid] = !isArchivedPastCycleGroup(list, gid, latestGidOnLoad);
       }
       const hasCurrentCycle = effectiveGroupIds.some((gid) => {
         const list = map[gid] || [];
-        return list.length > 0 && !isPastCycleGroup(list);
+        return list.length > 0 && !isArchivedPastCycleGroup(list, gid, latestGidOnLoad);
       });
       const hasPastCycle = effectiveGroupIds.some((gid) => {
         const list = map[gid] || [];
-        return list.length > 0 && isPastCycleGroup(list);
+        return list.length > 0 && isArchivedPastCycleGroup(list, gid, latestGidOnLoad);
       });
       const hasAnySessions = effectiveGroupIds.some((gid) => (map[gid] || []).length > 0);
       if (hasAnySessions && !hasCurrentCycle) {
@@ -1358,17 +1392,22 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     });
   }, [effectiveGroupIds, sessionsByGroupId]);
 
+  const latestGroupId = useMemo(
+    () => getLatestGroupIdWithSessions(sortedGroupIds, sessionsByGroupId),
+    [sortedGroupIds, sessionsByGroupId]
+  );
+
   const { currentGroupIds, pastGroupIds } = useMemo(() => {
     const current: string[] = [];
     const past: string[] = [];
     for (const gid of sortedGroupIds) {
       const rows = sessionsByGroupId[gid] || [];
       if (!rows.length) continue;
-      if (isPastCycleGroup(rows)) past.push(gid);
+      if (isArchivedPastCycleGroup(rows, gid, latestGroupId)) past.push(gid);
       else current.push(gid);
     }
     return { currentGroupIds: current, pastGroupIds: past };
-  }, [sortedGroupIds, sessionsByGroupId]);
+  }, [sortedGroupIds, sessionsByGroupId, latestGroupId]);
 
   const displayTitle = useMemo(() => titleDraft.trim() || bundleTitle, [titleDraft, bundleTitle]);
 
@@ -1386,7 +1425,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         return tname === "미정";
       });
     const isSpecialLectureGroup = dominantSessionType(rows) === "special_lecture";
-    const isPastCycle = isPastCycleGroup(rows);
+    const isPastCycle = isArchivedPastCycleGroup(rows, gid, latestGroupId);
     return (
       <section
         key={gid}
