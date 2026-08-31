@@ -31,7 +31,7 @@ describe('MASTER information and action grammar', () => {
     expect(detail).not.toContain('grid-cols-3');
     expect(spomove).toContain("sessionAssignment ? 'border border-slate-200");
     expect(spomove).toContain('이 수업에 추가');
-    expect(spomove).toContain('활동 살펴보기');
-    expect(spomove).toContain('실행 설정');
+    expect(spomove).toContain('활동 준비');
+    expect(spomove).not.toContain('실행 설정');
   });
 });
