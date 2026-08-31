@@ -17,7 +17,6 @@ import {
   marketingHeroDisplay,
   marketingSectionDisplay,
 } from '../../lib/ui-classes';
-import { ExternalPhoto } from '../external-photo';
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
 import styles from './home-editorial.module.css';
@@ -194,11 +193,6 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
                 {homePage.why.title}
               </h2>
               <p className={`${styles.whyBody} ${koreanText}`}>{homePage.why.body}</p>
-              <div className="mt-7">
-                <TextCta href={homePage.why.primaryCta.href} trackLabel={homePage.why.primaryCta.trackLabel}>
-                  {homePage.why.primaryCta.label}
-                </TextCta>
-              </div>
             </div>
             <div className={styles.whyPhoto}>
               <MediaPanel
@@ -221,7 +215,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               <h2 id="editorial-spomove-heading" className={`${marketingSectionDisplay} mt-3 whitespace-pre-line text-white`}>
                 {homePage.spomove.title}
               </h2>
-              <p className={`${styles.spomoveBody} ${koreanText}`}>{homePage.spomove.body}</p>
+              <p className={`${styles.spomoveBody} ${koreanText} whitespace-pre-line`}>{homePage.spomove.body}</p>
               <FlowSteps steps={homePage.spomove.flow} className={styles.spomoveFlow} arrowClassName={styles.flowArrow} />
               <div className={styles.spomoveCta}>
                 <TextCta
@@ -283,7 +277,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
 
       {/* 06 Field Proof */}
       <section id={homePage.cases.id} className={styles.cases} aria-labelledby="editorial-cases-heading">
-        <div className={styles.shell}>
+        <div className={styles.shellWide}>
           <div className={styles.casesHeader}>
             <div className="min-w-0">
               <h2 id="editorial-cases-heading" className={marketingSectionDisplay}>
@@ -324,12 +318,6 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
             >
               {homePage.contact.primaryCta.label}
             </TrackedLink>
-            <TextCta
-              href={homePage.contact.secondaryCta.href}
-              trackLabel={homePage.contact.secondaryCta.trackLabel}
-            >
-              {homePage.contact.secondaryCta.label}
-            </TextCta>
           </div>
         </div>
       </section>
@@ -356,28 +344,15 @@ function CaseEditorialItem({ card, priority }: { card: CaseCardWithThumb; priori
 }
 
 function CasePhoto({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
-  if (card.thumbnailSrc) {
-    return (
-      <ExternalPhoto
-        src={card.thumbnailSrc}
-        alt={`${card.programName} — ${card.venue}`}
-        className="absolute inset-0 h-full w-full"
-        fit="cover"
-        priority={priority}
-        quality={90}
-        sizes="(max-width: 1024px) 100vw, 50vw"
-      />
-    );
-  }
-
   return (
-    <MediaPanel
-      media={HOME_MEDIA[card.mediaKey]}
-      className={`absolute inset-0 h-full w-full border-0 ${homePhotoGrade}`}
-      sizes="gateCard"
-      photoPriority={priority}
+    <Image
+      src={card.editorialSrc}
+      alt={`${card.programName} — ${card.venue}`}
+      fill
+      className="object-cover"
+      style={{ objectPosition: card.editorialObjectPosition ?? '50% 50%' }}
       priority={priority}
-      objectFit="cover"
+      sizes="(max-width: 1023px) 100vw, (max-width: 1439px) 50vw, 720px"
     />
   );
 }

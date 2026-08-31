@@ -79,8 +79,8 @@ describe('acquisition leak closure', () => {
     expect(homePage.hero.primaryCta.href).toBe(`${SPOKEDU_PATHS.education}`);
     expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_PATHS.subscription}`);
     expect(homePage.contact.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
-    expect(homePage.contact.secondaryCta.href).toBe(`${SPOKEDU_PATHS.records}`);
+    expect('secondaryCta' in homePage.contact).toBe(false);
     expect(JSON.stringify(homePage.contact)).not.toMatch(/onboarding/);
-    expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기/);
+    expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기|운영 사례 더 보기/);
   });
 });

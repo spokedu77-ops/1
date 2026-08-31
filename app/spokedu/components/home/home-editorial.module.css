@@ -176,7 +176,8 @@
 }
 
 .whyPhoto {
-  max-width: 20rem;
+  width: 100%;
+  min-height: clamp(16rem, 42vw, 22rem);
   border-radius: var(--he-photo-radius);
   overflow: hidden;
 }
@@ -271,8 +272,7 @@
   border-radius: var(--he-product-radius);
   overflow: hidden;
   border: 1px solid var(--spokedu-marketing-color-border);
-  background: #eef2f7;
-  box-shadow: 0 24px 64px rgba(11, 31, 70, 0.1);
+  background: #f6f8fb;
 }
 
 .productStageFrame {
@@ -280,12 +280,12 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: #eef2f7;
+  background: #f6f8fb;
 }
 
 .productImageFocal {
-  object-fit: cover;
-  object-position: 38% 10%;
+  object-fit: contain;
+  object-position: top center;
 }
 
 .productStageFooter {
@@ -324,7 +324,7 @@
 .casesGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -354,23 +354,23 @@
 
 .caseFeatured .casePhoto {
   flex: 1 1 0;
-  min-height: 14rem;
+  min-height: clamp(18rem, 52vw, 24rem);
   aspect-ratio: auto;
 }
 
 .caseCompact .casePhoto {
   flex: 1 1 0;
-  min-height: 9.5rem;
+  min-height: clamp(12rem, 38vw, 16rem);
   aspect-ratio: auto;
 }
 
 .caseMeta {
   flex-shrink: 0;
-  margin-top: 0.875rem;
+  margin-top: 0.75rem;
 }
 
 .caseVenue {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: -0.02em;
@@ -444,12 +444,13 @@
   }
 
   .whyGrid {
-    grid-template-columns: minmax(0, 1.78fr) minmax(0, 0.72fr);
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
     gap: 3rem;
   }
 
   .whyPhoto {
-    max-width: none;
+    min-height: 20rem;
+    aspect-ratio: 4 / 3;
   }
 
   .spomoveGrid {
@@ -462,7 +463,8 @@
   }
 
   .productImageFocal {
-    object-position: 36% 8%;
+    object-fit: contain;
+    object-position: top center;
   }
 
   .productStageFooter {
@@ -479,10 +481,11 @@
   }
 
   .casesGrid {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-columns: minmax(0, 1.24fr) minmax(0, 0.76fr);
     grid-template-rows: 1fr 1fr;
-    gap: 1.25rem;
+    gap: 1rem;
     align-items: stretch;
+    min-height: 36rem;
   }
 
   .caseFeatured {

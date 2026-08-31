@@ -97,6 +97,26 @@ BEGIN
     RAISE EXCEPTION 'SMOKE_FAIL: mr_children_impact_safe exposes child_name';
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_class c
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relname = 'mr_children_impact_safe'
+      AND c.relkind = 'v'
+      AND 'security_invoker=true' = ANY (COALESCE(c.reloptions, ARRAY[]::text[]))
+  ) THEN
+    RAISE EXCEPTION 'SMOKE_FAIL: mr_children_impact_safe must use security_invoker=true';
+  END IF;
+
+  IF has_function_privilege('anon', 'private.mr_children_impact_safe_rows()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'SMOKE_FAIL: anon can execute private.mr_children_impact_safe_rows()';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated', 'private.mr_children_impact_safe_rows()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'SMOKE_FAIL: authenticated cannot execute private.mr_children_impact_safe_rows()';
+  END IF;
+
   -- self_reengagement NULL preserved (CASE H semantics column nullable)
   UPDATE public.mr_session_child_records SET self_reengagement = false, updated_by = v_user_id WHERE id = v_rec;
   UPDATE public.mr_session_child_records SET self_reengagement = NULL, updated_by = v_user_id WHERE id = v_rec;

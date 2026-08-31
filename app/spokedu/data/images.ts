@@ -148,6 +148,48 @@ export const SPOKEDU_IMAGES = {
       'home-hero-movement.jpg',
       '아동·청소년 체육수업 현장 — 지도자와 참여 활동',
     ),
+    fieldEditorialHero: defineImage(
+      'home',
+      'home-hero-field',
+      'field-editorial/home-hero-field.webp',
+      '서울위례초등학교 체육수업 — 지도자와 아동이 함께하는 놀이체육 현장',
+      { allowedPages: ['home'] },
+    ),
+    fieldEditorialWhy: defineImage(
+      'home',
+      'home-why-field',
+      'field-editorial/home-why-field.webp',
+      '체육수업 현장 — 지도자의 시범과 지도 장면',
+      { allowedPages: ['home'] },
+    ),
+    fieldEditorialSpomove: defineImage(
+      'home',
+      'home-spomove-field',
+      'field-editorial/home-spomove-field.webp',
+      'SPOMOVE 수업 — 화면 신호, 4색 패드, 아동 움직임이 함께 보이는 현장',
+      { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home'] },
+    ),
+    fieldEditorialCaseGeneral: defineImage(
+      'home',
+      'home-case-general',
+      'field-editorial/home-case-general.webp',
+      '매동초등학교 스포츠스텝업 — 일반 체육수업 운영 현장',
+      { allowedPages: ['home', 'records'] },
+    ),
+    fieldEditorialCaseAdapted: defineImage(
+      'home',
+      'home-case-adapted',
+      'field-editorial/home-case-adapted.webp',
+      '맞춤형 1:1 체육수업 — SPOMAT 위 지도자와 아동 상호작용',
+      { allowedPages: ['home', 'records'] },
+    ),
+    fieldEditorialCaseSpomove: defineImage(
+      'home',
+      'home-case-spomove',
+      'field-editorial/home-case-spomove.webp',
+      'SPOMOVE 수업 — 화면·패드·참여 아동이 함께 보이는 운영 현장',
+      { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home', 'records'] },
+    ),
   },
   private: {
     oneToOne: defineImage(

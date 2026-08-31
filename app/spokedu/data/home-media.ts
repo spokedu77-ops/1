@@ -55,6 +55,48 @@ function visualMedia(item: Omit<HomeMediaItem, 'type' | 'src' | 'poster' | 'fall
 }
 
 export const HOME_MEDIA = {
+  homeHeroField: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialHero, {
+    id: 'home-hero-field',
+    label: '체육수업 Hero',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '58% 42%',
+  }),
+  homeWhyField: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialWhy, {
+    id: 'home-why-field',
+    label: '직접 수업 지도',
+    fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '52% 40%',
+  }),
+  homeSpomoveField: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialSpomove, {
+    id: 'home-spomove-field',
+    label: 'SPOMOVE 현장',
+    fallbackGradient: 'from-fuchsia-500 via-violet-700 to-slate-900',
+    tone: 'violet',
+    objectPosition: '50% 48%',
+  }),
+  homeCaseGeneral: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialCaseGeneral, {
+    id: 'home-case-general',
+    label: '일반 체육수업 사례',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '50% 45%',
+  }),
+  homeCaseAdapted: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialCaseAdapted, {
+    id: 'home-case-adapted',
+    label: '특수·포용 체육 사례',
+    fallbackGradient: 'from-violet-500 via-indigo-700 to-slate-900',
+    tone: 'violet',
+    objectPosition: '55% 48%',
+  }),
+  homeCaseSpomove: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialCaseSpomove, {
+    id: 'home-case-spomove',
+    label: 'SPOMOVE 운영 사례',
+    fallbackGradient: 'from-fuchsia-500 via-violet-700 to-slate-900',
+    tone: 'violet',
+    objectPosition: '50% 42%',
+  }),
   homeHero: fromPhoto(SPOKEDU_IMAGES.home.hero, {
     id: 'home-hero',
     label: '체육수업 현장',

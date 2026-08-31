@@ -146,10 +146,11 @@ describe('spokedu site IA', () => {
     expect(homePage.subscription.flow).toEqual(['찾기', '준비', '진행', '기록']);
     expect(homePage.contact.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
     expect(homePage.contact.primaryCta.label).toBe('문의하기');
-    expect(homePage.contact.secondaryCta.href).toBe(`${SPOKEDU_PATHS.records}`);
-    expect(homePage.contact.secondaryCta.label).toBe('운영 사례 더 보기');
+    expect(homePage.contact.title).toBe('수업이나 활용 방법을 상담해보세요.');
+    expect('secondaryCta' in homePage.contact).toBe(false);
+    expect('primaryCta' in homePage.why).toBe(false);
     expect(JSON.stringify(homePage.contact)).not.toMatch(/onboarding|스포키듀 마스터/);
-    expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기/);
+    expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기|운영 사례 더 보기/);
     expect(JSON.stringify(homePage.hero)).not.toMatch(/SPO-MAT|9,900|15,015/);
   });
 
@@ -172,14 +173,17 @@ describe('spokedu site IA', () => {
     const whyMedia = HOME_MEDIA[homePage.why.mediaKey];
     const spomoveDetail = HOME_MEDIA[homePage.spomove.mediaKey];
 
-    expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.hero);
-    expect(whyMedia.asset).toBe(SPOKEDU_IMAGES.dispatch.kiwoomCenter);
-    expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.home.heroSpomoveClass);
+    expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.fieldEditorialHero);
+    expect(whyMedia.asset).toBe(SPOKEDU_IMAGES.home.fieldEditorialWhy);
+    expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.home.fieldEditorialSpomove);
     expect(canUseSpokeduImageOnPage(spomoveDetail.asset!, 'home')).toBe(true);
     expect(
       new Set([HOME_MEDIA[homePage.hero.mediaKey].src, whyMedia.src, spomoveDetail.src]).size,
     ).toBe(3);
-    expect(homePage.subscription.visual.src).toBe('/images/spokedu/subscription/product-lesson.png');
+    expect(homePage.subscription.visual.src).toBe('/images/spokedu/subscription/product-library.png');
+    expect(homePage.cases.cards[0]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-general.webp');
+    expect(homePage.cases.cards[1]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-adapted.webp');
+    expect(homePage.cases.cards[2]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-spomove.webp');
   });
 
   it('keeps home SEO aligned with the homepage positioning', () => {
