@@ -37,12 +37,12 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).not.toContain('선택적 상세');
   });
 
-  it('places 교사 Cue once under media and not inside 지도 포인트', () => {
-    expect(sheet).toContain('교사 Cue');
+  it('places 교사 핵심단서(Cue) once under media and not inside 지도 포인트', () => {
+    expect(sheet).toContain('교사 핵심단서(Cue)');
     expect(sheet).not.toContain('아이에게 하는 말');
     const coachingBlock = sheet.slice(sheet.indexOf('지도 포인트'), sheet.indexOf('난이도 조절 · 관찰 기준'));
     expect(coachingBlock).not.toContain('coachScript');
-    expect(coachingBlock).not.toContain('교사 Cue');
+    expect(coachingBlock).not.toContain('교사 핵심단서(Cue)');
   });
 
   it('keeps focusTags out of main objective block', () => {

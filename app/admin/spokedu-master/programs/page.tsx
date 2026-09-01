@@ -1604,10 +1604,11 @@ function SpomoveContentManager() {
                             </p>
                           </div>
                         ) : null}
-                        <p className="mt-3 text-[13px] font-black text-slate-950">{getSpomovePresetDisplayModel(preset).displayTitle}</p>
-                        <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
-                        <section className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
-                          <p className="text-[11px] font-black text-indigo-900">구독자 카드 정보</p>
+                        <details className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
+                          <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between text-[11px] font-black text-indigo-900 [&::-webkit-details-marker]:hidden">
+                            구독자 카드 정보
+                            <span className="text-[10px] text-indigo-600">필요할 때 열기</span>
+                          </summary>
                           <div className="mt-2 grid gap-2 sm:grid-cols-2">
                             <label className="block text-[10px] font-black text-slate-500">
                               사용자용 활동명
@@ -1636,22 +1637,7 @@ function SpomoveContentManager() {
                             카드 태그 (쉼표로 구분, 최대 5개)
                             <input value={(draft.catalogTags ?? []).join(', ')} onChange={(event) => updateDraft(preset.id, { catalogTags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 5) })} placeholder="선택 반응, 양측 이동, 보통" disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
                           </label>
-                          <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                            <div className="bg-slate-900 px-3 py-4 text-white">
-                              <p className="text-[10px] font-bold text-white/70">{preset.programTitle}</p>
-                              <p className="mt-1 text-[15px] font-black">{draft.displayTitle?.trim() || getSpomovePresetDisplayModel(preset).displayTitle}</p>
-                            </div>
-                            <div className="p-3">
-                              <p className="text-[11px] font-semibold leading-4 text-slate-500">{draft.shortDescription?.trim() || '카드 한줄 설명을 입력하면 여기에 표시됩니다.'}</p>
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {(draft.catalogTags?.length ? draft.catalogTags : [draft.variantLabel?.trim() || getSpomovePresetDisplayModel(preset).variantLabel]).filter(Boolean).map((tag) => (
-                                  <span key={tag} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{tag}</span>
-                                ))}
-                              </div>
-                              <p className="mt-3 text-right text-[10px] font-black text-indigo-600">활동 준비 →</p>
-                            </div>
-                          </div>
-                        </section>
+                        </details>
                         <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-[11px] font-black text-slate-700">
@@ -1693,7 +1679,12 @@ function SpomoveContentManager() {
                             </ul>
                           </div>
                         ) : null}
-                        <div className="mt-3 space-y-2">
+                        <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                          <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between text-[11px] font-black text-slate-600 [&::-webkit-details-marker]:hidden">
+                            고급·레거시 정보
+                            <span className="text-[10px] font-bold text-slate-400">핵심 키워드 · 이전 설명 호환</span>
+                          </summary>
+                          <div className="mt-2 space-y-2">
                           <p className="text-[11px] font-black text-slate-500">핵심 키워드</p>
                           {SPOMOVE_CORE_KEYWORD_AXIS.map((axis) => {
                             const parsed = parseSpomoveCoreKeywordsOverride(draft.coreKeywords);
@@ -1716,9 +1707,8 @@ function SpomoveContentManager() {
                               </label>
                             );
                           })}
-                        </div>
                         <label className="mt-3 block text-[11px] font-black text-slate-500">
-                          활동방법
+                          이전 활동방법 <span className="font-semibold text-slate-400">(공식 가이드가 없을 때만 사용)</span>
                           <textarea
                             value={draft.activityMethod ?? ''}
                             onChange={(event) => updateDraft(preset.id, { activityMethod: event.target.value })}
@@ -1728,7 +1718,7 @@ function SpomoveContentManager() {
                           />
                         </label>
                         <label className="mt-3 block text-[11px] font-black text-slate-500">
-                          활동 개념
+                          이전 활동 개념 <span className="font-semibold text-slate-400">(공식 가이드가 없을 때만 사용)</span>
                           <textarea
                             value={draft.activityConcept ?? ''}
                             onChange={(event) => updateDraft(preset.id, { activityConcept: event.target.value })}
@@ -1737,6 +1727,8 @@ function SpomoveContentManager() {
                             className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
                           />
                         </label>
+                          </div>
+                        </details>
                         <section className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
                           <div className="flex flex-wrap items-start justify-between gap-2">
                             <div>

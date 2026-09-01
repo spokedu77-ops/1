@@ -37,6 +37,7 @@ export type MasterSessionDto = {
   endAt: string;
   status: MasterSessionStatus;
   memo: string | null;
+  parentNotice?: string | null;
   completedAt: string | null;
   programs: MasterSessionProgramDto[];
   attendance: MasterSessionAttendanceDto[];

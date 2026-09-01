@@ -27,10 +27,11 @@ export function SpomovePadLayoutView({
 
     return (
       <div className={`rounded-2xl border p-4 ${borderClass}`}>
-        <p className={`text-sm font-black ${titleClass}`}>스포무브 매트 배치 방법</p>
+        <p className={`text-sm font-black ${titleClass}`}>매트 배치</p>
         <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
-          다이아몬드: 빨강(위) · 노랑(왼) · 초록(오) · 파랑(아래)
+          참가자가 화면을 바라본 기준입니다.
         </p>
+        <p className={`mt-3 text-center text-[11px] font-black ${mutedClass}`}>화면 ↑</p>
         <div className="mt-4 flex justify-center">
           <div
             className={`relative ${size}`}
@@ -42,6 +43,8 @@ export function SpomovePadLayoutView({
             <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: blue }}>파</div>
           </div>
         </div>
+        <p className={`mt-2 text-center text-xs font-semibold ${mutedClass}`}>빨강 앞 · 노랑 왼쪽 · 초록 오른쪽 · 파랑 뒤</p>
+        <p className={`mt-1 text-center text-[11px] font-black ${mutedClass}`}>참가자 위치</p>
         {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
       </div>
     );
@@ -52,10 +55,11 @@ export function SpomovePadLayoutView({
 
   return (
     <div className={`rounded-2xl border p-3 ${borderClass}`}>
-      <p className={`text-sm font-black ${titleClass}`}>스포무브 매트 배치 방법</p>
+      <p className={`text-sm font-black ${titleClass}`}>매트 배치</p>
       <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
-        정사각형: 빨강 · 노랑 · 초록 · 파랑
+        참가자가 화면을 바라본 기준입니다.
       </p>
+      <p className={`mt-3 text-center text-[11px] font-black ${mutedClass}`}>화면 ↑</p>
       <div className="mt-3 flex justify-center">
         <div
           className={`grid aspect-square ${boardClass} grid-cols-2 gap-1.5`}
@@ -67,11 +71,12 @@ export function SpomovePadLayoutView({
               className={`flex aspect-square items-center justify-center rounded-xl font-black text-white shadow-sm ${cellClass}`}
               style={{ background: SPOMOVE_PAD_GRID_HEX[index] }}
             >
-              {label}
+              <span className="text-center leading-4">{index < 2 ? '앞' : '뒤'}<br />{index % 2 === 0 ? '왼쪽' : '오른쪽'}<br />{label}</span>
             </div>
           ))}
         </div>
       </div>
+      <p className={`mt-2 text-center text-[11px] font-black ${mutedClass}`}>참가자 위치</p>
       {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
     </div>
   );

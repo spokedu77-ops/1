@@ -88,7 +88,7 @@
 .heroLead {
   margin-top: 1.5rem;
   max-width: 36rem;
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   line-height: 1.72;
   color: #d5dfed;
 }
@@ -108,10 +108,10 @@
 }
 
 .choiceSplit {
-  margin-top: clamp(2.25rem, 4.5vw, 3rem);
+  margin-top: clamp(2rem, 3.5vw, 2.75rem);
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2.5rem;
+  gap: 2rem;
 }
 
 .choiceColumn {
@@ -126,15 +126,15 @@
 }
 
 .choiceLabel {
-  font-size: 1.125rem;
+  font-size: 1.1875rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--spokedu-marketing-color-ink);
 }
 
 .choiceTagline {
-  margin-top: 0.75rem;
-  font-size: 1.375rem;
+  margin-top: 0.625rem;
+  font-size: 1.4375rem;
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: -0.025em;
@@ -142,16 +142,16 @@
 }
 
 .choiceBody {
-  margin-top: 1rem;
-  max-width: 24rem;
-  font-size: 1rem;
+  margin-top: 0.875rem;
+  max-width: 26rem;
+  font-size: 1.0625rem;
   line-height: 1.72;
   color: var(--spokedu-marketing-color-body);
 }
 
 .choiceCta {
   margin-top: auto;
-  padding-top: 1.75rem;
+  padding-top: 1.5rem;
 }
 
 /* —— Why —— */
@@ -170,16 +170,26 @@
 .whyBody {
   margin-top: 1.25rem;
   max-width: 32rem;
-  font-size: 1rem;
+  font-size: 1.0625rem;
   line-height: 1.72;
   color: var(--spokedu-marketing-color-body);
 }
 
 .whyPhoto {
+  position: relative;
   width: 100%;
-  min-height: clamp(16rem, 42vw, 22rem);
+  min-width: 0;
+  min-height: clamp(18rem, 44vw, 24rem);
+  aspect-ratio: 3 / 4;
   border-radius: var(--he-photo-radius);
   overflow: hidden;
+}
+
+.whyPhotoMedia {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
 }
 
 /* —— SPOMOVE —— */
@@ -205,14 +215,15 @@
 
 .spomoveBody {
   margin-top: 1.25rem;
-  max-width: 22rem;
-  font-size: 1.0625rem;
+  max-width: 24rem;
+  font-size: 1.125rem;
   line-height: 1.75;
   color: #cfdaea;
 }
 
 .spomoveFlow {
-  margin-top: 1.5rem;
+  margin-top: 1.375rem;
+  font-size: 0.9375rem;
   color: #afc8ff;
 }
 
@@ -227,7 +238,8 @@
 .spomoveVisual {
   position: relative;
   width: 100%;
-  min-height: clamp(18rem, 36vw, 32rem);
+  min-width: 0;
+  min-height: clamp(16rem, 32vw, 26rem);
   aspect-ratio: 16 / 10;
   border-radius: var(--he-photo-radius);
   overflow: hidden;
@@ -252,7 +264,7 @@
 .productStageLayout {
   display: flex;
   flex-direction: column;
-  gap: clamp(1.75rem, 3.5vw, 2.75rem);
+  gap: clamp(1.25rem, 2.5vw, 1.75rem);
 }
 
 .productStageIntro {
@@ -262,13 +274,14 @@
 .subscriptionLead {
   margin-top: 1.25rem;
   max-width: 32rem;
-  font-size: 1rem;
+  font-size: 1.0625rem;
   line-height: 1.72;
   color: var(--spokedu-marketing-color-body);
 }
 
 .productStageVisual {
   width: 100%;
+  min-width: 0;
   border-radius: var(--he-product-radius);
   overflow: hidden;
   border: 1px solid var(--spokedu-marketing-color-border);
@@ -278,13 +291,13 @@
 .productStageFrame {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1216 / 430;
   overflow: hidden;
   background: #f6f8fb;
 }
 
 .productImageFocal {
-  object-fit: contain;
+  object-fit: cover;
   object-position: top center;
 }
 
@@ -292,11 +305,13 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1.25rem;
+  gap: 1rem;
+  margin-top: 0.25rem;
 }
 
 .subscriptionFlow {
   color: var(--spokedu-marketing-color-blue);
+  font-size: 0.9375rem;
 }
 
 /* —— Cases —— */
@@ -315,7 +330,7 @@
 .casesLead {
   margin-top: 0.75rem;
   max-width: 28rem;
-  font-size: 1rem;
+  font-size: 1.0625rem;
   line-height: 1.72;
   color: var(--spokedu-marketing-color-body);
   white-space: pre-line;
@@ -323,16 +338,24 @@
 
 .casesGrid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.caseFeatured,
+.caseCompact {
+  width: 100%;
+  min-width: 0;
+}
+
 .caseLink {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   height: 100%;
   color: inherit;
   text-decoration: none;
@@ -341,27 +364,33 @@
 .caseLink article {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   height: 100%;
   min-height: 0;
 }
 
 .casePhoto {
   position: relative;
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   border-radius: var(--he-photo-radius);
   background: #e8edf4;
 }
 
+.casePhotoImage {
+  object-fit: cover;
+}
+
 .caseFeatured .casePhoto {
-  flex: 1 1 0;
-  min-height: clamp(18rem, 52vw, 24rem);
-  aspect-ratio: auto;
+  flex: 1 1 auto;
+  min-height: clamp(20rem, 56vw, 28rem);
 }
 
 .caseCompact .casePhoto {
-  flex: 1 1 0;
-  min-height: clamp(12rem, 38vw, 16rem);
-  aspect-ratio: auto;
+  flex: 1 1 auto;
+  min-height: clamp(13rem, 40vw, 17rem);
 }
 
 .caseMeta {
@@ -370,7 +399,7 @@
 }
 
 .caseVenue {
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: -0.02em;
@@ -379,28 +408,28 @@
 
 .caseAudience {
   margin-top: 0.35rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: var(--spokedu-marketing-color-body);
 }
 
 .caseProgram {
   margin-top: 0.25rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   line-height: 1.5;
   color: var(--spokedu-marketing-color-muted);
 }
 
 .caseCta {
   margin-top: 0.625rem;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--spokedu-marketing-color-blue);
 }
 
 /* —— Contact Conversion —— */
 .contact {
-  padding-block: clamp(4rem, 6vw, 5.5rem);
+  padding-block: clamp(3.25rem, 5vw, 4.5rem);
   background: var(--spokedu-marketing-color-white);
   border-top: 1px solid var(--spokedu-marketing-color-border);
 }
@@ -415,11 +444,7 @@
 }
 
 .contactActions {
-  margin-top: 2rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem 1.5rem;
+  margin-top: 1.75rem;
 }
 
 @media (min-width: 1024px) {
@@ -444,13 +469,14 @@
   }
 
   .whyGrid {
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-    gap: 3rem;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: clamp(2rem, 4vw, 3rem);
   }
 
   .whyPhoto {
-    min-height: 20rem;
-    aspect-ratio: 4 / 3;
+    min-height: 22rem;
+    max-height: 28rem;
+    aspect-ratio: 3 / 4;
   }
 
   .spomoveGrid {
@@ -458,20 +484,11 @@
     gap: 3rem;
   }
 
-  .productStageFrame {
-    aspect-ratio: 16 / 8.5;
-  }
-
-  .productImageFocal {
-    object-fit: contain;
-    object-position: top center;
-  }
-
   .productStageFooter {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   .casesHeader {
@@ -481,28 +498,50 @@
   }
 
   .casesGrid {
-    grid-template-columns: minmax(0, 1.24fr) minmax(0, 0.76fr);
-    grid-template-rows: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.875rem;
     align-items: stretch;
-    min-height: 36rem;
+    min-height: 34rem;
   }
 
   .caseFeatured {
-    grid-row: 1 / span 2;
-    display: flex;
-  }
-
-  .caseCompact {
+    grid-row: 1 / -1;
     display: flex;
   }
 
   .caseFeatured .casePhoto {
     min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .caseCompact {
+    display: flex;
+    min-height: 0;
+  }
+
+  .caseCompact .caseLink article {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.875rem;
+    min-height: calc((34rem - 0.875rem) / 2);
   }
 
   .caseCompact .casePhoto {
-    min-height: 0;
+    flex: 1.18 1 0;
+    min-width: 0;
+    min-height: 13.5rem;
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
+  .caseCompact .caseMeta {
+    flex: 0.82 1 0;
+    min-width: 0;
+    margin-top: 0;
+    align-self: flex-end;
+    padding-bottom: 0.125rem;
   }
 }
 

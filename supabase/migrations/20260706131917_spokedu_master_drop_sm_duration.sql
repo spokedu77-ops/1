@@ -1,0 +1,1 @@
+-- History anchor for an already-applied remote migration. No-op by design.

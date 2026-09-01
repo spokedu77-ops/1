@@ -158,7 +158,7 @@ export const SPOKEDU_IMAGES = {
     fieldEditorialWhy: defineImage(
       'home',
       'home-why-field',
-      'field-editorial/home-why-field.webp',
+      'field-editorial/home-why-field-ed.webp',
       '체육수업 현장 — 지도자의 시범과 지도 장면',
       { allowedPages: ['home'] },
     ),

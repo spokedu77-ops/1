@@ -30,6 +30,7 @@ import { resolveSessionContinuity } from './masterSessionContinuity';
 import { NextSessionPlanner } from './NextSessionPlanner';
 import { PreviousActivityCarryover } from './PreviousActivityCarryover';
 import { buildWeeklyAgenda, getScheduleAction, getScheduleWeekDays } from './weeklyAgenda';
+import { buildSessionProgramDetailHref, resolveSessionProgramAvailability } from './sessionProgramAvailability';
 
 function statusLabel(status: MasterSessionStatus) {
   return status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
@@ -95,6 +96,7 @@ function SessionSheet({
   const [nextSessionOpen, setNextSessionOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [reopenConfirmOpen, setReopenConfirmOpen] = useState(false);
   const [scheduleEditorOpen, setScheduleEditorOpen] = useState(false);
   const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [recordEditorOpen, setRecordEditorOpen] = useState(false);
@@ -134,10 +136,22 @@ function SessionSheet({
   const availableLibraryIds = new Set(
     libraryPrograms.filter((program) => !program.isPro || canUseRecords).map((program) => Number(program.id)),
   );
+  const catalogProgramIds = useMemo(
+    () => new Set(libraryPrograms.map((program) => Number(program.id))),
+    [libraryPrograms],
+  );
   const firstPreparedProgram = programs.find((program) => !program.isCompleted) ?? null;
   const nextPreparedProgram = firstPreparedProgram ? programs.find((program) => !program.isCompleted && program.id !== firstPreparedProgram.id) ?? null : null;
-  const firstPreparedProgramHref = activeSession && firstPreparedProgram?.sourceType === 'program' && firstPreparedProgram.programId
-    ? `/spokedu-master/library/${firstPreparedProgram.programId}?session=${encodeURIComponent(activeSession.id)}&sessionProgram=${encodeURIComponent(firstPreparedProgram.id)}&returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}&source=session`
+  const firstPreparedAvailability = firstPreparedProgram
+    ? resolveSessionProgramAvailability(firstPreparedProgram, catalogProgramIds, programsLoaded)
+    : null;
+  const firstPreparedProgramHref = activeSession && firstPreparedProgram && firstPreparedAvailability?.kind === 'available'
+    ? buildSessionProgramDetailHref({
+      programId: firstPreparedAvailability.programId,
+      sessionId: activeSession.id,
+      sessionProgramId: firstPreparedProgram.id,
+      returnTo: buildActivitySessionHref(activeSession.id),
+    })
     : activeSession && firstPreparedProgram?.sourceType === 'spomove' && firstPreparedProgram.spomovePresetId && findOfficialSpomovePreset(firstPreparedProgram.spomovePresetId)
       ? officialPresetSessionHref(findOfficialSpomovePreset(firstPreparedProgram.spomovePresetId)!, { entry: 'start', session: activeSession.id, sessionProgram: firstPreparedProgram.id, returnTo: buildActivitySessionHref(activeSession.id) })
       : null;
@@ -431,6 +445,19 @@ function SessionSheet({
     </BottomSheet>
   );
 
+  if (reopenConfirmOpen && activeSession?.status === 'completed') return (
+    <BottomSheet open title="수업 완료 취소" onClose={() => setReopenConfirmOpen(false)}>
+      <div className="space-y-4 pb-3">
+        <div className="rounded-xl bg-amber-50 p-4">
+          <p className="text-sm font-black text-amber-900">이 수업을 다시 예정 일정으로 돌립니다.</p>
+          <p className="mt-1 text-xs font-semibold leading-5 text-amber-800">출석, 활동 완료 표시, 수업 메모와 안내문은 삭제하지 않습니다. 내용을 수정한 뒤 다시 완료 처리할 수 있습니다.</p>
+        </div>
+        <button type="button" disabled={saving} onClick={() => void persist('scheduled')} className={SPM_PRIMARY_BTN_TALL}><RotateCcw size={15} />완료 취소</button>
+        <button type="button" disabled={saving} onClick={() => setReopenConfirmOpen(false)} className="h-11 w-full rounded-xl text-sm font-black text-slate-600">돌아가기</button>
+      </div>
+    </BottomSheet>
+  );
+
   if (deleteConfirmOpen && activeSession?.status === 'cancelled') return (
     <BottomSheet open title="취소 수업 삭제" onClose={() => setDeleteConfirmOpen(false)}>
       <div className="space-y-4 pb-3">
@@ -550,7 +577,12 @@ function SessionSheet({
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500" aria-label={`${index + 1}번째 활동`}>{index + 1}</span>
                   <button type="button" disabled={!activeSession || !actions.toggleActivityCompletion} onClick={() => void toggleProgram(program)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg ${program.isCompleted ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`} aria-label={`${program.programTitle ?? '활동'} 진행 여부`}><Check size={18} /></button>
                   <span className={`min-w-0 flex-1 text-sm font-medium ${program.isCompleted ? 'text-slate-500 line-through' : 'text-slate-800'}`}><span className="block truncate" title={program.programTitle ?? '이름 없는 활동'}>{program.programTitle ?? '이름 없는 활동'}</span><span className="flex items-center gap-1.5 text-xs font-normal text-slate-400">{program.sourceType === 'spomove' ? 'SPOMOVE' : '놀이체육'}{program.id === workspace?.nextPendingProgramId ? <span>· 다음 활동</span> : null}</span></span>
-                  {program.sourceType === 'program' && program.programId && activeSession ? <Link href={`/spokedu-master/library/${program.programId}?session=${encodeURIComponent(activeSession.id)}&sessionProgram=${encodeURIComponent(program.id)}&returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}&source=session`} className={`inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-bold text-slate-700 ${workspace?.presentationKind === 'RUN' && program.id === workspace.nextPendingProgramId ? 'bg-slate-900 text-white' : 'bg-white'}`} aria-label={`${program.programTitle ?? '프로그램'} 활동 준비`}>활동 준비</Link> : null}
+                  {program.sourceType === 'program' && activeSession ? (() => {
+                    const availability = resolveSessionProgramAvailability(program, catalogProgramIds, programsLoaded);
+                    if (availability.kind === 'available') return <Link href={buildSessionProgramDetailHref({ programId: availability.programId, sessionId: activeSession.id, sessionProgramId: program.id, returnTo: buildActivitySessionHref(activeSession.id) })} className={`inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-[11px] font-bold text-slate-700 ${workspace?.presentationKind === 'RUN' && program.id === workspace.nextPendingProgramId ? 'bg-slate-900 text-white' : 'bg-white'}`} aria-label={`${program.programTitle ?? '프로그램'} 활동 준비`}>활동 준비</Link>;
+                    if (availability.kind === 'checking') return <span className="inline-flex min-h-11 items-center px-3 text-[11px] font-bold text-slate-400">확인 중…</span>;
+                    return <button type="button" onClick={() => { setProgramFilter('program'); setProgramSearch(program.programTitle ?? ''); setSelectedActivityKeys([]); setProgramPickerOpen(true); }} className="inline-flex min-h-11 items-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-[11px] font-bold text-amber-800" aria-label={`${program.programTitle ?? '프로그램'} 라이브러리에서 다시 선택`}>다시 선택</button>;
+                  })() : null}
                   {program.sourceType === 'spomove' && program.spomovePresetId && findOfficialSpomovePreset(program.spomovePresetId) && activeSession ? <Link target="_blank" rel="noreferrer" href={officialPresetSessionHref(findOfficialSpomovePreset(program.spomovePresetId)!, { entry: 'start', session: activeSession.id, sessionProgram: program.id, returnTo: buildActivitySessionHref(activeSession.id) })} className={`inline-flex min-h-11 items-center rounded-lg border border-blue-200 px-3 text-[11px] font-bold text-blue-700 ${workspace?.presentationKind === 'RUN' && program.id === workspace.nextPendingProgramId ? 'bg-blue-600 text-white' : 'bg-white'}`} aria-label={`${program.programTitle ?? 'SPOMOVE'} 새 탭에서 실행`}>SPOMOVE 실행</Link> : null}
                 </div>
                 {actions.reorderActivities || actions.removeActivities ? (
@@ -660,6 +692,7 @@ function SessionSheet({
               : <Link href={`/spokedu-master/classes/${encodeURIComponent(activeSession.classId)}`} className={SPM_JOURNEY_PRIMARY}><UsersRound size={17} />수업반으로 돌아가기</Link>}
           {canUseRecords ? <Link href={`/spokedu-master/report?session=${encodeURIComponent(activeSession.id)}`} className={SPM_SECONDARY_BTN}><FileText size={15} />수업 안내문 보기</Link> : null}
           {formDirty ? <button type="button" disabled={saving || !classId} onClick={() => void persist()} className={SPM_SECONDARY_BTN}><Save size={15} />변경사항 저장</button> : null}
+          {actions.restore ? <button type="button" disabled={saving} onClick={() => setReopenConfirmOpen(true)} className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl text-xs font-bold text-amber-700 disabled:opacity-40"><RotateCcw size={14} />수업 완료 취소</button> : null}
         </section> : null}
 
         {status === 'cancelled' ? <div className={`${sessionSectionOrderClass(workspace?.sectionOrder.primary ?? 2)} rounded-xl bg-slate-100 p-4 text-xs font-bold text-slate-500`}><p className="text-center">취소 기록은 보존됩니다. 상황에 맞는 다음 행동을 선택해 주세요.</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><button type="button" disabled={saving} onClick={() => void persist('scheduled')} className={SPM_PRIMARY_BTN_TALL}><RotateCcw size={14} />{MASTER_ACTION_COPY.restoreSession}</button><Link href={`/spokedu-master/activity?date=${encodeURIComponent(getSeoulSessionDay(activeSession?.startAt ?? startAt))}&create=1&class=${encodeURIComponent(classId)}`} className={SPM_SECONDARY_BTN}>{MASTER_ACTION_COPY.replaceSession}</Link></div><button type="button" disabled={saving} onClick={() => setDeleteConfirmOpen(true)} className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-1 text-rose-600 disabled:opacity-40"><Trash2 size={14} />{MASTER_ACTION_COPY.deleteSession}</button></div> : null}

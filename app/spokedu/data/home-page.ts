@@ -8,7 +8,7 @@ import { SPOKEDU_PATHS } from './site';
 
 export const HOME_FIELD_EDITORIAL = {
   hero: '/images/spokedu/home/field-editorial/home-hero-field.webp',
-  why: '/images/spokedu/home/field-editorial/home-why-field.webp',
+  why: '/images/spokedu/home/field-editorial/home-why-field-ed.webp',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
   caseGeneral: '/images/spokedu/home/field-editorial/home-case-general.webp',
   caseAdapted: '/images/spokedu/home/field-editorial/home-case-adapted.webp',
@@ -96,7 +96,7 @@ export const homePage = {
     education: {
       headline: '체육수업',
       tagline: 'SPOKEDU가 직접 수업합니다.',
-      body: '학교·기관·개인·소그룹의 대상과 환경에 맞춰 수업을 구성하고 운영합니다.',
+      body: '학교·기관부터 개인·소그룹까지 대상과 환경에 맞춰 수업을 구성하고 운영합니다.',
       primaryCta: {
         label: '체육수업 알아보기',
         href: SPOKEDU_PATHS.education,
@@ -143,7 +143,7 @@ export const homePage = {
     lead: '놀이체육 콘텐츠와 SPOMOVE를 찾고, 수업 준비부터 진행·기록까지 한곳에서 이어갈 수 있습니다.',
     flow: ['찾기', '준비', '진행', '기록'] as const,
     visual: {
-      src: '/images/spokedu/subscription/product-library.png',
+      src: '/images/spokedu/subscription/product-library-home.webp',
       alt: '스포키듀 구독시스템 수업 라이브러리 — 바로 쓸 수업 고르기',
     },
     primaryCta: {
@@ -165,15 +165,15 @@ export const homePage = {
     cards: [
       buildHomeCaseCard('maedong-sports-stepup', {
         src: HOME_FIELD_EDITORIAL.caseGeneral,
-        objectPosition: '50% 45%',
+        objectPosition: '42% 55%',
       }),
       buildHomeCaseCard('donghaeng-special-pe', {
         src: HOME_FIELD_EDITORIAL.caseAdapted,
-        objectPosition: '55% 48%',
+        objectPosition: '50% 42%',
       }),
       buildHomeCaseCard('dongjak-spomove', {
         src: HOME_FIELD_EDITORIAL.caseSpomove,
-        objectPosition: '50% 42%',
+        objectPosition: '58% 48%',
       }),
     ],
   },

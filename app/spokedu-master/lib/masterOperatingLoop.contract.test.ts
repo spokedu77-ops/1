@@ -58,8 +58,10 @@ describe('MASTER whole-product operating loop', () => {
 
   it('preserves general-program and tool returns to the operating Session', () => {
     const activity = readFileSync('app/spokedu-master/activity/page.tsx', 'utf8');
-    expect(activity).toContain('source=session');
-    expect(activity).toContain('sessionProgram=');
+    const programNavigation = readFileSync('app/spokedu-master/activity/sessionProgramAvailability.ts', 'utf8');
+    expect(activity).toContain('buildSessionProgramDetailHref({');
+    expect(programNavigation).toContain("source: 'session'");
+    expect(programNavigation).toContain('sessionProgram: input.sessionProgramId');
     expect(activity).toContain('class-tools?session=');
     expect(activity).toContain('returnTo=');
   });

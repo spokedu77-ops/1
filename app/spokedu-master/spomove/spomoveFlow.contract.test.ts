@@ -83,11 +83,11 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).toContain('buildSpomoveGuideDisplayModel');
     expect(guidelineSheet).toContain('활동 목표');
     expect(guidelineSheet).toContain('준비');
-    expect(guidelineSheet).toContain('진행');
+    expect(guidelineSheet).toContain('활동 방법');
     expect(guidelineSheet).toContain('지도 포인트');
     expect(guidelineSheet).toContain('난이도 조절 · 관찰 기준');
     expect(guidelineSheet).not.toContain('선택적 상세');
-    expect(guidelineSheet).toContain('교사 Cue');
+    expect(guidelineSheet).toContain('교사 핵심단서(Cue)');
     expect(guidelineSheet).not.toContain('아이에게 하는 말');
     expect(guidelineSheet).toContain('min-[1024px]:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]');
     expect(guidelineSheet).not.toContain('1.55fr');
@@ -193,8 +193,10 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(settingsBriefing).toContain('sec === 3');
     expect(startBriefing).not.toContain('추천');
     expect(settingsBriefing).toContain('추천');
-    expect(padLayoutView).toContain('정사각형: 빨강 · 노랑 · 초록 · 파랑');
-    expect(padLayoutView).toContain('다이아몬드: 빨강(위) · 노랑(왼) · 초록(오) · 파랑(아래)');
+    expect(padLayoutView).toContain('참가자가 화면을 바라본 기준입니다.');
+    expect(padLayoutView).toContain('화면 ↑');
+    expect(padLayoutView).toContain('참가자 위치');
+    expect(padLayoutView).toContain("index < 2 ? '앞' : '뒤'");
     expect(padLayoutView).toContain('aspect-square');
     expect(settingsBriefing).toContain('meta={intervalLine ? null : prepLine}');
     expect(settingsBriefing).not.toContain('text-white/70">{prepLine}');

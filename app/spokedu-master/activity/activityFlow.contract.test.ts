@@ -25,8 +25,8 @@ describe('activity Session flow', () => {
 
   it('preserves exact Session context for activity preparation and SPOMOVE execution', () => {
     expect(source).toContain('target="_blank" rel="noreferrer"');
-    expect(source).toContain('sessionProgram=${encodeURIComponent(program.id)}');
-    expect(source).toContain('returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}');
+    expect(source).toContain('buildSessionProgramDetailHref({');
+    expect(source).toContain('returnTo: buildActivitySessionHref(activeSession.id)');
     expect(source).toContain("sessionProgram: program.id");
   });
 

@@ -218,22 +218,29 @@ function MyClassesContent() {
     setLoading(true);
     setScheduleError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-      setScheduleUserId(session.user.id);
-
       if (!currentDate) return;
       const { monday, sunday } = getWeekRange(new Date(currentDate));
 
       const res = await fetch(
-        `/api/teacher/my-schedule?from=${monday.toISOString()}&to=${sunday.toISOString()}`
+        `/api/teacher/my-schedule?from=${monday.toISOString()}&to=${sunday.toISOString()}`,
+        { credentials: 'include', cache: 'no-store' },
       );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const json = (await res.json().catch(() => ({}))) as {
+        data?: Session[];
+        userId?: string;
+        error?: string;
+      };
+      if (!res.ok) {
+        if (res.status === 401) throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+        if (res.status === 403) throw new Error('현재 계정으로는 수업 일정을 볼 수 없습니다.');
+        throw new Error(json.error || `HTTP ${res.status}`);
+      }
+      setScheduleUserId(json.userId ?? null);
       setSessions(json.data || []);
     } catch (err) {
       devLogger.error(err);
-      setScheduleError('일정을 불러오지 못했습니다.');
+      setSessions([]);
+      setScheduleError(err instanceof Error ? err.message : '일정을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }

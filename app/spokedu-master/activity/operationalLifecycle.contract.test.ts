@@ -34,4 +34,13 @@ describe('MASTER operational lifecycle integrity', () => {
     expect(restore).toContain("old.status='cancelled' and new.status='scheduled'");
     expect(restore).toContain("v_old.status='cancelled' and p_status='scheduled'");
   });
+
+  it('reopens completed sessions without deleting their recorded contents', () => {
+    const reopen = readFileSync('supabase/migrations/20260901155330_spokedu_master_session_reopen_and_parent_notice.sql', 'utf8');
+    expect(reopen).toContain("v_old.status in ('cancelled','completed') and p_status='scheduled'");
+    expect(reopen).toContain("new.completed_at := null");
+    expect(reopen).not.toContain('delete from public.spokedu_master_session_programs');
+    expect(activity).toContain('수업 완료 취소');
+    expect(activity).toContain('출석, 활동 완료 표시, 수업 메모와 안내문은 삭제하지 않습니다.');
+  });
 });

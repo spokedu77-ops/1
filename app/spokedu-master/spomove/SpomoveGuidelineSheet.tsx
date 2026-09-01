@@ -184,7 +184,7 @@ function CoachCueCard({ script }: { script: string }) {
       />
       <div className="flex items-center gap-1.5">
         <MessageCircle className="h-3.5 w-3.5 shrink-0 text-[var(--spm-acc)]" aria-hidden />
-        <p className="text-[11px] font-bold tracking-wide text-[var(--spm-acc)]">교사 Cue</p>
+        <p className="text-[11px] font-bold tracking-wide text-[var(--spm-acc)]">교사 핵심단서(Cue)</p>
       </div>
       <p className="mt-1.5 text-[13.5px] font-semibold leading-snug text-slate-900 sm:text-[14px] sm:leading-6">
         “{script.replace(/^["“”']+|["“”']+$/g, '')}”
@@ -302,7 +302,7 @@ function BriefingContent({
       </BriefingSection>
 
       {hasInstruction ? (
-        <BriefingSection title="진행">
+        <BriefingSection title="활동 방법">
           {instructionLines.length > 1 ? (
             <ProgressTimeline lines={instructionLines} />
           ) : (

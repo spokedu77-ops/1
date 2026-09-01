@@ -1,13 +1,14 @@
 'use client';
 
-import { ClipboardCopy, FileText } from 'lucide-react';
+import { ClipboardCopy, FileText, Save } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
 import { resolveReportSession } from '../lib/sessionContext';
+import { resolveParentNotice } from './parentNoticeModel';
 
 export default function ReportPage() {
   const data = useOperationalData();
@@ -18,20 +19,29 @@ export default function ReportPage() {
   const requestedSessionId = searchParams.get('session');
   const [selectedId, setSelectedId] = useState('');
   const selected = resolveReportSession(sessions, requestedSessionId, selectedId);
+  const [notice, setNotice] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const invalidRequestedSession = Boolean(requestedSessionId) && data.status === 'ready' && !selected;
-  const present = selected?.attendance.filter((item) => item.status === 'present').length ?? 0;
-  const absent = selected?.attendance.filter((item) => item.status === 'absent').length ?? 0;
-  const presentNames = selected?.attendance.filter((item) => item.status === 'present').map((item) => item.studentName) ?? [];
-  const absentNames = selected?.attendance.filter((item) => item.status === 'absent').map((item) => item.studentName) ?? [];
-  const completedPrograms = selected?.programs.filter((item) => item.isCompleted) ?? [];
-  const report = selected ? [
-    `${formatSeoulSessionDay(getSeoulSessionDay(selected.startAt), { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} ${selected.className} 수업 안내`,
-    completedPrograms.length ? `오늘은 ${completedPrograms.map((item) => item.programTitle ?? '이름 없는 활동').join(', ')} 활동을 진행했습니다.` : '오늘 수업은 활동 기록 없이 진행되었습니다.',
-    `출석 ${present}명, 결석 ${absent}명입니다.`,
-    presentNames.length ? `출석: ${presentNames.join(', ')}` : '',
-    absentNames.length ? `결석: ${absentNames.join(', ')}` : '',
-    selected.memo?.trim() ? `수업 메모: ${selected.memo.trim()}` : '',
-  ].filter(Boolean).join('\n') : '';
+  const persistedNotice = selected ? resolveParentNotice(selected) : '';
+  useEffect(() => {
+    setNotice(persistedNotice);
+    setFeedback(null);
+  }, [persistedNotice, selected?.id]);
+  const noticeDirty = Boolean(selected) && notice.trim() !== persistedNotice.trim();
+  const saveNotice = async () => {
+    if (!selected || !noticeDirty || saving) return;
+    setSaving(true);
+    setFeedback(null);
+    try {
+      await data.saveParentNotice(selected.id, notice);
+      setFeedback('안내문을 저장했습니다.');
+    } catch {
+      setFeedback('안내문을 저장하지 못했습니다. 다시 시도해 주세요.');
+    } finally {
+      setSaving(false);
+    }
+  };
   const backToSessionHref = selected
     ? `/spokedu-master/activity?session=${encodeURIComponent(selected.id)}`
     : '/spokedu-master/activity';
@@ -68,19 +78,22 @@ export default function ReportPage() {
           ) : null}
           {selected ? (
             <>
-              <pre className="mt-5 whitespace-pre-wrap rounded-xl bg-slate-50 p-4 font-sans text-sm font-semibold leading-7 text-slate-700">
-                {report}
-              </pre>
+              <label className="mt-5 block text-xs font-black text-slate-600">
+                안내문 내용
+                <textarea value={notice} onChange={(event) => { setNotice(event.target.value); setFeedback(null); }} maxLength={4000} className="mt-2 min-h-72 w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold leading-7 text-slate-700 outline-none focus:border-blue-500" />
+              </label>
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500"><span>{feedback ?? (noticeDirty ? '저장하지 않은 변경사항이 있습니다.' : '저장됨')}</span><span>{notice.length.toLocaleString()} / 4,000자</span></div>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button type="button" disabled={!noticeDirty || saving} onClick={() => void saveNotice()} className={SPM_PRIMARY_BTN}><Save size={15} />{saving ? '저장 중' : '안내문 저장'}</button>
                 <button
                   type="button"
-                  onClick={() => void navigator.clipboard.writeText(report)}
-                  className={SPM_PRIMARY_BTN}
+                  onClick={() => void navigator.clipboard.writeText(notice)}
+                  className={SPM_SECONDARY_BTN}
                 >
                   <ClipboardCopy size={15} />
                   안내문 복사
                 </button>
-                <Link href={backToSessionHref} className={SPM_SECONDARY_BTN}>
+                <Link href={backToSessionHref} className={`${SPM_SECONDARY_BTN} sm:col-span-2`}>
                   수업으로 돌아가기
                 </Link>
               </div>

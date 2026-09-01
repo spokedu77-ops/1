@@ -104,7 +104,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
         <div className={styles.heroMedia}>
           <MediaPanel
             media={heroMedia}
-            className={`absolute inset-0 h-full w-full scale-[1.04] border-0 rounded-none lg:translate-x-[16%] lg:scale-[1.22] ${homePhotoGrade}`}
+            className={`absolute inset-0 h-full w-full border-0 rounded-none ${homePhotoGrade}`}
             sizes="100vw"
             photoPriority
             priority
@@ -197,8 +197,8 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
             <div className={styles.whyPhoto}>
               <MediaPanel
                 media={whyMedia}
-                className={`aspect-[4/3] w-full border-0 ${homePhotoGrade}`}
-                sizes="(min-width: 1024px) 28vw, 88vw"
+                className={`${styles.whyPhotoMedia} border-0 ${homePhotoGrade}`}
+                sizes="(min-width: 1024px) 42vw, 88vw"
                 objectFit="cover"
               />
             </div>
@@ -349,10 +349,15 @@ function CasePhoto({ card, priority }: { card: CaseCardWithThumb; priority?: boo
       src={card.editorialSrc}
       alt={`${card.programName} — ${card.venue}`}
       fill
-      className="object-cover"
+      className={styles.casePhotoImage}
       style={{ objectPosition: card.editorialObjectPosition ?? '50% 50%' }}
       priority={priority}
-      sizes="(max-width: 1023px) 100vw, (max-width: 1439px) 50vw, 720px"
+      loading={priority ? undefined : 'eager'}
+      sizes={
+        priority
+          ? '(max-width: 1023px) 100vw, (max-width: 1439px) 58vw, 760px'
+          : '(max-width: 1023px) 100vw, (max-width: 1439px) 28vw, 420px'
+      }
     />
   );
 }

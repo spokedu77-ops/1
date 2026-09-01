@@ -61,6 +61,12 @@ export async function GET(req: NextRequest) {
       assistStudents,
     ]);
 
+    const queryError = mainRes.error || extraMemoRes.error || extraStudentsRes.error;
+    if (queryError) {
+      devLogger.error('[teacher/my-schedule] sessions lookup failed', queryError);
+      return NextResponse.json({ error: 'Schedule lookup failed' }, { status: 500 });
+    }
+
     const mainList = mainRes.data || [];
     const mainIds = new Set(mainList.map((s) => s.id));
     const myId = String(user.id).trim().toLowerCase();
@@ -93,7 +99,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ data: sanitizedForTeacherView });
+    return NextResponse.json({ data: sanitizedForTeacherView, userId: user.id });
   } catch (err) {
     devLogger.error('[teacher/my-schedule]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

@@ -15,6 +15,7 @@ const migration = readFileSync(
   'utf8',
 );
 const reportPage = readFileSync(join(process.cwd(), 'app/spokedu-master/report/page.tsx'), 'utf8');
+const parentNoticeModel = readFileSync(join(process.cwd(), 'app/spokedu-master/report/parentNoticeModel.ts'), 'utf8');
 
 const lessonNote = () => normalizeClassRecordInput({
   legacyId: 'lesson-note-1',
@@ -115,7 +116,8 @@ describe('Record System V2 migration and privacy contract', () => {
 
   it('builds reports from completed sessions without private guidance notes', () => {
     expect(reportPage).toContain("session.status === 'completed'");
-    expect(reportPage).toContain('selected.memo');
+    expect(reportPage).toContain('resolveParentNotice(selected)');
+    expect(parentNoticeModel).toContain('session.memo');
     expect(reportPage).not.toContain('classRecords');
     expect(reportPage).not.toContain('guidanceNote');
   });

@@ -77,13 +77,16 @@ function bootstrapStore(email) {
 async function login(context) {
   const page = await context.newPage();
   await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/dashboard')}`, { waitUntil: 'domcontentloaded' });
-  const passwordInput = page.locator('input[type="password"]').first();
-  if ((await passwordInput.count()) === 0) {
-    await page.locator('[role="tab"]').nth(1).waitFor({ state: 'visible', timeout: 10_000 });
-    await page.locator('[role="tab"]').nth(1).click();
+  const masterTab = page.getByRole('tab', { name: 'MASTER' });
+  await masterTab.waitFor({ state: 'visible', timeout: 10_000 });
+  if ((await masterTab.getAttribute('aria-selected')) !== 'true') await masterTab.click();
+
+  const passwordInput = page.locator('input[name="password"]');
+  if (!(await passwordInput.isVisible().catch(() => false))) {
+    await page.getByRole('button', { name: '비밀번호로 로그인' }).click();
   }
   await passwordInput.waitFor({ state: 'visible', timeout: 10_000 });
-  await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
+  await page.locator('input[name="username"]').fill(QA_ID);
   await passwordInput.fill(QA_PASSWORD);
   await page.locator('button[type="submit"]').click();
   await page.waitForURL(/\/spokedu-master\//, { timeout: 90000, waitUntil: 'domcontentloaded' });

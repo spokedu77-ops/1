@@ -30,6 +30,7 @@ type OperationalDataContextValue = {
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
   startSession: (sessionId: string) => Promise<MasterSessionDto>;
   completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<MasterSessionDto>;
+  saveParentNotice: (sessionId: string, parentNotice: string) => Promise<void>;
   deleteCancelledSession: (sessionId: string) => Promise<void>;
   createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms?: boolean; sourceSessionProgramIds?: string[] }) => Promise<MasterSessionDto>;
   carryoverSessionPrograms: (targetSessionId: string, sourceSessionId: string, sourceSessionProgramIds: string[]) => Promise<MasterSessionDto['programs']>;
@@ -185,6 +186,14 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
+  const saveParentNotice = useCallback(async (sessionId: string, parentNotice: string) => {
+    const json = await masterFetchJson<{ data: { parentNotice: string | null } }>(`/api/spokedu-master/sessions/${sessionId}/parent-notice`, {
+      body: JSON.stringify({ parentNotice }),
+      method: 'PATCH',
+    });
+    setSessions((current) => current.map((session) => session.id === sessionId ? { ...session, parentNotice: json.data.parentNotice } : session));
+  }, []);
+
   const startSession = useCallback(async (sessionId: string) => {
     const json = await masterFetchJson<{ data: { sessionId: string; startedAt: string } }>(`/api/spokedu-master/sessions/${sessionId}/start`, {
       method: 'POST',
@@ -307,6 +316,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       ownerId,
       reload,
       saveSession,
+      saveParentNotice,
       startSession,
       saveSessionAttendance,
       removeSessionProgram,
@@ -318,7 +328,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       updateSessionProgram,
       updateClass,
     }),
-    [addClassStudent, addSessionProgram, addSessionSpomove, carryoverSessionPrograms, classes, completeSession, createClass, createNextSession, createStudent, deleteCancelledSession, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveSession, saveSessionAttendance, sessions, startSession, status, students, updateClass, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, addSessionSpomove, carryoverSessionPrograms, classes, completeSession, createClass, createNextSession, createStudent, deleteCancelledSession, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveParentNotice, saveSession, saveSessionAttendance, sessions, startSession, status, students, updateClass, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

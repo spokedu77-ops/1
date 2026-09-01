@@ -50,13 +50,17 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain('aria-pressed={active}');
   });
 
-  it('lets teachers use quick presets and custom minutes/seconds for the timer', () => {
+  it('separates activity and rest countdowns while preserving custom minutes/seconds', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
+    const model = read('app/spokedu-master/components/ui/classToolsModel.ts');
 
-    expect(tools).toContain('const RETURN_TIMER_OPTIONS');
-    expect(tools).toContain("{ label: '3분', value: 3 * 60 * 1000 }");
-    expect(tools).toContain("{ label: '5분', value: 5 * 60 * 1000 }");
-    expect(tools).toContain("{ label: '10분', value: 10 * 60 * 1000 }");
+    expect(tools).toContain("useState<CountdownTimerMode>('activity')");
+    expect(tools).toContain("(['activity', 'rest'] as const)");
+    expect(tools).toContain('modeConfig.options.map');
+    expect(tools).toContain('수행 +1');
+    expect(model).toContain('COUNTDOWN_TIMER_MODE_CONFIG');
+    expect(model).toContain("expiredLabel: '활동 시간이 끝났습니다.'");
+    expect(model).toContain("expiredLabel: '휴식 시간이 끝났습니다.'");
     expect(tools).toContain('const [selectedDurationMs, setSelectedDurationMs]');
     expect(tools).toContain('const [customMinutes, setCustomMinutes]');
     expect(tools).toContain('const [customSeconds, setCustomSeconds]');

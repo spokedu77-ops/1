@@ -1,0 +1,3 @@
+-- History anchor: this migration was applied to the remote database before its
+-- source file was available in this repository. Kept intentionally empty so
+-- local and remote migration version chains remain comparable.

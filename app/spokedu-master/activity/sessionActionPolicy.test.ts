@@ -13,6 +13,7 @@ describe('Session action policy', () => {
       addActivities: false,
       removeActivities: false,
       reorderActivities: false,
+      restore: true,
     });
   });
 

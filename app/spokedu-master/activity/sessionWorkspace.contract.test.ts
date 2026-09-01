@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 const source = readFileSync('app/spokedu-master/activity/page.tsx', 'utf8');
 const capture = readFileSync('app/spokedu-master/activity/SessionCapturePanel.tsx', 'utf8');
+const programAvailability = readFileSync('app/spokedu-master/activity/sessionProgramAvailability.ts', 'utf8');
 
 describe('Session workspace structural contract', () => {
   it('keeps create schedule fields separate from existing Session schedule disclosure', () => {
@@ -23,8 +24,11 @@ describe('Session workspace structural contract', () => {
 
   it('keeps explicit teacher completion and exact navigation context', () => {
     expect(source).toContain('await data.updateSessionProgram');
-    expect(source).toContain('sessionProgram=${encodeURIComponent(program.id)}');
-    expect(source).toContain('returnTo=${encodeURIComponent(buildActivitySessionHref(activeSession.id))}');
+    expect(source).toContain('buildSessionProgramDetailHref({');
+    expect(source).toContain('sessionProgramId: program.id');
+    expect(source).toContain('returnTo: buildActivitySessionHref(activeSession.id)');
+    expect(programAvailability).toContain('sessionProgram: input.sessionProgramId');
+    expect(programAvailability).toContain('returnTo: input.returnTo');
     expect(source).toContain('target="_blank" rel="noreferrer"');
     expect(source).toContain('await captureRef.current?.save()');
     expect(source).toContain('수업 마무리 완료');

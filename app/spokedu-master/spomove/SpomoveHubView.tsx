@@ -1236,7 +1236,8 @@ export default function SpomoveHubView() {
         </section> : null}
 
         <section className="order-1 mt-4">
-        <div className="relative mb-3">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="relative">
           <label htmlFor="spomove-search" className="sr-only">활동명 또는 키워드 검색</label>
           <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -1262,6 +1263,11 @@ export default function SpomoveHubView() {
             </button>
           ) : null}
         </div>
+        <div className="grid min-h-11 grid-cols-2 rounded-xl border border-slate-200 bg-white p-1" aria-label="SPOMOVE 보기">
+          <button type="button" onClick={() => { if (showSavedOnly) toggleSavedOnly(); }} aria-pressed={!showSavedOnly} className={`min-h-11 rounded-lg px-3 text-[12px] font-bold transition ${!showSavedOnly ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500'}`}>전체</button>
+          <button type="button" onClick={() => { if (!showSavedOnly) toggleSavedOnly(); }} aria-pressed={showSavedOnly} className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 text-[12px] font-bold transition ${showSavedOnly ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500'}`}><Bookmark className="h-3.5 w-3.5" />즐겨찾기 <span className="text-[11px] opacity-70">{favoriteSpomoveIds.size}</span></button>
+        </div>
+        </div>
         </section>
         {isFamilyLanding ? (
           <section className="order-2 mt-5" aria-labelledby="spomove-family-heading">
@@ -1270,9 +1276,6 @@ export default function SpomoveHubView() {
                 <p className="text-xs font-normal text-slate-500">어떤 방식으로 움직일까요?</p>
                 <h2 id="spomove-family-heading" className="mt-1 text-xl font-semibold text-slate-950">SPOMOVE 프로그램</h2>
               </div>
-              <button type="button" onClick={toggleSavedOnly} className="inline-flex min-h-11 items-center gap-2 px-2 text-xs font-medium text-slate-500">
-                <Bookmark className="h-4 w-4" /> 저장한 활동 {favoriteSpomoveIds.size}
-              </button>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               {familyPresets.map(({ family, presets }) => (
