@@ -4,6 +4,7 @@ import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminA
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getSpokeduMasterProfile } from '@/app/lib/server/spokeduMasterProfile';
+import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
 
 const EXPIRED_ACCESS_MESSAGE =
   '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 이용권을 다시 선택해 주세요.';
@@ -235,6 +236,16 @@ export function buildSpokeduMasterAccessSnapshot(input: {
 
 type ServiceSupabase = ReturnType<typeof getServiceSupabase>;
 
+function inactiveTeacherResponse(): MasterAccessFail {
+  return {
+    ok: false,
+    response: NextResponse.json(
+      { error: 'Forbidden', reason: 'inactive_teacher' },
+      { status: 403 },
+    ),
+  };
+}
+
 export async function ensureSpokeduMasterEntitlement(
   serviceSupabase: ServiceSupabase,
   userId: string,
@@ -271,6 +282,9 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
     const isAdmin = await isPlatformAdminUser(user, serverSupabase);
     if (isAdmin) {
       return { ok: true, userId: user.id, isAdmin: true, plan: 'admin' };
+    }
+    if (!(await canAccessTeacherMaterials(user, serverSupabase))) {
+      return inactiveTeacherResponse();
     }
 
     const serviceSupabase = getServiceSupabase();
@@ -346,10 +360,15 @@ export async function requireSpokeduMasterSession(): Promise<MasterSessionResult
       };
     }
 
+    const isAdmin = await isPlatformAdminUser(user, serverSupabase);
+    if (!isAdmin && !(await canAccessTeacherMaterials(user, serverSupabase))) {
+      return inactiveTeacherResponse();
+    }
+
     return {
       ok: true,
       userId: user.id,
-      isAdmin: await isPlatformAdminUser(user, serverSupabase),
+      isAdmin,
     };
   } catch (err) {
     devLogger.error('[requireSpokeduMasterSession]', err);
@@ -388,6 +407,9 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
         userId: user.id,
         snapshot: buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: true }),
       };
+    }
+    if (!(await canAccessTeacherMaterials(user, serverSupabase))) {
+      return inactiveTeacherResponse();
     }
 
     const serviceSupabase = getServiceSupabase();

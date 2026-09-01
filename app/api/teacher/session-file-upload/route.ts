@@ -5,6 +5,7 @@ import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { CENTER_SESSION_FILES_BUCKET } from '@/app/lib/server/centerSessionFileStorage';
 import { canTeacherEditSession } from '@/app/lib/server/teacherSessionAccess';
+import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!(await canAccessTeacherMaterials(user, supabase))) {
+      return NextResponse.json({ error: 'Forbidden', reason: 'inactive_teacher' }, { status: 403 });
+    }
 
     const body = (await request.json().catch(() => null)) as {
       sessionId?: unknown;

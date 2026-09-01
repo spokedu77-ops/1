@@ -3,10 +3,10 @@
  * GET ?from=<ISO>&to=<ISO> : 로그인한 사용자의 주강사 + 보조 강사 수업 모두 반환
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
+import { requireTeacherMaterialsAccess } from '@/app/lib/server/teacherAuth';
 
 type ExtraTeacher = { id: string; price?: number };
 
@@ -22,11 +22,9 @@ function getExtraTeachersFromSession(s: { students_text?: string | null; memo?: 
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireTeacherMaterialsAccess();
+    if (!auth.ok) return auth.response;
+    const user = { id: auth.userId };
 
     const { searchParams } = new URL(req.url);
     const from = searchParams.get('from');

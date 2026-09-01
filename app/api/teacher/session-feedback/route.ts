@@ -8,6 +8,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { canTeacherEditSession } from '@/app/lib/server/teacherSessionAccess';
+import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
 import {
   type FeedbackFields,
   fieldsToTemplateText,
@@ -49,6 +50,9 @@ export async function POST(req: Request) {
     } = await serverSupabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (!(await canAccessTeacherMaterials(user, serverSupabase))) {
+      return NextResponse.json({ error: 'Forbidden', reason: 'inactive_teacher' }, { status: 403 });
     }
 
     const body = (await req.json().catch(() => ({}))) as Body;

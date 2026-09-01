@@ -17,6 +17,8 @@ describe('teacher center feedback upload contract', () => {
   });
 
   it('uses one shared main-or-assistant permission contract on both endpoints', () => {
+    expect(uploadRoute).toContain('canAccessTeacherMaterials(user, supabase)');
+    expect(feedbackRoute).toContain('canAccessTeacherMaterials(user, serverSupabase)');
     expect(uploadRoute).toContain('canTeacherEditSession(user.id, row)');
     expect(feedbackRoute).toContain('canTeacherEditSession(user.id, row)');
   });
