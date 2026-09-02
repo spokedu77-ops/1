@@ -57,7 +57,7 @@ describe('SPOMOVE pilot flow contract', () => {
   });
 
   it('loads launch-confirm preview without pad layout clutter', () => {
-    expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
+    expect(hub).toContain('useSpomoveGuideVideo');
     expect(hub).toContain('SPOMOVE_CONTENT_PACK_ID');
     expect(hub).toContain('normalizeSpomoveContentMap');
     expect(hub).toContain("useState<SpomoveContentLoadState>('loading')");

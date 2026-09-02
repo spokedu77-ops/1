@@ -4,11 +4,10 @@
  */
 export const MASTER_NAV_ITEMS = [
   { key: 'dashboard', href: '/spokedu-master/dashboard', label: '홈', shortLabel: '홈' },
-  { key: 'library', href: '/spokedu-master/library', label: '놀이체육', shortLabel: '놀이체육' },
-  { key: 'spomove', href: '/spokedu-master/spomove', label: 'SPOMOVE', shortLabel: '무브' },
+  { key: 'programs', href: '/spokedu-master/programs', label: '프로그램', shortLabel: '프로그램' },
+  { key: 'favorites', href: '/spokedu-master/favorites', label: '즐겨찾기', shortLabel: '즐겨찾기' },
+  { key: 'manage', href: '/spokedu-master/manage', label: '수업 관리', shortLabel: '수업 관리' },
   { key: 'class-tools', href: '/spokedu-master/class-tools', label: '수업 도구', shortLabel: '도구' },
-  { key: 'classes', href: '/spokedu-master/classes', label: '수업반', shortLabel: '수업반' },
-  { key: 'activity', href: '/spokedu-master/activity', label: '수업 일정', shortLabel: '일정' },
 ] as const;
 
 export type MasterNavKey = (typeof MASTER_NAV_ITEMS)[number]['key'];

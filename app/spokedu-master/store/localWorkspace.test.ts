@@ -134,9 +134,9 @@ describe('local workspace owner isolation', () => {
     seedWorkspace('id:user-a');
     useMasterStore.setState({
       profile: { id: 'user-a', email: 'a@example.com' } as never,
-      favoriteProgramIdsByOwner: {
-        'id:user-a': ['p1'],
-        'id:user-b': ['p2'],
+      favoriteContentRefsByOwner: {
+        'id:user-a': [{ type: 'program', id: 'p1' }],
+        'id:user-b': [{ type: 'program', id: 'p2' }],
       },
       recentProgramActivities: [
         { ownerId: 'id:user-a', programId: 'p1' },
@@ -146,8 +146,8 @@ describe('local workspace owner isolation', () => {
 
     useMasterStore.getState().clearCurrentOwnerLocalData();
 
-    expect(useMasterStore.getState().favoriteProgramIdsByOwner).toEqual({
-      'id:user-b': ['p2'],
+    expect(useMasterStore.getState().favoriteContentRefsByOwner).toEqual({
+      'id:user-b': [{ type: 'program', id: 'p2' }],
     });
     expect(useMasterStore.getState().recentProgramActivities).toEqual([
       expect.objectContaining({ ownerId: 'id:user-b' }),

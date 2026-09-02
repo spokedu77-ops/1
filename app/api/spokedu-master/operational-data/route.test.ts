@@ -281,9 +281,10 @@ describe('profile local cleanup boundary', () => {
       storeSource.indexOf('clearCurrentOwnerLocalData'),
       storeSource.indexOf('setProfile:', storeSource.indexOf('clearCurrentOwnerLocalData')),
     );
-    expect(cleanup).toContain('delete favoriteProgramIdsByOwner[ownerId]');
+    expect(cleanup).toContain('delete favoriteContentRefsByOwner[ownerId]');
+    expect(cleanup).toContain('delete pendingLegacyFavoriteIdsByOwner[ownerId]');
     expect(cleanup).toContain('!ownerIds.has(activity.ownerId)');
-    expect(cleanup).not.toContain('favoriteProgramIdsByOwner: {}');
+    expect(cleanup).not.toContain('favoriteContentRefsByOwner: {}');
     expect(cleanup).not.toContain('recentProgramActivities: []');
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  classifyLegacyFavoriteIds,
   claimPendingLegacyFavorites,
   getFavoritesByOwner,
   getFavoritesOwnerId,
@@ -8,8 +9,41 @@ import {
   mergeFavoriteProgramIds,
   migrateLegacyFavorites,
   normalizeFavoriteProgramIds,
+  normalizeFavoriteContentRefs,
+  toggleFavoriteContent,
   toggleFavoriteByOwner,
 } from './favoriteLib';
+
+describe('typed favorite content identity', () => {
+  it('keeps identical raw IDs distinct across content types', () => {
+    const refs = normalizeFavoriteContentRefs([
+      { type: 'program', id: 'same' },
+      { type: 'spomove', id: 'same' },
+      { type: 'program', id: 'same' },
+    ]);
+    expect(refs).toEqual([
+      { type: 'program', id: 'same' },
+      { type: 'spomove', id: 'same' },
+    ]);
+    expect(toggleFavoriteContent({ 'id:a': refs }, 'id:a', { type: 'program', id: 'same' }))
+      .toEqual({ 'id:a': [{ type: 'spomove', id: 'same' }] });
+  });
+
+  it('classifies only exact catalog matches and preserves unknowns and collisions', () => {
+    expect(classifyLegacyFavoriteIds(
+      ['program-only', 'spomove-only', 'unknown', 'both'],
+      new Set(['program-only', 'both']),
+      new Set(['spomove-only', 'both']),
+    )).toEqual({
+      refs: [
+        { type: 'program', id: 'program-only' },
+        { type: 'spomove', id: 'spomove-only' },
+      ],
+      pending: ['unknown'],
+      collisions: ['both'],
+    });
+  });
+});
 
 describe('favorite owner identity', () => {
   it('uses stable user ID before normalized email', () => {

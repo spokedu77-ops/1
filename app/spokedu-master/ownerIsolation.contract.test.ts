@@ -11,6 +11,7 @@ const OWNER_SCOPED_ROUTE_MARKERS = [
   { file: 'class-records/route.ts', mustInclude: [".eq('owner_id', access.userId)"] },
   { file: 'explanations/route.ts', mustInclude: [".eq('owner_id', access.userId)"] },
   { file: 'program-favorites/route.ts', mustInclude: [".eq('owner_id', access.userId)"] },
+  { file: 'favorites/route.ts', mustInclude: [".eq('owner_id', access.userId)"] },
   { file: 'operational-data/route.ts', mustInclude: ['p_owner_id'] },
 ] as const;
 

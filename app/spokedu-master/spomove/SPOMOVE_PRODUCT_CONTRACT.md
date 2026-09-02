@@ -10,32 +10,20 @@
 | --- | --- |
 | **Preset** | 실행 데이터 (Engine 옵션·URL·Recent·썸네일) |
 | **Activity Family** | 움직임 호환성 (Profile·추천·허용·제외·매트) |
-| **Catalog Family** | Hub에서 판매하는 상품 단위 (Phase 1~2에서 도입). Activity Family와 **병합하지 않음** |
+| **Catalog Family** | Hub에서 판매하는 현재 상품 단위. Activity Family와 **병합하지 않음** |
 
 ## 표면별 역할
 
 | 표면 | 역할 |
 | --- | --- |
-| Hub | 활동을 상품으로 제시 (Phase 0: 양산형 description 임시 미노출) |
+| Hub | Catalog Family와 활동을 현재 상품 구조로 제시 |
 | Start | 현재 실행 조건 **확인** 후 명시 시작 |
 | Settings | 실행 조건 **변경** 후 명시 시작 |
 | Guide | 지도법 — **카드 CTA가 아님**. Start 확인 Sheet 내부에 유지 (카드 밖 별도 「가이드 보기」 금지) |
 | Running | 화면 자극에 집중 (Engine only) |
 | Result · Recent | 실행 조합 기록·재사용 (확인 후 시작) |
 
-## Phase 구조
-
-| Phase | 내용 |
-| --- | --- |
-| **0** | 긴급 UI 격리 (현재) |
-| **1** | Catalog Family 감사 |
-| **2** | Family Hub |
-| **3** | 제품 UX 재설계 |
-| **4** | P0 Release |
-
-Phase 0은 SPOMOVE를 새로 설계하는 단계가 아니다. 즉시 실행·과밀 설정·양산형 설명을 중단하고 Catalog 감사가 가능한 안정 상태로 돌린다.
-
-## Phase 0 계약
+## 현재 Runtime 계약
 
 ### Entry · Autostart
 
@@ -43,7 +31,7 @@ Phase 0은 SPOMOVE를 새로 설계하는 단계가 아니다. 즉시 실행·�
 - **Legacy autostart**는 `entry` 쿼리가 **없을 때만** (`?autostart=1`). `entry=start&autostart=1` / `entry=settings&autostart=1` 은 Setup 화면
 - **Public UI 신규 링크는 autostart를 생성하지 않음** (Hub·Recent·즐겨찾기·검색·결과 재실행·저장 설정)
 - Result 재실행은 `entry=start` 확인 화면으로 (즉시 Engine 금지)
-- Release 전 Legacy autostart 유지/무시/리다이렉트 재결정
+- Legacy autostart는 명시된 제한 범위에서만 호환하며 신규 링크에는 사용하지 않음
 
 ### Hub
 
@@ -88,14 +76,14 @@ Phase 0은 SPOMOVE를 새로 설계하는 단계가 아니다. 즉시 실행·�
 
 ### 완료 증거
 
-Vercel success ≠ Vitest (`test:spomove-phase0`) ≠ 수동 UI QA. Vercel만으로 Phase 0 완료 선언 금지.
+Vercel success ≠ runtime contract test ≠ 수동 UI QA. 배포 성공만으로 완료 선언 금지.
 
 ## 변경 금지
 
 - 움직임별 프리셋 복제 · 실행 중 지속 HUD · 한 색 칸 양발 점프 기본 · 센서 없는 성공률 · 단일 매트 전 다중 매트
-- Phase 0에 Catalog 타입·Family Hub·테마 선택기·직접 카피·Expansion 삭제·Engine 수정 금지
+- Foundation Reset을 이유로 Engine/runtime 재설계·움직임 계층 병합·Expansion 삭제 금지
 
 ## PR 게이트 질문
 
 이 변경이 같은 화면을 더 다양한 체육수업으로 만드는가?  
-(Phase 0은 “손상을 중단하는가?”를 우선한다.)
+(Foundation Lock 이후에는 P0/P1 또는 verified contradiction만 수정한다.)

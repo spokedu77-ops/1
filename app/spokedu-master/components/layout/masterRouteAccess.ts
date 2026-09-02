@@ -21,6 +21,25 @@ export function isProtectedMasterRoute(pathname: string, basePath: string) {
 }
 
 export function getMasterRouteRequirement(pathname: string, basePath = '/spokedu-master'): MasterRouteRequirement {
+  if (
+    pathname === `${basePath}/spomove/session` ||
+    pathname.startsWith(`${basePath}/spomove/session/`)
+  ) {
+    return { capability: 'spomove' };
+  }
+  if (
+    pathname === `${basePath}/programs` ||
+    pathname.startsWith(`${basePath}/programs/`) ||
+    pathname === `${basePath}/favorites` ||
+    pathname.startsWith(`${basePath}/favorites/`) ||
+    pathname === `${basePath}/spomove` ||
+    pathname.startsWith(`${basePath}/spomove/`)
+  ) {
+    return { capability: 'library' };
+  }
+  if (pathname === `${basePath}/manage` || pathname.startsWith(`${basePath}/manage/`)) {
+    return { capability: 'attendance' };
+  }
   if (pathname === `${basePath}/library` || pathname.startsWith(`${basePath}/library/`)) {
     return { capability: 'library' };
   }
@@ -45,15 +64,16 @@ export function getMasterRouteRequirement(pathname: string, basePath = '/spokedu
   ) {
     return { capability: 'records' };
   }
-  if (pathname === `${basePath}/spomove` || pathname.startsWith(`${basePath}/spomove/`)) {
-    return { capability: 'spomove' };
-  }
   return { capability: 'authenticated' };
 }
 
+const SAFE_MASTER_RETURN_EXACT = new Set(['/spokedu-master']);
+
 const SAFE_MASTER_RETURN_PREFIXES = [
-  '/spokedu-master',
   '/spokedu-master/dashboard',
+  '/spokedu-master/programs',
+  '/spokedu-master/favorites',
+  '/spokedu-master/manage',
   '/spokedu-master/library',
   '/spokedu-master/class-tools',
   '/spokedu-master/class-record',
@@ -78,7 +98,6 @@ const BLOCKED_RETURN_QUERY_KEYS = new Set([
   'paymentKey',
   'orderId',
   'plan',
-  'mode',
 ]);
 
 export function getSafeMasterReturnPath(value: string | null | undefined, fallback = '/spokedu-master/dashboard') {
@@ -95,13 +114,17 @@ export function getSafeMasterReturnPath(value: string | null | undefined, fallba
   if (parsed.origin !== 'https://spokedu.local') return fallback;
   if (!parsed.pathname.startsWith('/spokedu-master')) return fallback;
   if (parsed.pathname.startsWith('/spokedu-master/class-mode')) return fallback;
-  if (!SAFE_MASTER_RETURN_PREFIXES.some((prefix) => parsed.pathname === prefix || parsed.pathname.startsWith(`${prefix}/`))) {
+  if (
+    !SAFE_MASTER_RETURN_EXACT.has(parsed.pathname) &&
+    !SAFE_MASTER_RETURN_PREFIXES.some((prefix) => parsed.pathname === prefix || parsed.pathname.startsWith(`${prefix}/`))
+  ) {
     return fallback;
   }
 
   for (const key of BLOCKED_RETURN_QUERY_KEYS) {
-    if (parsed.searchParams.has(key)) return parsed.pathname;
+    parsed.searchParams.delete(key);
   }
 
-  return `${parsed.pathname}${parsed.search}`;
+  const query = parsed.searchParams.toString();
+  return `${parsed.pathname}${query ? `?${query}` : ''}`;
 }

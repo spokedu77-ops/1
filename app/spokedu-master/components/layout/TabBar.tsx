@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CalendarDays, Home, Lock, Tv, UsersRound, Wrench } from 'lucide-react';
+import { BookOpen, CalendarDays, Heart, Home, Lock, Wrench } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
@@ -9,20 +9,18 @@ import { MASTER_NAV_ITEMS } from './masterNavLabels';
 
 const TAB_ICONS = {
   dashboard: Home,
-  library: BookOpen,
+  programs: BookOpen,
+  favorites: Heart,
+  manage: CalendarDays,
   'class-tools': Wrench,
-  classes: UsersRound,
-  activity: CalendarDays,
-  spomove: Tv,
 } as const;
 
 const TAB_CAPABILITIES = {
   dashboard: 'authenticated',
-  library: 'library',
+  programs: 'library',
+  favorites: 'library',
+  manage: 'attendance',
   'class-tools': 'classTools',
-  classes: 'attendance',
-  activity: 'attendance',
-  spomove: 'spomove',
 } as const satisfies Record<keyof typeof TAB_ICONS, MasterCapability>;
 
 function buildPrimaryTabs(basePath: string) {
@@ -77,7 +75,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
         aria-label="SPOKEDU MASTER 주요 메뉴"
       >
         <div
-          className="mx-auto grid h-[62px] w-full max-w-[720px] grid-cols-6 rounded-[18px] border"
+          className="mx-auto grid h-[62px] w-full max-w-[720px] grid-cols-5 rounded-[18px] border"
           style={{
             background: 'rgba(255,255,255,0.97)',
             borderColor: '#e2e8f0',
@@ -87,7 +85,8 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
           {primaryTabs.map(({ href, label, shortLabel, Icon, capability }) => {
             const active =
               isActivePath(pathname, href) ||
-              (href.endsWith('/activity') && isActivePath(pathname, `${basePath}/class-record`));
+              (href.endsWith('/programs') && (isActivePath(pathname, `${basePath}/library`) || isActivePath(pathname, `${basePath}/spomove`))) ||
+              (href.endsWith('/manage') && (isActivePath(pathname, `${basePath}/activity`) || isActivePath(pathname, `${basePath}/classes`) || isActivePath(pathname, `${basePath}/class-record`)));
             const locked = !canUseTab(accessContext?.snapshot, capability);
             return (
               <button

@@ -10,6 +10,12 @@ describe('master post-payment return path', () => {
     ).toBe('/spokedu-master/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start&program=funstick-fencing');
   });
 
+  it('returns from payment with legitimate SPOMOVE context and strips only sensitive keys', () => {
+    expect(getSafeMasterPostPaymentPath(
+      '/spokedu-master/spomove/session?preset=A&entry=start&mode=mobile&session=B&returnTo=C&source=home&authKey=x&customerKey=y&paymentKey=z&orderId=o',
+    )).toBe('/spokedu-master/spomove/session?preset=A&mode=mobile&entry=start&returnTo=C&source=home&session=B');
+  });
+
   it('keeps route-specific lesson and record query keys only', () => {
     expect(getSafeMasterPostPaymentPath('/spokedu-master/class-record?program=p1&record=r1&plan=premium')).toBe(
       '/spokedu-master/class-record?program=p1&record=r1',

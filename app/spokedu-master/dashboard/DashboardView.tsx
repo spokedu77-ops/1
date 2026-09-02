@@ -18,12 +18,10 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
-  normalizeSpomoveGuideVideoMap,
   normalizeSpomoveContentMap,
   SPOMOVE_CONTENT_PACK_ID,
   normalizeSpomoveHomeFeaturedSlots,
   normalizeSpomoveThumbnailMap,
-  SPOMOVE_GUIDE_VIDEO_PACK_ID,
   SPOMOVE_HOME_FEATURED_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
@@ -68,16 +66,13 @@ import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
 import { resolveMasterHomePriority } from '../lib/masterProductTruth';
+import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
 
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
   error: { code?: string } | null;
 };
 
-type SpomoveGuideVideoPackQueryResult = {
-  data: { assets_json?: unknown } | null;
-  error: { code?: string } | null;
-};
 type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
 
 function getFirstStartPaths() {
@@ -576,7 +571,6 @@ function EntitledDashboardView() {
   const [previewAutoplay, setPreviewAutoplay] = useState(false);
   const [spomoveThumbnailPaths, setSpomoveThumbnailPaths] = useState<Record<string, string>>({});
   const [spomoveThumbnailCacheBust, setSpomoveThumbnailCacheBust] = useState<number | undefined>();
-  const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
   const [spomoveContentMap, setSpomoveContentMap] = useState<Record<string, import('@/app/lib/spomove/spomoveOfficialAssets').SpomovePresetContentOverride>>({});
   const [spomoveContentLoadState, setSpomoveContentLoadState] = useState<SpomoveContentLoadState>('loading');
   const [featuredSpomoveSlotIds, setFeaturedSpomoveSlotIds] = useState<Array<string | null>>([
@@ -586,6 +580,7 @@ function EntitledDashboardView() {
     null,
   ]);
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
+  const guideVideoUrl = useSpomoveGuideVideo(previewSpomove?.id ?? null);
 
   useEffect(() => {
     setMounted(true);
@@ -600,7 +595,6 @@ function EntitledDashboardView() {
         .select('assets_json, updated_at')
         .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
         .maybeSingle(),
-      supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID).maybeSingle(),
       supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_CONTENT_PACK_ID).maybeSingle(),
       supabase
         .from('think_asset_packs')
@@ -608,7 +602,7 @@ function EntitledDashboardView() {
         .eq('id', SPOMOVE_HOME_FEATURED_PACK_ID)
         .maybeSingle(),
     ])
-      .then(([thumbnailResult, guideVideoResult, contentResult, featuredResult]) => {
+      .then(([thumbnailResult, contentResult, featuredResult]) => {
         if (!alive) return;
         const { data, error } = thumbnailResult as SpomoveThumbnailPackQueryResult;
         if (error && error.code !== 'PGRST116') {
@@ -620,13 +614,6 @@ function EntitledDashboardView() {
           setSpomoveThumbnailCacheBust(
             resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)),
           );
-        }
-
-        const { data: guideVideoData, error: guideVideoError } = guideVideoResult as SpomoveGuideVideoPackQueryResult;
-        if (guideVideoError && guideVideoError.code !== 'PGRST116') {
-          setGuideVideoUrls({});
-        } else {
-          setGuideVideoUrls(normalizeSpomoveGuideVideoMap(guideVideoData?.assets_json));
         }
 
         const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
@@ -652,7 +639,6 @@ function EntitledDashboardView() {
         if (!alive) return;
         setSpomoveThumbnailPaths({});
         setSpomoveThumbnailCacheBust(undefined);
-        setGuideVideoUrls({});
         setSpomoveContentMap({});
         setSpomoveContentLoadState('error');
         setFeaturedSpomoveSlotIds([null, null, null, null]);
@@ -896,7 +882,7 @@ function EntitledDashboardView() {
         preset={previewSpomove}
         contentOverride={previewSpomove ? spomoveContentMap[previewSpomove.id] : undefined}
         contentLoadState={spomoveContentLoadState}
-        guideVideoUrl={previewSpomove ? guideVideoUrls[previewSpomove.id] ?? '' : ''}
+        guideVideoUrl={guideVideoUrl}
         onClose={() => setPreviewSpomove(null)}
       />
     </main>

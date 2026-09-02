@@ -23,7 +23,7 @@ import {
   parseTaggedValues,
 } from '../lib/lessonDisplay';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
-import { spmChipClass, spmSegClass } from '../lib/masterUiClasses';
+import { spmChipClass } from '../lib/masterUiClasses';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
   isMasterParticipantFormat,
@@ -253,8 +253,8 @@ export default function LibraryView() {
   const { programs, programsLoaded, programsError } = useMasterStore();
   const profile = useMasterStore((state) => state.profile);
   const ownerId = getFavoritesOwnerId(profile);
-  const storedFavoriteIds = useMasterStore((state) =>
-    ownerId ? state.favoriteProgramIdsByOwner[ownerId] : undefined,
+  const storedFavoriteRefs = useMasterStore((state) =>
+    ownerId ? state.favoriteContentRefsByOwner[ownerId] : undefined,
   );
   const getFavoriteProgramIds = useMasterStore((state) => state.getFavoriteProgramIds);
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
@@ -270,8 +270,8 @@ export default function LibraryView() {
   const primaryActionLabel = getMasterContentPrimaryAction(contentMode);
   const isPremium = useIsPremium();
   const favoriteIds = useMemo(
-    () => storedFavoriteIds ?? getFavoriteProgramIds(ownerId),
-    [storedFavoriteIds, getFavoriteProgramIds, ownerId],
+    () => storedFavoriteRefs?.filter((ref) => ref.type === 'program').map((ref) => ref.id) ?? getFavoriteProgramIds(ownerId),
+    [storedFavoriteRefs, getFavoriteProgramIds, ownerId],
   );
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
@@ -563,28 +563,6 @@ export default function LibraryView() {
               />
             </label>
             <div className="flex flex-wrap items-center gap-2">
-              <div
-                className="grid min-h-11 grid-cols-2 items-center rounded-xl border border-[color:var(--spm-br2)] bg-white p-1 sm:min-h-10"
-                aria-label="라이브러리 보기"
-              >
-                <button
-                  type="button"
-                  onClick={() => changeView('all')}
-                  className={spmSegClass(view === 'all')}
-                  aria-pressed={view === 'all'}
-                >
-                  전체
-                </button>
-                <button
-                  type="button"
-                  onClick={() => changeView('favorites')}
-                  className={spmSegClass(view === 'favorites', 'inline-flex items-center gap-1.5')}
-                  aria-pressed={view === 'favorites'}
-                >
-                  <Bookmark className="h-3.5 w-3.5" />
-                  즐겨찾기 <span className="text-[11px] opacity-60">{validFavoriteCount}</span>
-                </button>
-              </div>
               {hasSearchIntent ? (
                 <button type="button" onClick={clearAllSearch} className="h-10 px-2 text-[12px] font-black text-[var(--spm-acc)]">
                   초기화

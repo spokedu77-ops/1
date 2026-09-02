@@ -4,18 +4,15 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(path, 'utf8');
 
 describe('MASTER favorite entry parity', () => {
-  it('keeps an always-visible all/favorites switch in both content hubs', () => {
+  it('keeps favorites as a first-class surface without duplicate hub modes', () => {
     const library = read('app/spokedu-master/library/LibraryView.tsx');
     const spomove = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
-
-    for (const source of [library, spomove]) {
-      expect(source).toContain('aria-pressed');
-      expect(source).toContain('전체');
-      expect(source).toContain('즐겨찾기');
-    }
-    expect(library).toContain('validFavoriteCount');
-    expect(spomove).toContain('favoriteSpomoveIds.size');
-    expect(spomove).toContain('aria-label="SPOMOVE 보기"');
+    const favorites = read('app/spokedu-master/favorites/FavoritesView.tsx');
+    expect(library).not.toContain('aria-label="라이브러리 보기"');
+    expect(spomove).not.toContain('aria-label="SPOMOVE 보기"');
+    expect(favorites).toContain("ref.type === 'program'");
+    expect(favorites).toContain("ref.type === 'spomove'");
+    expect(favorites).toContain('favoriteContentRefsByOwner');
   });
 
   it('keeps card favorite targets at least 44px on mobile', () => {

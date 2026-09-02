@@ -94,6 +94,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
   it('keeps billing CTA and bookmark labels unified in Korean', () => {
     const source = userVisibleSource();
     const library = read('app/spokedu-master/library/LibraryView.tsx');
+    const favorites = read('app/spokedu-master/favorites/FavoritesView.tsx');
     const preview = read('app/spokedu-master/components/lesson/ProgramPreviewModal.tsx');
     const access = read('app/spokedu-master/lib/masterAccessModel.ts');
 
@@ -102,7 +103,8 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).not.toContain('이용권 선택');
     expect(source).not.toContain('이용권 다시 구독하기');
     expect(source).not.toContain('이용권 다시 선택');
-    expect(library).toContain('즐겨찾기 <span');
+    expect(favorites).toContain('즐겨찾기');
+    expect(favorites).toContain('즐겨찾기에서 제거');
     expect(library).not.toContain('>저장 <');
     expect(library).not.toContain('>PRO<');
     expect(preview).not.toContain('PRO 전용');

@@ -6,7 +6,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('program favorites server sync contracts', () => {
   it('stores favorites through the server API instead of direct client writes', () => {
-    const route = read('app/api/spokedu-master/program-favorites/route.ts');
+    const route = read('app/api/spokedu-master/favorites/route.ts');
     expect(route).toContain("requireSpokeduMasterCapability('library')");
     expect(route).toContain("getServiceSupabase");
     expect(route).toContain("spokedu_master_program_favorites");
@@ -22,7 +22,8 @@ describe('program favorites server sync contracts', () => {
   it('pushes favorite changes after local toggle', () => {
     const store = read('app/spokedu-master/store/index.ts');
     expect(store).toContain('syncFavoriteProgramsFromServer');
-    expect(store).toContain("fetch('/api/spokedu-master/program-favorites'");
-    expect(store).toContain('pushFavoriteProgramsToServer');
+    expect(store).toContain("fetch('/api/spokedu-master/favorites'");
+    expect(store).toContain('mutateFavoriteOnServer');
+    expect(store).not.toContain("method: 'PUT'");
   });
 });

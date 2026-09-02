@@ -11,16 +11,17 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const mobile = read('app/spokedu-master/components/layout/TabBar.tsx');
     expect(desktop).toContain('MASTER_NAV_ITEMS');
     expect(mobile).toContain('MASTER_NAV_ITEMS');
-    expect(nav).toContain("href: '/spokedu-master/library', label: '놀이체육'");
-    expect(nav).toContain("href: '/spokedu-master/classes', label: '수업반'");
-    expect(nav).toContain("href: '/spokedu-master/activity', label: '수업 일정'");
-    expect(nav).toContain("key: 'library'");
-    expect(nav).toContain("key: 'spomove'");
-    expect(nav).toContain("key: 'activity'");
+    expect(nav).toContain("href: '/spokedu-master/programs', label: '프로그램'");
+    expect(nav).toContain("href: '/spokedu-master/favorites', label: '즐겨찾기'");
+    expect(nav).toContain("href: '/spokedu-master/manage', label: '수업 관리'");
+    expect(nav).toContain("key: 'programs'");
+    expect(nav).toContain("key: 'favorites'");
+    expect(nav).toContain("key: 'manage'");
     expect(nav).not.toContain("href: '/spokedu-master/profile'");
     expect(desktop).toContain('href="/spokedu-master/profile"');
     expect(nav).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
     expect(nav).not.toContain("href: '/spokedu-master/plan'");
+    expect((nav.match(/href: '/g) ?? [])).toHaveLength(5);
   });
 
   it('uses the Session calendar instead of the standalone record creator', () => {

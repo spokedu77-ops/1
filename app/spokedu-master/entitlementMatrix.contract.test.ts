@@ -113,6 +113,9 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
 
   it('maps protected routes to the matrix capability keys', () => {
     expect(getMasterRouteRequirement('/spokedu-master/library').capability).toBe('library');
+    expect(getMasterRouteRequirement('/spokedu-master/programs').capability).toBe('library');
+    expect(getMasterRouteRequirement('/spokedu-master/favorites').capability).toBe('library');
+    expect(getMasterRouteRequirement('/spokedu-master/manage').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/class-tools').capability).toBe('classTools');
     expect(getMasterRouteRequirement('/spokedu-master/class-record').capability).toBe('records');
     expect(getMasterRouteRequirement('/spokedu-master/activity').capability).toBe('attendance');
@@ -120,7 +123,8 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     expect(getMasterRouteRequirement('/spokedu-master/students').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('records');
     expect(getMasterRouteRequirement('/spokedu-master/report').capability).toBe('records');
-    expect(getMasterRouteRequirement('/spokedu-master/spomove').capability).toBe('spomove');
+    expect(getMasterRouteRequirement('/spokedu-master/spomove').capability).toBe('library');
+    expect(getMasterRouteRequirement('/spokedu-master/spomove/session').capability).toBe('spomove');
     expect(getMasterRouteRequirement('/spokedu-master/dashboard').capability).toBe('authenticated');
   });
 

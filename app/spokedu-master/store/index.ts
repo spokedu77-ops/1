@@ -6,14 +6,18 @@ import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
 import { useHasPremiumEntitlement } from '../access/MasterAccessProvider';
 import {
-  claimPendingLegacyFavorites,
-  getFavoritesByOwner,
-  isFavoriteByOwner,
-  migrateLegacyFavorites,
-  mergeFavoriteProgramIds,
+  classifyLegacyFavoriteIds,
+  getFavoriteContentIds as selectFavoriteContentIds,
+  isFavoriteContent as selectIsFavoriteContent,
+  mergeFavoriteContentRefs,
+  migrateFavoriteContentOwners,
   normalizeFavoriteProgramIds,
-  normalizeFavoritesByOwner,
-  toggleFavoriteByOwner,
+  normalizeFavoriteContentRefs,
+  normalizeFavoriteContentRefsByOwner,
+  toggleFavoriteContent as toggleFavoriteContentByOwner,
+  type FavoriteContentRef,
+  type FavoriteContentType,
+  type FavoritesByOwner,
 } from '../lib/favoriteLib';
 import {
   clearTodayLessonForOwner,
@@ -37,6 +41,7 @@ import {
 import { createLegacyOperationalArchiveFromPersistedStore } from '../lib/legacyOperationalArchive';
 import type { Lesson, Notification, Program, Session, UserProfile } from '../types';
 import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
+import { OFFICIAL_SPOMOVE_LIBRARY } from '../spomove/officialSpomovePresets';
 
 type ActiveSession = {
   drillId: string;
@@ -89,12 +94,16 @@ interface MasterState {
   pendingRecentProgramActivities: RecentProgramActivityInput[];
   recentActivityOwnerResolved: boolean;
   recordRecentProgramActivity: (activity: RecentProgramActivityInput) => void;
-  favoriteProgramIdsByOwner: Record<string, string[]>;
-  pendingLegacyFavoriteProgramIds: string[];
+  favoriteContentRefsByOwner: FavoritesByOwner;
+  pendingLegacyFavoriteIdsByOwner: Record<string, string[]>;
+  pendingLegacyFavoriteIds: string[];
   todayLessonByOwner: TodayLessonsByOwner;
   getFavoriteProgramIds: (ownerId: string | null) => string[];
   isFavoriteProgram: (ownerId: string | null, programId: string) => boolean;
   toggleFavoriteProgram: (ownerId: string | null, programId: string) => void;
+  getFavoriteContentIds: (ownerId: string | null, type: FavoriteContentType) => string[];
+  isFavoriteContent: (ownerId: string | null, ref: FavoriteContentRef) => boolean;
+  toggleFavoriteContent: (ownerId: string | null, ref: FavoriteContentRef) => void;
   getTodayLesson: (ownerId: string | null) => TodayLessonAssignment | null;
   getTodayLessons: (ownerId: string | null) => TodayLessonAssignment[];
   setTodayLesson: (ownerId: string | null, program: { id: string; title: string }) => void;
@@ -201,7 +210,42 @@ type PersistedMasterState = Partial<MasterState> & {
   classRecords?: unknown;
   students?: unknown;
   favorites?: string[];
+  favoriteProgramIdsByOwner?: Record<string, string[]>;
+  pendingLegacyFavoriteProgramIds?: string[];
 };
+
+const OFFICIAL_SPOMOVE_ID_SET = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
+
+function mergePendingIds(...values: unknown[]) {
+  return normalizeFavoriteProgramIds(values.flatMap((value) => Array.isArray(value) ? value : []));
+}
+
+function resolvePendingFavoriteMigration(
+  state: Pick<MasterState, 'profile' | 'favoriteContentRefsByOwner' | 'pendingLegacyFavoriteIdsByOwner' | 'pendingLegacyFavoriteIds'>,
+  programs: Program[],
+) {
+  const owner = getRecentActivityOwner(state.profile);
+  const pendingByOwner = { ...state.pendingLegacyFavoriteIdsByOwner };
+  if (owner && state.pendingLegacyFavoriteIds.length > 0) {
+    pendingByOwner[owner.ownerId] = mergePendingIds(pendingByOwner[owner.ownerId], state.pendingLegacyFavoriteIds);
+  }
+  const refsByOwner = { ...state.favoriteContentRefsByOwner };
+  const programIds = new Set(programs.map((program) => program.id));
+  for (const [ownerId, rawIds] of Object.entries(pendingByOwner)) {
+    const classified = classifyLegacyFavoriteIds(rawIds, programIds, OFFICIAL_SPOMOVE_ID_SET);
+    if (classified.refs.length > 0) {
+      refsByOwner[ownerId] = mergeFavoriteContentRefs(refsByOwner[ownerId] ?? [], classified.refs);
+    }
+    const unresolved = mergePendingIds(classified.pending, classified.collisions);
+    if (unresolved.length > 0) pendingByOwner[ownerId] = unresolved;
+    else delete pendingByOwner[ownerId];
+  }
+  return {
+    favoriteContentRefsByOwner: refsByOwner,
+    pendingLegacyFavoriteIdsByOwner: pendingByOwner,
+    pendingLegacyFavoriteIds: owner ? [] : state.pendingLegacyFavoriteIds,
+  };
+}
 
 export function migrateMasterStore(persisted: unknown, persistedVersion?: number): Partial<MasterState> & Record<string, unknown> {
   const state = persisted && typeof persisted === 'object' ? (persisted as PersistedMasterState) : {};
@@ -209,22 +253,54 @@ export function migrateMasterStore(persisted: unknown, persistedVersion?: number
     state,
     typeof persistedVersion === 'number' ? persistedVersion : null,
   );
-  const { classRecords: legacyClassRecords, students: legacyStudents, favorites: legacyFavorites, ...stateWithoutLegacyOperational } = state;
+  const {
+    classRecords: legacyClassRecords,
+    students: legacyStudents,
+    favorites: legacyFavorites,
+    favoriteProgramIdsByOwner: legacyFavoriteProgramIdsByOwner,
+    pendingLegacyFavoriteProgramIds,
+    ...stateWithoutLegacyOperational
+  } = state;
   const persistedProfile = state.profile && !hasBrokenText(state.profile) ? state.profile : null;
   const profile = persistedProfile ?? defaultProfile;
   const migrationOwnerId = getRecentActivityOwner(persistedProfile)?.ownerId ?? null;
-  const hasOwnerFavorites = Boolean(
-    stateWithoutLegacyOperational.favoriteProgramIdsByOwner &&
-    typeof stateWithoutLegacyOperational.favoriteProgramIdsByOwner === 'object',
+  const favoriteContentRefsByOwner = normalizeFavoriteContentRefsByOwner(
+    stateWithoutLegacyOperational.favoriteContentRefsByOwner,
   );
-  const favoriteProgramIdsByOwner = hasOwnerFavorites
-    ? normalizeFavoritesByOwner(stateWithoutLegacyOperational.favoriteProgramIdsByOwner)
-    : migrateLegacyFavorites(legacyFavorites, migrationOwnerId);
-  const pendingLegacyFavoriteProgramIds = hasOwnerFavorites
-    ? normalizeFavoriteProgramIds(stateWithoutLegacyOperational.pendingLegacyFavoriteProgramIds)
-    : migrationOwnerId
-      ? []
-      : normalizeFavoriteProgramIds(legacyFavorites);
+  const pendingLegacyFavoriteIdsByOwner: Record<string, string[]> = {};
+  const legacyOwnerFavorites = legacyFavoriteProgramIdsByOwner;
+  if (legacyOwnerFavorites && typeof legacyOwnerFavorites === 'object') {
+    for (const [ownerId, ids] of Object.entries(legacyOwnerFavorites)) {
+      if (!ownerId.startsWith('id:') && !ownerId.startsWith('email:')) continue;
+      const classified = classifyLegacyFavoriteIds(ids, new Set(), OFFICIAL_SPOMOVE_ID_SET);
+      if (classified.refs.length > 0) {
+        favoriteContentRefsByOwner[ownerId] = mergeFavoriteContentRefs(
+          favoriteContentRefsByOwner[ownerId] ?? [],
+          classified.refs,
+        );
+      }
+      pendingLegacyFavoriteIdsByOwner[ownerId] = mergePendingIds(classified.pending, classified.collisions);
+    }
+  }
+  const persistedPendingByOwner = stateWithoutLegacyOperational.pendingLegacyFavoriteIdsByOwner;
+  if (persistedPendingByOwner && typeof persistedPendingByOwner === 'object') {
+    for (const [ownerId, ids] of Object.entries(persistedPendingByOwner)) {
+      if (!ownerId.startsWith('id:') && !ownerId.startsWith('email:')) continue;
+      pendingLegacyFavoriteIdsByOwner[ownerId] = mergePendingIds(pendingLegacyFavoriteIdsByOwner[ownerId], ids);
+    }
+  }
+  const unscopedLegacy = mergePendingIds(
+    legacyFavorites,
+    pendingLegacyFavoriteProgramIds,
+    stateWithoutLegacyOperational.pendingLegacyFavoriteIds,
+  );
+  if (migrationOwnerId && unscopedLegacy.length > 0) {
+    pendingLegacyFavoriteIdsByOwner[migrationOwnerId] = mergePendingIds(
+      pendingLegacyFavoriteIdsByOwner[migrationOwnerId],
+      unscopedLegacy,
+    );
+  }
+  const pendingLegacyFavoriteIds = migrationOwnerId ? [] : unscopedLegacy;
   const persistedWorkspaceOwnerId =
     typeof state.localWorkspaceOwnerId === 'string' &&
     (state.localWorkspaceOwnerId.startsWith('id:') ||
@@ -271,8 +347,9 @@ export function migrateMasterStore(persisted: unknown, persistedVersion?: number
         })),
     pendingRecentProgramActivities: [],
     recentActivityOwnerResolved: false,
-    favoriteProgramIdsByOwner,
-    pendingLegacyFavoriteProgramIds,
+    favoriteContentRefsByOwner,
+    pendingLegacyFavoriteIdsByOwner,
+    pendingLegacyFavoriteIds,
     todayLessonByOwner: normalizeTodayLessonByOwner(
       (stateWithoutLegacyOperational as { todayLessonByOwner?: unknown }).todayLessonByOwner,
     ),
@@ -297,13 +374,17 @@ function getServerSyncableOwnerId(ownerId: string | null): string | null {
   return UUID_PATTERN.test(userId) ? ownerId : null;
 }
 
-async function pushFavoriteProgramsToServer(ownerId: string | null, programIds: string[]) {
+async function mutateFavoriteOnServer(
+  ownerId: string | null,
+  ref: FavoriteContentRef,
+  method: 'POST' | 'DELETE',
+) {
   if (!getServerSyncableOwnerId(ownerId)) return;
   try {
-    await fetch('/api/spokedu-master/program-favorites', {
-      method: 'PUT',
+    await fetch('/api/spokedu-master/favorites', {
+      method,
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ programIds: normalizeFavoriteProgramIds(programIds) }),
+      body: JSON.stringify(ref),
     });
   } catch {
     // Keep local favorites; retry on next sync.
@@ -341,7 +422,13 @@ export const useMasterStore = create<MasterState>()(
 
           const json = await res.json() as { data?: Program[] };
           if (Array.isArray(json.data)) {
-            set({ programs: enrichProgramsWithStaticVisuals(json.data), programsLoaded: true, programsError: null });
+            const programs = enrichProgramsWithStaticVisuals(json.data);
+            set((state) => ({
+              programs,
+              programsLoaded: true,
+              programsError: null,
+              ...resolvePendingFavoriteMigration(state, programs),
+            }));
             return;
           }
         } catch {
@@ -364,15 +451,19 @@ export const useMasterStore = create<MasterState>()(
               (ownerId): ownerId is string => Boolean(ownerId),
             ),
           );
-          const favoriteProgramIdsByOwner = { ...state.favoriteProgramIdsByOwner };
+          const favoriteContentRefsByOwner = { ...state.favoriteContentRefsByOwner };
+          const pendingLegacyFavoriteIdsByOwner = { ...state.pendingLegacyFavoriteIdsByOwner };
           const todayLessonByOwner = { ...state.todayLessonByOwner };
           for (const ownerId of ownerIds) {
-            delete favoriteProgramIdsByOwner[ownerId];
+            delete favoriteContentRefsByOwner[ownerId];
+            delete pendingLegacyFavoriteIdsByOwner[ownerId];
             delete todayLessonByOwner[ownerId];
           }
           return {
             ...clearedLocalWorkspace(state),
-            favoriteProgramIdsByOwner,
+            favoriteContentRefsByOwner,
+            pendingLegacyFavoriteIdsByOwner,
+            pendingLegacyFavoriteIds: [],
             todayLessonByOwner,
             recentProgramActivities: state.recentProgramActivities.filter(
               (activity) => !ownerIds.has(activity.ownerId),
@@ -388,10 +479,18 @@ export const useMasterStore = create<MasterState>()(
           if (!state.recentActivityOwnerResolved) return { profile: nextProfile };
           const owner = getRecentActivityOwner(nextProfile);
           if (!owner) return { profile: nextProfile };
-          const favorites = claimPendingLegacyFavorites(
-            state.favoriteProgramIdsByOwner,
-            state.pendingLegacyFavoriteProgramIds,
-            owner,
+          const favoriteContentRefsByOwner = migrateFavoriteContentOwners(state.favoriteContentRefsByOwner, owner);
+          const pendingLegacyFavoriteIdsByOwner = { ...state.pendingLegacyFavoriteIdsByOwner };
+          if (owner.emailOwnerId && pendingLegacyFavoriteIdsByOwner[owner.emailOwnerId]) {
+            pendingLegacyFavoriteIdsByOwner[owner.ownerId] = mergePendingIds(
+              pendingLegacyFavoriteIdsByOwner[owner.ownerId],
+              pendingLegacyFavoriteIdsByOwner[owner.emailOwnerId],
+            );
+            delete pendingLegacyFavoriteIdsByOwner[owner.emailOwnerId];
+          }
+          pendingLegacyFavoriteIdsByOwner[owner.ownerId] = mergePendingIds(
+            pendingLegacyFavoriteIdsByOwner[owner.ownerId],
+            state.pendingLegacyFavoriteIds,
           );
           return {
             profile: nextProfile,
@@ -401,7 +500,9 @@ export const useMasterStore = create<MasterState>()(
               owner,
             ),
             pendingRecentProgramActivities: [],
-            ...favorites,
+            favoriteContentRefsByOwner,
+            pendingLegacyFavoriteIdsByOwner,
+            pendingLegacyFavoriteIds: [],
           };
         }),
       resetProfile: () =>
@@ -414,6 +515,9 @@ export const useMasterStore = create<MasterState>()(
           },
           pendingRecentProgramActivities: [],
           recentActivityOwnerResolved: false,
+          favoriteContentRefsByOwner: {},
+          pendingLegacyFavoriteIdsByOwner: {},
+          pendingLegacyFavoriteIds: [],
         })),
       syncSubscription: async () => {
         try {
@@ -480,10 +584,18 @@ export const useMasterStore = create<MasterState>()(
                 recentActivityOwnerResolved: false,
               };
             }
-            const favorites = claimPendingLegacyFavorites(
-              state.favoriteProgramIdsByOwner,
-              state.pendingLegacyFavoriteProgramIds,
-              owner,
+            const favoriteContentRefsByOwner = migrateFavoriteContentOwners(state.favoriteContentRefsByOwner, owner);
+            const pendingLegacyFavoriteIdsByOwner = { ...state.pendingLegacyFavoriteIdsByOwner };
+            if (owner.emailOwnerId && pendingLegacyFavoriteIdsByOwner[owner.emailOwnerId]) {
+              pendingLegacyFavoriteIdsByOwner[owner.ownerId] = mergePendingIds(
+                pendingLegacyFavoriteIdsByOwner[owner.ownerId],
+                pendingLegacyFavoriteIdsByOwner[owner.emailOwnerId],
+              );
+              delete pendingLegacyFavoriteIdsByOwner[owner.emailOwnerId];
+            }
+            pendingLegacyFavoriteIdsByOwner[owner.ownerId] = mergePendingIds(
+              pendingLegacyFavoriteIdsByOwner[owner.ownerId],
+              state.pendingLegacyFavoriteIds,
             );
             const workspace =
               state.localWorkspaceOwnerId === owner.ownerId
@@ -500,7 +612,9 @@ export const useMasterStore = create<MasterState>()(
               ),
               pendingRecentProgramActivities: [],
               recentActivityOwnerResolved: true,
-              ...favorites,
+              favoriteContentRefsByOwner,
+              pendingLegacyFavoriteIdsByOwner,
+              pendingLegacyFavoriteIds: [],
             };
           });
           return true;
@@ -616,18 +730,27 @@ export const useMasterStore = create<MasterState>()(
             ),
           };
         }),
-      favoriteProgramIdsByOwner: {},
-      pendingLegacyFavoriteProgramIds: [],
+      favoriteContentRefsByOwner: {},
+      pendingLegacyFavoriteIdsByOwner: {},
+      pendingLegacyFavoriteIds: [],
       todayLessonByOwner: {},
       getFavoriteProgramIds: (ownerId) =>
-        getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId),
+        selectFavoriteContentIds(get().favoriteContentRefsByOwner, ownerId, 'program'),
       isFavoriteProgram: (ownerId, programId) =>
-        isFavoriteByOwner(get().favoriteProgramIdsByOwner, ownerId, programId),
+        selectIsFavoriteContent(get().favoriteContentRefsByOwner, ownerId, { type: 'program', id: programId }),
       toggleFavoriteProgram: (ownerId, programId) => {
+        get().toggleFavoriteContent(ownerId, { type: 'program', id: programId });
+      },
+      getFavoriteContentIds: (ownerId, type) =>
+        selectFavoriteContentIds(get().favoriteContentRefsByOwner, ownerId, type),
+      isFavoriteContent: (ownerId, ref) =>
+        selectIsFavoriteContent(get().favoriteContentRefsByOwner, ownerId, ref),
+      toggleFavoriteContent: (ownerId, ref) => {
+        const wasFavorite = selectIsFavoriteContent(get().favoriteContentRefsByOwner, ownerId, ref);
         set((state) => ({
-          favoriteProgramIdsByOwner: toggleFavoriteByOwner(state.favoriteProgramIdsByOwner, ownerId, programId),
+          favoriteContentRefsByOwner: toggleFavoriteContentByOwner(state.favoriteContentRefsByOwner, ownerId, ref),
         }));
-        void pushFavoriteProgramsToServer(ownerId, getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId));
+        void mutateFavoriteOnServer(ownerId, ref, wasFavorite ? 'DELETE' : 'POST');
       },
       getTodayLesson: (ownerId) =>
         getActiveTodayLesson(get().todayLessonByOwner, ownerId, getSeoulDayKey()),
@@ -660,20 +783,21 @@ export const useMasterStore = create<MasterState>()(
         const ownerId = getServerSyncableOwnerId(getRecentActivityOwner(get().profile)?.ownerId ?? null);
         if (!ownerId) return false;
         try {
-          const res = await fetch('/api/spokedu-master/program-favorites', { cache: 'no-store' });
+          const res = await fetch('/api/spokedu-master/favorites', { cache: 'no-store' });
           if (!res.ok) return false;
           const json = await res.json() as { data?: unknown };
-          const remoteIds = normalizeFavoriteProgramIds(json.data);
-          const localIds = getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId);
-          const mergedIds = mergeFavoriteProgramIds(localIds, remoteIds);
+          const remoteRefs = normalizeFavoriteContentRefs(json.data);
+          const localRefs = get().favoriteContentRefsByOwner[ownerId] ?? [];
+          const mergedRefs = mergeFavoriteContentRefs(localRefs, remoteRefs);
           set((state) => ({
-            favoriteProgramIdsByOwner: {
-              ...state.favoriteProgramIdsByOwner,
-              [ownerId]: mergedIds,
+            favoriteContentRefsByOwner: {
+              ...state.favoriteContentRefsByOwner,
+              [ownerId]: mergedRefs,
             },
           }));
-          if (mergedIds.length !== remoteIds.length || mergedIds.some((id) => !remoteIds.includes(id))) {
-            await pushFavoriteProgramsToServer(ownerId, mergedIds);
+          const remoteKeys = new Set(remoteRefs.map((ref) => `${ref.type}:${ref.id}`));
+          for (const ref of mergedRefs) {
+            if (!remoteKeys.has(`${ref.type}:${ref.id}`)) await mutateFavoriteOnServer(ownerId, ref, 'POST');
           }
           return true;
         } catch {
@@ -698,7 +822,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 17,
+      version: 18,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
@@ -710,8 +834,9 @@ export const useMasterStore = create<MasterState>()(
         classTimerRunning: state.classTimerRunning,
         classTimerStartedAt: state.classTimerStartedAt,
         recentProgramActivities: state.recentProgramActivities,
-        favoriteProgramIdsByOwner: state.favoriteProgramIdsByOwner,
-        pendingLegacyFavoriteProgramIds: state.pendingLegacyFavoriteProgramIds,
+        favoriteContentRefsByOwner: state.favoriteContentRefsByOwner,
+        pendingLegacyFavoriteIdsByOwner: state.pendingLegacyFavoriteIdsByOwner,
+        pendingLegacyFavoriteIds: state.pendingLegacyFavoriteIds,
         todayLessonByOwner: state.todayLessonByOwner,
         notifications: state.notifications,
       }),

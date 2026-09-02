@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CalendarDays, CircleUserRound, Home, Tv, UsersRound, Wifi, WifiOff, Wrench } from 'lucide-react';
+import { BookOpen, CalendarDays, CircleUserRound, Heart, Home, WifiOff, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
@@ -8,11 +8,10 @@ import { MASTER_NAV_ITEMS } from './masterNavLabels';
 
 const NAV_ICONS = {
   dashboard: Home,
-  library: BookOpen,
-  spomove: Tv,
+  programs: BookOpen,
+  favorites: Heart,
+  manage: CalendarDays,
   'class-tools': Wrench,
-  classes: UsersRound,
-  activity: CalendarDays,
 } as const;
 
 const APP_LINKS = MASTER_NAV_ITEMS.map((item) => ({
@@ -22,7 +21,16 @@ const APP_LINKS = MASTER_NAV_ITEMS.map((item) => ({
 }));
 
 function isActivePath(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+  if (pathname === href || pathname.startsWith(`${href}/`)) return true;
+  if (href.endsWith('/programs')) {
+    return pathname.startsWith('/spokedu-master/library') || pathname.startsWith('/spokedu-master/spomove');
+  }
+  if (href.endsWith('/manage')) {
+    return pathname.startsWith('/spokedu-master/activity')
+      || pathname.startsWith('/spokedu-master/classes')
+      || pathname.startsWith('/spokedu-master/class-record');
+  }
+  return false;
 }
 
 export function StatusBar() {
@@ -69,14 +77,14 @@ export function StatusBar() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          <span
+          {!operational.online ? <span
             className="hidden min-h-9 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-black sm:inline-flex"
-            style={{ background: operational.online ? 'var(--spm-grn-a11)' : 'var(--spm-amb-a12)', color: operational.online ? 'var(--spm-grn-strong)' : 'var(--spm-amb-strong)' }}
+            style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb-strong)' }}
             role="status"
           >
-            {operational.online ? <Wifi size={13} /> : <WifiOff size={13} />}
-            {operational.online ? '인터넷 연결됨' : '인터넷 연결 없음'}
-          </span>
+            <WifiOff size={13} />
+            인터넷 연결 없음
+          </span> : null}
           <Link
             href="/spokedu-master/profile"
             className="grid h-11 w-11 place-items-center rounded-[12px] bg-slate-950 shadow-[0_12px_24px_rgba(15,23,42,0.14)] transition-colors hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"

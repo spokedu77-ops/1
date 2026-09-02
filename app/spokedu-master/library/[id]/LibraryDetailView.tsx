@@ -40,8 +40,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const isPremium = useIsPremium();
   const profile = useMasterStore((state) => state.profile);
   const ownerId = getFavoritesOwnerId(profile);
-  const storedFavoriteIds = useMasterStore((state) =>
-    ownerId ? state.favoriteProgramIdsByOwner[ownerId] : undefined,
+  const storedFavoriteRefs = useMasterStore((state) =>
+    ownerId ? state.favoriteContentRefsByOwner[ownerId] : undefined,
   );
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
@@ -170,7 +170,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   }
 
   const model = buildLessonDisplayModel(program);
-  const favorite = Boolean(storedFavoriteIds) && isFavoriteProgram(ownerId, program.id);
+  const favorite = Boolean(storedFavoriteRefs) && isFavoriteProgram(ownerId, program.id);
   const videoUrl = model.videoUrl ?? undefined;
   const videoEmbedUrl = getVideoEmbedUrl(videoUrl, { autoplay: shouldAutoplayVideo });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(videoUrl) ? videoUrl : undefined;

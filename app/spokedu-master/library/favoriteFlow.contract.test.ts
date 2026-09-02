@@ -72,7 +72,7 @@ describe('detail favorite source of truth and return context', () => {
   });
 
   it('does not expose or mutate prior owner data when owner is unresolved', () => {
-    expect(detailSource).toContain('ownerId ? state.favoriteProgramIdsByOwner[ownerId] : undefined');
+    expect(detailSource).toContain('ownerId ? state.favoriteContentRefsByOwner[ownerId] : undefined');
     expect(detailSource).toContain('disabled={!ownerId}');
   });
 

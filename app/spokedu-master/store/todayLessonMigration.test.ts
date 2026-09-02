@@ -16,7 +16,8 @@ describe('today lesson persisted-store migration', () => {
     }, 16);
 
     expect(migrated.todayLessonByOwner).toEqual({ 'id:user': [assignment] });
-    expect(migrated.favoriteProgramIdsByOwner).toEqual({ 'id:user': ['p2'] });
+    expect(migrated.favoriteContentRefsByOwner).toEqual({});
+    expect(migrated.pendingLegacyFavoriteIdsByOwner).toEqual({ 'id:user': ['p2'] });
   });
 
   it('drops invalid legacy values without throwing', () => {

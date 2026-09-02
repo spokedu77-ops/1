@@ -42,6 +42,9 @@ describe('SPOKEDU MASTER route access policy', () => {
     ['/spokedu-master/shop', 'authenticated'],
     ['/spokedu-master/library', 'library'],
     ['/spokedu-master/library/42', 'library'],
+    ['/spokedu-master/programs', 'library'],
+    ['/spokedu-master/favorites', 'library'],
+    ['/spokedu-master/manage', 'attendance'],
     ['/spokedu-master/class-tools', 'classTools'],
     ['/spokedu-master/activity', 'attendance'],
     ['/spokedu-master/classes', 'attendance'],
@@ -50,7 +53,7 @@ describe('SPOKEDU MASTER route access policy', () => {
     ['/spokedu-master/students', 'attendance'],
     ['/spokedu-master/students/student-a', 'records'],
     ['/spokedu-master/report', 'records'],
-    ['/spokedu-master/spomove', 'spomove'],
+    ['/spokedu-master/spomove', 'library'],
     ['/spokedu-master/spomove/session', 'spomove'],
   ])('maps %s to %s capability', (pathname, capability) => {
     expect(getMasterRouteRequirement(pathname, basePath).capability).toBe(capability);
@@ -59,8 +62,9 @@ describe('SPOKEDU MASTER route access policy', () => {
   it.each([
     ['/spokedu-master/dashboard', '/spokedu-master/dashboard'],
     ['/spokedu-master/library/zigzag-running?from=dashboard', '/spokedu-master/library/zigzag-running?from=dashboard'],
-    ['/spokedu-master/payment?plan=lite', '/spokedu-master/payment'],
-    ['/spokedu-master/spomove?authKey=x', '/spokedu-master/spomove'],
+    ['/spokedu-master/payment?plan=lite&returnTo=%2Fspokedu-master%2Fprograms', '/spokedu-master/payment?returnTo=%2Fspokedu-master%2Fprograms'],
+    ['/spokedu-master/spomove?authKey=x&mode=mobile', '/spokedu-master/spomove?mode=mobile'],
+    ['/spokedu-master/programs?source=home', '/spokedu-master/programs?source=home'],
     ['/spokedu-master/shop', '/spokedu-master/shop'],
   ])('keeps safe internal return path %s as %s', (input, expected) => {
     expect(getSafeMasterReturnPath(input)).toBe(expected);
@@ -75,5 +79,15 @@ describe('SPOKEDU MASTER route access policy', () => {
     '/unknown',
   ])('rejects unsafe return path %s', (input) => {
     expect(getSafeMasterReturnPath(input)).toBe('/spokedu-master/dashboard');
+  });
+
+  it('preserves SPOMOVE context while removing only commercial and auth secrets', () => {
+    expect(getSafeMasterReturnPath(
+      '/spokedu-master/spomove/session?preset=A&entry=start&mode=mobile&session=B&returnTo=C&source=home&authKey=x&customerKey=y&paymentKey=z&orderId=o',
+    )).toBe('/spokedu-master/spomove/session?preset=A&entry=start&mode=mobile&session=B&returnTo=C&source=home');
+  });
+
+  it('does not treat an unknown MASTER child as an allowed return target', () => {
+    expect(getSafeMasterReturnPath('/spokedu-master/unknown-future-screen')).toBe('/spokedu-master/dashboard');
   });
 });

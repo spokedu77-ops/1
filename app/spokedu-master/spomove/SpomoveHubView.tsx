@@ -14,10 +14,8 @@ import {
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
   normalizeSpomoveContentMap,
-  normalizeSpomoveGuideVideoMap,
   normalizeSpomoveThumbnailMap,
   SPOMOVE_CONTENT_PACK_ID,
-  SPOMOVE_GUIDE_VIDEO_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
   type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
@@ -69,6 +67,7 @@ import {
   serializeSpomoveHubUrlState,
   type SpomoveHubViewMode,
 } from './spomoveHubNavigation';
+import { useSpomoveGuideVideo } from './useSpomoveGuideVideo';
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
@@ -77,7 +76,6 @@ type SpomoveThumbnailPackQueryResult = {
   error: { code?: string } | null;
 };
 
-type SpomoveGuideVideoPackQueryResult = SpomoveThumbnailPackQueryResult;
 type SpomoveContentPackQueryResult = SpomoveThumbnailPackQueryResult;
 
 const THINKING_LEVEL_TABS: ThinkingLevelTab[] = ['all', 'easy', 'normal', 'hard'];
@@ -903,23 +901,23 @@ export default function SpomoveHubView() {
   const showSavedOnly = hubView === 'favorites';
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
-  const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
   const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
   const [contentLoadState, setContentLoadState] = useState<SpomoveContentLoadState>('loading');
   const [assetPackError, setAssetPackError] = useState(false);
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
+  const guideVideoUrl = useSpomoveGuideVideo(previewPreset?.id ?? null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const profile = useProfile();
   const ownerId = getRecentActivityOwnerId(profile);
   const recentProgramActivities = useMasterStore((state) => state.recentProgramActivities);
-  const storedFavoriteIds = useMasterStore((state) =>
-    ownerId ? state.favoriteProgramIdsByOwner[ownerId] : undefined,
+  const storedFavoriteRefs = useMasterStore((state) =>
+    ownerId ? state.favoriteContentRefsByOwner[ownerId] : undefined,
   );
-  const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
-  const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
+  const isFavoriteContent = useMasterStore((state) => state.isFavoriteContent);
+  const toggleFavoriteContent = useMasterStore((state) => state.toggleFavoriteContent);
   const favoriteSpomoveIds = useMemo(
-    () => new Set((storedFavoriteIds ?? []).filter((id) => OFFICIAL_SPOMOVE_LIBRARY.some((preset) => preset.id === id && isHubListedPreset(preset)))),
-    [storedFavoriteIds],
+    () => new Set((storedFavoriteRefs ?? []).filter((ref) => ref.type === 'spomove').map((ref) => ref.id).filter((id) => OFFICIAL_SPOMOVE_LIBRARY.some((preset) => preset.id === id && isHubListedPreset(preset)))),
+    [storedFavoriteRefs],
   );
   const recentSpomoveActivities = useMemo(() => {
     if (!ownerId) return [];
@@ -942,14 +940,9 @@ export default function SpomoveHubView() {
       supabase
         .from('think_asset_packs')
         .select('assets_json')
-        .eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID)
-        .maybeSingle(),
-      supabase
-        .from('think_asset_packs')
-        .select('assets_json')
         .eq('id', SPOMOVE_CONTENT_PACK_ID)
         .maybeSingle(),
-    ]).then(([thumbnailResult, guideVideoResult, contentResult]) => {
+    ]).then(([thumbnailResult, contentResult]) => {
       if (!alive) return;
 
       const { data: thumbnailData, error: thumbnailError } = thumbnailResult as SpomoveThumbnailPackQueryResult;
@@ -963,14 +956,6 @@ export default function SpomoveHubView() {
         setThumbnailCacheBust(
           resolveSpomovePackCacheBust(thumbnailData?.updated_at as string | undefined, Object.values(next)),
         );
-      }
-
-      const { data: guideVideoData, error: guideVideoError } = guideVideoResult as SpomoveGuideVideoPackQueryResult;
-      if (guideVideoError && guideVideoError.code !== 'PGRST116') {
-        setAssetPackError(true);
-        setGuideVideoUrls({});
-      } else {
-        setGuideVideoUrls(normalizeSpomoveGuideVideoMap(guideVideoData?.assets_json));
       }
 
       const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
@@ -987,7 +972,6 @@ export default function SpomoveHubView() {
       setAssetPackError(true);
       setThumbnailPaths({});
       setThumbnailCacheBust(undefined);
-      setGuideVideoUrls({});
       setContentOverrides({});
       setContentLoadState('error');
     });
@@ -1024,10 +1008,6 @@ export default function SpomoveHubView() {
     } finally {
       setAddingPresetId(null);
     }
-  };
-
-  const toggleSavedOnly = () => {
-    updateHubState({ view: showSavedOnly ? 'all' : 'favorites', family: 'all' });
   };
 
   const clearHubFilters = () => {
@@ -1130,14 +1110,14 @@ export default function SpomoveHubView() {
           key={preset.id}
           preset={preset}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
-          favorite={isFavoriteProgram(ownerId, preset.id)}
+          favorite={isFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
           favoriteEnabled={ownerId != null && preset.isReady}
           hubView={hubView}
           hubReturnHref={hubReturnHref}
           contentOverride={contentOverrides[preset.id]}
           showProgramLabel={showProgramLabel}
           onPreview={() => setPreviewPreset(preset)}
-          onFavorite={() => toggleFavoriteProgram(ownerId, preset.id)}
+          onFavorite={() => toggleFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
           onAddToSession={sessionContext ? () => void addPresetToSession(preset) : undefined}
           addedToSession={Boolean(sessionContext?.programs.some((program) => program.sourceType === 'spomove' && program.spomovePresetId === preset.id))}
           addingToSession={addingPresetId === preset.id}
@@ -1236,7 +1216,7 @@ export default function SpomoveHubView() {
         </section> : null}
 
         <section className="order-1 mt-4">
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <div>
         <div className="relative">
           <label htmlFor="spomove-search" className="sr-only">활동명 또는 키워드 검색</label>
           <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1262,10 +1242,6 @@ export default function SpomoveHubView() {
               <X aria-hidden className="h-4 w-4" />
             </button>
           ) : null}
-        </div>
-        <div className="grid min-h-11 grid-cols-2 rounded-xl border border-slate-200 bg-white p-1" aria-label="SPOMOVE 보기">
-          <button type="button" onClick={() => { if (showSavedOnly) toggleSavedOnly(); }} aria-pressed={!showSavedOnly} className={`min-h-11 rounded-lg px-3 text-[12px] font-bold transition ${!showSavedOnly ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500'}`}>전체</button>
-          <button type="button" onClick={() => { if (!showSavedOnly) toggleSavedOnly(); }} aria-pressed={showSavedOnly} className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 text-[12px] font-bold transition ${showSavedOnly ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500'}`}><Bookmark className="h-3.5 w-3.5" />즐겨찾기 <span className="text-[11px] opacity-70">{favoriteSpomoveIds.size}</span></button>
         </div>
         </div>
         </section>
@@ -1296,9 +1272,6 @@ export default function SpomoveHubView() {
                 <p className="mt-1 text-sm font-normal text-slate-500">{filteredPresets.length}개 활동</p>
               </div>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={toggleSavedOnly} aria-pressed={showSavedOnly} className="inline-flex min-h-11 items-center gap-2 px-2 text-xs font-medium text-slate-500">
-                  <Bookmark className={`h-4 w-4 ${showSavedOnly ? 'fill-current' : ''}`} /> 저장
-                </button>
                 <button type="button" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600">
                   필터 <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -1334,7 +1307,7 @@ export default function SpomoveHubView() {
         )}
         <SharedSpomoveGuidelineSheet
           preset={previewPreset}
-          guideVideoUrl={previewPreset ? guideVideoUrls[previewPreset.id] ?? '' : ''}
+          guideVideoUrl={guideVideoUrl}
           contentOverride={previewPreset ? contentOverrides[previewPreset.id] : undefined}
           contentLoadState={contentLoadState}
           hubView={hubView}

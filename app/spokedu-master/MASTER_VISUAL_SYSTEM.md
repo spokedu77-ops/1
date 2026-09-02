@@ -1,4 +1,4 @@
-# SPOKEDU MASTER Visual System v1
+# SPOKEDU MASTER Visual System — Foundation Lock v2.1
 
 MASTER는 같은 foundation을 공유하되, 화면의 역할에 따라 다른 표현을 사용한다.
 정보 구조와 Product Contract는 각 Surface가 소유한다.
@@ -66,3 +66,16 @@ MASTER는 같은 foundation을 공유하되, 화면의 역할에 따라 다른 �
 - SPOMOVE preview는 digital content identity를 유지한다.
 - Class Tools의 숫자, 점수, 결과는 일반 typography보다 크게 쓸 수 있다.
 - 예외는 역할 차이를 설명해야 하며 decoration만을 이유로 만들지 않는다.
+
+## Locked information architecture
+
+- Primary navigation은 홈, 프로그램, 즐겨찾기, 수업 관리, 수업 도구의 정확히 5개다.
+- 프로그램은 놀이체육과 SPOMOVE Browse Gateway를 소유한다.
+- 즐겨찾기는 SAVE 이후 later REUSE / BUILD를 위한 first-class retrieval surface다.
+- 수업 관리는 Schedule을 먼저, 반복 Class context를 두 번째로 둔다.
+- PREPARE는 BUILD 내부 상태이며 `DISCOVER → BUILD → TEACH → CAPTURE → REUSE`에 새 단계를 추가하지 않는다.
+
+## Network status
+
+- 정상 online 상태는 badge 없이 silent하다.
+- offline, sync failure, network-required error는 명시적으로 노출한다.

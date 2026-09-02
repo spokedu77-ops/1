@@ -3,16 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { migrateMasterStore } from './index';
 
 describe('master store favorite migration', () => {
-  it('assigns legacy favorites only when the persisted profile identifies an owner', () => {
+  it('keeps owner-scoped legacy IDs pending until exact catalogs can classify them', () => {
     const migrated = migrateMasterStore({
       profile: { id: 'user-a', email: 'A@example.com' },
       favorites: ['p1', 'p1', 'p2'],
     }, 13);
 
-    expect(migrated.favoriteProgramIdsByOwner).toEqual({
-      'id:user-a': ['p1', 'p2'],
-    });
-    expect(migrated.pendingLegacyFavoriteProgramIds).toEqual([]);
+    expect(migrated.favoriteContentRefsByOwner).toEqual({});
+    expect(migrated.pendingLegacyFavoriteIdsByOwner).toEqual({ 'id:user-a': ['p1', 'p2'] });
+    expect(migrated.pendingLegacyFavoriteIds).toEqual([]);
     expect(migrated).not.toHaveProperty('favorites');
   });
 
@@ -22,8 +21,8 @@ describe('master store favorite migration', () => {
       favorites: ['p1', 'p2'],
     }, 13);
 
-    expect(migrated.favoriteProgramIdsByOwner).toEqual({});
-    expect(migrated.pendingLegacyFavoriteProgramIds).toEqual(['p1', 'p2']);
+    expect(migrated.favoriteContentRefsByOwner).toEqual({});
+    expect(migrated.pendingLegacyFavoriteIds).toEqual(['p1', 'p2']);
     expect(migrated).not.toHaveProperty('favorites');
   });
 
@@ -34,8 +33,8 @@ describe('master store favorite migration', () => {
     }, 13);
     const second = migrateMasterStore(first, 15);
 
-    expect(second.favoriteProgramIdsByOwner).toEqual({});
-    expect(second.pendingLegacyFavoriteProgramIds).toEqual(['p1', 'p2']);
+    expect(second.favoriteContentRefsByOwner).toEqual({});
+    expect(second.pendingLegacyFavoriteIds).toEqual(['p1', 'p2']);
     expect(second).not.toHaveProperty('favorites');
   });
 
@@ -49,9 +48,28 @@ describe('master store favorite migration', () => {
       pendingLegacyFavoriteProgramIds: [],
     }, 15);
 
-    expect(migrated.favoriteProgramIdsByOwner).toEqual({
+    expect(migrated.favoriteContentRefsByOwner).toEqual({});
+    expect(migrated.pendingLegacyFavoriteIdsByOwner).toEqual({
       'id:user-a': ['p1', 'p2'],
       'id:user-b': ['p1'],
+    });
+  });
+
+  it('normalizes already typed favorites without collapsing content domains', () => {
+    const migrated = migrateMasterStore({
+      favoriteContentRefsByOwner: {
+        'id:user-a': [
+          { type: 'program', id: 'same-id' },
+          { type: 'spomove', id: 'same-id' },
+          { type: 'program', id: 'same-id' },
+        ],
+      },
+    }, 18);
+    expect(migrated.favoriteContentRefsByOwner).toEqual({
+      'id:user-a': [
+        { type: 'program', id: 'same-id' },
+        { type: 'spomove', id: 'same-id' },
+      ],
     });
   });
 });
