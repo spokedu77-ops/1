@@ -580,7 +580,7 @@ function EntitledDashboardView() {
     null,
   ]);
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
-  const guideVideoUrl = useSpomoveGuideVideo(previewSpomove?.id ?? null);
+  const guideVideo = useSpomoveGuideVideo(previewSpomove?.id ?? null, isPremium);
 
   useEffect(() => {
     setMounted(true);
@@ -828,19 +828,18 @@ function EntitledDashboardView() {
 
       {isFirstUser ? <FirstStartGuide /> : homePriority === 'discovery' ? continuityEntry : null}
 
-      {isPremium ? (
-        <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="border-t border-slate-200 pt-4">
+      <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="border-t border-slate-200 pt-4">
           <SectionHeader
-            eyebrow="PREMIUM EXTENSION"
+            eyebrow="SPOMOVE"
             eyebrowIcon={<MonitorPlay size={14} />}
-            title="SPOMOVE로 확장하기"
+            title={isPremium ? 'SPOMOVE로 확장하기' : 'SPOMOVE 둘러보기'}
             titleId="spomove-heading"
-            description="이번 주 수업에 화면 반응 활동을 더해 보세요."
+            description={isPremium ? '이번 주 수업에 화면 반응 활동을 더해 보세요.' : '활동을 둘러보고 Premium 실행 기능을 확인해 보세요.'}
             href="/spokedu-master/spomove"
             action="SPOMOVE 더 보기"
           />
-          <div className="grid gap-2 sm:grid-cols-2">
-            {featuredSpomove.slice(0, 2).map((preset) => {
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredSpomove.slice(0, 4).map((preset) => {
               const model = getSpomovePresetDisplayModel(preset, spomoveContentMap[preset.id]);
               const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
               return <button key={preset.id} type="button" onClick={() => setPreviewSpomove(preset)} className="flex min-h-16 items-center gap-3 rounded-[12px] border border-slate-200 bg-white p-2 text-left hover:border-slate-300">
@@ -851,12 +850,6 @@ function EntitledDashboardView() {
             })}
           </div>
         </section>
-      ) : (
-        <section data-dashboard-section="spomove-discovery" className="flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="text-sm font-semibold text-slate-800">SPOMOVE로 수업을 더 확장할 수 있습니다.</p><p className="mt-0.5 text-xs text-slate-500">Weekly 4개는 그대로 완결되고, Premium은 화면 활동을 더합니다.</p></div>
-          <Link href="/spokedu-master/subscription" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-600">Premium 알아보기<ArrowRight size={14} /></Link>
-        </section>
-      )}
 
       {selectedProgram ? (
         <ProgramPreviewModal
@@ -882,7 +875,8 @@ function EntitledDashboardView() {
         preset={previewSpomove}
         contentOverride={previewSpomove ? spomoveContentMap[previewSpomove.id] : undefined}
         contentLoadState={spomoveContentLoadState}
-        guideVideoUrl={guideVideoUrl}
+        guideVideoUrl={guideVideo.url}
+        guideVideoState={guideVideo.state}
         onClose={() => setPreviewSpomove(null)}
       />
     </main>

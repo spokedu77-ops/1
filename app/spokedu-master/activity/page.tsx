@@ -701,7 +701,7 @@ function SessionSheet({
   );
 }
 
-export default function ActivityPage() {
+export function ManagePageContent() {
   const data = useOperationalData();
   const searchParams = useSearchParams();
   const [selectedDay, setSelectedDay] = useState(getSeoulToday());
@@ -764,3 +764,5 @@ export default function ActivityPage() {
     </main>
   );
 }
+
+export default ManagePageContent;

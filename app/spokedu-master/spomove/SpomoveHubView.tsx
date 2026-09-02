@@ -19,7 +19,7 @@ import {
   SPOMOVE_THUMBNAIL_PACK_ID,
   type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
-import { useMasterStore, useProfile } from '../store';
+import { useIsPremium, useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../lib/masterNavigationContext';
@@ -905,7 +905,8 @@ export default function SpomoveHubView() {
   const [contentLoadState, setContentLoadState] = useState<SpomoveContentLoadState>('loading');
   const [assetPackError, setAssetPackError] = useState(false);
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
-  const guideVideoUrl = useSpomoveGuideVideo(previewPreset?.id ?? null);
+  const isPremium = useIsPremium();
+  const guideVideo = useSpomoveGuideVideo(previewPreset?.id ?? null, isPremium);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const profile = useProfile();
   const ownerId = getRecentActivityOwnerId(profile);
@@ -1307,7 +1308,8 @@ export default function SpomoveHubView() {
         )}
         <SharedSpomoveGuidelineSheet
           preset={previewPreset}
-          guideVideoUrl={guideVideoUrl}
+          guideVideoUrl={guideVideo.url}
+          guideVideoState={guideVideo.state}
           contentOverride={previewPreset ? contentOverrides[previewPreset.id] : undefined}
           contentLoadState={contentLoadState}
           hubView={hubView}

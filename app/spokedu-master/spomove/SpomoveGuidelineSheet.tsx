@@ -23,6 +23,7 @@ import {
   SPOMOVE_VIDEO_FRAME_ASPECT_CLASS,
   SPOMOVE_VIDEO_POSTER_OBJECT_FIT,
 } from './spomoveMediaFit';
+import type { SpomoveGuideVideoState } from './useSpomoveGuideVideo';
 
 export type SpomoveContentLoadState = 'loading' | 'ready' | 'error';
 
@@ -55,6 +56,13 @@ function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
   const frameClassName =
     `mx-auto w-full overflow-hidden rounded-[14px] border border-slate-200/80 bg-slate-950 sm:rounded-[16px] ${MEDIA_SHADOW}`;
   const ratioClassName = `${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} w-full`;
+  if (!embed && /^https:\/\//i.test(videoUrl)) {
+    return (
+      <div data-spm-spomove-media="video-preview" className={frameClassName}>
+        <video controls preload="metadata" src={videoUrl} className={`${ratioClassName} bg-slate-950 object-contain`} />
+      </div>
+    );
+  }
   if (!embed) {
     return (
       <div
@@ -402,6 +410,7 @@ function ExecutionSummary({
 export function SpomoveGuidelineSheet({
   preset,
   guideVideoUrl = '',
+  guideVideoState = 'idle',
   contentOverride,
   contentLoadState = 'ready',
   hubView = 'all',
@@ -410,6 +419,7 @@ export function SpomoveGuidelineSheet({
 }: {
   preset: OfficialSpomovePreset | null;
   guideVideoUrl?: string;
+  guideVideoState?: SpomoveGuideVideoState;
   contentOverride?: SpomovePresetContentOverride;
   contentLoadState?: SpomoveContentLoadState;
   hubView?: SpomoveHubViewMode;
@@ -474,7 +484,22 @@ export function SpomoveGuidelineSheet({
                 활동 예시 영상
               </p>
               <div className="mt-1.5 shrink-0">
-                <SpomoveScreenPreview videoUrl={guideVideoUrl} />
+                {guideVideoState === 'locked' ? (
+                  <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center`}>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">Premium에서 영상과 실행이 열립니다.</p>
+                      <Link href="/spokedu-master/subscription" className="mt-2 inline-block text-sm font-semibold text-[var(--spm-acc)]">Premium 확인</Link>
+                    </div>
+                  </div>
+                ) : guideVideoState === 'loading' ? (
+                  <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-500`}>영상을 불러오는 중입니다.</div>
+                ) : guideVideoState === 'missing' ? (
+                  <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center text-sm font-semibold text-slate-500`}>이 활동의 Premium 영상이 아직 준비되지 않았습니다.</div>
+                ) : guideVideoState === 'error' ? (
+                  <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center text-sm font-semibold text-slate-500`}>영상을 불러오지 못했습니다.</div>
+                ) : (
+                  <SpomoveScreenPreview videoUrl={guideVideoUrl} />
+                )}
               </div>
               <p className="mt-2 shrink-0 text-[12px] font-medium leading-5 text-slate-500">
                 실제 운영 예시 영상입니다.
@@ -530,11 +555,11 @@ export function SpomoveGuidelineSheet({
                 닫기
               </button>
               <Link
-                href={startHref}
+                href={guideVideoState === 'locked' ? '/spokedu-master/subscription' : startHref}
                 data-spm-spomove-guide-action="start-official"
                 className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-black shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(15,23,42,0.10)] active:translate-y-0 focus-visible:outline-none sm:h-11 sm:w-[168px] sm:text-[14px]"
               >
-                수업 시작
+                {guideVideoState === 'locked' ? 'Premium으로 시작' : '수업 시작'}
               </Link>
             </div>
           </div>

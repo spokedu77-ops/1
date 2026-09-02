@@ -28,6 +28,16 @@ describe('Premium SPOMOVE media boundary', () => {
     expect(route).not.toContain('/object/public/');
   });
 
+  it('keeps Lite URLs out of browser state and plays Premium signed objects directly', () => {
+    const hook = read('app/spokedu-master/spomove/useSpomoveGuideVideo.ts');
+    const sheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
+    expect(hook).toContain('if (!presetId || !enabled) return');
+    expect(hook).toContain("state: 'locked'");
+    expect(sheet).toContain('<video controls preload="metadata" src={videoUrl}');
+    expect(sheet).toContain("guideVideoState === 'locked'");
+    expect(sheet).toContain("guideVideoState === 'missing'");
+  });
+
   it('prevents Admin from persisting new public guide-video URLs', () => {
     const admin = read('app/admin/spokedu-master/programs/page.tsx');
     expect(admin).toContain('isPrivateSpomoveGuideVideoRef');

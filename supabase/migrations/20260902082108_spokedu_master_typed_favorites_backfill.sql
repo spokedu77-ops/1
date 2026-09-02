@@ -9,6 +9,7 @@ declare
   before_owners bigint;
   target_program_id text;
   target_count integer;
+  legacy_figure8_count bigint;
   owner_collisions bigint;
   unknown_count bigint;
   duplicate_count bigint;
@@ -17,56 +18,65 @@ begin
     into before_favorites, before_owners
   from public.spokedu_master_program_favorites;
 
-  select count(*), min(c.id)::text into target_count, target_program_id
-  from public.curriculum c
-  join public.spokedu_pro_programs p
-    on p.source_center_curriculum_id = c.id and p.is_published is true
-  join public.spokedu_master_program_meta m on m.curriculum_id = c.id
-  where c.is_sub is false and c.title = '8자 agility drill';
-  if target_count <> 1 then
-    raise exception 'Verified figure-8 target drifted: expected 1 row, found %', target_count;
-  end if;
+  if before_favorites > 0 then
+    select count(*) into legacy_figure8_count
+    from public.spokedu_master_program_favorites where program_id = 'figure-8';
 
-  select count(*) into owner_collisions
-  from public.spokedu_master_program_favorites legacy
-  where legacy.program_id = 'figure-8'
-    and exists (
-      select 1 from public.spokedu_master_program_favorites canonical
-      where canonical.owner_id = legacy.owner_id
-        and canonical.program_id = target_program_id
-    );
-  if owner_collisions <> 0 then
-    raise exception 'Verified figure-8 remap has % owner collisions', owner_collisions;
-  end if;
-
-  update public.spokedu_master_program_favorites
-  set program_id = target_program_id
-  where program_id = 'figure-8';
-
-  update public.spokedu_master_program_favorites f
-  set content_type = 'program'
-  where content_type is null
-    and exists (
-      select 1
+    if legacy_figure8_count > 0 then
+      select count(*), min(c.id)::text into target_count, target_program_id
       from public.curriculum c
       join public.spokedu_pro_programs p
         on p.source_center_curriculum_id = c.id and p.is_published is true
       join public.spokedu_master_program_meta m on m.curriculum_id = c.id
-      where c.is_sub is false and c.id::text = f.program_id
-    );
+      where c.is_sub is false and c.title = '8자 agility drill';
+      if target_count <> 1 then
+        raise exception 'Verified figure-8 target drifted: expected 1 row, found %', target_count;
+      end if;
+    end if;
 
-  update public.spokedu_master_program_favorites
-  set content_type = 'spomove'
-  where content_type is null and program_id = any (array[
-    'dive-random', 'dive-standard', 'flanker-random-43',
-    'reaction-cognition-full-animal-18', 'reaction-cognition-full-color-03',
-    'reaction-cognition-l5-food-exp', 'reaction-cognition-l6-food-exp',
-    'reaction-cognition-mq3-34', 'reaction-cognition-space-direction-01',
-    'reaction-cognition-split-color-04', 'sequential-memory-5color-51',
-    'simon-pole-shape-06', 'stroop-word-reverse-48',
-    'visual-reaction-blackout-37', 'visual-reaction-flow-2x-31',
-    'visual-reaction-goalkeeper-42'
-  ]::text[]);
+    select count(*) into owner_collisions
+    from public.spokedu_master_program_favorites legacy
+    where legacy.program_id = 'figure-8'
+      and exists (
+        select 1 from public.spokedu_master_program_favorites canonical
+        where canonical.owner_id = legacy.owner_id
+          and canonical.program_id = target_program_id
+      );
+    if owner_collisions <> 0 then
+      raise exception 'Verified figure-8 remap has % owner collisions', owner_collisions;
+    end if;
+
+    if legacy_figure8_count > 0 then
+      update public.spokedu_master_program_favorites
+      set program_id = target_program_id
+      where program_id = 'figure-8';
+    end if;
+
+    update public.spokedu_master_program_favorites f
+    set content_type = 'program'
+    where content_type is null
+      and exists (
+        select 1
+        from public.curriculum c
+        join public.spokedu_pro_programs p
+          on p.source_center_curriculum_id = c.id and p.is_published is true
+        join public.spokedu_master_program_meta m on m.curriculum_id = c.id
+        where c.is_sub is false and c.id::text = f.program_id
+      );
+
+    update public.spokedu_master_program_favorites
+    set content_type = 'spomove'
+    where content_type is null and program_id = any (array[
+      'dive-random', 'dive-standard', 'flanker-random-43',
+      'reaction-cognition-full-animal-18', 'reaction-cognition-full-color-03',
+      'reaction-cognition-l5-food-exp', 'reaction-cognition-l6-food-exp',
+      'reaction-cognition-mq3-34', 'reaction-cognition-space-direction-01',
+      'reaction-cognition-split-color-04', 'sequential-memory-5color-51',
+      'simon-pole-shape-06', 'stroop-word-reverse-48',
+      'visual-reaction-blackout-37', 'visual-reaction-flow-2x-31',
+      'visual-reaction-goalkeeper-42'
+    ]::text[]);
+  end if;
 
   select count(*) into unknown_count
   from public.spokedu_master_program_favorites where content_type is null;

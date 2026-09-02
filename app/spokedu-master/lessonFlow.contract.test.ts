@@ -52,7 +52,8 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).toContain('이번 주 SPOKEDU 추천');
     expect(dashboard).toContain('!program.isPro');
     expect(dashboard).toContain('data-dashboard-section="spomove-extension"');
-    expect(dashboard).toContain('data-dashboard-section="spomove-discovery"');
+    expect(dashboard).toContain('featuredSpomove.slice(0, 4)');
+    expect(dashboard).not.toContain('data-dashboard-section="spomove-discovery"');
     expect(dashboard).not.toContain('data-dashboard-section="context-programs"');
     expect(todayPanel).toContain('data-dashboard-section="continuity"');
     expect(todayModel).toContain('deriveMasterSessionWorkState');

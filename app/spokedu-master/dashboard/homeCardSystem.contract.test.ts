@@ -12,10 +12,10 @@ describe('MASTER Home content card system', () => {
     expect(dashboard).toContain('WEEKLY_RECOMMENDATION_COUNT = 4');
   });
 
-  it('keeps one mobile Weekly rail and presents SPOMOVE as a compact Premium extension', () => {
+  it('keeps one mobile Weekly rail and presents four SPOMOVE discovery entries for every plan', () => {
     expect(dashboard.match(/w-\[78vw\] max-w-\[310px\]/g)).toHaveLength(1);
     expect(dashboard).toContain('data-dashboard-section="spomove-extension"');
-    expect(dashboard).toContain('featuredSpomove.slice(0, 2)');
+    expect(dashboard).toContain('featuredSpomove.slice(0, 4)');
     expect(dashboard).not.toContain('<Play');
   });
 
