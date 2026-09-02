@@ -137,7 +137,7 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     expect(hub).not.toContain('displayModel.variantLabel');
     expect(hub).not.toContain('catalogTags');
     expect(hub).not.toContain('<Play ');
-    expect(hub).toContain("import { Bookmark, ChevronDown, Lock, MonitorPlay, Search, X } from 'lucide-react'");
+    expect(hub).toContain("import { Bookmark, ChevronDown, Lock, Search, X } from 'lucide-react'");
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('h-11 w-11');

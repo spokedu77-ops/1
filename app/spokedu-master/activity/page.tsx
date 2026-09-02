@@ -8,11 +8,13 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { MasterAgenda, MasterCollectionRow, MasterPageHeader, MasterPageShell, MasterSection } from '../components/ui/MasterPrimitives';
+import { MasterState } from '../components/ui/MasterStatePanel';
 import { useMasterCanUseRecords, useMasterCanUseSpomove } from '../access/MasterAccessProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
 import { SPM_DESTRUCTIVE_BTN, SPM_JOURNEY_PRIMARY, SPM_JOURNEY_QUIET, SPM_JOURNEY_SECONDARY, SPM_PRIMARY_BTN_FULL, SPM_PRIMARY_BTN_TALL, SPM_SECONDARY_BTN, MASTER_ACTION_COPY } from '../lib/masterActionGrammar';
-import { SPM_JOURNEY_CONTEXT, SPM_JOURNEY_EYEBROW, SPM_JOURNEY_FIELD, SPM_JOURNEY_HEADING, SPM_JOURNEY_META, SPM_JOURNEY_SECTION, SPM_JOURNEY_STACK, SPM_JOURNEY_SURFACE } from '../lib/masterUiClasses';
+import { SPM_JOURNEY_CONTEXT, SPM_JOURNEY_FIELD, SPM_JOURNEY_HEADING, SPM_JOURNEY_META, SPM_JOURNEY_SECTION, SPM_JOURNEY_STACK } from '../lib/masterUiClasses';
 import { addSeoulSessionDays, buildSessionDraftDateTimes, formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday, seoulDateTimeInputToIso, seoulDayToDate } from '../lib/sessionDateTime';
 import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
@@ -532,7 +534,7 @@ function SessionSheet({
           </div> : null}
         </section> : null}
 
-        {activeSession && workspace?.presentationKind !== 'RECOVERY' && (workspace?.presentationKind !== 'RUN' || attendanceOpen) ? <section id="session-attendance" data-attendance-mode={workspace?.attendanceMode} className={`${sessionSectionOrderClass(workspace?.sectionOrder.attendance ?? 4)} ${SPM_JOURNEY_SURFACE} p-4`}>
+        {activeSession && workspace?.presentationKind !== 'RECOVERY' && (workspace?.presentationKind !== 'RUN' || attendanceOpen) ? <section id="session-attendance" data-attendance-mode={workspace?.attendanceMode} className={`${sessionSectionOrderClass(workspace?.sectionOrder.attendance ?? 4)} py-1`}>
           <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold text-slate-800">출석 <span className="text-xs font-medium text-slate-500">{presentRosterCount} / {currentRoster.length}</span></h3>{uncheckedRosterCount ? <p className="mt-1 text-xs font-medium text-amber-600">미확인 {uncheckedRosterCount}명</p> : <p className={`mt-1 ${SPM_JOURNEY_META}`}>모두 확인됨</p>}</div><button type="button" onClick={() => setAttendanceOpen((open) => !open)} aria-expanded={attendanceOpen} className={SPM_JOURNEY_SECONDARY}>{attendanceOpen ? '명단 닫기' : '출석 확인'}</button></div>
           {attendanceOpen ? <><div className="mt-2 flex justify-end">{actions.markAllPresent && currentRoster.length ? <button type="button" onClick={markAllPresent} className="min-h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-xs font-black text-emerald-700">전체 출석</button> : null}</div><div className="mt-2 grid gap-2 sm:grid-cols-2">
             {roster.map((student) => (
@@ -550,7 +552,7 @@ function SessionSheet({
         </section> : null}
 
         {workspace?.presentationKind === 'RUN' && activeSession && firstPreparedProgram ? <section data-session-teach className={sessionSectionOrderClass(workspace.sectionOrder.activities)}>
-          <p className={SPM_JOURNEY_EYEBROW}>지금 할 활동</p>
+          <h2 className="text-[22px] font-semibold leading-tight text-slate-950">지금 할 활동</h2>
           <div className="mt-2 rounded-2xl bg-slate-900 p-5 text-white">
             <div className="flex items-center gap-2 text-xs font-medium text-slate-400"><span>{firstPreparedProgram.sourceType === 'spomove' ? 'SPOMOVE' : '놀이체육'}</span><span>·</span><span>{completedPrograms + 1}/{programs.length}</span></div>
             <h3 className="mt-3 text-xl font-semibold leading-7">{firstPreparedProgram.programTitle ?? '이름 없는 활동'}</h3>
@@ -569,7 +571,7 @@ function SessionSheet({
             <ol className="space-y-2 border-t border-slate-100 p-3">{programs.map((program, index) => <li key={program.id} className="flex items-center gap-3 text-sm"><span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${program.isCompleted ? 'bg-emerald-100 text-emerald-700' : program.id === firstPreparedProgram.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500'}`}>{program.isCompleted ? '✓' : index + 1}</span><span className={program.isCompleted ? 'text-slate-400 line-through' : 'font-medium text-slate-700'}>{program.programTitle ?? '이름 없는 활동'}</span></li>)}</ol>
           </details>
         </section> : <section className={activeSession ? sessionSectionOrderClass(workspace?.sectionOrder.activities ?? 2) : ''}>
-          <div className="flex items-end justify-between gap-3"><div><p className={SPM_JOURNEY_EYEBROW}>오늘 뭐 하지?</p><h3 className={`mt-1 ${SPM_JOURNEY_HEADING}`}>오늘 활동 순서</h3></div>{workspace?.presentationKind !== 'PREP' ? <span className={SPM_JOURNEY_META}>진행 {completedPrograms}/{programs.length}</span> : null}</div>
+          <div className="flex items-end justify-between gap-3"><h2 className={SPM_JOURNEY_HEADING}>오늘 활동 순서</h2>{workspace?.presentationKind !== 'PREP' ? <span className={SPM_JOURNEY_META}>활동 {completedPrograms}/{programs.length}</span> : null}</div>
           <div className="mt-2 space-y-2">
             {programs.map((program, index) => (
               <div key={program.id} data-session-program={program.id} className={`border-b border-slate-200 py-2.5 last:border-b-0 ${program.isCompleted ? 'opacity-65' : ''}`}>
@@ -740,34 +742,33 @@ export function ManageOrchestrationSurface() {
 
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
-      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
-        <header className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
-          <div><h1 className="text-[28px] font-bold text-slate-950">수업 관리</h1><p className="mt-2 text-[14px] text-slate-500">{formatSeoulSessionDay(weekDays[0], { month: 'long', day: 'numeric' })}–{formatSeoulSessionDay(weekDays[6], { month: 'long', day: 'numeric' })}</p></div>
-          <button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} disabled={!data.classes.length} className={SPM_SECONDARY_BTN}><Plus size={17} />수업 추가</button>
-        </header>
+      <MasterPageShell variant="operational">
+        <MasterPageHeader
+          title="수업 관리"
+          description={`${formatSeoulSessionDay(weekDays[0], { month: 'long', day: 'numeric' })}–${formatSeoulSessionDay(weekDays[6], { month: 'long', day: 'numeric' })}`}
+          action={data.classes.length ? <button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} className={SPM_PRIMARY_BTN_TALL}><Plus size={17} />수업 추가</button> : <Link href="/spokedu-master/classes?create=1" className={SPM_PRIMARY_BTN_TALL}><Plus size={17} />수업반 만들기</Link>}
+        />
 
-        {data.status === 'loading' || data.status === 'idle' ? <p className="mt-5 rounded-2xl bg-white p-5 text-sm font-bold text-slate-500">수업 데이터를 불러오는 중입니다.</p> : null}
-        {data.status === 'error' ? <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-5"><p className="text-sm font-bold text-rose-700">수업 데이터를 불러오지 못했습니다.</p><button type="button" onClick={() => void data.reload()} className="mt-3 text-sm font-black text-rose-700">다시 시도</button></div> : null}
-        {routeError ? <div role="alert" className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{routeError}</div> : null}
+        {data.status === 'loading' || data.status === 'idle' ? <MasterState kind="loading" title="수업 데이터를 불러오는 중입니다." className="mt-6" /> : null}
+        {data.status === 'error' ? <MasterState kind="error" title="수업 데이터를 불러오지 못했습니다." action={<button type="button" onClick={() => void data.reload()} className={SPM_SECONDARY_BTN}>다시 시도</button>} className="mt-6" /> : null}
+        {routeError ? <MasterState kind="attention" title={routeError} className="mt-6" /> : null}
+        {!data.classes.length && data.status === 'ready' ? <MasterState kind="attention" title="수업반을 만들면 주간 일정을 추가할 수 있습니다." className="mt-6" /> : null}
 
-        {!data.classes.length && data.status === 'ready' ? <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800"><p>수업을 만들기 전에 수업반을 먼저 만들어 주세요.</p><Link href="/spokedu-master/classes?create=1" className="mt-2 inline-flex min-h-11 items-center text-sm font-black underline">수업반 만들기</Link></div> : null}
-
-        <section className="mt-5" aria-labelledby="weekly-agenda-heading">
-          <div className="flex items-center justify-between gap-3"><h2 id="weekly-agenda-heading" className="text-lg font-semibold text-slate-950">이번 주 수업 <span className="ml-1 text-sm font-normal text-slate-400">{weekSessionCount}개</span></h2><div className="flex items-center gap-1"><button type="button" onClick={() => setSelectedDay(addSeoulSessionDays(selectedDay, -7))} className="grid h-11 w-11 place-items-center rounded-[10px] text-slate-500 hover:bg-white" aria-label="이전 주"><ChevronLeft size={19} /></button><button type="button" onClick={() => setSelectedDay(getSeoulToday())} className="h-11 rounded-[10px] px-3 text-sm font-medium text-slate-600 hover:bg-white">오늘</button><button type="button" onClick={() => setSelectedDay(addSeoulSessionDays(selectedDay, 7))} className="grid h-11 w-11 place-items-center rounded-[10px] text-slate-500 hover:bg-white" aria-label="다음 주"><ChevronRight size={19} /></button></div></div>
-          <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200 bg-white">
+        <MasterSection title="이번 주 일정" className="mt-8" titleId="weekly-agenda-heading" action={<div className="flex items-center gap-1"><button type="button" onClick={() => setSelectedDay(addSeoulSessionDays(selectedDay, -7))} className="grid h-11 w-11 place-items-center rounded-[10px] text-slate-500 hover:bg-white" aria-label="이전 주"><ChevronLeft size={19} /></button><button type="button" onClick={() => setSelectedDay(getSeoulToday())} className="h-11 rounded-[10px] px-3 text-sm font-medium text-slate-600 hover:bg-white">오늘</button><button type="button" onClick={() => setSelectedDay(addSeoulSessionDays(selectedDay, 7))} className="grid h-11 w-11 place-items-center rounded-[10px] text-slate-500 hover:bg-white" aria-label="다음 주"><ChevronRight size={19} /></button></div>}>
+          {weekSessionCount ? <p className="-mt-2 mb-3 text-[13px] font-medium text-slate-500">{weekSessionCount}개의 수업</p> : null}
+          <MasterAgenda className="border-y border-slate-200 bg-white">
             {agenda.filter((item) => item.sessions.length > 0).map((item) => <section key={item.day} className="py-3 sm:grid sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-5 sm:px-3"><h3 className="mb-2 text-sm font-semibold text-slate-700 sm:mb-0">{item.day === getSeoulToday() ? '오늘 · ' : ''}{formatSeoulSessionDay(item.day, { month: 'long', day: 'numeric', weekday: 'short' })}</h3><div className="divide-y divide-slate-100">{item.sessions.map((session) => { const classItem = data.classes.find((entry) => entry.id === session.classId); const action = getScheduleAction(session, classItem); return <button key={session.id} type="button" onClick={() => setEditing(session)} className="flex min-h-[72px] w-full items-center gap-3 py-2 text-left"><time className="w-12 shrink-0 text-sm font-semibold tabular-nums text-slate-700">{formatSeoulSessionTime(session.startAt)}</time><span className="min-w-0 flex-1"><strong className="block truncate text-sm font-semibold text-slate-950">{session.className}</strong><small className="mt-1 block text-xs text-slate-500">{action.state.progress.total ? `활동 ${action.state.progress.completed}/${action.state.progress.total}` : '활동 준비 전'}</small></span><span className={`shrink-0 text-xs font-semibold ${action.actionable ? 'text-blue-700' : session.status === 'completed' ? 'text-emerald-700' : 'text-slate-400'}`}>{action.label}</span></button>; })}</div></section>)}
-            {!weekSessionCount ? <div className="flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-slate-500">이번 주 예정된 수업이 없습니다.</p><button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} disabled={!data.classes.length} className={SPM_SECONDARY_BTN}><Plus size={16} />다음 수업 만들기</button></div> : null}
-          </div>
-        </section>
+            {!weekSessionCount ? <p className="py-6 text-sm leading-6 text-slate-500">이번 주 예정된 수업이 없습니다.<br />수업을 추가하면 여기에서 바로 확인할 수 있습니다.</p> : null}
+          </MasterAgenda>
+        </MasterSection>
 
-        <section className="mt-8 border-t border-slate-200 pt-6" aria-labelledby="manage-classes-heading">
-          <div className="flex items-center justify-between gap-3"><h2 id="manage-classes-heading" className="text-[22px] font-semibold text-slate-950">내 수업반</h2><Link href="/spokedu-master/classes" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-600">수업반 관리 <ChevronRight size={16} /></Link></div>
+        <MasterSection title="내 수업반" className="mt-10" titleId="manage-classes-heading" action={<Link href="/spokedu-master/classes" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-600">수업반 관리 <ChevronRight size={16} /></Link>}>
           <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200 bg-white">
-            {data.classes.map((classItem) => <Link key={classItem.id} href={`/spokedu-master/classes/${encodeURIComponent(classItem.id)}`} className="flex min-h-16 items-center justify-between gap-3 px-3 py-3"><span className="min-w-0"><strong className="block truncate text-[16px] font-semibold text-slate-950">{classItem.name}</strong><small className="mt-1 block text-[12px] font-medium text-slate-500">학생 {classItem.studentIds.length}명</small></span><ChevronRight size={17} className="text-slate-400" /></Link>)}
+            {data.classes.map((classItem) => <MasterCollectionRow key={classItem.id} href={`/spokedu-master/classes/${encodeURIComponent(classItem.id)}`} className="px-3"><span className="min-w-0 flex-1"><strong className="block truncate text-[16px] font-semibold text-slate-950">{classItem.name}</strong><small className="mt-1 block text-[12px] font-medium text-slate-500">학생 {classItem.studentIds.length}명</small></span><ChevronRight size={17} className="text-slate-400" /></MasterCollectionRow>)}
             {data.status === 'ready' && data.classes.length === 0 ? <p className="py-5 text-sm text-slate-500">아직 만든 수업반이 없습니다.</p> : null}
           </div>
-        </section>
-      </div>
+        </MasterSection>
+      </MasterPageShell>
       {editing !== undefined ? <SessionSheet key={editing?.id ?? `new-${selectedDay}-${createClassId ?? 'default'}`} session={editing === null ? null : (data.sessions.find((item) => item.id === editing.id) ?? editing)} initialDate={seoulDayToDate(selectedDay)} initialClassId={createClassId} onClose={() => setEditing(undefined)} /> : null}
     </main>
   );

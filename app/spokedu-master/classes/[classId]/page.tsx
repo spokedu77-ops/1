@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronRight, MoreHorizontal, Pencil, Plus, UserMinus, Use
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { LessonManagementTabs } from '../../components/lesson/LessonManagementTabs';
 import { BottomSheet } from '../../components/ui/BottomSheet';
+import { MasterPageHeader, MasterPageShell } from '../../components/ui/MasterPrimitives';
 import { SPM_DESTRUCTIVE_BTN, SPM_PRIMARY_BTN_FULL, MASTER_ACTION_COPY } from '../../lib/masterActionGrammar';
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { buildClassPriorityWork } from '../../lib/masterTemporalContract';
@@ -72,9 +72,9 @@ export default function ClassDetailPage() {
     });
   }, [classId, nextSession]);
 
-  if (data.status === 'loading' || data.status === 'idle') return <main className="p-6 text-sm font-bold text-slate-500">수업반을 불러오는 중입니다.</main>;
-  if (data.status === 'error') return <main className="grid h-full place-items-center bg-[var(--spm-bg)] p-6"><div className="text-center"><p className="text-lg font-black text-rose-700">수업반을 불러오지 못했습니다.</p><button type="button" onClick={() => void data.reload()} className="mt-4 min-h-11 rounded-xl bg-slate-900 px-4 text-sm font-black text-white">다시 시도</button></div></main>;
-  if (!classItem) return <main className="grid h-full place-items-center bg-[var(--spm-bg)] p-6"><div className="text-center"><p className="text-lg font-black text-slate-800">수업반을 찾을 수 없습니다.</p><Link href="/spokedu-master/classes" className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-4 text-sm font-black text-white">수업반 목록으로</Link></div></main>;
+  if (data.status === 'loading' || data.status === 'idle') return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p role="status" className="text-sm font-medium text-slate-500">수업반을 불러오는 중입니다.</p></MasterPageShell></main>;
+  if (data.status === 'error') return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p role="alert" className="text-sm font-medium text-rose-700">수업반을 불러오지 못했습니다. <button type="button" onClick={() => void data.reload()} className="underline underline-offset-4">다시 시도</button></p></MasterPageShell></main>;
+  if (!classItem) return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p className="text-sm font-medium text-slate-700">수업반을 찾을 수 없습니다.</p><Link href="/spokedu-master/classes" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">수업반 목록으로</Link></MasterPageShell></main>;
 
   const removeFromClass = async (student: MasterStudentDto) => {
     setSaving(true); setError(null);
@@ -93,15 +93,9 @@ export default function ClassDetailPage() {
   const createSessionHref = `/spokedu-master/activity?date=${getSeoulToday()}&create=1&class=${encodeURIComponent(classItem.id)}`;
 
   return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
-    <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
-      <header>
-        <Link href="/spokedu-master/classes" className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500"><ChevronLeft size={16} />수업반</Link>
-        <div className="mt-2 flex items-start justify-between gap-3">
-          <div className="min-w-0"><h1 className="truncate text-2xl font-bold text-slate-900" title={classItem.name}>{classItem.name}</h1><p className="mt-2 text-sm font-normal text-slate-500">학생 {classItem.studentIds.length}명</p></div>
-          <button type="button" aria-label="수업반 이름 수정" title="수업반 이름 수정" onClick={() => { setEditName(classItem.name); setEditOpen(true); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-500 hover:bg-white"><Pencil size={17} /></button>
-        </div>
-        <div className="mt-4"><LessonManagementTabs /></div>
-      </header>
+    <MasterPageShell variant="operational">
+      <Link href="/spokedu-master/classes" className="mb-5 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500"><ChevronLeft size={16} />수업 관리</Link>
+      <MasterPageHeader title={classItem.name} description={`학생 ${classItem.studentIds.length}명 · 최근 수업 ${recentSessions.length}건`} action={<button type="button" aria-label="수업반 이름 수정" title="수업반 이름 수정" onClick={() => { setEditName(classItem.name); setEditOpen(true); }} className="grid h-11 w-11 place-items-center rounded-xl text-slate-500 hover:bg-white"><Pencil size={17} /></button>} />
       <div className="mt-5"><SessionSummary session={heroSession} workState={heroWorkState} emptyHref={createSessionHref} nextSessionNote={heroSession?.id === nextSession?.id ? nextSessionMemory?.capture?.applicationIdea?.trim() : null} /></div>
 
       {incompleteSessions.length ? <section className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3">
@@ -134,7 +128,7 @@ export default function ClassDetailPage() {
       {recentSessions.length ? <section className="mt-7"><div className="flex items-center justify-between"><h2 className="text-base font-bold text-slate-800">지난 수업</h2><Link href="/spokedu-master/activity" className="flex min-h-11 items-center text-xs font-bold text-slate-500">전체 일정</Link></div><div className="divide-y divide-slate-100 rounded-2xl bg-white px-4">{recentSessions.map((session) => <Link key={session.id} href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex min-h-16 items-center gap-3 py-2"><div className="min-w-0 flex-1"><p className="text-sm font-bold text-slate-800">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric' })} {formatSeoulSessionTime(session.startAt)}</p><p className="mt-1 text-xs font-medium text-slate-500">완료 활동 {session.programs.filter((item) => item.isCompleted).length}개 · {session.attendance.length ? `출석 ${session.attendance.length}명` : '출석 미기록'}</p></div><ChevronRight size={17} className="text-slate-400" /></Link>)}</div></section> : <p className="mt-7 text-sm font-medium text-slate-400">아직 지난 수업이 없습니다.</p>}
       <ClassMemoryPanel classId={classId} />
       <RegularSchedulePanel classId={classItem.id} sessions={data.sessions} onCreated={() => data.reload('soft')} />
-    </div>
+    </MasterPageShell>
 
     {addOpen ? <ClassRosterSheet classId={classItem.id} className={classItem.name} onClose={() => setAddOpen(false)} /> : null}
     {incompleteOpen ? <BottomSheet open title={`출석 미기록 ${incompleteSessions.length}건`} onClose={() => setIncompleteOpen(false)}><div className="space-y-2 pb-3">{incompleteSessions.map((session) => <div key={session.id} className="flex min-h-14 items-center gap-3 rounded-xl border border-slate-200 p-3"><div className="min-w-0 flex-1"><p className="text-sm font-black text-slate-800">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric' })}</p><p className="text-xs font-semibold text-slate-500">{formatSeoulSessionTime(session.startAt)}</p></div><Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex min-h-11 items-center rounded-xl bg-amber-100 px-4 text-xs font-black text-amber-900">기록</Link></div>)}</div></BottomSheet> : null}

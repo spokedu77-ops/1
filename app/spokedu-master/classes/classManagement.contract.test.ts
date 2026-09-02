@@ -9,17 +9,15 @@ describe('MASTER Class and attendance management contracts', () => {
   const list = read('app/spokedu-master/classes/page.tsx');
   const detail = read('app/spokedu-master/classes/[classId]/page.tsx');
   const rosterSheet = read('app/spokedu-master/classes/[classId]/ClassRosterSheet.tsx');
-  const tabs = read('app/spokedu-master/components/lesson/LessonManagementTabs.tsx');
   const desktopNav = read('app/spokedu-master/components/layout/StatusBar.tsx');
   const mobileNav = read('app/spokedu-master/components/layout/TabBar.tsx');
   const navLabels = read('app/spokedu-master/components/layout/masterNavLabels.ts');
 
   it('keeps Schedule and Classes as clear operating destinations with local cross-navigation', () => {
-    expect(tabs).toContain('/spokedu-master/activity');
-    expect(tabs).toContain('/spokedu-master/classes');
-    expect(tabs).toContain('일정');
-    expect(tabs).toContain('수업반');
     expect(navLabels).toContain("href: '/spokedu-master/manage', label: '수업 관리'");
+    expect(list).not.toContain('LessonManagementTabs');
+    expect(detail).not.toContain('LessonManagementTabs');
+    expect(list).toContain('href="/spokedu-master/manage"');
     expect(desktopNav).toContain('MASTER_NAV_ITEMS');
     expect(mobileNav).toContain('MASTER_NAV_ITEMS');
   });

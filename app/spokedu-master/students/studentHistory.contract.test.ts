@@ -11,16 +11,16 @@ describe('student history after Session refactor', () => {
     expect(students).toContain('data.sessions.filter');
     expect(detail).toContain('data.sessions');
     expect(detail).toContain("session.status !== 'completed'");
-    expect(detail).toContain('/spokedu-master/classes/${item.id}');
+    expect(detail).toContain('classes.map((item) => item.name)');
     expect(detail).not.toContain('StudentSessionHistory');
     expect(detail).not.toContain('focused: false');
     expect(detail).not.toContain('skills: []');
     expect(students).not.toContain('classRecords');
   });
 
-  it('routes new operational work to the Calendar', () => {
+  it('routes Session history to the Session workspace', () => {
     const detail = read('app/spokedu-master/students/[studentId]/page.tsx');
-    expect(detail).toContain('href="/spokedu-master/activity"');
+    expect(detail).toContain('/spokedu-master/activity?session=');
     expect(detail).not.toContain('RecordProgramPicker');
   });
 
@@ -29,8 +29,9 @@ describe('student history after Session refactor', () => {
     const detail = read('app/spokedu-master/students/[studentId]/page.tsx');
     expect(students).toContain('/spokedu-master/students/${student.id}');
     expect(students).toContain('학생 정보 수정');
-    expect(detail).toContain('반복 지도 참고');
-    expect(detail).toContain('소속 반 수업 이어가기');
+    expect(detail).toContain('title="지도 참고"');
+    expect(detail).toContain('title="수업 이력"');
+    expect(detail).toContain('MasterCollectionRow');
     expect(detail).not.toContain('수업 관리 열기');
   });
 });

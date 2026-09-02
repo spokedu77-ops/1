@@ -65,7 +65,7 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain('전체에서 찾기');
     expect(source).toContain('상황별 바로 고르기');
     expect(source).not.toContain('전체 {pool.length}개 수업');
-    expect(source).toContain('placeholder="피구, 협동, 풍선, 저학년, 실내…"');
+    expect(source).toContain('placeholder="활동 이름, 교구, 종목 검색"');
     expect(source).toContain('aria-label="놀이체육 활동 검색"');
     expect(source).toContain('...(program.equipment ?? [])');
     expect(source).not.toContain('조건에 맞는 수업 찾기');

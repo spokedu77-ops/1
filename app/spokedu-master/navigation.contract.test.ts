@@ -32,7 +32,7 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(activity).toContain('weekly-agenda-heading');
     expect(activity).toContain('수업 상세');
     expect(activity).toContain('오늘 할 활동을 하나 추가해 주세요.');
-    expect(activity).toContain('오늘 뭐 하지?');
+    expect(activity).toContain('오늘 활동 순서');
     expect(activity).toContain('수업 시작');
     expect(activity).toContain('deriveMasterSessionWorkState');
     expect(activity).toContain("workspace?.presentationKind === 'WRAP'");

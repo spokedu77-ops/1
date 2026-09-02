@@ -174,23 +174,23 @@ export function LessonCatalogCard({
   const cornerText = variant === 'home' ? cornerLabel?.replace(/^추천\s*/u, '') : cornerLabel;
   const showUsed = variant === 'library' && used;
   const showFavorite = variant === 'library' && Boolean(onFavorite);
-  const cardGeometry = 'h-[345px] min-h-[345px]';
-  const mediaAspect = 'aspect-[6/5]';
+  const cardGeometry = '';
+  const mediaAspect = 'aspect-[4/3]';
   const cardSurface =
     variant === 'home'
-      ? 'border border-slate-200 bg-white text-[color:var(--spm-t)] shadow-[0_14px_30px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)]'
+      ? 'border border-slate-200 bg-white text-[color:var(--spm-t)] hover:-translate-y-0.5 hover:border-slate-300'
       : locked
-        ? 'border border-amber-300/90 bg-[var(--spm-s1)] text-[color:var(--spm-t)] shadow-[0_0_0_1px_rgba(251,191,36,0.25)] hover:border-amber-400 hover:shadow-[0_2px_14px_rgba(245,158,11,0.18)]'
-        : 'border border-slate-200 bg-white text-[color:var(--spm-t)] shadow-[0_14px_30px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)]';
+        ? 'border border-amber-300/90 bg-[var(--spm-s1)] text-[color:var(--spm-t)] hover:border-amber-400'
+        : 'border border-slate-200 bg-white text-[color:var(--spm-t)] hover:-translate-y-0.5 hover:border-slate-300';
 
   return (
     <article
       {...articleProps}
-      className={`group flex ${cardGeometry} flex-col overflow-hidden rounded-[14px] transition-[border-color,box-shadow,transform] duration-150 active:translate-y-0 ${cardSurface}`}
+      className={`group flex ${cardGeometry} flex-col overflow-hidden rounded-[14px] transition-[border-color,transform] duration-150 active:translate-y-0 ${cardSurface}`}
     >
       {/* Opt-1: 남는 높이는 미디어가 흡수 — 푸터 흰 공백 금지 (App Store형) */}
       <div
-        className={`relative min-h-0 w-full flex-1 overflow-hidden border-b ${mediaAspect} ${
+        className={`relative w-full overflow-hidden border-b ${mediaAspect} ${
           variant === 'home' ? 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]' : 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]'
         }`}
       >
@@ -216,7 +216,7 @@ export function LessonCatalogCard({
         {(cornerText || locked || showUsed) && (
           <div className={`pointer-events-none absolute right-3 ${showFavorite ? 'top-14' : 'top-3'} flex max-w-[72%] flex-wrap justify-end gap-1`}>
             {cornerText ? (
-              <span className={`${variant === 'home' ? 'rounded-[6px] border-white/25 bg-black/36 px-2 py-1 font-mono text-white/92' : 'rounded-full border-white/80 bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] px-2.5 py-1 text-[color:var(--spm-t2)]'} border text-[11px] font-black shadow-sm backdrop-blur`}>
+              <span className={`${variant === 'home' ? 'rounded-[6px] border-white/25 bg-black/36 px-2 py-1 font-mono text-white/92' : 'rounded-full border-white/80 bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] px-2.5 py-1 text-[color:var(--spm-t2)]'} border text-[11px] font-medium backdrop-blur`}>
                 {cornerText}
               </span>
             ) : null}
@@ -284,10 +284,10 @@ export function LessonCatalogCard({
         )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
-            <p className="max-w-[76%] truncate text-[11px] font-black text-white/82 drop-shadow">
+            <p className="max-w-[76%] truncate text-[12px] font-medium text-white/82">
               {eyebrow}
             </p>
-            <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-black leading-5 text-white drop-shadow">
+            <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-semibold leading-5 text-white">
               {title}
             </h3>
         </div>
@@ -308,7 +308,7 @@ export function LessonCatalogCard({
         {locked ? (
           <Link
             href="/spokedu-master/payment?plan=premium"
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-black text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-semibold text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
           >
             프리미엄 자료
           </Link>
@@ -317,7 +317,7 @@ export function LessonCatalogCard({
             type="button"
             onClick={onPrimaryAction}
             disabled={primaryActionDisabled}
-            className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none disabled:opacity-55"
+            className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] px-3 text-[13px] font-semibold focus-visible:outline-none disabled:opacity-55"
           >
             <span className="inline-flex min-w-0 items-center gap-2">
               <BookOpen size={15} />
@@ -330,8 +330,8 @@ export function LessonCatalogCard({
             href={detailHref}
             className={
               variant === 'home'
-                ? 'inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
-                : 'spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none'
+                ? 'inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
+                : 'spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] px-3 text-[13px] font-semibold focus-visible:outline-none'
             }
           >
             <span className="inline-flex min-w-0 items-center gap-2">

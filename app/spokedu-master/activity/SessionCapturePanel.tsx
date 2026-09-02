@@ -7,7 +7,7 @@ import type { MasterClassRecordDto } from '../types/legacyOperational';
 import type { MasterSessionDto, MasterStudentDto } from '../types/operational';
 import { resolvePreviousSessionMemory, selectCurrentRosterObservations } from '../lib/sessionMemory';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
-import { SPM_JOURNEY_EYEBROW, SPM_JOURNEY_FIELD, SPM_JOURNEY_META, SPM_JOURNEY_SURFACE } from '../lib/masterUiClasses';
+import { SPM_JOURNEY_FIELD, SPM_JOURNEY_META } from '../lib/masterUiClasses';
 import { fetchSessionCaptures, saveSessionCapture } from '../lib/sessionCaptureClient';
 import type { SessionCaptureSurfaceMode } from './masterSessionWorkspaceModel';
 import { sessionSectionOrderClass } from './masterSessionWorkspaceModel';
@@ -126,11 +126,11 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
     if (!showInlinePremiumUpsell) return null;
     return (
       <section data-session-capture-gate className={`${orderClass} rounded-xl border border-slate-200 bg-slate-50 p-3`}>
-        <p className="text-sm font-black text-slate-800">오늘 관찰을 남기면 다음 준비에 이어집니다</p>
+        <p className="text-sm font-semibold text-slate-800">오늘 관찰을 남기면 다음 준비에 이어집니다</p>
         <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">출석은 Lite에서도 저장됩니다. 학생별 관찰·다음 수업 메모는 Premium에서 이어집니다.</p>
         <Link
           href={`/spokedu-master/payment?plan=premium&intent=continue_record&next=${encodeURIComponent(`/spokedu-master/activity?session=${session.id}&capture=1`)}&journeyId=${encodeURIComponent(`capture_${session.id}`)}`}
-          className="mt-2 inline-flex min-h-11 items-center text-xs font-black text-blue-700"
+          className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-blue-700"
         >
           Premium으로 기록 이어가기
         </Link>
@@ -142,11 +142,11 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
     if (!hasPreviousMemory && !loadError) return null;
     const nextSessionNote = previous?.capture?.applicationIdea?.trim() ?? '';
     return (
-      <section data-session-capture data-capture-mode="memory" className={`${orderClass} ${SPM_JOURNEY_SURFACE} p-4`}>
+      <section data-session-capture data-capture-mode="memory" className={`${orderClass} rounded-xl bg-slate-50 px-4 py-3`}>
         {loadError ? <p role="status" className="text-xs font-bold text-amber-700">지난 수업 기록을 불러오지 못했습니다. 수업 준비는 계속할 수 있습니다.</p> : null}
         {hasPreviousMemory ? (
           <>
-            <p className={SPM_JOURNEY_EYEBROW}>지난 수업에서 이어갈 점</p>
+            <h3 className="text-base font-semibold text-slate-900">지난 수업에서 이어갈 점</h3>
             {nextSessionNote ? <p className="mt-2 whitespace-pre-wrap text-base font-semibold leading-6 text-slate-900">{nextSessionNote}</p> : null}
             <p className={`mt-3 ${SPM_JOURNEY_META}`}>학생 기록 {previousObservations.length}명 · 지난 활동 {previousActivities.length}개{guidanceStudents.length ? ` · 지도 참고 ${guidanceStudents.length}명` : ''}</p>
             <details className="mt-2 border-t border-slate-100 pt-1">
@@ -167,7 +167,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
     return (
       <section data-session-capture data-capture-mode="emphasized" className={`${orderClass} divide-y divide-slate-200`}>
         <div className="pb-4">
-          <p className={SPM_JOURNEY_EYEBROW}>다음 수업을 위해 뭘 남겨둘까요?</p>
+          <h3 className="text-lg font-semibold text-slate-900">수업 마무리</h3>
           <label className="mt-3 block text-sm font-semibold text-slate-800">
             오늘 기억해둘 점 <span className="font-medium text-slate-400">· 선택</span>
             <textarea value={memo} onChange={(event) => onMemoChange(event.target.value)} className={`mt-2 min-h-20 ${SPM_JOURNEY_FIELD}`} placeholder="오늘 수업에서 기억할 만한 일이 있었나요?" maxLength={2000} />
@@ -202,7 +202,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
       {loadError ? <p role="status" className="mb-2 text-xs font-bold text-amber-700">지난 수업 기록을 불러오지 못했습니다. 수업 진행은 계속할 수 있습니다.</p> : null}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-black text-slate-800">{title}</h3>
+          <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
           <p className="mt-1 text-xs font-semibold text-slate-500">
             {recordedCount}명 기록 · 다음 수업 메모 {capture?.applicationIdea ? '있음' : '없음'}
           </p>
@@ -216,7 +216,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
               <button
                 type="button"
                 onClick={() => setActiveStudentId(activeStudentId === student.id ? null : student.id)}
-                className="flex min-h-11 w-full items-center justify-between text-left text-sm font-black text-slate-700"
+                className="flex min-h-11 w-full items-center justify-between text-left text-sm font-semibold text-slate-700"
               >
                 <span>
                   {student.name}
@@ -241,7 +241,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
               ) : null}
             </div>
           ))}
-          <label className="block text-xs font-black text-slate-600">
+          <label className="block text-[13px] font-medium text-slate-600">
             다음 수업에 이어갈 점
             <textarea
               value={nextNote}

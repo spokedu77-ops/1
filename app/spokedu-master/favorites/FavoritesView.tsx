@@ -4,6 +4,7 @@ import { Bookmark, MonitorPlay } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
+import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
 import { getFavoritesOwnerId, type FavoriteContentRef } from '../lib/favoriteLib';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { programHasPlayableVideo } from '../lib/program-media';
@@ -32,8 +33,8 @@ export default function FavoritesView() {
   const visible = refs.filter((ref) => filter === 'all' || ref.type === filter);
 
   return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
-      <header className="border-b border-slate-200 pb-5"><h1 className="text-[28px] font-bold text-slate-950">즐겨찾기</h1></header>
+    <MasterPageShell variant="editorial">
+      <MasterPageHeader title="즐겨찾기" />
       <div className="mt-4 flex gap-2" role="group" aria-label="즐겨찾기 필터">
         {([['all', '전체'], ['program', '놀이체육'], ['spomove', 'SPOMOVE']] as const).map(([id, label]) => <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className={`min-h-11 rounded-full px-4 text-[14px] font-semibold ${filter === id ? 'bg-slate-950 text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200'}`}>{label}</button>)}
       </div>
@@ -49,8 +50,8 @@ export default function FavoritesView() {
           const model = getSpomovePresetDisplayModel(preset);
           return <article key={`spomove:${ref.id}`} className="relative overflow-hidden rounded-2xl bg-[#101936] text-white"><button type="button" onClick={() => setPreviewPreset(preset)} className="flex min-h-64 w-full flex-col justify-between p-5 text-left"><span className="grid h-12 w-12 place-items-center rounded-full bg-white/10"><MonitorPlay /></span><span><span className="text-[13px] font-medium text-indigo-200">SPOMOVE</span><strong className="mt-2 block text-[18px] font-semibold">{model.displayTitle}</strong><span className="mt-2 block text-[14px] text-slate-300">Guide를 확인하고 활동을 시작하세요.</span></span></button><button type="button" onClick={() => remove(ownerId, ref)} className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-amber-300" aria-label={`${model.displayTitle} 즐겨찾기에서 제거`}><Bookmark className="h-5 w-5 fill-current" /></button></article>;
         })}
-      </section> : <section className="mt-12 text-center"><Bookmark className="mx-auto h-7 w-7 text-slate-300" /><h2 className="mt-3 text-[20px] font-semibold text-slate-900">저장한 콘텐츠가 없습니다.</h2><p className="mt-2 text-[14px] text-slate-500">Programs에서 마음에 드는 활동을 저장해 보세요.</p></section>}
-    </div>
+      </section> : <section className="mt-12 text-center"><Bookmark className="mx-auto h-7 w-7 text-slate-300" /><h2 className="mt-3 text-[20px] font-semibold text-slate-900">저장한 콘텐츠가 없습니다.</h2><p className="mt-2 text-[14px] text-slate-500">프로그램에서 자주 쓸 활동을 저장해 보세요.</p></section>}
+    </MasterPageShell>
     <SpomoveGuidelineSheet preset={previewPreset} guideVideoUrl={guideVideo.url} guideVideoState={guideVideo.state} contentLoadState="ready" hubReturnHref="/spokedu-master/favorites" onClose={() => setPreviewPreset(null)} />
   </main>;
 }

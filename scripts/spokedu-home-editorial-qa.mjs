@@ -8,16 +8,17 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 
 const BASE_URL = process.env.SPOKEDU_QA_URL ?? 'http://localhost:3000/';
-const OUT_DIR = path.join(process.cwd(), 'qa-screenshots', 'spokedu-home-editorial-finish');
+const OUT_DIR = path.join(process.cwd(), 'qa-screenshots', 'spokedu-home-optical-finish');
+const FONT_READY_MS = 12_000;
 
 const VIEWPORTS = [
   { name: '390', width: 390, height: 844 },
+  { name: '768', width: 768, height: 1024 },
   { name: '1024', width: 1024, height: 900 },
   { name: '1440', width: 1440, height: 900 },
 ];
 
-const SECTION_IDS = ['hero'];
-const FONT_READY_MS = 12_000;
+const SECTION_IDS = ['hero', 'choice', 'spomove', 'subscription', 'cases', 'contact'];
 
 async function waitForFonts(page) {
   const result = await page.evaluate(async (timeoutMs) => {
@@ -159,6 +160,18 @@ async function main() {
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 120_000 });
     await waitForFonts(page);
     await page.waitForTimeout(800);
+    await page.evaluate(async () => {
+      for (const img of document.querySelectorAll('img')) {
+        img.loading = 'eager';
+        if (!img.complete) {
+          await new Promise((resolve) => {
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+            window.setTimeout(resolve, 8000);
+          });
+        }
+      }
+    });
     await page
       .waitForFunction(
         () => {

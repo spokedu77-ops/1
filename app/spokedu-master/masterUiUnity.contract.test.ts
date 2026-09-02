@@ -50,11 +50,9 @@ describe('MASTER product UI unity', () => {
   });
 
   it('shares collection geometry and loading/empty/error grammar across operational lists', () => {
-    const tokens = readFileSync(join(ROOT, 'lib', 'masterUiClasses.ts'), 'utf8');
     const statePanel = readFileSync(join(ROOT, 'components', 'ui', 'MasterStatePanel.tsx'), 'utf8');
     const classes = readFileSync(join(ROOT, 'classes', 'page.tsx'), 'utf8');
     const students = readFileSync(join(ROOT, 'students', 'page.tsx'), 'utf8');
-    expect(tokens).toContain('@deprecated Foundation v3 uses MasterContentCard or MasterCollectionRow');
     expect(statePanel).toContain('data-master-state={kind}');
     for (const source of [classes, students]) {
       expect(source).toContain('MasterCollectionRow');

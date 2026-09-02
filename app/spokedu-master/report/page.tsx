@@ -52,14 +52,14 @@ export default function ReportPage() {
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
       <MasterPageShell variant="document">
         <MasterPageHeader title="수업 안내문" description="완료된 수업의 출석, 진행 프로그램, 수업 메모를 바탕으로 간단한 안내문을 확인합니다." />
-        <MasterDocumentSurface className="mt-7 border-t border-slate-200 pt-6">
+        <MasterDocumentSurface className="mt-8">
           {!requestedSessionId ? (
-            <label className="text-xs font-black text-slate-600">
+            <label className="text-[13px] font-medium text-slate-600">
               완료된 수업
               <select
                 value={selected?.id ?? ''}
                 onChange={(event) => setSelectedId(event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium"
               >
                 {sessions.map((session) => (
                   <option key={session.id} value={session.id}>
@@ -72,9 +72,9 @@ export default function ReportPage() {
           ) : null}
           {selected ? (
             <>
-              <label className="mt-5 block text-xs font-black text-slate-600">
+              <label className="mt-5 block text-[13px] font-medium text-slate-600">
                 안내문 내용
-                <textarea value={notice} onChange={(event) => { setNotice(event.target.value); setFeedback(null); }} maxLength={4000} className="mt-2 min-h-72 w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold leading-7 text-slate-700 outline-none focus:border-blue-500" />
+                <textarea value={notice} onChange={(event) => { setNotice(event.target.value); setFeedback(null); }} maxLength={4000} className="mt-2 min-h-72 w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-[15px] font-normal leading-7 text-slate-700 outline-none focus:border-blue-500" />
               </label>
               <div className="mt-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500"><span>{feedback ?? (noticeDirty ? '저장하지 않은 변경사항이 있습니다.' : '저장됨')}</span><span>{notice.length.toLocaleString()} / 4,000자</span></div>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">

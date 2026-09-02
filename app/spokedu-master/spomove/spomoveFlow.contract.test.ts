@@ -89,7 +89,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).not.toContain('선택적 상세');
     expect(guidelineSheet).toContain('교사 핵심단서(Cue)');
     expect(guidelineSheet).not.toContain('아이에게 하는 말');
-    expect(guidelineSheet).toContain('min-[1024px]:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)]');
+    expect(guidelineSheet).toContain('min-[1024px]:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)]');
     expect(guidelineSheet).not.toContain('1.55fr');
     expect(guidelineSheet).toContain('items-start');
     expect(guidelineSheet).not.toContain('lg:overflow-y-auto');

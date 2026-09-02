@@ -15,6 +15,7 @@ import {
 } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
+import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
   LESSON_TAG_PREFIX,
@@ -467,9 +468,9 @@ export default function LibraryView() {
       <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto px-4 py-16 sm:px-6 lg:px-8" style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center shadow-sm">
           <Lock className="mx-auto h-6 w-6 text-[color:var(--spm-t3)]" />
-          <h1 className="mt-3 text-xl font-black text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
+          <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
-          <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">
+          <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
             다시 구독하기
           </Link>
         </section>
@@ -487,44 +488,35 @@ export default function LibraryView() {
 
   return (
     <>
-      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-5 overflow-y-auto px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+      <main className="h-full overflow-y-auto pb-24 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+        <MasterPageShell variant="editorial" className="flex flex-col gap-7">
         {sessionContext ? <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
-          <p className="min-w-0 truncate text-xs font-black text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
-          <Link href={sessionReturnHref} className="inline-flex min-h-11 shrink-0 items-center text-xs font-black text-blue-700">수업으로 돌아가기</Link>
+          <p className="min-w-0 truncate text-xs font-semibold text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
+          <Link href={sessionReturnHref} className="inline-flex min-h-11 shrink-0 items-center text-xs font-semibold text-blue-700">수업으로 돌아가기</Link>
         </div> : null}
         {sessionAddError ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
-        <header className="border-b border-slate-200 pb-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="text-[28px] font-bold leading-tight text-slate-950">
-                놀이체육
-              </h1>
-              <p className="mt-1 text-[13px] font-normal text-slate-600">
-                수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3 grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div>
+          <MasterPageHeader title="놀이체육" description="수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요." />
+          <div className="mt-5 grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="피구, 협동, 풍선, 저학년, 실내…"
+                placeholder="활동 이름, 교구, 종목 검색"
                 aria-label="놀이체육 활동 검색"
                 className="h-13 w-full rounded-[12px] border border-slate-300 bg-white pl-11 pr-4 text-base font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-200"
               />
             </label>
             <div className="flex flex-wrap items-center gap-2">
               {hasSearchIntent ? (
-                <button type="button" onClick={clearAllSearch} className="h-10 px-2 text-[12px] font-black text-[var(--spm-acc)]">
+                <button type="button" onClick={clearAllSearch} className="h-10 px-2 text-[12px] font-semibold text-[var(--spm-acc)]">
                   초기화
                 </button>
               ) : null}
             </div>
           </div>
-        </header>
+        </div>
 
         {isBrowseMode ? (
           <>
@@ -534,7 +526,7 @@ export default function LibraryView() {
                   <h2 className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)]">상황별 바로 고르기</h2>
                 </div>
                 {shelves.slice(0, 1).map(({ shelf, programs: shelfPrograms, total }) => (
-                  <div key={shelf.id} className="rounded-[18px] border border-slate-200 bg-white/90 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)] sm:p-4">
+                  <div key={shelf.id}>
                     <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
                       <div>
                         <p className="text-[11px] font-bold text-slate-500">
@@ -545,7 +537,7 @@ export default function LibraryView() {
                       <button
                         type="button"
                         onClick={() => openShelf(shelf.id)}
-                        className="inline-flex min-h-11 items-center px-2 text-[12px] font-black text-[var(--spm-acc)] sm:min-h-9"
+                        className="inline-flex min-h-11 items-center px-2 text-[12px] font-semibold text-[var(--spm-acc)] sm:min-h-9"
                       >
                         더 보기 ({total})
                       </button>
@@ -568,7 +560,7 @@ export default function LibraryView() {
               </section>
             ) : null}
 
-            <section aria-label="상황별 빠른 진입" className="rounded-[18px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+            <section aria-label="상황별 빠른 진입" className="mt-8">
               <div className="mb-3">
                 <h2 className="text-[20px] font-semibold text-[color:var(--spm-t)]">조건으로 출발하기</h2>
                 <p className="mt-1 text-[13px] font-semibold text-slate-600">대상·공간·교구·활동 성격으로 바로 들어갑니다.</p>
@@ -579,7 +571,7 @@ export default function LibraryView() {
                     key={entry.id}
                     type="button"
                     onClick={() => applySituationFilter(entry.filter)}
-                    className="inline-flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[12px] font-black text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-950"
+                    className="inline-flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[12px] font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-950"
                   >
                     <span className="text-[12px] font-medium text-slate-400">{entry.groupLabel}</span>
                     {entry.label}
@@ -603,7 +595,7 @@ export default function LibraryView() {
                   <button
                     type="button"
                     onClick={clearBrowseConstraints}
-                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 shadow-sm"
+                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"
                   >
                     {getLibraryShelfDefinition(shelfId).title} ×
                   </button>
@@ -612,7 +604,7 @@ export default function LibraryView() {
                   <button
                     type="button"
                     onClick={clearBrowseConstraints}
-                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 shadow-sm"
+                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"
                   >
                     {LIBRARY_SELECTION_REASONS[reasonId].label} ×
                   </button>
@@ -622,7 +614,7 @@ export default function LibraryView() {
                     key={`${filter.group}:${filter.value}`}
                     type="button"
                     onClick={() => toggleFilter(filter)}
-                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 shadow-sm"
+                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"
                   >
                     {tagDisplayLabel(filter.group, filter.value)} ×
                   </button>
@@ -632,10 +624,10 @@ export default function LibraryView() {
           </div>
 
           <div className="mb-4 space-y-2">
-            <div className="rounded-[14px] border border-slate-200 bg-white/80 px-3 py-2">
+            <div className="py-1">
               {isBrowseMode ? (
                 <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] font-black text-slate-950">세부 조건</p>
+                  <p className="text-[12px] font-semibold text-slate-950">세부 조건</p>
                   <p className="text-[11px] font-bold text-slate-500">필요할 때만 좁히세요.</p>
                 </div>
               ) : null}
@@ -648,7 +640,7 @@ export default function LibraryView() {
             <button
               type="button"
               onClick={() => setShowAdvanced((prev) => !prev)}
-              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[12px] border border-slate-200 bg-white/72 px-3 py-2 text-left text-[12px] font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[12px] border border-slate-200 bg-white/72 px-3 py-2 text-left text-[12px] font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
             >
               <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -658,7 +650,7 @@ export default function LibraryView() {
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
             </button>
             {isAdvancedOpen ? (
-              <div className="grid gap-2.5 rounded-[14px] border border-slate-200 bg-white/80 p-2.5 lg:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid gap-2.5 rounded-[14px] bg-slate-100/70 p-2.5 lg:grid-cols-2 2xl:grid-cols-3">
                 {advancedGroups.map((group) => (
                   <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
                 ))}
@@ -684,14 +676,14 @@ export default function LibraryView() {
               <button
                 type="button"
                 onClick={() => setVisibleCount((current) => current + LIBRARY_PAGE_SIZE)}
-                className="inline-flex h-11 items-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-5 text-[13px] font-black text-[color:var(--spm-t2)] shadow-sm transition hover:border-[color:var(--spm-br3)] hover:text-[color:var(--spm-t)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
+                className="inline-flex h-11 items-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-5 text-[13px] font-semibold text-[color:var(--spm-t2)] transition hover:border-[color:var(--spm-br3)] hover:text-[color:var(--spm-t)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
               >
                 더 보기 ({visiblePrograms.length}/{filteredPrograms.length})
               </button>
             </div>
           ) : null}
           {filteredPrograms.length === 0 ? (
-              <div className="flex flex-col gap-3 border-t border-slate-200 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-sm font-medium text-slate-600">
                   조건에 맞는 수업이 없습니다.
                 </h3>
@@ -705,6 +697,7 @@ export default function LibraryView() {
               </div>
           ) : null}
         </section> : null}
+        </MasterPageShell>
       </main>
 
       {selected ? (

@@ -40,8 +40,7 @@ export function TodaySessionsPanel({
     <section data-dashboard-section="today-sessions" aria-labelledby="today-sessions-heading" className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-700">Today operations</p>
-          <h2 id="today-sessions-heading" className="mt-1 text-[20px] font-black tracking-[-0.02em] text-slate-900">오늘 수업</h2>
+          <h2 id="today-sessions-heading" className="text-[20px] font-semibold text-slate-900">오늘 수업</h2>
         </div>
         {!loading && cards.length > 0 ? <span className="text-xs font-bold text-slate-500">수업 {cards.length}개</span> : null}
       </div>
@@ -62,22 +61,22 @@ export function TodaySessionsPanel({
           {cards.map(({ session, rosterCount, activityCount, completedActivityCount, hasSpomove, ctaLabel, href, workState }) => (
             <article key={session.id} className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center ${session.status === 'cancelled' ? 'border-slate-200 bg-slate-50 opacity-70' : session.status === 'completed' ? 'border-slate-200 bg-slate-50/70' : 'border-slate-200 bg-white'}`}>
               <div className="flex min-w-0 flex-1 items-start gap-3">
-                <span className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 text-sm font-black text-slate-800"><Clock3 size={14} aria-hidden="true" />{formatSeoulSessionTime(session.startAt)}</span>
+                <span className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 text-sm font-semibold text-slate-800"><Clock3 size={14} aria-hidden="true" />{formatSeoulSessionTime(session.startAt)}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <h3 className="max-w-full truncate text-sm font-black text-slate-900" title={session.className}>{session.className}</h3>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-600">{STATUS_LABEL[session.status]}</span>
+                    <h3 className="max-w-full truncate text-sm font-semibold text-slate-900" title={session.className}>{session.className}</h3>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[12px] font-medium text-slate-600">{STATUS_LABEL[session.status]}</span>
                   </div>
                   <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-slate-500">
                     <span>{activityCount ? `활동 ${activityCount}개 · 진행 ${completedActivityCount}/${activityCount}` : '활동 미지정'}</span>
                     <span className="inline-flex items-center gap-1"><UsersRound size={12} aria-hidden="true" />학생 {rosterCount}명</span>
                     {hasSpomove ? <span className="inline-flex items-center gap-1 text-blue-700"><MonitorPlay size={12} aria-hidden="true" />SPOMOVE 포함</span> : null}
                   </p>
-                  <p className={`mt-1 text-xs font-black ${workState.attention.overdue || workState.attention.attendanceMissing ? 'text-amber-700' : 'text-emerald-700'}`}>{workState.operationalLabel}</p>
+                  <p className={`mt-1 text-xs font-semibold ${workState.attention.overdue || workState.attention.attendanceMissing ? 'text-amber-700' : 'text-emerald-700'}`}>{workState.operationalLabel}</p>
                 </div>
               </div>
               {ctaLabel ? (
-                <Link href={href} className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900 focus-visible:outline-offset-2 ${session.status === 'scheduled' ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-600'}`}>
+                <Link href={href} className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900 focus-visible:outline-offset-2 ${session.status === 'scheduled' ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-600'}`}>
                   {ctaLabel}<ArrowRight size={15} aria-hidden="true" />
                 </Link>
               ) : (
@@ -128,8 +127,8 @@ export function UpcomingPreparationPanel({ sessions, classes }: { sessions: Mast
     .sort((a, b) => a.session.startAt.localeCompare(b.session.startAt)).slice(0, 3), [classMap, now, sessions]);
   if (!items.length) return null;
   return <section data-dashboard-section="upcoming-prep" className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4">
-    <div className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.14em] text-blue-700">Preparation</p><h2 className="mt-1 text-base font-black text-slate-950">다가오는 수업 준비</h2></div><Link href="/spokedu-master/activity" className="min-h-11 px-2 text-xs font-black text-slate-500">전체 일정</Link></div>
-    <div className="mt-2 grid gap-2">{items.map(({ session, state }) => <Link key={session.id} href={state.href} className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-slate-50 px-3"><span className="min-w-0"><strong className="block truncate text-sm text-slate-900">{session.className}</strong><small className="text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(session.startAt)}</small></span><span className="shrink-0 text-xs font-black text-blue-700">수업 준비</span></Link>)}</div>
+    <div className="flex items-center justify-between"><h2 className="text-base font-semibold text-slate-950">다가오는 수업 준비</h2><Link href="/spokedu-master/activity" className="min-h-11 px-2 text-xs font-semibold text-slate-500">전체 일정</Link></div>
+    <div className="mt-2 grid gap-2">{items.map(({ session, state }) => <Link key={session.id} href={state.href} className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-slate-50 px-3"><span className="min-w-0"><strong className="block truncate text-sm text-slate-900">{session.className}</strong><small className="text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(session.startAt)}</small></span><span className="shrink-0 text-xs font-semibold text-blue-700">수업 준비</span></Link>)}</div>
   </section>;
 }
 
@@ -158,10 +157,10 @@ export function HomeContinuityPanel({ sessions, classes, loading, error, onRetry
       data-dashboard-section="continuity"
       data-continuity-priority="resume"
       aria-labelledby="home-continuity-heading"
-      className="flex flex-col gap-3 rounded-[16px] border border-indigo-200 bg-indigo-50/60 px-4 py-3 sm:flex-row sm:items-center"
+      className="flex flex-col gap-3 rounded-[14px] bg-slate-100 px-4 py-3 sm:flex-row sm:items-center"
     >
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium text-indigo-700">이어갈 수업</p>
+        <p className="text-[13px] font-medium text-slate-500">이어갈 수업</p>
         <h2 id="home-continuity-heading" className="mt-0.5 truncate text-[18px] font-semibold text-slate-950">{item.className}</h2>
         <p className="mt-1 text-xs text-slate-500">
           {formatSeoulSessionDay(getSeoulSessionDay(item.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(item.startAt)}
@@ -182,7 +181,7 @@ export function HomeNextSessionPanel({ sessions, classes }: { sessions: MasterSe
     .filter((session) => session.status === 'scheduled' && !session.startedAt && !session.programs.some((program) => program.isCompleted) && classIds.has(session.classId) && new Date(session.startAt).getTime() > now.getTime())
     .sort((left, right) => left.startAt.localeCompare(right.startAt))[0] ?? null, [classIds, now, sessions]);
   if (!next) return null;
-  return <section data-dashboard-section="next-session" className="flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
+  return <section data-dashboard-section="next-session" className="flex items-center justify-between gap-4 py-1">
     <div className="min-w-0"><p className="text-[13px] font-medium text-slate-500">내 다음 수업</p><h2 className="mt-1 truncate text-[20px] font-semibold text-slate-950">{next.className}</h2><p className="mt-1 text-[13px] text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(next.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(next.startAt)}</p></div>
     <Link href={`/spokedu-master/activity?session=${encodeURIComponent(next.id)}`} className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-slate-700">수업 준비<ArrowRight size={15} /></Link>
   </section>;

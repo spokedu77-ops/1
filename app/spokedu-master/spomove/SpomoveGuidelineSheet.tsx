@@ -29,8 +29,8 @@ import type { SpomoveGuideVideoState } from './useSpomoveGuideVideo';
 export type SpomoveContentLoadState = 'loading' | 'ready' | 'error';
 
 const PANEL_RADIUS = 'rounded-[18px]';
-const MEDIA_SHADOW = 'shadow-[0_5px_16px_rgba(15,23,42,0.04)]';
-const BRIEFING_SHADOW = 'shadow-[0_8px_24px_rgba(15,23,42,0.06)]';
+const MEDIA_SHADOW = '';
+const BRIEFING_SHADOW = '';
 const SOFT_BORDER = 'border border-slate-200/70';
 
 function usePreferredLaunchMode(): 'projector' | 'mobile' {
@@ -483,7 +483,7 @@ export function SpomoveGuidelineSheet({
         data-spm-spomove-launch-confirm=""
         data-spm-spomove-surface="stage"
       >
-        <div className="grid grid-cols-1 items-start gap-4 min-[1024px]:grid-cols-[minmax(0,0.95fr)_minmax(420px,1.05fr)] min-[1024px]:gap-5">
+        <div className="grid grid-cols-1 items-start gap-4 min-[1024px]:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)] min-[1024px]:gap-5">
           <div data-preview-column="media" className="min-w-0">
             <div
               data-spm-spomove-surface="media"
@@ -525,7 +525,7 @@ export function SpomoveGuidelineSheet({
             data-preview-column="content"
             data-preview-summary
             data-spm-spomove-surface="briefing"
-            className={`min-w-0 ${PANEL_RADIUS} border border-slate-200/55 bg-white p-4 sm:p-5 ${BRIEFING_SHADOW}`}
+            className={`min-w-0 ${PANEL_RADIUS} bg-white p-4 sm:p-5 ${BRIEFING_SHADOW}`}
           >
             {contentLoadState === 'loading' ? (
               <ContentLoading />

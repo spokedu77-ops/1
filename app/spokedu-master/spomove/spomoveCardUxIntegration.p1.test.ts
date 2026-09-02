@@ -90,7 +90,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('spm-btn-primary');
     expect(hub).not.toContain('<Play ');
-    expect(hub).toContain("import { Bookmark, ChevronDown, Lock, MonitorPlay, Search, X } from 'lucide-react'");
+    expect(hub).toContain("import { Bookmark, ChevronDown, Lock, Search, X } from 'lucide-react'");
     expect(hub).toContain('h-11 w-11');
   });
 

@@ -50,7 +50,7 @@ MASTER is a sports content service: editorial, media-first, modern, premium, cle
 ## States and actions
 
 - Empty states say what is absent and, only when useful, one next action. They are not filler panels.
-- Loading preserves the real layout geometry.
+- `MasterState` covers status, empty, error, and attention messages. Geometry-preserving loading skeletons remain each Surface's responsibility.
 - Errors are compact, meaningful, and may include one retry.
 - One primary CTA per viewport surface. Do not repeat a header CTA in an empty state.
 - Secondary actions support the current task; quiet actions navigate or manage.

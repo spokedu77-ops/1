@@ -17,9 +17,9 @@ describe('MASTER Visual System v1', () => {
 
   it('keeps standard collection and support surfaces neutral and compact', () => {
     expect(ui).toContain('SPM_STANDARD_SURFACE');
-    expect(ui).toContain('SPM_EMPTY_PANEL');
-    expect(ui).not.toMatch(/SPM_COLLECTION_CARD[\s\S]{0,240}shadow-sm/);
-    expect(ui).not.toMatch(/SPM_EMPTY_PANEL[\s\S]{0,140}(border-dashed|p-8)/);
+    expect(ui).not.toContain('SPM_EMPTY_PANEL');
+    expect(ui).not.toContain('SPM_STATE_PANEL');
+    expect(ui).not.toContain('SPM_COLLECTION_CARD');
   });
 
   it('publishes a restrained typography foundation without forcing one universal card', () => {

@@ -7,13 +7,15 @@ const followUp = readFileSync('app/spokedu-master/components/information/SystemD
 
 describe('MASTER Home content card system', () => {
   it('uses the Library card grammar for the four Weekly picks', () => {
-    expect(lessonCard).toContain("const cardGeometry = 'h-[345px] min-h-[345px]'");
+    expect(lessonCard).toContain("const mediaAspect = 'aspect-[4/3]'");
+    expect(lessonCard).not.toContain("h-[345px] min-h-[345px]");
     expect(dashboard).toContain('variant="home"');
     expect(dashboard).toContain('WEEKLY_RECOMMENDATION_COUNT = 4');
   });
 
   it('keeps one mobile Weekly rail and presents four SPOMOVE discovery entries for every plan', () => {
-    expect(dashboard.match(/w-\[78vw\] max-w-\[310px\]/g)).toHaveLength(1);
+    expect(dashboard.match(/w-\[82vw\] max-w-\[340px\]/g)).toHaveLength(2);
+    expect(dashboard).toContain('snap-mandatory');
     expect(dashboard).toContain('data-dashboard-section="spomove-extension"');
     expect(dashboard).toContain('featuredSpomove.slice(0, 4)');
     expect(dashboard).not.toContain('<Play');

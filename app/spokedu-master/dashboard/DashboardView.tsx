@@ -5,7 +5,6 @@ import {
   BookOpen,
   CheckCircle2,
   FileText,
-  MonitorPlay,
   UsersRound,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -216,7 +215,7 @@ function SectionHeader({
       {href && action ? (
         <Link
           href={href}
-          className={`${actionClass} -mt-0.5 text-[11px] sm:mt-0 sm:text-[12px]`}
+          className={`${actionClass} -mt-0.5 text-[13px] sm:mt-0`}
         >
           {action}
           <ArrowRight size={13} />
@@ -266,7 +265,7 @@ function FirstStartGuide() {
     <section
       data-dashboard-section="first-start"
       aria-labelledby="first-start-heading"
-      className="border-t border-slate-200 pt-4"
+      className="pt-2"
     >
       <div>
         <p className="text-[13px] font-medium text-slate-500">처음이라면</p>
@@ -316,12 +315,12 @@ function SpomoveCard({
   return (
     <article
       data-spomove-preset={preset.id}
-      className="group flex h-[345px] min-h-[345px] flex-col overflow-hidden rounded-[16px] border border-slate-200 bg-white text-[color:var(--spm-t)] transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-slate-300 active:translate-y-0"
+      className="group flex min-h-0 flex-col overflow-hidden rounded-[16px] border border-slate-200 bg-white text-[color:var(--spm-t)] transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-slate-300 active:translate-y-0"
     >
       <button
         type="button"
         onClick={() => onOpenGuide(preset)}
-        className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
+        className="relative aspect-[4/3] w-full overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
         aria-label={`${displayModel.displayTitle} 활동 준비 열기`}
       >
         {showThumbnail ? (
@@ -363,7 +362,7 @@ function SpomoveCard({
           </h3>
         </div>
       </button>
-      <div className="flex h-[96px] shrink-0 flex-col gap-2 bg-white p-3">
+      <div className="flex shrink-0 flex-col gap-2 bg-white p-3">
         <div className="flex h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]" aria-label="활동 정보">
           {[
             displayModel.variantLabel,
@@ -435,8 +434,8 @@ function ActivityPanel({
     return (
       <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[12px] border border-slate-200/70 bg-slate-50/60 px-2.5 py-2 ${className}`}>
         <div className="mb-1.5">
-          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">참고</p>
-          <h2 id="activity-heading" className="mt-0.5 text-[13px] font-black text-slate-600">기록 · 안내문</h2>
+          <p className="text-[12px] font-medium text-slate-400">참고</p>
+          <h2 id="activity-heading" className="mt-0.5 text-[13px] font-semibold text-slate-600">기록 · 안내문</h2>
         </div>
         <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-1">
           {activities.map(({ label, value, href, Icon, action }) => (
@@ -469,10 +468,10 @@ function ActivityPanel({
     <section data-dashboard-section="activity" aria-labelledby="activity-heading" className="rounded-[20px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="activity-heading" className="text-[18px] font-black text-[color:var(--spm-t)]">수업 기록</h2>
+          <h2 id="activity-heading" className="text-[18px] font-semibold text-[color:var(--spm-t)]">수업 기록</h2>
           <p className="mt-1 text-[13px] font-semibold text-[color:var(--spm-t2)]">완료한 수업의 안내문과 학생 이력을 확인하세요.</p>
         </div>
-        <Link href="/spokedu-master/profile" className="inline-flex min-h-9 items-center rounded-full bg-[var(--spm-acc-glow)] px-3 text-[12px] font-black text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]">
+        <Link href="/spokedu-master/profile" className="inline-flex min-h-9 items-center rounded-full bg-[var(--spm-acc-glow)] px-3 text-[12px] font-semibold text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]">
           {status}
         </Link>
       </div>
@@ -487,7 +486,7 @@ function ActivityPanel({
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-[var(--spm-s1)] text-emerald-700 shadow-sm"><Icon size={17} /></span>
             <span className="min-w-0">
               <span className="block text-[12px] font-bold text-[color:var(--spm-t2)]">{label}</span>
-              <span className="mt-0.5 inline-flex items-center gap-1 text-[15px] font-black text-[color:var(--spm-t)]">
+              <span className="mt-0.5 inline-flex items-center gap-1 text-[15px] font-semibold text-[color:var(--spm-t)]">
                 {action ?? (value === null ? '확인 중' : `${value}개`)}
                 {action ? <ArrowRight size={14} className="text-[var(--spm-acc)]" /> : null}
               </span>
@@ -695,15 +694,15 @@ function EntitledDashboardView() {
           : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto px-4 py-16" style={{ background: 'var(--spm-bg)' }}>
-        <section className="w-full max-w-xl rounded-[22px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center shadow-[0_16px_48px_rgba(15,23,42,0.06)]">
-          <h1 className="text-xl font-black text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
+        <section className="w-full max-w-xl rounded-[22px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center">
+          <h1 className="text-xl font-semibold text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
           {isUnauthorized ? (
-            <Link href="/login?next=/spokedu-master/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-black focus-visible:outline-none">로그인하기</Link>
+            <Link href="/login?next=/spokedu-master/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold focus-visible:outline-none">로그인하기</Link>
           ) : isForbidden ? (
-            <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">다시 구독하기</Link>
+            <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">다시 구독하기</Link>
           ) : (
-            <button type="button" onClick={() => void reloadPrograms()} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">다시 시도</button>
+            <button type="button" onClick={() => void reloadPrograms()} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">다시 시도</button>
           )}
         </section>
       </main>
@@ -721,7 +720,7 @@ function EntitledDashboardView() {
   );
 
   return (
-    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-5 overflow-y-auto px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8" style={{ background: 'var(--spm-bg)' }}>
+    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-9 overflow-y-auto px-4 pb-28 pt-7 sm:px-6 lg:gap-12 lg:px-8 lg:pb-12 lg:pt-10" style={{ background: 'var(--spm-bg)' }}>
       <header className="relative px-0.5 pt-0.5 sm:px-1">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0">
@@ -747,12 +746,10 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="featured-flow"
         aria-label="이번 주 수업 추천"
-        className="relative overflow-hidden rounded-[16px] border border-slate-200/90 bg-white p-3 sm:p-3.5"
+        className="relative"
       >
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading" className="relative">
           <SectionHeader
-            eyebrow="SPOKEDU WEEKLY PICK"
-            eyebrowIcon={<BookOpen size={14} />}
             title="이번 주 SPOKEDU 추천"
             titleId="weekly-heading"
             size="lg"
@@ -763,9 +760,9 @@ function EntitledDashboardView() {
           {!programsLoaded ? (
             <p className="rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
           ) : weeklyPrograms.length > 0 ? (
-            <div className="relative -mx-3.5 flex snap-x items-stretch gap-3.5 overflow-x-auto px-3.5 pb-2 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+            <div className="relative -mx-4 flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
               {weeklyPrograms.map((program, index) => (
-                <div key={program.id} className="h-full w-[78vw] max-w-[310px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
+                <div key={program.id} className="h-full w-[82vw] max-w-[340px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
                   <WeeklyProgramCard
                     program={program}
                     onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
@@ -777,12 +774,12 @@ function EntitledDashboardView() {
           ) : programsError ? (
             <div className="rounded-xl bg-rose-50 p-4 text-center">
               <p className="text-sm font-bold text-rose-700">수업 콘텐츠를 불러오지 못했습니다.</p>
-              <button type="button" onClick={() => void reloadPrograms()} className="mt-2 min-h-11 px-3 text-sm font-black text-rose-700 underline underline-offset-2">다시 시도</button>
+              <button type="button" onClick={() => void reloadPrograms()} className="mt-2 min-h-11 px-3 text-sm font-semibold text-rose-700 underline underline-offset-2">다시 시도</button>
             </div>
           ) : (
             <div className="rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-5 text-center">
               <p className="text-[14px] font-semibold text-[color:var(--spm-t2)]">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
-              <Link href="/spokedu-master/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[13px] font-black focus-visible:outline-none">
+              <Link href="/spokedu-master/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[13px] font-semibold focus-visible:outline-none">
                 수업 라이브러리 열기
               </Link>
             </div>
@@ -790,25 +787,19 @@ function EntitledDashboardView() {
         </section>
       </section>
 
-      <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="border-t border-slate-200 pt-4">
+      <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="rounded-[20px] bg-slate-950 px-4 py-5 sm:px-5 lg:px-6 lg:py-6">
           <SectionHeader
-            eyebrow="SPOMOVE"
-            eyebrowIcon={<MonitorPlay size={14} />}
             title={isPremium ? 'SPOMOVE로 확장하기' : 'SPOMOVE 둘러보기'}
             titleId="spomove-heading"
-            description={isPremium ? '이번 주 수업에 화면 반응 활동을 더해 보세요.' : '활동을 둘러보고 Premium 실행 기능을 확인해 보세요.'}
+            tone="dark"
+            description="화면과 움직임을 연결하는 디지털 활동을 골라보세요."
             href="/spokedu-master/spomove"
             action="SPOMOVE 더 보기"
           />
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-5 sm:px-5 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
             {featuredSpomove.slice(0, 4).map((preset) => {
-              const model = getSpomovePresetDisplayModel(preset, spomoveContentMap[preset.id]);
               const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
-              return <button key={preset.id} type="button" onClick={() => setPreviewSpomove(preset)} className="flex min-h-16 items-center gap-3 rounded-[12px] border border-slate-200 bg-white p-2 text-left hover:border-slate-300">
-                <span className="relative h-12 w-16 shrink-0 overflow-hidden rounded-[8px] bg-slate-900">{thumbnail ? <Image src={thumbnail} alt="" fill sizes="64px" className="object-cover" /> : null}</span>
-                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{model.displayTitle}</span><span className="mt-0.5 block text-xs text-slate-500">수업에 활동 더하기</span></span>
-                <ArrowRight size={15} className="shrink-0 text-slate-400" />
-              </button>;
+              return <div key={preset.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start md:w-auto md:max-w-none"><SpomoveCard preset={preset} thumbnailUrl={thumbnail} contentOverride={spomoveContentMap[preset.id]} onOpenGuide={setPreviewSpomove} /></div>;
             })}
           </div>
         </section>
