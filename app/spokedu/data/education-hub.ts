@@ -17,6 +17,8 @@ export type EducationHubCaseCard = {
   slug: FieldRecordSlug;
   role: EducationHubCaseRole;
   venue: string;
+  /** 운영 형태 · 대표 프로그램 — Home proof caption density */
+  displayMeta: string;
   audience: string;
   operationType: string;
   programLabel: string;
@@ -33,6 +35,7 @@ function buildEducationCaseCard(slug: FieldRecordSlug, role: EducationHubCaseRol
     slug: item.slug,
     role,
     venue: item.venue,
+    displayMeta: `${item.operationType} · ${item.programLabel}`,
     audience: item.meta,
     operationType: item.operationType,
     programLabel: item.programLabel,
@@ -59,7 +62,7 @@ export const educationHubPage = {
     lines: ['아동·청소년 체육수업을', '현장에 맞춰 직접 운영합니다.'] as const,
     lead:
       '학교·기관의 정기수업과 특강부터 개인·소그룹 수업까지 대상과 공간에 맞춰 직접 구성하고 운영합니다.',
-    mediaKey: 'homeHeroField' as const,
+    mediaKey: 'homeHeroFieldEducation' as const,
     primaryCta: {
       label: '기관수업 알아보기',
       href: `${SPOKEDU_BASE_PATH}/dispatch`,

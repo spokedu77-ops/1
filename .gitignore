@@ -29,6 +29,9 @@ qa-screenshots/
 # Temporary local artifacts
 .tmp/
 /tmp/
+# High-res bake originals (web derivatives only go to public/)
+/assets-source/**
+!/assets-source/README.md
 # (Home field editorial staging → docs/spokedu/HOME_FIELD_EDITORIAL_ASSETS.md + public/images/spokedu/home/field-editorial/)
 /docs/*.generated.csv
 /commercial-verification/*.json

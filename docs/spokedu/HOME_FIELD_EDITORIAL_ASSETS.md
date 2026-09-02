@@ -6,20 +6,23 @@ Subscription Home derivative: `public/images/spokedu/subscription/product-librar
 
 작업용 staging(`tmp/home-final-assets/`)은 repo에 두지 않습니다. `/tmp/`는 `.gitignore` 대상입니다.
 
-Re-bake script: `node scripts/fix-home-field-editorial-images.mjs` (EXIF auto-orient + case record sources)
+Re-bake script: `node scripts/fix-home-field-editorial-images.mjs`  
+(manifest 기반; **derivative WebP를 source로 재사용 금지**)
 
-## Asset map
+## ACTIVE HOME ASSET MAP
 
-| Home role | Web file | Production path | Crop / focal |
-|---|---|---|---|
-| Hero | `home-hero-field.webp` | `/images/spokedu/home/field-editorial/home-hero-field.webp` | Full-bleed; `object-position: 54% 46%`; 지도자·아동 활동 중심, 좌측 카피 여백 |
-| Why | `home-why-field-ed.webp` | `/images/spokedu/home/field-editorial/home-why-field-ed.webp` | Portrait 3:4; `object-position: 50% 38%`; 지도자 시범·지도 |
-| SPOMOVE | `home-spomove-field.webp` | `/images/spokedu/home/field-editorial/home-spomove-field.webp` | 16:10; `object-position: 52% 58%`; 화면·SPOMAT·아동 동시 |
-| Case — 일반 | `home-case-general.webp` | `/images/spokedu/home/field-editorial/home-case-general.webp` | Featured; `object-position: 42% 55%` |
-| Case — 특수·포용 | `home-case-adapted.webp` | `/images/spokedu/home/field-editorial/home-case-adapted.webp` | Supporting; `object-position: 50% 42%` |
-| Case — SPOMOVE | `home-case-spomove.webp` | `/images/spokedu/home/field-editorial/home-case-spomove.webp` | Supporting; `object-position: 58% 48%` |
+| Home role | Web file | Production path | Crop / focal | Source status |
+|---|---|---|---|---|
+| Hero | `home-hero-field.webp` | `/images/spokedu/home/field-editorial/home-hero-field.webp` | Home `58% 62%`; Education `64% 52%` (`homeHeroFieldEducation`) | Baked from `assets-source/.../KakaoTalk_Photo_2026-08-10-17-42-37_18_.jpeg` (5712×4284) → 2400×1800 WebP q86 |
+| SPOMOVE | `home-spomove-field.webp` | `/images/spokedu/home/field-editorial/home-spomove-field.webp` | Wide documentary; `object-position: 52% 58%` | `home/home-hero-spomove-class.JPG` → bake |
+| Case — 일반 | `home-case-general.webp` | `/images/spokedu/home/field-editorial/home-case-general.webp` | Featured; `object-position: 42% 55%` | `records/maedong-sports-stepup.jpg` |
+| Case — 특수·포용 | `home-case-adapted.webp` | `/images/spokedu/home/field-editorial/home-case-adapted.webp` | Supporting; `object-position: 50% 42%` | `records/donghaeng-special-pe-field.jpg` |
+| Case — SPOMOVE | `home-case-spomove.webp` | `/images/spokedu/home/field-editorial/home-case-spomove.webp` | Supporting; `object-position: 58% 48%` | `records/dongjak-spomove.jpg` |
+| Subscription UI | `product-library-home.webp` | `/images/spokedu/subscription/product-library-home.webp` | Top crop | `subscription/product-library.png` |
 
 Code SSOT: `app/spokedu/data/home-page.ts` (`HOME_FIELD_EDITORIAL`), `app/spokedu/data/images.ts`, `app/spokedu/data/home-media.ts`.
+
+Home narrative no longer includes a Why section. Why assets are **not** active Home roles.
 
 ## Case evidence integrity
 
@@ -29,41 +32,52 @@ Code SSOT: `app/spokedu/data/home-page.ts` (`HOME_FIELD_EDITORIAL`), `app/spoked
 | `donghaeng-special-pe` | `home-case-adapted.webp` | `public/images/spokedu/records/donghaeng-special-pe-field.jpg` | **YES** |
 | `dongjak-spomove` | `home-case-spomove.webp` | `public/images/spokedu/records/dongjak-spomove.jpg` | **YES** |
 
-## 원본 → 웹자산 추적
+## 원본 → 웹자산 추적 (active)
 
 | Web file | 촬영·운영 맥락 | Home 연결 | Source file |
 |---|---|---|---|
-| `home-hero-field.webp` | 서울위례초등학교 일반 체육수업 현장 | Hero | Approved field editorial export (re-bake) |
-| `home-why-field-ed.webp` | 기관 체육관 — 지도자 시범·집단 지도 | Why | Approved field editorial export (cache-bust re-bake) |
-| `home-spomove-field.webp` | SPOMOVE 현장 (화면·SPOMAT·참여) | SPOMOVE | Approved field editorial export (re-bake) |
+| `home-hero-field.webp` | 서울위례초등학교 · 2026.08.10 배구형 스포츠 | Hero (Home + /education shared web file) | **Source:** `KakaoTalk_Photo_2026-08-10-17-42-37_18_.jpeg` · **Drive file ID:** `1CvUlPEbLJLSz1t39ivmbt2UZYtzKveDO` · **Local staging:** `assets-source/spokedu/home/` (gitignored) · Original **5712×4284** · Web **2400×1800** q86 |
+| `home-spomove-field.webp` | SPOMOVE 현장 (화면·SPOMAT·참여) | SPOMOVE | `home/home-hero-spomove-class.JPG` |
 | `home-case-general.webp` | 매동초등학교 스포츠스텝업 | Cases featured (`maedong-sports-stepup`) | `records/maedong-sports-stepup.jpg` |
-| `home-case-adapted.webp` | 찾아가는 동행 체육교실 (특수·포용) | Cases compact (`donghaeng-special-pe`) | `records/donghaeng-special-pe-field.jpg` |
-| `home-case-spomove.webp` | 동작거점형 우리동네키움센터 SPOMOVE | Cases compact (`dongjak-spomove`) | `records/dongjak-spomove.jpg` |
+| `home-case-adapted.webp` | 찾아가는 동행 체육교실 (특수·포용) | Cases (`donghaeng-special-pe`) | `records/donghaeng-special-pe-field.jpg` |
+| `home-case-spomove.webp` | 동작거점형 우리동네키움센터 SPOMOVE | Cases (`dongjak-spomove`) | `records/dongjak-spomove.jpg` |
 | `product-library-home.webp` | 구독시스템 라이브러리 상단 UI | Subscription stage | `subscription/product-library.png` (top crop) |
 
 원본 Drive 파일명·폴더는 PO가 별도 보관. 이 문서는 **웹 배포용 사본** 기준입니다.
 
 ---
 
-## P0 — 홈페이지 공개 사용 가능 여부 (배포 전 필수)
+## ARCHIVED / UNUSED (not active Home roles)
 
-**Drive 보유 ≠ 공개 웹 사용 허가.**
-아래 표는 파일 단위 최종 확인용입니다. PO(또는 운영 책임자) 서명 전까지 **배포 금지**로 취급합니다.
+| Web file | Former role | Notes |
+|---|---|---|
+| `home-why-field-ed.webp` | Why (removed from Home IA) | File may remain on disk; **do not** map as production Home role |
+| `home-why-field.webp` | Why (legacy filename) | Same — unused by current Home SSOT |
 
-| Web file | Home role | 기관·현장 | 아동·기관 식별 노출 | 필요 확인 | 공개 사용 | 확인자 | 확인일 |
-|---|---|---|---|---|---|---|---|
-| `home-hero-field.webp` | Hero | 서울위례초등학교 | 학교명·아동·공간 | 학교/학부모·운영 계약 또는 촬영 동의 | ☐ | | |
-| `home-why-field-ed.webp` | Why | 기관 체육관 (지도 시범) | 아동·지도자 | 촬영·초상/운영 공간 사용 허가 | ☐ | | |
-| `home-case-general.webp` | Case 일반 | 매동초등학교 | 학교명·아동 | 학교/기관 승인 | ☐ | | |
-| `home-case-adapted.webp` | Case 특수·포용 | 찾아가는 동행 체육교실 맥락 | 아동·지도자 | 특수·포용 수업 촬영·보호자/기관 동의 | ☐ | | |
-| `home-case-spomove.webp` | Case SPOMOVE | 동작거점형 우리동네키움센터 맥락 | 아동·센터 공간 | 기관/센터 운영·촬영 승인 | ☐ | | |
-| `home-spomove-field.webp` | SPOMOVE | SPOMOVE 운영 현장 | 아동·화면 | 동일 (기관·촬영) | ☐ | | |
-| `product-library-home.webp` | Subscription | 제품 UI 스크린샷 | UI only | 내부 제품 캡처 | ☐ | | |
+---
 
-### 확인 체크 (각 파일)
+## P0 — Public-use governance
+
+**Drive 보유 ≠ 공개 웹 사용 허가.**  
+**Vercel deploy success ≠ public-use approval.**
+
+Agent/code must **not** mark assets APPROVED. Status below reflects PO confirmation only.
+
+| Surface | Asset | Context | Public-use status |
+|---|---|---|---|
+| Home Hero | `home-hero-field.webp` | 서울위례초등학교 | **UNCONFIRMED** |
+| Home SPOMOVE | `home-spomove-field.webp` | SPOMOVE 현장 | **UNCONFIRMED** |
+| Home Case 일반 | `home-case-general.webp` | 매동초등학교 | **UNCONFIRMED** |
+| Home Case 특수·포용 | `home-case-adapted.webp` | 동행 체육교실 | **UNCONFIRMED** |
+| Home Case SPOMOVE | `home-case-spomove.webp` | 동작 키움센터 | **UNCONFIRMED** |
+| Home Subscription UI | `product-library-home.webp` | 제품 UI | **UNCONFIRMED** |
+| /education Hero | same as Home Hero (`homeHeroField`) | 서울위례초 (shared) | **UNCONFIRMED** |
+| /education Cases | records thumbnails (yangcheon / dasarang / donghaeng) | field records | **UNCONFIRMED** |
+
+### 확인 체크 (각 파일 — PO)
 
 1. 해당 기관·학교에 **마케팅/홈페이지 게재** 문의 또는 계약 조항이 있는가
 2. 아동 **초상권·개인정보**(얼굴·유니폼·명찰) 게재 가능한가
 3. 현재 운영 공간·브랜드 메시지와 **불일치**하지 않는가
 
-모든 ☐ → ☑ 완료 후 배포.
+PO 서명 후 이 표의 status만 **APPROVED**로 갱신한다.

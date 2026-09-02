@@ -93,6 +93,10 @@ describe('spokedu site IA', () => {
       'cases',
       'contact',
     ]);
+    expect(educationHubPage.hero.mediaKey).toBe('homeHeroFieldEducation');
+    expect(HOME_MEDIA.homeHeroFieldEducation.src).toBe(HOME_MEDIA.homeHeroField.src);
+    expect(HOME_MEDIA.homeHeroField.objectPosition).toBe('58% 62%');
+    expect(HOME_MEDIA.homeHeroFieldEducation.objectPosition).toBe('64% 52%');
     expect(educationHubPage.hero.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch`);
     expect(educationHubPage.hero.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/private`);
     expect(educationHubPage.hero.lines.join(' ')).toMatch(/현장에 맞춰 직접 운영합니다/);
@@ -116,6 +120,11 @@ describe('spokedu site IA', () => {
       'donghaeng-special-pe',
     ]);
     expect(educationHubPage.cases.cards.find((card) => card.slug === 'yangcheon-paps')?.role).toBe('featured');
+    expect(educationHubPage.cases.cards.map((card) => card.displayMeta)).toEqual([
+      '정규수업 · PAPS',
+      '원데이·행사 · 원데이',
+      '정규수업 · 특수체육',
+    ]);
     expect(educationHubPage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
     expect(educationHubPage.contact.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
     expect(educationHubPage.contact.dispatchLink.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch`);

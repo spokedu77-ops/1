@@ -60,7 +60,17 @@ export const HOME_MEDIA = {
     label: '체육수업 Hero',
     fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
     tone: 'sky',
-    objectPosition: '54% 46%',
+    /** Left copy zone; crop upper gym wall — keep instructor + children mid-right */
+    objectPosition: '58% 62%',
+  }),
+  /** Same asset as Home Hero; Education uses bottom copy — keep subjects above scrim */
+  homeHeroFieldEducation: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialHero, {
+    id: 'home-hero-field-education',
+    label: '체육수업 Hero (교육)',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
+    tone: 'sky',
+    /** Bottom copy composition — keep instructor/children clear of left type + bottom scrim */
+    objectPosition: '64% 52%',
   }),
   homeSpomoveField: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialSpomove, {
     id: 'home-spomove-field',

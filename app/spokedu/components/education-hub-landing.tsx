@@ -10,7 +10,6 @@ import {
   koreanText,
   marketingButtonPrimary,
   marketingButtonPrimaryOnDark,
-  marketingButtonSecondary,
   marketingButtonSecondaryOnDark,
   marketingHeroDisplay,
   marketingHeroDisplaySectionScale,
@@ -248,19 +247,15 @@ export function EducationHubLanding() {
               </h2>
               <p className={`${styles.casesLead} ${koreanText}`}>{cases.lead}</p>
             </div>
-            <TrackedLink
-              href={cases.recordsCta.href}
-              trackLabel={cases.recordsCta.trackLabel}
-              className={`${marketingButtonSecondary} h-11 shrink-0 px-5 ${brandFocusRing}`}
-            >
+            <TextCta href={cases.recordsCta.href} trackLabel={cases.recordsCta.trackLabel}>
               {cases.recordsCta.label}
-            </TrackedLink>
+            </TextCta>
           </div>
           <ul className={styles.casesGrid}>
             {cases.cards.map((card) => (
               <li
                 key={card.slug}
-                className={card.role === 'featured' ? styles.caseFeatured : styles.caseCompact}
+                className={card.role === 'featured' ? styles.caseFeatured : styles.caseSupport}
               >
                 <EducationCaseItem card={card} priority={card.role === 'featured'} />
               </li>
@@ -307,23 +302,22 @@ function EducationCaseItem({ card, priority }: { card: EducationHubCaseCard; pri
         <div className={styles.casePhoto}>
           <ExternalPhoto
             src={card.thumbnailSrc}
-            alt={`${card.programLabel} — ${card.venue}`}
+            alt={`${card.venue} — ${card.displayMeta}`}
             className="absolute inset-0 h-full w-full"
             fit="cover"
             quality={88}
             priority={priority}
             sizes={
               priority
-                ? '(max-width: 1023px) 100vw, (max-width: 1439px) 58vw, 760px'
-                : '(max-width: 1023px) 100vw, (max-width: 1439px) 28vw, 420px'
+                ? '(max-width: 1023px) 100vw, (max-width: 1439px) 52vw, 680px'
+                : '(max-width: 1023px) 50vw, (max-width: 1439px) 24vw, 320px'
             }
             objectPosition={card.objectPosition}
           />
         </div>
         <div className={styles.caseMeta}>
           <h3 className={`${styles.caseVenue} ${koreanText}`}>{card.venue}</h3>
-          <p className={`${styles.caseOperation} ${koreanText}`}>{card.operationType}</p>
-          <p className={`${styles.caseProgram} ${koreanText}`}>{card.programLabel}</p>
+          <p className={`${styles.caseDisplayMeta} ${koreanText}`}>{card.displayMeta}</p>
           <p className={styles.caseCta}>{card.ctaLabel} →</p>
         </div>
       </article>
