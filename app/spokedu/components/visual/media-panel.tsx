@@ -12,6 +12,8 @@ type MediaPanelProps = {
   photoPriority?: boolean;
   /** LCP용 — 페이지 Hero 1장만 true 권장 */
   priority?: boolean;
+  /** priority 없이 LCP 후보만 eager (Hero preload와 경쟁하지 않음) */
+  loading?: 'eager' | 'lazy';
   sizes?: string | ImageSizesPreset;
   objectFit?: 'cover' | 'contain';
 };
@@ -28,6 +30,7 @@ export function MediaPanel({
   showLabel = false,
   photoPriority = false,
   priority = false,
+  loading,
   sizes = 'card3',
   objectFit = 'cover',
 }: MediaPanelProps) {
@@ -41,6 +44,7 @@ export function MediaPanel({
         className="absolute inset-0 h-full w-full"
         sizes={resolveSizes(sizes)}
         priority={priority}
+        loading={loading}
         objectFit={objectFit}
       />
     </figure>

@@ -196,6 +196,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
             <MediaPanel
               media={spomoveMedia}
               photoPriority
+              loading="eager"
               className={`${styles.spomovePhotoMedia} border-0`}
               sizes="(min-width: 1024px) 88vw, 92vw"
               objectFit="cover"

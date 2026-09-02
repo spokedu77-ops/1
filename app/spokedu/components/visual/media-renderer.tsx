@@ -14,6 +14,8 @@ type MediaRendererProps = {
   showLabel?: boolean;
   intensity?: 'soft' | 'bold' | 'photo';
   priority?: boolean;
+  /** priority=false여도 LCP 후보면 eager로 경고 억제 */
+  loading?: 'eager' | 'lazy';
   sizes?: string;
   animateZoom?: boolean;
   /** Home 등: 로드 실패 시 gradient/SVG placeholder 대신 빈 실사 영역 */
@@ -27,6 +29,7 @@ export function MediaRenderer({
   showLabel = false,
   intensity = 'bold',
   priority = false,
+  loading,
   sizes = '(max-width: 768px) 100vw, 50vw',
   animateZoom = false,
   strictPhoto = false,
@@ -70,6 +73,7 @@ export function MediaRenderer({
       fill
       sizes={sizes}
       priority={priority}
+      loading={priority ? undefined : loading}
       quality={priority ? 92 : 88}
       className={intensity === 'photo' ? fitClass : 'object-cover'}
       style={objectFit === 'cover' && media.objectPosition ? { objectPosition: media.objectPosition } : undefined}
