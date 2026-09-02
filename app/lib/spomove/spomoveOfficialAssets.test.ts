@@ -1,8 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizeSpomoveContentMap } from './spomoveOfficialAssets';
+import {
+  hasOnlyPrivateSpomoveGuideVideoRefs,
+  isPrivateSpomoveGuideVideoRef,
+  normalizeSpomoveContentMap,
+} from './spomoveOfficialAssets';
 
 describe('spomoveOfficialAssets', () => {
+  it('accepts only private Premium media object paths for guide videos', () => {
+    expect(isPrivateSpomoveGuideVideoRef('guides/activity.mp4')).toBe(true);
+    expect(isPrivateSpomoveGuideVideoRef('spokedu-master-premium-media/guides/activity.webm')).toBe(true);
+    expect(isPrivateSpomoveGuideVideoRef('https://youtu.be/dQw4w9WgXcQ')).toBe(false);
+    expect(hasOnlyPrivateSpomoveGuideVideoRefs({
+      guideVideos: { 'reaction-cognition-space-direction-01': 'guides/activity.mp4' },
+    })).toBe(true);
+    expect(hasOnlyPrivateSpomoveGuideVideoRefs({
+      guideVideos: { 'reaction-cognition-space-direction-01': 'https://youtu.be/dQw4w9WgXcQ' },
+    })).toBe(false);
+  });
+
   it('preserves partial movement guide drafts and v1 legacy fields', () => {
     const map = normalizeSpomoveContentMap({
       schemaVersion: 2,

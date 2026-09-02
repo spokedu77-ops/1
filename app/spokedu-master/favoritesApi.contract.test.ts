@@ -15,6 +15,8 @@ describe('typed item-level Favorites API', () => {
     expect(route).toContain(".eq('content_type', ref.type)");
     expect(route).toContain(".eq('program_id', ref.id)");
     expect(route).toContain("insertError.code !== '23505'");
+    expect(route).toContain('isMissingContentTypeError');
+    expect(route).toContain(".select('program_id')");
   });
 
   it('keeps the legacy whole-set endpoint out of canonical UI writers', () => {
@@ -22,5 +24,14 @@ describe('typed item-level Favorites API', () => {
     expect(store).toContain("fetch('/api/spokedu-master/favorites'");
     expect(store).not.toContain("fetch('/api/spokedu-master/program-favorites'");
     expect(store).not.toContain("method: 'PUT'");
+  });
+
+  it('ships a guarded parity migration for the verified figure-8 orphan', () => {
+    const migration = read('supabase/migrations/20260902082108_spokedu_master_typed_favorites_backfill.sql');
+    expect(migration).toContain("program_id = 'figure-8'");
+    expect(migration).toContain("c.title = '8자 agility drill'");
+    expect(migration).toContain('Favorite count parity failed');
+    expect(migration).toContain('Favorite owner count parity failed');
+    expect(migration).not.toMatch(/delete\s+from/i);
   });
 });

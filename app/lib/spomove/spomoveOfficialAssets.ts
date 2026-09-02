@@ -12,6 +12,7 @@ export const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbn
 export const SPOMOVE_THUMBNAIL_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 프리셋 썸네일';
 export const SPOMOVE_GUIDE_VIDEO_PACK_ID = 'spokedu_master_official_spomove_guide_videos';
 export const SPOMOVE_GUIDE_VIDEO_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 가이드 영상';
+export const SPOMOVE_PREMIUM_MEDIA_BUCKET = 'spokedu-master-premium-media';
 export const SPOMOVE_CONTENT_PACK_ID = 'spokedu_master_official_spomove_content';
 export const SPOMOVE_CONTENT_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 설명';
 export const SPOMOVE_HOME_FEATURED_PACK_ID = 'spokedu_master_home_spomove_featured';
@@ -80,6 +81,22 @@ export function normalizeSpomoveThumbnailMap(raw: unknown): Record<string, strin
 
 export function normalizeSpomoveGuideVideoMap(raw: unknown): Record<string, string> {
   return normalizePresetStringMap(raw, 'guideVideos');
+}
+
+export function isPrivateSpomoveGuideVideoRef(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed || /^https?:\/\//i.test(trimmed) || trimmed.startsWith('/') || trimmed.includes('..')) return false;
+  const prefix = `${SPOMOVE_PREMIUM_MEDIA_BUCKET}/`;
+  const path = trimmed.startsWith(prefix) ? trimmed.slice(prefix.length) : trimmed;
+  return Boolean(path) && /\.(mp4|webm)$/i.test(path);
+}
+
+export function hasOnlyPrivateSpomoveGuideVideoRefs(raw: unknown) {
+  const source = (raw as SpomoveGuideVideoAssetsJson | null)?.guideVideos;
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return false;
+  return Object.values(source).every((value) => (
+    value == null || value === '' || (typeof value === 'string' && isPrivateSpomoveGuideVideoRef(value))
+  ));
 }
 
 export function normalizeSpomoveContentMap(raw: unknown): Record<string, SpomovePresetContentOverride> {

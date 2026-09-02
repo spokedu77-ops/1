@@ -20,10 +20,19 @@ describe('Premium SPOMOVE media boundary', () => {
   it('gates and signs only private-bucket objects on the server', () => {
     const route = read('app/api/spokedu-master/spomove/guide-video/route.ts');
     expect(route).toContain("requireSpokeduMasterCapability('spomove')");
-    expect(route).toContain("'spokedu-master-premium-media'");
+    expect(route).toContain('SPOMOVE_PREMIUM_MEDIA_BUCKET');
+    expect(read('app/lib/spomove/spomoveOfficialAssets.ts')).toContain("'spokedu-master-premium-media'");
     expect(route).toContain('createSignedUrl');
+    expect(route).toContain('PREMIUM_MEDIA_NOT_MIGRATED');
     expect(route).not.toContain("from('iiwarmup-files')");
     expect(route).not.toContain('/object/public/');
+  });
+
+  it('prevents Admin from persisting new public guide-video URLs', () => {
+    const admin = read('app/admin/spokedu-master/programs/page.tsx');
+    expect(admin).toContain('isPrivateSpomoveGuideVideoRef');
+    expect(admin).toContain('guides/preset-id.mp4');
+    expect(admin).not.toContain('placeholder="https://www.youtube.com/watch?v=..."');
   });
 
   it('does not mutate the shared bucket in the staging migration', () => {

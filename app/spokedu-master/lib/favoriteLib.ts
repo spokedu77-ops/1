@@ -17,6 +17,11 @@ export type FavoriteContentRef = {
 
 export type FavoritesByOwner = Record<string, FavoriteContentRef[]>;
 
+/** Verified one-off renames only. Never infer a favorite type or target by prefix. */
+export const VERIFIED_LEGACY_FAVORITE_REFS: Readonly<Record<string, FavoriteContentRef>> = {
+  'figure-8': { type: 'program', id: '116' },
+};
+
 export function isFavoriteContentRef(value: unknown): value is FavoriteContentRef {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const candidate = value as { type?: unknown; id?: unknown };
@@ -98,6 +103,15 @@ export function classifyLegacyFavoriteIds(
   const pending: string[] = [];
   const collisions: string[] = [];
   for (const id of normalizeFavoriteProgramIds(value)) {
+    const verifiedLegacyRef = VERIFIED_LEGACY_FAVORITE_REFS[id];
+    if (verifiedLegacyRef) {
+      const targetExists = verifiedLegacyRef.type === 'program'
+        ? programIds.has(verifiedLegacyRef.id)
+        : spomoveIds.has(verifiedLegacyRef.id);
+      if (targetExists) refs.push(verifiedLegacyRef);
+      else pending.push(id);
+      continue;
+    }
     const program = programIds.has(id);
     const spomove = spomoveIds.has(id);
     if (program && spomove) collisions.push(id);

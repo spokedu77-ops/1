@@ -15,6 +15,7 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 if (!url || !serviceKey) throw new Error('Supabase read-only audit credentials are not configured.');
 
 const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
+const VERIFIED_LEGACY_PROGRAM_RENAMES = new Map([['figure-8', '116']]);
 
 async function allRows<T>(table: string, columns: string): Promise<T[]> {
   const rows: T[] = [];
@@ -53,8 +54,13 @@ const programIds = new Set(
 );
 const spomoveIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
 
-const favoriteCounts = { total: favorites.length, program: 0, spomove: 0, unknown: 0, collision: 0 };
+const favoriteCounts = { total: favorites.length, program: 0, spomove: 0, verifiedLegacyRemap: 0, unknown: 0, collision: 0 };
 for (const row of favorites) {
+  const verifiedTarget = VERIFIED_LEGACY_PROGRAM_RENAMES.get(row.program_id);
+  if (verifiedTarget && programIds.has(verifiedTarget)) {
+    favoriteCounts.verifiedLegacyRemap += 1;
+    continue;
+  }
   const isProgram = programIds.has(row.program_id);
   const isSpomove = spomoveIds.has(row.program_id);
   if (isProgram && isSpomove) favoriteCounts.collision += 1;
@@ -67,7 +73,11 @@ if (guidePack.error) throw guidePack.error;
 const guideValues = Object.values(normalizeSpomoveGuideVideoMap(guidePack.data?.assets_json));
 let anonymouslyPlayable = 0;
 let anonymouslyInaccessible = 0;
+let publicExternalUrls = 0;
+let privateObjectRefs = 0;
 for (const value of guideValues) {
+  if (/^https?:\/\//i.test(value)) publicExternalUrls += 1;
+  else privateObjectRefs += 1;
   const objectUrl = /^https?:\/\//i.test(value)
     ? value
     : `${url}/storage/v1/object/public/iiwarmup-files/${value.split('/').map(encodeURIComponent).join('/')}`;
@@ -88,6 +98,8 @@ console.log(JSON.stringify({
   },
   premiumGuideMedia: {
     auditedObjectCount: guideValues.length,
+    publicExternalUrls,
+    privateObjectRefs,
     anonymouslyPlayable,
     anonymouslyInaccessible,
     sharedBucketMutations: 0,

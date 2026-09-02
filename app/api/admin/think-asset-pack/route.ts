@@ -7,7 +7,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { SPOMOVE_CONTENT_PACK_ID } from '@/app/lib/spomove/spomoveOfficialAssets';
+import {
+  hasOnlyPrivateSpomoveGuideVideoRefs,
+  SPOMOVE_CONTENT_PACK_ID,
+  SPOMOVE_GUIDE_VIDEO_PACK_ID,
+} from '@/app/lib/spomove/spomoveOfficialAssets';
 import { validateSpomovePublishedGuidesForSave } from '@/app/lib/spomove/validateSpomovePublishedGuidesForSave';
 
 export async function POST(request: NextRequest) {
@@ -35,6 +39,13 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    if (id === SPOMOVE_GUIDE_VIDEO_PACK_ID && !hasOnlyPrivateSpomoveGuideVideoRefs(assets_json)) {
+      return NextResponse.json(
+        { error: 'Premium private bucket의 MP4/WebM object path만 저장할 수 있습니다.' },
+        { status: 400 },
+      );
     }
 
     const supabase = getServiceSupabase();

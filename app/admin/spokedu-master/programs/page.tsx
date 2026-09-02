@@ -44,6 +44,7 @@ import {
   SPOMOVE_CONTENT_PACK_NAME,
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
   SPOMOVE_GUIDE_VIDEO_PACK_NAME,
+  isPrivateSpomoveGuideVideoRef,
   SPOMOVE_THUMBNAIL_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_NAME,
   type SpomoveContentAssetsJson,
@@ -2240,11 +2241,14 @@ function SpomoveGuideVideoManager() {
     setSavingPresetId(presetId);
     setError(null);
     try {
+      if (nextUrl && !isPrivateSpomoveGuideVideoRef(nextUrl)) {
+        throw new Error('Premium private bucket의 MP4/WebM object path만 저장할 수 있습니다.');
+      }
       const next = { ...urlsRef.current };
       if (nextUrl) next[presetId] = nextUrl;
       else delete next[presetId];
       await persist(next);
-      toast.success('SPOMOVE 가이드 영상 링크를 저장했습니다.');
+      toast.success('SPOMOVE Premium 가이드 영상 경로를 저장했습니다.');
     } catch (saveError) {
       const message = saveError instanceof Error ? saveError.message : 'SPOMOVE 가이드 영상 저장에 실패했습니다.';
       setError(message);
@@ -2358,7 +2362,7 @@ function SpomoveGuideVideoManager() {
                             const value = event.target.value;
                             setDraftUrls((current) => ({ ...current, [preset.id]: value }));
                           }}
-                          placeholder="https://www.youtube.com/watch?v=..."
+                          placeholder="guides/preset-id.mp4"
                           disabled={savingThis || deletingThis}
                           className="mt-3 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold outline-none focus:border-indigo-400"
                         />

@@ -43,6 +43,19 @@ describe('typed favorite content identity', () => {
       collisions: ['both'],
     });
   });
+
+  it('uses the verified figure-8 rename only when canonical catalog id 116 exists', () => {
+    expect(classifyLegacyFavoriteIds(['figure-8'], new Set(['116']), new Set())).toEqual({
+      refs: [{ type: 'program', id: '116' }],
+      pending: [],
+      collisions: [],
+    });
+    expect(classifyLegacyFavoriteIds(['figure-8'], new Set(), new Set())).toEqual({
+      refs: [],
+      pending: ['figure-8'],
+      collisions: [],
+    });
+  });
 });
 
 describe('favorite owner identity', () => {

@@ -19,6 +19,13 @@ type FavoriteRow = {
   program_id: unknown;
 };
 
+function isMissingContentTypeError(error: unknown) {
+  if (!error || typeof error !== 'object') return false;
+  const detail = error as { code?: unknown; message?: unknown };
+  const message = typeof detail.message === 'string' ? detail.message : '';
+  return detail.code === '42703' || detail.code === 'PGRST204' || message.includes('content_type');
+}
+
 async function classifyTransitionRows(
   supabase: ReturnType<typeof getServiceSupabase>,
   rows: FavoriteRow[],
@@ -68,18 +75,30 @@ export async function GET() {
   if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
-  const { data, error } = await supabase
+  const typedResult = await supabase
     .from('spokedu_master_program_favorites')
     .select('content_type,program_id')
     .eq('owner_id', access.userId)
     .order('created_at', { ascending: true });
+
+  let data = typedResult.data as FavoriteRow[] | null;
+  let error = typedResult.error;
+  if (isMissingContentTypeError(error)) {
+    const legacyResult = await supabase
+      .from('spokedu_master_program_favorites')
+      .select('program_id')
+      .eq('owner_id', access.userId)
+      .order('created_at', { ascending: true });
+    data = (legacyResult.data ?? []).map((row) => ({ content_type: null, program_id: row.program_id }));
+    error = legacyResult.error;
+  }
 
   if (error) {
     await reportError(error, { context: 'spokedu_master.favorites', tags: { method: 'GET', stage: 'select', status: 500 } });
     return privateNoStoreJson({ error: FAVORITES_SERVER_ERROR }, { status: 500 });
   }
 
-  const rows = (data ?? []) as FavoriteRow[];
+  const rows = data ?? [];
   const transitionRefs = await classifyTransitionRows(supabase, rows);
   const refs = normalizeFavoriteContentRefs([...rows.map((row) => ({
     type: (row as FavoriteRow).content_type,
@@ -95,23 +114,43 @@ export async function POST(request: Request) {
   if (!ref) return privateNoStoreJson({ error: '유효하지 않은 즐겨찾기 요청입니다.' }, { status: 400 });
 
   const supabase = getServiceSupabase();
-  const { data: existing, error: selectError } = await supabase
+  const typedSelect = await supabase
     .from('spokedu_master_program_favorites')
     .select('id')
     .eq('owner_id', access.userId)
     .eq('content_type', ref.type)
     .eq('program_id', ref.id)
     .maybeSingle();
+  let existing = typedSelect.data;
+  let selectError = typedSelect.error;
+  let legacySchema = isMissingContentTypeError(selectError);
+  if (legacySchema) {
+    const legacySelect = await supabase
+      .from('spokedu_master_program_favorites')
+      .select('id')
+      .eq('owner_id', access.userId)
+      .eq('program_id', ref.id)
+      .maybeSingle();
+    existing = legacySelect.data;
+    selectError = legacySelect.error;
+  }
   if (selectError) {
     await reportError(selectError, { context: 'spokedu_master.favorites', tags: { method: 'POST', stage: 'select', status: 500 } });
     return privateNoStoreJson({ error: FAVORITES_SERVER_ERROR }, { status: 500 });
   }
   if (!existing) {
-    const { error: insertError } = await supabase.from('spokedu_master_program_favorites').insert({
-      owner_id: access.userId,
-      content_type: ref.type,
-      program_id: ref.id,
-    });
+    let { error: insertError } = await supabase.from('spokedu_master_program_favorites').insert(
+      legacySchema
+        ? { owner_id: access.userId, program_id: ref.id }
+        : { owner_id: access.userId, content_type: ref.type, program_id: ref.id },
+    );
+    if (!legacySchema && isMissingContentTypeError(insertError)) {
+      legacySchema = true;
+      ({ error: insertError } = await supabase.from('spokedu_master_program_favorites').insert({
+        owner_id: access.userId,
+        program_id: ref.id,
+      }));
+    }
     if (insertError && insertError.code !== '23505') {
       await reportError(insertError, { context: 'spokedu_master.favorites', tags: { method: 'POST', stage: 'insert', status: 500 } });
       return privateNoStoreJson({ error: FAVORITES_SERVER_ERROR }, { status: 500 });
@@ -127,12 +166,21 @@ export async function DELETE(request: Request) {
   if (!ref) return privateNoStoreJson({ error: '유효하지 않은 즐겨찾기 요청입니다.' }, { status: 400 });
 
   const supabase = getServiceSupabase();
-  const { error } = await supabase
+  const typedDelete = await supabase
     .from('spokedu_master_program_favorites')
     .delete()
     .eq('owner_id', access.userId)
     .eq('content_type', ref.type)
     .eq('program_id', ref.id);
+  let error = typedDelete.error;
+  if (isMissingContentTypeError(error)) {
+    const legacyDelete = await supabase
+      .from('spokedu_master_program_favorites')
+      .delete()
+      .eq('owner_id', access.userId)
+      .eq('program_id', ref.id);
+    error = legacyDelete.error;
+  }
   if (error) {
     await reportError(error, { context: 'spokedu_master.favorites', tags: { method: 'DELETE', stage: 'delete', status: 500 } });
     return privateNoStoreJson({ error: FAVORITES_SERVER_ERROR }, { status: 500 });
