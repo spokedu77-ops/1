@@ -30,7 +30,6 @@ export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> =
     'sound',
     'entry',
     'program',
-    'hubView',
     'cueSeconds',
     'difficulty',
     'hubReturn',
@@ -96,7 +95,7 @@ export function parseMasterWorkReturnHref(
       return decoded;
     }
   }
-  if (hubView === 'favorites') return '/spokedu-master/spomove?view=favorites';
+  void hubView;
   return fallback;
 }
 

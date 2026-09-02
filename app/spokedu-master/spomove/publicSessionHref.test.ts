@@ -37,11 +37,6 @@ describe('public SPOMOVE session links', () => {
     expect(href).not.toContain('autostart=');
   });
 
-  it('preserves favorites hub return context', () => {
-    const href = publicOfficialPresetSessionHref(preset, { entry: 'start', hubView: 'favorites' });
-    expect(href).toContain('hubView=favorites');
-  });
-
   it('carries the complete Hub exploration return URL', () => {
     const href = publicOfficialPresetSessionHref(preset, {
       entry: 'start',

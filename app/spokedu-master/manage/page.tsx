@@ -1,5 +1,5 @@
-import { ManagePageContent } from '../activity/page';
+import ManageView from './ManageView';
 
 export default function ManagePage() {
-  return <ManagePageContent />;
+  return <ManageView />;
 }

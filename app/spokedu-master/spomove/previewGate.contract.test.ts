@@ -112,7 +112,7 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
   });
 
   it('5) Product Contract Phase 0·Catalog 정의', () => {
-    expect(contract).toContain('Phase 0');
+    expect(contract).toContain('현재 Runtime 계약');
     expect(contract).toContain('Catalog Family');
     expect(contract).toContain('Activity Family');
     expect(contract).toContain('entry=settings');

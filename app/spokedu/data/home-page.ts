@@ -8,7 +8,6 @@ import { SPOKEDU_PATHS } from './site';
 
 export const HOME_FIELD_EDITORIAL = {
   hero: '/images/spokedu/home/field-editorial/home-hero-field.webp',
-  why: '/images/spokedu/home/field-editorial/home-why-field-ed.webp',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
   caseGeneral: '/images/spokedu/home/field-editorial/home-case-general.webp',
   caseAdapted: '/images/spokedu/home/field-editorial/home-case-adapted.webp',
@@ -18,10 +17,7 @@ export const HOME_FIELD_EDITORIAL = {
 export type HomeCaseCard = {
   slug: string;
   venue: string;
-  programType: string;
-  programName: string;
-  audience: string;
-  description: string;
+  displayMeta: string;
   href: string;
   ctaLabel: string;
   trackLabel: string;
@@ -39,6 +35,12 @@ export const HOME_MAIN_CASE_SLUGS: readonly FieldRecordSlug[] = [
   'dongjak-spomove',
 ] as const;
 
+const HOME_CASE_DISPLAY_META: Partial<Record<FieldRecordSlug, string>> = {
+  'maedong-sports-stepup': '6개월 늘봄 스포츠 · 기관 정기운영',
+  'donghaeng-special-pe': '특수·포용 체육 · 찾아가는 동행체육',
+  'dongjak-spomove': '초등학생 · SPOMOVE',
+};
+
 function buildHomeCaseCard(
   slug: FieldRecordSlug,
   editorial: { src: string; objectPosition?: string },
@@ -48,10 +50,7 @@ function buildHomeCaseCard(
   return {
     slug: card.slug,
     venue: item.venue,
-    programType: item.operationType,
-    programName: item.programLabel,
-    audience: item.meta,
-    description: item.description,
+    displayMeta: HOME_CASE_DISPLAY_META[slug] ?? item.meta,
     href: card.href,
     ctaLabel: '사례 보기',
     trackLabel: card.trackLabel,
@@ -64,7 +63,7 @@ function buildHomeCaseCard(
 }
 
 export const homePage = {
-  sectionOrder: ['hero', 'choice', 'why', 'spomove', 'subscription', 'cases', 'contact'] as const,
+  sectionOrder: ['hero', 'choice', 'spomove', 'subscription', 'cases', 'contact'] as const,
 
   hero: {
     id: 'hero',
@@ -82,11 +81,6 @@ export const homePage = {
       label: '구독시스템 알아보기',
       href: SPOKEDU_PATHS.subscription,
       trackLabel: 'cta-home-subscription-hero',
-    },
-    tertiaryCta: {
-      label: '운영 사례 보기',
-      href: SPOKEDU_PATHS.records,
-      trackLabel: 'cta-home-hero-records',
     },
   },
 
@@ -115,19 +109,13 @@ export const homePage = {
     },
   },
 
-  why: {
-    id: 'why',
-    title: '직접 수업하며 만듭니다.',
-    body:
-      '실제 수업에 필요한 활동을 직접 설계하고 적용합니다. 수업에서 다듬은 내용을 프로그램과 콘텐츠로 만듭니다.',
-    mediaKey: 'homeWhyField' as HomeMediaKey,
-  },
-
   spomove: {
     id: 'spomove',
     label: 'SPOMOVE',
-    title: '보고, 판단하고,\n움직입니다.',
-    body: '화면의 정보를 보고 판단한 뒤\n움직임으로 반응하는\nSPOKEDU의 자체 신체활동 콘텐츠입니다.',
+    micro: '직접 수업하며 만든 대표 콘텐츠',
+    title: '화면을 보고, 판단하고,\n움직입니다.',
+    definition:
+      '화면의 정보를 보고 판단한 뒤 움직임으로 반응하는 SPOKEDU의 자체 신체활동 콘텐츠입니다.',
     flow: ['화면 확인', '규칙 판단', '움직임'] as const,
     mediaKey: 'homeSpomoveField' as HomeMediaKey,
     primaryCta: {

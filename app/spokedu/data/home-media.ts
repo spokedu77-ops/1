@@ -62,13 +62,6 @@ export const HOME_MEDIA = {
     tone: 'sky',
     objectPosition: '54% 46%',
   }),
-  homeWhyField: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialWhy, {
-    id: 'home-why-field',
-    label: '직접 수업 지도',
-    fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
-    tone: 'sky',
-    objectPosition: '50% 38%',
-  }),
   homeSpomoveField: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialSpomove, {
     id: 'home-spomove-field',
     label: 'SPOMOVE 현장',

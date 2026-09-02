@@ -56,17 +56,6 @@ export function getMasterContentPrimaryAction(mode: MasterContentMode) {
   return mode === 'session-build' ? '이 수업에 추가' : '활동 살펴보기';
 }
 
-export type MasterHomePriority = 'operational' | 'today' | 'discovery';
-
-export function resolveMasterHomePriority(input: {
-  hasUrgentOperationalWork: boolean;
-  hasTodaySession: boolean;
-}): MasterHomePriority {
-  if (input.hasUrgentOperationalWork) return 'operational';
-  if (input.hasTodaySession) return 'today';
-  return 'discovery';
-}
-
 export type MasterActivityCompletionSource = 'teacher_explicit';
 
 /** Level 1 lifecycle truths retained under the Level 0 product contract. */

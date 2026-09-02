@@ -4,61 +4,62 @@ import {
 } from './field-records-catalog';
 import { SPOKEDU_BASE_PATH, SPOKEDU_PATHS } from './site';
 
-/** 체육교육 허브 사례 — 홈(dongjak)과 겹치지 않게 분산 */
+/** 체육교육 허브 사례 — 서비스 범위 증명 (정기 / 원데이 / 특수·포용) */
 export const EDUCATION_HUB_CASE_SLUGS = [
   'yangcheon-paps',
   'dasarang-oneday',
   'donghaeng-special-pe',
 ] as const satisfies readonly FieldRecordSlug[];
 
+export type EducationHubCaseRole = 'featured' | 'supporting';
+
 export type EducationHubCaseCard = {
   slug: FieldRecordSlug;
+  role: EducationHubCaseRole;
   venue: string;
   audience: string;
   operationType: string;
   programLabel: string;
-  description: string;
   href: string;
   ctaLabel: string;
   trackLabel: string;
-  thumbnailSrc?: string;
-  mediaKey: string;
+  thumbnailSrc: string;
+  objectPosition?: string;
 };
 
-function buildEducationCaseCard(slug: FieldRecordSlug): EducationHubCaseCard {
+function buildEducationCaseCard(slug: FieldRecordSlug, role: EducationHubCaseRole): EducationHubCaseCard {
   const item = getFieldRecordCatalogItem(slug);
   return {
     slug: item.slug,
+    role,
     venue: item.venue,
     audience: item.meta,
     operationType: item.operationType,
     programLabel: item.programLabel,
-    description: item.description,
     href: item.href,
     ctaLabel: '사례 보기',
     trackLabel: `education-case-${item.slug}`,
-    thumbnailSrc: item.thumbnailSrc,
-    mediaKey: item.mediaKey,
+    thumbnailSrc: item.thumbnailSrc!,
+    objectPosition:
+      slug === 'yangcheon-paps'
+        ? '50% 45%'
+        : slug === 'dasarang-oneday'
+          ? '48% 42%'
+          : '50% 40%',
   };
 }
 
-/** 체육교육 허브 SSOT — 요약만, dispatch/private 본문 복제 금지 */
+/** 체육교육 허브 SSOT — dispatch/private 본문 복제 금지 */
 export const educationHubPage = {
-  sectionOrder: [
-    'hero',
-    'primaryPaths',
-    'formats',
-    'principles',
-    'cases',
-    'finalCta',
-  ] as const,
+  sectionOrder: ['hero', 'choice', 'institutional', 'difference', 'cases', 'contact'] as const,
 
   hero: {
     id: 'hero',
     eyebrow: '체육교육',
-    title: '현장과 대상에 맞춰 운영하는 아동·청소년 체육교육',
+    lines: ['아동·청소년 체육수업을', '현장에 맞춰 직접 운영합니다.'] as const,
     lead:
-      '학교·센터·복지관 등 기관수업과 개인·소그룹 수업을 직접 설계·운영합니다. 원데이·행사와 특수·포용 체육은 대상·공간·운영 목적에 따라 구성을 조정합니다.',
+      '학교·기관의 정기수업과 특강부터 개인·소그룹 수업까지 대상과 공간에 맞춰 직접 구성하고 운영합니다.',
+    mediaKey: 'homeHeroField' as const,
     primaryCta: {
       label: '기관수업 알아보기',
       href: `${SPOKEDU_BASE_PATH}/dispatch`,
@@ -71,196 +72,129 @@ export const educationHubPage = {
     },
   },
 
-  primaryPaths: {
-    id: 'paths',
-    eyebrow: '경로 선택',
-    title: '기관수업과 개인·소그룹',
-    lead: '이용 목적에 따라 두 경로로 나뉩니다. 어느 쪽이든 상세 조건과 상담은 각 페이지에서 이어집니다.',
-    items: [
-      {
-        id: 'dispatch',
-        badge: '기관 담당자',
-        title: '기관수업',
-        description:
-          '학교·복지관·지역아동센터·공공기관·교육기관·센터의 정기수업, 방학·특강, 원데이·행사를 기관 조건에 맞춰 구성합니다.',
-        bullets: ['정기수업', '방학·특강', '원데이·행사', '운영안 협의'] as const,
-        ctaLabel: '기관수업 알아보기',
-        href: `${SPOKEDU_BASE_PATH}/dispatch`,
-        trackLabel: 'education-path-dispatch',
-        mediaKey: 'trackDispatch' as const,
-      },
-      {
-        id: 'private',
-        badge: '학부모',
-        title: '개인·소그룹',
-        description:
-          '아동 개인 또는 형제·친구 소그룹으로, 현재 수행 수준과 연령·공간을 확인한 뒤 상담으로 수업 방식을 정합니다.',
-        bullets: ['수준 확인', '연령·인원 고려', '1:1·소그룹', '상담 후 결정'] as const,
-        ctaLabel: '개인·소그룹 알아보기',
-        href: `${SPOKEDU_BASE_PATH}/private`,
-        trackLabel: 'education-path-private',
-        mediaKey: 'trackSmallGroup' as const,
-      },
-    ] as const,
+  choice: {
+    id: 'choice',
+    institution: {
+      title: '기관수업',
+      body:
+        '학교·복지관·지역아동센터·공공기관 등 기관의 대상·인원·공간·일정에 맞춰 수업 운영안을 구성합니다. 정기수업부터 방학·특강과 행사까지 운영 목적에 맞게 조정합니다.',
+      ctaLabel: '기관수업 자세히 보기',
+      href: `${SPOKEDU_BASE_PATH}/dispatch`,
+      trackLabel: 'education-choice-dispatch',
+      mediaKey: 'trackDispatch' as const,
+    },
+    private: {
+      title: '개인·소그룹',
+      body:
+        '1:1 또는 소규모 수업으로 아동의 현재 수행 방식과 연령·인원과 공간을 확인해 수업을 구성합니다.',
+      ctaLabel: '개인·소그룹 자세히 보기',
+      href: `${SPOKEDU_BASE_PATH}/private`,
+      trackLabel: 'education-choice-private',
+    },
   },
 
-  formats: {
-    id: 'formats',
-    eyebrow: '운영 형태',
-    title: '체육교육 안의 주요 운영 형태',
-    lead: '원데이·행사와 특수·포용 체육은 별도 사이트가 아니라 체육교육 서비스 안의 운영 형태·대상 범주입니다.',
-    items: [
+  institutional: {
+    id: 'institutional',
+    titleLines: ['기관마다', '수업 조건이 다릅니다.'] as const,
+    lead:
+      '대상과 인원, 사용 가능한 공간과 시간, 운영 목적을 먼저 확인한 뒤 수업에 필요한 활동과 난이도, 교구와 동선을 구성합니다.',
+    clientInputs: ['대상', '인원', '공간', '시간', '운영 목적'] as const,
+    spokeduOutputs: ['활동 구성', '난이도', '교구', '동선', '회기 흐름'] as const,
+    operationFormats: [
       {
         id: 'regular',
-        title: '기관 정기수업',
-        body: '일정 기간 반복 운영합니다. 대상과 공간에 맞춰 기본 움직임·놀이체육·뉴스포츠 등을 목적에 따라 조합합니다.',
-        href: `${SPOKEDU_BASE_PATH}/dispatch`,
-        ctaLabel: '기관 정기수업 안내',
-        trackLabel: 'education-format-regular',
+        index: '01',
+        title: '정기수업',
+        body: '일정 기간 반복 운영하는 체육수업입니다. 대상과 목적에 맞춰 기본 움직임, 놀이체육·뉴스포츠 등을 조합합니다.',
       },
       {
-        id: 'private',
-        title: '개인·소그룹 수업',
-        body: '개인의 현재 수행 방식과 목표를 확인하고, 연령·인원·공간을 고려해 상담 후 수업 방식을 정합니다.',
-        href: `${SPOKEDU_BASE_PATH}/private`,
-        ctaLabel: '개인·소그룹 안내',
-        trackLabel: 'education-format-private',
+        id: 'seasonal',
+        index: '02',
+        title: '방학·특강',
+        body: '방학 프로그램이나 일정 기간 집중 운영에 맞춰 회기 수와 수업 시간을 고려해 흐름을 구성합니다.',
       },
       {
         id: 'oneday',
+        index: '03',
         title: '원데이·행사',
-        body: '체육 행사, 팀빌딩, 미니올림픽, 방학 특강, 뉴스포츠 체험, 기관 행사처럼 일정형·단기 운영을 구성합니다.',
-        href: `${SPOKEDU_BASE_PATH}/dispatch?program=oneday-event#programs`,
-        ctaLabel: '원데이·행사 안내',
-        trackLabel: 'education-format-oneday',
+        body: '가족 체육행사, 미니운동회, 팀빌딩, 뉴스포츠 체험 등 하루 또는 단기 일정에 맞춰 운영합니다.',
       },
       {
         id: 'inclusive',
+        index: '04',
         title: '특수·포용 체육',
-        body: '참여자의 수행 방식과 수업 환경을 고려해 규칙·속도·교구·동선을 조정하고, 보조 인력과 기관 조건을 함께 확인합니다.',
-        href: `${SPOKEDU_BASE_PATH}/dispatch?program=special-pe#programs`,
-        ctaLabel: '특수·포용 안내',
-        trackLabel: 'education-format-inclusive',
+        body: '참여자의 수행 방식과 수업 환경을 고려해 규칙·속도·교구·동선을 조정합니다.',
       },
     ] as const,
+    cta: {
+      label: '기관수업 운영안 보기',
+      href: `${SPOKEDU_BASE_PATH}/dispatch`,
+      trackLabel: 'education-institutional-dispatch',
+    },
   },
 
-  principles: {
-    id: 'principles',
-    eyebrow: '구성 원칙',
-    title: '수업을 이렇게 구성합니다',
-    lead: '대상과 환경에 맞춰 활동 목적·난이도를 정하고, 운영 중 관찰한 수행 방식을 다음 구성에 참고합니다.',
+  difference: {
+    id: 'difference',
+    titleLines: ['수업은', '현장에서 계속 조정됩니다.'] as const,
+    body:
+      '대상과 환경을 먼저 확인하고 수업 목적에 맞춰 활동과 난이도를 구성합니다. 실제 수업에서 확인한 수행 방식은 다음 활동과 회기 구성에 다시 반영합니다.',
+    flow: ['사전 확인', '수업 구성', '현장 조정', '다음 회기 반영'] as const,
     steps: [
       {
-        label: '대상과 환경 확인',
-        body: '연령, 인원, 공간, 수업 시간, 교구·안전 동선을 먼저 확인합니다.',
+        label: '사전 확인',
+        body: '연령·인원·공간·시간과 안전 조건을 확인합니다.',
       },
       {
-        label: '목적과 난이도 설정',
-        body: '활동 목적에 맞춰 규칙과 난이도를 단계적으로 안내합니다.',
+        label: '수업 구성',
+        body: '활동 목적에 맞춰 난이도·교구·동선을 정합니다.',
       },
       {
-        label: '수업 운영',
-        body: '수행 방식에 따라 활동 구성과 동선을 현장에서 조정합니다.',
+        label: '현장 조정',
+        body: '참여자의 실제 수행에 따라 규칙과 속도를 조정합니다.',
       },
       {
-        label: '다음 수업 반영',
-        body: '수업 중 관찰한 수행 방식을 다음 활동 구성에 참고합니다.',
+        label: '다음 회기 반영',
+        body: '관찰한 수행 방식을 다음 수업 구성에 참고합니다.',
       },
     ] as const,
     spomoveNote:
-      '일부 수업에서는 화면과 움직임을 연결하는 SPOMOVE 콘텐츠를 활용합니다. 모든 수업에 포함되는 것은 아닙니다.',
-    spomoveCta: {
-      label: 'SPOMOVE 알아보기',
-      href: `${SPOKEDU_PATHS.spomove}`,
-      trackLabel: 'education-principles-spomove',
-    },
+      '일부 수업에서는 화면의 정보와 움직임을 연결하는 SPOKEDU의 SPOMOVE 콘텐츠를 활용할 수 있습니다. 모든 수업에 필수로 포함되는 것은 아닙니다.',
   },
 
   cases: {
     id: 'cases',
-    eyebrow: '현장 기록',
-    title: '체육교육 대표 사례',
-    lead: '공개된 운영 기록 중 기관 정기·원데이·특수체육 흐름이 드러나는 사례를 골랐습니다.',
+    title: '실제 운영 현장',
+    lead: '정기수업부터 단기 프로그램과 특수·포용 체육까지 실제 운영 사례를 확인할 수 있습니다.',
     recordsCta: {
       label: '운영 사례 더 보기',
       href: `${SPOKEDU_BASE_PATH}/records`,
       trackLabel: 'education-cases-records',
     },
-    cards: EDUCATION_HUB_CASE_SLUGS.map(buildEducationCaseCard),
+    cards: [
+      buildEducationCaseCard('yangcheon-paps', 'featured'),
+      buildEducationCaseCard('dasarang-oneday', 'supporting'),
+      buildEducationCaseCard('donghaeng-special-pe', 'supporting'),
+    ],
   },
 
-  finalCta: {
-    id: 'final-cta',
-    eyebrow: '다음 단계',
-    title: '기관과 개인 중 어디로 이어갈까요?',
-    lead: '운영 형태가 정해지지 않았어도 괜찮습니다. 대상·공간·일정을 알려주시면 맞는 경로로 안내합니다.',
-    primary: {
-      label: '기관 운영안 문의',
-      href: `${SPOKEDU_BASE_PATH}/dispatch#contact`,
-      trackLabel: 'education-final-dispatch',
+  contact: {
+    id: 'contact',
+    titleLines: ['우리 기관에는', '어떤 방식이 맞는지 상담해보세요.'] as const,
+    lead: '대상·인원·공간·일정을 알려주시면 상황에 맞는 수업 운영 방법을 안내합니다.',
+    primaryCta: {
+      label: '문의하기',
+      href: `${SPOKEDU_PATHS.contact}`,
+      trackLabel: 'education-contact-inquiry',
     },
-    secondary: {
-      label: '개인·소그룹 상담',
-      href: `${SPOKEDU_BASE_PATH}/private#apply`,
-      trackLabel: 'education-final-private',
-    },
-    contactLink: {
-      label: '그 밖의 문의·협업',
-      href: `${SPOKEDU_BASE_PATH}/contact`,
-      trackLabel: 'education-final-contact',
-    },
-  },
-
-  /**
-   * @deprecated PR1 최소 셸 호환 — `primaryPaths`·`formats` 사용.
-   * 테스트·레거시 import용 평탄 링크.
-   */
-  paths: [
-    {
-      id: 'dispatch',
-      badge: '기관',
-      title: '기관수업',
-      description: '공간·인원·일정에 맞춘 정규·행사형 기관 체육 운영.',
+    dispatchLink: {
+      label: '기관수업 상세',
       href: `${SPOKEDU_BASE_PATH}/dispatch`,
-      ctaLabel: '기관수업 알아보기',
-      trackLabel: 'education-path-dispatch',
+      trackLabel: 'education-contact-dispatch',
     },
-    {
-      id: 'private',
-      badge: '개인',
-      title: '개인·소그룹',
-      description: '아이 조건에 맞춘 1:1·소그룹 체육수업 상담.',
+    privateLink: {
+      label: '개인·소그룹 상세',
       href: `${SPOKEDU_BASE_PATH}/private`,
-      ctaLabel: '개인·소그룹 알아보기',
-      trackLabel: 'education-path-private',
+      trackLabel: 'education-contact-private',
     },
-    {
-      id: 'oneday',
-      badge: '행사',
-      title: '원데이·행사',
-      description: '축제·특별활동·시즌 일정에 맞춘 단기 체육 프로그램.',
-      href: `${SPOKEDU_BASE_PATH}/dispatch?program=oneday-event#programs`,
-      ctaLabel: '원데이·행사 안내',
-      trackLabel: 'education-path-oneday',
-    },
-    {
-      id: 'inclusive',
-      badge: '포용',
-      title: '특수·포용 체육',
-      description: '통합반·특수체육 등 참여 조건을 맞춘 기관 운영 안내.',
-      href: `${SPOKEDU_BASE_PATH}/dispatch?program=special-pe#programs`,
-      ctaLabel: '포용 체육 안내',
-      trackLabel: 'education-path-inclusive',
-    },
-  ] as const,
-
-  /** @deprecated 최종 CTA의 contactLink 사용 */
-  cta: {
-    title: '어떤 경로가 맞는지 모르시겠다면',
-    lead: '대상·공간·일정을 알려주시면 기관 또는 개인 경로로 안내합니다.',
-    label: '그 밖의 문의·협업',
-    href: `${SPOKEDU_BASE_PATH}/contact`,
-    trackLabel: 'education-cta-contact',
   },
 } as const;

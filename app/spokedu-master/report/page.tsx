@@ -1,6 +1,6 @@
 'use client';
 
-import { ClipboardCopy, FileText, Save } from 'lucide-react';
+import { ClipboardCopy, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -9,6 +9,8 @@ import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
 import { resolveReportSession } from '../lib/sessionContext';
 import { resolveParentNotice } from './parentNoticeModel';
+import { MasterDocumentSurface, MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
+import { MasterStatePanel } from '../components/ui/MasterStatePanel';
 
 export default function ReportPage() {
   const data = useOperationalData();
@@ -47,18 +49,10 @@ export default function ReportPage() {
     : '/spokedu-master/activity';
 
   return (
-    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] p-5 pb-28 lg:p-8">
-      <div className="mx-auto max-w-3xl">
-        <header>
-          <h1 className="flex items-center gap-2 text-2xl font-black text-slate-900">
-            <FileText size={22} />
-            수업 안내문
-          </h1>
-          <p className="mt-2 text-sm font-semibold text-slate-500">
-            완료된 수업의 출석, 진행 프로그램, 수업 메모를 바탕으로 간단한 안내문을 확인합니다.
-          </p>
-        </header>
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
+      <MasterPageShell variant="document">
+        <MasterPageHeader title="수업 안내문" description="완료된 수업의 출석, 진행 프로그램, 수업 메모를 바탕으로 간단한 안내문을 확인합니다." />
+        <MasterDocumentSurface className="mt-7 border-t border-slate-200 pt-6">
           {!requestedSessionId ? (
             <label className="text-xs font-black text-slate-600">
               완료된 수업
@@ -99,16 +93,12 @@ export default function ReportPage() {
               </div>
             </>
           ) : invalidRequestedSession ? (
-            <p className="mt-5 rounded-xl bg-rose-50 p-5 text-center text-sm font-bold text-rose-700">
-              완료된 수업을 찾을 수 없습니다.
-            </p>
+            <MasterStatePanel kind="error" title="완료된 수업을 찾을 수 없습니다." />
           ) : (
-            <p className="mt-5 rounded-xl bg-slate-50 p-5 text-center text-sm font-semibold text-slate-500">
-              완료된 수업이 없습니다.
-            </p>
+            <MasterStatePanel kind="empty" title="완료된 수업이 없습니다." />
           )}
-        </section>
-      </div>
+        </MasterDocumentSurface>
+      </MasterPageShell>
     </main>
   );
 }

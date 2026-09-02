@@ -1,241 +1,252 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { HOME_MEDIA } from '../data/home-media';
-import { educationHubPage } from '../data/education-hub';
+import { educationHubPage, type EducationHubCaseCard } from '../data/education-hub';
 import {
-  brandBlue,
-  brandInk,
-  homeBandSoftBlue,
-  homeBandWhite,
-  homeBodyLead,
   brandFocusRing,
-  marketingCardInteractive,
   homePhotoGrade,
-  homeSectionEyebrow,
+  koreanText,
+  marketingButtonPrimary,
+  marketingButtonPrimaryOnDark,
+  marketingButtonSecondary,
+  marketingButtonSecondaryOnDark,
   marketingHeroDisplay,
   marketingHeroDisplaySectionScale,
   marketingSectionDisplay,
-  marketingSectionPadCompact,
-  koreanText,
-  marketingButtonPrimary,
-  marketingButtonSecondary,
-  marketingSectionInner,
 } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 import { MediaPanel } from './visual';
-import { HomeChevron } from './home/home-chevron';
 import { TrackedLink } from './home/tracked-link';
+import styles from './education-hub.module.css';
 
-/** 체육교육 허브 — 6섹션 완성형 (dispatch/private 본문 비복제) */
+function TextCta({
+  href,
+  trackLabel,
+  children,
+  dark = false,
+}: {
+  href: string;
+  trackLabel: string;
+  children: ReactNode;
+  dark?: boolean;
+}) {
+  return (
+    <TrackedLink
+      href={href}
+      trackLabel={trackLabel}
+      className={
+        dark
+          ? 'inline-flex min-h-11 items-center text-[15px] font-semibold text-[#afc8ff] underline-offset-4 transition hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+          : `${brandFocusRing} inline-flex min-h-11 items-center gap-1 text-[15px] font-semibold [color:var(--spokedu-marketing-color-blue)] underline-offset-4 hover:underline`
+      }
+    >
+      {children}
+      <span aria-hidden>→</span>
+    </TrackedLink>
+  );
+}
+
 export function EducationHubLanding() {
   const reducedMotion = useReducedMotion();
-  const { hero, primaryPaths, formats, principles, cases, finalCta } = educationHubPage;
+  const { hero, choice, institutional, difference, cases, contact } = educationHubPage;
+  const heroMedia = HOME_MEDIA[hero.mediaKey];
+  const institutionMedia = HOME_MEDIA[choice.institution.mediaKey];
+  const [heroLine1, heroLine2] = hero.lines;
+  const [institutionalTitle1, institutionalTitle2] = institutional.titleLines;
+  const [differenceTitle1, differenceTitle2] = difference.titleLines;
+  const [contactTitle1, contactTitle2] = contact.titleLines;
 
   return (
-    <main
-      className="w-full overflow-x-clip"
+    <div
+      className={`${styles.page} w-full overflow-x-clip antialiased`}
+      data-spokedu-education="service-sales-editorial"
       data-spokedu-education-sections={educationHubPage.sectionOrder.length}
     >
-      <section id={hero.id} className={`${marketingSectionPadCompact} bg-white`}>
-        <div className={marketingSectionInner}>
-          <motion.div
-            className="max-w-3xl"
-            initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-            animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
-          >
-            <p className={homeSectionEyebrow}>{hero.eyebrow}</p>
-            <h1 className={`${marketingHeroDisplay} ${marketingHeroDisplaySectionScale} mt-3`}>{hero.title}</h1>
-            <p className={`${homeBodyLead} mt-4`}>{hero.lead}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <TrackedLink
-                href={hero.primaryCta.href}
-                trackLabel={hero.primaryCta.trackLabel}
-                commercialRoute="dispatch"
-                ctaIntentId={hero.primaryCta.trackLabel}
-                className={`${marketingButtonPrimary} h-12 min-h-12 px-7 ${brandFocusRing}`}
-              >
-                {hero.primaryCta.label}
-              </TrackedLink>
-              <TrackedLink
-                href={hero.secondaryCta.href}
-                trackLabel={hero.secondaryCta.trackLabel}
-                commercialRoute="private"
-                ctaIntentId={hero.secondaryCta.trackLabel}
-                className={`${marketingButtonSecondary} h-12 min-h-12 px-7 ${brandFocusRing}`}
-              >
-                {hero.secondaryCta.label}
-              </TrackedLink>
-            </div>
-          </motion.div>
+      {/* 01 Hero */}
+      <section id={hero.id} className={styles.hero} aria-labelledby="education-hero-heading">
+        <div className={styles.heroMedia}>
+          <MediaPanel
+            media={heroMedia}
+            className={`absolute inset-0 h-full w-full border-0 rounded-none ${homePhotoGrade}`}
+            sizes="100vw"
+            photoPriority
+            priority
+            objectFit="cover"
+          />
         </div>
-      </section>
-
-      <section
-        id={primaryPaths.id}
-        className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}
-        aria-labelledby="education-primary-heading"
-      >
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{primaryPaths.eyebrow}</p>
-          <h2 id="education-primary-heading" className={`${marketingSectionDisplay} mt-3`}>
-            {primaryPaths.title}
-          </h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-            {primaryPaths.lead}
-          </p>
-          <ul className="mt-8 grid grid-cols-1 gap-4 min-[800px]:grid-cols-2 min-[800px]:gap-5">
-            {primaryPaths.items.map((item, index) => {
-              const media = HOME_MEDIA[item.mediaKey];
-              return (
-                <li key={item.id} className="min-w-0">
-                  <TrackedLink
-                    href={item.href}
-                    trackLabel={item.trackLabel}
-                    commercialRoute={item.id === 'dispatch' ? 'dispatch' : 'private'}
-                    ctaIntentId={item.trackLabel}
-                    className={`${marketingCardInteractive} ${brandFocusRing} group flex h-full flex-col overflow-hidden`}
-                  >
-                    <div className="relative aspect-[16/10] w-full overflow-hidden">
-                      <MediaPanel
-                        media={media}
-                        className={`absolute inset-0 h-full w-full border-0 rounded-none ${homePhotoGrade}`}
-                        sizes="gateCard"
-                        photoPriority={index === 0}
-                        objectFit="cover"
-                      />
-                    </div>
-                    <div className="flex min-h-[14rem] flex-1 flex-col px-5 py-5 sm:px-6 sm:py-6">
-                      <p className="text-[12px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
-                        {item.badge}
-                      </p>
-                      <h3
-                        className={`mt-1.5 text-lg font-bold tracking-[-0.02em] sm:text-xl ${koreanText}`}
-                        style={{ color: brandInk }}
-                      >
-                        {item.title}
-                      </h3>
-                      <p className={`mt-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{item.description}</p>
-                      <ul className="mt-3.5 flex flex-wrap gap-1.5" aria-label={`${item.title} 포함`}>
-                        {item.bullets.map((bullet) => (
-                          <li
-                            key={bullet}
-                            className="rounded-full border border-[#D6E3FF] bg-[#EAF1FF] px-2.5 py-1 text-[11px] font-semibold text-[#2C446D]"
-                          >
-                            {bullet}
-                          </li>
-                        ))}
-                      </ul>
-                      <span
-                        className="mt-auto inline-flex items-center gap-1.5 pt-5 text-[15px] font-semibold"
-                        style={{ color: brandBlue }}
-                      >
-                        {item.ctaLabel}
-                        <HomeChevron />
-                      </span>
-                    </div>
-                  </TrackedLink>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </section>
-
-      <section
-        id={formats.id}
-        className={`${marketingSectionPadCompact} ${homeBandWhite}`}
-        aria-labelledby="education-formats-heading"
-      >
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{formats.eyebrow}</p>
-          <h2 id="education-formats-heading" className={`${marketingSectionDisplay} mt-3`}>
-            {formats.title}
-          </h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-            {formats.lead}
-          </p>
-          <ul className="mt-8 grid grid-cols-1 gap-4 min-[700px]:grid-cols-2 min-[1050px]:grid-cols-3">
-            {formats.items.filter((item) => item.id !== 'private').map((item) => (
-              <li key={item.id} className="min-w-0">
-                <TrackedLink
-                  href={item.href}
-                  trackLabel={item.trackLabel}
-                  className={`flex h-full flex-col rounded-[1.25rem] border border-[#DCE3EE] bg-[#F5F7FB] px-5 py-5 ${brandFocusRing} sm:px-6 sm:py-6`}
-                >
-                  <h3 className={`text-lg font-bold tracking-tight ${koreanText}`} style={{ color: brandInk }}>
-                    {item.title}
-                  </h3>
-                  <p className={`mt-2 flex-1 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{item.body}</p>
-                  <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold" style={{ color: brandBlue }}>
-                    {item.ctaLabel}
-                    <HomeChevron />
-                  </span>
-                </TrackedLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section
-        id={principles.id}
-        className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}
-        aria-labelledby="education-principles-heading"
-      >
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{principles.eyebrow}</p>
-          <h2 id="education-principles-heading" className={`${marketingSectionDisplay} mt-3`}>
-            {principles.title}
-          </h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-            {principles.lead}
-          </p>
-          <ol className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {principles.steps.map((step, index) => (
-              <li
-                key={step.label}
-                className="rounded-[1.15rem] border border-[#D6E3FF] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(15,33,70,0.04)]"
-              >
-                <span className="text-[11px] font-bold tracking-[0.14em]" style={{ color: brandBlue }}>
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <h3 className={`mt-2 text-[15px] font-bold ${koreanText}`} style={{ color: brandInk }}>
-                  {step.label}
-                </h3>
-                <p className={`mt-1.5 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{step.body}</p>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-8 max-w-2xl rounded-[1.25rem] border border-[#D6E3FF] bg-white px-5 py-5 sm:px-6">
-            <p className={`text-sm leading-relaxed text-[#536279] ${koreanText}`}>{principles.spomoveNote}</p>
-            <TrackedLink
-              href={principles.spomoveCta.href}
-              trackLabel={principles.spomoveCta.trackLabel}
-              className={`mt-3 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#245DFF] ${brandFocusRing}`}
+        <div className={styles.heroScrim} aria-hidden />
+        <div className={styles.heroCopy}>
+          <div className={styles.shell}>
+            <motion.div
+              initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+              animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
             >
-              {principles.spomoveCta.label}
-              <HomeChevron />
-            </TrackedLink>
+              <p className={styles.eyebrow}>{hero.eyebrow}</p>
+              <h1 id="education-hero-heading" className={`${marketingHeroDisplay} ${marketingHeroDisplaySectionScale} mt-3 text-white`}>
+                <span className="block">{heroLine1}</span>
+                <span className="mt-1 block">{heroLine2}</span>
+              </h1>
+              <p className={`${styles.heroLead} ${koreanText}`}>{hero.lead}</p>
+              <div className={styles.heroActions}>
+                <TrackedLink
+                  href={hero.primaryCta.href}
+                  trackLabel={hero.primaryCta.trackLabel}
+                  commercialRoute="dispatch"
+                  ctaIntentId={hero.primaryCta.trackLabel}
+                  className={`${marketingButtonPrimaryOnDark} ${brandFocusRing}`}
+                >
+                  {hero.primaryCta.label}
+                </TrackedLink>
+                <TrackedLink
+                  href={hero.secondaryCta.href}
+                  trackLabel={hero.secondaryCta.trackLabel}
+                  commercialRoute="private"
+                  ctaIntentId={hero.secondaryCta.trackLabel}
+                  className={`${marketingButtonSecondaryOnDark} ${brandFocusRing}`}
+                >
+                  {hero.secondaryCta.label}
+                </TrackedLink>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
+      {/* 02 Service Choice */}
+      <section id={choice.id} className={styles.choice} aria-labelledby="education-choice-heading">
+        <div className={styles.shell}>
+          <div className={styles.choiceGrid}>
+            <div className={styles.choicePrimary}>
+              <div className={styles.choicePrimaryInner}>
+                <div className={styles.choicePhoto}>
+                  <MediaPanel
+                    media={institutionMedia}
+                    className={`${styles.choicePhotoMedia} border-0 ${homePhotoGrade}`}
+                    sizes="(min-width: 1024px) 36vw, 88vw"
+                    photoPriority
+                    objectFit="cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <h2 id="education-choice-heading" className={`${styles.choiceTitle} ${koreanText}`}>
+                    {choice.institution.title}
+                  </h2>
+                  <p className={`${styles.choiceBody} ${koreanText}`}>{choice.institution.body}</p>
+                  <div className={styles.choiceCta}>
+                    <TextCta href={choice.institution.href} trackLabel={choice.institution.trackLabel}>
+                      {choice.institution.ctaLabel}
+                    </TextCta>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.choiceDivider} aria-hidden />
+            <div className={styles.choiceSecondary}>
+              <h2 className={`${styles.choiceTitle} ${koreanText}`}>{choice.private.title}</h2>
+              <p className={`${styles.choiceBody} ${koreanText}`}>{choice.private.body}</p>
+              <div className={styles.choiceCta}>
+                <TextCta href={choice.private.href} trackLabel={choice.private.trackLabel}>
+                  {choice.private.ctaLabel}
+                </TextCta>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 03 Institutional Mechanism */}
       <section
-        id={cases.id}
-        className={`${marketingSectionPadCompact} ${homeBandWhite}`}
-        aria-labelledby="education-cases-heading"
+        id={institutional.id}
+        className={styles.institutional}
+        aria-labelledby="education-institutional-heading"
       >
-        <div className={marketingSectionInner}>
-          <div className="flex flex-col gap-4 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between">
-            <div className="max-w-2xl">
-              <h2 id="education-cases-heading" className={`${marketingSectionDisplay} mt-3`}>
+        <div className={styles.shellWide}>
+          <h2 id="education-institutional-heading" className={`${marketingSectionDisplay} ${koreanText}`}>
+            <span className="block">{institutionalTitle1}</span>
+            <span className="block">{institutionalTitle2}</span>
+          </h2>
+          <p className={`${styles.institutionalLead} ${koreanText}`}>{institutional.lead}</p>
+
+          <div className={styles.mechanism}>
+            <div className={styles.mechanismBlock}>
+              <p className={styles.mechanismLabel}>기관이 알려주는 조건</p>
+              <ul className={styles.mechanismTerms} aria-label="기관이 알려주는 조건">
+                {institutional.clientInputs.map((term) => (
+                  <li key={term}>{term}</li>
+                ))}
+              </ul>
+            </div>
+            <div className={styles.mechanismArrow} aria-hidden>
+              ↓
+            </div>
+            <div className={styles.mechanismBlock}>
+              <p className={styles.mechanismLabel}>SPOKEDU가 맞추는 요소</p>
+              <ul className={styles.mechanismTerms} aria-label="SPOKEDU가 맞추는 요소">
+                {institutional.spokeduOutputs.map((term) => (
+                  <li key={term}>{term}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className={styles.formats}>
+            {institutional.operationFormats.map((format) => (
+              <div key={format.id} className={styles.formatRow}>
+                <span className={styles.formatIndex}>{format.index}</span>
+                <div className="min-w-0">
+                  <h3 className={`${styles.formatTitle} ${koreanText}`}>{format.title}</h3>
+                  <p className={`${styles.formatBody} ${koreanText}`}>{format.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.institutionalCta}>
+            <TextCta href={institutional.cta.href} trackLabel={institutional.cta.trackLabel}>
+              {institutional.cta.label}
+            </TextCta>
+          </div>
+        </div>
+      </section>
+
+      {/* 04 Field-Built Difference */}
+      <section
+        id={difference.id}
+        className={styles.difference}
+        aria-labelledby="education-difference-heading"
+      >
+        <div className={styles.shell}>
+          <h2 id="education-difference-heading" className={`${marketingSectionDisplay} ${koreanText}`}>
+            <span className="block">{differenceTitle1}</span>
+            <span className="block">{differenceTitle2}</span>
+          </h2>
+          <p className={`${styles.differenceBody} ${koreanText}`}>{difference.body}</p>
+
+          <ol className={styles.flow} aria-label="수업 운영 흐름">
+            {difference.steps.map((step) => (
+              <li key={step.label} className={styles.flowStep}>
+                <h3 className={`${styles.flowStepLabel} ${koreanText}`}>{step.label}</h3>
+                <p className={`${styles.flowStepBody} ${koreanText}`}>{step.body}</p>
+              </li>
+            ))}
+          </ol>
+
+          <p className={`${styles.spomoveNote} ${koreanText}`}>{difference.spomoveNote}</p>
+        </div>
+      </section>
+
+      {/* 05 Field Proof */}
+      <section id={cases.id} className={styles.cases} aria-labelledby="education-cases-heading">
+        <div className={styles.shellWide}>
+          <div className={styles.casesHeader}>
+            <div className="min-w-0">
+              <h2 id="education-cases-heading" className={marketingSectionDisplay}>
                 {cases.title}
               </h2>
-              <p className={`mt-3 text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-                {cases.lead}
-              </p>
+              <p className={`${styles.casesLead} ${koreanText}`}>{cases.lead}</p>
             </div>
             <TrackedLink
               href={cases.recordsCta.href}
@@ -245,100 +256,77 @@ export function EducationHubLanding() {
               {cases.recordsCta.label}
             </TrackedLink>
           </div>
-          <ul className="mt-8 grid grid-cols-1 gap-4 min-[800px]:grid-cols-3">
-            {cases.cards.map((card) => {
-              const media = HOME_MEDIA[card.mediaKey as keyof typeof HOME_MEDIA];
-              return (
-                <li key={card.slug} className="min-w-0">
-                  <TrackedLink
-                    href={card.href}
-                    trackLabel={card.trackLabel}
-                    className={`${marketingCardInteractive} ${brandFocusRing} group flex h-full flex-col overflow-hidden`}
-                  >
-                    <div className="relative aspect-[16/10] overflow-hidden">
-                      {card.thumbnailSrc ? (
-                        <ExternalPhoto
-                          src={card.thumbnailSrc}
-                          alt={`${card.programLabel} — ${card.venue}`}
-                          className="absolute inset-0 h-full w-full"
-                          fit="cover"
-                          quality={90}
-                          sizes="(max-width: 800px) 100vw, 33vw"
-                        />
-                      ) : media ? (
-                        <MediaPanel
-                          media={media}
-                          className={`absolute inset-0 h-full w-full border-0 rounded-none ${homePhotoGrade}`}
-                          sizes="gateCard"
-                          objectFit="cover"
-                        />
-                      ) : null}
-                    </div>
-                    <div className="flex min-h-[11.5rem] flex-1 flex-col px-5 py-5">
-                      <p className="text-[12px] font-semibold" style={{ color: brandBlue }}>
-                        {card.operationType} · {card.programLabel}
-                      </p>
-                      <h3 className={`mt-1.5 text-base font-bold leading-snug sm:text-lg ${koreanText}`} style={{ color: brandInk }}>
-                        {card.venue}
-                      </h3>
-                      <p className={`mt-1 text-sm font-medium text-[#6D7B90] ${koreanText}`}>{card.audience}</p>
-                      <p className={`mt-2 line-clamp-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>
-                        {card.description}
-                      </p>
-                      <span
-                        className="mt-auto inline-flex items-center gap-1.5 pt-4 text-[15px] font-semibold"
-                        style={{ color: brandBlue }}
-                      >
-                        {card.ctaLabel}
-                        <HomeChevron />
-                      </span>
-                    </div>
-                  </TrackedLink>
-                </li>
-              );
-            })}
+          <ul className={styles.casesGrid}>
+            {cases.cards.map((card) => (
+              <li
+                key={card.slug}
+                className={card.role === 'featured' ? styles.caseFeatured : styles.caseCompact}
+              >
+                <EducationCaseItem card={card} priority={card.role === 'featured'} />
+              </li>
+            ))}
           </ul>
         </div>
       </section>
 
-      <section id={finalCta.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`}>
-        <div className={marketingSectionInner}>
-          <div className="overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white px-5 py-8 shadow-[0_18px_50px_rgba(15,33,70,0.07)] sm:px-8 sm:py-10">
-            <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
-              {finalCta.eyebrow}
-            </p>
-            <h2 className={`${marketingSectionDisplay} mt-3 text-[1.65rem] sm:text-[2rem]`}>{finalCta.title}</h2>
-            <p className={`mt-3 max-w-xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>{finalCta.lead}</p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <TrackedLink
-                href={finalCta.primary.href}
-                trackLabel={finalCta.primary.trackLabel}
-                commercialRoute="dispatch"
-                ctaIntentId={finalCta.primary.trackLabel}
-                className={`${marketingButtonPrimary} h-12 min-h-12 px-7 ${brandFocusRing}`}
-              >
-                {finalCta.primary.label}
-              </TrackedLink>
-              <TrackedLink
-                href={finalCta.secondary.href}
-                trackLabel={finalCta.secondary.trackLabel}
-                commercialRoute="private"
-                ctaIntentId={finalCta.secondary.trackLabel}
-                className={`${marketingButtonSecondary} h-12 min-h-12 px-7 ${brandFocusRing}`}
-              >
-                {finalCta.secondary.label}
-              </TrackedLink>
-            </div>
+      {/* 06 Contact */}
+      <section id={contact.id} className={styles.contact} aria-labelledby="education-contact-heading">
+        <div className={styles.shell}>
+          <h2 id="education-contact-heading" className={`${marketingSectionDisplay} max-w-2xl ${koreanText}`}>
+            <span className="block">{contactTitle1}</span>
+            <span className="block">{contactTitle2}</span>
+          </h2>
+          <p className={`${styles.contactLead} ${koreanText}`}>{contact.lead}</p>
+          <div className={styles.contactActions}>
             <TrackedLink
-              href={finalCta.contactLink.href}
-              trackLabel={finalCta.contactLink.trackLabel}
-              className={`mt-5 inline-flex text-[14px] font-semibold text-[#536279] underline-offset-4 hover:text-[#14213A] hover:underline ${brandFocusRing} ${koreanText}`}
+              href={contact.primaryCta.href}
+              trackLabel={contact.primaryCta.trackLabel}
+              className={`${marketingButtonPrimary} ${brandFocusRing}`}
             >
-              {finalCta.contactLink.label}
+              {contact.primaryCta.label}
+            </TrackedLink>
+          </div>
+          <div className={`${styles.contactLinks} ${koreanText}`}>
+            <TrackedLink href={contact.dispatchLink.href} trackLabel={contact.dispatchLink.trackLabel}>
+              {contact.dispatchLink.label} →
+            </TrackedLink>
+            <TrackedLink href={contact.privateLink.href} trackLabel={contact.privateLink.trackLabel}>
+              {contact.privateLink.label} →
             </TrackedLink>
           </div>
         </div>
       </section>
-    </main>
+    </div>
+  );
+}
+
+function EducationCaseItem({ card, priority }: { card: EducationHubCaseCard; priority?: boolean }) {
+  return (
+    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`${styles.caseLink} ${brandFocusRing}`}>
+      <article>
+        <div className={styles.casePhoto}>
+          <ExternalPhoto
+            src={card.thumbnailSrc}
+            alt={`${card.programLabel} — ${card.venue}`}
+            className="absolute inset-0 h-full w-full"
+            fit="cover"
+            quality={88}
+            priority={priority}
+            sizes={
+              priority
+                ? '(max-width: 1023px) 100vw, (max-width: 1439px) 58vw, 760px'
+                : '(max-width: 1023px) 100vw, (max-width: 1439px) 28vw, 420px'
+            }
+            objectPosition={card.objectPosition}
+          />
+        </div>
+        <div className={styles.caseMeta}>
+          <h3 className={`${styles.caseVenue} ${koreanText}`}>{card.venue}</h3>
+          <p className={`${styles.caseOperation} ${koreanText}`}>{card.operationType}</p>
+          <p className={`${styles.caseProgram} ${koreanText}`}>{card.programLabel}</p>
+          <p className={styles.caseCta}>{card.ctaLabel} →</p>
+        </div>
+      </article>
+    </TrackedLink>
   );
 }

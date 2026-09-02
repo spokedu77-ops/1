@@ -701,7 +701,7 @@ function SessionSheet({
   );
 }
 
-export function ManagePageContent() {
+export function ManageOrchestrationSurface() {
   const data = useOperationalData();
   const searchParams = useSearchParams();
   const [selectedDay, setSelectedDay] = useState(getSeoulToday());
@@ -741,9 +741,9 @@ export function ManagePageContent() {
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
       <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6">
-        <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-xs font-semibold text-slate-500">이번 주 내 체육수업</p><h1 className="mt-1 text-2xl font-semibold text-slate-950">수업 일정</h1><p className="mt-1 text-sm text-slate-500">{formatSeoulSessionDay(weekDays[0], { month: 'long', day: 'numeric' })}–{formatSeoulSessionDay(weekDays[6], { month: 'long', day: 'numeric' })}</p></div>
-          <div className="flex flex-wrap items-center gap-2"><Link href="/spokedu-master/classes" className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-slate-500">반복 일정 관리</Link><button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} disabled={!data.classes.length} className={SPM_SECONDARY_BTN}><Plus size={17} />다음 수업 만들기</button></div>
+        <header className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div><h1 className="text-[28px] font-bold text-slate-950">수업 관리</h1><p className="mt-2 text-[14px] text-slate-500">{formatSeoulSessionDay(weekDays[0], { month: 'long', day: 'numeric' })}–{formatSeoulSessionDay(weekDays[6], { month: 'long', day: 'numeric' })}</p></div>
+          <button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} disabled={!data.classes.length} className={SPM_SECONDARY_BTN}><Plus size={17} />수업 추가</button>
         </header>
 
         {data.status === 'loading' || data.status === 'idle' ? <p className="mt-5 rounded-2xl bg-white p-5 text-sm font-bold text-slate-500">수업 데이터를 불러오는 중입니다.</p> : null}
@@ -759,10 +759,18 @@ export function ManagePageContent() {
             {!weekSessionCount ? <div className="flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-slate-500">이번 주 예정된 수업이 없습니다.</p><button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} disabled={!data.classes.length} className={SPM_SECONDARY_BTN}><Plus size={16} />다음 수업 만들기</button></div> : null}
           </div>
         </section>
+
+        <section className="mt-8 border-t border-slate-200 pt-6" aria-labelledby="manage-classes-heading">
+          <div className="flex items-center justify-between gap-3"><h2 id="manage-classes-heading" className="text-[22px] font-semibold text-slate-950">내 수업반</h2><Link href="/spokedu-master/classes" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-600">수업반 관리 <ChevronRight size={16} /></Link></div>
+          <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200 bg-white">
+            {data.classes.map((classItem) => <Link key={classItem.id} href={`/spokedu-master/classes/${encodeURIComponent(classItem.id)}`} className="flex min-h-16 items-center justify-between gap-3 px-3 py-3"><span className="min-w-0"><strong className="block truncate text-[16px] font-semibold text-slate-950">{classItem.name}</strong><small className="mt-1 block text-[12px] font-medium text-slate-500">학생 {classItem.studentIds.length}명</small></span><ChevronRight size={17} className="text-slate-400" /></Link>)}
+            {data.status === 'ready' && data.classes.length === 0 ? <p className="py-5 text-sm text-slate-500">아직 만든 수업반이 없습니다.</p> : null}
+          </div>
+        </section>
       </div>
       {editing !== undefined ? <SessionSheet key={editing?.id ?? `new-${selectedDay}-${createClassId ?? 'default'}`} session={editing === null ? null : (data.sessions.find((item) => item.id === editing.id) ?? editing)} initialDate={seoulDayToDate(selectedDay)} initialClassId={createClassId} onClose={() => setEditing(undefined)} /> : null}
     </main>
   );
 }
 
-export default ManagePageContent;
+export default ManageOrchestrationSurface;

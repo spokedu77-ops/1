@@ -11,7 +11,8 @@ describe('MASTER favorite entry parity', () => {
     expect(library).not.toContain('aria-label="라이브러리 보기"');
     expect(spomove).not.toContain('aria-label="SPOMOVE 보기"');
     expect(favorites).toContain("ref.type === 'program'");
-    expect(favorites).toContain("ref.type === 'spomove'");
+    expect(favorites).toContain("ref.type === filter");
+    expect(favorites).toContain('spomoveById.get(ref.id)');
     expect(favorites).toContain('favoriteContentRefsByOwner');
   });
 

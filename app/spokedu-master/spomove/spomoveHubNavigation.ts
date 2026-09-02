@@ -1,4 +1,4 @@
-export type SpomoveHubViewMode = 'all' | 'favorites';
+export type SpomoveHubViewMode = string;
 
 export type SpomoveHubUrlState = {
   view: SpomoveHubViewMode;
@@ -19,11 +19,13 @@ export const DEFAULT_SPOMOVE_HUB_URL_STATE: SpomoveHubUrlState = {
 };
 
 export function parseSpomoveHubView(value: string | null | undefined): SpomoveHubViewMode {
-  return value === 'favorites' ? 'favorites' : 'all';
+  void value;
+  return 'all';
 }
 
 export function getSpomoveHubHref(view: SpomoveHubViewMode = 'all'): string {
-  return view === 'favorites' ? '/spokedu-master/spomove?view=favorites' : '/spokedu-master/spomove';
+  void view;
+  return '/spokedu-master/spomove';
 }
 
 export function parseSpomoveHubUrlState(
@@ -46,7 +48,6 @@ export function parseSpomoveHubUrlState(
 
 export function serializeSpomoveHubUrlState(state: SpomoveHubUrlState): string {
   const params = new URLSearchParams();
-  if (state.view === 'favorites') params.set('view', 'favorites');
   if (state.family !== 'all') params.set('family', state.family);
   if (state.group !== 'all') params.set('group', state.group);
   if (state.difficulty !== 'all') params.set('difficulty', state.difficulty);

@@ -54,12 +54,11 @@ describe('MASTER product UI unity', () => {
     const statePanel = readFileSync(join(ROOT, 'components', 'ui', 'MasterStatePanel.tsx'), 'utf8');
     const classes = readFileSync(join(ROOT, 'classes', 'page.tsx'), 'utf8');
     const students = readFileSync(join(ROOT, 'students', 'page.tsx'), 'utf8');
-    expect(tokens).toContain('SPM_COLLECTION_CARD_FOOTER');
-    expect(tokens).toContain('mt-auto grid gap-2 pt-4');
+    expect(tokens).toContain('@deprecated Foundation v3 uses MasterContentCard or MasterCollectionRow');
     expect(statePanel).toContain('data-master-state={kind}');
     for (const source of [classes, students]) {
-      expect(source).toContain('SPM_COLLECTION_CARD_BODY');
-      expect(source).toContain('SPM_COLLECTION_CARD_FOOTER');
+      expect(source).toContain('MasterCollectionRow');
+      expect(source).not.toContain('SPM_COLLECTION_CARD_BODY');
       expect(source).toContain('<MasterStatePanel kind="loading"');
       expect(source).toContain('<MasterStatePanel kind="error"');
       expect(source).toContain('<MasterStatePanel kind="empty"');

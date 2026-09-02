@@ -12,7 +12,8 @@ describe('MASTER core operating UX contracts', () => {
     expect(page).toContain('getScheduleAction');
     expect(page).not.toContain('<MonthSessionCalendar');
     expect(page).not.toContain('type="date" value={selectedDay}');
-    expect(page).toContain('반복 일정 관리');
+    expect(page).toContain('내 수업반');
+    expect(page).toContain('수업반 관리');
   });
 
   it('keeps premature attendance controls out of new Session mode', () => {

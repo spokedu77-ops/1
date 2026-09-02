@@ -23,9 +23,7 @@ describe('SPOKEDU MASTER class tools placement', () => {
 
     expect(statusBar).toContain('MASTER_NAV_ITEMS');
     expect(navLabels).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
-    expect(navLabels).toContain("href: '/spokedu-master/classes', label: '수업반'");
-    expect(tabBar).toContain("classes: UsersRound");
-    expect(tabBar).toContain("classes: 'attendance'");
+    expect(navLabels).toContain("href: '/spokedu-master/manage', label: '수업 관리'");
     expect(tabBar).toContain("'class-tools': Wrench");
     expect(tabBar).toContain("'class-tools': 'classTools'");
     expect(detail).not.toContain('/spokedu-master/class-tools');

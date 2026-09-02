@@ -10,6 +10,7 @@ import type { SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOffi
 import { TrackedVideoIframe } from '../components/lesson/TrackedVideoIframe';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { preferLiteMedia } from '../lib/mediaPreferences';
+import { buildMasterGateContext, buildMasterPaymentHref } from '../lib/masterGateIntent';
 import { getVideoThumbnailCandidates } from '../lib/program-media';
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 import { publicOfficialPresetSessionHref } from './officialSpomovePresets';
@@ -144,7 +145,7 @@ function PrepMetaRow({
             key={item.label}
             className="min-w-0 rounded-xl border border-slate-200/80 bg-slate-50/90 px-3 py-2"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-400">{item.label}</p>
+            <p className="text-[12px] font-medium text-slate-500">{item.label}</p>
             <p className="mt-0.5 break-words text-[13.5px] font-bold leading-5 text-slate-900">{item.value}</p>
           </div>
         ))}
@@ -427,6 +428,7 @@ export function SpomoveGuidelineSheet({
   onClose: () => void;
 }) {
   const launchMode = usePreferredLaunchMode();
+  void hubView;
   if (!preset) return null;
 
   const display = getSpomovePresetDisplayModel(preset, contentOverride);
@@ -442,13 +444,21 @@ export function SpomoveGuidelineSheet({
         })
       : null;
   const cueSeconds = resolveSessionCueSeconds(preset, null);
-  const startHref = publicOfficialPresetSessionHref(preset, {
+  const baseStartHref = publicOfficialPresetSessionHref(preset, {
     mode: launchMode,
     entry: 'start',
     operation: declaredOperation,
-    hubView: hubView === 'favorites' ? 'favorites' : undefined,
     hubReturn: hubReturnHref,
   });
+  const source = hubReturnHref?.startsWith('/spokedu-master/favorites')
+    ? 'favorites'
+    : hubReturnHref?.startsWith('/spokedu-master/dashboard') ? 'home' : hubReturnHref?.includes('session=') ? 'session' : 'spomove';
+  const startUrl = new URL(baseStartHref, 'https://spokedu.local');
+  startUrl.searchParams.set('source', source);
+  if (hubReturnHref) startUrl.searchParams.set('returnTo', hubReturnHref);
+  const startHref = `${startUrl.pathname}?${startUrl.searchParams.toString()}`;
+  const gateContext = buildMasterGateContext({ capability: 'spomove', pathname: '/spokedu-master/spomove', currentPath: startHref });
+  const lockedHref = gateContext ? buildMasterPaymentHref(gateContext) : '/spokedu-master/subscription';
   const matCount = matGuidance?.recommended ?? family?.matRequirement.minMats ?? 1;
   const intervalLine =
     declaredOperation?.timing.pattern === 'interval'
@@ -488,7 +498,7 @@ export function SpomoveGuidelineSheet({
                   <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center`}>
                     <div>
                       <p className="text-sm font-bold text-slate-800">Premium에서 영상과 실행이 열립니다.</p>
-                      <Link href="/spokedu-master/subscription" className="mt-2 inline-block text-sm font-semibold text-[var(--spm-acc)]">Premium 확인</Link>
+                      <Link href={lockedHref} className="mt-2 inline-block text-sm font-semibold text-[var(--spm-acc)]">Premium 확인</Link>
                     </div>
                   </div>
                 ) : guideVideoState === 'loading' ? (
@@ -555,9 +565,9 @@ export function SpomoveGuidelineSheet({
                 닫기
               </button>
               <Link
-                href={guideVideoState === 'locked' ? '/spokedu-master/subscription' : startHref}
+                href={guideVideoState === 'locked' ? lockedHref : startHref}
                 data-spm-spomove-guide-action="start-official"
-                className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-black shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(15,23,42,0.10)] active:translate-y-0 focus-visible:outline-none sm:h-11 sm:w-[168px] sm:text-[14px]"
+                className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-semibold transition focus-visible:outline-none sm:w-[168px] sm:text-[14px]"
               >
                 {guideVideoState === 'locked' ? 'Premium으로 시작' : '수업 시작'}
               </Link>

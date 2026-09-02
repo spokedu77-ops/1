@@ -27,7 +27,6 @@ describe('LibraryView favorites contract', () => {
   });
 
   it('uses the owner-scoped canonical selectors and action', () => {
-    expect(source).toContain('state.getFavoriteProgramIds');
     expect(source).toContain('state.isFavoriteProgram');
     expect(source).toContain('state.toggleFavoriteProgram');
     expect(source).not.toContain("ownerId = 'local'");
@@ -58,7 +57,7 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain("if (sessionId && operationalStatus !== 'ready') return;");
     expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(source).toContain('autoplayVideo: programHasPlayableVideo(program)');
-    expect(source).toContain('SPOKEDU RESOURCE LIBRARY');
+    expect(source).toContain('primaryActionLabel = getMasterContentPrimaryAction(contentMode)');
   });
 
   it('keeps the library search controls compact and purpose-led', () => {
@@ -99,9 +98,9 @@ describe('LibraryView favorites contract', () => {
     expect(source).not.toContain('지난 수업 보기');
   });
 
-  it('returns the existing loading skeleton before rendering favorites empty states', () => {
+  it('returns the existing loading skeleton before rendering the catalog', () => {
     const loadingIndex = source.indexOf('if (!programsLoaded) return <LibrarySkeleton />');
-    const emptyStateIndex = source.indexOf("favoritesEmptyState === 'no-favorites'");
+    const emptyStateIndex = source.indexOf('const catalogTitle =');
     expect(loadingIndex).toBeGreaterThan(-1);
     expect(emptyStateIndex).toBeGreaterThan(loadingIndex);
   });

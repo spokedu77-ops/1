@@ -58,10 +58,11 @@ describe('lesson discovery and execution flow contract', () => {
     expect(todayPanel).toContain('data-dashboard-section="continuity"');
     expect(todayModel).toContain('deriveMasterSessionWorkState');
     expect(todayModel).toContain('href: workState.href');
-    expect(dashboard).toContain('resolveMasterHomePriority');
-    expect(dashboard).toContain('data-home-priority={homePriority}');
-    expect(dashboard).toContain("homePriority !== 'discovery' ? continuityEntry");
-    expect(dashboard).toContain("homePriority === 'discovery' ? continuityEntry");
+    expect(dashboard).not.toContain('resolveMasterHomePriority');
+    expect(dashboard).not.toContain('data-home-priority');
+    expect(dashboard).toContain("{'이번 주,\\n어떤 수업을 해볼까요?'}");
+    expect(todayPanel).toContain("session.status === 'scheduled'");
+    expect(todayPanel).not.toContain('출석 확인하기');
     expect(weeklyIndex).toBeGreaterThan(featuredIndex);
     expect(dashboard).not.toContain('function ContinueSection');
     expect(dashboard).not.toContain('data-dashboard-section="ops-anchor"');

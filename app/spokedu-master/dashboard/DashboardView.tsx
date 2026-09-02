@@ -30,7 +30,6 @@ import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { getSeoulSessionDay, getSeoulToday } from '../lib/sessionDateTime';
 import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
 import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
@@ -50,7 +49,7 @@ import {
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
 } from '../lib/recentProgramActivity';
-import { HomeContinuityPanel } from './TodaySessionsPanel';
+import { HomeContinuityPanel, HomeNextSessionPanel } from './TodaySessionsPanel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
@@ -65,7 +64,6 @@ import { EntitlementPreviewHome } from './EntitlementPreviewHome';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
-import { resolveMasterHomePriority } from '../lib/masterProductTruth';
 import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
 
 type SpomoveThumbnailPackQueryResult = {
@@ -77,8 +75,8 @@ type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; e
 
 function getFirstStartPaths() {
   return [
-    { title: '좋은 활동부터 찾아보기', description: 'Library에서 아이디어를 고른 뒤 수업에 연결합니다.', href: '/spokedu-master/library', Icon: BookOpen },
-    { title: '수업부터 만들기', description: '반과 일정을 만든 뒤 Library에서 활동을 담습니다.', href: '/spokedu-master/classes', Icon: UsersRound },
+    { title: '좋은 활동부터 찾아보기', description: '수업에 맞는 프로그램을 둘러보세요.', href: '/spokedu-master/programs', Icon: BookOpen },
+    { title: '수업부터 만들기', description: '수업반과 이번 주 일정을 한 번에 준비하세요.', href: '/spokedu-master/manage', Icon: UsersRound },
   ] as const;
 }
 
@@ -189,13 +187,8 @@ function SectionHeader({
 }) {
   const titleClass =
     size === 'lg'
-      ? `break-keep text-[20px] font-black leading-tight tracking-[-0.02em] sm:text-[24px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
-      : `break-keep text-[18px] font-black leading-tight tracking-[-0.02em] sm:text-[20px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
-  const eyebrowClass = tone === 'dark'
-    ? 'mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400'
-    : tone === 'feature'
-      ? 'mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500'
-      : 'mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500';
+      ? `break-keep text-[22px] font-semibold leading-tight ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
+      : `break-keep text-[20px] font-semibold leading-tight ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
   const descriptionClass = tone === 'dark'
     ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-400 sm:text-[13px]'
     : tone === 'feature'
@@ -210,12 +203,7 @@ function SectionHeader({
   return (
     <div className="mb-2.5 flex flex-col items-start justify-between gap-1.5 sm:mb-3 sm:flex-row sm:items-end sm:gap-3">
       <div className="min-w-0">
-        {eyebrow ? (
-          <p className={eyebrowClass}>
-            {eyebrowIcon}
-            {eyebrow}
-          </p>
-        ) : null}
+        {void eyebrow}{void eyebrowIcon}
         <h2 id={titleId} className={titleClass}>
           {title}
         </h2>
@@ -278,14 +266,14 @@ function FirstStartGuide() {
     <section
       data-dashboard-section="first-start"
       aria-labelledby="first-start-heading"
-      className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4"
+      className="border-t border-slate-200 pt-4"
     >
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">처음이라면</p>
-        <h2 id="first-start-heading" className="mt-1 text-[17px] font-black tracking-[-0.02em] text-[color:var(--spm-t)]">
+        <p className="text-[13px] font-medium text-slate-500">처음이라면</p>
+        <h2 id="first-start-heading" className="mt-1 text-[20px] font-semibold text-[color:var(--spm-t)]">
           첫 수업을 시작해 보세요
         </h2>
-        <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
+        <p className="mt-1 text-[14px] font-normal leading-6 text-slate-500">
           콘텐츠부터 찾아도, 수업부터 만들어도 같은 준비 흐름으로 이어집니다.
         </p>
       </div>
@@ -294,10 +282,10 @@ function FirstStartGuide() {
           <Link
             key={href}
             href={href}
-            className="flex min-h-11 items-center gap-2.5 rounded-[12px] border border-slate-200 bg-slate-50 px-3 text-[12px] font-black text-[color:var(--spm-t)] transition-colors hover:border-slate-300 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+            className="flex min-h-12 items-center gap-2.5 rounded-[12px] bg-slate-100 px-3 text-[14px] font-semibold text-[color:var(--spm-t)] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
           >
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-900 text-white"><Icon size={14} aria-hidden="true" /></span>
-            <span className="min-w-0 flex-1"><strong className="block break-keep">{title}</strong><small className="mt-0.5 block font-semibold text-slate-500">{description}</small></span>
+            <span className="min-w-0 flex-1"><strong className="block break-keep">{title}</strong><small className="mt-0.5 block text-[12px] font-medium text-slate-500">{description}</small></span>
             <ArrowRight size={13} className="shrink-0 text-slate-400" aria-hidden="true" />
           </Link>
         ))}
@@ -328,7 +316,7 @@ function SpomoveCard({
   return (
     <article
       data-spomove-preset={preset.id}
-      className="group flex h-[345px] min-h-[345px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white text-[color:var(--spm-t)] shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition-[border-color,box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)] active:translate-y-0"
+      className="group flex h-[345px] min-h-[345px] flex-col overflow-hidden rounded-[16px] border border-slate-200 bg-white text-[color:var(--spm-t)] transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-slate-300 active:translate-y-0"
     >
       <button
         type="button"
@@ -367,10 +355,10 @@ function SpomoveCard({
         )}
         <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-150 group-hover:bg-black/[0.07]" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
-          <p className="max-w-[76%] truncate text-[11px] font-black text-white/82 drop-shadow">
+          <p className="max-w-[76%] truncate text-[12px] font-medium text-white/82">
             {displayModel.programLabel}
           </p>
-          <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-black leading-5 text-white drop-shadow">
+          <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-semibold leading-5 text-white">
             {displayModel.displayTitle}
           </h3>
         </div>
@@ -394,7 +382,7 @@ function SpomoveCard({
           type="button"
           data-spm-spomove-card-action="start"
           onClick={() => onOpenGuide(preset)}
-          className="inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span>활동 준비</span>
           <ArrowRight size={14} aria-hidden />
@@ -681,24 +669,6 @@ function EntitledDashboardView() {
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
-  const homePriority = useMemo(() => {
-    const today = getSeoulToday();
-    const now = Date.now();
-    const classById = new Map(operationalClasses.map((item) => [item.id, item]));
-    return resolveMasterHomePriority({
-      hasUrgentOperationalWork: operationalStatus !== 'ready' || operationalSessions.some((session) =>
-        session.status === 'scheduled' && (
-          Boolean(session.startedAt)
-          || session.programs.some((program) => program.isCompleted)
-          || new Date(session.endAt).getTime() < now
-        )
-        || session.status === 'completed'
-          && Boolean(classById.get(session.classId)?.studentIds.length)
-          && session.attendance.length === 0),
-      hasTodaySession: operationalSessions.some((session) => getSeoulSessionDay(session.startAt) === today),
-    });
-  }, [operationalClasses, operationalSessions, operationalStatus]);
-
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
       console.error('[SPOKEDU MASTER] Weekly recommendations could not be filled to four items.');
@@ -751,21 +721,16 @@ function EntitledDashboardView() {
   );
 
   return (
-    <main data-home-priority={homePriority} className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-4 overflow-y-auto px-4 pb-28 pt-4 sm:gap-5 sm:px-6 sm:pt-5 lg:gap-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-      {/* Home priority follows current user need; operations are not inherently above discovery. */}
+    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-5 overflow-y-auto px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8" style={{ background: 'var(--spm-bg)' }}>
       <header className="relative px-0.5 pt-0.5 sm:px-1">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">매주 새로운 수업</p>
             <h1
-              className="mt-1 text-[22px] font-black leading-none tracking-[-0.03em] text-[color:var(--spm-t)] sm:text-[26px]"
+              className="max-w-xl whitespace-pre-line text-[32px] font-bold leading-[1.15] tracking-[-0.025em] text-[color:var(--spm-t)] md:text-[40px]"
               style={{ fontFamily: 'var(--spm-font-display, inherit)' }}
             >
-              SPOKEDU MASTER
+              {'이번 주,\n어떤 수업을 해볼까요?'}
             </h1>
-            <p className="mt-1.5 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]">
-              이번 주 추천을 받고, 하던 수업은 바로 이어가세요.
-            </p>
           </div>
           <Link
             href="/spokedu-master/activity"
@@ -777,7 +742,7 @@ function EntitledDashboardView() {
         </div>
       </header>
 
-      {!isFirstUser && homePriority !== 'discovery' ? continuityEntry : null}
+      {!isFirstUser ? continuityEntry : null}
 
       <section
         data-dashboard-section="featured-flow"
@@ -792,7 +757,6 @@ function EntitledDashboardView() {
             titleId="weekly-heading"
             size="lg"
             tone="feature"
-            description="SPOKEDU가 직접 고른, Lite만으로 모두 실행 가능한 프로그램 4개입니다."
             href="/spokedu-master/library"
             action="수업 더 보기"
           />
@@ -826,8 +790,6 @@ function EntitledDashboardView() {
         </section>
       </section>
 
-      {isFirstUser ? <FirstStartGuide /> : homePriority === 'discovery' ? continuityEntry : null}
-
       <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="border-t border-slate-200 pt-4">
           <SectionHeader
             eyebrow="SPOMOVE"
@@ -850,6 +812,9 @@ function EntitledDashboardView() {
             })}
           </div>
         </section>
+
+      {!isFirstUser ? <HomeNextSessionPanel sessions={operationalSessions} classes={operationalClasses} /> : null}
+      {isFirstUser ? <FirstStartGuide /> : null}
 
       {selectedProgram ? (
         <ProgramPreviewModal
@@ -877,6 +842,7 @@ function EntitledDashboardView() {
         contentLoadState={spomoveContentLoadState}
         guideVideoUrl={guideVideo.url}
         guideVideoState={guideVideo.state}
+        hubReturnHref="/spokedu-master/dashboard"
         onClose={() => setPreviewSpomove(null)}
       />
     </main>

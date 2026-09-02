@@ -621,13 +621,13 @@ function CardVisual({
         {showProgramLabel ? (
           <p
             data-spm-spomove-card-program-label="true"
-            className="max-w-[78%] truncate text-[11px] font-black leading-4 tracking-[0.01em] text-white/78 drop-shadow"
+            className="max-w-[78%] truncate text-[12px] font-medium leading-4 text-white/78"
           >
             {label}
           </p>
         ) : null}
         <h3
-          className={`line-clamp-2 max-w-[94%] text-[17px] font-black leading-[1.2] text-white drop-shadow ${
+          className={`line-clamp-2 max-w-[94%] text-[17px] font-semibold leading-[1.2] text-white ${
             showProgramLabel ? 'mt-1' : 'mt-0'
           }`}
         >
@@ -655,14 +655,14 @@ function CardInfo({
   onGuide: () => void;
   sessionAssignment?: boolean;
 }) {
+  void hubView;
   const router = useRouter();
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
   const showSettings =
     supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
 
   const hrefForSettings = () => {
-    const hubViewOption = hubView === 'favorites' ? { hubView: 'favorites' as const } : {};
-    return publicOfficialPresetSessionHref(preset, { entry: 'settings', hubReturn: hubReturnHref, ...hubViewOption });
+    return publicOfficialPresetSessionHref(preset, { entry: 'settings', hubReturn: hubReturnHref });
   };
 
   return (
@@ -898,7 +898,6 @@ export default function SpomoveHubView() {
     return `${url.pathname}?${url.searchParams.toString()}`;
   };
   const hubReturnHref = appendSessionContext(serializeSpomoveHubUrlState(urlState));
-  const showSavedOnly = hubView === 'favorites';
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
@@ -1050,13 +1049,11 @@ export default function SpomoveHubView() {
     matchesProgramGroup(preset, value);
   const matchesDifficulty = (preset: OfficialSpomovePreset, value: ThinkingLevelTab) =>
     matchesThinkingLevel(preset, value);
-  const matchesFavorites = (preset: OfficialSpomovePreset) => !showSavedOnly || favoriteSpomoveIds.has(preset.id);
-
   const filteredPresets = useMemo(() => {
     const familyPresets = filterPresetsByCatalogFamily(visiblePresets, selectedFamilyId);
     const presets = familyPresets.filter((preset) =>
       matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, activeThinkingLevel) &&
-      matchesMovement(preset, movementFilter) && matchesSearch(preset) && matchesFavorites(preset));
+      matchesMovement(preset, movementFilter) && matchesSearch(preset));
     return sortSpomovePresetsByCatalogOrder(presets);
   // Filter helpers close over search/favorite state already listed below.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- matches* recreate each render; inputs above are the true deps
@@ -1067,17 +1064,16 @@ export default function SpomoveHubView() {
     favoriteSpomoveIds,
     movementFilter,
     movementLayerEnabled,
-    showSavedOnly,
     searchQuery,
     selectedFamilyId,
   ]);
   const facetPresets = filterPresetsByCatalogFamily(visiblePresets, selectedFamilyId);
   const difficultyFacetCount = (tab: ThinkingLevelTab) => facetPresets.filter((preset) =>
     matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, tab) &&
-    matchesMovement(preset, movementFilter) && matchesSearch(preset) && matchesFavorites(preset)).length;
+    matchesMovement(preset, movementFilter) && matchesSearch(preset)).length;
   const movementFacetCount = (tab: MovementQuickFilter | 'all') => facetPresets.filter((preset) =>
     matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, activeThinkingLevel) &&
-    matchesMovement(preset, tab) && matchesSearch(preset) && matchesFavorites(preset)).length;
+    matchesMovement(preset, tab) && matchesSearch(preset)).length;
   const showProgramLabel = selectedFamilyId === null;
   const activeFilterLabel =
     [
@@ -1085,12 +1081,11 @@ export default function SpomoveHubView() {
       activeThinkingLevel === 'all' ? null : THINKING_LEVEL_FILTER_LABELS[activeThinkingLevel],
       movementFilter === 'all' ? null : MOVEMENT_FILTERS.find(([id]) => id === movementFilter)?.[1],
       searchQuery ? `“${searchQuery}”` : null,
-      showSavedOnly ? '즐겨찾기' : null,
       selectedFamilyId ? getSpomoveCatalogFamily(selectedFamilyId).name : null,
     ]
       .filter(Boolean)
       .join(' · ') || '전체';
-  const isFamilyLanding = selectedFamilyId === null && !searchQuery && !showSavedOnly && activeProgramGroup === 'all';
+  const isFamilyLanding = selectedFamilyId === null && !searchQuery && activeProgramGroup === 'all';
   const familyPresets = useMemo(
     () => SPOMOVE_CATALOG_FAMILIES.map((family) => ({
       family,
@@ -1145,7 +1140,7 @@ export default function SpomoveHubView() {
         ) : null}
         {/* 헤더 */}
         <header className="border-b border-slate-200 pb-4">
-          <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+          <span className="inline-flex items-center gap-2 text-[13px] font-medium text-slate-500">
             <MonitorPlay className="h-3.5 w-3.5" />
             PREMIUM DIGITAL MOVEMENT
           </span>
@@ -1161,8 +1156,8 @@ export default function SpomoveHubView() {
         {!isFamilyLanding ? <section className="order-3 mt-8 border-t border-slate-200 pt-5">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">최근 SPOMOVE</p>
-              <h2 className="mt-0.5 text-[18px] font-black leading-tight text-slate-950">최근 사용한 활동</h2>
+              <p className="text-[13px] font-medium text-slate-500">최근 SPOMOVE</p>
+              <h2 className="mt-0.5 text-[20px] font-semibold leading-tight text-slate-950">최근 사용한 활동</h2>
             </div>
             <a href="#spomove-program-list" className="inline-flex min-h-11 items-center text-sm font-black text-slate-950 sm:min-h-9">활동 선택</a>
           </div>
@@ -1268,7 +1263,7 @@ export default function SpomoveHubView() {
                   <button type="button" onClick={() => updateHubState({ family: 'all' })} className="mb-2 min-h-11 text-xs font-medium text-slate-500">← 프로그램 전체</button>
                 ) : null}
                 <h2 className="text-xl font-semibold text-slate-950">
-                  {selectedFamilyId ? getSpomoveCatalogFamily(selectedFamilyId).name : showSavedOnly ? '저장한 활동' : '검색 결과'}
+                  {selectedFamilyId ? getSpomoveCatalogFamily(selectedFamilyId).name : '검색 결과'}
                 </h2>
                 <p className="mt-1 text-sm font-normal text-slate-500">{filteredPresets.length}개 활동</p>
               </div>
@@ -1300,7 +1295,7 @@ export default function SpomoveHubView() {
               <div className="mt-4">{renderPresetGrid(filteredPresets)}</div>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-3 py-6 text-sm text-slate-600">
-                <p>{showSavedOnly ? '저장한 활동이 없습니다.' : `${activeFilterLabel} 조건에 맞는 활동이 없습니다.`}</p>
+                <p>{activeFilterLabel} 조건에 맞는 활동이 없습니다.</p>
                 <button type="button" onClick={clearHubFilters} className="min-h-11 font-semibold text-[var(--spm-acc)]">전체 프로그램 보기</button>
               </div>
             )}

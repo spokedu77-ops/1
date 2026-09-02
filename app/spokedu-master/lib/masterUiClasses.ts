@@ -29,7 +29,7 @@ export function spmSegClass(active: boolean, extra = ''): string {
   }${extra ? ` ${extra}` : ''}`;
 }
 
-/** Repeated collection geometry: content decides meaning, never footer position. */
+/** @deprecated Foundation v3 uses MasterContentCard or MasterCollectionRow. */
 export const SPM_COLLECTION_CARD =
   'flex h-full min-h-[220px] flex-col rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2';
 
@@ -37,13 +37,15 @@ export const SPM_COLLECTION_CARD_BODY = 'min-h-0 flex-1';
 
 export const SPM_COLLECTION_CARD_FOOTER = 'mt-auto grid gap-2 pt-4';
 
+/** @deprecated Foundation v3 uses MasterState. */
 export const SPM_STATE_PANEL =
   'rounded-xl border border-slate-200 bg-white p-4 text-sm font-normal leading-6 text-slate-600';
 
+/** @deprecated Foundation v3 uses MasterState. */
 export const SPM_EMPTY_PANEL =
   'rounded-xl border border-slate-200 bg-white px-4 py-5 text-center text-sm text-slate-500';
 
-/** Visual System v1 foundations shared across all MASTER surface families. */
+/** Foundation v3 compatibility tokens for call sites not yet componentized. */
 export const SPM_PAGE_TITLE = 'text-2xl font-semibold leading-tight text-slate-950';
 export const SPM_SECTION_HEADING = 'text-lg font-semibold text-slate-900';
 export const SPM_CONTENT_TITLE = 'text-base font-semibold text-slate-900';

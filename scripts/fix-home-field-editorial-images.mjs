@@ -1,68 +1,104 @@
 /**
- * Re-bake Home field-editorial WebP assets with correct orientation and case provenance.
+ * Bake Home field-editorial WebP assets from explicit local originals.
+ * Never re-encode an existing production derivative as if it were a source.
+ *
  * Usage: node scripts/fix-home-field-editorial-images.mjs
  */
+import { existsSync } from 'fs';
 import { rename, unlink } from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'public/images/spokedu/home/field-editorial');
+const HOME = path.join(ROOT, 'public/images/spokedu/home');
 const RECORDS = path.join(ROOT, 'public/images/spokedu/records');
 const SUB = path.join(ROOT, 'public/images/spokedu/subscription');
 
-const WEBP = { quality: 88, effort: 4 };
+const WEBP = { quality: 86, effort: 4 };
 
-async function writeWebpFrom(input, output, options = {}) {
-  let pipeline = sharp(input);
-  if (options.rotate != null) pipeline = pipeline.rotate(options.rotate);
-  else pipeline = pipeline.rotate();
-  if (options.resize) {
-    pipeline = pipeline.resize(options.resize.width, options.resize.height, {
+/** @type {Array<{ role: string; source: string | null; output: string; targetWidth: number; quality?: number; resize?: { width: number; height: number }; skip?: string }>} */
+const MANIFEST = [
+  {
+    role: 'hero',
+    source: null,
+    output: path.join(OUT, 'home-hero-field.webp'),
+    targetWidth: 2400,
+    skip: 'ASSET SOURCE REQUIRED — no high-res original for 서울위례초 Hero in repo; do not webp→webp',
+  },
+  {
+    role: 'spomove',
+    source: path.join(HOME, 'home-hero-spomove-class.JPG'),
+    output: path.join(OUT, 'home-spomove-field.webp'),
+    targetWidth: 2400,
+  },
+  {
+    role: 'case-general',
+    source: path.join(RECORDS, 'maedong-sports-stepup.jpg'),
+    output: path.join(OUT, 'home-case-general.webp'),
+    targetWidth: 1600,
+  },
+  {
+    role: 'case-adapted',
+    source: path.join(RECORDS, 'donghaeng-special-pe-field.jpg'),
+    output: path.join(OUT, 'home-case-adapted.webp'),
+    targetWidth: 1200,
+    resize: { width: 1200, height: 900 },
+  },
+  {
+    role: 'case-spomove',
+    source: path.join(RECORDS, 'dongjak-spomove.jpg'),
+    output: path.join(OUT, 'home-case-spomove.webp'),
+    targetWidth: 1600,
+  },
+];
+
+async function writeWebpFrom(entry) {
+  if (entry.skip) {
+    console.warn(`SKIP ${entry.role}: ${entry.skip}`);
+    return;
+  }
+  if (!entry.source || !existsSync(entry.source)) {
+    console.warn(`SKIP ${entry.role}: missing source ${entry.source ?? '(null)'}`);
+    return;
+  }
+
+  let pipeline = sharp(entry.source).rotate();
+  if (entry.resize) {
+    pipeline = pipeline.resize(entry.resize.width, entry.resize.height, {
+      fit: 'cover',
+      position: 'centre',
+    });
+  } else {
+    pipeline = pipeline.resize(entry.targetWidth, null, {
       fit: 'inside',
-      withoutEnlargement: true,
+      withoutEnlargement: false,
     });
   }
-  const buffer = await pipeline.webp(WEBP).toBuffer();
-  const tempPath = `${output}.rebuild`;
+
+  const buffer = await pipeline.webp({ ...WEBP, quality: entry.quality ?? WEBP.quality }).toBuffer();
+  const tempPath = `${entry.output}.rebuild`;
   await sharp(buffer).toFile(tempPath);
-  await unlink(output).catch(() => undefined);
-  await rename(tempPath, output);
-  const meta = await sharp(output).metadata();
-  console.log(`OK ${path.relative(ROOT, output)} → ${meta.width}x${meta.height}`);
+  await unlink(entry.output).catch(() => undefined);
+  await rename(tempPath, entry.output);
+  const meta = await sharp(entry.output).metadata();
+  const sizeKb = Math.round((await import('fs')).statSync(entry.output).size / 1024);
+  console.log(
+    `OK ${path.relative(ROOT, entry.output)} ← ${path.relative(ROOT, entry.source)} → ${meta.width}x${meta.height} (${sizeKb}KB)`,
+  );
 }
 
-// Why: re-bake with auto-orient (pixels upright in container)
-await writeWebpFrom(path.join(OUT, 'home-why-field-ed.webp'), path.join(OUT, 'home-why-field-ed.webp'));
+for (const entry of MANIFEST) {
+  await writeWebpFrom(entry);
+}
 
-// Hero: re-bake only (orientation OK)
-await writeWebpFrom(path.join(OUT, 'home-hero-field.webp'), path.join(OUT, 'home-hero-field.webp'));
-
-// SPOMOVE section: re-bake (orientation OK)
-await writeWebpFrom(path.join(OUT, 'home-spomove-field.webp'), path.join(OUT, 'home-spomove-field.webp'));
-
-// Cases: replace with verified record sources for slug integrity
-await writeWebpFrom(
-  path.join(RECORDS, 'maedong-sports-stepup.jpg'),
-  path.join(OUT, 'home-case-general.webp'),
-);
-
-await writeWebpFrom(
-  path.join(RECORDS, 'donghaeng-special-pe-field.jpg'),
-  path.join(OUT, 'home-case-adapted.webp'),
-  { resize: { width: 960, height: 960 } },
-);
-
-await writeWebpFrom(path.join(RECORDS, 'dongjak-spomove.jpg'), path.join(OUT, 'home-case-spomove.webp'), {
-  resize: { width: 1280, height: 720 },
-});
-
-// Subscription Home derivative — top UI only (same screenshot, trimmed empty lower band)
-const libraryMeta = await sharp(path.join(SUB, 'product-library.png')).metadata();
-const cropHeight = Math.min(libraryMeta.height ?? 430, 430);
-await sharp(path.join(SUB, 'product-library.png'))
-  .extract({ left: 0, top: 0, width: libraryMeta.width ?? 1216, height: cropHeight })
-  .webp(WEBP)
-  .toFile(path.join(SUB, 'product-library-home.webp'));
-
-console.log('OK subscription/product-library-home.webp');
+// Subscription Home derivative — top UI only (PNG source, single encode)
+if (existsSync(path.join(SUB, 'product-library.png'))) {
+  const libraryMeta = await sharp(path.join(SUB, 'product-library.png')).metadata();
+  const cropHeight = Math.min(libraryMeta.height ?? 430, 430);
+  await sharp(path.join(SUB, 'product-library.png'))
+    .extract({ left: 0, top: 0, width: libraryMeta.width ?? 1216, height: cropHeight })
+    .webp(WEBP)
+    .toFile(path.join(SUB, 'product-library-home.webp'));
+  console.log('OK subscription/product-library-home.webp');
+}

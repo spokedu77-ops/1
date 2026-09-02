@@ -8,7 +8,6 @@ import {
   MASTER_PRODUCT_FLOW,
   MASTER_PRODUCT_VALUES,
   resolveMasterContentMode,
-  resolveMasterHomePriority,
 } from './masterProductTruth';
 
 describe('MASTER Level 0 product contract', () => {
@@ -43,9 +42,4 @@ describe('MASTER content and Home context', () => {
     expect(getMasterContentPrimaryAction('session-build')).toBe('이 수업에 추가');
   });
 
-  it('uses current user need instead of a permanent operations-first rule', () => {
-    expect(resolveMasterHomePriority({ hasUrgentOperationalWork: true, hasTodaySession: true })).toBe('operational');
-    expect(resolveMasterHomePriority({ hasUrgentOperationalWork: false, hasTodaySession: true })).toBe('today');
-    expect(resolveMasterHomePriority({ hasUrgentOperationalWork: false, hasTodaySession: false })).toBe('discovery');
-  });
 });

@@ -4,7 +4,7 @@
   --he-content: 1200px;
   --he-wide: 1320px;
   --he-measure: 640px;
-  --he-photo-radius: 14px;
+  --he-documentary-radius: 6px;
   --he-product-radius: 14px;
   color: var(--spokedu-marketing-color-navy);
   background: var(--spokedu-marketing-color-paper);
@@ -34,7 +34,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -154,44 +154,6 @@
   padding-top: 1.5rem;
 }
 
-/* —— Why —— */
-.why {
-  padding-block: clamp(3rem, 5vw, 4rem);
-  background: var(--spokedu-marketing-color-paper);
-}
-
-.whyGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.75rem;
-  align-items: center;
-}
-
-.whyBody {
-  margin-top: 1.25rem;
-  max-width: 32rem;
-  font-size: 1.0625rem;
-  line-height: 1.72;
-  color: var(--spokedu-marketing-color-body);
-}
-
-.whyPhoto {
-  position: relative;
-  width: 100%;
-  min-width: 0;
-  min-height: clamp(18rem, 44vw, 24rem);
-  aspect-ratio: 3 / 4;
-  border-radius: var(--he-photo-radius);
-  overflow: hidden;
-}
-
-.whyPhotoMedia {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  width: 100%;
-}
-
 /* —— SPOMOVE —— */
 .spomove {
   padding-block: clamp(5rem, 8vw, 7rem);
@@ -199,10 +161,14 @@
   color: #fff;
 }
 
-.spomoveGrid {
+.spomoveHeader {
   display: grid;
-  gap: 2rem;
-  align-items: stretch;
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.spomoveHeaderPrimary {
+  min-width: 0;
 }
 
 .spomoveLabel {
@@ -213,46 +179,74 @@
   color: #afc8ff;
 }
 
-.spomoveBody {
-  margin-top: 1.25rem;
-  max-width: 24rem;
+.spomoveMicro {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #8faddf;
+}
+
+.spomoveDefinition {
+  max-width: 22rem;
   font-size: 1.125rem;
-  line-height: 1.75;
+  line-height: 1.72;
   color: #cfdaea;
 }
 
-.spomoveFlow {
-  margin-top: 1.375rem;
-  font-size: 0.9375rem;
-  color: #afc8ff;
-}
-
-.spomoveFlow .flowArrow {
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.spomoveCta {
-  margin-top: 2rem;
-}
-
-.spomoveVisual {
+.spomovePhoto {
   position: relative;
   width: 100%;
   min-width: 0;
-  min-height: clamp(16rem, 32vw, 26rem);
-  aspect-ratio: 16 / 10;
-  border-radius: var(--he-photo-radius);
+  margin-top: clamp(2rem, 4vw, 2.75rem);
+  aspect-ratio: 16 / 9;
+  min-height: clamp(14rem, 42vw, 22rem);
+  border-radius: var(--he-documentary-radius);
   overflow: hidden;
   background: #132245;
 }
 
-.spomoveMedia {
+.spomovePhotoMedia {
   position: absolute;
   inset: 0;
   height: 100%;
   width: 100%;
   margin: 0;
   border-radius: 0;
+}
+
+.spomovePrinciples {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin: clamp(2rem, 4vw, 2.75rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spomovePrincipleItem {
+  min-width: 0;
+}
+
+.spomovePrincipleLabel {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.spomovePrincipleRule {
+  display: block;
+  margin-top: 0.75rem;
+  width: 2.5rem;
+  height: 2px;
+  background: rgba(175, 200, 255, 0.55);
+}
+
+.spomoveCta {
+  margin-top: 2.25rem;
 }
 
 /* —— Subscription —— */
@@ -339,14 +333,14 @@
 .casesGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: 2rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .caseFeatured,
-.caseCompact {
+.caseSupport {
   width: 100%;
   min-width: 0;
 }
@@ -374,8 +368,9 @@
   position: relative;
   width: 100%;
   min-width: 0;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  border-radius: var(--he-photo-radius);
+  border-radius: var(--he-documentary-radius);
   background: #e8edf4;
 }
 
@@ -383,19 +378,9 @@
   object-fit: cover;
 }
 
-.caseFeatured .casePhoto {
-  flex: 1 1 auto;
-  min-height: clamp(20rem, 56vw, 28rem);
-}
-
-.caseCompact .casePhoto {
-  flex: 1 1 auto;
-  min-height: clamp(13rem, 40vw, 17rem);
-}
-
 .caseMeta {
   flex-shrink: 0;
-  margin-top: 0.75rem;
+  margin-top: 0.875rem;
 }
 
 .caseVenue {
@@ -406,18 +391,12 @@
   color: var(--spokedu-marketing-color-ink);
 }
 
-.caseAudience {
-  margin-top: 0.35rem;
+.caseDisplayMeta {
+  margin-top: 0.375rem;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.55;
   color: var(--spokedu-marketing-color-body);
-}
-
-.caseProgram {
-  margin-top: 0.25rem;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: var(--spokedu-marketing-color-muted);
 }
 
 .caseCta {
@@ -468,20 +447,25 @@
     background: var(--spokedu-marketing-color-border);
   }
 
-  .whyGrid {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    gap: clamp(2rem, 4vw, 3rem);
+  .spomoveHeader {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: clamp(2rem, 4vw, 3.5rem);
   }
 
-  .whyPhoto {
-    min-height: 22rem;
-    max-height: 28rem;
-    aspect-ratio: 3 / 4;
+  .spomoveDefinition {
+    max-width: none;
+    font-size: 1.125rem;
+    justify-self: end;
+    text-align: left;
   }
 
-  .spomoveGrid {
-    grid-template-columns: minmax(0, 0.38fr) minmax(0, 0.62fr);
-    gap: 3rem;
+  .spomovePrinciples {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .spomovePrincipleLabel {
+    font-size: 1.375rem;
   }
 
   .productStageFooter {
@@ -493,55 +477,36 @@
 
   .casesHeader {
     flex-direction: row;
-    align-items: flex-end;
+    align-items: baseline;
     justify-content: space-between;
+    gap: 2rem;
   }
 
   .casesGrid {
-    grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0.875rem;
-    align-items: stretch;
-    min-height: 34rem;
-  }
-
-  .caseFeatured {
-    grid-row: 1 / -1;
-    display: flex;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(0.875rem, 1.5vw, 1.125rem);
+    align-items: start;
   }
 
   .caseFeatured .casePhoto {
-    min-height: 0;
-    flex: 1 1 auto;
-  }
-
-  .caseCompact {
-    display: flex;
-    min-height: 0;
-  }
-
-  .caseCompact .caseLink article {
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 0.875rem;
-    min-height: calc((34rem - 0.875rem) / 2);
-  }
-
-  .caseCompact .casePhoto {
-    flex: 1.18 1 0;
-    min-width: 0;
-    min-height: 13.5rem;
-    height: auto;
     aspect-ratio: 4 / 3;
+    min-height: 0;
   }
 
-  .caseCompact .caseMeta {
-    flex: 0.82 1 0;
-    min-width: 0;
-    margin-top: 0;
-    align-self: flex-end;
-    padding-bottom: 0.125rem;
+  .caseSupport .casePhoto {
+    aspect-ratio: 4 / 3;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .casesGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .caseFeatured {
+    grid-column: 1 / -1;
   }
 }
 
@@ -551,10 +516,6 @@
     width: 100%;
     height: 1px;
     background: var(--spokedu-marketing-color-border);
-  }
-
-  .casesGrid {
-    gap: 2.25rem;
   }
 }
 

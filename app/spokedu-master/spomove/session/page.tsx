@@ -594,7 +594,6 @@ function SpomoveSessionContent() {
         operationLayerStatus !== 'legacyDisabled' && operationCandidate
           ? operationCandidate
           : null,
-      hubView: searchParams.get('hubView') === 'favorites' ? 'favorites' : undefined,
       hubReturn: parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView')),
       returnTo: origin.returnTo ?? undefined,
       session: origin.sessionId ?? undefined,

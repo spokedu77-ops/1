@@ -41,8 +41,8 @@ describe('profile local workspace cleanup contract', () => {
 });
 
 describe('local workspace persistence boundary', () => {
-  it('persists owner-scoped workspace fields with store version 17', () => {
-    expect(storeSource).toContain('version: 17');
+  it('persists owner-scoped workspace fields with store version 18', () => {
+    expect(storeSource).toContain('version: 18');
     expect(storeSource).toContain('localWorkspaceOwnerId: state.localWorkspaceOwnerId');
     expect(storeSource).toContain('classTimerMs: state.classTimerMs');
     expect(storeSource).toContain('classTimerRunning: state.classTimerRunning');

@@ -140,61 +140,50 @@ export function HomeContinuityPanel({ sessions, classes, loading, error, onRetry
   error: boolean;
   onRetry: () => void;
 }) {
-  const now = useMemo(() => new Date(), []);
   const item = useMemo(() => {
-    const classMap = new Map(classes.map((classItem) => [classItem.id, classItem]));
     const candidates = sessions
-      .filter((session) => session.status !== 'cancelled')
-      .map((session) => ({ session, state: deriveMasterSessionWorkState(session, classMap.get(session.classId), now) }))
-      .filter(({ state }) => state.stage !== 'completed' || state.attention.attendanceMissing)
-      .sort((left, right) => {
-        const rank = ({ session, state }: typeof left) => {
-          if (state.stage === 'ready-to-wrap') return 0;
-          if (session.startedAt || state.stage === 'in-progress') return 1;
-          if (state.attention.attendanceMissing || state.attention.overdue) return 2;
-          return 3;
-        };
-        return rank(left) - rank(right)
-          || new Date(left.session.startAt).getTime() - new Date(right.session.startAt).getTime();
-      });
+      .filter((session) => session.status === 'scheduled' && (Boolean(session.startedAt) || session.programs.some((program) => program.isCompleted)))
+      .sort((left, right) => left.startAt.localeCompare(right.startAt));
     return candidates[0] ?? null;
-  }, [classes, now, sessions]);
+  }, [sessions]);
 
-  if (loading) return <p className="text-sm text-slate-500">다음 수업을 확인하고 있습니다.</p>;
-  if (error) return <p role="alert" className="text-sm text-rose-700">수업 흐름을 불러오지 못했습니다. <button type="button" onClick={onRetry} className="min-h-11 underline underline-offset-2">다시 시도</button></p>;
+  void classes; void loading; void error; void onRetry;
   if (!item) return null;
 
-  const urgent = Boolean(item.session.startedAt)
-    || item.state.stage === 'in-progress'
-    || item.state.stage === 'ready-to-wrap'
-    || item.state.attention.overdue
-    || item.state.attention.attendanceMissing;
-  const action = item.state.stage === 'ready-to-wrap'
-    ? '수업 마무리하기'
-    : item.session.startedAt || item.state.stage === 'in-progress'
-      ? '수업 계속하기'
-      : item.state.attention.attendanceMissing
-        ? '출석 확인하기'
-        : '수업 준비 이어가기';
+  const completed = item.programs.filter((program) => program.isCompleted).length;
+  const action = item.programs.length > 0 && completed === item.programs.length ? '수업 마무리하기' : '수업 계속하기';
 
   return (
     <section
       data-dashboard-section="continuity"
-      data-continuity-priority={urgent ? 'resume' : 'next'}
+      data-continuity-priority="resume"
       aria-labelledby="home-continuity-heading"
-      className={`flex flex-col gap-3 rounded-[16px] border px-4 py-3 sm:flex-row sm:items-center ${urgent ? 'border-amber-200 bg-amber-50/60' : 'border-slate-200 bg-white'}`}
+      className="flex flex-col gap-3 rounded-[16px] border border-indigo-200 bg-indigo-50/60 px-4 py-3 sm:flex-row sm:items-center"
     >
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold text-slate-500">{urgent ? '이어갈 수업' : '내 다음 수업'}</p>
-        <h2 id="home-continuity-heading" className="mt-0.5 truncate text-base font-semibold text-slate-950">{item.session.className}</h2>
+        <p className="text-[13px] font-medium text-indigo-700">이어갈 수업</p>
+        <h2 id="home-continuity-heading" className="mt-0.5 truncate text-[18px] font-semibold text-slate-950">{item.className}</h2>
         <p className="mt-1 text-xs text-slate-500">
-          {formatSeoulSessionDay(getSeoulSessionDay(item.session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(item.session.startAt)}
-          {item.state.progress.total > 0 ? ` · 활동 ${item.state.progress.completed}/${item.state.progress.total}` : ''}
+          {formatSeoulSessionDay(getSeoulSessionDay(item.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(item.startAt)}
+          {item.programs.length > 0 ? ` · 활동 ${completed}/${item.programs.length}` : ''}
         </p>
       </div>
-      <Link href={item.state.href} className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-[10px] px-4 text-sm font-semibold ${urgent ? 'bg-slate-950 text-white' : 'border border-slate-300 bg-white text-slate-800'}`}>
+      <Link href={`/spokedu-master/activity?session=${encodeURIComponent(item.id)}`} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-slate-950 px-4 text-sm font-semibold text-white">
         {action}<ArrowRight size={15} aria-hidden="true" />
       </Link>
     </section>
   );
+}
+
+export function HomeNextSessionPanel({ sessions, classes }: { sessions: MasterSessionDto[]; classes: MasterClassDto[] }) {
+  const now = useMemo(() => new Date(), []);
+  const classIds = useMemo(() => new Set(classes.map((item) => item.id)), [classes]);
+  const next = useMemo(() => sessions
+    .filter((session) => session.status === 'scheduled' && !session.startedAt && !session.programs.some((program) => program.isCompleted) && classIds.has(session.classId) && new Date(session.startAt).getTime() > now.getTime())
+    .sort((left, right) => left.startAt.localeCompare(right.startAt))[0] ?? null, [classIds, now, sessions]);
+  if (!next) return null;
+  return <section data-dashboard-section="next-session" className="flex items-center justify-between gap-4 border-t border-slate-200 pt-4">
+    <div className="min-w-0"><p className="text-[13px] font-medium text-slate-500">내 다음 수업</p><h2 className="mt-1 truncate text-[20px] font-semibold text-slate-950">{next.className}</h2><p className="mt-1 text-[13px] text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(next.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(next.startAt)}</p></div>
+    <Link href={`/spokedu-master/activity?session=${encodeURIComponent(next.id)}`} className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-slate-700">수업 준비<ArrowRight size={15} /></Link>
+  </section>;
 }

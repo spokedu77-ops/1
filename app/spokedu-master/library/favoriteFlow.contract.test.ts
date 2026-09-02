@@ -38,13 +38,13 @@ describe('library card and preview favorite synchronization', () => {
     expect(librarySource).toContain(
       'isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}',
     );
-    expect(librarySource).toContain('selectLibraryBasePrograms(pool, favoriteIds, view)');
+    expect(librarySource).toContain('isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}');
   });
 });
 
 describe('preview and detail navigation context', () => {
   it('passes the current library view into the modal and direct card detail href', () => {
-    expect(librarySource).toContain('sourceLibraryView={view}');
+    expect(librarySource).toContain('sourceLibraryView="all"');
     expect(librarySource).toContain('sourceLibrarySearch={sourceLibrarySearch}');
     expect(librarySource).toContain(
       'detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}',

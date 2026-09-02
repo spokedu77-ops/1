@@ -1,6 +1,6 @@
 import type { ClassRecord } from '../types';
 
-export type LibraryViewMode = 'all' | 'favorites';
+export type LibraryViewMode = 'all';
 
 export type LibraryFilterGroupKey =
   | 'target'
@@ -64,20 +64,6 @@ export function rankLibraryPrograms<T>(
     .map(({ program }) => program);
 }
 
-export function parseLibraryView(value: string | null): LibraryViewMode {
-  return value === 'favorites' ? 'favorites' : 'all';
-}
-
-export function selectLibraryBasePrograms<T extends { id: string }>(
-  programs: T[],
-  favoriteProgramIds: string[],
-  view: LibraryViewMode,
-): T[] {
-  if (view === 'all') return programs;
-  const favoriteIds = new Set(favoriteProgramIds);
-  return programs.filter((program) => favoriteIds.has(program.id));
-}
-
 export function countValidFavoritePrograms<T extends { id: string }>(
   programs: T[],
   favoriteProgramIds: string[],
@@ -98,18 +84,6 @@ export function filterLibraryPrograms<T>(
       (normalizedQuery.length === 0 || matchesQuery(program, normalizedQuery)) &&
       matchesActiveFilter(program),
   );
-}
-
-export function getFavoritesEmptyState(
-  view: LibraryViewMode,
-  validFavoriteCount: number,
-  hasQuery: boolean,
-  hasFilter: boolean,
-  resultCount: number,
-): 'none' | 'no-favorites' | 'no-results' {
-  if (view !== 'favorites' || resultCount > 0) return 'none';
-  if (validFavoriteCount === 0 && !hasQuery && !hasFilter) return 'no-favorites';
-  return 'no-results';
 }
 
 function filtersByGroup(filters: LibraryActiveFilter[]) {

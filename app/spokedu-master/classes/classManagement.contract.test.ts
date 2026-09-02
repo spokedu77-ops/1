@@ -19,8 +19,7 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(tabs).toContain('/spokedu-master/classes');
     expect(tabs).toContain('일정');
     expect(tabs).toContain('수업반');
-    expect(navLabels).toContain("href: '/spokedu-master/activity', label: '수업 일정'");
-    expect(navLabels).toContain("href: '/spokedu-master/classes', label: '수업반'");
+    expect(navLabels).toContain("href: '/spokedu-master/manage', label: '수업 관리'");
     expect(desktopNav).toContain('MASTER_NAV_ITEMS');
     expect(mobileNav).toContain('MASTER_NAV_ITEMS');
   });
@@ -41,10 +40,9 @@ describe('MASTER Class and attendance management contracts', () => {
   });
 
   it('uses state-based Class actions instead of an abstract open action', () => {
-    expect(list).toContain('card.priorityWorkState?.primaryLabel');
-    expect(list).toContain('다음 수업 준비하기');
-    expect(list).toContain('다음 수업 만들기');
-    expect(list).toContain('반 흐름 보기');
+    expect(list).toContain('MasterCollectionRow');
+    expect(list).toContain('확인할 기록');
+    expect(list).toContain('다음 일정 없음');
     expect(list).not.toContain('MASTER_ACTION_COPY.open');
   });
 

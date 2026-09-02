@@ -1,0 +1,593 @@
+/* FIELD-BUILT EDITORIAL — /education service sales */
+
+.page {
+  --edu-content: 1200px;
+  --edu-wide: 1320px;
+  --edu-photo-radius: 14px;
+  color: var(--spokedu-marketing-color-navy);
+  background: var(--spokedu-marketing-color-paper);
+}
+
+.shell {
+  width: min(var(--edu-content), 100%);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.shellWide {
+  width: min(var(--edu-wide), 100%);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--spokedu-marketing-color-blue);
+}
+
+/* —— Hero —— */
+.hero {
+  position: relative;
+  min-height: min(78svh, 680px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: var(--spokedu-marketing-color-navy);
+}
+
+.heroMedia {
+  position: absolute;
+  inset: 0;
+}
+
+.heroScrim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 17, 38, 0.28) 0%,
+    rgba(8, 17, 38, 0.52) 45%,
+    rgba(8, 17, 38, 0.82) 100%
+  );
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding-block: clamp(4.5rem, 12vh, 6.5rem);
+}
+
+.heroLead {
+  margin-top: 1.25rem;
+  max-width: 34rem;
+  font-size: 1.125rem;
+  line-height: 1.72;
+  color: #d5dfed;
+}
+
+.heroActions {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* —— Choice —— */
+.choice {
+  padding-block: clamp(4rem, 7vw, 5.75rem);
+  background: var(--spokedu-marketing-color-white);
+}
+
+.choiceGrid {
+  margin-top: clamp(2rem, 4vw, 2.75rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+}
+
+.choicePrimary,
+.choiceSecondary {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.choicePrimaryInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: end;
+}
+
+.choicePhoto {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 16 / 10;
+  max-height: 16rem;
+  border-radius: var(--edu-photo-radius);
+  overflow: hidden;
+}
+
+.choicePhotoMedia {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.choiceTitle {
+  font-size: clamp(1.5rem, 2.5vw, 1.875rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.choiceBody {
+  margin-top: 0.875rem;
+  max-width: 32rem;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.choiceCta {
+  margin-top: 1.25rem;
+}
+
+.choiceDivider {
+  display: none;
+}
+
+/* —— Institutional —— */
+.institutional {
+  padding-block: clamp(4.5rem, 8vw, 6.5rem);
+  background: #eef3fb;
+}
+
+.institutionalLead {
+  margin-top: 1.25rem;
+  max-width: 36rem;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.mechanism {
+  margin-top: clamp(2.25rem, 4vw, 3rem);
+  display: grid;
+  gap: 1.5rem;
+}
+
+.mechanismBlock {
+  width: 100%;
+  min-width: 0;
+}
+
+.mechanismLabel {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.mechanismTerms {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding: 0;
+  list-style: none;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.mechanismArrow {
+  display: flex;
+  justify-content: center;
+  padding-block: 0.25rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--spokedu-marketing-color-blue);
+  opacity: 0.72;
+}
+
+.formats {
+  margin-top: clamp(2.5rem, 5vw, 3.25rem);
+  padding-top: clamp(2rem, 4vw, 2.75rem);
+  border-top: 1px solid rgba(36, 93, 255, 0.14);
+}
+
+.formatRow {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 1rem 1.25rem;
+  padding-block: 1.125rem;
+  border-bottom: 1px solid rgba(15, 33, 70, 0.08);
+}
+
+.formatRow:last-child {
+  border-bottom: 0;
+}
+
+.formatIndex {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--spokedu-marketing-color-blue);
+  padding-top: 0.2rem;
+}
+
+.formatTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.formatBody {
+  grid-column: 2;
+  margin-top: 0.35rem;
+  max-width: 40rem;
+  font-size: 1rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.institutionalCta {
+  margin-top: 2rem;
+}
+
+/* —— Difference —— */
+.difference {
+  padding-block: clamp(4rem, 7vw, 5.75rem);
+  background: var(--spokedu-marketing-color-white);
+}
+
+.differenceBody {
+  margin-top: 1.25rem;
+  max-width: 34rem;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.flow {
+  margin-top: clamp(2rem, 4vw, 2.75rem);
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--spokedu-marketing-color-border);
+}
+
+.flowStep {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.35rem;
+  padding-block: 1.125rem;
+  border-bottom: 1px solid var(--spokedu-marketing-color-border);
+}
+
+.flowStepLabel {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.flowStepBody {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.spomoveNote {
+  margin-top: 2rem;
+  max-width: 36rem;
+  font-size: 1rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-muted);
+}
+
+/* —— Cases —— */
+.cases {
+  padding-block: clamp(4.5rem, 7vw, 6rem);
+  background: var(--spokedu-marketing-color-paper);
+}
+
+.casesHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: clamp(2rem, 4vw, 2.75rem);
+}
+
+.casesLead {
+  margin-top: 0.75rem;
+  max-width: 30rem;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.casesGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.caseLink {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.caseLink article {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+
+.casePhoto {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--edu-photo-radius);
+  background: #e8edf4;
+}
+
+.casePhotoImage {
+  object-fit: cover;
+}
+
+.caseFeatured .casePhoto {
+  min-height: clamp(20rem, 56vw, 28rem);
+}
+
+.caseCompact .casePhoto {
+  min-height: clamp(13rem, 40vw, 17rem);
+}
+
+.caseMeta {
+  flex-shrink: 0;
+  margin-top: 0.75rem;
+}
+
+.caseVenue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.caseOperation {
+  margin-top: 0.35rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.caseProgram {
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--spokedu-marketing-color-muted);
+}
+
+.caseCta {
+  margin-top: 0.625rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--spokedu-marketing-color-blue);
+}
+
+/* —— Contact —— */
+.contact {
+  padding-block: clamp(3.5rem, 6vw, 5rem);
+  background: var(--spokedu-marketing-color-white);
+  border-top: 1px solid var(--spokedu-marketing-color-border);
+}
+
+.contactLead {
+  margin-top: 1rem;
+  max-width: 32rem;
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.contactActions {
+  margin-top: 1.75rem;
+}
+
+.contactLinks {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.contactLinks a {
+  color: var(--spokedu-marketing-color-body);
+  text-decoration: none;
+}
+
+.contactLinks a:hover {
+  color: var(--spokedu-marketing-color-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (min-width: 1024px) {
+  .choiceGrid {
+    grid-template-columns: minmax(0, 1.62fr) 1px minmax(0, 1fr);
+    gap: 0;
+    align-items: stretch;
+  }
+
+  .choicePrimary {
+    padding-right: clamp(2rem, 4vw, 3rem);
+  }
+
+  .choiceSecondary {
+    padding-left: clamp(2rem, 4vw, 3rem);
+    justify-content: center;
+  }
+
+  .choiceDivider {
+    display: block;
+    width: 1px;
+    background: var(--spokedu-marketing-color-border);
+  }
+
+  .choicePrimaryInner {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 1.75rem;
+    align-items: end;
+  }
+
+  .choicePhoto {
+    max-height: none;
+    min-height: 11rem;
+    aspect-ratio: 4 / 3;
+  }
+
+  .mechanism {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: start;
+    gap: 1.5rem 2rem;
+  }
+
+  .mechanismArrow {
+    padding-top: 2rem;
+    padding-block: 0;
+    font-size: 0;
+  }
+
+  .mechanismArrow::after {
+    content: '→';
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--spokedu-marketing-color-blue);
+    opacity: 0.72;
+  }
+
+  .flow {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 0;
+    gap: 0;
+  }
+
+  .flowStep {
+    padding: 0 1.25rem 0 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--spokedu-marketing-color-border);
+  }
+
+  .flowStep:last-child {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .casesHeader {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .casesGrid {
+    grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.875rem;
+    align-items: stretch;
+    min-height: 34rem;
+  }
+
+  .caseFeatured {
+    grid-row: 1 / -1;
+    display: flex;
+  }
+
+  .caseFeatured .casePhoto {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .caseCompact {
+    display: flex;
+    min-height: 0;
+  }
+
+  .caseCompact .caseLink article {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 0.875rem;
+    min-height: calc((34rem - 0.875rem) / 2);
+  }
+
+  .caseCompact .casePhoto {
+    flex: 1.18 1 0;
+    min-width: 0;
+    min-height: 13.5rem;
+    aspect-ratio: 4 / 3;
+  }
+
+  .caseCompact .caseMeta {
+    flex: 0.82 1 0;
+    min-width: 0;
+    margin-top: 0;
+    align-self: flex-end;
+    padding-bottom: 0.125rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .choiceDivider {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: var(--spokedu-marketing-color-border);
+  }
+
+  .casesGrid {
+    gap: 2.25rem;
+  }
+
+  .formatRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .formatBody {
+    grid-column: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
