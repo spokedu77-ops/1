@@ -26,4 +26,9 @@ describe('MASTER Home content card system', () => {
     expect(followUp).toContain('min-h-11');
     expect(followUp).not.toContain('sm:p-5');
   });
+
+  it('reports recoverable Weekly slot diagnostics as warnings instead of runtime errors', () => {
+    expect(dashboard).toContain("console.warn('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.'");
+    expect(dashboard).not.toContain("console.error('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.'");
+  });
 });

@@ -21,6 +21,12 @@ import {
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
 import CenterEquipmentActivityDetailModal from '@/app/components/curriculum/CenterEquipmentActivityDetailModal';
 import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCenterCurriculum';
+import {
+  YUA_CATEGORY,
+  YUA_LIBRARY_SUB_TAB,
+  buildYuaFixedSessionSlots,
+  getYuaLibraryItems,
+} from '@/app/lib/curriculum/yuaSections';
 import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
 import { getPublicUrl, uploadToStorage, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
@@ -300,6 +306,7 @@ export default function AdminCurriculumPage() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [mainTab, setMainTab] = useState<MainCurriculumTab>('personal');
   const [categoryTab, setCategoryTab] = useState<string>('신체 기능향상 8회기');
+  const [yuaViewMode, setYuaViewMode] = useState<'fixed' | 'library'>('fixed');
   const [subTab, setSubTab] = useState<string>(() => {
     const tabs = getSubTabsForCategory('신체 기능향상 8회기');
     return tabs[0] ?? '';
@@ -784,13 +791,12 @@ export default function AdminCurriculumPage() {
     });
   }, [personalItems]);
 
-  const yuaSessionSlots = useMemo(() => {
-    const labels = getSubTabsForCategory('유아체육');
-    return labels.map((label) => {
-      const item = personalItems.find((p: PersonalCurriculumItem) => p.category === '유아체육' && p.sub_tab === label) ?? null;
-      return { label, item };
-    });
+  const yuaFixedSessionSlots = useMemo(() => {
+    const labels = getSubTabsForCategory(YUA_CATEGORY);
+    return buildYuaFixedSessionSlots(personalItems, labels);
   }, [personalItems]);
+
+  const yuaLibraryItems = useMemo(() => getYuaLibraryItems(personalItems), [personalItems]);
 
   const currentEquipment = useMemo(() => {
     return centerEquipmentList.find((e) => e.number === selectedEquipmentNumber) ?? null;
@@ -1112,6 +1118,7 @@ export default function AdminCurriculumPage() {
   const handleCategorySelect = (category: string, sub: string) => {
     setCategoryTab(category);
     setSubTab(sub);
+    if (category === YUA_CATEGORY) setYuaViewMode('fixed');
   };
 
   const handlePersonalSubmit = async (e: React.FormEvent) => {
@@ -1172,7 +1179,7 @@ export default function AdminCurriculumPage() {
 
   const openPersonalModalForSubTab = (targetSubTab: string) => {
     setPersonalPost({
-      category: '유아체육',
+      category: YUA_CATEGORY,
       sub_tab: targetSubTab,
       title: '',
       url: '',
@@ -1665,40 +1672,100 @@ export default function AdminCurriculumPage() {
                       );
                     })}
                   </div>
-                ) : categoryTab === '유아체육' ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {yuaSessionSlots.map(({ label, item }) => {
-                      const thumb = item ? getSafeThumbnailUrl(item) : '';
-                      return (
-                        <div
-                          key={label}
-                          className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${item ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer' : 'cursor-pointer opacity-90 hover:shadow-sm'}`}
-                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } else openPersonalModalForSubTab(label); }}
-                        >
-                          <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {item ? (
-                              <>
-                                <button type="button" onClick={(e) => openPersonalEdit(item, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"><Edit2 size={16}/></button>
-                                <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
-                              </>
-                            ) : null}
-                          </div>
-                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
-                            {thumb ? (
-                              <img src={thumb} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                                <Play size={28} className="text-slate-400" />
+                ) : categoryTab === YUA_CATEGORY ? (
+                  <div className="space-y-4">
+                    <div className="flex rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => setYuaViewMode('fixed')}
+                        className={`flex-1 rounded-xl px-4 py-3 text-sm font-black transition-colors ${yuaViewMode === 'fixed' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      >
+                        고정 6차시
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setYuaViewMode('library')}
+                        className={`flex-1 rounded-xl px-4 py-3 text-sm font-black transition-colors ${yuaViewMode === 'library' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      >
+                        라이브러리
+                      </button>
+                    </div>
+
+                    {yuaViewMode === 'fixed' ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {yuaFixedSessionSlots.map(({ label, item }) => {
+                          const thumb = item ? getSafeThumbnailUrl(item) : '';
+                          return (
+                            <div
+                              key={label}
+                              className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${item ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer' : 'cursor-pointer opacity-90 hover:shadow-sm'}`}
+                              onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } else openPersonalModalForSubTab(label); }}
+                            >
+                              <div className="absolute top-3 right-3 z-20 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {item ? (
+                                  <>
+                                    <button type="button" onClick={(e) => openPersonalEdit(item, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-indigo-600 shadow-md"><Edit2 size={16}/></button>
+                                    <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl text-slate-600 hover:text-red-600 shadow-md"><Trash2 size={16}/></button>
+                                  </>
+                                ) : null}
                               </div>
-                            )}
-                          </div>
-                          <div className="p-4">
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
-                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
-                          </div>
-                        </div>
-                      );
-                    })}
+                              <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                                {thumb ? (
+                                  <img src={thumb} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
+                                    <Play size={28} className="text-slate-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-4">
+                                <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
+                                <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : yuaLibraryItems.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {yuaLibraryItems.map((item) => {
+                          const thumb = getSafeThumbnailUrl(item);
+                          return (
+                            <div
+                              key={item.id}
+                              className="group relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200/60 hover:shadow-xl"
+                              onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}
+                            >
+                              <div className="absolute right-3 top-3 z-20 flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+                                <button type="button" onClick={(e) => openPersonalEdit(item, e)} className="rounded-xl bg-white/95 p-2 text-slate-600 shadow-md backdrop-blur hover:text-indigo-600"><Edit2 size={16}/></button>
+                                <button type="button" onClick={(e) => deletePersonalItem(item.id, e)} className="rounded-xl bg-white/95 p-2 text-slate-600 shadow-md backdrop-blur hover:text-red-600"><Trash2 size={16}/></button>
+                              </div>
+                              <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                                {thumb ? (
+                                  <img src={thumb} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-300 to-slate-200">
+                                    <Play size={28} className="text-slate-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-4">
+                                <span className="mb-2 inline-block rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-700">라이브러리</span>
+                                <h3 className="line-clamp-1 text-base font-black text-slate-900">{item.title}</h3>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openPersonalModalForSubTab(YUA_LIBRARY_SUB_TAB)}
+                        className="w-full rounded-[32px] border-2 border-dashed border-slate-200 bg-white py-24 text-center font-bold text-slate-400 transition-colors hover:border-indigo-300 hover:text-indigo-600"
+                      >
+                        라이브러리가 비어 있습니다. 눌러서 첫 프로그램을 추가하세요.
+                      </button>
+                    )}
                   </div>
                 ) : filteredPersonalItems.length > 0 ? (
                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -2067,13 +2134,15 @@ export default function AdminCurriculumPage() {
           <Plus size={32} />
         </button>
       )}
-      {mainTab === 'personal' && (
+      {mainTab === 'personal' && !(categoryTab === YUA_CATEGORY && yuaViewMode === 'fixed') && (
         <button
           type="button"
           className="fixed bottom-8 right-8 w-16 h-16 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 shadow-slate-900/40"
           onClick={() => {
             if (categoryTab === '신체 기능향상 8회기') {
               setIs8huiSlotPickerOpen(true);
+            } else if (categoryTab === YUA_CATEGORY) {
+              openPersonalModalForSubTab(YUA_LIBRARY_SUB_TAB);
             } else {
               openPersonalModal();
             }
@@ -2601,22 +2670,31 @@ export default function AdminCurriculumPage() {
               </button>
             </div>
             <div className="space-y-4 font-bold text-left">
-              <div className="space-y-2 text-left">
-                <label className="text-xs font-black text-slate-400 uppercase text-left">카테고리</label>
-                <select required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={personalPost.category} onChange={e => { const v = e.target.value; setPersonalPost({ ...personalPost, category: v, sub_tab: getSubTabsForCategory(v)[0] ?? '' }); }}>
-                  {[...PERSONAL_CATEGORIES_ROW1, ...PERSONAL_CATEGORIES_ROW2].map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2 text-left">
-                <label className="text-xs font-black text-slate-400 uppercase text-left">하위 탭</label>
-                <select required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={personalPost.sub_tab} onChange={e => setPersonalPost({ ...personalPost, sub_tab: e.target.value })}>
-                  {getSubTabsForCategory(personalPost.category).map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
+              {personalPost.category === YUA_CATEGORY ? (
+                <div className="rounded-2xl bg-slate-100 px-4 py-3 text-left">
+                  <p className="text-xs font-black uppercase text-slate-400">구분</p>
+                  <p className="mt-1 font-black text-slate-900">유아체육 · {personalPost.sub_tab}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-black text-slate-400 uppercase text-left">카테고리</label>
+                    <select required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={personalPost.category} onChange={e => { const v = e.target.value; setPersonalPost({ ...personalPost, category: v, sub_tab: getSubTabsForCategory(v)[0] ?? '' }); }}>
+                      {[...PERSONAL_CATEGORIES_ROW1, ...PERSONAL_CATEGORIES_ROW2].map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-black text-slate-400 uppercase text-left">하위 탭</label>
+                    <select required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" value={personalPost.sub_tab} onChange={e => setPersonalPost({ ...personalPost, sub_tab: e.target.value })}>
+                      {getSubTabsForCategory(personalPost.category).map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
               <div className="space-y-2 text-left">
                 <label className="text-xs font-black text-slate-400 uppercase text-left">Title</label>
                 <input required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="수업 제목" value={personalPost.title} onChange={e => setPersonalPost({ ...personalPost, title: e.target.value })} />

@@ -23,12 +23,13 @@ const L3_IDS = [
 ] as const;
 
 describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
-  it('flips desktop media/guide ratio toward guide-first', () => {
-    expect(sheet).toContain('minmax(0,0.95fr)');
-    expect(sheet).toContain('minmax(420px,1.05fr)');
+  it('keeps the desktop media/guide ratio and stretches both panels to equal height', () => {
+    expect(sheet).toContain('minmax(0,1.15fr)');
+    expect(sheet).toContain('minmax(380px,0.85fr)');
     expect(sheet).not.toContain('1.55fr');
-    expect(sheet).not.toContain('0.85fr');
-    expect(sheet).toContain('items-start');
+    expect(sheet).toContain('items-stretch');
+    expect(sheet).toContain('flex h-full flex-col');
+    expect(sheet).toContain('min-w-0 h-full');
     expect(sheet).not.toContain('mt-auto');
   });
 
@@ -37,9 +38,12 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).not.toContain('선택적 상세');
   });
 
-  it('places 교사 핵심단서(Cue) once under media and not inside 지도 포인트', () => {
+  it('places 교사 핵심단서(Cue) and 준비 under media and not inside 지도 포인트', () => {
     expect(sheet).toContain('교사 핵심단서(Cue)');
     expect(sheet).not.toContain('아이에게 하는 말');
+    const mediaBlock = sheet.slice(sheet.indexOf('data-preview-column="media"'), sheet.indexOf('<aside'));
+    expect(mediaBlock).toContain('CoachCueCard');
+    expect(mediaBlock).toContain('title="준비"');
     const coachingBlock = sheet.slice(sheet.indexOf('지도 포인트'), sheet.indexOf('난이도 조절 · 관찰 기준'));
     expect(coachingBlock).not.toContain('coachScript');
     expect(coachingBlock).not.toContain('교사 핵심단서(Cue)');
@@ -48,7 +52,7 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
   it('keeps focusTags out of main objective block', () => {
     const objectiveSection = sheet.slice(
       sheet.indexOf('title="활동 목표"'),
-      sheet.indexOf('title="준비"'),
+      sheet.indexOf('title="활동 방법"'),
     );
     expect(objectiveSection).not.toContain('focusTags');
     expect(sheet).toContain('활동 요소');

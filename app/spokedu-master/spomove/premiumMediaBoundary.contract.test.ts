@@ -28,6 +28,14 @@ describe('Premium SPOMOVE media boundary', () => {
     expect(route).not.toContain('/object/public/');
   });
 
+  it('lets platform admins review legacy HTTPS guide videos without weakening subscriber access', () => {
+    const route = read('app/api/spokedu-master/spomove/guide-video/route.ts');
+    expect(route).toContain("access.isAdmin && /^https:\\/\\//i.test(configuredValue)");
+    expect(route.indexOf("access.isAdmin && /^https:\\/\\//i.test(configuredValue)")).toBeLessThan(
+      route.indexOf('PREMIUM_MEDIA_NOT_MIGRATED'),
+    );
+  });
+
   it('keeps Lite URLs out of browser state and plays Premium signed objects directly', () => {
     const hook = read('app/spokedu-master/spomove/useSpomoveGuideVideo.ts');
     const sheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');

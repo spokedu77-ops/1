@@ -51,8 +51,16 @@ export async function GET(request: Request) {
   if (packError) return privateNoStoreJson({ error: '가이드 영상을 불러오지 못했습니다.' }, { status: 500 });
 
   const configuredValue = normalizeSpomoveGuideVideoMap(pack?.assets_json)[presetId];
-  const objectPath = configuredValue ? resolvePrivateObjectPath(configuredValue) : null;
   if (!configuredValue) return privateNoStoreJson({ data: null });
+
+  // The operations team must be able to review the legacy guide library while
+  // public video references are being migrated into the private Premium bucket.
+  // Non-admin subscribers still receive only short-lived private signed URLs.
+  if (access.isAdmin && /^https:\/\//i.test(configuredValue)) {
+    return privateNoStoreJson({ data: { url: configuredValue, expiresIn: null } });
+  }
+
+  const objectPath = resolvePrivateObjectPath(configuredValue);
   if (!objectPath) {
     return privateNoStoreJson(
       { error: 'Premium 가이드 영상이 private media로 이전되지 않았습니다.', code: 'PREMIUM_MEDIA_NOT_MIGRATED' },

@@ -217,17 +217,7 @@ function ContentLoading() {
   );
 }
 
-function ContentError({
-  matCount,
-  cueSeconds,
-  movementLabel,
-  intervalLine,
-}: {
-  matCount: number;
-  cueSeconds: number;
-  movementLabel: string | null;
-  intervalLine: string | null;
-}) {
+function ContentError() {
   return (
     <div className="space-y-5">
       <div
@@ -237,29 +227,15 @@ function ContentError({
         활동 가이드를 불러오지 못했습니다. 활동 실행은 가능하며, 다시 열거나 페이지를 새로고침해 가이드를 다시
         불러올 수 있습니다.
       </div>
-      <BriefingSection title="준비">
-        <PrepMetaRow
-          matCount={matCount}
-          cueSeconds={cueSeconds}
-          movementLabel={movementLabel}
-          intervalLine={intervalLine}
-        />
-      </BriefingSection>
     </div>
   );
 }
 
 function BriefingContent({
   guideDisplay,
-  matCount,
-  cueSeconds,
-  intervalLine,
   briefingReadiness,
 }: {
   guideDisplay: ReturnType<typeof buildSpomoveGuideDisplayModel>;
-  matCount: number;
-  cueSeconds: number;
-  intervalLine: string | null;
   briefingReadiness: ReturnType<typeof resolveSpomoveBriefingReadiness>['readiness'];
 }) {
   const objective = guideDisplay.objective;
@@ -300,15 +276,6 @@ function BriefingContent({
           {objective ? <p>{objective}</p> : <p>{legacyConcept}</p>}
         </BriefingSection>
       ) : null}
-
-      <BriefingSection title="준비">
-        <PrepMetaRow
-          matCount={matCount}
-          cueSeconds={cueSeconds}
-          movementLabel={guideDisplay.recommendedMovementLabel}
-          intervalLine={intervalLine}
-        />
-      </BriefingSection>
 
       {hasInstruction ? (
         <BriefingSection title="활동 방법">
@@ -483,11 +450,11 @@ export function SpomoveGuidelineSheet({
         data-spm-spomove-launch-confirm=""
         data-spm-spomove-surface="stage"
       >
-        <div className="grid grid-cols-1 items-start gap-4 min-[1024px]:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)] min-[1024px]:gap-5">
-          <div data-preview-column="media" className="min-w-0">
+        <div className="grid grid-cols-1 items-stretch gap-4 min-[1024px]:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)] min-[1024px]:gap-5">
+          <div data-preview-column="media" className="min-w-0 h-full">
             <div
               data-spm-spomove-surface="media"
-              className={`${PANEL_RADIUS} ${SOFT_BORDER} bg-white/95 p-3 sm:p-4 ${MEDIA_SHADOW}`}
+              className={`${PANEL_RADIUS} ${SOFT_BORDER} flex h-full flex-col bg-white/95 p-3 sm:p-4 ${MEDIA_SHADOW}`}
             >
               <p className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold tracking-wide text-slate-500">
                 <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--spm-acc)]" />
@@ -504,44 +471,43 @@ export function SpomoveGuidelineSheet({
                 ) : guideVideoState === 'loading' ? (
                   <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-500`}>영상을 불러오는 중입니다.</div>
                 ) : guideVideoState === 'missing' ? (
-                  <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center text-sm font-semibold text-slate-500`}>이 활동의 Premium 영상이 아직 준비되지 않았습니다.</div>
+                  <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center text-sm font-semibold text-slate-500`}>영상 연결 작업 중입니다.</div>
                 ) : guideVideoState === 'error' ? (
                   <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center text-sm font-semibold text-slate-500`}>영상을 불러오지 못했습니다.</div>
                 ) : (
                   <SpomoveScreenPreview videoUrl={guideVideoUrl} />
                 )}
               </div>
-              <p className="mt-2 shrink-0 text-[12px] font-medium leading-5 text-slate-500">
-                실제 운영 예시 영상입니다.
-              </p>
               {coachScript ? (
                 <div className="mt-3 shrink-0">
                   <CoachCueCard script={coachScript} />
                 </div>
               ) : null}
+              <div className="mt-4 shrink-0">
+                <BriefingSection title="준비">
+                  <PrepMetaRow
+                    matCount={matCount}
+                    cueSeconds={cueSeconds}
+                    movementLabel={movementLabel}
+                    intervalLine={intervalLine}
+                  />
+                </BriefingSection>
+              </div>
             </div>
           </div>
           <aside
             data-preview-column="content"
             data-preview-summary
             data-spm-spomove-surface="briefing"
-            className={`min-w-0 ${PANEL_RADIUS} bg-white p-4 sm:p-5 ${BRIEFING_SHADOW}`}
+            className={`min-w-0 h-full ${PANEL_RADIUS} bg-white p-4 sm:p-5 ${BRIEFING_SHADOW}`}
           >
             {contentLoadState === 'loading' ? (
               <ContentLoading />
             ) : contentLoadState === 'error' ? (
-              <ContentError
-                matCount={matCount}
-                cueSeconds={cueSeconds}
-                movementLabel={movementLabel}
-                intervalLine={intervalLine}
-              />
+              <ContentError />
             ) : (
               <BriefingContent
                 guideDisplay={guideDisplay}
-                matCount={matCount}
-                cueSeconds={cueSeconds}
-                intervalLine={intervalLine}
                 briefingReadiness={briefingReadiness}
               />
             )}

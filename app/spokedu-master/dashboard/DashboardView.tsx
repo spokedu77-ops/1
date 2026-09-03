@@ -670,13 +670,13 @@ function EntitledDashboardView() {
   };
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
-      console.error('[SPOKEDU MASTER] Weekly recommendations could not be filled to four items.');
+      console.warn('[SPOKEDU MASTER] Weekly recommendations could not be filled to four items.');
     }
     if (process.env.NODE_ENV !== 'production' && weeklySelection.slotConflicts.length > 0) {
-      console.error('[SPOKEDU MASTER] Conflicting explicit weekly slots.', weeklySelection.slotConflicts);
+      console.warn('[SPOKEDU MASTER] Conflicting explicit weekly slots.', weeklySelection.slotConflicts);
     }
     if (process.env.NODE_ENV !== 'production' && weeklySelection.slotDiagnostics.length > 0) {
-      console.error('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.', weeklySelection.slotDiagnostics);
+      console.warn('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.', weeklySelection.slotDiagnostics);
     }
   }, [programPool.length, programsLoaded, weeklyPrograms.length, weeklySelection.slotConflicts, weeklySelection.slotDiagnostics]);
 
