@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   useCallback,
@@ -248,7 +248,6 @@ const LIBRARY_ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
 ];
 const SPOMOVE_ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
   { key: 'spomove-catalog', label: '공식 프리셋' },
-  { key: 'spomove-content', label: 'SPOMOVE 설명' },
   { key: 'spomove-thumbnails', label: 'SPOMOVE 썸네일' },
   { key: 'spomove-guide-videos', label: 'SPOMOVE 가이드 영상' },
 ];
@@ -962,7 +961,538 @@ function patchCoreKeywordAxis(
   ].filter(Boolean) as string[]);
 }
 
-function SpomoveContentManager() {
+type SpomoveEditModalProps = {
+  preset: (typeof ADMIN_SPOMOVE_LIBRARY)[number];
+  draft: SpomovePresetContentOverride;
+  saved: SpomovePresetContentOverride | undefined;
+  saving: boolean;
+  deleting: boolean;
+  tab: 'guide' | 'card' | 'advanced';
+  saveIssues: SpomovePublishedGuideSaveIssue[];
+  sourceIntegrity: ReturnType<typeof resolveSpomoveGuideSourceIntegrity>;
+  onTabChange: (tab: 'guide' | 'card' | 'advanced') => void;
+  onUpdateDraft: (patch: Partial<SpomovePresetContentOverride>) => void;
+  onUpdateMovementGuide: (patch: Partial<SpomoveMovementGuideDraft>) => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+};
+
+function SpomoveEditModal({
+  preset,
+  draft,
+  saved,
+  saving,
+  deleting,
+  tab,
+  saveIssues,
+  sourceIntegrity,
+  onTabChange,
+  onUpdateDraft,
+  onUpdateMovementGuide,
+  onSave,
+  onDelete,
+  onClose,
+}: SpomoveEditModalProps) {
+  const dirty = JSON.stringify(normalizeContentDraft(saved)) !== JSON.stringify(draft);
+  const guideCompletion = getMovementGuideCompletion(preset, draft.movementGuide);
+  const presetIssues = saveIssues.filter((issue) => issue.presetId === preset.id);
+  const displayTitle =
+    ['flanker', 'stroop', 'sequential-memory', 'simon'].includes(preset.programGroup)
+      ? getSpomovePresetDisplayModel(preset).displayTitle
+      : draft.displayTitle?.trim() || getSpomovePresetDisplayModel(preset).displayTitle;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative flex w-full max-w-xl flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl" style={{ maxHeight: 'min(90vh, 720px)' }}>
+        {/* 헤더 */}
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div className="min-w-0">
+            <p className="truncate text-[14px] font-black text-slate-950">{displayTitle}</p>
+            <p className="mt-0.5 truncate text-[11px] font-bold text-slate-400">{preset.id}</p>
+          </div>
+          <button type="button" onClick={onClose} className="shrink-0 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+        {/* Source Changed / Untracked 경고 */}
+        {sourceIntegrity.status === 'changed' && (
+          <div className="shrink-0 border-b border-orange-100 bg-orange-50 px-5 py-2.5">
+            <p className="text-[11px] font-black text-orange-900">Source Changed · 재검수 필요</p>
+            <p className="mt-0.5 text-[10px] font-semibold leading-4 text-orange-700">
+              가이드를 확인 후 Published로 다시 저장하면 Source Current로 갱신됩니다.
+              {sourceIntegrity.sourceReviewedAt ? ` (Reviewed: ${sourceIntegrity.sourceReviewedAt.slice(0, 10)})` : ''}
+            </p>
+          </div>
+        )}
+        {sourceIntegrity.status === 'untracked' && (
+          <div className="shrink-0 border-b border-slate-100 bg-slate-50 px-5 py-2.5">
+            <p className="text-[10px] font-semibold text-slate-600">Source Untracked — Published 저장 시 baseline이 등록됩니다.</p>
+          </div>
+        )}
+        {/* 탭 네비게이션 */}
+        <div className="shrink-0 border-b border-slate-100 px-5 pt-3 pb-0">
+          <div className="flex gap-1">
+            {([
+              { key: 'guide', label: '가이드' },
+              { key: 'card', label: '카드 정보' },
+              { key: 'advanced', label: '고급' },
+            ] as const).map(({ key, label }) => {
+              const active = tab === key;
+              return (
+                <button key={key} type="button" onClick={() => onTabChange(key)}
+                  className={`h-8 rounded-t-md px-3 text-[12px] font-black transition-colors ${active ? 'border border-b-white border-slate-200 bg-white text-indigo-700' : 'text-slate-500 hover:text-slate-700'}`}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {/* 탭 콘텐츠 (스크롤) */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          {/* ── 가이드 탭 ── */}
+          {tab === 'guide' && (<>
+            <div className="mb-4 rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-black text-slate-700">완성도 {guideCompletion.completeCount}/{guideCompletion.requiredCount}</p>
+                <span className={`rounded-full px-2 py-1 text-[10px] font-black ${guideCompletion.issues.length === 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                  {guideCompletion.issues.length === 0 ? '게시 조건 충족' : `${guideCompletion.issues.length}개 보완`}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div className={`h-full rounded-full ${guideCompletion.issues.length === 0 ? 'bg-emerald-500' : 'bg-amber-400'}`} style={{ width: `${guideCompletion.percent}%` }} />
+              </div>
+              {guideCompletion.issues.length > 0 && (
+                <p className="mt-1.5 text-[10px] font-semibold text-slate-500">빠진 항목: {guideCompletion.issues.map((i) => i.field).join(', ')}</p>
+              )}
+            </div>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+              <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                {(['draft', 'published'] as const).map((status) => {
+                  const active = (draft.movementGuideStatus ?? 'draft') === status;
+                  return (
+                    <button key={status} type="button" onClick={() => onUpdateDraft({ movementGuideStatus: status })}
+                      className={`h-7 rounded-md px-2.5 text-[11px] font-black ${active ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}`}>
+                      {status === 'draft' ? 'Draft' : 'Published'}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-bold text-slate-500">추천 동작: <span className="font-black text-slate-900">{getMovementGuideLabel(draft.movementGuide?.movement)}</span></p>
+                <button type="button" onClick={() => onUpdateDraft({ movementGuide: withPresetGuideMovement(preset, draft.movementGuide) })}
+                  className="h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 hover:text-indigo-700">추천 적용</button>
+                <button type="button" onClick={() => onUpdateDraft({ movementGuide: buildMovementGuideStarterDraft(preset, draft.movementGuide) })}
+                  className="h-7 rounded-md border border-indigo-200 bg-indigo-50 px-2 text-[11px] font-black text-indigo-700 hover:bg-indigo-100">초안 채우기</button>
+              </div>
+            </div>
+            <div className="grid gap-3">
+              <label className="block text-[10px] font-black text-slate-400">
+                활동 목표
+                <textarea value={draft.movementGuide?.objective ?? ''} onChange={(e) => onUpdateMovementGuide({ objective: e.target.value })}
+                  placeholder="화면에 제시되는 방향을 빠르게 구분하고 해당 위치로 정확하게 이동합니다."
+                  className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">{SPOMOVE_EDITORIAL_ADMIN_HELPER.objective}</span>
+              </label>
+              <label className="block text-[10px] font-black text-slate-400">
+                진행 방법
+                <textarea value={draft.movementGuide?.instruction ?? ''} onChange={(e) => onUpdateMovementGuide({ instruction: e.target.value })}
+                  className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+              </label>
+              <label className="block text-[10px] font-black text-slate-400">
+                지도 포인트 (최대 3개, 한 줄에 하나)
+                <textarea value={draft.movementGuide?.teachingPoints?.join('\n') ?? ''} onChange={(e) => onUpdateMovementGuide({ teachingPoints: e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).slice(0, 3) })}
+                  placeholder="속도보다 방향 선택의 정확성을 먼저 확인하세요."
+                  className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">{SPOMOVE_EDITORIAL_ADMIN_HELPER.teachingPoints}</span>
+              </label>
+              <label className="block text-[10px] font-black text-slate-400">
+                교사 멘트
+                <textarea value={draft.movementGuide?.coachScript ?? ''} onChange={(e) => onUpdateMovementGuide({ coachScript: e.target.value })}
+                  className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+              </label>
+              <div>
+                <p className="text-[10px] font-black text-slate-400">Focus tag</p>
+                <div className="mt-1 flex flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-white p-2">
+                  {SPOMOVE_FOCUS_TAGS.map((tag) => {
+                    const selected = draft.movementGuide?.focusTags?.includes(tag) ?? false;
+                    return (
+                      <button key={tag} type="button" onClick={() => {
+                        const current = [...(draft.movementGuide?.focusTags ?? [])] as SpomoveFocusTag[];
+                        const next = selected ? current.filter((t) => t !== tag) : [...current, tag].slice(0, 3);
+                        onUpdateMovementGuide({ focusTags: next });
+                      }} className={`h-8 rounded-full border px-3 text-[11px] font-black ${selected ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                        {SPOMOVE_FOCUS_TAG_LABELS[tag]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-[10px] font-black text-slate-400">
+                  쉬운 변형
+                  <textarea value={draft.movementGuide?.easier ?? ''} onChange={(e) => onUpdateMovementGuide({ easier: e.target.value })}
+                    className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                </label>
+                <label className="block text-[10px] font-black text-slate-400">
+                  어려운 변형
+                  <textarea value={draft.movementGuide?.harder ?? ''} onChange={(e) => onUpdateMovementGuide({ harder: e.target.value })}
+                    className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                </label>
+              </div>
+            </div>
+            {presetIssues.length > 0 && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                <p className="text-[11px] font-black text-amber-900">공식 가이드 게시 전 보완 필요</p>
+                <ul className="mt-1 space-y-1">
+                  {presetIssues.map((issue) => (
+                    <li key={`${issue.presetId}-${issue.field}-${issue.code}`} className="text-[11px] font-semibold leading-4 text-amber-800">{issue.field}: {issue.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>)}
+          {/* ── 카드 정보 탭 ── */}
+          {tab === 'card' && (
+            <div className="grid gap-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="block text-[10px] font-black text-slate-500">
+                  사용자용 활동명
+                  <input value={draft.displayTitle ?? ''} onChange={(e) => onUpdateDraft({ displayTitle: e.target.value })} placeholder={getSpomovePresetDisplayModel(preset).displayTitle}
+                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                </label>
+                <label className="block text-[10px] font-black text-slate-500">
+                  카드 변형명
+                  <input value={draft.variantLabel ?? ''} onChange={(e) => onUpdateDraft({ variantLabel: e.target.value })} placeholder={getSpomovePresetDisplayModel(preset).variantLabel}
+                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                </label>
+              </div>
+              <label className="block text-[10px] font-black text-slate-500">
+                카드 한줄 설명
+                <input value={draft.shortDescription ?? ''} onChange={(e) => onUpdateDraft({ shortDescription: e.target.value })} placeholder="활동 방식을 한 문장으로 설명"
+                  className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+              </label>
+              <div className="grid gap-2 sm:grid-cols-[1fr_6rem]">
+                <label className="flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-bold text-slate-600">
+                  <input type="checkbox" checked={draft.isVisible !== false} onChange={(e) => onUpdateDraft({ isVisible: e.target.checked })} className="h-4 w-4 accent-indigo-600" />
+                  구독자 화면에 노출
+                </label>
+                <label className="block text-[10px] font-black text-slate-500">
+                  정렬 순서
+                  <input type="number" min={0} value={draft.sortOrder ?? preset.sortOrder} onChange={(e) => onUpdateDraft({ sortOrder: Number(e.target.value) })}
+                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+                </label>
+              </div>
+              <label className="block text-[10px] font-black text-slate-500">
+                카드 태그 (쉼표로 구분, 최대 5개)
+                <input value={(draft.catalogTags ?? []).join(', ')} onChange={(e) => onUpdateDraft({ catalogTags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 5) })} placeholder="선택 반응, 양측 이동, 보통"
+                  className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+              </label>
+            </div>
+          )}
+          {/* ── 고급 탭 ── */}
+          {tab === 'advanced' && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-[11px] font-black text-slate-500">핵심 키워드</p>
+                <div className="mt-2 space-y-2">
+                  {SPOMOVE_CORE_KEYWORD_AXIS.map((axis) => {
+                    const parsed = parseSpomoveCoreKeywordsOverride(draft.coreKeywords);
+                    const selected = parsed[axis.key] ? [parsed[axis.key]!] : [];
+                    return (
+                      <label key={axis.key} className="block text-[10px] font-black text-slate-400">
+                        {axis.label}
+                        <div className="mt-1">
+                          <ChoiceChips options={[...axis.values]} selected={selected}
+                            onChange={(next) => { const picked = next.at(-1) ?? null; onUpdateDraft({ coreKeywords: patchCoreKeywordAxis(draft.coreKeywords, axis.key, picked) }); }} />
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+              <label className="block text-[11px] font-black text-slate-500">
+                이전 활동방법 <span className="font-semibold text-slate-400">(공식 가이드가 없을 때만 사용)</span>
+                <textarea value={draft.activityMethod ?? ''} onChange={(e) => onUpdateDraft({ activityMethod: e.target.value })} placeholder="화면에 나온 색을 발로 짧게 터치합니다."
+                  className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+              </label>
+              <label className="block text-[11px] font-black text-slate-500">
+                이전 활동 개념 <span className="font-semibold text-slate-400">(공식 가이드가 없을 때만 사용)</span>
+                <textarea value={draft.activityConcept ?? ''} onChange={(e) => onUpdateDraft({ activityConcept: e.target.value })} placeholder="수업자가 이해해야 할 활동 개념을 입력하세요."
+                  className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
+              </label>
+            </div>
+          )}
+        </div>
+        {/* 모달 하단 저장/닫기 고정 */}
+        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-slate-100 px-5 py-3">
+          <button type="button" onClick={onDelete} disabled={!saved || saving || deleting}
+            className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 px-3 text-[12px] font-black text-rose-600 hover:bg-rose-50 disabled:opacity-40">
+            {deleting ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}삭제
+          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={onClose} className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-600">닫기</button>
+            <button type="button" onClick={onSave} disabled={!dirty || saving || deleting}
+              className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none disabled:opacity-40">
+              {saving ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}저장
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function useSpomoveContentData() {
+  const [contentMap, setContentMap] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const contentRef = useRef(contentMap);
+  contentRef.current = contentMap;
+  const [draftMap, setDraftMap] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const [loading, setLoading] = useState(true);
+  const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
+  const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saveIssues, setSaveIssues] = useState<SpomovePublishedGuideSaveIssue[]>([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error: loadError } = await supabase
+        .from('think_asset_packs')
+        .select('assets_json')
+        .eq('id', SPOMOVE_CONTENT_PACK_ID)
+        .maybeSingle();
+      if (loadError && loadError.code !== 'PGRST116') throw loadError;
+      const next = normalizeSpomoveContentMap(data?.assets_json);
+      setContentMap(next);
+      contentRef.current = next;
+      setDraftMap(next);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'SPOMOVE 설명을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const persist = useCallback(async (next: Record<string, SpomovePresetContentOverride>) => {
+    const res = await fetch('/api/admin/think-asset-pack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        id: SPOMOVE_CONTENT_PACK_ID,
+        name: SPOMOVE_CONTENT_PACK_NAME,
+        theme: 'spomove',
+        assets_json: { schemaVersion: 2, content: next } satisfies SpomoveContentAssetsJson,
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as ThinkAssetPackSaveResponse;
+    if (!res.ok) {
+      const issues = normalizeSpomoveGuideSaveIssues(body.issues);
+      throw new SpomoveContentSaveError(body.error ?? 'SPOMOVE 설명 저장에 실패했습니다.', issues);
+    }
+    setContentMap(next);
+    contentRef.current = next;
+    setDraftMap(next);
+    setSaveIssues([]);
+  }, []);
+
+  const updateDraft = useCallback((presetId: string, patch: Partial<SpomovePresetContentOverride>) => {
+    setDraftMap((current) => ({
+      ...current,
+      [presetId]: { ...normalizeContentDraft(current[presetId]), ...patch },
+    }));
+  }, []);
+
+  const updateMovementGuide = useCallback((presetId: string, patch: Partial<SpomoveMovementGuideDraft>) => {
+    setDraftMap((current) => {
+      const currentDraft = normalizeContentDraft(current[presetId]);
+      return {
+        ...current,
+        [presetId]: {
+          ...currentDraft,
+          movementGuide: { ...currentDraft.movementGuide, ...patch },
+        },
+      };
+    });
+  }, []);
+
+  const saveContent = useCallback(async (presetId: string) => {
+    const draft = normalizeContentDraft(draftMap[presetId]);
+    const previous = contentRef.current[presetId];
+    const preset = findOfficialSpomovePreset(presetId);
+    let nextEntry: SpomovePresetContentOverride = {
+      displayTitle: draft.displayTitle?.trim() ?? '',
+      shortDescription: draft.shortDescription?.trim() ?? '',
+      variantLabel: draft.variantLabel?.trim() ?? '',
+      catalogTags: draft.catalogTags?.map((tag) => tag.trim()).filter(Boolean).slice(0, 5) ?? [],
+      isVisible: draft.isVisible !== false,
+      sortOrder: draft.sortOrder,
+      coreKeywords: normalizeSpomoveCoreKeywordsList(draft.coreKeywords ?? []),
+      activityMethod: draft.activityMethod?.trim() ?? '',
+      activityConcept: draft.activityConcept?.trim() ?? '',
+      movementGuide: draft.movementGuide,
+      movementGuideStatus: draft.movementGuideStatus,
+    };
+    if (draft.movementGuideStatus === 'published' && preset) {
+      nextEntry = withPublishedSourceBaseline(preset, nextEntry);
+    } else {
+      nextEntry = preserveSourceBaselineFields(previous, nextEntry);
+    }
+    const next = { ...contentRef.current };
+    if (contentDraftIsEmpty(nextEntry)) delete next[presetId];
+    else next[presetId] = nextEntry;
+    setSavingPresetId(presetId);
+    setError(null);
+    setSaveIssues([]);
+    try {
+      await persist(next);
+      toast.success('SPOMOVE 설명을 저장했습니다.');
+    } catch (saveError) {
+      const message = saveError instanceof Error ? saveError.message : 'SPOMOVE 설명 저장에 실패했습니다.';
+      setError(message);
+      setSaveIssues(saveError instanceof SpomoveContentSaveError ? saveError.issues : []);
+      toast.error(message);
+    } finally {
+      setSavingPresetId(null);
+    }
+  }, [draftMap, persist]);
+
+  const deleteContent = useCallback(async (presetId: string) => {
+    if (!contentRef.current[presetId]) return;
+    const next = { ...contentRef.current };
+    delete next[presetId];
+    setDeletingPresetId(presetId);
+    setError(null);
+    setSaveIssues([]);
+    try {
+      await persist(next);
+      toast.success('SPOMOVE 설명을 삭제했습니다.');
+    } catch (deleteError) {
+      const message = deleteError instanceof Error ? deleteError.message : 'SPOMOVE 설명 삭제에 실패했습니다.';
+      setError(message);
+      setSaveIssues(deleteError instanceof SpomoveContentSaveError ? deleteError.issues : []);
+      toast.error(message);
+    } finally {
+      setDeletingPresetId(null);
+    }
+  }, [persist]);
+
+  return {
+    contentMap, draftMap, loading, savingPresetId, deletingPresetId, error, saveIssues,
+    updateDraft, updateMovementGuide, saveContent, deleteContent,
+  };
+}
+
+function SpomoveCatalogManager() {
+  const {
+    contentMap, draftMap, loading, savingPresetId, deletingPresetId, error, saveIssues,
+    updateDraft, updateMovementGuide, saveContent, deleteContent,
+  } = useSpomoveContentData();
+  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
+  const [modalTab, setModalTab] = useState<'guide' | 'card' | 'advanced'>('guide');
+
+  return (
+    <>
+    <main className="min-h-[calc(100dvh-73px)] bg-slate-50 p-5">
+      <div className="mb-5">
+        <h2 className="text-xl font-black">공식 SPOMOVE 프리셋</h2>
+        <p className="mt-1 text-sm font-semibold text-slate-500">카드를 클릭하면 설명과 가이드를 편집할 수 있습니다.</p>
+        {error && <p className="mt-2 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-[12px] font-bold text-rose-700">{error}</p>}
+      </div>
+      {loading ? (
+        <div className="flex justify-center py-16"><div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" /></div>
+      ) : (
+        <div className="space-y-4">
+          {SPOMOVE_GROUP_OPTIONS.map((group) => {
+            const presets = ADMIN_SPOMOVE_LIBRARY
+              .filter((preset) => preset.programGroup === group.key)
+              .sort((a, b) => a.sortOrder - b.sortOrder);
+            return (
+              <section key={group.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="text-[15px] font-black text-slate-950">{group.label}</h3>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-600 shadow-sm">{presets.length}개</span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                  {presets.map((preset) => {
+                    const display = getSpomovePresetDisplayModel(preset);
+                    const draft = normalizeContentDraft(draftMap[preset.id]);
+                    const briefing = resolveSpomoveBriefingReadiness({ preset, contentOverride: draft });
+                    const sourceIntegrity = resolveSpomoveGuideSourceIntegrity({ preset, contentOverride: draft });
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => { setEditingPresetId(preset.id); setModalTab('guide'); }}
+                        className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-indigo-300 hover:shadow-md"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-[11px] font-black text-indigo-600">{display.axisLabel}</p>
+                            <h4 className="mt-1 text-base font-black text-slate-950">{display.displayTitle}</h4>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-600">{display.programLabel}</span>
+                        </div>
+                        <p className="mt-2 text-xs font-semibold text-slate-500">{display.settingLabel}</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {preset.settingChips.slice(0, 4).map((chip) => (
+                            <span key={chip} className="rounded-full border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-500">{chip}</span>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-1">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${briefing.readiness === 'ready' ? 'bg-emerald-50 text-emerald-700' : briefing.readiness === 'needsEditorial' ? 'bg-amber-50 text-amber-700' : briefing.readiness === 'legacy' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {BRIEFING_READINESS_LABELS[briefing.readiness]}
+                          </span>
+                          {sourceIntegrity.status === 'changed' && (
+                            <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-black text-orange-800">Source Changed</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+    </main>
+    {editingPresetId != null && (() => {
+      const preset = ADMIN_SPOMOVE_LIBRARY.find((p) => p.id === editingPresetId);
+      if (!preset) return null;
+      const draft = normalizeContentDraft(draftMap[editingPresetId]);
+      const saved = contentMap[editingPresetId];
+      const sourceIntegrity = resolveSpomoveGuideSourceIntegrity({ preset, contentOverride: draft });
+      return (
+        <SpomoveEditModal
+          preset={preset}
+          draft={draft}
+          saved={saved}
+          saving={savingPresetId === editingPresetId}
+          deleting={deletingPresetId === editingPresetId}
+          tab={modalTab}
+          saveIssues={saveIssues}
+          sourceIntegrity={sourceIntegrity}
+          onTabChange={setModalTab}
+          onUpdateDraft={(patch) => updateDraft(editingPresetId, patch)}
+          onUpdateMovementGuide={(patch) => updateMovementGuide(editingPresetId, patch)}
+          onSave={() => { void saveContent(editingPresetId); }}
+          onDelete={() => { void deleteContent(editingPresetId).then(() => setEditingPresetId(null)); }}
+          onClose={() => setEditingPresetId(null)}
+        />
+      );
+    })()}
+    </>
+  );
+}
+
+export function SpomoveContentManager() {
   const [contentMap, setContentMap] = useState<Record<string, SpomovePresetContentOverride>>({});
   const contentRef = useRef(contentMap);
   contentRef.current = contentMap;
@@ -974,7 +1504,9 @@ function SpomoveContentManager() {
   const [saveIssues, setSaveIssues] = useState<SpomovePublishedGuideSaveIssue[]>([]);
   const [workFilter, setWorkFilter] = useState<SpomoveContentWorkFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedPresetId, setExpandedPresetId] = useState<string | null>(null);
+  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
+  const [, setExpandedPresetId] = useState<string | null>(null);
+  const [modalTab, setModalTab] = useState<'guide' | 'card' | 'advanced'>('guide');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1261,6 +1793,7 @@ function SpomoveContentManager() {
   }, [visibleContentPresets]);
 
   return (
+    <>
     <main className="min-h-[calc(100dvh-73px)] bg-slate-50 p-4 sm:p-6">
       <div className="mx-auto max-w-[1500px] space-y-5">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -1513,12 +2046,6 @@ function SpomoveContentManager() {
                 <div className="mt-4 grid gap-3 lg:grid-cols-2">
                   {presets.map((preset) => {
                     const draft = normalizeContentDraft(draftMap[preset.id]);
-                    const saved = contentMap[preset.id];
-                    const savingThis = savingPresetId === preset.id;
-                    const deletingThis = deletingPresetId === preset.id;
-                    const dirty = JSON.stringify(normalizeContentDraft(saved)) !== JSON.stringify(draft);
-                    const presetIssues = saveIssues.filter((issue) => issue.presetId === preset.id);
-                    const guideCompletion = getMovementGuideCompletion(preset, draft.movementGuide);
                     const briefing = resolveSpomoveBriefingReadiness({
                       preset,
                       contentOverride: draft,
@@ -1535,370 +2062,36 @@ function SpomoveContentManager() {
                     ].filter(Boolean);
 
                     return (
-                      <details
+                      <button
                         key={preset.id}
-                        open={expandedPresetId === '__all__' || expandedPresetId === preset.id}
-                        onToggle={(event) => {
-                          if (event.currentTarget.open) setExpandedPresetId(preset.id);
-                          else if (expandedPresetId === preset.id) setExpandedPresetId(null);
-                        }}
-                        className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                        type="button"
+                        onClick={() => { setEditingPresetId(preset.id); setModalTab('guide'); }}
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 p-4 text-left transition-colors hover:border-indigo-300 hover:bg-indigo-50/30"
                       >
-                        <summary className="cursor-pointer list-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 [&::-webkit-details-marker]:hidden">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="truncate text-[13px] font-black text-slate-950">
-                                {['flanker', 'stroop', 'sequential-memory', 'simon'].includes(preset.programGroup)
-                                  ? getSpomovePresetDisplayModel(preset).displayTitle
-                                  : draft.displayTitle?.trim() || getSpomovePresetDisplayModel(preset).displayTitle}
-                              </p>
-                              <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-emerald-700">
-                                  {BRIEFING_READINESS_LABELS[briefing.readiness]}
-                                </span>
-                                <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
-                                    sourceIntegrity.status === 'changed'
-                                      ? 'bg-orange-50 text-orange-800'
-                                      : sourceIntegrity.status === 'current'
-                                        ? 'bg-white text-slate-600'
-                                        : 'bg-slate-100 text-slate-500'
-                                  }`}
-                                >
-                                  {SOURCE_INTEGRITY_LABELS[sourceIntegrity.status]}
-                                </span>
-                                {briefingGapLabels.map((label) => (
-                                  <span key={label} className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                                    {label} 없음
-                                  </span>
-                                ))}
-                                {(draft.catalogTags ?? []).slice(0, 4).map((tag) => <span key={tag} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">{tag}</span>)}
-                              </div>
-                            </div>
-                            <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-black text-indigo-700">상세 편집</span>
-                          </div>
-                        </summary>
-                        {sourceIntegrity.status === 'changed' ? (
-                          <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5">
-                            <p className="text-[12px] font-black text-orange-900">Source Changed · 재검수 필요</p>
-                            <p className="mt-1 text-[11px] font-semibold leading-4 text-orange-800">
-                              마지막 가이드 검수 이후 실행 원본이 변경되었습니다.
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-[13px] font-black text-slate-950">
+                              {['flanker', 'stroop', 'sequential-memory', 'simon'].includes(preset.programGroup)
+                                ? getSpomovePresetDisplayModel(preset).displayTitle
+                                : draft.displayTitle?.trim() || getSpomovePresetDisplayModel(preset).displayTitle}
                             </p>
-                            {sourceIntegrity.sourceReviewedAt ? (
-                              <p className="mt-1.5 text-[10px] font-bold text-orange-700/90">
-                                Reviewed:{' '}
-                                {sourceIntegrity.sourceReviewedAt.slice(0, 10)}
-                              </p>
-                            ) : null}
-                            <p className="mt-2 text-[10px] font-semibold text-orange-700/80">
-                              가이드를 확인한 뒤 Published로 다시 저장하면 Source Current로 갱신됩니다.
-                              (내용이 같아도 재승인 가능)
-                            </p>
-                          </div>
-                        ) : null}
-                        {sourceIntegrity.status === 'untracked' ? (
-                          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-                            <p className="text-[12px] font-black text-slate-700">Source Untracked</p>
-                            <p className="mt-1 text-[11px] font-semibold leading-4 text-slate-600">
-                              아직 원본 fingerprint baseline이 없습니다. Published 저장 시 등록됩니다.
-                            </p>
-                          </div>
-                        ) : null}
-                        <details className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/50 p-3">
-                          <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between text-[11px] font-black text-indigo-900 [&::-webkit-details-marker]:hidden">
-                            구독자 카드 정보
-                            <span className="text-[10px] text-indigo-600">필요할 때 열기</span>
-                          </summary>
-                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                            <label className="block text-[10px] font-black text-slate-500">
-                              사용자용 활동명
-                              <input value={draft.displayTitle ?? ''} onChange={(event) => updateDraft(preset.id, { displayTitle: event.target.value })} placeholder={getSpomovePresetDisplayModel(preset).displayTitle} disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
-                            </label>
-                            <label className="block text-[10px] font-black text-slate-500">
-                              카드 변형명
-                              <input value={draft.variantLabel ?? ''} onChange={(event) => updateDraft(preset.id, { variantLabel: event.target.value })} placeholder={getSpomovePresetDisplayModel(preset).variantLabel} disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
-                            </label>
-                          </div>
-                          <label className="mt-2 block text-[10px] font-black text-slate-500">
-                            카드 한줄 설명
-                            <input value={draft.shortDescription ?? ''} onChange={(event) => updateDraft(preset.id, { shortDescription: event.target.value })} placeholder="활동 방식을 한 문장으로 설명" disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
-                          </label>
-                          <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_6rem]">
-                            <label className="flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-bold text-slate-600">
-                              <input type="checkbox" checked={draft.isVisible !== false} onChange={(event) => updateDraft(preset.id, { isVisible: event.target.checked })} disabled={savingThis || deletingThis} className="h-4 w-4 accent-indigo-600" />
-                              구독자 화면에 노출
-                            </label>
-                            <label className="block text-[10px] font-black text-slate-500">
-                              정렬 순서
-                              <input type="number" min={0} value={draft.sortOrder ?? preset.sortOrder} onChange={(event) => updateDraft(preset.id, { sortOrder: Number(event.target.value) })} disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
-                            </label>
-                          </div>
-                          <label className="mt-2 block text-[10px] font-black text-slate-500">
-                            카드 태그 (쉼표로 구분, 최대 5개)
-                            <input value={(draft.catalogTags ?? []).join(', ')} onChange={(event) => updateDraft(preset.id, { catalogTags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 5) })} placeholder="선택 반응, 양측 이동, 보통" disabled={savingThis || deletingThis} className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
-                          </label>
-                        </details>
-                        <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-[11px] font-black text-slate-700">
-                              공식 가이드 완성도 {guideCompletion.completeCount}/{guideCompletion.requiredCount}
-                            </p>
-                            <span
-                              className={`rounded-full px-2 py-1 text-[10px] font-black ${
-                                guideCompletion.issues.length === 0
-                                  ? 'bg-emerald-50 text-emerald-700'
-                                  : 'bg-amber-50 text-amber-700'
-                              }`}
-                            >
-                              {guideCompletion.issues.length === 0 ? '게시 조건 충족' : `${guideCompletion.issues.length}개 보완`}
-                            </span>
-                          </div>
-                          <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                            <div
-                              className={`h-full rounded-full ${
-                                guideCompletion.issues.length === 0 ? 'bg-emerald-500' : 'bg-amber-400'
-                              }`}
-                              style={{ width: `${guideCompletion.percent}%` }}
-                            />
-                          </div>
-                          {guideCompletion.issues.length > 0 ? (
-                            <p className="mt-2 text-[11px] font-semibold leading-4 text-slate-500">
-                              빠진 항목: {guideCompletion.issues.map((issue) => issue.field).join(', ')}
-                            </p>
-                          ) : null}
-                        </div>
-                        {presetIssues.length > 0 ? (
-                          <div className="mt-3 rounded-lg border border-amber-200 bg-white px-3 py-2">
-                            <p className="text-[11px] font-black text-amber-900">공식 가이드 게시 전 보완 필요</p>
-                            <ul className="mt-1 space-y-1">
-                              {presetIssues.map((issue) => (
-                                <li key={`${issue.presetId}-${issue.field}-${issue.code}`} className="text-[11px] font-semibold leading-4 text-amber-800">
-                                  {issue.field}: {issue.message}
-                                </li>
+                            <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-emerald-700">
+                                {BRIEFING_READINESS_LABELS[briefing.readiness]}
+                              </span>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${sourceIntegrity.status === 'changed' ? 'bg-orange-50 text-orange-800' : sourceIntegrity.status === 'current' ? 'bg-white text-slate-600' : 'bg-slate-100 text-slate-500'}`}>
+                                {SOURCE_INTEGRITY_LABELS[sourceIntegrity.status]}
+                              </span>
+                              {briefingGapLabels.map((label) => (
+                                <span key={label} className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">{label} 없음</span>
                               ))}
-                            </ul>
-                          </div>
-                        ) : null}
-                        <details className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                          <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between text-[11px] font-black text-slate-600 [&::-webkit-details-marker]:hidden">
-                            고급·레거시 정보
-                            <span className="text-[10px] font-bold text-slate-400">핵심 키워드 · 이전 설명 호환</span>
-                          </summary>
-                          <div className="mt-2 space-y-2">
-                          <p className="text-[11px] font-black text-slate-500">핵심 키워드</p>
-                          {SPOMOVE_CORE_KEYWORD_AXIS.map((axis) => {
-                            const parsed = parseSpomoveCoreKeywordsOverride(draft.coreKeywords);
-                            const selected = parsed[axis.key] ? [parsed[axis.key]!] : [];
-                            return (
-                              <label key={axis.key} className="block text-[10px] font-black text-slate-400">
-                                {axis.label}
-                                <div className="mt-1">
-                                  <ChoiceChips
-                                    options={[...axis.values]}
-                                    selected={selected}
-                                    onChange={(next) => {
-                                      const picked = next.at(-1) ?? null;
-                                      updateDraft(preset.id, {
-                                        coreKeywords: patchCoreKeywordAxis(draft.coreKeywords, axis.key, picked),
-                                      });
-                                    }}
-                                  />
-                                </div>
-                              </label>
-                            );
-                          })}
-                        <label className="mt-3 block text-[11px] font-black text-slate-500">
-                          이전 활동방법 <span className="font-semibold text-slate-400">(공식 가이드가 없을 때만 사용)</span>
-                          <textarea
-                            value={draft.activityMethod ?? ''}
-                            onChange={(event) => updateDraft(preset.id, { activityMethod: event.target.value })}
-                            placeholder="화면에 나온 색을 발로 짧게 터치합니다."
-                            disabled={savingThis || deletingThis}
-                            className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                          />
-                        </label>
-                        <label className="mt-3 block text-[11px] font-black text-slate-500">
-                          이전 활동 개념 <span className="font-semibold text-slate-400">(공식 가이드가 없을 때만 사용)</span>
-                          <textarea
-                            value={draft.activityConcept ?? ''}
-                            onChange={(event) => updateDraft(preset.id, { activityConcept: event.target.value })}
-                            placeholder="수업자가 이해해야 할 활동 개념을 입력하세요."
-                            disabled={savingThis || deletingThis}
-                            className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                          />
-                        </label>
-                          </div>
-                        </details>
-                        <section className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div>
-                              <p className="text-[11px] font-black text-slate-700">공식 수업 가이드</p>
-                              <p className="mt-0.5 text-[10px] font-semibold leading-4 text-slate-400">
-                                Published는 구독자에게 바로 보이는 완성 가이드입니다.
-                              </p>
-                            </div>
-                            <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1">
-                              {(['draft', 'published'] as const).map((status) => {
-                                const active = (draft.movementGuideStatus ?? 'draft') === status;
-                                return (
-                                  <button
-                                    key={status}
-                                    type="button"
-                                    onClick={() => updateDraft(preset.id, { movementGuideStatus: status })}
-                                    className={`h-7 rounded-md px-2 text-[11px] font-black ${
-                                      active ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'
-                                    }`}
-                                  >
-                                    {status === 'draft' ? 'Draft' : 'Published'}
-                                  </button>
-                                );
-                              })}
+                              {(draft.catalogTags ?? []).slice(0, 4).map((tag) => <span key={tag} className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-500">{tag}</span>)}
                             </div>
                           </div>
-                          <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-[11px] font-bold text-slate-500">
-                                추천 동작: <span className="font-black text-slate-900">{getMovementGuideLabel(draft.movementGuide?.movement)}</span>
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => updateDraft(preset.id, { movementGuide: withPresetGuideMovement(preset, draft.movementGuide) })}
-                                className="h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 hover:text-indigo-700"
-                              >
-                                추천 동작 적용
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => updateDraft(preset.id, { movementGuide: buildMovementGuideStarterDraft(preset, draft.movementGuide) })}
-                                className="h-7 rounded-md border border-indigo-200 bg-indigo-50 px-2 text-[11px] font-black text-indigo-700 hover:bg-indigo-100"
-                              >
-                                초안 자동 채우기
-                              </button>
-                            </div>
-                          </div>
-                          <div className="mt-3 grid gap-2">
-                            <label className="block text-[10px] font-black text-slate-400">
-                              활동 목표
-                              <textarea
-                                value={draft.movementGuide?.objective ?? ''}
-                                onChange={(event) => updateMovementGuide(preset.id, { objective: event.target.value })}
-                                placeholder="화면에 제시되는 방향을 빠르게 구분하고 해당 위치로 정확하게 이동합니다."
-                                disabled={savingThis || deletingThis}
-                                className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                              />
-                              <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">
-                                {SPOMOVE_EDITORIAL_ADMIN_HELPER.objective}
-                              </span>
-                            </label>
-                            <label className="block text-[10px] font-black text-slate-400">
-                              진행 방법
-                              <textarea
-                                value={draft.movementGuide?.instruction ?? ''}
-                                onChange={(event) => updateMovementGuide(preset.id, { instruction: event.target.value })}
-                                disabled={savingThis || deletingThis}
-                                className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                              />
-                            </label>
-                            <label className="block text-[10px] font-black text-slate-400">
-                              지도 포인트 (최대 3개, 한 줄에 하나)
-                              <textarea
-                                value={draft.movementGuide?.teachingPoints?.join('\n') ?? ''}
-                                onChange={(event) => updateMovementGuide(preset.id, {
-                                  teachingPoints: event.target.value
-                                    .split(/\r?\n/)
-                                    .map((item) => item.trim())
-                                    .filter(Boolean)
-                                    .slice(0, 3),
-                                })}
-                                placeholder="속도보다 방향 선택의 정확성을 먼저 확인하세요."
-                                disabled={savingThis || deletingThis}
-                                className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                              />
-                              <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">
-                                {SPOMOVE_EDITORIAL_ADMIN_HELPER.teachingPoints}
-                              </span>
-                            </label>
-                            <label className="block text-[10px] font-black text-slate-400">
-                              교사 멘트
-                              <textarea
-                                value={draft.movementGuide?.coachScript ?? ''}
-                                onChange={(event) => updateMovementGuide(preset.id, { coachScript: event.target.value })}
-                                disabled={savingThis || deletingThis}
-                                className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                              />
-                            </label>
-                            <div>
-                              <p className="text-[10px] font-black text-slate-400">Focus tag</p>
-                              <div className="mt-1 flex flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-white p-2">
-                                {SPOMOVE_FOCUS_TAGS.map((tag) => {
-                                  const selected = draft.movementGuide?.focusTags?.includes(tag) ?? false;
-                                  return (
-                                    <button
-                                      key={tag}
-                                      type="button"
-                                      onClick={() => {
-                                        const current = [...(draft.movementGuide?.focusTags ?? [])] as SpomoveFocusTag[];
-                                        const next = selected
-                                          ? current.filter((item) => item !== tag)
-                                          : [...current, tag].slice(0, 3);
-                                        updateMovementGuide(preset.id, { focusTags: next });
-                                      }}
-                                      className={`h-8 rounded-full border px-3 text-[11px] font-black ${
-                                        selected
-                                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                                          : 'border-slate-200 bg-slate-50 text-slate-500'
-                                      }`}
-                                    >
-                                      {SPOMOVE_FOCUS_TAG_LABELS[tag]}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                              <label className="block text-[10px] font-black text-slate-400">
-                                쉬운 변형
-                                <textarea
-                                  value={draft.movementGuide?.easier ?? ''}
-                                  onChange={(event) => updateMovementGuide(preset.id, { easier: event.target.value })}
-                                  disabled={savingThis || deletingThis}
-                                  className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                                />
-                              </label>
-                              <label className="block text-[10px] font-black text-slate-400">
-                                어려운 변형
-                                <textarea
-                                  value={draft.movementGuide?.harder ?? ''}
-                                  onChange={(event) => updateMovementGuide(preset.id, { harder: event.target.value })}
-                                  disabled={savingThis || deletingThis}
-                                  className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                                />
-                              </label>
-                            </div>
-                          </div>
-                        </section>
-                        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => void saveContent(preset.id)}
-                            disabled={!dirty || savingThis || deletingThis}
-                            className="spm-btn-primary inline-flex h-8 items-center justify-center rounded-[10px] px-3 text-[11px] font-black focus-visible:outline-none disabled:opacity-40"
-                          >
-                            {savingThis ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}
-                            저장
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void deleteContent(preset.id)}
-                            disabled={!saved || savingThis || deletingThis}
-                            className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-rose-600 disabled:opacity-40"
-                          >
-                            {deletingThis ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}
-                            삭제
-                          </button>
+                          <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-black text-indigo-700">편집</span>
                         </div>
-                      </details>
+                      </button>
                     );
                   })}
                 </div>
@@ -1908,6 +2101,32 @@ function SpomoveContentManager() {
         )}
       </div>
     </main>
+    {editingPresetId != null && (() => {
+      const preset = ADMIN_SPOMOVE_LIBRARY.find((p) => p.id === editingPresetId);
+      if (!preset) return null;
+      const draft = normalizeContentDraft(draftMap[editingPresetId]);
+      const saved = contentMap[editingPresetId];
+      const sourceIntegrity = resolveSpomoveGuideSourceIntegrity({ preset, contentOverride: draft });
+      return (
+        <SpomoveEditModal
+          preset={preset}
+          draft={draft}
+          saved={saved}
+          saving={savingPresetId === editingPresetId}
+          deleting={deletingPresetId === editingPresetId}
+          tab={modalTab}
+          saveIssues={saveIssues}
+          sourceIntegrity={sourceIntegrity}
+          onTabChange={setModalTab}
+          onUpdateDraft={(patch) => updateDraft(editingPresetId, patch)}
+          onUpdateMovementGuide={(patch) => updateMovementGuide(editingPresetId, patch)}
+          onSave={() => { void saveContent(editingPresetId); }}
+          onDelete={() => { void deleteContent(editingPresetId).then(() => setEditingPresetId(null)); }}
+          onClose={() => setEditingPresetId(null)}
+        />
+      );
+    })()}
+    </>
   );
 }
 
@@ -3436,54 +3655,9 @@ export default function AdminSmProgramsPage() {
       ) : null}
 
       {activeTab === 'spomove-catalog' ? (
-        <main className="p-5">
-          <div className="mb-4">
-            <h2 className="text-xl font-black">공식 SPOMOVE 프리셋</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">SPOKEDU MASTER에 노출되는 공식 카탈로그와 동일한 목록입니다.</p>
-          </div>
-          <div className="space-y-4">
-            {SPOMOVE_GROUP_OPTIONS.map((group) => {
-              const presets = ADMIN_SPOMOVE_LIBRARY
-                .filter((preset) => preset.programGroup === group.key)
-                .sort((a, b) => a.sortOrder - b.sortOrder);
-
-              return (
-                <section key={group.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="text-[15px] font-black text-slate-950">{group.label}</h3>
-                    <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-slate-600 shadow-sm">
-                      {presets.length}개
-                    </span>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    {presets.map((preset) => {
-                      const display = getSpomovePresetDisplayModel(preset);
-                      return (
-                        <article key={preset.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-[11px] font-black text-indigo-600">{display.axisLabel}</p>
-                              <h4 className="mt-1 text-base font-black text-slate-950">{display.displayTitle}</h4>
-                            </div>
-                            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-600">{display.programLabel}</span>
-                          </div>
-                          <p className="mt-3 text-xs font-semibold text-slate-500">{display.settingLabel}</p>
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            {preset.settingChips.slice(0, 4).map((chip) => <span key={chip} className="rounded-full border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-500">{chip}</span>)}
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        </main>
+        <SpomoveCatalogManager />
       ) : activeTab === 'content-audit' ? (
         <ContentAuditPanel onOpenProgram={openProgramFromAudit} />
-      ) : activeTab === 'spomove-content' ? (
-        <SpomoveContentManager />
       ) : activeTab === 'spomove-thumbnails' ? (
         <SpomoveThumbnailManager />
       ) : activeTab === 'spomove-guide-videos' ? (

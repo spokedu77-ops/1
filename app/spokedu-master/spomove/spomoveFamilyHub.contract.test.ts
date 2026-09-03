@@ -26,7 +26,7 @@ describe('SPOMOVE Family-first Hub', () => {
   });
 
   it('uses content color in previews and neutral chrome around Families', () => {
-    expect(hub).toContain('<SpomoveProgramVisual preset={representative} />');
+    expect(hub).toContain('buildSpomoveProgramGroupSections');
     expect(hub).not.toContain('AXIS_ACCENT');
     expect(hub).toContain('card.badges.slice(0, 2)');
   });

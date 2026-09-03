@@ -1,4 +1,6 @@
-import { SPOMOVE_PAD_GRID_HEX, SPOMOVE_PAD_LAYOUT_LABELS } from './spomovePadDisplay';
+import Image from 'next/image';
+
+import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
 import type { SpomovePadLayoutVariant } from './spomovePadLayout';
 
 type SpomovePadLayoutViewProps = {
@@ -29,7 +31,7 @@ export function SpomovePadLayoutView({
       <div className={`rounded-2xl border p-4 ${borderClass}`}>
         <p className={`text-sm font-black ${titleClass}`}>매트 배치</p>
         <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
-          참가자가 화면을 바라본 기준입니다.
+          학생이 화면을 바라보는 기준입니다.
         </p>
         <p className={`mt-3 text-center text-[11px] font-black ${mutedClass}`}>화면 ↑</p>
         <div className="mt-4 flex justify-center">
@@ -44,39 +46,38 @@ export function SpomovePadLayoutView({
           </div>
         </div>
         <p className={`mt-2 text-center text-xs font-semibold ${mutedClass}`}>빨강 앞 · 노랑 왼쪽 · 초록 오른쪽 · 파랑 뒤</p>
-        <p className={`mt-1 text-center text-[11px] font-black ${mutedClass}`}>참가자 위치</p>
+        <p className={`mt-1 text-center text-[11px] font-black ${mutedClass}`}>학생 위치</p>
         {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
       </div>
     );
   }
 
-  const boardClass = compact ? 'w-[148px]' : 'w-[200px]';
-  const cellClass = compact ? 'text-xs' : 'text-sm';
+  const boardClass = compact
+    ? 'w-[148px] [@media(max-height:950px)]:w-[112px]'
+    : 'w-[200px] [@media(max-height:950px)]:w-[144px]';
 
   return (
-    <div className={`rounded-2xl border p-3 ${borderClass}`}>
+    <div className={`rounded-2xl border p-3 [@media(max-height:950px)]:py-2.5 ${borderClass}`}>
       <p className={`text-sm font-black ${titleClass}`}>매트 배치</p>
       <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
-        참가자가 화면을 바라본 기준입니다.
+        학생이 화면을 바라보는 기준입니다.
       </p>
-      <p className={`mt-3 text-center text-[11px] font-black ${mutedClass}`}>화면 ↑</p>
-      <div className="mt-3 flex justify-center">
+      <p className={`mt-3 text-center text-[11px] font-black [@media(max-height:950px)]:mt-2 ${mutedClass}`}>화면 ↑</p>
+      <div className="mt-3 flex justify-center [@media(max-height:950px)]:mt-2">
         <div
-          className={`grid aspect-square ${boardClass} grid-cols-2 gap-1.5`}
+          className={`relative aspect-square overflow-hidden rounded-xl shadow-sm ${boardClass}`}
           aria-label="패드 배치: 빨강, 노랑, 초록, 파랑"
         >
-          {SPOMOVE_PAD_LAYOUT_LABELS.map((label, index) => (
-            <div
-              key={label}
-              className={`flex aspect-square items-center justify-center rounded-xl font-black text-white shadow-sm ${cellClass}`}
-              style={{ background: SPOMOVE_PAD_GRID_HEX[index] }}
-            >
-              <span className="text-center leading-4">{index < 2 ? '앞' : '뒤'}<br />{index % 2 === 0 ? '왼쪽' : '오른쪽'}<br />{label}</span>
-            </div>
-          ))}
+          <Image
+            src="/images/spokedu/brand/spomat-layout.png"
+            alt="빨강, 노랑, 초록, 파랑 순서로 배치된 스포매트"
+            fill
+            sizes={compact ? '148px' : '200px'}
+            className="object-cover"
+          />
         </div>
       </div>
-      <p className={`mt-2 text-center text-[11px] font-black ${mutedClass}`}>참가자 위치</p>
+      <p className={`mt-2 text-center text-[11px] font-black [@media(max-height:950px)]:mt-1.5 ${mutedClass}`}>학생 위치</p>
       {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
     </div>
   );

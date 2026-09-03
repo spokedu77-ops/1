@@ -49,12 +49,12 @@ import {
   getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
   sortSpomovePresetsByCatalogOrder,
+  buildSpomoveProgramGroupSections,
 } from './spomovePresetDisplayModel';
 import {
   SPOMOVE_CATALOG_FAMILIES,
   filterPresetsByCatalogFamily,
   getSpomoveCatalogFamily,
-  type SpomoveCatalogFamily,
   type SpomoveCatalogFamilyId,
 } from './spomoveCatalogFamilies';
 // Legacy sort helpers remain part of the hub contract; official catalog uses SPOMOVE_PUBLIC_CATALOG_ORDER.
@@ -565,6 +565,7 @@ function shouldStretchThumbnailToSquare(_width: number, _height: number, src: st
 function CardVisual({
   preset,
   thumbnailUrl,
+  thumbnailPending,
   imageFailed,
   onImageError,
   title,
@@ -573,6 +574,7 @@ function CardVisual({
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
+  thumbnailPending: boolean;
   imageFailed: boolean;
   onImageError: () => void;
   title: string;
@@ -591,7 +593,13 @@ function CardVisual({
       data-spm-spomove-media="image-thumb"
       className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-slate-200 bg-white"
     >
-      {showThumbnail ? (
+      {thumbnailPending ? (
+        <div
+          className="absolute inset-0 bg-slate-100"
+          data-spm-spomove-thumbnail-loading="true"
+          aria-hidden="true"
+        />
+      ) : showThumbnail ? (
         <Image
           src={thumbnailUrl}
           alt=""
@@ -721,6 +729,7 @@ function CardInfo({
 function PresetCard({
   preset,
   thumbnailUrl,
+  thumbnailPending,
   favorite,
   favoriteEnabled,
   hubView,
@@ -736,6 +745,7 @@ function PresetCard({
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
+  thumbnailPending: boolean;
   favorite: boolean;
   favoriteEnabled: boolean;
   hubView: SpomoveHubViewMode;
@@ -789,6 +799,7 @@ function PresetCard({
         <CardVisual
           preset={preset}
           thumbnailUrl={thumbnailUrl}
+          thumbnailPending={thumbnailPending}
           imageFailed={imageFailed}
           onImageError={() => setImageFailed(true)}
           title={displayModel.displayTitle}
@@ -830,39 +841,6 @@ function PresetCard({
   );
 }
 
-function CatalogFamilyCard({
-  family,
-  presets,
-  onSelect,
-}: {
-  family: SpomoveCatalogFamily;
-  presets: readonly OfficialSpomovePreset[];
-  onSelect: () => void;
-}) {
-  const representative = presets[0];
-  if (!representative) return null;
-
-  return (
-    <button
-      type="button"
-      data-spm-spomove-catalog-family={family.id}
-      onClick={onSelect}
-      className="group overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition-colors hover:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
-    >
-      <div className="aspect-video overflow-hidden border-b border-slate-200 bg-slate-950">
-        <SpomoveProgramVisual preset={representative} />
-      </div>
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <h2 className="text-lg font-semibold leading-tight text-slate-950">{family.name}</h2>
-          <span className="shrink-0 text-xs font-normal text-slate-400">{presets.length}개</span>
-        </div>
-        <p className="mt-2 line-clamp-2 text-sm font-normal leading-5 text-slate-600">{family.description}</p>
-      </div>
-    </button>
-  );
-}
-
 // ── 메인 뷰 ──
 
 export default function SpomoveHubView() {
@@ -900,6 +878,7 @@ export default function SpomoveHubView() {
   const hubReturnHref = appendSessionContext(serializeSpomoveHubUrlState(urlState));
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
+  const [thumbnailPackLoaded, setThumbnailPackLoaded] = useState(false);
   const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
   const [contentLoadState, setContentLoadState] = useState<SpomoveContentLoadState>('loading');
   const [assetPackError, setAssetPackError] = useState(false);
@@ -957,6 +936,7 @@ export default function SpomoveHubView() {
           resolveSpomovePackCacheBust(thumbnailData?.updated_at as string | undefined, Object.values(next)),
         );
       }
+      setThumbnailPackLoaded(true);
 
       const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
       if (contentError && contentError.code !== 'PGRST116') {
@@ -972,6 +952,7 @@ export default function SpomoveHubView() {
       setAssetPackError(true);
       setThumbnailPaths({});
       setThumbnailCacheBust(undefined);
+      setThumbnailPackLoaded(true);
       setContentOverrides({});
       setContentLoadState('error');
     });
@@ -1086,13 +1067,6 @@ export default function SpomoveHubView() {
       .filter(Boolean)
       .join(' · ') || '전체';
   const isFamilyLanding = selectedFamilyId === null && !searchQuery && activeProgramGroup === 'all';
-  const familyPresets = useMemo(
-    () => SPOMOVE_CATALOG_FAMILIES.map((family) => ({
-      family,
-      presets: filterPresetsByCatalogFamily(visiblePresets, family.id),
-    })).filter(({ presets }) => presets.length > 0),
-    [visiblePresets],
-  );
 
   const renderPresetGrid = (presets: OfficialSpomovePreset[], gridId?: string) => (
     <div
@@ -1106,6 +1080,7 @@ export default function SpomoveHubView() {
           key={preset.id}
           preset={preset}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
+          thumbnailPending={!thumbnailPackLoaded}
           favorite={isFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
           favoriteEnabled={ownerId != null && preset.isReady}
           hubView={hubView}
@@ -1144,7 +1119,7 @@ export default function SpomoveHubView() {
             SPOMOVE
           </h1>
           <p className="mt-2 max-w-2xl text-[14px] font-normal leading-6 text-slate-600">
-            시각 자극을 움직임으로 연결하는 SPOKEDU 디지털 체육활동
+            SPOMOVE 프로그램은 시각 자극을 움직임으로 연결하는 SPOKEDU 디지털 체육활동입니다.
           </p>
         </header>
 
@@ -1238,18 +1213,30 @@ export default function SpomoveHubView() {
         </div>
         </section>
         {isFamilyLanding ? (
-          <section className="order-2 mt-5" aria-labelledby="spomove-family-heading">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-normal text-slate-500">어떤 방식으로 움직일까요?</p>
-                <h2 id="spomove-family-heading" className="mt-1 text-xl font-semibold text-slate-950">SPOMOVE 프로그램</h2>
-              </div>
-            </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {familyPresets.map(({ family, presets }) => (
-                <CatalogFamilyCard key={family.id} family={family} presets={presets} onSelect={() => selectCatalogFamily(family.id)} />
-              ))}
-            </div>
+          <section id="spomove-program-list" className="order-2 mt-5 flex flex-col gap-12">
+            {SPOMOVE_CATALOG_FAMILIES.map((family) => {
+              const familyFiltered = filterPresetsByCatalogFamily(visiblePresets, family.id);
+              const sections = buildSpomoveProgramGroupSections(familyFiltered);
+              if (sections.length === 0) return null;
+              return (
+                <div key={family.id} data-spm-spomove-catalog-family={family.id}>
+                  <div className="mb-4 flex items-end justify-between gap-3">
+                    <div>
+                      <h2 className="text-xl font-semibold text-slate-950">{family.name}</h2>
+                      <p className="mt-1 text-sm font-normal text-slate-500">{family.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => selectCatalogFamily(family.id)}
+                      className="shrink-0 min-h-9 text-xs font-semibold text-[var(--spm-acc)] hover:underline focus-visible:outline-none"
+                    >
+                      {familyFiltered.length}개 전체 보기
+                    </button>
+                  </div>
+                  {renderPresetGrid(familyFiltered.slice(0, 3), `spomove-family-${family.id}`)}
+                </div>
+              );
+            })}
           </section>
         ) : (
           <section id="spomove-program-list" className="order-2 mt-5">

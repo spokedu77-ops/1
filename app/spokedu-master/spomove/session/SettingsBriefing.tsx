@@ -79,8 +79,8 @@ export function SettingsBriefing({
   const padLayoutVariant = getSpomovePadLayoutVariant(preset);
 
   return (
-    <div className="space-y-4" data-spm-session-settings-screen="true">
-      <div className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3">
+    <div className="space-y-4 [@media(max-height:950px)]:space-y-3" data-spm-session-settings-screen="true">
+      <div className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 [@media(max-height:950px)]:py-2">
         <p className="text-[12px] font-black tracking-[0.08em] text-white/45">설정 변경</p>
         <p className="mt-1 text-[13px] font-semibold text-white/65">필요한 값만 바꾼 뒤 시작합니다.</p>
       </div>
@@ -98,7 +98,7 @@ export function SettingsBriefing({
       ) : null}
 
       {showCueSpeed ? (
-        <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5">
+        <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5 [@media(max-height:950px)]:p-3">
           <p className="text-[12px] font-black tracking-[0.08em] text-white/55">자극 속도</p>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
             {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
@@ -110,7 +110,7 @@ export function SettingsBriefing({
                   type="button"
                   onClick={() => onCueSecondsChange(sec)}
                   title={`${sec}초 · ${getCueSpeedGuide(sec).tempoLabel}`}
-                  className={`relative inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-black transition ${
+                  className={`relative inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-black transition [@media(max-height:950px)]:h-10 ${
                     active
                         ? 'bg-[var(--spm-acc)] text-white'
                         : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'
@@ -160,7 +160,7 @@ export function SettingsBriefing({
         </div>
       ) : null}
 
-      <div className="rounded-[18px] border border-white/10 bg-black/25 px-4 py-3" aria-live="polite">
+      <div className="rounded-[18px] border border-white/10 bg-black/25 px-4 py-3 [@media(max-height:950px)]:py-2" aria-live="polite">
         <p className="text-[11px] font-black tracking-[0.08em] text-white/45">적용될 설정</p>
         <p className="mt-1.5 text-[14px] font-black text-white/85">
           {[showCueSpeed ? `자극 ${cueSeconds}초` : null, difficultyOptions.find((option) => option.value === difficultyValue)?.label, prepLine]
@@ -173,7 +173,7 @@ export function SettingsBriefing({
         type="button"
         onClick={onStart}
         disabled={startDisabled}
-        className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-white text-[16px] font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-white text-[16px] font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 [@media(max-height:950px)]:h-12"
       >
         <Play className="h-5 w-5 fill-black" />
         {startDisabled ? '불러오는 중…' : '수업 시작'}

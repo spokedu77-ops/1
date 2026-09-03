@@ -1,6 +1,6 @@
 'use client';
 
-import { create } from 'zustand';
+import { create, type StateCreator } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
@@ -397,6 +397,43 @@ function errorFromStatus(status: number): Exclude<ContentLoadError, null> {
   return 'server';
 }
 
+type StoreSet = Parameters<StateCreator<MasterState>>[0];
+type StoreGet = Parameters<StateCreator<MasterState>>[1];
+
+async function fetchAndSetPrograms(
+  set: StoreSet,
+  get: StoreGet,
+  cacheOption: RequestCache,
+): Promise<void> {
+  try {
+    const res = await fetch('/api/spokedu-master/programs', { cache: cacheOption });
+    if (!res.ok) {
+      const error = errorFromStatus(res.status);
+      set((state) => ({
+        programs: error === 'unauthorized' || error === 'forbidden' ? [] : state.programs,
+        programsLoaded: true,
+        programsError: error,
+      }));
+      return;
+    }
+    const json = await res.json() as { data?: Program[] };
+    if (Array.isArray(json.data)) {
+      const programs = enrichProgramsWithStaticVisuals(json.data);
+      set((state) => ({
+        programs,
+        programsLoaded: true,
+        programsError: null,
+        ...resolvePendingFavoriteMigration(state, programs),
+      }));
+      return;
+    }
+  } catch {
+    set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'network' }));
+    return;
+  }
+  set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'server' }));
+}
+
 export const useMasterStore = create<MasterState>()(
   persist(
     (set, get) => ({
@@ -405,37 +442,12 @@ export const useMasterStore = create<MasterState>()(
       programsError: null,
       loadPrograms: async () => {
         if (get().programsLoaded && !get().programsError) return;
-        await get().reloadPrograms();
+        // 초기 로드: Next.js 60s revalidate 캐시 활용 (DB 부담 감소)
+        await fetchAndSetPrograms(set, get, 'default');
       },
       reloadPrograms: async () => {
-        try {
-          const res = await fetch('/api/spokedu-master/programs', { cache: 'no-store' });
-          if (!res.ok) {
-            const error = errorFromStatus(res.status);
-            set((state) => ({
-              programs: error === 'unauthorized' || error === 'forbidden' ? [] : state.programs,
-              programsLoaded: true,
-              programsError: error,
-            }));
-            return;
-          }
-
-          const json = await res.json() as { data?: Program[] };
-          if (Array.isArray(json.data)) {
-            const programs = enrichProgramsWithStaticVisuals(json.data);
-            set((state) => ({
-              programs,
-              programsLoaded: true,
-              programsError: null,
-              ...resolvePendingFavoriteMigration(state, programs),
-            }));
-            return;
-          }
-        } catch {
-          set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'network' }));
-          return;
-        }
-        set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'server' }));
+        // 강제 갱신 (focus 복귀 / 재시도 버튼): 항상 최신 데이터
+        await fetchAndSetPrograms(set, get, 'no-store');
       },
       profile: defaultProfile,
       localWorkspaceOwnerId: null,

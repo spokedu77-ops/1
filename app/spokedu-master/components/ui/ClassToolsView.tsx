@@ -996,6 +996,7 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
   const [rungs, setRungs] = useState<LadderRung[]>([]);
   const [selectedStart, setSelectedStart] = useState<number | null>(null);
   const [revealedStarts, setRevealedStarts] = useState<Set<number>>(() => new Set());
+  const [showResultModal, setShowResultModal] = useState(false);
   const levelCount = Math.max(5, students.length * 2);
   const ladderWidth = Math.max(520, students.length * 120);
   const ladderHeight = 380;
@@ -1054,6 +1055,7 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => { setRevealedStarts(new Set(students.map((_, index) => index))); setSelectedStart(null); }} disabled={!rungs.length} className="h-12 rounded-[13px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>전체 결과 공개</button>
+          <button type="button" onClick={() => setShowResultModal(true)} disabled={revealedStarts.size === 0} className="h-12 rounded-[13px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>결과 보기</button>
           <ActionButton onClick={createLadder} disabled={students.length < 2} accent="#0891b2"><Route size={17} />{rungs.length ? '다시 만들기' : '사다리 만들기'}</ActionButton>
         </div>
       </div>
@@ -1081,9 +1083,25 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
           </div>
         </div>
       ) : null}
-      {revealedStarts.size ? (
-        <div className="grid w-full max-w-[960px] gap-2 sm:grid-cols-2">
-          {students.map((student, index) => revealedStarts.has(index) ? <button type="button" onClick={() => setSelectedStart(index)} key={student.id} className="flex min-h-12 items-center justify-between rounded-[12px] px-4 py-3 text-left" style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-grn-a28)' }}><span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</span><span className="text-[13px] font-black" style={{ color: 'var(--spm-grn)' }}>{outcomes[destinations[index]!] || `결과 ${destinations[index]! + 1}`}</span></button> : null)}
+
+      {showResultModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setShowResultModal(false)}>
+          <div className="w-full max-w-sm rounded-2xl p-6 shadow-2xl" style={{ background: 'var(--spm-bg)', border: '1px solid var(--spm-br2)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>결과 요약</p>
+              <button type="button" onClick={() => setShowResultModal(false)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[18px] font-bold" style={{ color: 'var(--spm-t3)' }}>✕</button>
+            </div>
+            <div className="flex flex-col gap-2">
+              {students.map((student, index) =>
+                revealedStarts.has(index) ? (
+                  <div key={student.id} className="flex items-center justify-between rounded-[12px] px-4 py-3" style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-grn-a28)' }}>
+                    <span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</span>
+                    <span className="text-[13px] font-black" style={{ color: 'var(--spm-grn)' }}>{outcomes[destinations[index]!] || `결과 ${destinations[index]! + 1}`}</span>
+                  </div>
+                ) : null
+              )}
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

@@ -193,10 +193,10 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(settingsBriefing).toContain('sec === 3');
     expect(startBriefing).not.toContain('추천');
     expect(settingsBriefing).toContain('추천');
-    expect(padLayoutView).toContain('참가자가 화면을 바라본 기준입니다.');
+    expect(padLayoutView).toContain('학생이 화면을 바라보는 기준입니다.');
     expect(padLayoutView).toContain('화면 ↑');
-    expect(padLayoutView).toContain('참가자 위치');
-    expect(padLayoutView).toContain("index < 2 ? '앞' : '뒤'");
+    expect(padLayoutView).toContain('학생 위치');
+    expect(padLayoutView).toContain('/images/spokedu/brand/spomat-layout.png');
     expect(padLayoutView).toContain('aspect-square');
     expect(settingsBriefing).toContain('meta={intervalLine ? null : prepLine}');
     expect(settingsBriefing).not.toContain('text-white/70">{prepLine}');

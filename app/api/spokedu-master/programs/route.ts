@@ -21,8 +21,8 @@ const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#1c1917', '#292524', '#44403c', '#78716c'],
 ];
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// 60초 캐시: DB 쿼리 부담 감소. 강제 갱신은 store.reloadPrograms()의 no-store 경로 사용.
+export const revalidate = 60;
 
 const CATEGORY_COLORS: Record<string, [string, string, string, string]> = {
   경쟁형: ['#111827', '#1d4ed8', '#f97316', '#facc15'],
@@ -397,31 +397,33 @@ export async function GET() {
   const curriculumIdSet = new Set(curriculumIds);
 
   const metaByCurriculumId = new Map<number, MetaRow>();
+  const overlayByCurriculumId = new Map<number, OverlayRow>();
+
   if (curriculumIds.length > 0) {
-    const { data: metaRows, error: metaErr } = await supabase
-      .from('spokedu_master_program_meta')
-      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
-      .in('curriculum_id', curriculumIds);
-    if (metaErr || !metaRows) {
-      await reportProgramSourceFailure(metaErr, 'spokedu_master_program_meta');
+    const [metaResult, overlayResult] = await Promise.all([
+      supabase
+        .from('spokedu_master_program_meta')
+        .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
+        .in('curriculum_id', curriculumIds),
+      supabase
+        .from('spokedu_pro_programs')
+        .select('title,source_center_curriculum_id,video_url,activity_method,equipment,updated_at,is_published')
+        .in('source_center_curriculum_id', curriculumIds),
+    ]);
+
+    if (metaResult.error || !metaResult.data) {
+      await reportProgramSourceFailure(metaResult.error, 'spokedu_master_program_meta');
       return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
     }
-    for (const meta of (metaRows ?? []) as MetaRow[]) {
+    for (const meta of metaResult.data as MetaRow[]) {
       metaByCurriculumId.set(meta.curriculum_id, meta);
     }
-  }
 
-  const overlayByCurriculumId = new Map<number, OverlayRow>();
-  if (curriculumIds.length > 0) {
-    const { data: overlayRows, error: overlayErr } = await supabase
-      .from('spokedu_pro_programs')
-      .select('title,source_center_curriculum_id,video_url,activity_method,equipment,updated_at,is_published')
-      .in('source_center_curriculum_id', curriculumIds);
-    if (overlayErr || !overlayRows) {
-      await reportProgramSourceFailure(overlayErr, 'spokedu_pro_programs');
+    if (overlayResult.error || !overlayResult.data) {
+      await reportProgramSourceFailure(overlayResult.error, 'spokedu_pro_programs');
       return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
     }
-    for (const overlay of (overlayRows ?? []) as OverlayRow[]) {
+    for (const overlay of overlayResult.data as OverlayRow[]) {
       const curriculumId = overlay.source_center_curriculum_id;
       if (curriculumId == null) continue;
       if (!curriculumIdSet.has(curriculumId)) continue;
