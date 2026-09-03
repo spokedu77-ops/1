@@ -58,12 +58,14 @@ describe('MovementConfigurator contract', () => {
 
   it('Hub 카드 하단은 semantic card metadata만 노출한다', () => {
     expect(hub).toContain('getSpomoveCardDisplayModel');
-    expect(hub).toContain('data-spm-spomove-card-meta');
+    expect(hub).toContain('data-spm-spomove-card-body');
     expect(hub).not.toContain("after:content-['·']");
     expect(hub).not.toContain('활용 요소');
     expect(hub).not.toContain('최근 설정');
     expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('활동 준비');
+    expect(hub).not.toContain('활동 준비');
+    expect(hub).not.toContain('시작 설정');
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(hub).not.toContain('실행 설정');
   });
 

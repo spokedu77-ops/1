@@ -9,8 +9,6 @@ import {
   resolveSpomoveCardPairKey,
   titleIncludesDifficulty,
 } from './spomovePresetDisplayModel';
-import { supportsCueSpeedOverride } from './spomoveCueSpeed';
-import { getSpomoveDifficultyKind } from './spomoveDifficulty';
 
 function read(path: string) {
   return readFileSync(join(process.cwd(), path), 'utf8');
@@ -18,6 +16,7 @@ function read(path: string) {
 
 const publicLibrary = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.catalogStatus !== 'hold');
 const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
+const preview = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
 
 describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
   it('keeps public 72 catalog order from P0', () => {
@@ -25,20 +24,18 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(publicLibrary.map((preset) => preset.id)).toEqual([...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER]);
   });
 
-  it('gates programLabel via Hub context prop (not URL reads inside Card)', () => {
-    expect(hub).toContain('showProgramLabel={showProgramLabel}');
-    expect(hub).toContain('const showProgramLabel = selectedFamilyId === null');
-    expect(hub).toContain('data-spm-spomove-show-program-label={showProgramLabel ? \'true\' : \'false\'}');
-    expect(hub).toContain('data-spm-spomove-card-program-label="true"');
-    expect(hub).toContain('showProgramLabel ? (');
+  it('keeps discovery card body compact and independent from URL reads', () => {
+    expect(hub).toContain('data-spm-spomove-card-body');
+    expect(hub).toContain('decisionMeta');
+    expect(hub).toContain('supportingMeta');
+    expect(hub).toContain('min-h-[84px]');
     expect(hub).not.toContain('useSearchParams().get(\'programGroup\')');
   });
 
-  it('documents programLabel visibility matrix in Hub context', () => {
-    // 전체 / 즐겨찾기 전체 → all → label on
+  it('distinguishes default Family landing from selected Family results', () => {
     expect(hub).toContain('selectedFamilyId === null');
-    // Family 안에서는 상위 Family 이름을 카드마다 반복하지 않는다.
-    expect(hub).toContain('const showProgramLabel = selectedFamilyId === null');
+    expect(hub).toContain('familyFiltered.slice(0, 4)');
+    expect(hub).toContain('familyPreview');
   });
 
   it('keeps P0 semantic badge contract for all public cards', () => {
@@ -83,37 +80,29 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(pairs).toBeGreaterThanOrEqual(5);
   });
 
-  it('keeps result-based action grammar: activity review primary, settings secondary, no Play', () => {
-    expect(hub).toContain('활동 준비');
-    expect(hub).toContain('시작 설정');
-    expect(hub).toContain('data-spm-spomove-start-mode="guide"');
-    expect(hub).toContain('data-spm-spomove-start-mode="settings"');
-    expect(hub).toContain('spm-btn-primary');
+  it('keeps execution actions in Preview and out of Browse cards', () => {
+    expect(hub).not.toContain('활동 준비');
+    expect(hub).not.toContain('시작 설정');
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(preview).toContain('활동 준비');
+    expect(preview).toContain('시작 설정');
+    expect(preview).toContain('spm-btn-primary');
     expect(hub).not.toContain('<Play ');
-    expect(hub).toContain("import { Bookmark, ChevronDown, Lock, Search, X } from 'lucide-react'");
+    expect(hub).toContain("import { Bookmark, ChevronDown, Search, X } from 'lucide-react'");
     expect(hub).toContain('h-11 w-11');
   });
 
-  it('shows settings CTA only when cue/difficulty override exists (contract source)', () => {
-    expect(hub).toContain('supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset))');
-    let withSettings = 0;
-    let withoutSettings = 0;
-    for (const preset of publicLibrary) {
-      const show = supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
-      if (show) withSettings += 1;
-      else withoutSettings += 1;
-    }
-    expect(withSettings).toBeGreaterThan(0);
-    expect(withoutSettings).toBeGreaterThan(0);
+  it('keeps both prepare and settings routes available from Preview', () => {
+    expect(preview).toContain("sessionHref('start')");
+    expect(preview).toContain("sessionHref('settings')");
   });
 
-  it('uses a commercially readable 3-column preset grid after Family selection', () => {
+  it('uses four-column desktop density and a stable card ratio', () => {
     expect(hub).toContain(
-      'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-3',
+      'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
     );
-    expect(hub).not.toContain('xl:grid-cols-4');
-    expect(hub).toContain('min-h-[300px]');
-    expect(hub).toContain('aspect-[6/5]');
+    expect(hub).not.toContain('min-h-[300px]');
+    expect(hub).toContain('aspect-[4/3]');
   });
 
   it('uses one PresetCard path for all hub surfaces', () => {

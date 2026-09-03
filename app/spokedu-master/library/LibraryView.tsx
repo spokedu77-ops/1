@@ -201,7 +201,7 @@ function ProgramCard({
       favoriteEnabled={favoriteEnabled}
       onFavorite={onFavorite}
       priority={priority}
-      sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw"
+      sizes="(min-width: 1280px) 300px, (min-width: 768px) 50vw, 100vw"
       primaryActionLabel={primaryActionLabel}
       onPrimaryAction={onPrimaryAction}
       primaryActionDisabled={primaryActionDisabled}
@@ -497,8 +497,8 @@ export default function LibraryView() {
         {sessionAddError ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
         <div>
           <MasterPageHeader title="놀이체육" description="수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요." />
-          <div className="mt-5 grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-            <label className="relative block">
+          <div className="mt-5 flex w-full max-w-[680px] items-center gap-2">
+            <label className="relative block min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
               <input
                 value={query}
@@ -750,7 +750,7 @@ function ProgramGrid({
   addingProgramId: string | null;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {programs.map((program, index) => (
         <ProgramCard
           key={program.id}

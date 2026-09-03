@@ -130,16 +130,18 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
   it('hub card surface follows P0 action and badge contract', () => {
     const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
     expect(hub).toContain('getSpomoveCardDisplayModel');
-    expect(hub).toContain('data-spm-spomove-card-meta');
-    expect(hub).toContain('활동 준비');
+    expect(hub).toContain('data-spm-spomove-card-body');
+    expect(hub).not.toContain('활동 준비');
+    expect(hub).not.toContain('시작 설정');
     expect(hub).not.toContain("after:content-['·']");
     expect(hub).not.toContain('supportMetaParts.slice');
     expect(hub).not.toContain('displayModel.variantLabel');
     expect(hub).not.toContain('catalogTags');
     expect(hub).not.toContain('<Play ');
-    expect(hub).toContain("import { Bookmark, ChevronDown, Lock, Search, X } from 'lucide-react'");
-    expect(hub).toContain('data-spm-spomove-start-mode="guide"');
-    expect(hub).toContain('data-spm-spomove-start-mode="settings"');
+    expect(hub).toContain("import { Bookmark, ChevronDown, Search, X } from 'lucide-react'");
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(hub).toContain('data-spm-spomove-session-action');
+    expect(hub).toContain('이 수업에 추가');
     expect(hub).toContain('h-11 w-11');
   });
 });

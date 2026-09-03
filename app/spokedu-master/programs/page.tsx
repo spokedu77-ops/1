@@ -5,7 +5,7 @@ import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimit
 
 const PROGRAM_DOMAINS = [
   { href: '/spokedu-master/library', title: '놀이체육', description: '현장에서 바로 활용하는 놀이·뉴스포츠 활동', image: '/spokedu/spokedu-promo-banner.png' },
-  { href: '/spokedu-master/spomove', title: 'SPOMOVE', description: '화면과 움직임을 연결하는 디지털 활동', image: '/spomove/dive/color-gate/star.png' },
+  { href: '/spokedu-master/spomove', title: 'SPOMOVE', description: '화면과 움직임을 연결하는 디지털 활동', image: '/images/spokedu/programs/program-spomove.jpg' },
 ] as const;
 
 export default function ProgramsPage() {

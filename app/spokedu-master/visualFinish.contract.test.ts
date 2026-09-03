@@ -25,16 +25,29 @@ describe('MASTER representative visual finish', () => {
     expect(card).toContain("favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'");
   });
 
-  it('keeps SPOMOVE taxonomy and actions distinct with the shared preview', () => {
+  it('keeps SPOMOVE discovery cards separate from Preview-owned execution actions', () => {
     const hub = read('spomove/SpomoveHubView.tsx');
     const preview = read('spomove/SpomoveGuidelineSheet.tsx');
+
     expect(hub).toContain('SPOMOVE 프로그램');
-    expect(hub).toContain('data-spm-spomove-card-action="start"');
-    expect(hub).toContain('활동 준비');
-    expect(hub).toContain('시작 설정');
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
+    expect(hub).toContain('SPOMOVE_CATALOG_FAMILIES');
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(hub).toContain('Bookmark');
+    expect(hub).not.toContain('data-spm-spomove-card-action="start"');
+    expect(hub).not.toContain('활동 준비');
+    expect(hub).not.toContain('시작 설정');
+    expect(hub).toContain('이 수업에 추가');
+    expect(hub).toContain('familyFiltered.slice(0, 4)');
+    expect(hub).toContain('xl:grid-cols-4');
+    expect(hub).toContain('sm:max-w-[440px]');
     expect(hub).not.toContain('PREMIUM DIGITAL MOVEMENT');
+
     expect(preview).toContain('data-preview-column="media"');
     expect(preview).toContain("guideVideoState === 'locked'");
+    expect(preview).toContain('활동 준비');
+    expect(preview).toContain('시작 설정');
+    expect(preview).toContain("sessionHref('start')");
+    expect(preview).toContain("sessionHref('settings')");
   });
 });

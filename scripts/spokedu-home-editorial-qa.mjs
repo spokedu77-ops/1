@@ -8,7 +8,11 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 
 const BASE_URL = process.env.SPOKEDU_QA_URL ?? 'http://localhost:3000/';
-const OUT_DIR = path.join(process.cwd(), 'qa-screenshots', 'spokedu-home-optical-finish');
+const OUT_DIR = path.join(
+  process.cwd(),
+  'qa-screenshots',
+  process.env.SPOKEDU_QA_OUT ?? 'spokedu-home-optical-finish',
+);
 const FONT_READY_MS = 12_000;
 
 const VIEWPORTS = [
@@ -80,7 +84,22 @@ async function captureSection(page, sectionId, filePath) {
   const el = page.locator(`#${sectionId}`);
   if ((await el.count()) === 0) return;
   await el.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(200);
+  await page.evaluate(async (id) => {
+    const node = document.getElementById(id);
+    if (!node) return;
+    const images = [...node.querySelectorAll('img')];
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.addEventListener('load', resolve, { once: true });
+          img.addEventListener('error', resolve, { once: true });
+          window.setTimeout(resolve, 5000);
+        });
+      }),
+    );
+  }, sectionId);
+  await page.waitForTimeout(120);
   const docBox = await page.evaluate((id) => {
     const node = document.getElementById(id);
     if (!node) return null;

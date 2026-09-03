@@ -16,10 +16,11 @@ describe('SPOMOVE user-friction hardening contracts', () => {
     expect(hub).toContain('전체 프로그램 보기');
   });
 
-  it('keeps one card column through 430px and mobile action targets usable', () => {
+  it('keeps one card column through 430px and uses a mobile Family preview rail', () => {
     expect(hub).toContain('min-[431px]:grid-cols-2');
     expect(hub).not.toContain('min-[380px]:grid-cols-2');
-    expect(hub).toContain('h-11 min-w-0 flex-[1.6]');
+    expect(hub).toContain('snap-x snap-mandatory');
+    expect(hub).toContain('w-[82vw]');
   });
 
   it('does not truncate prep values and always exposes a footer close action', () => {
@@ -29,6 +30,6 @@ describe('SPOMOVE user-friction hardening contracts', () => {
     expect(sheet).not.toContain('실제 운영 예시 영상입니다.');
     expect(sheet).not.toContain('실제 준비 수량은 오른쪽 기준을 따릅니다.');
     expect(sheet).not.toContain('실행 전 오른쪽 준비·진행 기준을 확인하세요.');
-    expect(sheet).toContain('grid-cols-[minmax(88px,0.7fr)_minmax(0,1.3fr)]');
+    expect(sheet).toContain('grid-cols-[minmax(72px,0.55fr)_minmax(104px,0.9fr)_minmax(120px,1.2fr)]');
   });
 });

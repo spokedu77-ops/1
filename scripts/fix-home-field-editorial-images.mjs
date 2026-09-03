@@ -114,7 +114,7 @@ for (const entry of MANIFEST) {
   await writeWebpFrom(entry);
 }
 
-// Subscription Home derivative — top UI only (PNG source, single encode)
+// Legacy banner crop — retain file; Home no longer uses this as the product stage.
 if (existsSync(path.join(SUB, 'product-library.png'))) {
   const libraryMeta = await sharp(path.join(SUB, 'product-library.png')).metadata();
   const cropHeight = Math.min(libraryMeta.height ?? 430, 430);
@@ -123,4 +123,16 @@ if (existsSync(path.join(SUB, 'product-library.png'))) {
     .webp(WEBP)
     .toFile(path.join(SUB, 'product-library-home.webp'));
   console.log('OK subscription/product-library-home.webp');
+}
+
+// Home product stage — lesson UI (taller real product surface; library PNG is already 1216×430)
+const lessonSource = path.join(SUB, 'product-lesson.png');
+if (existsSync(lessonSource)) {
+  const lessonMeta = await sharp(lessonSource).metadata();
+  const srcW = lessonMeta.width ?? 1296;
+  const srcH = lessonMeta.height ?? 748;
+  await sharp(lessonSource)
+    .webp(WEBP)
+    .toFile(path.join(SUB, 'product-home-stage.webp'));
+  console.log(`OK subscription/product-home-stage.webp (${srcW}x${srcH} native)`);
 }

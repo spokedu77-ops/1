@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Bookmark, ChevronDown, Lock, Search, X } from 'lucide-react';
+import { Bookmark, ChevronDown, Search, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -31,8 +31,6 @@ import { isHubListedPreset } from './movements/isHubVisiblePreset';
 import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomoveSameSettings';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import type { MovementQuickFilter } from './movements/movementTypes';
-import { supportsCueSpeedOverride } from './spomoveCueSpeed';
-import { getSpomoveDifficultyKind } from './spomoveDifficulty';
 
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
@@ -65,7 +63,6 @@ import {
   getSpomoveHubHref,
   parseSpomoveHubUrlState,
   serializeSpomoveHubUrlState,
-  type SpomoveHubViewMode,
 } from './spomoveHubNavigation';
 import { useSpomoveGuideVideo } from './useSpomoveGuideVideo';
 
@@ -111,6 +108,13 @@ const PROGRAM_GROUP_LABELS: Record<ProgramGroupTab, string> = {
   stroop: '스트룹 이펙트',
   'sequential-memory': '순차 기억',
   dive: 'DIVE',
+};
+
+const FAMILY_DISPLAY_DESCRIPTION: Record<SpomoveCatalogFamilyId, string> = {
+  'signal-response': '색 · 위치 · 방향 신호에 빠르게 반응합니다.',
+  'conflict-choice': '방해 신호 속에서 필요한 규칙을 선택합니다.',
+  'sequence-memory': '위치와 순서를 기억해 움직임으로 연결합니다.',
+  'dive-flow': '연속 신호에 맞춰 방향과 자세를 전환합니다.',
 };
 
 // SPOMOVE 4색은 padGrid.ts 단일 출처
@@ -568,18 +572,12 @@ function CardVisual({
   thumbnailPending,
   imageFailed,
   onImageError,
-  title,
-  label,
-  showProgramLabel,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   thumbnailPending: boolean;
   imageFailed: boolean;
   onImageError: () => void;
-  title: string;
-  label: string;
-  showProgramLabel: boolean;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
@@ -591,7 +589,7 @@ function CardVisual({
   return (
     <div
       data-spm-spomove-media="image-thumb"
-      className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-slate-200 bg-white"
+      className="relative aspect-[4/3] w-full overflow-hidden border-b border-slate-200 bg-white"
     >
       {thumbnailPending ? (
         <div
@@ -625,103 +623,6 @@ function CardVisual({
           </span>
         </div>
       )}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-14">
-        {showProgramLabel ? (
-          <p
-            data-spm-spomove-card-program-label="true"
-            className="max-w-[78%] truncate text-[12px] font-medium leading-4 text-white/78"
-          >
-            {label}
-          </p>
-        ) : null}
-        <h3
-          className={`line-clamp-2 max-w-[94%] text-[17px] font-semibold leading-[1.2] text-white ${
-            showProgramLabel ? 'mt-1' : 'mt-0'
-          }`}
-        >
-          {title}
-        </h3>
-      </div>
-    </div>
-  );
-}
-
-function CardInfo({
-  preset,
-  isReady,
-  hubView,
-  hubReturnHref,
-  contentOverride,
-  onGuide,
-  sessionAssignment = false,
-}: {
-  preset: OfficialSpomovePreset;
-  isReady: boolean;
-  hubView: SpomoveHubViewMode;
-  hubReturnHref: string;
-  contentOverride?: SpomovePresetContentOverride;
-  onGuide: () => void;
-  sessionAssignment?: boolean;
-}) {
-  void hubView;
-  const router = useRouter();
-  const card = getSpomoveCardDisplayModel(preset, contentOverride);
-  const showSettings =
-    supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
-
-  const hrefForSettings = () => {
-    return publicOfficialPresetSessionHref(preset, { entry: 'settings', hubReturn: hubReturnHref });
-  };
-
-  return (
-    <div className="flex shrink-0 flex-col gap-2.5 p-3 pt-2.5 text-left">
-      <div
-        className="flex min-h-[28px] min-w-0 flex-wrap content-start items-center gap-1.5 overflow-hidden"
-        aria-label="활동 정보"
-        data-spm-spomove-card-meta-row="true"
-      >
-        {card.badges.slice(0, 2).map((badge) => (
-          <span
-            key={`${badge.slot}-${badge.value}`}
-            data-spm-spomove-card-meta={badge.slot}
-            className="inline-flex max-w-full items-center truncate text-[11px] font-normal leading-4 text-slate-500"
-          >
-            {badge.value}
-          </span>
-        ))}
-      </div>
-
-      {isReady ? (
-        <div className="mt-auto flex gap-2">
-          <button
-            type="button"
-            data-spm-spomove-card-action="start"
-            data-spm-spomove-start-mode="guide"
-            onClick={onGuide}
-            className={`inline-flex h-11 min-w-0 flex-[1.6] items-center justify-center whitespace-nowrap rounded-[10px] px-2 text-[13px] font-semibold focus-visible:outline-none ${sessionAssignment ? 'border border-slate-200 bg-white text-slate-700' : 'spm-btn-primary'}`}
-          >
-            활동 준비
-          </button>
-          {showSettings ? (
-            <button
-              type="button"
-              data-spm-spomove-card-action="start"
-              data-spm-spomove-start-mode="settings"
-              onClick={() => router.push(hrefForSettings())}
-              className="inline-flex h-11 min-w-0 flex-1 items-center justify-center overflow-hidden whitespace-nowrap rounded-[10px] border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 sm:px-3"
-            >
-              시작 설정
-            </button>
-          ) : null}
-        </div>
-      ) : (
-        <div className="mt-auto border-t border-slate-100 pt-2">
-          <span className="inline-flex items-center justify-center gap-1 text-[11px] font-bold text-slate-400">
-            <Lock className="h-3 w-3" />
-            제공 예정
-          </span>
-        </div>
-      )}
     </div>
   );
 }
@@ -732,10 +633,7 @@ function PresetCard({
   thumbnailPending,
   favorite,
   favoriteEnabled,
-  hubView,
-  hubReturnHref,
   contentOverride,
-  showProgramLabel,
   onPreview,
   onFavorite,
   onAddToSession,
@@ -748,10 +646,7 @@ function PresetCard({
   thumbnailPending: boolean;
   favorite: boolean;
   favoriteEnabled: boolean;
-  hubView: SpomoveHubViewMode;
-  hubReturnHref: string;
   contentOverride?: SpomovePresetContentOverride;
-  showProgramLabel: boolean;
   onPreview: () => void;
   onFavorite: () => void;
   onAddToSession?: () => void;
@@ -761,6 +656,9 @@ function PresetCard({
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
+  const card = getSpomoveCardDisplayModel(preset, contentOverride);
+  const decisionMeta = card.meta.difficulty ?? card.meta.responseType;
+  const supportingMeta = card.meta.responseType === decisionMeta ? card.meta.trainingFocus : card.meta.responseType;
 
   const inner = (
     <>
@@ -793,7 +691,7 @@ function PresetCard({
           if (!preset.isReady) return;
           onPreview();
         }}
-        aria-label={`${displayModel.displayTitle} 활동 준비 열기`}
+        aria-label={`${displayModel.displayTitle} 미리보기 열기`}
         className="relative flex min-h-0 w-full flex-1 cursor-pointer flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
       >
         <CardVisual
@@ -802,22 +700,16 @@ function PresetCard({
           thumbnailPending={thumbnailPending}
           imageFailed={imageFailed}
           onImageError={() => setImageFailed(true)}
-          title={displayModel.displayTitle}
-          label={displayModel.programLabel}
-          showProgramLabel={showProgramLabel}
         />
+        <div className="flex min-h-[84px] w-full flex-col justify-center px-3.5 py-3" data-spm-spomove-card-body="true">
+          <h3 className="line-clamp-2 text-[15px] font-semibold leading-5 text-slate-950">{displayModel.displayTitle}</h3>
+          <p className="mt-1 truncate text-[12px] font-medium text-slate-500">
+            {[decisionMeta, supportingMeta].filter(Boolean).join(' · ')}
+          </p>
+        </div>
       </button>
-      <CardInfo
-        preset={preset}
-        isReady={preset.isReady}
-        hubView={hubView}
-        hubReturnHref={hubReturnHref}
-        contentOverride={contentOverride}
-        onGuide={onPreview}
-        sessionAssignment={Boolean(onAddToSession)}
-      />
       {onAddToSession ? (
-        <div className="border-t border-slate-100 px-3 pb-3 pt-2">
+        <div className="border-t border-slate-100 px-3 py-3" data-spm-spomove-session-action="true">
           <button type="button" onClick={onAddToSession} disabled={addedToSession || addingToSession} className="spm-btn-primary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-3 text-sm font-semibold disabled:bg-emerald-100 disabled:text-emerald-700">
             {addedToSession ? '이 수업에 추가됨' : addingToSession ? '추가 중' : sessionBuildAction}
           </button>
@@ -828,14 +720,14 @@ function PresetCard({
 
   if (!preset.isReady) {
     return (
-      <article className="relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white opacity-75">
+      <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white opacity-75">
         {inner}
       </article>
     );
   }
 
   return (
-    <article className="group relative flex h-full min-h-[300px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-slate-300 focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-slate-400 focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
       {inner}
     </article>
   );
@@ -1001,6 +893,11 @@ export default function SpomoveHubView() {
     updateHubState({ family: familyId, group: 'all', difficulty: 'all', movement: 'all', q: '', view: 'all' });
   };
 
+  const selectAllFamilies = () => {
+    setFiltersOpen(false);
+    updateHubState({ family: 'all', group: 'all', difficulty: 'all', movement: 'all', q: '', view: 'all' });
+  };
+
   const visiblePresets = useMemo(
     () => OFFICIAL_SPOMOVE_LIBRARY.filter(isHubListedPreset).filter((preset) => contentOverrides[preset.id]?.isVisible !== false),
     [contentOverrides],
@@ -1068,32 +965,37 @@ export default function SpomoveHubView() {
       .join(' · ') || '전체';
   const isFamilyLanding = selectedFamilyId === null && !searchQuery && activeProgramGroup === 'all';
 
-  const renderPresetGrid = (presets: OfficialSpomovePreset[], gridId?: string) => (
+  const renderPresetGrid = (
+    presets: OfficialSpomovePreset[],
+    gridId?: string,
+    familyPreview = false,
+  ) => (
     <div
       id={gridId}
       data-spm-spomove-card-grid="true"
+      data-spm-spomove-family-preview={familyPreview ? 'true' : 'false'}
       data-spm-spomove-show-program-label={showProgramLabel ? 'true' : 'false'}
-      className="grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-3"
+      className={familyPreview
+        ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3 xl:grid-cols-4'
+        : 'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}
     >
       {presets.map((preset) => (
-        <PresetCard
-          key={preset.id}
-          preset={preset}
-          thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
-          thumbnailPending={!thumbnailPackLoaded}
-          favorite={isFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
-          favoriteEnabled={ownerId != null && preset.isReady}
-          hubView={hubView}
-          hubReturnHref={hubReturnHref}
-          contentOverride={contentOverrides[preset.id]}
-          showProgramLabel={showProgramLabel}
-          onPreview={() => setPreviewPreset(preset)}
-          onFavorite={() => toggleFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
-          onAddToSession={sessionContext ? () => void addPresetToSession(preset) : undefined}
-          addedToSession={Boolean(sessionContext?.programs.some((program) => program.sourceType === 'spomove' && program.spomovePresetId === preset.id))}
-          addingToSession={addingPresetId === preset.id}
-          sessionBuildAction={sessionBuildAction}
-        />
+        <div key={preset.id} className={familyPreview ? 'w-[82vw] max-w-[320px] shrink-0 snap-start sm:w-auto sm:max-w-none' : ''}>
+          <PresetCard
+            preset={preset}
+            thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
+            thumbnailPending={!thumbnailPackLoaded}
+            favorite={isFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
+            favoriteEnabled={ownerId != null && preset.isReady}
+            contentOverride={contentOverrides[preset.id]}
+            onPreview={() => setPreviewPreset(preset)}
+            onFavorite={() => toggleFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
+            onAddToSession={sessionContext ? () => void addPresetToSession(preset) : undefined}
+            addedToSession={Boolean(sessionContext?.programs.some((program) => program.sourceType === 'spomove' && program.spomovePresetId === preset.id))}
+            addingToSession={addingPresetId === preset.id}
+            sessionBuildAction={sessionBuildAction}
+          />
+        </div>
       ))}
     </div>
   );
@@ -1113,15 +1015,55 @@ export default function SpomoveHubView() {
             일부 활동 이미지·가이드가 일시적으로 불러와지지 않았습니다. 활동 실행은 계속할 수 있습니다.
           </div>
         ) : null}
-        {/* 헤더 */}
-        <header>
-          <h1 className="text-[30px] font-bold leading-tight text-slate-950 sm:text-[34px]">
-            SPOMOVE
-          </h1>
-          <p className="mt-2 max-w-2xl text-[14px] font-normal leading-6 text-slate-600">
-            SPOMOVE 프로그램은 시각 자극을 움직임으로 연결하는 SPOKEDU 디지털 체육활동입니다.
-          </p>
+        <header aria-label="SPOMOVE 프로그램" className="rounded-[20px] bg-[#10172a] px-5 py-6 text-white sm:px-7 sm:py-7" data-spm-spomove-digital-header="true">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+            <div className="min-w-0">
+              <h1 className="text-[28px] font-semibold leading-none tracking-[-0.03em] sm:text-[32px]">SPOMOVE</h1>
+              <p className="mt-3 max-w-lg text-[14px] font-medium leading-5 text-slate-300 sm:text-[15px]">
+                화면의 신호에 반응하며 움직이는<br className="hidden sm:block" /> 디지털 체육활동
+              </p>
+            </div>
+            <div className="relative w-full sm:max-w-[440px]">
+              <label htmlFor="spomove-search" className="sr-only">활동명 또는 키워드 검색</label>
+              <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                id="spomove-search"
+                type="search"
+                value={searchQuery}
+                onChange={(event) => {
+                  const nextQuery = event.target.value;
+                  updateHubState({ q: nextQuery, family: nextQuery ? 'all' : urlState.family }, true);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape' && searchQuery) {
+                    event.preventDefault();
+                    updateHubState({ q: '' }, true);
+                  }
+                }}
+                placeholder="활동 검색..."
+                className="h-11 w-full rounded-xl border border-white/15 bg-white/10 pl-10 pr-11 text-sm font-medium text-white outline-none placeholder:text-slate-400 focus:border-white/35 focus:bg-white/[0.14] focus:ring-2 focus:ring-white/10"
+              />
+              {searchQuery ? (
+                <button type="button" onClick={() => updateHubState({ q: '' }, true)} aria-label="검색어 지우기" className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-xl text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
+                  <X aria-hidden className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+          </div>
         </header>
+
+        <nav className="order-1 mt-3 overflow-x-auto border-b border-slate-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="SPOMOVE 프로그램 분류" data-spm-spomove-family-nav="true">
+          <div className="flex min-w-max items-center gap-6 px-1">
+            <button type="button" onClick={selectAllFamilies} aria-current={selectedFamilyId === null ? 'page' : undefined} className={`relative min-h-12 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === null ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[#172554]' : 'text-slate-500 hover:text-slate-800'}`}>
+              전체
+            </button>
+            {SPOMOVE_CATALOG_FAMILIES.map((family) => (
+              <button key={family.id} type="button" onClick={() => selectCatalogFamily(family.id)} aria-current={selectedFamilyId === family.id ? 'page' : undefined} className={`relative min-h-12 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === family.id ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[#172554]' : 'text-slate-500 hover:text-slate-800'}`}>
+                {family.name}
+              </button>
+            ))}
+          </div>
+        </nav>
 
         {/* 최근 활동 */}
         {!isFamilyLanding ? <section className="order-3 mt-10">
@@ -1182,38 +1124,8 @@ export default function SpomoveHubView() {
           )}
         </section> : null}
 
-        <section className="order-1 mt-4">
-        <div>
-        <div className="relative">
-          <label htmlFor="spomove-search" className="sr-only">활동명 또는 키워드 검색</label>
-          <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            id="spomove-search"
-            type="search"
-            value={searchQuery}
-            onChange={(event) => {
-              const nextQuery = event.target.value;
-              updateHubState({ q: nextQuery, family: nextQuery ? 'all' : urlState.family }, true);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape' && searchQuery) {
-                event.preventDefault();
-                updateHubState({ q: '' }, true);
-              }
-            }}
-            placeholder="활동명 또는 키워드 검색"
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-11 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400 focus:border-[var(--spm-acc)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--spm-acc)_18%,transparent)]"
-          />
-          {searchQuery ? (
-            <button type="button" onClick={() => updateHubState({ q: '' }, true)} aria-label="검색어 지우기" className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-xl text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)]">
-              <X aria-hidden className="h-4 w-4" />
-            </button>
-          ) : null}
-        </div>
-        </div>
-        </section>
         {isFamilyLanding ? (
-          <section id="spomove-program-list" className="order-2 mt-5 flex flex-col gap-12">
+          <section id="spomove-program-list" className="order-2 mt-7 flex flex-col gap-10">
             {SPOMOVE_CATALOG_FAMILIES.map((family) => {
               const familyFiltered = filterPresetsByCatalogFamily(visiblePresets, family.id);
               const sections = buildSpomoveProgramGroupSections(familyFiltered);
@@ -1222,18 +1134,18 @@ export default function SpomoveHubView() {
                 <div key={family.id} data-spm-spomove-catalog-family={family.id}>
                   <div className="mb-4 flex items-end justify-between gap-3">
                     <div>
-                      <h2 className="text-xl font-semibold text-slate-950">{family.name}</h2>
-                      <p className="mt-1 text-sm font-normal text-slate-500">{family.description}</p>
+                      <h2 className="text-[20px] font-semibold leading-tight text-slate-950">{family.name}</h2>
+                      <p className="mt-1 text-[13px] font-normal leading-5 text-slate-500">{FAMILY_DISPLAY_DESCRIPTION[family.id]}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => selectCatalogFamily(family.id)}
                       className="shrink-0 min-h-9 text-xs font-semibold text-[var(--spm-acc)] hover:underline focus-visible:outline-none"
                     >
-                      {familyFiltered.length}개 전체 보기
+                      전체 {familyFiltered.length}개 →
                     </button>
                   </div>
-                  {renderPresetGrid(familyFiltered.slice(0, 3), `spomove-family-${family.id}`)}
+                  {renderPresetGrid(familyFiltered.slice(0, 4), `spomove-family-${family.id}`, true)}
                 </div>
               );
             })}
@@ -1248,7 +1160,12 @@ export default function SpomoveHubView() {
                 <h2 className="text-xl font-semibold text-slate-950">
                   {selectedFamilyId ? getSpomoveCatalogFamily(selectedFamilyId).name : '검색 결과'}
                 </h2>
-                <p className="mt-1 text-sm font-normal text-slate-500">{filteredPresets.length}개 활동</p>
+                {selectedFamilyId ? (
+                  <p className="mt-1 text-sm font-normal text-slate-500">{FAMILY_DISPLAY_DESCRIPTION[selectedFamilyId]}</p>
+                ) : searchQuery ? (
+                  <p className="mt-1 text-sm font-normal text-slate-500">“{searchQuery}” {filteredPresets.length}개</p>
+                ) : null}
+                {selectedFamilyId ? <p className="mt-2 text-[12px] font-semibold text-slate-400">{filteredPresets.length}개 활동</p> : null}
               </div>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600">

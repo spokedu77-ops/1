@@ -131,8 +131,8 @@ export const homePage = {
     lead: '놀이체육 콘텐츠와 SPOMOVE를 찾고, 수업 준비부터 진행·기록까지 한곳에서 이어갈 수 있습니다.',
     flow: ['찾기', '준비', '진행', '기록'] as const,
     visual: {
-      src: '/images/spokedu/subscription/product-library-home.webp',
-      alt: '스포키듀 구독시스템 수업 라이브러리 — 바로 쓸 수업 고르기',
+      src: '/images/spokedu/subscription/product-home-stage.webp',
+      alt: '스포키듀 구독시스템 수업 화면 — 준비·진행·기록',
     },
     primaryCta: {
       label: '구독시스템 알아보기',
@@ -153,15 +153,15 @@ export const homePage = {
     cards: [
       buildHomeCaseCard('maedong-sports-stepup', {
         src: HOME_FIELD_EDITORIAL.caseGeneral,
-        objectPosition: '42% 55%',
+        objectPosition: '40% 32%',
       }),
       buildHomeCaseCard('donghaeng-special-pe', {
         src: HOME_FIELD_EDITORIAL.caseAdapted,
-        objectPosition: '50% 42%',
+        objectPosition: '68% 46%',
       }),
       buildHomeCaseCard('dongjak-spomove', {
         src: HOME_FIELD_EDITORIAL.caseSpomove,
-        objectPosition: '58% 48%',
+        objectPosition: '52% 50%',
       }),
     ],
   },

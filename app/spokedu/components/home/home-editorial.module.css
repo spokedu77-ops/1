@@ -4,8 +4,8 @@
   --he-content: 1200px;
   --he-wide: 1320px;
   --he-measure: 640px;
-  --he-documentary-radius: 6px;
-  --he-product-radius: 14px;
+  --he-documentary-radius: 3px;
+  --he-product-radius: 11px;
   --he-section-quiet: clamp(3.25rem, 5vw, 4.5rem);
   --he-section-standard: clamp(4.5rem, 7vw, 6rem);
   --he-section-feature: clamp(5.25rem, 8vw, 7.25rem);
@@ -191,21 +191,15 @@
   padding-top: 1.5rem;
 }
 
-/* —— SPOMOVE (feature) —— */
+/* —— SPOMOVE (feature / field) —— */
 .spomove {
   padding-block: var(--he-section-feature);
   background: #081126;
   color: #fff;
 }
 
-.spomoveHeader {
-  display: grid;
-  gap: 1.5rem;
-  align-items: end;
-}
-
-.spomoveHeaderPrimary {
-  min-width: 0;
+.spomoveIntro {
+  max-width: 48.75rem;
 }
 
 .spomoveLabel {
@@ -224,8 +218,21 @@
   color: #8faddf;
 }
 
+.spomoveTitle {
+  margin: 0.75rem 0 0;
+  max-width: 48.5rem;
+  font-family: var(--spokedu-marketing-font-display);
+  font-size: clamp(2.125rem, 4.4vw, 4.125rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  color: #fff;
+  white-space: pre-line;
+}
+
 .spomoveDefinition {
-  max-width: 22rem;
+  margin-top: 1.375rem;
+  max-width: 38.5rem;
   font-size: 1.125rem;
   line-height: var(--he-lead-leading);
   color: #cfdaea;
@@ -236,8 +243,8 @@
   width: 100%;
   min-width: 0;
   margin-top: clamp(2.25rem, 4.5vw, 3.25rem);
-  aspect-ratio: 16 / 9;
-  min-height: clamp(14rem, 42vw, 22rem);
+  aspect-ratio: 2.02 / 1;
+  min-height: clamp(12rem, 36vw, 20rem);
   border-radius: var(--he-documentary-radius);
   overflow: hidden;
   background: #132245;
@@ -252,19 +259,27 @@
   border-radius: 0;
 }
 
+.spomoveFooter {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: clamp(1.35rem, 2.5vw, 1.75rem);
+  align-items: start;
+}
+
 .spomovePrinciples {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.25rem;
-  margin: clamp(1.5rem, 3vw, 2rem) 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .spomovePrincipleItem {
   min-width: 0;
-  border-top: 1px solid rgba(175, 200, 255, 0.32);
-  padding-top: 1rem;
+  border-top: 1px solid rgba(175, 200, 255, 0.28);
+  padding-top: 0.9rem;
 }
 
 .spomovePrincipleLabel {
@@ -277,7 +292,7 @@
 }
 
 .spomoveCta {
-  margin-top: 2rem;
+  justify-self: start;
 }
 
 /* —— Subscription (feature / product) —— */
@@ -286,20 +301,31 @@
   background: var(--spokedu-marketing-color-white);
 }
 
-.productStageLayout {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.productProof {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1.5rem, 3vw, 2.25rem);
+  align-items: start;
 }
 
-.productStageIntro {
-  max-width: 36rem;
-  margin-bottom: clamp(1.5rem, 3vw, 2rem);
+.productProofCopy {
+  min-width: 0;
+}
+
+.subscriptionTitle {
+  margin: 0;
+  max-width: 22rem;
+  font-family: var(--spokedu-marketing-font-display);
+  font-size: clamp(1.875rem, 3.4vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: var(--spokedu-marketing-color-ink);
 }
 
 .subscriptionLead {
-  margin-top: 1.15rem;
-  max-width: 32rem;
+  margin-top: 1rem;
+  max-width: 22rem;
   font-size: 1.0625rem;
   line-height: var(--he-body-leading);
   color: var(--spokedu-marketing-color-body);
@@ -312,20 +338,20 @@
   overflow: hidden;
   border: 1px solid var(--spokedu-marketing-color-border);
   background: #f6f8fb;
-  box-shadow: 0 24px 60px rgba(8, 17, 38, 0.06);
+  box-shadow: 0 18px 48px rgba(8, 17, 38, 0.055);
 }
 
 .productStageFrame {
   position: relative;
   width: 100%;
-  aspect-ratio: 1216 / 430;
+  aspect-ratio: 1296 / 748;
   overflow: hidden;
   background: #f6f8fb;
 }
 
 .productImageFocal {
   object-fit: cover;
-  object-position: top center;
+  object-position: top left;
 }
 
 .productStageFooter {
@@ -333,14 +359,20 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 1rem;
-  margin-top: 0;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--spokedu-marketing-color-border);
+  margin-top: 1.5rem;
+  padding-top: 0;
+  border-top: none;
 }
 
 .subscriptionFlow {
-  color: var(--spokedu-marketing-color-blue);
-  font-size: 0.9375rem;
+  color: var(--spokedu-marketing-color-ink);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.subscriptionFlow .flowArrow {
+  opacity: 0.45;
+  font-weight: 500;
 }
 
 /* —— Cases (standard / proof) —— */
@@ -353,7 +385,17 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  margin-bottom: clamp(2rem, 4vw, 2.75rem);
+  margin-bottom: 2.25rem;
+}
+
+.casesTitle {
+  margin: 0;
+  font-family: var(--spokedu-marketing-font-display);
+  font-size: clamp(1.75rem, 3.2vw, 3.125rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: var(--spokedu-marketing-color-ink);
 }
 
 .casesLead {
@@ -374,8 +416,7 @@
   list-style: none;
 }
 
-.caseFeatured,
-.caseSupport {
+.caseItem {
   width: 100%;
   min-width: 0;
 }
@@ -420,15 +461,11 @@
 }
 
 .caseVenue {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: -0.02em;
   color: var(--spokedu-marketing-color-ink);
-}
-
-.caseFeatured .caseVenue {
-  font-size: 1.1875rem;
 }
 
 .caseDisplayMeta {
@@ -440,13 +477,13 @@
 }
 
 .caseCta {
-  margin-top: 0.625rem;
+  margin-top: 0.5rem;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--spokedu-marketing-color-blue);
+  color: var(--spokedu-marketing-color-ink);
 }
 
 .caseCtaArrow {
@@ -520,6 +557,10 @@
     transform: scale(1.012);
   }
 
+  .caseLink:hover .caseCta {
+    color: var(--spokedu-marketing-color-blue);
+  }
+
   .caseLink:hover .caseCtaArrow {
     transform: translateX(2px);
   }
@@ -547,17 +588,10 @@
     background: var(--spokedu-marketing-color-border);
   }
 
-  .spomoveHeader {
-    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-    gap: clamp(2.5rem, 5vw, 4rem);
-  }
-
-  .spomoveDefinition {
-    max-width: none;
-    font-size: 1.125rem;
-    justify-self: stretch;
-    text-align: left;
-    padding-bottom: 0.25rem;
+  .spomoveFooter {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: end;
   }
 
   .spomovePrinciples {
@@ -566,7 +600,12 @@
   }
 
   .spomovePrincipleLabel {
-    font-size: 1.375rem;
+    font-size: 1.4375rem;
+  }
+
+  .spomoveCta {
+    justify-self: end;
+    padding-bottom: 0.1rem;
   }
 
   .productStageFooter {
@@ -581,22 +620,13 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 2rem;
+    margin-bottom: 2.25rem;
   }
 
   .casesGrid {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(1.25rem, 1.75vw, 1.5rem);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.375rem;
     align-items: start;
-  }
-
-  .caseFeatured .casePhoto {
-    aspect-ratio: 16 / 10;
-    min-height: 0;
-  }
-
-  .caseSupport .casePhoto {
-    aspect-ratio: 4 / 3;
-    min-height: 0;
   }
 
   .contactLayout {
@@ -616,18 +646,26 @@
   }
 }
 
+@media (min-width: 1200px) {
+  .productProof {
+    grid-template-columns: minmax(0, 4.4fr) minmax(0, 7.6fr);
+    gap: clamp(2rem, 3.5vw, 3.25rem);
+    align-items: start;
+  }
+
+  .productProofCopy {
+    padding-top: 0.35rem;
+  }
+}
+
 @media (min-width: 768px) and (max-width: 1023px) {
   .casesGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.25rem;
   }
 
-  .caseFeatured {
+  .caseItem:first-child {
     grid-column: 1 / -1;
-  }
-
-  .caseFeatured .casePhoto {
-    aspect-ratio: 16 / 10;
   }
 }
 
@@ -659,5 +697,9 @@
   .caseLink:hover .caseCtaArrow,
   .textCta:hover .textCtaArrow {
     transform: none !important;
+  }
+
+  .caseLink:hover .caseCta {
+    color: inherit;
   }
 }

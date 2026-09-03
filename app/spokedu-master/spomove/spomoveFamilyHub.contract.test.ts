@@ -17,10 +17,11 @@ describe('SPOMOVE Family-first Hub', () => {
     expect(hub).toContain('filterPresetsByCatalogFamily(visiblePresets, selectedFamilyId)');
   });
 
-  it('keeps detailed filters behind disclosure and card actions preparation-led', () => {
+  it('keeps detailed filters behind disclosure and Browse cards preview-led', () => {
     expect(hub).toContain('aria-expanded={filtersOpen}');
-    expect(hub).toContain('활동 준비');
-    expect(hub).toContain('시작 설정');
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(hub).not.toContain('활동 준비');
+    expect(hub).not.toContain('시작 설정');
     expect(hub).not.toContain('바로 실행');
     expect(hub).not.toContain('바로 시작');
   });
@@ -28,6 +29,7 @@ describe('SPOMOVE Family-first Hub', () => {
   it('uses content color in previews and neutral chrome around Families', () => {
     expect(hub).toContain('buildSpomoveProgramGroupSections');
     expect(hub).not.toContain('AXIS_ACCENT');
-    expect(hub).toContain('card.badges.slice(0, 2)');
+    expect(hub).toContain('FAMILY_DISPLAY_DESCRIPTION');
+    expect(hub).toContain('aspect-[4/3]');
   });
 });

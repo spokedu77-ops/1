@@ -55,8 +55,8 @@ export default function StudentDetailPage() {
         <MasterSection title="수업 이력" className="mt-10">
           {history.length ? <div className="border-y border-slate-200">
             {history.map(({ session, attendance }) => (
-              <MasterCollectionRow key={session.id} className="items-start py-4">
-                <Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex min-w-0 flex-1 items-start gap-4">
+              <MasterCollectionRow key={session.id} className="flex-wrap items-start py-4">
+                <Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex w-full min-w-0 items-start gap-3 sm:gap-4">
                   <span className={`mt-0.5 rounded-full px-2.5 py-1 text-xs font-semibold ${attendance.status === 'present' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{attendanceLabel(attendance.status)}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-base font-semibold text-slate-900">{session.className}</span>
@@ -65,7 +65,7 @@ export default function StudentDetailPage() {
                   </span>
                   <ChevronRight size={17} className="mt-1 shrink-0 text-slate-400" />
                 </Link>
-                <div className="w-full pl-[76px]"><StudentSessionObservation studentId={studentId} sessionId={session.id} />{session.memo?.trim() ? <p className="mt-2 whitespace-pre-wrap text-sm font-normal leading-6 text-slate-600">{session.memo.trim()}</p> : null}</div>
+                <div className="w-full pl-0 pt-2 sm:pl-[76px]"><StudentSessionObservation studentId={studentId} sessionId={session.id} />{session.memo?.trim() ? <p className="mt-2 whitespace-pre-wrap text-sm font-normal leading-6 text-slate-600">{session.memo.trim()}</p> : null}</div>
               </MasterCollectionRow>
             ))}
           </div> : <p className="text-sm font-medium text-slate-500">아직 출석이 기록된 수업이 없습니다.</p>}

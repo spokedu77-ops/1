@@ -411,21 +411,29 @@ export function SpomoveGuidelineSheet({
         })
       : null;
   const cueSeconds = resolveSessionCueSeconds(preset, null);
-  const baseStartHref = publicOfficialPresetSessionHref(preset, {
-    mode: launchMode,
-    entry: 'start',
-    operation: declaredOperation,
-    hubReturn: hubReturnHref,
-  });
   const source = hubReturnHref?.startsWith('/spokedu-master/favorites')
     ? 'favorites'
     : hubReturnHref?.startsWith('/spokedu-master/dashboard') ? 'home' : hubReturnHref?.includes('session=') ? 'session' : 'spomove';
-  const startUrl = new URL(baseStartHref, 'https://spokedu.local');
-  startUrl.searchParams.set('source', source);
-  if (hubReturnHref) startUrl.searchParams.set('returnTo', hubReturnHref);
-  const startHref = `${startUrl.pathname}?${startUrl.searchParams.toString()}`;
-  const gateContext = buildMasterGateContext({ capability: 'spomove', pathname: '/spokedu-master/spomove', currentPath: startHref });
-  const lockedHref = gateContext ? buildMasterPaymentHref(gateContext) : '/spokedu-master/subscription';
+  const sessionHref = (entry: 'start' | 'settings') => {
+    const baseHref = publicOfficialPresetSessionHref(preset, {
+      mode: launchMode,
+      entry,
+      operation: declaredOperation,
+      hubReturn: hubReturnHref,
+    });
+    const url = new URL(baseHref, 'https://spokedu.local');
+    url.searchParams.set('source', source);
+    if (hubReturnHref) url.searchParams.set('returnTo', hubReturnHref);
+    return `${url.pathname}?${url.searchParams.toString()}`;
+  };
+  const startHref = sessionHref('start');
+  const settingsHref = sessionHref('settings');
+  const lockedSessionHref = (currentPath: string) => {
+    const gateContext = buildMasterGateContext({ capability: 'spomove', pathname: '/spokedu-master/spomove', currentPath });
+    return gateContext ? buildMasterPaymentHref(gateContext) : '/spokedu-master/subscription';
+  };
+  const lockedStartHref = lockedSessionHref(startHref);
+  const lockedSettingsHref = lockedSessionHref(settingsHref);
   const matCount = matGuidance?.recommended ?? family?.matRequirement.minMats ?? 1;
   const intervalLine =
     declaredOperation?.timing.pattern === 'interval'
@@ -465,7 +473,7 @@ export function SpomoveGuidelineSheet({
                   <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center`}>
                     <div>
                       <p className="text-sm font-bold text-slate-800">Premium에서 영상과 실행이 열립니다.</p>
-                      <Link href={lockedHref} className="mt-2 inline-block text-sm font-semibold text-[var(--spm-acc)]">Premium 확인</Link>
+                      <Link href={lockedStartHref} className="mt-2 inline-block text-sm font-semibold text-[var(--spm-acc)]">Premium 확인</Link>
                     </div>
                   </div>
                 ) : guideVideoState === 'loading' ? (
@@ -522,7 +530,7 @@ export function SpomoveGuidelineSheet({
             <div className="hidden min-w-0 md:block min-[1024px]:hidden">
               <ExecutionSummary matCount={matCount} cueSeconds={cueSeconds} movementLabel={movementLabel} />
             </div>
-            <div className="grid w-full grid-cols-[minmax(88px,0.7fr)_minmax(0,1.3fr)] gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
+            <div className="grid w-full grid-cols-[minmax(72px,0.55fr)_minmax(104px,0.9fr)_minmax(120px,1.2fr)] gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
               <button
                 type="button"
                 onClick={onClose}
@@ -531,11 +539,18 @@ export function SpomoveGuidelineSheet({
                 닫기
               </button>
               <Link
-                href={guideVideoState === 'locked' ? lockedHref : startHref}
+                href={guideVideoState === 'locked' ? lockedSettingsHref : settingsHref}
+                data-spm-spomove-guide-action="settings"
+                className="inline-flex h-11 min-w-[112px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+              >
+                시작 설정
+              </Link>
+              <Link
+                href={guideVideoState === 'locked' ? lockedStartHref : startHref}
                 data-spm-spomove-guide-action="start-official"
                 className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-semibold transition focus-visible:outline-none sm:w-[168px] sm:text-[14px]"
               >
-                {guideVideoState === 'locked' ? 'Premium으로 시작' : '수업 시작'}
+                활동 준비
               </Link>
             </div>
           </div>

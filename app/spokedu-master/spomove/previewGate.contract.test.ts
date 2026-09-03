@@ -16,6 +16,7 @@ function read(path: string) {
  */
 describe('SPOMOVE preview gate (Phase 0)', () => {
   const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
+  const preview = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
   const session = read('app/spokedu-master/spomove/session/page.tsx');
   const hrefSource = read('app/spokedu-master/spomove/officialSpomovePresets.ts');
   const contract = read('app/spokedu-master/spomove/SPOMOVE_PRODUCT_CONTRACT.md');
@@ -30,14 +31,15 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(session).not.toContain('오늘의 동작');
   });
 
-  it('2) Hub CTA는 확인 모달·설정 · Public autostart 없음 · description 미노출', () => {
-    expect(hub).toContain('data-spm-spomove-start-mode="guide"');
-    expect(hub).toContain('data-spm-spomove-start-mode="settings"');
+  it('2) Hub는 Preview로 진입하고 실행 액션은 Preview가 소유한다', () => {
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(hub).not.toContain('data-spm-spomove-start-mode="guide"');
+    expect(hub).not.toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('시작 설정');
-    expect(hub).toContain('hrefForSettings');
-    expect(hub).not.toContain("hrefForOfficial('start')");
-    expect(hub).toContain('publicOfficialPresetSessionHref');
+    expect(preview).toContain('시작 설정');
+    expect(preview).toContain('활동 준비');
+    expect(preview).toContain("sessionHref('settings')");
+    expect(preview).toContain("sessionHref('start')");
     expect(hub).not.toContain('writeFamilyMovement');
     expect(hub).not.toContain('{preset.description}');
     expect(hub).toContain('같은 설정으로 시작');
@@ -71,11 +73,11 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(session).not.toContain('사용한 동작');
   });
 
-  it('2c) Hub 활동 준비·썸네일은 같은 확인 모달 루트', () => {
-    expect(hub).toContain('활동 준비');
-    expect(hub).toContain('data-spm-spomove-start-mode="guide"');
-    expect(hub).toContain('onClick={onGuide}');
-    expect(hub).toContain('활동 준비 열기');
+  it('2c) Hub 카드·썸네일은 같은 Preview 모달 루트', () => {
+    expect(hub).not.toContain('활동 준비');
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(hub).toContain('onPreview();');
+    expect(hub).toContain('미리보기 열기');
     expect(hub).not.toContain('가이드 보기');
     expect(hub).not.toContain('바로 실행');
     expect(hub).not.toContain('바로 시작');

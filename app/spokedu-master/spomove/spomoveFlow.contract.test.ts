@@ -19,11 +19,11 @@ const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
 const masterResult = read('app/spokedu-master/spomove/session/MasterSessionResult.tsx');
 
 describe('SPOMOVE pilot flow contract', () => {
-  it('shows card tags and start/settings actions on hub cards', () => {
+  it('opens Preview from discovery cards without execution actions', () => {
     expect(hub).toContain('sortSpomovePresetsByDisplayTitle');
-    expect(hub).toContain('활동 준비 열기');
-    expect(hub).toContain('data-spm-spomove-card-action="start"');
-    expect(hub).toContain('data-spm-spomove-start-mode="settings"');
+    expect(hub).toContain('미리보기 열기');
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(hub).not.toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('가이드 보기');
     expect(hub).not.toContain('바로 실행');
     expect(hub).not.toContain('빠른 시작');
@@ -34,16 +34,16 @@ describe('SPOMOVE pilot flow contract', () => {
 
   it('keeps normal program cards separate from recent rerun actions', () => {
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
-    expect(hub).toContain('data-spm-spomove-card-action="start"');
+    expect(hub).not.toContain('data-spm-spomove-card-action="start"');
     expect(hub).toContain('data-spm-spomove-recent-action="rerun"');
 
-    const cardInfoBlock = hub.slice(
-      hub.indexOf('function CardInfo'),
+    const presetCardBlock = hub.slice(
       hub.indexOf('function PresetCard'),
+      hub.indexOf('export default function SpomoveHubView'),
     );
-    expect(cardInfoBlock).toContain('data-spm-spomove-card-action="start"');
-    expect(cardInfoBlock).not.toContain('data-spm-spomove-recent-action="rerun"');
-    expect(cardInfoBlock).not.toContain('다시 실행');
+    expect(presetCardBlock).toContain('data-spm-spomove-card-action="preview"');
+    expect(presetCardBlock).not.toContain('data-spm-spomove-card-action="start"');
+    expect(presetCardBlock).not.toContain('data-spm-spomove-recent-action="rerun"');
   });
 
   it('shows recent SPOMOVE re-entry without exposing other owners', () => {
@@ -114,7 +114,8 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).not.toContain('매트 바로 밖');
     expect(guidelineSheet).not.toContain('소집단');
     expect(guidelineSheet).not.toContain('{activityMethod.title}');
-    expect(guidelineSheet).toContain('수업 시작');
+    expect(guidelineSheet).toContain('활동 준비');
+    expect(guidelineSheet).toContain('시작 설정');
     expect(guidelineSheet).not.toContain('바로 시작');
     expect(guidelineSheet).not.toContain('바로 실행');
     expect(guidelineSheet).not.toContain('안내 더보기');
@@ -136,20 +137,20 @@ describe('SPOMOVE pilot flow contract', () => {
   });
 
   it('separates start (entry=start) from settings and keeps Public without autostart', () => {
-    expect(hub).toContain('data-spm-spomove-start-mode="guide"');
-    expect(hub).toContain('data-spm-spomove-start-mode="settings"');
+    expect(hub).not.toContain('data-spm-spomove-start-mode="guide"');
+    expect(hub).not.toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="dive"');
     expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('시작 설정');
-    expect(hub).toContain('hrefForSettings');
-    expect(hub).not.toContain("hrefForOfficial('start')");
+    expect(guidelineSheet).toContain('시작 설정');
+    expect(guidelineSheet).toContain("sessionHref('settings')");
+    expect(guidelineSheet).toContain("sessionHref('start')");
     expect(hub).not.toContain('writeFamilyMovement');
     expect(hub).toContain('publicOfficialPresetSessionHref');
     expect(session).toContain('activationBlocked');
     expect(session).toContain('전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.');
     expect(session).not.toContain('MovementHud');
     expect(guidelineSheet).not.toContain('autostart: true');
-    expect(guidelineSheet).toContain('수업 시작');
+    expect(guidelineSheet).toContain('활동 준비');
     expect(guidelineSheet).not.toContain('바로 시작');
     expect(guidelineSheet).not.toContain('바로 실행');
     expect(guidelineSheet).toContain('data-spm-spomove-guide-action="start-official"');
@@ -165,7 +166,8 @@ describe('SPOMOVE pilot flow contract', () => {
 
   it('keeps StartBriefing confirmation-only and cue editing in SettingsBriefing', () => {
     expect(hub).toContain('publicOfficialPresetSessionHref');
-    expect(hub).toContain('data-spm-spomove-card-action="start"');
+    expect(hub).not.toContain('data-spm-spomove-card-action="start"');
+    expect(guidelineSheet).toContain('data-spm-spomove-guide-action="start-official"');
     expect(startBriefing).not.toContain('SPOMOVE_CUE_SPEED_OPTIONS');
     expect(startBriefing).not.toContain('onCueSecondsChange');
     expect(startBriefing).toContain('현재 실행값');

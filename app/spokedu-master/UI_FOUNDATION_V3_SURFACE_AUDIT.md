@@ -2,20 +2,69 @@
 
 This inventory is the implementation companion to `MASTER_VISUAL_SYSTEM.md`. Product behavior, routes, persistence, entitlement, and session lifecycle are frozen.
 
-| Route family | Surface family | Primary primitive | State model | v3 status |
-| --- | --- | --- | --- | --- |
-| `/spokedu-master` | Editorial | Editorial hierarchy, media rails, contextual continuity | Inline | MIGRATED |
-| `/programs` | Editorial | Page shell, page header, media gateway | Inline | MIGRATED |
-| `/favorites` | Editorial | Page shell, page header, typed content cards | Inline | MIGRATED |
-| `/library` | Editorial | Editorial header, search hierarchy, sections, content cards | Inline | MIGRATED |
-| `/spomove`, SPOMOVE preview | Digital | Digital taxonomy, media cards, shared preview | Inline / gate | MIGRATED |
-| `/manage` | Operational | Page shell, page header, agenda, section, collection row | Inline | MIGRATED |
-| `/classes`, `/students` | Operational | Page shell, page header, section, collection row | Inline | MIGRATED |
-| `/classes/:id`, `/students/:id` | Operational detail | Operational header, row history, inline guidance/state | Inline | MIGRATED |
-| `/activity` | Session workspace | Lifecycle-owned composition with context, activity sequence, capture, and one state primary | Contextual | MIGRATED |
-| `/report` | Document | Document surface | Inline | MIGRATED |
-| `/class-tools` | Live utility | Existing utility surface | Immediate | COMPATIBILITY |
-| `/payment`, `/subscription` | Commercial support | Existing gate/payment surface | Contextual | NOT_MIGRATED |
+| Route family | Surface family | Primary primitive | State model | Implementation | Visual proof |
+| --- | --- | --- | --- | --- | --- |
+| `/spokedu-master` | Editorial | Editorial hierarchy, media rails, contextual continuity | Inline | MIGRATED | PASSED |
+| `/programs` | Editorial | Page shell, page header, media gateway | Inline | MIGRATED | PASSED |
+| `/favorites` | Editorial | Page shell, page header, typed content cards | Inline | MIGRATED | PASSED |
+| `/library` | Editorial | Editorial header, search hierarchy, sections, content cards | Inline | MIGRATED | PASSED |
+| `/spomove`, SPOMOVE preview | Digital | Digital taxonomy, media cards, shared preview | Inline / gate | MIGRATED | PASSED |
+| `/manage` | Operational | Page shell, page header, agenda, section, collection row | Inline | MIGRATED | PASSED |
+| `/classes`, `/students` | Operational | Page shell, page header, section, collection row | Inline | MIGRATED | PASSED |
+| `/classes/:id`, `/students/:id` | Operational detail | Operational header, row history, inline guidance/state | Inline | MIGRATED | PASSED |
+| `/activity` | Session workspace | Lifecycle-owned composition with context, activity sequence, capture, and one state primary | Contextual | MIGRATED | BLOCKED |
+| `/report` | Document | Document surface | Inline | MIGRATED | PASSED |
+| `/class-tools` | Live utility | Existing utility surface | Immediate | COMPATIBILITY | PASSED |
+| `/payment`, `/subscription` | Commercial support | Existing gate/payment surface | Contextual | NOT_MIGRATED | UNVERIFIED |
+
+## Visual evidence policy
+
+Static contracts, lint, TypeScript, and token-count checks establish `STATIC VISUAL CONTRACT`; they do not establish rendered quality. `RENDERED VISUAL PROOF` is tracked independently as `PASSED`, `PENDING`, `FAILED`, or `UNVERIFIED`. A route without reviewed screenshots is `UNVERIFIED` (or `PENDING` while its required capture set is in progress), never a Visual PASS.
+
+SPOMOVE rendered proof was reviewed at 1440px and 390px in both default and selected-Family states. The reviewed captures have no document-level horizontal overflow or repeated Browse execution actions and preserve the five-item Family navigation.
+
+## Rendered visual proof sweep — 2026-09-04
+
+Evidence uses the first viewport at browser zoom 100% after fonts and images complete, at 1440×900 and 390×844. `PASSED` means the rendered state was reviewed for role, hierarchy, density, CTA competition, mobile behavior, and MASTER consistency. It does not derive from static tests.
+
+| Surface | Implementation | Rendered proof | Fixture state |
+| --- | --- | --- | --- |
+| Home | MIGRATED | PASSED | Weekly recommendations |
+| Programs | MIGRATED | PASSED | Both program families |
+| Library | MIGRATED | PASSED | Editorial landing |
+| Favorites | MIGRATED | PASSED | Empty saved-library state |
+| SPOMOVE default | MIGRATED | PASSED | All Families |
+| SPOMOVE selected Family | MIGRATED | PASSED | Signal response |
+| Manage | MIGRATED | PASSED | Current week |
+| Classes | MIGRATED | PASSED | Three classes |
+| Class Detail | MIGRATED | PASSED | One-student class with history |
+| Students | MIGRATED | PASSED | Three students |
+| Student Detail | MIGRATED | PASSED | One completed-session history |
+| Session PREP | MIGRATED | PASSED | Scheduled session with two programs |
+| Session TEACH | MIGRATED | BLOCKED | No in-progress fixture; no lifecycle mutation permitted |
+| Session CAPTURE | MIGRATED | BLOCKED | No wrap/capture fixture; no lifecycle mutation permitted |
+| Report | MIGRATED | PASSED | Completed-session notice |
+| Class Tools | COMPATIBILITY | PASSED | Stopwatch landing |
+
+### Human review matrix
+
+| Surface | Role | Hierarchy | Density | CTA | Mobile | Consistency |
+| --- | --- | --- | --- | --- | --- | --- |
+| Home | PASS | PASS | PASS | PASS | PASS | PASS |
+| Programs | PASS | PASS | PASS | PASS | PASS | PASS |
+| Library | PASS | PASS | PASS | PASS | PASS | PASS |
+| Favorites | PASS | PASS | PASS | PASS | PASS | PASS |
+| SPOMOVE default | PASS | PASS | PASS | PASS | PASS | PASS |
+| SPOMOVE selected Family | PASS | PASS | PASS | PASS | PASS | PASS |
+| Manage | PASS | PASS | PASS | PASS | PASS | PASS |
+| Classes | PASS | PASS | PASS | PASS | PASS | PASS |
+| Class Detail | PASS | PASS | PASS | PASS | PASS | PASS |
+| Students | PASS | PASS | PASS | PASS | PASS | PASS |
+| Student Detail | PASS | PASS | PASS | PASS | PASS | PASS |
+| Session PREP | PASS | PASS | PASS | PASS | PASS | PASS |
+| Session TEACH | BLOCKED | BLOCKED | BLOCKED | BLOCKED | BLOCKED | BLOCKED |
+| Session CAPTURE | BLOCKED | BLOCKED | BLOCKED | BLOCKED | BLOCKED | BLOCKED |
+| Report | PASS | PASS | PASS | PASS | PASS | PASS |
 
 Session compatibility note: `SPM_JOURNEY_STACK`, `CONTEXT`, `SECTION`, `HEADING`, `META`, and `FIELD` remain as narrow lifecycle presentation roles. Generic `SPM_JOURNEY_SURFACE` and decorative `SPM_JOURNEY_EYEBROW` are no longer dependencies of the Session workspace. Runtime selectors, persistence, and action policy remain unchanged.
 

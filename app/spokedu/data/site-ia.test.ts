@@ -196,7 +196,7 @@ describe('spokedu site IA', () => {
     expect(
       new Set([HOME_MEDIA[homePage.hero.mediaKey].src, spomoveDetail.src]).size,
     ).toBe(2);
-    expect(homePage.subscription.visual.src).toBe('/images/spokedu/subscription/product-library-home.webp');
+    expect(homePage.subscription.visual.src).toBe('/images/spokedu/subscription/product-home-stage.webp');
     expect(homePage.cases.cards[0]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-general.webp');
     expect(homePage.cases.cards[1]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-adapted.webp');
     expect(homePage.cases.cards[2]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-spomove.webp');

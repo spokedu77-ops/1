@@ -317,7 +317,7 @@ export function LessonCatalogCard({
             type="button"
             onClick={onPrimaryAction}
             disabled={primaryActionDisabled}
-            className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] px-3 text-[13px] font-semibold focus-visible:outline-none disabled:opacity-55"
+            className="inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:opacity-55"
           >
             <span className="inline-flex min-w-0 items-center gap-2">
               <BookOpen size={15} />
@@ -331,7 +331,7 @@ export function LessonCatalogCard({
             className={
               variant === 'home'
                 ? 'inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
-                : 'spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] px-3 text-[13px] font-semibold focus-visible:outline-none'
+                : 'inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
             }
           >
             <span className="inline-flex min-w-0 items-center gap-2">
