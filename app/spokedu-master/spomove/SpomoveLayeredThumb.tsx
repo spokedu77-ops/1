@@ -77,7 +77,7 @@ export function SpomoveLayeredThumb({
               quality={75}
               priority={priority}
               className="object-contain object-center"
-              onLoad={(event) => {
+              onLoad={() => {
                 if (isSvgSrc(src)) setStretch(true);
               }}
               onError={fail}

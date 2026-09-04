@@ -47,9 +47,9 @@ export default function FavoritesView() {
       .select('assets_json, updated_at')
       .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
       .maybeSingle()
-      .then((result) => {
+      .then((result: { data: { assets_json?: unknown; updated_at?: string | null } | null; error: { code?: string } | null }) => {
         if (!alive) return;
-        const { data, error } = result as { data: { assets_json?: unknown; updated_at?: string | null } | null; error: { code?: string } | null };
+        const { data, error } = result;
         if (error && error.code !== 'PGRST116') return;
         const next = normalizeSpomoveThumbnailMap(data?.assets_json);
         setThumbnailPaths(next);

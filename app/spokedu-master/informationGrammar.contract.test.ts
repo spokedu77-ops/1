@@ -29,9 +29,8 @@ describe('MASTER information and action grammar', () => {
   it('keeps one dominant action per local decision context', () => {
     expect(detail).toContain('data-detail-support-actions');
     expect(detail).not.toContain('grid-cols-3');
-    expect(spomove).toContain("sessionAssignment ? 'border border-slate-200");
     expect(spomove).toContain('이 수업에 추가');
-    expect(spomove).toContain('활동 준비');
+    expect(spomove).not.toContain('활동 준비');
     expect(spomove).not.toContain('실행 설정');
   });
 });

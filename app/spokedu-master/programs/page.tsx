@@ -13,6 +13,7 @@ import {
   SPOMOVE_HOME_FEATURED_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
+import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { isProgramHomeRecommendationEligible } from '../lib/program-meta';
 import {
   normalizeProgramGatewayMedia,
@@ -103,12 +104,15 @@ export default function ProgramsPage() {
           href="/spokedu-master/library"
           action="전체 놀이체육 보기"
           image={lessonHeroSrc}
-          items={weeklyPrograms.map((program) => ({
-            id: program.id,
-            title: program.title,
-            href: `/spokedu-master/library/${program.id}`,
-            meta: program.theme || '놀이체육',
-          }))}
+          items={weeklyPrograms.map((program) => {
+            const model = buildLessonDisplayModel(program);
+            return {
+              id: program.id,
+              title: program.title,
+              href: `/spokedu-master/library/${program.id}`,
+              meta: model.theme || '놀이체육',
+            };
+          })}
         />
 
         <GatewaySection

@@ -12,7 +12,7 @@ function program(overrides: Partial<Program> & Pick<Program, 'id' | 'title'>): P
     space: '체육관',
     description: '',
     steps: [],
-    equipment: [],
+    equipment: overrides.equipment ?? [],
     tags: overrides.tags ?? [],
     colors: ['#111827', '#334155', '#64748b', '#e2e8f0'],
     thumbnailUrl: overrides.thumbnailUrl,

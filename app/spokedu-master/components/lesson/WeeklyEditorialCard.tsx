@@ -26,12 +26,15 @@ function CoverImage({
     return <div className="absolute inset-0 bg-slate-200" />;
   }
   if (isRemoteImage(imageSrc) && !imageSrc.includes('.supabase.co')) {
-    // eslint-disable-next-line @next/next/no-img-element -- remote program heroes may sit outside next/image patterns
     return (
-      <img
+      <Image
         src={imageSrc}
         alt=""
-        className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+        fill
+        sizes={sizes}
+        priority={priority}
+        unoptimized
+        className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
         onError={(event) => {
           const fallback = getImageFallbackSrc(imageSrc);
           if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
