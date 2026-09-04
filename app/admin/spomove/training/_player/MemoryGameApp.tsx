@@ -62,6 +62,7 @@ import {
   isFront3PanelLevel,
   isColorSequenceLevel,
   isColorNumberLevel,
+  isInstantMemoryLevel,
   modifiedQuadrantStage,
   modifiedQuadrantLevelFromStage,
   catalogSpatialUiLevel,
@@ -179,9 +180,9 @@ type Settings = {
   goalkeeperTier: 1 | 2;
   goalkeeperBonusTimeEnabled: boolean;
   handFootDifficulty: 'easy' | 'normal' | 'hard';
-  /** reactTrain level 12 (색 기억 그리드): 3×3 / 4×4 / 5×5 */
+  /** spatial level 7 (순간 기억): 3×3 / 4×4 / 5×5 */
   colorMemoryGridSize: 3 | 4 | 5;
-  /** reactTrain level 12 (색 기억 그리드): flicker=깜빡이 · oneshot=원샷 */
+  /** spatial level 7 (순간 기억): flicker=깜빡이 · oneshot=원샷 */
   colorMemoryGridMode: 'flicker' | 'oneshot';
   /** reactTrain level 13 (바이러스 폭증): easy/normal/hard */
   virusOutbreakDifficulty: 'easy' | 'normal' | 'hard';
@@ -297,9 +298,9 @@ export type MemoryGameAutoLaunch = {
   goalkeeperTier?: 1 | 2;
   goalkeeperBonusTimeEnabled?: boolean;
   handFootDifficulty?: 'easy' | 'normal' | 'hard';
-  /** reactTrain level 12 (색 기억 그리드): 3×3 / 4×4 / 5×5 */
+  /** spatial level 7 (순간 기억): 3×3 / 4×4 / 5×5 */
   colorMemoryGridSize?: 3 | 4 | 5;
-  /** reactTrain level 12 (색 기억 그리드): flicker=깜빡이 · oneshot=원샷 */
+  /** spatial level 7 (순간 기억): flicker=깜빡이 · oneshot=원샷 */
   colorMemoryGridMode?: 'flicker' | 'oneshot';
   /** reactTrain level 13 (바이러스 폭증): easy/normal/hard */
   virusOutbreakDifficulty?: 'easy' | 'normal' | 'hard';
@@ -959,7 +960,7 @@ export default function MemoryGameApp({
       }
 
       /** Training ??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝???????????????????????????????????????????????????????????????????????????????????????????????????????? ??????????????????3???????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐???????????(flow ???? */
-      const warmupSec = Math.max(3, cfg.warmup ?? 0);
+      const warmupSec = typeof cfg.warmup === 'number' ? Math.max(0, cfg.warmup) : 3;
 
       if (cfg.mode === 'flow') {
         // FlowGameClient(Flow 2.0)??????????? ??????????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐???????????????????????????????猷몄굣??????????????????????????????????????????????? ????????????????????????????????????????????????????????????????猷몄굣???????????????????
@@ -976,11 +977,13 @@ export default function MemoryGameApp({
         // spatial(?????????????????????????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲???????????????????????????????????????????????????????????????????????????????????????warmup ?????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐????????????????????????
         const resolvedForStart = resolveTrainingEngine(cfg.mode, cfg.level);
         const nextScreen: Screen =
-          cfg.mode === 'spatial'
-            ? 'memory'
-            : cfg.mode === 'reactTrain' && resolvedForStart.engineMode === 'reactTrain'
-              ? 'visualReaction'
-              : 'training';
+          cfg.mode === 'spatial' && isInstantMemoryLevel(cfg.level)
+            ? 'visualReaction'
+            : cfg.mode === 'spatial'
+              ? 'memory'
+              : cfg.mode === 'reactTrain' && resolvedForStart.engineMode === 'reactTrain'
+                ? 'visualReaction'
+                : 'training';
         // 시지각·사이먼 카모/풍선: 플레이어 내부 카운트다운만 사용 (바깥 워밍업과 이중 카운트 방지)
         const screenWarmupSec =
           nextScreen === 'visualReaction' || (cfg.mode === 'simon' && (cfg.level === 4 || cfg.level === 5))
@@ -1406,6 +1409,10 @@ export default function MemoryGameApp({
                         set('level', isColorNumberLevel(settings.level) ? settings.level : 4);
                         return;
                       }
+                      if (settings.mode === 'spatial' && lv.id === 7) {
+                        set('level', 7);
+                        return;
+                      }
                       set('level', lv.id);
                     }}
                     style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${active ? M.accent : 'var(--border)'}`, background: active ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}
@@ -1625,6 +1632,83 @@ export default function MemoryGameApp({
                     })}
                   </div>
                 </div>
+              ) : null}
+              {settings.mode === 'spatial' && isInstantMemoryLevel(settings.level) ? (
+                <>
+                  <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>타일 개수</div>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.5 }}>
+                      기억 후 단 한 칸만 색이 바뀝니다. 그리드가 클수록 찾기 어렵습니다.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      {([
+                        { id: 3 as const, label: '3×3', detail: '입문' },
+                        { id: 4 as const, label: '4×4', detail: '보통' },
+                        { id: 5 as const, label: '5×5', detail: '어려움' },
+                      ]).map((opt) => {
+                        const active = settings.colorMemoryGridSize === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => set('colorMemoryGridSize', opt.id)}
+                            style={{
+                              flex: 1,
+                              padding: '0.55rem 0.4rem',
+                              borderRadius: '0.75rem',
+                              border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                              background: active ? `${M.accent}12` : 'var(--card)',
+                              color: active ? M.accent : 'var(--text)',
+                              fontWeight: active ? 800 : 600,
+                              fontSize: '0.95rem',
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            <span style={{ display: 'block' }}>{opt.label}</span>
+                            <span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: active ? M.accent : 'var(--text-muted)', fontWeight: 800 }}>{opt.detail}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>진행 방식</div>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.5 }}>
+                      깜빡이는 원본·변경 색을 번갈아 보여 주고, 원샷은 한 번만 바꾼 뒤 유지합니다.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      {([
+                        { id: 'flicker' as const, label: '깜빡이', detail: '추천' },
+                        { id: 'oneshot' as const, label: '원샷', detail: '하드코어' },
+                      ]).map((opt) => {
+                        const active = settings.colorMemoryGridMode === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => set('colorMemoryGridMode', opt.id)}
+                            style={{
+                              flex: 1,
+                              padding: '0.55rem 0.4rem',
+                              borderRadius: '0.75rem',
+                              border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                              background: active ? `${M.accent}12` : 'var(--card)',
+                              color: active ? M.accent : 'var(--text)',
+                              fontWeight: active ? 800 : 600,
+                              fontSize: '0.95rem',
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            <span style={{ display: 'block' }}>{opt.label}</span>
+                            <span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: active ? M.accent : 'var(--text-muted)', fontWeight: 800 }}>{opt.detail}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
               ) : null}
               {settings.mode === 'basic' && showVariantAppendix && <VariantImageGallery />}
               {settings.mode === 'simon' && settings.level === 3 ? (
@@ -1919,6 +2003,14 @@ export default function MemoryGameApp({
                         : 'Speed is randomized between 1.0 and 2.5 seconds.'}
                     </p>
                   </div>
+                ) : settings.mode === 'spatial' && isInstantMemoryLevel(settings.level) ? (
+                  <div style={S.sec}>
+                    {stepNum(stepSpeed, '기억 시간')}
+                    <p style={{ margin: '0 0 0.75rem', fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                      첫 화면(그리드)을 보여주는 시간입니다. 이후 답 고르는 시간은 3초로 고정됩니다.
+                    </p>
+                    <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
+                  </div>
                 ) : (
                   <div style={S.sec}>
                     {stepNum(stepSpeed, "Signal speed")}
@@ -2035,7 +2127,8 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 ) : null}
-                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) !== 8 && reactTrainEngineLevelForUi(settings.level) !== 9 ? (
+                {((settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) !== 8 && reactTrainEngineLevelForUi(settings.level) !== 9) ||
+                  (settings.mode === 'spatial' && isInstantMemoryLevel(settings.level))) ? (
                   <div style={S.sec}>
                     {stepNum(stepReps, "Choose duration")}
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -2061,6 +2154,7 @@ export default function MemoryGameApp({
                         </button>
                       ))}
                     </div>
+                    {settings.mode === 'reactTrain' ? (
                     <div style={{ marginTop: '0.75rem' }}>
                       <button
                         type="button"
@@ -2081,6 +2175,7 @@ export default function MemoryGameApp({
                         Kids safe mode: {settings.kidsSafeMode ? "On" : "Off"}
                       </button>
                     </div>
+                    ) : null}
                   </div>
                 ) : null}
                 {settings.mode !== 'spatial' && settings.mode !== 'reactTrain' && (
@@ -2240,6 +2335,8 @@ export default function MemoryGameApp({
       ? Math.min(6, settings.speed * 1.25)
       : settings.speed;
     const reactEngineLevel = reactTrainEngineLevelForUi(settings.level);
+    const isInstantMemory =
+      settings.mode === 'spatial' && isInstantMemoryLevel(settings.level);
     return (
       <div ref={visualReactionContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
         <style>{CSS}</style>
@@ -2247,6 +2344,16 @@ export default function MemoryGameApp({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
+        ) : isInstantMemory || reactEngineLevel === 12 ? (
+          <ColorMemoryGridReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
+            gridSize={settings.colorMemoryGridSize === 3 || settings.colorMemoryGridSize === 5 ? settings.colorMemoryGridSize : 4}
+            gameMode={settings.colorMemoryGridMode === 'oneshot' ? 'oneshot' : 'flicker'}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
         ) : reactEngineLevel === 13 ? (
           <VirusOutbreakReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
@@ -2257,16 +2364,6 @@ export default function MemoryGameApp({
                 ? settings.virusOutbreakDifficulty
                 : 'normal'
             }
-            onExit={stop}
-            onComplete={handleReactTrainComplete}
-          />
-        ) : reactEngineLevel === 12 ? (
-          <ColorMemoryGridReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
-            gridSize={settings.colorMemoryGridSize === 3 || settings.colorMemoryGridSize === 5 ? settings.colorMemoryGridSize : 4}
-            gameMode={settings.colorMemoryGridMode === 'oneshot' ? 'oneshot' : 'flicker'}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />

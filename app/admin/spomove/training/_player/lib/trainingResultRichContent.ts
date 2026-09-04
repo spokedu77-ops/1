@@ -306,6 +306,7 @@ function spatialPatternLabel(level: number): string {
   if (level === 2) return '5색';
   if (level === 3) return '추가(3→7)';
   if (level === 4 || level === 5) return '색·번호';
+  if (level === 7) return '순간 기억';
   return '10색';
 }
 

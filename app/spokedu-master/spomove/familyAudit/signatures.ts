@@ -29,6 +29,8 @@ const ENGINE_OPTION_KEYS = [
   'flankerArrowMode',
   'camouflagePlacement',
   'stroopWordMode',
+  'colorMemoryGridSize',
+  'colorMemoryGridMode',
 ] as const;
 
 /**
@@ -49,7 +51,7 @@ export const MECHANIC_KEYS_BY_MODE: Record<OfficialSpomoveEngineMode, readonly s
   simon: ['simonPoleCount'],
   flanker: ['flankerStimulusType', 'flankerNestedCircleCount', 'flankerArrowMode', 'variantColorTheme'],
   stroop: ['stroopWordMode'],
-  spatial: [],
+  spatial: ['colorMemoryGridSize', 'colorMemoryGridMode'],
   flow: ['flowFeatures', 'flowLayout', 'flowIncludeBonus', 'flowDuration'],
 };
 

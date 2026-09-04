@@ -100,7 +100,6 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 201, name: '손 따로, 발 따로', enName: 'Hand and Foot Separate', desc: '난이도 쉬움/보통/어려움. 기존 변형 4분할 프로그램을 시지각 반응으로 이관합니다.' },
       { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '난이도 보통(1패널)/어려움(2패널)과 속도 느림(9개)/빠름(13개)을 고릅니다. 흰 공 1개를 검은 공들 속에서 추적합니다.' },
       { id: 8, name: '(보류) 숫자 연산 기차', enName: '(On Hold) Number Train', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
-      { id: 12, name: '(보류) 색 기억 그리드', enName: '(On Hold) Color Memory Grid', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
       { id: 13, name: '(보류) 바이러스 폭증', enName: '(On Hold) Virus Outbreak', desc: '삭제하지 않고 보류합니다. 스포키듀 마스터에서는 숨길 예정입니다.' },
     ],
   },
@@ -195,6 +194,7 @@ export const MODES: Record<string, SpomoveMode> = {
     levels: [
       { id: 1, name: '순서 기억', enName: 'Order Memory', desc: '난이도 쉬움은 3개, 보통은 5개, 쉬움→보통→어려움은 3~7개 점증, 어려움은 직접 지정 10색으로 진행합니다.' },
       { id: 2, name: '랜덤 기억', enName: 'Random Memory', desc: '난이도 어려움에서 퀴즈 또는 전체 공개 방식으로 색과 번호를 기억합니다.' },
+      { id: 7, name: '순간 기억', enName: 'Instant Memory', desc: '그리드 색을 잠깐 기억한 뒤, 바뀐 한 칸의 색을 찾아 패드로 반응합니다. 타일 수(3×3/4×4/5×5)와 깜빡이/원샷을 고릅니다.' },
     ],
   },
 
@@ -349,6 +349,11 @@ export function isColorNumberLevel(level: number): boolean {
   return level === 4 || level === 5;
 }
 
+/** spatial 엔진 level 7 — 순간 기억(색 기억 그리드) */
+export function isInstantMemoryLevel(level: number): boolean {
+  return level === 7;
+}
+
 /** stroop 4단계 하위 옵션 — 기본(단어+배경) / 누락 색상 */
 export type StroopWordMode = 'bg' | 'missing';
 
@@ -365,10 +370,11 @@ export function catalogStroopUiLevel(level: number): number {
   return level === 5 ? 4 : level;
 }
 
-/** spatial 엔진 level → 카탈로그 대표 id (순서 기억=1, 랜덤 기억=2) */
+/** spatial 엔진 level → 카탈로그 대표 id (순서 기억=1, 랜덤 기억=2, 순간 기억=7) */
 export function catalogSpatialUiLevel(level: number): number {
   if (isColorSequenceLevel(level)) return 1;
   if (isColorNumberLevel(level)) return 2;
+  if (isInstantMemoryLevel(level)) return 7;
   return level;
 }
 
@@ -439,6 +445,8 @@ export function resolveTrainingEngine(mode: string, level: number): { engineMode
 
 export function normalizeLegacyTrainingMode(mode: string | undefined, level: number): { mode: string; level: number } {
   if (!mode) return { mode: 'basic', level: 1 };
+  // 구 시지각 반응 · 색 기억 그리드(12) → 순차 기억 · 순간 기억(7)
+  if (mode === 'reactTrain' && level === 12) return { mode: 'spatial', level: 7 };
   if (mode === 'gonogo') return { mode: 'gonogo', level: Math.min(4, Math.max(1, level)) };
   if (mode === 'taskswitch') return { mode: 'taskswitch', level: Math.min(3, Math.max(1, level)) };
   if (mode === 'executive') {
@@ -453,7 +461,7 @@ export function normalizeLegacyTrainingMode(mode: string | undefined, level: num
 /**
  * 카탈로그 대표 id뿐 아니라 엔진 서브레벨도 허용한다.
  * basic: 변형사분할 8·9(·레거시10), 랜덤분할 서로다른색 6
- * spatial: 색순서 2·3, 색·번호 5
+ * spatial: 색순서 2·3·6, 색·번호 4·5, 순간 기억 7
  */
 export function isKnownTrainingLevel(mode: string, level: number): boolean {
   const modeDef = MODES[mode];
@@ -471,7 +479,7 @@ export function isKnownTrainingLevel(mode: string, level: number): boolean {
     return level >= 1 && level <= 6;
   }
   if (mode === 'spatial') {
-    return isColorSequenceLevel(level) || isColorNumberLevel(level);
+    return isColorSequenceLevel(level) || isColorNumberLevel(level) || isInstantMemoryLevel(level);
   }
   if (mode === 'reactTrain') {
     if (level >= 1 && level <= 10) return true;

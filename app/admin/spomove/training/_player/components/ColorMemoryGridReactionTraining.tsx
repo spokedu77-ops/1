@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * 시지각 반응 · 색 기억 그리드 (Visual Reaction 8 / engine 12)
- * 원본 「도플갱어의 방」변화맹 테스트 메커니즘을 SPOMOVE HUD·톤에 맞게 이식.
- * — MEMORIZE 3s → SEARCH 7s(단 1칸만 색 변경 · FLICKER|ONESHOT) → REVEAL 3.5s
+ * 순차 기억 · 순간 기억 (Sequential Memory 3 / engine spatial 7)
+ * — MEMORIZE = 설정 기억 시간(speedSec) → SEARCH 3s 고정(답 고르기) → REVEAL 3.5s
  * — 정답 색 = 바뀐(새) 색 (패드 반응 기준)
+ * — 원샷 REVEAL: 원래 색 → 바뀐 색
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -26,10 +26,15 @@ const COLORS = [
   { name: '초록', hex: '#33cc33', glow: '#99ff99' },
 ] as const;
 
-const MEMORIZE_MS = 3000;
-const SEARCH_MS = 7000;
+/** 답 고르는(SEARCH) 시간 — 설정과 무관하게 고정 */
+const SEARCH_MS = 3000;
 const REVEAL_MS = 3500;
 const FLICKER_CYCLE_MS = 1000;
+
+function normalizeMemorizeMs(speedSec: number): number {
+  const sec = Number.isFinite(speedSec) ? speedSec : 3;
+  return Math.round(Math.max(1, Math.min(10, sec)) * 1000);
+}
 
 export type ColorMemoryGridSize = 3 | 4 | 5;
 export type ColorMemoryGridMode = 'flicker' | 'oneshot';
@@ -54,6 +59,7 @@ type Game = {
   durationLeft: number;
   gridSize: ColorMemoryGridSize;
   gameMode: ColorMemoryGridMode;
+  memorizeMs: number;
   targetIdx: number;
   tiles: Tile[];
   laneCount: [number, number, number, number];
@@ -154,6 +160,7 @@ function playSfx(type: 'tick' | 'flash' | 'reveal') {
 
 export function ColorMemoryGridReactionTraining({
   durationSec,
+  speedSec,
   gridSize: gridSizeProp = 4,
   gameMode: gameModeProp = 'flicker',
   onComplete,
@@ -203,6 +210,7 @@ export function ColorMemoryGridReactionTraining({
       durationLeft: Math.max(5, Math.round(durationSec)),
       gridSize: normalizeGridSize(gridSizeProp),
       gameMode: normalizeGameMode(gameModeProp),
+      memorizeMs: normalizeMemorizeMs(speedSec),
       targetIdx: 0,
       tiles: [],
       laneCount: [0, 0, 0, 0],
@@ -298,7 +306,10 @@ export function ColorMemoryGridReactionTraining({
       hideMessage();
       setFlash(false);
       if (roundRef.current) roundRef.current.textContent = String(g.round);
-      setStatus(`기억 · ${g.gridSize}×${g.gridSize} · ${g.gameMode === 'flicker' ? '깜빡이' : '원샷'}`, '#f9a8d4');
+      setStatus(
+        `기억 · ${g.gridSize}×${g.gridSize} · ${g.gameMode === 'flicker' ? '깜빡이' : '원샷'} · ${(g.memorizeMs / 1000).toFixed(g.memorizeMs % 1000 === 0 ? 0 : 1)}초`,
+        '#f9a8d4',
+      );
     };
 
     const draw = (now: number) => {
@@ -332,6 +343,34 @@ export function ColorMemoryGridReactionTraining({
             currentScale *= 0.8;
             opacity = 0.2;
           } else if (tile.newColorIdx != null) {
+            // 원샷: 좌(원래) / 우(바뀐) 분할 표시. 깜빡이: 바뀐 색만.
+            if (g.gameMode === 'oneshot') {
+              const s = tile.size * (1 + Math.sin(now * 0.01) * 0.1);
+              const oldColor = COLORS[tile.colorIdx]!;
+              const newColor = COLORS[tile.newColorIdx]!;
+              ctx.save();
+              ctx.translate(tile.x + tile.size / 2, tile.y + tile.size / 2);
+              ctx.shadowBlur = 30;
+              ctx.shadowColor = newColor.glow;
+              ctx.beginPath();
+              ctx.roundRect(-s / 2, -s / 2, s / 2, s, 10);
+              ctx.clip();
+              ctx.fillStyle = oldColor.hex;
+              ctx.fillRect(-s / 2, -s / 2, s, s);
+              ctx.restore();
+
+              ctx.save();
+              ctx.translate(tile.x + tile.size / 2, tile.y + tile.size / 2);
+              ctx.shadowBlur = 30;
+              ctx.shadowColor = newColor.glow;
+              ctx.beginPath();
+              ctx.roundRect(0, -s / 2, s / 2, s, 10);
+              ctx.clip();
+              ctx.fillStyle = newColor.hex;
+              ctx.fillRect(-s / 2, -s / 2, s, s);
+              ctx.restore();
+              return;
+            }
             renderIdx = tile.newColorIdx;
             currentScale = 1 + Math.sin(now * 0.01) * 0.1;
           }
@@ -358,24 +397,24 @@ export function ColorMemoryGridReactionTraining({
         ctx.restore();
       });
 
-      // ── 상태 머신 (원본 타이밍) ──
+      // ── 상태 머신 ──
       if (g.phase === 'MEMORIZE') {
-        const timeLeft = Math.ceil(3 - elapsed / 1000);
-        if (elapsed > 500 && timeLeft > 0) {
+        // 남은 ms 기준: 6초면 6·5·4·3·2·1 각 1초(첫 숫자도 잘리지 않음)
+        const timeLeft = Math.max(0, Math.ceil((g.memorizeMs - elapsed) / 1000));
+        if (timeLeft > 0) {
           showMessage(String(timeLeft), 'num');
-          const sec = Math.floor(elapsed / 1000);
-          if (sec !== g.lastTickSec) {
-            g.lastTickSec = sec;
+          if (timeLeft !== g.lastTickSec) {
+            g.lastTickSec = timeLeft;
             playSfx('tick');
           }
         }
-        if (elapsed >= MEMORIZE_MS) {
+        if (elapsed >= g.memorizeMs) {
           g.phase = 'SEARCH';
           g.phaseStartMs = now;
           g.lastTickSec = -1;
           hideMessage();
           playSfx('flash');
-          setStatus('바뀐 색깔은? · 해당 색 패드로', '#86efac');
+          setStatus('바뀐 색깔은? · 해당 색 패드로 · 3초', '#86efac');
         }
       } else if (g.phase === 'SEARCH') {
         if (g.gameMode === 'flicker') {
@@ -385,17 +424,13 @@ export function ColorMemoryGridReactionTraining({
           setFlash(elapsed < 150);
         }
 
-        const timeLeft = Math.ceil((SEARCH_MS - elapsed) / 1000);
-        if (elapsed < 1000) {
-          showMessage('바뀐 색깔은?', 'pill');
-        } else if (timeLeft > 0) {
+        // 답 고르기 3초: 3·2·1 각 1초 (안내는 status 문구)
+        const timeLeft = Math.max(0, Math.ceil((SEARCH_MS - elapsed) / 1000));
+        if (timeLeft > 0) {
           showMessage(String(timeLeft), 'num');
-          if (timeLeft <= 3) {
-            const sec = Math.floor(elapsed / 1000);
-            if (sec !== g.lastTickSec) {
-              g.lastTickSec = sec;
-              playSfx('tick');
-            }
+          if (timeLeft !== g.lastTickSec) {
+            g.lastTickSec = timeLeft;
+            playSfx('tick');
           }
         }
 
@@ -406,11 +441,19 @@ export function ColorMemoryGridReactionTraining({
           playSfx('reveal');
           const target = g.tiles[g.targetIdx]!;
           const newIdx = target.newColorIdx ?? target.colorIdx;
+          const oldIdx = target.colorIdx;
           g.laneCount[newIdx]++;
           const ans = COLORS[newIdx]!;
-          showMessage(`정답: ${ans.name}`, 'pill');
-          if (centerRef.current) centerRef.current.style.color = ans.glow;
-          setStatus(`${ans.name} · 바뀐 색`, '#e5e7eb');
+          const prev = COLORS[oldIdx]!;
+          if (g.gameMode === 'oneshot') {
+            showMessage(`${prev.name} → ${ans.name}`, 'pill');
+            if (centerRef.current) centerRef.current.style.color = ans.glow;
+            setStatus(`${prev.name} → ${ans.name}`, '#e5e7eb');
+          } else {
+            showMessage(`정답: ${ans.name}`, 'pill');
+            if (centerRef.current) centerRef.current.style.color = ans.glow;
+            setStatus(`${ans.name} · 바뀐 색`, '#e5e7eb');
+          }
         }
       } else if (g.phase === 'REVEAL') {
         if (elapsed >= REVEAL_MS) {
@@ -453,7 +496,7 @@ export function ColorMemoryGridReactionTraining({
       if (g.timer) clearInterval(g.timer);
       setFlash(false);
     };
-  }, [complete, durationSec, gameModeProp, gridSizeProp]);
+  }, [complete, durationSec, gameModeProp, gridSizeProp, speedSec]);
 
   return (
     <div className="cmgrid">
@@ -464,8 +507,8 @@ export function ColorMemoryGridReactionTraining({
           <div className="cmgrid-hv" ref={roundRef}>1</div>
         </div>
         <div className="cmgrid-hc grow">
-          <div className="cmgrid-hv" style={{ fontSize: 'clamp(13px,2vw,20px)' }}>색 기억 그리드</div>
-          <div className="cmgrid-hk">Visual Reaction 8</div>
+          <div className="cmgrid-hv" style={{ fontSize: 'clamp(13px,2vw,20px)' }}>순간 기억</div>
+          <div className="cmgrid-hk">Sequential Memory 3</div>
         </div>
         <div className="cmgrid-hc">
           <div className="cmgrid-hk">TIME</div>

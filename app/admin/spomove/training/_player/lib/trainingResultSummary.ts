@@ -1,4 +1,4 @@
-import { COLORS, MEMORY_ROUNDS, MODES, catalogBasicUiLevel, isFront3PanelLevel, isModifiedQuadrantLevel, modifiedQuadrantStage } from '../constants';
+import { COLORS, MEMORY_ROUNDS, MODES, catalogBasicUiLevel, catalogSpatialUiLevel, isFront3PanelLevel, isModifiedQuadrantLevel, modifiedQuadrantStage } from '../constants';
 import { GUIDE_BLOCKS } from '../trainingGuideContent';
 
 export type TrainingSessionResult = {
@@ -114,6 +114,11 @@ export function resultLevelLabel(mode: string | undefined, level: number): strin
     }
     const catalogId = catalogBasicUiLevel(level);
     const idx = MODES.basic?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
+    if (idx >= 0) return `${idx + 1}번`;
+  }
+  if (mode === 'spatial') {
+    const catalogId = catalogSpatialUiLevel(level);
+    const idx = MODES.spatial?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
     if (idx >= 0) return `${idx + 1}번`;
   }
   const m = MODES[mode];

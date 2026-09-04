@@ -10,6 +10,7 @@ import {
 import { normalizeColorTrackerRounds } from '@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining';
 import { normalizeNumberCartRounds } from '@/app/admin/spomove/training/_player/components/NumberCartReactionTraining';
 import { resolveReactTrainUiLevel } from '@/app/admin/spomove/training/_player/constants';
+import { StartCountdownGate } from '@/app/admin/spomove/training/_player/lib/reactTrainStartCountdown';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 
@@ -58,6 +59,12 @@ const NumberCartReactionTraining = lazy(() =>
 const ColorTrackerReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining').then((m) => ({
     default: m.ColorTrackerReactionTraining,
+  })),
+);
+
+const ColorMemoryGridReactionTraining = lazy(() =>
+  import('@/app/admin/spomove/training/_player/components/ColorMemoryGridReactionTraining').then((m) => ({
+    default: m.ColorMemoryGridReactionTraining,
   })),
 );
 
@@ -128,6 +135,9 @@ type Props = {
   stroopWordMode?: 'bg' | 'missing';
   /** basic L7 손 따로/발 따로 (visual-reaction hand-foot presets) */
   handFootDifficulty?: 'easy' | 'normal' | 'hard';
+  /** 순차 기억 · 순간 기억(spatial 7) */
+  colorMemoryGridSize?: 3 | 4 | 5;
+  colorMemoryGridMode?: 'flicker' | 'oneshot';
   /** O4 — Operation timing.interval → MemoryGame intervalMode */
   intervalLaunch?: {
     workSeconds: number;
@@ -187,6 +197,8 @@ export function EngineRouter({
   flankerArrowMode,
   stroopWordMode,
   handFootDifficulty,
+  colorMemoryGridSize,
+  colorMemoryGridMode,
   intervalLaunch = null,
   onComplete,
   onExit,
@@ -463,45 +475,69 @@ export function EngineRouter({
   }
 
   if (mode === 'spatial') {
-    const safeLevel = Math.min(Math.max(level, 1), 6);
     const handleSpatialComplete = () => {
       onComplete({ engineMode: mode, engineLevel: level, colorCounts: null });
     };
+    if (level === 7) {
+      const dur = durationSec ?? (rounds ?? 10) * (speedSec ?? 3);
+      const sp = speedSec ?? 3;
+      return (
+        <Suspense fallback={<LoadingOverlay />}>
+          <ColorMemoryGridReactionTraining
+            durationSec={Math.max(dur, 30)}
+            speedLevel={mapReactSpeedLevel(sp)}
+            speedSec={sp}
+            gridSize={colorMemoryGridSize === 3 || colorMemoryGridSize === 5 ? colorMemoryGridSize : 4}
+            gameMode={colorMemoryGridMode === 'oneshot' ? 'oneshot' : 'flicker'}
+            onExit={onExit}
+            onComplete={handleReactTrainComplete}
+          />
+        </Suspense>
+      );
+    }
+    const safeLevel = Math.min(Math.max(level, 1), 6);
     if (safeLevel === 5) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <MemoryGameLevel5
-            onExit={onExit}
-            onComplete={handleSpatialComplete}
-            audioMode="beep"
-            speedSec={speedSec ?? 1.2}
-            startDelayMs={0}
-          />
+          <StartCountdownGate>
+            <MemoryGameLevel5
+              onExit={onExit}
+              onComplete={handleSpatialComplete}
+              audioMode="beep"
+              speedSec={speedSec ?? 1.2}
+              startDelayMs={0}
+            />
+          </StartCountdownGate>
         </Suspense>
       );
     }
     if (safeLevel === 4) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <MemoryGameLevel4
+          <StartCountdownGate>
+            <MemoryGameLevel4
+              onExit={onExit}
+              onComplete={handleSpatialComplete}
+              audioMode="beep"
+              speedSec={speedSec ?? 1.2}
+              startDelayMs={0}
+            />
+          </StartCountdownGate>
+        </Suspense>
+      );
+    }
+    return (
+      <Suspense fallback={<LoadingOverlay />}>
+        <StartCountdownGate>
+          <MemoryGame
+            level={safeLevel}
             onExit={onExit}
             onComplete={handleSpatialComplete}
             audioMode="beep"
             speedSec={speedSec ?? 1.2}
             startDelayMs={0}
           />
-        </Suspense>
-      );
-    }
-    return (
-      <Suspense fallback={<LoadingOverlay />}>
-        <MemoryGame
-          level={safeLevel}
-          onExit={onExit}
-          onComplete={handleSpatialComplete}
-          audioMode="beep"
-          speedSec={speedSec ?? 1.2}
-        />
+        </StartCountdownGate>
       </Suspense>
     );
   }

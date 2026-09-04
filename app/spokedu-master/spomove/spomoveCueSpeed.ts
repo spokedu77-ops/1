@@ -67,12 +67,15 @@ export const SPOMOVE_CUE_SPEED_GUIDES: Record<SpomoveCueSpeedSec, SpomoveCueSpee
 const STORAGE_KEY = 'spokedu-master.spomove.lastCueSeconds';
 
 /**
- * 브리핑에서 자극 속도(2~6초)를 고를 수 있는 프리셋.
- * 제외: DIVE, 숫자 연산 기차, 흰 공, 레거시 reactTrain 매직 아이, 순차 기억
+ * 브리핑에서 자극 속도(1~6초)를 고를 수 있는 프리셋.
+ * 제외: DIVE, 숫자 연산 기차, 흰 공, 레거시 reactTrain 매직 아이, 순차 기억(순간 기억 제외)
+ * 순간 기억(spatial 7): 자극 속도 = 첫 그리드 기억 시간
  * 골키퍼(10)는 비행 시간(초)으로 cueSeconds를 사용한다.
  */
 export function supportsCueSpeedOverride(preset: OfficialSpomovePreset): boolean {
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') return false;
+  // 순차 기억 · 순간 기억만 자극 속도(기억 시간) 허용
+  if (preset.engine.mode === 'spatial' && preset.engine.level === 7) return true;
   if (preset.programGroup === 'sequential-memory') return false;
   if (preset.engine.mode === 'spatial') return false;
   if (preset.engine.mode === 'flow') return false;

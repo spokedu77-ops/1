@@ -39,9 +39,10 @@ describe('spomoveCueSpeed', () => {
     expect(recommendedCueSecondsForPreset(easy!)).toBeGreaterThanOrEqual(4);
   });
 
-  it('excludes dive, sequential memory, number cart, color tracker, and legacy visual-only programs', () => {
+  it('excludes dive, sequential memory (except instant), number cart, color tracker, and legacy visual-only programs', () => {
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('dive-standard')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('sequential-memory-3color-09')!)).toBe(false);
+    expect(supportsCueSpeedOverride(findOfficialSpomovePreset('sequential-memory-custom-10color-exp')!)).toBe(true);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-number-cart-l2')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-blackout-37')!)).toBe(true);

@@ -24,6 +24,7 @@ import {
   isFront3PanelLevel,
   isColorSequenceLevel,
   isColorNumberLevel,
+  isInstantMemoryLevel,
   modifiedQuadrantStage,
   modifiedQuadrantLevelFromStage,
   colorSequenceOption,
@@ -232,7 +233,8 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Hand and Foot Separate Normal': '손 따로, 발 따로 (보통)',
   'Hand and Foot Separate Hard': '손 따로, 발 따로 (어려움)',
   '(On Hold) Number Train': '(보류) 숫자 연산 기차',
-  '(On Hold) Color Memory Grid': '(보류) 색 기억 그리드',
+  '(On Hold) Color Memory Grid': '순간 기억',
+  'Instant Memory': '순간 기억',
   '(On Hold) Virus Outbreak': '(보류) 바이러스 폭증',
 };
 
@@ -341,9 +343,9 @@ type LaunchSettings = {
   goalkeeperTier: 1 | 2;
   goalkeeperBonusTimeEnabled: boolean;
   handFootDifficulty: 'easy' | 'normal' | 'hard';
-  /** 시지각반응(reactTrain) 색 기억 그리드(12) 전용: 3×3 / 4×4 / 5×5 */
+  /** 순차 기억 · 순간 기억(7) 전용: 3×3 / 4×4 / 5×5 */
   colorMemoryGridSize: 3 | 4 | 5;
-  /** 시지각반응(reactTrain) 색 기억 그리드(12) 전용: flicker=깜빡이 · oneshot=원샷 */
+  /** 순차 기억 · 순간 기억(7) 전용: flicker=깜빡이 · oneshot=원샷 */
   colorMemoryGridMode: 'flicker' | 'oneshot';
   /** 시지각반응(reactTrain) 바이러스 폭증(13) 전용: easy/normal/hard */
   virusOutbreakDifficulty: 'easy' | 'normal' | 'hard';
@@ -830,7 +832,7 @@ function SettingsScreen({
       if (m?.levels?.some((lv) => lv.id === normalized)) return normalized;
     }
     if (modeId === 'spatial') {
-      if (isColorSequenceLevel(candidate) || isColorNumberLevel(candidate)) {
+      if (isColorSequenceLevel(candidate) || isColorNumberLevel(candidate) || isInstantMemoryLevel(candidate)) {
         return candidate;
       }
       const normalized = catalogSpatialUiLevel(candidate);
@@ -1088,6 +1090,9 @@ function SettingsScreen({
                         if (modeId === 'spatial' && lv.id === 2) {
                           return isColorNumberLevel(current) ? current : 4;
                         }
+                        if (modeId === 'spatial' && lv.id === 7) {
+                          return 7;
+                        }
                         return lv.id;
                       });
                       setLaunch((s) => {
@@ -1128,6 +1133,18 @@ function SettingsScreen({
                               duration: [30, 60, 120, 180].includes(next.duration) ? next.duration : 120,
                             };
                           }
+                        }
+                        if (modeId === 'spatial' && lv.id === 7) {
+                          next = {
+                            ...next,
+                            timeMode: 'time',
+                            duration: [30, 60, 120, 180].includes(next.duration) ? next.duration : 60,
+                            colorMemoryGridSize:
+                              next.colorMemoryGridSize === 3 || next.colorMemoryGridSize === 5
+                                ? next.colorMemoryGridSize
+                                : 4,
+                            colorMemoryGridMode: next.colorMemoryGridMode === 'oneshot' ? 'oneshot' : 'flicker',
+                          };
                         }
                         return next;
                       });
@@ -1788,8 +1805,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 색 기억 그리드(12): 타일 수 · 진행 방식 */}
-          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 12 ? (
+          {/* 순차 기억 · 순간 기억(7): 타일 수 · 진행 방식 */}
+          {isSpatial && isInstantMemoryLevel(levelId) ? (
             <>
               <section style={{ marginBottom: 22 }}>
                 <div style={{ marginBottom: 8 }}>
@@ -1968,21 +1985,34 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (모션 게이트는 관문이 화면을 통과하는 시간으로 직접 매핑) */}
+          {/* 속도 / 순간 기억 기억 시간 */}
           {(!isFlowOrChallenge || isColorGateTheme) && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isColorGateTheme ? '게이트 통과 시간' : isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? '비행 시간' : '신호 속도'}
+                  {isSpatial && isInstantMemoryLevel(levelId)
+                    ? '기억 시간'
+                    : isColorGateTheme
+                      ? '게이트 통과 시간'
+                      : isReactTrain && reactTrainEngineLevelForUi(levelId) === 10
+                        ? '비행 시간'
+                        : '신호 속도'}
                 </label>
                 <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                  {isColorGateTheme
-                    ? `${launch.speed.toFixed(1)}초 / 화면 통과`
-                    : isReactTrain && reactTrainEngineLevelForUi(levelId) === 10
-                    ? `${launch.speed.toFixed(1)}초 / 스폰→히트`
-                    : `${launch.speed.toFixed(1)}초 / 자극`}
+                  {isSpatial && isInstantMemoryLevel(levelId)
+                    ? `${launch.speed.toFixed(1)}초 / 첫 화면`
+                    : isColorGateTheme
+                      ? `${launch.speed.toFixed(1)}초 / 화면 통과`
+                      : isReactTrain && reactTrainEngineLevelForUi(levelId) === 10
+                        ? `${launch.speed.toFixed(1)}초 / 스폰→히트`
+                        : `${launch.speed.toFixed(1)}초 / 자극`}
                 </div>
               </div>
+              {isSpatial && isInstantMemoryLevel(levelId) ? (
+                <p style={{ margin: '0 0 10px', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  첫 그리드가 보이는 시간입니다. 답 고르는 시간은 3초로 고정됩니다.
+                </p>
+              ) : null}
               <SpeedSelector
                 value={launch.speed}
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
@@ -2378,7 +2408,13 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9) ? '라운드' : isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
+                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9)
+                    ? '라운드'
+                    : isReactTrain || (isSpatial && isInstantMemoryLevel(levelId))
+                      ? '훈련 시간'
+                      : isSpatial
+                        ? '진행'
+                        : '분량'}
                 </label>
               </div>
 
@@ -2436,7 +2472,7 @@ function SettingsScreen({
                     );
                   })}
                 </div>
-              ) : isReactTrain ? (
+              ) : isReactTrain || (isSpatial && isInstantMemoryLevel(levelId)) ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[30, 60, 120, 180].map((sec) => {
                     const active = launch.duration === sec;

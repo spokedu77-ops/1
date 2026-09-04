@@ -364,10 +364,17 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
       '순서 기억 · 쉬움 (3개)',
       '순서 기억 · 보통 (5개)',
       '순서 기억 · 쉬움 → 보통 → 어려움 (3~7개)',
-      '순서 기억 · 어려움 (커스텀)',
+      '순간 기억 · 4×4 그리드 (원샷)',
       '랜덤 기억 · 어려움 (퀴즈)',
       '전체 공개 · 어려움',
     ]);
+    const instant = findOfficialSpomovePreset('sequential-memory-custom-10color-exp');
+    expect(instant?.engine).toMatchObject({
+      mode: 'spatial',
+      level: 7,
+      colorMemoryGridSize: 4,
+      colorMemoryGridMode: 'oneshot',
+    });
   });
 
   it('사이먼 10개는 모든 보통/어려움 쌍을 제목에 표시한다', () => {

@@ -661,7 +661,8 @@ function SpomoveSessionContent() {
       <div className="relative h-dvh overflow-hidden bg-black">
         <EngineRouter
           durationSec={
-            officialPreset.engine.mode === 'reactTrain'
+            officialPreset.engine.mode === 'reactTrain' ||
+            (officialPreset.engine.mode === 'spatial' && officialPreset.engine.level === 7)
               ? standardSpomoveDurationSec(effectiveCueSeconds, officialPreset.rounds)
               : undefined
           }
@@ -693,6 +694,8 @@ function SpomoveSessionContent() {
           flankerArrowMode={officialPreset.engine.flankerArrowMode}
           stroopWordMode={officialPreset.engine.stroopWordMode}
           handFootDifficulty={officialPreset.engine.handFootDifficulty}
+          colorMemoryGridSize={officialPreset.engine.colorMemoryGridSize}
+          colorMemoryGridMode={officialPreset.engine.colorMemoryGridMode}
           intervalLaunch={
             effectiveOperation?.timing.pattern === 'interval'
               ? {

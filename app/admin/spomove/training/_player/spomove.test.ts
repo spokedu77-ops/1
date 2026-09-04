@@ -84,6 +84,16 @@ describe('sequential memory catalog', () => {
 
     expect([4, 5].map(catalogSpatialUiLevel)).toEqual([2, 2]);
   });
+
+  test('places instant memory as catalog item 3 (engine level 7)', () => {
+    expect(MODES.spatial.levels[2]).toMatchObject({
+      id: 7,
+      name: '순간 기억',
+      enName: 'Instant Memory',
+    });
+    expect(catalogSpatialUiLevel(7)).toBe(7);
+    expect(MODES.reactTrain.levels.map((level) => level.id)).not.toContain(12);
+  });
 });
 
 // ── 슬라이드 헬퍼 ──────────────────────────────────────────────────────────────
@@ -887,7 +897,7 @@ describe('training result summary', () => {
   test('resolveReactTrainUiLevel: 화면 카탈로그 엔진 id + 구 id 폴백', async () => {
     const { resolveReactTrainUiLevel, MODES } = await import('./constants');
     const ids = MODES.reactTrain.levels.map((lv) => lv.id);
-    expect(ids).toEqual([3, 1, 2, 6, 10, 201, 9, 8, 12, 13]);
+    expect(ids).toEqual([3, 1, 2, 6, 10, 201, 9, 8, 13]);
     expect(MODES.reactTrain.levels.map((lv) => lv.enName)).toEqual([
       'Balloon Pop',
       'Wave Dodge',
@@ -897,7 +907,6 @@ describe('training result summary', () => {
       'Hand and Foot Separate',
       'Color Tracker',
       '(On Hold) Number Train',
-      '(On Hold) Color Memory Grid',
       '(On Hold) Virus Outbreak',
     ]);
     expect(MODES.reactTrain.levels.map((lv) => lv.name)).toEqual([
@@ -909,7 +918,6 @@ describe('training result summary', () => {
       '손 따로, 발 따로',
       '흰 공 찾기',
       '(보류) 숫자 연산 기차',
-      '(보류) 색 기억 그리드',
       '(보류) 바이러스 폭증',
     ]);
     // 화면 순번(1-based index) ≠ 엔진 id (예: 화면 4번 = 두더지 eng 6)

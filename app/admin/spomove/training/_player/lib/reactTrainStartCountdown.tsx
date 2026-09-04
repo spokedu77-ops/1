@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState, type ReactNode } from 'react';
 
 /** 시지각·관련 캔버스 플레이어 공통 시작 워밍업(초). VisualReactionTraining과 동일. */
 export const REACT_TRAIN_START_COUNTDOWN_SEC = 3;
@@ -57,7 +58,8 @@ export function ReactTrainStartCountdownOverlay({ countdown }: { countdown: numb
 }
 
 /**
- * VRT와 동일 타이밍: 즉시 N 표시 → 60ms 후 1초마다 N-1… → 0에서 onDone.
+ * VRT와 동일 타이밍: 즉시 N 표시 → 매 1초마다 N-1… → 0에서 onDone.
+ * 예: 3초면 3·2·1 각 1초(총 정확히 3초) 후 onDone.
  * 반환값은 cleanup.
  */
 export function runReactTrainStartCountdown(opts: {
@@ -68,25 +70,57 @@ export function runReactTrainStartCountdown(opts: {
   const seconds = Math.max(1, Math.round(opts.seconds ?? REACT_TRAIN_START_COUNTDOWN_SEC));
   opts.onTick(seconds);
   let value = seconds;
-  let interval: ReturnType<typeof setInterval> | null = null;
-  const startId = window.setTimeout(() => {
-    interval = setInterval(() => {
-      value -= 1;
-      if (value <= 0) {
-        if (interval) {
-          clearInterval(interval);
-          interval = null;
-        }
-        opts.onTick(0);
-        opts.onDone();
-        return;
-      }
-      opts.onTick(value);
-    }, 1000);
-  }, 60);
+  const interval = setInterval(() => {
+    value -= 1;
+    if (value <= 0) {
+      clearInterval(interval);
+      opts.onTick(0);
+      opts.onDone();
+      return;
+    }
+    opts.onTick(value);
+  }, 1000);
 
   return () => {
-    clearTimeout(startId);
-    if (interval) clearInterval(interval);
+    clearInterval(interval);
   };
+}
+
+/** MASTER 등에서 플레이어 마운트 전 공통 3·2·1 게이트 */
+export function StartCountdownGate({
+  children,
+  seconds = REACT_TRAIN_START_COUNTDOWN_SEC,
+}: {
+  children: ReactNode;
+  seconds?: number;
+}) {
+  const [countdown, setCountdown] = useState(Math.max(1, Math.round(seconds)));
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (ready) return;
+    return runReactTrainStartCountdown({
+      seconds,
+      onTick: setCountdown,
+      onDone: () => setReady(true),
+    });
+  }, [ready, seconds]);
+
+  if (!ready) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 320,
+          height: '100dvh',
+          maxHeight: '100dvh',
+          background: '#0a0a0f',
+        }}
+      >
+        <ReactTrainStartCountdownOverlay countdown={countdown} />
+      </div>
+    );
+  }
+  return <>{children}</>;
 }

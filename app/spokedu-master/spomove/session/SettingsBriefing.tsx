@@ -100,6 +100,11 @@ export function SettingsBriefing({
       {showCueSpeed ? (
         <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5 [@media(max-height:950px)]:p-3">
           <p className="text-[12px] font-black tracking-[0.08em] text-white/55">자극 속도</p>
+          {preset.engine.mode === 'spatial' && preset.engine.level === 7 ? (
+            <p className="mt-1 text-[12px] font-semibold text-white/55">
+              첫 그리드를 보여주는 시간입니다. 답 고르기는 3초 고정입니다.
+            </p>
+          ) : null}
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
             {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
               const active = cueSeconds === sec;

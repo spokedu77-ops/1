@@ -82,6 +82,10 @@ export type OfficialSpomovePreset = {
     camouflagePlacement?: 'center' | 'variant';
     /** stroop 4단계: 단어+배경(기본) | 누락 색상 */
     stroopWordMode?: 'bg' | 'missing';
+    /** 순차 기억 · 순간 기억(spatial 7): 그리드 크기 */
+    colorMemoryGridSize?: 3 | 4 | 5;
+    /** 순차 기억 · 순간 기억(spatial 7): flicker | oneshot */
+    colorMemoryGridMode?: 'flicker' | 'oneshot';
   };
   cueSeconds: number;
   rounds: number;
@@ -1362,7 +1366,7 @@ const SEQUENTIAL_MEMORY_CATALOG_TITLE_BY_ID: Record<string, string> = {
   'sequential-memory-3color-09': '순서 기억 · 쉬움 (3개)',
   'sequential-memory-5color-51': '순서 기억 · 보통 (5개)',
   'sequential-memory-10color-52': '순서 기억 · 쉬움 → 보통 → 어려움 (3~7개)',
-  'sequential-memory-custom-10color-exp': '순서 기억 · 어려움 (커스텀)',
+  'sequential-memory-custom-10color-exp': '순간 기억 · 4×4 그리드 (원샷)',
   'sequential-memory-color-number-exp': '랜덤 기억 · 어려움 (퀴즈)',
   'sequential-memory-full-reveal-54': '전체 공개 · 어려움',
 };
