@@ -418,6 +418,7 @@ export function SpomoveGuidelineSheet({
     const baseHref = publicOfficialPresetSessionHref(preset, {
       mode: launchMode,
       entry,
+      cueSeconds: preset.cueSeconds,
       operation: declaredOperation,
       hubReturn: hubReturnHref,
     });
@@ -550,7 +551,7 @@ export function SpomoveGuidelineSheet({
                 data-spm-spomove-guide-action="start-official"
                 className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-semibold transition focus-visible:outline-none sm:w-[168px] sm:text-[14px]"
               >
-                활동 준비
+                활동 바로 시작
               </Link>
             </div>
           </div>

@@ -2,8 +2,15 @@
 
 import { ClipboardList, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-import { formatElapsedSeconds } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
+import { TrainingResultScreen } from '@/app/admin/spomove/training/_player/components/TrainingResultScreen';
+import {
+  resultLevelLabel,
+  settingsToTrainingResultConfig,
+  type ColorStimulusCounts,
+} from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
+import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
 
 export function MasterSessionResult({
@@ -11,8 +18,18 @@ export function MasterSessionResult({
   activityTitle,
   elapsedMs,
   settings,
+  colorCounts = null,
+  engineMode,
+  engineLevel,
+  rounds,
+  cueSeconds,
+  intervalMode = false,
+  intervalWork,
+  intervalSets,
+  flowDuration,
   recordHref,
   hubHref,
+  leaveHref,
   sessionReturnHref,
   canMarkComplete = false,
   markCompleteStatus = 'idle',
@@ -23,8 +40,19 @@ export function MasterSessionResult({
   activityTitle: string;
   elapsedMs: number;
   settings: string[];
+  colorCounts?: ColorStimulusCounts | null;
+  engineMode: OfficialSpomoveEngineMode;
+  engineLevel: number;
+  rounds: number;
+  cueSeconds: number;
+  intervalMode?: boolean;
+  intervalWork?: number;
+  intervalSets?: number;
+  flowDuration?: number;
   recordHref: string | null;
   hubHref: string;
+  /** TopBar/목록 — Dashboard/Favorites/Hub/Session 원점 */
+  leaveHref?: string;
   /** Session operating origin — Primary return when present. */
   sessionReturnHref?: string | null;
   /** Explicit teacher action only — never auto from engine done. */
@@ -33,45 +61,61 @@ export function MasterSessionResult({
   onMarkCompleteAndReturn?: () => void;
   onRetry: () => void;
 }) {
+  const router = useRouter();
   const done = status === 'done';
   const fromSession = Boolean(sessionReturnHref);
   const marking = markCompleteStatus === 'saving';
+  const cfg = settingsToTrainingResultConfig({
+    mode: engineMode,
+    level: engineLevel,
+    timeMode: intervalMode ? 'interval' : 'time',
+    duration: Math.max(1, rounds * cueSeconds),
+    targetReps: rounds,
+    intervalMode,
+    intervalWork,
+    intervalSets,
+    flowDuration,
+  });
+  const usedSettings = settings.filter(Boolean).join(' · ');
+
   return (
-    <main className="flex h-dvh items-center justify-center overflow-y-auto bg-slate-100 px-4 py-[max(1rem,env(safe-area-inset-top))] text-slate-950">
-      <section className="w-full max-w-xl rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.14)] sm:p-7">
-        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${done ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}>
-          {done ? '정상 완료' : '중도 종료'}
-        </span>
-        <h1 className="mt-4 text-[28px] font-black leading-tight sm:text-[34px]">{done ? '훈련 완료' : '수업을 종료했습니다'}</h1>
-        <p className="mt-2 text-[17px] font-bold text-slate-700">{activityTitle}</p>
-
-        <div className="mt-5 grid grid-cols-2 gap-2">
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-bold text-slate-500">진행 시간</p>
-            <p className="mt-1 text-xl font-black">{formatElapsedSeconds(elapsedMs)}</p>
-          </div>
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-bold text-slate-500">종료 상태</p>
-            <p className="mt-1 text-xl font-black">{done ? '완료' : '중도 종료'}</p>
-          </div>
-        </div>
-
-        <section className="mt-3 rounded-2xl border border-slate-200 p-4">
-          <h2 className="text-xs font-black tracking-wide text-slate-500">사용한 설정</h2>
-          <p className="mt-2 break-words text-[15px] font-bold leading-6 text-slate-800">{settings.filter(Boolean).join(' · ')}</p>
-        </section>
-        <p className="mt-3 text-xs font-semibold leading-5 text-slate-500">
-          {fromSession
-            ? '실행 종료와 수업 활동 완료 기록은 별개입니다. 수업 화면에서 진행 체크하거나, 아래에서 완료로 표시할 수 있습니다.'
-            : '표시된 정보는 실행 시간과 사용 설정이며, 수행 능력을 자동 채점한 결과가 아닙니다.'}
-        </p>
-        {fromSession && markCompleteStatus === 'error' ? (
-          <p role="status" className="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
-            완료 기록을 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.
+    <TrainingResultScreen
+      cfg={cfg}
+      elapsedMs={elapsedMs}
+      colorCounts={colorCounts}
+      levelLabel={resultLevelLabel(engineMode, engineLevel)}
+      title={done ? '훈련 완료' : '수업을 종료했습니다'}
+      statusBadge={done ? '정상 완료' : '중도 종료'}
+      programTitle={activityTitle}
+      sessionSettings={{
+        title: '사용한 설정',
+        primary: usedSettings || `자극 ${cueSeconds}초`,
+        secondary: intervalMode && intervalWork && intervalSets
+          ? `Tabata ${intervalSets}세트 · ${intervalWork}초`
+          : flowDuration
+            ? `스테이지 ${flowDuration}초`
+            : undefined,
+      }}
+      retryLabel="같은 설정으로 다시 실행"
+      onBack={() => router.push(leaveHref || sessionReturnHref || hubHref)}
+      onRetry={onRetry}
+      footer={(
+        <div className="grid gap-2">
+          {usedSettings ? (
+            <p className="break-words text-[13px] font-bold leading-5 text-slate-800">
+              사용한 설정 · {usedSettings}
+            </p>
+          ) : null}
+          <p className="text-xs font-semibold leading-5 text-slate-500">
+            {fromSession
+              ? '실행 종료와 수업 활동 완료 기록은 별개입니다. 수업 화면에서 진행 체크하거나, 아래에서 완료로 표시할 수 있습니다.'
+              : '표시된 정보는 실행 시간과 사용 설정이며, 수행 능력을 자동 채점한 결과가 아닙니다.'}
           </p>
-        ) : null}
-
-        <div className="mt-6 grid gap-2">
+          {fromSession && markCompleteStatus === 'error' ? (
+            <p role="status" className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
+              완료 기록을 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.
+            </p>
+          ) : null}
           {sessionReturnHref ? (
             <Link href={sessionReturnHref} className={`${SPM_PRIMARY_BTN} min-h-12 w-full`}>
               수업으로 돌아가기
@@ -99,7 +143,7 @@ export function MasterSessionResult({
             {fromSession ? 'SPOMOVE 활동 목록' : '활동 목록으로'}
           </Link>
         </div>
-      </section>
-    </main>
+      )}
+    />
   );
 }

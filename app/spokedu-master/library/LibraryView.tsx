@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   LessonCatalogCard,
@@ -279,8 +279,9 @@ export default function LibraryView() {
       });
     return parsedFilters.length > 0 ? parsedFilters : legacyFilter;
   });
-  const shelfId = parseLibraryShelfId(searchParams.get('shelf'));
-  const reasonId = parseReasonId(searchParams.get('reason'));
+  const [shelfId, setShelfId] = useState(() => parseLibraryShelfId(searchParams.get('shelf')));
+  const [reasonId, setReasonId] = useState(() => parseReasonId(searchParams.get('reason')));
+  const resultsRef = useRef<HTMLElement | null>(null);
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [addingProgramId, setAddingProgramId] = useState<string | null>(null);
@@ -330,14 +331,13 @@ export default function LibraryView() {
   }, [query, filters, shelfId, reasonId]);
 
   useEffect(() => {
-    // Preserve Session-mode context until the canonical Session list is ready.
-    // Normalizing while it is still empty would race away session/returnTo/source.
     if (sessionId && operationalStatus !== 'ready') return;
     const next = sourceLibrarySearch;
-    const current = searchParams.toString();
-    if (next === current) return;
-    router.replace(next ? `/spokedu-master/library?${next}` : '/spokedu-master/library', { scroll: false });
-  }, [operationalStatus, sessionId, sourceLibrarySearch, router, searchParams]);
+    const href = next ? `/spokedu-master/library?${next}` : '/spokedu-master/library';
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (current === href) return;
+    window.history.replaceState(window.history.state, '', href);
+  }, [operationalStatus, sessionId, sourceLibrarySearch]);
 
   const filteredPrograms = useMemo(() => {
     const base = filterLibraryPrograms(
@@ -375,54 +375,33 @@ export default function LibraryView() {
     });
   };
 
-  const replaceLibraryParams = (mutate: (params: URLSearchParams) => void) => {
-    const params = new URLSearchParams(searchParams.toString());
-    mutate(params);
-    router.push(`/spokedu-master/library?${params.toString()}`, { scroll: false });
-  };
-
   const openShelf = (nextShelf: LibraryShelfId) => {
     setQuery('');
     setFilters([]);
-    replaceLibraryParams((params) => {
-      params.delete('view');
-      params.set('shelf', nextShelf);
-      params.delete('reason');
-      params.delete('q');
-      params.delete('filters');
-    });
+    setShelfId(nextShelf);
+    setReasonId(null);
   };
 
   const applySituationFilter = (filter: ActiveFilter) => {
     setQuery('');
     setFilters([filter]);
-    replaceLibraryParams((params) => {
-      params.set('view', 'all');
-      params.delete('shelf');
-      params.delete('reason');
-      params.delete('q');
-      params.delete('filters');
-      params.append('filters', `${filter.group}:${filter.value}`);
+    setShelfId(null);
+    setReasonId(null);
+    requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   };
 
   const clearBrowseConstraints = () => {
-    replaceLibraryParams((params) => {
-      params.delete('shelf');
-      params.delete('reason');
-    });
+    setShelfId(null);
+    setReasonId(null);
   };
 
   const clearAllSearch = () => {
     setQuery('');
     setFilters([]);
-    replaceLibraryParams((params) => {
-      params.delete('q');
-      params.delete('filters');
-      params.delete('shelf');
-      params.delete('reason');
-      params.delete('view');
-    });
+    setShelfId(null);
+    setReasonId(null);
   };
 
   const filterGroups = useMemo<FilterGroup[]>(
@@ -518,6 +497,30 @@ export default function LibraryView() {
           </div>
         </div>
 
+        <section aria-label="상황별 빠른 진입">
+          <div className="mb-3">
+            <h2 className="text-[20px] font-semibold text-[color:var(--spm-t)]">조건으로 출발하기</h2>
+            <p className="mt-1 text-[13px] font-semibold text-slate-600">대상·공간·교구·활동 성격으로 바로 좁힙니다.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {LIBRARY_SITUATION_ENTRIES.map((entry) => {
+              const active = filters.some((filter) => filter.group === entry.filter.group && filter.value === entry.filter.value);
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  onClick={() => applySituationFilter(entry.filter)}
+                  aria-pressed={active}
+                  className={spmChipClass(active)}
+                >
+                  <span className={`text-[12px] font-medium ${active ? 'text-white/70' : 'text-slate-400'}`}>{entry.groupLabel}</span>
+                  {entry.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         {isBrowseMode ? (
           <>
             {shelves.length > 0 ? (
@@ -560,30 +563,10 @@ export default function LibraryView() {
               </section>
             ) : null}
 
-            <section aria-label="상황별 빠른 진입" className="mt-8">
-              <div className="mb-3">
-                <h2 className="text-[20px] font-semibold text-[color:var(--spm-t)]">조건으로 출발하기</h2>
-                <p className="mt-1 text-[13px] font-semibold text-slate-600">대상·공간·교구·활동 성격으로 바로 들어갑니다.</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {LIBRARY_SITUATION_ENTRIES.map((entry) => (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    onClick={() => applySituationFilter(entry.filter)}
-                    className="inline-flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[12px] font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-950"
-                  >
-                    <span className="text-[12px] font-medium text-slate-400">{entry.groupLabel}</span>
-                    {entry.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-
           </>
         ) : null}
 
-        {!isBrowseMode ? <section id="library-catalog">
+        {!isBrowseMode ? <section id="library-catalog" ref={resultsRef}>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <SectionTitle
               eyebrow={isBrowseMode ? '전체 검색' : '수업 목록'}

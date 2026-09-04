@@ -18,6 +18,7 @@ import {
 import { useIsPremium, useMasterStore } from '../../store';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { AssignProgramToSessionButton } from '../../components/session/AssignProgramToSessionButton';
+import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
 import { getLibraryReturnHref } from '../libraryNavigation';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../../lib/masterNavigationContext';
 import { selectRelatedLessonVideos } from '../relatedLessonVideos';
@@ -142,9 +143,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[var(--spm-bg)] px-6 text-center">
         <BookOpenFallback />
-        <h1 className="mt-5 text-xl font-black text-[color:var(--spm-t)]">수업을 찾을 수 없습니다.</h1>
+        <h1 className="mt-5 text-xl font-semibold text-[color:var(--spm-t)]">수업을 찾을 수 없습니다.</h1>
         <p className="mt-2 text-sm text-[color:var(--spm-t3)]">라이브러리에서 다른 수업을 선택해 주세요.</p>
-        <Link href={libraryReturnHref} className="spm-btn-primary mt-6 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">
+        <Link href={libraryReturnHref} className="spm-btn-primary mt-6 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
           라이브러리로 돌아가기
         </Link>
       </main>
@@ -157,13 +158,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-[18px] border border-amber-200 bg-amber-50 text-amber-600">
           <FileText className="h-7 w-7" />
         </div>
-        <h1 className="mt-5 text-xl font-black text-[color:var(--spm-t)]">프리미엄 전용 수업입니다.</h1>
-        <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">
+        <h1 className="mt-5 text-xl font-semibold text-[color:var(--spm-t)]">프리미엄 전용 수업입니다.</h1>
+        <p className="mt-2 max-w-md text-sm font-medium leading-6 text-[color:var(--spm-t2)]">
           이 수업의 전체 지도안, 코칭 스크립트, 영상 자료는 프리미엄 이용권에서 열람할 수 있습니다.
         </p>
         <div className="mt-6 grid w-full max-w-sm gap-2 sm:grid-cols-2">
-          <Link href="/spokedu-master/payment?plan=premium" className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none">프리미엄 보기</Link>
-          <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-black text-[color:var(--spm-t2)]">라이브러리로</Link>
+          <Link href="/spokedu-master/payment?plan=premium" className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold focus-visible:outline-none">프리미엄 보기</Link>
+          <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-semibold text-[color:var(--spm-t2)]">라이브러리로</Link>
         </div>
       </main>
     );
@@ -196,11 +197,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
       }}
     >
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200/70 bg-[color-mix(in_srgb,var(--spm-s1)_91%,transparent)] px-3 shadow-[0_6px_24px_rgba(15,23,42,0.035)] backdrop-blur-2xl sm:gap-3 sm:px-6 lg:px-8">
-        <Link href={fromSession ? workReturnHref : libraryReturnHref} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-[11px] px-1 text-sm font-black text-[color:var(--spm-t2)] transition-colors duration-200 hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transition-none sm:justify-start sm:px-2" aria-label={fromSession ? '수업으로 돌아가기' : '라이브러리로 돌아가기'}>
+        <Link href={fromSession ? workReturnHref : libraryReturnHref} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-[11px] px-1 text-sm font-semibold text-[color:var(--spm-t2)] transition-colors duration-200 hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transition-none sm:justify-start sm:px-2" aria-label={fromSession ? '수업으로 돌아가기' : '라이브러리로 돌아가기'}>
           <ArrowLeft className="h-4 w-4 shrink-0" />
           <span className="hidden sm:inline">{fromSession ? '수업으로' : '라이브러리로'}</span>
         </Link>
-        <p data-detail-sticky-title aria-hidden={isHeroTitleVisible} className={`min-w-0 truncate text-center text-[13px] font-black text-[color:var(--spm-t)] transition-opacity duration-150 motion-reduce:transition-none sm:text-[14px] ${isHeroTitleVisible ? 'invisible opacity-0' : 'visible opacity-100'}`}>
+        <p data-detail-sticky-title aria-hidden={isHeroTitleVisible} className={`min-w-0 truncate text-center text-[13px] font-semibold text-[color:var(--spm-t)] transition-opacity duration-150 motion-reduce:transition-none sm:text-[14px] ${isHeroTitleVisible ? 'invisible opacity-0' : 'visible opacity-100'}`}>
           {model.title}
         </p>
         <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--spm-t2)] ring-1 transition duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : ownerId ? 'bg-white/70 ring-slate-200/70 hover:bg-white' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200/70'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} disabled={!ownerId}>
@@ -223,12 +224,17 @@ export default function LibraryDetailView({ id }: { id: string }) {
             />
           ) : null}
           actions={(
-            <div data-detail-actions className="mx-auto w-full max-w-[740px] space-y-2.5">
-              <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} returnHref={fromSession ? workReturnHref : null} className="inline-flex h-12 w-full min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-[0_6px_16px_rgba(15,23,42,0.14)] disabled:opacity-55" />
-              <div data-detail-support-actions className="flex justify-center">
-                <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className="inline-flex min-h-11 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-[11px] bg-transparent px-2 text-[12px] font-black text-[color:var(--spm-t2)] ring-1 ring-slate-200/75 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] sm:gap-2 sm:px-3 sm:text-[13px]">
-                  <Copy className="hidden h-4 w-4 shrink-0 sm:block" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
-                </button>
+            <div className="max-lg:contents lg:mt-0">
+              <div
+                data-detail-actions
+                className="flex w-full max-w-[460px] gap-2 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-40 max-lg:max-w-none max-lg:border-t max-lg:border-slate-200/80 max-lg:bg-[color-mix(in_srgb,var(--spm-s1)_94%,transparent)] max-lg:px-4 max-lg:py-3 max-lg:shadow-[0_-8px_24px_rgba(15,23,42,0.08)] max-lg:backdrop-blur-xl max-lg:[padding-bottom:max(0.75rem,env(safe-area-inset-bottom))]"
+              >
+                <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} returnHref={fromSession ? workReturnHref : null} className={`${SPM_PRIMARY_BTN} h-11 min-h-11 flex-1 rounded-[10px] px-3 text-[14px] font-semibold`} />
+                <div data-detail-support-actions className="shrink-0">
+                  <button data-detail-action="copy" type="button" onClick={() => void copyLessonPlan()} className={`${SPM_SECONDARY_BTN} min-h-11 gap-1.5 rounded-[10px] px-3 text-[13px] font-semibold`}>
+                    <Copy className="h-4 w-4 shrink-0" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

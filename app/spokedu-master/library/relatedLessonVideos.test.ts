@@ -139,4 +139,44 @@ describe('selectRelatedLessonVideos', () => {
 
     expect(selectRelatedLessonVideos(current, [current, one, unrelated])).toHaveLength(1);
   });
+
+  it('picks one activity per similarity axis and does not repeat the same program', () => {
+    const currentActivity = program({
+      id: 'current-axes',
+      title: '기준 활동',
+      tags: ['신체 기능:민첩성', '움직임:이동', '패스'],
+      equipment: ['라바콘 5개'],
+    });
+    const body = program({
+      id: 'body',
+      title: '신체',
+      tags: ['신체 기능:민첩성'],
+      lessonDetail: { videoUrl: 'https://youtu.be/bodyfunc1' } as Program['lessonDetail'],
+    });
+    const gear = program({
+      id: 'gear',
+      title: '교구',
+      equipment: ['라바콘 12개'],
+      lessonDetail: { videoUrl: 'https://youtu.be/samegear1' } as Program['lessonDetail'],
+    });
+    const move = program({
+      id: 'move',
+      title: '동작',
+      tags: ['움직임:이동'],
+      lessonDetail: { videoUrl: 'https://youtu.be/movepat1' } as Program['lessonDetail'],
+    });
+    const extra = program({
+      id: 'extra',
+      title: '가 태그',
+      tags: ['패스', '협응력'],
+      lessonDetail: { videoUrl: 'https://youtu.be/fallback1' } as Program['lessonDetail'],
+    });
+
+    const result = selectRelatedLessonVideos(currentActivity, [body, gear, move, extra]);
+    expect(result.map((item) => ({ id: item.id, reason: item.reason }))).toEqual([
+      { id: 'body', reason: '신체 기능 유사' },
+      { id: 'gear', reason: '같은 교구' },
+      { id: 'move', reason: '동작 패턴 유사' },
+    ]);
+  });
 });

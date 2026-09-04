@@ -620,6 +620,11 @@ function SpomoveSessionContent() {
       : null;
   const sessionOrigin = readSpomoveSessionOrigin(searchParams);
   const hubReturnHref = parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'));
+  const workReturnHref = parseMasterWorkReturnHref(
+    searchParams.get('returnTo'),
+    searchParams.get('hubReturn'),
+    searchParams.get('hubView'),
+  );
   const sessionReturnHref = sessionOrigin.isSessionOrigin
     ? parseMasterWorkReturnHref(
       sessionOrigin.returnTo,
@@ -798,12 +803,34 @@ function SpomoveSessionContent() {
 
       {(state === 'done' || state === 'ended') && sessionResult ? (
         <div className="absolute inset-0 min-h-0 overflow-hidden bg-[#F1F5F9]">
-          <MasterSessionResult status={state} activityTitle={displayModel?.displayTitle ?? officialPreset.title} elapsedMs={sessionResult.elapsedMs ?? 0} settings={[
-            `SPOMAT ${matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}장`,
-            `자극 ${effectiveCueSeconds}초`,
-            difficultyLabel,
-            operationSummary,
-          ].filter(Boolean) as string[]} recordHref={recordProgramHref} hubHref={hubReturnHref} sessionReturnHref={sessionReturnHref} canMarkComplete={Boolean(sessionOrigin.sessionId && sessionOrigin.sessionProgramId && state === 'done')} markCompleteStatus={markCompleteStatus} onMarkCompleteAndReturn={markCompleteAndReturn} onRetry={reopenStartConfirmation} />
+          <MasterSessionResult
+            status={state}
+            activityTitle={displayModel?.displayTitle ?? officialPreset.title}
+            elapsedMs={sessionResult.elapsedMs ?? 0}
+            colorCounts={sessionResult.colorCounts ?? null}
+            engineMode={sessionResult.engineMode}
+            engineLevel={sessionResult.engineLevel}
+            rounds={officialPreset.rounds}
+            cueSeconds={effectiveCueSeconds}
+            intervalMode={effectiveOperation?.timing.pattern === 'interval'}
+            intervalWork={effectiveOperation?.timing.pattern === 'interval' ? effectiveOperation.timing.workSeconds : undefined}
+            intervalSets={effectiveOperation?.timing.pattern === 'interval' ? effectiveOperation.timing.sets : undefined}
+            flowDuration={officialPreset.engine.flowDuration}
+            settings={[
+              `SPOMAT ${matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}장`,
+              `자극 ${effectiveCueSeconds}초`,
+              difficultyLabel,
+              operationSummary,
+            ].filter(Boolean) as string[]}
+            recordHref={recordProgramHref}
+            hubHref={hubReturnHref}
+            leaveHref={workReturnHref}
+            sessionReturnHref={sessionReturnHref}
+            canMarkComplete={Boolean(sessionOrigin.sessionId && sessionOrigin.sessionProgramId && state === 'done')}
+            markCompleteStatus={markCompleteStatus}
+            onMarkCompleteAndReturn={markCompleteAndReturn}
+            onRetry={reopenStartConfirmation}
+          />
         </div>
       ) : null}
 

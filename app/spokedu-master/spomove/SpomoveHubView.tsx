@@ -1,7 +1,6 @@
 ﻿'use client';
 
 import { Bookmark, ChevronDown, Search, X } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -59,6 +58,7 @@ import {
 // sortSpomovePresetsByDisplayTitle
 import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet, type SpomoveContentLoadState } from './SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
+import { SpomoveLayeredThumb } from './SpomoveLayeredThumb';
 import {
   getSpomoveHubHref,
   parseSpomoveHubUrlState,
@@ -562,10 +562,6 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
   }
 }
 
-function shouldStretchThumbnailToSquare(_width: number, _height: number, src: string) {
-  return /\.svg(\?|#|$)/i.test(src);
-}
-
 function CardVisual({
   preset,
   thumbnailUrl,
@@ -580,17 +576,9 @@ function CardVisual({
   onImageError: () => void;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
-  const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
-  // IMAGE thumb FROZEN (P1): object-cover + aspect-[6/5]. Do not apply video contain here.
-  const fitClass = stretch
-    ? 'object-fill object-center'
-    : 'object-cover object-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.015]';
 
   return (
-    <div
-      data-spm-spomove-media="image-thumb"
-      className="relative aspect-[4/3] w-full overflow-hidden border-b border-slate-200 bg-white"
-    >
+    <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-slate-200 bg-white">
       {thumbnailPending ? (
         <div
           className="absolute inset-0 bg-slate-100"
@@ -598,21 +586,7 @@ function CardVisual({
           aria-hidden="true"
         />
       ) : showThumbnail ? (
-        <Image
-          src={thumbnailUrl}
-          alt=""
-          fill
-          sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
-          quality={75}
-          className={fitClass}
-          onLoad={(event) => {
-            const img = event.currentTarget;
-            if (shouldStretchThumbnailToSquare(img.naturalWidth, img.naturalHeight, thumbnailUrl)) {
-              setStretch(true);
-            }
-          }}
-          onError={onImageError}
-        />
+        <SpomoveLayeredThumb src={thumbnailUrl} sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw" onError={onImageError} />
       ) : (
         <SpomoveProgramVisual preset={preset} />
       )}
@@ -1015,11 +989,11 @@ export default function SpomoveHubView() {
             일부 활동 이미지·가이드가 일시적으로 불러와지지 않았습니다. 활동 실행은 계속할 수 있습니다.
           </div>
         ) : null}
-        <header aria-label="SPOMOVE 프로그램" className="rounded-[20px] bg-[#10172a] px-5 py-6 text-white sm:px-7 sm:py-7" data-spm-spomove-digital-header="true">
+        <header aria-label="SPOMOVE 프로그램" className="spm-spomove-surface rounded-[20px] px-5 py-6 text-white sm:px-7 sm:py-7" data-spm-spomove-digital-header="true">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
             <div className="min-w-0">
               <h1 className="text-[28px] font-semibold leading-none tracking-[-0.03em] sm:text-[32px]">SPOMOVE</h1>
-              <p className="mt-3 max-w-lg text-[14px] font-medium leading-5 text-slate-300 sm:text-[15px]">
+              <p className="mt-3 max-w-lg text-[14px] font-medium leading-5 text-[color:var(--spm-spomove-surface-muted)] sm:text-[15px]">
                 화면의 신호에 반응하며 움직이는<br className="hidden sm:block" /> 디지털 체육활동
               </p>
             </div>
@@ -1054,11 +1028,11 @@ export default function SpomoveHubView() {
 
         <nav className="order-1 mt-3 overflow-x-auto border-b border-slate-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="SPOMOVE 프로그램 분류" data-spm-spomove-family-nav="true">
           <div className="flex min-w-max items-center gap-6 px-1">
-            <button type="button" onClick={selectAllFamilies} aria-current={selectedFamilyId === null ? 'page' : undefined} className={`relative min-h-12 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === null ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[#172554]' : 'text-slate-500 hover:text-slate-800'}`}>
+            <button type="button" onClick={selectAllFamilies} aria-current={selectedFamilyId === null ? 'page' : undefined} className={`relative min-h-12 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === null ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--spm-spomove-accent)]' : 'text-slate-500 hover:text-slate-800'}`}>
               전체
             </button>
             {SPOMOVE_CATALOG_FAMILIES.map((family) => (
-              <button key={family.id} type="button" onClick={() => selectCatalogFamily(family.id)} aria-current={selectedFamilyId === family.id ? 'page' : undefined} className={`relative min-h-12 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === family.id ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[#172554]' : 'text-slate-500 hover:text-slate-800'}`}>
+              <button key={family.id} type="button" onClick={() => selectCatalogFamily(family.id)} aria-current={selectedFamilyId === family.id ? 'page' : undefined} className={`relative min-h-12 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === family.id ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--spm-spomove-accent)]' : 'text-slate-500 hover:text-slate-800'}`}>
                 {family.name}
               </button>
             ))}

@@ -87,6 +87,10 @@ export function parseMasterWorkReturnHref(
       || decoded.startsWith('/spokedu-master/activity?')
       || decoded === '/spokedu-master/spomove'
       || decoded.startsWith('/spokedu-master/spomove?')
+      || decoded === '/spokedu-master/dashboard'
+      || decoded.startsWith('/spokedu-master/dashboard?')
+      || decoded === '/spokedu-master/favorites'
+      || decoded.startsWith('/spokedu-master/favorites?')
       || decoded.startsWith('/spokedu-master/classes/')
       || decoded.startsWith('/spokedu-master/library')
       || decoded.startsWith('/spokedu-master/class-tools')

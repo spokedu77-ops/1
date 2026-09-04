@@ -59,8 +59,8 @@ export function LessonPreviewContent({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.62fr)_minmax(320px,0.88fr)] lg:items-stretch">
-        <div data-preview-column="media" className="min-w-0 lg:h-full">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.62fr)_minmax(320px,0.88fr)] lg:items-start">
+        <div data-preview-column="media" className="min-w-0">
           <LessonPreviewMedia
             program={program}
             layout="preview"
@@ -85,7 +85,7 @@ export function LessonPreviewContent({
           <aside
             data-preview-column="content"
             data-preview-summary
-            className="min-w-0 rounded-[14px] border border-slate-200 bg-white p-4 [scrollbar-width:thin] lg:max-h-[min(620px,calc(100dvh-260px))] lg:overflow-y-auto"
+            className="min-w-0 rounded-[14px] border border-slate-200 bg-white p-4"
             tabIndex={0}
           >
             <div className="space-y-5">

@@ -115,6 +115,7 @@ import {
 import { ContentAuditPanel } from './ContentAuditPanel';
 import { readAdminJsonSafe } from './readAdminJsonSafe';
 import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
+import { ProgramGatewayHeroManager } from './ProgramGatewayHeroManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'home-ready' | 'image-needed';
@@ -3638,11 +3639,17 @@ export default function AdminSmProgramsPage() {
 
       {activeTab === 'programs' ? (
         <>
+          <ProgramGatewayHeroManager domain="lesson" />
           <WeeklyRecommendationManager items={items} onSaved={load} />
         </>
       ) : null}
 
-      {isSpomoveAdmin ? <SpomoveHomeFeaturedManager /> : null}
+      {isSpomoveAdmin ? (
+        <>
+          <ProgramGatewayHeroManager domain="spomove" />
+          <SpomoveHomeFeaturedManager />
+        </>
+      ) : null}
 
       {createOpen ? (
         <CreateProgramModal

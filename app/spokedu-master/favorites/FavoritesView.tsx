@@ -1,8 +1,15 @@
 'use client';
 
-import { Bookmark, MonitorPlay } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Bookmark } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
+import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
+import {
+  normalizeSpomoveThumbnailMap,
+  SPOMOVE_THUMBNAIL_PACK_ID,
+} from '@/app/lib/spomove/spomoveOfficialAssets';
 import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
 import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
 import { getFavoritesOwnerId, type FavoriteContentRef } from '../lib/favoriteLib';
@@ -12,7 +19,9 @@ import { useIsPremium, useMasterStore } from '../store';
 import { isHubListedPreset } from '../spomove/movements/isHubVisiblePreset';
 import { OFFICIAL_SPOMOVE_LIBRARY, type OfficialSpomovePreset } from '../spomove/officialSpomovePresets';
 import { SpomoveGuidelineSheet } from '../spomove/SpomoveGuidelineSheet';
-import { getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
+import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
+import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
+import { getSpomoveCardDisplayModel, getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
 import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
 
 type Filter = 'all' | 'program' | 'spomove';
@@ -27,6 +36,29 @@ export default function FavoritesView() {
   const [filter, setFilter] = useState<Filter>('all');
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
   const guideVideo = useSpomoveGuideVideo(previewPreset?.id ?? null, isPremium);
+  const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
+  const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
+
+  useEffect(() => {
+    let alive = true;
+    const supabase = getSupabaseBrowserClient();
+    void supabase
+      .from('think_asset_packs')
+      .select('assets_json, updated_at')
+      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
+      .maybeSingle()
+      .then((result) => {
+        if (!alive) return;
+        const { data, error } = result as { data: { assets_json?: unknown; updated_at?: string | null } | null; error: { code?: string } | null };
+        if (error && error.code !== 'PGRST116') return;
+        const next = normalizeSpomoveThumbnailMap(data?.assets_json);
+        setThumbnailPaths(next);
+        setThumbnailCacheBust(resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)));
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const programById = useMemo(() => new Map(programs.map((program) => [program.id, program])), [programs]);
   const spomoveById = useMemo(() => new Map(OFFICIAL_SPOMOVE_LIBRARY.filter(isHubListedPreset).map((preset) => [preset.id, preset])), []);
@@ -48,7 +80,35 @@ export default function FavoritesView() {
           }
           const preset = spomoveById.get(ref.id); if (!preset) return null;
           const model = getSpomovePresetDisplayModel(preset);
-          return <article key={`spomove:${ref.id}`} className="relative overflow-hidden rounded-2xl bg-[#101936] text-white"><button type="button" onClick={() => setPreviewPreset(preset)} className="flex min-h-64 w-full flex-col justify-between p-5 text-left"><span className="grid h-12 w-12 place-items-center rounded-full bg-white/10"><MonitorPlay /></span><span><span className="text-[13px] font-medium text-indigo-200">SPOMOVE</span><strong className="mt-2 block text-[18px] font-semibold">{model.displayTitle}</strong><span className="mt-2 block text-[14px] text-slate-300">Guide를 확인하고 활동을 시작하세요.</span></span></button><button type="button" onClick={() => remove(ownerId, ref)} className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-amber-300" aria-label={`${model.displayTitle} 즐겨찾기에서 제거`}><Bookmark className="h-5 w-5 fill-current" /></button></article>;
+          const card = getSpomoveCardDisplayModel(preset);
+          const decisionMeta = card.meta.difficulty ?? card.meta.responseType ?? 'SPOMOVE';
+          const supportMeta = [card.meta.responseType, card.meta.trainingFocus].filter((part) => part && part !== decisionMeta).join(' · ');
+          const thumbPath = thumbnailPaths[preset.id];
+          let thumbUrl = '';
+          if (thumbPath) {
+            try { thumbUrl = withPublicUrlCacheBust(getPublicUrl(thumbPath), thumbnailCacheBust); } catch { thumbUrl = ''; }
+          }
+          return (
+            <article key={`spomove:${ref.id}`} className="relative overflow-hidden rounded-[14px] border border-slate-200 bg-white">
+              <button type="button" onClick={() => setPreviewPreset(preset)} className="w-full text-left" aria-label={`${model.displayTitle} 미리보기`}>
+                <SpomoveLayeredThumb
+                  src={thumbUrl}
+                  sizes="(min-width: 1024px) 30vw, (min-width: 640px) 50vw, 92vw"
+                  fallback={(
+                    <div className="grid h-full w-full grid-cols-2 gap-1 bg-slate-950 p-4" aria-hidden>
+                      {SPOMOVE_PAD_GRID_HEX.map((color) => <span key={color} className="rounded-[8px]" style={{ background: color }} />)}
+                    </div>
+                  )}
+                />
+                <span className="block px-3.5 py-3">
+                  <span className="text-[11px] font-medium text-[color:var(--spm-spomove-surface-muted,#64748b)]">SPOMOVE</span>
+                  <strong className="mt-1 block line-clamp-2 text-[16px] font-semibold text-slate-950">{model.displayTitle}</strong>
+                  <span className="mt-1 block truncate text-[12px] font-medium text-slate-500">{[decisionMeta, supportMeta].filter(Boolean).join(' · ')}</span>
+                </span>
+              </button>
+              <button type="button" onClick={() => remove(ownerId, ref)} className="absolute right-3 top-3 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/95 text-amber-600 shadow-sm" aria-label={`${model.displayTitle} 즐겨찾기에서 제거`}><Bookmark className="h-5 w-5 fill-current" /></button>
+            </article>
+          );
         })}
       </section> : <section className="mt-12 text-center"><Bookmark className="mx-auto h-7 w-7 text-slate-300" /><h2 className="mt-3 text-[20px] font-semibold text-slate-900">저장한 콘텐츠가 없습니다.</h2><p className="mt-2 text-[14px] text-slate-500">프로그램에서 자주 쓸 활동을 저장해 보세요.</p></section>}
     </MasterPageShell>

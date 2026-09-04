@@ -5,8 +5,8 @@ This inventory is the implementation companion to `MASTER_VISUAL_SYSTEM.md`. Pro
 | Route family | Surface family | Primary primitive | State model | Implementation | Visual proof |
 | --- | --- | --- | --- | --- | --- |
 | `/spokedu-master` | Editorial | Editorial hierarchy, media rails, contextual continuity | Inline | MIGRATED | PASSED |
-| `/programs` | Editorial | Page shell, page header, media gateway | Inline | MIGRATED | PASSED |
-| `/favorites` | Editorial | Page shell, page header, typed content cards | Inline | MIGRATED | PASSED |
+| `/programs` | Editorial | Page shell, page header, media gateway | Inline | MIGRATED | PENDING |
+| `/favorites` | Editorial | Page shell, page header, typed content cards | Inline | MIGRATED | PENDING |
 | `/library` | Editorial | Editorial header, search hierarchy, sections, content cards | Inline | MIGRATED | PASSED |
 | `/spomove`, SPOMOVE preview | Digital | Digital taxonomy, media cards, shared preview | Inline / gate | MIGRATED | PASSED |
 | `/manage` | Operational | Page shell, page header, agenda, section, collection row | Inline | MIGRATED | PASSED |
@@ -25,14 +25,20 @@ SPOMOVE rendered proof was reviewed at 1440px and 390px in both default and sele
 
 ## Rendered visual proof sweep — 2026-09-04
 
-Evidence uses the first viewport at browser zoom 100% after fonts and images complete, at 1440×900 and 390×844. `PASSED` means the rendered state was reviewed for role, hierarchy, density, CTA competition, mobile behavior, and MASTER consistency. It does not derive from static tests.
+Empty Favorites must not be treated as mixed-content visual proof. Surfaces listed as PENDING require populated screenshots at 390px and 1440px before they can be marked PASSED.
 
 | Surface | Implementation | Rendered proof | Fixture state |
 | --- | --- | --- | --- |
 | Home | MIGRATED | PASSED | Weekly recommendations |
-| Programs | MIGRATED | PASSED | Both program families |
+| Programs populated | MIGRATED | PENDING | Editorial gateway with representative content |
 | Library | MIGRATED | PASSED | Editorial landing |
-| Favorites | MIGRATED | PASSED | Empty saved-library state |
+| Favorites mixed populated | MIGRATED | PENDING | Lesson + SPOMOVE saved together |
+| Program Preview populated | MIGRATED | PENDING | Short and long summary content |
+| SPOMOVE Start mobile | MIGRATED | PENDING | Ready confirmation at 390px |
+| Library Detail execution | MIGRATED | PENDING | Video + 2-step method, no equal-height panels |
+| Library Detail preparation | MIGRATED | PENDING | Equipment rail + setup image + description script + briefing |
+| Library Detail related | MIGRATED | PENDING | Three related videos with reasons |
+| Library Detail recall | MIGRATED | PENDING | Last-class continuity note present |
 | SPOMOVE default | MIGRATED | PASSED | All Families |
 | SPOMOVE selected Family | MIGRATED | PASSED | Signal response |
 | Manage | MIGRATED | PASSED | Current week |
@@ -51,9 +57,15 @@ Evidence uses the first viewport at browser zoom 100% after fonts and images com
 | Surface | Role | Hierarchy | Density | CTA | Mobile | Consistency |
 | --- | --- | --- | --- | --- | --- | --- |
 | Home | PASS | PASS | PASS | PASS | PASS | PASS |
-| Programs | PASS | PASS | PASS | PASS | PASS | PASS |
+| Programs populated | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING |
 | Library | PASS | PASS | PASS | PASS | PASS | PASS |
-| Favorites | PASS | PASS | PASS | PASS | PASS | PASS |
+| Favorites mixed populated | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING |
+| Program Preview populated | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING |
+| SPOMOVE Start mobile | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING |
+| Library Detail execution | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING |
+| Library Detail preparation | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING |
+| Library Detail related | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING |
+| Library Detail recall | PENDING | PENDING | PENDING | PENDING | PENDING | PENDING |
 | SPOMOVE default | PASS | PASS | PASS | PASS | PASS | PASS |
 | SPOMOVE selected Family | PASS | PASS | PASS | PASS | PASS | PASS |
 | Manage | PASS | PASS | PASS | PASS | PASS | PASS |

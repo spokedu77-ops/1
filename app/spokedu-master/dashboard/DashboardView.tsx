@@ -7,7 +7,6 @@ import {
   FileText,
   UsersRound,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
@@ -25,12 +24,11 @@ import {
   SPOMOVE_THUMBNAIL_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { resolveHomeFeaturedSpomove } from '../lib/spomoveHomeFeatured';
-import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
+import { WeeklyEditorialCard } from '../components/lesson/WeeklyEditorialCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
 import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
-import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   programHasPlayableVideo,
@@ -47,15 +45,20 @@ import {
   getRecentActivityOwnerId,
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
+  type RecentProgramActivity,
 } from '../lib/recentProgramActivity';
 import { HomeContinuityPanel, HomeNextSessionPanel } from './TodaySessionsPanel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
+  publicOfficialPresetSessionHref,
   type OfficialSpomovePreset,
 } from '../spomove/officialSpomovePresets';
 import { SpomoveGuidelineSheet, type SpomoveContentLoadState } from '../spomove/SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
+import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
+import { canReproduceSpomoveSameSettings } from '../spomove/movements/canReproduceSpomoveSameSettings';
+import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { hasMasterEntitlement } from '../lib/masterAccessModel';
@@ -135,10 +138,6 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
   }
 }
 
-function shouldStretchSpomoveThumbnail(_width: number, _height: number, src: string) {
-  return /\.svg(\?|#|$)/i.test(src);
-}
-
 /** 추천 슬롯을 최대 4개까지 풀에서 보충한다. */
 function ensureWeeklyRecommendationCount(
   selected: Program[],
@@ -161,6 +160,25 @@ function ensureWeeklyRecommendationCount(
   }
 
   return result;
+}
+
+function withDiscoveryReturn(href: string, returnTo: string, source: 'home') {
+  const url = new URL(href, MASTER_CONTEXT_ORIGIN);
+  url.searchParams.set('returnTo', returnTo);
+  url.searchParams.set('source', source);
+  return `${url.pathname}?${url.searchParams.toString()}`;
+}
+
+function usePreferredLaunchMode(): 'projector' | 'mobile' {
+  const [mode, setMode] = useState<'projector' | 'mobile'>('projector');
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)');
+    const apply = () => setMode(media.matches ? 'mobile' : 'projector');
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
+  return mode;
 }
 
 function SectionHeader({
@@ -189,7 +207,7 @@ function SectionHeader({
       ? `break-keep text-[22px] font-semibold leading-tight ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
       : `break-keep text-[20px] font-semibold leading-tight ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
   const descriptionClass = tone === 'dark'
-    ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-400 sm:text-[13px]'
+    ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-[color:var(--spm-spomove-surface-muted)] sm:text-[13px]'
     : tone === 'feature'
       ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]'
       : 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]';
@@ -236,24 +254,17 @@ function WeeklyProgramCard({
 }) {
   const model = buildLessonDisplayModel(program);
   const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const selectionMeta = formatProgramSelectionReasons(program);
-  const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
+  const supportMeta = buildLessonCardSupportMeta(program, { equipmentFallback: prep });
 
   return (
-    <LessonCatalogCard
-      variant="home"
+    <WeeklyEditorialCard
       title={model.title}
       heroImageUrl={model.heroImageUrl}
-      categoryFallback={model.theme || '체육 수업'}
+      category={model.theme || '체육 수업'}
+      supportMeta={supportMeta}
       hasVideo={programHasPlayableVideo(program)}
       onPreview={() => onPreview(program)}
-      detailHref={`/spokedu-master/library/${program.id}`}
-      decisionMeta={model.theme || '체육 수업'}
-      supportMeta={supportMeta}
       priority={priority}
-      dataAttrs={{
-        'data-weekly-program': program.id,
-      }}
       sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw"
     />
   );
@@ -298,19 +309,26 @@ function SpomoveCard({
   thumbnailUrl,
   contentOverride,
   onOpenGuide,
+  launchMode,
   priority = false,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   contentOverride?: import('@/app/lib/spomove/spomoveOfficialAssets').SpomovePresetContentOverride;
   onOpenGuide: (preset: OfficialSpomovePreset) => void;
+  launchMode: 'projector' | 'mobile';
   priority?: boolean;
 }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
-  const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
-  const fitClass = stretch ? 'object-fill object-center' : 'object-cover object-center';
   const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
+  const startHref = withDiscoveryReturn(
+    publicOfficialPresetSessionHref(preset, {
+      entry: 'start',
+      cueSeconds: preset.cueSeconds,
+      mode: launchMode,
+    }),
+    '/spokedu-master/dashboard',
+    'home',
+  );
 
   return (
     <article
@@ -320,38 +338,21 @@ function SpomoveCard({
       <button
         type="button"
         onClick={() => onOpenGuide(preset)}
-        className="relative aspect-[4/3] w-full overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
+        className="relative w-full overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
         aria-label={`${displayModel.displayTitle} 활동 준비 열기`}
       >
-        {showThumbnail ? (
-          <Image
-            src={thumbnailUrl}
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 74vw"
-            quality={75}
-            className={fitClass}
-            priority={priority}
-            onLoad={(event) => {
-              if (
-                shouldStretchSpomoveThumbnail(
-                  event.currentTarget.naturalWidth,
-                  event.currentTarget.naturalHeight,
-                  thumbnailUrl,
-                )
-              ) {
-                setStretch(true);
-              }
-            }}
-            onError={() => setImageFailed(true)}
-          />
-        ) : (
-          <div className="grid h-full w-full grid-cols-2 gap-1.5 bg-slate-950 p-5" aria-hidden="true">
-            {SPOMOVE_PAD_GRID_HEX.map((color) => (
-              <span key={color} className="rounded-[10px] shadow-inner" style={{ background: color }} />
-            ))}
-          </div>
-        )}
+        <SpomoveLayeredThumb
+          src={thumbnailUrl}
+          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 74vw"
+          priority={priority}
+          fallback={(
+            <div className="grid h-full w-full grid-cols-2 gap-1.5 bg-slate-950 p-5" aria-hidden="true">
+              {SPOMOVE_PAD_GRID_HEX.map((color) => (
+                <span key={color} className="rounded-[10px] shadow-inner" style={{ background: color }} />
+              ))}
+            </div>
+          )}
+        />
         <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-150 group-hover:bg-black/[0.07]" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
           <p className="max-w-[76%] truncate text-[12px] font-medium text-white/82">
@@ -377,16 +378,107 @@ function SpomoveCard({
             </span>
           ))}
         </div>
+        <Link
+          href={startHref}
+          data-spm-spomove-card-action="start"
+          className="inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+        >
+          <span>활동 바로 시작</span>
+          <ArrowRight size={14} aria-hidden />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function RecentSpomoveReuseCard({
+  activity,
+  thumbnailUrl,
+  onOpenGuide,
+  launchMode,
+}: {
+  activity: RecentProgramActivity;
+  thumbnailUrl: string;
+  onOpenGuide: (preset: OfficialSpomovePreset) => void;
+  launchMode: 'projector' | 'mobile';
+}) {
+  const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId) ?? null;
+  const displayTitle = preset
+    ? getSpomovePresetDisplayModel(preset).displayTitle
+    : activity.programTitle;
+  const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
+  const snapshot = activity.spomoveSnapshot;
+  const cueSeconds = snapshot?.cueSeconds ?? activity.cueSeconds ?? preset?.cueSeconds;
+  const recentHref = preset
+    ? withDiscoveryReturn(
+        canReproduce
+          ? publicOfficialPresetSessionHref(preset, {
+              entry: 'start',
+              mode: launchMode,
+              cueSeconds: snapshot?.cueSeconds ?? activity.cueSeconds,
+              difficulty: snapshot?.difficultyValue ?? activity.difficultyValue,
+              operation:
+                snapshot && snapshot.operationLayerStatus !== 'legacyDisabled'
+                  ? snapshot.operation
+                  : null,
+            })
+          : publicOfficialPresetSessionHref(preset, {
+              entry: 'start',
+              mode: launchMode,
+              cueSeconds: preset.cueSeconds,
+            }),
+        '/spokedu-master/dashboard',
+        'home',
+      )
+    : `/spokedu-master/spomove/session?preset=${activity.programId}&mode=projector&sound=on&entry=start`;
+
+  if (!preset) return null;
+
+  return (
+    <article
+      data-dashboard-section="recent-spomove"
+      className="flex flex-col gap-3 rounded-[14px] border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:gap-4"
+    >
+      <button
+        type="button"
+        onClick={() => onOpenGuide(preset)}
+        className="relative w-full shrink-0 overflow-hidden rounded-[10px] bg-[var(--spm-s2)] sm:w-[132px]"
+        aria-label={`${displayTitle} 미리보기 열기`}
+      >
+        <SpomoveLayeredThumb
+          src={thumbnailUrl}
+          sizes="132px"
+          className="rounded-[10px]"
+          fallback={(
+            <div className="grid h-full w-full grid-cols-2 gap-1 bg-slate-950 p-2" aria-hidden="true">
+              {SPOMOVE_PAD_GRID_HEX.map((color) => (
+                <span key={color} className="rounded-[6px]" style={{ background: color }} />
+              ))}
+            </div>
+          )}
+        />
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] font-semibold text-slate-500">최근 사용한 활동</p>
         <button
           type="button"
-          data-spm-spomove-card-action="start"
           onClick={() => onOpenGuide(preset)}
-          className="inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-0.5 block w-full truncate text-left text-[16px] font-semibold text-[color:var(--spm-t)]"
         >
-          <span>활동 준비</span>
-          <ArrowRight size={14} aria-hidden />
+          {displayTitle}
         </button>
+        {cueSeconds ? (
+          <p className="mt-1 text-[12px] font-semibold text-slate-500">자극 {cueSeconds}초</p>
+        ) : null}
       </div>
+      <Link
+        href={recentHref}
+        data-spm-spomove-recent-action="rerun"
+        data-spm-spomove-recent-reproduce={canReproduce ? '1' : '0'}
+        className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-3 text-[13px] font-semibold focus-visible:outline-none sm:w-auto sm:min-w-[168px]"
+      >
+        {canReproduce ? '같은 설정으로 다시 시작' : '이 활동 다시 시작'}
+      </Link>
     </article>
   );
 }
@@ -568,6 +660,7 @@ function EntitledDashboardView() {
   ]);
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
   const guideVideo = useSpomoveGuideVideo(previewSpomove?.id ?? null, isPremium);
+  const launchMode = usePreferredLaunchMode();
 
   useEffect(() => {
     setMounted(true);
@@ -663,6 +756,9 @@ function EntitledDashboardView() {
     () => resolveHomeFeaturedSpomove(featuredSpomoveSlotIds),
     [featuredSpomoveSlotIds],
   );
+  const latestSpomoveActivity = useMemo(() => {
+    return [...validSpomoveActivities].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0] ?? null;
+  }, [validSpomoveActivities]);
 
   const openPreview = (program: Program, autoplayVideo = false) => {
     setPreviewAutoplay(autoplayVideo);
@@ -743,6 +839,18 @@ function EntitledDashboardView() {
 
       {!isFirstUser ? continuityEntry : null}
 
+      {latestSpomoveActivity ? (
+        <RecentSpomoveReuseCard
+          activity={latestSpomoveActivity}
+          thumbnailUrl={resolveSpomoveThumbnailUrl(
+            spomoveThumbnailPaths[latestSpomoveActivity.programId],
+            spomoveThumbnailCacheBust,
+          )}
+          onOpenGuide={setPreviewSpomove}
+          launchMode={launchMode}
+        />
+      ) : null}
+
       <section
         data-dashboard-section="featured-flow"
         aria-label="이번 주 수업 추천"
@@ -787,9 +895,9 @@ function EntitledDashboardView() {
         </section>
       </section>
 
-      <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="rounded-[20px] bg-slate-950 px-4 py-5 sm:px-5 lg:px-6 lg:py-6">
+      <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="spm-spomove-surface rounded-[20px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
           <SectionHeader
-            title={isPremium ? 'SPOMOVE로 확장하기' : 'SPOMOVE 둘러보기'}
+            title="SPOMOVE로 확장하기"
             titleId="spomove-heading"
             tone="dark"
             description="화면과 움직임을 연결하는 디지털 활동을 골라보세요."
@@ -799,7 +907,7 @@ function EntitledDashboardView() {
           <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-5 sm:px-5 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
             {featuredSpomove.slice(0, 4).map((preset) => {
               const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
-              return <div key={preset.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start md:w-auto md:max-w-none"><SpomoveCard preset={preset} thumbnailUrl={thumbnail} contentOverride={spomoveContentMap[preset.id]} onOpenGuide={setPreviewSpomove} /></div>;
+              return <div key={preset.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start md:w-auto md:max-w-none"><SpomoveCard preset={preset} thumbnailUrl={thumbnail} contentOverride={spomoveContentMap[preset.id]} onOpenGuide={setPreviewSpomove} launchMode={launchMode} /></div>;
             })}
           </div>
         </section>

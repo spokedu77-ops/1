@@ -65,3 +65,22 @@ MASTER is a sports content service: editorial, media-first, modern, premium, cle
 ## Locked IA
 
 Primary navigation remains Home, Programs, Favorites, Manage, and Class Tools. Home remains discovery-first; Manage remains schedule-first/class-second; Library and SPOMOVE remain discovery/save; Favorites remains retrieval; SPOMOVE Browse is open and Runtime is Premium.
+
+## Library Detail
+
+Purpose: an editorial preparation page where an instructor can understand one activity, prepare it, save or assign it, then discover a next activity.
+
+Canonical order:
+
+1. Identity — title, English subtitle when present, public tags / core meta
+2. Understand — lesson video and method
+3. Prepare — equipment summary, setup image, overview (description script + briefing)
+4. Recall — last-class continuity, only when data exists
+5. Discover Next — related videos, max 3, with an explicit reason
+6. Action — assign to a session (primary) and copy the lesson plan (secondary)
+
+CTA must not dominate the page before content. Desktop uses a compact action group near the title (max-width about 420–460px). Mobile may use a sticky bottom action bar. Do not repeat the primary CTA in the same viewport, and do not use a page-wide giant button.
+
+Understand and Prepare columns are content-driven: shared heading baseline, intrinsic body height, `items-start`, no panel `h-full`, no `items-stretch` equal-height surfaces, no inner scroll to fake matching columns.
+
+Whitespace is the default separator. Nested cards around media, giant black bars, and `font-black` on titles/body/meta/CTA are prohibited on this page.

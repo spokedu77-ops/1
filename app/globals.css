@@ -120,6 +120,12 @@
   /* 전 제품 Primary CTA (실행/시작/저장·핵심 행동) — slate-950과 섞지 말 것 */
   --spm-cta: #2563eb;
   --spm-cta-hover: #1d4ed8;
+  /* SPOMOVE discovery surface (Home 추천 / Hub header) — runtime·게임 화면과 분리 */
+  --spm-spomove-surface: #18263f;
+  --spm-spomove-surface-fg: #f8fafc;
+  --spm-spomove-surface-muted: #cbd5e1;
+  --spm-spomove-surface-border: rgba(255, 255, 255, 0.09);
+  --spm-spomove-accent: #172554;
   --spm-acc-a06: color-mix(in srgb, var(--spm-acc) 6%, transparent);
   --spm-acc-a08: color-mix(in srgb, var(--spm-acc) 8%, transparent);
   --spm-acc-a09: color-mix(in srgb, var(--spm-acc) 9%, transparent);
@@ -319,6 +325,12 @@ body {
 .spm-btn-primary:focus-visible {
   outline: 2px solid var(--spm-cta) !important;
   outline-offset: 2px;
+}
+
+.spm-spomove-surface {
+  color: var(--spm-spomove-surface-fg);
+  border: 1px solid var(--spm-spomove-surface-border);
+  background: var(--spm-spomove-surface);
 }
 
 /* 터치 최적화가 붙은 클릭 영역 — 포인터 보강 */

@@ -16,24 +16,28 @@ export function SpomovePadLayoutView({
   compact = false,
   dark = false,
   meta = null,
-}: SpomovePadLayoutViewProps) {
+  flush = false,
+}: SpomovePadLayoutViewProps & { flush?: boolean }) {
   const [red, yellow, green, blue] = SPOMOVE_PAD_GRID_HEX;
   const borderClass = dark ? 'border-white/10 bg-black/20' : 'border-slate-200 bg-slate-50';
   const titleClass = dark ? 'text-white' : 'text-slate-950';
   const mutedClass = dark ? 'text-white/55' : 'text-slate-500';
   const metaLine = meta?.trim() || null;
+  const frameClass = flush ? '' : `rounded-2xl border p-4 ${borderClass}`;
 
   if (variant === 'compass') {
     const size = compact ? 'h-32 w-32' : 'h-40 w-40';
     const padClass = compact ? 'h-14 w-14 text-xs' : 'h-16 w-16 text-sm';
 
     return (
-      <div className={`rounded-2xl border p-4 ${borderClass}`}>
-        <p className={`text-sm font-black ${titleClass}`}>매트 배치</p>
-        <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
-          학생이 화면을 바라보는 기준입니다.
-        </p>
-        <p className={`mt-3 text-center text-[11px] font-black ${mutedClass}`}>화면 ↑</p>
+      <div className={frameClass || undefined}>
+        {flush ? null : (
+          <>
+            <p className={`text-sm font-semibold ${titleClass}`}>매트 배치</p>
+            <p className={`mt-1 text-xs font-medium ${mutedClass}`}>학생이 화면을 바라보는 기준입니다.</p>
+          </>
+        )}
+        <p className={`text-center text-[11px] font-medium ${mutedClass} ${flush ? '' : 'mt-3'}`}>화면 ↑</p>
         <div className="mt-4 flex justify-center">
           <div
             className={`relative ${size}`}
@@ -45,8 +49,8 @@ export function SpomovePadLayoutView({
             <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: blue }}>파</div>
           </div>
         </div>
-        <p className={`mt-2 text-center text-xs font-semibold ${mutedClass}`}>빨강 앞 · 노랑 왼쪽 · 초록 오른쪽 · 파랑 뒤</p>
-        <p className={`mt-1 text-center text-[11px] font-black ${mutedClass}`}>학생 위치</p>
+        <p className={`mt-2 text-center text-xs font-medium ${mutedClass}`}>빨강 앞 · 노랑 왼쪽 · 초록 오른쪽 · 파랑 뒤</p>
+        <p className={`mt-1 text-center text-[11px] font-medium ${mutedClass}`}>학생 위치</p>
         {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
       </div>
     );
@@ -57,12 +61,14 @@ export function SpomovePadLayoutView({
     : 'w-[200px] [@media(max-height:950px)]:w-[144px]';
 
   return (
-    <div className={`rounded-2xl border p-3 [@media(max-height:950px)]:py-2.5 ${borderClass}`}>
-      <p className={`text-sm font-black ${titleClass}`}>매트 배치</p>
-      <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
-        학생이 화면을 바라보는 기준입니다.
-      </p>
-      <p className={`mt-3 text-center text-[11px] font-black [@media(max-height:950px)]:mt-2 ${mutedClass}`}>화면 ↑</p>
+    <div className={frameClass ? `${frameClass} ${compact ? 'p-3 [@media(max-height:950px)]:py-2.5' : ''}` : undefined}>
+      {flush ? null : (
+        <>
+          <p className={`text-sm font-semibold ${titleClass}`}>매트 배치</p>
+          <p className={`mt-1 text-xs font-medium ${mutedClass}`}>학생이 화면을 바라보는 기준입니다.</p>
+        </>
+      )}
+      <p className={`text-center text-[11px] font-medium ${mutedClass} ${flush ? '' : 'mt-3 [@media(max-height:950px)]:mt-2'}`}>화면 ↑</p>
       <div className="mt-3 flex justify-center [@media(max-height:950px)]:mt-2">
         <div
           className={`relative aspect-square overflow-hidden rounded-xl shadow-sm ${boardClass}`}
@@ -77,7 +83,7 @@ export function SpomovePadLayoutView({
           />
         </div>
       </div>
-      <p className={`mt-2 text-center text-[11px] font-black [@media(max-height:950px)]:mt-1.5 ${mutedClass}`}>학생 위치</p>
+      <p className={`mt-2 text-center text-[11px] font-medium [@media(max-height:950px)]:mt-1.5 ${mutedClass}`}>학생 위치</p>
       {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
     </div>
   );
