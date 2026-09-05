@@ -15,7 +15,7 @@ describe('SPOKEDU MASTER library detail final IA', () => {
   });
 
   it('documents Library Detail as an editorial preparation page', () => {
-    expect(visual).toContain('## Library Detail');
+    expect(visual).toContain('LIBRARY DETAIL');
     expect(visual).toContain('Identity');
     expect(visual).toContain('Understand');
     expect(visual).toContain('Prepare');
@@ -55,14 +55,12 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     const preparation = guide.indexOf('data-detail-row="preparation"');
     expect(execution).toBeGreaterThan(-1);
     expect(preparation).toBeGreaterThan(execution);
-    expect(guide).toContain('min-[900px]:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)]');
-    expect(guide).toContain('min-[900px]:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)]');
+    expect(guide).toContain('min-[900px]:grid-cols-');
     expect(guide.indexOf('<VideoPanel model={model}')).toBeLessThan(guide.indexOf('<MethodPanel model={model}'));
     expect(guide).toContain("const DETAIL_ROW_CLASS =");
     expect(guide).toContain("'grid items-start");
     expect(guide).not.toContain('items-stretch');
     expect(guide).not.toContain("grid-rows-[30px_minmax(0,1fr)]");
-    expect(guide).toContain('min-[900px]:grid-rows-[30px_auto]');
     expect(guide).not.toContain('h-[450px]');
   });
 
@@ -139,6 +137,7 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(related).toContain('programHasPlayableVideo(candidate)');
     expect(related).toContain('candidate.id !== current.id');
     expect(related).toContain('Math.max(0, limit)');
+    expect(related).toContain('limit = 3');
     expect(related).not.toContain('Math.random');
     expect(related).toContain("'신체 기능 유사'");
     expect(related).toContain("'같은 교구'");

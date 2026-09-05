@@ -19,7 +19,6 @@ export type HomeCaseCard = {
   venue: string;
   displayMeta: string;
   href: string;
-  ctaLabel: string;
   trackLabel: string;
   mediaKey: HomeMediaKey;
   editorialSrc: string;
@@ -28,7 +27,6 @@ export type HomeCaseCard = {
   thumbnailSrc?: string;
 };
 
-export const HOME_FEATURED_CASE_SLUG: FieldRecordSlug = 'maedong-sports-stepup';
 export const HOME_MAIN_CASE_SLUGS: readonly FieldRecordSlug[] = [
   'maedong-sports-stepup',
   'donghaeng-special-pe',
@@ -52,7 +50,6 @@ function buildHomeCaseCard(
     venue: item.venue,
     displayMeta: HOME_CASE_DISPLAY_META[slug] ?? item.meta,
     href: card.href,
-    ctaLabel: '사례 보기',
     trackLabel: card.trackLabel,
     mediaKey: card.mediaKey,
     editorialSrc: editorial.src,
@@ -112,11 +109,23 @@ export const homePage = {
   spomove: {
     id: 'spomove',
     label: 'SPOMOVE',
-    micro: '직접 수업하며 만든 대표 콘텐츠',
     title: '화면을 보고, 판단하고,\n움직입니다.',
     definition:
-      '화면의 정보를 보고 판단한 뒤 움직임으로 반응하는 SPOKEDU의 자체 신체활동 콘텐츠입니다.',
-    flow: ['화면 확인', '규칙 판단', '움직임'] as const,
+      '화면의 정보를 확인하고 규칙에 따라 판단한 뒤,\n움직임으로 반응하는 SPOKEDU의 자체 신체활동 콘텐츠입니다.',
+    flow: [
+      {
+        title: '화면 확인',
+        description: '화면에 제시된 정보와 규칙을 확인합니다.',
+      },
+      {
+        title: '규칙 판단',
+        description: '주어진 규칙에 따라 어떻게 반응할지 판단합니다.',
+      },
+      {
+        title: '움직임',
+        description: '판단한 반응을 몸의 움직임으로 실행합니다.',
+      },
+    ] as const,
     mediaKey: 'homeSpomoveField' as HomeMediaKey,
     primaryCta: {
       label: 'SPOMOVE 자세히 보기',
@@ -127,7 +136,7 @@ export const homePage = {
 
   subscription: {
     id: 'subscription',
-    title: '오늘 수업을 찾고, 준비하고, 바로 운영하세요.',
+    titleLines: ['오늘 수업을 찾고,', '준비하고,', '바로 운영하세요.'] as const,
     lead: '놀이체육 콘텐츠와 SPOMOVE를 찾고, 수업 준비부터 진행·기록까지 한곳에서 이어갈 수 있습니다.',
     flow: ['찾기', '준비', '진행', '기록'] as const,
     visual: {
@@ -144,7 +153,7 @@ export const homePage = {
   cases: {
     id: 'cases',
     title: '실제 운영 현장',
-    lead: 'SPOKEDU가 직접 운영한\n수업과 프로그램 기록입니다.',
+    lead: '학교·기관에서 진행한\n실제 수업과 프로그램입니다.',
     recordsCta: {
       label: '운영 사례 전체 보기',
       href: SPOKEDU_PATHS.records,

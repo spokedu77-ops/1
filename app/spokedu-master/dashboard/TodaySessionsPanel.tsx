@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 
 import { SPM_PRIMARY_BTN } from '../lib/masterActionGrammar';
+import { MV_CONTENT_TITLE, MV_META, MV_QUIET_ACTION, MV_REENTRY_IDENTITY, MV_REENTRY_OBJECT, MV_REENTRY_SECONDARY } from '../lib/masterUiClasses';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
 import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { summarizePastOperationalDebt } from '../lib/masterTemporalContract';
@@ -157,17 +158,17 @@ export function HomeContinuityPanel({ sessions, classes, loading, error, onRetry
       data-dashboard-section="continuity"
       data-continuity-priority="resume"
       aria-labelledby="home-continuity-heading"
-      className="flex flex-col gap-3 rounded-[14px] bg-slate-100 px-4 py-3 sm:flex-row sm:items-center"
+      className={MV_REENTRY_OBJECT}
     >
-      <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium text-slate-500">이어갈 수업</p>
-        <h2 id="home-continuity-heading" className="mt-0.5 truncate text-[18px] font-semibold text-slate-950">{item.className}</h2>
-        <p className="mt-1 text-xs text-slate-500">
+      <div className={MV_REENTRY_IDENTITY}>
+        <p className={MV_META}>이어갈 수업</p>
+        <h2 id="home-continuity-heading" className={`${MV_CONTENT_TITLE} mt-1 truncate`}>{item.className}</h2>
+        <p className={`${MV_META} mt-1`}>
           {formatSeoulSessionDay(getSeoulSessionDay(item.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(item.startAt)}
           {item.programs.length > 0 ? ` · 활동 ${completed}/${item.programs.length}` : ''}
         </p>
       </div>
-      <Link href={`/spokedu-master/activity?session=${encodeURIComponent(item.id)}`} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-slate-950 px-4 text-sm font-semibold text-white">
+      <Link href={`/spokedu-master/activity?session=${encodeURIComponent(item.id)}`} className={MV_REENTRY_SECONDARY}>
         {action}<ArrowRight size={15} aria-hidden="true" />
       </Link>
     </section>
@@ -181,8 +182,14 @@ export function HomeNextSessionPanel({ sessions, classes }: { sessions: MasterSe
     .filter((session) => session.status === 'scheduled' && !session.startedAt && !session.programs.some((program) => program.isCompleted) && classIds.has(session.classId) && new Date(session.startAt).getTime() > now.getTime())
     .sort((left, right) => left.startAt.localeCompare(right.startAt))[0] ?? null, [classIds, now, sessions]);
   if (!next) return null;
-  return <section data-dashboard-section="next-session" className="flex items-center justify-between gap-4 py-1">
-    <div className="min-w-0"><p className="text-[13px] font-medium text-slate-500">내 다음 수업</p><h2 className="mt-1 truncate text-[20px] font-semibold text-slate-950">{next.className}</h2><p className="mt-1 text-[13px] text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(next.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(next.startAt)}</p></div>
-    <Link href={`/spokedu-master/activity?session=${encodeURIComponent(next.id)}`} className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-semibold text-slate-700">수업 준비<ArrowRight size={15} /></Link>
-  </section>;
+  return (
+    <section data-dashboard-section="next-session" className={MV_REENTRY_OBJECT}>
+      <div className={MV_REENTRY_IDENTITY}>
+        <p className={MV_META}>내 다음 수업</p>
+        <h2 className={`${MV_CONTENT_TITLE} mt-1 truncate`}>{next.className}</h2>
+        <p className={`${MV_META} mt-1`}>{formatSeoulSessionDay(getSeoulSessionDay(next.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(next.startAt)}</p>
+      </div>
+      <Link href={`/spokedu-master/activity?session=${encodeURIComponent(next.id)}`} className={MV_QUIET_ACTION}>수업 준비<ArrowRight size={15} /></Link>
+    </section>
+  );
 }

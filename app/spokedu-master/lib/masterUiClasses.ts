@@ -1,5 +1,6 @@
 /**
- * MASTER UI 토큰 클래스 — 전 페이지 통일.
+ * MASTER UI leftover class tokens until canonical remap.
+ * Visual SSOT: app/spokedu-master/MASTER_VISUAL_SYSTEM.md
  * Primary 실행 = spm-btn-primary (--spm-cta).
  * 선택 칩/세그먼트 = --spm-acc (실행 파랑과 역할 분리).
  */
@@ -48,3 +49,34 @@ export const SPM_JOURNEY_HEADING = 'text-lg font-semibold text-slate-900';
 export const SPM_JOURNEY_META = 'text-xs font-normal text-slate-500';
 export const SPM_JOURNEY_FIELD =
   'w-full rounded-xl border border-transparent bg-slate-50 p-3 text-sm font-normal outline-none transition focus:border-slate-300 focus:bg-white';
+
+/**
+ * Canonical Art Direction tokens (Visual SSOT).
+ * Home is the first consumer. Do not invent page-local type/width instead of these.
+ * Do not remap MasterPageShell here — that would restyle Programs/Library before canonical approval.
+ */
+export const MV_EDITORIAL_WIDTH = 'mx-auto w-full max-w-[1120px]';
+export const MV_HOME_DISPLAY =
+  'max-w-xl whitespace-pre-line text-[30px] font-semibold leading-[1.12] text-[color:var(--spm-t)] sm:text-[32px] lg:text-[36px]';
+export const MV_SECTION_TITLE =
+  'break-keep text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]';
+export const MV_SECTION_TITLE_INVERSE =
+  'break-keep text-[22px] font-semibold leading-tight text-[color:var(--spm-spomove-surface-fg)] sm:text-[24px]';
+export const MV_SECTION_COPY = 'mt-1.5 max-w-xl text-[15px] font-normal leading-6 text-slate-600';
+export const MV_SECTION_COPY_INVERSE =
+  'mt-2 max-w-xl text-[15px] font-normal leading-6 text-[color:var(--spm-spomove-surface-muted)]';
+export const MV_QUIET_ACTION =
+  'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
+export const MV_QUIET_ACTION_INVERSE =
+  'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white';
+export const MV_CONTENT_TITLE = 'text-[18px] font-semibold leading-snug text-[color:var(--spm-t)]';
+export const MV_META = 'text-[12px] font-medium leading-5 text-slate-500 sm:text-[13px]';
+export const MV_HEADING_TO_SHELF = 'mb-4 sm:mb-5';
+export const MV_REENTRY_OBJECT =
+  'flex w-full max-w-[660px] flex-wrap items-center gap-x-3.5 gap-y-0 rounded-[14px] border border-slate-200/70 bg-white/65 px-3.5 py-3 sm:flex-nowrap';
+export const MV_REENTRY_IDENTITY = 'min-w-0 flex-1';
+export const MV_REENTRY_SECONDARY =
+  'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-slate-700 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
+export const MV_EXTENSION_TITLE =
+  'text-[17px] font-semibold leading-snug text-slate-800';
+export const MV_HOME_START_QUIET = MV_QUIET_ACTION;

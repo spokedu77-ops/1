@@ -49,6 +49,7 @@ describe('public marketing typography contract', () => {
     expect(home).not.toMatch(/\.sectionTitle\s*{/);
     expect(home).not.toMatch(/\.bridgeTitle\s*{/);
     expect(home).not.toMatch(/font-size:\s*clamp\(/);
+    expect(home).not.toMatch(/homeBrandDisplay|--he-brand-display/);
   });
 
   it('keeps the V17 subscription headings on the approved bold rendering', () => {
@@ -91,7 +92,7 @@ describe('public marketing typography contract', () => {
 
   it('keeps key public page titles and section titles on canonical utilities', () => {
     expect(read('app/spokedu/components/home/home-editorial-landing.tsx')).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
-    expect(read('app/spokedu/components/home/home-editorial-landing.tsx')).toMatch(/<h2[\s\S]*marketingSectionDisplay/);
+    expect(read('app/spokedu/components/home/home-editorial-landing.tsx')).toMatch(/<h2[\s\S]*homeQuietDisplay/);
     expect(read('app/spokedu/components/landing-hero.tsx')).toMatch(/<motion\.h1[\s\S]*marketingHeroDisplay/);
     expect(read('app/spokedu/components/education-hub-landing.tsx')).toMatch(/<h1[\s\S]*marketingHeroDisplay/);
     expect(read('app/spokedu/components/education-hub-landing.tsx')).toMatch(/<h2[\s\S]*marketingSectionDisplay/);

@@ -17,22 +17,19 @@ const fitSsot = read('app/spokedu-master/spomove/spomoveMediaFit.ts');
 const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 const sheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
 
-describe('SPOMOVE media fit — IMAGE frozen / VIDEO full-frame', () => {
-  it('locks SSOT: image cover + video contain', () => {
-    expect(SPOMOVE_IMAGE_THUMB_OBJECT_FIT).toBe('cover');
-    expect(SPOMOVE_IMAGE_THUMB_ASPECT_CLASS).toBe('aspect-[6/5]');
+describe('SPOMOVE media fit — instruction full-visible / video 16:9 (not rendered PASS)', () => {
+  it('keeps a shared media module: 4:3 contain thumbs, 16:9 video frame', () => {
+    expect(SPOMOVE_IMAGE_THUMB_OBJECT_FIT).toBe('contain');
+    expect(SPOMOVE_IMAGE_THUMB_ASPECT_CLASS).toBe('aspect-[4/3]');
     expect(SPOMOVE_VIDEO_POSTER_OBJECT_FIT).toBe('contain');
     expect(SPOMOVE_VIDEO_FRAME_ASPECT_CLASS).toBe('aspect-video');
-    expect(fitSsot).toContain("SPOMOVE_IMAGE_THUMB_OBJECT_FIT = 'cover'");
+    expect(fitSsot).toContain("SPOMOVE_IMAGE_THUMB_OBJECT_FIT = 'contain'");
     expect(fitSsot).toContain("SPOMOVE_VIDEO_POSTER_OBJECT_FIT = 'contain'");
   });
 
-  it('keeps Hub CardVisual image thumbs on frozen cover crop (not video contain)', () => {
-    const cardVisual = hub.slice(hub.indexOf('function CardVisual'), hub.indexOf('function cardBadgeClass'));
-    expect(cardVisual).toContain("data-spm-spomove-media=\"image-thumb\"");
-    expect(cardVisual).toContain('aspect-[6/5]');
-    expect(cardVisual).toContain('object-cover object-center');
-    expect(cardVisual).not.toContain('object-contain');
+  it('routes Hub CardVisual thumbs through SpomoveLayeredThumb, not a page-local crop', () => {
+    const cardVisual = hub.slice(hub.indexOf('function CardVisual'), hub.indexOf('function PresetCard'));
+    expect(cardVisual).toContain('SpomoveLayeredThumb');
     expect(cardVisual).not.toContain('posterObjectFit');
     expect(cardVisual).not.toContain('SPOMOVE_VIDEO_POSTER_OBJECT_FIT');
   });

@@ -1,6 +1,20 @@
-# UI Foundation v3 surface audit
+# ARCHIVE — UI Foundation v3 surface audit
 
-This inventory is the implementation companion to `MASTER_VISUAL_SYSTEM.md`. Product behavior, routes, persistence, entitlement, and session lifecycle are frozen.
+**Authority: none.** This file is a historical screenshot / migration log from Visual Foundation v3.
+
+- Do not implement UI from this table.
+- Do not treat `PASSED` here as rendered visual PASS.
+- Live 390/1440 ledger: `MASTER_SURFACE_MATRIX.md`
+- Visual SSOT: `MASTER_VISUAL_SYSTEM.md`
+- Governance: `docs/SPOKEDU_MASTER_DESIGN_GOVERNANCE.md`
+
+Product behavior, routes, persistence, entitlement, and session lifecycle were never owned here.
+
+---
+
+# UI Foundation v3 surface audit (historical)
+
+This inventory was the implementation companion to `MASTER_VISUAL_SYSTEM.md` (now superseded).
 
 | Route family | Surface family | Primary primitive | State model | Implementation | Visual proof |
 | --- | --- | --- | --- | --- | --- |

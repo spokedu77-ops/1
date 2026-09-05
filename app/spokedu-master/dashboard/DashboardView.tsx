@@ -2,13 +2,12 @@
 
 import {
   ArrowRight,
-  BookOpen,
   CheckCircle2,
   FileText,
   UsersRound,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const WEEKLY_RECOMMENDATION_COUNT = 4;
 
@@ -28,7 +27,7 @@ import { WeeklyEditorialCard } from '../components/lesson/WeeklyEditorialCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
+import { buildHomeWeeklySupportMeta, splitLessonTitle } from '../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   programHasPlayableVideo,
@@ -47,6 +46,7 @@ import {
   reconcileRecentSpomoveActivities,
   type RecentProgramActivity,
 } from '../lib/recentProgramActivity';
+import { getHomeSpomoveShelfCopy } from './homeSpomoveShelf';
 import { HomeContinuityPanel, HomeNextSessionPanel } from './TodaySessionsPanel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
@@ -56,7 +56,6 @@ import {
 import { SpomoveGuidelineSheet, type SpomoveContentLoadState } from '../spomove/SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
-import { getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
 import { canReproduceSpomoveSameSettings } from '../spomove/movements/canReproduceSpomoveSameSettings';
 import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
@@ -67,6 +66,21 @@ import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
 import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
+import {
+  MV_CONTENT_TITLE,
+  MV_EDITORIAL_WIDTH,
+  MV_EXTENSION_TITLE,
+  MV_HEADING_TO_SHELF,
+  MV_HOME_DISPLAY,
+  MV_HOME_START_QUIET,
+  MV_META,
+  MV_QUIET_ACTION,
+  MV_REENTRY_IDENTITY,
+  MV_REENTRY_OBJECT,
+  MV_REENTRY_SECONDARY,
+  MV_SECTION_COPY,
+  MV_SECTION_TITLE,
+} from '../lib/masterUiClasses';
 
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
@@ -77,8 +91,8 @@ type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; e
 
 function getFirstStartPaths() {
   return [
-    { title: '좋은 활동부터 찾아보기', description: '수업에 맞는 프로그램을 둘러보세요.', href: '/spokedu-master/programs', Icon: BookOpen },
-    { title: '수업부터 만들기', description: '수업반과 이번 주 일정을 한 번에 준비하세요.', href: '/spokedu-master/manage', Icon: UsersRound },
+    { title: '좋은 활동부터 찾아보기', description: '수업에 맞는 프로그램을 둘러보세요.', href: '/spokedu-master/programs' },
+    { title: '수업부터 만들기', description: '수업반과 이번 주 일정을 한 번에 준비하세요.', href: '/spokedu-master/manage' },
   ] as const;
 }
 
@@ -182,61 +196,30 @@ function usePreferredLaunchMode(): 'projector' | 'mobile' {
 }
 
 function SectionHeader({
-  eyebrow,
-  eyebrowIcon,
   title,
   description,
   href,
   action,
   titleId,
-  size = 'md',
-  tone = 'light',
 }: {
-  eyebrow?: string;
-  eyebrowIcon?: ReactNode;
   title: string;
   description?: string;
   href?: string;
   action?: string;
   titleId?: string;
-  size?: 'md' | 'lg';
-  tone?: 'light' | 'dark' | 'feature';
 }) {
-  const titleClass =
-    size === 'lg'
-      ? `break-keep text-[22px] font-semibold leading-tight ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
-      : `break-keep text-[20px] font-semibold leading-tight ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
-  const descriptionClass = tone === 'dark'
-    ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-[color:var(--spm-spomove-surface-muted)] sm:text-[13px]'
-    : tone === 'feature'
-      ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]'
-      : 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]';
-  const actionClass = tone === 'dark'
-    ? 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[12px] font-bold text-white/75 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:min-h-9'
-    : tone === 'feature'
-      ? 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[12px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900 sm:min-h-9'
-      : 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[12px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900 sm:min-h-9';
-
   return (
-    <div className="mb-2.5 flex flex-col items-start justify-between gap-1.5 sm:mb-3 sm:flex-row sm:items-end sm:gap-3">
+    <div className={`${MV_HEADING_TO_SHELF} flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end sm:gap-3`}>
       <div className="min-w-0">
-        {void eyebrow}{void eyebrowIcon}
-        <h2 id={titleId} className={titleClass}>
+        <h2 id={titleId} className={MV_SECTION_TITLE}>
           {title}
         </h2>
-        {description ? (
-          <p className={descriptionClass}>
-            {description}
-          </p>
-        ) : null}
+        {description ? <p className={MV_SECTION_COPY}>{description}</p> : null}
       </div>
       {href && action ? (
-        <Link
-          href={href}
-          className={`${actionClass} -mt-0.5 text-[13px] sm:mt-0`}
-        >
+        <Link href={href} className={MV_QUIET_ACTION}>
           {action}
-          <ArrowRight size={13} />
+          <ArrowRight size={15} />
         </Link>
       ) : null}
     </div>
@@ -253,12 +236,13 @@ function WeeklyProgramCard({
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
+  const titles = splitLessonTitle(model.title);
   const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const supportMeta = buildLessonCardSupportMeta(program, { equipmentFallback: prep });
+  const supportMeta = buildHomeWeeklySupportMeta(program, { equipmentFallback: prep });
 
   return (
     <WeeklyEditorialCard
-      title={model.title}
+      title={titles.koreanTitle}
       heroImageUrl={model.heroImageUrl}
       category={model.theme || '체육 수업'}
       supportMeta={supportMeta}
@@ -276,27 +260,26 @@ function FirstStartGuide() {
     <section
       data-dashboard-section="first-start"
       aria-labelledby="first-start-heading"
-      className="pt-2"
     >
-      <div>
-        <p className="text-[13px] font-medium text-slate-500">처음이라면</p>
-        <h2 id="first-start-heading" className="mt-1 text-[20px] font-semibold text-[color:var(--spm-t)]">
-          첫 수업을 시작해 보세요
-        </h2>
-        <p className="mt-1 text-[14px] font-normal leading-6 text-slate-500">
-          콘텐츠부터 찾아도, 수업부터 만들어도 같은 준비 흐름으로 이어집니다.
-        </p>
-      </div>
-      <div className="mt-3 grid gap-2 md:grid-cols-2">
-        {firstStartPaths.map(({ title, description, href, Icon }) => (
+      <h2 id="first-start-heading" className={MV_SECTION_TITLE}>
+        첫 수업을 시작해 보세요
+      </h2>
+      <p className="mt-2 max-w-xl text-[15px] font-normal leading-6 text-slate-600">
+        콘텐츠부터 찾아도, 수업부터 만들어도 같은 준비 흐름으로 이어집니다.
+      </p>
+      <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
+        {firstStartPaths.map(({ title, description, href }) => (
           <Link
             key={href}
             href={href}
-            className="flex min-h-12 items-center gap-2.5 rounded-[12px] bg-slate-100 px-3 text-[14px] font-semibold text-[color:var(--spm-t)] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+            className="min-h-11 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
           >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-900 text-white"><Icon size={14} aria-hidden="true" /></span>
-            <span className="min-w-0 flex-1"><strong className="block break-keep">{title}</strong><small className="mt-0.5 block text-[12px] font-medium text-slate-500">{description}</small></span>
-            <ArrowRight size={13} className="shrink-0 text-slate-400" aria-hidden="true" />
+            <span className={`${MV_CONTENT_TITLE} block`}>{title}</span>
+            <span className={`${MV_META} mt-1.5 block`}>{description}</span>
+            <span className={`${MV_QUIET_ACTION} mt-3`}>
+              시작하기
+              <ArrowRight size={15} aria-hidden="true" />
+            </span>
           </Link>
         ))}
       </div>
@@ -319,7 +302,7 @@ function SpomoveCard({
   launchMode: 'projector' | 'mobile';
   priority?: boolean;
 }) {
-  const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
+  const displayModel = getHomeSpomoveShelfCopy(preset, contentOverride);
   const startHref = withDiscoveryReturn(
     publicOfficialPresetSessionHref(preset, {
       entry: 'start',
@@ -331,60 +314,34 @@ function SpomoveCard({
   );
 
   return (
-    <article
-      data-spomove-preset={preset.id}
-      className="group flex min-h-0 flex-col overflow-hidden rounded-[16px] border border-slate-200 bg-white text-[color:var(--spm-t)] transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-slate-300 active:translate-y-0"
-    >
+    <article data-spomove-preset={preset.id} className="flex h-full w-full min-w-0 flex-col">
       <button
         type="button"
         onClick={() => onOpenGuide(preset)}
-        className="relative w-full overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
-        aria-label={`${displayModel.displayTitle} 활동 준비 열기`}
+        className="relative w-full overflow-hidden rounded-[16px] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+        aria-label={`${displayModel.title} 활동 준비 열기`}
       >
         <SpomoveLayeredThumb
           src={thumbnailUrl}
-          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 74vw"
+          sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw"
           priority={priority}
+          className="!aspect-video rounded-[16px]"
           fallback={(
-            <div className="grid h-full w-full grid-cols-2 gap-1.5 bg-slate-950 p-5" aria-hidden="true">
+            <div className="grid h-full w-full grid-cols-2 gap-1.5 bg-slate-950 p-4" aria-hidden="true">
               {SPOMOVE_PAD_GRID_HEX.map((color) => (
-                <span key={color} className="rounded-[10px] shadow-inner" style={{ background: color }} />
+                <span key={color} className="rounded-[8px] shadow-inner" style={{ background: color }} />
               ))}
             </div>
           )}
         />
-        <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-150 group-hover:bg-black/[0.07]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
-          <p className="max-w-[76%] truncate text-[12px] font-medium text-white/82">
-            {displayModel.programLabel}
-          </p>
-          <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-semibold leading-5 text-white">
-            {displayModel.displayTitle}
-          </h3>
-        </div>
       </button>
-      <div className="flex shrink-0 flex-col gap-2 bg-white p-3">
-        <div className="flex h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]" aria-label="활동 정보">
-          {[
-            displayModel.variantLabel,
-            displayModel.difficultyLabel,
-            displayModel.targetLabel,
-          ].filter(Boolean).slice(0, 3).map((part, index) => (
-            <span
-              key={`${part}-${index}`}
-              className="min-w-0 truncate after:mx-1.5 after:text-[color:var(--spm-t3)] after:content-['·'] last:after:content-none"
-            >
-              {part}
-            </span>
-          ))}
-        </div>
-        <Link
-          href={startHref}
-          data-spm-spomove-card-action="start"
-          className="inline-flex h-11 w-full shrink-0 items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
-        >
-          <span>활동 바로 시작</span>
-          <ArrowRight size={14} aria-hidden />
+      <div className="mt-2.5 flex min-h-0 flex-1 flex-col">
+        {displayModel.typeLabel ? <p className={MV_META}>{displayModel.typeLabel}</p> : null}
+        <h3 className={`${MV_EXTENSION_TITLE} mt-1`}>{displayModel.title}</h3>
+        {displayModel.support ? <p className={`${MV_META} mt-2`}>{displayModel.support}</p> : null}
+        <Link href={startHref} data-spm-spomove-card-action="start" className={`${MV_HOME_START_QUIET} mt-auto pt-2`}>
+          활동 바로 시작
+          <ArrowRight size={15} aria-hidden />
         </Link>
       </div>
     </article>
@@ -403,12 +360,15 @@ function RecentSpomoveReuseCard({
   launchMode: 'projector' | 'mobile';
 }) {
   const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId) ?? null;
-  const displayTitle = preset
-    ? getSpomovePresetDisplayModel(preset).displayTitle
-    : activity.programTitle;
   const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
   const snapshot = activity.spomoveSnapshot;
   const cueSeconds = snapshot?.cueSeconds ?? activity.cueSeconds ?? preset?.cueSeconds;
+  const shelf = preset ? getHomeSpomoveShelfCopy(preset) : null;
+  const displayTitle = shelf?.title ?? activity.programTitle;
+  const contextLine = [
+    shelf?.typeLabel,
+    cueSeconds ? `자극 ${cueSeconds}초` : null,
+  ].filter(Boolean).join(' · ');
   const recentHref = preset
     ? withDiscoveryReturn(
         canReproduce
@@ -435,49 +395,45 @@ function RecentSpomoveReuseCard({
   if (!preset) return null;
 
   return (
-    <article
-      data-dashboard-section="recent-spomove"
-      className="flex flex-col gap-3 rounded-[14px] border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:gap-4"
-    >
+    <article data-dashboard-section="recent-spomove" className={MV_REENTRY_OBJECT}>
       <button
         type="button"
         onClick={() => onOpenGuide(preset)}
-        className="relative w-full shrink-0 overflow-hidden rounded-[10px] bg-[var(--spm-s2)] sm:w-[132px]"
+        className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[12px]"
         aria-label={`${displayTitle} 미리보기 열기`}
       >
         <SpomoveLayeredThumb
           src={thumbnailUrl}
-          sizes="132px"
-          className="rounded-[10px]"
+          sizes="72px"
+          className="!h-full !w-full !aspect-auto rounded-[12px]"
           fallback={(
-            <div className="grid h-full w-full grid-cols-2 gap-1 bg-slate-950 p-2" aria-hidden="true">
+            <div className="grid h-full w-full grid-cols-2 gap-1 bg-slate-950 p-1.5" aria-hidden="true">
               {SPOMOVE_PAD_GRID_HEX.map((color) => (
-                <span key={color} className="rounded-[6px]" style={{ background: color }} />
+                <span key={color} className="rounded-[4px]" style={{ background: color }} />
               ))}
             </div>
           )}
         />
       </button>
-      <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-semibold text-slate-500">최근 사용한 활동</p>
+      <div className={MV_REENTRY_IDENTITY}>
+        <p className={`${MV_META} min-w-0 truncate`}>최근 사용한 활동</p>
         <button
           type="button"
           onClick={() => onOpenGuide(preset)}
-          className="mt-0.5 block w-full truncate text-left text-[16px] font-semibold text-[color:var(--spm-t)]"
+          className={`${MV_CONTENT_TITLE} mt-0.5 block w-full truncate text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]`}
         >
           {displayTitle}
         </button>
-        {cueSeconds ? (
-          <p className="mt-1 text-[12px] font-semibold text-slate-500">자극 {cueSeconds}초</p>
-        ) : null}
+        {contextLine ? <p className={`${MV_META} mt-0.5 truncate`}>{contextLine}</p> : null}
       </div>
       <Link
         href={recentHref}
         data-spm-spomove-recent-action="rerun"
         data-spm-spomove-recent-reproduce={canReproduce ? '1' : '0'}
-        className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-3 text-[13px] font-semibold focus-visible:outline-none sm:w-auto sm:min-w-[168px]"
+        className={`${MV_REENTRY_SECONDARY} ml-[84px] sm:ml-0`}
       >
-        {canReproduce ? '같은 설정으로 다시 시작' : '이 활동 다시 시작'}
+        다시 시작
+        <ArrowRight size={15} aria-hidden />
       </Link>
     </article>
   );
@@ -789,16 +745,16 @@ function EntitledDashboardView() {
           ? '네트워크 문제로 수업 라이브러리를 불러오지 못했습니다. 연결 상태를 확인해 주세요.'
           : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
-      <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto px-4 py-16" style={{ background: 'var(--spm-bg)' }}>
-        <section className="w-full max-w-xl rounded-[22px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center">
-          <h1 className="text-xl font-semibold text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
-          <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
+      <main className={`${MV_EDITORIAL_WIDTH} flex h-full items-center justify-center overflow-y-auto px-4 py-16`} style={{ background: 'var(--spm-bg)' }}>
+        <section className="w-full max-w-xl text-center">
+          <h1 className={MV_SECTION_TITLE}>수업 라이브러리를 불러올 수 없습니다.</h1>
+          <p className="mt-3 text-[15px] font-normal leading-6 text-slate-600">{message}</p>
           {isUnauthorized ? (
             <Link href="/login?next=/spokedu-master/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold focus-visible:outline-none">로그인하기</Link>
           ) : isForbidden ? (
-            <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">다시 구독하기</Link>
+            <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[14px] font-semibold focus-visible:outline-none">다시 구독하기</Link>
           ) : (
-            <button type="button" onClick={() => void reloadPrograms()} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">다시 시도</button>
+            <button type="button" onClick={() => void reloadPrograms()} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[14px] font-semibold focus-visible:outline-none">다시 시도</button>
           )}
         </section>
       </main>
@@ -816,61 +772,57 @@ function EntitledDashboardView() {
   );
 
   return (
-    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-9 overflow-y-auto px-4 pb-28 pt-7 sm:px-6 lg:gap-12 lg:px-8 lg:pb-12 lg:pt-10" style={{ background: 'var(--spm-bg)' }}>
-      <header className="relative px-0.5 pt-0.5 sm:px-1">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-          <div className="min-w-0">
-            <h1
-              className="max-w-xl whitespace-pre-line text-[32px] font-bold leading-[1.15] tracking-[-0.025em] text-[color:var(--spm-t)] md:text-[40px]"
-              style={{ fontFamily: 'var(--spm-font-display, inherit)' }}
-            >
-              {'이번 주,\n어떤 수업을 해볼까요?'}
-            </h1>
-          </div>
-          <Link
-            href="/spokedu-master/activity"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 self-start text-[11px] font-bold text-slate-400 transition-colors hover:text-slate-700 sm:min-h-8 sm:self-auto"
-          >
-            수업 일정 보기
-            <ArrowRight size={12} />
-          </Link>
-        </div>
+    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-12">
+      <section data-dashboard-chapter="opening" className="px-4 pb-10 pt-5 sm:px-6 lg:pb-11 lg:pt-6">
+        <div className={MV_EDITORIAL_WIDTH}>
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <h1 className={MV_HOME_DISPLAY} style={{ fontFamily: 'var(--spm-font-display, inherit)' }}>
+          {'이번 주,\n어떤 수업을 해볼까요?'}
+        </h1>
+        <Link href="/spokedu-master/activity" className={`${MV_QUIET_ACTION} shrink-0`}>
+          수업 일정 보기
+          <ArrowRight size={15} />
+        </Link>
       </header>
 
-      {!isFirstUser ? continuityEntry : null}
-
-      {latestSpomoveActivity ? (
-        <RecentSpomoveReuseCard
-          activity={latestSpomoveActivity}
-          thumbnailUrl={resolveSpomoveThumbnailUrl(
-            spomoveThumbnailPaths[latestSpomoveActivity.programId],
-            spomoveThumbnailCacheBust,
-          )}
-          onOpenGuide={setPreviewSpomove}
-          launchMode={launchMode}
-        />
-      ) : null}
+      <div className="mt-6 flex flex-col gap-3 empty:hidden">
+        {!isFirstUser ? continuityEntry : null}
+        {latestSpomoveActivity ? (
+          <RecentSpomoveReuseCard
+            activity={latestSpomoveActivity}
+            thumbnailUrl={resolveSpomoveThumbnailUrl(
+              spomoveThumbnailPaths[latestSpomoveActivity.programId],
+              spomoveThumbnailCacheBust,
+            )}
+            onOpenGuide={setPreviewSpomove}
+            launchMode={launchMode}
+          />
+        ) : null}
+        {!isFirstUser ? <HomeNextSessionPanel sessions={operationalSessions} classes={operationalClasses} /> : null}
+        {isFirstUser ? <FirstStartGuide /> : null}
+      </div>
+        </div>
+      </section>
 
       <section
         data-dashboard-section="featured-flow"
         aria-label="이번 주 수업 추천"
-        className="relative"
+        className="bg-white px-4 py-11 sm:px-6 lg:pb-14 lg:pt-12"
       >
-        <section data-dashboard-section="weekly" aria-labelledby="weekly-heading" className="relative">
+        <div className={MV_EDITORIAL_WIDTH}>
+        <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
           <SectionHeader
             title="이번 주 SPOKEDU 추천"
             titleId="weekly-heading"
-            size="lg"
-            tone="feature"
             href="/spokedu-master/library"
             action="수업 더 보기"
           />
           {!programsLoaded ? (
-            <p className="rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
+            <p className="text-[15px] text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
           ) : weeklyPrograms.length > 0 ? (
-            <div className="relative -mx-4 flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+            <div className="relative -mx-4 flex snap-x snap-mandatory items-start gap-5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:gap-6 lg:px-0 [&::-webkit-scrollbar]:hidden">
               {weeklyPrograms.map((program, index) => (
-                <div key={program.id} className="h-full w-[82vw] max-w-[340px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
+                <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start md:w-auto md:max-w-none">
                   <WeeklyProgramCard
                     program={program}
                     onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
@@ -880,40 +832,53 @@ function EntitledDashboardView() {
               ))}
             </div>
           ) : programsError ? (
-            <div className="rounded-xl bg-rose-50 p-4 text-center">
-              <p className="text-sm font-bold text-rose-700">수업 콘텐츠를 불러오지 못했습니다.</p>
-              <button type="button" onClick={() => void reloadPrograms()} className="mt-2 min-h-11 px-3 text-sm font-semibold text-rose-700 underline underline-offset-2">다시 시도</button>
+            <div>
+              <p className="text-[15px] text-rose-700">수업 콘텐츠를 불러오지 못했습니다.</p>
+              <button type="button" onClick={() => void reloadPrograms()} className="mt-2 min-h-11 px-3 text-[14px] font-semibold text-rose-700 underline underline-offset-2">다시 시도</button>
             </div>
           ) : (
-            <div className="rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-5 text-center">
-              <p className="text-[14px] font-semibold text-[color:var(--spm-t2)]">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
-              <Link href="/spokedu-master/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[13px] font-semibold focus-visible:outline-none">
+            <div>
+              <p className="text-[15px] text-slate-600">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
+              <Link href="/spokedu-master/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[14px] font-semibold focus-visible:outline-none">
                 수업 라이브러리 열기
               </Link>
             </div>
           )}
         </section>
+        </div>
       </section>
 
-      <section data-dashboard-section="spomove-extension" aria-labelledby="spomove-heading" className="spm-spomove-surface rounded-[20px] px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
-          <SectionHeader
-            title="SPOMOVE로 확장하기"
-            titleId="spomove-heading"
-            tone="dark"
-            description="화면과 움직임을 연결하는 디지털 활동을 골라보세요."
-            href="/spokedu-master/spomove"
-            action="SPOMOVE 더 보기"
-          />
-          <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-5 sm:px-5 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
-            {featuredSpomove.slice(0, 4).map((preset) => {
-              const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
-              return <div key={preset.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start md:w-auto md:max-w-none"><SpomoveCard preset={preset} thumbnailUrl={thumbnail} contentOverride={spomoveContentMap[preset.id]} onOpenGuide={setPreviewSpomove} launchMode={launchMode} /></div>;
-            })}
-          </div>
-        </section>
-
-      {!isFirstUser ? <HomeNextSessionPanel sessions={operationalSessions} classes={operationalClasses} /> : null}
-      {isFirstUser ? <FirstStartGuide /> : null}
+      <section
+        data-dashboard-section="spomove-extension"
+        aria-labelledby="spomove-heading"
+        className="w-full border-t border-slate-200/70 bg-[var(--spm-s2)] px-4 pb-14 pt-11 sm:px-6 lg:pb-14 lg:pt-12"
+      >
+        <div className={MV_EDITORIAL_WIDTH}>
+        <SectionHeader
+          title="SPOMOVE로 확장하기"
+          titleId="spomove-heading"
+          description="놀이체육을 디지털 자극 활동으로 확장합니다."
+          href="/spokedu-master/spomove"
+          action="SPOMOVE 더 보기"
+        />
+        <div className="-mx-4 flex snap-x snap-mandatory items-stretch gap-5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:gap-6 lg:px-0 [&::-webkit-scrollbar]:hidden">
+          {featuredSpomove.slice(0, 4).map((preset) => {
+            const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
+            return (
+              <div key={preset.id} className="flex h-auto w-[82vw] max-w-[340px] shrink-0 snap-start md:h-full md:w-auto md:max-w-none">
+                <SpomoveCard
+                  preset={preset}
+                  thumbnailUrl={thumbnail}
+                  contentOverride={spomoveContentMap[preset.id]}
+                  onOpenGuide={setPreviewSpomove}
+                  launchMode={launchMode}
+                />
+              </div>
+            );
+          })}
+        </div>
+        </div>
+      </section>
 
       {selectedProgram ? (
         <ProgramPreviewModal

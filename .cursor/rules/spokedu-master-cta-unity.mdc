@@ -1,28 +1,20 @@
 ---
-description: SPOKEDU MASTER Primary CTA 통일 (색·흰선 방지)
+description: MASTER CTA — pointer to Visual SSOT six-kind grammar
 globs: app/spokedu-master/**/*
 alwaysApply: false
 ---
 
-# MASTER Primary CTA 통일
+# MASTER CTA
 
-거시 목표: 전 페이지 흐름·통일성, 구독 가치(실행/시작이 선명).
+Visual SSOT: `app/spokedu-master/MASTER_VISUAL_SYSTEM.md` § CTA grammar.
 
-## 토큰
-- Primary 행동 색: `var(--spm-cta)` (`#2563eb`) / hover `var(--spm-cta-hover)`
-- `--spm-acc`(`#0f172a`)는 텍스트·배지·**선택 칩**용. **솔리드 실행 버튼에 쓰지 말 것.**
+Six kinds only: Primary, Secondary, Quiet, Inline, Icon, Sticky mobile.
 
-## 클래스
-- 솔리드 Primary: `spm-btn-primary` (`globals.css`)
-- 홈 수업 카드 `수업 준비`처럼 **보조/얕은** 액션은 보더 버튼 유지 (spm-btn-primary 금지)
-- 필터·탭 선택: `spmChipClass` / `spmSegClass` (`lib/masterUiClasses.ts`) — acc 솔리드. 페이지마다 `bg-slate-950` 하드코딩 금지
+Tokens:
 
-## 카피
-- 제품 UI·게이트·랜딩·meta에 **「바로 실행」** 금지 (CTA 거짓·계약 위반). 대신 **시작** / **화면으로 실행** / **실행**.
-- 계약 문서·테스트의 “금지 목록”에만 `바로 실행` 문자열이 남을 수 있다.
+- Solid Primary = `spm-btn-primary` / `--spm-cta` (not `--spm-acc`, not `bg-slate-950`)
+- Selection chips = `spmChipClass` / `spmSegClass` (not Primary)
+- Product UI must not use `바로 실행`
+- No inset white hairline on Primary
 
-## 금지
-- Primary에 `bg-slate-950` / `bg-[var(--spm-acc)]` / inset white shadow 혼용
-- 페이지마다 다른 Primary 블루·검정 임의 선택
-- 흰 세로선 유발: `shadow-[inset_0_1px_0_rgba(255,255,255,...)]`
-- 선택 칩을 Primary 블루로 칠해 실행 버튼과 동급으로 보이게 하기
+Do not add a seventh CTA kind in this file.

@@ -13,7 +13,6 @@ import {
   marketingButtonPrimaryOnDark,
   marketingButtonSecondaryOnDark,
   marketingHeroDisplay,
-  marketingSectionDisplay,
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
@@ -35,14 +34,14 @@ function FlowSteps({
   arrowClassName?: string;
 }) {
   return (
-    <ul className={`${styles.flowRow} ${className ?? ''}`} aria-label="흐름">
+    <ol className={`${styles.flowRow} ${className ?? ''}`} aria-label="사용 흐름">
       {steps.map((step, index) => (
         <li key={step}>
           {index > 0 ? <span className={`${styles.flowArrow} ${arrowClassName ?? ''}`} aria-hidden>→</span> : null}
           <span>{step}</span>
         </li>
       ))}
-    </ul>
+    </ol>
   );
 }
 
@@ -138,7 +137,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
       {/* 02 Commercial Choice */}
       <section id={homePage.choice.id} className={styles.choice} aria-labelledby="editorial-choice-heading">
         <div className={styles.contentRail}>
-          <h2 id="editorial-choice-heading" className={`${marketingSectionDisplay} ${styles.measure}`}>
+          <h2 id="editorial-choice-heading" className={`${styles.homeQuietDisplay} ${styles.choiceTitle} ${styles.measure}`}>
             {homePage.choice.title}
           </h2>
           <div className={styles.choiceSplit}>
@@ -176,16 +175,27 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
       {/* 03 SPOMOVE */}
       <section id={homePage.spomove.id} className={styles.spomove} aria-labelledby="editorial-spomove-heading">
         <div className={styles.contentRail}>
-          <header className={styles.spomoveIntro}>
-            <p className={styles.spomoveLabel}>{homePage.spomove.label}</p>
-            <p className={`${styles.spomoveMicro} ${koreanText}`}>{homePage.spomove.micro}</p>
-            <h2 id="editorial-spomove-heading" className={`${styles.spomoveTitle} ${koreanText}`}>
-              {homePage.spomove.title}
-            </h2>
-            <p className={`${styles.spomoveDefinition} ${koreanText}`}>{homePage.spomove.definition}</p>
+          <header className={styles.spomoveHeader}>
+            <div className={styles.spomoveHeadline}>
+              <p className={styles.spomoveLabel}>{homePage.spomove.label}</p>
+              <h2 id="editorial-spomove-heading" className={`${styles.homeSignatureDisplay} ${styles.spomoveTitle} ${koreanText}`}>
+                {homePage.spomove.title}
+              </h2>
+            </div>
+            <div className={styles.spomoveSupport}>
+              <p className={`${styles.homeLead} ${styles.spomoveDefinition} ${koreanText}`}>{homePage.spomove.definition}</p>
+              <div className={styles.spomoveCta}>
+                <TextCta
+                  href={homePage.spomove.primaryCta.href}
+                  trackLabel={homePage.spomove.primaryCta.trackLabel}
+                  dark
+                >
+                  {homePage.spomove.primaryCta.label}
+                </TextCta>
+              </div>
+            </div>
           </header>
         </div>
-
         <div className={styles.visualRail}>
           <div className={styles.spomovePhoto}>
             <MediaPanel
@@ -193,86 +203,76 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               photoPriority
               loading="eager"
               className={`${styles.spomovePhotoMedia} border-0`}
-              sizes="(min-width: 1024px) 88vw, 92vw"
+              sizes="(min-width: 960px) 88vw, 92vw"
               objectFit="cover"
             />
           </div>
         </div>
-
         <div className={styles.contentRail}>
-          <div className={styles.spomoveFooter}>
-            <ol className={styles.spomovePrinciples} aria-label="SPOMOVE 핵심 원리">
-              {homePage.spomove.flow.map((step) => (
-                <li key={step} className={styles.spomovePrincipleItem}>
-                  <span className={styles.spomovePrincipleLabel}>{step}</span>
-                </li>
-              ))}
-            </ol>
-            <div className={styles.spomoveCta}>
-              <TextCta
-                href={homePage.spomove.primaryCta.href}
-                trackLabel={homePage.spomove.primaryCta.trackLabel}
-                dark
-              >
-                {homePage.spomove.primaryCta.label}
-              </TextCta>
-            </div>
-          </div>
+          <ol className={styles.spomovePrinciples} aria-label="SPOMOVE 핵심 원리">
+            {homePage.spomove.flow.map((step) => (
+              <li key={step.title} className={styles.spomovePrincipleItem}>
+                <h3 className={`${styles.homeSubhead} ${styles.spomovePrincipleLabel}`}>{step.title}</h3>
+                <p className={`${styles.spomovePrincipleBody} ${koreanText}`}>{step.description}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
       {/* 04 Subscription — Product Proof */}
       <section id={homePage.subscription.id} className={styles.subscription} aria-labelledby="editorial-subscription-heading">
         <div className={styles.contentRail}>
-          <div className={styles.productProof}>
-            <div className={styles.productProofCopy}>
-              <h2 id="editorial-subscription-heading" className={`${styles.subscriptionTitle} ${koreanText}`}>
-                {homePage.subscription.title}
-              </h2>
-              <p className={`${styles.subscriptionLead} ${koreanText}`}>{homePage.subscription.lead}</p>
-            </div>
-            <div className={styles.productStageVisual}>
-              <div className={styles.productStageFrame}>
-                <Image
-                  src={homePage.subscription.visual.src}
-                  alt={homePage.subscription.visual.alt}
-                  fill
-                  className={styles.productImageFocal}
-                  sizes="(min-width: 1200px) 58vw, 92vw"
-                  priority={false}
-                />
+          <div className={styles.subscriptionIntro}>
+            <h2 id="editorial-subscription-heading" className={`${styles.homeSectionDisplay} ${styles.subscriptionTitle} ${koreanText}`}>
+              {homePage.subscription.titleLines.map((line) => (
+                <span key={line} className={styles.subscriptionTitleLine}>
+                  {line}
+                </span>
+              ))}
+            </h2>
+            <div className={styles.subscriptionSupport}>
+              <p className={`${styles.homeBody} ${styles.subscriptionLead} ${koreanText}`}>{homePage.subscription.lead}</p>
+              <FlowSteps steps={homePage.subscription.flow} className={styles.subscriptionFlow} />
+              <div className={styles.subscriptionCta}>
+                <TextCta
+                  href={homePage.subscription.primaryCta.href}
+                  trackLabel={homePage.subscription.primaryCta.trackLabel}
+                >
+                  {homePage.subscription.primaryCta.label}
+                </TextCta>
               </div>
             </div>
           </div>
-          <footer className={styles.productStageFooter}>
-            <FlowSteps steps={homePage.subscription.flow} className={styles.subscriptionFlow} />
-            <TextCta
-              href={homePage.subscription.primaryCta.href}
-              trackLabel={homePage.subscription.primaryCta.trackLabel}
-            >
-              {homePage.subscription.primaryCta.label}
-            </TextCta>
-          </footer>
+        </div>
+        <div className={styles.visualRail}>
+          <div className={styles.productStageVisual}>
+            <div className={styles.productStageFrame}>
+              <Image
+                src={homePage.subscription.visual.src}
+                alt={homePage.subscription.visual.alt}
+                fill
+                className={styles.productImageFocal}
+                sizes="(min-width: 960px) 88vw, 92vw"
+                priority={false}
+              />
+            </div>
+          </div>
         </div>
       </section>
 
       {/* 05 Field Proof */}
       <section id={homePage.cases.id} className={styles.cases} aria-labelledby="editorial-cases-heading">
         <div className={styles.contentRail}>
-          <div className={styles.casesHeader}>
-            <div className="min-w-0">
-              <h2 id="editorial-cases-heading" className={`${styles.casesTitle} ${koreanText}`}>
-                {homePage.cases.title}
-              </h2>
-              <p className={`${styles.casesLead} ${koreanText}`}>{homePage.cases.lead}</p>
-            </div>
-            <TextCta href={homePage.cases.recordsCta.href} trackLabel={homePage.cases.recordsCta.trackLabel}>
-              {homePage.cases.recordsCta.label}
-            </TextCta>
-          </div>
+          <header className={styles.casesHeader}>
+            <h2 id="editorial-cases-heading" className={`${styles.homeSectionDisplay} ${styles.casesTitle} ${koreanText}`}>
+              {homePage.cases.title}
+            </h2>
+            <p className={`${styles.homeLead} ${styles.casesLead} ${koreanText}`}>{homePage.cases.lead}</p>
+          </header>
         </div>
         <div className={styles.visualRail}>
-          <ul className={styles.casesGrid}>
+          <ul className={styles.casesIndex}>
             {caseCards.map((card) => (
               <li key={card.slug} className={styles.caseItem}>
                 <CaseEditorialItem card={card} />
@@ -280,17 +280,24 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
             ))}
           </ul>
         </div>
+        <div className={styles.contentRail}>
+          <div className={styles.casesArchive}>
+            <TextCta href={homePage.cases.recordsCta.href} trackLabel={homePage.cases.recordsCta.trackLabel}>
+              {homePage.cases.recordsCta.label}
+            </TextCta>
+          </div>
+        </div>
       </section>
 
       {/* 06 Contact Conversion */}
       <section id={homePage.contact.id} className={styles.contact} aria-labelledby="editorial-contact-heading">
         <div className={styles.contentRail}>
           <div className={styles.contactLayout}>
-            <h2 id="editorial-contact-heading" className={marketingSectionDisplay}>
+            <h2 id="editorial-contact-heading" className={styles.homeQuietDisplay}>
               {homePage.contact.title}
             </h2>
             <div>
-              <p className={`${styles.contactBody} ${koreanText}`}>{homePage.contact.lead}</p>
+              <p className={`${styles.homeBody} ${styles.contactBody} ${koreanText}`}>{homePage.contact.lead}</p>
               <div className={styles.contactActions}>
                 <TrackedLink
                   href={homePage.contact.primaryCta.href}
@@ -316,14 +323,8 @@ function CaseEditorialItem({ card }: { card: CaseCardWithThumb }) {
           <CasePhoto card={card} />
         </div>
         <div className={styles.caseMeta}>
-          <h3 className={`${styles.caseVenue} ${koreanText}`}>{card.venue}</h3>
-          <p className={`${styles.caseDisplayMeta} ${koreanText}`}>{card.displayMeta}</p>
-          <p className={styles.caseCta}>
-            {card.ctaLabel}
-            <span className={styles.caseCtaArrow} aria-hidden>
-              →
-            </span>
-          </p>
+          <h3 className={`${styles.homeSubhead} ${styles.caseVenue} ${koreanText}`}>{card.venue}</h3>
+          <p className={`${styles.homeMeta} ${styles.caseDisplayMeta} ${koreanText}`}>{card.displayMeta}</p>
         </div>
       </article>
     </TrackedLink>
@@ -339,7 +340,7 @@ function CasePhoto({ card }: { card: CaseCardWithThumb }) {
       className={`${styles.casePhotoImage} ${styles.photoGradeCase}`}
       style={{ objectPosition: card.editorialObjectPosition ?? '50% 50%' }}
       loading="lazy"
-      sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, (max-width: 1439px) 32vw, 420px"
+      sizes="(max-width: 959px) 92vw, 32vw"
     />
   );
 }

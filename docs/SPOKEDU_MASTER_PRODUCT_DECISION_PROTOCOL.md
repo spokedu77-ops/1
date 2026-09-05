@@ -175,6 +175,10 @@ PRODUCT OWNER DECISION: PENDING
 | **PD-006** | Session URL entry ≠ autostart; use runtime transition | `sessionEntryMode.ts`, `publicOfficialPresetSessionHref` forces `autostart: false` for public links |
 | **PD-007** | `masterUserLoop` / `rerun_spomove` contract — **no further change** in current cycle | Restored baseline; treat as KEEP until new decision |
 
+Visual file authority is **not** a Product Decision. See `MASTER_VISUAL_SYSTEM.md` header. Do not add PD-009+ for typography source, audit source, or component authority.
+
+**PD-008 (closed):** legacy governance, 2026-09-05 — **SUPERSEDED.** Not a behavior decision. Kept here only so the ID is not reused.
+
 ---
 
 ## 7. Pending Decision Candidates (Foundation Sprint)
@@ -201,6 +205,7 @@ Implementation sprints must include:
 1. [Product Constitution](./SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md) (reference, not paste)
 2. This Decision Protocol
 3. Completed [Sprint Brief](./SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md)
+4. UI work: [Art Direction](../app/spokedu-master/MASTER_VISUAL_SYSTEM.md) — not archived v3, not Foundation audit, not `MASTER_ART_DIRECTION.md` pointer
 
 Codex must not implement product behavior **outside** Sprint Brief scope.
 
@@ -212,7 +217,7 @@ If Cursor rules conflict:
 
 1. **Product governance** (this sprint) defines hierarchy and approval gates
 2. **preserve-existing-behavior** blocks unapproved changes
-3. **work-principles** requires global thinking before local edits
+3. **Visual SSOT** (`MASTER_VISUAL_SYSTEM.md`) owns look; work-principles / cta-unity are pointers only
 4. **no-verify-shell** — no test/lint/build commands unless user explicitly requests
 
 If still ambiguous → **report**; do not pick arbitrarily.

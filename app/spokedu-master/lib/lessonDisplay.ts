@@ -70,6 +70,18 @@ export function getLessonTitle(program: Program, fallback = 'SPOKEDU 수업') {
   return cleanText(program.title, fallback);
 }
 
+export function splitLessonTitle(title: string): {
+  koreanTitle: string;
+  englishTitle: string | null;
+} {
+  const value = title.trim();
+  const match = value.match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+  if (!match) return { koreanTitle: value, englishTitle: null };
+  const koreanTitle = match[1]?.trim() || value;
+  const englishTitle = match[2]?.trim() || null;
+  return { koreanTitle, englishTitle };
+}
+
 export function getLessonTheme(program: Program) {
   const value = normalizeLessonTheme(cleanText(program.category, ''));
   return isLessonPlaceholder(value) ? '' : value;
@@ -137,4 +149,18 @@ export function buildLessonCardSupportMeta(
   const operation = equipment || participant;
 
   return [target, space, operation].filter(Boolean).join(' · ');
+}
+
+/** Home Weekly: decision axes only — target / space / equipment, max two. */
+export function buildHomeWeeklySupportMeta(
+  program: Program,
+  options: {
+    equipmentFallback?: string;
+  } = {},
+) {
+  return buildLessonCardSupportMeta(program, options)
+    .split(' · ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(' · ');
 }

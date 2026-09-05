@@ -158,11 +158,25 @@ describe('spokedu site IA', () => {
     expect(JSON.stringify(homePage)).not.toMatch(/FIELD|CONTENT|SYSTEM/);
     expect('why' in homePage).toBe(false);
     expect(homePage.spomove.primaryCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
-    expect(homePage.spomove.flow).toEqual(['화면 확인', '규칙 판단', '움직임']);
+    expect(homePage.spomove.flow).toEqual([
+      {
+        title: '화면 확인',
+        description: '화면에 제시된 정보와 규칙을 확인합니다.',
+      },
+      {
+        title: '규칙 판단',
+        description: '주어진 규칙에 따라 어떻게 반응할지 판단합니다.',
+      },
+      {
+        title: '움직임',
+        description: '판단한 반응을 몸의 움직임으로 실행합니다.',
+      },
+    ]);
     expect(homePage.spomove.title).toContain('화면을 보고');
     expect(homePage.spomove.definition).not.toMatch(/향상|개선|반드시 성장/);
-    expect(homePage.spomove.micro).toBe('직접 수업하며 만든 대표 콘텐츠');
+    expect('micro' in homePage.spomove).toBe(false);
     expect(homePage.subscription.flow).toEqual(['찾기', '준비', '진행', '기록']);
+    expect(homePage.subscription.titleLines).toEqual(['오늘 수업을 찾고,', '준비하고,', '바로 운영하세요.']);
     expect(homePage.contact.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
     expect(homePage.contact.primaryCta.label).toBe('문의하기');
     expect(homePage.contact.title).toBe('수업이나 활용 방법을 상담해보세요.');
@@ -185,6 +199,54 @@ describe('spokedu site IA', () => {
     ]);
     expect(homePage.cases.cards).toHaveLength(3);
     expect(homePage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
+    expect(homePage.cases.cards.every((card) => !('ctaLabel' in card))).toBe(true);
+  });
+
+  it('keeps Home constitution P0 information relationships', () => {
+    const landingSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/components/home/home-editorial-landing.tsx'),
+      'utf8',
+    );
+    const cssSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/components/home/home-editorial.module.css'),
+      'utf8',
+    );
+    const homePageSource = readFileSync(join(process.cwd(), 'app/spokedu/data/home-page.ts'), 'utf8');
+
+    const spomoveBlock = landingSource.slice(
+      landingSource.indexOf('{/* 03 SPOMOVE */}'),
+      landingSource.indexOf('{/* 04 Subscription'),
+    );
+    const subscriptionBlock = landingSource.slice(
+      landingSource.indexOf('{/* 04 Subscription'),
+      landingSource.indexOf('{/* 05 Field Proof */}'),
+    );
+    const casesBlock = landingSource.slice(
+      landingSource.indexOf('{/* 05 Field Proof */}'),
+      landingSource.indexOf('{/* 06 Contact Conversion */}'),
+    );
+
+    expect(spomoveBlock.indexOf('primaryCta')).toBeLessThan(spomoveBlock.indexOf('spomovePhoto'));
+    expect(spomoveBlock).toMatch(/spomoveHeader|spomoveSupport/);
+    expect(spomoveBlock).not.toMatch(/spomoveSpread|spomoveMicro|직접 수업하며 만든 대표 콘텐츠/);
+    expect(homePage.spomove.flow).toHaveLength(3);
+    expect(homePage.spomove.flow.every((step) => step.title && step.description)).toBe(true);
+
+    expect(subscriptionBlock).toMatch(/subscriptionIntro/);
+    expect(subscriptionBlock).toMatch(/subscriptionSupport/);
+    expect(subscriptionBlock.indexOf('subscriptionFlow')).toBeLessThan(subscriptionBlock.indexOf('productStageVisual'));
+    expect(subscriptionBlock.indexOf('subscriptionCta')).toBeLessThan(subscriptionBlock.indexOf('productStageVisual'));
+    expect(subscriptionBlock).not.toMatch(/productStageFooter|productProofCopy/);
+    expect(cssSource).not.toMatch(/productStageFooter|spomoveFooter|spomoveMicro|productProof|casesGrid|caseRow|spomoveSpread/);
+
+    expect(homePage.cases.cards).toHaveLength(3);
+    expect(casesBlock).not.toMatch(/ctaLabel|사례 보기/);
+    expect(casesBlock).toMatch(/casesIndex/);
+    expect(casesBlock).toMatch(/casesArchive/);
+    expect(casesBlock.indexOf('casesIndex')).toBeLessThan(casesBlock.indexOf('casesArchive'));
+    expect(cssSource).not.toMatch(/caseItem:first-child/);
+    expect(homePageSource).not.toMatch(/HOME_FEATURED_CASE_SLUG/);
+    expect(JSON.stringify(homePage.spomove.flow)).not.toMatch(/향상|개선|치료|인지|주의력|반응속도/);
   });
 
   it('keeps Home media roles distinct and backed by approved assets', () => {

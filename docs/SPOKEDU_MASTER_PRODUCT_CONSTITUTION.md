@@ -114,8 +114,10 @@ Priorities: **professional, fast, clear, trustworthy, field-usable**
 
 - Not childish or overly colorful UI merely because the domain is youth PE
 - Metadata neutral by default; emphasis only for status / execution / warning
-- Same role = same grammar across pages (labels, CTA weight, rhythm)
-- Primary CTA: `spm-btn-primary`; selection chips: `spmChipClass` / `spmSegClass` (see CTA unity rule)
+- Same role = same grammar across pages
+- Visual tokens, type, width, media, rhythm, CTA six: [Art Direction](../app/spokedu-master/MASTER_VISUAL_SYSTEM.md) only
+
+Do not duplicate type scales or CTA recipes here.
 
 ---
 
@@ -169,7 +171,7 @@ When principles conflict, resolve top-down:
 3. **Domain Meaning**
 4. **Information Architecture**
 5. **Interaction Semantics**
-6. **Visual System**
+6. **Art Direction** (look)
 7. **Existing implementation**
 8. **Existing tests**
 
@@ -185,12 +187,11 @@ Codex does **not** gain authority to REPLACE/REMOVE existing contracts because a
 |-----------------|------|
 | This Constitution | Why and what “good” means |
 | [Decision Protocol](./SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md) | When and how contracts change |
-| [Audit Baseline](./SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md) | Current state evidence |
+| [Art Direction](../app/spokedu-master/MASTER_VISUAL_SYSTEM.md) | Visual SSOT (L2) |
 | [Sprint Brief Template](./SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md) | Scoped implementation input |
+| [Design Governance](./SPOKEDU_MASTER_DESIGN_GOVERNANCE.md) | Visual doc/rule inventory (not a fifth UI spec) |
 | `.cursor/rules/spokedu-master-product-governance.mdc` | Agent enforcement |
 | `.cursor/rules/preserve-existing-behavior.mdc` | No unapproved behavior change |
-| `.cursor/rules/spokedu-master-work-principles.mdc` | Whole-page context & unity |
-| `.cursor/rules/spokedu-master-cta-unity.mdc` | CTA visual/copy contract |
 
 **Core principle:**
 
@@ -217,6 +218,7 @@ Full registry: [Decision Protocol § Approved Decisions](./SPOKEDU_MASTER_PRODUC
 
 ## Related SSOT (do not duplicate)
 
+- Visual SSOT: `app/spokedu-master/MASTER_VISUAL_SYSTEM.md`
 - Commercial ops: [spokedu-master-commercial-runbook.md](./spokedu-master-commercial-runbook.md)
 - SPOMOVE contract: `app/spokedu-master/spomove/SPOMOVE_PRODUCT_CONTRACT.md`
 - Public product slice: `app/spokedu-master/lib/publicProductContract.ts`

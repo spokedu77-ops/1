@@ -7,9 +7,14 @@ alwaysApply: true
 
 ## Before any MASTER product work
 
-1. Read [Product Constitution](../../docs/SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md)
-2. Read [Decision Protocol](../../docs/SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md)
-3. If implementing: require completed [Sprint Brief](../../docs/SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md)
+Read at most these four:
+
+1. [Product Constitution](../../docs/SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md)
+2. [Decision Protocol](../../docs/SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md)
+3. UI look: [Art Direction](../../app/spokedu-master/MASTER_VISUAL_SYSTEM.md)
+4. If implementing: completed [Sprint Brief](../../docs/SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md)
+
+Surface audit, archived v3, and extra design essays are not implementation authority. See [Design Governance](../../docs/SPOKEDU_MASTER_DESIGN_GOVERNANCE.md).
 
 ## Authority (non-negotiable)
 
@@ -40,8 +45,8 @@ Distinguish first vs returning user; Free/Lite/Premium; Team/Center (sales-led, 
 - Do not implement product behavior **outside Sprint Brief**
 - Do not expand scope for “improvement” or “unity” without approval
 - Pair with **preserve-existing-behavior**: unrequested behavior change forbidden
-- Pair with **work-principles**: think whole surface / journey before local patch
-- Pair with **cta-unity** for CTA visual/copy
+- Pair with **work-principles**: pointer only — Visual SSOT owns look
+- Pair with **cta-unity**: pointer only — Visual SSOT owns the six CTA kinds
 
 ## Rule conflicts
 

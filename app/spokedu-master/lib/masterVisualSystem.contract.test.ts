@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 const actions = readFileSync('app/spokedu-master/lib/masterActionGrammar.ts', 'utf8');
 const ui = readFileSync('app/spokedu-master/lib/masterUiClasses.ts', 'utf8');
 
-describe('MASTER Visual System v1', () => {
+describe('MASTER action/token freeze (not Art Direction PASS)', () => {
   it('keeps primary, secondary, quiet, and destructive actions semantically distinct', () => {
     expect(actions).toContain('SPM_JOURNEY_PRIMARY');
     expect(actions).toContain('SPM_JOURNEY_SECONDARY');

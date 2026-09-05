@@ -1,6 +1,6 @@
 # SPOKEDU MASTER — Sprint Brief Template
 
-**Use with:** [Constitution](./SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md) + [Decision Protocol](./SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md)
+**Use with:** [Constitution](./SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md) + [Decision Protocol](./SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md) + (UI) [Art Direction](../app/spokedu-master/MASTER_VISUAL_SYSTEM.md)
 
 Copy this file per sprint. Fill all sections before implementation.
 

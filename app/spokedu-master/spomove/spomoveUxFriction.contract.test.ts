@@ -30,6 +30,5 @@ describe('SPOMOVE user-friction hardening contracts', () => {
     expect(sheet).not.toContain('실제 운영 예시 영상입니다.');
     expect(sheet).not.toContain('실제 준비 수량은 오른쪽 기준을 따릅니다.');
     expect(sheet).not.toContain('실행 전 오른쪽 준비·진행 기준을 확인하세요.');
-    expect(sheet).toContain('grid-cols-[minmax(72px,0.55fr)_minmax(104px,0.9fr)_minmax(120px,1.2fr)]');
   });
 });

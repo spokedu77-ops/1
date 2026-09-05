@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), 'app/spokedu-master', file), 'utf8');
 
-describe('MASTER representative visual finish', () => {
+describe('MASTER representative visual finish (pre-reset snapshot; not Art Direction PASS)', () => {
   it('keeps Home editorial and media-first without strong content shadows', () => {
     const home = read('dashboard/DashboardView.tsx');
     expect(home).toContain("{'이번 주,\\n어떤 수업을 해볼까요?'}");

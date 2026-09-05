@@ -4,11 +4,13 @@ import { describe, expect, it } from 'vitest';
 
 const read = (file: string) => fs.readFileSync(path.join(process.cwd(), 'app/spokedu-master', file), 'utf8');
 
-describe('MASTER UI Foundation v3', () => {
-  it('declares one authority and the required semantic primitives', () => {
+describe('MASTER Visual SSOT (not rendered PASS)', () => {
+  it('declares one visual authority and keeps required semantic primitives in code', () => {
     const doc = read('MASTER_VISUAL_SYSTEM.md');
+    const pointer = read('MASTER_ART_DIRECTION.md');
     const primitives = read('components/ui/MasterPrimitives.tsx');
-    expect(doc).toContain('sole visual authority');
+    expect(doc).toContain('Visual SSOT');
+    expect(pointer).toContain('No implementation authority');
     for (const name of ['MasterPageShell', 'MasterPageHeader', 'MasterSection', 'MasterState', 'MasterAgenda', 'MasterCollectionRow', 'MasterContentCard', 'MasterDocumentSurface']) expect(doc).toContain(name);
     for (const name of ['MasterPageShell', 'MasterPageHeader', 'MasterSection', 'MasterAgenda', 'MasterCollectionRow', 'MasterContentCard', 'MasterDocumentSurface']) expect(primitives).toContain(`function ${name}`);
   });
