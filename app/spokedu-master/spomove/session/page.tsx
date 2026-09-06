@@ -11,6 +11,7 @@ import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingB
 import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 
 import { useMasterStore } from '../../store';
+import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import { EngineRouter, type EngineCompletePayload } from './EngineRouter';
 import { lockViewportScroll } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
@@ -19,6 +20,7 @@ import {
   publicOfficialPresetSessionHref,
   standardSpomoveDurationSec,
 } from '../officialSpomovePresets';
+import { canLaunchInternalSpomoveCandidate } from '../internalSpomoveCandidateAccess';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 import { parseSpomoveHubReturnHref } from '../spomoveHubNavigation';
 import {
@@ -130,6 +132,11 @@ function SpomoveSessionContent() {
   const searchParams = useSearchParams();
   const presetId = searchParams.get('preset') ?? '';
   const baseOfficialPreset = useMemo(() => findOfficialSpomovePreset(presetId), [presetId]);
+  const masterAccess = useOptionalMasterAccessContext();
+  const canLaunchPreset = canLaunchInternalSpomoveCandidate(
+    baseOfficialPreset,
+    masterAccess?.snapshot.isAdmin,
+  );
   const difficultyKind = useMemo(
     () => (baseOfficialPreset ? getSpomoveDifficultyKind(baseOfficialPreset) : null),
     [baseOfficialPreset],
@@ -659,7 +666,7 @@ function SpomoveSessionContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [beginConfiguredSession, showBriefing, state]);
 
-  if (!officialPreset) return <UnsupportedPreset />;
+  if (!officialPreset || !canLaunchPreset) return <UnsupportedPreset />;
 
   if (state === 'running') {
     return (

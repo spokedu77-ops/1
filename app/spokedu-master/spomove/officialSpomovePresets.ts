@@ -112,6 +112,8 @@ export type OfficialSpomovePreset = {
   /** active: SPOKEDU MASTER 노출, hold: Admin 보존·SPOKEDU MASTER 숨김 */
   catalogStatus?: 'active' | 'hold';
   holdReason?: string;
+  /** 일반 구독자 session URL 차단. 기존 HOLD 전역 정책과 별개 */
+  internalCandidate?: boolean;
 };
 
 export const OFFICIAL_SPOMOVE_CORE_COUNT = 43;
@@ -1085,6 +1087,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
   {
     id: 'stroop-arrow-direction-color-v2',
     catalogStatus: 'hold',
+    internalCandidate: true,
     holdReason: '2A 내부 후보: Public 교체 전 검증용. Hub 비노출.',
     sortOrder: 37,
     title: '(내부) 스트룹 화살표 방향×색 이동 후보',

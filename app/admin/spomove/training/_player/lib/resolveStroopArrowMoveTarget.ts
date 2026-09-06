@@ -13,9 +13,10 @@ function colorIdFromFillHex(hex: string | undefined): string | null {
   return COLORS.find((c) => c.bg.toLowerCase() === normalized)?.id ?? null;
 }
 
-function normalizeDimension(task: string | undefined): StroopArrowMoveDimension {
+function normalizeDimension(task: string | undefined): StroopArrowMoveDimension | null {
+  if (task === 'direction') return 'direction';
   if (task === 'color' || task === 'fill') return 'color';
-  return 'direction';
+  return null;
 }
 
 /**
@@ -31,6 +32,7 @@ export function resolveStroopArrowMoveTarget(input: {
 }): string | null {
   void input.reverse;
   const dimension = normalizeDimension(input.stroopTask);
+  if (!dimension) return null;
   if (dimension === 'color') {
     return input.fillColorId ?? colorIdFromFillHex(input.fillHex);
   }
@@ -38,6 +40,18 @@ export function resolveStroopArrowMoveTarget(input: {
     SPATIAL_ARROW_COLOR_BY_DIRECTION[input.arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION] ??
     null
   );
+}
+
+export function resolveStroopArrowMovementCue(content: {
+  stroopArrowResponse?: unknown;
+  stroopArrowTask?: unknown;
+} | null | undefined): string | null {
+  if (content?.stroopArrowResponse !== 'movement') return null;
+  if (content.stroopArrowTask === 'direction') return STROOP_ARROW_MOVE_TASK_CUE.direction;
+  if (content.stroopArrowTask === 'fill' || content.stroopArrowTask === 'color') {
+    return STROOP_ARROW_MOVE_TASK_CUE.color;
+  }
+  return null;
 }
 
 export function isStroopArrowCongruent(input: {

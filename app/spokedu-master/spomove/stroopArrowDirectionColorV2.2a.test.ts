@@ -8,8 +8,10 @@ import {
 import {
   isStroopArrowCongruent,
   resolveStroopArrowMoveTarget,
+  resolveStroopArrowMovementCue,
   STROOP_ARROW_MOVE_TASK_CUE,
 } from '@/app/admin/spomove/training/_player/lib/resolveStroopArrowMoveTarget';
+import { canLaunchInternalSpomoveCandidate } from './internalSpomoveCandidateAccess';
 import { isHubListedPreset, isHubRunnablePreset } from './movements/isHubVisiblePreset';
 import {
   findOfficialSpomovePreset,
@@ -58,6 +60,12 @@ describe('SPOMOVE 2A stroop-arrow-direction-color-v2', () => {
     expect(isHubListedPreset(preset!)).toBe(false);
     expect(isHubRunnablePreset(preset!)).toBe(false);
     expect(getSpomovePadLayoutVariant(preset!)).toBe('compass');
+    expect(preset?.internalCandidate).toBe(true);
+    expect(canLaunchInternalSpomoveCandidate(preset, false)).toBe(false);
+    expect(canLaunchInternalSpomoveCandidate(preset, undefined)).toBe(false);
+    expect(canLaunchInternalSpomoveCandidate(preset, true)).toBe(true);
+    expect(canLaunchInternalSpomoveCandidate(findOfficialSpomovePreset('stroop-missing-color-50'), false)).toBe(true);
+    expect(canLaunchInternalSpomoveCandidate(findOfficialSpomovePreset('stroop-arrow-reverse-08'), false)).toBe(true);
   });
 
   it('Test E — 방향과 색이 독립이며 Congruent/Incongruent가 모두 발생', () => {
@@ -110,6 +118,71 @@ describe('SPOMOVE 2A stroop-arrow-direction-color-v2', () => {
         stroopTask: 'direction',
       }),
     ).toBe('yellow');
+    expect(
+      resolveStroopArrowMoveTarget({
+        arrowId: 'left',
+        fillColorId: 'yellow',
+        stroopTask: 'direction',
+      }),
+    ).toBe('green');
+    expect(
+      resolveStroopArrowMoveTarget({
+        arrowId: 'down',
+        fillColorId: 'red',
+        stroopTask: 'direction',
+      }),
+    ).toBe('blue');
+  });
+
+  it('invalid stroopTask / arrow / color → null', () => {
+    expect(
+      resolveStroopArrowMoveTarget({
+        arrowId: 'up',
+        fillColorId: 'blue',
+        stroopTask: undefined,
+      }),
+    ).toBeNull();
+    expect(
+      resolveStroopArrowMoveTarget({
+        arrowId: 'up',
+        fillColorId: 'blue',
+        stroopTask: '',
+      }),
+    ).toBeNull();
+    expect(
+      resolveStroopArrowMoveTarget({
+        arrowId: 'up',
+        fillColorId: 'blue',
+        stroopTask: 'garbage',
+      }),
+    ).toBeNull();
+    expect(
+      resolveStroopArrowMoveTarget({
+        arrowId: 'unknown',
+        fillColorId: 'blue',
+        stroopTask: 'direction',
+      }),
+    ).toBeNull();
+    expect(
+      resolveStroopArrowMoveTarget({
+        arrowId: 'up',
+        fillHex: '#NOT_A_COLOR',
+        stroopTask: 'color',
+      }),
+    ).toBeNull();
+  });
+
+  it('invalid movement task는 Cue를 만들지 않는다', () => {
+    expect(resolveStroopArrowMovementCue({ stroopArrowResponse: 'movement', stroopArrowTask: 'garbage' })).toBeNull();
+    expect(resolveStroopArrowMovementCue({ stroopArrowResponse: 'movement', stroopArrowTask: '' })).toBeNull();
+    expect(resolveStroopArrowMovementCue({ stroopArrowResponse: 'movement' })).toBeNull();
+    expect(
+      resolveStroopArrowMovementCue({ stroopArrowResponse: 'movement', stroopArrowTask: 'direction' }),
+    ).toBe(STROOP_ARROW_MOVE_TASK_CUE.direction);
+    expect(
+      resolveStroopArrowMovementCue({ stroopArrowResponse: 'movement', stroopArrowTask: 'fill' }),
+    ).toBe(STROOP_ARROW_MOVE_TASK_CUE.color);
+    expect(resolveStroopArrowMovementCue({ stroopArrowTask: 'direction' })).toBeNull();
   });
 
   it('movement 신호의 TTS는 정답이 아니라 과제 차원 Cue다', () => {

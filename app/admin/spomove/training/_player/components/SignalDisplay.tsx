@@ -3,6 +3,7 @@
 import React from 'react';
 import { PAD_POSITIONS } from '@/app/lib/admin/constants/padGrid';
 import type { FruitSlide, VariantPanelContent } from '../lib/signals';
+import { resolveStroopArrowMovementCue } from '../lib/resolveStroopArrowMoveTarget';
 import { BodyActionIcon, BODY_ACTION_LABELS, type BodyActionId } from './BodyActionIcons';
 
 const STROOP_WORD_FONT_FAMILY = '"Bagel Fat One", "Jua", "Nunito", "Noto Sans KR", sans-serif';
@@ -500,12 +501,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
         })());
     const strokeCol = lightPage ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.22)';
     const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
-    const movementCue =
-      content?.stroopArrowResponse === 'movement'
-        ? content.stroopArrowTask === 'direction'
-          ? '방향을 보세요'
-          : '색을 보세요'
-        : null;
+    const movementCue = resolveStroopArrowMovementCue(content);
     return (
       <div key={animKey} className="signal-blink" style={C}>
         {movementCue ? (
