@@ -91,7 +91,7 @@ export class ColorGateManager {
       this.clearTextureCache();
       return;
     }
-    this.setPoseImagesByPose(new Map([['lunge-reach', img]]));
+    this.setPoseImagesByPose(new Map<ColorGatePoseKey, HTMLImageElement>([['lunge', img]]));
   }
 
   setPoseImages(images: HTMLImageElement[]): void {
@@ -227,7 +227,7 @@ export class ColorGateManager {
         this.poseBag[j] = tmp;
       }
     }
-    return this.poseBag.pop() ?? 'star';
+    return this.poseBag.pop() ?? COLOR_GATE_POSE_SEQUENCE[0]!;
   }
 
   private pickNextGateColor(): GateColorId {
