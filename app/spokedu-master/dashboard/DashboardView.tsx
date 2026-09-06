@@ -249,7 +249,8 @@ function WeeklyProgramCard({
       hasVideo={programHasPlayableVideo(program)}
       onPreview={() => onPreview(program)}
       priority={priority}
-      sizes="(min-width: 1280px) 312px, (min-width: 640px) 300px, 82vw"
+      sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
+      cleanSquareMedia
     />
   );
 }
@@ -318,14 +319,15 @@ function SpomoveCard({
       <button
         type="button"
         onClick={() => onOpenGuide(preset)}
-        className="relative w-full overflow-hidden rounded-[16px] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+        className="group/preview w-full cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
         aria-label={`${displayModel.title} 활동 준비 열기`}
       >
         <SpomoveLayeredThumb
           src={thumbnailUrl}
-          sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw"
+          sizes="(min-width: 1280px) 224px, (min-width: 768px) 45vw, 82vw"
           priority={priority}
-          className="!aspect-video rounded-[16px]"
+          presentation="home-clean-square"
+          className="rounded-[16px]"
           fallback={(
             <div className="grid h-full w-full grid-cols-2 gap-1.5 bg-slate-950 p-4" aria-hidden="true">
               {SPOMOVE_PAD_GRID_HEX.map((color) => (
@@ -334,16 +336,16 @@ function SpomoveCard({
             </div>
           )}
         />
+        <div className="mt-2.5">
+          {displayModel.typeLabel ? <p className={MV_META}>{displayModel.typeLabel}</p> : null}
+          <h3 className={`${MV_EXTENSION_TITLE} mt-0.5 transition-colors duration-200 group-hover/preview:text-slate-950`}>{displayModel.title}</h3>
+          {displayModel.support ? <p className={`${MV_META} mt-1`}>{displayModel.support}</p> : null}
+        </div>
       </button>
-      <div className="mt-2.5 flex min-h-0 flex-1 flex-col">
-        {displayModel.typeLabel ? <p className={MV_META}>{displayModel.typeLabel}</p> : null}
-        <h3 className={`${MV_EXTENSION_TITLE} mt-1`}>{displayModel.title}</h3>
-        {displayModel.support ? <p className={`${MV_META} mt-2`}>{displayModel.support}</p> : null}
-        <Link href={startHref} data-spm-spomove-card-action="start" className={`${MV_HOME_START_QUIET} mt-auto pt-2`}>
-          활동 바로 시작
-          <ArrowRight size={15} aria-hidden />
-        </Link>
-      </div>
+      <Link href={startHref} data-spm-spomove-card-action="start" className={`${MV_HOME_START_QUIET} mt-2.5`}>
+        활동 바로 시작
+        <ArrowRight size={15} aria-hidden />
+      </Link>
     </article>
   );
 }
@@ -807,7 +809,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="featured-flow"
         aria-label="이번 주 수업 추천"
-        className="bg-white px-4 py-11 sm:px-6 lg:pb-12 lg:pt-11"
+        className="bg-white px-4 pb-8 pt-11 sm:px-6"
       >
         <div className={MV_EDITORIAL_WIDTH}>
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
@@ -820,10 +822,10 @@ function EntitledDashboardView() {
           {!programsLoaded ? (
             <p className="text-[15px] text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
           ) : weeklyPrograms.length > 0 ? (
-            <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden">
-              <div className="flex w-max snap-x snap-mandatory items-start gap-5 lg:snap-proximity">
+            <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max snap-x snap-mandatory items-start gap-5 lg:grid lg:w-auto lg:grid-cols-4 lg:gap-6 lg:snap-none">
                 {weeklyPrograms.slice(0, 4).map((program, index) => (
-                  <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-[312px] lg:max-w-none">
+                  <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-auto lg:max-w-none lg:shrink">
                     <WeeklyProgramCard
                       program={program}
                       onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
@@ -855,7 +857,7 @@ function EntitledDashboardView() {
         aria-labelledby="spomove-heading"
         className="w-full bg-white px-4 pb-12 sm:px-6"
       >
-        <div className={`${MV_EDITORIAL_WIDTH} border-t border-slate-100 pt-9`}>
+        <div className={`${MV_EDITORIAL_WIDTH} border-t border-slate-100 pt-8`}>
         <SectionHeader
           title="SPOMOVE로 확장하기"
           titleId="spomove-heading"
@@ -863,11 +865,11 @@ function EntitledDashboardView() {
           href="/spokedu-master/spomove"
           action="SPOMOVE 더 보기"
         />
-        <div className="-mx-4 flex snap-x snap-mandatory items-stretch gap-5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:gap-6 lg:px-0 [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex snap-x snap-mandatory items-stretch gap-5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:mx-0 lg:grid-cols-4 lg:gap-8 lg:px-0 [&::-webkit-scrollbar]:hidden">
           {featuredSpomove.slice(0, 4).map((preset) => {
             const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
             return (
-              <div key={preset.id} className="flex h-auto w-[82vw] max-w-[340px] shrink-0 snap-start md:h-full md:w-auto md:max-w-none">
+              <div key={preset.id} className="flex h-auto w-[82vw] max-w-[340px] shrink-0 snap-start md:h-full md:w-auto md:max-w-none lg:max-w-[224px]">
                 <SpomoveCard
                   preset={preset}
                   thumbnailUrl={thumbnail}

@@ -23,6 +23,7 @@ export function InstructionalThumb({
   sizes,
   priority = false,
   className,
+  presentation = 'default',
   fallback,
 }: {
   src: string;
@@ -30,6 +31,7 @@ export function InstructionalThumb({
   sizes: string;
   priority?: boolean;
   className?: string;
+  presentation?: 'default' | 'home-clean-square';
   fallback?: ReactNode;
 }) {
   const imageSrc = normalizeImageSrc(src);
@@ -37,6 +39,7 @@ export function InstructionalThumb({
   const showImage = Boolean(imageSrc) && !failed;
   const unoptimized = isRemoteImage(imageSrc) && !imageSrc.includes('.supabase.co');
   const svg = isSvgSrc(imageSrc);
+  const cleanSquare = presentation === 'home-clean-square';
 
   const failOver = (event: { currentTarget: HTMLImageElement }) => {
     const fallbackSrc = getImageFallbackSrc(imageSrc);
@@ -50,7 +53,7 @@ export function InstructionalThumb({
   return (
     <div
       data-master-media="instructional"
-      className={`relative aspect-[4/3] w-full overflow-hidden rounded-[16px] bg-slate-200 ${className ?? ''}`.trim()}
+      className={`relative w-full overflow-hidden rounded-[16px] bg-slate-200 ${cleanSquare ? 'aspect-square' : 'aspect-[4/3]'} ${className ?? ''}`.trim()}
     >
       {showImage ? (
         svg ? (
@@ -63,6 +66,18 @@ export function InstructionalThumb({
             priority={priority}
             unoptimized={unoptimized}
             className="object-fill object-center"
+            onError={failOver}
+          />
+        ) : cleanSquare ? (
+          <Image
+            src={imageSrc}
+            alt={alt}
+            fill
+            sizes={sizes}
+            quality={75}
+            priority={priority}
+            unoptimized={unoptimized}
+            className="object-cover object-center"
             onError={failOver}
           />
         ) : (

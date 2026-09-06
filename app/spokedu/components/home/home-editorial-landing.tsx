@@ -62,7 +62,7 @@ function TextCta({
       trackLabel={trackLabel}
       className={`${styles.textCta} ${dark ? styles.textCtaDark : ''} ${brandFocusRing}`}
     >
-      {children}
+      <span className={styles.textCtaLabel}>{children}</span>
       <span className={styles.textCtaArrow} aria-hidden>
         →
       </span>

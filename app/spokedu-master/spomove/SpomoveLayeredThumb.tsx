@@ -15,6 +15,7 @@ export function SpomoveLayeredThumb({
   sizes,
   priority = false,
   className,
+  presentation = 'default',
   fallback,
   onError,
 }: {
@@ -23,6 +24,7 @@ export function SpomoveLayeredThumb({
   sizes: string;
   priority?: boolean;
   className?: string;
+  presentation?: 'default' | 'home-clean-square';
   fallback?: ReactNode;
   onError?: () => void;
 }) {
@@ -33,14 +35,26 @@ export function SpomoveLayeredThumb({
     onError?.();
   };
   const showImage = Boolean(src) && !failed;
+  const cleanSquare = presentation === 'home-clean-square';
 
   return (
     <div
       data-spm-spomove-media="image-thumb"
-      className={`relative overflow-hidden ${SPOMOVE_IMAGE_THUMB_ASPECT_CLASS} ${className ?? ''}`.trim()}
+      className={`relative overflow-hidden ${cleanSquare ? 'aspect-square' : SPOMOVE_IMAGE_THUMB_ASPECT_CLASS} ${className ?? ''}`.trim()}
     >
       {showImage ? (
-        stretch ? (
+        cleanSquare ? (
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            sizes={sizes}
+            quality={75}
+            priority={priority}
+            className="object-cover object-center"
+            onError={fail}
+          />
+        ) : stretch ? (
           <Image
             src={src}
             alt={alt}
