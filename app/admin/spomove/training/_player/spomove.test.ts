@@ -23,6 +23,7 @@ import { registerPresentedSignal, type RepsState } from './lib/repsLogic';
 import { getNextIntervalState } from './lib/intervalTimer';
 import { generateSignal, createBasicSignalGenerator, createSimonSignalGenerator, type FruitSlide } from './lib/signals';
 import { generateObstacleSchedule } from './flow-lab/engine/modules/flowObstacleSchedule';
+import { colorGatePosesForVariant } from './flow-lab/engine/modules/colorGateGuides';
 import type { FlowModuleKey } from './flow-lab/engine/modules/flowModules';
 import {
   MODES,
@@ -787,7 +788,7 @@ describe('FlowPreset', () => {
       duration: 30,
     };
     saveFlowPresets([preset]);
-    expect(loadFlowPresets()[0]).toEqual(preset);
+    expect(loadFlowPresets()[0]).toEqual({ ...preset, colorGateCategory: 'all' });
   });
 
   const VALID: FlowPreset = {
@@ -815,6 +816,28 @@ describe('FlowPreset', () => {
     const r: SavePresetResult = saveFlowPresets([VALID]);
     expect(r.success).toBe(false);
     if (!r.success) expect(r.error.toLowerCase()).toMatch(/quota|저장/i);
+  });
+});
+
+describe('Color Gate pose filtering', () => {
+  const categories = ['strength', 'flexibility', 'balance', 'power-jump'] as const;
+
+  test('all uses 20 solo poses at each difficulty', () => {
+    expect(colorGatePosesForVariant('solo-easy', 'all')).toHaveLength(20);
+    expect(colorGatePosesForVariant('solo-normal', 'all')).toHaveLength(20);
+  });
+
+  test.each(categories)('%s uses 5 poses at each difficulty', (category) => {
+    expect(colorGatePosesForVariant('solo-easy', category)).toHaveLength(5);
+    expect(colorGatePosesForVariant('solo-normal', category)).toHaveLength(5);
+  });
+
+  test.each(['all', ...categories] as const)('together ignores %s and keeps the partner 3', (category) => {
+    expect(colorGatePosesForVariant('together-easy', category)).toEqual([
+      'partner-hold',
+      'partner-squat',
+      'partner-high-five',
+    ]);
   });
 });
 

@@ -9,6 +9,7 @@ import {
   type DiveThemeId,
   normalizeDiveThemeId,
 } from '@/app/lib/spomove/diveThemes';
+import type { ColorGateCategoryFilter } from '../flow-lab/engine/modules/colorGateGuides';
 
 export const FLOW_PRESETS_KEY = 'spomove_flow_presets_v2';
 const FLOW_PRESETS_KEY_LEGACY = 'spomove_flow_presets';
@@ -21,6 +22,7 @@ export interface FlowPreset {
   /** Hub 파노라마 환경 테마 */
   environmentTheme: DiveThemeId;
   duration: number;
+  colorGateCategory?: ColorGateCategoryFilter;
 }
 
 function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
@@ -46,6 +48,13 @@ function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
     features: features as string[],
     environmentTheme,
     duration,
+    colorGateCategory:
+      raw.colorGateCategory === 'strength'
+      || raw.colorGateCategory === 'flexibility'
+      || raw.colorGateCategory === 'balance'
+      || raw.colorGateCategory === 'power-jump'
+        ? raw.colorGateCategory
+        : 'all',
   };
 }
 

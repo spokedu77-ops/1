@@ -299,6 +299,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
 type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy';
+type ColorGateCategoryFilter = 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
 
 type LaunchSettings = {
   speed: number;
@@ -325,6 +326,7 @@ type LaunchSettings = {
   diveEnvironmentTheme: DiveThemeId;
   flowDuration: number;
   colorGateVariant: ColorGateVariant;
+  colorGateCategory: ColorGateCategoryFilter;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 숫자 연산 기차(엔진 8) 전용: L1/L2/L3 */
@@ -379,8 +381,9 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   stroopWordDifficulty: 'basic',
   flowFeatures: [],
   diveEnvironmentTheme: 'space',
-  flowDuration: 25,
+  flowDuration: 60,
   colorGateVariant: 'solo-easy',
+  colorGateCategory: 'all',
   reactTrainConcurrent: 2,
   numberCartTier: 2,
   colorTrackerTier: 1,
@@ -424,6 +427,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     diveEnvironmentTheme: normalizeDiveThemeId(auto.diveEnvironmentTheme ?? fallback.diveEnvironmentTheme),
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
     colorGateVariant: auto.colorGateVariant ?? fallback.colorGateVariant,
+    colorGateCategory: auto.colorGateCategory ?? 'all',
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
     numberCartTier: (auto.numberCartTier as 1 | 2 | 3 | undefined) ?? fallback.numberCartTier,
     colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
@@ -553,6 +557,7 @@ function TrainingPortal({
     diveEnvironmentTheme: launch.diveEnvironmentTheme,
     flowDuration: launch.flowDuration,
     colorGateVariant: launch.colorGateVariant,
+    colorGateCategory: launch.colorGateCategory,
     reactTrainConcurrent: launch.reactTrainConcurrent,
     numberCartTier: launch.numberCartTier,
     colorTrackerTier: launch.colorTrackerTier,
@@ -868,13 +873,13 @@ function SettingsScreen({
   const saveFlowPreset = () => {
     const name = window.prompt('즐겨찾기 이름', `세팅 ${flowPresets.length + 1}`);
     if (!name) return;
-    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], environmentTheme: launch.diveEnvironmentTheme, duration: launch.flowDuration }];
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], environmentTheme: launch.diveEnvironmentTheme, duration: launch.flowDuration, colorGateCategory: launch.colorGateCategory }];
     const result = saveFlowPresets(next);
     if (!result.success) { setFlowPresetError(result.error); return; }
     setFlowPresets(next);
     setFlowPresetError(null);
   };
-  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration }));
+  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, colorGateCategory: p.colorGateCategory ?? 'all' }));
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
     const result = saveFlowPresets(next);
@@ -2180,11 +2185,24 @@ function SettingsScreen({
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>모션 게이트 옵션</label>
                 <p style={{ margin: '3px 0 0', fontSize: 10, color: T.textDim }}>참여 방식과 난이도에 맞는 포즈 이미지 묶음을 선택합니다.</p>
               </div>
+              <div style={{ marginBottom: 6, fontSize: 11, fontWeight: 800, color: T.muted }}>유형</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12, opacity: launch.colorGateVariant === 'together-easy' ? 0.45 : 1 }}>
+                {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성']] as const).map(([value, label]) => {
+                  const active = launch.colorGateCategory === value;
+                  return (
+                    <button key={value} type="button" disabled={launch.colorGateVariant === 'together-easy'} onClick={() => setLaunch((s) => ({ ...s, colorGateCategory: value }))}
+                      style={{ flex: '1 1 110px', minWidth: 0, padding: '10px 6px', borderRadius: 12, border: `1.5px solid ${active ? '#38BDF8' : T.border}`, background: active ? 'rgba(56,189,248,0.14)' : T.card, color: active ? '#38BDF8' : T.textDim, fontFamily: 'inherit', fontWeight: 900, cursor: launch.colorGateVariant === 'together-easy' ? 'not-allowed' : 'pointer', textAlign: 'center' }}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ marginBottom: 6, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
                 {([
-                  ['solo-easy', '솔로', '쉬움'],
-                  ['solo-normal', '솔로', '보통'],
-                  ['together-easy', '투게더', '쉬움'],
+                  ['solo-easy', '쉬움', ''],
+                  ['solo-normal', '어려움', ''],
+                  ['together-easy', '투게더', ''],
                 ] as const).map(([value, label, difficulty]) => {
                   const active = launch.colorGateVariant === value;
                   return (
@@ -2256,7 +2274,7 @@ function SettingsScreen({
                 <p style={{ margin: '3px 0 0', fontSize: 10, color: T.textDim }}>스테이지 한 구간을 달리는 시간입니다.</p>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[15, 20, 25, 30, 45, 60].map((sec) => {
+                {[45, 60, 90, 120, 150].map((sec) => {
                   const active = launch.flowDuration === sec;
                   return (
                     <button

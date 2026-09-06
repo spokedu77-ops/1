@@ -34,6 +34,7 @@ import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
 import { CSS, S } from './styles';
 import FlowGameClient from './flow-lab/FlowGameClient';
+import type { ColorGateCategoryFilter } from './flow-lab/engine/modules/colorGateGuides';
 import { buildStages } from './flow-lab/engine/modules/stageBuilder';
 import {
   DEFAULT_MEMORY_COLOR_SLOTS,
@@ -166,6 +167,7 @@ type Settings = {
   /** sequential DIVE에서 BONUS 스테이지 포함 여부 */
   flowIncludeBonus: boolean;
   colorGateVariant: ColorGateVariant;
+  colorGateCategory: ColorGateCategoryFilter;
   /** ????????????????????????1?? ??????????????????????????????????????????????*/
   reactTrainConcurrent: 1 | 2 | 3;
   /** ???????????????????????????????????????8???????? engine level 9) L1/L2/L3 */
@@ -229,10 +231,11 @@ const defaultSettings: Settings = {
   stroopWordRuleMode: 'switch' as const,
   flowFeatures: new Set<FlowFeatureKey>(),
   diveEnvironmentTheme: 'space',
-  flowDuration: 25,
+  flowDuration: 60,
   flowLayout: 'sequential',
   flowIncludeBonus: true,
   colorGateVariant: 'solo-easy',
+  colorGateCategory: 'all',
   reactTrainConcurrent: 2,
   numberCartTier: 2,
   colorTrackerTier: 1,
@@ -291,6 +294,7 @@ export type MemoryGameAutoLaunch = {
   flowLayout?: 'sequential' | 'random';
   flowIncludeBonus?: boolean;
   colorGateVariant?: ColorGateVariant;
+  colorGateCategory?: ColorGateCategoryFilter;
   /** ????????????????????????1?? ??????????????????????????????????????????????*/
   reactTrainConcurrent?: 1 | 2 | 3;
   /** ???????????????????????????????????????8???????? engine level 9) L1/L2/L3 */
@@ -363,6 +367,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       diveEnvironmentTheme: s.diveEnvironmentTheme,
       flowDuration: s.flowDuration,
       colorGateVariant: s.colorGateVariant,
+      colorGateCategory: s.colorGateCategory,
       reactTrainConcurrent: s.reactTrainConcurrent,
       numberCartTier: s.numberCartTier,
       colorTrackerTier: s.colorTrackerTier,
@@ -475,12 +480,12 @@ export default function MemoryGameApp({
   const saveFlowPreset = () => {
     const name = prompt('Preset name', `Preset ${flowPresets.length + 1}`);
     if (!name) return;
-    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], environmentTheme: settings.diveEnvironmentTheme, duration: settings.flowDuration }];
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], environmentTheme: settings.diveEnvironmentTheme, duration: settings.flowDuration, colorGateCategory: settings.colorGateCategory }];
     setFlowPresets(next);
     saveFlowPresets(next);
   };
   const loadFlowPreset = (p: FlowPreset) => {
-    setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration }));
+    setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, colorGateCategory: p.colorGateCategory ?? 'all' }));
   };
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
@@ -679,6 +684,7 @@ export default function MemoryGameApp({
           : defaultSettings.flowFeatures,
         diveEnvironmentTheme: normalizeDiveThemeId(autoDiveTheme),
         memoryColorSlots: normalizeMemoryColorSlots(autoLaunch.memoryColorSlots),
+        colorGateCategory: autoLaunch.colorGateCategory ?? 'all',
       };
       autoLaunchCfgRef.current = merged;
       setSettings(merged);
@@ -1947,11 +1953,21 @@ export default function MemoryGameApp({
                 {settings.flowFeatures.has('colorGate') && (
                   <div style={S.sec}>
                     {stepNum(5, '모션 게이트 옵션')}
+                    <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>유형</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.85rem', opacity: settings.colorGateVariant === 'together-easy' ? 0.45 : 1 }}>
+                      {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성']] as const).map(([value, label]) => (
+                        <button key={value} type="button" disabled={settings.colorGateVariant === 'together-easy'} onClick={() => setSettings((s) => ({ ...s, colorGateCategory: value }))}
+                          style={{ flex: '1 1 110px', padding: '0.65rem 0.5rem', borderRadius: '0.8rem', cursor: settings.colorGateVariant === 'together-easy' ? 'not-allowed' : 'pointer', fontFamily: 'inherit', color: settings.colorGateCategory === value ? '#38BDF8' : 'var(--text)', fontWeight: 800, border: `2px solid ${settings.colorGateCategory === value ? '#38BDF8' : 'var(--border)'}`, background: settings.colorGateCategory === value ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>난이도</div>
                     <div style={{ display: 'grid', gap: '0.5rem' }}>
                       {([
-                        ['solo-easy', '솔로 · 쉬움', '기본 전신 동작 5개'],
-                        ['solo-normal', '솔로 · 보통', '균형·코어 동작 10개'],
-                        ['together-easy', '투게더 · 쉬움', '2인 협동 동작 3개'],
+                        ['solo-easy', '쉬움', '기본 동작'],
+                        ['solo-normal', '어려움', '도전 동작'],
+                        ['together-easy', '투게더', '2인 협동 동작 3개'],
                       ] as const).map(([value, label, detail]) => (
                         <button key={value} type="button" onClick={() => setSettings((s) => ({ ...s, colorGateVariant: value }))}
                           style={{ padding: '0.75rem', borderRadius: '0.8rem', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text)', border: `2px solid ${settings.colorGateVariant === value ? '#38BDF8' : 'var(--border)'}`, background: settings.colorGateVariant === value ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
@@ -1968,7 +1984,7 @@ export default function MemoryGameApp({
                     Select the duration for each DIVE stage.
                   </p>
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    {[15, 20, 25, 30, 45, 60].map((n) => (
+                    {[45, 60, 90, 120, 150].map((n) => (
                       <button
                         key={n}
                         type="button"
@@ -2497,6 +2513,7 @@ export default function MemoryGameApp({
         panoramaYawDeg={divePanorama.yawDeg}
         colorGateCueSeconds={settings.speed}
         colorGateVariant={settings.colorGateVariant}
+        colorGateCategory={settings.colorGateCategory}
         onComplete={handleFlowDone}
         onExit={stop}
         onEngineReady={(api) => { flowEngineApiRef.current = api; }}
