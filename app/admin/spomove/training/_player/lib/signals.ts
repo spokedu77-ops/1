@@ -4,6 +4,7 @@
 
 import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS, spatialArrowFillForDirection, SPATIAL_ARROW_COLOR_BY_DIRECTION, type SpatialArrowColorMapping } from '../constants';
 import { resolveStroopArrowMoveTarget, STROOP_ARROW_MOVE_TASK_CUE } from './resolveStroopArrowMoveTarget';
+import { resolveStroopWordMoveTarget, resolveStroopWordMovementCue } from './resolveStroopWordMoveTarget';
 import {
   SPOMOVE_VARIANT_SLOT_COLOR_IDS,
   SPOMOVE_VARIANT_SLOT_COUNT,
@@ -348,6 +349,10 @@ export type GenerateSignalOptions = {
   stroopWordDifficulty?: 'basic' | 'bg';
   /** stroop 1번: 음성 정답(기본) | SPOMAT 이동 응답(신규 후보 전용) */
   stroopArrowResponse?: 'voice' | 'movement';
+  /** stroop 단어: 음성 정답(기본) | SPOMAT 이동 응답(내부 후보 전용) */
+  stroopWordResponse?: 'voice' | 'movement';
+  /** stroop 단어 이동 후보: 차원 그대로 | 차원 반전 */
+  stroopWordRuleMode?: 'switch' | 'reverse';
 };
 
 export function generateSignal(
@@ -670,7 +675,8 @@ export function generateSignal(
 
     // 2: 단어. 보통은 검정 배경, 어려움은 배경 간섭을 추가한다.
     if (level === 2 || level === 3) {
-      if (level === 2 && opts?.stroopWordDifficulty === 'bg') {
+      const wordMovement = opts?.stroopWordResponse === 'movement';
+      if (!wordMovement && level === 2 && opts?.stroopWordDifficulty === 'bg') {
         for (let retry = 0; retry < 25; retry++) {
           const [w, tc, bg] = triple(stroopPool);
           if (tc.hex !== bg.hex && tc.hex !== w.hex && bg.hex !== w.hex) {
@@ -685,9 +691,9 @@ export function generateSignal(
       }
       const [w, tc] = pair(stroopPool);
       const sayMeaning = Math.random() < 0.5;
-      const reverse = Math.random() < 0.5;
-      return {
-        type: 'stroop',
+      const reverse = wordMovement ? opts?.stroopWordRuleMode === 'reverse' : Math.random() < 0.5;
+      const sig = {
+        type: 'stroop' as const,
         bg: NEUTRAL_BG,
         content: {
           word: w.name,
@@ -697,6 +703,19 @@ export function generateSignal(
             : (sayMeaning ? ('word_meaning' as const) : ('ink' as const)),
         },
         voice: !reverse ? (sayMeaning ? w.name : tc.name) : (sayMeaning ? tc.name : w.name),
+      };
+      if (!wordMovement) return sig;
+      const task = sayMeaning ? ('meaning' as const) : ('ink' as const);
+      const content = {
+        ...sig.content,
+        stroopWordTask: task,
+        stroopWordReverse: reverse,
+        stroopWordResponse: 'movement' as const,
+      };
+      return {
+        ...sig,
+        content,
+        voice: resolveStroopWordMovementCue(content),
       };
     }
 
@@ -1518,7 +1537,19 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
     }
     return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
   }
-  if (t === 'stroop') return uniqueColorKeys([colorIdFromHex(content.textHex)]);
+  if (t === 'stroop') {
+    if (content.stroopWordResponse === 'movement') {
+      return uniqueColorKeys([
+        resolveStroopWordMoveTarget({
+          word: content.word as string | undefined,
+          textHex: content.textHex as string | undefined,
+          task: content.stroopWordTask as string | undefined,
+          reverse: content.stroopWordReverse === true,
+        }),
+      ]);
+    }
+    return uniqueColorKeys([colorIdFromHex(content.textHex)]);
+  }
   if (t === 'dual_num' || t === 'dual_color_arrow') {
     const color = content.color as { id?: string } | undefined;
     return uniqueColorKeys([color?.id]);

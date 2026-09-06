@@ -199,6 +199,8 @@ export const PRESET_FAMILY_MAP: Record<string, ActivityFamilyId> = {
   'stroop-arrow-direction-color-v2': 'stroop-arrow',
   'stroop-arrow-bg-47': 'stroop-arrow',
   'stroop-word-reverse-48': 'stroop-word',
+  'stroop-word-switch-movement-v2': 'stroop-word',
+  'stroop-word-reverse-movement-v2': 'stroop-word',
   'stroop-word-bg-49': 'stroop-word',
   'stroop-missing-color-50': 'stroop-missing',
   'sequential-memory-3color-09': 'sequential-memory',

@@ -4,6 +4,7 @@ import React from 'react';
 import { PAD_POSITIONS } from '@/app/lib/admin/constants/padGrid';
 import type { FruitSlide, VariantPanelContent } from '../lib/signals';
 import { resolveStroopArrowMovementCue } from '../lib/resolveStroopArrowMoveTarget';
+import { resolveStroopWordMovementCue } from '../lib/resolveStroopWordMoveTarget';
 import { BodyActionIcon, BODY_ACTION_LABELS, type BodyActionId } from './BodyActionIcons';
 
 const STROOP_WORD_FONT_FAMILY = '"Bagel Fat One", "Jua", "Nunito", "Noto Sans KR", sans-serif';
@@ -575,6 +576,39 @@ export const SignalDisplay = React.memo(function SignalDisplay({
         })());
     return (
       <div key={animKey} className="signal-blink" style={C}>
+        {(() => {
+          const wordCue = resolveStroopWordMovementCue(content);
+          if (!wordCue) return null;
+          return (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'max(1.25rem, env(safe-area-inset-top))',
+                left: 0,
+                right: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            >
+              <div
+                style={{
+                  padding: '0.45rem 1.1rem',
+                  borderRadius: '999px',
+                  background: 'rgba(15,23,42,0.78)',
+                  color: '#fff',
+                  fontSize: 'clamp(1.05rem, 3.2vmin, 1.65rem)',
+                  fontWeight: 800,
+                  letterSpacing: '-0.02em',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.28)',
+                }}
+              >
+                {wordCue}
+              </div>
+            </div>
+          );
+        })()}
         <style>
           {"@import url('https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Jua&family=Nunito:wght@900&display=swap');"}
         </style>

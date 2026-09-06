@@ -41,6 +41,8 @@ export function useTrainingTimer({
   stroopArrowMode,
   stroopWordDifficulty,
   stroopArrowResponse,
+  stroopWordResponse,
+  stroopWordRuleMode,
   simonPoleCount = 1,
   onSignal,
   onFinish,
@@ -69,6 +71,8 @@ export function useTrainingTimer({
   stroopArrowMode?: 'basic' | 'bg';
   stroopWordDifficulty?: 'basic' | 'bg';
   stroopArrowResponse?: 'voice' | 'movement';
+  stroopWordResponse?: 'voice' | 'movement';
+  stroopWordRuleMode?: 'switch' | 'reverse';
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount?: 1 | 2;
   onSignal: (sig: Record<string, unknown>) => void;
@@ -123,7 +127,7 @@ export function useTrainingTimer({
       const fruitOpts = {
         ...(fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : {}),
         ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode } : {}),
-        ...(engineMode === 'stroop' ? { stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse } : {}),
+        ...(engineMode === 'stroop' ? { stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode } : {}),
       };
       genRef.current = createModeColorDupGenerator(engineMode, engineLevel, colors, fruitOpts);
     } else {
@@ -161,7 +165,8 @@ export function useTrainingTimer({
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
         else {
           const movementCue =
-            (sig.content as { stroopArrowResponse?: string } | undefined)?.stroopArrowResponse === 'movement' &&
+            ((sig.content as { stroopArrowResponse?: string; stroopWordResponse?: string } | undefined)?.stroopArrowResponse === 'movement' ||
+              (sig.content as { stroopWordResponse?: string } | undefined)?.stroopWordResponse === 'movement') &&
             typeof sig.voice === 'string'
               ? sig.voice
               : null;
@@ -225,7 +230,7 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, simonPoleCount, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

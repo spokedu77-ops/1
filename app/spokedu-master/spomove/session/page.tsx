@@ -706,6 +706,8 @@ function SpomoveSessionContent() {
           flankerArrowMode={officialPreset.engine.flankerArrowMode}
           stroopWordMode={officialPreset.engine.stroopWordMode}
           stroopArrowResponse={officialPreset.engine.stroopArrowResponse}
+          stroopWordResponse={officialPreset.engine.stroopWordResponse}
+          stroopWordRuleMode={officialPreset.engine.stroopWordRuleMode}
           handFootDifficulty={officialPreset.engine.handFootDifficulty}
           colorMemoryGridSize={officialPreset.engine.colorMemoryGridSize}
           colorMemoryGridMode={officialPreset.engine.colorMemoryGridMode}

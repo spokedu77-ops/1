@@ -135,6 +135,8 @@ type Props = {
   stroopWordMode?: 'bg' | 'missing';
   /** stroop 1번 이동 응답 후보. 미지정 시 기존 음성 경로 */
   stroopArrowResponse?: 'voice' | 'movement';
+  stroopWordResponse?: 'voice' | 'movement';
+  stroopWordRuleMode?: 'switch' | 'reverse';
   /** basic L7 손 따로/발 따로 (visual-reaction hand-foot presets) */
   handFootDifficulty?: 'easy' | 'normal' | 'hard';
   /** 순차 기억 · 순간 기억(spatial 7) */
@@ -199,6 +201,8 @@ export function EngineRouter({
   flankerArrowMode,
   stroopWordMode,
   stroopArrowResponse,
+  stroopWordResponse,
+  stroopWordRuleMode,
   handFootDifficulty,
   colorMemoryGridSize,
   colorMemoryGridMode,
@@ -294,6 +298,14 @@ export function EngineRouter({
             stroopWordMode: (mode === 'stroop' && level === 5) || stroopWordMode === 'missing' ? 'missing' : 'bg',
             ...(mode === 'stroop' && stroopArrowResponse === 'movement'
               ? { stroopArrowResponse: 'movement' as const }
+              : {}),
+            ...(mode === 'stroop' && stroopWordResponse === 'movement'
+              ? {
+                  stroopWordResponse: 'movement' as const,
+                  ...(stroopWordRuleMode === 'switch' || stroopWordRuleMode === 'reverse'
+                    ? { stroopWordRuleMode }
+                    : {}),
+                }
               : {}),
             simonPoleCount: effectiveSimonPole,
             ...(handFootDifficulty === 'easy' ||

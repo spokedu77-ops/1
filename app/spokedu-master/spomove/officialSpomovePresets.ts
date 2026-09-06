@@ -84,6 +84,10 @@ export type OfficialSpomovePreset = {
     stroopWordMode?: 'bg' | 'missing';
     /** stroop 1번: 음성 정답(기본) | SPOMAT 이동 응답(내부 후보 전용) */
     stroopArrowResponse?: 'voice' | 'movement';
+    /** stroop 단어: 음성 정답(기본) | SPOMAT 이동 응답(내부 후보 전용) */
+    stroopWordResponse?: 'voice' | 'movement';
+    /** stroop 단어 이동 후보: 차원 그대로 | 차원 반전 */
+    stroopWordRuleMode?: 'switch' | 'reverse';
     /** 순차 기억 · 순간 기억(spatial 7): 그리드 크기 */
     colorMemoryGridSize?: 3 | 4 | 5;
     /** 순차 기억 · 순간 기억(spatial 7): flicker | oneshot */
@@ -116,7 +120,7 @@ export type OfficialSpomovePreset = {
   internalCandidate?: boolean;
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 43;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 45;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -1113,6 +1117,78 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '응답', value: 'SPOMAT 이동' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
+    ],
+  },
+  {
+    id: 'stroop-word-switch-movement-v2',
+    catalogStatus: 'hold',
+    internalCandidate: true,
+    holdReason: '2B 내부 후보: Word Switch 이동. Public 교체 전 검증용.',
+    sortOrder: 38,
+    title: '(내부) 스트룹 단어 스위치 이동 후보',
+    en: 'Stroop Word Switch Movement (candidate)',
+    axis: 'executive',
+    axisTitle: SPOMOVE_AXIS_META.executive.title,
+    programGroup: 'stroop',
+    programTitle: '스트룹 이펙트',
+    salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
+    engine: {
+      mode: 'stroop',
+      level: 2,
+      stroopWordResponse: 'movement',
+      stroopWordRuleMode: 'switch',
+    },
+    description:
+      '색 단어의 의미 또는 글자 색 규칙을 그대로 따라 해당 SPOMAT으로 이동하는 내부 검증용 단어 스트룹 후보',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '내부 검증 전용. Public Hub 미노출.',
+    isReady: true,
+    settingSummary: '3초 · 20회 · 스위치 이동 · BGM 자동',
+    settingChips: ['3초', '20회', '단어 스위치', '이동 응답'],
+    executionFacts: [
+      { label: '자극 방식', value: '색 단어 · 의미/잉크' },
+      { label: '규칙', value: '지정 차원 그대로' },
+      { label: '응답', value: 'SPOMAT 이동' },
+      { label: '반복', value: '20회' },
+    ],
+  },
+  {
+    id: 'stroop-word-reverse-movement-v2',
+    catalogStatus: 'hold',
+    internalCandidate: true,
+    holdReason: '2B 내부 후보: Word Reverse 이동. Public 교체 전 검증용.',
+    sortOrder: 39,
+    title: '(내부) 스트룹 단어 역규칙 이동 후보',
+    en: 'Stroop Word Reverse Movement (candidate)',
+    axis: 'executive',
+    axisTitle: SPOMOVE_AXIS_META.executive.title,
+    programGroup: 'stroop',
+    programTitle: '스트룹 이펙트',
+    salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
+    engine: {
+      mode: 'stroop',
+      level: 3,
+      stroopWordResponse: 'movement',
+      stroopWordRuleMode: 'reverse',
+    },
+    description:
+      '색 단어에서 Cue 차원의 반대 정보로 해당 SPOMAT에 이동하는 내부 검증용 단어 역규칙 후보',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '내부 검증 전용. Public Hub 미노출.',
+    isReady: true,
+    settingSummary: '3초 · 20회 · 역규칙 이동 · BGM 자동',
+    settingChips: ['3초', '20회', '단어 역규칙', '이동 응답'],
+    executionFacts: [
+      { label: '자극 방식', value: '색 단어 · 의미/잉크' },
+      { label: '규칙', value: '지정 차원의 반대' },
+      { label: '응답', value: 'SPOMAT 이동' },
+      { label: '반복', value: '20회' },
     ],
   },
   // sortOrder 49: Missing Color (level 4 · 누락 옵션)

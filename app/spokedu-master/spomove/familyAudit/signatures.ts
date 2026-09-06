@@ -30,6 +30,8 @@ const ENGINE_OPTION_KEYS = [
   'camouflagePlacement',
   'stroopWordMode',
   'stroopArrowResponse',
+  'stroopWordResponse',
+  'stroopWordRuleMode',
   'colorMemoryGridSize',
   'colorMemoryGridMode',
 ] as const;
@@ -51,7 +53,7 @@ export const MECHANIC_KEYS_BY_MODE: Record<OfficialSpomoveEngineMode, readonly s
   ],
   simon: ['simonPoleCount'],
   flanker: ['flankerStimulusType', 'flankerNestedCircleCount', 'flankerArrowMode', 'variantColorTheme'],
-  stroop: ['stroopWordMode', 'stroopArrowResponse'],
+  stroop: ['stroopWordMode', 'stroopArrowResponse', 'stroopWordResponse', 'stroopWordRuleMode'],
   spatial: ['colorMemoryGridSize', 'colorMemoryGridMode'],
   flow: ['flowFeatures', 'flowLayout', 'flowIncludeBonus', 'flowDuration'],
 };

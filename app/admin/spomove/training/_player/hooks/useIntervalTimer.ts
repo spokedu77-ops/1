@@ -40,6 +40,8 @@ export function useIntervalTimer({
   stroopArrowMode,
   stroopWordDifficulty,
   stroopArrowResponse,
+  stroopWordResponse,
+  stroopWordRuleMode,
   simonPoleCount = 1,
   onSignal,
   onFinish,
@@ -66,6 +68,8 @@ export function useIntervalTimer({
   stroopArrowMode?: 'basic' | 'bg';
   stroopWordDifficulty?: 'basic' | 'bg';
   stroopArrowResponse?: 'voice' | 'movement';
+  stroopWordResponse?: 'voice' | 'movement';
+  stroopWordRuleMode?: 'switch' | 'reverse';
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount?: 1 | 2;
   onSignal: (sig: Record<string, unknown>) => void;
@@ -102,7 +106,7 @@ export function useIntervalTimer({
       const fruitOpts = {
         ...(fruitSlides ? { fruitSlides } : {}),
         ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode } : {}),
-        ...(engineMode === 'stroop' ? { stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse } : {}),
+        ...(engineMode === 'stroop' ? { stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode } : {}),
       };
     if (engineMode === 'basic') {
       genRef.current = createBasicSignalGenerator(
@@ -187,7 +191,8 @@ export function useIntervalTimer({
               playBeep(getBeepForSignal(sig) ?? 'mid');
             } else {
               const movementCue =
-                (sig.content as { stroopArrowResponse?: string } | undefined)?.stroopArrowResponse === 'movement' &&
+                ((sig.content as { stroopArrowResponse?: string; stroopWordResponse?: string } | undefined)?.stroopArrowResponse === 'movement' ||
+                  (sig.content as { stroopWordResponse?: string } | undefined)?.stroopWordResponse === 'movement') &&
                 typeof sig.voice === 'string'
                   ? sig.voice
                   : null;
@@ -206,7 +211,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, simonPoleCount, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }
