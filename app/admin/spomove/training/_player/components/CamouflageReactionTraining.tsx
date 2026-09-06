@@ -243,6 +243,12 @@ export function CamouflageReactionTraining({
           shapePath: buildCamoShapePath(shapeIdx, cx, cy, size),
         };
       });
+      play.dataset.camoPlacement = placementModeRef.current;
+      const first = g.targets[0];
+      if (first) {
+        play.dataset.camoNx = String(first.nx);
+        play.dataset.camoNy = String(first.ny);
+      }
       if (placementModeRef.current === 'variant') {
         g.edgeIdx = (g.edgeIdx + count) % 4;
       }

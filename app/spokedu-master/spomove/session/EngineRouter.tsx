@@ -13,6 +13,10 @@ import { resolveReactTrainUiLevel } from '@/app/admin/spomove/training/_player/c
 import { StartCountdownGate } from '@/app/admin/spomove/training/_player/lib/reactTrainStartCountdown';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
+import {
+  resolveSimonL4CamouflageConcurrent,
+  resolveSimonL4CamouflagePlacementMode,
+} from '../resolveSimonL4CamouflagePlacementMode';
 
 const VisualReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/VisualReactionTraining').then((module) => ({
@@ -124,6 +128,8 @@ type Props = {
   simonPoleCount?: 1 | 2;
   colorTrackerDualPanel?: boolean;
   camouflagePlacement?: 'center' | 'variant';
+  /** Simon L4 내부 후보: preset 배치 존중. 없으면 legacy variant */
+  camouflagePlacementResponse?: 'legacy' | 'preset';
   flowFeatures?: string[];
   flowDuration?: number;
   flowLayout?: 'sequential' | 'random';
@@ -191,6 +197,7 @@ export function EngineRouter({
   simonPoleCount,
   colorTrackerDualPanel,
   camouflagePlacement,
+  camouflagePlacementResponse,
   flowFeatures,
   flowDuration,
   flowLayout,
@@ -239,14 +246,18 @@ export function EngineRouter({
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 5);
     const sp = speedSec ?? 5;
     const reactSpeedLevel = mapReactSpeedLevel(sp);
+    const placementMode = resolveSimonL4CamouflagePlacementMode({
+      camouflagePlacement,
+      camouflagePlacementResponse,
+    });
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <CamouflageReactionTraining
           durationSec={dur}
           speedLevel={reactSpeedLevel}
           speedSec={sp}
-          placementMode="variant"
-          concurrent={simonPoleCount === 2 ? 2 : 1}
+          placementMode={placementMode}
+          concurrent={resolveSimonL4CamouflageConcurrent(simonPoleCount)}
           onExit={onExit}
           onComplete={handleReactTrainComplete}
         />

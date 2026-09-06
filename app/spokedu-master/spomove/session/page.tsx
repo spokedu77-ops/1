@@ -696,6 +696,7 @@ function SpomoveSessionContent() {
           simonPoleCount={officialPreset.engine.simonPoleCount}
           colorTrackerDualPanel={officialPreset.engine.colorTrackerDualPanel}
           camouflagePlacement={officialPreset.engine.camouflagePlacement}
+          camouflagePlacementResponse={officialPreset.engine.camouflagePlacementResponse}
           flowFeatures={officialPreset.engine.flowFeatures}
           flowDuration={officialPreset.engine.flowDuration}
           flowLayout={officialPreset.engine.flowLayout}

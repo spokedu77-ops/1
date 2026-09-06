@@ -178,6 +178,8 @@ export const PRESET_FAMILY_MAP: Record<string, ActivityFamilyId> = {
   'simon-balloon-hard-skeleton': 'simon-balloon',
   'simon-random-hard-skeleton': 'simon-mixed',
   'simon-camouflage-center-skeleton': 'simon-mixed',
+  'simon-camouflage-center-v2': 'simon-mixed',
+  'simon-camouflage-variant-v2': 'simon-mixed',
   'flanker-uniform-07': 'flanker-uniform',
   'flanker-uniform-number-exp': 'flanker-uniform',
   'flanker-random-43': 'flanker-random',

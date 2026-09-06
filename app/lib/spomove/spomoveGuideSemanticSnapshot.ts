@@ -32,6 +32,7 @@ export type SpomoveGuideSemanticSnapshot = {
     flankerExtremeMode?: string;
     flankerArrowMode?: string;
     camouflagePlacement?: string;
+    camouflagePlacementResponse?: string;
     stroopWordMode?: string;
     stroopArrowResponse?: string;
     stroopWordResponse?: string;
@@ -79,6 +80,9 @@ export function buildSpomoveGuideSemanticSnapshot(
   if (e.flankerExtremeMode !== undefined) engine.flankerExtremeMode = e.flankerExtremeMode;
   if (e.flankerArrowMode !== undefined) engine.flankerArrowMode = e.flankerArrowMode;
   if (e.camouflagePlacement !== undefined) engine.camouflagePlacement = e.camouflagePlacement;
+  if (e.camouflagePlacementResponse !== undefined) {
+    engine.camouflagePlacementResponse = e.camouflagePlacementResponse;
+  }
   if (e.stroopWordMode !== undefined) engine.stroopWordMode = e.stroopWordMode;
   if (e.stroopArrowResponse !== undefined) engine.stroopArrowResponse = e.stroopArrowResponse;
   if (e.stroopWordResponse !== undefined) engine.stroopWordResponse = e.stroopWordResponse;

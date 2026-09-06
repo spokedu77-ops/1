@@ -10,7 +10,7 @@ export const SPOMOVE_GUIDE_SOURCE_DIGESTS: SpomoveGuideSourceDigestMap = {
   visualGoalkeeper: '687980c82e5c090e',
   handFootBasicL7: 'ecd0ad7ceacca525',
   simonPoles: '6641444f56477f69',
-  simonCamouflage: '691b351e63c329a3',
+  simonCamouflage: '90e6bcc42e7bae6b',
   simonBalloon: '2c83618f061051e6',
   flankerSignals: '26ae437df8329eb5',
   stroopSignals: '51bc720e547ffe34',
@@ -18,5 +18,5 @@ export const SPOMOVE_GUIDE_SOURCE_DIGESTS: SpomoveGuideSourceDigestMap = {
   sequentialMemoryL4: '0dc4f695a28fa3a3',
   sequentialMemoryL5: '1969a5501a4df618',
   diveFlow: '6af550be8016ab6a',
-  engineRouter: '4eab4d5b674a96ff',
+  engineRouter: 'cf85eb079223929d',
 };

@@ -80,6 +80,8 @@ export type OfficialSpomovePreset = {
     flankerExtremeMode?: 'theme' | 'arrow';
     flankerArrowMode?: 'lr' | 'udlr';
     camouflagePlacement?: 'center' | 'variant';
+    /** Simon L4: 미지정=기존 variant 강제, preset=camouflagePlacement 존중 */
+    camouflagePlacementResponse?: 'legacy' | 'preset';
     /** stroop 4단계: 단어+배경(기본) | 누락 색상 */
     stroopWordMode?: 'bg' | 'missing';
     /** stroop 1번: 음성 정답(기본) | SPOMAT 이동 응답(내부 후보 전용) */
@@ -120,7 +122,7 @@ export type OfficialSpomovePreset = {
   internalCandidate?: boolean;
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 45;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 47;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -1188,6 +1190,76 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '자극 방식', value: '색 단어 · 의미/잉크' },
       { label: '규칙', value: '지정 차원의 반대' },
       { label: '응답', value: 'SPOMAT 이동' },
+      { label: '반복', value: '20회' },
+    ],
+  },
+  {
+    id: 'simon-camouflage-center-v2',
+    catalogStatus: 'hold',
+    internalCandidate: true,
+    holdReason: '2C 내부 후보: Camouflage CENTER 배치. Public 교체 전 검증용.',
+    sortOrder: 40,
+    title: '(내부) 사이먼 카모플라쥬 중앙 배치 후보',
+    en: 'Simon Camouflage Center (candidate)',
+    axis: 'attention',
+    axisTitle: SPOMOVE_AXIS_META.attention.title,
+    programGroup: 'simon',
+    programTitle: '사이먼 이펙트',
+    salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
+    engine: {
+      mode: 'simon',
+      level: 4,
+      camouflagePlacement: 'center',
+      camouflagePlacementResponse: 'preset',
+    },
+    description:
+      '노이즈 속 위장 도형이 화면 중앙에 드러날 때 색을 찾아 해당 SPOMAT으로 이동하는 내부 검증용 CENTER 후보',
+    cueSeconds: 2,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '내부 검증 전용. Public Hub 미노출.',
+    isReady: true,
+    settingSummary: '2초 · 20회 · 중앙 배치',
+    settingChips: ['2초', '20회', '중앙'],
+    executionFacts: [
+      { label: '자극 방식', value: '카모플라쥬 색 탐지' },
+      { label: '배치', value: 'CENTER' },
+      { label: '반복', value: '20회' },
+    ],
+  },
+  {
+    id: 'simon-camouflage-variant-v2',
+    catalogStatus: 'hold',
+    internalCandidate: true,
+    holdReason: '2C 내부 후보: Camouflage VARIANT 배치 대조군. Public 교체 전 검증용.',
+    sortOrder: 41,
+    title: '(내부) 사이먼 카모플라쥬 변형 배치 후보',
+    en: 'Simon Camouflage Variant (candidate)',
+    axis: 'attention',
+    axisTitle: SPOMOVE_AXIS_META.attention.title,
+    programGroup: 'simon',
+    programTitle: '사이먼 이펙트',
+    salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
+    engine: {
+      mode: 'simon',
+      level: 4,
+      camouflagePlacement: 'variant',
+      camouflagePlacementResponse: 'preset',
+    },
+    description:
+      '노이즈 속 위장 도형이 기존 변형 위치에 드러날 때 색을 찾아 해당 SPOMAT으로 이동하는 내부 검증용 VARIANT 대조군',
+    cueSeconds: 2,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '내부 검증 전용. Public Hub 미노출.',
+    isReady: true,
+    settingSummary: '2초 · 20회 · 변형 배치',
+    settingChips: ['2초', '20회', '변형'],
+    executionFacts: [
+      { label: '자극 방식', value: '카모플라쥬 색 탐지' },
+      { label: '배치', value: 'VARIANT' },
       { label: '반복', value: '20회' },
     ],
   },
