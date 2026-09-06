@@ -258,10 +258,10 @@ describe('spokedu site IA', () => {
     expect(
       new Set([HOME_MEDIA[homePage.hero.mediaKey].src, spomoveDetail.src]).size,
     ).toBe(2);
-    expect(homePage.subscription.visual.src).toBe('/images/spokedu/subscription/product-home-stage.webp');
+    expect(homePage.subscription.visual.src).toBe('/images/spokedu/subscription/product-home-stage-p05.webp');
     expect(homePage.cases.cards[0]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-general.webp');
-    expect(homePage.cases.cards[1]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-adapted.webp');
-    expect(homePage.cases.cards[2]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-spomove.webp');
+    expect(homePage.cases.cards[1]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-adapted-p05.webp');
+    expect(homePage.cases.cards[2]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-spomove-p05.webp');
     expect(homePage.cases.cards[0]?.displayMeta).toBe('6개월 늘봄 스포츠 · 기관 정기운영');
     expect(homePage.cases.cards[1]?.displayMeta).toBe('특수·포용 체육 · 찾아가는 동행체육');
     expect(homePage.cases.cards[2]?.displayMeta).toBe('초등학생 · SPOMOVE');

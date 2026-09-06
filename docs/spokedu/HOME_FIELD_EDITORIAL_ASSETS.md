@@ -9,6 +9,8 @@ Subscription Home derivative: `public/images/spokedu/subscription/product-librar
 Re-bake script: `node scripts/fix-home-field-editorial-images.mjs`  
 (manifest 기반; **derivative WebP를 source로 재사용 금지**)
 
+Home runtime filenames (Pass 05 cache identity): `home-case-adapted-p05.webp`, `home-case-spomove-p05.webp`, `product-home-stage-p05.webp`. Unsuffixed names are historical only.
+
 ## ACTIVE HOME ASSET MAP
 
 | Home role | Web file | Production path | Crop / focal | Source status |
@@ -16,8 +18,8 @@ Re-bake script: `node scripts/fix-home-field-editorial-images.mjs`
 | Hero | `home-hero-field.webp` | `/images/spokedu/home/field-editorial/home-hero-field.webp` | Home `58% 62%`; Education `64% 52%` (`homeHeroFieldEducation`) | Baked from `assets-source/.../KakaoTalk_Photo_2026-08-10-17-42-37_18_.jpeg` (5712×4284) → 2400×1800 WebP q86 |
 | SPOMOVE | `home-spomove-field.webp` | `/images/spokedu/home/field-editorial/home-spomove-field.webp` | Wide documentary; `object-position: 52% 58%` | `home/home-hero-spomove-class.JPG` → bake |
 | Case — 일반 | `home-case-general.webp` | `/images/spokedu/home/field-editorial/home-case-general.webp` | Featured; `object-position: 42% 55%` | `records/maedong-sports-stepup.jpg` |
-| Case — 특수·포용 | `home-case-adapted.webp` | `/images/spokedu/home/field-editorial/home-case-adapted.webp` | Supporting; `object-position: 50% 42%` | `records/donghaeng-special-pe-field.jpg` |
-| Case — SPOMOVE | `home-case-spomove.webp` | `/images/spokedu/home/field-editorial/home-case-spomove.webp` | Supporting; `object-position: 58% 48%` | `records/dongjak-spomove.jpg` |
+| Case — 특수·포용 | `home-case-adapted-p05.webp` | `/images/spokedu/home/field-editorial/home-case-adapted-p05.webp` | Supporting; `object-position: 48% 42%` | `records/donghaeng-special-pe-field.jpg` |
+| Case — SPOMOVE | `home-case-spomove-p05.webp` | `/images/spokedu/home/field-editorial/home-case-spomove-p05.webp` | Supporting; `object-position: 48% 46%` | `records/dongjak-spomove.jpg` |
 | Subscription UI | `product-library-home.webp` | `/images/spokedu/subscription/product-library-home.webp` | Top crop | `subscription/product-library.png` |
 
 Code SSOT: `app/spokedu/data/home-page.ts` (`HOME_FIELD_EDITORIAL`), `app/spokedu/data/images.ts`, `app/spokedu/data/home-media.ts`.

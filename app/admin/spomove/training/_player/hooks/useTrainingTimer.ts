@@ -40,6 +40,7 @@ export function useTrainingTimer({
   stroopWordMode,
   stroopArrowMode,
   stroopWordDifficulty,
+  stroopArrowResponse,
   simonPoleCount = 1,
   onSignal,
   onFinish,
@@ -67,6 +68,7 @@ export function useTrainingTimer({
   stroopWordMode?: 'bg' | 'missing';
   stroopArrowMode?: 'basic' | 'bg';
   stroopWordDifficulty?: 'basic' | 'bg';
+  stroopArrowResponse?: 'voice' | 'movement';
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount?: 1 | 2;
   onSignal: (sig: Record<string, unknown>) => void;
@@ -121,7 +123,7 @@ export function useTrainingTimer({
       const fruitOpts = {
         ...(fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : {}),
         ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode } : {}),
-        ...(engineMode === 'stroop' ? { stroopWordMode, stroopArrowMode, stroopWordDifficulty } : {}),
+        ...(engineMode === 'stroop' ? { stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse } : {}),
       };
       genRef.current = createModeColorDupGenerator(engineMode, engineLevel, colors, fruitOpts);
     } else {
@@ -158,7 +160,12 @@ export function useTrainingTimer({
         onSignal(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
         else {
-          const v = getSignalVoice();
+          const movementCue =
+            (sig.content as { stroopArrowResponse?: string } | undefined)?.stroopArrowResponse === 'movement' &&
+            typeof sig.voice === 'string'
+              ? sig.voice
+              : null;
+          const v = movementCue ?? getSignalVoice();
           if (v) tts(v, true);
         }
       }
@@ -218,7 +225,7 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, simonPoleCount, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, simonPoleCount, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

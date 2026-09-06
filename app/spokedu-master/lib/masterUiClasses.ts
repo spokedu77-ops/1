@@ -73,8 +73,8 @@ export const MV_CONTENT_TITLE = 'text-[18px] font-semibold leading-snug text-[co
 export const MV_META = 'text-[12px] font-medium leading-5 text-slate-500 sm:text-[13px]';
 export const MV_HEADING_TO_SHELF = 'mb-4 sm:mb-5';
 export const MV_REENTRY_OBJECT =
-  'flex w-full max-w-[660px] flex-wrap items-center gap-x-3.5 gap-y-0 rounded-[14px] border border-slate-200/70 bg-white/65 px-3.5 py-3 sm:flex-nowrap';
-export const MV_REENTRY_IDENTITY = 'min-w-0 flex-1';
+  'flex w-full max-w-[600px] flex-wrap items-center gap-x-3.5 gap-y-0 rounded-[14px] border border-slate-200/60 bg-white/60 px-3.5 py-2.5 sm:flex-nowrap';
+export const MV_REENTRY_IDENTITY = 'min-w-0 flex-[0_1_auto]';
 export const MV_REENTRY_SECONDARY =
   'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-slate-700 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
 export const MV_EXTENSION_TITLE =

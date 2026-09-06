@@ -3,6 +3,7 @@
  */
 
 import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS, spatialArrowFillForDirection, SPATIAL_ARROW_COLOR_BY_DIRECTION, type SpatialArrowColorMapping } from '../constants';
+import { resolveStroopArrowMoveTarget, STROOP_ARROW_MOVE_TASK_CUE } from './resolveStroopArrowMoveTarget';
 import {
   SPOMOVE_VARIANT_SLOT_COLOR_IDS,
   SPOMOVE_VARIANT_SLOT_COUNT,
@@ -345,6 +346,8 @@ export type GenerateSignalOptions = {
   stroopArrowMode?: 'basic' | 'bg';
   /** stroop 2번 단어: 기본 | 배경 간섭 */
   stroopWordDifficulty?: 'basic' | 'bg';
+  /** stroop 1번: 음성 정답(기본) | SPOMAT 이동 응답(신규 후보 전용) */
+  stroopArrowResponse?: 'voice' | 'movement';
 };
 
 export function generateSignal(
@@ -632,6 +635,21 @@ export function generateSignal(
       };
     };
 
+    const withStroopArrowMovementResponse = (
+      sig: ReturnType<typeof pickArrowStroop>,
+    ) => {
+      const taskDir = sig.content.stroopArrowTask === 'direction';
+      return {
+        ...sig,
+        voice: taskDir ? STROOP_ARROW_MOVE_TASK_CUE.direction : STROOP_ARROW_MOVE_TASK_CUE.color,
+        content: {
+          ...sig.content,
+          stroopArrowReverse: false,
+          stroopArrowResponse: 'movement' as const,
+        },
+      };
+    };
+
     const pickBgNotFill = (fillHex: string) => {
       const candidates = stroopPool.filter((c) => c.hex !== fillHex);
       return (candidates.length ? r(candidates) : r(stroopPool)).hex;
@@ -639,11 +657,15 @@ export function generateSignal(
 
     // 1: 색상화살표. 반응인지 색상화살표와 달리 화살표 색은 매 신호 랜덤이다.
     if (level === 1) {
+      const movement = opts?.stroopArrowResponse === 'movement';
+      const reverse = movement ? false : Math.random() < 0.5;
       if (opts?.stroopArrowMode === 'bg') {
         const fill = r(stroopPool);
-        return pickArrowStroop(pickBgNotFill(fill.hex), Math.random() < 0.5, fill);
+        const sig = pickArrowStroop(pickBgNotFill(fill.hex), reverse, fill);
+        return movement ? withStroopArrowMovementResponse(sig) : sig;
       }
-      return pickArrowStroop(NEUTRAL_BG, Math.random() < 0.5);
+      const sig = pickArrowStroop(NEUTRAL_BG, reverse);
+      return movement ? withStroopArrowMovementResponse(sig) : sig;
     }
 
     // 2: 단어. 보통은 검정 배경, 어려움은 배경 간섭을 추가한다.
@@ -1484,7 +1506,18 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
     }
     return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
   }
-  if (t === 'stroop_arrow') return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
+  if (t === 'stroop_arrow') {
+    if (content.stroopArrowResponse === 'movement') {
+      return uniqueColorKeys([
+        resolveStroopArrowMoveTarget({
+          arrowId: String(content.arrowId ?? ''),
+          fillHex: content.fillHex as string | undefined,
+          stroopTask: content.stroopArrowTask as string | undefined,
+        }),
+      ]);
+    }
+    return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
+  }
   if (t === 'stroop') return uniqueColorKeys([colorIdFromHex(content.textHex)]);
   if (t === 'dual_num' || t === 'dual_color_arrow') {
     const color = content.color as { id?: string } | undefined;

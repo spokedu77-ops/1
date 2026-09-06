@@ -82,6 +82,8 @@ export type OfficialSpomovePreset = {
     camouflagePlacement?: 'center' | 'variant';
     /** stroop 4단계: 단어+배경(기본) | 누락 색상 */
     stroopWordMode?: 'bg' | 'missing';
+    /** stroop 1번: 음성 정답(기본) | SPOMAT 이동 응답(내부 후보 전용) */
+    stroopArrowResponse?: 'voice' | 'movement';
     /** 순차 기억 · 순간 기억(spatial 7): 그리드 크기 */
     colorMemoryGridSize?: 3 | 4 | 5;
     /** 순차 기억 · 순간 기억(spatial 7): flicker | oneshot */
@@ -112,7 +114,7 @@ export type OfficialSpomovePreset = {
   holdReason?: string;
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 42;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 43;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -1078,6 +1080,36 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },
+    ],
+  },
+  {
+    id: 'stroop-arrow-direction-color-v2',
+    catalogStatus: 'hold',
+    holdReason: '2A 내부 후보: Public 교체 전 검증용. Hub 비노출.',
+    sortOrder: 37,
+    title: '(내부) 스트룹 화살표 방향×색 이동 후보',
+    en: 'Stroop Arrow Direction × Color (candidate)',
+    axis: 'executive',
+    axisTitle: SPOMOVE_AXIS_META.executive.title,
+    programGroup: 'stroop',
+    programTitle: '스트룹 이펙트',
+    salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
+    engine: { mode: 'stroop', level: 1, stroopArrowResponse: 'movement' },
+    description:
+      '색이 채워진 화살표에서 방향 또는 색 규칙을 따라 해당 SPOMAT으로 이동하는 내부 검증용 스트룹 화살표 후보',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '내부 검증 전용. Public Hub 미노출.',
+    isReady: true,
+    settingSummary: '3초 · 20회 · 이동 응답 · BGM 자동',
+    settingChips: ['3초', '20회', '방향×색', '이동 응답'],
+    executionFacts: [
+      { label: '자극 방식', value: '색상 화살표 · 방향/색 전환' },
+      { label: '응답', value: 'SPOMAT 이동' },
+      { label: '반복', value: '20회' },
+      { label: 'BGM', value: '자동 재생' },
     ],
   },
   // sortOrder 49: Missing Color (level 4 · 누락 옵션)

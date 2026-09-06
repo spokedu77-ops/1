@@ -254,6 +254,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
                 fill
                 className={styles.productImageFocal}
                 sizes="(min-width: 960px) 88vw, 92vw"
+                quality={90}
                 priority={false}
               />
             </div>
@@ -270,8 +271,6 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
             </h2>
             <p className={`${styles.homeLead} ${styles.casesLead} ${koreanText}`}>{homePage.cases.lead}</p>
           </header>
-        </div>
-        <div className={styles.visualRail}>
           <ul className={styles.casesIndex}>
             {caseCards.map((card) => (
               <li key={card.slug} className={styles.caseItem}>
@@ -279,8 +278,6 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               </li>
             ))}
           </ul>
-        </div>
-        <div className={styles.contentRail}>
           <div className={styles.casesArchive}>
             <TextCta href={homePage.cases.recordsCta.href} trackLabel={homePage.cases.recordsCta.trackLabel}>
               {homePage.cases.recordsCta.label}
@@ -340,7 +337,7 @@ function CasePhoto({ card }: { card: CaseCardWithThumb }) {
       className={`${styles.casePhotoImage} ${styles.photoGradeCase}`}
       style={{ objectPosition: card.editorialObjectPosition ?? '50% 50%' }}
       loading="lazy"
-      sizes="(max-width: 959px) 92vw, 32vw"
+      sizes="(max-width: 959px) 92vw, 360px"
     />
   );
 }

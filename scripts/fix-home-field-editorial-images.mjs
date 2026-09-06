@@ -52,14 +52,14 @@ const MANIFEST = [
   {
     role: 'case-adapted',
     source: path.join(RECORDS, 'donghaeng-special-pe-field.jpg'),
-    output: path.join(OUT, 'home-case-adapted.webp'),
+    output: path.join(OUT, 'home-case-adapted-p05.webp'),
     targetWidth: 1200,
     resize: { width: 1200, height: 900 },
   },
   {
     role: 'case-spomove',
     source: path.join(RECORDS, 'dongjak-spomove.jpg'),
-    output: path.join(OUT, 'home-case-spomove.webp'),
+    output: path.join(OUT, 'home-case-spomove-p05.webp'),
     targetWidth: 1600,
     withoutEnlargement: true,
   },
@@ -125,14 +125,37 @@ if (existsSync(path.join(SUB, 'product-library.png'))) {
   console.log('OK subscription/product-library-home.webp');
 }
 
-// Home product stage — lesson UI (taller real product surface; library PNG is already 1216×430)
+// Home product stage — actual library (find) + lesson (prepare / run / record)
+const librarySource = path.join(SUB, 'product-library.png');
 const lessonSource = path.join(SUB, 'product-lesson.png');
-if (existsSync(lessonSource)) {
-  const lessonMeta = await sharp(lessonSource).metadata();
-  const srcW = lessonMeta.width ?? 1296;
-  const srcH = lessonMeta.height ?? 748;
-  await sharp(lessonSource)
-    .webp(WEBP)
-    .toFile(path.join(SUB, 'product-home-stage.webp'));
-  console.log(`OK subscription/product-home-stage.webp (${srcW}x${srcH} native)`);
+if (existsSync(librarySource) && existsSync(lessonSource)) {
+  // Native screenshots are 1216×430 and 1296×748 — do not upscale past lesson width.
+  const stageW = 1296;
+  const stageH = 748;
+  const gap = 10;
+  const libBand = 278;
+  const lessonBand = stageH - libBand - gap;
+  const libraryLayer = await sharp(librarySource)
+    .rotate()
+    .resize(stageW, libBand, { fit: 'cover', position: 'top', withoutEnlargement: false })
+    .toBuffer();
+  const lessonLayer = await sharp(lessonSource)
+    .rotate()
+    .resize(stageW, lessonBand, { fit: 'cover', position: 'top', withoutEnlargement: true })
+    .toBuffer();
+  await sharp({
+    create: {
+      width: stageW,
+      height: stageH,
+      channels: 3,
+      background: '#f4f6fa',
+    },
+  })
+    .composite([
+      { input: libraryLayer, top: 0, left: 0 },
+      { input: lessonLayer, top: libBand + gap, left: 0 },
+    ])
+    .webp({ quality: 90, effort: 4 })
+    .toFile(path.join(SUB, 'product-home-stage-p05.webp'));
+  console.log(`OK subscription/product-home-stage-p05.webp composite ${stageW}x${stageH} q90`);
 }

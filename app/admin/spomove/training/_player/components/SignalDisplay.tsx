@@ -500,8 +500,43 @@ export const SignalDisplay = React.memo(function SignalDisplay({
         })());
     const strokeCol = lightPage ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.22)';
     const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
+    const movementCue =
+      content?.stroopArrowResponse === 'movement'
+        ? content.stroopArrowTask === 'direction'
+          ? '방향을 보세요'
+          : '색을 보세요'
+        : null;
     return (
       <div key={animKey} className="signal-blink" style={C}>
+        {movementCue ? (
+          <div
+            style={{
+              position: 'absolute',
+              top: 'max(1.25rem, env(safe-area-inset-top))',
+              left: 0,
+              right: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              zIndex: 2,
+            }}
+          >
+            <div
+              style={{
+                padding: '0.45rem 1.1rem',
+                borderRadius: '999px',
+                background: 'rgba(15,23,42,0.78)',
+                color: '#fff',
+                fontSize: 'clamp(1.05rem, 3.2vmin, 1.65rem)',
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.28)',
+              }}
+            >
+              {movementCue}
+            </div>
+          </div>
+        ) : null}
         <svg
           viewBox="0 0 100 130"
           preserveAspectRatio="xMidYMid meet"

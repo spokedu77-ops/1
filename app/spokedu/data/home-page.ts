@@ -10,8 +10,8 @@ export const HOME_FIELD_EDITORIAL = {
   hero: '/images/spokedu/home/field-editorial/home-hero-field.webp',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
   caseGeneral: '/images/spokedu/home/field-editorial/home-case-general.webp',
-  caseAdapted: '/images/spokedu/home/field-editorial/home-case-adapted.webp',
-  caseSpomove: '/images/spokedu/home/field-editorial/home-case-spomove.webp',
+  caseAdapted: '/images/spokedu/home/field-editorial/home-case-adapted-p05.webp',
+  caseSpomove: '/images/spokedu/home/field-editorial/home-case-spomove-p05.webp',
 } as const;
 
 export type HomeCaseCard = {
@@ -140,8 +140,8 @@ export const homePage = {
     lead: '놀이체육 콘텐츠와 SPOMOVE를 찾고, 수업 준비부터 진행·기록까지 한곳에서 이어갈 수 있습니다.',
     flow: ['찾기', '준비', '진행', '기록'] as const,
     visual: {
-      src: '/images/spokedu/subscription/product-home-stage.webp',
-      alt: '스포키듀 구독시스템 수업 화면 — 준비·진행·기록',
+      src: '/images/spokedu/subscription/product-home-stage-p05.webp',
+      alt: '구독시스템 수업 라이브러리에서 수업을 고르고, 선택한 수업의 준비·기록 화면',
     },
     primaryCta: {
       label: '구독시스템 알아보기',
@@ -162,15 +162,15 @@ export const homePage = {
     cards: [
       buildHomeCaseCard('maedong-sports-stepup', {
         src: HOME_FIELD_EDITORIAL.caseGeneral,
-        objectPosition: '40% 32%',
+        objectPosition: '36% 58%',
       }),
       buildHomeCaseCard('donghaeng-special-pe', {
         src: HOME_FIELD_EDITORIAL.caseAdapted,
-        objectPosition: '68% 46%',
+        objectPosition: '48% 42%',
       }),
       buildHomeCaseCard('dongjak-spomove', {
         src: HOME_FIELD_EDITORIAL.caseSpomove,
-        objectPosition: '52% 50%',
+        objectPosition: '48% 46%',
       }),
     ],
   },

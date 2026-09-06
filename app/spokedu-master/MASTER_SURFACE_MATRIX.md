@@ -9,7 +9,7 @@ Rendered PASS = populated 390 **and** 1440. Static tests are not PASS. Archived 
 
 | Surface | Role | Character | Canonical reference | 390 | 1440 |
 |---------|------|-----------|---------------------|-----|------|
-| HOME | Discover + Re-enter | Editorial | Canonical | PASSED | PASSED |
+| HOME | Discover + Re-enter | Editorial | Canonical | RENDERED — REVIEW REQUIRED | RENDERED — REVIEW REQUIRED |
 | LIBRARY DETAIL | Understand + Prepare | Editorial preparation | Canonical | PENDING | PENDING |
 | SPOMOVE HUB | Browse | Digital sports content | Canonical | PENDING | PENDING |
 | SPOMOVE START | Confirm then run | Digital execution gate | Canonical | PENDING | PENDING |

@@ -209,19 +209,19 @@ function SectionHeader({
   titleId?: string;
 }) {
   return (
-    <div className={`${MV_HEADING_TO_SHELF} flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-end sm:gap-3`}>
-      <div className="min-w-0">
+    <div className={MV_HEADING_TO_SHELF}>
+      <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-4">
         <h2 id={titleId} className={MV_SECTION_TITLE}>
           {title}
         </h2>
-        {description ? <p className={MV_SECTION_COPY}>{description}</p> : null}
+        {href && action ? (
+          <Link href={href} className={MV_QUIET_ACTION}>
+            {action}
+            <ArrowRight size={15} />
+          </Link>
+        ) : null}
       </div>
-      {href && action ? (
-        <Link href={href} className={MV_QUIET_ACTION}>
-          {action}
-          <ArrowRight size={15} />
-        </Link>
-      ) : null}
+      {description ? <p className={MV_SECTION_COPY}>{description}</p> : null}
     </div>
   );
 }
@@ -249,7 +249,7 @@ function WeeklyProgramCard({
       hasVideo={programHasPlayableVideo(program)}
       onPreview={() => onPreview(program)}
       priority={priority}
-      sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw"
+      sizes="(min-width: 1280px) 312px, (min-width: 640px) 300px, 82vw"
     />
   );
 }
@@ -773,7 +773,7 @@ function EntitledDashboardView() {
 
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-12">
-      <section data-dashboard-chapter="opening" className="px-4 pb-10 pt-5 sm:px-6 lg:pb-11 lg:pt-6">
+      <section data-dashboard-chapter="opening" className="px-4 pb-8 pt-4 sm:px-6 lg:pb-7 lg:pt-2">
         <div className={MV_EDITORIAL_WIDTH}>
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <h1 className={MV_HOME_DISPLAY} style={{ fontFamily: 'var(--spm-font-display, inherit)' }}>
@@ -785,7 +785,7 @@ function EntitledDashboardView() {
         </Link>
       </header>
 
-      <div className="mt-6 flex flex-col gap-3 empty:hidden">
+      <div className="mt-5 flex flex-col gap-3 empty:hidden lg:mt-[18px]">
         {!isFirstUser ? continuityEntry : null}
         {latestSpomoveActivity ? (
           <RecentSpomoveReuseCard
@@ -807,7 +807,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="featured-flow"
         aria-label="이번 주 수업 추천"
-        className="bg-white px-4 py-11 sm:px-6 lg:pb-14 lg:pt-12"
+        className="bg-white px-4 py-11 sm:px-6 lg:pb-12 lg:pt-11"
       >
         <div className={MV_EDITORIAL_WIDTH}>
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
@@ -820,16 +820,18 @@ function EntitledDashboardView() {
           {!programsLoaded ? (
             <p className="text-[15px] text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
           ) : weeklyPrograms.length > 0 ? (
-            <div className="relative -mx-4 flex snap-x snap-mandatory items-start gap-5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:gap-6 lg:px-0 [&::-webkit-scrollbar]:hidden">
-              {weeklyPrograms.map((program, index) => (
-                <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start md:w-auto md:max-w-none">
-                  <WeeklyProgramCard
-                    program={program}
-                    onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
-                    priority={index < 2}
-                  />
-                </div>
-              ))}
+            <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max snap-x snap-mandatory items-start gap-5 lg:snap-proximity">
+                {weeklyPrograms.slice(0, 4).map((program, index) => (
+                  <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-[312px] lg:max-w-none">
+                    <WeeklyProgramCard
+                      program={program}
+                      onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
+                      priority={index < 2}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : programsError ? (
             <div>
@@ -851,9 +853,9 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="spomove-extension"
         aria-labelledby="spomove-heading"
-        className="w-full border-t border-slate-200/70 bg-[var(--spm-s2)] px-4 pb-14 pt-11 sm:px-6 lg:pb-14 lg:pt-12"
+        className="w-full bg-white px-4 pb-12 sm:px-6"
       >
-        <div className={MV_EDITORIAL_WIDTH}>
+        <div className={`${MV_EDITORIAL_WIDTH} border-t border-slate-100 pt-9`}>
         <SectionHeader
           title="SPOMOVE로 확장하기"
           titleId="spomove-heading"

@@ -7,6 +7,7 @@ export function getSpomovePadLayoutVariant(preset: OfficialSpomovePreset): Spomo
   if (preset.id === 'reaction-cognition-space-direction-01') return 'compass';
   if (preset.id === 'reaction-cognition-space-direction-color-01b') return 'compass';
   if (preset.id === 'stroop-arrow-reverse-08') return 'compass';
+  if (preset.id === 'stroop-arrow-direction-color-v2') return 'compass';
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') return 'compass';
   if (preset.engine.mode === 'simon' && preset.engine.level === 1) return 'compass';
   return 'grid2x2';

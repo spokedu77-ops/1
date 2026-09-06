@@ -33,6 +33,7 @@ export type SpomoveGuideSemanticSnapshot = {
     flankerArrowMode?: string;
     camouflagePlacement?: string;
     stroopWordMode?: string;
+    stroopArrowResponse?: string;
   };
   cueSeconds: number;
   rounds: number;
@@ -77,6 +78,7 @@ export function buildSpomoveGuideSemanticSnapshot(
   if (e.flankerArrowMode !== undefined) engine.flankerArrowMode = e.flankerArrowMode;
   if (e.camouflagePlacement !== undefined) engine.camouflagePlacement = e.camouflagePlacement;
   if (e.stroopWordMode !== undefined) engine.stroopWordMode = e.stroopWordMode;
+  if (e.stroopArrowResponse !== undefined) engine.stroopArrowResponse = e.stroopArrowResponse;
 
   const snap: SpomoveGuideSemanticSnapshot = {
     presetId: preset.id,

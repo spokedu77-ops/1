@@ -196,6 +196,7 @@ export const PRESET_FAMILY_MAP: Record<string, ActivityFamilyId> = {
   'flanker-theme-mix-skeleton': 'flanker-theme',
   'flanker-extreme-arrow-hard-skeleton': 'flanker-arrow',
   'stroop-arrow-reverse-08': 'stroop-arrow',
+  'stroop-arrow-direction-color-v2': 'stroop-arrow',
   'stroop-arrow-bg-47': 'stroop-arrow',
   'stroop-word-reverse-48': 'stroop-word',
   'stroop-word-bg-49': 'stroop-word',
