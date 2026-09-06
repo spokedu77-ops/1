@@ -93,9 +93,7 @@ async function captureNetworkWaterfall(page) {
   });
   page.on('response', async (res) => {
     const url = res.url();
-    const hit = requests.find((r) => url.startsWith(r.url.slice(0, 120)) || r.url.includes('home-hero') || r.url.includes('home-spomove'));
     if (/home-hero-field|home-spomove-field|_next\/image.*home-(hero|spomove)/i.test(url)) {
-      const req = requests.find((r) => url.includes(r.url.split('?')[0].slice(-40)) || url === r.url);
       const timing = performanceNow();
       requests.push({
         url: url.slice(0, 220),
@@ -177,7 +175,6 @@ async function auditDom(page) {
       return r.width > 0;
     });
     const missingAlt = imgs.filter((img) => !img.getAttribute('alt')?.trim()).length;
-    const reducedMotion = getComputedStyle(document.documentElement).getPropertyValue('--he-section-quiet');
     const canonical = document.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? null;
     const robots = document.querySelector('meta[name="robots"]')?.getAttribute('content') ?? null;
     const title = document.title;

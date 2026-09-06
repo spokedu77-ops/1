@@ -3,7 +3,7 @@ import { ImageResponse } from 'next/og';
 import { parseMoveReportSharePayload } from '@/app/move-report/lib/shareLink';
 import { P } from '@/app/move-report/data/profiles';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 /**
  * Google Fonts text 파라미터로 필요한 한국어 문자만 서브셋 로드.

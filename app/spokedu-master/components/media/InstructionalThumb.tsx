@@ -53,7 +53,7 @@ export function InstructionalThumb({
   return (
     <div
       data-master-media="instructional"
-      className={`relative w-full overflow-hidden rounded-[16px] bg-slate-200 ${cleanSquare ? 'aspect-square' : 'aspect-[4/3]'} ${className ?? ''}`.trim()}
+      className={`relative overflow-hidden rounded-[16px] bg-slate-200 ${cleanSquare ? 'aspect-square w-full' : 'aspect-[4/3] w-full'} ${className ?? ''}`.trim()}
     >
       {showImage ? (
         svg ? (

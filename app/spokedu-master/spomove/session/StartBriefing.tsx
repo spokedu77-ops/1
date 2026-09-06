@@ -47,7 +47,10 @@ export function StartBriefing({
     <div className="space-y-5" data-spm-session-ready-screen="true">
       <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} compact dark flush />
 
-      <p className="text-center text-[14px] font-medium leading-6 text-white/80">{summary}</p>
+      <div className="text-center">
+        <p className="text-[11px] font-semibold tracking-wide text-white/45">현재 실행값</p>
+        <p className="mt-1 text-[14px] font-medium leading-6 text-white/80">{summary}</p>
+      </div>
       <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] font-medium text-white/55" aria-label="실행 준비 상태">
         {mode === 'projector' ? <span className="inline-flex items-center gap-1.5"><Maximize className="h-4 w-4" /> 전체화면 준비</span> : null}
         <span className="inline-flex items-center gap-1.5">{soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />} {soundEnabled ? '소리 사용' : '소리 끔'}</span>

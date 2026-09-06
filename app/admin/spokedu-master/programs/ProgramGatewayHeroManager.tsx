@@ -181,7 +181,6 @@ export function ProgramGatewayHeroManager({ domain }: { domain: 'lesson' | 'spom
             <Loader2 className="h-5 w-5 animate-spin" />
           </div>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={previewSrc} alt="" className="aspect-[16/7] w-full object-cover" />
         )}
         {!media[key] ? (

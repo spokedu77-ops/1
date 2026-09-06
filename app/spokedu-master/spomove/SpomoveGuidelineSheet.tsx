@@ -459,6 +459,7 @@ export function SpomoveGuidelineSheet({
         data-spm-spomove-launch-confirm=""
         data-spm-spomove-surface="stage"
       >
+        <h2 className="sr-only">활동 준비</h2>
         <div className="grid grid-cols-1 items-stretch gap-4 min-[1024px]:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)] min-[1024px]:gap-5">
           <div data-preview-column="media" className="min-w-0 h-full">
             <div
@@ -551,7 +552,7 @@ export function SpomoveGuidelineSheet({
                 data-spm-spomove-guide-action="start-official"
                 className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-semibold transition focus-visible:outline-none sm:w-[168px] sm:text-[14px]"
               >
-                활동 바로 시작
+                수업 시작
               </Link>
             </div>
           </div>

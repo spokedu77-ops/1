@@ -27,13 +27,14 @@ import { WeeklyEditorialCard } from '../components/lesson/WeeklyEditorialCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { buildHomeWeeklySupportMeta, splitLessonTitle } from '../lib/lessonDisplay';
+import { buildHomeWeeklySupportMeta, buildLessonCardSupportMeta, splitLessonTitle } from '../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   programHasPlayableVideo,
   resolveProgramHero,
 } from '../lib/program-media';
 import { formatLibraryCardEquipmentName } from '../library/libraryViewModel';
+import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import {
   getProgramHomeReadiness,
   isProgramHomeRecommendationEligible,
@@ -238,14 +239,16 @@ function WeeklyProgramCard({
   const model = buildLessonDisplayModel(program);
   const titles = splitLessonTitle(model.title);
   const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const supportMeta = buildHomeWeeklySupportMeta(program, { equipmentFallback: prep });
+  const selectionMeta = formatProgramSelectionReasons(program);
+  const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
+  const weeklySupportMeta = selectionMeta ? supportMeta : buildHomeWeeklySupportMeta(program, { equipmentFallback: prep });
 
   return (
     <WeeklyEditorialCard
       title={titles.koreanTitle}
       heroImageUrl={model.heroImageUrl}
       category={model.theme || '체육 수업'}
-      supportMeta={supportMeta}
+      supportMeta={weeklySupportMeta}
       hasVideo={programHasPlayableVideo(program)}
       onPreview={() => onPreview(program)}
       priority={priority}
