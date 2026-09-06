@@ -31,6 +31,7 @@ interface FlowGameClientProps {
   panoramaYawDeg?:   number;
   colorGateCueSeconds?: number;
   colorGateVariant?: import('./engine/modules/colorGateGuides').ColorGateVariant;
+  colorGateCategory?: import('./engine/modules/colorGateGuides').ColorGateCategoryFilter;
   onComplete:        (stats: FlowStats) => void;
   onExit:            () => void;
   onEngineReady?:    (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
@@ -67,6 +68,7 @@ export default function FlowGameClient({
   panoramaYawDeg,
   colorGateCueSeconds,
   colorGateVariant,
+  colorGateCategory,
   onComplete,
   onExit,
   onEngineReady,
@@ -169,7 +171,7 @@ export default function FlowGameClient({
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, motionScale, bgmPath, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateVariant },
+        { stages, motionScale, bgmPath, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateVariant, colorGateCategory },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -209,7 +211,7 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, motionScale, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateVariant, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
+  }, [stages.length, motionScale, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateVariant, colorGateCategory, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 

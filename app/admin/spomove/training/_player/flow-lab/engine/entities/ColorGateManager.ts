@@ -5,6 +5,7 @@ import {
   GATE_COLORS,
   PLAYABLE_GATE_COLOR_IDS,
   buildColorGateSilhouetteCanvas,
+  type ColorGateCategoryFilter,
   type ColorGatePoseKey,
   type ColorGateVariant,
   type GateColorId,
@@ -74,7 +75,12 @@ export class ColorGateManager {
   private sameColorRunLength = 0;
   private poseBag: ColorGatePoseKey[] = [];
 
-  constructor(lowRes = false, private readonly cueSeconds = 4, private readonly variant: ColorGateVariant = 'solo-easy') {
+  constructor(
+    lowRes = false,
+    private readonly cueSeconds = 4,
+    private readonly variant: ColorGateVariant = 'solo-easy',
+    private readonly category: ColorGateCategoryFilter = 'all',
+  ) {
     this.lowRes = lowRes;
   }
 
@@ -91,7 +97,7 @@ export class ColorGateManager {
       this.clearTextureCache();
       return;
     }
-    this.setPoseImagesByPose(new Map([['lunge-reach', img]]));
+    this.setPoseImagesByPose(new Map<ColorGatePoseKey, HTMLImageElement>([['lunge', img]]));
   }
 
   setPoseImages(images: HTMLImageElement[]): void {
@@ -219,7 +225,7 @@ export class ColorGateManager {
 
   private pickNextPose(): ColorGatePoseKey {
     if (this.poseBag.length === 0) {
-      this.poseBag = [...(colorGatePosesForVariant(this.variant) ?? COLOR_GATE_POSE_SEQUENCE)];
+      this.poseBag = [...(colorGatePosesForVariant(this.variant, this.category) ?? COLOR_GATE_POSE_SEQUENCE)];
       for (let i = this.poseBag.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         const tmp = this.poseBag[i]!;
@@ -227,7 +233,7 @@ export class ColorGateManager {
         this.poseBag[j] = tmp;
       }
     }
-    return this.poseBag.pop() ?? 'star';
+    return this.poseBag.pop() ?? COLOR_GATE_POSE_SEQUENCE[0]!;
   }
 
   private pickNextGateColor(): GateColorId {
