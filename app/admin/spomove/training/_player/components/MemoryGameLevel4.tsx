@@ -2,12 +2,19 @@
 
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { generateLevel4Pattern, Level4Item } from '../lib/signals';
+import {
+  COLOR_NUMBER_MEMORY_QUESTION_GUIDANCE_MOVEMENT,
+  COLOR_NUMBER_MEMORY_QUESTION_GUIDANCE_VOICE,
+  LEVEL4_QA_COUNT,
+  LEVEL4_TOTAL,
+  pickLevel4QaIndices,
+} from '../lib/resolveColorNumberMemoryMoveTarget';
 import { playBeep } from '../lib/audio';
 import { EMBED_FIXED_VIEWPORT } from '../lib/embedViewport';
 import { CSS } from '../styles';
 
-const TOTAL = 10;
-const QA_COUNT = 5;
+const TOTAL = LEVEL4_TOTAL;
+const QA_COUNT = LEVEL4_QA_COUNT;
 
 type L4Phase = 'idle' | 'showing' | 'qa_ready' | 'qa_question' | 'qa_answer' | 'done';
 
@@ -17,13 +24,16 @@ export function MemoryGameLevel4({
   audioMode,
   speedSec,
   startDelayMs = 600,
+  spatialMemoryResponse,
 }: {
   onExit: () => void;
   onComplete: () => void;
   audioMode: string;
   speedSec: number;
   startDelayMs?: number;
+  spatialMemoryResponse?: 'voice' | 'movement';
 }) {
+  const isMovementResponse = spatialMemoryResponse === 'movement';
   const [items] = useState<Level4Item[]>(() => generateLevel4Pattern());
   const [showIdx, setShowIdx] = useState(-1);
   const [memFlash, setMemFlash] = useState(false);
@@ -51,12 +61,7 @@ export function MemoryGameLevel4({
       prevColorRef.current = null;
       // 10개 중 5개 랜덤 선택 (인덱스 셔플)
       // 주의: sort(() => Math.random() - 0.5)는 편향이 있을 수 있어 Fisher–Yates로 셔플
-      const indices = Array.from({ length: TOTAL }, (_, i) => i);
-      for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j]!, indices[i]!];
-      }
-      const shuffled = indices.slice(0, QA_COUNT);
+      const shuffled = pickLevel4QaIndices(TOTAL, QA_COUNT);
       setQaItems(shuffled.map((i) => items[i]!));
       setQaIdx(0);
       setPhase('qa_ready');
@@ -165,7 +170,7 @@ export function MemoryGameLevel4({
   // ── idle (준비 or 동일 색 플래시) ──
   if (phase === 'idle')
     return (
-      <div style={{ ...EMBED_FIXED_VIEWPORT, background: memFlash ? '#ffffff' : '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div data-l4-phase="idle" data-l4-response={isMovementResponse ? 'movement' : 'voice'} style={{ ...EMBED_FIXED_VIEWPORT, background: memFlash ? '#ffffff' : '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -181,7 +186,7 @@ export function MemoryGameLevel4({
     const isYellow = currentItem?.color.bg === '#FACC15';
     const textColor = isYellow ? '#111' : '#fff';
     return (
-      <div style={{ ...EMBED_FIXED_VIEWPORT, background: bgColor, overflow: 'hidden', zIndex: 300, transition: memFlash ? 'none' : 'background 0.05s' }}>
+      <div data-l4-phase="showing" data-l4-response={isMovementResponse ? 'movement' : 'voice'} style={{ ...EMBED_FIXED_VIEWPORT, background: bgColor, overflow: 'hidden', zIndex: 300, transition: memFlash ? 'none' : 'background 0.05s' }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -209,7 +214,7 @@ export function MemoryGameLevel4({
   // ── qa_ready (Q&A 시작 전 안내) ──
   if (phase === 'qa_ready')
     return (
-      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div data-l4-phase="qa_ready" data-l4-response={isMovementResponse ? 'movement' : 'voice'} style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem' }}>
@@ -229,7 +234,7 @@ export function MemoryGameLevel4({
   // ── qa_question (질문 화면) ──
   if (phase === 'qa_question' && currentQA)
     return (
-      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div data-l4-phase="qa_question" data-l4-response={isMovementResponse ? 'movement' : 'voice'} data-l4-question-num={currentQA.num} style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2.5rem', padding: '6rem 2rem 4rem' }}>
@@ -241,7 +246,9 @@ export function MemoryGameLevel4({
               <span style={{ color: '#FCD34D', fontSize: 'clamp(2rem,6vw,3.5rem)' }}>숫자 {currentQA.num}</span>은<br />무슨 색깔이었을까요?
             </div>
             <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.3)', marginTop: '1rem', fontWeight: 500 }}>
-              학생이 먼저 말하면 정답을 확인하세요
+              {isMovementResponse
+                ? COLOR_NUMBER_MEMORY_QUESTION_GUIDANCE_MOVEMENT
+                : COLOR_NUMBER_MEMORY_QUESTION_GUIDANCE_VOICE}
             </div>
           </div>
           <button onClick={handleAction} style={{ background: '#22C55E', color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1.1rem 2.8rem', fontSize: 'clamp(1rem,3vw,1.3rem)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 28px rgba(34,197,94,0.4)' }}>
@@ -259,7 +266,7 @@ export function MemoryGameLevel4({
     const nextBg = isLast ? '#22C55E' : '#F97316';
     const nextShadow = isLast ? '0 8px 28px rgba(34,197,94,0.4)' : '0 8px 28px rgba(249,115,22,0.35)';
     return (
-      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div data-l4-phase="qa_answer" data-l4-response={isMovementResponse ? 'movement' : 'voice'} data-l4-answer-color={currentQA.color.id} data-l4-answer-num={currentQA.num} style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '6rem 2rem 4rem' }}>
@@ -288,7 +295,7 @@ export function MemoryGameLevel4({
   // ── done ──
   if (phase === 'done')
     return (
-      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div data-l4-phase="done" data-l4-response={isMovementResponse ? 'movement' : 'voice'} style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem' }}>
           <div style={{ fontSize: '4rem' }}>🎉</div>

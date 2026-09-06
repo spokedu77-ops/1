@@ -148,6 +148,8 @@ type Props = {
   /** 순차 기억 · 순간 기억(spatial 7) */
   colorMemoryGridSize?: 3 | 4 | 5;
   colorMemoryGridMode?: 'flicker' | 'oneshot';
+  /** spatial L4 이동 응답 후보. 미지정 시 기존 음성 Q&A */
+  spatialMemoryResponse?: 'voice' | 'movement';
   /** O4 — Operation timing.interval → MemoryGame intervalMode */
   intervalLaunch?: {
     workSeconds: number;
@@ -213,6 +215,7 @@ export function EngineRouter({
   handFootDifficulty,
   colorMemoryGridSize,
   colorMemoryGridMode,
+  spatialMemoryResponse,
   intervalLaunch = null,
   onComplete,
   onExit,
@@ -550,6 +553,7 @@ export function EngineRouter({
               audioMode="beep"
               speedSec={speedSec ?? 1.2}
               startDelayMs={0}
+              spatialMemoryResponse={spatialMemoryResponse === 'movement' ? 'movement' : undefined}
             />
           </StartCountdownGate>
         </Suspense>

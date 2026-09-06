@@ -122,7 +122,7 @@ export type OfficialSpomovePreset = {
   internalCandidate?: boolean;
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 47;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 48;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -1261,6 +1261,41 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '자극 방식', value: '카모플라쥬 색 탐지' },
       { label: '배치', value: 'VARIANT' },
       { label: '반복', value: '20회' },
+    ],
+  },
+  {
+    id: 'sequential-memory-color-number-movement-v2',
+    catalogStatus: 'hold',
+    internalCandidate: true,
+    holdReason: '2D 내부 후보: Color-Number Memory 이동. Public 교체 전 검증용.',
+    sortOrder: 42,
+    title: '(내부) 색·번호 기억 이동 후보',
+    en: 'Color-Number Memory Movement (candidate)',
+    axis: 'executive',
+    axisTitle: SPOMOVE_AXIS_META.executive.title,
+    programGroup: 'sequential-memory',
+    programTitle: '순차 기억',
+    salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
+    engine: {
+      mode: 'spatial',
+      level: 4,
+      spatialMemoryResponse: 'movement',
+    },
+    description:
+      '번호-색 연결을 기억한 뒤 질문 번호의 색 SPOMAT으로 이동하고 교사가 정답을 공개하는 내부 검증용 후보',
+    cueSeconds: 3,
+    rounds: 10,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '내부 검증 전용. Public Hub 미노출.',
+    isReady: true,
+    settingSummary: '색·번호 기억 · 이동 응답 · BGM 자동',
+    settingChips: ['색·번호 기억', '이동 응답', 'BGM 자동'],
+    executionFacts: [
+      { label: '기억 방식', value: '번호-색 연합' },
+      { label: '응답', value: 'SPOMAT 이동' },
+      { label: '질문', value: '랜덤 5문항' },
+      { label: 'BGM', value: '자동 재생' },
     ],
   },
   // sortOrder 49: Missing Color (level 4 · 누락 옵션)

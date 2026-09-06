@@ -712,6 +712,7 @@ function SpomoveSessionContent() {
           handFootDifficulty={officialPreset.engine.handFootDifficulty}
           colorMemoryGridSize={officialPreset.engine.colorMemoryGridSize}
           colorMemoryGridMode={officialPreset.engine.colorMemoryGridMode}
+          spatialMemoryResponse={officialPreset.engine.spatialMemoryResponse}
           intervalLaunch={
             effectiveOperation?.timing.pattern === 'interval'
               ? {

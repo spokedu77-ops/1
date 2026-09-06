@@ -37,6 +37,7 @@ export type SpomoveGuideSemanticSnapshot = {
     stroopArrowResponse?: string;
     stroopWordResponse?: string;
     stroopWordRuleMode?: string;
+    spatialMemoryResponse?: string;
   };
   cueSeconds: number;
   rounds: number;
@@ -87,6 +88,7 @@ export function buildSpomoveGuideSemanticSnapshot(
   if (e.stroopArrowResponse !== undefined) engine.stroopArrowResponse = e.stroopArrowResponse;
   if (e.stroopWordResponse !== undefined) engine.stroopWordResponse = e.stroopWordResponse;
   if (e.stroopWordRuleMode !== undefined) engine.stroopWordRuleMode = e.stroopWordRuleMode;
+  if (e.spatialMemoryResponse !== undefined) engine.spatialMemoryResponse = e.spatialMemoryResponse;
 
   const snap: SpomoveGuideSemanticSnapshot = {
     presetId: preset.id,

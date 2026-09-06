@@ -210,6 +210,7 @@ export const PRESET_FAMILY_MAP: Record<string, ActivityFamilyId> = {
   'sequential-memory-10color-52': 'sequential-memory',
   'sequential-memory-full-reveal-54': 'sequential-memory',
   'sequential-memory-color-number-exp': 'sequential-memory',
+  'sequential-memory-color-number-movement-v2': 'sequential-memory',
   'sequential-memory-custom-10color-exp': 'sequential-memory',
   'dive-standard': 'dive',
   'dive-random': 'dive',
