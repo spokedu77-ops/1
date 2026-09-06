@@ -30,6 +30,7 @@ export type ColorGateCategory =
   | 'power-jump'
   | 'partner';
 
+export type ColorGateCategoryFilter = 'all' | Exclude<ColorGateCategory, 'partner'>;
 export type ColorGateDifficulty = 'easy' | 'hard';
 
 /**
@@ -133,8 +134,9 @@ export function colorGatePosesForCategory(
 }
 
 /**
- * 기존 3개 옵션과 호환되는 런타임 포즈 풀.
- * 솔로는 4개 체력 카테고리를 모두 합쳐 난이도별 20개를 무중복 셔플한다.
+ * 기존 3개 난이도 옵션과 호환되는 런타임 포즈 풀.
+ * category가 all이면 솔로 4개 체력 유형 전체를 사용하고, 특정 유형이면 해당 5개만 사용한다.
+ * together-easy는 category와 무관하게 기존 2인 협동 포즈만 사용한다.
  */
 export const COLOR_GATE_VARIANT_POSES: Record<ColorGateVariant, readonly ColorGatePoseKey[]> = {
   'solo-easy': COLOR_GATE_POSE_DEFINITIONS
@@ -148,8 +150,15 @@ export const COLOR_GATE_VARIANT_POSES: Record<ColorGateVariant, readonly ColorGa
     .map((pose) => pose.key),
 };
 
-export function colorGatePosesForVariant(variant: ColorGateVariant): readonly ColorGatePoseKey[] {
-  return COLOR_GATE_VARIANT_POSES[variant];
+export function colorGatePosesForVariant(
+  variant: ColorGateVariant,
+  category: ColorGateCategoryFilter = 'all',
+): readonly ColorGatePoseKey[] {
+  if (variant === 'together-easy') return COLOR_GATE_VARIANT_POSES['together-easy'];
+  if (category === 'all') return COLOR_GATE_VARIANT_POSES[variant];
+
+  const difficulty: ColorGateDifficulty = variant === 'solo-normal' ? 'hard' : 'easy';
+  return colorGatePosesForCategory(category, difficulty);
 }
 
 export function getColorGatePoseDefinition(pose: ColorGatePoseKey): ColorGatePoseDefinition {
