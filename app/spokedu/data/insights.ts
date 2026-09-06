@@ -121,7 +121,7 @@ export const insightArticles: InsightArticle[] = [
     audience: '기관 담당자 · 방과후',
     filters: ['institution', 'lesson-design'],
     mediaKey: 'trackDispatch',
-    href: `${SPOKEDU_BASE_PATH}/dispatch`,
+    href: `${SPOKEDU_PATHS.education}`,
     ctaLabel: '기관 수업 제안',
     trackLabel: 'insights-article-space-design',
     detail: {

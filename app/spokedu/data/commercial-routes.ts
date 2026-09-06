@@ -61,7 +61,7 @@ export function dispatchInquiryHref(args: {
   if (args.program) params.set('program', args.program);
   if (args.conversionEvidence) params.set('conversionEvidence', args.conversionEvidence);
   const qs = params.toString();
-  return `${SPOKEDU_BASE_PATH}/dispatch${qs ? `?${qs}` : ''}#contact`;
+  return `${SPOKEDU_PATHS.education}${qs ? `?${qs}` : ''}`;
 }
 
 export function privateInquiryHref(args: {

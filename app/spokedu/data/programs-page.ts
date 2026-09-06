@@ -1,7 +1,7 @@
 import { dispatchInquiryHref } from './commercial-routes';
 import type { HomeMediaKey } from './home-media';
 import { programSystemItems } from './program-system-items';
-import { SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_PATHS } from './site';
 
 export const programsPage = {
   hero: {
@@ -19,7 +19,7 @@ export const programsPage = {
     },
     secondary: {
       label: '기관 라인업 자세히',
-      href: `${SPOKEDU_BASE_PATH}/dispatch#programs`,
+      href: `${SPOKEDU_PATHS.education}`,
       trackLabel: 'programs-cta-dispatch-lineup',
     },
   },

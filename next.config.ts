@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
       { source: "/spokedu", destination: "/", permanent: true },
       { source: "/spokedu/about", destination: "/about", permanent: true },
       { source: "/spokedu/education", destination: "/education", permanent: true },
-      { source: "/spokedu/dispatch", destination: "/dispatch", permanent: true },
+      { source: "/spokedu/dispatch", destination: "/education", permanent: true },
       { source: "/spokedu/private", destination: "/private", permanent: true },
       { source: "/spokedu/programs/spomove/catalog", destination: "/spomove/catalog", permanent: true },
       { source: "/spokedu/programs/spomove", destination: "/spomove", permanent: true },
@@ -65,15 +65,15 @@ const nextConfig: NextConfig = {
       { source: "/spokedu/cases", destination: "/records", permanent: true },
       { source: "/spokedu/cases/:slug", destination: "/records/:slug", permanent: true },
 
-      // --- Redirect-only programs → dispatch ---
-      { source: "/spokedu/programs/paps", destination: "/dispatch", permanent: true },
-      { source: "/spokedu/programs/camp", destination: "/dispatch", permanent: true },
-      { source: "/spokedu/programs/oneday-event", destination: "/dispatch", permanent: true },
-      { source: "/spokedu/programs/monthly-newsports", destination: "/dispatch", permanent: true },
-      { source: "/programs/paps", destination: "/dispatch", permanent: true },
-      { source: "/programs/camp", destination: "/dispatch", permanent: true },
-      { source: "/programs/oneday-event", destination: "/dispatch", permanent: true },
-      { source: "/programs/monthly-newsports", destination: "/dispatch", permanent: true },
+      // --- Redirect-only programs → institution PE (/education), 1-hop ---
+      { source: "/spokedu/programs/paps", destination: "/education", permanent: true },
+      { source: "/spokedu/programs/camp", destination: "/education", permanent: true },
+      { source: "/spokedu/programs/oneday-event", destination: "/education", permanent: true },
+      { source: "/spokedu/programs/monthly-newsports", destination: "/education", permanent: true },
+      { source: "/programs/paps", destination: "/education", permanent: true },
+      { source: "/programs/camp", destination: "/education", permanent: true },
+      { source: "/programs/oneday-event", destination: "/education", permanent: true },
+      { source: "/programs/monthly-newsports", destination: "/education", permanent: true },
       { source: "/spokedu/programs", destination: "/spomove", permanent: true },
 
       // --- Absorbed legacy marketing routes ---
@@ -83,7 +83,10 @@ const nextConfig: NextConfig = {
       { source: "/spokedu/insights", destination: "/about", permanent: true },
       { source: "/insights", destination: "/about", permanent: true },
       { source: "/parents", destination: "/private", permanent: true },
-      { source: "/institutions", destination: "/dispatch", permanent: true },
+      { source: "/institutions", destination: "/education", permanent: true },
+      { source: "/dispatch", destination: "/education", permanent: true },
+      { source: "/info/dispatch", destination: "/education", permanent: true },
+      { source: "/info/dispatch.html", destination: "/education", permanent: true },
       { source: "/audience", destination: "/", permanent: true },
 
       // --- Admin / training legacy (unchanged) ---

@@ -111,7 +111,7 @@ export const homePage = {
     label: 'SPOMOVE',
     title: '화면을 보고, 판단하고,\n움직입니다.',
     definition:
-      '화면의 정보를 확인하고 규칙에 따라 판단한 뒤,\n움직임으로 반응하는 SPOKEDU의 자체 신체활동 콘텐츠입니다.',
+      '화면의 정보를 확인하고 규칙에 따라 판단한 뒤, 움직임으로 반응하는 SPOKEDU의 자체 신체활동 콘텐츠입니다.',
     flow: [
       {
         title: '화면 확인',
@@ -119,7 +119,7 @@ export const homePage = {
       },
       {
         title: '규칙 판단',
-        description: '주어진 규칙에 따라 어떻게 반응할지 판단합니다.',
+        description: '주어진 규칙에 따라 반응을 판단합니다.',
       },
       {
         title: '움직임',
@@ -153,7 +153,7 @@ export const homePage = {
   cases: {
     id: 'cases',
     title: '실제 운영 현장',
-    lead: '학교·기관에서 진행한\n실제 수업과 프로그램입니다.',
+    lead: '학교·기관에서 진행한 실제 수업과 프로그램입니다.',
     recordsCta: {
       label: '운영 사례 전체 보기',
       href: SPOKEDU_PATHS.records,

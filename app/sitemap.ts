@@ -15,7 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     SPOKEDU_PATHS.home,
     SPOKEDU_PATHS.about,
     SPOKEDU_PATHS.education,
-    SPOKEDU_PATHS.dispatch,
     SPOKEDU_PATHS.private,
     SPOKEDU_PATHS.spomove,
     SPOKEDU_PATHS.spomoveCatalog,

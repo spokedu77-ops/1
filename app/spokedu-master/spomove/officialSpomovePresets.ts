@@ -61,6 +61,8 @@ export type OfficialSpomovePreset = {
     hideBodyLabelModeControls?: boolean;
     spatialArrowColorMode?: 'basic' | 'color';
     spatialArrowColorMapping?: 'random' | 'compass';
+    /** 순차 기억 색·번호 후보: 화면 선택 | SPOMAT 이동 응답 */
+    spatialMemoryResponse?: 'voice' | 'movement';
     reactTrainConcurrent?: 1 | 2 | 3;
     moleLookMode?: 'classic' | 'variant';
     numberCartTier?: 1 | 2 | 3;

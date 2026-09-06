@@ -77,7 +77,7 @@ describe('buildStages', () => {
     expect(stages[0]!.isColorGate).toBe(true);
     expect(stages[0]!.newModule).toBe('colorGate');
     expect(stages[0]!.activeModules).toEqual(new Set(['colorGate']));
-    expect(stages[0]!.colorGatePose).toBe('jump');
+    expect(stages[0]!.colorGatePose).toBe('squat');
     expect(stages[0]!.colorGateTotal).toBe(1);
   });
 

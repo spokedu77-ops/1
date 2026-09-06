@@ -212,7 +212,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
           <ol className={styles.spomovePrinciples} aria-label="SPOMOVE 핵심 원리">
             {homePage.spomove.flow.map((step) => (
               <li key={step.title} className={styles.spomovePrincipleItem}>
-                <h3 className={`${styles.homeSubhead} ${styles.spomovePrincipleLabel}`}>{step.title}</h3>
+                <h3 className={`${styles.spomovePrincipleLabel} ${koreanText}`}>{step.title}</h3>
                 <p className={`${styles.spomovePrincipleBody} ${koreanText}`}>{step.description}</p>
               </li>
             ))}

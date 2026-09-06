@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 
 const baseUrl = process.argv[2] ?? 'http://localhost:3000';
 const outputDirectory = path.join(process.cwd(), '.qa-spokedu', 'typography');
-const routes = ['/', '/subscription', '/education', '/spomove', '/private', '/dispatch', '/about'];
+const routes = ['/', '/subscription', '/education', '/spomove', '/private', '/about'];
 const widths = [390, 768, 1024, 1440];
 
 await mkdir(outputDirectory, { recursive: true });

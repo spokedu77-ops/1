@@ -35,7 +35,7 @@ const CANONICAL: Record<SpokeduSeoPageKey, string> = {
   about: SPOKEDU_PATHS.about,
   education: SPOKEDU_PATHS.education,
   private: SPOKEDU_PATHS.private,
-  dispatch: SPOKEDU_PATHS.dispatch,
+  dispatch: SPOKEDU_PATHS.education,
   curriculum: SPOKEDU_PATHS.subscription,
   programs: SPOKEDU_PATHS.spomove,
   records: SPOKEDU_PATHS.records,
@@ -110,9 +110,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '현장 체육교육에서 시작해 콘텐츠와 시스템으로 확장하는 SPOKEDU. 체육교육·SPOMOVE·구독시스템의 관계와 주요 연혁을 안내합니다.',
   },
   education: {
-    title: '체육교육 | 기관수업·개인·소그룹·원데이 SPOKEDU',
+    title: '기관 체육수업 | 학교·복지관·키움센터 체육교육 SPOKEDU',
     description:
-      '아동·청소년 체육교육 허브. 기관수업과 개인·소그룹, 원데이·행사, 특수·포용 체육 경로를 안내하고 상세 운영은 각 페이지에서 이어갑니다.',
+      '학교·복지관·키움센터 등 기관의 대상·인원·공간에 맞춰 정기수업, 방학·특강, 원데이·행사, 특수·포용 체육을 직접 구성하고 운영합니다.',
   },
   private: {
     title: '개인·소그룹 체육수업 | SPOKEDU',
@@ -120,9 +120,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '아이의 현재 수행 수준과 목표를 확인한 뒤 1:1·소그룹 체육수업 방향을 상담으로 안내합니다.',
   },
   dispatch: {
-    title: '기관수업 | 키움센터·학교·복지관 체육교육 SPOKEDU',
+    title: '기관 체육수업 | 학교·복지관·키움센터 체육교육 SPOKEDU',
     description:
-      '기관 조건에 맞춘 정규·원데이·방학 체육수업 운영안. 공간·인원·일정에 따라 구성을 조정하고 필요 시 SPOMOVE를 조합합니다.',
+      '학교·복지관·키움센터 등 기관의 대상·인원·공간에 맞춰 정기수업, 방학·특강, 원데이·행사, 특수·포용 체육을 직접 구성하고 운영합니다.',
   },
   curriculum: {
     title: '스포키듀 구독시스템 | 수업 준비·진행·기록 SPOKEDU',
@@ -164,7 +164,16 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
 export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
   home: ['스포키듀', 'SPOKEDU', '기관 체육수업', '단체 체육', '아동 체육교육', 'SPOMOVE', '체육과외'],
   about: ['스포키듀', 'SPOKEDU', '아동 체육교육', '체육 커리큘럼'],
-  education: ['체육교육', '기관 체육수업', '개인 체육수업', '원데이 체육', '특수체육', 'SPOKEDU'],
+  education: [
+    '기관 체육수업',
+    '학교 체육교육',
+    '복지관 체육',
+    '키움센터 체육',
+    '정기수업',
+    '원데이 체육',
+    '특수체육',
+    'SPOKEDU',
+  ],
   private: ['개인 체육수업', '소그룹 체육수업', '어린이 체육수업', '아동 체육교육'],
   dispatch: ['기관 체육수업', '키움센터 체육 프로그램', 'SPOMOVE', 'PAPS 놀이체육'],
   curriculum: ['스포키듀 구독시스템', '체육 수업 라이브러리', '지도자 교육', 'SPOMOVE'],

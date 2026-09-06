@@ -15,7 +15,7 @@ export function buildProgramDetailMetadata(slug: ProgramDetailSlug) {
   return buildSpokeduPageMetadata({
     title: `${program.title} | SPOKEDU 프로그램`,
     description: program.detailDescription ?? program.description,
-    canonical: slug === 'spomove' ? SPOKEDU_PATHS.spomove : SPOKEDU_PATHS.dispatch,
+    canonical: slug === 'spomove' ? SPOKEDU_PATHS.spomove : SPOKEDU_PATHS.education,
     keywords: [program.title],
     pageKey: 'programs',
     ogImage: buildProgramDetailOgImage(slug),

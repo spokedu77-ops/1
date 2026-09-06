@@ -65,7 +65,7 @@ describe('acquisition leak closure', () => {
       const href = getRecordConversionHref(item.slug);
       if (hasFieldRecordOnsiteSummary(item)) {
         expect(href).toBeTruthy();
-        expect(href).toContain('/dispatch');
+        expect(href).toContain('/education');
         expect(href).toContain(`conversionEvidence=${item.slug}`);
         expect(href).not.toContain('/contact');
       } else {

@@ -1,1 +1,1 @@
-export { default, metadata } from '../../spokedu/dispatch/page';
+export { default } from '../../spokedu/dispatch/page';

@@ -32,6 +32,7 @@ import { VirusOutbreakReactionTraining } from './components/VirusOutbreakReactio
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
+import { ColorGatePoseAppendix } from './components/ColorGatePoseAppendix';
 import { CSS, S } from './styles';
 import FlowGameClient from './flow-lab/FlowGameClient';
 import type { ColorGateCategoryFilter } from './flow-lab/engine/modules/colorGateGuides';
@@ -1976,6 +1977,7 @@ export default function MemoryGameApp({
                         </button>
                       ))}
                     </div>
+                    <ColorGatePoseAppendix />
                   </div>
                 )}
                 <div style={S.sec}>

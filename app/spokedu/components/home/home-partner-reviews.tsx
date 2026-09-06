@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import { dispatchPage } from '../../data/dispatch-page';
-import { SPOKEDU_BASE_PATH } from '../../data/site';
+import { SPOKEDU_PATHS } from '../../data/site';
 import {
   brandBlue,
   brandInk,
@@ -78,7 +78,7 @@ export function HomePartnerReviews() {
         </div>
 
         <TrackedLink
-          href={`${SPOKEDU_BASE_PATH}/dispatch`}
+          href={`${SPOKEDU_PATHS.education}`}
           trackLabel="cta-home-review-dispatch"
           className={`${marketingButtonSecondary} mt-10 ${brandFocusRing}`}
         >

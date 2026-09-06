@@ -44,7 +44,7 @@ type TabContent = {
   sections: SectionBlock[];
 };
 
-const CONTACT_HREF = '/dispatch?program=spomove#contact';
+const CONTACT_HREF = '/education?program=spomove';
 const CATALOG_HREF = '/spomove/catalog';
 
 const responseStages: InfoCard[] = [

@@ -52,6 +52,7 @@ import {
 import { loadFlowPresets, saveFlowPresets, type FlowPreset } from './_player/lib/flowPresets';
 import { DIVE_THEME_UI, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { VariantAppendixFullscreen } from './_player/components/VariantAppendixFullscreen';
+import { ColorGatePoseAppendix } from './_player/components/ColorGatePoseAppendix';
 import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
 
 /* ─── MemoryGameApp (Training 전용): SSR 비활성, 클라이언트 전용 ─── */
@@ -2224,6 +2225,7 @@ function SettingsScreen({
                   );
                 })}
               </div>
+              <ColorGatePoseAppendix />
             </section>
           ) : null}
 

@@ -62,28 +62,14 @@ export type SiteNavEntry =
       children: SiteNavLink[];
     };
 
-/** 글로벌 헤더·모바일 메뉴 SSOT */
+/** 글로벌 헤더·모바일 메뉴 SSOT — 상업 2축 + signature + evidence */
 export const siteNav: SiteNavEntry[] = [
-  {
-    type: 'link',
-    label: '스포키듀',
-    href: SPOKEDU_PATHS.about,
-    trackLabel: 'nav-about',
-    matchPrefix: '/about',
-  },
   {
     type: 'link',
     label: '체육교육',
     href: SPOKEDU_PATHS.education,
     trackLabel: 'nav-education',
     matchPrefix: '/education',
-  },
-  {
-    type: 'link',
-    label: 'SPOMOVE',
-    href: SPOKEDU_PATHS.spomove,
-    trackLabel: 'nav-spomove',
-    matchPrefix: '/spomove',
   },
   {
     type: 'link',
@@ -94,17 +80,17 @@ export const siteNav: SiteNavEntry[] = [
   },
   {
     type: 'link',
+    label: 'SPOMOVE',
+    href: SPOKEDU_PATHS.spomove,
+    trackLabel: 'nav-spomove',
+    matchPrefix: '/spomove',
+  },
+  {
+    type: 'link',
     label: '운영 사례',
     href: SPOKEDU_PATHS.records,
     trackLabel: 'nav-records',
     matchPrefix: '/records',
-  },
-  {
-    type: 'link',
-    label: '문의·협업',
-    href: SPOKEDU_PATHS.contact,
-    trackLabel: 'nav-contact',
-    matchPrefix: '/contact',
   },
 ];
 
@@ -114,43 +100,97 @@ export const siteHeaderCta = {
   trackLabel: 'header-contact',
 } as const;
 
-/** 푸터 탐색 링크 — siteNav와 동일 목적지, trackLabel만 footer 접두 */
-export const footerNavLinks: SiteNavLink[] = siteNav
-  .filter((entry): entry is Extract<SiteNavEntry, { type: 'link' }> => entry.type === 'link')
-  .map((entry) => ({
-    label: entry.label,
-    href: entry.href,
-    trackLabel: entry.trackLabel.replace(/^nav-/, 'footer-'),
-  }));
+export type FooterNavGroup = {
+  heading: string;
+  links: SiteNavLink[];
+};
 
-/** 푸터 서비스 바로가기 (허브 하위 실경로) */
-export const footerServiceLinks: SiteNavLink[] = [
+/** 푸터 보조 항로 — Header에 올리지 않는 supporting destinations */
+export const footerNavGroups: FooterNavGroup[] = [
   {
-    label: '기관수업',
-    href: SPOKEDU_PATHS.dispatch,
-    trackLabel: 'footer-service-dispatch',
+    heading: '브랜드',
+    links: [
+      {
+        label: '스포키듀 소개',
+        href: SPOKEDU_PATHS.about,
+        trackLabel: 'footer-about',
+      },
+    ],
   },
   {
-    label: '개인·소그룹',
-    href: SPOKEDU_PATHS.private,
-    trackLabel: 'footer-service-private',
+    heading: '서비스',
+    links: [
+      {
+        label: '기관수업',
+        href: SPOKEDU_PATHS.education,
+        trackLabel: 'footer-service-dispatch',
+      },
+      {
+        label: '개인·소그룹',
+        href: SPOKEDU_PATHS.private,
+        trackLabel: 'footer-service-private',
+      },
+    ],
   },
   {
-    label: 'SPOMOVE 카탈로그',
-    href: `${SPOKEDU_PATHS.spomove}?tab=catalog`,
-    trackLabel: 'footer-service-spomove-catalog',
+    heading: '콘텐츠·제품',
+    links: [
+      {
+        label: 'SPOMOVE',
+        href: SPOKEDU_PATHS.spomove,
+        trackLabel: 'footer-spomove',
+      },
+      {
+        label: 'SPOMOVE 카탈로그',
+        href: SPOKEDU_PATHS.spomoveCatalog,
+        trackLabel: 'footer-service-spomove-catalog',
+      },
+      {
+        label: '구독시스템',
+        href: SPOKEDU_PATHS.subscription,
+        trackLabel: 'footer-subscription',
+      },
+      {
+        label: 'SPOMAT',
+        href: SPOKEDU_PATHS.spomat,
+        trackLabel: 'footer-service-spomat',
+      },
+    ],
   },
   {
-    label: 'SPOMAT',
-    href: SPOKEDU_PATHS.spomat,
-    trackLabel: 'footer-service-spomat',
+    heading: '증거',
+    links: [
+      {
+        label: '운영 사례',
+        href: SPOKEDU_PATHS.records,
+        trackLabel: 'footer-records',
+      },
+    ],
   },
   {
-    label: '파트너·협업 안내',
-    href: SPOKEDU_PATHS.partners,
-    trackLabel: 'footer-service-partners',
+    heading: '협업·문의',
+    links: [
+      {
+        label: '파트너·협업 안내',
+        href: SPOKEDU_PATHS.partners,
+        trackLabel: 'footer-service-partners',
+      },
+      {
+        label: '문의',
+        href: SPOKEDU_PATHS.contact,
+        trackLabel: 'footer-contact',
+      },
+    ],
   },
 ];
+
+/** 평탄화된 푸터 링크 — contact footer 등 */
+export const footerNavLinks: SiteNavLink[] = footerNavGroups.flatMap((group) => group.links);
+
+/** @deprecated `footerNavGroups` 사용 — 서비스·제품 보조 링크만 */
+export const footerServiceLinks: SiteNavLink[] = footerNavGroups
+  .filter((group) => group.heading === '서비스' || group.heading === '콘텐츠·제품' || group.heading === '협업·문의')
+  .flatMap((group) => group.links);
 
 export const footerSupplementaryLinks: SiteNavLink[] = [];
 
@@ -172,19 +212,21 @@ export const AUDIENCE_TRACK_ORDER: readonly AudienceTrackId[] = [
 
 export const AUDIENCE_TRACK_PATHS: Record<AudienceTrackId, string> = {
   private: SPOKEDU_PATHS.private,
-  dispatch: SPOKEDU_PATHS.dispatch,
+  dispatch: SPOKEDU_PATHS.education,
   curriculum: SPOKEDU_PATHS.subscription,
 };
 
 /**
  * @deprecated `siteNav` 사용.
- * content.ts 등 레거시 import 호환용 — 글로벌 IA와 동일한 1급 경로만 평탄화.
+ * content.ts 등 레거시 import 호환용 — 글로벌 헤더와 동일한 1급 경로만 평탄화.
  */
-export const siteNavItems: SiteNavItem[] = footerNavLinks.map((link) => ({
-  label: link.label,
-  path: link.href === '/' ? '/' : link.href,
-  href: link.href,
-}));
+export const siteNavItems: SiteNavItem[] = siteNav
+  .filter((entry): entry is Extract<SiteNavEntry, { type: 'link' }> => entry.type === 'link')
+  .map((entry) => ({
+    label: entry.label,
+    path: entry.href === '/' ? '/' : entry.href,
+    href: entry.href,
+  }));
 
 /** @deprecated — `footerNavLinks` 사용 */
 export const footerLinks = siteNavItems;

@@ -35,7 +35,7 @@ describe('field evidence catalog alignment', () => {
     for (const item of FIELD_RECORD_CATALOG) {
       const href = getRecordConversionHref(item.slug);
       if (hasFieldRecordOnsiteSummary(item)) {
-        expect(href).toContain('/dispatch');
+        expect(href).toContain('/education');
         expect(item.relevantRoutes).toContain('dispatch');
       } else {
         expect(href).toBeNull();

@@ -124,7 +124,7 @@ export function DispatchProposalForm() {
               submitPath:
                 typeof window !== 'undefined'
                   ? `${window.location.pathname}${window.location.search || ''}`
-                  : '/dispatch',
+                  : '/education',
             }),
             cta_intent_id: 'dispatch_proposal',
             conversion_evidence_slug: conversionEvidenceSlug ?? undefined,

@@ -215,7 +215,7 @@ export const trackUsageRows = [
   {
     track: '기관수업',
     summary: 'PAPS·원데이·SPOMOVE',
-    href: '/dispatch',
+    href: '/education',
     programs: ['PAPS', '원데이', 'SPOMOVE', '놀이체육'],
   },
   {

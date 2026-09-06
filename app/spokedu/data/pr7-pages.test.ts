@@ -32,7 +32,7 @@ describe('PR7 about / spomat / partners', () => {
 
   it('keeps partners as secondary to contact and does not expand top nav', () => {
     expect(partnersPage.cta.primary.href).toContain('/contact');
-    expect(siteNav.filter((e) => e.type === 'link')).toHaveLength(6);
+    expect(siteNav.filter((e) => e.type === 'link')).toHaveLength(4);
     expect(siteNav.some((e) => e.type === 'link' && e.href.includes('/partners'))).toBe(false);
     expect(siteNav.some((e) => e.type === 'link' && e.href.includes('/spomat'))).toBe(false);
     expect(footerServiceLinks.some((l) => l.href === `${SPOKEDU_BASE_PATH}/spomat`)).toBe(true);

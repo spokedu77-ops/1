@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 const baseUrl = process.argv[2] ?? 'http://localhost:3000';
 const outputDirectory = path.join(process.cwd(), '.qa-spokedu', 'home-commercial');
 const widths = [390, 768, 1024, 1440];
-const smokeRoutes = ['/private', '/dispatch', '/spomove', '/subscription'];
+const smokeRoutes = ['/private', '/education', '/spomove', '/subscription'];
 const expectedSections = ['hero', 'class', 'bridge', 'spomove', 'subscription', 'cases', 'final-action'];
 
 await mkdir(outputDirectory, { recursive: true });
@@ -86,7 +86,9 @@ try {
       audit.primaryRadius === '14px' &&
       audit.brokenImages.length === 0 &&
       audit.duplicateImageSources.length === 0 &&
-      ['/dispatch', '/private', '/education'].every((href) => audit.classLinks.includes(href)) &&
+      ['/private', '/education'].every((href) =>
+        audit.classLinks.some((link) => link === href || (typeof link === 'string' && link.startsWith(`${href}?`))),
+      ) &&
       /FIELD.*CONTENT.*SYSTEM/.test(audit.bridgeText) &&
       audit.finalPrimaryHref === '/contact'
     );

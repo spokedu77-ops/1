@@ -239,20 +239,20 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${isDesktopOpen ? 'md:translate-x-0' : 'md:-translate-x-full'}`}
       >
-        <div className="hidden border-b border-slate-700 p-6 text-left md:block">
-          <h1 className="text-xl font-semibold uppercase italic tracking-tighter text-blue-400">SPOKEDU</h1>
-          <p className="mt-1 text-[10px] font-medium uppercase text-slate-400">{isAdminRoute ? 'Admin Portal' : 'Warm-up Portal'}</p>
+        <div className="hidden border-b border-slate-700 px-5 py-4 text-left md:block">
+          <h1 className="text-xl font-semibold uppercase italic leading-none tracking-tighter text-blue-400">SPOKEDU</h1>
+          <p className="mt-1.5 text-[10px] font-medium uppercase leading-none text-slate-400">{isAdminRoute ? 'Admin Portal' : 'Warm-up Portal'}</p>
         </div>
 
-        <nav className="flex-1 space-y-3 overflow-y-auto p-3 pt-[calc(3rem+env(safe-area-inset-top,0px))] text-left md:pt-3">
+        <nav className="scrollbar-hide min-h-0 flex-1 space-y-2 overflow-y-auto p-3 pt-[calc(3rem+env(safe-area-inset-top,0px))] text-left md:pt-3">
           {groups.map((group, groupIndex) => (
-            <div key={group.group} className={`space-y-0.5 text-left ${groupIndex > 0 ? 'mt-3 border-t border-slate-700 pt-3' : ''}`}>
-              <h3 className="px-2.5 py-1 text-left text-[10px] font-semibold uppercase tracking-widest text-slate-500">{group.group}</h3>
+            <div key={group.group} className={`space-y-0.5 text-left ${groupIndex > 0 ? 'mt-2 border-t border-slate-700 pt-2' : ''}`}>
+              <h3 className="px-2.5 py-0.5 text-left text-[10px] font-semibold uppercase leading-4 tracking-widest text-slate-500">{group.group}</h3>
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = !item.disabled && isActiveItem(item.href);
-                  const baseClass = `group flex min-h-[40px] touch-manipulation items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all ${
+                  const baseClass = `group flex min-h-[36px] touch-manipulation items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-all ${
                     item.disabled
                       ? 'pointer-events-none cursor-not-allowed text-slate-500 opacity-40'
                       : isActive
@@ -263,8 +263,8 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                   if (item.disabled) {
                     return (
                       <div key={item.href} className={baseClass} aria-disabled>
-                        <Icon size={18} className="text-slate-500" />
-                        <span className="text-sm font-medium">{item.name}</span>
+                        <Icon size={17} className="text-slate-500" />
+                        <span className="text-sm font-medium leading-5">{item.name}</span>
                         <span className="ml-auto text-[10px] text-slate-500">개발 예정</span>
                       </div>
                     );
@@ -272,8 +272,8 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
                   return (
                     <Link key={item.href} href={item.href} onClick={(event) => handleMenuClick(event, item)} className={baseClass}>
-                      <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
-                      <span className="text-sm font-medium">{item.name}</span>
+                      <Icon size={17} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
+                      <span className="text-sm font-medium leading-5">{item.name}</span>
                       {item.href === '/admin' && consultPendingCount > 0 && (
                         <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">
                           +{consultPendingCount}
@@ -287,18 +287,18 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
           ))}
         </nav>
 
-        <div className="border-t border-slate-700 bg-slate-900/50 p-4">
-          <div className="mb-2 flex items-center gap-3 border-b border-slate-800 px-2 py-3">
+        <div className="border-t border-slate-700 bg-slate-900/50 px-3 py-2">
+          <div className="flex items-center gap-2.5 border-b border-slate-800 px-1.5 py-2">
             <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
               <User size={16} />
             </div>
             <div className="overflow-hidden text-left">
-              <p className="text-left text-[10px] font-medium uppercase tracking-tight text-slate-500">Account</p>
-              <p className="truncate text-left text-[11px] font-medium text-slate-200">{userEmail || 'Admin'}</p>
+              <p className="text-left text-[9px] font-medium uppercase leading-3 tracking-tight text-slate-500">Account</p>
+              <p className="truncate text-left text-[11px] font-medium leading-4 text-slate-200">{userEmail || 'Admin'}</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="group flex w-full items-center gap-3 p-2 text-slate-500 transition-colors hover:text-rose-400">
-            <LogOut size={18} className="transition-transform group-hover:rotate-12" />
+          <button onClick={handleLogout} className="group flex min-h-9 w-full items-center gap-2.5 px-1.5 py-1.5 text-slate-500 transition-colors hover:text-rose-400">
+            <LogOut size={17} className="transition-transform group-hover:rotate-12" />
             <span className="text-sm font-medium">로그아웃</span>
           </button>
         </div>

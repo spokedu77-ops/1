@@ -6,8 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, ty
 import {
   brandContactLinks,
   brandProfile,
-  footerNavLinks,
-  footerServiceLinks,
+  footerNavGroups,
   getSocialLinks,
   siteHeaderCta,
   siteNav,
@@ -436,7 +435,7 @@ export function SiteFooter() {
   return (
     <footer style={{ backgroundColor: NAVY }} className="text-white">
       <div className={`${marketingSectionInner} py-9 sm:py-11`}>
-        <div className="grid grid-cols-1 gap-8 min-[640px]:grid-cols-2 min-[1200px]:grid-cols-4 min-[1200px]:items-start min-[1200px]:gap-10">
+        <div className="grid grid-cols-1 gap-8 min-[640px]:grid-cols-2 min-[1200px]:grid-cols-5 min-[1200px]:items-start min-[1200px]:gap-8">
           <div className="min-w-0 space-y-2.5 min-[640px]:col-span-2 min-[1200px]:col-span-1">
             <BrandLogo onDark scrollHomeOnClick size="md" />
             <p className={`text-[14px] font-semibold leading-none text-white ${koreanText}`}>{brandProfile.nameKo}</p>
@@ -444,31 +443,28 @@ export function SiteFooter() {
             <p className={`text-[13px] leading-none text-white/45 ${koreanText}`}>운영지역 {brandProfile.serviceArea}</p>
           </div>
 
-          <div className="min-w-0">
-            <p className={footerHeadingClass}>탐색</p>
-            <ul className="mt-3 space-y-0.5">
-              {footerNavLinks.map((link) => (
-                <li key={link.href} className="flex">
-                  <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
-                    {link.label}
-                  </Link>
-                </li>
+          {([
+            footerNavGroups.filter((group) => group.heading === '브랜드' || group.heading === '서비스'),
+            footerNavGroups.filter((group) => group.heading === '콘텐츠·제품'),
+            footerNavGroups.filter((group) => group.heading === '증거' || group.heading === '협업·문의'),
+          ] as const).map((column, columnIndex) => (
+            <div key={columnIndex} className="min-w-0 space-y-6">
+              {column.map((group) => (
+                <div key={group.heading} className="min-w-0">
+                  <p className={footerHeadingClass}>{group.heading}</p>
+                  <ul className="mt-3 space-y-0.5">
+                    {group.links.map((link) => (
+                      <li key={`${group.heading}-${link.href}`} className="flex">
+                        <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
-          </div>
-
-          <div className="min-w-0">
-            <p className={footerHeadingClass}>수업 경로</p>
-            <ul className="mt-3 space-y-0.5">
-              {footerServiceLinks.map((link) => (
-                <li key={link.href} className="flex">
-                  <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+            </div>
+          ))}
 
           <div className="min-w-0">
             <p className={footerHeadingClass}>연락처</p>

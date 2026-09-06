@@ -7,6 +7,7 @@ export const SPOKEDU_PATHS = {
   home: '/',
   about: '/about',
   education: '/education',
+  /** @deprecated Legacy URL only. Permanent redirect → `/education`. Do not generate new public hrefs. */
   dispatch: '/dispatch',
   private: '/private',
   spomove: '/spomove',

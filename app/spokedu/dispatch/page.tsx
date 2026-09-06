@@ -1,17 +1,25 @@
-import { Suspense } from 'react';
-import DispatchLanding from '../components/dispatch-landing';
-import { LandingPageRoot } from '../components/landing-page-root';
-import { dispatchPage } from '../data/dispatch-page';
-import { buildSpokeduMetadata } from '../data/seo';
+import { permanentRedirect } from 'next/navigation';
 
-export const metadata = buildSpokeduMetadata('dispatch');
+type SearchParams = Record<string, string | string[] | undefined>;
 
-export default function SpokeduDispatchPage() {
-  return (
-    <LandingPageRoot heroMediaKey={dispatchPage.hero.mediaKey}>
-      <Suspense fallback={<div className="min-h-[40vh]" aria-hidden />}>
-        <DispatchLanding />
-      </Suspense>
-    </LandingPageRoot>
-  );
+function queryString(searchParams: SearchParams): string {
+  const params = new URLSearchParams();
+  for (const [key, raw] of Object.entries(searchParams)) {
+    const values = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
+    for (const value of values) {
+      if (value) params.append(key, value);
+    }
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : '';
+}
+
+/** Legacy institution URL — permanent redirect to canonical `/education`. */
+export default async function SpokeduDispatchPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  permanentRedirect(`/education${queryString(params)}`);
 }
