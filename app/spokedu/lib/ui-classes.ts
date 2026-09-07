@@ -69,11 +69,26 @@ export const landingHeroCopy = 'order-1 space-y-5 sm:space-y-6 lg:space-y-8';
 
 export const landingHeroVisual = 'order-2 lg:order-2';
 
-/** 한국어 제목·본문 — 단어 중간 줄바꿈 방지 (기|관 등) */
-export const koreanLineBreak = 'break-keep [word-break:keep-all] [line-break:strict]';
+/** 한국어 공통 wrap — 단어 중간 분해 금지 */
+export const koreanLineBreak =
+  'break-keep [word-break:keep-all] [overflow-wrap:normal] [line-break:strict] [hyphens:none]';
 
-/** 한국어 제목·본문 — keep-all + 균형 줄바꿈 */
-export const koreanText = `${koreanLineBreak} text-balance`;
+/** Display — keep-all + text-wrap:balance (H1–H4, section title, CTA display) */
+export const koreanDisplay = `${koreanLineBreak} [text-wrap:balance]`;
+
+/** Body — keep-all + text-wrap:pretty (lead, body, caption, meta, review, FAQ answer) */
+export const koreanBody = `${koreanLineBreak} [text-wrap:pretty]`;
+
+/**
+ * 기존 별칭. 제목·짧은 라벨은 `koreanDisplay`, 본문은 `koreanBody`.
+ * Home 등 기존 호출은 display 계약(balance)을 유지한다.
+ */
+export const koreanText = koreanDisplay;
+
+/** Public marketing motion — Education·Home CTA와 동일 언어 */
+export const spokeduMotionFast = '[transition-duration:180ms] [transition-timing-function:ease]';
+export const spokeduMotionStandard = '[transition-duration:250ms] [transition-timing-function:ease]';
+export const spokeduMotionReveal = '[transition-duration:380ms] [transition-timing-function:ease]';
 
 /** 스포키듀 마케팅 사이트 공통 콘텐츠 너비 — padding은 globals.css `.site-container` */
 /** 홈 카드 텍스트 패널 — 모바일 20 / 태블릿 22~24 / 데스크톱 24~28 */
