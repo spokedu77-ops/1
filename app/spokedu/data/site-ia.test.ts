@@ -118,8 +118,8 @@ describe('spokedu site IA', () => {
       'faq',
       'contact',
     ]);
-    expect(educationHubPage.hero.mediaKey).toBe('homeHeroFieldEducation');
-    expect(HOME_MEDIA.homeHeroFieldEducation.src).toBe(HOME_MEDIA.homeHeroField.src);
+    expect(educationHubPage.hero.mediaKey).toBe('homeCaseGeneral');
+    expect(HOME_MEDIA[educationHubPage.hero.mediaKey].src).not.toBe(HOME_MEDIA.homeHeroField.src);
     expect(educationHubPage.hero.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}?type=dispatch`);
     expect(educationHubPage.hero.secondaryCta.href).toBe('#cases');
     expect(educationHubPage.hero.lines.join(' ')).toMatch(/움직이고 싶게/);

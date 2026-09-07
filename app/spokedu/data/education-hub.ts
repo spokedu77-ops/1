@@ -40,7 +40,7 @@ export const educationHubPage = {
     eyebrow: '체육교육 · 기관수업',
     lines: ['움직이게 하는 수업이 아니라,', '움직이고 싶게 만드는 수업입니다.'] as const,
     lead: '학교·키움센터·복지관 등 기관의 대상, 인원, 공간에 맞춰 지도자가 현장에서 직접 체육수업을 운영합니다.',
-    mediaKey: 'homeHeroFieldEducation' as const,
+    mediaKey: 'homeCaseGeneral' as const,
     primaryCta: { label: '기관 체육수업 상담하기', href: CONTACT_HREF, trackLabel: 'education-hero-consult' },
     secondaryCta: { label: '실제 운영 사례 보기', href: '#cases', trackLabel: 'education-hero-cases' },
   },
@@ -68,7 +68,7 @@ export const educationHubPage = {
       { id: 'inclusive', title: '특수·포용 체육', body: '참여자의 수행 방식에 따라 규칙, 속도, 교구와 동선을 조정합니다.', example: '예: 통합반 단계별 활동' },
     ] as const,
     fieldMedia: [
-      { mediaKey: 'homeCaseGeneral' as const, caption: '반 단위 수업에서 활동 구역을 나누어 진행하는 현장' },
+      { mediaKey: 'proofCommunity' as const, caption: '원데이 운영에서 활동 구역을 나누어 함께 움직이는 현장' },
       { mediaKey: 'homeCaseAdapted' as const, caption: '참여자의 수행 속도에 맞춰 지도자가 함께 움직이는 현장' },
     ],
     lineup: [
@@ -93,7 +93,7 @@ export const educationHubPage = {
     items: [
       { label: '설계', body: '대상·공간·운영 목적을 실제 수업안에 반영합니다.' },
       { label: '강사', body: '수업 기준을 공유하고 상황에 따라 배치를 조정합니다.' },
-      { label: '현장', body: '공간·인원·수행 수준에 맞춰 동선과 난이도를 조정합니다.' },
+      { label: '진행', body: '공간·인원·수행 수준에 맞춰 동선과 난이도를 조정합니다.' },
       { label: '공유', body: '필요 시 관찰 내용과 다음 회기 조정사항을 정리합니다.' },
     ] as const,
   },

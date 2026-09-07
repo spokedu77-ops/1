@@ -33,7 +33,7 @@ export function EducationHubLanding() {
 
     <section id={fit.id} className={styles.fit} aria-labelledby="education-fit-heading"><div className={styles.contentRail}>
       <header className={styles.sectionHeader}><h2 id="education-fit-heading" className={styles.sectionTitle}>{fit.title}</h2><p className={`${styles.sectionLead} ${koreanText}`}>{fit.lead}</p></header>
-      <ul className={styles.fitGrid}>{fit.items.map(item => <li key={item.label}><p className={styles.meta}>{item.label}</p><h3>{item.condition}</h3><p>{item.response}</p>{item.label === '공간' ? <small>{fit.smallSpace}</small> : null}</li>)}</ul>
+      <ul className={styles.fitGrid}>{fit.items.map(item => <li key={item.label}><p className={styles.meta}>{item.label}</p><h3>{item.condition}</h3><p>{item.response}</p></li>)}</ul>
       <p className={styles.institutionLine}><strong>적합 기관</strong><span>{fit.institutions}</span></p>
     </div></section>
 
