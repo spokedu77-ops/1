@@ -22,7 +22,7 @@ import {
   buildStages as labBuildStages,
   buildStagePreview as labBuildStagePreview,
 } from './engine/modules/stageBuilder';
-import { generateObstacleSchedule as labGenerateObstacleSchedule } from './engine/modules/flowObstacleSchedule';
+import { generateObstacleSchedule as labGenerateObstacleSchedule, REACH_CAP_SESSION } from './engine/modules/flowObstacleSchedule';
 import type { FlowModuleKey as LabFlowModuleKey } from './engine/modules/flowModules';
 import {
   PLAYABLE_GATE_COLOR_IDS,
@@ -190,7 +190,7 @@ describe('generateObstacleSchedule', () => {
         mods.length === 1 &&
         mods.includes('reach' as AnyModuleKey) &&
         !isBonus &&
-        sessionReach >= 2;
+        sessionReach >= REACH_CAP_SESSION;
 
       if (!hasObstacleModule || reachOnlyExhausted) {
         expect(sched.every((s) => s === null)).toBe(true);
@@ -199,7 +199,9 @@ describe('generateObstacleSchedule', () => {
 
       expect(sched.length).toBeGreaterThan(0);
       if (mods.length === 1 && mods.includes('reach' as AnyModuleKey) && !isBonus) {
-        expect(sched.filter((s) => s === 'reach')).toHaveLength(2 - sessionReach);
+        expect(sched.filter((s) => s === 'reach')).toHaveLength(
+          Math.min(sched.length, REACH_CAP_SESSION - sessionReach),
+        );
         return;
       }
       expect(sched.every((s) => s !== null)).toBe(true);
@@ -217,7 +219,7 @@ describe('generateObstacleSchedule', () => {
         mods.includes('punch' as AnyModuleKey),
         mods.includes('duck' as AnyModuleKey),
         mods.includes('kick' as AnyModuleKey),
-        mods.includes('reach' as AnyModuleKey) && (isBonus || sessionReach < 2),
+        mods.includes('reach' as AnyModuleKey) && (isBonus || sessionReach < REACH_CAP_SESSION),
       ].filter(Boolean).length;
       if (typeCount < 2 && !isBonus) return;
 
@@ -275,7 +277,7 @@ describe('generateObstacleSchedule', () => {
       const reachRate = hasReach.filter(Boolean).length;
       if (
         (mods.includes('reach' as AnyModuleKey) || isBonus) &&
-        (isBonus || sessionReach < 2)
+        (isBonus || sessionReach < REACH_CAP_SESSION)
       ) {
         expect(reachRate).toBeGreaterThan(0);
       }

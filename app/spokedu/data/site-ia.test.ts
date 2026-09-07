@@ -110,31 +110,23 @@ describe('spokedu site IA', () => {
     expect(educationHubPage.sectionOrder).toEqual([
       'hero',
       'fit',
-      'reviews',
-      'comparison',
-      'lineup',
       'operating',
+      'adjustment',
       'cases',
+      'reviews',
       'process',
       'faq',
       'contact',
-      'private',
     ]);
     expect(educationHubPage.hero.mediaKey).toBe('homeHeroFieldEducation');
     expect(HOME_MEDIA.homeHeroFieldEducation.src).toBe(HOME_MEDIA.homeHeroField.src);
     expect(educationHubPage.hero.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}?type=dispatch`);
     expect(educationHubPage.hero.secondaryCta.href).toBe('#cases');
     expect(educationHubPage.hero.lines.join(' ')).toMatch(/움직이고 싶게/);
-    expect(educationHubPage.private.cta.href).toBe(`${SPOKEDU_BASE_PATH}/private`);
-    expect(educationHubPage.lineup.spomoveNote).toMatch(/일부 수업/);
-    expect(educationHubPage.lineup.spomoveNote).toMatch(/모든 수업에 필수로 포함되는 것은 아닙니다/);
-    expect(educationHubPage.lineup.items.map((item) => item.id)).toEqual([
-      'spomove',
-      'monthly-sports',
-      'slow-sports',
-      'mini-olympics',
-      'sports-booth',
-      'custom',
+    expect(educationHubPage.operating.spomove.note).toMatch(/일부 수업/);
+    expect(educationHubPage.operating.spomove.note).toMatch(/모든 수업에 필수로 포함되는 것은 아닙니다/);
+    expect(educationHubPage.operating.lineup.map((item) => item.name)).toEqual([
+      '펑셔널 무브', '팀빌딩', 'SPOMOVE', '월간 스포츠', '미니올림픽', '체험·부스·커스텀',
     ]);
     expect(educationHubPage.operating.formats.map((item) => item.id)).toEqual([
       'regular',

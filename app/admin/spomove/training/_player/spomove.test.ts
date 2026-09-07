@@ -22,7 +22,7 @@ import {
 import { registerPresentedSignal, type RepsState } from './lib/repsLogic';
 import { getNextIntervalState } from './lib/intervalTimer';
 import { generateSignal, createBasicSignalGenerator, createSimonSignalGenerator, type FruitSlide } from './lib/signals';
-import { generateObstacleSchedule } from './flow-lab/engine/modules/flowObstacleSchedule';
+import { generateObstacleSchedule, REACH_CAP_SESSION } from './flow-lab/engine/modules/flowObstacleSchedule';
 import { colorGatePosesForVariant } from './flow-lab/engine/modules/colorGateGuides';
 import type { FlowModuleKey } from './flow-lab/engine/modules/flowModules';
 import {
@@ -722,11 +722,11 @@ describe('generateObstacleSchedule', () => {
     expect(schedule.filter(s => s === 'kick').length).toBeGreaterThanOrEqual(2);
   });
 
-  test('reach 단일 — 세션 reach 이미 2회 사용 시 reach 0회 (예산 소진)', () => {
+  test('reach 단일 — 세션 reach 한도 소진 시 reach 0회', () => {
     const schedule = generateObstacleSchedule({
       ...BASE_OPTS,
       activeModules: makeModules('reach'),
-      sessionReachPlaced: 2,
+      sessionReachPlaced: REACH_CAP_SESSION,
     });
     expect(schedule.filter(s => s === 'reach').length).toBe(0);
   });

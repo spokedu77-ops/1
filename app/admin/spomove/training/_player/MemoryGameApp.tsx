@@ -1986,7 +1986,10 @@ export default function MemoryGameApp({
                     Select the duration for each DIVE stage.
                   </p>
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    {[45, 60, 90, 120, 150].map((n) => (
+                    {(settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1
+                      ? [45, 60, 90, 120, 150]
+                      : [15, 20, 25, 30, 35]
+                    ).map((n) => (
                       <button
                         key={n}
                         type="button"

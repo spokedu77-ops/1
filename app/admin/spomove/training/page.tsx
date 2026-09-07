@@ -458,6 +458,9 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
 }
 
 const FLOW_COLOR_GATE_LEVEL_ID = 2;
+const ACTION_MOVE_STAGE_SECONDS = [15, 20, 25, 30, 35] as const;
+const COLOR_GATE_STAGE_SECONDS = [45, 60, 90, 120, 150] as const;
+const DEFAULT_ACTION_MOVE_STAGE_SEC = 20;
 
 function isFlowColorGateLevel(modeId: string, levelId: number): boolean {
   return modeId === 'flow' && levelId === FLOW_COLOR_GATE_LEVEL_ID;
@@ -465,13 +468,28 @@ function isFlowColorGateLevel(modeId: string, levelId: number): boolean {
 
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
   if (isFlowColorGateLevel(modeId, levelId)) {
-    return launch.flowFeatures.length === 1 && launch.flowFeatures[0] === 'colorGate'
-      ? launch
-      : { ...launch, flowFeatures: ['colorGate'] };
+    const featuresOk = launch.flowFeatures.length === 1 && launch.flowFeatures[0] === 'colorGate';
+    const durationOk = (COLOR_GATE_STAGE_SECONDS as readonly number[]).includes(launch.flowDuration);
+    if (featuresOk && durationOk) return launch;
+    return {
+      ...launch,
+      flowFeatures: ['colorGate'],
+      flowDuration: durationOk ? launch.flowDuration : 60,
+    };
   }
 
-  if (modeId === 'flow' && launch.flowFeatures.includes('colorGate')) {
-    return { ...launch, flowFeatures: launch.flowFeatures.filter((key) => key !== 'colorGate') };
+  if (modeId === 'flow') {
+    const withoutGate = launch.flowFeatures.includes('colorGate')
+      ? launch.flowFeatures.filter((key) => key !== 'colorGate')
+      : launch.flowFeatures;
+    const durationOk = (ACTION_MOVE_STAGE_SECONDS as readonly number[]).includes(launch.flowDuration);
+    if (withoutGate !== launch.flowFeatures || !durationOk) {
+      return {
+        ...launch,
+        flowFeatures: withoutGate,
+        flowDuration: durationOk ? launch.flowDuration : DEFAULT_ACTION_MOVE_STAGE_SEC,
+      };
+    }
   }
 
   if (modeId === 'flanker' && (levelId === 4 || levelId === 5 || levelId === 6) && launch.flankerStimulusType !== 'color') {
@@ -932,6 +950,15 @@ function SettingsScreen({
           display: flex;
           justify-content: center;
         }
+        .settings-body.dive-fit {
+          padding: 14px 20px 20px;
+        }
+        .settings-body.dive-fit .settings-shell > h1 {
+          font-size: 18px !important;
+        }
+        .settings-body.dive-fit .settings-columns {
+          gap: 12px;
+        }
         .settings-shell {
           width: 100%;
           max-width: 1040px;
@@ -992,17 +1019,19 @@ function SettingsScreen({
         </span>
       </header>
 
-      <div className="settings-body">
+      <div className={`settings-body${isFlowOrChallenge ? ' dive-fit' : ''}`}>
         <div className="settings-shell">
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
             트레이닝 설정
           </h1>
+          {isFlowOrChallenge ? null : (
           <p style={{ margin: '10px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
             자극 속도·분량(또는 시간)을 맞춘 뒤 시작하세요. 아래에서 상세 가이드를 펼칠 수 있습니다.
           </p>
+          )}
 
           {/* 가이드 */}
-          <div style={{ marginTop: 18, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ marginTop: isFlowOrChallenge ? 10 : 18, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
             <button
               type="button"
               onClick={() => setGuideOpen((v) => !v)}
@@ -1056,13 +1085,13 @@ function SettingsScreen({
             ) : null}
           </div>
 
-          <div style={{ height: 1, background: T.border, margin: '18px 0 20px' }} />
+          <div style={{ height: 1, background: T.border, margin: isFlowOrChallenge ? '10px 0 12px' : '18px 0 20px' }} />
 
           <div className="settings-columns">
             <div className="settings-column">
 
           {/* 세부 테마 */}
-          <section style={{ marginBottom: 18 }}>
+          <section style={{ marginBottom: isFlowOrChallenge ? 10 : 18 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
               <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>세부 테마</label>
               <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
@@ -1993,8 +2022,8 @@ function SettingsScreen({
 
           {/* 속도 / 순간 기억 기억 시간 */}
           {(!isFlowOrChallenge || isColorGateTheme) && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
-            <section style={{ marginBottom: 26 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+            <section style={{ marginBottom: isColorGateTheme ? 10 : 26 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isColorGateTheme ? 6 : 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
                   {isSpatial && isInstantMemoryLevel(levelId)
                     ? '기억 시간'
@@ -2023,6 +2052,7 @@ function SettingsScreen({
                 value={launch.speed}
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
                 showPresets={false}
+                compact={isColorGateTheme}
               />
             </section>
           ) : null}
@@ -2181,25 +2211,24 @@ function SettingsScreen({
 
           {/* 모션 게이트 전용 옵션 */}
           {isColorGateTheme ? (
-            <section style={{ marginBottom: 22 }}>
-              <div style={{ marginBottom: 10 }}>
+            <section style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>모션 게이트 옵션</label>
-                <p style={{ margin: '3px 0 0', fontSize: 10, color: T.textDim }}>참여 방식과 난이도에 맞는 포즈 이미지 묶음을 선택합니다.</p>
               </div>
-              <div style={{ marginBottom: 6, fontSize: 11, fontWeight: 800, color: T.muted }}>유형</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12, opacity: launch.colorGateVariant === 'together-easy' ? 0.45 : 1 }}>
+              <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>유형</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8, opacity: launch.colorGateVariant === 'together-easy' ? 0.45 : 1 }}>
                 {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성']] as const).map(([value, label]) => {
                   const active = launch.colorGateCategory === value;
                   return (
                     <button key={value} type="button" disabled={launch.colorGateVariant === 'together-easy'} onClick={() => setLaunch((s) => ({ ...s, colorGateCategory: value }))}
-                      style={{ flex: '1 1 110px', minWidth: 0, padding: '10px 6px', borderRadius: 12, border: `1.5px solid ${active ? '#38BDF8' : T.border}`, background: active ? 'rgba(56,189,248,0.14)' : T.card, color: active ? '#38BDF8' : T.textDim, fontFamily: 'inherit', fontWeight: 900, cursor: launch.colorGateVariant === 'together-easy' ? 'not-allowed' : 'pointer', textAlign: 'center' }}>
+                      style={{ flex: '1 1 72px', minWidth: 0, padding: '7px 4px', borderRadius: 10, border: `1.5px solid ${active ? '#38BDF8' : T.border}`, background: active ? 'rgba(56,189,248,0.14)' : T.card, color: active ? '#38BDF8' : T.textDim, fontFamily: 'inherit', fontSize: 12, fontWeight: 900, cursor: launch.colorGateVariant === 'together-easy' ? 'not-allowed' : 'pointer', textAlign: 'center' }}>
                       {label}
                     </button>
                   );
                 })}
               </div>
-              <div style={{ marginBottom: 6, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+              <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5 }}>
                 {([
                   ['solo-easy', '쉬움', ''],
                   ['solo-normal', '어려움', ''],
@@ -2212,14 +2241,14 @@ function SettingsScreen({
                       type="button"
                       onClick={() => setLaunch((s) => ({ ...s, colorGateVariant: value }))}
                       style={{
-                        minWidth: 0, padding: '11px 6px', borderRadius: 12,
+                        minWidth: 0, padding: '8px 4px', borderRadius: 10,
                         border: `1.5px solid ${active ? '#06B6D4' : T.border}`,
                         background: active ? 'rgba(6,182,212,0.14)' : T.card,
                         color: active ? '#22D3EE' : T.textDim,
                         fontFamily: 'inherit', cursor: 'pointer', textAlign: 'center',
                       }}
                     >
-                      <span style={{ display: 'block', fontSize: 13, fontWeight: 900 }}>{active ? '✓ ' : ''}{label}</span>
+                      <span style={{ display: 'block', fontSize: 12, fontWeight: 900 }}>{active ? '✓ ' : ''}{label}</span>
                       <span style={{ display: 'block', marginTop: 2, fontSize: 10, fontWeight: 700 }}>{difficulty}</span>
                     </button>
                   );
@@ -2231,14 +2260,11 @@ function SettingsScreen({
 
           {/* Flow 전용: Hub 파노라마 환경 테마 */}
           {isFlowOrChallenge ? (
-            <section style={{ marginBottom: 22 }}>
-              <div style={{ marginBottom: 10 }}>
+            <section style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>환경 테마</label>
-                <p style={{ margin: '3px 0 0', fontSize: 10, color: T.textDim, lineHeight: 1.5 }}>
-                  Asset Hub DIVE 파노라마와 연결됩니다. 저사양 PC·태블릿은 자동으로 가벼운 모드로 실행됩니다.
-                </p>
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {DIVE_THEME_UI.map(({ id, label }) => {
                   const active = launch.diveEnvironmentTheme === id;
                   const hasHub = Boolean(diveEnvData.themes[id]);
@@ -2249,8 +2275,8 @@ function SettingsScreen({
                       onClick={() => setLaunch((s) => ({ ...s, diveEnvironmentTheme: id }))}
                       style={{
                         flex: '1 1 88px',
-                        padding: '10px 6px',
-                        borderRadius: 12,
+                        padding: '7px 5px',
+                        borderRadius: 10,
                         border: `1.5px solid ${active ? '#8B5CF6' : T.border}`,
                         background: active ? 'rgba(139,92,246,0.16)' : T.card,
                         cursor: 'pointer',
@@ -2259,7 +2285,7 @@ function SettingsScreen({
                       }}
                       title={hasHub ? 'Hub 파노라마' : '정적 폴백'}
                     >
-                      <div style={{ fontWeight: 900, fontSize: 13, color: active ? '#8B5CF6' : T.text }}>{active ? '✓ ' : ''}{label}</div>
+                      <div style={{ fontWeight: 900, fontSize: 12, color: active ? '#8B5CF6' : T.text }}>{active ? '✓ ' : ''}{label}</div>
                       {!hasHub ? <div style={{ fontSize: 9, color: T.muted, marginTop: 2 }}>폴백</div> : null}
                     </button>
                   );
@@ -2270,13 +2296,12 @@ function SettingsScreen({
 
           {/* Flow 전용: 스테이지 시간 */}
           {isFlowOrChallenge ? (
-            <section style={{ marginBottom: 22 }}>
-              <div style={{ marginBottom: 10 }}>
+            <section style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>스테이지당 시간</label>
-                <p style={{ margin: '3px 0 0', fontSize: 10, color: T.textDim }}>스테이지 한 구간을 달리는 시간입니다.</p>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[45, 60, 90, 120, 150].map((sec) => {
+                {(isColorGateTheme ? COLOR_GATE_STAGE_SECONDS : ACTION_MOVE_STAGE_SECONDS).map((sec) => {
                   const active = launch.flowDuration === sec;
                   return (
                     <button
@@ -2284,7 +2309,7 @@ function SettingsScreen({
                       type="button"
                       onClick={() => setLaunch((s) => ({ ...s, flowDuration: sec }))}
                       style={{
-                        flex: '1 1 60px', padding: '9px 6px', borderRadius: 12,
+                        flex: '1 1 60px', padding: '7px 6px', borderRadius: 10,
                         border: `1.5px solid ${active ? '#3B82F6' : T.border}`,
                         background: active ? 'rgba(59,130,246,0.14)' : T.card,
                         color: active ? '#3B82F6' : T.textDim,
@@ -2302,36 +2327,20 @@ function SettingsScreen({
 
           {/* Flow 전용: 추가 동작 선택 */}
           {isFlowOrChallenge && !isColorGateTheme ? (
-            <section style={{ marginBottom: 26 }}>
-              <div style={{ marginBottom: 10 }}>
+            <section style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>추가 동작 선택</label>
-                <p style={{ margin: '4px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  선택한 동작이 스테이지별로 순차 추가됩니다. 복수 선택 가능합니다.
-                </p>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${T.border}`, background: 'rgba(255,255,255,0.035)' }}>
-                  <div style={{ fontSize: 11, fontWeight: 900, color: T.text, marginBottom: 6 }}>선택한 단계 구성</div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: T.textDim, lineHeight: 1.7 }}>
-                    1. 액션 무브
-                    {launch.flowFeatures.includes('colorGate') ? <><br />2. 모션 게이트</> : null}
-                  </div>
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
                 {(
                   [
-                    { key: 'punch'    as FlowFeatureKey, icon: '👊', label: '박스 펀치 (PUNCH)',      desc: '레인 위 낮은 박스가 등장합니다. 주먹으로 파괴하세요.' },
-                    { key: 'kick'     as FlowFeatureKey, icon: '🦵', label: '롤링 배럴 킥 (KICK)',    desc: '가슴 높이 배럴이 옵니다. 발을 들어 차세요.' },
-                    { key: 'duck'     as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기 (DUCK)',      desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
-                    { key: 'reach'    as FlowFeatureKey, icon: '🧱', label: '펀치 벽 두드리기',         desc: '브릿지를 막는 벽이 등장합니다. 5번 두드려 부수세요.' },
-                    { key: 'colorGate' as FlowFeatureKey, icon: '🎯', label: '색 포즈 관문 (GATE)',   desc: '빨·노·초·파 배경 — 해당 색 패드로 이동해 5가지 동작을 순서대로!' },
+                    { key: 'punch' as FlowFeatureKey, icon: '👊', label: '박스 펀치' },
+                    { key: 'kick'  as FlowFeatureKey, icon: '🦵', label: '롤링 배럴 킥' },
+                    { key: 'duck'  as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기' },
+                    { key: 'reach' as FlowFeatureKey, icon: '🧱', label: '펀치 벽 두드리기' },
                   ]
-                ).filter(({ key }) => key !== 'colorGate').map(({ key, icon, label, desc }) => {
+                ).map(({ key, icon, label }) => {
                   const active = launch.flowFeatures.includes(key);
-                  const displayIcon = key === 'colorGate' ? '🎯' : icon;
-                  const displayLabel = key === 'colorGate' ? '모션 게이트' : label;
-                  const displayDesc = key === 'colorGate'
-                    ? '액션 무브에 섞이지 않고 별도 모션 게이트로 실행됩니다. 브릿지 없이 색 포즈 관문만 진행합니다.'
-                    : desc;
                   return (
                     <button
                       key={key}
@@ -2346,30 +2355,21 @@ function SettingsScreen({
                       }}
                       style={{
                         display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: 10,
-                        padding: '10px 12px',
-                        borderRadius: 12,
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 10px',
+                        borderRadius: 10,
                         border: `1.5px solid ${active ? '#22C55E' : T.border}`,
                         background: active ? 'rgba(34,197,94,0.10)' : T.card,
                         cursor: 'pointer',
                         fontFamily: 'inherit',
                         textAlign: 'left',
-                        transition: 'all 0.13s',
                       }}
                     >
-                      <span style={{ fontSize: '1.15rem', lineHeight: 1, marginTop: 2 }}>{displayIcon}</span>
-                      <div>
-                        {key === 'colorGate' ? (
-                          <div style={{ fontWeight: 900, fontSize: 13, color: active ? '#16A34A' : T.text, marginBottom: 2 }}>
-                            {active ? '✓ ' : ''}{displayLabel}
-                          </div>
-                        ) : null}
-                        <div style={{ display: key === 'colorGate' ? 'none' : undefined, fontWeight: 900, fontSize: 13, color: active ? '#16A34A' : T.text, marginBottom: 2 }}>
-                          {active ? '✓ ' : ''}{label}
-                        </div>
-                        <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.45 }}>{displayDesc}</div>
-                      </div>
+                      <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{icon}</span>
+                      <span style={{ fontWeight: 900, fontSize: 12, color: active ? '#16A34A' : T.text }}>
+                        {active ? '✓ ' : ''}{label}
+                      </span>
                     </button>
                   );
                 })}
@@ -2379,8 +2379,8 @@ function SettingsScreen({
 
           {/* Flow 전용: 즐겨찾기 */}
           {isFlowOrChallenge && !isColorGateTheme ? (
-            <section style={{ marginBottom: 26 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <section style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>즐겨찾기</label>
                 <button
                   type="button"
@@ -2939,8 +2939,8 @@ function SettingsScreen({
             onClick={() => onStart(levelId, launchSettingsForLevel(modeId, levelId, launch))}
             style={{
               width: '100%',
-              padding: '17px 24px',
-              borderRadius: 14,
+              padding: isFlowOrChallenge ? '12px 20px' : '17px 24px',
+              borderRadius: isFlowOrChallenge ? 12 : 14,
               border: 'none',
               background: accent,
               color: '#000',

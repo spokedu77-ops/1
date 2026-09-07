@@ -21,6 +21,11 @@ import { useMasterEmailOtp } from '@/app/components/auth/useMasterEmailOtp';
 
 type LoginTab = 'master' | 'ops';
 
+type ServerSessionCheck = {
+  admin?: boolean;
+  reason?: 'no-session' | 'forbidden' | 'server-error';
+};
+
 function isMasterNextPath(nextSafe: string | null): boolean {
   return (
     nextSafe === '/spokedu-master/onboarding' ||
@@ -79,6 +84,33 @@ function LoginContent() {
         }
 
         if (session?.user) {
+          // getSession()은 브라우저에 남은 토큰만 읽으므로 만료·폐기된 세션도
+          // 일시적으로 반환할 수 있다. 서버 검증 없이 /admin으로 보내면
+          // admin layout이 /login으로 되돌려 로그인 루프가 생긴다.
+          const serverCheckResponse = await fetch('/api/auth/check-admin', {
+            credentials: 'include',
+            cache: 'no-store',
+          });
+          const serverCheck = (await serverCheckResponse.json()) as ServerSessionCheck;
+
+          if (serverCheck.reason === 'no-session') {
+            try {
+              sessionStorage.removeItem('admin_check_cache_v1');
+              await supabase.auth.signOut();
+            } finally {
+              if (!cancelled) setSessionChecked(true);
+            }
+            return;
+          }
+
+          if (serverCheck.reason === 'server-error') {
+            if (!cancelled) {
+              setLoginError('로그인 상태를 확인하지 못했습니다. 다시 로그인해 주세요.');
+              setSessionChecked(true);
+            }
+            return;
+          }
+
           const redirectPath = await resolvePostLoginRedirect(nextSafe, supabase, session.user);
           reportLoginUxEvent('auto_redirect_from_login', {
             redirectPath,

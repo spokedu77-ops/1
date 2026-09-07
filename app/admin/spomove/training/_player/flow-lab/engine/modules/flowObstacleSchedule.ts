@@ -25,8 +25,8 @@ const BRIDGE_TOTAL_UNITS  = 4200 + 200 + 450; // BRIDGE_LENGTH + PAD_DEPTH + BRI
 const FRAMES_PER_SEC      = 60;
 const UNITS_PER_FRAME_DIV = 50; // currentSpeed * 50 * dt60
 
-/** 세션 전체 reach 허용 횟수 */
-const REACH_CAP_SESSION = 2;
+/** 세션 전체 reach(펀치 벽) 허용 횟수 */
+export const REACH_CAP_SESSION = 6;
 /** 보너스 스테이지 reach 허용 횟수 (세션 한도 무관) */
 const REACH_CAP_BONUS = 3;
 
@@ -150,11 +150,14 @@ export function generateObstacleSchedule(opts: ObstacleScheduleOptions): Obstacl
         for (let k = 0; k < n; k++) required.push('reach');
       }
     } else {
-      // 복수 특기: 각 타입 최소 1회
+      // 복수 특기: 각 타입 최소 1회, 펀치 벽은 예산 안에서 2회까지 보장
       if (hasPunch) { required.push('box'); }
       if (hasKick)  { required.push('kick'); }
       if (hasDuck)  { required.push('ufo'); }
-      if (hasReach && reachBudget > 0) required.push('reach');
+      if (hasReach && reachBudget > 0) {
+        const n = Math.min(2, reachBudget);
+        for (let k = 0; k < n; k++) required.push('reach');
+      }
     }
   }
 

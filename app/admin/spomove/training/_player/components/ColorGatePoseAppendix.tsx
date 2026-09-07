@@ -21,14 +21,14 @@ export function ColorGatePoseAppendix() {
   const poses = COLOR_GATE_POSE_DEFINITIONS.filter((pose) => pose.category === activeGroup);
 
   return (
-    <div style={{ marginTop: 12 }}>
+    <div style={{ marginTop: 8 }}>
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 12, padding: '11px 14px', borderRadius: 12,
+          gap: 12, padding: '8px 12px', borderRadius: 10,
           border: `1.5px solid ${open ? '#38BDF8' : 'var(--border, #CBD5E1)'}`,
           background: open ? 'rgba(56,189,248,0.10)' : 'var(--card, #fff)',
           color: 'var(--text, #0F172A)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
