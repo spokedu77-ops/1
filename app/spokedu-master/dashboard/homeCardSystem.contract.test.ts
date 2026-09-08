@@ -73,7 +73,8 @@ describe('MASTER Home content card system', () => {
 
   it('never flashes legacy SPOMOVE artwork or the four-pad fallback while remote media is loading', () => {
     expect(programsGateway).toContain('gatewayMediaLoaded');
-    expect(programsGateway).toContain("!gatewayMediaLoaded\n    ? null");
+    expect(programsGateway).toMatch(/const lessonHeroSrc = !gatewayMediaLoaded\s+\? null/);
+    expect(programsGateway).toMatch(/const spomoveHeroSrc = !gatewayMediaLoaded\s+\? null/);
     expect(programsGateway).toContain('animate-pulse bg-gradient-to-br');
     expect(dashboard).toContain('SpomoveThumbnailPlaceholder');
     expect(dashboard).not.toContain('SPOMOVE_PAD_GRID_HEX');

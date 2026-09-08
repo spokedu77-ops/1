@@ -71,48 +71,31 @@ export default function ProgramsPage() {
     : resolveProgramGatewayHero({ lessonHero: null, spomoveHero: null }, 'spomoveHero');
 
   return (
-    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
-      <MasterPageShell variant="editorial">
-        <MasterPageHeader title="프로그램" description="수업 방식에 맞는 콘텐츠를 선택하세요." />
+    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-24 lg:pb-0">
+      <MasterPageShell
+        variant="editorial"
+        className="flex min-h-full max-w-[1120px] flex-col pb-10 sm:pb-12 lg:pb-14"
+      >
+        <MasterPageHeader title="프로그램" description="수업에 맞는 프로그램을 선택하세요." />
 
-        <div className="mt-9 grid gap-6 lg:grid-cols-2 lg:gap-7">
-          <ProgramGatewayCard
-            title="놀이체육"
-            description="현장에서 바로 활용하는 놀이·뉴스포츠 수업"
-            meta="놀이체육 · 뉴스포츠 · 협동/경쟁 활동"
-            action="놀이체육 둘러보기"
-            href="/spokedu-master/library"
-            image={lessonHeroSrc}
-          />
-          <ProgramGatewayCard
-            title="SPOMOVE"
-            description="화면 자극과 움직임을 연결하는 디지털 활동"
-            meta="시지각 · 반응 · 인지 자극"
-            action="SPOMOVE 둘러보기"
-            href="/spokedu-master/spomove"
-            image={spomoveHeroSrc}
-          />
-        </div>
-
-        <section aria-labelledby="program-decision-guide" className="mt-14 border-t border-slate-200 pb-14 pt-6 lg:mt-16 lg:pb-16">
-          <h2
-            id="program-decision-guide"
-            className="text-[21px] font-semibold tracking-[-0.015em] text-slate-950"
-          >
-            어떤 프로그램이 맞을까요?
-          </h2>
-          <div className="mt-5 grid gap-6 sm:grid-cols-2 sm:gap-0">
-            <DecisionGuideColumn
+        <div className="flex flex-1 items-start py-10 sm:py-12 lg:items-center lg:pb-28 lg:pt-10">
+          <div className="grid w-full gap-6 md:grid-cols-2 lg:gap-8">
+            <ProgramGatewayCard
               title="놀이체육"
-              items={['교구와 신체활동 중심', '다양한 종목 · 협동 · 경쟁 활동', '폭넓은 현장 수업 구성']}
+              description="다양한 교구와 움직임으로 구성하는 현장 체육활동"
+              action="놀이체육 둘러보기"
+              href="/spokedu-master/library"
+              image={lessonHeroSrc}
             />
-            <DecisionGuideColumn
+            <ProgramGatewayCard
               title="SPOMOVE"
-              items={['화면 자극과 움직임 중심', '시지각 · 반응 · 인지 자극', '디지털 활동으로 수업 확장']}
-              className="border-t border-slate-200 pt-6 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0"
+              description="화면 자극과 움직임을 연결하는 시지각 움직임 프로그램"
+              action="SPOMOVE 둘러보기"
+              href="/spokedu-master/spomove"
+              image={spomoveHeroSrc}
             />
           </div>
-        </section>
+        </div>
       </MasterPageShell>
     </main>
   );
@@ -121,7 +104,6 @@ export default function ProgramsPage() {
 function ProgramGatewayCard({
   title,
   description,
-  meta,
   action,
   href,
   image,
@@ -129,7 +111,6 @@ function ProgramGatewayCard({
 }: {
   title: string;
   description: string;
-  meta: string;
   action: string;
   href: string;
   image: string | null;
@@ -138,7 +119,7 @@ function ProgramGatewayCard({
   return (
     <Link
       href={href}
-      className="group overflow-hidden rounded-[18px] border border-slate-200 bg-white transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+      className="group flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-slate-200">
         {image ? (
@@ -155,36 +136,14 @@ function ProgramGatewayCard({
           <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100" aria-hidden="true" />
         )}
       </div>
-      <div className="px-[18px] pb-5 pt-4">
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-[18px] sm:px-6 sm:pb-6 sm:pt-5">
         <h2 className="text-[24px] font-semibold tracking-[-0.02em] text-slate-950">{title}</h2>
-        <p className="mt-1.5 text-[15px] font-medium leading-[1.5] text-slate-600">{description}</p>
-        <p className="mt-2 text-[13px] font-medium text-slate-400">{meta}</p>
-        <span className="mt-4 inline-flex items-center gap-1 text-[14px] font-semibold text-slate-700 transition-colors group-hover:text-slate-950">
+        <p className="mt-2 text-[15px] font-normal leading-6 text-slate-600">{description}</p>
+        <span className="mt-4 inline-flex min-h-11 items-center gap-1.5 self-start text-[14px] font-semibold text-slate-700 transition-colors group-hover:text-slate-950 sm:mt-5">
           {action}
           <span aria-hidden="true">→</span>
         </span>
       </div>
     </Link>
-  );
-}
-
-function DecisionGuideColumn({
-  title,
-  items,
-  className = '',
-}: {
-  title: string;
-  items: readonly string[];
-  className?: string;
-}) {
-  return (
-    <div className={`sm:pr-8 ${className}`}>
-      <h3 className="text-[16px] font-semibold text-slate-900">{title}</h3>
-      <ul className="mt-3 space-y-1.5 text-[14px] leading-[1.65] text-slate-600">
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </div>
   );
 }

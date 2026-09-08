@@ -47,7 +47,7 @@ describe('MASTER Visual SSOT (not rendered PASS)', () => {
       expect(source).toContain('MasterPageShell');
       expect(source).toContain('MasterPageHeader');
     }
-    expect(programs).toContain('수업 프로그램');
+    expect(programs).toContain('title="프로그램"');
     expect(programs).toContain('<Image');
     expect(programs).not.toContain('DISCOVER · BUILD');
     expect(favorites).toContain("['all', '전체']");

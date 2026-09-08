@@ -66,6 +66,11 @@ interface MasterState {
   programsError: ContentLoadError;
   loadPrograms: () => Promise<void>;
   reloadPrograms: () => Promise<void>;
+  homePrograms: Program[];
+  homeProgramsLoaded: boolean;
+  homeProgramsError: ContentLoadError;
+  loadHomePrograms: () => Promise<void>;
+  reloadHomePrograms: () => Promise<void>;
   profile: UserProfile | null;
   setProfile: (profile: Partial<UserProfile>) => void;
   resetProfile: () => void;
@@ -434,12 +439,34 @@ async function fetchAndSetPrograms(
   set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'server' }));
 }
 
+async function fetchAndSetHomePrograms(set: StoreSet, cacheOption: RequestCache): Promise<void> {
+  try {
+    const res = await fetch('/api/spokedu-master/programs?surface=home', { cache: cacheOption });
+    if (!res.ok) {
+      set({ homePrograms: [], homeProgramsLoaded: true, homeProgramsError: errorFromStatus(res.status) });
+      return;
+    }
+    const json = await res.json() as { data?: Program[] };
+    if (Array.isArray(json.data)) {
+      set({ homePrograms: enrichProgramsWithStaticVisuals(json.data), homeProgramsLoaded: true, homeProgramsError: null });
+      return;
+    }
+  } catch {
+    set((state) => ({ homePrograms: state.homePrograms, homeProgramsLoaded: true, homeProgramsError: 'network' }));
+    return;
+  }
+  set((state) => ({ homePrograms: state.homePrograms, homeProgramsLoaded: true, homeProgramsError: 'server' }));
+}
+
 export const useMasterStore = create<MasterState>()(
   persist(
     (set, get) => ({
       programs: [],
       programsLoaded: false,
       programsError: null,
+      homePrograms: [],
+      homeProgramsLoaded: false,
+      homeProgramsError: null,
       loadPrograms: async () => {
         if (get().programsLoaded && !get().programsError) return;
         // 초기 로드: Next.js 60s revalidate 캐시 활용 (DB 부담 감소)
@@ -448,6 +475,13 @@ export const useMasterStore = create<MasterState>()(
       reloadPrograms: async () => {
         // 강제 갱신 (focus 복귀 / 재시도 버튼): 항상 최신 데이터
         await fetchAndSetPrograms(set, get, 'no-store');
+      },
+      loadHomePrograms: async () => {
+        if (get().homeProgramsLoaded && !get().homeProgramsError) return;
+        await fetchAndSetHomePrograms(set, 'default');
+      },
+      reloadHomePrograms: async () => {
+        await fetchAndSetHomePrograms(set, 'no-store');
       },
       profile: defaultProfile,
       localWorkspaceOwnerId: null,

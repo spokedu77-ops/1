@@ -12,6 +12,8 @@ import {
 import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { extractExactSectionLines, parseTextareaLines, parseVariationMethod } from '@/app/spokedu-master/lib/lessonContentContract';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
+import { selectWeeklyRecommendationSlots } from '@/app/spokedu-master/lib/weeklyRecommendations';
+import { getProgramHomeReadiness, isProgramHomeRecommendationEligible } from '@/app/spokedu-master/lib/program-meta';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#312e81', '#3730a3', '#4338ca', '#4f46e5'],
@@ -376,7 +378,25 @@ async function reportInvalidMasterPrograms(invalid: Array<{ curriculumId: number
   });
 }
 
-export async function GET() {
+function normalizeProgramTitle(title: string) {
+  return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
+}
+
+function selectHomePrograms(programs: Program[]) {
+  return selectWeeklyRecommendationSlots(programs.filter((program) => !program.isPro), {
+    isRecommendationEligible: isProgramHomeRecommendationEligible,
+    compareFallback: (a, b) =>
+      Number(b.isHot) - Number(a.isHot) ||
+      getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
+      Number(Boolean(pickBestHeroUrl(b.lessonDetail?.heroImageUrl, b.thumbnailUrl))) - Number(Boolean(pickBestHeroUrl(a.lessonDetail?.heroImageUrl, a.thumbnailUrl))) ||
+      Number(Boolean(b.lessonDetail?.videoUrl)) - Number(Boolean(a.lessonDetail?.videoUrl)) ||
+      Number(b.isNew) - Number(a.isNew) ||
+      (a.homeSortOrder ?? 9999) - (b.homeSortOrder ?? 9999),
+    normalizeTitle: normalizeProgramTitle,
+  }).programs;
+}
+
+export async function GET(request?: Request) {
   const access = await requireSpokeduMasterCapability('library');
   if (!access.ok) return withPrivateNoStore(access.response);
 
@@ -461,8 +481,11 @@ export async function GET() {
 
   const canAccessProDetails = canAccessProProgramDetails(access);
   const visiblePrograms = programs.map((program) => redactProgramForAccess(program, canAccessProDetails));
+  const responsePrograms = request && new URL(request.url).searchParams.get('surface') === 'home'
+    ? selectHomePrograms(visiblePrograms)
+    : visiblePrograms;
 
-  return privateNoStoreJson({ data: visiblePrograms, total: visiblePrograms.length });
+  return privateNoStoreJson({ data: responsePrograms, total: responsePrograms.length });
 }
 
 export async function PATCH(request: Request) {

@@ -566,13 +566,13 @@ export default function DashboardView() {
 
 function EntitledDashboardView() {
   const {
-    programs,
-    programsLoaded,
-    programsError,
+    homePrograms: programs,
+    homeProgramsLoaded: programsLoaded,
+    homeProgramsError: programsError,
     recentProgramActivities,
     recentActivityOwnerResolved,
     recordRecentProgramActivity,
-    reloadPrograms,
+    reloadHomePrograms: reloadPrograms,
   } = useMasterStore();
   const {
     students: serverStudents,

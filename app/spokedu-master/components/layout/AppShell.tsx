@@ -179,6 +179,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const setOnline = useMasterStore((state) => state.setOnline);
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
+  const loadHomePrograms = useMasterStore((state) => state.loadHomePrograms);
   const syncFavoriteProgramsFromServer = useMasterStore((state) => state.syncFavoriteProgramsFromServer);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const syncMasterProfile = useMasterStore((state) => state.syncMasterProfile);
@@ -261,9 +262,10 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     if (isLanding || isPublicDocument) return;
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
     if (!canLoadEntitledContent) return;
-    void loadPrograms();
+    if (pathname === `${basePath}/dashboard`) void loadHomePrograms();
+    else void loadPrograms();
     void syncFavoriteProgramsFromServer();
-  }, [accessGuard.status, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, loadPrograms, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, basePath, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, pathname, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     setStoreHydrated(useMasterStore.persist.hasHydrated());
@@ -276,6 +278,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       if (isLanding || isPublicDocument || document.visibilityState !== 'visible') return;
       if (isProtectedRoute && accessGuard.status !== 'allowed') return;
       if (!canLoadEntitledContent) return;
+      if (pathname === `${basePath}/dashboard`) return;
       void reloadPrograms();
       void syncFavoriteProgramsFromServer();
     };
@@ -285,7 +288,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', refreshProgramsOnFocus);
       document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
     };
-  }, [accessGuard.status, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, reloadPrograms, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, basePath, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, pathname, reloadPrograms, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);

@@ -1,0 +1,28 @@
+---
+description: SPOKEDU public website SSOT — brand, page jobs, nav, CTA, wrap, no MASTER.
+globs: app/spokedu/**,app/(spokedu-public)/**,app/info/**,app/sitemap.ts,next.config.ts
+alwaysApply: false
+---
+
+# SPOKEDU public website
+
+Full contract: [docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md](docs/SPOKEDU_PUBLIC_WEBSITE_SSOT.md)
+
+## Do
+
+- One brand journey, not per-page decoration.
+- Two purchase axes only: 체육교육 (`/education`) and 구독시스템 (`/subscription` → MASTER). SPOMOVE = content/IP. SPOMAT = execution tool.
+- Header: 체육교육 → 구독시스템 → SPOMOVE → 운영 사례 + `[상담하기]`. Do not add About / SPOMAT / Partners / 개인·소그룹.
+- Institution canonical: `/education`. Do **not** redirect `/info/dispatch` or `/info/dispatch.html` to `/education`. Those URLs stay as the legacy dispatch page.
+- `/subscription` sells and hands off to MASTER. No public `/product` → `/purchase` funnel.
+- Korean display = keep-all + strict + balance. Body = keep-all + strict + pretty. Never split words to keep a grid.
+- CTA grammar and motion tokens match Home. Hover only `@media (hover:hover) and (pointer:fine)`.
+- Unverified counts, conversion rates, causal “향상/치료” claims: forbidden.
+- Page-by-page: READ → contract check → implement → visual QA → PO review → LOCK. Then next page.
+
+## Do not
+
+- Touch MASTER while doing public work.
+- Redesign Education structure away from legacy `/info/dispatch` without PO.
+- Commit, push, branch, reset, restore, revert unless the user names that action.
+- Change unrelated working-tree files.

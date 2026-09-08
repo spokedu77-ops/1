@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   LessonCatalogCard,
@@ -26,6 +26,8 @@ import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
 import { spmChipClass } from '../lib/masterUiClasses';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
+  MASTER_PARTICIPANT_FORMATS,
+  MASTER_SPACE_TAGS,
   isMasterParticipantFormat,
   parseMasterParticipantFormats,
   parseMasterSpaces,
@@ -40,14 +42,10 @@ import type { Program } from '../types';
 import {
   filterProgramsByReason,
   filterProgramsByShelf,
-  getLibraryShelfDefinition,
   parseLibraryShelfId,
-  LIBRARY_SITUATION_ENTRIES,
-  type LibraryShelfId,
 } from './libraryCuration';
 import {
   LIBRARY_SELECTION_REASON_IDS,
-  LIBRARY_SELECTION_REASONS,
   formatProgramSelectionReasons,
   type LibrarySelectionReasonId,
 } from './librarySelectionReasons';
@@ -76,6 +74,26 @@ const MOVEMENT_LABEL: Record<string, string> = {
 type FilterGroupKey = LibraryFilterGroupKey;
 type ActiveFilter = LibraryActiveFilter;
 type ActiveFilters = ActiveFilter[];
+
+const QUICK_THEME_VALUES = ['협동형', '경쟁형', '술래형', '도전형', '조절형'] as const satisfies readonly (typeof LESSON_THEME_OPTIONS)[number][];
+const QUICK_SPACE_VALUES = MASTER_SPACE_TAGS;
+const QUICK_PARTICIPANT_VALUES = MASTER_PARTICIPANT_FORMATS;
+const QUICK_FILTER_GROUPS = new Set<FilterGroupKey>(['theme', 'space', 'participant']);
+
+const QUICK_FILTER_LABEL: Partial<Record<FilterGroupKey, Record<string, string>>> = {
+  theme: { 협동형: '협동', 경쟁형: '경쟁', 술래형: '술래', 도전형: '도전', 조절형: '조절' },
+  participant: { 개인전: '개인', '2인 1조': '2인', 팀전: '팀' },
+};
+
+function normalizeQuickBrowseFilters(filters: ActiveFilters): ActiveFilters {
+  const seenAxes = new Set<FilterGroupKey>();
+  return filters.filter((filter) => {
+    if (!QUICK_FILTER_GROUPS.has(filter.group)) return true;
+    if (seenAxes.has(filter.group)) return false;
+    seenAxes.add(filter.group);
+    return true;
+  });
+}
 
 type FilterGroup = {
   key: FilterGroupKey;
@@ -143,17 +161,6 @@ function parseReasonId(value: string | null): LibrarySelectionReasonId | null {
   return (LIBRARY_SELECTION_REASON_IDS as readonly string[]).includes(value)
     ? (value as LibrarySelectionReasonId)
     : null;
-}
-
-function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
-  return (
-    <div className="mb-3 flex items-end justify-between gap-4">
-      <div>
-        <p className="text-[13px] font-medium text-slate-500">{eyebrow}</p>
-        <h2 className="mt-1 text-[24px] font-semibold leading-tight text-[color:var(--spm-t)]">{title}</h2>
-      </div>
-    </div>
-  );
 }
 
 function ProgramCard({
@@ -228,11 +235,47 @@ function FilterRow({
               key={option.value}
               type="button"
               onClick={() => onFilter({ group: group.key, value: option.value })}
+              aria-pressed={active}
               className={spmChipClass(active, 'max-w-[11rem] truncate')}
               title={`${tagDisplayLabel(group.key, option.value)} (${option.count})`}
             >
               {tagDisplayLabel(group.key, option.value)}
-              <span className="ml-1 text-[10px] opacity-50">{option.count}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function QuickBrowseAxis({
+  label,
+  group,
+  values,
+  filters,
+  onFilter,
+}: {
+  label: string;
+  group: FilterGroupKey;
+  values: readonly string[];
+  filters: ActiveFilters;
+  onFilter: (next: ActiveFilter) => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+      <p className="shrink-0 text-[13px] font-medium text-slate-500">{label}</p>
+      <div className="flex min-w-0 flex-wrap gap-1.5">
+        {values.map((value) => {
+          const active = filters.some((filter) => filter.group === group && filter.value === value);
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onFilter({ group, value })}
+              aria-pressed={active}
+              className={spmChipClass(active)}
+            >
+              {QUICK_FILTER_LABEL[group]?.[value] ?? value}
             </button>
           );
         })}
@@ -276,11 +319,10 @@ export default function LibraryView() {
           ? [{ group: parsedGroup, value: parsedValue }]
           : [];
       });
-    return parsedFilters.length > 0 ? parsedFilters : legacyFilter;
+    return normalizeQuickBrowseFilters(parsedFilters.length > 0 ? parsedFilters : legacyFilter);
   });
   const [shelfId, setShelfId] = useState(() => parseLibraryShelfId(searchParams.get('shelf')));
   const [reasonId, setReasonId] = useState(() => parseReasonId(searchParams.get('reason')));
-  const resultsRef = useRef<HTMLElement | null>(null);
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [addingProgramId, setAddingProgramId] = useState<string | null>(null);
@@ -305,27 +347,6 @@ export default function LibraryView() {
   const pool = useMemo(() => programs.filter((program) => !program.isPro), [programs]);
 
   const viewPool = pool;
-
-  const themeVideoPrograms = useMemo(() => {
-    const playablePrograms = viewPool.filter(programHasPlayableVideo);
-    const selected: Program[] = [];
-    const selectedThemes = new Set<string>();
-
-    for (const program of playablePrograms) {
-      const theme = getLessonTheme(program) || program.category || '기타';
-      if (selectedThemes.has(theme)) continue;
-      selected.push(program);
-      selectedThemes.add(theme);
-      if (selected.length === 4) return selected;
-    }
-
-    for (const program of playablePrograms) {
-      if (!selected.some((candidate) => candidate.id === program.id)) selected.push(program);
-      if (selected.length === 4) break;
-    }
-
-    return selected;
-  }, [viewPool]);
 
   const sourceLibrarySearch = useMemo(() => {
     const params = new URLSearchParams();
@@ -380,7 +401,6 @@ export default function LibraryView() {
   const hasActiveFilters = filters.length > 0;
   const hasBrowseConstraint = Boolean(shelfId || reasonId);
   const hasSearchIntent = query.trim().length > 0 || hasActiveFilters || hasBrowseConstraint;
-  const isBrowseMode = !hasSearchIntent;
 
   const toggleFilter = (nextFilter: ActiveFilter) => {
     setFilters((current) => {
@@ -393,24 +413,14 @@ export default function LibraryView() {
     });
   };
 
-  const openShelf = (nextShelf: LibraryShelfId) => {
-    setQuery('');
-    setFilters([]);
-    setShelfId(nextShelf);
-    setReasonId(null);
-  };
-
-  const applySituationFilter = (filter: ActiveFilter) => {
-    setQuery('');
-    setFilters([filter]);
-    setShelfId(null);
-    setReasonId(null);
-    requestAnimationFrame(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const toggleQuickFilter = (nextFilter: ActiveFilter) => {
+    setFilters((current) => {
+      const active = current.some(
+        (filter) => filter.group === nextFilter.group && filter.value === nextFilter.value,
+      );
+      const withoutAxis = current.filter((filter) => filter.group !== nextFilter.group);
+      return active ? withoutAxis : [...withoutAxis, nextFilter];
     });
-  };
-
-  const clearBrowseConstraints = () => {
     setShelfId(null);
     setReasonId(null);
   };
@@ -429,28 +439,16 @@ export default function LibraryView() {
         filters,
         [
           { key: 'target', label: '대상' },
-          { key: 'space', label: '공간' },
-          { key: 'participant', label: '참여 형태' },
           { key: 'function', label: '신체 기능' },
           { key: 'movement', label: '움직임' },
-          { key: 'theme', label: '테마' },
         ],
         getStructuredValues,
       ),
     [viewPool, filters],
   );
 
-  const basicGroups = useMemo(
-    () => filterGroups.filter((g) => (['target', 'space'] as FilterGroupKey[]).includes(g.key)),
-    [filterGroups],
-  );
-  const advancedGroups = useMemo(
-    () => filterGroups.filter((g) => (['participant', 'function', 'movement', 'theme'] as FilterGroupKey[]).includes(g.key)),
-    [filterGroups],
-  );
-
-  const advancedHasActive =
-    filters.some((filter) => (['participant', 'function', 'movement', 'theme'] as FilterGroupKey[]).includes(filter.group));
+  const advancedGroups = filterGroups;
+  const advancedHasActive = filters.some((filter) => !QUICK_FILTER_GROUPS.has(filter.group));
   const isAdvancedOpen = showAdvanced || advancedHasActive;
 
   if (pool.length === 0) {
@@ -475,18 +473,10 @@ export default function LibraryView() {
     );
   }
 
-  const catalogTitle = shelfId
-      ? `${getLibraryShelfDefinition(shelfId).title} ${filteredPrograms.length}개`
-      : reasonId
-        ? `${LIBRARY_SELECTION_REASONS[reasonId].label} ${filteredPrograms.length}개`
-        : hasSearchIntent
-          ? `검색 결과 ${filteredPrograms.length}개`
-          : '전체에서 찾기';
-
   return (
     <>
       <main className="h-full overflow-y-auto pb-24 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-        <MasterPageShell variant="editorial" className="flex flex-col gap-7">
+        <MasterPageShell variant="editorial" className="flex max-w-[1120px] flex-col gap-6 sm:gap-7">
         {sessionContext ? <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
           <p className="min-w-0 truncate text-xs font-semibold text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
           <Link href={sessionReturnHref} className="inline-flex min-h-11 shrink-0 items-center text-xs font-semibold text-blue-700">수업으로 돌아가기</Link>
@@ -494,7 +484,7 @@ export default function LibraryView() {
         {sessionAddError ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
         <div>
           <MasterPageHeader title="놀이체육" description="수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요." />
-          <div className="mt-5 flex w-full max-w-[680px] items-center gap-2">
+          <div className="mt-4 flex w-full max-w-[640px] items-center gap-2">
             <label className="relative block min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
               <input
@@ -502,7 +492,7 @@ export default function LibraryView() {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="활동 이름, 교구, 종목 검색"
                 aria-label="놀이체육 활동 검색"
-                className="h-13 w-full rounded-[12px] border border-slate-300 bg-white pl-11 pr-4 text-base font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-200"
+                className="h-12 w-full rounded-[12px] border border-slate-300 bg-white pl-11 pr-4 text-[15px] font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-200"
               />
             </label>
             <div className="flex flex-wrap items-center gap-2">
@@ -515,140 +505,39 @@ export default function LibraryView() {
           </div>
         </div>
 
-        <section aria-label="상황별 빠른 진입">
-          <div className="mb-3">
-            <h2 className="text-[20px] font-semibold text-[color:var(--spm-t)]">조건으로 출발하기</h2>
-            <p className="mt-1 text-[13px] font-semibold text-slate-600">대상·공간·교구·활동 성격으로 바로 좁힙니다.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {LIBRARY_SITUATION_ENTRIES.map((entry) => {
-              const active = filters.some((filter) => filter.group === entry.filter.group && filter.value === entry.filter.value);
-              return (
-                <button
-                  key={entry.id}
-                  type="button"
-                  onClick={() => applySituationFilter(entry.filter)}
-                  aria-pressed={active}
-                  className={spmChipClass(active)}
-                >
-                  <span className={`text-[12px] font-medium ${active ? 'text-white/70' : 'text-slate-400'}`}>{entry.groupLabel}</span>
-                  {entry.label}
-                </button>
-              );
-            })}
+        <section aria-labelledby="library-quick-browse">
+          <h2 id="library-quick-browse" className="text-[18px] font-semibold text-[color:var(--spm-t)]">빠르게 찾기</h2>
+          <div className="mt-3 grid gap-x-8 gap-y-2.5 lg:grid-cols-[minmax(0,1fr)_auto]">
+            <QuickBrowseAxis label="수업 테마" group="theme" values={QUICK_THEME_VALUES} filters={filters} onFilter={toggleQuickFilter} />
+            <QuickBrowseAxis label="공간" group="space" values={QUICK_SPACE_VALUES} filters={filters} onFilter={toggleQuickFilter} />
+            <QuickBrowseAxis label="참여 형태" group="participant" values={QUICK_PARTICIPANT_VALUES} filters={filters} onFilter={toggleQuickFilter} />
           </div>
         </section>
 
-        {isBrowseMode ? (
-          <>
-            {themeVideoPrograms.length > 0 ? (
-              <section aria-label="테마별 추천 영상" className="space-y-3">
-                <div className="flex flex-wrap items-end justify-between gap-2">
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500">수업 테마에 맞춰 골라보세요</p>
-                    <h2 className="mt-0.5 text-[22px] font-semibold leading-tight text-[color:var(--spm-t)]">테마별 추천 영상</h2>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openShelf('theme_videos')}
-                    className="inline-flex min-h-11 items-center px-2 text-[12px] font-semibold text-[var(--spm-acc)] sm:min-h-9"
-                  >
-                    전체보기
-                  </button>
-                </div>
-                <ProgramGrid
-                  programs={themeVideoPrograms}
-                  isPremium={isPremium}
-                  isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
-                  favoriteEnabled={ownerId != null}
-                  sourceLibraryView="all"
-                  sourceLibrarySearch={sourceLibrarySearch}
-                  toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
-                  setSelected={setSelected}
-                  primaryActionLabel={primaryActionLabel}
-                  onAddToSession={sessionContext ? (program) => void addProgramToSession(program) : undefined}
-                  addingProgramId={addingProgramId}
-                />
-              </section>
-            ) : null}
-
-          </>
-        ) : null}
-
-        {!isBrowseMode ? <section id="library-catalog" ref={resultsRef}>
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <SectionTitle
-              eyebrow={isBrowseMode ? '전체 검색' : '수업 목록'}
-              title={catalogTitle}
-            />
-            {hasActiveFilters || hasBrowseConstraint ? (
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                {shelfId ? (
-                  <button
-                    type="button"
-                    onClick={clearBrowseConstraints}
-                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"
-                  >
-                    {getLibraryShelfDefinition(shelfId).title} ×
-                  </button>
-                ) : null}
-                {reasonId ? (
-                  <button
-                    type="button"
-                    onClick={clearBrowseConstraints}
-                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"
-                  >
-                    {LIBRARY_SELECTION_REASONS[reasonId].label} ×
-                  </button>
-                ) : null}
-                {filters.map((filter) => (
-                  <button
-                    key={`${filter.group}:${filter.value}`}
-                    type="button"
-                    onClick={() => toggleFilter(filter)}
-                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"
-                  >
-                    {tagDisplayLabel(filter.group, filter.value)} ×
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mb-4 space-y-2">
-            <div className="py-1">
-              {isBrowseMode ? (
-                <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[12px] font-semibold text-slate-950">세부 조건</p>
-                  <p className="text-[11px] font-bold text-slate-500">필요할 때만 좁히세요.</p>
-                </div>
-              ) : null}
-              <div className="grid gap-2 lg:grid-cols-2">
-                {basicGroups.map((group) => (
-                  <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
-                ))}
-              </div>
-            </div>
+        <section id="library-catalog">
+          <div className="mb-4 flex min-h-11 flex-wrap items-center justify-between gap-3">
+            <h2 className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">놀이체육 활동</h2>
             <button
               type="button"
               onClick={() => setShowAdvanced((prev) => !prev)}
-              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-[12px] border border-slate-200 bg-white/72 px-3 py-2 text-left text-[12px] font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+              aria-expanded={isAdvancedOpen}
+              className="inline-flex min-h-11 items-center gap-2 px-2 text-[13px] font-semibold text-slate-600 transition hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
             >
-              <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                {isBrowseMode ? '더 많은 조건' : '세부 조건'}
-                <span className="text-[11px] font-normal text-[color:var(--spm-t3)]">참여 형태 · 신체 기능 · 움직임 · 테마</span>
-              </span>
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
+              <SlidersHorizontal className="h-4 w-4" />
+              세부 필터
+              <ChevronDown className={`h-4 w-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
             </button>
-            {isAdvancedOpen ? (
-              <div className="grid gap-2.5 rounded-[14px] bg-slate-100/70 p-2.5 lg:grid-cols-2 2xl:grid-cols-3">
+          </div>
+
+          {isAdvancedOpen ? (
+            <div className="mb-5 border-b border-slate-200 pb-5">
+              <div className="grid gap-3 lg:grid-cols-2">
                 {advancedGroups.map((group) => (
                   <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
                 ))}
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
           <ProgramGrid
             programs={visiblePrograms}
@@ -688,7 +577,7 @@ export default function LibraryView() {
                 </button>
               </div>
           ) : null}
-        </section> : null}
+        </section>
         </MasterPageShell>
       </main>
 

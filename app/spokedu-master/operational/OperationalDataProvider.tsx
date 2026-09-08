@@ -64,6 +64,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const canUseAttendance = useMasterCanUseAttendance();
   const ownerId = getProfileOwnerId(profile);
   const activeOwnerRef = useRef<string | null>(null);
+  const reloadInFlightRef = useRef<{ ownerId: string; promise: Promise<void> } | null>(null);
   const [status, setStatus] = useState<OperationalDataStatus>('idle');
   const [students, setStudents] = useState<MasterStudentDto[]>([]);
   const [classes, setClasses] = useState<MasterClassDto[]>([]);
@@ -85,6 +86,8 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (reloadInFlightRef.current?.ownerId === ownerId) return reloadInFlightRef.current.promise;
+
     activeOwnerRef.current = ownerId;
     setError(null);
     if (mode === 'hard') {
@@ -92,6 +95,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       setStatus('loading');
     }
 
+    const task = (async () => {
     try {
       const [studentsJson, sessionsJson] = await Promise.all([
         masterFetchJson<{ data?: MasterStudentDto[] }>('/api/spokedu-master/students'),
@@ -107,6 +111,13 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       if (mode === 'hard') clearData();
       setError(getProviderErrorMessage(caught));
       setStatus('error');
+    }
+    })();
+    reloadInFlightRef.current = { ownerId, promise: task };
+    try {
+      await task;
+    } finally {
+      if (reloadInFlightRef.current?.promise === task) reloadInFlightRef.current = null;
     }
   }, [canUseAttendance, clearData, ownerId]);
 

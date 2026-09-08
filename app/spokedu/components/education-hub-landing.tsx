@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { HOME_MEDIA } from '../data/home-media';
-import { educationHubPage, type EducationHubCaseCard } from '../data/education-hub';
+import { educationHubPage, type EducationHubCaseCard, type EducationProgram } from '../data/education-hub';
 import {
   brandFocusRing,
   homePhotoGrade,
@@ -12,91 +12,26 @@ import {
   marketingButtonPrimaryOnDark,
   marketingHeroDisplay,
   marketingHeroDisplaySectionScale,
+  marketingSectionDisplay,
 } from '../lib/ui-classes';
 import { MediaPanel } from './visual';
 import { TrackedLink } from './home/tracked-link';
 import styles from './education-hub.module.css';
 
-type ProgramFamily = {
-  id: string;
-  title: string;
-  description: string;
-  meta: string;
-  image: string | null;
-  intro: string;
-  recommendedFor: readonly string[];
-  activities: readonly string[];
-  formats: readonly string[];
-};
+type ProgramFamily = EducationProgram;
 
-const PROGRAM_FAMILIES: readonly ProgramFamily[] = [
-  {
-    id: 'functional-move',
-    title: '펑셔널 무브',
-    description: '기본 움직임을 수업의 바탕으로 구성합니다.',
-    meta: '정기수업 · 기초 활동',
-    image: null,
-    intro: '기본 움직임을 바탕으로 수업의 기초 체력과 움직임 경험을 구성합니다.',
-    recommendedFor: ['정기 체육수업', '저학년 및 입문 단계', '기초 움직임 경험이 필요한 그룹'],
-    activities: ['이동운동기술', '균형', '협응', '기초 조작활동'],
-    formats: ['정기수업', '단회 특강'],
-  },
-  {
-    id: 'teambuilding',
-    title: '팀빌딩',
-    description: '협동 미션과 규칙 있는 팀 활동을 조합합니다.',
-    meta: '단회 · 관계 형성 · 캠프',
-    image: null,
-    intro: '협동 미션과 규칙 있는 팀 활동을 통해 관계 형성과 협업 경험을 설계합니다.',
-    recommendedFor: ['학급 관계 형성', '캠프', '원데이 프로그램', '기관 행사'],
-    activities: ['협동 이동', '팀 미션', '전략 게임', '공동 목표 활동'],
-    formats: ['단회', '특강', '행사'],
-  },
-  {
-    id: 'spomove',
-    title: 'SPOMOVE',
-    description: '화면의 정보를 보고 판단한 뒤 움직임으로 반응합니다.',
-    meta: '워밍업 · 반응형 활동',
-    image: null,
-    intro: '화면의 정보를 보고 판단한 뒤 움직임으로 반응하는 디지털 신체활동입니다.',
-    recommendedFor: ['수업 워밍업', '시지각 반응 활동', '집중 및 선택 반응 과제', '수업 전환 활동'],
-    activities: ['색상/방향 자극', '시지각 반응', '선택 반응', '인지-움직임 연결'],
-    formats: ['정기수업', '프로그램 확장', '체험형 활동'],
-  },
-  {
-    id: 'monthly-sports',
-    title: '월간 스포츠',
-    description: '스포츠와 뉴스포츠 종목을 회기별 테마로 구성합니다.',
-    meta: '정기수업 · 방과후',
-    image: null,
-    intro: '스포츠와 뉴스포츠 종목을 회기별 테마로 구성해 다양한 종목 경험을 제공합니다.',
-    recommendedFor: ['정기수업', '방과후', '종목 경험 확대', '시즌형 프로그램'],
-    activities: ['뉴스포츠', '구기 종목', '라켓 스포츠', '시즌별 스포츠'],
-    formats: ['정기수업', '방과후', '월간 테마'],
-  },
-  {
-    id: 'mini-olympics',
-    title: '미니올림픽',
-    description: '여러 종목을 팀 경쟁과 응원 흐름으로 연결합니다.',
-    meta: '행사 · 스페셜 클래스',
-    image: null,
-    intro: '여러 종목을 팀 경쟁과 응원 흐름으로 연결해 하나의 스포츠 이벤트로 구성합니다.',
-    recommendedFor: ['기관 행사', '캠프', '학급 이벤트', '특별수업'],
-    activities: ['팀별 종목', '릴레이', '협동 경기', '기록형 경기'],
-    formats: ['행사', '스페셜 클래스', '원데이'],
-  },
-  {
-    id: 'custom-booth',
-    title: '체험·부스·커스텀',
-    description: '기관 목적과 동선에 맞춰 체험 단위를 새로 조합합니다.',
-    meta: '축제 · 공공행사',
-    image: null,
-    intro: '기관의 목적과 동선에 맞춰 체험 단위와 프로그램을 새롭게 조합합니다.',
-    recommendedFor: ['축제', '박람회', '공공행사', '체험부스'],
-    activities: ['체험형 스포츠', '순환형 활동', 'SPOMOVE', '기관 맞춤 콘텐츠'],
-    formats: ['부스', '행사', '커스텀 프로그램'],
-  },
-];
+function WrapUnits({ parts, className }: { parts: readonly string[]; className?: string }) {
+  return (
+    <span className={`${styles.wrapUnits} ${className ?? ''}`}>
+      {parts.map((part, index) => (
+        <span key={`${part}-${index}`} className={styles.wrapUnit}>
+          {part}
+          {index < parts.length - 1 ? ' ·' : ''}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 function TextCta({
   href,
@@ -123,14 +58,22 @@ function TextCta({
   );
 }
 
-function FieldMedia({ mediaKey, caption }: { mediaKey: keyof typeof HOME_MEDIA; caption: string }) {
+function FieldMedia({
+  mediaKey,
+  caption,
+  variant,
+}: {
+  mediaKey: keyof typeof HOME_MEDIA;
+  caption: string;
+  variant: 'primary' | 'secondary';
+}) {
   return (
-    <figure className={styles.fieldFigure}>
+    <figure className={`${styles.fieldFigure} ${variant === 'primary' ? styles.fieldFigurePrimary : styles.fieldFigureSecondary}`}>
       <div className={styles.fieldPhoto}>
         <MediaPanel
           media={HOME_MEDIA[mediaKey]}
           className={`${styles.mediaFill} border-0 ${homePhotoGrade}`}
-          sizes="(min-width: 960px) 44vw, 92vw"
+          sizes={variant === 'primary' ? '(min-width: 960px) 58vw, 92vw' : '(min-width: 960px) 38vw, 92vw'}
           objectFit="cover"
         />
       </div>
@@ -193,84 +136,105 @@ export function EducationHubLanding() {
 
       <section id={fit.id} className={styles.fit} aria-labelledby="education-fit-heading">
         <div className={styles.contentRail}>
-          <header className={`${styles.sectionHeader} ${styles.sectionReveal}`}>
-            <h2 id="education-fit-heading" className={`${styles.sectionTitle} ${koreanDisplay}`}>
+          <header className={styles.sectionHeader}>
+            <h2 id="education-fit-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
               {fit.title}
             </h2>
             <p className={`${styles.sectionLead} ${koreanBody}`}>{fit.lead}</p>
+            <p className={`${styles.fitStatementBody} ${koreanBody}`}>{fit.statement}</p>
           </header>
-          <ul className={styles.fitGrid}>
+          <ul className={styles.fitMatrix}>
             {fit.items.map((item) => (
               <li key={item.label}>
-                <p className={`${styles.meta} ${koreanBody}`}>{item.label}</p>
-                <h3 className={koreanDisplay}>{item.condition}</h3>
-                <p className={koreanBody}>{item.response}</p>
+                <p className={`${styles.fitLabel} ${koreanDisplay}`}>{item.label}</p>
+                <div>
+                  <h3 className={koreanDisplay}>
+                    <WrapUnits parts={item.condition} />
+                  </h3>
+                  <p className={koreanBody}>{item.response}</p>
+                </div>
               </li>
             ))}
           </ul>
           <p className={`${styles.institutionLine} ${koreanBody}`}>
             <strong className={koreanDisplay}>적합 기관</strong>
-            <span>{fit.institutions}</span>
+            <WrapUnits parts={fit.institutions} />
           </p>
+          <p className={`${styles.fitNote} ${koreanBody}`}>{fit.smallSpace}</p>
         </div>
       </section>
 
       <section id={operating.id} className={styles.operating} aria-labelledby="education-operating-heading">
         <div className={styles.contentRail}>
-          <header className={`${styles.sectionHeader} ${styles.sectionReveal}`}>
-            <h2 id="education-operating-heading" className={`${styles.sectionTitle} ${koreanDisplay}`}>
-              {operating.title}
-            </h2>
-            <p className={`${styles.sectionLead} ${koreanBody}`}>{operating.lead}</p>
-          </header>
-          <div className={styles.formatGrid}>
-            {operating.formats.map((format) => (
-              <article key={format.title}>
-                <h3 className={koreanDisplay}>{format.title}</h3>
-                <p className={koreanBody}>{format.body}</p>
-                <small className={koreanBody}>{format.example}</small>
-              </article>
-            ))}
+          <div className={styles.operatingChapter}>
+            <div className={styles.operatingCopy}>
+              <header className={styles.sectionHeader}>
+                <h2 id="education-operating-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
+                  {operating.title}
+                </h2>
+                <p className={`${styles.sectionLead} ${koreanBody}`}>{operating.lead}</p>
+              </header>
+              <div className={styles.formatList}>
+                {operating.formats.map((format) => (
+                  <article key={format.id}>
+                    <h3 className={koreanDisplay}>{format.title}</h3>
+                    <p className={koreanBody}>{format.body}</p>
+                    <p className={`${styles.formatExample} ${koreanBody}`}>{format.example}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+            <div className={styles.fieldStage} id="field-stage">
+              {operating.fieldMedia.map((item, index) => (
+                <FieldMedia
+                  key={item.mediaKey}
+                  {...item}
+                  variant={index === 0 ? 'primary' : 'secondary'}
+                />
+              ))}
+            </div>
           </div>
         </div>
-        <div className={styles.visualRail}>
-          <div className={`${styles.fieldPair} ${styles.sectionReveal}`}>
-            {operating.fieldMedia.map((item) => (
-              <FieldMedia key={item.mediaKey} {...item} />
-            ))}
-          </div>
-        </div>
+      </section>
+
+      <section id="programs" className={styles.programs} aria-labelledby="education-programs-heading">
         <div className={styles.contentRail}>
-          <div className={styles.lineupIntro}>
-            <h3 className={koreanDisplay}>기관 목적에 따라 조합하는 운영 콘텐츠</h3>
-            <p className={koreanBody}>
-              정규 수업부터 행사·체험까지, 대상과 운영 목적에 맞춰 프로그램을 조합합니다.
+          <header className={styles.lineupIntro}>
+            <h2 id="education-programs-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
+              기관 목적에 따라 조합하는 운영 콘텐츠
+            </h2>
+            <p className={`${styles.sectionLead} ${koreanBody}`}>
+              하나를 상품처럼 고르는 목록이 아니라, 대상과 운영 목적에 맞춰 수업 안에 조합하는 범위입니다.
             </p>
-          </div>
+          </header>
           <ul className={styles.programGrid}>
-            {PROGRAM_FAMILIES.map((program) => (
+            {operating.lineup.map((program) => (
               <li key={program.id}>
                 <ProgramCard program={program} onSelect={setSelectedProgram} />
               </li>
             ))}
           </ul>
         </div>
+      </section>
+
+      <section id="spomove" className={styles.spomoveBand} aria-labelledby="education-spomove-heading">
         <div className={styles.visualRail}>
           <div className={styles.spomoveProof}>
             <div className={styles.spomovePhoto}>
-              <Image
-                src="/images/spokedu/home/field-editorial/home-spomove-field.webp"
-                alt="SPOMOVE 화면을 보며 지도자와 아이들이 함께 움직이는 기관수업 현장"
-                fill
-                className={styles.directPhoto}
-                sizes="(min-width: 960px) 58vw, 92vw"
+              <MediaPanel
+                media={HOME_MEDIA[operating.spomove.mediaKey]}
+                className={`${styles.mediaFill} border-0 ${homePhotoGrade}`}
+                sizes="(min-width: 1100px) 58vw, 100vw"
+                objectFit="cover"
               />
             </div>
-            <div>
+            <div className={styles.spomoveCopy}>
               <p className={`${styles.meta} ${koreanDisplay}`}>SPOMOVE · 현장 활용</p>
-              <h3 className={koreanDisplay}>{operating.spomove.title}</h3>
+              <h2 id="education-spomove-heading" className={`${styles.spomoveTitle} ${koreanDisplay}`}>
+                {operating.spomove.title}
+              </h2>
               <p className={koreanBody}>{operating.spomove.body}</p>
-              <small className={koreanBody}>{operating.spomove.note}</small>
+              <p className={`${styles.spomoveNote} ${koreanBody}`}>{operating.spomove.note}</p>
             </div>
           </div>
         </div>
@@ -278,32 +242,38 @@ export function EducationHubLanding() {
 
       <section id={adjustment.id} className={styles.adjustment} aria-labelledby="education-adjustment-heading">
         <div className={styles.contentRail}>
-          <header className={`${styles.sectionHeader} ${styles.sectionReveal}`}>
-            <h2 id="education-adjustment-heading" className={`${styles.sectionTitle} ${koreanDisplay}`}>
+          <header className={styles.sectionHeader}>
+            <h2 id="education-adjustment-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
               {adjustment.title}
             </h2>
             <p className={`${styles.sectionLead} ${koreanBody}`}>{adjustment.lead}</p>
           </header>
-          <ul className={styles.mechanism}>
-            {adjustment.items.map((item) => (
+          <ol className={styles.mechanism}>
+            {adjustment.items.map((item, index) => (
               <li key={item.label}>
+                <span className={styles.mechanismIndex} aria-hidden>
+                  {String(index + 1).padStart(2, '0')}
+                </span>
                 <h3 className={koreanDisplay}>{item.label}</h3>
+                <p className={`${styles.mechanismKeys} ${koreanBody}`}>
+                  <WrapUnits parts={item.keys} />
+                </p>
                 <p className={koreanBody}>{item.body}</p>
               </li>
             ))}
-          </ul>
+          </ol>
         </div>
       </section>
 
       <section id={cases.id} className={styles.cases} aria-labelledby="education-cases-heading">
         <div className={styles.contentRail}>
-          <header className={`${styles.sectionHeader} ${styles.sectionReveal}`}>
-            <h2 id="education-cases-heading" className={`${styles.sectionTitle} ${koreanDisplay}`}>
+          <header className={styles.sectionHeader}>
+            <h2 id="education-cases-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
               {cases.title}
             </h2>
             <p className={`${styles.sectionLead} ${koreanBody}`}>{cases.lead}</p>
           </header>
-          <ul className={`${styles.caseGrid} ${styles.sectionReveal}`}>
+          <ul className={styles.caseGrid}>
             {cases.cards.map((card) => (
               <li key={card.slug}>
                 <CaseItem card={card} />
@@ -315,41 +285,55 @@ export function EducationHubLanding() {
 
       <section id={reviews.id} className={styles.reviews} aria-labelledby="education-reviews-heading">
         <div className={styles.contentRail}>
-          <h2 id="education-reviews-heading" className={`${styles.reviewTitle} ${styles.sectionReveal} ${koreanDisplay}`}>
+          <h2 id="education-reviews-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
             {reviews.title}
           </h2>
-          <ul>
-            {reviews.items.map((item) => (
-              <li key={item.meta}>
-                <p className={koreanBody}>{item.quote}</p>
-                <small className={koreanBody}>{item.meta}</small>
-              </li>
-            ))}
-          </ul>
+          <div className={styles.reviewLayout}>
+            <blockquote className={styles.reviewFeatured}>
+              <p className={koreanBody}>{reviews.items[0].quote}</p>
+              <cite className={koreanBody}>{reviews.items[0].meta}</cite>
+            </blockquote>
+            <ul className={styles.reviewSupport}>
+              {reviews.items.slice(1).map((item) => (
+                <li key={item.meta}>
+                  <p className={koreanBody}>{item.quote}</p>
+                  <cite className={koreanBody}>{item.meta}</cite>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
+      <div className={styles.closingPaper}>
       <section id={process.id} className={styles.process} aria-labelledby="education-process-heading">
         <div className={styles.contentRail}>
-          <h2 id="education-process-heading" className={`${styles.sectionTitle} ${koreanDisplay}`}>
-            {process.title}
-          </h2>
-          <ol>
-            {process.steps.map((step, index) => (
-              <li key={step.title}>
-                <span aria-hidden>{index < process.steps.length - 1 ? '→' : ''}</span>
+          <header className={styles.sectionHeader}>
+            <h2 id="education-process-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
+              {process.title}
+            </h2>
+            <p className={`${styles.sectionLead} ${koreanBody}`}>{process.lead}</p>
+          </header>
+          <ol className={styles.processTrack}>
+            {process.steps.map((step) => (
+              <li key={step.n}>
+                <span className={styles.processIndex} aria-hidden>
+                  {step.n}
+                </span>
                 <h3 className={koreanDisplay}>{step.title}</h3>
+                <p className={`${styles.processKeys} ${koreanBody}`}>
+                  <WrapUnits parts={step.keys} />
+                </p>
                 <p className={koreanBody}>{step.body}</p>
               </li>
             ))}
           </ol>
-          <p className={`${styles.processNote} ${koreanBody}`}>{process.note}</p>
         </div>
       </section>
 
       <section id={faq.id} className={styles.faq} aria-labelledby="education-faq-heading">
         <div className={styles.contentRail}>
-          <h2 id="education-faq-heading" className={`${styles.sectionTitle} ${koreanDisplay}`}>
+          <h2 id="education-faq-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
             {faq.title}
           </h2>
           <div className={styles.faqList}>
@@ -362,12 +346,14 @@ export function EducationHubLanding() {
           </div>
         </div>
       </section>
+      </div>
 
       <section id={contact.id} className={styles.contact} aria-labelledby="education-contact-heading">
         <div className={styles.contentRail}>
           <div>
-            <h2 id="education-contact-heading" className={`${styles.sectionTitle} ${koreanDisplay}`}>
-              {contact.title}
+            <h2 id="education-contact-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
+              <span>{contact.titleLines[0]}</span>
+              <span>{contact.titleLines[1]}</span>
             </h2>
             <p className={koreanBody}>{contact.lead}</p>
           </div>
@@ -389,22 +375,6 @@ export function EducationHubLanding() {
   );
 }
 
-function ProgramMedia({ program, sizes }: { program: ProgramFamily; sizes: string }) {
-  if (program.image) {
-    return (
-      <Image
-        src={program.image}
-        alt=""
-        fill
-        className={styles.programMediaImage}
-        sizes={sizes}
-      />
-    );
-  }
-
-  return <span className={styles.programMediaFallback}>대표 이미지</span>;
-}
-
 function ProgramCard({
   program,
   onSelect,
@@ -415,18 +385,18 @@ function ProgramCard({
   return (
     <button
       type="button"
-      className={`${styles.programCard} ${brandFocusRing} ${koreanDisplay}`}
+      className={`${styles.programCard} ${brandFocusRing}`}
       onClick={() => onSelect(program)}
     >
-      <span className={styles.programMedia}>
-        <ProgramMedia program={program} sizes="(min-width: 1100px) 22vw, (min-width: 640px) 44vw, 92vw" />
+      <span className={`${styles.programCardTitle} ${koreanDisplay}`}>{program.name}</span>
+      <span className={`${styles.programCardDescription} ${koreanBody}`}>{program.description}</span>
+      <span className={`${styles.programCardMeta} ${koreanBody}`}>
+        <WrapUnits parts={program.use} />
       </span>
-      <span className={styles.programCardBody}>
-        <span className={`${styles.programCardTitle} ${koreanDisplay}`}>{program.title}</span>
-        <span className={`${styles.programCardDescription} ${koreanBody}`}>{program.description}</span>
-        <span className={`${styles.programCardMeta} ${koreanBody}`}>{program.meta}</span>
-        <span className={`${styles.programCardAction} ${koreanDisplay}`} aria-hidden>
-          자세히 보기 →
+      <span className={`${styles.programCardAction} ${koreanDisplay}`}>
+        <span className={styles.programCardActionLabel}>활동 내용 보기</span>
+        <span className={styles.programCardActionArrow} aria-hidden>
+          →
         </span>
       </span>
     </button>
@@ -503,26 +473,33 @@ function ProgramDetailModal({
         >
           ×
         </button>
-        <div className={styles.programModalMedia}>
-          <ProgramMedia program={program} sizes="(min-width: 760px) 720px, 92vw" />
-        </div>
         <div className={styles.programModalBody}>
           <h3 id={titleId} className={`${styles.programModalTitle} ${koreanDisplay}`}>
-            {program.title}
+            {program.name}
           </h3>
-          <p className={`${styles.programModalIntro} ${koreanBody}`}>{program.intro}</p>
+          <p className={`${styles.programModalIntro} ${koreanBody}`}>{program.details.intro}</p>
+          {'mediaKey' in program.details ? (
+            <div className={styles.programModalPhoto}>
+              <MediaPanel
+                media={HOME_MEDIA[program.details.mediaKey]}
+                className={`${styles.mediaFill} border-0 ${homePhotoGrade}`}
+                sizes="(min-width: 640px) 620px, 92vw"
+                objectFit="cover"
+              />
+            </div>
+          ) : null}
           <div className={styles.programModalSection}>
-            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>추천 상황</h4>
+            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>추천 운영</h4>
             <ul className={koreanBody}>
-              {program.recommendedFor.map((item) => (
+              {program.details.recommendedFor.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
           <div className={styles.programModalSection}>
-            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>활동 구성</h4>
+            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>대표 활동</h4>
             <ul className={koreanBody}>
-              {program.activities.map((item) => (
+              {program.details.activities.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -530,18 +507,11 @@ function ProgramDetailModal({
           <div className={styles.programModalSection}>
             <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>운영 형태</h4>
             <ul className={koreanBody}>
-              {program.formats.map((item) => (
+              {program.details.formats.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
-          <button
-            type="button"
-            className={`${styles.programModalDismiss} ${brandFocusRing} ${koreanDisplay}`}
-            onClick={onClose}
-          >
-            닫기
-          </button>
         </div>
       </div>
     </div>

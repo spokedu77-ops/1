@@ -32,10 +32,10 @@ describe('LibraryView favorites contract', () => {
     expect(source).not.toContain("ownerId = 'local'");
   });
 
-  it('keeps one ProgramCard implementation for both views', () => {
+  it('keeps one canonical ProgramCard implementation for the catalog', () => {
     expect(source.match(/function ProgramCard\(/g)).toHaveLength(1);
     expect(source.match(/function ProgramGrid\(/g)).toHaveLength(1);
-    expect(source.match(/<ProgramGrid/g)).toHaveLength(2);
+    expect(source.match(/<ProgramGrid/g)).toHaveLength(1);
     expect(source).toContain('LessonCatalogCard');
   });
 
@@ -62,40 +62,40 @@ describe('LibraryView favorites contract', () => {
 
   it('keeps the library search controls compact and purpose-led', () => {
     expect(source).toContain('수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요.');
-    expect(source).toContain('전체에서 찾기');
-    expect(source).toContain('상황별 바로 고르기');
+    expect(source).toContain('빠르게 찾기');
+    expect(source).toContain('놀이체육 활동');
     expect(source).not.toContain('전체 {pool.length}개 수업');
     expect(source).toContain('placeholder="활동 이름, 교구, 종목 검색"');
     expect(source).toContain('aria-label="놀이체육 활동 검색"');
     expect(source).toContain('...(program.equipment ?? [])');
     expect(source).not.toContain('조건에 맞는 수업 찾기');
-    expect(source).not.toContain('전체 수업 ${filteredPrograms.length}개');
+    expect(source).not.toContain('전체 프로그램 ${filteredPrograms.length}');
+    expect(source).not.toContain('수업 목록');
     expect(source).not.toContain('MATERIAL_VIDEO_VALUE');
     expect(source).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(source).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
     expect(source).not.toContain('href="/spokedu-master/spomove" className="inline-flex h-14');
   });
 
-  it('leads with distinct playable theme videos before the full catalog', () => {
-    expect(source).toContain('themeVideoPrograms');
-    expect(source).toContain('viewPool.filter(programHasPlayableVideo)');
-    expect(source).toContain('selectedThemes');
-    expect(source).toContain("openShelf('theme_videos')");
-    expect(source).toContain('테마별 추천 영상');
-    expect(source).toContain('전체보기');
-    expect(source).not.toContain('shelves.slice(0, 1)');
-    expect(source).toContain('LIBRARY_SITUATION_ENTRIES');
+  it('leads with three compact browse axes and then the full catalog', () => {
+    expect(source).toContain("const QUICK_THEME_VALUES = ['협동형', '경쟁형', '술래형', '도전형', '조절형']");
+    expect(source).toContain('const QUICK_SPACE_VALUES = MASTER_SPACE_TAGS');
+    expect(source).toContain('const QUICK_PARTICIPANT_VALUES = MASTER_PARTICIPANT_FORMATS');
+    expect(source).toContain('toggleQuickFilter');
+    expect(source).toContain('normalizeQuickBrowseFilters');
+    expect(source).toContain("lg:grid-cols-[minmax(0,1fr)_auto]");
     expect(source).toContain('formatProgramSelectionReasons');
-    expect(source).toContain('aria-label="테마별 추천 영상"');
-    expect(source).toContain('aria-label="상황별 빠른 진입"');
+    expect(source).not.toContain('테마별 추천 영상');
+    expect(source).not.toContain('LIBRARY_SITUATION_ENTRIES');
   });
 
-  it('adds participant format filter and routes situation shortcuts through filters only', () => {
-    expect(source).toContain("{ key: 'participant', label: '참여 형태' }");
+  it('uses shared structured values and single-select quick axes', () => {
     expect(source).toContain('parseMasterParticipantFormats');
-    expect(source).toContain('applySituationFilter(entry.filter)');
-    expect(source).not.toContain('entry.shelfId');
-    expect(source).not.toContain('entry.reasonId');
+    expect(source).toContain('const withoutAxis = current.filter((filter) => filter.group !== nextFilter.group)');
+    expect(source).toContain("['theme', 'space', 'participant']");
+    expect(source).toContain("{ key: 'target', label: '대상' }");
+    expect(source).toContain("{ key: 'function', label: '신체 기능' }");
+    expect(source).toContain("{ key: 'movement', label: '움직임' }");
   });
 
   it('does not expose operational history or record cloning as a default library action', () => {
@@ -106,8 +106,8 @@ describe('LibraryView favorites contract', () => {
 
   it('returns the existing loading skeleton before rendering the catalog', () => {
     const loadingIndex = source.indexOf('if (!programsLoaded) return <LibrarySkeleton />');
-    const emptyStateIndex = source.indexOf('const catalogTitle =');
+    const catalogIndex = source.indexOf('id="library-catalog"');
     expect(loadingIndex).toBeGreaterThan(-1);
-    expect(emptyStateIndex).toBeGreaterThan(loadingIndex);
+    expect(catalogIndex).toBeGreaterThan(loadingIndex);
   });
 });
