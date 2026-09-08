@@ -60,7 +60,7 @@ export function WeeklyEditorialCard({
         </span>
         <div className="px-3 pb-3.5 pt-2.5">
           {type ? <span className={`${MV_META} block`}>{type}</span> : null}
-          <span className={`${MV_CONTENT_TITLE} mt-0.5 block line-clamp-2 transition-colors duration-200 group-hover:text-slate-700`}>{title}</span>
+          <span className={`${MV_CONTENT_TITLE} mt-0.5 block min-h-[3.1rem] line-clamp-2 transition-colors duration-200 group-hover:text-slate-700`}>{title}</span>
           {support ? <span className={`${MV_META} mt-1.5 block text-slate-600`}>{support}</span> : null}
         </div>
       </button>

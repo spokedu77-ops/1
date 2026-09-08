@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { CategoryIcon } from '../ui/ProgramThumb';
+import { InstructionalThumb } from '../media/InstructionalThumb';
+import { MV_CONTENT_TITLE, MV_META } from '../../lib/masterUiClasses';
 import {
   getImageFallbackSrc,
   isRemoteImage,
@@ -139,6 +141,7 @@ export type LessonCatalogCardProps = {
   primaryActionLabel?: string;
   onPrimaryAction?: () => void;
   primaryActionDisabled?: boolean;
+  editorial?: boolean;
 };
 
 export function LessonCatalogCard({
@@ -163,6 +166,7 @@ export function LessonCatalogCard({
   primaryActionLabel = '활동 살펴보기',
   onPrimaryAction,
   primaryActionDisabled = false,
+  editorial = false,
 }: LessonCatalogCardProps) {
   const articleProps = Object.fromEntries(
     Object.entries(dataAttrs ?? {}).filter((entry): entry is [string, string] => Boolean(entry[1])),
@@ -182,6 +186,90 @@ export function LessonCatalogCard({
       : locked
         ? 'border border-amber-300/90 bg-[var(--spm-s1)] text-[color:var(--spm-t)] hover:border-amber-400'
         : 'border border-slate-200 bg-white text-[color:var(--spm-t)] hover:-translate-y-0.5 hover:border-slate-300';
+
+  if (editorial) {
+    return (
+      <article
+        {...articleProps}
+        className="group relative min-w-0 overflow-hidden rounded-[16px] border border-slate-100/80 bg-white transition-colors duration-200 hover:border-slate-200"
+      >
+        <button
+          type="button"
+          onClick={onPreview}
+          className="flex w-full flex-col items-stretch text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
+          aria-label={`${title} 수업 미리보기`}
+        >
+          <span className="relative block w-full">
+            {heroImageUrl ? (
+              <InstructionalThumb
+                src={heroImageUrl}
+                sizes={sizes}
+                priority={priority}
+                presentation="home-clean-square"
+                className="rounded-none transition-transform duration-200 group-hover:scale-[1.015]"
+              />
+            ) : (
+              <span className="relative flex aspect-square w-full items-center justify-center bg-slate-200">
+                <CategoryIcon category={categoryFallback} size={36} color="rgba(15,23,42,0.45)" />
+              </span>
+            )}
+            {hasVideo ? (
+              <span className="pointer-events-none absolute left-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
+                <Play className="h-3 w-3 fill-current" aria-hidden />
+              </span>
+            ) : null}
+          </span>
+          <span className="block px-3 pb-3.5 pt-2.5">
+            {eyebrow ? <span className={`${MV_META} block`}>{eyebrow}</span> : null}
+            <span className={`${MV_CONTENT_TITLE} mt-0.5 block line-clamp-2 transition-colors duration-200 group-hover:text-slate-700`}>
+              {title}
+            </span>
+            {description ? <span className={`${MV_META} mt-1.5 block text-slate-600`}>{description}</span> : null}
+          </span>
+        </button>
+
+        {showFavorite ? (
+          <button
+            type="button"
+            onClick={onFavorite}
+            className={`absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 ${favorite ? 'bg-white text-amber-500 shadow-sm' : 'bg-white/90 text-slate-600 shadow-sm hover:bg-white hover:text-slate-900'}`}
+            aria-pressed={favorite}
+            aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+            title={!favoriteEnabled ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+            disabled={!favoriteEnabled}
+          >
+            <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+          </button>
+        ) : null}
+
+        {locked || onPrimaryAction ? (
+          <div className="border-t border-slate-100 px-3 py-3">
+            {locked ? (
+              <Link
+                href="/spokedu-master/payment?plan=premium"
+                className="inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-semibold text-amber-800"
+              >
+                프리미엄 자료
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={onPrimaryAction}
+                disabled={primaryActionDisabled}
+                className="inline-flex h-11 w-full items-center justify-between gap-3 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:opacity-55"
+              >
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <BookOpen size={15} />
+                  {primaryActionLabel}
+                </span>
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
+        ) : null}
+      </article>
+    );
+  }
 
   return (
     <article

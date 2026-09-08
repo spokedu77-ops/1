@@ -37,6 +37,7 @@ describe('LibraryView favorites contract', () => {
     expect(source.match(/function ProgramGrid\(/g)).toHaveLength(1);
     expect(source.match(/<ProgramGrid/g)).toHaveLength(1);
     expect(source).toContain('LessonCatalogCard');
+    expect(source).toContain('editorial');
   });
 
   it('provides an accessible bookmark button without opening preview', () => {
@@ -45,9 +46,9 @@ describe('LibraryView favorites contract', () => {
     expect(catalogCard).toContain("favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'");
   });
 
-  it('opens preview from the media card and keeps one full-lesson CTA', () => {
+  it('opens preview from the editorial card and keeps session add as the only card action', () => {
     expect(catalogCard).toContain('aria-label={`${title} 수업 미리보기`}');
-    expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
+    expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(2);
     expect(catalogCard).not.toMatch(/>\s*수업 미리보기\s*</);
     expect(catalogCard).toContain("primaryActionLabel = '활동 살펴보기'");
     expect(source).toContain('resolveMasterContentMode');
@@ -58,12 +59,13 @@ describe('LibraryView favorites contract', () => {
     expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(source).toContain('autoplayVideo: programHasPlayableVideo(program)');
     expect(source).toContain('primaryActionLabel = getMasterContentPrimaryAction(contentMode)');
+    expect(catalogCard).toContain('if (editorial)');
+    expect(catalogCard).toContain('InstructionalThumb');
   });
 
   it('keeps the library search controls compact and purpose-led', () => {
     expect(source).toContain('수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요.');
-    expect(source).toContain('빠르게 찾기');
-    expect(source).toContain('놀이체육 활동');
+    expect(source).toContain('전체 놀이체육');
     expect(source).not.toContain('전체 {pool.length}개 수업');
     expect(source).toContain('placeholder="활동 이름, 교구, 종목 검색"');
     expect(source).toContain('aria-label="놀이체육 활동 검색"');
@@ -77,25 +79,29 @@ describe('LibraryView favorites contract', () => {
     expect(source).not.toContain('href="/spokedu-master/spomove" className="inline-flex h-14');
   });
 
-  it('leads with three compact browse axes and then the full catalog', () => {
-    expect(source).toContain("const QUICK_THEME_VALUES = ['협동형', '경쟁형', '술래형', '도전형', '조절형']");
-    expect(source).toContain('const QUICK_SPACE_VALUES = MASTER_SPACE_TAGS');
-    expect(source).toContain('const QUICK_PARTICIPANT_VALUES = MASTER_PARTICIPANT_FORMATS');
-    expect(source).toContain('toggleQuickFilter');
-    expect(source).toContain('normalizeQuickBrowseFilters');
-    expect(source).toContain("lg:grid-cols-[minmax(0,1fr)_auto]");
-    expect(source).toContain('formatProgramSelectionReasons');
-    expect(source).not.toContain('테마별 추천 영상');
-    expect(source).not.toContain('LIBRARY_SITUATION_ENTRIES');
+  it('leads with two Home-parity recommendation shelves and then the full catalog', () => {
+    expect(source.match(/<RecommendationShelf/g)).toHaveLength(2);
+    expect(source).toContain('title="\uAD50\uC2E4\uC5D0\uC11C \uC9C4\uD589"');
+    expect(source).toContain('title="\uBBF8\uCDE8\uD559 \uCD94\uCC9C"');
+    expect(source).toContain('WeeklyEditorialCard');
+    expect(source).toContain('cleanSquareMedia');
+    expect(source).toContain('return ordered.slice(0, 4)');
+    expect(source).toContain('lg:grid-cols-4 lg:gap-6');
+    expect(source).not.toContain('BrowseSection');
+    expect(source).not.toContain('selectBrowseFilter');
+    expect(source).not.toContain('selectBrowseRepresentatives');
   });
 
-  it('uses shared structured values and single-select quick axes', () => {
+  it('keeps all six structured filters behind the detailed filter control', () => {
     expect(source).toContain('parseMasterParticipantFormats');
-    expect(source).toContain('const withoutAxis = current.filter((filter) => filter.group !== nextFilter.group)');
-    expect(source).toContain("['theme', 'space', 'participant']");
-    expect(source).toContain("{ key: 'target', label: '대상' }");
-    expect(source).toContain("{ key: 'function', label: '신체 기능' }");
-    expect(source).toContain("{ key: 'movement', label: '움직임' }");
+    expect(source).toContain("['target', 'space', 'participant', 'function', 'movement', 'theme']");
+    expect(source).toContain("{ key: 'target'");
+    expect(source).toContain("{ key: 'space'");
+    expect(source).toContain("{ key: 'participant'");
+    expect(source).toContain("{ key: 'function'");
+    expect(source).toContain("{ key: 'movement'");
+    expect(source).toContain("{ key: 'theme'");
+    expect(source).toContain('const isAdvancedOpen = showAdvanced || filters.length > 0');
   });
 
   it('does not expose operational history or record cloning as a default library action', () => {

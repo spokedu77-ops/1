@@ -950,7 +950,7 @@ export default function SpokeduHQDashboard() {
                   { n: '0', label: 'SPOKEDU 홈페이지', href: '/spokedu' },
                   { n: '1', label: '체육관', href: '/info/gym' },
                   { n: '2', label: '과외', href: '/info/private' },
-                  { n: '3', label: '파견', href: '/info/dispatch' },
+                  { n: '3', label: '파견', href: '/info/dispatch.html' },
                   { n: '4', label: '구독서비스', href: '/info/curriculum' },
                 ].map((item) => (
                   <a

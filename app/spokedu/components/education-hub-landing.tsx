@@ -33,6 +33,14 @@ function WrapUnits({ parts, className }: { parts: readonly string[]; className?:
   );
 }
 
+function Stars() {
+  return (
+    <span className={styles.stars} aria-hidden>
+      ★★★★★
+    </span>
+  );
+}
+
 function TextCta({
   href,
   trackLabel,
@@ -83,7 +91,8 @@ function FieldMedia({
 }
 
 export function EducationHubLanding() {
-  const { hero, fit, operating, adjustment, cases, reviews, process, faq, contact } = educationHubPage;
+  const { hero, fit, operating, comparison, adjustment, cases, reviews, process, faq, contact } =
+    educationHubPage;
   const [selectedProgram, setSelectedProgram] = useState<ProgramFamily | null>(null);
   const closeProgramDetail = useCallback(() => setSelectedProgram(null), []);
 
@@ -136,26 +145,27 @@ export function EducationHubLanding() {
 
       <section id={fit.id} className={styles.fit} aria-labelledby="education-fit-heading">
         <div className={styles.contentRail}>
-          <header className={styles.sectionHeader}>
-            <h2 id="education-fit-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-              {fit.title}
-            </h2>
-            <p className={`${styles.sectionLead} ${koreanBody}`}>{fit.lead}</p>
-            <p className={`${styles.fitStatementBody} ${koreanBody}`}>{fit.statement}</p>
-          </header>
-          <ul className={styles.fitMatrix}>
-            {fit.items.map((item) => (
-              <li key={item.label}>
-                <p className={`${styles.fitLabel} ${koreanDisplay}`}>{item.label}</p>
-                <div>
+          <div className={styles.fitLayout}>
+            <header className={styles.fitIntro}>
+              <h2 id="education-fit-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
+                {fit.title}
+              </h2>
+              <p className={`${styles.sectionLead} ${koreanBody}`}>{fit.lead}</p>
+              <p className={`${styles.fitStatementBody} ${koreanBody}`}>{fit.statement}</p>
+            </header>
+            <ul className={styles.fitGrid}>
+              {fit.items.map((item) => (
+                <li key={item.label}>
+                  <p className={`${styles.fitLabel} ${koreanDisplay}`}>{item.label}</p>
                   <h3 className={koreanDisplay}>
                     <WrapUnits parts={item.condition} />
                   </h3>
                   <p className={koreanBody}>{item.response}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+                  <p className={`${styles.fitItemNote} ${koreanBody}`}>{item.note}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
           <p className={`${styles.institutionLine} ${koreanBody}`}>
             <strong className={koreanDisplay}>적합 기관</strong>
             <WrapUnits parts={fit.institutions} />
@@ -201,11 +211,9 @@ export function EducationHubLanding() {
         <div className={styles.contentRail}>
           <header className={styles.lineupIntro}>
             <h2 id="education-programs-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-              기관 목적에 따라 조합하는 운영 콘텐츠
+              {operating.lineupTitle}
             </h2>
-            <p className={`${styles.sectionLead} ${koreanBody}`}>
-              하나를 상품처럼 고르는 목록이 아니라, 대상과 운영 목적에 맞춰 수업 안에 조합하는 범위입니다.
-            </p>
+            <p className={`${styles.sectionLead} ${koreanBody}`}>{operating.lineupLead}</p>
           </header>
           <ul className={styles.programGrid}>
             {operating.lineup.map((program) => (
@@ -214,6 +222,40 @@ export function EducationHubLanding() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      <section id={comparison.id} className={styles.comparison} aria-labelledby="education-comparison-heading">
+        <div className={styles.contentRail}>
+          <p className={`${styles.darkBadge} ${koreanDisplay}`}>{comparison.badge}</p>
+          <h2 id="education-comparison-heading" className={`${styles.darkTitle} ${koreanDisplay}`}>
+            {comparison.title}
+          </h2>
+          <p className={`${styles.darkLead} ${koreanBody}`}>{comparison.lead}</p>
+          <div className={styles.compareTable} role="table" aria-label="운영 방식 비교">
+            <div className={styles.compareHead} role="row">
+              <span className={koreanDisplay}>비교 항목</span>
+              <span className={`${styles.compareOurs} ${koreanDisplay}`}>{comparison.ours}</span>
+              <span className={koreanDisplay}>{comparison.theirs}</span>
+            </div>
+            {comparison.rows.map((row) => (
+              <div key={row.label} className={styles.compareRow} role="row">
+                <span className={`${styles.compareLabel} ${koreanDisplay}`}>{row.label}</span>
+                <span className={`${styles.compareSpokedu} ${koreanBody}`}>
+                  <span className={styles.compareMark} aria-hidden>
+                    ✓
+                  </span>
+                  {row.spokedu}
+                </span>
+                <span className={`${styles.compareOther} ${koreanBody}`}>
+                  <span className={styles.compareMarkMuted} aria-hidden>
+                    –
+                  </span>
+                  {row.other}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -285,19 +327,31 @@ export function EducationHubLanding() {
 
       <section id={reviews.id} className={styles.reviews} aria-labelledby="education-reviews-heading">
         <div className={styles.contentRail}>
-          <h2 id="education-reviews-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
+          <p className={`${styles.darkBadge} ${koreanDisplay}`}>{reviews.badge}</p>
+          <h2 id="education-reviews-heading" className={`${styles.darkTitle} ${koreanDisplay}`}>
             {reviews.title}
           </h2>
+          <p className={`${styles.darkLead} ${koreanBody}`}>{reviews.lead}</p>
           <div className={styles.reviewLayout}>
             <blockquote className={styles.reviewFeatured}>
+              <Stars />
+              <p className={`${styles.reviewHeadline} ${koreanDisplay}`}>{reviews.items[0].headline}</p>
               <p className={koreanBody}>{reviews.items[0].quote}</p>
-              <cite className={koreanBody}>{reviews.items[0].meta}</cite>
+              <cite className={koreanBody}>
+                {reviews.items[0].name}
+                <span> · {reviews.items[0].org}</span>
+              </cite>
             </blockquote>
             <ul className={styles.reviewSupport}>
               {reviews.items.slice(1).map((item) => (
-                <li key={item.meta}>
+                <li key={item.org}>
+                  <Stars />
+                  <p className={`${styles.reviewHeadline} ${koreanDisplay}`}>{item.headline}</p>
                   <p className={koreanBody}>{item.quote}</p>
-                  <cite className={koreanBody}>{item.meta}</cite>
+                  <cite className={koreanBody}>
+                    {item.name}
+                    <span> · {item.org}</span>
+                  </cite>
                 </li>
               ))}
             </ul>
@@ -314,17 +368,19 @@ export function EducationHubLanding() {
             </h2>
             <p className={`${styles.sectionLead} ${koreanBody}`}>{process.lead}</p>
           </header>
-          <ol className={styles.processTrack}>
+          <ol className={styles.processCards}>
             {process.steps.map((step) => (
               <li key={step.n}>
-                <span className={styles.processIndex} aria-hidden>
-                  {step.n}
-                </span>
-                <h3 className={koreanDisplay}>{step.title}</h3>
-                <p className={`${styles.processKeys} ${koreanBody}`}>
-                  <WrapUnits parts={step.keys} />
-                </p>
-                <p className={koreanBody}>{step.body}</p>
+                <article>
+                  <span className={styles.processIndex} aria-hidden>
+                    {step.n}
+                  </span>
+                  <h3 className={koreanDisplay}>{step.title}</h3>
+                  <p className={`${styles.processKeys} ${koreanBody}`}>
+                    <WrapUnits parts={step.keys} />
+                  </p>
+                  <p className={koreanBody}>{step.body}</p>
+                </article>
               </li>
             ))}
           </ol>
@@ -489,7 +545,7 @@ function ProgramDetailModal({
             </div>
           ) : null}
           <div className={styles.programModalSection}>
-            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>추천 운영</h4>
+            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>이런 기관에 적합</h4>
             <ul className={koreanBody}>
               {program.details.recommendedFor.map((item) => (
                 <li key={item}>{item}</li>
@@ -497,7 +553,7 @@ function ProgramDetailModal({
             </ul>
           </div>
           <div className={styles.programModalSection}>
-            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>대표 활동</h4>
+            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>활용 예시</h4>
             <ul className={koreanBody}>
               {program.details.activities.map((item) => (
                 <li key={item}>{item}</li>
@@ -505,7 +561,7 @@ function ProgramDetailModal({
             </ul>
           </div>
           <div className={styles.programModalSection}>
-            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>운영 형태</h4>
+            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>운영 흐름</h4>
             <ul className={koreanBody}>
               {program.details.formats.map((item) => (
                 <li key={item}>{item}</li>

@@ -13,21 +13,24 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   LessonCatalogCard,
 } from '../components/lesson/LessonCatalogCard';
+import { WeeklyEditorialCard } from '../components/lesson/WeeklyEditorialCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
   LESSON_TAG_PREFIX,
+  buildHomeWeeklySupportMeta,
+  buildLessonCardSupportMeta,
   getLessonTheme,
   parseTaggedValues,
+  splitLessonTitle,
 } from '../lib/lessonDisplay';
+import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
 import { spmChipClass } from '../lib/masterUiClasses';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
-  MASTER_PARTICIPANT_FORMATS,
-  MASTER_SPACE_TAGS,
   isMasterParticipantFormat,
   parseMasterParticipantFormats,
   parseMasterSpaces,
@@ -56,6 +59,7 @@ import {
   matchesLibraryFilters,
   paginateLibraryPrograms,
   rankLibraryPrograms,
+  formatLibraryCardEquipmentName,
   type LibraryActiveFilter,
   type LibraryFilterGroupKey,
 } from './libraryViewModel';
@@ -74,26 +78,6 @@ const MOVEMENT_LABEL: Record<string, string> = {
 type FilterGroupKey = LibraryFilterGroupKey;
 type ActiveFilter = LibraryActiveFilter;
 type ActiveFilters = ActiveFilter[];
-
-const QUICK_THEME_VALUES = ['협동형', '경쟁형', '술래형', '도전형', '조절형'] as const satisfies readonly (typeof LESSON_THEME_OPTIONS)[number][];
-const QUICK_SPACE_VALUES = MASTER_SPACE_TAGS;
-const QUICK_PARTICIPANT_VALUES = MASTER_PARTICIPANT_FORMATS;
-const QUICK_FILTER_GROUPS = new Set<FilterGroupKey>(['theme', 'space', 'participant']);
-
-const QUICK_FILTER_LABEL: Partial<Record<FilterGroupKey, Record<string, string>>> = {
-  theme: { 협동형: '협동', 경쟁형: '경쟁', 술래형: '술래', 도전형: '도전', 조절형: '조절' },
-  participant: { 개인전: '개인', '2인 1조': '2인', 팀전: '팀' },
-};
-
-function normalizeQuickBrowseFilters(filters: ActiveFilters): ActiveFilters {
-  const seenAxes = new Set<FilterGroupKey>();
-  return filters.filter((filter) => {
-    if (!QUICK_FILTER_GROUPS.has(filter.group)) return true;
-    if (seenAxes.has(filter.group)) return false;
-    seenAxes.add(filter.group);
-    return true;
-  });
-}
 
 type FilterGroup = {
   key: FilterGroupKey;
@@ -211,6 +195,7 @@ function ProgramCard({
       primaryActionLabel={primaryActionLabel}
       onPrimaryAction={onPrimaryAction}
       primaryActionDisabled={primaryActionDisabled}
+      editorial
     />
   );
 }
@@ -248,39 +233,60 @@ function FilterRow({
   );
 }
 
-function QuickBrowseAxis({
-  label,
-  group,
-  values,
-  filters,
-  onFilter,
-}: {
-  label: string;
-  group: FilterGroupKey;
-  values: readonly string[];
-  filters: ActiveFilters;
-  onFilter: (next: ActiveFilter) => void;
-}) {
+function isRecommendationReady(program: Program) {
+  const model = buildLessonDisplayModel(program);
+  return Boolean(model.heroImageUrl && model.title.trim() && (formatProgramSelectionReasons(program) || program.description?.trim()));
+}
+
+function selectRecommendationPrograms(programs: Program[], group: FilterGroupKey, value: string, excluded = new Set<string>()) {
+  const candidates = programs.filter((program) => getStructuredValues(program, group).includes(value));
+  const ordered = [
+    ...candidates.filter((program) => !excluded.has(program.id) && isRecommendationReady(program)),
+    ...candidates.filter((program) => !excluded.has(program.id) && !isRecommendationReady(program)),
+    ...candidates.filter((program) => excluded.has(program.id) && isRecommendationReady(program)),
+    ...candidates.filter((program) => excluded.has(program.id) && !isRecommendationReady(program)),
+  ];
+  return ordered.slice(0, 4);
+}
+
+function RecommendationProgramCard({ program, onPreview, priority = false }: { program: Program; onPreview: () => void; priority?: boolean }) {
+  const model = buildLessonDisplayModel(program);
+  const titles = splitLessonTitle(model.title);
+  const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
+  const selectionMeta = formatProgramSelectionReasons(program);
+  const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
+  const weeklySupportMeta = selectionMeta ? supportMeta : buildHomeWeeklySupportMeta(program, { equipmentFallback: prep });
+
   return (
-    <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-      <p className="shrink-0 text-[13px] font-medium text-slate-500">{label}</p>
-      <div className="flex min-w-0 flex-wrap gap-1.5">
-        {values.map((value) => {
-          const active = filters.some((filter) => filter.group === group && filter.value === value);
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onFilter({ group, value })}
-              aria-pressed={active}
-              className={spmChipClass(active)}
-            >
-              {QUICK_FILTER_LABEL[group]?.[value] ?? value}
-            </button>
-          );
-        })}
+    <WeeklyEditorialCard
+      title={titles.koreanTitle}
+      heroImageUrl={model.heroImageUrl}
+      category={model.theme || '체육 수업'}
+      supportMeta={weeklySupportMeta}
+      hasVideo={programHasPlayableVideo(program)}
+      onPreview={onPreview}
+      priority={priority}
+      sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
+      cleanSquareMedia
+    />
+  );
+}
+
+function RecommendationShelf({ title, programs, onPreview, priority = false }: { title: string; programs: Program[]; onPreview: (program: Program) => void; priority?: boolean }) {
+  return (
+    <section aria-labelledby={`library-recommendation-${title}`}>
+      <p className="text-[12px] font-semibold text-[color:var(--spm-t3)]">추천 테마</p>
+      <h2 id={`library-recommendation-${title}`} className="mt-1 text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">{title}</h2>
+      <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max snap-x snap-mandatory items-start gap-5 lg:grid lg:w-auto lg:grid-cols-4 lg:gap-6 lg:snap-none">
+          {programs.map((program, index) => (
+            <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-auto lg:max-w-none lg:shrink">
+              <RecommendationProgramCard program={program} onPreview={() => onPreview(program)} priority={priority && index < 2} />
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -319,7 +325,7 @@ export default function LibraryView() {
           ? [{ group: parsedGroup, value: parsedValue }]
           : [];
       });
-    return normalizeQuickBrowseFilters(parsedFilters.length > 0 ? parsedFilters : legacyFilter);
+    return parsedFilters.length > 0 ? parsedFilters : legacyFilter;
   });
   const [shelfId, setShelfId] = useState(() => parseLibraryShelfId(searchParams.get('shelf')));
   const [reasonId, setReasonId] = useState(() => parseReasonId(searchParams.get('reason')));
@@ -347,6 +353,11 @@ export default function LibraryView() {
   const pool = useMemo(() => programs.filter((program) => !program.isPro), [programs]);
 
   const viewPool = pool;
+  const classroomPrograms = useMemo(() => selectRecommendationPrograms(viewPool, 'space', '교실'), [viewPool]);
+  const preschoolPrograms = useMemo(
+    () => selectRecommendationPrograms(viewPool, 'target', '미취학', new Set(classroomPrograms.map((program) => program.id))),
+    [classroomPrograms, viewPool],
+  );
 
   const sourceLibrarySearch = useMemo(() => {
     const params = new URLSearchParams();
@@ -413,18 +424,6 @@ export default function LibraryView() {
     });
   };
 
-  const toggleQuickFilter = (nextFilter: ActiveFilter) => {
-    setFilters((current) => {
-      const active = current.some(
-        (filter) => filter.group === nextFilter.group && filter.value === nextFilter.value,
-      );
-      const withoutAxis = current.filter((filter) => filter.group !== nextFilter.group);
-      return active ? withoutAxis : [...withoutAxis, nextFilter];
-    });
-    setShelfId(null);
-    setReasonId(null);
-  };
-
   const clearAllSearch = () => {
     setQuery('');
     setFilters([]);
@@ -439,8 +438,11 @@ export default function LibraryView() {
         filters,
         [
           { key: 'target', label: '대상' },
+          { key: 'space', label: '공간' },
+          { key: 'participant', label: '참여 형태' },
           { key: 'function', label: '신체 기능' },
           { key: 'movement', label: '움직임' },
+          { key: 'theme', label: '테마' },
         ],
         getStructuredValues,
       ),
@@ -448,8 +450,7 @@ export default function LibraryView() {
   );
 
   const advancedGroups = filterGroups;
-  const advancedHasActive = filters.some((filter) => !QUICK_FILTER_GROUPS.has(filter.group));
-  const isAdvancedOpen = showAdvanced || advancedHasActive;
+  const isAdvancedOpen = showAdvanced || filters.length > 0;
 
   if (pool.length === 0) {
     if (!programsLoaded) return <LibrarySkeleton />;
@@ -476,57 +477,57 @@ export default function LibraryView() {
   return (
     <>
       <main className="h-full overflow-y-auto pb-24 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-        <MasterPageShell variant="editorial" className="flex max-w-[1120px] flex-col gap-6 sm:gap-7">
-        {sessionContext ? <div className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
+        <MasterPageShell variant="editorial" className="max-w-[1120px]">
+        {sessionContext ? <div className="mb-3 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
           <p className="min-w-0 truncate text-xs font-semibold text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
           <Link href={sessionReturnHref} className="inline-flex min-h-11 shrink-0 items-center text-xs font-semibold text-blue-700">수업으로 돌아가기</Link>
         </div> : null}
-        {sessionAddError ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
-        <div>
-          <MasterPageHeader title="놀이체육" description="수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요." />
-          <div className="mt-4 flex w-full max-w-[640px] items-center gap-2">
-            <label className="relative block min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="활동 이름, 교구, 종목 검색"
-                aria-label="놀이체육 활동 검색"
-                className="h-12 w-full rounded-[12px] border border-slate-300 bg-white pl-11 pr-4 text-[15px] font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-200"
-              />
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
+        {sessionAddError ? <p role="alert" className="mb-3 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{sessionAddError}</p> : null}
+        <MasterPageHeader title="놀이체육" description="수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요." />
+
+        <div className="mt-10 space-y-16">
+          <RecommendationShelf
+            title="교실에서 진행"
+            programs={classroomPrograms}
+            priority
+            onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
+          />
+          <RecommendationShelf
+            title="미취학 추천"
+            programs={preschoolPrograms}
+            onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
+          />
+
+        <section id="library-catalog" className="scroll-mt-6">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <h2 className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">전체 놀이체육</h2>
+            <div className="flex min-w-0 flex-wrap items-center gap-2 lg:w-[460px]">
+              <label className="relative block min-w-[200px] flex-1">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="활동 이름, 교구, 종목 검색"
+                  aria-label="놀이체육 활동 검색"
+                  className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-[14px] font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-200"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((prev) => !prev)}
+                aria-expanded={isAdvancedOpen}
+                className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                세부 필터
+                <ChevronDown className={`h-4 w-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
+              </button>
               {hasSearchIntent ? (
-                <button type="button" onClick={clearAllSearch} className="h-10 px-2 text-[12px] font-semibold text-[var(--spm-acc)]">
+                <button type="button" onClick={clearAllSearch} className="inline-flex min-h-11 shrink-0 items-center px-1 text-[12px] font-semibold text-[var(--spm-acc)]">
                   초기화
                 </button>
               ) : null}
             </div>
-          </div>
-        </div>
-
-        <section aria-labelledby="library-quick-browse">
-          <h2 id="library-quick-browse" className="text-[18px] font-semibold text-[color:var(--spm-t)]">빠르게 찾기</h2>
-          <div className="mt-3 grid gap-x-8 gap-y-2.5 lg:grid-cols-[minmax(0,1fr)_auto]">
-            <QuickBrowseAxis label="수업 테마" group="theme" values={QUICK_THEME_VALUES} filters={filters} onFilter={toggleQuickFilter} />
-            <QuickBrowseAxis label="공간" group="space" values={QUICK_SPACE_VALUES} filters={filters} onFilter={toggleQuickFilter} />
-            <QuickBrowseAxis label="참여 형태" group="participant" values={QUICK_PARTICIPANT_VALUES} filters={filters} onFilter={toggleQuickFilter} />
-          </div>
-        </section>
-
-        <section id="library-catalog">
-          <div className="mb-4 flex min-h-11 flex-wrap items-center justify-between gap-3">
-            <h2 className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">놀이체육 활동</h2>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((prev) => !prev)}
-              aria-expanded={isAdvancedOpen}
-              className="inline-flex min-h-11 items-center gap-2 px-2 text-[13px] font-semibold text-slate-600 transition hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              세부 필터
-              <ChevronDown className={`h-4 w-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
-            </button>
           </div>
 
           {isAdvancedOpen ? (
@@ -578,6 +579,7 @@ export default function LibraryView() {
               </div>
           ) : null}
         </section>
+        </div>
         </MasterPageShell>
       </main>
 
@@ -631,7 +633,7 @@ function ProgramGrid({
   addingProgramId: string | null;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
       {programs.map((program, index) => (
         <ProgramCard
           key={program.id}

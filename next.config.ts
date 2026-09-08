@@ -116,8 +116,8 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       })),
       {
-        source: "/sw.js",
-        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+        source: "/info/dispatch.html",
+        headers: [{ key: "Cache-Control", value: "no-store" }],
       },
       {
         source: "/:path*",

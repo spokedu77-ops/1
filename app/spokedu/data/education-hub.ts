@@ -34,7 +34,7 @@ function caseCard(
 }
 
 export const educationHubPage = {
-  sectionOrder: ['hero', 'fit', 'operating', 'adjustment', 'cases', 'reviews', 'process', 'faq', 'contact'] as const,
+  sectionOrder: ['hero', 'fit', 'operating', 'comparison', 'adjustment', 'cases', 'reviews', 'process', 'faq', 'contact'] as const,
   hero: {
     id: 'hero',
     eyebrow: '체육교육 · 기관수업',
@@ -53,22 +53,26 @@ export const educationHubPage = {
       {
         label: '공간',
         condition: ['교실', '활동실', '강당', '체육관'],
-        response: '교실에서는 이동 범위를 줄이고, 강당·체육관에서는 활동 구역과 대기 동선을 나눕니다.',
+        response: '이동 범위, 대기 동선, 소음, 안전 범위를 먼저 조정합니다.',
+        note: '교실에서는 이동을 줄이고, 강당에서는 구역과 대기를 나눕니다.',
       },
       {
         label: '인원',
         condition: ['소규모', '반 단위', '다인원 행사'],
-        response: '소규모는 한 흐름으로, 반 단위·다인원은 활동 분할과 강사 배치로 대기를 줄입니다.',
+        response: '팀 구성, 활동 분할, 강사 배치 기준을 정합니다.',
+        note: '대기 시간이 길어지지 않게 흐름을 나눕니다.',
       },
       {
         label: '연령',
         condition: ['유아', '초등', '청소년', '특수·통합'],
-        response: '규칙과 과제 난이도를 맞추고, 특수·통합은 수행 속도와 참여 순서를 나눕니다.',
+        response: '규칙 이해도와 수행 속도에 맞춰 과제 난이도를 나눕니다.',
+        note: '같은 공간에서도 참여 순서를 다르게 둘 수 있습니다.',
       },
       {
         label: '운영',
         condition: ['정규수업', '특강', '방학', '행사'],
-        response: '정규는 회기 흐름을, 특강·행사는 하루 또는 단기 일정에 맞춰 준비 범위를 조정합니다.',
+        response: '회기, 준비물, 기록 공유, 현장 피드백 범위를 정합니다.',
+        note: '하루 일정과 학기 운영은 준비 범위가 다릅니다.',
       },
     ] as const,
     institutions: ['키움센터', '학교', '방과후', '복지관', '공공기관', '유치원/어린이집', '아동문화공간'],
@@ -114,6 +118,8 @@ export const educationHubPage = {
         caption: '참여자의 수행 속도에 맞춰 지도자가 함께 움직이며 조정한 수업',
       },
     ],
+    lineupTitle: '기관 목적에 따라 조합하는 운영 콘텐츠',
+    lineupLead: '하나를 상품처럼 고르는 목록이 아니라, 대상과 운영 목적에 맞춰 수업 안에 조합하는 범위입니다.',
     lineup: [
       {
         id: 'functional-move',
@@ -196,6 +202,41 @@ export const educationHubPage = {
       note: '일부 수업에서는 SPOKEDU의 자체 콘텐츠 SPOMOVE를 활용합니다. 모든 수업에 필수로 포함되는 것은 아닙니다.',
     },
   },
+  comparison: {
+    id: 'comparison',
+    badge: '운영 기준',
+    title: '수업 방식의 차이를 먼저 확인하세요',
+    lead: '종목 수보다 설계, 강사 기준, 현장 조정, 운영 후 공유가 기관 운영을 가릅니다.',
+    ours: 'SPOKEDU',
+    theirs: '단순 프로그램 제공',
+    rows: [
+      {
+        label: '핵심 커리큘럼',
+        spokedu: '펑셔널 무브와 팀빌딩을 바탕으로 기관 목적에 맞춰 활동을 조합합니다.',
+        other: '강사 재량으로 당일 활동을 고르는 경우가 많습니다.',
+      },
+      {
+        label: '강사 운영 기준',
+        spokedu: '수업 기준을 공유한 뒤 대상과 일정에 맞춰 배정합니다.',
+        other: '단기 인력 중심으로 당일 진행하는 경우가 많습니다.',
+      },
+      {
+        label: '결근·변동 대응',
+        spokedu: '부재가 생기면 기관에 공유하고 대체 운영을 조율합니다.',
+        other: '휴강으로 끝나는 경우가 많습니다.',
+      },
+      {
+        label: '수업 진행 방식',
+        spokedu: '공간, 인원, 수행 속도에 맞춰 동선과 난이도를 현장에서 조정합니다.',
+        other: '정해진 활동을 시간 안에 진행하는 데 머무는 경우가 많습니다.',
+      },
+      {
+        label: '운영 후 공유',
+        spokedu: '필요하면 관찰 내용과 다음 회기 조정사항을 정리해 공유합니다.',
+        other: '수업 종료로 끝나는 경우가 많습니다.',
+      },
+    ] as const,
+  },
   adjustment: {
     id: 'adjustment',
     title: '실제 현장에서 조정합니다',
@@ -219,17 +260,34 @@ export const educationHubPage = {
   },
   reviews: {
     id: 'reviews',
+    badge: '기관 후기',
     title: '기관 담당자가 전하는 경험',
+    lead: '수업이 현장에서 어떻게 맞춰졌는지를 담당자 경험으로 확인합니다.',
     items: [
-      { quote: '수준별 난이도와 참여 순서를 나눠 통합반에서도 흐름을 이어갈 수 있었습니다.', meta: '센터 담당자 · 찾아가는 동행 체육교실' },
-      { quote: '회차별 목적이 분명해 운영 계획과 맞추기 쉬웠습니다.', meta: '센터 담당자 · 양천거점형키움센터' },
-      { quote: '좁은 공간과 변동 인원에도 대기와 동선을 현장에서 맞춰 주셨습니다.', meta: '담당자 · 강동구 보건소 연계 수업' },
+      {
+        headline: '느린 학습자도 함께 참여할 수 있는 수업 구성',
+        quote: '수준별 난이도와 참여 순서를 나눠 통합반에서도 활동이 이어지도록 맞춰 주셨습니다.',
+        name: '센터 담당자',
+        org: '찾아가는 동행 체육교실',
+      },
+      {
+        headline: '회차마다 목적이 분명한 수업',
+        quote: '회차별 활동 목적이 분명해 기관 운영 계획과 맞추기 쉬웠습니다.',
+        name: '센터 담당자',
+        org: '양천거점형키움센터',
+      },
+      {
+        headline: '공간과 인원에 맞는 현장 조정',
+        quote: '좁은 공간과 변동 인원에도 대기와 동선을 현장에서 맞춰 주셨습니다.',
+        name: '담당자',
+        org: '강동구 보건소 연계 수업',
+      },
     ] as const,
   },
   process: {
     id: 'process',
-    title: '진행 과정',
-    lead: '기관 조건을 확인한 뒤 실제 수업이 가능한 운영안으로 구체화합니다.',
+    title: '도입 과정',
+    lead: '조건을 확인한 뒤, 실제 수업이 가능한 운영안으로 구체화합니다.',
     steps: [
       {
         n: '01',
