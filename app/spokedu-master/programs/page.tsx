@@ -84,6 +84,26 @@ export default function ProgramsPage() {
             image={spomoveHeroSrc}
           />
         </div>
+
+        <section aria-labelledby="program-decision-guide" className="mt-14 border-t border-slate-200 pb-14 pt-6 lg:mt-16 lg:pb-16">
+          <h2
+            id="program-decision-guide"
+            className="text-[21px] font-semibold tracking-[-0.015em] text-slate-950"
+          >
+            어떤 프로그램이 맞을까요?
+          </h2>
+          <div className="mt-5 grid gap-6 sm:grid-cols-2 sm:gap-0">
+            <DecisionGuideColumn
+              title="놀이체육"
+              items={['교구와 신체활동 중심', '다양한 종목 · 협동 · 경쟁 활동', '폭넓은 현장 수업 구성']}
+            />
+            <DecisionGuideColumn
+              title="SPOMOVE"
+              items={['화면 자극과 움직임 중심', '시지각 · 반응 · 인지 자극', '디지털 활동으로 수업 확장']}
+              className="border-t border-slate-200 pt-6 sm:border-l sm:border-t-0 sm:pl-8 sm:pt-0"
+            />
+          </div>
+        </section>
       </MasterPageShell>
     </main>
   );
@@ -128,5 +148,26 @@ function ProgramGatewayCard({
         </span>
       </div>
     </Link>
+  );
+}
+
+function DecisionGuideColumn({
+  title,
+  items,
+  className = '',
+}: {
+  title: string;
+  items: readonly string[];
+  className?: string;
+}) {
+  return (
+    <div className={`sm:pr-8 ${className}`}>
+      <h3 className="text-[16px] font-semibold text-slate-900">{title}</h3>
+      <ul className="mt-3 space-y-1.5 text-[14px] leading-[1.65] text-slate-600">
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
   );
 }

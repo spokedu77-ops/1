@@ -28,10 +28,10 @@ describe('Premium SPOMOVE media boundary', () => {
     expect(route).not.toContain('/object/public/');
   });
 
-  it('lets platform admins review legacy HTTPS guide videos without weakening subscriber access', () => {
+  it('returns YouTube and Vimeo guide videos to capability-gated callers', () => {
     const route = read('app/api/spokedu-master/spomove/guide-video/route.ts');
-    expect(route).toContain("access.isAdmin && /^https:\\/\\//i.test(configuredValue)");
-    expect(route.indexOf("access.isAdmin && /^https:\\/\\//i.test(configuredValue)")).toBeLessThan(
+    expect(route).toContain('isPublicSpomoveGuideVideoRef(configuredValue)');
+    expect(route.indexOf('isPublicSpomoveGuideVideoRef(configuredValue)')).toBeLessThan(
       route.indexOf('PREMIUM_MEDIA_NOT_MIGRATED'),
     );
   });
@@ -46,11 +46,10 @@ describe('Premium SPOMOVE media boundary', () => {
     expect(sheet).toContain("guideVideoState === 'missing'");
   });
 
-  it('prevents Admin from persisting new public guide-video URLs', () => {
+  it('lets Admin persist YouTube and Vimeo guide-video URLs', () => {
     const admin = read('app/admin/spokedu-master/programs/page.tsx');
-    expect(admin).toContain('isPrivateSpomoveGuideVideoRef');
-    expect(admin).toContain('guides/preset-id.mp4');
-    expect(admin).not.toContain('placeholder="https://www.youtube.com/watch?v=..."');
+    expect(admin).toContain('isAllowedSpomoveGuideVideoRef');
+    expect(admin).toContain('placeholder="https://youtu.be/..."');
   });
 
   it('does not mutate the shared bucket in the staging migration', () => {

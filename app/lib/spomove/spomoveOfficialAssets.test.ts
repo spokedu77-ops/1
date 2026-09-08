@@ -1,22 +1,30 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  hasOnlyAllowedSpomoveGuideVideoRefs,
   hasOnlyPrivateSpomoveGuideVideoRefs,
+  isAllowedSpomoveGuideVideoRef,
   isPrivateSpomoveGuideVideoRef,
   normalizeSpomoveContentMap,
 } from './spomoveOfficialAssets';
 
 describe('spomoveOfficialAssets', () => {
-  it('accepts only private Premium media object paths for guide videos', () => {
+  it('accepts private Premium media paths and YouTube/Vimeo URLs for guide videos', () => {
     expect(isPrivateSpomoveGuideVideoRef('guides/activity.mp4')).toBe(true);
     expect(isPrivateSpomoveGuideVideoRef('spokedu-master-premium-media/guides/activity.webm')).toBe(true);
     expect(isPrivateSpomoveGuideVideoRef('https://youtu.be/dQw4w9WgXcQ')).toBe(false);
+    expect(isAllowedSpomoveGuideVideoRef('guides/activity.mp4')).toBe(true);
+    expect(isAllowedSpomoveGuideVideoRef('https://youtu.be/dQw4w9WgXcQ')).toBe(true);
+    expect(isAllowedSpomoveGuideVideoRef('https://example.com/video.mp4')).toBe(false);
     expect(hasOnlyPrivateSpomoveGuideVideoRefs({
       guideVideos: { 'reaction-cognition-space-direction-01': 'guides/activity.mp4' },
     })).toBe(true);
     expect(hasOnlyPrivateSpomoveGuideVideoRefs({
       guideVideos: { 'reaction-cognition-space-direction-01': 'https://youtu.be/dQw4w9WgXcQ' },
     })).toBe(false);
+    expect(hasOnlyAllowedSpomoveGuideVideoRefs({
+      guideVideos: { 'reaction-cognition-space-direction-01': 'https://youtu.be/dQw4w9WgXcQ' },
+    })).toBe(true);
   });
 
   it('preserves partial movement guide drafts and v1 legacy fields', () => {

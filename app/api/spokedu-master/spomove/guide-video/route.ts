@@ -3,6 +3,7 @@ import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/private
 import {
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
   SPOMOVE_PREMIUM_MEDIA_BUCKET,
+  isPublicSpomoveGuideVideoRef,
   normalizeSpomoveGuideVideoMap,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
@@ -53,10 +54,7 @@ export async function GET(request: Request) {
   const configuredValue = normalizeSpomoveGuideVideoMap(pack?.assets_json)[presetId];
   if (!configuredValue) return privateNoStoreJson({ data: null });
 
-  // The operations team must be able to review the legacy guide library while
-  // public video references are being migrated into the private Premium bucket.
-  // Non-admin subscribers still receive only short-lived private signed URLs.
-  if (access.isAdmin && /^https:\/\//i.test(configuredValue)) {
+  if (isPublicSpomoveGuideVideoRef(configuredValue)) {
     return privateNoStoreJson({ data: { url: configuredValue, expiresIn: null } });
   }
 

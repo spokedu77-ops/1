@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
-  hasOnlyPrivateSpomoveGuideVideoRefs,
+  hasOnlyAllowedSpomoveGuideVideoRefs,
   SPOMOVE_CONTENT_PACK_ID,
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (id === SPOMOVE_GUIDE_VIDEO_PACK_ID && !hasOnlyPrivateSpomoveGuideVideoRefs(assets_json)) {
+    if (id === SPOMOVE_GUIDE_VIDEO_PACK_ID && !hasOnlyAllowedSpomoveGuideVideoRefs(assets_json)) {
       return NextResponse.json(
-        { error: 'Premium private bucket의 MP4/WebM object path만 저장할 수 있습니다.' },
+        { error: 'YouTube·Vimeo 링크 또는 Premium private bucket의 MP4/WebM 경로만 저장할 수 있습니다.' },
         { status: 400 },
       );
     }

@@ -1,3 +1,4 @@
+import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import { OFFICIAL_SPOMOVE_LIBRARY } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import { normalizeSpomoveCoreKeywordsList } from '@/app/spokedu-master/spomove/spomoveCoreKeywords';
 import {
@@ -91,11 +92,28 @@ export function isPrivateSpomoveGuideVideoRef(value: string) {
   return Boolean(path) && /\.(mp4|webm)$/i.test(path);
 }
 
+export function isPublicSpomoveGuideVideoRef(value: string) {
+  const embed = parseVideoEmbedUrl(value);
+  return embed?.provider === 'youtube' || embed?.provider === 'vimeo';
+}
+
+export function isAllowedSpomoveGuideVideoRef(value: string) {
+  return isPrivateSpomoveGuideVideoRef(value) || isPublicSpomoveGuideVideoRef(value);
+}
+
 export function hasOnlyPrivateSpomoveGuideVideoRefs(raw: unknown) {
   const source = (raw as SpomoveGuideVideoAssetsJson | null)?.guideVideos;
   if (!source || typeof source !== 'object' || Array.isArray(source)) return false;
   return Object.values(source).every((value) => (
     value == null || value === '' || (typeof value === 'string' && isPrivateSpomoveGuideVideoRef(value))
+  ));
+}
+
+export function hasOnlyAllowedSpomoveGuideVideoRefs(raw: unknown) {
+  const source = (raw as SpomoveGuideVideoAssetsJson | null)?.guideVideos;
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return false;
+  return Object.values(source).every((value) => (
+    value == null || value === '' || (typeof value === 'string' && isAllowedSpomoveGuideVideoRef(value))
   ));
 }
 
