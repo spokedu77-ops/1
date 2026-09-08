@@ -125,6 +125,7 @@ function ProgramGatewayCard({
   action,
   href,
   image,
+  imagePosition = 'center 25%',
 }: {
   title: string;
   description: string;
@@ -132,6 +133,7 @@ function ProgramGatewayCard({
   action: string;
   href: string;
   image: string | null;
+  imagePosition?: string;
 }) {
   return (
     <Link
@@ -146,7 +148,8 @@ function ProgramGatewayCard({
             fill
             sizes="(min-width: 1024px) 40vw, 100vw"
             loading="eager"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.012]"
+            className="object-cover"
+            style={{ objectPosition: imagePosition }}
           />
         ) : (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100" aria-hidden="true" />

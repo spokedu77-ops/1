@@ -1,5 +1,6 @@
 import type { LibraryFilterGroupKey } from './libraryViewModel';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
+import { programHasPlayableVideo } from '../lib/program-media';
 import type { Program } from '../types';
 import {
   programMatchesSelectionReason,
@@ -10,6 +11,7 @@ export type LibraryShelfKind = 'editorial' | 'rule';
 
 export type LibraryShelfId =
   | 'this_week'
+  | 'theme_videos'
   | 'narrow_space'
   | 'preschool'
   | 'low_equipment'
@@ -44,6 +46,13 @@ export const LIBRARY_SHELVES: LibraryShelfDefinition[] = [
       const order = program.homeSortOrder ?? 9999;
       return program.isHot === true || (order >= 1 && order <= 4);
     },
+  },
+  {
+    id: 'theme_videos',
+    kind: 'rule',
+    title: '전체 영상',
+    subtitle: '바로 재생할 수 있는 모든 수업 영상',
+    match: (program) => programHasPlayableVideo(program),
   },
   {
     id: 'narrow_space',

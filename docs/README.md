@@ -43,8 +43,7 @@
 
 | 문서 | 용도 |
 |------|------|
-| [SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md](SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md) | 제품 North Star, 가치 루프, Product Truth, 계약 위계 |
-| [SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md](SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md) | Audit → Decision Gate → Implementation, REPLACE/REMOVE 승인 경계 |
+| [SPOKEDU_MASTER_PRODUCT_CONTRACT.md](SPOKEDU_MASTER_PRODUCT_CONTRACT.md) | Canonical product meaning, decisions, change governance, and SSOT map |
 | [SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md](SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md) | 현재 MASTER surface·journey·roadmap baseline |
 | [SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md](SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md) | 구현 Sprint Brief 템플릿 |
 

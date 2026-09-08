@@ -25,9 +25,9 @@ describe('lesson discovery and execution flow contract', () => {
   it('keeps preview focused on quick suitability information', () => {
     expect(preview).toContain('model.activityMethod.slice(0, 3)');
     expect(preview).toContain('model.equipment.slice(0, 3)');
-    expect(preview).toContain('대표 변형');
+    expect(preview).not.toContain('대표 변형');
     expect(preview).toContain('핵심 안전사항');
-    expect(preview).toContain('firstUsableLine(model.variationMethod)');
+    expect(preview).not.toContain('firstUsableLine(model.variationMethod)');
     expect(preview).toContain('firstUsableLine(model.safetyNotes)');
   });
 

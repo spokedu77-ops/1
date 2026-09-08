@@ -4,8 +4,9 @@
 **Date:** 2026-08-20  
 **Scope:** `app/spokedu-master`, related API routes, contract tests  
 **Method:** Code evidence only; **UNKNOWN** where not verified
+**Authority:** Historical evidence only. Current authority: [Product Contract](./SPOKEDU_MASTER_PRODUCT_CONTRACT.md).
 
-Companion: [Constitution](./SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md) · [Decision Protocol](./SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md)
+Current authority: [Product Contract](./SPOKEDU_MASTER_PRODUCT_CONTRACT.md).
 
 ---
 
@@ -313,7 +314,7 @@ Scoring: Impact × Frequency × Criticality × Commercial leverage × Cross-surf
 
 ## 8. Preserved Approved Decisions
 
-See [Decision Protocol § Approved Product Decisions](./SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md#6-approved-product-decisions-seed-registry): **PD-001 through PD-007**.
+See [Product Contract § Approved Product Decisions](./SPOKEDU_MASTER_PRODUCT_CONTRACT.md#17-approved-product-decisions): **PD-001 through PD-007**.
 
 ---
 

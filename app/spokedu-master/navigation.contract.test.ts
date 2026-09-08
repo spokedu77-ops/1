@@ -28,8 +28,8 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
     const legacy = read('app/spokedu-master/class-record/page.tsx');
     expect(activity).toContain('수업 관리');
-    expect(activity).toContain('buildWeeklyAgenda');
-    expect(activity).toContain('weekly-agenda-heading');
+    expect(activity).toContain('<MonthSessionCalendar');
+    expect(activity).toContain('manage-calendar-heading');
     expect(activity).toContain('수업 상세');
     expect(activity).toContain('오늘 할 활동을 하나 추가해 주세요.');
     expect(activity).toContain('오늘 활동 순서');

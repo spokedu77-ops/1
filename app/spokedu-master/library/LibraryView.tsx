@@ -38,7 +38,6 @@ import { getMasterContentPrimaryAction, resolveMasterContentMode } from '../lib/
 import { useIsPremium, useMasterStore } from '../store';
 import type { Program } from '../types';
 import {
-  buildLibraryShelves,
   filterProgramsByReason,
   filterProgramsByShelf,
   getLibraryShelfDefinition,
@@ -307,7 +306,26 @@ export default function LibraryView() {
 
   const viewPool = pool;
 
-  const shelves = useMemo(() => buildLibraryShelves(viewPool), [viewPool]);
+  const themeVideoPrograms = useMemo(() => {
+    const playablePrograms = viewPool.filter(programHasPlayableVideo);
+    const selected: Program[] = [];
+    const selectedThemes = new Set<string>();
+
+    for (const program of playablePrograms) {
+      const theme = getLessonTheme(program) || program.category || '기타';
+      if (selectedThemes.has(theme)) continue;
+      selected.push(program);
+      selectedThemes.add(theme);
+      if (selected.length === 4) return selected;
+    }
+
+    for (const program of playablePrograms) {
+      if (!selected.some((candidate) => candidate.id === program.id)) selected.push(program);
+      if (selected.length === 4) break;
+    }
+
+    return selected;
+  }, [viewPool]);
 
   const sourceLibrarySearch = useMemo(() => {
     const params = new URLSearchParams();
@@ -523,43 +541,34 @@ export default function LibraryView() {
 
         {isBrowseMode ? (
           <>
-            {shelves.length > 0 ? (
-              <section aria-label="편집 컬렉션" className="space-y-5">
-                <div>
-                  <h2 className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)]">상황별 바로 고르기</h2>
-                </div>
-                {shelves.slice(0, 1).map(({ shelf, programs: shelfPrograms, total }) => (
-                  <div key={shelf.id}>
-                    <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-                      <div>
-                        <p className="text-[11px] font-bold text-slate-500">
-                          {shelf.kind === 'editorial' ? '편집' : '규칙'} · {shelf.subtitle}
-                        </p>
-                        <h3 className="mt-0.5 text-[18px] font-semibold text-[color:var(--spm-t)]">{shelf.title}</h3>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => openShelf(shelf.id)}
-                        className="inline-flex min-h-11 items-center px-2 text-[12px] font-semibold text-[var(--spm-acc)] sm:min-h-9"
-                      >
-                        더 보기 ({total})
-                      </button>
-                    </div>
-                    <ProgramGrid
-                      programs={shelfPrograms}
-                      isPremium={isPremium}
-                      isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
-                      favoriteEnabled={ownerId != null}
-                      sourceLibraryView="all"
-                      sourceLibrarySearch={sourceLibrarySearch}
-                      toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
-                      setSelected={setSelected}
-                      primaryActionLabel={primaryActionLabel}
-                      onAddToSession={sessionContext ? (program) => void addProgramToSession(program) : undefined}
-                      addingProgramId={addingProgramId}
-                    />
+            {themeVideoPrograms.length > 0 ? (
+              <section aria-label="테마별 추천 영상" className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-500">수업 테마에 맞춰 골라보세요</p>
+                    <h2 className="mt-0.5 text-[22px] font-semibold leading-tight text-[color:var(--spm-t)]">테마별 추천 영상</h2>
                   </div>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => openShelf('theme_videos')}
+                    className="inline-flex min-h-11 items-center px-2 text-[12px] font-semibold text-[var(--spm-acc)] sm:min-h-9"
+                  >
+                    전체보기
+                  </button>
+                </div>
+                <ProgramGrid
+                  programs={themeVideoPrograms}
+                  isPremium={isPremium}
+                  isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
+                  favoriteEnabled={ownerId != null}
+                  sourceLibraryView="all"
+                  sourceLibrarySearch={sourceLibrarySearch}
+                  toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
+                  setSelected={setSelected}
+                  primaryActionLabel={primaryActionLabel}
+                  onAddToSession={sessionContext ? (program) => void addProgramToSession(program) : undefined}
+                  addingProgramId={addingProgramId}
+                />
               </section>
             ) : null}
 

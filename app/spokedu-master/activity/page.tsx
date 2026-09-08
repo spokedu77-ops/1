@@ -1,21 +1,21 @@
 'use client';
 
 import {
-  ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock3,
+  ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, Clock3,
   FileText, Play, Plus, RotateCcw, Save, Search, Trash2, UsersRound, Wrench, XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { MasterAgenda, MasterCollectionRow, MasterPageHeader, MasterPageShell, MasterSection } from '../components/ui/MasterPrimitives';
+import { MasterCollectionRow, MasterPageHeader, MasterPageShell, MasterSection } from '../components/ui/MasterPrimitives';
 import { MasterState } from '../components/ui/MasterStatePanel';
 import { useMasterCanUseRecords, useMasterCanUseSpomove } from '../access/MasterAccessProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
 import { SPM_DESTRUCTIVE_BTN, SPM_JOURNEY_PRIMARY, SPM_JOURNEY_QUIET, SPM_JOURNEY_SECONDARY, SPM_PRIMARY_BTN_FULL, SPM_PRIMARY_BTN_TALL, SPM_SECONDARY_BTN, MASTER_ACTION_COPY } from '../lib/masterActionGrammar';
 import { SPM_JOURNEY_CONTEXT, SPM_JOURNEY_FIELD, SPM_JOURNEY_HEADING, SPM_JOURNEY_META, SPM_JOURNEY_SECTION, SPM_JOURNEY_STACK } from '../lib/masterUiClasses';
-import { addSeoulSessionDays, buildSessionDraftDateTimes, formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday, seoulDateTimeInputToIso, seoulDayToDate } from '../lib/sessionDateTime';
+import { buildSessionDraftDateTimes, formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay, getSeoulToday, seoulDateTimeInputToIso, seoulDayToDate } from '../lib/sessionDateTime';
 import type { MasterSessionDto, MasterSessionStatus } from '../types/operational';
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
 import { buildActivitySessionHref } from '../lib/masterNavigationContext';
@@ -31,7 +31,8 @@ import { SessionCapturePanel, type SessionCaptureHandle } from './SessionCapture
 import { resolveSessionContinuity } from './masterSessionContinuity';
 import { NextSessionPlanner } from './NextSessionPlanner';
 import { PreviousActivityCarryover } from './PreviousActivityCarryover';
-import { buildWeeklyAgenda, getScheduleAction, getScheduleWeekDays } from './weeklyAgenda';
+import { MonthSessionCalendar } from './MonthSessionCalendar';
+import { getMonthKey } from './monthCalendar';
 import { buildSessionProgramDetailHref, resolveSessionProgramAvailability } from './sessionProgramAvailability';
 
 function statusLabel(status: MasterSessionStatus) {
@@ -711,9 +712,13 @@ export function ManageOrchestrationSurface() {
   const [createClassId, setCreateClassId] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
   const handledQuery = useRef<string | null>(null);
-  const weekDays = useMemo(() => getScheduleWeekDays(selectedDay), [selectedDay]);
-  const agenda = useMemo(() => buildWeeklyAgenda(selectedDay, data.sessions), [data.sessions, selectedDay]);
-  const weekSessionCount = agenda.reduce((count, item) => count + item.sessions.length, 0);
+  const [visibleMonth, setVisibleMonth] = useState(() => getMonthKey(selectedDay));
+  const daySessions = useMemo(() => data.sessions
+    .filter((session) => getSeoulSessionDay(session.startAt) === selectedDay)
+    .sort((a, b) => {
+      const priority = { scheduled: 0, completed: 1, cancelled: 2 } as const;
+      return priority[a.status] - priority[b.status] || a.startAt.localeCompare(b.startAt);
+    }), [data.sessions, selectedDay]);
 
   useEffect(() => {
     if (data.status !== 'ready') return;
@@ -724,6 +729,7 @@ export function ManageOrchestrationSurface() {
     if (resolution.kind === 'session') {
       setRouteError(null);
       setSelectedDay(getSeoulSessionDay(resolution.session.startAt));
+      setVisibleMonth(getMonthKey(getSeoulSessionDay(resolution.session.startAt)));
       setEditing(resolution.session);
     } else if (resolution.kind === 'missing-session') {
       setEditing(undefined);
@@ -731,6 +737,7 @@ export function ManageOrchestrationSurface() {
     } else if (resolution.kind === 'create') {
       setRouteError(null);
       setSelectedDay(resolution.day);
+      setVisibleMonth(getMonthKey(resolution.day));
       setCreateClassId(resolution.classId);
       setEditing(null);
     } else if (resolution.kind === 'missing-class') {
@@ -745,21 +752,43 @@ export function ManageOrchestrationSurface() {
       <MasterPageShell variant="operational">
         <MasterPageHeader
           title="수업 관리"
-          description={`${formatSeoulSessionDay(weekDays[0], { month: 'long', day: 'numeric' })}–${formatSeoulSessionDay(weekDays[6], { month: 'long', day: 'numeric' })}`}
+          description={`${formatSeoulSessionDay(selectedDay, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })} 일정`}
           action={data.classes.length ? <button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} className={SPM_PRIMARY_BTN_TALL}><Plus size={17} />수업 추가</button> : <Link href="/spokedu-master/classes?create=1" className={SPM_PRIMARY_BTN_TALL}><Plus size={17} />수업반 만들기</Link>}
         />
 
         {data.status === 'loading' || data.status === 'idle' ? <MasterState kind="loading" title="수업 데이터를 불러오는 중입니다." className="mt-6" /> : null}
         {data.status === 'error' ? <MasterState kind="error" title="수업 데이터를 불러오지 못했습니다." action={<button type="button" onClick={() => void data.reload()} className={SPM_SECONDARY_BTN}>다시 시도</button>} className="mt-6" /> : null}
         {routeError ? <MasterState kind="attention" title={routeError} className="mt-6" /> : null}
-        {!data.classes.length && data.status === 'ready' ? <MasterState kind="attention" title="수업반을 만들면 주간 일정을 추가할 수 있습니다." className="mt-6" /> : null}
+        {!data.classes.length && data.status === 'ready' ? <MasterState kind="attention" title="수업반을 만들면 캘린더에 일정을 추가할 수 있습니다." className="mt-6" /> : null}
 
-        <MasterSection title="이번 주 일정" className="mt-8" titleId="weekly-agenda-heading" action={<div className="flex items-center gap-1"><button type="button" onClick={() => setSelectedDay(addSeoulSessionDays(selectedDay, -7))} className="grid h-11 w-11 place-items-center rounded-[10px] text-slate-500 hover:bg-white" aria-label="이전 주"><ChevronLeft size={19} /></button><button type="button" onClick={() => setSelectedDay(getSeoulToday())} className="h-11 rounded-[10px] px-3 text-sm font-medium text-slate-600 hover:bg-white">오늘</button><button type="button" onClick={() => setSelectedDay(addSeoulSessionDays(selectedDay, 7))} className="grid h-11 w-11 place-items-center rounded-[10px] text-slate-500 hover:bg-white" aria-label="다음 주"><ChevronRight size={19} /></button></div>}>
-          {weekSessionCount ? <p className="-mt-2 mb-3 text-[13px] font-medium text-slate-500">{weekSessionCount}개의 수업</p> : null}
-          <MasterAgenda className="border-y border-slate-200 bg-white">
-            {agenda.filter((item) => item.sessions.length > 0).map((item) => <section key={item.day} className="py-3 sm:grid sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-5 sm:px-3"><h3 className="mb-2 text-sm font-semibold text-slate-700 sm:mb-0">{item.day === getSeoulToday() ? '오늘 · ' : ''}{formatSeoulSessionDay(item.day, { month: 'long', day: 'numeric', weekday: 'short' })}</h3><div className="divide-y divide-slate-100">{item.sessions.map((session) => { const classItem = data.classes.find((entry) => entry.id === session.classId); const action = getScheduleAction(session, classItem); return <button key={session.id} type="button" onClick={() => setEditing(session)} className="flex min-h-[72px] w-full items-center gap-3 py-2 text-left"><time className="w-12 shrink-0 text-sm font-semibold tabular-nums text-slate-700">{formatSeoulSessionTime(session.startAt)}</time><span className="min-w-0 flex-1"><strong className="block truncate text-sm font-semibold text-slate-950">{session.className}</strong><small className="mt-1 block text-xs text-slate-500">{action.state.progress.total ? `활동 ${action.state.progress.completed}/${action.state.progress.total}` : '활동 준비 전'}</small></span><span className={`shrink-0 text-xs font-semibold ${action.actionable ? 'text-blue-700' : session.status === 'completed' ? 'text-emerald-700' : 'text-slate-400'}`}>{action.label}</span></button>; })}</div></section>)}
-            {!weekSessionCount ? <p className="py-6 text-sm leading-6 text-slate-500">이번 주 예정된 수업이 없습니다.<br />수업을 추가하면 여기에서 바로 확인할 수 있습니다.</p> : null}
-          </MasterAgenda>
+        <MasterSection title="수업 캘린더" className="mt-8" titleId="manage-calendar-heading">
+          <MonthSessionCalendar
+            month={visibleMonth}
+            selectedDay={selectedDay}
+            sessions={data.sessions}
+            onMonthChange={setVisibleMonth}
+            onDaySelect={(day) => {
+              setSelectedDay(day);
+              setVisibleMonth(getMonthKey(day));
+            }}
+          />
+          <div className="mt-5 flex items-center justify-between gap-3">
+            <h3 className="text-base font-semibold text-slate-950">{formatSeoulSessionDay(selectedDay, { month: 'long', day: 'numeric', weekday: 'long' })}</h3>
+            <span className="text-xs font-medium text-slate-500">수업 {daySessions.length}개</span>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {daySessions.map((session) => {
+              const classItem = data.classes.find((item) => item.id === session.classId) ?? null;
+              const workState = deriveMasterSessionWorkState(session, classItem);
+              const debt = workState.attention.overdue || workState.attention.attendanceMissing;
+              return <button key={session.id} type="button" onClick={() => setEditing(session)} className={`rounded-2xl border bg-white p-4 text-left transition hover:-translate-y-px hover:shadow-sm ${debt ? 'border-amber-200' : 'border-slate-200'}`}>
+                <div className="flex items-center justify-between gap-2"><span className="flex items-center gap-1.5 text-sm font-semibold text-slate-800"><Clock3 size={15} />{formatSeoulSessionTime(session.startAt)}–{formatSeoulSessionTime(session.endAt)}</span><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ring-1 ${statusTone(session.status)}`}>{statusLabel(session.status)}</span></div>
+                <h4 className="mt-2 text-base font-semibold text-slate-950">{session.className}</h4>
+                <p className={`mt-1 text-xs font-medium ${debt ? 'text-amber-700' : 'text-slate-500'}`}>{workState.operationalLabel}</p>
+              </button>;
+            })}
+            {!daySessions.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-7 text-center sm:col-span-2"><UsersRound className="mx-auto text-slate-300" /><p className="mt-3 text-sm font-medium text-slate-500">이 날짜에 예정된 수업이 없습니다.</p><button type="button" onClick={() => { setCreateClassId(null); setEditing(null); }} disabled={!data.classes.length} className={`mt-4 ${SPM_PRIMARY_BTN_TALL}`}><Plus size={16} />이 날짜에 수업 추가</button></div> : null}
+          </div>
         </MasterSection>
 
         <MasterSection title="내 수업반" className="mt-10" titleId="manage-classes-heading" action={<Link href="/spokedu-master/classes" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-600">수업반 관리 <ChevronRight size={16} /></Link>}>

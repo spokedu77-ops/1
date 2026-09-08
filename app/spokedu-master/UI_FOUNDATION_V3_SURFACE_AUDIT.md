@@ -1,6 +1,6 @@
 # ARCHIVE — UI Foundation v3 surface audit
 
-**Authority: none.** This file is a historical screenshot / migration log from Visual Foundation v3.
+**ARCHIVED — NO IMPLEMENTATION AUTHORITY.** This file is a historical screenshot / migration log from Visual Foundation v3.
 
 - Do not implement UI from this table.
 - Do not treat `PASSED` here as rendered visual PASS.

@@ -5,11 +5,12 @@
 **SUPERSEDES:** `MASTER_ART_DIRECTION.md`, Visual Foundation v3 (`MASTER_VISUAL_SYSTEM` archive)
 
 **Does not own:** product meaning, locked IA, entitlement, Engine, payment, persistence, session lifecycle  
-**Does not override:** Product Constitution, approved Product Decisions (behavior)
+**Does not override:** [Product Contract](../../docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md), including approved Product Decisions (behavior)
 
 Which file is Visual SSOT is a **governance** fact on this header — not a Product Decision Registry entry.
 
 Governance: [Design Governance](../../docs/SPOKEDU_MASTER_DESIGN_GOVERNANCE.md)  
+Product authority: [Product Contract](../../docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md)
 Surface roles + rendered QA ledger: [MASTER_SURFACE_MATRIX.md](./MASTER_SURFACE_MATRIX.md)
 
 This file is the only visual authority. Other visual documents, Cursor rules, archived audits, and tests cannot override it. Screenshot review is the only visual PASS.
@@ -21,14 +22,13 @@ This file is the only visual authority. Other visual documents, Cursor rules, ar
 
 | Layer | Document | Owns |
 |-------|----------|------|
-| L0 | `docs/SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md` | Product truth, core loop, commercial meaning |
-| L1 | `docs/SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md` | Approved behavior / navigation / entitlement |
+| L0 / L1 | `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md` | Product truth, core loop, approved behavior, and change authority |
 | L2 | **this file** | All look: character, type, color, width, rhythm, media, CTA, cards, surfaces, motion |
 | L3 | `MASTER_SURFACE_MATRIX.md` | Per-page role (not a second philosophy) + live 390/1440 QA ledger |
 
 Conflict:
 
-- Constitution vs this file → Constitution
+- Product Contract vs this file → Product Contract
 - Approved Product Decision vs visual proposal → Product Decision
 - Old visual contract / test vs this file → this file (behavior semantics unchanged)
 - User preference vs established product logic → report **conflict**; do not auto-accept taste
@@ -266,7 +266,7 @@ Still forbidden in product UI:
 - Primary fill `bg-slate-950` / `--spm-acc` / inset white hairline
 - A seventh CTA kind invented in a Cursor rule
 
-Copy must name the real transition (Constitution § CTA). PD-002: Today Lesson primary = 「수업 준비」.
+Copy must name the real transition (Product Contract § Product Truth). PD-002: Today Lesson primary = 「수업 준비」.
 
 Leftover: `SPM_OPEN_BTN` (slate-900 solid) must not look like Primary on discovery CTAs.
 

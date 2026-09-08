@@ -32,12 +32,12 @@ describe('MASTER Visual SSOT (not rendered PASS)', () => {
 
   it('makes Manage the canonical operational reference with one contextual primary action', () => {
     const manage = read('activity/page.tsx').slice(read('activity/page.tsx').indexOf('export function ManageOrchestrationSurface'));
-    for (const name of ['MasterPageShell', 'MasterPageHeader', 'MasterAgenda', 'MasterSection', 'MasterCollectionRow']) expect(manage).toContain(name);
+    for (const name of ['MasterPageShell', 'MasterPageHeader', 'MasterSection', 'MasterCollectionRow']) expect(manage).toContain(name);
     expect(manage).not.toContain('rounded-2xl bg-white p-5');
     expect(manage).not.toContain('다음 수업 만들기');
     expect(manage).not.toContain('border-b border-slate-200 pb-5');
     expect(manage).toContain('/spokedu-master/classes?create=1');
-    expect(manage.indexOf('이번 주 일정')).toBeLessThan(manage.indexOf('내 수업반'));
+    expect(manage.indexOf('수업 캘린더')).toBeLessThan(manage.indexOf('내 수업반'));
   });
 
   it('converges representative editorial surfaces', () => {

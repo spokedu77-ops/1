@@ -7,6 +7,7 @@ import { useEffect, useId, useRef } from 'react';
 export function BottomSheet({
   open,
   title,
+  headerTitle,
   headerActions,
   children,
   onClose,
@@ -15,6 +16,7 @@ export function BottomSheet({
 }: {
   open: boolean;
   title: string;
+  headerTitle?: ReactNode;
   headerActions?: ReactNode;
   children: ReactNode;
   onClose: () => void;
@@ -161,13 +163,19 @@ export function BottomSheet({
             size === 'preview' || isLaunch ? 'mb-2.5' : 'mb-5'
           }`}
         >
-          <h2
-            id={titleId}
-            className={`font-black ${isLaunch ? 'text-[16px] sm:text-[17px]' : 'text-[18px]'}`}
-            style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0 }}
-          >
-            {title}
-          </h2>
+          {headerTitle ? (
+            <div id={titleId} className="min-w-0 flex-1">
+              {headerTitle}
+            </div>
+          ) : (
+            <h2
+              id={titleId}
+              className={`font-black ${isLaunch ? 'text-[16px] sm:text-[17px]' : 'text-[18px]'}`}
+              style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0 }}
+            >
+              {title}
+            </h2>
+          )}
           <div className="flex shrink-0 items-center gap-2">
             {headerActions}
             <button

@@ -1,17 +1,10 @@
 ---
-description: MASTER UI — pointer to Visual SSOT; no local visual philosophy
+description: SPOKEDU MASTER pointer to canonical governance
 alwaysApply: true
 ---
 
-# MASTER work principles
+# MASTER work principles — pointer only
 
-UI work reads at most:
+Canonical governance: `/AGENTS.md` → `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md` → `app/spokedu-master/MASTER_VISUAL_SYSTEM.md` for UI work.
 
-1. Product Constitution
-2. Decision Protocol
-3. `app/spokedu-master/MASTER_VISUAL_SYSTEM.md`
-4. Sprint Brief (when implementing)
-
-Read Visual SSOT before changing MASTER UI. Same role = same grammar. Do not invent a new rule here. On conflict, follow Visual SSOT (product contracts still beat visual preference).
-
-If a request collides with product semantics or Visual SSOT — say **conflict**. If both options fit — say **taste**.
+This file has no independent product or visual authority. Do not add rules here.

@@ -20,7 +20,7 @@ describe('Foundation Reset user-facing contracts', () => {
   });
   it('composes schedule before classes in Manage', () => {
     expect(manage).toContain('수업 관리');
-    expect(manage.indexOf('weekly-agenda-heading')).toBeLessThan(manage.indexOf('manage-classes-heading'));
+    expect(manage.indexOf('manage-calendar-heading')).toBeLessThan(manage.indexOf('manage-classes-heading'));
     expect(manage).toContain('내 수업반');
     expect(managePage).not.toContain('activity/page');
   });

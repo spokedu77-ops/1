@@ -4,6 +4,7 @@ import { Bookmark, BookOpen, CheckCircle2, Lock } from 'lucide-react';
 import Link from 'next/link';
 
 import { getSupportedOfficialSpomovePresets } from '../../lib/program-meta';
+import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
 import type { Program } from '../../types';
 import { getLibraryProgramDetailHref } from '../../library/libraryNavigation';
 import type { LibraryViewMode } from '../../library/libraryViewModel';
@@ -41,11 +42,23 @@ export function ProgramPreviewModal({
   onClose: () => void;
 }) {
   const locked = program.isPro && !isPremium;
+  const model = buildLessonDisplayModel(program);
+  const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
 
   return (
     <BottomSheet
       open
-      title="간편 준비"
+      title={model.title}
+      headerTitle={
+        <div>
+          <h2 className="truncate text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-950">
+            {model.title}
+          </h2>
+          {meta.length > 0 ? (
+            <p className="mt-1 truncate text-[12px] font-medium text-slate-500">{meta.join(' · ')}</p>
+          ) : null}
+        </div>
+      }
       onClose={onClose}
       size="preview"
       headerActions={onFavorite ? (
@@ -70,6 +83,7 @@ export function ProgramPreviewModal({
         locked={locked}
         autoplayVideo={autoplayVideo}
         onPlaybackStarted={onPlaybackStarted}
+        showHeading={false}
         badges={
           <>
             {onToggleTodayLesson && !locked ? (

@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, MessageSquareQuote, Package, Shuffle } from 'lucide-react';
+import { AlertTriangle, MessageSquareQuote, Package } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { isLessonPlaceholder } from '../../lib/lessonDisplay';
@@ -26,6 +26,7 @@ export function LessonPreviewContent({
   footer,
   autoplayVideo = false,
   locked = false,
+  showHeading = true,
   onPlaybackStarted,
 }: {
   program: Program;
@@ -33,31 +34,34 @@ export function LessonPreviewContent({
   footer?: ReactNode;
   autoplayVideo?: boolean;
   locked?: boolean;
+  showHeading?: boolean;
   onPlaybackStarted?: () => void;
 }) {
   const model = buildLessonDisplayModel(program);
   const previewEquipment = locked ? [] : model.equipment.slice(0, 3);
   const previewRules = locked ? [] : model.activityMethod.slice(0, 3);
   const previewScript = locked ? '' : model.previewCoachScript;
-  const previewVariation = locked ? '' : firstUsableLine(model.variationMethod);
   const previewSafety = locked ? '' : firstUsableLine(model.safetyNotes);
   const hasSummaryContent =
     !locked &&
     (previewEquipment.length > 0 ||
       Boolean(previewScript) ||
       previewRules.length > 0 ||
-      Boolean(previewVariation) ||
       Boolean(previewSafety));
   const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
 
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <LessonTitle title={model.title} badges={badges} />
-        {meta.length > 0 ? (
-          <p className="mt-1 truncate text-[12px] font-bold text-slate-500">{meta.join(' · ')}</p>
-        ) : null}
-      </div>
+      {showHeading ? (
+        <div>
+          <LessonTitle title={model.title} badges={badges} />
+          {meta.length > 0 ? (
+            <p className="mt-1 truncate text-[12px] font-bold text-slate-500">{meta.join(' · ')}</p>
+          ) : null}
+        </div>
+      ) : badges ? (
+        <div className="flex flex-wrap items-center gap-2">{badges}</div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.62fr)_minmax(320px,0.88fr)] lg:items-start">
         <div data-preview-column="media" className="min-w-0">
@@ -124,31 +128,21 @@ export function LessonPreviewContent({
                 <section className="border-t border-slate-100 pt-4">
                   <p className="sr-only">주요 활동 순서 요약</p>
                   <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">활동 방법</h3>
-                  <ol className="mt-3 space-y-3">
+                  <ol className="relative mt-3 space-y-0">
                     {previewRules.map((rule, index) => (
-                      <li key={`${rule}-${index}`} className="relative grid grid-cols-[28px_minmax(0,1fr)] gap-2.5">
+                      <li key={`${rule}-${index}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-3 last:pb-0">
                         {index < previewRules.length - 1 ? (
-                          <span aria-hidden className="absolute left-[13px] top-7 h-[calc(100%+4px)] w-px bg-slate-200" />
+                          <span aria-hidden className="absolute bottom-0 left-[13px] top-7 w-px bg-[color-mix(in_srgb,var(--spm-acc)_28%,#e2e8f0)]" />
                         ) : null}
-                        <span className="relative z-10 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-[11px] font-black text-[var(--spm-acc)]">
+                        <span className="relative z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_14%,white)] text-[11px] font-bold tabular-nums text-[var(--spm-acc)] ring-1 ring-[color-mix(in_srgb,var(--spm-acc)_28%,transparent)]">
                           {index + 1}
                         </span>
-                        <span className="min-w-0 pt-0.5 text-[13px] font-semibold leading-6 text-slate-700">
+                        <span className="min-w-0 pt-1 text-[14px] font-medium leading-[1.55] text-slate-700">
                           {rule}
                         </span>
                       </li>
                     ))}
                   </ol>
-                </section>
-              ) : null}
-
-              {previewVariation ? (
-                <section className="border-t border-slate-100 pt-4">
-                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">
-                    <Shuffle className="h-3.5 w-3.5" />
-                    대표 변형
-                  </h3>
-                  <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-700">{previewVariation}</p>
                 </section>
               ) : null}
 

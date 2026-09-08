@@ -76,11 +76,17 @@ describe('LibraryView favorites contract', () => {
     expect(source).not.toContain('href="/spokedu-master/spomove" className="inline-flex h-14');
   });
 
-  it('leads with curated shelves before the full catalog', () => {
-    expect(source).toContain('buildLibraryShelves');
+  it('leads with distinct playable theme videos before the full catalog', () => {
+    expect(source).toContain('themeVideoPrograms');
+    expect(source).toContain('viewPool.filter(programHasPlayableVideo)');
+    expect(source).toContain('selectedThemes');
+    expect(source).toContain("openShelf('theme_videos')");
+    expect(source).toContain('테마별 추천 영상');
+    expect(source).toContain('전체보기');
+    expect(source).not.toContain('shelves.slice(0, 1)');
     expect(source).toContain('LIBRARY_SITUATION_ENTRIES');
     expect(source).toContain('formatProgramSelectionReasons');
-    expect(source).toContain('aria-label="편집 컬렉션"');
+    expect(source).toContain('aria-label="테마별 추천 영상"');
     expect(source).toContain('aria-label="상황별 빠른 진입"');
   });
 

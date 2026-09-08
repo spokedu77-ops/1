@@ -6,11 +6,11 @@ const ROOT = process.cwd();
 const read = (path: string) => readFileSync(join(ROOT, path), 'utf8');
 
 describe('MASTER core operating UX contracts', () => {
-  it('uses a weekly agenda as the single Schedule navigator', () => {
+  it('uses the monthly calendar as the Schedule navigator', () => {
     const page = read('app/spokedu-master/activity/page.tsx');
-    expect(page).toContain('buildWeeklyAgenda');
-    expect(page).toContain('getScheduleAction');
-    expect(page).not.toContain('<MonthSessionCalendar');
+    expect(page).toContain('<MonthSessionCalendar');
+    expect(page).toContain('daySessions');
+    expect(page).not.toContain('buildWeeklyAgenda');
     expect(page).not.toContain('type="date" value={selectedDay}');
     expect(page).toContain('내 수업반');
     expect(page).toContain('수업반 관리');

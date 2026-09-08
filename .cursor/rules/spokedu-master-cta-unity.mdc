@@ -1,20 +1,11 @@
 ---
-description: MASTER CTA — pointer to Visual SSOT six-kind grammar
+description: SPOKEDU MASTER CTA pointer to the Visual System
 globs: app/spokedu-master/**/*
 alwaysApply: false
 ---
 
-# MASTER CTA
+# MASTER CTA — pointer only
 
-Visual SSOT: `app/spokedu-master/MASTER_VISUAL_SYSTEM.md` § CTA grammar.
+MASTER CTA grammar lives in `app/spokedu-master/MASTER_VISUAL_SYSTEM.md`.
 
-Six kinds only: Primary, Secondary, Quiet, Inline, Icon, Sticky mobile.
-
-Tokens:
-
-- Solid Primary = `spm-btn-primary` / `--spm-cta` (not `--spm-acc`, not `bg-slate-950`)
-- Selection chips = `spmChipClass` / `spmSegClass` (not Primary)
-- Product UI must not use `바로 실행`
-- No inset white hairline on Primary
-
-Do not add a seventh CTA kind in this file.
+This file has no independent visual authority. Do not create local CTA grammar here.
