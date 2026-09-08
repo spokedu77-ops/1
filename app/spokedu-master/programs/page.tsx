@@ -23,6 +23,7 @@ export default function ProgramsPage() {
   const [lessonHero, setLessonHero] = useState<string | null>(null);
   const [spomoveHero, setSpomoveHero] = useState<string | null>(null);
   const [heroCacheBust, setHeroCacheBust] = useState<number | undefined>();
+  const [gatewayMediaLoaded, setGatewayMediaLoaded] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -47,6 +48,10 @@ export default function ProgramsPage() {
             ),
           );
         }
+        setGatewayMediaLoaded(true);
+      })
+      .catch(() => {
+        if (alive) setGatewayMediaLoaded(true);
       });
 
     return () => {
@@ -54,10 +59,14 @@ export default function ProgramsPage() {
     };
   }, []);
 
-  const lessonHeroSrc = lessonHero
+  const lessonHeroSrc = !gatewayMediaLoaded
+    ? null
+    : lessonHero
     ? withPublicUrlCacheBust(getPublicUrl(lessonHero), heroCacheBust)
     : resolveProgramGatewayHero({ lessonHero: null, spomoveHero: null }, 'lessonHero');
-  const spomoveHeroSrc = spomoveHero
+  const spomoveHeroSrc = !gatewayMediaLoaded
+    ? null
+    : spomoveHero
     ? withPublicUrlCacheBust(getPublicUrl(spomoveHero), heroCacheBust)
     : resolveProgramGatewayHero({ lessonHero: null, spomoveHero: null }, 'spomoveHero');
 
@@ -122,7 +131,7 @@ function ProgramGatewayCard({
   meta: string;
   action: string;
   href: string;
-  image: string;
+  image: string | null;
 }) {
   return (
     <Link
@@ -130,13 +139,18 @@ function ProgramGatewayCard({
       className="group overflow-hidden rounded-[18px] border border-slate-200 bg-white transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-slate-200">
-        <Image
-          src={image}
-          alt=""
-          fill
-          sizes="(min-width: 1024px) 40vw, 100vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.012]"
-        />
+        {image ? (
+          <Image
+            src={image}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 40vw, 100vw"
+            loading="eager"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.012]"
+          />
+        ) : (
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100" aria-hidden="true" />
+        )}
       </div>
       <div className="px-[18px] pb-5 pt-4">
         <h2 className="text-[24px] font-semibold tracking-[-0.02em] text-slate-950">{title}</h2>

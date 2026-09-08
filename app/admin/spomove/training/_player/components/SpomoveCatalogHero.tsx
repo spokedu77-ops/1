@@ -6,7 +6,10 @@ import { StudentModal } from './StudentModal';
 import { StudentManageScreen } from './StudentManageScreen';
 import { useStudents } from '../hooks/useStudents';
 
-const SPOKEDU_PROMO_BANNER_SRC = '/spokedu/spokedu-promo-banner.png';
+const SPOKEDU_PROMO_BANNERS = [
+  '/spokedu/spokedu-promo-banner-1.png',
+  '/spokedu/spokedu-promo-banner.png',
+] as const;
 
 const HERO_ANIM_CSS = `
 @keyframes spomoveCatalogHeroFadeUp {
@@ -32,6 +35,7 @@ export function SpomoveCatalogHero() {
   const [showStudentManage, setShowStudentManage] = useState(false);
   const [bannerLightboxOpen, setBannerLightboxOpen] = useState(false);
   const [bannerMounted, setBannerMounted] = useState(false);
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [theme] = useState(() =>
     typeof window !== 'undefined' ? localStorage.getItem('spokedu_theme') || 'light' : 'light',
   );
@@ -41,6 +45,13 @@ export function SpomoveCatalogHero() {
   }, []);
 
   const closeBannerLightbox = useCallback(() => setBannerLightboxOpen(false), []);
+  const activeBannerSrc = SPOKEDU_PROMO_BANNERS[activeBannerIndex];
+  const showPreviousBanner = () => {
+    setActiveBannerIndex((current) => (current - 1 + SPOKEDU_PROMO_BANNERS.length) % SPOKEDU_PROMO_BANNERS.length);
+  };
+  const showNextBanner = () => {
+    setActiveBannerIndex((current) => (current + 1) % SPOKEDU_PROMO_BANNERS.length);
+  };
 
   useEffect(() => {
     if (!bannerLightboxOpen) return;
@@ -126,16 +137,11 @@ export function SpomoveCatalogHero() {
             gap: 'clamp(0.45rem,1.6vw,0.7rem)',
           }}
         >
-          <button
-            type="button"
-            onClick={() => setBannerLightboxOpen(true)}
-            aria-label="SPOKEDU 배너 전체 화면으로 보기"
+          <div
             style={{
+              position: 'relative',
               margin: 0,
               padding: 0,
-              border: 'none',
-              background: 'transparent',
-              cursor: 'zoom-in',
               width: '100%',
               maxWidth: 'min(100%, 920px)',
               borderRadius: 12,
@@ -144,20 +150,59 @@ export function SpomoveCatalogHero() {
               boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             }}
           >
-            <img
-              src={SPOKEDU_PROMO_BANNER_SRC}
-              alt="SPOKEDU — 움직임이 배움이 되다. 아동·청소년 체육교육"
-              width={1600}
-              height={900}
+            <button
+              type="button"
+              onClick={() => setBannerLightboxOpen(true)}
+              aria-label={`${activeBannerIndex + 1}번 SPOKEDU 배너 전체 화면으로 보기`}
               style={{
+                margin: 0,
+                padding: 0,
+                border: 'none',
+                background: 'transparent',
+                cursor: 'zoom-in',
                 width: '100%',
-                height: 'auto',
                 display: 'block',
+                lineHeight: 0,
               }}
-              loading="eager"
-              decoding="async"
-            />
-          </button>
+            >
+              <img
+                src={activeBannerSrc}
+                alt={`${activeBannerIndex + 1}번 SPOKEDU 홍보 배너`}
+                width={1600}
+                height={900}
+                style={{ width: '100%', height: 'auto', display: 'block' }}
+                loading="eager"
+                decoding="async"
+              />
+            </button>
+            <button type="button" onClick={showPreviousBanner} aria-label="이전 배너" style={bannerArrowStyle('left')}>
+              ‹
+            </button>
+            <button type="button" onClick={showNextBanner} aria-label="다음 배너" style={bannerArrowStyle('right')}>
+              ›
+            </button>
+          </div>
+          <div aria-label="배너 선택" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {SPOKEDU_PROMO_BANNERS.map((src, index) => (
+              <button
+                key={src}
+                type="button"
+                onClick={() => setActiveBannerIndex(index)}
+                aria-label={`${index + 1}번 배너 보기`}
+                aria-current={activeBannerIndex === index ? 'true' : undefined}
+                style={{
+                  width: activeBannerIndex === index ? 22 : 8,
+                  height: 8,
+                  padding: 0,
+                  border: 0,
+                  borderRadius: 999,
+                  background: activeBannerIndex === index ? '#F97316' : 'rgba(255,255,255,0.28)',
+                  cursor: 'pointer',
+                  transition: 'width 160ms ease, background 160ms ease',
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -222,7 +267,7 @@ export function SpomoveCatalogHero() {
               onClick={closeBannerLightbox}
             >
               <img
-                src={SPOKEDU_PROMO_BANNER_SRC}
+                src={activeBannerSrc}
                 alt=""
                 width={1600}
                 height={900}
@@ -247,4 +292,24 @@ export function SpomoveCatalogHero() {
         : null}
     </div>
   );
+}
+
+function bannerArrowStyle(side: 'left' | 'right') {
+  return {
+    position: 'absolute' as const,
+    top: '50%',
+    [side]: 12,
+    transform: 'translateY(-50%)',
+    width: 42,
+    height: 42,
+    padding: 0,
+    border: '1px solid rgba(255,255,255,0.32)',
+    borderRadius: '50%',
+    background: 'rgba(2,6,23,0.62)',
+    color: '#fff',
+    fontSize: 31,
+    lineHeight: '36px',
+    cursor: 'pointer',
+    backdropFilter: 'blur(6px)',
+  };
 }

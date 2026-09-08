@@ -6,6 +6,7 @@ const weeklyCard = readFileSync('app/spokedu-master/components/lesson/WeeklyEdit
 const thumb = readFileSync('app/spokedu-master/components/media/InstructionalThumb.tsx', 'utf8');
 const shelf = readFileSync('app/spokedu-master/dashboard/homeSpomoveShelf.ts', 'utf8');
 const followUp = readFileSync('app/spokedu-master/components/information/SystemDecisionBanner.tsx', 'utf8');
+const programsGateway = readFileSync('app/spokedu-master/programs/page.tsx', 'utf8');
 
 describe('MASTER Home content card system', () => {
   it('keeps Home weekly as four editorial cards, not Library catalog grammar', () => {
@@ -68,5 +69,20 @@ describe('MASTER Home content card system', () => {
   it('reports recoverable Weekly slot diagnostics as warnings instead of runtime errors', () => {
     expect(dashboard).toContain("console.warn('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.'");
     expect(dashboard).not.toContain("console.error('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.'");
+  });
+
+  it('never flashes legacy SPOMOVE artwork or the four-pad fallback while remote media is loading', () => {
+    expect(programsGateway).toContain('gatewayMediaLoaded');
+    expect(programsGateway).toContain("!gatewayMediaLoaded\n    ? null");
+    expect(programsGateway).toContain('animate-pulse bg-gradient-to-br');
+    expect(dashboard).toContain('SpomoveThumbnailPlaceholder');
+    expect(dashboard).not.toContain('SPOMOVE_PAD_GRID_HEX');
+  });
+
+  it('applies thumbnail, content, and featured SPOMOVE packs independently', () => {
+    expect(dashboard).toContain('.then((thumbnailResult: SpomoveThumbnailPackQueryResult)');
+    expect(dashboard).toContain('.then((contentResult: SpomoveContentPackQueryResult)');
+    expect(dashboard).toContain('.then((featuredResult: SpomoveFeaturedPackQueryResult)');
+    expect(dashboard).not.toContain('.then(([thumbnailResult, contentResult, featuredResult])');
   });
 });

@@ -55,7 +55,6 @@ import {
   type OfficialSpomovePreset,
 } from '../spomove/officialSpomovePresets';
 import { SpomoveGuidelineSheet, type SpomoveContentLoadState } from '../spomove/SpomoveGuidelineSheet';
-import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { canReproduceSpomoveSameSettings } from '../spomove/movements/canReproduceSpomoveSameSettings';
 import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
@@ -89,6 +88,7 @@ type SpomoveThumbnailPackQueryResult = {
 };
 
 type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
+type SpomoveFeaturedPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
 
 function getFirstStartPaths() {
   return [
@@ -151,6 +151,15 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
   } catch {
     return '';
   }
+}
+
+function SpomoveThumbnailPlaceholder() {
+  return (
+    <div
+      className="h-full w-full animate-pulse bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100"
+      aria-hidden="true"
+    />
+  );
 }
 
 /** 추천 슬롯을 최대 4개까지 풀에서 보충한다. */
@@ -332,11 +341,7 @@ function SpomoveCard({
           presentation="home-clean-square"
           className="rounded-[16px]"
           fallback={(
-            <div className="grid h-full w-full grid-cols-2 gap-1.5 bg-slate-950 p-4" aria-hidden="true">
-              {SPOMOVE_PAD_GRID_HEX.map((color) => (
-                <span key={color} className="rounded-[8px] shadow-inner" style={{ background: color }} />
-              ))}
-            </div>
+            <SpomoveThumbnailPlaceholder />
           )}
         />
         <div className="mt-2.5">
@@ -412,11 +417,7 @@ function RecentSpomoveReuseCard({
           sizes="72px"
           className="!h-full !w-full !aspect-auto rounded-[12px]"
           fallback={(
-            <div className="grid h-full w-full grid-cols-2 gap-1 bg-slate-950 p-1.5" aria-hidden="true">
-              {SPOMOVE_PAD_GRID_HEX.map((color) => (
-                <span key={color} className="rounded-[4px]" style={{ background: color }} />
-              ))}
-            </div>
+            <SpomoveThumbnailPlaceholder />
           )}
         />
       </button>
@@ -630,20 +631,12 @@ function EntitledDashboardView() {
   useEffect(() => {
     let alive = true;
     const supabase = getSupabaseBrowserClient();
-    void Promise.all([
-      supabase
-        .from('think_asset_packs')
-        .select('assets_json, updated_at')
-        .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
-        .maybeSingle(),
-      supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_CONTENT_PACK_ID).maybeSingle(),
-      supabase
-        .from('think_asset_packs')
-        .select('assets_json')
-        .eq('id', SPOMOVE_HOME_FEATURED_PACK_ID)
-        .maybeSingle(),
-    ])
-      .then(([thumbnailResult, contentResult, featuredResult]) => {
+    void supabase
+      .from('think_asset_packs')
+      .select('assets_json, updated_at')
+      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
+      .maybeSingle()
+      .then((thumbnailResult: SpomoveThumbnailPackQueryResult) => {
         if (!alive) return;
         const { data, error } = thumbnailResult as SpomoveThumbnailPackQueryResult;
         if (error && error.code !== 'PGRST116') {
@@ -656,7 +649,20 @@ function EntitledDashboardView() {
             resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)),
           );
         }
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSpomoveThumbnailPaths({});
+        setSpomoveThumbnailCacheBust(undefined);
+      });
 
+    void supabase
+      .from('think_asset_packs')
+      .select('assets_json')
+      .eq('id', SPOMOVE_CONTENT_PACK_ID)
+      .maybeSingle()
+      .then((contentResult: SpomoveContentPackQueryResult) => {
+        if (!alive) return;
         const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
         if (contentError && contentError.code !== 'PGRST116') {
           setSpomoveContentMap({});
@@ -665,11 +671,21 @@ function EntitledDashboardView() {
           setSpomoveContentMap(normalizeSpomoveContentMap(contentData?.assets_json));
           setSpomoveContentLoadState('ready');
         }
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSpomoveContentMap({});
+        setSpomoveContentLoadState('error');
+      });
 
-        const { data: featuredData, error: featuredError } = featuredResult as {
-          data: { assets_json?: unknown } | null;
-          error: { code?: string } | null;
-        };
+    void supabase
+      .from('think_asset_packs')
+      .select('assets_json')
+      .eq('id', SPOMOVE_HOME_FEATURED_PACK_ID)
+      .maybeSingle()
+      .then((featuredResult: SpomoveFeaturedPackQueryResult) => {
+        if (!alive) return;
+        const { data: featuredData, error: featuredError } = featuredResult;
         if (featuredError && featuredError.code !== 'PGRST116') {
           setFeaturedSpomoveSlotIds([null, null, null, null]);
         } else {
@@ -678,10 +694,6 @@ function EntitledDashboardView() {
       })
       .catch(() => {
         if (!alive) return;
-        setSpomoveThumbnailPaths({});
-        setSpomoveThumbnailCacheBust(undefined);
-        setSpomoveContentMap({});
-        setSpomoveContentLoadState('error');
         setFeaturedSpomoveSlotIds([null, null, null, null]);
       });
     return () => {

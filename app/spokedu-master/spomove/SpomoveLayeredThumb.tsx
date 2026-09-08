@@ -28,13 +28,14 @@ export function SpomoveLayeredThumb({
   fallback?: ReactNode;
   onError?: () => void;
 }) {
-  const [failed, setFailed] = useState(false);
-  const [stretch, setStretch] = useState(() => isSvgSrc(src));
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const [stretchSrc, setStretchSrc] = useState<string | null>(() => (isSvgSrc(src) ? src : null));
   const fail = () => {
-    setFailed(true);
+    setFailedSrc(src);
     onError?.();
   };
-  const showImage = Boolean(src) && !failed;
+  const showImage = Boolean(src) && failedSrc !== src;
+  const stretch = isSvgSrc(src) || stretchSrc === src;
   const cleanSquare = presentation === 'home-clean-square';
 
   return (
@@ -65,7 +66,7 @@ export function SpomoveLayeredThumb({
             className="object-fill object-center"
             onLoad={(event) => {
               if (isSvgSrc(src) || event.currentTarget.naturalWidth / Math.max(event.currentTarget.naturalHeight, 1) > 3) {
-                setStretch(true);
+                setStretchSrc(src);
               }
             }}
             onError={fail}
@@ -92,7 +93,7 @@ export function SpomoveLayeredThumb({
               priority={priority}
               className="object-contain object-center"
               onLoad={() => {
-                if (isSvgSrc(src)) setStretch(true);
+                if (isSvgSrc(src)) setStretchSrc(src);
               }}
               onError={fail}
             />

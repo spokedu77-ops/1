@@ -16,6 +16,7 @@ function read(path: string) {
 const fitSsot = read('app/spokedu-master/spomove/spomoveMediaFit.ts');
 const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 const sheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
+const layeredThumb = read('app/spokedu-master/spomove/SpomoveLayeredThumb.tsx');
 
 describe('SPOMOVE media fit — instruction full-visible / video 16:9 (not rendered PASS)', () => {
   it('keeps a shared media module: 4:3 contain thumbs, 16:9 video frame', () => {
@@ -53,5 +54,11 @@ describe('SPOMOVE media fit — instruction full-visible / video 16:9 (not rende
     expect(hub).not.toContain('getVideoThumbnailCandidates');
     expect(hub).not.toContain('TrackedVideoIframe');
     expect(hub).not.toContain('SPOMOVE_VIDEO_POSTER_OBJECT_FIT');
+  });
+
+  it('recovers when a failed thumbnail URL is replaced after an upload', () => {
+    expect(layeredThumb).toContain('failedSrc !== src');
+    expect(layeredThumb).toContain('setFailedSrc(src)');
+    expect(layeredThumb).toContain('stretchSrc === src');
   });
 });
