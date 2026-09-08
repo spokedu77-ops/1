@@ -141,17 +141,24 @@ describe('SPOMOVE 2D sequential-memory-color-number-movement-v2', () => {
     });
     expect(findOfficialSpomovePreset('sequential-memory-full-reveal-54')?.engine).toEqual({
       mode: 'spatial',
-      level: 5,
+      level: 7,
+      colorMemoryGridSize: 3,
+      colorMemoryGridMode: 'oneshot',
     });
     for (const id of OTHER_SEQUENTIAL_PUBLIC) {
       expect(findOfficialSpomovePreset(id)?.engine).not.toHaveProperty('spatialMemoryResponse');
     }
   });
 
-  it('Full Reveal 불변', () => {
+  it('3×3 원샷 순간 기억은 Public 상태를 유지한다', () => {
     const preset = findOfficialSpomovePreset('sequential-memory-full-reveal-54');
     expect(preset?.catalogStatus).not.toBe('hold');
-    expect(preset?.engine).toEqual({ mode: 'spatial', level: 5 });
+    expect(preset?.engine).toEqual({
+      mode: 'spatial',
+      level: 7,
+      colorMemoryGridSize: 3,
+      colorMemoryGridMode: 'oneshot',
+    });
     expect(preset?.internalCandidate).toBeUndefined();
   });
 

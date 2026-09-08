@@ -130,25 +130,25 @@ const COLOR_NUMBER: SpomoveSequentialMemoryGuideSeed = {
   },
 };
 
-const FULL_REVEAL: SpomoveSequentialMemoryGuideSeed = {
+const INSTANT_MEMORY_3X3: SpomoveSequentialMemoryGuideSeed = {
   presetId: 'sequential-memory-full-reveal-54',
-  cluster: 'm3-full-reveal',
+  cluster: 'm1-color-sequence',
   movementGuide: {
     movement: { baseMovement: 'stepHold', limbRule: 'free' },
-    objective: '격자 전체에 공개된 색 순서를 한눈에 기억한 뒤, 같은 순서로 패드를 재현합니다.',
+    objective: '3×3 색 그리드를 잠깐 기억한 뒤, 단 한 칸만 바뀐 색을 원샷으로 찾아 해당 색 패드로 반응합니다.',
     teachingPoints: [
-      '한 칸만 보지 말고 전체 패턴(행·열·덩어리)으로 읽게 하세요.',
-      '공개가 사라진 뒤에도 바로 뛰지 말고, 속으로 한 번 훑은 뒤 재현을 시작하세요.',
-      '교사와 함께 시작·중간·끝 칸을 대조해 확인합니다.',
+      '기억 구간에서는 3×3 전체를 한눈에 찍고, 색이 바뀐 뒤에만 한 칸의 변화를 찾게 하세요.',
+      '원샷은 한 번만 바뀌므로, 바뀐 뒤의 새 색이 정답(패드)임을 분명히 합니다.',
+      '정답 공개는 원래 색 → 바뀐 색 순서로 확인합니다.',
     ],
     instruction:
-      '화면에 전체 순서가 한 번에 공개되는 동안 격자 전체를 봅니다.\n공개가 끝나면 같은 순서로 패드를 밟아 재현합니다.\n교사가 전체 순서를 확인한 뒤 다음 라운드로 갑니다.',
-    coachScript: '한눈에 전체! 기억하고 그대로 재현!',
-    focusTags: tags('sequenceMemory', 'visualSearch', 'lowerBodyCoordination'),
-    easier: '공개 시간을 늘리고, 재현 전 행 단위로 되뇌게 합니다.',
-    harder: '공개 시간을 줄이고, 되뇌기 없이 바로 재현하게 합니다.',
-    successCriteria: '전체 공개 패턴을 반영해 순서대로 재현하고 교사 확인을 받습니다.',
-    commonMistake: '일부 칸만 보고 나머지를 추측하거나, 한 줄만 재현하고 끝냅니다.',
+      '3×3 그리드 색을 설정한 기억 시간 동안 봅니다.\n한 칸만 색이 바뀌면 3초 안에 그 새 색 패드로 이동합니다.\n정답 공개(원래 색 → 바뀐 색)를 본 뒤 다음 라운드로 갑니다.',
+    coachScript: '3×3 전체를 찍고, 바뀐 한 칸만!',
+    focusTags: tags('sequenceMemory', 'attentionShift', 'individual'),
+    easier: '기억 시간을 늘리거나 깜빡이 모드로 변화 위치를 익힙니다.',
+    harder: '4×4 또는 5×5 그리드의 원샷 모드로 난이도를 올립니다.',
+    successCriteria: '바뀐 칸의 새 색을 찾아 같은 색 패드로 반응합니다.',
+    commonMistake: '원래 색 패드로 가거나, 바뀌지 않은 칸에 시선을 고정합니다.',
   },
 };
 
@@ -158,7 +158,7 @@ export const SPOMOVE_SEQUENTIAL_MEMORY_GUIDE_SEEDS: readonly SpomoveSequentialMe
   COLOR_RAMP,
   COLOR_CUSTOM,
   COLOR_NUMBER,
-  FULL_REVEAL,
+  INSTANT_MEMORY_3X3,
 ];
 
 export const SPOMOVE_SEQUENTIAL_MEMORY_SEED_PRESET_IDS = SPOMOVE_SEQUENTIAL_MEMORY_GUIDE_SEEDS.map(

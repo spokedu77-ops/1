@@ -1416,32 +1416,38 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-  // sortOrder 54: Full Reveal (level 5)
+  // Legacy sortOrder 54 slot: Instant Memory 3×3 Oneshot (level 7)
   {
     id: 'sequential-memory-full-reveal-54',
     sortOrder: 41,
-    title: '순차 기억 · Full Reveal',
+    title: '순간 기억 3X3 그리드 (원샷)',
     en: 'Sequential Memory',
     axis: 'executive',
     axisTitle: SPOMOVE_AXIS_META.executive.title,
     programGroup: 'sequential-memory',
     programTitle: '순차 기억',
     salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
-    engine: { mode: 'spatial', level: 5 },
-    description: '전체 순서를 한 번에 보여준 후 재현하는 고급 전체 공개 기억 수행 활동',
+    engine: {
+      mode: 'spatial',
+      level: 7,
+      colorMemoryGridSize: 3,
+      colorMemoryGridMode: 'oneshot',
+    },
+    description: '3×3 색 그리드를 잠깐 기억한 뒤, 단 한 칸만 바뀐 색을 원샷으로 찾아 패드로 반응하는 순간 기억 활동',
     cueSeconds: 3,
     rounds: 10,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '전체 패턴 기억, 시각적 순서 인지, 극한 작업기억',
+    recommendedUse: '순간 기억 입문, 변화 탐색, 시각적 작업기억',
     isReady: true,
-    settingSummary: '전체 공개 기억 · 10라운드 · BGM 자동',
-    settingChips: ['전체 공개', '10라운드', 'BGM 자동'],
+    settingSummary: '3×3 그리드 · 원샷 · 기억 3초 · 답 3초 · BGM 자동',
+    settingChips: ['3×3 그리드', '원샷', '기억 3초', '답 3초'],
     executionFacts: [
-      { label: '기억 방식', value: '전체 공개 후 재현' },
+      { label: '기억 방식', value: '순간 기억 3×3 원샷' },
+      { label: '기억 시간', value: '3초' },
+      { label: '답 고르기', value: '3초 고정' },
       { label: '라운드', value: '10라운드' },
       { label: 'BGM', value: '자동 재생' },
-      { label: '효과음', value: '자동' },
     ],
   },
   // ─── DIVE (3 presets) ───
@@ -1588,7 +1594,7 @@ const SEQUENTIAL_MEMORY_CATALOG_TITLE_BY_ID: Record<string, string> = {
   'sequential-memory-10color-52': '순서 기억 · 쉬움 → 보통 → 어려움 (3~7개)',
   'sequential-memory-custom-10color-exp': '순간 기억 · 4×4 그리드 (원샷)',
   'sequential-memory-color-number-exp': '랜덤 기억 · 어려움 (퀴즈)',
-  'sequential-memory-full-reveal-54': '전체 공개 · 어려움',
+  'sequential-memory-full-reveal-54': '순간 기억 3X3 그리드 (원샷)',
 };
 
 function isSpokeduMasterCatalogHoldout(preset: OfficialSpomovePreset) {

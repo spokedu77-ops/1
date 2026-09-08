@@ -366,13 +366,20 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
       '순서 기억 · 쉬움 → 보통 → 어려움 (3~7개)',
       '순간 기억 · 4×4 그리드 (원샷)',
       '랜덤 기억 · 어려움 (퀴즈)',
-      '전체 공개 · 어려움',
+      '순간 기억 3X3 그리드 (원샷)',
     ]);
     const instant = findOfficialSpomovePreset('sequential-memory-custom-10color-exp');
     expect(instant?.engine).toMatchObject({
       mode: 'spatial',
       level: 7,
       colorMemoryGridSize: 4,
+      colorMemoryGridMode: 'oneshot',
+    });
+    const instant3x3 = findOfficialSpomovePreset('sequential-memory-full-reveal-54');
+    expect(instant3x3?.engine).toMatchObject({
+      mode: 'spatial',
+      level: 7,
+      colorMemoryGridSize: 3,
       colorMemoryGridMode: 'oneshot',
     });
   });
