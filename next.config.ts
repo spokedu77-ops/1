@@ -85,8 +85,6 @@ const nextConfig: NextConfig = {
       { source: "/parents", destination: "/private", permanent: true },
       { source: "/institutions", destination: "/education", permanent: true },
       { source: "/dispatch", destination: "/education", permanent: true },
-      { source: "/info/dispatch", destination: "/education", permanent: true },
-      { source: "/info/dispatch.html", destination: "/education", permanent: true },
       { source: "/audience", destination: "/", permanent: true },
 
       // --- Admin / training legacy (unchanged) ---

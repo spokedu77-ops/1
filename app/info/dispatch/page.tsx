@@ -1,10 +1,22 @@
-import { permanentRedirectToEducation } from '../../spokedu/lib/permanentRedirectToEducation';
+import type { Metadata } from 'next';
 
-/** Historical QR URL — do not render legacy HTML. Redirect to `/education`. */
-export default async function DispatchInfoPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  permanentRedirectToEducation(await searchParams);
+export const metadata: Metadata = {
+  title: 'SPOKEDU — 프리미엄 체육 파견 솔루션',
+  description:
+    '시키지 않아도 뛰어드는 아이들, 그 수업을 설계합니다. 연세대학교 체육교육 전공 출신이 직접 설계한 기관 맞춤 체육 파견 솔루션.',
+};
+
+export default function DispatchInfoPage() {
+  return (
+    <iframe
+      src="/info/dispatch.html"
+      style={{
+        width: '100%',
+        height: '100vh',
+        border: 'none',
+        display: 'block',
+      }}
+      title="SPOKEDU 프리미엄 체육 파견 솔루션"
+    />
+  );
 }
