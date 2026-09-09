@@ -131,9 +131,6 @@ export function LessonPreviewContent({
                   <ol className="relative mt-3 space-y-0">
                     {previewRules.map((rule, index) => (
                       <li key={`${rule}-${index}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-3 last:pb-0">
-                        {index < previewRules.length - 1 ? (
-                          <span aria-hidden className="absolute bottom-0 left-[13px] top-7 w-px bg-[color-mix(in_srgb,var(--spm-acc)_28%,#e2e8f0)]" />
-                        ) : null}
                         <span className="relative z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_14%,white)] text-[11px] font-bold tabular-nums text-[var(--spm-acc)] ring-1 ring-[color-mix(in_srgb,var(--spm-acc)_28%,transparent)]">
                           {index + 1}
                         </span>

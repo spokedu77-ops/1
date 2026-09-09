@@ -24,6 +24,7 @@ import {
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { resolveHomeFeaturedSpomove } from '../lib/spomoveHomeFeatured';
 import { WeeklyEditorialCard } from '../components/lesson/WeeklyEditorialCard';
+import { InstructionalThumb } from '../components/media/InstructionalThumb';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
@@ -43,6 +44,7 @@ import { sortProgramsByAgeGroupPreference } from '../lib/homeAgePreference';
 import { isMasterFirstUser } from '../lib/masterUserLoop';
 import {
   getRecentActivityOwnerId,
+  buildProgramResumeHref,
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
   type RecentProgramActivity,
@@ -445,6 +447,49 @@ function RecentSpomoveReuseCard({
   );
 }
 
+function RecentLessonReuseCard({
+  activity,
+  program,
+}: {
+  activity: RecentProgramActivity;
+  program: Program;
+}) {
+  const model = buildLessonDisplayModel(program);
+  const recentHref = buildProgramResumeHref(activity.programId, activity.action);
+  const contextLine = activity.action === 'video_started' ? '놀이체육 · 영상 이어보기' : '놀이체육 · 수업 준비';
+
+  return (
+    <article data-dashboard-section="recent-lesson" className={MV_REENTRY_OBJECT}>
+      <Link
+        href={recentHref}
+        className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[12px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+        aria-label={`${model.title} 다시 열기`}
+      >
+        <InstructionalThumb
+          src={model.heroImageUrl ?? ''}
+          alt=""
+          sizes="72px"
+          className="!h-full !w-full !aspect-auto rounded-[12px]"
+        />
+      </Link>
+      <div className={MV_REENTRY_IDENTITY}>
+        <p className={`${MV_META} min-w-0 truncate`}>최근 사용한 활동</p>
+        <Link
+          href={recentHref}
+          className={`${MV_CONTENT_TITLE} mt-0.5 block w-full truncate focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]`}
+        >
+          {model.title}
+        </Link>
+        <p className={`${MV_META} mt-0.5 truncate`}>{contextLine}</p>
+      </div>
+      <Link href={recentHref} data-spm-lesson-recent-action="resume" className={`${MV_REENTRY_SECONDARY} ml-[84px] sm:ml-0`}>
+        {activity.action === 'video_started' ? '이어 보기' : '다시 보기'}
+        <ArrowRight size={15} aria-hidden />
+      </Link>
+    </article>
+  );
+}
+
 function ActivityPanel({
   reportCount,
   recordCount,
@@ -729,9 +774,14 @@ function EntitledDashboardView() {
     () => resolveHomeFeaturedSpomove(featuredSpomoveSlotIds),
     [featuredSpomoveSlotIds],
   );
-  const latestSpomoveActivity = useMemo(() => {
-    return [...validSpomoveActivities].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0] ?? null;
-  }, [validSpomoveActivities]);
+  const latestRecentActivity = useMemo(() => {
+    return [...validLessonActivities, ...validSpomoveActivities]
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0] ?? null;
+  }, [validLessonActivities, validSpomoveActivities]);
+  const latestLessonProgram = useMemo(() => {
+    if (!latestRecentActivity || latestRecentActivity.action === 'spomove_started') return null;
+    return programs.find((program) => program.id === latestRecentActivity.programId) ?? null;
+  }, [latestRecentActivity, programs]);
 
   const openPreview = (program: Program, autoplayVideo = false) => {
     setPreviewAutoplay(autoplayVideo);
@@ -804,16 +854,18 @@ function EntitledDashboardView() {
 
       <div className="mt-5 flex flex-col gap-3 empty:hidden lg:mt-[18px]">
         {!isFirstUser ? continuityEntry : null}
-        {latestSpomoveActivity ? (
+        {latestRecentActivity?.action === 'spomove_started' ? (
           <RecentSpomoveReuseCard
-            activity={latestSpomoveActivity}
+            activity={latestRecentActivity}
             thumbnailUrl={resolveSpomoveThumbnailUrl(
-              spomoveThumbnailPaths[latestSpomoveActivity.programId],
+              spomoveThumbnailPaths[latestRecentActivity.programId],
               spomoveThumbnailCacheBust,
             )}
             onOpenGuide={setPreviewSpomove}
             launchMode={launchMode}
           />
+        ) : latestRecentActivity && latestLessonProgram ? (
+          <RecentLessonReuseCard activity={latestRecentActivity} program={latestLessonProgram} />
         ) : null}
         {!isFirstUser ? <HomeNextSessionPanel sessions={operationalSessions} classes={operationalClasses} /> : null}
         {isFirstUser ? <FirstStartGuide /> : null}

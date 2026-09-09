@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, MessageSquareQuote } from 'lucide-react';
 
 import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import type { SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
@@ -147,25 +147,14 @@ function PrepMetaRow({
 function ProgressTimeline({ lines }: { lines: string[] }) {
   return (
     <ol className="relative space-y-0" data-spm-spomove-progress-timeline="true">
-      {lines.map((line, index) => {
-        const isLast = index === lines.length - 1;
-        return (
-          <li key={`${index}-${line}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-3 last:pb-0">
-            <div className="relative flex flex-col items-center">
-              <span className="relative z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_14%,white)] text-[11px] font-bold tabular-nums text-[var(--spm-acc)] ring-1 ring-[color-mix(in_srgb,var(--spm-acc)_28%,transparent)]">
-                {index + 1}
-              </span>
-              {!isLast ? (
-                <span
-                  aria-hidden
-                  className="absolute top-7 bottom-0 w-px bg-[color-mix(in_srgb,var(--spm-acc)_28%,#e2e8f0)]"
-                />
-              ) : null}
-            </div>
-            <span className="pt-1 text-[14px] font-medium leading-[1.55] text-slate-700">{line}</span>
-          </li>
-        );
-      })}
+      {lines.map((line, index) => (
+        <li key={`${index}-${line}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-3 last:pb-0">
+          <span className="relative z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_14%,white)] text-[11px] font-bold tabular-nums text-[var(--spm-acc)] ring-1 ring-[color-mix(in_srgb,var(--spm-acc)_28%,transparent)]">
+            {index + 1}
+          </span>
+          <span className="min-w-0 pt-1 text-[14px] font-medium leading-[1.55] text-slate-700">{line}</span>
+        </li>
+      ))}
     </ol>
   );
 }
@@ -202,11 +191,9 @@ function ContentError() {
 function BriefingContent({
   guideDisplay,
   briefingReadiness,
-  prep,
 }: {
   guideDisplay: ReturnType<typeof buildSpomoveGuideDisplayModel>;
   briefingReadiness: ReturnType<typeof resolveSpomoveBriefingReadiness>['readiness'];
-  prep: { matCount: number; cueSeconds: number; movementLabel: string | null; intervalLine: string | null };
 }) {
   const objective = guideDisplay.objective;
   const legacyConcept = guideDisplay.guideMode === 'legacy' ? guideDisplay.legacyManual?.activityConcept : null;
@@ -241,9 +228,31 @@ function BriefingContent({
       {hasObjectiveBlock ? (
         <BriefingSection
           title="활동 목표"
-          bodyClassName="mt-2 text-[14.5px] font-semibold leading-[1.6] text-slate-950 sm:text-[15px] sm:leading-[1.58]"
+          bodyClassName="mt-2"
         >
-          {objective ? <p>{objective}</p> : <p>{legacyConcept}</p>}
+          <div className="overflow-hidden rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_20%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_5%,white)] px-3.5 py-3.5">
+            <p className="text-[14.5px] font-semibold leading-[1.6] text-slate-900 sm:text-[15px]">
+              {objective ?? legacyConcept}
+            </p>
+          </div>
+        </BriefingSection>
+      ) : null}
+
+      {hasTeachingPoints ? (
+        <BriefingSection title="지도 포인트" bodyClassName="mt-2">
+          <div className="rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-3.5" data-spm-spomove-teaching-markers="true">
+            <div className="mb-2 inline-flex items-center gap-1.5 text-[12px] font-bold text-[var(--spm-acc)]">
+              <MessageSquareQuote className="h-3.5 w-3.5" aria-hidden />
+              선생님 안내
+            </div>
+            <div className="space-y-1.5">
+              {teachingPoints.map((point) => (
+                <p key={point} className="text-[13.5px] font-semibold leading-[1.6] text-slate-700">
+                  “{point}”
+                </p>
+              ))}
+            </div>
+          </div>
         </BriefingSection>
       ) : null}
 
@@ -256,26 +265,6 @@ function BriefingContent({
           )}
         </BriefingSection>
       ) : null}
-
-      {hasTeachingPoints ? (
-        <BriefingSection title="지도 포인트">
-          <ul className="space-y-2.5" data-spm-spomove-teaching-markers="true">
-            {teachingPoints.map((point) => (
-              <li key={point} className="flex gap-2.5">
-                <span
-                  aria-hidden
-                  className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--spm-acc)]"
-                />
-                <span className="text-[14px] font-medium leading-[1.55] text-slate-700">{point}</span>
-              </li>
-            ))}
-          </ul>
-        </BriefingSection>
-      ) : null}
-
-      <BriefingSection title="준비">
-        <PrepMetaRow {...prep} />
-      </BriefingSection>
 
       {hasOptionalDetails ? (
         <section>
@@ -461,6 +450,16 @@ export function SpomoveGuidelineSheet({
                   <SpomoveScreenPreview videoUrl={guideVideoUrl} />
                 )}
               </div>
+              <div className="mt-4 shrink-0">
+                <BriefingSection title="준비">
+                  <PrepMetaRow
+                    matCount={matCount}
+                    cueSeconds={cueSeconds}
+                    movementLabel={movementLabel}
+                    intervalLine={intervalLine}
+                  />
+                </BriefingSection>
+              </div>
             </div>
           </div>
           <aside
@@ -477,7 +476,6 @@ export function SpomoveGuidelineSheet({
               <BriefingContent
                 guideDisplay={guideDisplay}
                 briefingReadiness={briefingReadiness}
-                prep={{ matCount, cueSeconds, movementLabel, intervalLine }}
               />
             )}
           </aside>

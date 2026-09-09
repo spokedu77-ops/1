@@ -39,7 +39,7 @@ describe('admin program editor contract', () => {
       tags: [' 움직임:동적 ', '신체 기능:민첩성', '움직임:동적'],
       space: ' 교실 ',
       setupImageUrl: ' /setup.jpg ',
-      coachScript: ' 시작합니다. ',
+      coachScript: ' 첫 안내입니다. \n\n 두 번째 안내입니다. ',
       briefingNotes: ' 안내 1 \n 안내 2 ',
       variationMethod: ' 변형 1 ',
     });
@@ -62,6 +62,7 @@ describe('admin program editor contract', () => {
       'is_published',
     ]);
     expect(payload.meta.sm_theme).toBe('도전형');
+    expect(payload.meta.sm_coach_script).toBe('첫 안내입니다.\n\n두 번째 안내입니다.');
     expect(payload.meta.sm_tags).toEqual(['움직임:동적', '신체 기능:민첩성']);
     expect(payload.overlay).not.toHaveProperty('main_theme');
     expect(payload.overlay).not.toHaveProperty('group_size');

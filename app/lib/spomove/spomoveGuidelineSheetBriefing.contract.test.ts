@@ -38,12 +38,13 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).not.toContain('선택적 상세');
   });
 
-  it('keeps the media column video-only and moves preserved prep into briefing', () => {
+  it('places preserved prep directly under the video in the media column', () => {
     const mediaBlock = sheet.slice(sheet.indexOf('data-preview-column="media"'), sheet.indexOf('<aside'));
     expect(mediaBlock).not.toContain('CoachCueCard');
-    expect(mediaBlock).not.toContain('title="준비"');
-    const briefingBlock = sheet.slice(sheet.indexOf('<aside'), sheet.indexOf('data-spm-spomove-action-rail'));
-    expect(briefingBlock).toContain('prep={{ matCount, cueSeconds, movementLabel, intervalLine }}');
+    expect(mediaBlock).toContain('title="준비"');
+    const videoIndex = mediaBlock.indexOf('<SpomoveScreenPreview');
+    const prepIndex = mediaBlock.indexOf('title="준비"');
+    expect(prepIndex).toBeGreaterThan(videoIndex);
     expect(sheet).not.toContain('교사 핵심단서(Cue)');
   });
 
@@ -113,6 +114,11 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).toContain('ProgressTimeline');
     expect(sheet).not.toContain("padStart(2, '0')");
     expect(sheet).toContain('{index + 1}');
+    expect(sheet.indexOf('title="활동 목표"')).toBeLessThan(sheet.indexOf('title="지도 포인트"'));
+    expect(sheet.indexOf('title="지도 포인트"')).toBeLessThan(sheet.indexOf('title="활동 방법"'));
+    expect(sheet).toContain('MessageSquareQuote');
+    expect(sheet).toContain('선생님 안내');
+    expect(sheet).not.toContain('Target');
   });
 
   it('uses the existing favorite persistence and leaves only the two workflow actions in the footer', () => {

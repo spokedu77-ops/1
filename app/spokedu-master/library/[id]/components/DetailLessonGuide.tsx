@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, MessageSquareQuote, Package, Play, X, ZoomIn } from 'lucide-react';
+import { ExternalLink, MessageSquareQuote, Package, Play, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
@@ -41,10 +41,13 @@ function StepMarker({ index }: { index: number }) {
 }
 
 export function splitCoachScriptParagraphs(script: string): string[] {
-  const normalized = script.replace(/\\r\\n|\\n|\r\n?/g, '\n').trim();
+  const normalized = script
+    .replace(/\\r\\n|\\n|\\r/g, '\n')
+    .replace(/\r\n?|\u2028|\u2029/g, '\n')
+    .trim();
   if (!normalized) return [];
-  const hasBlankLine = /\n\s*\n/.test(normalized);
-  return (hasBlankLine ? normalized.split(/\n\s*\n+/) : normalized.split('\n'))
+  return normalized
+    .split(/\n+/)
     .map((paragraph) => paragraph.trim())
     .filter(Boolean);
 }
@@ -116,26 +119,25 @@ function SetupImage({ title, src }: { title: string; src: string }) {
   const unoptimized = imageNeedsUnoptimized(src);
   return (
     <>
-      <div className="relative overflow-hidden rounded-[16px] bg-slate-100">
-        <div className="relative aspect-[4/3] w-full">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group block w-full cursor-zoom-in overflow-hidden rounded-[16px] bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+        aria-label={`${title} 초기 교구 세팅 크게 보기`}
+      >
+        <div className="w-full overflow-hidden">
           <Image
             src={src}
             alt={`${title} 초기 교구 세팅`}
-            fill
+            width={1600}
+            height={1200}
             sizes="(min-width: 1220px) 560px, (min-width: 900px) 46vw, 100vw"
-            className="max-h-full object-contain object-center"
+            className="h-auto w-full object-contain object-center transition-transform duration-200 group-hover:scale-[1.015]"
             unoptimized={unoptimized}
           />
         </div>
-        <button
-          ref={triggerRef}
-          type="button"
-          onClick={() => setOpen(true)}
-          className="absolute bottom-3 right-3 z-10 inline-flex min-h-11 items-center gap-1.5 rounded-[10px] bg-white/80 px-2.5 text-[12px] font-semibold text-slate-700 ring-1 ring-white/70 backdrop-blur-sm transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
-        >
-          <ZoomIn className="h-3.5 w-3.5" /> 이미지 확대
-        </button>
-      </div>
+      </button>
 
       {open ? (
         <div
@@ -294,7 +296,6 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
         <ol className="relative m-0 space-y-0">
           {model.activityMethod.map((item, index) => (
             <li key={`${index}-${item}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-4 last:pb-0">
-              {index < model.activityMethod.length - 1 ? <span aria-hidden className="absolute bottom-0 left-[13px] top-7 w-px bg-slate-200" /> : null}
               <StepMarker index={index} />
               <p className="m-0 break-keep pt-0.5 text-[15px] font-medium leading-[1.65] text-[color:var(--spm-t)] sm:text-[16px]">
                 {item}
@@ -408,11 +409,17 @@ function OverviewPanel({ model, column }: { model: LessonDisplayModel; column: 1
               <MessageSquareQuote className="h-4 w-4 text-[var(--spm-acc)]" />
               설명 스크립트
             </h3>
-            <blockquote className="mt-3 space-y-4 border-l-2 border-[color-mix(in_srgb,var(--spm-acc)_55%,transparent)] py-1 pl-4">
+            <blockquote className="mt-3 space-y-4">
               {splitCoachScriptParagraphs(model.coachScript).map((paragraph, index) => (
-                <p key={`${index}-${paragraph}`} className="m-0 whitespace-pre-line break-keep text-[16px] font-medium leading-[1.7] text-slate-700 sm:text-[17px] sm:leading-[1.75]">
-                  {paragraph}
-                </p>
+                <div
+                  key={`${index}-${paragraph}`}
+                  className="grid grid-cols-[3px_minmax(0,1fr)] gap-3 rounded-r-[10px] bg-[color-mix(in_srgb,var(--spm-acc)_3%,white)] py-2 pr-3"
+                >
+                  <span className="h-full min-h-8 rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_58%,transparent)]" aria-hidden />
+                  <p className="m-0 whitespace-pre-line break-keep text-[16px] font-medium leading-[1.7] text-slate-700 sm:text-[17px] sm:leading-[1.75]">
+                    {paragraph}
+                  </p>
+                </div>
               ))}
             </blockquote>
           </section>

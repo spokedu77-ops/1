@@ -34,8 +34,8 @@ export function normalizeTextarea(value: string | null | undefined) {
   const text = (value ?? '')
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter(Boolean)
-    .join('\n');
+    .join('\n')
+    .trim();
   return text || null;
 }
 

@@ -102,15 +102,21 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(overview.match(/model\.coachScript/g)?.length).toBeGreaterThanOrEqual(2);
     expect(guide).not.toContain('CoachScriptSection');
     expect(guide).toContain('export function splitCoachScriptParagraphs');
-    expect(guide).toContain("script.replace(/\\\\r\\\\n|\\\\n|\\r\\n?/g, '\\n')");
-    expect(guide).toContain("normalized.split(/\\n\\s*\\n+/) : normalized.split('\\n')");
+    expect(guide).toContain(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')");
+    expect(guide).toContain(".replace(/\\r\\n?|\\u2028|\\u2029/g, '\\n')");
+    expect(guide).toContain('.split(/\\n+/)');
     expect(guide).toContain('splitCoachScriptParagraphs(model.coachScript).map');
+    expect(guide).toContain('space-y-4');
+    expect(guide).toContain('grid-cols-[3px_minmax(0,1fr)]');
+    expect(guide).toContain('min-h-8 rounded-full');
   });
 
   it('preserves setup-image enlargement, video tracking, and poster priority', () => {
     expect(guide).toContain('object-contain');
     expect(guide).toContain('max-h-full');
-    expect(guide).toContain('이미지 확대');
+    expect(guide).not.toContain('이미지 확대');
+    expect(guide).toContain('cursor-zoom-in');
+    expect(guide).toContain('group-hover:scale-[1.015]');
     expect(guide).toContain("event.key === 'Escape'");
     expect(guide).toContain('getVideoThumbnailCandidates(video.sourceUrl');
     expect(guide).toContain('posterCandidates={posterCandidates}');

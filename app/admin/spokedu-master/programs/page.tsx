@@ -2865,7 +2865,7 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12px]">
         <p className="font-black text-slate-900">준비물 / 수업 스크립트</p>
         <p className="mt-1 font-semibold text-slate-600">{equipment.join(', ') || '—'}</p>
-        <p className="mt-2 line-clamp-3 font-semibold text-slate-600">{form.coachScript || '—'}</p>
+        <p className="mt-2 line-clamp-3 whitespace-pre-line font-semibold text-slate-600">{form.coachScript || '—'}</p>
       </div>
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12px] sm:col-span-2">
         <p className="font-black text-slate-900">활동 방법</p>

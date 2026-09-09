@@ -50,6 +50,9 @@ describe('MASTER Home content card system', () => {
 
   it('keeps Recent as a compact re-entry object and removes the Home navy band', () => {
     expect(dashboard).toContain('MV_REENTRY_OBJECT');
+    expect(dashboard).toContain('RecentLessonReuseCard');
+    expect(dashboard).toContain('[...validLessonActivities, ...validSpomoveActivities]');
+    expect(dashboard).toContain("latestRecentActivity?.action === 'spomove_started'");
     expect(dashboard).not.toContain('SPM_SECONDARY_BTN');
     expect(dashboard).not.toContain('bg-[var(--spm-spomove-surface)]');
     expect(dashboard).toContain('놀이체육을 디지털 자극 활동으로 확장합니다.');
