@@ -28,6 +28,7 @@ export function SettingsBriefing({
   preset,
   startDisabled,
   cueSeconds,
+  recommendedCueSeconds,
   onCueSecondsChange,
   difficultyKind,
   difficultyValue,
@@ -40,6 +41,7 @@ export function SettingsBriefing({
   preset: OfficialSpomovePreset;
   startDisabled: boolean;
   cueSeconds: SpomoveCueSpeedSec;
+  recommendedCueSeconds: SpomoveCueSpeedSec;
   onCueSecondsChange: (value: SpomoveCueSpeedSec) => void;
   difficultyKind: SpomoveDifficultyKind | null;
   difficultyValue: string;
@@ -108,7 +110,7 @@ export function SettingsBriefing({
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
             {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
               const active = cueSeconds === sec;
-              const recommended = sec === 3;
+              const recommended = sec === recommendedCueSeconds;
               return (
                 <button
                   key={sec}

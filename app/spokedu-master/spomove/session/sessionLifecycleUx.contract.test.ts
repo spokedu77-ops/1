@@ -17,6 +17,8 @@ describe('SPOMOVE session lifecycle UX', () => {
     expect(start).toContain('설정 변경');
     expect(settings).toContain('data-spm-session-settings-screen');
     expect(settings).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
+    expect(settings).toContain('sec === recommendedCueSeconds');
+    expect(page).toContain('recommendedCueSeconds={effectiveRecommendedCueSeconds}');
     expect(settings).toContain('getSpomoveDifficultyOptions');
   });
 

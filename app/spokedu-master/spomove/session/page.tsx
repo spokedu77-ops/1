@@ -354,6 +354,10 @@ function SpomoveSessionContent() {
       : cueSeconds;
     return next;
   }, [cueSeconds, officialPreset]);
+  const effectiveRecommendedCueSeconds = useMemo(
+    () => officialPreset ? resolveSessionCueSeconds(officialPreset, recommendedCueSeconds) : 3,
+    [officialPreset, recommendedCueSeconds],
+  );
 
   const cueFloorNotice = useMemo(() => {
     return null;
@@ -792,6 +796,7 @@ function SpomoveSessionContent() {
               preset={officialPreset}
               startDisabled={bgmLoading || !canStartSession}
               cueSeconds={effectiveCueSeconds}
+              recommendedCueSeconds={effectiveRecommendedCueSeconds}
               onCueSecondsChange={handleCueSecondsChange}
               difficultyKind={difficultyKind}
               difficultyValue={difficultyValue}
