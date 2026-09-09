@@ -58,7 +58,7 @@ describe('spomove preset display model', () => {
     expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기');
     expect(getSpomoveCardDisplayModel(moleNormal!).publicMeta).toEqual({
       core: '시각 반응',
-      difficulty: '난이도 어려움',
+      difficulty: '난이도 보통',
     });
     expect(getSpomoveCardDisplayModel(moleNormal!).badges.some((badge) => badge.value === '보통')).toBe(false);
 

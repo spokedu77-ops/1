@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(path, 'utf8');
 const home = read('app/spokedu-master/dashboard/DashboardView.tsx');
 const continuity = read('app/spokedu-master/dashboard/TodaySessionsPanel.tsx');
-const manage = read('app/spokedu-master/activity/page.tsx');
+const manage = read('app/spokedu-master/manage/ManageView.tsx');
 const managePage = read('app/spokedu-master/manage/page.tsx');
 const favorites = read('app/spokedu-master/favorites/FavoritesView.tsx');
 const library = read('app/spokedu-master/library/LibraryView.tsx');
@@ -18,10 +18,11 @@ describe('Foundation Reset user-facing contracts', () => {
     expect(continuity).toContain("session.status === 'scheduled'");
     expect(continuity).not.toContain('출석 확인하기');
   });
-  it('composes schedule before classes in Manage', () => {
+  it('composes Schedule and attendance without repeating Classes in Manage', () => {
     expect(manage).toContain('수업 관리');
-    expect(manage.indexOf('manage-calendar-heading')).toBeLessThan(manage.indexOf('manage-classes-heading'));
-    expect(manage).toContain('내 수업반');
+    expect(manage).toContain('일정');
+    expect(manage).toContain('출석부');
+    expect(manage).not.toContain('내 수업반');
     expect(managePage).not.toContain('activity/page');
   });
   it('makes Favorites the retrieval surface and opens shared Preview', () => {

@@ -7,7 +7,7 @@ const hardening = read('supabase/migrations/20260822210000_spokedu_master_sessio
 describe('SPOKEDU MASTER Session foundation', () => {
   it('keeps class membership ID-based and independent from class names', () => {
     const sessions = read('app/api/spokedu-master/sessions/route.ts');
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(sessions).toContain('spokedu_master_class_students(student_id)');
     expect(activity).toContain('selectedClass?.studentIds.includes(student.id)');
     expect(activity).not.toContain('student.group');
@@ -26,16 +26,15 @@ describe('SPOKEDU MASTER Session foundation', () => {
     expect(hardening).not.toContain('delete from public.spokedu_master_session_attendance where student_id');
   });
 
-  it('keeps a newly created class open for child mutations', () => {
-    const activity = read('app/spokedu-master/activity/page.tsx');
-    expect(activity).toContain('setActiveSession(saved)');
-    expect(activity).toContain("!activeSession ? <div");
+  it('creates a Session with selected activities through the existing command', () => {
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    expect(activity).toContain('data.saveSession(input(nextStatus), activeSession?.id)');
+    expect(activity).toContain('programs: activeSession ? undefined');
     expect(activity).toContain('MASTER_ACTION_COPY.createSession');
-    expect(activity).toContain('setPrograms(saved.programs)');
   });
 
   it('applies program UI state only after mutation success', () => {
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(activity.indexOf('await data.updateSessionProgram')).toBeLessThan(activity.indexOf('setPrograms((current) => current.map'));
     expect(activity.indexOf('await data.removeSessionProgram')).toBeLessThan(activity.lastIndexOf('setPrograms((current) => current.filter'));
   });
@@ -60,17 +59,17 @@ describe('SPOKEDU MASTER Session foundation', () => {
     expect(hardening).toContain('set sort_order=sort_order-1');
   });
 
-  it('round-trips the explicit first-start timestamp without adding a lifecycle status', () => {
+  it('retains the first-start persistence API without exposing Manage runtime', () => {
     const migration = read('supabase/migrations/20260828233000_spokedu_master_session_started_at.sql');
     const sessions = read('app/api/spokedu-master/sessions/route.ts');
     const provider = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(migration).toContain('started_at timestamptz null');
     expect(migration).not.toMatch(/default|backfill|in_progress/i);
     expect(sessions).toContain('started_at');
     expect(sessions).toContain('startedAt: row.started_at');
     expect(provider).toContain('startSession: (sessionId: string)');
-    expect(activity).toContain('await data.startSession(activeSession.id)');
-    expect(activity).toContain('startedAt: activeSession?.startedAt ?? null');
+    expect(activity).not.toContain('data.startSession');
+    expect(activity).not.toContain('수업 시작');
   });
 });

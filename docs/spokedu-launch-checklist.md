@@ -1,12 +1,12 @@
-# SPOKEDU `/spokedu` 오픈 전 체크리스트
+# SPOKEDU 공개 사이트 오픈 전 체크리스트
 
-실제 도메인(`spokedu.com` 등) 연결 전·후에 확인할 항목입니다. 코드 기본값은 **spokedu.com을 쓰지 않습니다** (`app/spokedu/lib/site-url.ts`).
+실제 도메인 연결 전·후에 확인할 항목입니다. 코드의 public canonical origin은 **`https://spokedu.kr`** 입니다 (`proxy.ts` `CANONICAL_ORIGIN`, `app/spokedu/lib/site-url.ts` `getSpokeduSiteUrl`).
 
 ---
 
 ## 1. 도메인 연결 전 (Preview / Staging)
 
-- [ ] Preview URL에서 `/spokedu` 홈·하위 페이지가 정상 렌더되는지 확인
+- [ ] Preview URL에서 `/` 홈·공개 하위 페이지가 정상 렌더되는지 확인 (`/spokedu`는 `/`로 영구 리다이렉트)
 - [ ] 콘솔에 hydration / nested `<a>` 경고 없음
 - [ ] `metadataBase`가 Preview 호스트 기준인지 확인 (아래 OG 절차)
 - [ ] 문의 폼 제출이 동작하는지 확인 (Supabase/이메일 연동 환경)
@@ -29,16 +29,13 @@ rg -i "TODO|placeholder|준비중|help@spokedu|example\\.com" app/spokedu
 | Local | `.env.local` 권장 | 비우면 `http://localhost:3000` |
 | Production (도메인 연결 후) | **실제 서비스 URL** | OG·canonical·sitemap 절대 URL |
 
-우선순위 (`app/spokedu/lib/site-url.ts` → `getSpokeduSiteUrl`):
-
-1. `NEXT_PUBLIC_SITE_URL`
-2. `VERCEL_URL` → `https://${VERCEL_URL}`
-3. 없으면 `http://localhost:3000`
+`getSpokeduSiteUrl()` currently returns `https://spokedu.kr` (does not read env).
+`NEXT_PUBLIC_SITE_URL` is still used by some operational scripts (not by that helper).
 
 **주의**
 
-- 코드 기본값으로 `spokedu.com`을 **쓰지 않습니다**.
-- **아직 `spokedu.com` 도메인을 쓰지 않는다면** `NEXT_PUBLIC_SITE_URL`에 `spokedu.com`을 넣지 마세요.
+- Public canonical origin은 `https://spokedu.kr`입니다 (`getSpokeduSiteUrl`).
+- `NEXT_PUBLIC_SITE_URL`을 쓸 때는 `https://spokedu.kr`과 다른 호스트를 넣지 마세요.
 - 도메인 연결 전 Preview는 env 없이도 동작합니다. 연결 후에만 실제 도메인을 설정하고 Redeploy하세요.
 
 ```env
@@ -85,8 +82,8 @@ NEXT_PUBLIC_SITE_URL=https://실제도메인
 
 - [ ] 사이트 등록 (도메인 확정 후)
 - [ ] 소유 확인 (HTML 메타 / 파일)
-- [ ] `sitemap.xml` 제출 (앱 루트 sitemap에 `/spokedu` 포함 여부 확인)
-- [ ] 대표 URL: `/spokedu` 또는 루트 리다이렉트 정책 결정
+- [ ] `sitemap.xml` 제출 (앱 루트 sitemap은 `/` 및 클린 공개 경로 기준)
+- [ ] 대표 URL: `/` (`/spokedu` → `/` 영구 리다이렉트)
 
 ---
 
@@ -94,7 +91,7 @@ NEXT_PUBLIC_SITE_URL=https://실제도메인
 
 - [ ] 속성 추가 (URL prefix 또는 도메인)
 - [ ] sitemap 제출
-- [ ] `/spokedu` 주요 URL 색인 요청 (홈, programs, contact 등)
+- [ ] 주요 공개 URL 색인 요청 (홈 `/`, `/education`, `/spomove`, `/contact` 등)
 - [ ] `robots.txt`에서 크롤 허용 확인
 
 ---

@@ -4,6 +4,7 @@ export type ActivityQueryResolution =
   | { kind: 'session'; session: MasterSessionDto }
   | { kind: 'missing-session'; sessionId: string }
   | { kind: 'create'; day: string; classId: string | null }
+  | { kind: 'date'; day: string }
   | { kind: 'missing-class'; classId: string }
   | { kind: 'none' };
 
@@ -24,5 +25,6 @@ export function resolveActivityQuery(
     if (classId && !classes.some((item) => item.id === classId)) return { kind: 'missing-class', classId };
     return { kind: 'create', day: requestedDay, classId };
   }
+  if (requestedDay && /^\d{4}-\d{2}-\d{2}$/.test(requestedDay)) return { kind: 'date', day: requestedDay };
   return { kind: 'none' };
 }

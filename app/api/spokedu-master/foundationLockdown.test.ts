@@ -8,7 +8,7 @@ const students = read('app/spokedu-master/students/page.tsx');
 const provider = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
 const sessions = read('app/api/spokedu-master/sessions/route.ts');
 const programRoute = read('app/api/spokedu-master/sessions/[sessionId]/programs/route.ts');
-const activity = read('app/spokedu-master/activity/page.tsx');
+const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
 const weeklyAgenda = read('app/spokedu-master/activity/weeklyAgenda.ts');
 
 describe('SPOKEDU MASTER final foundation lockdown', () => {

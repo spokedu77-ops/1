@@ -18,6 +18,10 @@ describe('Activity query routing', () => {
     expect(resolveActivityQuery(new URLSearchParams('date=2026-08-24&create=1'), sessions, classes)).toEqual({ kind: 'create', day: '2026-08-24', classId: null });
   });
 
+  it('selects a valid date without forcing create mode', () => {
+    expect(resolveActivityQuery(new URLSearchParams('date=2026-08-24'), sessions, classes)).toEqual({ kind: 'date', day: '2026-08-24' });
+  });
+
   it('prefills only an exact explicit Class and never falls back for an invalid id', () => {
     expect(resolveActivityQuery(new URLSearchParams('date=2026-08-24&create=1&class=class-a'), sessions, classes)).toEqual({ kind: 'create', day: '2026-08-24', classId: 'class-a' });
     expect(resolveActivityQuery(new URLSearchParams('date=2026-08-24&create=1&class=missing'), sessions, classes)).toEqual({ kind: 'missing-class', classId: 'missing' });

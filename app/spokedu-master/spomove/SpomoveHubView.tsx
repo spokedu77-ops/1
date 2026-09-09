@@ -992,16 +992,19 @@ export default function SpomoveHubView() {
             일부 활동 이미지·가이드가 일시적으로 불러와지지 않았습니다. 활동 실행은 계속할 수 있습니다.
           </div>
         ) : null}
-        <header aria-label="SPOMOVE 프로그램" className="spm-spomove-surface rounded-[20px] px-5 py-6 text-white sm:px-7 sm:py-7" data-spm-spomove-digital-header="true">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+        <header aria-label="SPOMOVE 프로그램" className="spm-spomove-surface rounded-[20px] px-5 py-5 text-white sm:px-7 sm:py-6" data-spm-spomove-digital-header="true">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <div className="min-w-0">
               <h1 className="text-[28px] font-semibold leading-none tracking-[-0.03em] sm:text-[32px]">SPOMOVE</h1>
-              <p className="mt-3 max-w-lg text-[14px] font-medium leading-5 text-[color:var(--spm-spomove-surface-muted)] sm:text-[15px]">
-                화면의 신호에 반응하며 움직이는<br className="hidden sm:block" /> 디지털 체육활동
+              <p className="mt-2 text-[14px] font-medium leading-5 text-[color:var(--spm-spomove-surface-muted)] sm:text-[15px] lg:whitespace-nowrap">
+                화면의 신호를 움직임으로 연결하는 체육활동
+              </p>
+              <p className="mt-1.5 text-[12px] font-medium leading-4 text-white/55 sm:text-[13px]">
+                26개 프로그램 · 72개 활동
               </p>
             </div>
             <div className="relative w-full sm:max-w-[440px]">
-              <label htmlFor="spomove-search" className="sr-only">활동명 또는 키워드 검색</label>
+              <label htmlFor="spomove-search" className="sr-only">프로그램명, 테마, 시리즈 검색</label>
               <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="spomove-search"
@@ -1017,7 +1020,7 @@ export default function SpomoveHubView() {
                     updateHubState({ q: '' }, true);
                   }
                 }}
-                placeholder="활동 검색..."
+                placeholder="프로그램명, 테마, 시리즈 검색"
                 className="h-11 w-full rounded-xl border border-white/15 bg-white/10 pl-10 pr-11 text-sm font-medium text-white outline-none placeholder:text-slate-400 focus:border-white/35 focus:bg-white/[0.14] focus:ring-2 focus:ring-white/10"
               />
               {searchQuery ? (

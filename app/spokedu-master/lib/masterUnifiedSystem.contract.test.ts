@@ -32,7 +32,7 @@ describe('MASTER unified navigation context', () => {
     expect(resolveMasterContextQueryKeys('/spokedu-master/spomove/session')).toContain('hubReturn');
     expect(resolveMasterContextQueryKeys('/spokedu-master/spomove/session')).toContain('returnTo');
     expect(resolveMasterContextQueryKeys('/spokedu-master/spomove/session')).toContain('session');
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(activity).toContain('buildActivitySessionHref(activeSession.id)');
     expect(activity).toContain('session: activeSession.id');
     expect(activity).toContain('sessionProgram: program.id');

@@ -5,14 +5,13 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('MASTER Session connections', () => {
-  const activity = read('app/spokedu-master/activity/page.tsx');
+  const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
   const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
   const report = read('app/spokedu-master/report/page.tsx');
 
-  it('opens Class tools in a new tab with the exact scheduled Session context', () => {
-    expect(activity).toContain('/spokedu-master/class-tools?session=${encodeURIComponent(activeSession.id)}');
-    expect(activity).toContain('target="_blank" rel="noreferrer"');
-    expect(activity).toContain('수업도구');
+  it('keeps Class tools out of the simplified Manage detail', () => {
+    expect(activity).not.toContain('/spokedu-master/class-tools?session=');
+    expect(activity).not.toContain('수업도구');
   });
 
   it('locks Session-linked tools to the exact Session Class without a first-Class fallback', () => {
@@ -24,10 +23,9 @@ describe('MASTER Session connections', () => {
     expect(tools).toContain(": classKeys.includes(selectedClassKey) ? selectedClassKey : (classKeys[0] ?? '')");
   });
 
-  it('links a completed Session to its exact report while keeping next Session primary', () => {
-    expect(activity).toContain('/spokedu-master/report?session=${encodeURIComponent(activeSession.id)}');
-    expect(activity).toContain('안내문 보기');
-    expect(activity).toContain('다음 수업 만들기');
+  it('keeps report and next-session cascades out of Manage primary UX', () => {
+    expect(activity).not.toContain('/spokedu-master/report?session=');
+    expect(activity).not.toContain('다음 수업 만들기');
   });
 
   it('does not use a standalone report fallback when a Session query is explicit', () => {

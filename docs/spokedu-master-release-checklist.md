@@ -2,15 +2,65 @@
 
 ## Automated Verification
 
-- [ ] `npx.cmd eslint app/spokedu-master app/api/spokedu-master scripts/spokedu-master-commercial-smoke-qa.mjs`
-- [ ] `npx.cmd tsc --noEmit --incremental false`
-- [ ] `npx.cmd vitest run app/api/spokedu-master/access/route.test.ts app/api/spokedu-master/operational-routes.test.ts app/api/spokedu-master/explanations/route.test.ts app/api/spokedu-master/operational-data.test.ts`
-- [ ] `npm.cmd run qa:spokedu-master:release-automated -- http://localhost:3000`
-- [ ] `npm.cmd run qa:spokedu-master:production-prep`
-- [ ] `npm.cmd run qa:spokedu-master:data-integrity`
-- [ ] `npm.cmd run qa:spokedu-master`
-- [ ] `npm.cmd run build`
+Executable MASTER QA is defined by GitHub Actions, not by ad-hoc file lists in this checklist. There is no single repository-wide `npm run lint` gate. `npm test` / `npm run test:full` is broader regression and is **not** the normal MASTER PR gate.
+
+### Canonical CI — MASTER PR/push (`master-gate`)
+
+Authoritative job: `.github/workflows/spokedu-master-qa.yml` / `master-gate`.
+
+- [ ] Targeted ESLint (`--max-warnings 0`). Path list is owned by that job, currently:
+
+```text
+npx eslint
+app/spokedu-master
+app/api/spokedu-master
+app/lib/server/spokeduMasterAccess.ts
+app/lib/server/spokeduMasterPayment.ts
+app/lib/server/spokeduMasterPaymentApply.ts
+proxy.ts
+scripts/spokedu-master-commercial-smoke-qa.mjs
+scripts/spokedu-master-commercial-preflight.mjs
+--max-warnings 0
+```
+
+- [ ] `npm run test:spokedu-master:core`
 - [ ] `git diff --check`
+
+Do not treat individual files such as `operational-data.test.ts` or `explanations/route.test.ts` as the core CI allowlist. Core membership is `vitest.spokedu-master-core.config.ts`.
+
+### Canonical CI — repository TypeScript
+
+Authoritative job: `.github/workflows/typecheck.yml`. This is **not** part of `master-gate`.
+
+- [ ] `npm run typecheck`
+
+Runs when that workflow’s path filters match (typically `**/*.ts` / `**/*.tsx` and related config).
+
+### Canonical CI — commercial Linux smoke (not every PR)
+
+Job: `commercial-linux-smoke` in the same MASTER QA workflow. Runs when pushing `release/**` or `commercial/**`, or when `workflow_dispatch` sets `run_commercial_smoke`. Depends on `master-gate`.
+
+- [ ] `npm run build`
+- [ ] `npm run start` (CI uses port 3099)
+- [ ] HTTP probes: `/login`, `/spokedu-master/landing`, `/spokedu-master/payment`
+
+### OPTIONAL / MANUAL (not MASTER core CI)
+
+Windows-local convenience (not canonical CI):
+
+- [ ] `npx.cmd tsc --noEmit --incremental false`
+
+Operator / staging scripts (not the PR core gate):
+
+- [ ] `npm run qa:spokedu-master:release-automated -- http://localhost:3000`
+- [ ] `npm run qa:spokedu-master:production-prep`
+- [ ] `npm run qa:spokedu-master:data-integrity`
+- [ ] `npm run qa:spokedu-master`
+- [ ] `npm run build` (local)
+
+Legacy ClassRecord / import protection (run when changing that code; not PR core):
+
+- [ ] `npm run test:spokedu-master:legacy`
 
 ## Required Environment Variables
 

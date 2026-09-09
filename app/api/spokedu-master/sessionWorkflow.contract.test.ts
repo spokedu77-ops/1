@@ -19,14 +19,14 @@ describe('SPOKEDU MASTER Session workflow', () => {
 
   it('uses the unique session id and keeps program completion independent', () => {
     const api = read('app/api/spokedu-master/sessions/route.ts');
-    const calendar = read('app/spokedu-master/activity/page.tsx');
+    const calendar = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(api).toContain("p_session_id: sessionId");
     expect(api).toContain("'spokedu_master_save_session'");
-    expect(calendar).toContain('status: inputStatus');
-    expect(calendar).toContain("sessionInput('completed')");
+    expect(calendar).toContain('status: nextStatus');
+    expect(calendar).toContain("input('completed')");
     expect(calendar).toContain('data.updateSessionProgram');
     expect(calendar).toContain('data.saveSessionAttendance');
-    expect(calendar).toContain("void persist('completed')");
+    expect(calendar).toContain("persist(activeSession ? 'completed' : 'scheduled')");
     expect(calendar).not.toContain('프로그램별 메모');
   });
 

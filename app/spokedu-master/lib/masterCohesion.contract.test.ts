@@ -40,20 +40,19 @@ describe('MASTER commercial cohesion contracts', () => {
     expect(MASTER_ACTION_COPY.deleteSession).toBe('수업 삭제');
     const students = read('app/spokedu-master/students/page.tsx');
     const classes = read('app/spokedu-master/classes/[classId]/page.tsx');
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(students).toContain('MASTER_ACTION_COPY.archiveStudent');
     expect(students).not.toContain('Trash2');
     expect(classes).toContain('MASTER_ACTION_COPY.removeFromClass');
-    expect(activity).toContain('MASTER_ACTION_COPY.restoreSession');
-    expect(activity).toContain('MASTER_ACTION_COPY.replaceSession');
-    expect(activity).toContain('MASTER_ACTION_COPY.deleteSession');
+    expect(activity).toContain('취소 해제');
+    expect(activity).toContain('수업 삭제');
   });
 
   it('keeps operational primary CTAs on the brand token', () => {
     for (const path of [
       'app/spokedu-master/classes/page.tsx',
       'app/spokedu-master/students/page.tsx',
-      'app/spokedu-master/activity/page.tsx',
+      'app/spokedu-master/manage/ScheduleTab.tsx',
       'app/spokedu-master/dashboard/TodaySessionsPanel.tsx',
     ]) {
       const source = read(path);

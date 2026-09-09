@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { Bookmark, MessageSquareQuote } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 
 import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import type { SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
@@ -241,10 +241,6 @@ function BriefingContent({
       {hasTeachingPoints ? (
         <BriefingSection title="지도 포인트" bodyClassName="mt-2">
           <div className="rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-3.5" data-spm-spomove-teaching-markers="true">
-            <div className="mb-2 inline-flex items-center gap-1.5 text-[12px] font-bold text-[var(--spm-acc)]">
-              <MessageSquareQuote className="h-3.5 w-3.5" aria-hidden />
-              선생님 안내
-            </div>
             <div className="space-y-1.5">
               {teachingPoints.map((point) => (
                 <p key={point} className="text-[13.5px] font-semibold leading-[1.6] text-slate-700">
@@ -418,9 +414,34 @@ export function SpomoveGuidelineSheet({
           <Bookmark className={`h-[17px] w-[17px] ${favorite ? 'fill-current' : ''}`} aria-hidden />
         </button>
       )}
+      footer={(
+        <div
+          data-spm-spomove-action-rail="true"
+          className="sticky bottom-0 z-10 -mx-4 border-t border-slate-200/70 bg-white px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-1px_6px_rgba(15,23,42,0.035)] sm:-mx-5 sm:px-5"
+        >
+          <div className="flex justify-end">
+            <div className="grid w-full grid-cols-[minmax(104px,0.9fr)_minmax(120px,1.2fr)] gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
+              <Link
+                href={guideVideoState === 'locked' ? lockedSettingsHref : settingsHref}
+                data-spm-spomove-guide-action="settings"
+                className="inline-flex h-11 min-w-[112px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+              >
+                시작 설정
+              </Link>
+              <Link
+                href={guideVideoState === 'locked' ? lockedStartHref : startHref}
+                data-spm-spomove-guide-action="start-official"
+                className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-semibold transition focus-visible:outline-none sm:w-[168px] sm:text-[14px]"
+              >
+                수업 시작
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     >
       <div
-        className="-mx-4 flex flex-col gap-0 rounded-[14px] px-4 py-1 sm:-mx-5 sm:px-5"
+        className="flex flex-col gap-0 rounded-[14px] py-1"
         style={{ background: 'color-mix(in srgb, var(--spm-acc) 1.5%, #F8FAFC)' }}
         data-spm-spomove-launch-confirm=""
         data-spm-spomove-surface="stage"
@@ -481,29 +502,6 @@ export function SpomoveGuidelineSheet({
           </aside>
         </div>
 
-        <div
-          data-spm-spomove-action-rail="true"
-          className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-slate-200/60 bg-white/90 px-4 pb-[max(0px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_16px_rgba(15,23,42,0.04)] backdrop-blur-sm sm:-mx-5 sm:px-5"
-        >
-          <div className="flex justify-end">
-            <div className="grid w-full grid-cols-[minmax(104px,0.9fr)_minmax(120px,1.2fr)] gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
-              <Link
-                href={guideVideoState === 'locked' ? lockedSettingsHref : settingsHref}
-                data-spm-spomove-guide-action="settings"
-                className="inline-flex h-11 min-w-[112px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
-              >
-                시작 설정
-              </Link>
-              <Link
-                href={guideVideoState === 'locked' ? lockedStartHref : startHref}
-                data-spm-spomove-guide-action="start-official"
-                className="spm-btn-primary inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-semibold transition focus-visible:outline-none sm:w-[168px] sm:text-[14px]"
-              >
-                수업 시작
-              </Link>
-            </div>
-          </div>
-        </div>
       </div>
     </BottomSheet>
   );

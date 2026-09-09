@@ -8,7 +8,10 @@ const sheet = read('SpomoveGuidelineSheet.tsx');
 
 describe('SPOMOVE user-friction hardening contracts', () => {
   it('keeps search, URL state, reset and selection semantics explicit', () => {
-    expect(hub).toContain('활동명 또는 키워드 검색');
+    expect(hub).toContain('프로그램명, 테마, 시리즈 검색');
+    expect(hub).toContain('화면의 신호를 움직임으로 연결하는 체육활동');
+    expect(hub).toContain('26개 프로그램 · 72개 활동');
+    expect(hub).not.toContain('<br className="hidden sm:block" />');
     expect(hub).toContain('parseSpomoveHubUrlState');
     expect(hub).toContain('serializeSpomoveHubUrlState');
     expect(hub).toContain('data-spm-spomove-catalog-family={family.id}');

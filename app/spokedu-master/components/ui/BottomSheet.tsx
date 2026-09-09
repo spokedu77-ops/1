@@ -10,6 +10,7 @@ export function BottomSheet({
   headerTitle,
   headerActions,
   children,
+  footer,
   onClose,
   size = 'default',
   initialFocusSelector,
@@ -19,8 +20,9 @@ export function BottomSheet({
   headerTitle?: ReactNode;
   headerActions?: ReactNode;
   children: ReactNode;
+  footer?: ReactNode;
   onClose: () => void;
-  size?: 'default' | 'document' | 'preview' | 'launch';
+  size?: 'default' | 'document' | 'preview' | 'launch' | 'session';
   initialFocusSelector?: string;
 }) {
   const titleId = useId();
@@ -121,10 +123,18 @@ export function BottomSheet({
   if (!open) return null;
 
   const isLaunch = size === 'launch';
+  const isSession = size === 'session';
+  const hasDetachedFooter = Boolean(footer);
 
   const panelClassName =
     size === 'preview'
-      ? 'relative max-h-[88dvh] w-full max-w-[1160px] overflow-y-auto rounded-t-[16px] p-4 shadow-2xl outline-none sm:rounded-[16px] sm:p-5'
+      ? `relative max-h-[88dvh] w-full max-w-[1160px] rounded-t-[16px] p-4 shadow-2xl outline-none sm:rounded-[16px] sm:p-5 ${hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`
+      : isSession
+        ? [
+            'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] px-4 pt-3 shadow-2xl outline-none',
+            'sm:px-5 sm:pt-4',
+            'lg:h-full lg:max-h-none lg:w-[410px] lg:max-w-[410px] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-[-16px_0_36px_rgba(15,23,42,0.12)]',
+          ].join(' ')
       : isLaunch
         ? [
             'relative z-[1] flex w-full max-h-[90dvh] flex-col overflow-hidden shadow-2xl outline-none',
@@ -133,34 +143,36 @@ export function BottomSheet({
           ].join(' ')
       : size === 'document'
       ? 'relative max-h-[92dvh] w-full max-w-[1360px] overflow-y-auto rounded-t-[14px] p-4 shadow-2xl outline-none sm:rounded-[14px] sm:p-6'
-      : 'relative max-h-[88dvh] w-full max-w-[720px] overflow-y-auto rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6';
+      : `relative max-h-[88dvh] w-full max-w-[720px] rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6 ${hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`;
 
-  const overlayClassName = isLaunch
+  const overlayClassName = isSession
+    ? 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm lg:pointer-events-none lg:top-16 lg:items-stretch lg:justify-end lg:bg-transparent lg:px-0 lg:backdrop-blur-none'
+    : isLaunch
     ? 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 backdrop-blur-sm sm:items-center sm:px-6'
     : 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm sm:items-center sm:px-6';
 
   return (
     <div className={overlayClassName} role="presentation">
-      <button type="button" aria-label={`${title} 닫기`} className="absolute inset-0 cursor-default" onClick={onClose} />
+      <button type="button" aria-label={`${title} 닫기`} className={`absolute inset-0 cursor-default ${isSession ? 'lg:hidden' : ''}`} onClick={onClose} />
       <div
         ref={dialogRef}
-        className={panelClassName}
+        className={`${panelClassName} ${isSession ? 'lg:pointer-events-auto' : ''}`}
         style={{
           background: '#ffffff',
           border: '1px solid #e2e8f0',
-          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+          paddingBottom: hasDetachedFooter ? 0 : 'max(16px, env(safe-area-inset-bottom))',
         }}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
       >
-        {isLaunch ? (
+        {isLaunch || isSession ? (
           <div className="mx-auto mb-2 h-1 w-10 shrink-0 rounded-full bg-slate-200 sm:hidden" aria-hidden />
         ) : null}
         <div
           className={`flex shrink-0 items-center justify-between gap-3 ${
-            size === 'preview' || isLaunch ? 'mb-2.5' : 'mb-5'
+            size === 'preview' || isLaunch || isSession ? 'mb-2.5' : 'mb-5'
           }`}
         >
           {headerTitle ? (
@@ -190,7 +202,12 @@ export function BottomSheet({
             </button>
           </div>
         </div>
-        {isLaunch ? <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div> : children}
+        {isLaunch || isSession || hasDetachedFooter ? (
+          <>
+            <div data-sheet-scroll-owner className="min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain pb-4 sm:pb-5">{children}</div>
+            {footer ? <div className="shrink-0">{footer}</div> : null}
+          </>
+        ) : children}
       </div>
     </div>
   );

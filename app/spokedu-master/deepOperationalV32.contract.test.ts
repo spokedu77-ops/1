@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 const classDetail = readFileSync('app/spokedu-master/classes/[classId]/page.tsx', 'utf8');
 const studentDetail = readFileSync('app/spokedu-master/students/[studentId]/page.tsx', 'utf8');
-const session = readFileSync('app/spokedu-master/activity/page.tsx', 'utf8');
+const session = readFileSync('app/spokedu-master/manage/SessionDetailSheet.tsx', 'utf8');
 const capture = readFileSync('app/spokedu-master/activity/SessionCapturePanel.tsx', 'utf8');
 
 describe('UI Foundation v3.2 deep operational contract', () => {
@@ -26,12 +26,12 @@ describe('UI Foundation v3.2 deep operational contract', () => {
     expect(studentDetail).not.toContain('font-black');
   });
 
-  it('keeps lifecycle selectors while removing generic journey panels and eyebrows', () => {
-    expect(session).toContain('resolveSessionWorkspacePresentation');
-    expect(session).toContain("workspace?.presentationKind === 'PREP'");
-    expect(session).toContain("workspace?.presentationKind === 'RUN'");
-    expect(session).toContain("workspace?.presentationKind === 'WRAP'");
-    expect(session).toContain('data-session-primary-action');
+  it('uses the simple operational Session sequence without runtime workspaces', () => {
+    expect(session).toContain('수업 활동');
+    expect(session).toContain('출석');
+    expect(session).toContain('메모');
+    expect(session).not.toContain('resolveSessionWorkspacePresentation');
+    expect(session).not.toContain("presentationKind === 'RUN'");
     expect(session).not.toContain('SPM_JOURNEY_SURFACE');
     expect(session).not.toContain('SPM_JOURNEY_EYEBROW');
     expect(capture).not.toContain('SPM_JOURNEY_SURFACE');
@@ -40,8 +40,8 @@ describe('UI Foundation v3.2 deep operational contract', () => {
 
   it('preserves the existing persistence and completion calls', () => {
     expect(session).toContain('await data.updateSessionProgram');
-    expect(session).toContain("void persist('completed')");
+    expect(session).toContain("persist(activeSession ? 'completed' : 'scheduled')");
     expect(session).toContain('await captureRef.current?.save()');
-    expect(session).toContain('markAllPresent');
+    expect(session).toContain('전체 출석');
   });
 });

@@ -197,7 +197,6 @@ describe('SPOMOVE public naming apply', () => {
     expect(model.displayTitle).not.toMatch(/SPOMAT|이동/u);
   });
 });
-
 describe('SPOMOVE public card meta contract', () => {
   it('covers core and difficulty for all public 72 cards', () => {
     let bareDifficulty = 0;
@@ -274,5 +273,62 @@ describe('SPOMOVE public card meta contract', () => {
     expect(hub).not.toContain('decisionMeta');
     expect(hub).not.toContain('supportingMeta');
     expect(hub).not.toContain('composeSpomoveCardSubtitleParts');
+  });
+
+  it('uses public preset difficulty instead of thinkingLevel', () => {
+    const source = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/spomovePublicCardDifficulty.ts'), 'utf8');
+    expect(source).not.toContain('thinkingLevel');
+    expect(source).not.toContain('SPOMOVE_THINKING_LEVEL_LABELS');
+    expect(source).not.toContain('getOfficialSpomovePresetGuide');
+
+    const moleLine = (id: string) =>
+      composeSpomovePublicCardMetaParts(getSpomoveCardDisplayModel(findPublic(id)).publicMeta).join(' · ');
+    expect(moleLine('visual-reaction-mole-l1')).toBe('시각 반응 · 난이도 쉬움');
+    expect(moleLine('visual-reaction-mole-normal-skeleton')).toBe('시각 반응 · 난이도 보통');
+    expect(moleLine('visual-reaction-goalkeeper-easy-skeleton')).toBe('시각 반응 · 난이도 쉬움');
+    expect(moleLine('visual-reaction-goalkeeper-42')).toBe('시각 반응 · 난이도 보통');
+    expect(moleLine('simon-pole-arrows-41')).toBe('사이먼 이펙트 · 난이도 보통');
+    expect(moleLine('simon-arrow-hard-skeleton')).toBe('사이먼 이펙트 · 난이도 어려움');
+    expect(moleLine('flanker-uniform-07')).toBe('플랭커 이펙트 · 좌우 · 난이도 보통');
+    expect(moleLine('flanker-arrow-udlr-exp')).toBe('플랭커 이펙트 · 상하좌우 · 난이도 어려움');
+    expect(moleLine('reaction-cognition-quad-fruit-10')).toBe('4분할 · 과일 · 난이도 쉬움');
+  });
+
+  it('differentiates simon public pairs by difficulty slot', () => {
+    const pairs = [
+      ['simon-pole-arrows-41', 'simon-arrow-hard-skeleton'],
+      ['simon-pole-shape-06', 'simon-shape-hard-skeleton'],
+      ['simon-balloon-flash-05', 'simon-balloon-hard-skeleton'],
+      ['simon-mixed-gallery-exp', 'simon-random-hard-skeleton'],
+      ['simon-camouflage-center-skeleton', 'visual-reaction-blackout-37'],
+    ] as const;
+    for (const [normalId, hardId] of pairs) {
+      const normal = getSpomoveCardDisplayModel(findPublic(normalId));
+      const hard = getSpomoveCardDisplayModel(findPublic(hardId));
+      expect(normal.title).toBe(hard.title);
+      expect(normal.publicMeta.core).toBe(hard.publicMeta.core);
+      expect(normal.publicMeta.variant).toBe(hard.publicMeta.variant);
+      expect(normal.publicMeta.difficulty).toBe('난이도 보통');
+      expect(hard.publicMeta.difficulty).toBe('난이도 어려움');
+    }
+  });
+
+  it('reports no unexplained identical public cards', () => {
+    const bySignature = new Map<string, string[]>();
+    for (const preset of publicLibrary) {
+      const display = getSpomovePresetDisplayModel(preset);
+      const card = getSpomoveCardDisplayModel(preset);
+      const signature = [
+        display.rootTitle,
+        card.publicMeta.core,
+        card.publicMeta.variant ?? '',
+        card.publicMeta.difficulty,
+      ].join('|');
+      const list = bySignature.get(signature) ?? [];
+      list.push(preset.id);
+      bySignature.set(signature, list);
+    }
+    const collisions = [...bySignature.values()].filter((ids) => ids.length > 1);
+    expect(collisions).toEqual([]);
   });
 });

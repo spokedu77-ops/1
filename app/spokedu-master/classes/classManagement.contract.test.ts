@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('MASTER Class and attendance management contracts', () => {
-  const activity = read('app/spokedu-master/activity/page.tsx');
+  const manage = read('app/spokedu-master/manage/ManageView.tsx');
+  const schedule = read('app/spokedu-master/manage/ScheduleTab.tsx');
+  const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+  const projection = read('app/spokedu-master/manage/AttendanceProjectionTable.tsx');
   const list = read('app/spokedu-master/classes/page.tsx');
   const detail = read('app/spokedu-master/classes/[classId]/page.tsx');
   const rosterSheet = read('app/spokedu-master/classes/[classId]/ClassRosterSheet.tsx');
@@ -26,9 +29,9 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(activity).not.toContain('ClassManagerSheet');
     expect(activity).not.toContain('ClassNameRow');
     expect(activity).not.toContain('수업반 관리</button>');
-    expect(activity).toContain('/spokedu-master/classes?create=1');
-    expect(activity).toContain("setCreateClassId(resolution.classId)");
-    expect(activity).toContain('잘못된 수업반입니다.');
+    expect(schedule).toContain('/spokedu-master/classes?create=1');
+    expect(manage).toContain("setCreateClassId(resolution.classId)");
+    expect(manage).toContain('유효하지 않은 수업반입니다.');
   });
 
   it('creates Classes with one field and routes to the exact new Class', () => {
@@ -44,23 +47,21 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(list).not.toContain('MASTER_ACTION_COPY.open');
   });
 
-  it('orders Class Detail by current work, context, history, memory, then schedule management', () => {
+  it('keeps Class Detail focused on current work, roster, history, and memory', () => {
     const currentWork = detail.indexOf('<SessionSummary session=');
     const rosterTabs = detail.indexOf('role="tablist"');
     const recentHistory = detail.indexOf('지난 수업</h2>');
     const memory = detail.indexOf('<ClassMemoryPanel');
-    const schedule = detail.indexOf('<RegularSchedulePanel');
     expect(currentWork).toBeGreaterThan(-1);
     expect(rosterTabs).toBeGreaterThan(currentWork);
     expect(recentHistory).toBeGreaterThan(rosterTabs);
     expect(memory).toBeGreaterThan(recentHistory);
-    expect(schedule).toBeGreaterThan(memory);
+    expect(detail).not.toContain('RegularSchedulePanel');
     expect(detail).not.toContain('다음 운영 작업');
     expect(detail).toContain('미기록 수업 선택');
     expect(detail).toContain('지금 해야 할 일');
     expect(detail).toContain('지난 수업 마무리하기');
     expect(detail).toContain('수업 준비 이어가기');
-    expect(detail).toContain('다음 수업 만들기');
     expect(detail).toContain('아직 지난 수업이 없습니다.');
     expect(detail).not.toContain('border border-dashed');
   });
@@ -86,21 +87,18 @@ describe('MASTER Class and attendance management contracts', () => {
 
   it('renders attendance as a completed Session projection without an attendance-book object', () => {
     expect(detail).toContain('buildClassAttendanceView');
-    expect(detail).toContain("status === 'present' ? '✓ 출석' : status === 'absent' ? '결석' : '—'");
-    expect(detail).toContain('overflow-x-auto');
-    expect(detail).toContain('sticky left-0');
+    expect(detail).toContain('AttendanceProjectionTable');
+    expect(projection).toContain('overflow-x-auto');
+    expect(projection).toContain('sticky left-0');
     expect(detail).toContain('shiftAttendanceMonth');
-    expect(detail).toContain('/spokedu-master/activity?session=${encodeURIComponent(session.id)}');
+    expect(projection).toContain('/spokedu-master/activity?session=${encodeURIComponent(session.id)}');
     expect(detail).not.toContain('AttendanceBook');
     expect(detail).not.toContain('출석부 만들기');
   });
 
   it('supports fast current-roster attendance without blocking Session completion', () => {
-    expect(activity).toContain('const markAllPresent');
-    expect(activity).toContain("currentRoster.map((student) => [student.id, 'present' as const])");
-    expect(activity).toContain('setAttendanceDirty(true)');
-    expect(activity).toContain('미확인 {uncheckedRosterCount}명');
-    expect(activity).toContain('actions.markAllPresent && currentRoster.length');
+    expect(activity).toContain("Object.fromEntries(roster.map((student) => [student.id, 'present' as const]))");
+    expect(activity).toContain('전체 출석');
     expect(activity).not.toContain('uncheckedRosterCount === 0');
   });
 

@@ -1,21 +1,12 @@
 ---
-description: SPOKEDU MASTER canonical governance entry and enforcement
+description: SPOKEDU MASTER Cursor adapter — follow AGENTS.md, not this file
 alwaysApply: true
 ---
 
-# SPOKEDU MASTER governance
+# SPOKEDU MASTER governance — pointer only
 
-For SPOKEDU MASTER work:
+Follow `/AGENTS.md` first.
 
-1. Read `/AGENTS.md`.
-2. Follow `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md`.
-3. For UI work, follow `app/spokedu-master/MASTER_VISUAL_SYSTEM.md`.
-4. Check `app/spokedu-master/MASTER_SURFACE_MATRIX.md` for surface role and rendered-QA status.
-5. For SPOMOVE work, follow `app/spokedu-master/spomove/SPOMOVE_PRODUCT_CONTRACT.md`.
-6. Implement only the approved user request or completed Sprint Brief scope.
-7. Preserve existing product semantics unless an approved Product Decision says otherwise.
-8. Do not use archived or superseded contracts as authority.
+For MASTER work, apply the product/domain contract that AGENTS.md names: `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md`.
 
-Do not infer runtime behavior from a pathname or component name alone. Global analysis does not authorize global refactoring.
-
-> Think globally. Decide explicitly. Implement only approved scope.
+This file has no independent product, visual, or implementation authority. Do not add rules here.

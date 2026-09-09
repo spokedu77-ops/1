@@ -24,15 +24,7 @@ This runbook is the release checklist for SPOKEDU MASTER. It documents the curre
    - `SECURITY DEFINER` and fixed `search_path` are present.
    - `public`, `anon`, and `authenticated` execution are revoked.
    - `service_role` execute is granted.
-4. Run CI gate.
-   - TypeScript
-   - ESLint
-   - related Vitest
-   - migration contract tests
-   - production build
-   - `next start` route smoke
-   - logged commercial smoke when QA credentials are available
-   - `git diff --check`
+4. Run the matching CI jobs (see **CI jobs** below). Do not assume production build, legacy Vitest, or staging payment run on every MASTER PR.
 5. Post-deploy smoke.
    - `/login`
    - `/spokedu-master/landing`
@@ -46,6 +38,62 @@ This runbook is the release checklist for SPOKEDU MASTER. It documents the curre
    - class record save failure
    - owner data exposure
    - blank screen or infinite loading on a core route
+
+## CI jobs
+
+Source of truth: `.github/workflows/spokedu-master-qa.yml` and `.github/workflows/typecheck.yml`. `npm run lint` is gym-scoped and is not the MASTER CI lint command. Use the job identifiers below. Do not treat “Lane A / Lane B / Lane C” as a second hierarchy.
+
+### Normal MASTER validation — `master-gate` and `typecheck.yml`
+
+Runs when MASTER-related path filters match (see the MASTER QA workflow `on.pull_request` / `on.push` paths).
+
+**`master-gate`** (`MASTER gate — lint + contracts`):
+
+- targeted ESLint with `--max-warnings 0` (path list in the workflow job, not `npm run lint`)
+- `npm run test:spokedu-master:core`
+- `git diff --check`
+
+Does **not** run production build, `test:spokedu-master:legacy`, `npm test` / `test:full`, or staging payment.
+
+**`typecheck.yml`** (separate workflow):
+
+- `npm run typecheck`
+- only when its own path filters match
+- MASTER QA workflow does not duplicate this job
+
+### Commercial Linux smoke — `commercial-linux-smoke`
+
+Job: `commercial-linux-smoke`. Requires `master-gate` first. This is not “Lane B”.
+
+Runs only if:
+
+- the ref name starts with `release/` or `commercial/`, or
+- `workflow_dispatch` with `run_commercial_smoke`
+
+Commands:
+
+- `npm run build`
+- `npm run start` on port 3099
+- HTTP probes: `/login`, `/spokedu-master/landing`, `/spokedu-master/payment`
+
+Everyday `main` pushes skip this job unless dispatch forces it.
+
+### Manual staging validation — `lane-b-staging-guard` (`Lane B — staging guard`)
+
+Workflow job id: `lane-b-staging-guard`. Display name in Actions: **Lane B — staging guard**. “Lane B” means only this job. This is **not** every PR and is not `commercial-linux-smoke`.
+
+Runs only on `workflow_dispatch` with `run_staging_validation`. Uses staging secrets. After preflight:
+
+- Playwright Chromium install (if preflight passed)
+- `npm run qa:spokedu-master -- --base-url "$STAGING_BASE_URL"`
+- `node scripts/spokedu-master-commercial-verification-report.mjs`
+- optional `npm run qa:spokedu-master:staging-payment` when `run_toss_sandbox` is true
+
+Preflight uses `scripts/spokedu-master-commercial-preflight.mjs`. Failure fails the job on `release/**` or `commercial/**` refs; on other refs a failed preflight does not fail the job.
+
+### Preview read-only smoke — `preview-remote-smoke`
+
+Runs only on `workflow_dispatch` when a Vercel Preview base URL is provided. Accepts only HTTPS `*.vercel.app` hosts. Read-only `/login`, `/spokedu-master/landing`, `/spokedu-master/payment` HEAD checks.
 
 ## Payment
 
@@ -182,21 +230,15 @@ When Toss sandbox real payment is intentionally deferred, treat the no-payment g
   - payment apply/reconciliation logs
   - client error reporting for unexpected UI crashes
 
-## GitHub Actions lanes
+## GitHub Actions jobs
 
-- Lane A — Linux isolated verification:
-  - Runs on GitHub Actions Ubuntu only.
-  - Uses CI-safe placeholder service values.
-  - Must not call real Supabase or Toss.
-  - Runs build, TypeScript, ESLint, related Vitest, migration contracts, Linux `next start`, non-login route smoke, mocked route contracts, and `git diff --check`.
-- Preview read-only smoke:
-  - Runs only when a Vercel Preview URL is provided.
-  - Accepts only HTTPS Vercel preview domains.
-  - Runs read-only route checks.
-- Lane B — remote staging validation:
-  - Runs only after explicit workflow dispatch and staging preflight.
-  - Skips with `STAGING VALIDATION SKIPPED — unsafe or incomplete staging configuration` when any guard is incomplete.
-  - Release/commercial branches must not treat a staging skip as commercial readiness.
+Same identifiers as **CI jobs** above. Do not reuse “Lane A” for Linux smoke or “Lane B” for anything except `lane-b-staging-guard`.
+
+- `master-gate` — Ubuntu; CI placeholder env; no real Supabase or Toss; targeted ESLint, `test:spokedu-master:core`, `git diff --check`.
+- `typecheck.yml` — `npm run typecheck` when its path filters match.
+- `commercial-linux-smoke` — Ubuntu; CI placeholder env; no real Supabase or Toss; `npm run build`, Linux `next start`, non-login HTTP probes. Not every PR.
+- `preview-remote-smoke` — only when a HTTPS Vercel Preview URL is provided; read-only route checks.
+- `lane-b-staging-guard` (**Lane B — staging guard**) — only after explicit `workflow_dispatch` and staging preflight; secret-dependent. Preflight may print `STAGING VALIDATION SKIPPED — unsafe or incomplete staging configuration`. Release/commercial branches must not treat a staging skip as commercial readiness.
 
 ## Required GitHub Secrets
 

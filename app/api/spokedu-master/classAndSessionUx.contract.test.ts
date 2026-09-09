@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const read = (path: string) => readFileSync(path, 'utf8');
-const activity = read('app/spokedu-master/activity/page.tsx');
+const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+const picker = read('app/spokedu-master/manage/SessionActivityPicker.tsx');
 const classes = read('app/spokedu-master/classes/page.tsx');
 const classDetail = read('app/spokedu-master/classes/[classId]/page.tsx');
 
@@ -20,17 +21,17 @@ describe('SPOKEDU MASTER class and Session operating UX', () => {
 
   it('directs an empty roster to ID-based membership management', () => {
     expect(activity).toContain('selectedClass?.studentIds.includes(student.id)');
-    expect(activity).toContain('명단 관리하기 →');
+    expect(activity).toContain('등록된 학생이 없습니다.');
     expect(activity).not.toContain('student.group ===');
   });
 
   it('uses a searchable multi-select program picker with SPOMOVE discovery', () => {
     const mutationRoute = read('app/api/spokedu-master/sessions/[sessionId]/programs/route.ts');
     const sourceMigration = read('supabase/migrations/20260823010000_spokedu_master_session_program_sources.sql');
-    expect(activity).toContain('프로그램명, 연령, 공간 검색');
-    expect(activity).toContain("['spomove', 'SPOMOVE']");
+    expect(picker).toContain('활동 검색');
+    expect(picker).toContain("(['program', 'spomove'] as const)");
     expect(activity).toContain('OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset)');
-    expect(activity).toContain('selectedActivityKeys');
+    expect(picker).toContain('setSelected');
     expect(activity).toContain('data.addSessionSpomove');
     expect(mutationRoute).toContain('findOfficialSpomovePreset');
     expect(mutationRoute).toContain('spokedu_master_add_session_spomove');
@@ -42,7 +43,7 @@ describe('SPOKEDU MASTER class and Session operating UX', () => {
   it('keeps status visible while using explicit completion and cancellation actions', () => {
     expect(activity).toContain('statusLabel(status)');
     expect(activity).not.toContain('<option value="completed">');
-    expect(activity).toContain("void persist('completed')");
+    expect(activity).toContain("persist(activeSession ? 'completed' : 'scheduled')");
     expect(activity).toContain("void persist('cancelled')");
   });
 });

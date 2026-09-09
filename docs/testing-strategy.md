@@ -35,3 +35,24 @@ test suite.
 
 `npm test` remains an alias of the full suite for backward compatibility with
 existing local and external automation.
+
+## Repository typecheck
+
+`npm run typecheck` (`tsc --noEmit --pretty false`) is the repository TypeScript
+gate. GitHub Actions runs it from `.github/workflows/typecheck.yml`. The MASTER
+`master-gate` job does not run typecheck.
+
+## Lint execution authority
+
+There is no single canonical repository-wide lint command.
+
+- `eslint.config.mjs` owns ESLint **rule** configuration, not CI path scope.
+- MASTER CI lint scope is `.github/workflows/spokedu-master-qa.yml` /
+  `master-gate` (targeted `npx eslint … --max-warnings 0`).
+- `npm run lint` currently lints `app/info/gym` only (legacy/manual). It is not
+  the MASTER CI lint gate.
+- `npm run lint:all` is a manual whole-repository lint (`eslint .`).
+- `npm run lint:ci` is `eslint . --max-warnings 102` and is not invoked by
+  GitHub Actions.
+- `npm run lint:spomove` is a manual scoped command. Its current paths are
+  `app/admin/spomove` and `app/api/spokedu-master` with `--max-warnings 0`.

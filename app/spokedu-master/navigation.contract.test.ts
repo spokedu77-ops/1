@@ -26,18 +26,20 @@ describe('SPOKEDU MASTER primary navigation', () => {
 
   it('uses the Session calendar instead of the standalone record creator', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
+    const manage = read('app/spokedu-master/manage/ManageView.tsx');
+    const schedule = read('app/spokedu-master/manage/ScheduleTab.tsx');
+    const detail = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     const legacy = read('app/spokedu-master/class-record/page.tsx');
-    expect(activity).toContain('수업 관리');
-    expect(activity).toContain('<MonthSessionCalendar');
-    expect(activity).toContain('manage-calendar-heading');
-    expect(activity).toContain('수업 상세');
-    expect(activity).toContain('오늘 할 활동을 하나 추가해 주세요.');
-    expect(activity).toContain('오늘 활동 순서');
-    expect(activity).toContain('수업 시작');
-    expect(activity).toContain('deriveMasterSessionWorkState');
-    expect(activity).toContain("workspace?.presentationKind === 'WRAP'");
+    expect(activity).toContain("import ManageView from '../manage/ManageView'");
+    expect(manage).toContain('수업 관리');
+    expect(schedule).toContain('<MonthSessionCalendar');
+    expect(schedule).toContain('manage-calendar-heading');
+    expect(detail).toContain('수업 상세');
+    expect(detail).toContain('수업 활동');
+    expect(detail).not.toContain('수업 시작');
+    expect(detail).not.toContain('resolveSessionWorkspacePresentation');
     expect(activity).not.toContain('/spokedu-master/class-record');
-    expect(activity).not.toContain('ClassManagerSheet');
+    expect(manage).not.toContain('ClassManagerSheet');
     expect(legacy).toContain("redirect('/spokedu-master/activity')");
   });
 

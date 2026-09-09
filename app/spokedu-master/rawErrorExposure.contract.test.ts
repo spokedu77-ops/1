@@ -9,7 +9,7 @@ describe('SPOKEDU MASTER raw error exposure cleanup', () => {
     const payment = read('app/spokedu-master/payment/page.tsx');
     const students = read('app/spokedu-master/students/page.tsx');
     const report = read('app/spokedu-master/report/page.tsx');
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
 
     expect(payment).not.toContain('authError.message');
     expect(payment).not.toContain('setError(json.error');

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const activity = readFileSync('app/spokedu-master/activity/page.tsx', 'utf8');
+const activity = readFileSync('app/spokedu-master/manage/SessionDetailSheet.tsx', 'utf8');
 const provider = readFileSync('app/spokedu-master/operational/OperationalDataProvider.tsx', 'utf8');
 const migration = readFileSync('supabase/migrations/20260824120000_spokedu_master_atomic_session_completion.sql', 'utf8');
 
@@ -20,13 +20,10 @@ describe('MASTER operational lifecycle integrity', () => {
     expect(provider).not.toContain('item.programs.find((program) => program.id === id)!');
   });
 
-  it('keeps cancelled content immutable and offers recovery, replacement, and deletion', () => {
-    expect(activity).toContain('취소 기록은 보존됩니다. 상황에 맞는 다음 행동을 선택해 주세요.');
-    expect(activity).toContain('MASTER_ACTION_COPY.restoreSession');
-    expect(activity).toContain('MASTER_ACTION_COPY.replaceSession');
-    expect(activity).toContain('MASTER_ACTION_COPY.deleteSession');
-    expect(activity).toContain('create=1&class=');
-    expect(activity).toContain('Keep the sheet open so complete / restore / cancel recovery stay in one continuous flow.');
+  it('keeps cancelled content immutable and offers quiet restore and deletion', () => {
+    expect(activity).toContain('취소 해제');
+    expect(activity).toContain('수업 삭제');
+    expect(activity).toContain("status === 'cancelled'");
   });
 
   it('allows cancelled to scheduled restore in the foundation migration chain', () => {
@@ -41,6 +38,6 @@ describe('MASTER operational lifecycle integrity', () => {
     expect(reopen).toContain("new.completed_at := null");
     expect(reopen).not.toContain('delete from public.spokedu_master_session_programs');
     expect(activity).toContain('수업 완료 취소');
-    expect(activity).toContain('출석, 활동 완료 표시, 수업 메모와 안내문은 삭제하지 않습니다.');
+    expect(activity).toContain("void persist('scheduled')");
   });
 });

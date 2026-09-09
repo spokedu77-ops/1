@@ -1,3 +1,9 @@
+---
+description: 공개 랜딩 카드 — landingCardShell 함수와 landingCardFrame 문자열을 섞지 말 것
+globs: app/spokedu/components/visual/**,app/spokedu/lib/ui-classes.ts,app/spokedu/lib/landingCardShell.contract.test.ts
+alwaysApply: false
+---
+
 # spokedu 랜딩 카드 shell 이름
 
 ## 두 심볼을 섞지 말 것

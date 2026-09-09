@@ -1,6 +1,6 @@
 ---
 description: admin/note 편집 UX 전역 계약 — sibling order / Enter marks / Ctrl+Z / Placement
-globs: app/admin/note/**/*
+globs: app/admin/note/**/*,app/lib/note/**/*
 alwaysApply: false
 ---
 

@@ -1,50 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SPOKEDU
 
-## 일정 및 센터관리 (Supabase)
+Next.js App Router repository.
 
-신규 환경: [`supabase/migrations/`](../supabase/migrations/) 적용.
+Agent instructions: [AGENTS.md](./AGENTS.md).
 
-레거시 수동 SQL(과거 참고): [`sql/archive/legacy/`](sql/archive/legacy/) — schedules 관련은 `29_schedules_schema.sql` 등.  
-실행 순서 설명: [sql/README_schedules_일정테이블.md](sql/README_schedules_일정테이블.md)
+## Database (Supabase)
 
-## Getting Started
+New environments: apply [`supabase/migrations/`](supabase/migrations/).
 
-First, run the development server:
+Legacy manual SQL (reference only): [`sql/archive/legacy/`](sql/archive/legacy/).
+Schedule table notes: [sql/README_schedules_일정테이블.md](sql/README_schedules_일정테이블.md)
+
+## Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Public home is `/` (`app/(spokedu-public)/page.tsx`). Legacy `/spokedu` redirects to `/`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Hosted on Vercel. MASTER commercial process: [docs/spokedu-master-commercial-runbook.md](docs/spokedu-master-commercial-runbook.md).
 
 ## SPOMOVE Notion Catalog
 
-`/spokedu/programs/spomove/catalog` displays the public Notion catalog URL from `SPOMOVE_NOTION_CATALOG_URL`.
+Public catalog route: `/spomove/catalog`, from `SPOMOVE_NOTION_CATALOG_URL`.
+Legacy `/spokedu/programs/spomove/catalog` redirects to `/spomove/catalog`.
 
 1. Notion 페이지에서 공유 → 게시를 실행합니다.
 2. “이 페이지 임베드하기”에서 공개 주소를 확인합니다.

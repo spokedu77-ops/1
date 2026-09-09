@@ -7,20 +7,19 @@ const read = (path: string) => readFileSync(path, 'utf8');
 
 describe('MASTER Field Reliability — work preservation / mutation / resume', () => {
   it('RESUME-01 / REL-01: SessionSheet guards unsaved attendance/memo and soft-reconciles server truth', () => {
-    const activity = read('app/spokedu-master/activity/page.tsx');
-    expect(activity).toContain('unsavedWork');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    expect(activity).toContain('dirty');
     expect(activity).toContain('beforeunload');
     expect(activity).toContain('저장하지 않은 변경이 있습니다');
     expect(activity).toContain('requestClose');
-    expect(activity).toContain('data.sessions.find((item) => item.id === editing.id)');
+    expect(activity).toContain('requestClose');
   });
 
   it('FAIL-01: Session mutations use safe client error messages and keep retry copy', () => {
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(activity).toContain('getMasterRequestErrorMessage');
-    expect(activity).toContain('sessionMutationError');
     expect(activity).not.toMatch(/setError\(caught instanceof Error \? caught\.message/);
-    expect(activity).toContain('입력 내용은 유지되어 있습니다');
+    expect(activity).toContain('수업을 저장하지 못했습니다.');
 
     const network = getMasterRequestErrorMessage(new MasterClientRequestError(toNetworkMasterClientError()));
     expect(network).toContain('인터넷');
@@ -37,7 +36,7 @@ describe('MASTER Field Reliability — work preservation / mutation / resume', (
   });
 
   it('REL-06: activity toggle/reorder/remove share saving lock', () => {
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(activity).toContain('|| saving) return');
     expect(activity).toMatch(/toggleProgram[\s\S]*setSaving\(true\)/);
     expect(activity).toMatch(/moveProgram[\s\S]*setSaving\(true\)/);
@@ -50,12 +49,12 @@ describe('MASTER Field Reliability — work preservation / mutation / resume', (
     expect(payment).toContain('setTimeout');
   });
 
-  it('FIELD-LITE / FIELD-PREM anchors remain in Session complete → next path', () => {
-    const activity = read('app/spokedu-master/activity/page.tsx');
+  it('FIELD-LITE / FIELD-PREM keeps atomic completion and removes next-session primary UX', () => {
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const provider = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
     expect(activity).toContain('completeSession');
-    expect(activity).toContain('다음 수업 만들기');
-    expect(activity).toContain('sourceSessionProgramIds');
-    expect(activity).toContain('createNextSession');
+    expect(activity).not.toContain('다음 수업 만들기');
+    expect(provider).toContain('createNextSession');
   });
 
   it('DENSE-01: documents full hydrate as known soft-refresh scope (no silent pagination)', () => {

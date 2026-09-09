@@ -28,6 +28,7 @@ import {
 } from './spomovePublicCatalogOrder';
 import { supportsCueSpeedOverride } from './spomoveCueSpeed';
 import { getSpomoveDifficultyKind } from './spomoveDifficulty';
+import { resolveSpomovePublicCardDifficulty } from './spomovePublicCardDifficulty';
 import {
   composeOfficialDisplayTitle,
   composeSpomovePublicCardMetaParts,
@@ -453,11 +454,7 @@ export function resolveSpomoveCardBadges(meta: SpomoveCardMeta): SpomoveCardBadg
 }
 
 export { composeSpomovePublicCardMetaParts };
-
-export function resolveSpomovePublicCardDifficulty(preset: OfficialSpomovePreset): string {
-  const guide = getOfficialSpomovePresetGuide(preset);
-  return `난이도 ${SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}`;
-}
+export { resolveSpomovePublicCardDifficulty } from './spomovePublicCardDifficulty';
 
 export function resolveSpomovePublicCardMeta(preset: OfficialSpomovePreset): SpomovePublicCardMeta {
   const naming = getSpomovePublicNaming(preset.id);

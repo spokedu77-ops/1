@@ -1,6 +1,6 @@
 ---
 description: admin/note 메모장 계약 — Intent 없는 본문·순서 변경 금지 (ZERO LOSS 사용자-facing SSOT)
-globs: app/admin/note/**/*,app/lib/note/**/*,app/lib/server/noteOpLog/**/*,app/lib/server/loadNoteDocumentBlocks*.ts,app/lib/server/applyNoteBlockInvariantMigrations.ts,app/api/admin/note/**/*
+globs: app/admin/note/**/*,app/lib/note/**/*,app/lib/server/noteOpLog/**/*,app/lib/server/loadNoteDocumentBlocks*.ts,app/lib/server/applyNoteBlockInvariantMigrations.ts,app/lib/server/applyNoteBlockTreeMigrations.ts,app/api/admin/note/**/*
 alwaysApply: true
 ---
 

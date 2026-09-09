@@ -1,26 +1,60 @@
 # docs/ — 문서 인덱스
 
-루트 `docs/`에는 **현행 SSOT·운영 문서**만 둡니다.  
-완료된 분석·제안·레거시 참고는 [`archive/`](archive/) 아래로 옮겨 두었습니다.
+루트 `docs/` 인덱스는 **권한 종류를 구분**합니다. 완료된 분석·제안·레거시 참고는 [`archive/`](archive/) 아래입니다. 이 패스에서는 파일을 옮기지 않습니다.
 
-## Active — SSOT (경로 고정, 이동 금지)
+에이전트 진입점은 루트 [`AGENTS.md`](../AGENTS.md)입니다.
 
-코드·contract test가 아래 경로를 직접 참조합니다.
+## Canonical
+
+구현·제품 의미의 현재 권한. 코드가 경로를 가리키는 경우도 여기 둡니다.
 
 | 문서 | 용도 |
 |------|------|
-| [admin-note-notion-contract.md](admin-note-notion-contract.md) | Admin Note 편집·저장 계약 |
-| [SPOMOVE_OPERATION_LAYER_SSOT.md](SPOMOVE_OPERATION_LAYER_SSOT.md) | SPOMOVE 5축 운영 레이어 SSOT |
-| [SPOMOVE_MOVEMENT_PHYSICAL_CONTRACT.md](SPOMOVE_MOVEMENT_PHYSICAL_CONTRACT.md) | Movement Physical Contract |
+| [SPOKEDU_MASTER_PRODUCT_CONTRACT.md](SPOKEDU_MASTER_PRODUCT_CONTRACT.md) | MASTER 제품 의미·결정·변경 거버넌스 SSOT |
+| [SPOKEDU_PUBLIC_WEBSITE_SSOT.md](SPOKEDU_PUBLIC_WEBSITE_SSOT.md) | 공개 사이트 브랜드·여정·페이지 job SSOT |
+| [SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md](SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md) | 구현 Sprint Brief 템플릿 |
+| [admin-note-notion-contract.md](admin-note-notion-contract.md) | Admin Note 편집·저장 계약 (코드 주석이 참조) |
+| [SPOMOVE_OPERATION_LAYER_SSOT.md](SPOMOVE_OPERATION_LAYER_SSOT.md) | SPOMOVE 5축 운영 레이어 (코드가 참조) |
+
+## Supporting
+
+현행이지만 독립 제품/비주얼 SSOT가 아닙니다.
+
+| 문서 | 용도 |
+|------|------|
+| [SPOKEDU_MASTER_DESIGN_GOVERNANCE.md](SPOKEDU_MASTER_DESIGN_GOVERNANCE.md) | 문서 권한 지도·인벤토리. 제품/비주얼 SSOT 아님 |
+| [testing-strategy.md](testing-strategy.md) | Vitest core / legacy / full 스위트 역할 |
+| [SPOMOVE_MOVEMENT_PHYSICAL_CONTRACT.md](SPOMOVE_MOVEMENT_PHYSICAL_CONTRACT.md) | Movement Physical 계약. 상위 SSOT는 Operation Layer |
+
+## Operational
+
+| 문서 | 용도 |
+|------|------|
 | [spokedu-master-commercial-runbook.md](spokedu-master-commercial-runbook.md) | MASTER 상용 운영 runbook |
-| [spokedu-master-commercial-risk-audit.md](spokedu-master-commercial-risk-audit.md) | MASTER 상용 리스크 audit |
 | [spokedu-master-release-checklist.md](spokedu-master-release-checklist.md) | MASTER 릴리스 체크리스트 |
 | [spokedu-master-backup-restore-runbook.md](spokedu-master-backup-restore-runbook.md) | MASTER 백업·복구 runbook |
-| [admin_classes_오류분석_및_수업로그.md](admin_classes_오류분석_및_수업로그.md) | 수업 관리·session_count_logs |
+| [spokedu-launch-checklist.md](spokedu-launch-checklist.md) | 공개 사이트 오픈 체크리스트 |
+| [spokedu-live-smoke-test.md](spokedu-live-smoke-test.md) | 공개 라이브 스모크 |
+| [spokedu-tv-display-and-remote.md](spokedu-tv-display-and-remote.md) | TV 디스플레이·리모트 |
+| [PHASE5_DB_마이그레이션_가이드.md](PHASE5_DB_마이그레이션_가이드.md) | Phase 5 DB 마이그레이션 가이드 |
+| [배포_주차_표시_체크리스트.md](배포_주차_표시_체크리스트.md) | 배포 주차 표시 체크리스트 |
 
-## Active — 운영·제품
+## Historical / analysis (docs 루트, 권한 없음)
 
-### SPOMOVE / CAMERA
+제품 계약이 baseline을 historical evidence로 명시합니다. audit·분석은 canonical이 아닙니다.
+
+- [SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md](SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md)
+- [spokedu-master-commercial-risk-audit.md](spokedu-master-commercial-risk-audit.md)
+- [admin_classes_오류분석_및_수업로그.md](admin_classes_오류분석_및_수업로그.md)
+- [session_count_logs_analysis.md](session_count_logs_analysis.md)
+- [사용자페이지_로딩_왜_느린지.md](사용자페이지_로딩_왜_느린지.md)
+- [웜업_챌린지_전체_분석_및_BGM_동기화.md](웜업_챌린지_전체_분석_및_BGM_동기화.md)
+
+SUPERSEDED 포인터 (구링크 호환, 독립 권한 없음): [SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md](SPOKEDU_MASTER_PRODUCT_CONSTITUTION.md), [SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md](SPOKEDU_MASTER_PRODUCT_DECISION_PROTOCOL.md)
+
+## Supporting domain docs (SPOMOVE / CAMERA)
+
+권한은 위 Canonical/Supporting 표를 따릅니다. 아래는 현행 도메인 작업 문서입니다.
 
 - [SPOMOVE_PHASE0_QA_CHECKLIST.md](SPOMOVE_PHASE0_QA_CHECKLIST.md)
 - [SPOMOVE_PHASE_EXECUTION_PLAN.md](SPOMOVE_PHASE_EXECUTION_PLAN.md)
@@ -36,25 +70,6 @@
 - [CAMERA_RESULT_DATA_MODEL.md](CAMERA_RESULT_DATA_MODEL.md)
 - [CAMERA_SETTINGS_RESULT_CONTRACT.md](CAMERA_SETTINGS_RESULT_CONTRACT.md)
 - [CAMERA_STEP10_PARTICIPANTS.md](CAMERA_STEP10_PARTICIPANTS.md)
-
-### SPOKEDU / MASTER / 배포
-
-#### Product Foundation (SSOT — implementation 전 반드시 참조)
-
-| 문서 | 용도 |
-|------|------|
-| [SPOKEDU_MASTER_PRODUCT_CONTRACT.md](SPOKEDU_MASTER_PRODUCT_CONTRACT.md) | Canonical product meaning, decisions, change governance, and SSOT map |
-| [SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md](SPOKEDU_MASTER_PRODUCT_AUDIT_BASELINE.md) | 현재 MASTER surface·journey·roadmap baseline |
-| [SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md](SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md) | 구현 Sprint Brief 템플릿 |
-
-- [spokedu-launch-checklist.md](spokedu-launch-checklist.md)
-- [spokedu-live-smoke-test.md](spokedu-live-smoke-test.md)
-- [spokedu-tv-display-and-remote.md](spokedu-tv-display-and-remote.md)
-- [PHASE5_DB_마이그레이션_가이드.md](PHASE5_DB_마이그레이션_가이드.md)
-- [배포_주차_표시_체크리스트.md](배포_주차_표시_체크리스트.md)
-- [session_count_logs_analysis.md](session_count_logs_analysis.md)
-- [사용자페이지_로딩_왜_느린지.md](사용자페이지_로딩_왜_느린지.md)
-- [웜업_챌린지_전체_분석_및_BGM_동기화.md](웜업_챌린지_전체_분석_및_BGM_동기화.md)
 
 ### 템플릿·도구
 

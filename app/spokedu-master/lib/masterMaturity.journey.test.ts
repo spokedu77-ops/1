@@ -21,10 +21,12 @@ describe('MASTER whole-product maturity journeys', () => {
     );
   });
 
-  it('PREM-01 connects complete → report → next with session context', () => {
-    const activity = read('app/spokedu-master/activity/page.tsx');
+  it('PREM-01 keeps report return and legacy capture context without a completion cascade', () => {
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const manage = read('app/spokedu-master/manage/ManageView.tsx');
     const report = read('app/spokedu-master/report/page.tsx');
-    expect(activity).toContain('sourceSessionProgramIds: selectedCarryoverIds');
+    expect(activity).not.toContain('NextSessionPlanner');
+    expect(manage).toContain("searchParams.get('capture') === '1'");
     expect(report).toContain('backToSessionHref');
     expect(report).toContain('SPM_SECONDARY_BTN');
     expect(getSafeMasterPostPaymentPath('/spokedu-master/report?session=abc')).toContain('session=abc');

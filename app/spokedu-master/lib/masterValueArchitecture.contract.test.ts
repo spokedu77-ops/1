@@ -5,27 +5,26 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('VALUE / Connected Memory continuity', () => {
-  const activity = read('app/spokedu-master/activity/page.tsx');
+  const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
   const capture = read('app/spokedu-master/activity/SessionCapturePanel.tsx');
   const nextMigration = read('supabase/migrations/20260823120000_spokedu_master_create_next_session.sql');
   const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
   const panel = read('app/spokedu-master/components/value/MasterValueEvidencePanel.tsx');
   const evidenceLib = read('app/spokedu-master/lib/masterSubscriberValueEvidence.ts');
 
-  it('PREM-01: Capture memory surfaces in PREP and next planner without auto-writing current memo', () => {
-    expect(activity).toContain('captureMode={workspace?.captureMode');
+  it('PREM-01: Capture remains available only through the legacy context', () => {
+    expect(activity).toContain('legacyCapture && activeSession');
     expect(activity).toContain('<SessionCapturePanel');
     expect(capture).toContain("captureMode === 'memory'");
     expect(capture).toContain('지난 수업에서 이어갈 점');
     expect(activity).not.toMatch(/setMemo\(previous/);
   });
 
-  it('LIFECYCLE-01: next Session reuses Class + selective programs and starts with empty memo', () => {
+  it('LIFECYCLE-01: retained next Session command starts with empty history fields', () => {
     expect(nextMigration).toContain('v_source.class_id');
     expect(nextMigration).toContain("'scheduled', null, null");
-    expect(activity).toContain('sourceSessionProgramIds: selectedCarryoverIds');
-    expect(activity).toContain('PreviousActivityCarryover');
-    expect(activity).toContain('buildNextSessionDraft');
+    expect(activity).not.toContain('PreviousActivityCarryover');
+    expect(activity).not.toContain('NextSessionPlanner');
   });
 
   it('VALUE-01: Home keeps one continuity action alongside Weekly curation', () => {

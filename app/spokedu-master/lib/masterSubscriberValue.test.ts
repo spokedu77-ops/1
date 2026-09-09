@@ -137,20 +137,20 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
     expect(draft.day).toBe('2026-08-26');
     expect(draft.startTime).toBeTruthy();
     expect(draft.endTime).toBeTruthy();
-    const activity = read('app/spokedu-master/activity/page.tsx');
-    expect(activity).toContain('sourceSessionProgramIds');
-    expect(activity).toContain('다음 수업 만들기');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    expect(activity).not.toContain('NextSessionPlanner');
   });
 
-  it('VALUE-PREM-01 surfaces: Payment shows gate context; Completed prioritizes Next over upsell', () => {
+  it('VALUE-PREM-01 surfaces: Payment keeps gate context while Manage keeps capture deep-link compatibility', () => {
     const payment = read('app/spokedu-master/payment/page.tsx');
-    const activity = read('app/spokedu-master/activity/page.tsx');
+    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const manage = read('app/spokedu-master/manage/ManageView.tsx');
     const home = read('app/spokedu-master/dashboard/DashboardView.tsx');
     expect(payment).toContain('buildMasterGateDisplayModel');
     expect(payment).toContain('gateDisplay');
-    expect(activity).toContain('다음 수업 만들기');
-    expect(activity).toContain('<PreviousActivityCarryover');
-    expect(activity).toContain('sourceSessionProgramIds: selectedCarryoverIds');
+    expect(activity).toContain('legacyCapture && activeSession');
+    expect(manage).toContain("searchParams.get('capture') === '1'");
+    expect(activity).not.toContain('PreviousActivityCarryover');
     expect(activity).not.toContain('Premium modal');
     expect(home).not.toContain('Premium 업그레이드');
     expect(home).not.toContain('프리미엄 배너');

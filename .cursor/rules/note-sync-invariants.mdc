@@ -1,6 +1,6 @@
 ---
 description: admin/note 동기화 불변식 — 단일 파이프라인 강제
-globs: app/admin/note/**/*
+globs: app/admin/note/**/*,app/lib/note/**/*,app/lib/server/noteOpLog/**/*,app/api/admin/note/**/*
 alwaysApply: false
 ---
 

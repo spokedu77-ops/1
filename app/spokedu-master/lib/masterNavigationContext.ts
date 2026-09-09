@@ -19,6 +19,7 @@ export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> =
   '/spokedu-master/class-record': ['program', 'record'],
   '/spokedu-master/report': ['session', 'program', 'record'],
   '/spokedu-master/activity': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
+  '/spokedu-master/manage': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
   '/spokedu-master/students': [],
   '/spokedu-master/classes': ['create'],
   '/spokedu-master/class-tools': ['session', 'returnTo', 'source'],
@@ -53,6 +54,7 @@ export function resolveMasterContextQueryKeys(pathname: string): readonly string
   if (pathname.startsWith('/spokedu-master/class-tools')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/class-tools'];
   if (pathname.startsWith('/spokedu-master/report')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/report'];
   if (pathname.startsWith('/spokedu-master/activity')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/activity'];
+  if (pathname.startsWith('/spokedu-master/manage')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/manage'];
   if (pathname.startsWith('/spokedu-master/students/')) return [];
   if (pathname.startsWith('/spokedu-master/students')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/students'];
   if (pathname.startsWith('/spokedu-master/classes/')) return [];
@@ -86,6 +88,8 @@ export function parseMasterWorkReturnHref(
     if (
       decoded === '/spokedu-master/activity'
       || decoded.startsWith('/spokedu-master/activity?')
+      || decoded === '/spokedu-master/manage'
+      || decoded.startsWith('/spokedu-master/manage?')
       || decoded === '/spokedu-master/spomove'
       || decoded.startsWith('/spokedu-master/spomove?')
       || decoded === '/spokedu-master/dashboard'
