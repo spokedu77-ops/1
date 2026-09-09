@@ -41,17 +41,20 @@ describe('spomove preset display model', () => {
     expect(quadFruit && quadAnimalExpansion && moleNormal && sequenceFive).toBeTruthy();
 
     expect(getSpomovePresetDisplayModel(quadFruit!).programLabel).toBe('반응 인지');
-    expect(getSpomovePresetDisplayModel(quadFruit!).displayTitle).toBe('4분할 자극 · 과일');
+    expect(getSpomovePresetDisplayModel(quadFruit!).rootTitle).toBe('목표 찾아가기');
+    expect(getSpomovePresetDisplayModel(quadFruit!).variantLabel).toBe('과일');
+    expect(getSpomovePresetDisplayModel(quadFruit!).displayTitle).toBe('목표 찾아가기 · 과일');
+    expect(getSpomoveCardDisplayModel(quadFruit!).title).toBe('목표 찾아가기');
     expect(getSpomoveCardDisplayModel(quadFruit!).meta.trainingFocus).toBe('선택 반응');
     expect(getSpomoveCardDisplayModel(quadFruit!).meta.responseType).toBe('단순 반응');
-    expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).displayTitle).toBe('4분할 자극 · 동물');
+    expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).displayTitle).toBe('목표 찾아가기 · 동물');
 
     expect(getSpomovePresetDisplayModel(moleNormal!).programLabel).toBe('시지각 반응');
     expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기 · 보통');
     expect(getSpomoveCardDisplayModel(moleNormal!).badges.some((badge) => badge.value === '보통')).toBe(false);
 
     expect(getSpomovePresetDisplayModel(sequenceFive!).programLabel).toBe('순차 기억');
-    expect(getSpomovePresetDisplayModel(sequenceFive!).displayTitle).toBe('순서 기억 · 보통 (5개)');
+    expect(getSpomovePresetDisplayModel(sequenceFive!).displayTitle).toBe('색 순서 기억하기 · 5개');
   });
 
   it('buildSpomoveCardTags mirrors semantic card badges', () => {
@@ -130,7 +133,7 @@ describe('spomove preset display model', () => {
     });
 
     expect(model.guideMode).toBe('published');
-    expect(model.title).toBe('CMS briefing title');
+    expect(model.title).toBe('방향 따라가기 · 화살표');
     expect(model.objective).toBe('Recognize the direction and move accurately.');
     expect(model.teachingPoints).toEqual(['Check accuracy before speed.']);
     expect(model.isOfficialGuide).toBe(true);

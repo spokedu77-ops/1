@@ -46,7 +46,7 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     for (const preset of publicLibrary) {
       const card = getSpomoveCardDisplayModel(preset);
       const difficultyBadges = card.badges.filter((badge) => badge.slot === 'difficulty');
-      if (titleIncludesDifficulty(card.title)) {
+      if (titleIncludesDifficulty(card.title) || titleIncludesDifficulty(card.variantLabel)) {
         expect(difficultyBadges).toHaveLength(0);
       }
       const labelValues = card.badges.map((badge) => badge.value);
@@ -84,7 +84,7 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     const byPair = new Map<string, typeof publicLibrary>();
     for (const preset of publicLibrary) {
       const card = getSpomoveCardDisplayModel(preset);
-      if (!titleIncludesDifficulty(card.title)) continue;
+      if (!titleIncludesDifficulty(card.title) && !titleIncludesDifficulty(card.variantLabel)) continue;
       const key = `${preset.programGroup}::${resolveSpomoveCardPairKey(card.title)}`;
       const list = byPair.get(key) ?? [];
       list.push(preset);

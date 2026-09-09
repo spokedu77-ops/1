@@ -28,8 +28,10 @@ import {
 } from './spomovePublicCatalogOrder';
 import { supportsCueSpeedOverride } from './spomoveCueSpeed';
 import { getSpomoveDifficultyKind } from './spomoveDifficulty';
+import { composeOfficialDisplayTitle, getAppliedSpomovePublicNaming } from './spomovePublicNaming';
 
 export type SpomovePresetDisplayModel = {
+  rootTitle: string;
   displayTitle: string;
   shortDescription: string;
   axisLabel: string;
@@ -66,6 +68,7 @@ export type SpomoveCardBadge = {
 export type SpomoveCardDisplayModel = {
   programLabel: string;
   title: string;
+  variantLabel: string;
   meta: SpomoveCardMeta;
   badges: SpomoveCardBadge[];
 };
@@ -395,9 +398,17 @@ function resolveCardTrainingFocus(preset: OfficialSpomovePreset, title: string):
       if (preset.engine.handFootDifficulty) return '상하지 협응';
       return '시각 탐색';
     case 'simon':
-      if (pairKey.includes('풍선')) return '위치 간섭 조절';
-      if (pairKey.includes('카모플라쥬')) return '시각 탐색';
-      if (pairKey.includes('랜덤')) return '혼합 자극 처리';
+      if (preset.engine.camouflagePlacement) return '시각 탐색';
+      if (preset.id === 'simon-mixed-gallery-exp' || preset.id === 'simon-random-hard-skeleton') {
+        return '혼합 자극 처리';
+      }
+      if (
+        pairKey.includes('풍선') ||
+        preset.id === 'simon-balloon-flash-05' ||
+        preset.id === 'simon-balloon-hard-skeleton'
+      ) {
+        return '위치 간섭 조절';
+      }
       return '간섭 억제';
     case 'flanker':
       if (preset.engine.flankerExtremeMode) return '위치 간섭 조절';
@@ -433,10 +444,65 @@ export function resolveSpomoveCardBadges(meta: SpomoveCardMeta): SpomoveCardBadg
   return badges;
 }
 
+const DIFFICULTY_TOKEN_PATTERN = /쉬움|보통|어려움/u;
+
+function difficultyTokenIn(value: string): string | null {
+  const match = value.match(DIFFICULTY_TOKEN_PATTERN);
+  return match?.[0] ?? null;
+}
+
+/** Hub/favorites metadata line: official variant first, then existing decision/support slots. */
+export function composeSpomoveCardSubtitleParts(
+  variantLabel: string,
+  decisionMeta?: string,
+  supportingMeta?: string,
+): string[] {
+  const variant = variantLabel.trim();
+  const variantDifficulty = variant ? difficultyTokenIn(variant) : null;
+  const parts = [variant, decisionMeta?.trim(), supportingMeta?.trim()].filter(
+    (part): part is string => Boolean(part),
+  );
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const part of parts) {
+    if (variantDifficulty && part === `난이도 ${variantDifficulty}`) continue;
+    if (seen.has(part)) continue;
+    seen.add(part);
+    result.push(part);
+  }
+  return result;
+}
+
+function resolveOfficialCardVariant(preset: OfficialSpomovePreset, display: SpomovePresetDisplayModel): string {
+  const naming = getAppliedSpomovePublicNaming(preset.id);
+  if (!naming?.variant?.trim()) return '';
+  return display.variantLabel.trim();
+}
+
+export function buildSpomovePresetSearchHaystack(
+  preset: OfficialSpomovePreset,
+  contentOverride?: SpomovePresetContentOverride,
+): string {
+  const display = getSpomovePresetDisplayModel(preset, contentOverride);
+  const card = getSpomoveCardDisplayModel(preset, contentOverride);
+  return [
+    display.displayTitle,
+    display.rootTitle,
+    display.variantLabel,
+    display.programLabel,
+    buildDisplayTitle(preset, contentOverride),
+    preset.title,
+    contentOverride?.displayTitle,
+    ...card.badges.map((badge) => badge.value),
+  ]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join(' ');
+}
+
 function buildCardMeta(
   preset: OfficialSpomovePreset,
   title: string,
-  options?: { includeAudienceAdaptation?: boolean },
+  options?: { includeAudienceAdaptation?: boolean; variantLabel?: string },
 ): SpomoveCardMeta {
   const guide = getOfficialSpomovePresetGuide(preset);
   const { audience, adaptation } = resolveAudienceAdaptation(guide.targetGroups);
@@ -446,7 +512,7 @@ function buildCardMeta(
     adjustable: resolveCardAdjustable(preset),
   };
 
-  if (!titleIncludesDifficulty(title)) {
+  if (!titleIncludesDifficulty(title) && !titleIncludesDifficulty(options?.variantLabel ?? '')) {
     meta.difficulty = `난이도 ${SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}`;
   }
 
@@ -458,16 +524,43 @@ function buildCardMeta(
   return meta;
 }
 
+function resolvePublicDisplayTitles(
+  preset: OfficialSpomovePreset,
+  contentOverride?: SpomovePresetContentOverride,
+): Pick<SpomovePresetDisplayModel, 'rootTitle' | 'displayTitle' | 'variantLabel'> {
+  const fallbackTitle = buildDisplayTitle(preset, contentOverride);
+  const fallbackVariant = contentOverride?.variantLabel?.trim() || buildVariantLabel(preset);
+  const applied = getAppliedSpomovePublicNaming(preset.id);
+  if (applied) {
+    const variantLabel = applied.variant?.trim() ?? '';
+    return {
+      rootTitle: applied.root,
+      variantLabel,
+      displayTitle: composeOfficialDisplayTitle(applied.root, applied.variant),
+    };
+  }
+  return {
+    rootTitle: fallbackTitle,
+    displayTitle: fallbackTitle,
+    variantLabel: fallbackVariant,
+  };
+}
+
 /** CMS catalogTags는 public card badge로 직접 소비하지 않는다. */
 export function getSpomoveCardDisplayModel(
   preset: OfficialSpomovePreset,
   _contentOverride?: SpomovePresetContentOverride,
 ): SpomoveCardDisplayModel {
   const base = getSpomovePresetDisplayModel(preset, _contentOverride);
-  const meta = buildCardMeta(preset, base.displayTitle, { includeAudienceAdaptation: false });
+  const variantLabel = resolveOfficialCardVariant(preset, base);
+  const meta = buildCardMeta(preset, base.displayTitle, {
+    includeAudienceAdaptation: false,
+    variantLabel,
+  });
   return {
     programLabel: base.programLabel,
-    title: base.displayTitle,
+    title: base.rootTitle,
+    variantLabel,
     meta,
     badges: resolveSpomoveCardBadges(meta),
   };
@@ -481,12 +574,14 @@ export function getSpomovePresetDisplayModel(
   const durationLabel = buildDurationLabel(preset);
   // Public card는 catalogTags를 직접 쓰지 않는다. supportMeta는 레거시 진단용만 유지.
   const supportMetaParts = buildSupportMetaParts(preset);
+  const titles = resolvePublicDisplayTitles(preset, contentOverride);
   return {
-    displayTitle: buildDisplayTitle(preset, contentOverride),
+    rootTitle: titles.rootTitle,
+    displayTitle: titles.displayTitle,
     shortDescription: contentOverride?.shortDescription?.trim() || preset.description,
     axisLabel: preset.axisTitle,
     programLabel: preset.programTitle,
-    variantLabel: contentOverride?.variantLabel?.trim() || buildVariantLabel(preset),
+    variantLabel: titles.variantLabel,
     targetLabel: buildTargetLabel(guide.targetGroups),
     difficultyLabel: SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel],
     settingLabel: durationLabel,

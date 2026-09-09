@@ -46,7 +46,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
       expect(card.badges.length).toBeLessThanOrEqual(3);
       expect(card.badges.some((badge) => badge.value === '오염')).toBe(false);
       expect(card.badges.every((badge) => !badge.value.endsWith('·'))).toBe(true);
-      if (titleIncludesDifficulty(card.title)) {
+      if (titleIncludesDifficulty(card.title) || titleIncludesDifficulty(card.variantLabel)) {
         expect(card.badges.some((badge) => badge.slot === 'difficulty')).toBe(false);
       }
     }
@@ -56,7 +56,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     const byPair = new Map<string, ReturnType<typeof getSpomoveCardDisplayModel>[]>();
     for (const preset of publicLibrary) {
       const card = getSpomoveCardDisplayModel(preset);
-      if (!titleIncludesDifficulty(card.title)) continue;
+      if (!titleIncludesDifficulty(card.title) && !titleIncludesDifficulty(card.variantLabel)) continue;
       const key = `${preset.programGroup}::${resolveSpomoveCardPairKey(card.title)}`;
       const list = byPair.get(key) ?? [];
       list.push(card);

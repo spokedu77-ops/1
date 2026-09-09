@@ -1,6 +1,6 @@
 import type { SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
 import type { OfficialSpomovePreset } from '../spomove/officialSpomovePresets';
-import { getSpomoveCardDisplayModel } from '../spomove/spomovePresetDisplayModel';
+import { getSpomoveCardDisplayModel, getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
 
 export type HomeSpomoveShelfCopy = {
   typeLabel: string;
@@ -16,10 +16,11 @@ export function getHomeSpomoveShelfCopy(
   preset: OfficialSpomovePreset,
   contentOverride?: SpomovePresetContentOverride,
 ): HomeSpomoveShelfCopy {
+  const display = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
   return {
     typeLabel: card.meta.responseType?.trim() || '',
-    title: card.title,
+    title: display.displayTitle,
     support: [card.meta.difficulty, card.meta.trainingFocus]
       .map((value) => value?.replace(/^난이도\s*/u, '').trim())
       .filter((value): value is string => Boolean(value))

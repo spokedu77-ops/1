@@ -43,6 +43,8 @@ import {
   type SpomoveThinkingLevel,
 } from './officialSpomovePresetGuides';
 import {
+  buildSpomovePresetSearchHaystack,
+  composeSpomoveCardSubtitleParts,
   getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
   sortSpomovePresetsByCatalogOrder,
@@ -638,6 +640,7 @@ function PresetCard({
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
   const decisionMeta = card.meta.difficulty ?? card.meta.responseType;
   const supportingMeta = card.meta.responseType === decisionMeta ? card.meta.trainingFocus : card.meta.responseType;
+  const subtitleParts = composeSpomoveCardSubtitleParts(card.variantLabel, decisionMeta, supportingMeta);
 
   const inner = (
     <>
@@ -681,9 +684,9 @@ function PresetCard({
           onImageError={() => setImageFailed(true)}
         />
         <div className="flex min-h-[84px] w-full flex-col justify-center px-3.5 py-3" data-spm-spomove-card-body="true">
-          <h3 className="line-clamp-2 text-[15px] font-semibold leading-5 text-slate-950">{displayModel.displayTitle}</h3>
+          <h3 className="line-clamp-2 text-[15px] font-semibold leading-5 text-slate-950">{displayModel.rootTitle}</h3>
           <p className="mt-1 truncate text-[12px] font-medium text-slate-500">
-            {[decisionMeta, supportingMeta].filter(Boolean).join(' · ')}
+            {subtitleParts.join(' · ')}
           </p>
         </div>
       </button>
@@ -884,10 +887,7 @@ export default function SpomoveHubView() {
   const normalizedQuery = searchQuery.toLocaleLowerCase('ko-KR');
   const matchesSearch = (preset: OfficialSpomovePreset) => {
     if (!normalizedQuery) return true;
-    const display = getSpomovePresetDisplayModel(preset, contentOverrides[preset.id]);
-    const card = getSpomoveCardDisplayModel(preset, contentOverrides[preset.id]);
-    return [display.displayTitle, display.programLabel, ...card.badges.map((badge) => badge.value)]
-      .join(' ')
+    return buildSpomovePresetSearchHaystack(preset, contentOverrides[preset.id])
       .toLocaleLowerCase('ko-KR')
       .includes(normalizedQuery);
   };
