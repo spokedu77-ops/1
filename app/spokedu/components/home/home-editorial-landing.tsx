@@ -10,8 +10,7 @@ import {
   homeSkipLink,
   koreanText,
   marketingButtonPrimary,
-  marketingButtonPrimaryOnDark,
-  marketingButtonSecondaryOnDark,
+  marketingButtonSecondary,
   marketingHeroDisplay,
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
@@ -88,49 +87,35 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
   const [heroLine1, heroLine2] = homePage.hero.lines;
 
   return (
-    <div className={`${styles.page} w-full overflow-x-clip antialiased`} data-spokedu-home-editorial="field-built">
+    <div className={`${styles.page} w-full overflow-x-clip antialiased`} data-spokedu-home-editorial="v1-connected">
       <a href="#choice" className={homeSkipLink}>
         본문으로 건너뛰기
       </a>
 
       {/* 01 Hero */}
       <section id={homePage.hero.id} className={styles.hero} aria-labelledby="editorial-hero-heading">
-        <div className={styles.heroMedia}>
-          <MediaPanel
-            media={heroMedia}
-            className="absolute inset-0 h-full w-full border-0 rounded-none"
-            sizes="100vw"
-            photoPriority
-            priority
-            objectFit="cover"
-          />
-        </div>
-        <div className={styles.heroScrimCopy} aria-hidden />
-        <div className={styles.heroScrimDepth} aria-hidden />
-        <div className={styles.heroCopy}>
-          <div className={styles.contentRail}>
-            <h1 id="editorial-hero-heading" className={`${marketingHeroDisplay} text-white`}>
-              <span className="block">{heroLine1}</span>
-              <span className="mt-1.5 block">{heroLine2}</span>
+        <div className={`${styles.contentRail} ${styles.heroGrid}`}>
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>아동·청소년 체육교육 · SPOKEDU</p>
+            <h1 id="editorial-hero-heading" className={`${marketingHeroDisplay} ${styles.heroHeadingLayout}`}>
+              <span>{heroLine1}</span><span>{heroLine2}</span>
             </h1>
             <p className={`${styles.heroLead} ${koreanText}`}>{homePage.hero.support}</p>
             <div className={styles.heroActions}>
-              <TrackedLink
-                href={homePage.hero.primaryCta.href}
-                trackLabel={homePage.hero.primaryCta.trackLabel}
-                className={marketingButtonPrimaryOnDark}
-              >
+              <TrackedLink href={homePage.hero.primaryCta.href} trackLabel={homePage.hero.primaryCta.trackLabel} className={marketingButtonPrimary}>
                 {homePage.hero.primaryCta.label}
               </TrackedLink>
-              <TrackedLink
-                href={homePage.hero.secondaryCta.href}
-                trackLabel={homePage.hero.secondaryCta.trackLabel}
-                className={marketingButtonSecondaryOnDark}
-              >
+              <TrackedLink href={homePage.hero.secondaryCta.href} trackLabel={homePage.hero.secondaryCta.trackLabel} className={marketingButtonSecondary}>
                 {homePage.hero.secondaryCta.label}
               </TrackedLink>
             </div>
           </div>
+          <figure className={styles.heroFigure}>
+            <div className={styles.heroImageFrame}>
+              <Image src={heroMedia.src!} alt={heroMedia.alt} fill priority sizes="(min-width: 960px) 52vw, 100vw" className={styles.heroImage} />
+            </div>
+            <figcaption className={styles.heroCaption}>함께 움직이고, 규칙을 발견하고, 다시 도전하는 수업.</figcaption>
+          </figure>
         </div>
       </section>
 
@@ -140,39 +125,45 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
           <h2 id="editorial-choice-heading" className={`${styles.homeQuietDisplay} ${styles.choiceTitle} ${styles.measure}`}>
             {homePage.choice.title}
           </h2>
-          <div className={styles.choiceSplit}>
-            <div className={styles.choiceColumn}>
-              <p className={styles.choiceLabel}>{homePage.choice.education.headline}</p>
-              <p className={`${styles.choiceTagline} ${koreanText}`}>{homePage.choice.education.tagline}</p>
-              <p className={`${styles.choiceBody} ${koreanText}`}>{homePage.choice.education.body}</p>
-              <div className={styles.choiceCta}>
-                <TextCta
-                  href={homePage.choice.education.primaryCta.href}
-                  trackLabel={homePage.choice.education.primaryCta.trackLabel}
-                >
-                  {homePage.choice.education.primaryCta.label}
-                </TextCta>
-              </div>
-            </div>
-            <div className={styles.choiceDivider} aria-hidden />
-            <div className={styles.choiceColumn}>
-              <p className={styles.choiceLabel}>{homePage.choice.subscription.headline}</p>
-              <p className={`${styles.choiceTagline} ${koreanText}`}>{homePage.choice.subscription.tagline}</p>
-              <p className={`${styles.choiceBody} ${koreanText}`}>{homePage.choice.subscription.body}</p>
-              <div className={styles.choiceCta}>
-                <TextCta
-                  href={homePage.choice.subscription.primaryCta.href}
-                  trackLabel={homePage.choice.subscription.primaryCta.trackLabel}
-                >
-                  {homePage.choice.subscription.primaryCta.label}
-                </TextCta>
-              </div>
-            </div>
+          <div className={styles.serviceGrid}>
+            {homePage.serviceChoices.map((service, index) => (
+              <TrackedLink key={service.href} href={service.href} trackLabel={service.trackLabel} className={`${styles.serviceCard} ${brandFocusRing}`}>
+                <div className={styles.serviceTop}><span className={styles.serviceNumber} aria-hidden>0{index + 1}</span><span>{service.audience}</span></div>
+                <h3>{service.label}</h3>
+                <p>{service.description}</p>
+                <span className={styles.serviceAction}>{service.action}<span aria-hidden>↗</span></span>
+              </TrackedLink>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 03 SPOMOVE */}
+      {/* 03 Field Proof */}
+      <section id={homePage.cases.id} className={styles.cases} aria-labelledby="editorial-cases-heading">
+        <div className={styles.contentRail}>
+          <header className={styles.casesHeader}>
+            <p className={styles.eyebrow}>수업 사례</p>
+            <h2 id="editorial-cases-heading" className={`${styles.homeSectionDisplay} ${styles.casesTitle} ${koreanText}`}>
+              {homePage.cases.title}
+            </h2>
+            <p className={`${styles.homeLead} ${styles.casesLead} ${koreanText}`}>{homePage.cases.lead}</p>
+          </header>
+          <ul className={styles.casesIndex}>
+            {caseCards.map((card) => (
+              <li key={card.slug} className={styles.caseItem}>
+                <CaseEditorialItem card={card} />
+              </li>
+            ))}
+          </ul>
+          <div className={styles.casesArchive}>
+            <TextCta href={homePage.cases.recordsCta.href} trackLabel={homePage.cases.recordsCta.trackLabel}>
+              {homePage.cases.recordsCta.label}
+            </TextCta>
+          </div>
+        </div>
+      </section>
+
+      {/* 04 SPOMOVE */}
       <section id={homePage.spomove.id} className={styles.spomove} aria-labelledby="editorial-spomove-heading">
         <div className={styles.contentRail}>
           <header className={styles.spomoveHeader}>
@@ -220,7 +211,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
         </div>
       </section>
 
-      {/* 04 Subscription — Product Proof */}
+      {/* 05 Subscription — Product Proof */}
       <section id={homePage.subscription.id} className={styles.subscription} aria-labelledby="editorial-subscription-heading">
         <div className={styles.contentRail}>
           <div className={styles.subscriptionIntro}>
@@ -262,30 +253,6 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
         </div>
       </section>
 
-      {/* 05 Field Proof */}
-      <section id={homePage.cases.id} className={styles.cases} aria-labelledby="editorial-cases-heading">
-        <div className={styles.contentRail}>
-          <header className={styles.casesHeader}>
-            <h2 id="editorial-cases-heading" className={`${styles.homeSectionDisplay} ${styles.casesTitle} ${koreanText}`}>
-              {homePage.cases.title}
-            </h2>
-            <p className={`${styles.homeLead} ${styles.casesLead} ${koreanText}`}>{homePage.cases.lead}</p>
-          </header>
-          <ul className={styles.casesIndex}>
-            {caseCards.map((card) => (
-              <li key={card.slug} className={styles.caseItem}>
-                <CaseEditorialItem card={card} />
-              </li>
-            ))}
-          </ul>
-          <div className={styles.casesArchive}>
-            <TextCta href={homePage.cases.recordsCta.href} trackLabel={homePage.cases.recordsCta.trackLabel}>
-              {homePage.cases.recordsCta.label}
-            </TextCta>
-          </div>
-        </div>
-      </section>
-
       {/* 06 Contact Conversion */}
       <section id={homePage.contact.id} className={styles.contact} aria-labelledby="editorial-contact-heading">
         <div className={styles.contentRail}>
@@ -322,6 +289,7 @@ function CaseEditorialItem({ card }: { card: CaseCardWithThumb }) {
         <div className={styles.caseMeta}>
           <h3 className={`${styles.homeSubhead} ${styles.caseVenue} ${koreanText}`}>{card.venue}</h3>
           <p className={`${styles.homeMeta} ${styles.caseDisplayMeta} ${koreanText}`}>{card.displayMeta}</p>
+          <span className={styles.caseAction}>수업 살펴보기 <span aria-hidden>↗</span></span>
         </div>
       </article>
     </TrackedLink>

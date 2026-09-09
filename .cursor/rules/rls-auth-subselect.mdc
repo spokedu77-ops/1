@@ -1,6 +1,7 @@
 ---
 description: Supabase/Postgres RLS에서 auth.* 호출 최적화 (advisor 알람 방지)
-alwaysApply: true
+globs: supabase/migrations/**,sql/**,docs/**/*.sql
+alwaysApply: false
 ---
 
 # RLS 정책의 `auth.role()` / `auth.uid()` 표기

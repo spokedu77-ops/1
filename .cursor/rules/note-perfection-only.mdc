@@ -1,6 +1,5 @@
 ---
-description: admin/note — 기능 추가 금지, 기존 구현 완벽화만
-globs: app/admin/note/**/*
+description: admin/note — 명시적 완벽화 모드만 (자동 glob 없음; @note-perfection-only 로 활성화)
 alwaysApply: false
 ---
 

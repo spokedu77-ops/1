@@ -1,6 +1,7 @@
 ---
 description: Prevent breaking admin UI when changing RLS/auth helper functions
-alwaysApply: true
+globs: supabase/migrations/**,app/admin/**,app/teacher/**,app/lib/admin/**,app/lib/supabase/browser.ts
+alwaysApply: false
 ---
 
 # RLS/권한 변경 전: Admin 기능 파손 방지

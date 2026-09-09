@@ -1,6 +1,7 @@
 ---
 description: 수업·세션 관리 기본 틀 및 연기/그룹 플로우 수정 금지
-alwaysApply: true
+globs: app/admin/classes-shared/**,app/admin/classes/**,app/admin/classes-v2/**,app/api/admin/teachers-classes/**,app/api/admin/postpone-notices/**,app/api/sessions/auto-finish/route.ts
+alwaysApply: false
 ---
 
 # 수업·세션 관리 핵심 로직 수정 금지

@@ -13,12 +13,11 @@ This runbook is the release checklist for SPOKEDU MASTER. It documents the curre
    - `SPM_RUNTIME_ENV=staging`
    - `SPM_STAGING_WRITE_GUARD=ALLOW_STAGING_WRITES`
    - approved staging Supabase project ref
-2. Apply staging migrations before production migrations.
-   - `spokedu_master_profiles`
-   - `spokedu_master_replace_class_record`
-   - `spokedu_master_delete_operational_data`
-   - `spokedu_master_apply_payment`
-   - `spokedu_master_create_class_record`
+2. Apply staging **`supabase/migrations/**`** before production **`supabase/migrations/**`**.
+   - That directory is the only automatic chronological migration history.
+   - Do **not** treat root `sql/**` operator/repair scripts as migrations. They are not applied by the migration runner.
+   - Do not run `sql/archive/**` or numbered repair SQL as part of a normal deploy.
+   - Contracts the app currently calls include (non-exhaustive): `spokedu_master_profiles`, `spokedu_master_replace_class_record`, `spokedu_master_delete_operational_data`, `spokedu_master_apply_payment`, `spokedu_master_create_class_record`, plus later session/class workflow RPCs. Confirm signatures against the latest migration that defines each function, not against `sql/**`.
 3. Verify migration contracts.
    - Function signature is unchanged from the app call site.
    - `SECURITY DEFINER` and fixed `search_path` are present.
@@ -144,10 +143,13 @@ When Toss sandbox real payment is intentionally deferred, treat the no-payment g
    - Runs `verification-report` plus operational commercial smoke (excludes payment activation).
    - Writes `commercial-verification/release-automated-report.json`.
 4. Production cron (before live billing renew):
-   - Set `CRON_SECRET` in Vercel/host env.
-   - Apply the hourly Supabase Cron migration; `0 * * * *` is the scheduler SSOT.
-   - Cron calls `POST /api/spokedu-master/payment/billing/renew` with `Authorization: Bearer <CRON_SECRET>`.
-   - Monitor `spokedu_master_billing_runs`: the latest `succeeded`/`completed_with_errors` time, counts, and `error_code` must advance every hour. A `dispatched` row that remains unresolved into the next run is an incident.
+   - Set `CRON_SECRET` in Vercel/host env. Vault URL/secret setup is operator SQL (`npm run qa:spokedu-master:configure-billing-cron` / `commercial-verification/billing-cron-vault.sql`), not a substitute for `supabase/migrations/**`.
+   - Repository **design** scheduler is **Supabase pg_cron**, not Vercel Cron and not a GitHub Actions `schedule` workflow (no root `vercel.json` crons; no billing GitHub cron in this repo).
+   - Current **scheduling migration winner** in history: `20260822191000_spokedu_master_billing_cron_observability.sql` (`0 * * * *`, job name `spokedu-master-billing-renew-hourly`).
+   - Earlier `20260714140000_pause_spokedu_master_billing_cron.sql` **unscheduled** that job. Later observability migration is written to schedule it again.
+   - **Live `cron.job` state is not proven by the repository.** Confirm in the target Supabase project before assuming renew is running. Do not claim the live job is enabled from docs alone.
+   - Designed call: `POST /api/spokedu-master/payment/billing/renew` with `Authorization: Bearer <CRON_SECRET>`.
+   - If observability is applied, monitor `spokedu_master_billing_runs`: the latest `succeeded`/`completed_with_errors` time, counts, and `error_code` must advance every hour. A `dispatched` row that remains unresolved into the next run is an incident.
 5. When ready for payment verification later:
    - Toss sandbox once per environment
    - `GET /api/spokedu-master/access`, subscription row, webhook event, reconcile

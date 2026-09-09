@@ -65,15 +65,17 @@ export type SiteNavEntry =
 /** 글로벌 헤더·모바일 메뉴 SSOT — 상업 2축 + signature + evidence */
 export const siteNav: SiteNavEntry[] = [
   {
-    type: 'link',
-    label: '체육교육',
-    href: SPOKEDU_PATHS.education,
+    type: 'group',
+    label: '체육수업',
     trackLabel: 'nav-education',
-    matchPrefix: '/education',
+    children: [
+      { label: '기관·학교 수업', href: SPOKEDU_PATHS.education, trackLabel: 'nav-education-institution' },
+      { label: '개인·소그룹 수업', href: SPOKEDU_PATHS.private, trackLabel: 'nav-education-private' },
+    ],
   },
   {
     type: 'link',
-    label: '구독시스템',
+    label: '수업자료·구독',
     href: SPOKEDU_PATHS.subscription,
     trackLabel: 'nav-subscription',
     matchPrefix: '/subscription',
@@ -87,7 +89,7 @@ export const siteNav: SiteNavEntry[] = [
   },
   {
     type: 'link',
-    label: '운영 사례',
+    label: '수업 사례',
     href: SPOKEDU_PATHS.records,
     trackLabel: 'nav-records',
     matchPrefix: '/records',
@@ -146,7 +148,7 @@ export const footerNavGroups: FooterNavGroup[] = [
         trackLabel: 'footer-service-spomove-catalog',
       },
       {
-        label: '구독시스템',
+        label: '수업자료·구독',
         href: SPOKEDU_PATHS.subscription,
         trackLabel: 'footer-subscription',
       },
@@ -158,10 +160,10 @@ export const footerNavGroups: FooterNavGroup[] = [
     ],
   },
   {
-    heading: '증거',
+    heading: '수업 사례',
     links: [
       {
-        label: '운영 사례',
+        label: '수업 사례',
         href: SPOKEDU_PATHS.records,
         trackLabel: 'footer-records',
       },
@@ -221,7 +223,7 @@ export const AUDIENCE_TRACK_PATHS: Record<AudienceTrackId, string> = {
  * content.ts 등 레거시 import 호환용 — 글로벌 헤더와 동일한 1급 경로만 평탄화.
  */
 export const siteNavItems: SiteNavItem[] = siteNav
-  .filter((entry): entry is Extract<SiteNavEntry, { type: 'link' }> => entry.type === 'link')
+  .flatMap((entry) => entry.type === 'group' ? entry.children : [entry])
   .map((entry) => ({
     label: entry.label,
     path: entry.href === '/' ? '/' : entry.href,

@@ -1,6 +1,7 @@
 ---
 description: SPOKEDU 수업 사례 썸네일은 로컬 고정 — 런타임 외부 이미지/API 금지
-alwaysApply: true
+globs: app/spokedu/**,app/(spokedu-public)/**,public/images/spokedu/records/**,app/sitemap.ts
+alwaysApply: false
 ---
 
 # SPOKEDU 사례 이미지 — API 폭탄 방지

@@ -54,9 +54,9 @@ export default function ManageView() {
   const selectTab = (nextTab: ManageTab) => { setEditing(undefined); setTab(nextTab); };
 
   return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
-    <MasterPageShell variant="operational">
+    <MasterPageShell variant={editing !== undefined ? 'wide' : 'operational'} className={editing !== undefined ? 'lg:pr-[434px]' : ''}>
       <MasterPageHeader title="수업 관리" />
-      <div className="mt-6 grid w-full max-w-sm grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1" role="tablist" aria-label="수업 관리 보기">
+      <div className="mt-6 grid w-full max-w-[272px] grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1" role="tablist" aria-label="수업 관리 보기">
         <button type="button" role="tab" aria-selected={tab === 'schedule'} onClick={() => selectTab('schedule')} className={`min-h-12 rounded-lg px-6 text-sm font-semibold transition-colors ${tab === 'schedule' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'}`}>일정</button>
         <button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => selectTab('attendance')} className={`min-h-12 rounded-lg px-6 text-sm font-semibold transition-colors ${tab === 'attendance' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'}`}>출석부</button>
       </div>

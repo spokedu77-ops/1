@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   brandContactLinks,
   brandProfile,
@@ -10,13 +10,12 @@ import {
   getSocialLinks,
   siteHeaderCta,
   siteNav,
-  isSpokeduHomePath,
   type SiteNavEntry,
   type SiteNavLink,
 } from '../data/site';
 import { BrandLogo } from './brand-logo';
 import { isExternalHref, externalLinkProps } from '../lib/external-link';
-import { lockSpokeduScroll, getSpokeduScrollY, scrollSpokeduToTop, unlockSpokeduScroll } from '../lib/scroll';
+import { lockSpokeduScroll, scrollSpokeduToTop, unlockSpokeduScroll } from '../lib/scroll';
 import { inferTrackFromHref } from '../lib/tracking';
 import { brandBlue, brandNavy, koreanText, marketingSectionInner } from '../lib/ui-classes';
 
@@ -101,36 +100,19 @@ function NavAnchor({
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const isHome = isSpokeduHomePath(pathname);
-  const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [openDesktopGroup, setOpenDesktopGroup] = useState<string | null>(null);
-  const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
   const desktopGroupButtonRef = useRef<HTMLButtonElement>(null);
   const desktopGroupPanelRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobilePanelRef = useRef<HTMLDivElement>(null);
-  const mobileProgramsId = useId();
 
-  const onHero = isHome && !scrolled;
+  // V1 uses a light header across public pages, including the split Home hero.
+  const onHero = false;
   const closeMenus = useCallback(() => {
     setMenuOpen(false);
     setOpenDesktopGroup(null);
-    setOpenMobileGroup(null);
   }, []);
-
-  useEffect(() => {
-    if (!isHome) {
-      setScrolled(false);
-      return;
-    }
-    const onScroll = () => setScrolled(getSpokeduScrollY() > 56);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, [isHome]);
 
   useEffect(() => {
     closeMenus();
@@ -155,7 +137,7 @@ export function SiteHeader() {
         return;
       }
       if (e.key !== 'Tab' || !focusables?.length) return;
-      const list = Array.from(focusables);
+      const list = [...(menuButtonRef.current ? [menuButtonRef.current] : []), ...Array.from(focusables)];
       const first = list[0];
       const last = list[list.length - 1];
       if (!first || !last) return;
@@ -187,7 +169,10 @@ export function SiteHeader() {
       setOpenDesktopGroup(null);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenDesktopGroup(null);
+      if (e.key === 'Escape') {
+        desktopGroupButtonRef.current?.focus();
+        setOpenDesktopGroup(null);
+      }
     };
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('keydown', onKey);
@@ -198,7 +183,7 @@ export function SiteHeader() {
   }, [openDesktopGroup]);
 
   const linkClass = (active: boolean) =>
-    `inline-flex h-9 items-center text-[13px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+    `inline-flex h-9 items-center text-[15px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
       onHero
         ? active
           ? 'text-white underline decoration-white/80 underline-offset-[6px]'
@@ -234,7 +219,6 @@ export function SiteHeader() {
           className={`inline-flex h-9 items-center gap-1 ${linkClass(groupActive || groupOpen)}`}
           aria-expanded={groupOpen}
           aria-controls={menuId}
-          aria-haspopup="true"
           onClick={() => setOpenDesktopGroup((current) => (current === entry.label ? null : entry.label))}
         >
           {entry.label}
@@ -253,7 +237,6 @@ export function SiteHeader() {
           <div
             id={menuId}
             ref={desktopGroupPanelRef}
-            role="menu"
             className="absolute left-0 top-[calc(100%+0.5rem)] z-50 min-w-[13.5rem] border border-slate-200 bg-white py-1.5 shadow-sm"
           >
             {entry.children.map((child) => (
@@ -261,7 +244,6 @@ export function SiteHeader() {
                 key={child.href}
                 href={child.href}
                 trackLabel={child.trackLabel}
-                role="menuitem"
                 className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#245DFF]"
                 onNavigate={() => setOpenDesktopGroup(null)}
               >
@@ -292,37 +274,20 @@ export function SiteHeader() {
       );
     }
 
-    const groupOpen = openMobileGroup === entry.label;
-    const panelId = `${mobileProgramsId}-${entry.trackLabel}`;
     return (
-      <div key={entry.label} className="border-b border-white/10">
-        <button
-          type="button"
-          className="flex min-h-12 w-full items-center justify-between text-base font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          aria-expanded={groupOpen}
-          aria-controls={panelId}
-          onClick={() => setOpenMobileGroup((current) => (current === entry.label ? null : entry.label))}
-        >
-          {entry.label}
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className={groupOpen ? 'rotate-180' : ''}>
-            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </button>
-        {groupOpen ? (
-          <div id={panelId} className="pb-2 pl-3">
-            {entry.children.map((child) => (
-              <NavAnchor
-                key={child.href}
-                href={child.href}
-                trackLabel={`mobile-${child.trackLabel}`}
-                className="flex min-h-11 items-center text-[15px] text-white/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                onNavigate={closeMenus}
-              >
-                {child.label}
-              </NavAnchor>
-            ))}
-          </div>
-        ) : null}
+      <div key={entry.label} className="border-b border-white/10 pb-3">
+        <p className="pt-4 pb-1 text-sm font-semibold text-white/65">{entry.label}</p>
+        {entry.children.map((child) => (
+          <NavAnchor
+            key={child.href}
+            href={child.href}
+            trackLabel={`mobile-${child.trackLabel}`}
+            className="flex min-h-12 items-center text-base font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            onNavigate={closeMenus}
+          >
+            {child.label}
+          </NavAnchor>
+        ))}
       </div>
     );
   };
@@ -347,7 +312,7 @@ export function SiteHeader() {
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={siteHeaderCta.trackLabel}
-              className={`hidden h-10 items-center justify-center rounded-xl px-5 text-[13px] font-bold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+              className={`hidden h-10 items-center justify-center rounded-xl px-5 text-[15px] font-bold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
                   : onHero
@@ -446,7 +411,7 @@ export function SiteFooter() {
           {([
             footerNavGroups.filter((group) => group.heading === '브랜드' || group.heading === '서비스'),
             footerNavGroups.filter((group) => group.heading === '콘텐츠·제품'),
-            footerNavGroups.filter((group) => group.heading === '증거' || group.heading === '협업·문의'),
+            footerNavGroups.filter((group) => group.heading === '수업 사례' || group.heading === '협업·문의'),
           ] as const).map((column, columnIndex) => (
             <div key={columnIndex} className="min-w-0 space-y-6">
               {column.map((group) => (

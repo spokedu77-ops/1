@@ -2,7 +2,7 @@
 
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 export function BottomSheet({
   open,
@@ -21,7 +21,7 @@ export function BottomSheet({
   headerActions?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
-  onClose: () => void;
+  onClose: () => void | boolean;
   size?: 'default' | 'document' | 'preview' | 'launch' | 'session';
   initialFocusSelector?: string;
 }) {
@@ -30,6 +30,16 @@ export function BottomSheet({
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const onCloseRef = useRef(onClose);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const [desktopSession, setDesktopSession] = useState(false);
+
+  useEffect(() => {
+    if (size !== 'session') return;
+    const media = window.matchMedia('(min-width: 1024px)');
+    const sync = () => setDesktopSession(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, [size]);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -68,7 +78,7 @@ export function BottomSheet({
     const windowY = window.scrollY;
 
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (!desktopSession) document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => {
       const initialFocusTarget = initialFocusSelector && dialogRef.current
         ? dialogRef.current.querySelector<HTMLElement>(initialFocusSelector)
@@ -83,7 +93,7 @@ export function BottomSheet({
         return;
       }
 
-      if (event.key !== 'Tab' || !dialogRef.current) return;
+      if (event.key !== 'Tab' || !dialogRef.current || desktopSession) return;
 
       const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -118,7 +128,21 @@ export function BottomSheet({
       restore();
       requestAnimationFrame(restore);
     };
-  }, [initialFocusSelector, open]);
+  }, [desktopSession, initialFocusSelector, open]);
+
+  useEffect(() => {
+    if (!open || !desktopSession || size !== 'session') return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (dialogRef.current?.contains(event.target as Node)) return;
+      const closed = onCloseRef.current();
+      if (closed === false) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
+  }, [desktopSession, open, size]);
 
   if (!open) return null;
 
@@ -133,7 +157,7 @@ export function BottomSheet({
         ? [
             'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] px-4 pt-3 shadow-2xl outline-none',
             'sm:px-5 sm:pt-4',
-            'lg:h-full lg:max-h-none lg:w-[410px] lg:max-w-[410px] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-[-16px_0_36px_rgba(15,23,42,0.12)]',
+            'lg:mr-[max(0px,calc((100vw-1376px)/2))] lg:h-full lg:max-h-none lg:w-[410px] lg:max-w-[410px] lg:rounded-none lg:border-y-0 lg:shadow-[-12px_0_28px_rgba(15,23,42,0.1)]',
           ].join(' ')
       : isLaunch
         ? [
@@ -163,7 +187,7 @@ export function BottomSheet({
           paddingBottom: hasDetachedFooter ? 0 : 'max(16px, env(safe-area-inset-bottom))',
         }}
         role="dialog"
-        aria-modal="true"
+        aria-modal={isSession ? !desktopSession : true}
         aria-labelledby={titleId}
         tabIndex={-1}
       >

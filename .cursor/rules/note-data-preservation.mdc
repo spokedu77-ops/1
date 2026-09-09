@@ -1,6 +1,6 @@
 ---
 description: admin/note 데이터 보존 최상위 계약 — 본문·순서 침묵 유실 금지
-globs: app/admin/note/**/*,app/lib/note/**/*,app/lib/server/noteOpLog/**/*,app/api/admin/note/**/*
+globs: app/admin/note/**/*,app/lib/note/**/*,app/lib/server/noteOpLog/**/*,app/api/admin/note/**/*,app/lib/server/loadNoteDocumentBlocks*.ts,app/lib/server/applyNoteBlockInvariantMigrations.ts,app/lib/server/applyNoteBlockTreeMigrations.ts,app/lib/server/applyToggleBodyForwardMigrations.ts,app/lib/server/reconcileSubPagesOnDocumentLoad.ts,scripts/admin-note-*.mjs,scripts/repair-admin-note-ops-materialization.mjs,supabase/migrations/*note_block*.sql,supabase/migrations/*note_document*.sql,supabase/migrations/*admin_note*.sql,supabase/migrations/*execute_note_transaction*.sql,supabase/migrations/*note_reserve_op*.sql,supabase/migrations/*note_allocate_one_seq.sql,supabase/migrations/*note_commit_block*.sql
 alwaysApply: true
 ---
 

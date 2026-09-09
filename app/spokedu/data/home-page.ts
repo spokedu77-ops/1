@@ -60,22 +60,22 @@ function buildHomeCaseCard(
 }
 
 export const homePage = {
-  sectionOrder: ['hero', 'choice', 'spomove', 'subscription', 'cases', 'contact'] as const,
+  sectionOrder: ['hero', 'choice', 'cases', 'spomove', 'subscription', 'contact'] as const,
 
   hero: {
     id: 'hero',
-    lines: ['아동·청소년 체육수업을', '직접 설계하고 운영합니다.'] as const,
+    lines: ['움직임으로 배우고,', '경험으로 자랍니다.'] as const,
     support:
-      '학교·기관부터 개인·소그룹까지 현장에 맞는 체육수업을 직접 운영하고, 그 과정에서 필요한 콘텐츠와 지도자용 수업 시스템도 만듭니다.',
+      '아동·청소년을 위한 체육수업을 직접 설계하고 운영합니다. 현장에서 사용하는 수업자료와 SPOMOVE 콘텐츠도 만듭니다.',
     mediaKey: 'homeHeroField' as HomeMediaKey,
     brand: 'SPOKEDU',
     primaryCta: {
-      label: '체육수업 알아보기',
-      href: SPOKEDU_PATHS.education,
+      label: '나에게 맞는 수업 찾기',
+      href: '#choice',
       trackLabel: 'cta-home-education-hero',
     },
     secondaryCta: {
-      label: '구독시스템 알아보기',
+      label: '수업자료·구독 알아보기',
       href: SPOKEDU_PATHS.subscription,
       trackLabel: 'cta-home-subscription-hero',
     },
@@ -99,12 +99,18 @@ export const homePage = {
       tagline: '지도자가 직접 수업할 수 있도록 돕습니다.',
       body: '놀이체육 콘텐츠와 SPOMOVE를 활용해 수업을 준비하고 진행하고 기록할 수 있습니다.',
       primaryCta: {
-        label: '구독시스템 알아보기',
+        label: '수업자료·구독 알아보기',
         href: SPOKEDU_PATHS.subscription,
         trackLabel: 'cta-home-choice-subscription',
       },
     },
   },
+
+  serviceChoices: [
+    { label: '기관·학교 수업', audience: '학교·센터·복지관', description: '정기수업부터 특강·행사까지, 기관의 대상과 공간에 맞춰 운영합니다.', href: SPOKEDU_PATHS.education, trackLabel: 'cta-home-choice-education', action: '기관수업 알아보기' },
+    { label: '개인·소그룹 수업', audience: '아이·학부모', description: '아이의 운동 경험과 수업 목표를 확인하고, 함께할 수업 방식을 안내합니다.', href: SPOKEDU_PATHS.private, trackLabel: 'cta-home-choice-private', action: '개인수업 알아보기' },
+    { label: '수업자료·구독', audience: '체육 지도자', description: '놀이체육 자료와 SPOMOVE로 수업을 찾고, 준비하고, 진행하세요.', href: SPOKEDU_PATHS.subscription, trackLabel: 'cta-home-choice-subscription', action: '구독 알아보기' },
+  ],
 
   spomove: {
     id: 'spomove',
@@ -144,7 +150,7 @@ export const homePage = {
       alt: '구독시스템 수업 라이브러리에서 수업을 고르고, 선택한 수업의 준비·기록 화면',
     },
     primaryCta: {
-      label: '구독시스템 알아보기',
+      label: '수업자료·구독 알아보기',
       href: SPOKEDU_PATHS.subscription,
       trackLabel: 'cta-home-subscription-learn',
     },
@@ -152,10 +158,10 @@ export const homePage = {
 
   cases: {
     id: 'cases',
-    title: '실제 운영 현장',
-    lead: '학교·기관에서 진행한 실제 수업과 프로그램입니다.',
+    title: '우리 수업은 현장에서 이어집니다.',
+    lead: '학교의 정기수업부터 포용 체육까지, 실제 운영한 수업을 만나보세요.',
     recordsCta: {
-      label: '운영 사례 전체 보기',
+      label: '수업 사례 전체 보기',
       href: SPOKEDU_PATHS.records,
       trackLabel: 'cta-home-cases-records',
     },

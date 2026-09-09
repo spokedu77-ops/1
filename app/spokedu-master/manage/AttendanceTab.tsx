@@ -30,7 +30,7 @@ export function AttendanceTab({ onShowSchedule }: { onShowSchedule: () => void }
 
   return (
     <section aria-labelledby="manage-attendance-heading" className="mt-7">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
         <label className="text-xs font-semibold text-slate-500">수업반
           <select value={selectedClass.id} onChange={(event) => setClassId(event.target.value)} className="mt-1 block h-11 min-w-56 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800">
             {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}

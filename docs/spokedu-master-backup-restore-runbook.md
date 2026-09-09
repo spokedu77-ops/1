@@ -1,10 +1,14 @@
 # SPOKEDU MASTER Backup and Restore Runbook
 
-This runbook covers SPOKEDU MASTER operational data only. It is based on repository code and migrations as of 2026-06-21. Do not treat unverified Supabase dashboard settings as complete.
+This runbook covers SPOKEDU MASTER operational and billing data. It is operator guidance, not schema authority. Schema authority is `supabase/migrations/**` (chronological history) plus application code for objects those migrations originally created.
+
+Repository docs last aligned with migration coverage: 2026-09. Do not treat unverified Supabase dashboard settings as complete.
+
+This runbook does **not** define backup scope for admin Note (`note_documents` / `note_blocks` / ops) or Move Report (`mr_*`). Those domains have their own migration history.
 
 ## Backup Scope
 
-Back up these public schema tables together:
+Back up these public schema tables together (owner-scoped operational + payment):
 
 - `spokedu_master_students`
 - `spokedu_master_class_records`
@@ -14,9 +18,20 @@ Back up these public schema tables together:
 - `spokedu_master_payment_orders`
 - `spokedu_master_payment_webhook_events`
 
+Include later MASTER workflow / observability tables when the goal is full product recovery (column lists are not reproduced here; see the named migrations):
+
+- `spokedu_master_profiles`
+- `spokedu_master_classes`
+- `spokedu_master_sessions`
+- `spokedu_master_session_programs`
+- `spokedu_master_session_attendance`
+- `spokedu_master_billing_runs`
+
 Back up this MASTER catalog/content table with the same recovery set when the goal is full product recovery rather than only owner-scoped operational data:
 
 - `spokedu_master_program_meta`
+
+Payment integrity and billing observability live in later migrations (`20260822190000_spokedu_master_payment_integrity_phase1.sql`, `20260822191000_spokedu_master_billing_cron_observability.sql`). Session/class workflow tables are introduced from `20260821180000_spokedu_master_session_workflow.sql` onward. Do not treat the 2026-06 table list as the full MASTER surface.
 
 Observed ownership columns:
 
@@ -60,21 +75,35 @@ Minimum commercial readiness target:
 
 ## Migration Reproducibility
 
-The current repository contains migrations for the MASTER operational schema:
+`supabase/migrations/**` is immutable chronological history. Latest migrations plus current application code are the effective runtime contract **only where that history contains the original object**.
+
+**Repository-history limitation (not proof that production is broken):** applying `supabase/migrations/**` alone is **not** sufficient to reconstruct a complete database from an empty project. Original `CREATE` definitions for some pre-existing objects are absent from migration history. Known examples:
+
+- `sessions`
+- `users`
+- `note_documents`
+- `note_blocks`
+- `spokedu_master_program_meta`
+
+Those tables exist in application use and (except `program_meta` CREATE) often in `sql/archive/legacy/**` as historical evidence. Archive SQL is not current schema authority and is not automatically applied.
+
+Early MASTER operational CREATE/ALTER examples still in history (non-exhaustive):
 
 - `20260605090000_spokedu_master_subscriptions.sql`
-- `20260519120000_spokedu_master_program_meta_lesson_detail.sql`
-- `20260603180000_spokedu_master_program_meta_images.sql`
-- `20260615120000_spokedu_master_program_meta_content_fields.sql`
+- `20260519120000_spokedu_master_program_meta_lesson_detail.sql` (ALTER only)
+- `20260603180000_spokedu_master_program_meta_images.sql` (ALTER only)
+- `20260615120000_spokedu_master_program_meta_content_fields.sql` (ALTER only)
 - `20260616120000_spokedu_master_operational_data.sql`
 - `20260616123000_optimize_spokedu_master_operational_rls.sql`
 - `20260616124000_fix_spokedu_master_updated_at_search_path.sql`
 - `20260619120000_spokedu_master_explanations.sql`
 - `20260621120000_spokedu_master_payment_webhook_events.sql`
 
-`supabase/config.toml` was not present in this repository at the time of this runbook update, so local Supabase project reproducibility is not fully proven from repository configuration alone.
+Later history (also non-exhaustive) includes payment integrity, billing cron observability / `spokedu_master_billing_runs`, session/class workflow RPCs and tables, session capture/restore/carryover, recurring schedule rules, and typed favorites. Browse `supabase/migrations/*spokedu_master*` rather than treating the 2026-06 list as complete.
 
-`spokedu_master_program_meta` is referenced by MASTER admin/program APIs, but this repository search found only `alter table` migrations for it, not the original `create table` migration. Treat that as a migration reproducibility gap until the table creation migration or baseline schema is confirmed.
+`supabase/config.toml` is not present in this repository, so local Supabase project reproducibility is not fully proven from repository configuration alone.
+
+`spokedu_master_program_meta` is referenced by MASTER admin/program APIs; this repository still has only `ALTER TABLE` migrations for it, not the original `CREATE TABLE`. Treat that as a migration reproducibility gap until a live inspect result is captured and reviewed. Note RPC/materialization (`note_apply_block_transaction`, op seq/commit) is defined in Note migrations; it is outside this MASTER backup table set.
 
 Use a temporary or local database for rehearsal. Never run reset, drop, truncate, or restore commands against production without an explicit incident plan.
 

@@ -1,7 +1,7 @@
 ---
 description: Admin API 라우트 인증 패턴 강제
-globs: app/api/admin/**/*.ts, app/api/auth/**/*.ts
-alwaysApply: true
+globs: app/api/admin/**/*.ts,app/api/auth/**/*.ts,app/lib/server/adminAuth.ts,app/lib/auth/platformAdminIdentity.ts,app/api/sessions/auto-finish/route.ts
+alwaysApply: false
 ---
 
 # Admin API 인증 규칙
