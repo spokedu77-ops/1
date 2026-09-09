@@ -108,8 +108,8 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(hrefSource).toContain('publicOfficialPresetSessionHref');
     expect(preview).toContain("url.searchParams.set('recommendedCueSeconds'");
     expect(session).toContain('if (recommendedCueSeconds != null)');
-    expect(session).toContain('urlDifficulty');
-    expect(session).toContain('difficultyReady');
+    expect(session).not.toContain('urlDifficulty');
+    expect(session).not.toContain('difficultyReady');
     expect(session).toContain('activationBlocked');
     expect(session).toContain('전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.');
     expect(session).toContain('unlockActivation');

@@ -173,6 +173,11 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(settingsBriefing).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
     expect(settingsBriefing).toContain('onCueSecondsChange');
     expect(startBriefing).toContain('실행 시작');
+    expect(startBriefing).toContain('`SPOMAT ${matCount}장 · 자극 ${cueSeconds}초`');
+    expect(startBriefing).not.toContain('movementSummary');
+    expect(startBriefing).not.toContain('전체화면 준비');
+    expect(startBriefing).not.toContain('소리 사용');
+    expect(startBriefing).toContain('border border-white/20');
     expect(startBriefing).not.toContain('바로 시작');
     expect(startBriefing).not.toContain('바로 실행');
   });
@@ -191,16 +196,16 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(startBriefing).not.toContain('난이도 {cueDifficulty}');
     expect(settingsBriefing).not.toContain('난이도 {cueDifficulty}');
     expect(startBriefing).not.toContain('sec === 3');
-    expect(settingsBriefing).toContain('sec === 3');
+    expect(settingsBriefing).toContain('sec === recommendedCueSeconds');
     expect(startBriefing).not.toContain('추천');
     expect(settingsBriefing).toContain('추천');
-    expect(padLayoutView).toContain('학생이 화면을 바라보는 기준입니다.');
+    expect(padLayoutView).not.toContain('학생이 화면을 바라보는 기준입니다.');
     expect(padLayoutView).toContain('화면 ↑');
-    expect(padLayoutView).toContain('학생 위치');
+    expect(padLayoutView).not.toContain('학생 위치');
     expect(padLayoutView).toContain('/images/spokedu/brand/spomat-layout.png');
     expect(padLayoutView).toContain('aspect-square');
-    expect(settingsBriefing).toContain('meta={intervalLine ? null : prepLine}');
-    expect(settingsBriefing).not.toContain('text-white/70">{prepLine}');
+    expect(settingsBriefing).not.toContain('meta=');
+    expect(settingsBriefing).not.toContain('적용될 설정');
   });
 
   it('reproduces recent same-settings or downgrades the label', () => {
@@ -208,7 +213,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('같은 설정으로 시작');
     expect(hub).toContain('이 활동으로 시작');
     expect(hub).toContain('data-spm-spomove-recent-reproduce');
-    expect(session).toContain('difficultyValue: difficultyKind ? difficultyValue : undefined');
+    expect(session).not.toContain('difficultyValue');
   });
 
   it('keeps Start/Settings briefings without nested details modal', () => {

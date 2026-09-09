@@ -1,6 +1,6 @@
 'use client';
 
-import { Maximize, Play, Volume2, VolumeX } from 'lucide-react';
+import { Play } from 'lucide-react';
 
 import type { OfficialSpomovePreset } from '../officialSpomovePresets';
 import type { SpomoveCueSpeedSec } from '../spomoveCueSpeed';
@@ -11,11 +11,7 @@ import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 export function StartBriefing({
   preset,
   cueSeconds,
-  difficultyLabel,
   matCount,
-  movementSummary,
-  mode,
-  soundEnabled,
   canChangeSettings,
   startDisabled,
   onSettings,
@@ -23,39 +19,27 @@ export function StartBriefing({
 }: {
   preset: OfficialSpomovePreset;
   cueSeconds: SpomoveCueSpeedSec;
-  difficultyLabel?: string | null;
   matCount: number;
-  movementSummary?: string | null;
-  mode: 'projector' | 'mobile';
-  soundEnabled: boolean;
   canChangeSettings: boolean;
   startDisabled: boolean;
   onSettings: () => void;
   onStart: () => void;
 }) {
-  const summary = [`SPOMAT ${matCount}장`, `자극 ${cueSeconds}초`, difficultyLabel, movementSummary]
-    .filter(Boolean)
-    .join(' · ');
-  const status = [
-    mode === 'projector' ? '전체화면 준비' : null,
-    soundEnabled ? '소리 사용' : '소리 끔',
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const summary = `SPOMAT ${matCount}장 · 자극 ${cueSeconds}초`;
 
   return (
     <div className="space-y-5" data-spm-session-ready-screen="true">
-      <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} compact dark flush />
+      <section>
+        <p className="text-sm font-semibold text-white">매트 배치</p>
+        <div className="mt-2">
+          <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} compact dark flush />
+        </div>
+      </section>
 
       <div className="text-center">
         <p className="text-[11px] font-semibold tracking-wide text-white/45">현재 실행값</p>
         <p className="mt-1 text-[14px] font-medium leading-6 text-white/80">{summary}</p>
       </div>
-      <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[13px] font-medium text-white/55" aria-label="실행 준비 상태">
-        {mode === 'projector' ? <span className="inline-flex items-center gap-1.5"><Maximize className="h-4 w-4" /> 전체화면 준비</span> : null}
-        <span className="inline-flex items-center gap-1.5">{soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />} {soundEnabled ? '소리 사용' : '소리 끔'}</span>
-        <span className="sr-only">{status}</span>
-      </p>
 
       <button
         type="button"
@@ -70,7 +54,7 @@ export function StartBriefing({
         <button
           type="button"
           onClick={onSettings}
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl text-[13px] font-medium text-white/55 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-white/20 bg-white/[0.04] text-[14px] font-semibold text-white/80 transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
         >
           설정 변경
         </button>

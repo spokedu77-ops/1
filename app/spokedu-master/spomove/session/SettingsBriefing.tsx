@@ -1,103 +1,45 @@
 'use client';
 
 import { Play } from 'lucide-react';
-import { useMemo } from 'react';
 
-import type { ActivityFamilyDefinition } from '../movements/movementTypes';
 import {
   SPOMOVE_CUE_SPEED_OPTIONS,
   getCueSpeedGuide,
   supportsCueSpeedOverride,
   type SpomoveCueSpeedSec,
 } from '../spomoveCueSpeed';
-import {
-  getSpomoveDifficultyOptions,
-  type SpomoveDifficultyKind,
-} from '../spomoveDifficulty';
 import type { OfficialSpomovePreset } from '../officialSpomovePresets';
-import { resolveRequiredMatGuidance } from '../operations/operationConstraints';
-import type { ActivityOperationConfig } from '../operations/operationTypes';
 import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 
-/**
- * 일반 Session Settings — 완성된 Preset 대표값 고정 + 자극 속도·난이도만 조절.
- * 움직임/5축 Operation 조립 UI 없음 (Class Set·Variant 영역).
- */
+/** Session Settings adjusts only values that can change this run. */
 export function SettingsBriefing({
   preset,
   startDisabled,
   cueSeconds,
   recommendedCueSeconds,
   onCueSecondsChange,
-  difficultyKind,
-  difficultyValue,
-  onDifficultyChange,
   onStart,
-  activityFamily,
   cueFloorNotice,
-  operationConfig,
 }: {
   preset: OfficialSpomovePreset;
   startDisabled: boolean;
   cueSeconds: SpomoveCueSpeedSec;
   recommendedCueSeconds: SpomoveCueSpeedSec;
   onCueSecondsChange: (value: SpomoveCueSpeedSec) => void;
-  difficultyKind: SpomoveDifficultyKind | null;
-  difficultyValue: string;
-  onDifficultyChange: (value: string) => void;
   onStart: () => void;
-  activityFamily?: ActivityFamilyDefinition | null;
   cueFloorNotice?: string | null;
-  operationConfig?: ActivityOperationConfig | null;
 }) {
   const showCueSpeed = supportsCueSpeedOverride(preset);
-  const difficultyOptions = difficultyKind ? getSpomoveDifficultyOptions(difficultyKind) : [];
-
-  const intervalLine =
-    operationConfig?.timing.pattern === 'interval'
-      ? `${operationConfig.timing.workSeconds}초 운동 · ${operationConfig.timing.restSeconds}초 휴식 · ${operationConfig.timing.sets}세트`
-      : null;
-
-  const prepLine = useMemo(() => {
-    const mats = activityFamily
-      ? resolveRequiredMatGuidance({
-          minMats: activityFamily.matRequirement.minMats,
-          participantScale: operationConfig?.participantScale ?? 'individual',
-        }).recommended
-      : 1;
-    const timingLabel =
-      operationConfig?.timing.pattern === 'responseWindow'
-        ? '충분 반응'
-        : operationConfig?.timing.pattern === 'interval'
-          ? '인터벌'
-          : operationConfig?.timing.pattern === 'continuous'
-            ? '연속 반응'
-            : null;
-    const parts = [timingLabel, `매트 ${mats}장`].filter(Boolean);
-    return parts.join(' · ');
-  }, [activityFamily, operationConfig]);
-
-  const padLayoutVariant = getSpomovePadLayoutVariant(preset);
 
   return (
     <div className="space-y-4 [@media(max-height:950px)]:space-y-3" data-spm-session-settings-screen="true">
-      <div className="rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 [@media(max-height:950px)]:py-2">
-        <p className="text-[12px] font-black tracking-[0.08em] text-white/45">설정 변경</p>
-        <p className="mt-1 text-[13px] font-semibold text-white/65">필요한 값만 바꾼 뒤 시작합니다.</p>
-      </div>
-      <SpomovePadLayoutView
-        variant={padLayoutVariant}
-        compact
-        dark
-        meta={intervalLine ? null : prepLine}
-      />
-
-      {intervalLine ? (
-        <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-          <p className="text-[14px] font-bold text-white/85">{intervalLine}</p>
-        </section>
-      ) : null}
+      <section>
+        <p className="text-sm font-semibold text-white">매트 배치</p>
+        <div className="mt-2">
+          <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} compact dark flush />
+        </div>
+      </section>
 
       {showCueSpeed ? (
         <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5 [@media(max-height:950px)]:p-3">
@@ -119,8 +61,8 @@ export function SettingsBriefing({
                   title={`${sec}초 · ${getCueSpeedGuide(sec).tempoLabel}`}
                   className={`relative inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-black transition [@media(max-height:950px)]:h-10 ${
                     active
-                        ? 'bg-[var(--spm-acc)] text-white'
-                        : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'
+                      ? 'bg-[var(--spm-acc)] text-white'
+                      : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'
                   }`}
                 >
                   {sec}
@@ -138,43 +80,6 @@ export function SettingsBriefing({
           ) : null}
         </div>
       ) : null}
-
-      {difficultyKind ? (
-        <div className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-          <p className="text-[12px] font-black tracking-[0.08em] text-white/55">난이도</p>
-          <div className="mt-3 flex gap-2">
-            {difficultyOptions.map((opt) => {
-              const active = difficultyValue === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onDifficultyChange(opt.value)}
-                  className={`flex-1 rounded-xl px-2 py-3 text-center transition ${
-                    active
-                      ? 'bg-[var(--spm-acc)] text-white'
-                      : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'
-                  }`}
-                >
-                  <span className="block text-[18px] font-black">{opt.label}</span>
-                  <span className={`mt-1 block text-[10px] font-bold ${active ? 'text-white/80' : 'text-white/45'}`}>
-                    {opt.sub}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      <div className="rounded-[18px] border border-white/10 bg-black/25 px-4 py-3 [@media(max-height:950px)]:py-2" aria-live="polite">
-        <p className="text-[11px] font-black tracking-[0.08em] text-white/45">적용될 설정</p>
-        <p className="mt-1.5 text-[14px] font-black text-white/85">
-          {[showCueSpeed ? `자극 ${cueSeconds}초` : null, difficultyOptions.find((option) => option.value === difficultyValue)?.label, prepLine]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-      </div>
 
       <button
         type="button"

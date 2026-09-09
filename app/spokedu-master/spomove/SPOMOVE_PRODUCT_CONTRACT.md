@@ -50,21 +50,17 @@
 - Admin의 프로그램별 `recommendedCueSeconds`는 추천 초기값이며 사용자 설정을 덮어쓰지 않는다.
 - 자극 시간 우선순위는 `명시적 cueSeconds URL → Admin 추천값 → 프로그램별 저장값 → Preset 기본값`이다. Admin 추천값이 전달된 공식 모달 진입에서는 이전 브라우저 저장값이 추천값을 가리지 않는다.
 - 추천값은 기존 SPOMOVE content pack에 저장하며 허용 범위는 정수 `1~6초`이다.
-- SSOT는 `session/page.tsx` (`movementPick` · `cueSeconds` · `difficultyValue` 등)
+- SSOT는 `session/page.tsx` (`movementPick` · `cueSeconds` 등)
 - Start/Settings는 Controlled만 · **동일** `beginConfiguredSession` 호출
 - 저장: Settings에서 움직임 변경 시 · 실제 수업 시작 시
 
-### Start 요약 (Profile별)
+### Start 요약
 
-| Profile | 표시 |
-| --- | --- |
-| selectable | Effective 움직임 |
-| fixed | 발 터치 · 화면 지정 방식 |
-| bodyCueBuiltIn | 화면이 손·발 직접 안내 |
-| diveBuiltIn | 움직임 행 미표시 |
-
-- 속도 지원: 자극 속도 선택 · 비지원: 고정 진행 방식 요약 (비활성 2~6초 나열 금지)
-- selector 없음 · 명시 시작
+- 현재 실행값은 `SPOMAT N장 · 자극 N초`만 표시
+- difficulty · movement summary · 전체화면 · 소리 상태는 표시하지 않음
+- 속도 지원: Settings에서 자극 속도 선택 · 비지원: 비활성 1~6초 나열 금지
+- Session Settings는 난이도 override를 읽거나 저장하지 않으며 Preset의 작성된 Engine 기본값을 그대로 실행
+- Start selector 없음 · 명시 시작
 
 ### Settings
 

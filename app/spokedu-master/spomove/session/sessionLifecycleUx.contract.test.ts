@@ -15,11 +15,15 @@ describe('SPOMOVE session lifecycle UX', () => {
     expect(start).not.toContain('onCueSecondsChange');
     expect(start).toContain('실행 시작');
     expect(start).toContain('설정 변경');
+    expect(start).toContain('border border-white/20');
+    expect(start).not.toContain('movementSummary');
+    expect(start).not.toContain('전체화면 준비');
+    expect(start).not.toContain('소리 사용');
     expect(settings).toContain('data-spm-session-settings-screen');
     expect(settings).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
     expect(settings).toContain('sec === recommendedCueSeconds');
     expect(page).toContain('recommendedCueSeconds={effectiveRecommendedCueSeconds}');
-    expect(settings).toContain('getSpomoveDifficultyOptions');
+    expect(settings).not.toContain('getSpomoveDifficultyOptions');
   });
 
   it('requires explicit confirmation before an engine exit becomes ended', () => {
@@ -58,7 +62,7 @@ describe('SPOMOVE session lifecycle UX', () => {
 
   it('preserves retry settings and Session/Hub return context', () => {
     expect(page).toContain('cueSeconds: effectiveCueSeconds');
-    expect(page).toContain('difficulty: difficultyKind ? difficultyValue : undefined');
+    expect(page).not.toContain('difficultyValue');
     expect(page).toContain('operationCandidate');
     expect(page).toContain('hubReturn: parseSpomoveHubReturnHref');
     expect(page).toContain('returnTo: origin.returnTo');

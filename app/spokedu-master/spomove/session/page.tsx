@@ -29,12 +29,6 @@ import {
   readSpomoveSessionOrigin,
 } from '../../lib/masterNavigationContext';
 import {
-  applySpomoveDifficulty,
-  getSpomoveDifficultyKind,
-  getSpomoveDifficultyOptions,
-  readSpomoveDifficultyValue,
-} from '../spomoveDifficulty';
-import {
   clampCueSpeedSec,
   parseCueSecondsQuery,
   resolveSessionCueSeconds,
@@ -137,45 +131,7 @@ function SpomoveSessionContent() {
     baseOfficialPreset,
     masterAccess?.snapshot.isAdmin,
   );
-  const difficultyKind = useMemo(
-    () => (baseOfficialPreset ? getSpomoveDifficultyKind(baseOfficialPreset) : null),
-    [baseOfficialPreset],
-  );
-  const urlDifficulty = searchParams.get('difficulty');
-  const [difficultyValue, setDifficultyValue] = useState(() => {
-    if (!baseOfficialPreset || !difficultyKind) return '1';
-    const options = getSpomoveDifficultyOptions(difficultyKind);
-    if (urlDifficulty && options.some((opt) => opt.value === urlDifficulty)) {
-      return urlDifficulty;
-    }
-    if (typeof window !== 'undefined') {
-      const pref = readPresetConfigPreference(baseOfficialPreset.id);
-      if (pref?.difficultyValue && options.some((opt) => opt.value === pref.difficultyValue)) {
-        return pref.difficultyValue;
-      }
-    }
-    return readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind);
-  });
-  useEffect(() => {
-    if (!baseOfficialPreset || !difficultyKind) return;
-    const options = getSpomoveDifficultyOptions(difficultyKind);
-    if (urlDifficulty && options.some((opt) => opt.value === urlDifficulty)) {
-      setDifficultyValue(urlDifficulty);
-      return;
-    }
-    const pref = readPresetConfigPreference(baseOfficialPreset.id);
-    if (pref?.difficultyValue && options.some((opt) => opt.value === pref.difficultyValue)) {
-      setDifficultyValue(pref.difficultyValue);
-      return;
-    }
-    setDifficultyValue(readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind));
-  }, [baseOfficialPreset, difficultyKind, urlDifficulty]);
-  const difficultyReady = !difficultyKind || Boolean(difficultyValue);
-  const officialPreset = useMemo(() => {
-    if (!baseOfficialPreset) return null;
-    if (!difficultyKind) return baseOfficialPreset;
-    return applySpomoveDifficulty(baseOfficialPreset, difficultyKind, difficultyValue);
-  }, [baseOfficialPreset, difficultyKind, difficultyValue]);
+  const officialPreset = baseOfficialPreset;
   const displayModel = useMemo(
     () => (officialPreset ? getSpomovePresetDisplayModel(officialPreset) : null),
     [officialPreset],
@@ -269,23 +225,20 @@ function SpomoveSessionContent() {
   }, [activityFamily, operationCandidate, operationLayerStatus]);
 
   const persistPresetPreference = useCallback(
-    (next: { cue?: number; difficulty?: string }) => {
+    (next: { cue?: number }) => {
       if (!officialPreset) return;
       const prev = readPresetConfigPreference(officialPreset.id);
-      // 일반 Hub: cue·difficulty만 Preference. movement/operation은 Class Set·Variant 영역.
+      // 일반 Hub: cue만 Preference. movement/operation은 Class Set·Variant 영역.
       writePresetConfigPreference(officialPreset.id, {
         schemaVersion: 1,
         presetId: officialPreset.id,
         cueSeconds: next.cue ?? prev?.cueSeconds,
-        difficultyValue: next.difficulty ?? (difficultyKind ? difficultyValue : prev?.difficultyValue),
       });
     },
-    [difficultyKind, difficultyValue, officialPreset],
+    [officialPreset],
   );
 
-  const canStartSession =
-    difficultyReady &&
-    operationLayerStatus !== 'pending';
+  const canStartSession = operationLayerStatus !== 'pending';
 
   const urlCueSeconds = useMemo(
     () => parseCueSecondsQuery(searchParams.get('cueSeconds')),
@@ -433,8 +386,6 @@ function SpomoveSessionContent() {
             presetId: officialPreset.id,
             operationLayerStatus: 'legacyDisabled',
             cueSeconds: effectiveCueSeconds,
-            difficultyKind: difficultyKind ?? undefined,
-            difficultyValue: difficultyKind ? difficultyValue : undefined,
           })
         : buildSpomoveSessionSnapshotV2({
             presetId: officialPreset.id,
@@ -442,8 +393,6 @@ function SpomoveSessionContent() {
               operationLayerStatus === 'pending' ? 'ready' : operationLayerStatus,
             operation: operationCandidate,
             cueSeconds: effectiveCueSeconds,
-            difficultyKind: difficultyKind ?? undefined,
-            difficultyValue: difficultyKind ? difficultyValue : undefined,
           });
     recordRecentProgramActivity({
       programId: officialPreset.id,
@@ -452,13 +401,9 @@ function SpomoveSessionContent() {
       occurredAt: new Date().toISOString(),
       activityFamilyId: officialPreset.activityFamilyId,
       cueSeconds: effectiveCueSeconds,
-      difficultyKind: difficultyKind ?? undefined,
-      difficultyValue: difficultyKind ? difficultyValue : undefined,
       spomoveSnapshot: snapshot,
     });
   }, [
-    difficultyKind,
-    difficultyValue,
     effectiveCueSeconds,
     launchMode,
     officialPreset,
@@ -609,7 +554,6 @@ function SpomoveSessionContent() {
       entry: 'start',
       mode: launchMode,
       cueSeconds: effectiveCueSeconds,
-      difficulty: difficultyKind ? difficultyValue : undefined,
       operation:
         operationLayerStatus !== 'legacyDisabled' && operationCandidate
           ? operationCandidate
@@ -621,8 +565,6 @@ function SpomoveSessionContent() {
     });
     router.replace(href);
   }, [
-    difficultyKind,
-    difficultyValue,
     effectiveCueSeconds,
     exitFullscreenAfterSession,
     launchMode,
@@ -653,12 +595,10 @@ function SpomoveSessionContent() {
       sessionOrigin.sessionId ? buildActivitySessionHref(sessionOrigin.sessionId) : '/spokedu-master/activity',
     )
     : null;
-  const difficultyLabel = difficultyKind
-    ? getSpomoveDifficultyOptions(difficultyKind).find((option) => option.value === difficultyValue)?.label ?? null
-    : null;
   const openSettings = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('entry', 'settings');
+    params.delete('difficulty');
     router.replace(`/spokedu-master/spomove/session?${params.toString()}`);
   }, [router, searchParams]);
 
@@ -798,27 +738,15 @@ function SpomoveSessionContent() {
               cueSeconds={effectiveCueSeconds}
               recommendedCueSeconds={effectiveRecommendedCueSeconds}
               onCueSecondsChange={handleCueSecondsChange}
-              difficultyKind={difficultyKind}
-              difficultyValue={difficultyValue}
-              onDifficultyChange={(value) => {
-                setDifficultyValue(value);
-                persistPresetPreference({ difficulty: value });
-              }}
               onStart={beginConfiguredSession}
-              activityFamily={activityFamily}
               cueFloorNotice={cueFloorNotice}
-              operationConfig={operationCandidate}
             />
           ) : (
             <StartBriefing
               preset={officialPreset}
               cueSeconds={effectiveCueSeconds}
-              difficultyLabel={difficultyLabel}
               matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}
-              movementSummary={operationSummary}
-              mode={launchMode}
-              soundEnabled={soundEnabled}
-              canChangeSettings={supportsCueSpeedOverride(officialPreset) || Boolean(difficultyKind)}
+              canChangeSettings={supportsCueSpeedOverride(officialPreset)}
               startDisabled={bgmLoading || !canStartSession}
               onSettings={openSettings}
               onStart={beginConfiguredSession}
@@ -845,7 +773,6 @@ function SpomoveSessionContent() {
             settings={[
               `SPOMAT ${matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}장`,
               `자극 ${effectiveCueSeconds}초`,
-              difficultyLabel,
               operationSummary,
             ].filter(Boolean) as string[]}
             recordHref={recordProgramHref}

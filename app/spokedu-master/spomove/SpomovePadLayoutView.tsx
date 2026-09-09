@@ -7,22 +7,18 @@ type SpomovePadLayoutViewProps = {
   variant: SpomovePadLayoutVariant;
   compact?: boolean;
   dark?: boolean;
-  /** 진행 방식·매트 장수 등 — 배치 카드에 붙여 고아 메타 블록을 만들지 않음 */
-  meta?: string | null;
 };
 
 export function SpomovePadLayoutView({
   variant,
   compact = false,
   dark = false,
-  meta = null,
   flush = false,
 }: SpomovePadLayoutViewProps & { flush?: boolean }) {
   const [red, yellow, green, blue] = SPOMOVE_PAD_GRID_HEX;
   const borderClass = dark ? 'border-white/10 bg-black/20' : 'border-slate-200 bg-slate-50';
   const titleClass = dark ? 'text-white' : 'text-slate-950';
   const mutedClass = dark ? 'text-white/55' : 'text-slate-500';
-  const metaLine = meta?.trim() || null;
   const frameClass = flush ? '' : `rounded-2xl border p-4 ${borderClass}`;
 
   if (variant === 'compass') {
@@ -34,7 +30,6 @@ export function SpomovePadLayoutView({
         {flush ? null : (
           <>
             <p className={`text-sm font-semibold ${titleClass}`}>매트 배치</p>
-            <p className={`mt-1 text-xs font-medium ${mutedClass}`}>학생이 화면을 바라보는 기준입니다.</p>
           </>
         )}
         <p className={`text-center text-[11px] font-medium ${mutedClass} ${flush ? '' : 'mt-3'}`}>화면 ↑</p>
@@ -50,8 +45,6 @@ export function SpomovePadLayoutView({
           </div>
         </div>
         <p className={`mt-2 text-center text-xs font-medium ${mutedClass}`}>빨강 앞 · 노랑 왼쪽 · 초록 오른쪽 · 파랑 뒤</p>
-        <p className={`mt-1 text-center text-[11px] font-medium ${mutedClass}`}>학생 위치</p>
-        {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
       </div>
     );
   }
@@ -65,7 +58,6 @@ export function SpomovePadLayoutView({
       {flush ? null : (
         <>
           <p className={`text-sm font-semibold ${titleClass}`}>매트 배치</p>
-          <p className={`mt-1 text-xs font-medium ${mutedClass}`}>학생이 화면을 바라보는 기준입니다.</p>
         </>
       )}
       <p className={`text-center text-[11px] font-medium ${mutedClass} ${flush ? '' : 'mt-3 [@media(max-height:950px)]:mt-2'}`}>화면 ↑</p>
@@ -83,8 +75,6 @@ export function SpomovePadLayoutView({
           />
         </div>
       </div>
-      <p className={`mt-2 text-center text-[11px] font-medium [@media(max-height:950px)]:mt-1.5 ${mutedClass}`}>학생 위치</p>
-      {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
     </div>
   );
 }

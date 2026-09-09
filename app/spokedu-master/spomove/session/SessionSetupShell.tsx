@@ -14,7 +14,7 @@ export function SessionSetupShell({
   compact?: boolean;
 }) {
   return (
-    <div className="flex min-h-min w-full justify-center px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[calc(4.75rem+env(safe-area-inset-top))] sm:px-8 [@media(max-height:950px)]:pb-3 [@media(max-height:950px)]:pt-[calc(4.25rem+env(safe-area-inset-top))]">
+    <div className="flex min-h-dvh w-full items-center justify-center px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[calc(4.75rem+env(safe-area-inset-top))] sm:px-8 [@media(max-height:950px)]:pb-3 [@media(max-height:950px)]:pt-[calc(4.25rem+env(safe-area-inset-top))]">
       <section className={`w-full border-white/10 ${compact ? 'max-w-[520px]' : 'max-w-[560px]'}`}>
         <div className="px-1 pt-2 sm:px-2">
           <p className="text-[12px] font-medium text-white/55">{programLabel}</p>
