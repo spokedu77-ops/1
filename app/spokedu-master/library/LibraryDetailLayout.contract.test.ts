@@ -39,7 +39,11 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(view.match(/data-detail-action=/g)).toHaveLength(1);
     expect(view).toContain('data-detail-actions');
     expect(view).toContain('data-detail-support-actions');
-    expect(view).toContain('max-w-[460px]');
+    expect(view).toContain('max-w-[1080px]');
+    expect(view).not.toContain('max-w-[1220px]');
+    expect(view).toContain('lg:w-[190px]');
+    expect(view).toContain('max-lg:flex-1');
+    expect(view).not.toContain('min-h-11 flex-1 rounded');
     expect(view).toContain('AssignProgramToSessionButton');
     expect(view).not.toContain('수업 일정 관리');
     expect(view).toContain('지도안 복사');
@@ -72,25 +76,35 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain('const DETAIL_PANEL_BODY_CLASS');
     expect(guide.match(/data-detail-panel-heading/g)).toHaveLength(4);
     expect(guide.match(/data-detail-panel-body/g)).toHaveLength(4);
-    expect(guide).toContain('min-[900px]:self-center');
+    expect(guide).not.toContain('min-[900px]:self-center');
+    expect(guide).toContain('flex flex-col self-start');
     expect(guide).not.toContain('overflow-y-auto');
   });
 
-  it('keeps equipment as a section-level summary above setup and overview siblings', () => {
+  it('keeps physical preparation separate from the teaching guide', () => {
     const setup = guide.slice(guide.indexOf('function SetupPanel'), guide.indexOf('function OverviewPanel'));
     const overview = guide.slice(guide.indexOf('function OverviewPanel'), guide.indexOf('function RelatedVideosSection'));
-    expect(guide).toContain('data-detail-equipment-summary');
+    expect(guide).not.toContain('data-detail-equipment-summary');
+    expect(guide).toContain('data-detail-equipment');
+    expect(guide).toContain('data-detail-setup-notes');
     expect(guide).toContain('준비물');
-    expect(setup).not.toContain('model.equipment');
+    expect(setup).toContain('model.equipment');
+    expect(setup).toContain('model.setupNotes');
     expect(overview).not.toContain('model.equipment');
     expect(overview).toContain('model.coachScript');
     expect(overview).toContain('model.briefingNotes');
+    expect(overview).toContain('지도 가이드');
+    expect(overview).not.toContain('수업 한눈에 보기');
     expect(overview).toContain('설명 스크립트');
     expect(overview).toContain('사전교육');
     expect(overview).not.toContain('model.objective');
     expect(overview).not.toContain('model.developmentFocus');
     expect(overview.match(/model\.coachScript/g)?.length).toBeGreaterThanOrEqual(2);
     expect(guide).not.toContain('CoachScriptSection');
+    expect(guide).toContain('export function splitCoachScriptParagraphs');
+    expect(guide).toContain("script.replace(/\\\\r\\\\n|\\\\n|\\r\\n?/g, '\\n')");
+    expect(guide).toContain("normalized.split(/\\n\\s*\\n+/) : normalized.split('\\n')");
+    expect(guide).toContain('splitCoachScriptParagraphs(model.coachScript).map');
   });
 
   it('preserves setup-image enlargement, video tracking, and poster priority', () => {
@@ -159,6 +173,7 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).not.toContain('SPOKEDU MASTER</span>');
     expect(guide).toContain('model.setupNotes');
     expect(guide).toContain('const hasPhysicalPreparation');
+    expect(guide).toContain('Boolean(model.setupImageUrl) || model.equipment.length > 0 || model.setupNotes.length > 0');
     expect(guide).toContain('hasPhysicalPreparation && hasOverview');
     expect(guide).toContain('model.tags.length > 0');
     expect(guide).toContain("videos.length === 1");
@@ -166,6 +181,42 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(view).toContain("setPlanCopyStatus('error')");
     expect(view).toContain('copyFeedbackTimerRef');
     expect(view).toContain("prefersReducedMotion() ? 'auto' : 'smooth'");
+  });
+
+  it('uses preparation context and user-facing related-video wording without changing selection reasons', () => {
+    expect(guide).toContain('data-detail-context');
+    expect(guide).toContain('상세 수업 준비');
+    expect(guide).toContain('관련 수업 영상');
+    expect(guide).toContain("'신체 기능 유사': '비슷한 신체 기능'");
+    expect(guide).toContain("'같은 교구': '같은 교구 활용'");
+    expect(guide).toContain("'동작 패턴 유사': '비슷한 움직임'");
+    expect(guide).toContain("'관련 활동': '함께 보기 좋은 활동'");
+  });
+
+  it('uses the modal step-marker grammar and content-based method support', () => {
+    expect(guide).toContain('function StepMarker');
+    expect(guide).toContain('inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full');
+    expect(guide.match(/<StepMarker index=\{index\}/g)).toHaveLength(3);
+    expect(guide).not.toContain("padStart(2, '0')");
+    expect(guide).toContain('function getMethodSupport');
+    expect(guide).toContain('if (model.variationMethod.length > 0 || model.activityMethod.length > 4) return []');
+    expect(guide).toContain('model.developmentFocus');
+    expect(guide).toContain('model.objective');
+    expect(guide).toContain('model.safetyNotes');
+    expect(guide).toContain('model.activityMethod.length <= 2 ? 2 : 1');
+    expect(guide).not.toContain('model.activityMethod.length >= 4');
+    expect(guide).toContain('...(model.developmentFocus ? [model.developmentFocus] : [])');
+  });
+
+  it('keeps mobile actions sticky while moving desktop actions and favorite into the hero', () => {
+    expect(guide).toContain('lg:grid-cols-[minmax(0,1fr)_auto]');
+    expect(view).toContain('max-lg:fixed');
+    expect(view).toContain('transition-none lg:hidden');
+    expect(view).toContain('aria-hidden className="hidden h-11 w-11 lg:block"');
+    expect(view).toContain('hidden h-11 w-11');
+    expect(view).toContain('lg:inline-flex');
+    expect(view.match(/aria-pressed=\{favorite\}/g)).toHaveLength(2);
+    expect(view).toContain('bg-[var(--spm-bg)]');
   });
 
   it('shows explicit Capture memory after core preparation with an exact Session deep link', () => {

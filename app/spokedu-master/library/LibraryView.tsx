@@ -272,11 +272,16 @@ function RecommendationProgramCard({ program, onPreview, priority = false }: { p
   );
 }
 
-function RecommendationShelf({ title, programs, onPreview, priority = false }: { title: string; programs: Program[]; onPreview: (program: Program) => void; priority?: boolean }) {
+function RecommendationShelf({ title, programs, onPreview, onViewAll, priority = false }: { title: string; programs: Program[]; onPreview: (program: Program) => void; onViewAll: () => void; priority?: boolean }) {
   return (
     <section aria-labelledby={`library-recommendation-${title}`}>
       <p className="text-[12px] font-semibold text-[color:var(--spm-t3)]">추천 테마</p>
-      <h2 id={`library-recommendation-${title}`} className="mt-1 text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">{title}</h2>
+      <div className="mt-1 flex items-center justify-between gap-4">
+        <h2 id={`library-recommendation-${title}`} className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">{title}</h2>
+        <button type="button" onClick={onViewAll} className="inline-flex min-h-11 shrink-0 items-center text-[13px] font-semibold text-[color:var(--spm-acc)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
+          전체보기
+        </button>
+      </div>
       <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
         <div className="flex w-max snap-x snap-mandatory items-start gap-5 lg:grid lg:w-auto lg:grid-cols-4 lg:gap-6 lg:snap-none">
           {programs.map((program, index) => (
@@ -349,14 +354,15 @@ export default function LibraryView() {
     }
   };
 
-  // The physical-activity Library is a complete Lite catalog. Premium content lives in SPOMOVE.
-  const pool = useMemo(() => programs.filter((program) => !program.isPro), [programs]);
+  // The full catalog stays discoverable; access-gated lessons are locked by ProgramGrid.
+  const pool = programs;
+  const recommendationPool = useMemo(() => programs.filter((program) => !program.isPro), [programs]);
 
   const viewPool = pool;
-  const classroomPrograms = useMemo(() => selectRecommendationPrograms(viewPool, 'space', '교실'), [viewPool]);
+  const classroomPrograms = useMemo(() => selectRecommendationPrograms(recommendationPool, 'space', '교실'), [recommendationPool]);
   const preschoolPrograms = useMemo(
-    () => selectRecommendationPrograms(viewPool, 'target', '미취학', new Set(classroomPrograms.map((program) => program.id))),
-    [classroomPrograms, viewPool],
+    () => selectRecommendationPrograms(recommendationPool, 'target', '미취학', new Set(classroomPrograms.map((program) => program.id))),
+    [classroomPrograms, recommendationPool],
   );
 
   const sourceLibrarySearch = useMemo(() => {
@@ -431,6 +437,16 @@ export default function LibraryView() {
     setReasonId(null);
   };
 
+  const viewAllRecommendation = (filter: ActiveFilter) => {
+    setQuery('');
+    setFilters([filter]);
+    setShelfId(null);
+    setReasonId(null);
+    requestAnimationFrame(() => {
+      document.getElementById('library-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   const filterGroups = useMemo<FilterGroup[]>(
     () =>
       buildLibraryFilterGroups(
@@ -491,11 +507,13 @@ export default function LibraryView() {
             programs={classroomPrograms}
             priority
             onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
+            onViewAll={() => viewAllRecommendation({ group: 'space', value: '교실' })}
           />
           <RecommendationShelf
             title="미취학 추천"
             programs={preschoolPrograms}
             onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
+            onViewAll={() => viewAllRecommendation({ group: 'target', value: '미취학' })}
           />
 
         <section id="library-catalog" className="scroll-mt-6">

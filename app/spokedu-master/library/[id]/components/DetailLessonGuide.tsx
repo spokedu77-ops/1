@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, MessageSquareQuote, Play, X, ZoomIn } from 'lucide-react';
+import { ExternalLink, MessageSquareQuote, Package, Play, X, ZoomIn } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
@@ -31,6 +31,49 @@ const DETAIL_PANEL_HEADING_CLASS =
 const DETAIL_PANEL_BODY_CLASS = 'min-w-0';
 const DETAIL_ROW_CLASS =
   'grid items-start gap-8 min-[900px]:gap-10';
+
+function StepMarker({ index }: { index: number }) {
+  return (
+    <span className="relative z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_14%,white)] text-[11px] font-bold tabular-nums text-[var(--spm-acc)] ring-1 ring-[color-mix(in_srgb,var(--spm-acc)_28%,transparent)]">
+      {index + 1}
+    </span>
+  );
+}
+
+export function splitCoachScriptParagraphs(script: string): string[] {
+  const normalized = script.replace(/\\r\\n|\\n|\r\n?/g, '\n').trim();
+  if (!normalized) return [];
+  const hasBlankLine = /\n\s*\n/.test(normalized);
+  return (hasBlankLine ? normalized.split(/\n\s*\n+/) : normalized.split('\n'))
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
+
+function normalizeComparableText(value: string) {
+  return value.replace(/\s+/g, ' ').trim().toLocaleLowerCase('ko');
+}
+
+function getMethodSupport(model: LessonDisplayModel): string[] {
+  if (model.variationMethod.length > 0 || model.activityMethod.length > 4) return [];
+  const methodText = normalizeComparableText(model.activityMethod.join(' '));
+  const maxItems = model.activityMethod.length <= 2 ? 2 : 1;
+  const candidates = [
+    ...model.fieldTips,
+    ...(model.developmentFocus ? [model.developmentFocus] : []),
+    ...(model.description ? [model.description] : []),
+    ...(model.objective ? [model.objective] : []),
+    ...model.safetyNotes,
+  ];
+  const selected: string[] = [];
+  for (const candidate of candidates) {
+    const normalized = normalizeComparableText(candidate);
+    if (!normalized || (methodText && (methodText.includes(normalized) || normalized.includes(methodText))) ||
+        selected.some((item) => normalizeComparableText(item) === normalized)) continue;
+    selected.push(candidate);
+    if (selected.length >= maxItems) break;
+  }
+  return selected;
+}
 
 export function splitLessonTitle(title: string): {
   koreanTitle: string;
@@ -162,15 +205,13 @@ function LessonVideo({ model, video }: { model: LessonDisplayModel; video: Video
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-[16px] bg-slate-950">
-      <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_35%,#334155,#020617_72%)] text-center text-white/70">
-        <p className="m-0 text-[13px] font-medium tracking-[0.02em]">수업 영상</p>
-      </div>
+      <div aria-hidden className="absolute inset-0 bg-slate-950" />
       {video.embedUrl ? (
         <TrackedVideoIframe
           key={video.embedUrl}
           src={video.embedUrl}
           title={`${model.title} 수업 영상`}
-          className="h-full w-full"
+          className="relative z-10 h-full w-full bg-slate-950"
           onPlaybackStarted={video.onPlaybackStarted}
           posterUrl={dedicatedPoster}
           posterCandidates={posterCandidates}
@@ -180,7 +221,7 @@ function LessonVideo({ model, video }: { model: LessonDisplayModel; video: Video
       {video.directUrl ? (
         <video
           src={video.directUrl}
-          className="h-full w-full object-contain"
+          className="relative z-10 h-full w-full bg-slate-950 object-contain"
           controls
           playsInline
           autoPlay={video.autoplay}
@@ -236,6 +277,7 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
     ? model.variationMethod
     : model.variationMethod.slice(0, 2);
   const hiddenVariationCount = Math.max(0, model.variationMethod.length - 2);
+  const methodSupport = getMethodSupport(model);
 
   return (
     <div data-detail-panel="method" className={DETAIL_PANEL_CLASS}>
@@ -247,33 +289,41 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
       </h2>
       <div
         data-detail-panel-body
-        className={`${DETAIL_PANEL_BODY_CLASS} flex flex-col min-[900px]:col-start-2 min-[900px]:row-start-2 min-[900px]:self-center`}
+        className={`${DETAIL_PANEL_BODY_CLASS} flex flex-col self-start min-[900px]:col-start-2 min-[900px]:row-start-2`}
       >
-        <ol className="m-0 space-y-5">
+        <ol className="relative m-0 space-y-0">
           {model.activityMethod.map((item, index) => (
-            <li key={`${index}-${item}`} className="grid grid-cols-[40px_minmax(0,1fr)] gap-3 sm:gap-4">
-              <span className="pt-px text-[16px] font-semibold leading-7 tabular-nums tracking-[-0.04em] text-[var(--spm-acc)] sm:text-[18px]">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <p className="m-0 break-keep text-[15px] font-medium leading-[1.7] text-[color:var(--spm-t)] sm:text-[16px]">
+            <li key={`${index}-${item}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-4 last:pb-0">
+              {index < model.activityMethod.length - 1 ? <span aria-hidden className="absolute bottom-0 left-[13px] top-7 w-px bg-slate-200" /> : null}
+              <StepMarker index={index} />
+              <p className="m-0 break-keep pt-0.5 text-[15px] font-medium leading-[1.65] text-[color:var(--spm-t)] sm:text-[16px]">
                 {item}
               </p>
             </li>
           ))}
         </ol>
 
-        {model.variationMethod.length > 0 ? (
+        {methodSupport.length > 0 ? (
           <section className="mt-7 pt-5">
-            <h3 className="m-0 text-[17px] font-semibold tracking-[-0.018em] text-[color:var(--spm-t)]">
+            <h3 className="m-0 text-[17px] font-semibold tracking-[-0.018em] text-[color:var(--spm-t)]">지도 포인트</h3>
+            <div className="mt-3.5 space-y-2.5">
+              {methodSupport.map((item, index) => (
+                <p key={`${index}-${item}`} className="m-0 break-keep text-[15px] leading-[1.7] text-[color:var(--spm-t2)]">{item}</p>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {model.variationMethod.length > 0 ? (
+          <section className="mt-8 border-t border-slate-200 pt-6">
+            <h3 className="m-0 text-[15px] font-semibold tracking-[-0.012em] text-[color:var(--spm-t2)]">
               난이도 조절 · 변형 활동
             </h3>
-            <ul id={variationListId} className="m-0 mt-3.5 space-y-3">
+            <ul id={variationListId} className="m-0 mt-4 space-y-3">
               {visibleVariations.map((item, index) => (
-                <li data-detail-variation-item key={`${index}-${item}`} className="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-2.5">
-                  <span className="pt-px text-[14px] font-semibold tabular-nums text-[color:var(--spm-t3)]">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <p className="m-0 break-keep text-[14px] font-medium leading-[1.65] text-[color:var(--spm-t2)] sm:text-[15px]">
+                <li data-detail-variation-item key={`${index}-${item}`} className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-2.5">
+                  <StepMarker index={index} />
+                  <p className="m-0 break-keep pt-0.5 text-[14px] font-medium leading-[1.65] text-[color:var(--spm-t2)] sm:text-[15px]">
                     {item}
                   </p>
                 </li>
@@ -305,7 +355,6 @@ function columnClass(column: 1 | 2, part: 'heading' | 'body') {
 }
 
 function SetupPanel({ model, column }: { model: LessonDisplayModel; column: 1 | 2 }) {
-  if (!model.setupImageUrl) return null;
   return (
     <div data-detail-panel="setup" className={DETAIL_PANEL_CLASS}>
       <h2
@@ -319,6 +368,22 @@ function SetupPanel({ model, column }: { model: LessonDisplayModel; column: 1 | 
         className={`${DETAIL_PANEL_BODY_CLASS} ${columnClass(column, 'body')}`}
       >
         {model.setupImageUrl ? <SetupImage title={model.title} src={model.setupImageUrl} /> : null}
+        {model.equipment.length > 0 ? (
+          <section className={`flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-3 py-2 ${model.setupImageUrl ? 'mt-5' : ''}`} data-detail-equipment>
+            <h3 className="m-0 inline-flex shrink-0 items-center gap-1.5 text-[14px] font-semibold text-[color:var(--spm-t)]"><Package className="h-4 w-4 text-[color:var(--spm-t3)]" />준비물</h3>
+            <p className="m-0 min-w-0 break-keep text-[14px] leading-6 text-[color:var(--spm-t2)]">{model.equipment.join(' · ')}</p>
+          </section>
+        ) : null}
+        {model.setupNotes.length > 0 ? (
+          <section className={model.setupImageUrl || model.equipment.length > 0 ? 'mt-6' : undefined} data-detail-setup-notes>
+            <h3 className="m-0 text-[16px] font-semibold text-[color:var(--spm-t)]">세팅 포인트</h3>
+            <div className="mt-3 space-y-2.5">
+              {model.setupNotes.map((item, index) => (
+                <p key={`${index}-${item}`} className="m-0 break-keep text-[15px] leading-[1.7] text-[color:var(--spm-t2)]">{item}</p>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   );
@@ -331,7 +396,7 @@ function OverviewPanel({ model, column }: { model: LessonDisplayModel; column: 1
         data-detail-panel-heading
         className={`${DETAIL_PANEL_HEADING_CLASS} ${columnClass(column, 'heading')}`}
       >
-        수업 한눈에 보기
+        지도 가이드
       </h2>
       <div
         data-detail-panel-body
@@ -343,23 +408,23 @@ function OverviewPanel({ model, column }: { model: LessonDisplayModel; column: 1
               <MessageSquareQuote className="h-4 w-4 text-[var(--spm-acc)]" />
               설명 스크립트
             </h3>
-            <blockquote className="mt-3 border-l-[3px] border-[var(--spm-acc)] bg-[color-mix(in_srgb,var(--spm-acc)_6%,white)] px-4 py-4">
-              <p className="m-0 whitespace-pre-line break-keep text-[16px] font-medium leading-[1.7] text-slate-700 sm:text-[17px] sm:leading-[1.75]">
-                {model.coachScript}
-              </p>
+            <blockquote className="mt-3 space-y-4 border-l-2 border-[color-mix(in_srgb,var(--spm-acc)_55%,transparent)] py-1 pl-4">
+              {splitCoachScriptParagraphs(model.coachScript).map((paragraph, index) => (
+                <p key={`${index}-${paragraph}`} className="m-0 whitespace-pre-line break-keep text-[16px] font-medium leading-[1.7] text-slate-700 sm:text-[17px] sm:leading-[1.75]">
+                  {paragraph}
+                </p>
+              ))}
             </blockquote>
           </section>
         ) : null}
         {model.briefingNotes.length > 0 ? (
           <section className={model.coachScript ? 'mt-8' : undefined}>
             <h3 className="m-0 text-[16px] font-semibold text-[color:var(--spm-t)]">사전교육</h3>
-            <ol className="m-0 mt-4 space-y-4">
+            <ol className="m-0 mt-4 space-y-3">
               {model.briefingNotes.map((item, index) => (
-                <li key={`${index}-${item}`} className="grid grid-cols-[40px_minmax(0,1fr)] gap-3">
-                  <span className="pt-px text-[16px] font-semibold tabular-nums tracking-[-0.04em] text-[var(--spm-acc)]">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="break-keep text-[15px] font-medium leading-[1.7] text-[color:var(--spm-t2)]">{item}</span>
+                <li key={`${index}-${item}`} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5">
+                  <StepMarker index={index} />
+                  <span className="break-keep pt-0.5 text-[15px] font-medium leading-[1.65] text-[color:var(--spm-t2)]">{item}</span>
                 </li>
               ))}
             </ol>
@@ -380,7 +445,7 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
   return (
     <section data-detail-related-videos className="mt-16 sm:mt-[72px]" aria-labelledby="related-video-heading">
       <h2 id="related-video-heading" className="m-0 text-[21px] font-semibold tracking-[-0.025em] text-[color:var(--spm-t)]">
-        관련영상
+        관련 수업 영상
       </h2>
       <div className={`mt-5 grid items-start gap-4 sm:gap-5 ${gridClass}`}>
         {videos.map((video) => (
@@ -409,7 +474,12 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
             </div>
             <div className="px-0.5 pt-3">
               <p data-related-video-reason className="m-0 text-[12px] font-medium text-[color:var(--spm-t3)]">
-                {video.reason}
+                {{
+                  '신체 기능 유사': '비슷한 신체 기능',
+                  '같은 교구': '같은 교구 활용',
+                  '동작 패턴 유사': '비슷한 움직임',
+                  '관련 활동': '함께 보기 좋은 활동',
+                }[video.reason]}
               </p>
               <h3 className="m-0 mt-1 line-clamp-2 break-keep text-[15px] font-semibold leading-[1.45] tracking-[-0.012em] text-[color:var(--spm-t)]">
                 {video.title}
@@ -439,27 +509,27 @@ export function DetailLessonGuide({
 }) {
   const title = splitLessonTitle(model.title);
   const hasOverview = Boolean(model.coachScript) || model.briefingNotes.length > 0;
-  const hasPhysicalPreparation = Boolean(model.setupImageUrl);
-  const equipmentItems = [...model.equipment];
-  const equipmentSummary = [...equipmentItems, ...model.setupNotes].filter(Boolean).join(' · ');
-  const showPrepare = hasPhysicalPreparation || hasOverview || equipmentItems.length > 0 || model.setupNotes.length > 0;
+  const hasPhysicalPreparation = Boolean(model.setupImageUrl) || model.equipment.length > 0 || model.setupNotes.length > 0;
+  const showPrepare = hasPhysicalPreparation || hasOverview;
   const twoColPrepare = hasPhysicalPreparation && hasOverview;
 
   return (
     <div>
-      <header className="pb-6 pt-3 sm:pb-7 sm:pt-1">
-        <h1
-          ref={heroTitleRef}
-          data-detail-hero-title
-          className="max-w-[900px] break-keep text-[28px] font-semibold leading-[1.2] tracking-[-0.03em] text-[color:var(--spm-t)] sm:text-[30px]"
-        >
-          {title.koreanTitle}
-        </h1>
-        {title.englishTitle ? (
-          <p data-detail-english-title className="mt-2 max-w-[760px] break-words text-[15px] font-medium leading-6 text-[color:var(--spm-t2)] sm:text-[16px]">
-            {title.englishTitle}
-          </p>
-        ) : null}
+      <header className="grid items-start gap-5 pb-7 pt-3 sm:pt-1 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-8">
+        <div className="min-w-0">
+          <p data-detail-context className="mb-2 text-[13px] font-medium text-[color:var(--spm-t3)]">상세 수업 준비</p>
+          <h1
+            ref={heroTitleRef}
+            data-detail-hero-title
+            className="flex max-w-[900px] flex-wrap items-baseline gap-x-3 gap-y-1 break-keep text-[28px] font-semibold leading-[1.2] tracking-[-0.03em] text-[color:var(--spm-t)] sm:text-[30px]"
+          >
+            <span>{title.koreanTitle}</span>
+            {title.englishTitle ? (
+              <span data-detail-english-title className="break-words text-[13px] font-normal leading-5 tracking-normal text-[color:var(--spm-t3)] sm:text-[14px]">
+                {title.englishTitle}
+              </span>
+            ) : null}
+          </h1>
         {model.tags.length > 0 ? (
           <div data-detail-public-tags className="mt-4 flex max-w-3xl flex-wrap gap-2">
             {model.tags.map((tag) => (
@@ -469,7 +539,8 @@ export function DetailLessonGuide({
             ))}
           </div>
         ) : null}
-        <div className="lg:mt-5">{actions}</div>
+        </div>
+        <div className="lg:pt-7">{actions}</div>
       </header>
 
       <section
@@ -486,12 +557,6 @@ export function DetailLessonGuide({
           data-detail-row="preparation"
           className="mt-12 scroll-mt-20 sm:mt-14"
         >
-          {equipmentSummary ? (
-            <div data-detail-equipment-summary className="mb-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <p className="m-0 text-[13px] font-semibold text-[color:var(--spm-t)]">준비물</p>
-              <p className="m-0 break-keep text-[14px] font-medium leading-6 text-slate-600">{equipmentSummary}</p>
-            </div>
-          ) : null}
           {hasPhysicalPreparation || hasOverview ? (
             <div
               className={`${DETAIL_ROW_CLASS} ${twoColPrepare ? 'min-[900px]:grid-cols-[minmax(0,0.98fr)_minmax(0,1.02fr)] min-[900px]:grid-rows-[30px_auto]' : 'min-[900px]:grid-cols-1'}`}

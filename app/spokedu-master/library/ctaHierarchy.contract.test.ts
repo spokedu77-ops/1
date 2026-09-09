@@ -27,8 +27,11 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(detail).not.toContain('오늘 수업으로 지정');
   });
 
-  it('keeps favorite as a compact sticky-header action', () => {
-    expect(detail).toContain('aria-pressed={favorite}');
+  it('keeps favorite in the mobile header and desktop hero action group', () => {
+    expect(detail.match(/aria-pressed=\{favorite\}/g)).toHaveLength(2);
+    expect(detail).toContain('transition-none lg:hidden');
+    expect(detail).toContain('aria-hidden className="hidden h-11 w-11 lg:block"');
+    expect(detail).toContain('lg:inline-flex');
     expect(detail).not.toContain('/spokedu-master/class-tools');
   });
 });
