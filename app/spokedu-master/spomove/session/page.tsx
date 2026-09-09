@@ -304,6 +304,7 @@ function SpomoveSessionContent() {
   const [cueSeconds, setCueSeconds] = useState<SpomoveCueSpeedSec>(() => {
     if (!officialPreset) return 3;
     if (urlCueSeconds != null) return resolveSessionCueSeconds(officialPreset, urlCueSeconds);
+    if (recommendedCueSeconds != null) return resolveSessionCueSeconds(officialPreset, recommendedCueSeconds);
     if (typeof window !== 'undefined') {
       const pref = readPresetConfigPreference(officialPreset.id);
       if (pref?.cueSeconds != null && Number.isFinite(pref.cueSeconds)) {
@@ -325,12 +326,16 @@ function SpomoveSessionContent() {
       setCueSeconds(resolveSessionCueSeconds(officialPreset, urlCueSeconds));
       return;
     }
+    if (recommendedCueSeconds != null) {
+      setCueSeconds(resolveSessionCueSeconds(officialPreset, recommendedCueSeconds));
+      return;
+    }
     const pref = readPresetConfigPreference(officialPreset.id);
     const prefCue =
       pref?.cueSeconds != null && Number.isFinite(pref.cueSeconds)
         ? clampCueSpeedSec(pref.cueSeconds)
         : null;
-    setCueSeconds(resolveSessionCueSeconds(officialPreset, prefCue ?? recommendedCueSeconds));
+    setCueSeconds(resolveSessionCueSeconds(officialPreset, prefCue));
   }, [officialPreset, recommendedCueSeconds, urlCueSeconds]);
 
   const handleCueSecondsChange = useCallback(

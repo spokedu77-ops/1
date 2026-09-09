@@ -64,10 +64,11 @@ describe('SPOMOVE session lifecycle UX', () => {
     expect(page).toContain('parseMasterWorkReturnHref');
   });
 
-  it('prioritizes explicit and saved cue settings before the admin recommendation', () => {
+  it('prioritizes explicit and admin-recommended cue settings before a saved fallback', () => {
     expect(page).toContain("searchParams.get('recommendedCueSeconds')");
     expect(page).toContain('if (urlCueSeconds != null)');
+    expect(page).toContain('if (recommendedCueSeconds != null)');
     expect(page).toContain('pref?.cueSeconds');
-    expect(page).toContain('prefCue ?? recommendedCueSeconds');
+    expect(page).toContain('resolveSessionCueSeconds(officialPreset, prefCue)');
   });
 });

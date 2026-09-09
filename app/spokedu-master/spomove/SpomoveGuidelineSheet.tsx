@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 
 import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import type { SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { TrackedVideoIframe } from '../components/lesson/TrackedVideoIframe';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import { preferLiteMedia } from '../lib/mediaPreferences';
 import { buildMasterGateContext, buildMasterPaymentHref } from '../lib/masterGateIntent';
 import { getVideoThumbnailCandidates } from '../lib/program-media';
@@ -25,6 +26,7 @@ import {
   SPOMOVE_VIDEO_POSTER_OBJECT_FIT,
 } from './spomoveMediaFit';
 import type { SpomoveGuideVideoState } from './useSpomoveGuideVideo';
+import { useMasterStore } from '../store';
 
 export type SpomoveContentLoadState = 'loading' | 'ready' | 'error';
 
@@ -90,16 +92,6 @@ function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
   );
 }
 
-function SectionAccentRail() {
-  return (
-    <span
-      aria-hidden
-      data-spm-spomove-section-rail="true"
-      className="mt-0.5 inline-block h-3.5 w-[3px] shrink-0 rounded-full bg-[var(--spm-acc)] sm:h-4"
-    />
-  );
-}
-
 function BriefingSection({
   title,
   children,
@@ -111,10 +103,7 @@ function BriefingSection({
 }) {
   return (
     <section data-spm-spomove-briefing-section="">
-      <h3 className="flex items-center gap-2 text-[13px] font-bold tracking-[-0.01em] text-slate-900 sm:text-[14px]">
-        <SectionAccentRail />
-        {title}
-      </h3>
+      <h3 className="text-[13px] font-bold tracking-[-0.01em] text-slate-900 sm:text-[14px]">{title}</h3>
       <div className={bodyClassName}>{children}</div>
     </section>
   );
@@ -164,7 +153,7 @@ function ProgressTimeline({ lines }: { lines: string[] }) {
           <li key={`${index}-${line}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-3 last:pb-0">
             <div className="relative flex flex-col items-center">
               <span className="relative z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_14%,white)] text-[11px] font-bold tabular-nums text-[var(--spm-acc)] ring-1 ring-[color-mix(in_srgb,var(--spm-acc)_28%,transparent)]">
-                {String(index + 1).padStart(2, '0')}
+                {index + 1}
               </span>
               {!isLast ? (
                 <span
@@ -178,27 +167,6 @@ function ProgressTimeline({ lines }: { lines: string[] }) {
         );
       })}
     </ol>
-  );
-}
-
-function CoachCueCard({ script }: { script: string }) {
-  return (
-    <div
-      data-spm-spomove-coach-cue="true"
-      className="relative overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--spm-acc)_20%,transparent)] bg-[var(--spm-acc-glow)] py-2.5 pl-3.5 pr-3"
-    >
-      <span
-        aria-hidden
-        className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-[var(--spm-acc)]"
-      />
-      <div className="flex items-center gap-1.5">
-        <MessageCircle className="h-3.5 w-3.5 shrink-0 text-[var(--spm-acc)]" aria-hidden />
-        <p className="text-[11px] font-bold tracking-wide text-[var(--spm-acc)]">교사 핵심단서(Cue)</p>
-      </div>
-      <p className="mt-1.5 text-[13.5px] font-semibold leading-snug text-slate-900 sm:text-[14px] sm:leading-6">
-        “{script.replace(/^["“”']+|["“”']+$/g, '')}”
-      </p>
-    </div>
   );
 }
 
@@ -234,9 +202,11 @@ function ContentError() {
 function BriefingContent({
   guideDisplay,
   briefingReadiness,
+  prep,
 }: {
   guideDisplay: ReturnType<typeof buildSpomoveGuideDisplayModel>;
   briefingReadiness: ReturnType<typeof resolveSpomoveBriefingReadiness>['readiness'];
+  prep: { matCount: number; cueSeconds: number; movementLabel: string | null; intervalLine: string | null };
 }) {
   const objective = guideDisplay.objective;
   const legacyConcept = guideDisplay.guideMode === 'legacy' ? guideDisplay.legacyManual?.activityConcept : null;
@@ -303,6 +273,10 @@ function BriefingContent({
         </BriefingSection>
       ) : null}
 
+      <BriefingSection title="준비">
+        <PrepMetaRow {...prep} />
+      </BriefingSection>
+
       {hasOptionalDetails ? (
         <section>
           <details className="group" data-spm-spomove-details-control="true">
@@ -354,27 +328,6 @@ function BriefingContent({
   );
 }
 
-function ExecutionSummary({
-  matCount,
-  cueSeconds,
-  movementLabel,
-}: {
-  matCount: number;
-  cueSeconds: number;
-  movementLabel: string | null;
-}) {
-  const parts = [`SPOMAT ${matCount}장`, `${cueSeconds}초`, movementLabel].filter(Boolean);
-  return (
-    <p className="text-[12.5px] font-semibold text-slate-600">
-      <span className="font-medium text-slate-400">실행 요약</span>
-      <span className="mx-1.5 text-slate-300" aria-hidden>
-        ·
-      </span>
-      {parts.join(' · ')}
-    </p>
-  );
-}
-
 export function SpomoveGuidelineSheet({
   preset,
   guideVideoUrl = '',
@@ -395,8 +348,14 @@ export function SpomoveGuidelineSheet({
   onClose: () => void;
 }) {
   const launchMode = usePreferredLaunchMode();
+  const profile = useMasterStore((state) => state.profile);
+  const ownerId = getFavoritesOwnerId(profile);
+  const favoriteRefs = useMasterStore((state) => ownerId ? state.favoriteContentRefsByOwner[ownerId] : undefined) ?? [];
+  const toggleFavoriteContent = useMasterStore((state) => state.toggleFavoriteContent);
   void hubView;
   if (!preset) return null;
+
+  const favorite = favoriteRefs.some((ref) => ref.type === 'spomove' && ref.id === preset.id);
 
   const display = getSpomovePresetDisplayModel(preset, contentOverride);
   const family = preset.activityFamilyId ? getActivityFamily(preset.activityFamilyId) : null;
@@ -449,11 +408,28 @@ export function SpomoveGuidelineSheet({
     cueSeconds,
   });
   const { readiness: briefingReadiness } = resolveSpomoveBriefingReadiness({ preset, contentOverride });
-  const coachScript = guideDisplay.coachScript?.trim() || null;
   const movementLabel = guideDisplay.recommendedMovementLabel;
 
   return (
-    <BottomSheet open title={display.displayTitle} onClose={onClose} size="preview">
+    <BottomSheet
+      open
+      title={display.displayTitle}
+      onClose={onClose}
+      size="preview"
+      headerActions={(
+        <button
+          type="button"
+          onClick={() => toggleFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
+          className={`grid h-11 w-11 place-items-center rounded-[10px] border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${favorite ? 'border-amber-200 bg-amber-50 text-amber-600' : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-white hover:text-slate-700'}`}
+          aria-pressed={favorite}
+          aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+          title={!ownerId ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+          disabled={!ownerId}
+        >
+          <Bookmark className={`h-[17px] w-[17px] ${favorite ? 'fill-current' : ''}`} aria-hidden />
+        </button>
+      )}
+    >
       <div
         className="-mx-4 flex flex-col gap-0 rounded-[14px] px-4 py-1 sm:-mx-5 sm:px-5"
         style={{ background: 'color-mix(in srgb, var(--spm-acc) 1.5%, #F8FAFC)' }}
@@ -467,11 +443,7 @@ export function SpomoveGuidelineSheet({
               data-spm-spomove-surface="media"
               className={`${PANEL_RADIUS} ${SOFT_BORDER} flex h-full flex-col bg-white/95 p-3 sm:p-4 ${MEDIA_SHADOW}`}
             >
-              <p className="flex shrink-0 items-center gap-1.5 text-[11px] font-bold tracking-wide text-slate-500">
-                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--spm-acc)]" />
-                활동 예시 영상
-              </p>
-              <div className="mt-1.5 shrink-0">
+              <div className="shrink-0">
                 {guideVideoState === 'locked' ? (
                   <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center`}>
                     <div>
@@ -489,21 +461,6 @@ export function SpomoveGuidelineSheet({
                   <SpomoveScreenPreview videoUrl={guideVideoUrl} />
                 )}
               </div>
-              {coachScript ? (
-                <div className="mt-3 shrink-0">
-                  <CoachCueCard script={coachScript} />
-                </div>
-              ) : null}
-              <div className="mt-4 shrink-0">
-                <BriefingSection title="준비">
-                  <PrepMetaRow
-                    matCount={matCount}
-                    cueSeconds={cueSeconds}
-                    movementLabel={movementLabel}
-                    intervalLine={intervalLine}
-                  />
-                </BriefingSection>
-              </div>
             </div>
           </div>
           <aside
@@ -520,6 +477,7 @@ export function SpomoveGuidelineSheet({
               <BriefingContent
                 guideDisplay={guideDisplay}
                 briefingReadiness={briefingReadiness}
+                prep={{ matCount, cueSeconds, movementLabel, intervalLine }}
               />
             )}
           </aside>
@@ -529,18 +487,8 @@ export function SpomoveGuidelineSheet({
           data-spm-spomove-action-rail="true"
           className="sticky bottom-0 z-10 -mx-4 mt-4 border-t border-slate-200/60 bg-white/90 px-4 pb-[max(0px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_16px_rgba(15,23,42,0.04)] backdrop-blur-sm sm:-mx-5 sm:px-5"
         >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-            <div className="hidden min-w-0 md:block min-[1024px]:hidden">
-              <ExecutionSummary matCount={matCount} cueSeconds={cueSeconds} movementLabel={movementLabel} />
-            </div>
-            <div className="grid w-full grid-cols-[minmax(72px,0.55fr)_minmax(104px,0.9fr)_minmax(120px,1.2fr)] gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-11 min-w-[72px] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
-              >
-                닫기
-              </button>
+          <div className="flex justify-end">
+            <div className="grid w-full grid-cols-[minmax(104px,0.9fr)_minmax(120px,1.2fr)] gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
               <Link
                 href={guideVideoState === 'locked' ? lockedSettingsHref : settingsHref}
                 data-spm-spomove-guide-action="settings"

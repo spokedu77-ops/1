@@ -107,7 +107,7 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(hrefSource).toContain("if (options?.cueSeconds != null)");
     expect(hrefSource).toContain('publicOfficialPresetSessionHref');
     expect(preview).toContain("url.searchParams.set('recommendedCueSeconds'");
-    expect(session).toContain('prefCue ?? recommendedCueSeconds');
+    expect(session).toContain('if (recommendedCueSeconds != null)');
     expect(session).toContain('urlDifficulty');
     expect(session).toContain('difficultyReady');
     expect(session).toContain('activationBlocked');

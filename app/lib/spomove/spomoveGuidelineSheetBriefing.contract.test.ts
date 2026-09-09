@@ -38,15 +38,13 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).not.toContain('선택적 상세');
   });
 
-  it('places 교사 핵심단서(Cue) and 준비 under media and not inside 지도 포인트', () => {
-    expect(sheet).toContain('교사 핵심단서(Cue)');
-    expect(sheet).not.toContain('아이에게 하는 말');
+  it('keeps the media column video-only and moves preserved prep into briefing', () => {
     const mediaBlock = sheet.slice(sheet.indexOf('data-preview-column="media"'), sheet.indexOf('<aside'));
-    expect(mediaBlock).toContain('CoachCueCard');
-    expect(mediaBlock).toContain('title="준비"');
-    const coachingBlock = sheet.slice(sheet.indexOf('지도 포인트'), sheet.indexOf('난이도 조절 · 관찰 기준'));
-    expect(coachingBlock).not.toContain('coachScript');
-    expect(coachingBlock).not.toContain('교사 핵심단서(Cue)');
+    expect(mediaBlock).not.toContain('CoachCueCard');
+    expect(mediaBlock).not.toContain('title="준비"');
+    const briefingBlock = sheet.slice(sheet.indexOf('<aside'), sheet.indexOf('data-spm-spomove-action-rail'));
+    expect(briefingBlock).toContain('prep={{ matCount, cueSeconds, movementLabel, intervalLine }}');
+    expect(sheet).not.toContain('교사 핵심단서(Cue)');
   });
 
   it('keeps focusTags out of main objective block', () => {
@@ -99,21 +97,31 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(preview).not.toContain('lg:h-full');
   });
 
-  it('locks premium visual surface hooks without changing briefing IA', () => {
+  it('keeps the simplified briefing surface hooks and shared step grammar', () => {
     expect(sheet).toContain('data-spm-spomove-surface="stage"');
     expect(sheet).toContain('data-spm-spomove-surface="media"');
     expect(sheet).toContain('data-spm-spomove-surface="briefing"');
-    expect(sheet).toContain('data-spm-spomove-section-rail="true"');
+    expect(sheet).not.toContain('data-spm-spomove-section-rail="true"');
     expect(sheet).toContain('data-spm-spomove-prep-stats="true"');
     expect(sheet).toContain('data-spm-spomove-progress-timeline="true"');
     expect(sheet).toContain('data-spm-spomove-teaching-markers="true"');
-    expect(sheet).toContain('data-spm-spomove-coach-cue="true"');
+    expect(sheet).not.toContain('data-spm-spomove-coach-cue="true"');
     expect(sheet).toContain('data-spm-spomove-details-control="true"');
     expect(sheet).toContain('data-spm-spomove-action-rail="true"');
-    expect(sheet).toContain('CoachCueCard');
+    expect(sheet).not.toContain('CoachCueCard');
     expect(sheet).toContain('PrepMetaRow');
     expect(sheet).toContain('ProgressTimeline');
-    expect(sheet).toContain('MessageCircle');
+    expect(sheet).not.toContain("padStart(2, '0')");
+    expect(sheet).toContain('{index + 1}');
+  });
+
+  it('uses the existing favorite persistence and leaves only the two workflow actions in the footer', () => {
+    expect(sheet).toContain('toggleFavoriteContent(ownerId');
+    expect(sheet).toContain("{ type: 'spomove', id: preset.id }");
+    expect(sheet).toContain('aria-pressed={favorite}');
+    expect(sheet).toContain('headerActions');
+    expect(sheet).not.toContain('ExecutionSummary');
+    expect(sheet).not.toContain('>\n                닫기\n              </button>');
   });
 });
 
