@@ -10,7 +10,7 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 
   it('keeps cards focused on preview and detail', () => {
-    expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
+    expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(2);
     expect(library).toContain('LessonCatalogCard');
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
     expect(catalogCard).toContain('primaryActionLabel');

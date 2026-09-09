@@ -114,6 +114,7 @@ describe('spokedu site IA', () => {
       'comparison',
       'adjustment',
       'cases',
+      'proof',
       'reviews',
       'process',
       'faq',

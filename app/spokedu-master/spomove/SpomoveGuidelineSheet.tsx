@@ -410,7 +410,8 @@ export function SpomoveGuidelineSheet({
           participantScale: declaredOperation.participantScale,
         })
       : null;
-  const cueSeconds = resolveSessionCueSeconds(preset, null);
+  const recommendedCueSeconds = contentOverride?.recommendedCueSeconds ?? preset.cueSeconds;
+  const cueSeconds = resolveSessionCueSeconds(preset, recommendedCueSeconds);
   const source = hubReturnHref?.startsWith('/spokedu-master/favorites')
     ? 'favorites'
     : hubReturnHref?.startsWith('/spokedu-master/dashboard') ? 'home' : hubReturnHref?.includes('session=') ? 'session' : 'spomove';
@@ -418,11 +419,11 @@ export function SpomoveGuidelineSheet({
     const baseHref = publicOfficialPresetSessionHref(preset, {
       mode: launchMode,
       entry,
-      cueSeconds: preset.cueSeconds,
       operation: declaredOperation,
       hubReturn: hubReturnHref,
     });
     const url = new URL(baseHref, 'https://spokedu.local');
+    url.searchParams.set('recommendedCueSeconds', String(recommendedCueSeconds));
     url.searchParams.set('source', source);
     if (hubReturnHref) url.searchParams.set('returnTo', hubReturnHref);
     return `${url.pathname}?${url.searchParams.toString()}`;

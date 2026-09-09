@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { HOME_MEDIA } from '../data/home-media';
 import { educationHubPage, type EducationHubCaseCard, type EducationProgram } from '../data/education-hub';
@@ -19,6 +19,10 @@ import { TrackedLink } from './home/tracked-link';
 import styles from './education-hub.module.css';
 
 type ProgramFamily = EducationProgram;
+type ProcessIconId = (typeof educationHubPage.process.steps)[number]['icon'];
+type ReviewAccent = 'blue' | 'cyan' | 'teal';
+
+const REVIEW_ACCENTS: readonly ReviewAccent[] = ['blue', 'cyan', 'teal'];
 
 function WrapUnits({ parts, className }: { parts: readonly string[]; className?: string }) {
   return (
@@ -33,10 +37,77 @@ function WrapUnits({ parts, className }: { parts: readonly string[]; className?:
   );
 }
 
-function Stars() {
+function ChipList({ parts }: { parts: readonly string[] }) {
+  return (
+    <ul className={styles.chipList}>
+      {parts.map((part) => (
+        <li key={part}>{part}</li>
+      ))}
+    </ul>
+  );
+}
+
+function ReviewStars({ visible }: { visible: boolean }) {
+  if (!visible) return null;
   return (
     <span className={styles.stars} aria-hidden>
-      ★★★★★
+      {Array.from({ length: 5 }, (_, index) => (
+        <span key={index}>★</span>
+      ))}
+    </span>
+  );
+}
+
+function NeutralMark() {
+  return (
+    <span className={styles.compareDash} aria-hidden>
+      –
+    </span>
+  );
+}
+
+function CheckMark() {
+  return (
+    <svg className={styles.compareCheck} viewBox="0 0 20 20" aria-hidden>
+      <path
+        d="M4.2 10.4 8 14.1 15.8 5.9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ProcessIcon({ icon }: { icon: ProcessIconId }) {
+  return (
+    <span className={styles.processIcon} aria-hidden>
+      <svg viewBox="0 0 24 24" aria-hidden>
+        {icon === 'checklist' ? (
+          <>
+            <path d="M8 4.5h8.5A2.5 2.5 0 0 1 19 7v12.5A2.5 2.5 0 0 1 16.5 22h-9A2.5 2.5 0 0 1 5 19.5V7A2.5 2.5 0 0 1 7.5 4.5H8" />
+            <path d="M9 4.5V3.8A1.8 1.8 0 0 1 10.8 2h2.4A1.8 1.8 0 0 1 15 3.8v.7" />
+            <path d="m8.5 12 1.8 1.8 4.4-4.4" />
+            <path d="M8.5 17.5H15" />
+          </>
+        ) : null}
+        {icon === 'plan' ? (
+          <>
+            <path d="M5 7.5h14v12H5z" />
+            <path d="M8 4.5v3M16 4.5v3M5 11h14" />
+            <path d="M8.5 14.5h3M8.5 17.5h7" />
+          </>
+        ) : null}
+        {icon === 'field' ? (
+          <>
+            <circle cx="12" cy="6.2" r="2" />
+            <path d="M8.2 21.2 10.4 13l-2.6-2.4 4.2-1.4 2.3 3.6 2.7-1.4" />
+            <path d="M10.4 13 8 21.2M13.2 14.8 15.6 21" />
+          </>
+        ) : null}
+      </svg>
     </span>
   );
 }
@@ -91,7 +162,7 @@ function FieldMedia({
 }
 
 export function EducationHubLanding() {
-  const { hero, fit, operating, comparison, adjustment, cases, reviews, process, faq, contact } =
+  const { hero, fit, operating, comparison, adjustment, cases, proof, reviews, process, faq, contact } =
     educationHubPage;
   const [selectedProgram, setSelectedProgram] = useState<ProgramFamily | null>(null);
   const closeProgramDetail = useCallback(() => setSelectedProgram(null), []);
@@ -232,34 +303,52 @@ export function EducationHubLanding() {
             {comparison.title}
           </h2>
           <p className={`${styles.darkLead} ${koreanBody}`}>{comparison.lead}</p>
-          <div className={styles.compareTable} role="table" aria-label="운영 방식 비교">
-            <div className={styles.compareHead} role="row">
-              <span className={koreanDisplay}>비교 항목</span>
-              <span className={`${styles.compareOurs} ${koreanDisplay}`}>{comparison.ours}</span>
-              <span className={koreanDisplay}>{comparison.theirs}</span>
-            </div>
-            {comparison.rows.map((row) => (
-              <div key={row.label} className={styles.compareRow} role="row">
-                <span className={`${styles.compareLabel} ${koreanDisplay}`}>{row.label}</span>
-                <span className={`${styles.compareSpokedu} ${koreanBody}`}>
-                  <span className={styles.compareMark} aria-hidden>
-                    ✓
-                  </span>
-                  {row.spokedu}
-                </span>
-                <span className={`${styles.compareOther} ${koreanBody}`}>
-                  <span className={styles.compareMarkMuted} aria-hidden>
-                    –
-                  </span>
-                  {row.other}
-                </span>
-              </div>
-            ))}
-          </div>
+          <table className={styles.compareTable} aria-labelledby="education-comparison-heading">
+            <thead>
+              <tr>
+                <th scope="col" className={`${styles.compareAxisHead} ${koreanDisplay}`}>
+                  {comparison.axisLabel}
+                </th>
+                <th scope="col" className={`${styles.compareOursHead} ${koreanDisplay}`}>
+                  {comparison.ours}
+                </th>
+                <th scope="col" className={`${styles.compareTheirsHead} ${koreanDisplay}`}>
+                  {comparison.theirs}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparison.rows.map((row) => (
+                <tr key={row.label}>
+                  <th scope="row" className={`${styles.compareLabel} ${koreanDisplay}`}>
+                    {row.label}
+                  </th>
+                  <td className={`${styles.compareOursCell} ${koreanBody}`}>
+                    <span className={`${styles.compareCellKicker} ${koreanDisplay}`} aria-hidden>
+                      {comparison.ours}
+                    </span>
+                    <span className={styles.compareOursValue}>
+                      <CheckMark />
+                      <span>{row.spokedu}</span>
+                    </span>
+                  </td>
+                  <td className={`${styles.compareOtherCell} ${koreanBody}`}>
+                    <span className={`${styles.compareCellKicker} ${koreanDisplay}`} aria-hidden>
+                      {comparison.theirs}
+                    </span>
+                    <span className={styles.compareOtherValue}>
+                      <NeutralMark />
+                      <span>{row.other}</span>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <section id="spomove" className={styles.spomoveBand} aria-labelledby="education-spomove-heading">
+      <section id="spomove" className={styles.spomoveFeature} aria-labelledby="education-spomove-heading">
         <div className={styles.visualRail}>
           <div className={styles.spomoveProof}>
             <div className={styles.spomovePhoto}>
@@ -271,7 +360,7 @@ export function EducationHubLanding() {
               />
             </div>
             <div className={styles.spomoveCopy}>
-              <p className={`${styles.meta} ${koreanDisplay}`}>SPOMOVE · 현장 활용</p>
+              <p className={`${styles.meta} ${koreanDisplay}`}>{operating.spomove.eyebrow}</p>
               <h2 id="education-spomove-heading" className={`${styles.spomoveTitle} ${koreanDisplay}`}>
                 {operating.spomove.title}
               </h2>
@@ -291,10 +380,10 @@ export function EducationHubLanding() {
             <p className={`${styles.sectionLead} ${koreanBody}`}>{adjustment.lead}</p>
           </header>
           <ol className={styles.mechanism}>
-            {adjustment.items.map((item, index) => (
+            {adjustment.items.map((item) => (
               <li key={item.label}>
                 <span className={styles.mechanismIndex} aria-hidden>
-                  {String(index + 1).padStart(2, '0')}
+                  {item.n}
                 </span>
                 <h3 className={koreanDisplay}>{item.label}</h3>
                 <p className={`${styles.mechanismKeys} ${koreanBody}`}>
@@ -325,6 +414,19 @@ export function EducationHubLanding() {
         </div>
       </section>
 
+      <section id={proof.id} className={styles.proof} aria-label={proof.regionLabel}>
+        <div className={styles.contentRail}>
+          <ul className={styles.proofStrip}>
+            {proof.items.map((item) => (
+              <li key={item.label}>
+                <p className={`${styles.proofLabel} ${koreanDisplay}`}>{item.label}</p>
+                <p className={`${styles.proofBody} ${koreanBody}`}>{item.body}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       <section id={reviews.id} className={styles.reviews} aria-labelledby="education-reviews-heading">
         <div className={styles.contentRail}>
           <p className={`${styles.darkBadge} ${koreanDisplay}`}>{reviews.badge}</p>
@@ -332,30 +434,21 @@ export function EducationHubLanding() {
             {reviews.title}
           </h2>
           <p className={`${styles.darkLead} ${koreanBody}`}>{reviews.lead}</p>
-          <div className={styles.reviewLayout}>
-            <blockquote className={styles.reviewFeatured}>
-              <Stars />
-              <p className={`${styles.reviewHeadline} ${koreanDisplay}`}>{reviews.items[0].headline}</p>
-              <p className={koreanBody}>{reviews.items[0].quote}</p>
-              <cite className={koreanBody}>
-                {reviews.items[0].name}
-                <span> · {reviews.items[0].org}</span>
-              </cite>
-            </blockquote>
-            <ul className={styles.reviewSupport}>
-              {reviews.items.slice(1).map((item) => (
-                <li key={item.org}>
-                  <Stars />
+          <ul className={styles.reviewGrid}>
+            {reviews.items.map((item, index) => (
+              <li key={item.org} data-accent={REVIEW_ACCENTS[index] ?? 'blue'}>
+                <blockquote>
+                  <ReviewStars visible={item.showStars} />
                   <p className={`${styles.reviewHeadline} ${koreanDisplay}`}>{item.headline}</p>
-                  <p className={koreanBody}>{item.quote}</p>
-                  <cite className={koreanBody}>
-                    {item.name}
-                    <span> · {item.org}</span>
-                  </cite>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  <p className={`${styles.reviewQuote} ${koreanBody}`}>{item.quote}</p>
+                  <footer className={styles.reviewIdentity}>
+                    <cite className={`${styles.reviewName} ${koreanDisplay}`}>{item.name}</cite>
+                    <span className={`${styles.reviewOrg} ${koreanBody}`}>{item.org}</span>
+                  </footer>
+                </blockquote>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -368,22 +461,27 @@ export function EducationHubLanding() {
             </h2>
             <p className={`${styles.sectionLead} ${koreanBody}`}>{process.lead}</p>
           </header>
-          <ol className={styles.processCards}>
-            {process.steps.map((step) => (
-              <li key={step.n}>
-                <article>
-                  <span className={styles.processIndex} aria-hidden>
-                    {step.n}
-                  </span>
+          <div className={styles.processTrack}>
+            {process.steps.map((step, index) => (
+              <Fragment key={step.n}>
+                {index > 0 ? (
+                  <div className={styles.processConnector} aria-hidden>
+                    <span className={styles.processConnectorLine} />
+                    <span className={styles.processConnectorArrow} />
+                  </div>
+                ) : null}
+                <article className={styles.processCard}>
+                  <div className={styles.processHead}>
+                    <span className={styles.processIndex}>{step.n}</span>
+                    <ProcessIcon icon={step.icon} />
+                  </div>
                   <h3 className={koreanDisplay}>{step.title}</h3>
-                  <p className={`${styles.processKeys} ${koreanBody}`}>
-                    <WrapUnits parts={step.keys} />
-                  </p>
                   <p className={koreanBody}>{step.body}</p>
+                  <ChipList parts={step.keys} />
                 </article>
-              </li>
+              </Fragment>
             ))}
-          </ol>
+          </div>
         </div>
       </section>
 

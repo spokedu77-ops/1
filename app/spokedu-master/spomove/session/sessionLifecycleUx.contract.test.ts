@@ -63,4 +63,11 @@ describe('SPOMOVE session lifecycle UX', () => {
     expect(page).toContain('session: origin.sessionId');
     expect(page).toContain('parseMasterWorkReturnHref');
   });
+
+  it('prioritizes explicit and saved cue settings before the admin recommendation', () => {
+    expect(page).toContain("searchParams.get('recommendedCueSeconds')");
+    expect(page).toContain('if (urlCueSeconds != null)');
+    expect(page).toContain('pref?.cueSeconds');
+    expect(page).toContain('prefCue ?? recommendedCueSeconds');
+  });
 });

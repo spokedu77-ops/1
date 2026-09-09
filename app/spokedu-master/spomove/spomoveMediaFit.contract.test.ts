@@ -18,19 +18,21 @@ const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 const sheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
 const layeredThumb = read('app/spokedu-master/spomove/SpomoveLayeredThumb.tsx');
 
-describe('SPOMOVE media fit — instruction full-visible / video 16:9 (not rendered PASS)', () => {
-  it('keeps a shared media module: 4:3 contain thumbs, 16:9 video frame', () => {
-    expect(SPOMOVE_IMAGE_THUMB_OBJECT_FIT).toBe('contain');
-    expect(SPOMOVE_IMAGE_THUMB_ASPECT_CLASS).toBe('aspect-[4/3]');
+describe('SPOMOVE media fit — clean discovery thumbs / video 16:9 (not rendered PASS)', () => {
+  it('keeps a shared media module: square clean-fill discovery thumbs, 16:9 contained video frame', () => {
+    expect(SPOMOVE_IMAGE_THUMB_OBJECT_FIT).toBe('cover');
+    expect(SPOMOVE_IMAGE_THUMB_ASPECT_CLASS).toBe('aspect-square');
     expect(SPOMOVE_VIDEO_POSTER_OBJECT_FIT).toBe('contain');
     expect(SPOMOVE_VIDEO_FRAME_ASPECT_CLASS).toBe('aspect-video');
-    expect(fitSsot).toContain("SPOMOVE_IMAGE_THUMB_OBJECT_FIT = 'contain'");
+    expect(fitSsot).toContain("SPOMOVE_IMAGE_THUMB_OBJECT_FIT = 'cover'");
     expect(fitSsot).toContain("SPOMOVE_VIDEO_POSTER_OBJECT_FIT = 'contain'");
   });
 
   it('routes Hub CardVisual thumbs through SpomoveLayeredThumb, not a page-local crop', () => {
     const cardVisual = hub.slice(hub.indexOf('function CardVisual'), hub.indexOf('function PresetCard'));
     expect(cardVisual).toContain('SpomoveLayeredThumb');
+    expect(cardVisual).toContain('aspect-square');
+    expect(cardVisual).toContain('presentation="home-clean-square"');
     expect(cardVisual).not.toContain('posterObjectFit');
     expect(cardVisual).not.toContain('SPOMOVE_VIDEO_POSTER_OBJECT_FIT');
   });
@@ -60,5 +62,13 @@ describe('SPOMOVE media fit — instruction full-visible / video 16:9 (not rende
     expect(layeredThumb).toContain('failedSrc !== src');
     expect(layeredThumb).toContain('setFailedSrc(src)');
     expect(layeredThumb).toContain('stretchSrc === src');
+  });
+
+  it('shares one clean square image branch between Home and Hub without blur or contain', () => {
+    expect(layeredThumb).toContain("presentation?: 'default' | 'home-clean-square'");
+    const cleanBranch = layeredThumb.slice(layeredThumb.indexOf('cleanSquare ? ('), layeredThumb.indexOf(') : stretch ?'));
+    expect(cleanBranch).toContain('object-cover object-center');
+    expect(cleanBranch).not.toContain('blur-xl');
+    expect(cleanBranch).not.toContain('object-contain');
   });
 });

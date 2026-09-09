@@ -97,12 +97,12 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(preview).toContain("sessionHref('settings')");
   });
 
-  it('uses four-column desktop density and a stable card ratio', () => {
+  it('uses four-column desktop density and the Home-aligned square card ratio', () => {
     expect(hub).toContain(
       'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
     );
     expect(hub).not.toContain('min-h-[300px]');
-    expect(hub).toContain('aspect-[4/3]');
+    expect(hub).toContain('aspect-square');
   });
 
   it('uses one PresetCard path for all hub surfaces', () => {

@@ -171,7 +171,7 @@ They carry participant position, equipment position, distance, spatial layout, a
 - Inspect source ratio first. If a shared authored ratio exists, that ratio is canonical. If ratios are mixed: foreground **full-visible** (`object-contain`) plus a restrained background treatment. Never damage the foreground plate.
 - Thumbnail **selection** for Weekly 4 is curated product content. Do not relitigate which photo is chosen. The UI problem is how the chosen still is framed.
 
-Home Weekly uses `InstructionalThumb`. Hub instruction thumbs use `spomoveMediaFit` + `SpomoveLayeredThumb`.
+Home Weekly uses `InstructionalThumb`. Hub thumbnails use `spomoveMediaFit` + `SpomoveLayeredThumb` clean-fill presentation.
 
 ---
 
@@ -214,12 +214,12 @@ Do not re-decide thumbnail policy per page. Prefer shared media components.
 | Editorial photo | 16:9 or 16:10 | cover |
 | Program / lesson instructional still | Follow the source ratio | Plate fills the frame (`object-contain` in a matching box). Do not cover-crop activity information. Do not shrink the still into a gray field. |
 | Content card photo (non-instructional) | 4:3 or 16:10 | cover only when the still is not instructional |
-| SPOMOVE instructional image | 4:3 | full-visible foreground; no crop of the instruction plate; layered background if needed |
+| SPOMOVE discovery thumbnail | Square | shared clean-fill presentation; inspect authored assets so core stimulus, text, and movement cues remain visible |
 | Setup image | 4:3 | contain; do not crop information |
 | Video | 16:9 | — |
 | Portrait / other | — | explicit exception only |
 
-Home Weekly uses program instructional stills (`InstructionalThumb`), not editorial cover-crop. Hub instruction thumbs use `spomoveMediaFit` + `SpomoveLayeredThumb`.
+Home Weekly uses program instructional stills (`InstructionalThumb`), not editorial cover-crop. Home and Hub SPOMOVE thumbnails use the shared square clean-fill presentation.
 
 ---
 

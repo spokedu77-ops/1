@@ -119,4 +119,20 @@ describe('spomoveOfficialAssets', () => {
 
     expect(map['reaction-cognition-space-direction-01']).toBeUndefined();
   });
+
+  it('keeps only whole-second cue recommendations supported by runtime settings', () => {
+    const valid = normalizeSpomoveContentMap({
+      content: {
+        'reaction-cognition-space-direction-01': { recommendedCueSeconds: 4 },
+      },
+    });
+    const invalid = normalizeSpomoveContentMap({
+      content: {
+        'reaction-cognition-space-direction-01': { recommendedCueSeconds: 6.5 },
+      },
+    });
+
+    expect(valid['reaction-cognition-space-direction-01']?.recommendedCueSeconds).toBe(4);
+    expect(invalid['reaction-cognition-space-direction-01']).toBeUndefined();
+  });
 });

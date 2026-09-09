@@ -30,6 +30,6 @@ describe('SPOMOVE Family-first Hub', () => {
     expect(hub).toContain('buildSpomoveProgramGroupSections');
     expect(hub).not.toContain('AXIS_ACCENT');
     expect(hub).toContain('FAMILY_DISPLAY_DESCRIPTION');
-    expect(hub).toContain('aspect-[4/3]');
+    expect(hub).toContain('aspect-square');
   });
 });

@@ -34,7 +34,7 @@ function caseCard(
 }
 
 export const educationHubPage = {
-  sectionOrder: ['hero', 'fit', 'operating', 'comparison', 'adjustment', 'cases', 'reviews', 'process', 'faq', 'contact'] as const,
+  sectionOrder: ['hero', 'fit', 'operating', 'comparison', 'adjustment', 'cases', 'proof', 'reviews', 'process', 'faq', 'contact'] as const,
   hero: {
     id: 'hero',
     eyebrow: '체육교육 · 기관수업',
@@ -47,36 +47,36 @@ export const educationHubPage = {
   fit: {
     id: 'fit',
     title: '기관 조건에 맞춰 구성합니다',
-    lead: '기관의 대상, 인원, 공간, 목적을 먼저 확인합니다.',
-    statement: '공간이 달라지면 동선을, 인원이 달라지면 배치를, 연령과 운영 형태에 따라 수업 구성을 바꿉니다.',
+    lead: '수업 전에 공간, 인원, 연령, 운영 형태를 확인합니다.',
+    statement: '확인한 조건에 따라 수업 구성과 준비 범위를 달리합니다.',
     items: [
       {
         label: '공간',
         condition: ['교실', '활동실', '강당', '체육관'],
-        response: '이동 범위, 대기 동선, 소음, 안전 범위를 먼저 조정합니다.',
-        note: '교실에서는 이동을 줄이고, 강당에서는 구역과 대기를 나눕니다.',
+        response: '활동 범위와 대기 동선을 공간에 맞춰 구성합니다.',
+        note: '교실은 이동을 줄이고, 강당은 구역을 나눠 구성합니다.',
       },
       {
         label: '인원',
         condition: ['소규모', '반 단위', '다인원 행사'],
-        response: '팀 구성, 활동 분할, 강사 배치 기준을 정합니다.',
-        note: '대기 시간이 길어지지 않게 흐름을 나눕니다.',
+        response: '팀 구성과 활동 분할 기준을 인원 규모에 맞춰 정합니다.',
+        note: '소규모와 다인원 행사는 준비 범위가 다릅니다.',
       },
       {
         label: '연령',
         condition: ['유아', '초등', '청소년', '특수·통합'],
-        response: '규칙 이해도와 수행 속도에 맞춰 과제 난이도를 나눕니다.',
-        note: '같은 공간에서도 참여 순서를 다르게 둘 수 있습니다.',
+        response: '규칙 이해도에 맞춰 과제 구성을 나눕니다.',
+        note: '같은 콘텐츠 목록을 연령에 그대로 적용하지 않습니다.',
       },
       {
         label: '운영',
         condition: ['정규수업', '특강', '방학', '행사'],
-        response: '회기, 준비물, 기록 공유, 현장 피드백 범위를 정합니다.',
-        note: '하루 일정과 학기 운영은 준비 범위가 다릅니다.',
+        response: '정규수업과 행사형은 회기와 준비 범위를 다르게 잡습니다.',
+        note: '하루 일정과 학기 운영은 준비 단위가 다릅니다.',
       },
     ] as const,
     institutions: ['키움센터', '학교', '방과후', '복지관', '공공기관', '유치원/어린이집', '아동문화공간'],
-    smallSpace: '교실이나 활동실처럼 공간이 작아도 인원, 동선, 소음과 안전 범위를 확인해 구성할 수 있습니다.',
+    smallSpace: '교실이나 활동실처럼 공간이 작아도 면적과 대기 위치를 확인해 구성할 수 있습니다.',
   },
   operating: {
     id: 'operating',
@@ -111,11 +111,11 @@ export const educationHubPage = {
     fieldMedia: [
       {
         mediaKey: 'homeHeroMovement' as const,
-        caption: '반 단위 수업에서 활동 구역을 나눠 대기 시간을 줄인 운영',
+        caption: '반 단위 정기수업에서 활동 구역을 나눠 운영한 현장',
       },
       {
         mediaKey: 'homeCaseAdapted' as const,
-        caption: '참여자의 수행 속도에 맞춰 지도자가 함께 움직이며 조정한 수업',
+        caption: '수행 방식이 다른 참여자와 지도자가 함께 움직인 특수·포용 수업',
       },
     ],
     lineupTitle: '기관 목적에 따라 조합하는 운영 콘텐츠',
@@ -197,55 +197,77 @@ export const educationHubPage = {
     ],
     spomove: {
       mediaKey: 'homeCaseSpomove' as const,
+      eyebrow: 'SPOMOVE',
       title: '수업 안에서 화면을 보고 움직입니다',
-      body: '워밍업이나 전환 구간에 화면 정보를 확인하고, 규칙에 따라 움직임으로 반응하는 활동을 일부 수업에 조합합니다.',
-      note: '일부 수업에서는 SPOKEDU의 자체 콘텐츠 SPOMOVE를 활용합니다. 모든 수업에 필수로 포함되는 것은 아닙니다.',
+      body: '워밍업이나 전환 구간에 화면을 보고 움직임으로 반응하는 활동을 일부 수업에 조합합니다.',
+      note: '일부 수업에서 활용하며 모든 수업에 필수로 포함되는 것은 아닙니다.',
     },
   },
   comparison: {
     id: 'comparison',
     badge: '운영 기준',
     title: '수업 방식의 차이를 먼저 확인하세요',
-    lead: '종목 수보다 설계, 강사 기준, 현장 조정, 운영 후 공유가 기관 운영을 가릅니다.',
-    ours: 'SPOKEDU',
-    theirs: '단순 프로그램 제공',
+    lead: '종목 수보다 설계 범위, 강사 운영, 현장 대응, 운영 이후 공유가 기관 수업을 가릅니다.',
+    axisLabel: '비교 기준',
+    ours: 'SPOKEDU 현장 운영',
+    theirs: '활동 제공 중심 방식',
     rows: [
       {
-        label: '핵심 커리큘럼',
-        spokedu: '펑셔널 무브와 팀빌딩을 바탕으로 기관 목적에 맞춰 활동을 조합합니다.',
-        other: '강사 재량으로 당일 활동을 고르는 경우가 많습니다.',
+        label: '수업 설계',
+        spokedu: '대상 · 공간 · 인원 · 운영 목적을 확인한 뒤 수업을 구성합니다.',
+        other: '준비된 활동 또는 종목 단위로 운영합니다.',
       },
       {
-        label: '강사 운영 기준',
-        spokedu: '수업 기준을 공유한 뒤 대상과 일정에 맞춰 배정합니다.',
-        other: '단기 인력 중심으로 당일 진행하는 경우가 많습니다.',
+        label: '강사 운영',
+        spokedu: '수업 기준과 운영 범위를 공유한 뒤 기관 조건에 맞춰 배정합니다.',
+        other: '활동 진행 중심으로 운영합니다.',
       },
       {
-        label: '결근·변동 대응',
-        spokedu: '부재가 생기면 기관에 공유하고 대체 운영을 조율합니다.',
-        other: '휴강으로 끝나는 경우가 많습니다.',
+        label: '현장 대응',
+        spokedu: '동선 · 난이도 · 수행 속도를 수업 중 조정합니다.',
+        other: '준비된 활동 흐름을 중심으로 진행합니다.',
       },
       {
-        label: '수업 진행 방식',
-        spokedu: '공간, 인원, 수행 속도에 맞춰 동선과 난이도를 현장에서 조정합니다.',
-        other: '정해진 활동을 시간 안에 진행하는 데 머무는 경우가 많습니다.',
+        label: '콘텐츠 구성',
+        spokedu: '놀이체육 · 뉴스포츠 · SPOMOVE 등을 목적에 맞춰 조합합니다.',
+        other: '개별 콘텐츠 또는 종목 단위로 활용합니다.',
       },
       {
-        label: '운영 후 공유',
-        spokedu: '필요하면 관찰 내용과 다음 회기 조정사항을 정리해 공유합니다.',
-        other: '수업 종료로 끝나는 경우가 많습니다.',
+        label: '운영 이후',
+        spokedu: '필요 시 관찰 내용과 다음 회기 조정사항을 공유합니다.',
+        other: '해당 회기 운영 완료를 기준으로 합니다.',
       },
     ] as const,
   },
   adjustment: {
     id: 'adjustment',
-    title: '실제 현장에서 조정합니다',
-    lead: '운영안은 현장 조건에 맞춰 수업 안에서 다시 구체화됩니다.',
+    title: '수업 중 현장에서 조정합니다',
+    lead: '수업이 시작되면 공간과 참여 상황에 맞춰 운영을 다시 조정합니다.',
     items: [
-      { label: '설계', keys: ['대상', '공간', '목적'], body: '확인한 조건을 실제 수업안에 반영합니다.' },
-      { label: '강사', keys: ['기준 공유', '배치'], body: '수업 기준을 공유하고 인원·공간에 맞춰 배치합니다.' },
-      { label: '진행', keys: ['동선', '난이도', '속도'], body: '현장에서 동선, 난이도, 수행 속도를 조정합니다.' },
-      { label: '공유', keys: ['관찰', '다음 회기'], body: '필요하면 관찰과 다음 회기 조정사항을 정리합니다.' },
+      {
+        n: '01',
+        label: '동선',
+        keys: ['공간', '이동', '대기'],
+        body: '공간과 참여 인원에 맞춰 이동 범위와 대기 위치를 조정합니다.',
+      },
+      {
+        n: '02',
+        label: '난이도',
+        keys: ['거리', '규칙', '속도'],
+        body: '수행 수준에 맞춰 거리와 규칙, 활동 속도를 조정합니다.',
+      },
+      {
+        n: '03',
+        label: '참여',
+        keys: ['순서', '역할', '인원'],
+        body: '참여 방식과 순서, 역할을 현장 상황에 맞춰 조정합니다.',
+      },
+      {
+        n: '04',
+        label: '운영',
+        keys: ['관찰', '피드백', '다음 회기'],
+        body: '수업 중 확인한 사항은 필요한 경우 다음 회기 운영에 반영합니다.',
+      },
     ] as const,
   },
   cases: {
@@ -258,6 +280,24 @@ export const educationHubPage = {
       caseCard('donghaeng-special-pe', '특수·통합 · 정기수업', '참여자의 수행 방식에 맞춰 규칙과 진행 속도를 조정했습니다.', '48% 36%'),
     ],
   },
+  proof: {
+    id: 'proof',
+    regionLabel: '운영 강점',
+    items: [
+      {
+        label: '직접 운영',
+        body: '실제 기관 현장에서 수업을 운영합니다.',
+      },
+      {
+        label: '현장 조정',
+        body: '대상 · 인원 · 공간에 맞춰 수업 중 동선과 난이도를 조정합니다.',
+      },
+      {
+        label: '자체 콘텐츠',
+        body: '놀이체육 · 뉴스포츠 · SPOMOVE 등을 목적에 맞춰 조합합니다.',
+      },
+    ] as const,
+  },
   reviews: {
     id: 'reviews',
     badge: '기관 후기',
@@ -265,21 +305,24 @@ export const educationHubPage = {
     lead: '수업이 현장에서 어떻게 맞춰졌는지를 담당자 경험으로 확인합니다.',
     items: [
       {
+        showStars: true,
         headline: '느린 학습자도 함께 참여할 수 있는 수업 구성',
         quote: '수준별 난이도와 참여 순서를 나눠 통합반에서도 활동이 이어지도록 맞춰 주셨습니다.',
-        name: '센터 담당자',
+        name: '사업 담당자',
         org: '찾아가는 동행 체육교실',
       },
       {
+        showStars: true,
         headline: '회차마다 목적이 분명한 수업',
         quote: '회차별 활동 목적이 분명해 기관 운영 계획과 맞추기 쉬웠습니다.',
         name: '센터 담당자',
         org: '양천거점형키움센터',
       },
       {
+        showStars: true,
         headline: '공간과 인원에 맞는 현장 조정',
         quote: '좁은 공간과 변동 인원에도 대기와 동선을 현장에서 맞춰 주셨습니다.',
-        name: '담당자',
+        name: '기관 담당자',
         org: '강동구 보건소 연계 수업',
       },
     ] as const,
@@ -287,25 +330,28 @@ export const educationHubPage = {
   process: {
     id: 'process',
     title: '도입 과정',
-    lead: '조건을 확인한 뒤, 실제 수업이 가능한 운영안으로 구체화합니다.',
+    lead: '문의 이후 조건 확인, 운영안 구성, 현장 운영 순으로 진행합니다.',
     steps: [
       {
         n: '01',
         title: '조건 확인',
+        icon: 'checklist',
         keys: ['대상', '인원', '공간', '일정'],
         body: '기관의 운영 목적과 수업 환경을 확인합니다.',
       },
       {
         n: '02',
         title: '운영안 구성',
+        icon: 'plan',
         keys: ['프로그램', '회기', '강사', '교구'],
         body: '기관 조건에 맞춰 수업 흐름과 준비 범위를 제안합니다.',
       },
       {
         n: '03',
         title: '현장 운영',
-        keys: ['수업 진행', '난이도 조정', '운영 공유'],
-        body: '사전 조율한 기준으로 수업하고, 필요한 사항은 다음 회기에 반영합니다.',
+        icon: 'field',
+        keys: ['진행', '조정', '공유'],
+        body: '사전 조율한 기준으로 수업하고 필요한 사항은 다음 회기에 반영합니다.',
       },
     ] as const,
   },

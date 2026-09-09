@@ -47,6 +47,9 @@
 
 ### Setup state
 
+- Admin의 프로그램별 `recommendedCueSeconds`는 추천 초기값이며 사용자 설정을 덮어쓰지 않는다.
+- 자극 시간 우선순위는 `명시적 cueSeconds URL → 프로그램별 저장값 → Admin 추천값 → Preset 기본값`이다.
+- 추천값은 기존 SPOMOVE content pack에 저장하며 허용 범위는 정수 `1~6초`이다.
 - SSOT는 `session/page.tsx` (`movementPick` · `cueSeconds` · `difficultyValue` 등)
 - Start/Settings는 Controlled만 · **동일** `beginConfiguredSession` 호출
 - 저장: Settings에서 움직임 변경 시 · 실제 수업 시작 시

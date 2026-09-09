@@ -7,8 +7,11 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
+  normalizeSpomoveContentMap,
   normalizeSpomoveThumbnailMap,
+  SPOMOVE_CONTENT_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
+  type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
 import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
@@ -38,6 +41,8 @@ export default function FavoritesView() {
   const guideVideo = useSpomoveGuideVideo(previewPreset?.id ?? null, isPremium);
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
+  const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const [contentLoadState, setContentLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
     let alive = true;
@@ -54,6 +59,24 @@ export default function FavoritesView() {
         const next = normalizeSpomoveThumbnailMap(data?.assets_json);
         setThumbnailPaths(next);
         setThumbnailCacheBust(resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)));
+      });
+    void supabase
+      .from('think_asset_packs')
+      .select('assets_json')
+      .eq('id', SPOMOVE_CONTENT_PACK_ID)
+      .maybeSingle()
+      .then((result: { data: { assets_json?: unknown } | null; error: { code?: string } | null }) => {
+        if (!alive) return;
+        const { data, error } = result;
+        if (error && error.code !== 'PGRST116') {
+          setContentLoadState('error');
+          return;
+        }
+        setContentOverrides(normalizeSpomoveContentMap(data?.assets_json));
+        setContentLoadState('ready');
+      })
+      .catch(() => {
+        if (alive) setContentLoadState('error');
       });
     return () => {
       alive = false;
@@ -112,6 +135,6 @@ export default function FavoritesView() {
         })}
       </section> : <section className="mt-12 text-center"><Bookmark className="mx-auto h-7 w-7 text-slate-300" /><h2 className="mt-3 text-[20px] font-semibold text-slate-900">저장한 콘텐츠가 없습니다.</h2><p className="mt-2 text-[14px] text-slate-500">프로그램에서 자주 쓸 활동을 저장해 보세요.</p></section>}
     </MasterPageShell>
-    <SpomoveGuidelineSheet preset={previewPreset} guideVideoUrl={guideVideo.url} guideVideoState={guideVideo.state} contentLoadState="ready" hubReturnHref="/spokedu-master/favorites" onClose={() => setPreviewPreset(null)} />
+    <SpomoveGuidelineSheet preset={previewPreset} guideVideoUrl={guideVideo.url} guideVideoState={guideVideo.state} contentOverride={previewPreset ? contentOverrides[previewPreset.id] : undefined} contentLoadState={contentLoadState} hubReturnHref="/spokedu-master/favorites" onClose={() => setPreviewPreset(null)} />
   </main>;
 }

@@ -691,6 +691,7 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
 
 function normalizeContentDraft(value: SpomovePresetContentOverride | undefined): SpomovePresetContentOverride {
   return {
+    recommendedCueSeconds: value?.recommendedCueSeconds,
     displayTitle: value?.displayTitle ?? '',
     shortDescription: value?.shortDescription ?? '',
     variantLabel: value?.variantLabel ?? '',
@@ -710,6 +711,7 @@ function normalizeContentDraft(value: SpomovePresetContentOverride | undefined):
 
 function contentDraftIsEmpty(value: SpomovePresetContentOverride | undefined) {
   return (
+    value?.recommendedCueSeconds == null &&
     !value?.displayTitle?.trim() &&
     !value?.shortDescription?.trim() &&
     !value?.variantLabel?.trim() &&
@@ -1054,6 +1056,18 @@ function SpomoveEditModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {/* ── 가이드 탭 ── */}
           {tab === 'guide' && (<>
+            <label className="mb-4 block text-[10px] font-black text-slate-500">
+              추천 자극 시간
+              <select
+                value={draft.recommendedCueSeconds ?? ''}
+                onChange={(event) => onUpdateDraft({ recommendedCueSeconds: event.target.value ? Number(event.target.value) : undefined })}
+                className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400"
+              >
+                <option value="">기존 기본값 ({preset.cueSeconds}초)</option>
+                {[1, 2, 3, 4, 5, 6].map((seconds) => <option key={seconds} value={seconds}>{seconds}초</option>)}
+              </select>
+              <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">사용자가 이 프로그램에 저장한 시간이 없을 때 기본 추천값으로 사용합니다.</span>
+            </label>
             <div className="mb-4 rounded-lg border border-slate-200 bg-white px-3 py-2">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] font-black text-slate-700">완성도 {guideCompletion.completeCount}/{guideCompletion.requiredCount}</p>
@@ -1328,6 +1342,7 @@ function useSpomoveContentData() {
     const previous = contentRef.current[presetId];
     const preset = findOfficialSpomovePreset(presetId);
     let nextEntry: SpomovePresetContentOverride = {
+      recommendedCueSeconds: draft.recommendedCueSeconds,
       displayTitle: draft.displayTitle?.trim() ?? '',
       shortDescription: draft.shortDescription?.trim() ?? '',
       variantLabel: draft.variantLabel?.trim() ?? '',
@@ -1594,6 +1609,7 @@ export function SpomoveContentManager() {
     const previous = contentRef.current[presetId];
     const preset = findOfficialSpomovePreset(presetId);
     let nextEntry: SpomovePresetContentOverride = {
+      recommendedCueSeconds: draft.recommendedCueSeconds,
       displayTitle: draft.displayTitle?.trim() ?? '',
       shortDescription: draft.shortDescription?.trim() ?? '',
       variantLabel: draft.variantLabel?.trim() ?? '',

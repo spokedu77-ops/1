@@ -33,6 +33,7 @@ export type SpomoveHomeFeaturedAssetsJson = {
 };
 
 export type SpomovePresetContentOverride = {
+  recommendedCueSeconds?: number;
   displayTitle?: string;
   shortDescription?: string;
   variantLabel?: string;
@@ -136,6 +137,10 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
         ? entry.movementGuideStatus
         : undefined;
     const normalized: SpomovePresetContentOverride = {};
+    const recommendedCueSeconds = Number(entry.recommendedCueSeconds);
+    if (Number.isInteger(recommendedCueSeconds) && recommendedCueSeconds >= 1 && recommendedCueSeconds <= 6) {
+      normalized.recommendedCueSeconds = recommendedCueSeconds;
+    }
     const displayTitle = typeof entry.displayTitle === 'string' ? entry.displayTitle.trim() : '';
     const shortDescription = typeof entry.shortDescription === 'string' ? entry.shortDescription.trim() : '';
     const variantLabel = typeof entry.variantLabel === 'string' ? entry.variantLabel.trim() : '';

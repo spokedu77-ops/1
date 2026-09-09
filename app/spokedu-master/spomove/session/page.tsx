@@ -291,6 +291,10 @@ function SpomoveSessionContent() {
     () => parseCueSecondsQuery(searchParams.get('cueSeconds')),
     [searchParams],
   );
+  const recommendedCueSeconds = useMemo(
+    () => parseCueSecondsQuery(searchParams.get('recommendedCueSeconds')),
+    [searchParams],
+  );
 
   const [state, setState] = useState<SessionState>('idle');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -306,7 +310,7 @@ function SpomoveSessionContent() {
         return resolveSessionCueSeconds(officialPreset, clampCueSpeedSec(pref.cueSeconds));
       }
     }
-    return resolveSessionCueSeconds(officialPreset, null);
+    return resolveSessionCueSeconds(officialPreset, recommendedCueSeconds);
   });
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   const startLockedRef = useRef(false);
@@ -326,8 +330,8 @@ function SpomoveSessionContent() {
       pref?.cueSeconds != null && Number.isFinite(pref.cueSeconds)
         ? clampCueSpeedSec(pref.cueSeconds)
         : null;
-    setCueSeconds(resolveSessionCueSeconds(officialPreset, prefCue));
-  }, [officialPreset, urlCueSeconds]);
+    setCueSeconds(resolveSessionCueSeconds(officialPreset, prefCue ?? recommendedCueSeconds));
+  }, [officialPreset, recommendedCueSeconds, urlCueSeconds]);
 
   const handleCueSecondsChange = useCallback(
     (value: SpomoveCueSpeedSec) => {

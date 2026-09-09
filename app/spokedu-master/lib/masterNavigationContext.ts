@@ -31,6 +31,7 @@ export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> =
     'entry',
     'program',
     'cueSeconds',
+    'recommendedCueSeconds',
     'difficulty',
     'hubReturn',
     'returnTo',

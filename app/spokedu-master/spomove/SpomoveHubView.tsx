@@ -578,7 +578,7 @@ function CardVisual({
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
 
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-slate-200 bg-white">
+    <div className="relative aspect-square w-full overflow-hidden border-b border-slate-200 bg-white">
       {thumbnailPending ? (
         <div
           className="absolute inset-0 bg-slate-100"
@@ -586,7 +586,12 @@ function CardVisual({
           aria-hidden="true"
         />
       ) : showThumbnail ? (
-        <SpomoveLayeredThumb src={thumbnailUrl} sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw" onError={onImageError} />
+        <SpomoveLayeredThumb
+          src={thumbnailUrl}
+          sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
+          presentation="home-clean-square"
+          onError={onImageError}
+        />
       ) : (
         <SpomoveProgramVisual preset={preset} />
       )}

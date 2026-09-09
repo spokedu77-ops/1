@@ -81,6 +81,12 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).toContain('sticky bottom-0');
   });
 
+  it('passes the admin cue recommendation separately from an explicit user override', () => {
+    expect(sheet).toContain('contentOverride?.recommendedCueSeconds ?? preset.cueSeconds');
+    expect(sheet).toContain("url.searchParams.set('recommendedCueSeconds'");
+    expect(sheet).not.toContain('cueSeconds: preset.cueSeconds');
+  });
+
   it('keeps video preview full-frame contain (IMAGE hub crop stays separate)', () => {
     const preview = sheet.slice(
       sheet.indexOf('function SpomoveScreenPreview'),
