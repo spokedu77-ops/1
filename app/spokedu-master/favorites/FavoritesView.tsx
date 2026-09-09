@@ -27,7 +27,7 @@ import { SpomoveGuidelineSheet } from '../spomove/SpomoveGuidelineSheet';
 import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import {
-  composeSpomoveCardSubtitleParts,
+  composeSpomovePublicCardMetaParts,
   getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
 } from '../spomove/spomovePresetDisplayModel';
@@ -66,6 +66,10 @@ const FILTERS: ReadonlyArray<readonly [Filter, string]> = [
 
 function joinMetaParts(parts: Array<string | null | undefined>) {
   return [...new Set(parts.map((part) => part?.trim()).filter((part): part is string => Boolean(part)))].slice(0, 2).join(' · ');
+}
+
+function stripEnglishSubtitle(title: string) {
+  return title.replace(/\s*\([A-Za-z0-9][A-Za-z0-9 '&+./-]*\)\s*$/, '').trim();
 }
 
 function resolveThumbnailUrl(path: string | undefined, cacheBust?: number) {
@@ -152,12 +156,13 @@ export default function FavoritesView() {
         const program = programById.get(ref.id);
         if (!program) continue;
         const model = buildLessonDisplayModel(program);
+        const title = stripEnglishSubtitle(model.title);
         items.push({
           type: 'program',
           ref,
           key: `program:${ref.id}`,
-          title: model.title,
-          accessTitle: model.title,
+          title,
+          accessTitle: title,
           supportMeta: joinMetaParts([model.theme, model.equipment[0]]),
           href: `/spokedu-master/library/${encodeURIComponent(program.id)}`,
           heroImageUrl: model.heroImageUrl ?? '',
@@ -171,15 +176,13 @@ export default function FavoritesView() {
       if (!preset) continue;
       const model = getSpomovePresetDisplayModel(preset, contentOverrides[preset.id]);
       const card = getSpomoveCardDisplayModel(preset, contentOverrides[preset.id]);
-      const decisionMeta = card.meta.difficulty ?? card.meta.responseType;
-      const supportingMeta = card.meta.responseType === decisionMeta ? card.meta.trainingFocus : card.meta.responseType;
       items.push({
         type: 'spomove',
         ref,
         key: `spomove:${ref.id}`,
         title: model.rootTitle,
         accessTitle: model.displayTitle,
-        supportMeta: composeSpomoveCardSubtitleParts(card.variantLabel, decisionMeta, supportingMeta).join(' · '),
+        supportMeta: composeSpomovePublicCardMetaParts(card.publicMeta).join(' · '),
         preset,
       });
     }
@@ -233,7 +236,7 @@ export default function FavoritesView() {
                         src={item.heroImageUrl}
                         alt=""
                         sizes="(min-width: 1280px) 260px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 92vw"
-                        presentation="home-clean-square"
+                        presentation="full-visible-4-3"
                         className="rounded-none"
                         fallback={(
                           <div className="grid h-full w-full place-items-center bg-slate-200" aria-hidden>
@@ -262,7 +265,7 @@ export default function FavoritesView() {
                       src={thumbnailUrl}
                       alt=""
                       sizes="(min-width: 1280px) 260px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 92vw"
-                      presentation="home-clean-square"
+                      presentation="full-visible-4-3"
                       className="rounded-none"
                       fallback={(
                         <div className="grid h-full w-full grid-cols-2 gap-1 bg-slate-950 p-4" aria-hidden>

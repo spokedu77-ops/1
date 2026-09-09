@@ -36,11 +36,11 @@ export function FavoriteRetrievalCard({
 
   return (
     <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 hover:border-slate-300">
-      <div className="relative aspect-square w-full shrink-0 overflow-hidden border-b border-slate-100 bg-slate-100">
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden border-b border-slate-100 bg-slate-100">
         {media}
         {hasVideo ? (
-          <span className="pointer-events-none absolute left-3 top-3 z-[5] grid h-7 w-7 place-items-center rounded-full bg-white/80 text-slate-950/70">
-            <Play className="h-3.5 w-3.5 fill-current" aria-hidden />
+          <span className="pointer-events-none absolute left-3 top-3 z-[5] grid h-6 w-6 place-items-center rounded-full bg-white/65 text-slate-950/55">
+            <Play className="h-3 w-3 fill-current" aria-hidden />
           </span>
         ) : null}
       </div>
@@ -69,8 +69,8 @@ export function FavoriteRetrievalCard({
         className="absolute right-1.5 top-1.5 z-20 grid h-11 w-11 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--spm-acc)]"
         aria-label={removeAriaLabel ?? `${title} 즐겨찾기에서 제거`}
       >
-        <span className="grid h-9 w-9 place-items-center rounded-full bg-white/80 text-[color:var(--spm-acc)] ring-1 ring-slate-900/5 backdrop-blur-sm transition-colors group-hover:bg-white/90">
-          <Bookmark className="h-[17px] w-[17px] fill-current" aria-hidden />
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-white/75 text-[color:var(--spm-acc)] ring-1 ring-slate-900/5 backdrop-blur-sm transition-colors group-hover:bg-white/90">
+          <Bookmark className="h-4 w-4 fill-current" aria-hidden />
         </span>
       </button>
     </article>

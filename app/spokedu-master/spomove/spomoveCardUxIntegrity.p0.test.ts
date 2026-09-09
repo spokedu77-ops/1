@@ -8,7 +8,6 @@ import {
   getSpomoveCardDisplayModel,
   resolveAudienceAdaptation,
   resolveSpomoveCardPairKey,
-  titleIncludesDifficulty,
 } from './spomovePresetDisplayModel';
 import { getOfficialSpomovePresetGuide } from './officialSpomovePresetGuides';
 import { supportsCueSpeedOverride } from './spomoveCueSpeed';
@@ -42,12 +41,12 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     }
   });
 
-  it('does not duplicate difficulty when title already encodes it', () => {
+  it('does not put bare difficulty words on public badges', () => {
     for (const preset of publicLibrary) {
       const card = getSpomoveCardDisplayModel(preset);
       const difficultyBadges = card.badges.filter((badge) => badge.slot === 'difficulty');
-      if (titleIncludesDifficulty(card.title) || titleIncludesDifficulty(card.variantLabel)) {
-        expect(difficultyBadges).toHaveLength(0);
+      for (const badge of difficultyBadges) {
+        expect(badge.value).toMatch(/^난이도 (쉬움|보통|어려움)$/u);
       }
       const labelValues = card.badges.map((badge) => badge.value);
       expect(labelValues.filter((value) => value === '보통' || value === '어려움' || value === '쉬움')).toHaveLength(0);
@@ -84,7 +83,7 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     const byPair = new Map<string, typeof publicLibrary>();
     for (const preset of publicLibrary) {
       const card = getSpomoveCardDisplayModel(preset);
-      if (!titleIncludesDifficulty(card.title) && !titleIncludesDifficulty(card.variantLabel)) continue;
+      if (card.publicMeta.variant) continue;
       const key = `${preset.programGroup}::${resolveSpomoveCardPairKey(card.title)}`;
       const list = byPair.get(key) ?? [];
       list.push(preset);

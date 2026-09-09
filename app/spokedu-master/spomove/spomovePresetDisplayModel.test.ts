@@ -45,12 +45,21 @@ describe('spomove preset display model', () => {
     expect(getSpomovePresetDisplayModel(quadFruit!).variantLabel).toBe('과일');
     expect(getSpomovePresetDisplayModel(quadFruit!).displayTitle).toBe('목표 찾아가기 · 과일');
     expect(getSpomoveCardDisplayModel(quadFruit!).title).toBe('목표 찾아가기');
+    expect(getSpomoveCardDisplayModel(quadFruit!).publicMeta).toEqual({
+      core: '4분할',
+      variant: '과일',
+      difficulty: '난이도 쉬움',
+    });
     expect(getSpomoveCardDisplayModel(quadFruit!).meta.trainingFocus).toBe('선택 반응');
     expect(getSpomoveCardDisplayModel(quadFruit!).meta.responseType).toBe('단순 반응');
     expect(getSpomovePresetDisplayModel(quadAnimalExpansion!).displayTitle).toBe('목표 찾아가기 · 동물');
 
     expect(getSpomovePresetDisplayModel(moleNormal!).programLabel).toBe('시지각 반응');
-    expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기 · 보통');
+    expect(getSpomovePresetDisplayModel(moleNormal!).displayTitle).toBe('두더지 잡기');
+    expect(getSpomoveCardDisplayModel(moleNormal!).publicMeta).toEqual({
+      core: '시각 반응',
+      difficulty: '난이도 어려움',
+    });
     expect(getSpomoveCardDisplayModel(moleNormal!).badges.some((badge) => badge.value === '보통')).toBe(false);
 
     expect(getSpomovePresetDisplayModel(sequenceFive!).programLabel).toBe('순차 기억');

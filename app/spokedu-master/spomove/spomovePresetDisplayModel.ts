@@ -28,7 +28,14 @@ import {
 } from './spomovePublicCatalogOrder';
 import { supportsCueSpeedOverride } from './spomoveCueSpeed';
 import { getSpomoveDifficultyKind } from './spomoveDifficulty';
-import { composeOfficialDisplayTitle, getAppliedSpomovePublicNaming } from './spomovePublicNaming';
+import {
+  composeOfficialDisplayTitle,
+  composeSpomovePublicCardMetaParts,
+  getAppliedSpomovePublicNaming,
+  getPublicCardVariant,
+  getSpomovePublicNaming,
+  type SpomovePublicCardMeta,
+} from './spomovePublicNaming';
 
 export type SpomovePresetDisplayModel = {
   rootTitle: string;
@@ -69,6 +76,7 @@ export type SpomoveCardDisplayModel = {
   programLabel: string;
   title: string;
   variantLabel: string;
+  publicMeta: SpomovePublicCardMeta;
   meta: SpomoveCardMeta;
   badges: SpomoveCardBadge[];
 };
@@ -444,39 +452,22 @@ export function resolveSpomoveCardBadges(meta: SpomoveCardMeta): SpomoveCardBadg
   return badges;
 }
 
-const DIFFICULTY_TOKEN_PATTERN = /쉬움|보통|어려움/u;
+export { composeSpomovePublicCardMetaParts };
 
-function difficultyTokenIn(value: string): string | null {
-  const match = value.match(DIFFICULTY_TOKEN_PATTERN);
-  return match?.[0] ?? null;
+export function resolveSpomovePublicCardDifficulty(preset: OfficialSpomovePreset): string {
+  const guide = getOfficialSpomovePresetGuide(preset);
+  return `난이도 ${SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}`;
 }
 
-/** Hub/favorites metadata line: official variant first, then existing decision/support slots. */
-export function composeSpomoveCardSubtitleParts(
-  variantLabel: string,
-  decisionMeta?: string,
-  supportingMeta?: string,
-): string[] {
-  const variant = variantLabel.trim();
-  const variantDifficulty = variant ? difficultyTokenIn(variant) : null;
-  const parts = [variant, decisionMeta?.trim(), supportingMeta?.trim()].filter(
-    (part): part is string => Boolean(part),
-  );
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const part of parts) {
-    if (variantDifficulty && part === `난이도 ${variantDifficulty}`) continue;
-    if (seen.has(part)) continue;
-    seen.add(part);
-    result.push(part);
-  }
-  return result;
-}
-
-function resolveOfficialCardVariant(preset: OfficialSpomovePreset, display: SpomovePresetDisplayModel): string {
-  const naming = getAppliedSpomovePublicNaming(preset.id);
-  if (!naming?.variant?.trim()) return '';
-  return display.variantLabel.trim();
+export function resolveSpomovePublicCardMeta(preset: OfficialSpomovePreset): SpomovePublicCardMeta {
+  const naming = getSpomovePublicNaming(preset.id);
+  const core = naming?.cardCore?.trim() ?? '';
+  const variant = getPublicCardVariant(naming);
+  return {
+    core,
+    ...(variant ? { variant } : {}),
+    difficulty: resolveSpomovePublicCardDifficulty(preset),
+  };
 }
 
 export function buildSpomovePresetSearchHaystack(
@@ -493,6 +484,9 @@ export function buildSpomovePresetSearchHaystack(
     buildDisplayTitle(preset, contentOverride),
     preset.title,
     contentOverride?.displayTitle,
+    card.publicMeta.core,
+    card.publicMeta.variant,
+    card.publicMeta.difficulty,
     ...card.badges.map((badge) => badge.value),
   ]
     .filter((part): part is string => Boolean(part?.trim()))
@@ -502,19 +496,15 @@ export function buildSpomovePresetSearchHaystack(
 function buildCardMeta(
   preset: OfficialSpomovePreset,
   title: string,
-  options?: { includeAudienceAdaptation?: boolean; variantLabel?: string },
+  options?: { includeAudienceAdaptation?: boolean },
 ): SpomoveCardMeta {
-  const guide = getOfficialSpomovePresetGuide(preset);
-  const { audience, adaptation } = resolveAudienceAdaptation(guide.targetGroups);
+  const { audience, adaptation } = resolveAudienceAdaptation(getOfficialSpomovePresetGuide(preset).targetGroups);
   const meta: SpomoveCardMeta = {
     responseType: resolveCardResponseType(preset),
     trainingFocus: resolveCardTrainingFocus(preset, title),
     adjustable: resolveCardAdjustable(preset),
+    difficulty: resolveSpomovePublicCardDifficulty(preset),
   };
-
-  if (!titleIncludesDifficulty(title) && !titleIncludesDifficulty(options?.variantLabel ?? '')) {
-    meta.difficulty = `난이도 ${SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}`;
-  }
 
   if (options?.includeAudienceAdaptation) {
     if (audience) meta.audience = audience;
@@ -532,11 +522,11 @@ function resolvePublicDisplayTitles(
   const fallbackVariant = contentOverride?.variantLabel?.trim() || buildVariantLabel(preset);
   const applied = getAppliedSpomovePublicNaming(preset.id);
   if (applied) {
-    const variantLabel = applied.variant?.trim() ?? '';
+    const variantLabel = getPublicCardVariant(applied);
     return {
       rootTitle: applied.root,
       variantLabel,
-      displayTitle: composeOfficialDisplayTitle(applied.root, applied.variant),
+      displayTitle: composeOfficialDisplayTitle(applied.root, variantLabel),
     };
   }
   return {
@@ -552,15 +542,13 @@ export function getSpomoveCardDisplayModel(
   _contentOverride?: SpomovePresetContentOverride,
 ): SpomoveCardDisplayModel {
   const base = getSpomovePresetDisplayModel(preset, _contentOverride);
-  const variantLabel = resolveOfficialCardVariant(preset, base);
-  const meta = buildCardMeta(preset, base.displayTitle, {
-    includeAudienceAdaptation: false,
-    variantLabel,
-  });
+  const publicMeta = resolveSpomovePublicCardMeta(preset);
+  const meta = buildCardMeta(preset, base.displayTitle, { includeAudienceAdaptation: false });
   return {
     programLabel: base.programLabel,
     title: base.rootTitle,
-    variantLabel,
+    variantLabel: publicMeta.variant ?? '',
+    publicMeta,
     meta,
     badges: resolveSpomoveCardBadges(meta),
   };

@@ -7,7 +7,6 @@ import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from './spomovePublicCatalogOrder';
 import {
   getSpomoveCardDisplayModel,
   resolveSpomoveCardPairKey,
-  titleIncludesDifficulty,
 } from './spomovePresetDisplayModel';
 
 function read(path: string) {
@@ -26,8 +25,10 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
 
   it('keeps discovery card body compact and independent from URL reads', () => {
     expect(hub).toContain('data-spm-spomove-card-body');
-    expect(hub).toContain('decisionMeta');
-    expect(hub).toContain('supportingMeta');
+    expect(hub).toContain('card.publicMeta');
+    expect(hub).toContain('composeSpomovePublicCardMetaParts');
+    expect(hub).not.toContain('decisionMeta');
+    expect(hub).not.toContain('supportingMeta');
     expect(hub).toContain('min-h-[84px]');
     expect(hub).not.toContain('useSearchParams().get(\'programGroup\')');
   });
@@ -46,9 +47,8 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
       expect(card.badges.length).toBeLessThanOrEqual(3);
       expect(card.badges.some((badge) => badge.value === '오염')).toBe(false);
       expect(card.badges.every((badge) => !badge.value.endsWith('·'))).toBe(true);
-      if (titleIncludesDifficulty(card.title) || titleIncludesDifficulty(card.variantLabel)) {
-        expect(card.badges.some((badge) => badge.slot === 'difficulty')).toBe(false);
-      }
+      expect(card.publicMeta.difficulty).toMatch(/^난이도 (쉬움|보통|어려움)$/u);
+      expect(card.badges.some((badge) => badge.value === '쉬움' || badge.value === '보통' || badge.value === '어려움')).toBe(false);
     }
   });
 
@@ -56,7 +56,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     const byPair = new Map<string, ReturnType<typeof getSpomoveCardDisplayModel>[]>();
     for (const preset of publicLibrary) {
       const card = getSpomoveCardDisplayModel(preset);
-      if (!titleIncludesDifficulty(card.title) && !titleIncludesDifficulty(card.variantLabel)) continue;
+      if (card.publicMeta.variant) continue;
       const key = `${preset.programGroup}::${resolveSpomoveCardPairKey(card.title)}`;
       const list = byPair.get(key) ?? [];
       list.push(card);

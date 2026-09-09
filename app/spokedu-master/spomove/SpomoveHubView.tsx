@@ -44,7 +44,7 @@ import {
 } from './officialSpomovePresetGuides';
 import {
   buildSpomovePresetSearchHaystack,
-  composeSpomoveCardSubtitleParts,
+  composeSpomovePublicCardMetaParts,
   getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
   sortSpomovePresetsByCatalogOrder,
@@ -638,9 +638,7 @@ function PresetCard({
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
-  const decisionMeta = card.meta.difficulty ?? card.meta.responseType;
-  const supportingMeta = card.meta.responseType === decisionMeta ? card.meta.trainingFocus : card.meta.responseType;
-  const subtitleParts = composeSpomoveCardSubtitleParts(card.variantLabel, decisionMeta, supportingMeta);
+  const subtitleParts = composeSpomovePublicCardMetaParts(card.publicMeta);
 
   const inner = (
     <>
