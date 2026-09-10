@@ -15,12 +15,12 @@ Home runtime filenames (Pass 05 cache identity): `home-case-adapted-p05.webp`, `
 
 | Home role | Web file | Production path | Crop / focal | Source status |
 |---|---|---|---|---|
-| Hero | `home-hero-field.webp` | `/images/spokedu/home/field-editorial/home-hero-field.webp` | Home `58% 62%`; Education `64% 52%` (`homeHeroFieldEducation`) | Baked from `assets-source/.../KakaoTalk_Photo_2026-08-10-17-42-37_18_.jpeg` (5712×4284) → 2400×1800 WebP q86 |
-| SPOMOVE | `home-spomove-field.webp` | `/images/spokedu/home/field-editorial/home-spomove-field.webp` | Wide documentary; `object-position: 52% 58%` | `home/home-hero-spomove-class.JPG` → bake |
-| Case — 일반 | `home-case-general.webp` | `/images/spokedu/home/field-editorial/home-case-general.webp` | Featured; `object-position: 42% 55%` | `records/maedong-sports-stepup.jpg` |
+| Hero | `home-hero-movement.jpg` | `/images/spokedu/home/home-hero-movement.jpg` | Wide 16:9 desktop / 4:3 mobile; `object-position: 50% 62%` | Instructor + class with equipment. `home-hero-field.webp` remains Education shared file, not Home Hero. |
+| SPOMOVE screen + field | `home-spomove-dive-field.webp` | `/images/spokedu/home/field-editorial/home-spomove-dive-field.webp` | Screen panel `50% 30%`; field panel default dive focal | Same DIVE class photo used twice. Not paired with grape/stroop assets. |
+| Case — 일반 (featured) | `home-case-general.webp` | `/images/spokedu/home/field-editorial/home-case-general.webp` | Featured; `object-position: 36% 58%` | `records/maedong-sports-stepup.jpg` |
 | Case — 특수·포용 | `home-case-adapted-p05.webp` | `/images/spokedu/home/field-editorial/home-case-adapted-p05.webp` | Supporting; `object-position: 48% 42%` | `records/donghaeng-special-pe-field.jpg` |
 | Case — SPOMOVE | `home-case-spomove-p05.webp` | `/images/spokedu/home/field-editorial/home-case-spomove-p05.webp` | Supporting; `object-position: 48% 46%` | `records/dongjak-spomove.jpg` |
-| Subscription UI | `product-library-home.webp` | `/images/spokedu/subscription/product-library-home.webp` | Top crop | `subscription/product-library.png` |
+| Subscription UI | `library-program-cards.png` | `/images/spokedu/subscription/library-program-cards.png` | Top-weighted cover `50% 18%` | Live library capture with lesson names + thumbnails. Prepare-modal shots are not Home stage. |
 
 Code SSOT: `app/spokedu/data/home-page.ts` (`HOME_FIELD_EDITORIAL`), `app/spokedu/data/images.ts`, `app/spokedu/data/home-media.ts`.
 
@@ -38,12 +38,15 @@ Home narrative no longer includes a Why section. Why assets are **not** active H
 
 | Web file | 촬영·운영 맥락 | Home 연결 | Source file |
 |---|---|---|---|
-| `home-hero-field.webp` | 서울위례초등학교 · 2026.08.10 배구형 스포츠 | Hero (Home + /education shared web file) | **Source:** `KakaoTalk_Photo_2026-08-10-17-42-37_18_.jpeg` · **Drive file ID:** `1CvUlPEbLJLSz1t39ivmbt2UZYtzKveDO` · **Local staging:** `assets-source/spokedu/home/` (gitignored) · Original **5712×4284** · Web **2400×1800** q86 |
-| `home-spomove-field.webp` | SPOMOVE 현장 (화면·SPOMAT·참여) | SPOMOVE | `home/home-hero-spomove-class.JPG` |
+| `home-hero-movement.jpg` | 교구 설명 중인 수업 장면 | Home Hero | `home/home-hero-movement.jpg` |
+| `home-hero-field.webp` | 서울위례초등학교 · 2026.08.10 배구형 스포츠 | Education shared file (not current Home Hero) | **Source:** `KakaoTalk_Photo_2026-08-10-17-42-37_18_.jpeg` · **Drive file ID:** `1CvUlPEbLJLSz1t39ivmbt2UZYtzKveDO` |
+| `home-spomove-dive-field.webp` | SPOMOVE DIVE 현장 (화면·패드·이동) | Home SPOMOVE screen+field | `field-editorial/home-spomove-dive-field.webp` |
+| `home-spomove-field.webp` | 포도 화면 SPOMOVE 현장 | Not an active Home role | `home/home-hero-spomove-class.JPG` |
 | `home-case-general.webp` | 매동초등학교 스포츠스텝업 | Cases featured (`maedong-sports-stepup`) | `records/maedong-sports-stepup.jpg` |
 | `home-case-adapted.webp` | 찾아가는 동행 체육교실 (특수·포용) | Cases (`donghaeng-special-pe`) | `records/donghaeng-special-pe-field.jpg` |
 | `home-case-spomove.webp` | 동작거점형 우리동네키움센터 SPOMOVE | Cases (`dongjak-spomove`) | `records/dongjak-spomove.jpg` |
-| `product-library-home.webp` | 구독시스템 라이브러리 상단 UI | Subscription stage | `subscription/product-library.png` (top crop) |
+| `library-program-cards.png` | 수업명·활동 썸네일이 보이는 라이브러리 | Home Subscription stage | `subscription/library-program-cards.png` |
+| `product-library-home.webp` | 구독시스템 홈 상단 UI | Not current Home stage | `subscription/product-library.png` (top crop) |
 
 원본 Drive 파일명·폴더는 PO가 별도 보관. 이 문서는 **웹 배포용 사본** 기준입니다.
 
@@ -67,13 +70,13 @@ Agent/code must **not** mark assets APPROVED. Status below reflects PO confirmat
 
 | Surface | Asset | Context | Public-use status |
 |---|---|---|---|
-| Home Hero | `home-hero-field.webp` | 서울위례초등학교 | **UNCONFIRMED** |
-| Home SPOMOVE | `home-spomove-field.webp` | SPOMOVE 현장 | **UNCONFIRMED** |
+| Home Hero | `home-hero-movement.jpg` | 교구 설명 수업 | **UNCONFIRMED** |
+| Home SPOMOVE | `home-spomove-dive-field.webp` | DIVE 화면·현장 | **UNCONFIRMED** |
 | Home Case 일반 | `home-case-general.webp` | 매동초등학교 | **UNCONFIRMED** |
 | Home Case 특수·포용 | `home-case-adapted.webp` | 동행 체육교실 | **UNCONFIRMED** |
 | Home Case SPOMOVE | `home-case-spomove.webp` | 동작 키움센터 | **UNCONFIRMED** |
-| Home Subscription UI | `product-library-home.webp` | 제품 UI | **UNCONFIRMED** |
-| /education Hero | same as Home Hero (`homeHeroField`) | 서울위례초 (shared) | **UNCONFIRMED** |
+| Home Subscription UI | `library-program-cards.png` | 라이브러리 수업 카드 | **UNCONFIRMED** |
+| /education Hero | `home-hero-field.webp` (`homeHeroField`) | 서울위례초 | **UNCONFIRMED** |
 | /education Cases | records thumbnails (yangcheon / dasarang / donghaeng) | field records | **UNCONFIRMED** |
 
 ### 확인 체크 (각 파일 — PO)

@@ -221,10 +221,10 @@ export function LessonCatalogCard({
           </span>
           <span className="block px-3 pb-3.5 pt-2.5">
             {eyebrow ? <span className={`${MV_META} block`}>{eyebrow}</span> : null}
-            <span className={`${MV_CONTENT_TITLE} mt-0.5 block line-clamp-2 transition-colors duration-200 group-hover:text-slate-700`}>
+            <span className={`${MV_CONTENT_TITLE} mt-1.5 block line-clamp-1 transition-colors duration-200 group-hover:text-slate-700`}>
               {title}
             </span>
-            {description ? <span className={`${MV_META} mt-1.5 block text-slate-600`}>{description}</span> : null}
+            {description ? <span className={`${MV_META} mt-3 block text-slate-600`}>{description}</span> : null}
           </span>
         </button>
 
@@ -232,7 +232,7 @@ export function LessonCatalogCard({
           <button
             type="button"
             onClick={onFavorite}
-            className={`absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 ${favorite ? 'bg-white text-amber-500 shadow-sm' : 'bg-white/90 text-slate-600 shadow-sm hover:bg-white hover:text-slate-900'}`}
+            className={`absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:w-9 ${favorite ? 'bg-white text-amber-500 shadow-sm' : 'bg-white/90 text-slate-600 shadow-sm hover:bg-white hover:text-slate-900'}`}
             aria-pressed={favorite}
             aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
             title={!favoriteEnabled ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}

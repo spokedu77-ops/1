@@ -27,7 +27,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
   it('uses a direct calendar and a one-column time-sorted Agenda', () => {
     const calendar = read('app/spokedu-master/activity/MonthSessionCalendar.tsx');
     expect(schedule).toContain('.sort((a, b) => a.startAt.localeCompare(b.startAt))');
-    expect(schedule).toContain('rounded-xl border border-slate-200 border-l-2 bg-white');
+    expect(schedule).toContain('rounded-[12px] border border-slate-200 border-l-[3px] bg-white');
     expect(schedule).toContain('놀이체육 ${programCount}');
     expect(schedule).toContain('SPOMOVE ${spomoveCount}');
     expect(calendar).not.toContain('sessionDotClass');

@@ -66,7 +66,10 @@ describe('SPOMOVE media fit — clean discovery thumbs / video 16:9 (not rendere
 
   it('shares one clean square image branch between Home and Hub without blur or contain', () => {
     expect(layeredThumb).toContain("presentation?: 'default' | 'home-clean-square'");
-    const cleanBranch = layeredThumb.slice(layeredThumb.indexOf('cleanSquare ? ('), layeredThumb.indexOf(') : stretch ?'));
+    const cleanBranch = layeredThumb.slice(
+      layeredThumb.indexOf('cleanSquare ? ('),
+      layeredThumb.indexOf(') : fullVisibleFourThree ?'),
+    );
     expect(cleanBranch).toContain('object-cover object-center');
     expect(cleanBranch).not.toContain('blur-xl');
     expect(cleanBranch).not.toContain('object-contain');

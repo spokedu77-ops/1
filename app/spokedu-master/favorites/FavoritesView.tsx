@@ -17,6 +17,7 @@ import { InstructionalThumb } from '../components/media/InstructionalThumb';
 import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { getFavoritesOwnerId, type FavoriteContentRef } from '../lib/favoriteLib';
+import { buildHomeWeeklySupportMeta } from '../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { MV_EDITORIAL_WIDTH, spmChipClass } from '../lib/masterUiClasses';
 import { programHasPlayableVideo } from '../lib/program-media';
@@ -63,10 +64,6 @@ const FILTERS: ReadonlyArray<readonly [Filter, string]> = [
   ['program', '놀이체육'],
   ['spomove', 'SPOMOVE'],
 ];
-
-function joinMetaParts(parts: Array<string | null | undefined>) {
-  return [...new Set(parts.map((part) => part?.trim()).filter((part): part is string => Boolean(part)))].slice(0, 2).join(' · ');
-}
 
 function stripEnglishSubtitle(title: string) {
   return title.replace(/\s*\([A-Za-z0-9][A-Za-z0-9 '&+./-]*\)\s*$/, '').trim();
@@ -163,7 +160,7 @@ export default function FavoritesView() {
           key: `program:${ref.id}`,
           title,
           accessTitle: title,
-          supportMeta: joinMetaParts([model.theme, model.equipment[0]]),
+          supportMeta: buildHomeWeeklySupportMeta(program),
           href: `/spokedu-master/library/${encodeURIComponent(program.id)}`,
           heroImageUrl: model.heroImageUrl ?? '',
           theme: model.theme,
@@ -217,7 +214,7 @@ export default function FavoritesView() {
         </div>
 
         {visibleItems.length ? (
-          <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="저장한 콘텐츠">
+          <section className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6" aria-label="저장한 콘텐츠">
             {visibleItems.map((item) => {
               if (item.type === 'program') {
                 return (
@@ -235,7 +232,7 @@ export default function FavoritesView() {
                       <InstructionalThumb
                         src={item.heroImageUrl}
                         alt=""
-                        sizes="(min-width: 1280px) 260px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 92vw"
+                        sizes="(min-width: 1280px) 360px, (min-width: 640px) 50vw, 92vw"
                         presentation="full-visible-4-3"
                         className="rounded-none"
                         fallback={(
@@ -264,7 +261,7 @@ export default function FavoritesView() {
                     <SpomoveLayeredThumb
                       src={thumbnailUrl}
                       alt=""
-                      sizes="(min-width: 1280px) 260px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 92vw"
+                      sizes="(min-width: 1280px) 360px, (min-width: 640px) 50vw, 92vw"
                       presentation="full-visible-4-3"
                       className="rounded-none"
                       fallback={(

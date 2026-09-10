@@ -47,10 +47,10 @@ export function FavoriteRetrievalCard({
 
       <div className="flex flex-1 flex-col px-3.5 pb-3.5 pt-3">
         <p className={`${MV_META} truncate`}>{contentType}</p>
-        <h2 className={`${MV_CONTENT_TITLE} mt-0.5 min-h-[3.1rem] line-clamp-2 transition-colors duration-200 group-hover:text-slate-700`}>
+        <h2 className={`${MV_CONTENT_TITLE} mt-1.5 line-clamp-1 transition-colors duration-200 group-hover:text-slate-700`}>
           {title}
         </h2>
-        <p className={`${MV_META} mt-1.5 min-h-5 truncate text-slate-600`}>{supportMeta || '\u00a0'}</p>
+        <p className={`${MV_META} mt-3 min-h-5 truncate text-slate-600`}>{supportMeta || '\u00a0'}</p>
       </div>
 
       {href ? (

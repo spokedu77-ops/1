@@ -9,6 +9,7 @@ import { SPOKEDU_PATHS } from './site';
 export const HOME_FIELD_EDITORIAL = {
   hero: '/images/spokedu/home/field-editorial/home-hero-field.webp',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
+  spomoveDive: '/images/spokedu/home/field-editorial/home-spomove-dive-field.webp',
   caseGeneral: '/images/spokedu/home/field-editorial/home-case-general.webp',
   caseAdapted: '/images/spokedu/home/field-editorial/home-case-adapted-p05.webp',
   caseSpomove: '/images/spokedu/home/field-editorial/home-case-spomove-p05.webp',
@@ -49,7 +50,7 @@ const HOME_CASE_PROOF: Partial<
   'donghaeng-special-pe': {
     kind: '특수체육',
     headline: '찾아가는 동행 체육교실',
-    operation: '특수체육 현장에서 아이와 함께 움직이는 맞춤 활동으로 운영합니다.',
+    operation: '특수체육 현장에서 아이와 함께 화면과 매트 위에서 움직이는 찾아가는 수업입니다.',
   },
   'dongjak-spomove': {
     kind: '초등 · 키움센터',
@@ -89,18 +90,17 @@ export const homePage = {
 
   hero: {
     id: 'hero',
-    lines: ['아이들이 움직이며', '배우는 체육수업을', '만듭니다.'] as const,
+    lines: ['움직이며 배우는', '아이들의 체육수업'] as const,
     support:
-      '학교·기관 수업과 개인·소그룹 수업을 직접 운영합니다. 지도자를 위한 수업자료와 SPOMOVE 콘텐츠도 만듭니다.',
+      '학교·기관 수업과 개인·소그룹 수업을 직접 운영합니다. 현장에서 사용하는 수업자료와 SPOMOVE 콘텐츠도 만듭니다.',
     mediaKey: 'homeHeroMovement' as HomeMediaKey,
-    brand: 'SPOKEDU',
     primaryCta: {
-      label: '수업 유형 살펴보기',
+      label: '수업 유형 보기',
       href: '#choice',
       trackLabel: 'cta-home-education-hero',
     },
     secondaryCta: {
-      label: '지도자용 자료 살펴보기',
+      label: '지도자용 자료 보기',
       href: SPOKEDU_PATHS.subscription,
       trackLabel: 'cta-home-subscription-hero',
     },
@@ -108,7 +108,7 @@ export const homePage = {
 
   choice: {
     id: 'choice',
-    title: '수업을 맡기거나, 직접 준비하세요.',
+    title: '필요한 서비스를 선택하세요.',
     education: {
       headline: '체육수업',
       tagline: 'SPOKEDU가 직접 수업합니다.',
@@ -154,17 +154,23 @@ export const homePage = {
       description: '놀이체육 자료와 SPOMOVE로 수업을 찾고 준비합니다.',
       href: SPOKEDU_PATHS.subscription,
       trackLabel: 'cta-home-choice-subscription',
-      action: '수업자료·구독 안내',
+      action: '구독 서비스 안내',
     },
   ],
 
   spomove: {
     id: 'spomove',
-    kicker: '현장에서 사용하는 수업 콘텐츠도 만듭니다.',
     label: 'SPOMOVE',
-    title: '화면 속 규칙이 몸의 움직임으로 이어집니다.',
+    titleLines: ['화면의 신호가', '몸의 움직임으로 이어집니다.'] as const,
+    title: '화면의 신호가 몸의 움직임으로 이어집니다.',
     definition:
-      'SPOMOVE는 화면의 정보를 확인하고 규칙에 따라 움직임으로 반응하는 SPOKEDU의 자체 신체활동 콘텐츠입니다. 기관 수업에서 활용하고, 지도자는 구독서비스에서 이용할 수 있습니다.',
+      '화면의 색과 길을 보고 바닥에서 움직여 반응하는 콘텐츠입니다. 기관 수업에서 활용하고, 지도자는 구독서비스에서 이용할 수 있습니다.',
+    exampleNote: '아래 화면과 현장 사진은 같은 DIVE 수업입니다.',
+    screen: {
+      src: HOME_FIELD_EDITORIAL.spomoveDive,
+      alt: '같은 DIVE 수업의 실행 화면 — 노란 길과 파란 게이트가 제시된 장면',
+      objectPosition: '50% 30%',
+    },
     mediaKey: 'homeSpomoveDiveField' as HomeMediaKey,
     primaryCta: {
       label: 'SPOMOVE 수업 방식 보기',
@@ -175,7 +181,7 @@ export const homePage = {
 
   subscription: {
     id: 'subscription',
-    titleLines: ['수업을 고르고,', '준비하고,', '진행하세요.'] as const,
+    titleLines: ['다음 수업을 준비하는 데', '필요한 자료를 한곳에.'] as const,
     lead: '놀이체육 자료와 SPOMOVE를 찾아 수업 준비와 진행으로 이어갈 수 있습니다.',
     flow: ['찾기', '준비', '진행', '기록'] as const,
     features: [
@@ -183,19 +189,11 @@ export const homePage = {
         id: 'find',
         title: '대상에 맞는 수업 찾기',
         body: '대상·공간 조건으로 수업을 고르면 수업명과 활동 장면이 카드로 보입니다.',
-        src: '/images/spokedu/subscription/library-program-cards.png',
-        alt: '조건 필터와 육상 스테핑 드릴, 접시콘 빙고 등 수업 카드가 보이는 라이브러리 화면',
-        caption: '실제 서비스 화면',
-        fit: 'cover',
       },
       {
         id: 'prepare',
         title: '준비물과 진행 방법 확인',
-        body: '준비물 수량과 진행 순서를 수업 화면에서 확인합니다.',
-        src: '/images/spokedu/subscription/prepare-dishcone-bingo.png',
-        alt: '접시콘 빙고 수업의 준비물과 진행 방법이 보이는 실제 서비스 화면',
-        caption: '실제 서비스 화면',
-        fit: 'contain',
+        body: '선택한 수업의 준비물 수량과 진행 순서를 한 화면에서 확인합니다.',
       },
     ] as const,
     visual: {
@@ -237,8 +235,8 @@ export const homePage = {
 
   contact: {
     id: 'contact',
-    title: '수업 상담을 남겨 주세요.',
-    lead: '기관·학교 수업과 개인·소그룹 수업은 상담 유형을 나눠 안내합니다. 지도자용 자료가 필요하면 공개 소개 페이지를 먼저 볼 수 있습니다.',
+    title: '수업을 함께 준비해볼까요?',
+    lead: '기관·학교 수업과 개인·소그룹 수업은 상담 유형을 나눠 안내합니다.',
     primaryCta: {
       label: '기관 수업 상담',
       href: `${SPOKEDU_PATHS.contact}?type=dispatch`,

@@ -183,7 +183,7 @@ export function SiteHeader() {
   }, [openDesktopGroup]);
 
   const linkClass = (active: boolean) =>
-    `inline-flex h-9 items-center text-[15px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+    `inline-flex h-10 items-center text-[15px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
       onHero
         ? active
           ? 'text-white underline decoration-white/80 underline-offset-[6px]'
@@ -212,11 +212,11 @@ export function SiteHeader() {
     const groupActive = isGroupActive(pathname, entry.children);
     const menuId = `desktop-nav-group-${entry.trackLabel}`;
     return (
-      <div key={entry.label} className="relative flex h-9 items-center">
+      <div key={entry.label} className="relative flex h-10 items-center">
         <button
           ref={groupOpen ? desktopGroupButtonRef : undefined}
           type="button"
-          className={`inline-flex h-9 items-center gap-1 ${linkClass(groupActive || groupOpen)}`}
+          className={`inline-flex h-10 items-center gap-1 ${linkClass(groupActive || groupOpen)}`}
           aria-expanded={groupOpen}
           aria-controls={menuId}
           onClick={() => setOpenDesktopGroup((current) => (current === entry.label ? null : entry.label))}
@@ -304,15 +304,15 @@ export function SiteHeader() {
         <div className={`${marketingSectionInner} flex h-[var(--spokedu-public-header-height)] items-center justify-between gap-4`}>
           <BrandLogo onDark={onHero} scrollHomeOnClick size="lg" />
 
-          <nav className="hidden h-12 items-center gap-8 lg:flex xl:gap-10" aria-label="주 메뉴">
+          <nav className="hidden h-10 items-center gap-7 lg:flex xl:gap-9" aria-label="주 메뉴">
             {siteNav.map(renderDesktopEntry)}
           </nav>
 
-          <div className="flex h-12 items-center gap-2">
+          <div className="flex h-10 items-center gap-2">
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={siteHeaderCta.trackLabel}
-              className={`hidden min-h-12 items-center justify-center rounded-xl px-5 text-[15px] font-bold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+              className={`hidden h-10 items-center justify-center rounded-[0.5rem] px-4 text-[15px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
                   : onHero
@@ -395,7 +395,7 @@ export function SiteFooter() {
 
   const footerLinkClass =
     `inline-flex min-h-8 items-center text-[14px] font-medium leading-none tracking-[-0.01em] text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${koreanText}`;
-  const footerHeadingClass = `text-[12px] font-semibold uppercase tracking-[0.12em] text-white/60 ${koreanText}`;
+  const footerHeadingClass = `text-[13px] font-semibold tracking-[-0.01em] text-white/60 ${koreanText}`;
 
   return (
     <footer style={{ backgroundColor: NAVY }} className="text-white">

@@ -14,12 +14,12 @@ describe('SPOKEDU MASTER craft + selection reasons', () => {
     expect(source).not.toContain("tags ?? []).some((tag) => /spomove/i.test(tag)");
   });
 
-  it('keeps library and home cards on the same selection-reason vocabulary', () => {
+  it('keeps recommendation cards on one fixed space and participant metadata grammar', () => {
     const library = read('app/spokedu-master/library/LibraryView.tsx');
     const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
-    expect(library).toContain('formatProgramSelectionReasons');
-    expect(dashboard).toContain('formatProgramSelectionReasons');
-    expect(dashboard).toContain('selectionMeta || buildLessonCardSupportMeta');
+    expect(library).toContain('buildHomeWeeklySupportMeta(program)');
+    expect(dashboard).toContain('buildHomeWeeklySupportMeta(program)');
+    expect(dashboard).not.toContain('selectionMeta ?');
   });
 
   it('routes onboarding/class-tools/record empty CTAs through spm-btn-primary', () => {

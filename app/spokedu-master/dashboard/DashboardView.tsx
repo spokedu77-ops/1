@@ -28,20 +28,19 @@ import { InstructionalThumb } from '../components/media/InstructionalThumb';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { buildHomeWeeklySupportMeta, buildLessonCardSupportMeta, splitLessonTitle } from '../lib/lessonDisplay';
+import { buildHomeWeeklySupportMeta, splitLessonTitle } from '../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   programHasPlayableVideo,
   resolveProgramHero,
 } from '../lib/program-media';
-import { formatLibraryCardEquipmentName } from '../library/libraryViewModel';
-import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import {
   getProgramHomeReadiness,
   isProgramHomeRecommendationEligible,
 } from '../lib/program-meta';
 import { sortProgramsByAgeGroupPreference } from '../lib/homeAgePreference';
 import { isMasterFirstUser } from '../lib/masterUserLoop';
+import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
   getRecentActivityOwnerId,
   buildProgramResumeHref,
@@ -241,18 +240,21 @@ function SectionHeader({
 function WeeklyProgramCard({
   program,
   onPreview,
+  favorite,
+  favoriteEnabled,
+  onFavorite,
   priority = false,
 }: {
   program: Program;
   onPreview: (program: Program) => void;
+  favorite: boolean;
+  favoriteEnabled: boolean;
+  onFavorite: () => void;
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
   const titles = splitLessonTitle(model.title);
-  const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const selectionMeta = formatProgramSelectionReasons(program);
-  const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
-  const weeklySupportMeta = selectionMeta ? supportMeta : buildHomeWeeklySupportMeta(program, { equipmentFallback: prep });
+  const weeklySupportMeta = buildHomeWeeklySupportMeta(program);
 
   return (
     <WeeklyEditorialCard
@@ -262,6 +264,9 @@ function WeeklyProgramCard({
       supportMeta={weeklySupportMeta}
       hasVideo={programHasPlayableVideo(program)}
       onPreview={() => onPreview(program)}
+      favorite={favorite}
+      favoriteEnabled={favoriteEnabled}
+      onFavorite={onFavorite}
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
@@ -618,6 +623,8 @@ function EntitledDashboardView() {
     recentActivityOwnerResolved,
     recordRecentProgramActivity,
     reloadHomePrograms: reloadPrograms,
+    isFavoriteProgram,
+    toggleFavoriteProgram,
   } = useMasterStore();
   const {
     students: serverStudents,
@@ -627,6 +634,7 @@ function EntitledDashboardView() {
     reload: reloadOperationalData,
   } = useOperationalData();
   const profile = useProfile();
+  const favoritesOwnerId = getFavoritesOwnerId(profile);
   const isPremium = useIsPremium();
   const recentActivityOwnerId = recentActivityOwnerResolved
     ? getRecentActivityOwnerId(profile)
@@ -896,6 +904,9 @@ function EntitledDashboardView() {
                     <WeeklyProgramCard
                       program={program}
                       onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
+                      favorite={isFavoriteProgram(favoritesOwnerId, program.id)}
+                      favoriteEnabled={favoritesOwnerId != null}
+                      onFavorite={() => toggleFavoriteProgram(favoritesOwnerId, program.id)}
                       priority={index < 2}
                     />
                   </div>
@@ -956,6 +967,8 @@ function EntitledDashboardView() {
           program={selectedProgram}
           autoplayVideo={previewAutoplay}
           isPremium={isPremium}
+          favorite={isFavoriteProgram(favoritesOwnerId, selectedProgram.id)}
+          onFavorite={favoritesOwnerId ? () => toggleFavoriteProgram(favoritesOwnerId, selectedProgram.id) : undefined}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({
               programId: selectedProgram.id,

@@ -99,6 +99,8 @@ describe('MASTER Class and attendance management contracts', () => {
   it('supports fast current-roster attendance without blocking Session completion', () => {
     expect(activity).toContain("Object.fromEntries(roster.map((student) => [student.id, 'present' as const]))");
     expect(activity).toContain('전체 출석');
+    expect(activity).toContain('전체 해제');
+    expect(activity).toContain('aria-pressed={allStudentsPresent}');
     expect(activity).not.toContain('uncheckedRosterCount === 0');
   });
 

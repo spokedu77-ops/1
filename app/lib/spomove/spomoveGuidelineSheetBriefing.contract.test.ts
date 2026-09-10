@@ -116,8 +116,7 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).toContain('{index + 1}');
     expect(sheet.indexOf('title="활동 목표"')).toBeLessThan(sheet.indexOf('title="지도 포인트"'));
     expect(sheet.indexOf('title="지도 포인트"')).toBeLessThan(sheet.indexOf('title="활동 방법"'));
-    expect(sheet).toContain('MessageSquareQuote');
-    expect(sheet).toContain('선생님 안내');
+    expect(sheet).toContain('“{point}”');
     expect(sheet).not.toContain('Target');
   });
 

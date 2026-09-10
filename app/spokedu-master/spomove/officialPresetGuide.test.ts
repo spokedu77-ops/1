@@ -81,7 +81,7 @@ describe('official SPOMOVE preset guide contract', () => {
     expect(hub).not.toContain('displayModel.supportMetaParts.slice(0, 3)');
     expect(hub).not.toContain('buildSpomoveGuideDisplayModel');
     expect(`${startBriefing}\n${settingsBriefing}`).toContain('자극 속도');
-    expect(`${startBriefing}\n${settingsBriefing}`).toContain('난이도');
+    expect(`${startBriefing}\n${settingsBriefing}`).toContain('매트 배치');
     expect(`${startBriefing}\n${settingsBriefing}`).toContain('수업 시작');
     expect(session).toContain('StartBriefing');
   });

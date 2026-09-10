@@ -26,7 +26,7 @@ describe('acquisition leak closure', () => {
       SPOKEDU_PATHS.private,
       SPOKEDU_PATHS.subscription,
     ]);
-    expect(homePage.hero.primaryCta.label).toBe('수업 유형 살펴보기');
+    expect(homePage.hero.primaryCta.label).toBe('수업 유형 보기');
     expect(homePage.contact.primaryCta.label).toBe('기관 수업 상담');
     expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기/);
   });

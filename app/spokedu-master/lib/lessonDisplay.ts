@@ -151,16 +151,12 @@ export function buildLessonCardSupportMeta(
   return [target, space, operation].filter(Boolean).join(' · ');
 }
 
-/** Home Weekly: decision axes only — target / space / equipment, max two. */
+/** Recommendation cards keep one fixed metadata grammar: space / participant. */
 export function buildHomeWeeklySupportMeta(
   program: Program,
-  options: {
-    equipmentFallback?: string;
-  } = {},
 ) {
-  return buildLessonCardSupportMeta(program, options)
-    .split(' · ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .join(' · ');
+  const space = parseMasterSpaces(program.space).join('·');
+  const participant = formatLessonCardParticipant(program);
+
+  return [space, participant].filter(Boolean).join(' · ');
 }

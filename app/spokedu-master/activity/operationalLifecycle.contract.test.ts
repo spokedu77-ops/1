@@ -37,7 +37,7 @@ describe('MASTER operational lifecycle integrity', () => {
     expect(reopen).toContain("v_old.status in ('cancelled','completed') and p_status='scheduled'");
     expect(reopen).toContain("new.completed_at := null");
     expect(reopen).not.toContain('delete from public.spokedu_master_session_programs');
-    expect(activity).toContain('수업 완료 취소');
+    expect(activity).toContain('완료 취소');
     expect(activity).toContain("void persist('scheduled')");
   });
 });

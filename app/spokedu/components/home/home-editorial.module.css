@@ -1,25 +1,25 @@
-/* V1 Home — field-first PE brand with one connected service journey. */
+/* V1 Home — field-first PE brand. Photos carry the impression; color is reserved for contact. */
 
 .page {
   --he-content: 75rem;
   --he-wide: 75rem;
   --he-measure: 40rem;
-  --he-image-radius: 1rem;
-  --he-section-quiet: clamp(3rem, 7vw, 5rem);
-  --he-section-standard: clamp(3.5rem, 8vw, 6.5rem);
+  --he-image-radius: 0.5rem;
+  --he-section-quiet: clamp(2.75rem, 6vw, 4.5rem);
+  --he-section-standard: clamp(3.25rem, 7vw, 5.5rem);
   --he-body-leading: 1.7;
   --he-lead-leading: 1.7;
   --he-caption-leading: 1.55;
   --he-gutter: clamp(1.25rem, 4vw, 3rem);
-  --he-section-display: clamp(1.625rem, 2.4vw, 2.25rem);
-  --he-quiet-display: clamp(1.625rem, 2.3vw, 2.125rem);
+  --he-section-display: clamp(1.75rem, 2.6vw, 2.375rem);
+  --he-quiet-display: clamp(1.75rem, 2.5vw, 2.25rem);
   --he-subhead-size: 1.25rem;
   --he-lead-size: 1.125rem;
   --he-body-size: 1.0625rem;
   --he-meta-size: 0.9375rem;
   --he-cta-size: 1rem;
   color: var(--spokedu-marketing-color-navy);
-  background: var(--spokedu-marketing-color-paper);
+  background: var(--spokedu-marketing-color-white);
 }
 
 .homeSectionDisplay,
@@ -28,6 +28,7 @@
   font-family: var(--spokedu-marketing-font-display);
   font-weight: 700;
   letter-spacing: -0.03em;
+  color: var(--spokedu-marketing-color-navy);
 }
 
 .homeSectionDisplay {
@@ -89,32 +90,17 @@
 
 /* —— Hero —— */
 .hero {
-  padding-block: calc(var(--spokedu-public-header-height) + 2.75rem) 3.5rem;
+  padding-block: calc(var(--spokedu-public-header-height) + 2rem) var(--he-section-quiet);
   background: var(--spokedu-marketing-color-white);
-}
-
-.heroGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2rem;
-  align-items: start;
 }
 
 .heroCopy {
   min-width: 0;
 }
 
-.eyebrow {
-  margin: 0 0 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 650;
-  line-height: 1.5;
-  color: var(--spokedu-marketing-color-blue);
-}
-
 .heroHeadingLayout {
   margin: 0;
-  max-width: 16em;
+  max-width: 14em;
   color: var(--spokedu-marketing-color-navy);
   font-size: 2rem !important;
   line-height: 1.25 !important;
@@ -128,18 +114,19 @@
 }
 
 .heroLead {
-  margin: 1.25rem 0 0;
-  max-width: 36rem;
+  margin: 1.125rem 0 0;
+  max-width: 38rem;
   font-size: 1.0625rem;
   line-height: 1.7;
   color: var(--spokedu-marketing-color-body);
 }
 
 .heroActions {
-  margin-top: 1.75rem;
+  margin-top: 1.5rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
 }
 
 .heroActions a {
@@ -149,7 +136,7 @@
 
 .heroFigure {
   min-width: 0;
-  margin: 0;
+  margin: 1.25rem 0 0;
 }
 
 .heroImageFrame {
@@ -157,19 +144,18 @@
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: var(--he-image-radius);
-  background: var(--spokedu-marketing-color-paper);
+  background: #e8edf4;
 }
 
 .heroImage {
   object-fit: cover;
-  object-position: 50% 68%;
+  object-position: 50% 62%;
 }
 
 /* —— Choice —— */
 .choice {
   padding-block: var(--he-section-quiet);
   background: var(--spokedu-marketing-color-white);
-  border-top: 1px solid var(--spokedu-marketing-color-border);
 }
 
 .choiceTitle {
@@ -180,7 +166,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
-  margin-top: 2rem;
+  margin-top: 1.75rem;
   border-block: 1px solid var(--spokedu-marketing-color-border);
 }
 
@@ -188,18 +174,14 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: 1.75rem 1rem;
-  margin-inline: -1rem;
+  padding: 1.75rem 0;
   color: var(--spokedu-marketing-color-ink);
   text-decoration: none;
-  border-radius: var(--he-image-radius);
-  outline: 1px solid transparent;
-  transition: outline-color 180ms ease, background-color 180ms ease;
 }
 
 .serviceCard:focus-visible {
   outline: 2px solid var(--spokedu-marketing-color-blue);
-  outline-offset: 2px;
+  outline-offset: 4px;
 }
 
 .serviceCard + .serviceCard {
@@ -215,7 +197,7 @@
 }
 
 .serviceCard h3 {
-  margin: 0.5rem 0 0.75rem;
+  margin: 0.4rem 0 0.65rem;
   font-size: 1.375rem;
   line-height: 1.35;
   font-weight: 700;
@@ -236,7 +218,7 @@
   justify-content: space-between;
   gap: 1rem;
   margin-top: auto;
-  padding-top: 1.5rem;
+  padding-top: 1.25rem;
   font-size: 1rem;
   font-weight: 650;
   color: var(--spokedu-marketing-color-blue);
@@ -249,7 +231,7 @@
 /* —— Cases —— */
 .cases {
   padding-block: var(--he-section-standard);
-  background: var(--spokedu-marketing-color-paper);
+  background: var(--spokedu-marketing-color-white);
 }
 
 .casesHeader {
@@ -279,7 +261,7 @@
 .casesIndex {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem;
+  gap: 2rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -316,6 +298,10 @@
   background: #e8edf4;
 }
 
+.caseFeatured .casePhoto {
+  aspect-ratio: 16 / 10;
+}
+
 .casePhotoImage {
   object-fit: cover;
   transition: transform 200ms ease;
@@ -343,8 +329,13 @@
   color: var(--spokedu-marketing-color-ink);
 }
 
+.caseFeatured .caseVenue {
+  font-size: 1.375rem;
+}
+
 .caseDisplayMeta {
   margin: 0.4rem 0 0;
+  max-width: 40rem;
   color: var(--spokedu-marketing-color-body);
 }
 
@@ -365,125 +356,106 @@
   color: var(--spokedu-marketing-color-navy);
 }
 
-.spomoveLayout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.75rem;
-  align-items: start;
-}
-
 .spomoveCopy {
   min-width: 0;
-}
-
-.spomoveKicker {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.6;
-  color: var(--spokedu-marketing-color-body);
+  max-width: 40rem;
 }
 
 .spomoveLabel {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--spokedu-marketing-color-blue);
+  letter-spacing: -0.01em;
+  color: var(--spokedu-marketing-color-navy);
 }
 
 .spomoveTitle {
-  margin: 0.75rem 0 0;
-  max-width: 22rem;
+  margin: 0.5rem 0 0;
   color: var(--spokedu-marketing-color-ink);
+}
+
+.spomoveTitleLine {
+  display: block;
 }
 
 .spomoveDefinition {
   margin: 1rem 0 0;
-  max-width: 36rem;
+  max-width: 38rem;
   color: var(--spokedu-marketing-color-body);
+}
+
+.spomoveExampleNote {
+  margin: 0.75rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--spokedu-marketing-color-navy);
 }
 
 .spomoveCta {
   margin-top: 1.25rem;
 }
 
+.spomovePair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  margin-top: 1.75rem;
+  align-items: start;
+}
+
+.spomoveScreen,
 .spomovePhoto {
   position: relative;
-  width: min(22rem, 100%);
+  display: flex;
+  width: 100%;
   min-width: 0;
   margin: 0;
-  aspect-ratio: 3 / 4;
-  border-radius: var(--he-image-radius);
+  flex-direction: column;
+  overflow: visible;
+  background: transparent;
+}
+
+.spomoveScreenFrame {
+  position: relative;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: var(--spokedu-marketing-color-paper);
-  justify-self: start;
+  border-radius: var(--he-image-radius);
+  background: #111827;
+}
+
+.spomoveScreenImage {
+  object-fit: cover;
+}
+
+.spomovePhotoMedia {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: var(--he-image-radius);
 }
 
 .spomovePhoto :global(img) {
   filter: brightness(1.01) contrast(1.04) saturate(1.03);
 }
 
-.spomovePhotoMedia {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  border-radius: 0;
-}
-
-.spomoveExampleLabel {
-  margin: 1.75rem 0 0;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--spokedu-marketing-color-navy);
-}
-
-.spomovePrinciples {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  margin: 0.75rem 0 0;
-  padding: 0.875rem 0 0;
-  border-top: 1px solid var(--spokedu-marketing-color-border);
-  list-style: none;
-}
-
-.spomovePrincipleItem {
-  min-width: 0;
-}
-
-.spomovePrincipleLabel {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.35;
-  color: var(--spokedu-marketing-color-ink);
-}
-
-.spomovePrincipleBody {
-  margin: 0.35rem 0 0;
-  max-width: 24rem;
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1.6;
-  color: var(--spokedu-marketing-color-body);
+.mediaCaption {
+  margin: 0.45rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--spokedu-marketing-color-muted);
 }
 
 /* —— Subscription —— */
 .subscription {
   padding-block: var(--he-section-standard);
-  background: var(--spokedu-marketing-color-paper);
+  background: var(--spokedu-marketing-color-white);
 }
 
 .subscriptionIntro {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.25rem;
+  gap: 0.75rem;
   align-items: start;
 }
 
@@ -498,7 +470,7 @@
 
 .subscriptionSupport {
   min-width: 0;
-  max-width: 36rem;
+  max-width: 38rem;
 }
 
 .subscriptionLead {
@@ -507,36 +479,11 @@
 }
 
 .subscriptionCta {
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
 }
 
-.productFeatures {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2rem;
-  margin: 2rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.productFeature {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.productFeatureCopy {
-  min-width: 0;
-}
-
-.productFeatureCopy p {
-  margin-top: 0.5rem;
-  color: var(--spokedu-marketing-color-body);
-}
-
-.productFeatureVisual {
-  margin: 0;
+.productStage {
+  margin: 1.75rem 0 0;
   min-width: 0;
   width: 100%;
 }
@@ -557,12 +504,7 @@
 
 .productImageCover {
   object-fit: cover;
-  object-position: 50% 72%;
-}
-
-.productImageContain {
-  object-fit: contain;
-  object-position: center;
+  object-position: 50% 18%;
 }
 
 .productCaption {
@@ -572,27 +514,49 @@
   color: var(--spokedu-marketing-color-muted);
 }
 
-/* —— Contact —— */
-.contact {
-  padding-block: var(--he-section-quiet);
-  background: var(--spokedu-marketing-color-white);
-  border-top: 1px solid var(--spokedu-marketing-color-border);
+.productFeatures {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.contactLayout {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.productFeature {
+  min-width: 0;
 }
 
-.contactBody {
-  margin-top: 1rem;
-  max-width: 36rem;
+.productFeature p {
+  margin-top: 0.4rem;
   color: var(--spokedu-marketing-color-body);
 }
 
+/* —— Contact —— */
+.contact {
+  padding-block: 2.5rem;
+  background: var(--spokedu-marketing-color-blue);
+  color: #fff;
+}
+
+.contactCluster {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  max-width: 40rem;
+}
+
+.contactTitle {
+  color: #fff;
+}
+
+.contactBody {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.86);
+}
+
 .contactActions {
-  margin-top: 1.5rem;
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -604,12 +568,17 @@
 }
 
 .contactSupport {
-  margin-top: 1rem;
+  margin: 0;
 }
 
 /* —— Text CTA —— */
 .textCta {
   composes: homeTextCta;
+}
+
+.textCtaOnBlue {
+  composes: homeTextCta;
+  color: #fff;
 }
 
 .textCtaLabel {
@@ -627,17 +596,14 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .textCta:hover .textCtaLabel {
+  .textCta:hover .textCtaLabel,
+  .textCtaOnBlue:hover .textCtaLabel {
     text-decoration-thickness: 2px;
   }
 
-  .textCta:hover .textCtaArrow {
+  .textCta:hover .textCtaArrow,
+  .textCtaOnBlue:hover .textCtaArrow {
     transform: translateX(2px);
-  }
-
-  .serviceCard:hover {
-    background: var(--spokedu-marketing-color-paper);
-    outline-color: var(--spokedu-marketing-color-border);
   }
 
   .serviceCard:hover .serviceAction {
@@ -657,22 +623,31 @@
 
 @media (min-width: 960px) {
   .heroHeadingLayout {
-    font-size: 3.125rem !important;
-    line-height: 1.18 !important;
+    font-size: 3.25rem !important;
+    line-height: 1.16 !important;
+  }
+
+  .heroFigure {
+    margin-top: 1.5rem;
+  }
+
+  .heroImageFrame {
+    aspect-ratio: 16 / 9;
   }
 
   .serviceGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 2rem;
   }
 
   .serviceCard {
-    padding: 2rem 1.25rem;
-    margin-inline: 0;
+    padding: 1.75rem 0;
   }
 
   .serviceCard + .serviceCard {
     border-top: 0;
     border-left: 1px solid var(--spokedu-marketing-color-border);
+    padding-left: 2rem;
   }
 
   .casesHeader {
@@ -682,48 +657,57 @@
   }
 
   .casesIndex {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1.4fr) minmax(16rem, 0.7fr);
+    grid-template-rows: auto auto;
+    gap: 1.5rem 2rem;
+    align-items: start;
   }
 
-  .subscriptionIntro {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 2rem;
-    align-items: end;
+  .caseFeatured {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .caseFeaturedArticle {
+    height: 100%;
+  }
+
+  .caseFeatured .casePhoto {
+    aspect-ratio: 4 / 3;
+  }
+
+  .caseSupporting .casePhoto {
+    aspect-ratio: 16 / 10;
   }
 
   .productFeatures {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
+    gap: 1.5rem 2.5rem;
   }
 
-  .contactLayout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    gap: clamp(2rem, 4vw, 3.5rem);
-    align-items: end;
+  .contact {
+    padding-block: 3rem;
   }
 
-  .contactBody {
-    margin-top: 0;
+  .contactCluster {
+    gap: 1.125rem;
   }
 }
 
 @media (min-width: 1080px) {
-  .heroGrid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-    gap: 3rem;
-    align-items: center;
-  }
-
   .heroLead {
     font-size: 1.125rem;
   }
 
-  .spomoveLayout {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 3rem;
+  .spomovePair {
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    gap: 1.25rem;
     align-items: start;
+  }
+
+  .spomoveScreenFrame,
+  .spomovePhotoMedia {
+    aspect-ratio: 4 / 3;
   }
 }
 
@@ -735,8 +719,8 @@
 
 @media (max-width: 599px) {
   .hero {
-    padding-top: calc(var(--spokedu-public-header-height) + 2rem);
-    padding-bottom: 2.5rem;
+    padding-top: calc(var(--spokedu-public-header-height) + 1.5rem);
+    padding-bottom: 2.25rem;
   }
 
   .heroLead,
@@ -749,6 +733,10 @@
   .contactActions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .spomovePhotoMedia {
+    aspect-ratio: 4 / 3;
   }
 }
 
@@ -767,7 +755,8 @@
   }
 
   .caseLink:hover .casePhotoImage,
-  .textCta:hover .textCtaArrow {
+  .textCta:hover .textCtaArrow,
+  .textCtaOnBlue:hover .textCtaArrow {
     transform: none !important;
   }
 

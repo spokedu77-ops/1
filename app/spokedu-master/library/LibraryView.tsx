@@ -21,7 +21,6 @@ import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
   LESSON_TAG_PREFIX,
   buildHomeWeeklySupportMeta,
-  buildLessonCardSupportMeta,
   getLessonTheme,
   parseTaggedValues,
   splitLessonTitle,
@@ -59,7 +58,6 @@ import {
   matchesLibraryFilters,
   paginateLibraryPrograms,
   rankLibraryPrograms,
-  formatLibraryCardEquipmentName,
   type LibraryActiveFilter,
   type LibraryFilterGroupKey,
 } from './libraryViewModel';
@@ -173,7 +171,7 @@ function ProgramCard({
   primaryActionDisabled?: boolean;
 }) {
   const decisionMeta = getLessonTheme(program) || program.category || '체육 수업';
-  const supportMeta = formatProgramSelectionReasons(program);
+  const supportMeta = buildHomeWeeklySupportMeta(program);
 
   return (
     <LessonCatalogCard
@@ -249,13 +247,24 @@ function selectRecommendationPrograms(programs: Program[], group: FilterGroupKey
   return ordered.slice(0, 4);
 }
 
-function RecommendationProgramCard({ program, onPreview, priority = false }: { program: Program; onPreview: () => void; priority?: boolean }) {
+function RecommendationProgramCard({
+  program,
+  onPreview,
+  favorite,
+  favoriteEnabled,
+  onFavorite,
+  priority = false,
+}: {
+  program: Program;
+  onPreview: () => void;
+  favorite: boolean;
+  favoriteEnabled: boolean;
+  onFavorite: () => void;
+  priority?: boolean;
+}) {
   const model = buildLessonDisplayModel(program);
   const titles = splitLessonTitle(model.title);
-  const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const selectionMeta = formatProgramSelectionReasons(program);
-  const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
-  const weeklySupportMeta = selectionMeta ? supportMeta : buildHomeWeeklySupportMeta(program, { equipmentFallback: prep });
+  const weeklySupportMeta = buildHomeWeeklySupportMeta(program);
 
   return (
     <WeeklyEditorialCard
@@ -265,6 +274,9 @@ function RecommendationProgramCard({ program, onPreview, priority = false }: { p
       supportMeta={weeklySupportMeta}
       hasVideo={programHasPlayableVideo(program)}
       onPreview={onPreview}
+      favorite={favorite}
+      favoriteEnabled={favoriteEnabled}
+      onFavorite={onFavorite}
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
@@ -272,7 +284,25 @@ function RecommendationProgramCard({ program, onPreview, priority = false }: { p
   );
 }
 
-function RecommendationShelf({ title, programs, onPreview, onViewAll, priority = false }: { title: string; programs: Program[]; onPreview: (program: Program) => void; onViewAll: () => void; priority?: boolean }) {
+function RecommendationShelf({
+  title,
+  programs,
+  onPreview,
+  onViewAll,
+  isFavorite,
+  favoriteEnabled,
+  onFavorite,
+  priority = false,
+}: {
+  title: string;
+  programs: Program[];
+  onPreview: (program: Program) => void;
+  onViewAll: () => void;
+  isFavorite: (programId: string) => boolean;
+  favoriteEnabled: boolean;
+  onFavorite: (programId: string) => void;
+  priority?: boolean;
+}) {
   return (
     <section aria-labelledby={`library-recommendation-${title}`}>
       <p className="text-[12px] font-semibold text-[color:var(--spm-t3)]">추천 테마</p>
@@ -286,7 +316,14 @@ function RecommendationShelf({ title, programs, onPreview, onViewAll, priority =
         <div className="flex w-max snap-x snap-mandatory items-start gap-5 lg:grid lg:w-auto lg:grid-cols-4 lg:gap-6 lg:snap-none">
           {programs.map((program, index) => (
             <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-auto lg:max-w-none lg:shrink">
-              <RecommendationProgramCard program={program} onPreview={() => onPreview(program)} priority={priority && index < 2} />
+              <RecommendationProgramCard
+                program={program}
+                onPreview={() => onPreview(program)}
+                favorite={isFavorite(program.id)}
+                favoriteEnabled={favoriteEnabled}
+                onFavorite={() => onFavorite(program.id)}
+                priority={priority && index < 2}
+              />
             </div>
           ))}
         </div>
@@ -508,12 +545,18 @@ export default function LibraryView() {
             priority
             onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
             onViewAll={() => viewAllRecommendation({ group: 'space', value: '교실' })}
+            isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
+            favoriteEnabled={ownerId != null}
+            onFavorite={(programId) => toggleFavoriteProgram(ownerId, programId)}
           />
           <RecommendationShelf
             title="미취학 추천"
             programs={preschoolPrograms}
             onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
             onViewAll={() => viewAllRecommendation({ group: 'target', value: '미취학' })}
+            isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
+            favoriteEnabled={ownerId != null}
+            onFavorite={(programId) => toggleFavoriteProgram(ownerId, programId)}
           />
 
         <section id="library-catalog" className="scroll-mt-6">
