@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildSpomoveRecordDraft, buildSpomoveRecordHref, resolveSpomoveDraftFromQuery } from './spomoveRecordDraft';
-import type { OfficialSpomovePreset } from '../officialSpomovePresets';
+import { findOfficialSpomovePreset, type OfficialSpomovePreset } from '../officialSpomovePresets';
 
 const preset = {
   id: 'reaction-test',
@@ -37,6 +37,12 @@ describe('SPOMOVE record draft', () => {
     expect(href).toContain('program=123');
     expect(href).toContain('spomoveDraft=');
     expect(new URL(href, 'https://example.test').searchParams.get('spomoveDraft')).toContain('수업 기록용 일반 추정치');
+  });
+
+  it('uses the current public title for an applied preset', () => {
+    const publicPreset = findOfficialSpomovePreset('reaction-cognition-quad-fruit-10');
+    expect(publicPreset).toBeTruthy();
+    expect(buildSpomoveRecordDraft({ preset: publicPreset!, status: 'done' })).toContain('네 칸 과일 색 따라가기 완료');
   });
 
   it('stores oversized drafts in session storage and links by key', () => {

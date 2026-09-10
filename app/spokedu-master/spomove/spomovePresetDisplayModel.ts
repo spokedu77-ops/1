@@ -30,7 +30,6 @@ import { supportsCueSpeedOverride } from './spomoveCueSpeed';
 import { getSpomoveDifficultyKind } from './spomoveDifficulty';
 import { resolveSpomovePublicCardDifficulty } from './spomovePublicCardDifficulty';
 import {
-  composeOfficialDisplayTitle,
   composeSpomovePublicCardMetaParts,
   getAppliedSpomovePublicNaming,
   getPublicCardVariant,
@@ -473,9 +472,11 @@ export function buildSpomovePresetSearchHaystack(
 ): string {
   const display = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
+  const naming = getSpomovePublicNaming(preset.id);
   return [
     display.displayTitle,
     display.rootTitle,
+    naming?.cardTitle,
     display.variantLabel,
     display.programLabel,
     buildDisplayTitle(preset, contentOverride),
@@ -521,9 +522,9 @@ function resolvePublicDisplayTitles(
   if (applied) {
     const variantLabel = getPublicCardVariant(applied);
     return {
-      rootTitle: applied.root,
+      rootTitle: applied.cardTitle,
       variantLabel,
-      displayTitle: composeOfficialDisplayTitle(applied.root, variantLabel),
+      displayTitle: applied.cardTitle,
     };
   }
   return {

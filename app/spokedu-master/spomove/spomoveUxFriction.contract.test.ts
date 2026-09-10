@@ -14,6 +14,10 @@ describe('SPOMOVE user-friction hardening contracts', () => {
     expect(hub).not.toContain('<br className="hidden sm:block" />');
     expect(hub).toContain('parseSpomoveHubUrlState');
     expect(hub).toContain('serializeSpomoveHubUrlState');
+    expect(hub).toContain('setDraftQuery');
+    expect(hub).toContain('hydrateSearchFromUrl');
+    expect(hub).toContain('type="text"');
+    expect(hub).toContain('spellCheck={false}');
     expect(hub).toContain('data-spm-spomove-catalog-family={family.id}');
     expect(hub).toContain('aria-expanded={filtersOpen}');
     expect(hub).toContain('전체 프로그램 보기');

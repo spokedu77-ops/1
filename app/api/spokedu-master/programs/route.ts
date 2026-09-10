@@ -14,6 +14,7 @@ import { extractExactSectionLines, parseTextareaLines, parseVariationMethod } fr
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import { selectWeeklyRecommendationSlots } from '@/app/spokedu-master/lib/weeklyRecommendations';
 import { getProgramHomeReadiness, isProgramHomeRecommendationEligible } from '@/app/spokedu-master/lib/program-meta';
+import { isLessonCatalogNew } from '@/app/spokedu-master/lib/lessonCatalogNew';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#312e81', '#3730a3', '#4338ca', '#4f46e5'],
@@ -204,6 +205,7 @@ type OverlayRow = {
 type CurrRow = {
   id: number;
   display_order: number | null;
+  created_at: string | null;
 };
 
 type ProgramValidationIssue =
@@ -329,7 +331,8 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
     isPro: meta?.sm_is_pro ?? false,
     hasReferenceVideo: Boolean(normalizeVideoUrl(videoUrl)),
     hasSpomoveConnection: relatedSpomoveIds.length > 0,
-    isNew: meta?.sm_is_new ?? false,
+    listedAt: row.created_at ?? undefined,
+    isNew: isLessonCatalogNew(row.created_at),
     isHot: meta?.sm_is_hot ?? false,
     homeSortOrder: meta?.sm_display_order ?? (typeof row.display_order === 'number' ? row.display_order : 5000 + index),
     thumbnailUrl,
@@ -403,7 +406,7 @@ export async function GET(request?: Request) {
   const supabase = getServiceSupabase();
   const { data: curriculumRows, error: currErr } = await supabase
     .from('curriculum')
-    .select('id,display_order')
+    .select('id,display_order,created_at')
     .eq('is_sub', false)
     .order('display_order', { ascending: true, nullsFirst: false })
     .order('id', { ascending: false });

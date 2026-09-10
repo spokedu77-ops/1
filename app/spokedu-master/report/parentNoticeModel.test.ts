@@ -18,4 +18,12 @@ describe('parent notice model', () => {
   it('prefers the teacher-edited persisted notice', () => {
     expect(resolveParentNotice({ ...session, parentNotice: '직접 수정한 안내문' })).toBe('직접 수정한 안내문');
   });
+
+  it('uses current public naming for completed SPOMOVE snapshots', () => {
+    const spomoveSession: MasterSessionDto = {
+      ...session,
+      programs: [{ id: 's1', sourceType: 'spomove', programId: null, spomovePresetId: 'reaction-cognition-quad-fruit-10', programTitle: '4분할 자극 · 과일', sortOrder: 0, isCompleted: true }],
+    };
+    expect(buildDefaultParentNotice(spomoveSession)).toContain('네 칸 과일 색 따라가기 활동을 진행했습니다.');
+  });
 });

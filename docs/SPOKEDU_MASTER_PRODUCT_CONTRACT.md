@@ -135,6 +135,7 @@ Do not implement a candidate while its decision is PENDING.
 | PD-006 | Session route entry is not autostart; determine behavior from entry mode, briefing, legacy autostart flag, confirmation, and engine state. |
 | PD-007 | `masterUserLoop` / `rerun_spomove` remains KEEP in the current cycle. |
 | PD-008 | Closed legacy governance ID; superseded and not reusable. It is not a behavior decision. |
+| PD-009 | Library NEW is only for newly listed 놀이체육 activities, for 14 days from catalog listed time. The unfiltered catalog end copy is 「업데이트 예정」 only. |
 
 ## 18. Pending Decision Candidates
 

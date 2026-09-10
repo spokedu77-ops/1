@@ -88,6 +88,10 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain('return ordered.slice(0, 4)');
     expect(source).toContain('lg:grid-cols-4 lg:gap-6');
     expect(source).not.toContain('BrowseSection');
+    expect(source).toContain('업데이트 예정');
+    expect(source).toContain('isNew={program.isNew}');
+    expect(catalogCard).toContain('LessonNewMark');
+    expect(catalogCard).toContain('aria-label="신규 활동"');
     expect(source).not.toContain('selectBrowseFilter');
     expect(source).not.toContain('selectBrowseRepresentatives');
   });

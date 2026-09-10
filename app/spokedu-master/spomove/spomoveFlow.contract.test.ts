@@ -39,7 +39,7 @@ describe('SPOMOVE pilot flow contract', () => {
 
     const presetCardBlock = hub.slice(
       hub.indexOf('function PresetCard'),
-      hub.indexOf('export default function SpomoveHubView'),
+      hub.indexOf('function SpomoveHubInner'),
     );
     expect(presetCardBlock).toContain('data-spm-spomove-card-action="preview"');
     expect(presetCardBlock).not.toContain('data-spm-spomove-card-action="start"');

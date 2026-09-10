@@ -5,6 +5,7 @@ import { Bookmark, Play } from 'lucide-react';
 import { InstructionalThumb } from '../media/InstructionalThumb';
 import { MV_CONTENT_TITLE, MV_META } from '../../lib/masterUiClasses';
 import { CategoryIcon } from '../ui/ProgramThumb';
+import { LessonNewMark } from './LessonCatalogCard';
 
 export function WeeklyEditorialCard({
   title,
@@ -19,6 +20,7 @@ export function WeeklyEditorialCard({
   priority = false,
   sizes = '(min-width: 1280px) 250px, (min-width: 768px) 45vw, 82vw',
   cleanSquareMedia = false,
+  isNew = false,
 }: {
   title: string;
   heroImageUrl?: string | null;
@@ -32,6 +34,7 @@ export function WeeklyEditorialCard({
   priority?: boolean;
   sizes?: string;
   cleanSquareMedia?: boolean;
+  isNew?: boolean;
 }) {
   const type = category.trim();
   const support = (supportMeta ?? '').trim();
@@ -58,9 +61,14 @@ export function WeeklyEditorialCard({
               <CategoryIcon category={category} size={36} color="rgba(15,23,42,0.45)" />
             </span>
           )}
-          {hasVideo ? (
-            <span className="pointer-events-none absolute left-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
-              <Play className="h-3 w-3 fill-current" aria-hidden />
+          {isNew || hasVideo ? (
+            <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
+              {isNew ? <LessonNewMark /> : null}
+              {hasVideo ? (
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
+                  <Play className="h-3 w-3 fill-current" aria-hidden />
+                </span>
+              ) : null}
             </span>
           ) : null}
         </span>

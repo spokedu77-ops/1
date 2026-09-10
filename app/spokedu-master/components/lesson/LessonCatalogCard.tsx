@@ -33,6 +33,17 @@ export function splitLessonCardTitle(raw: string): { title: string; subtitle: st
   return { title: matched[1]!.trim(), subtitle: matched[2]!.trim() };
 }
 
+export function LessonNewMark() {
+  return (
+    <span
+      className="pointer-events-none rounded-[6px] bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-950"
+      aria-label="신규 활동"
+    >
+      NEW
+    </span>
+  );
+}
+
 function placeholderBackground(category: string) {
   const key = category.trim();
   if (key.includes('술래')) return '#dce7ef';
@@ -142,6 +153,7 @@ export type LessonCatalogCardProps = {
   onPrimaryAction?: () => void;
   primaryActionDisabled?: boolean;
   editorial?: boolean;
+  isNew?: boolean;
 };
 
 export function LessonCatalogCard({
@@ -167,6 +179,7 @@ export function LessonCatalogCard({
   onPrimaryAction,
   primaryActionDisabled = false,
   editorial = false,
+  isNew = false,
 }: LessonCatalogCardProps) {
   const articleProps = Object.fromEntries(
     Object.entries(dataAttrs ?? {}).filter((entry): entry is [string, string] => Boolean(entry[1])),
@@ -213,9 +226,14 @@ export function LessonCatalogCard({
                 <CategoryIcon category={categoryFallback} size={36} color="rgba(15,23,42,0.45)" />
               </span>
             )}
-            {hasVideo ? (
-              <span className="pointer-events-none absolute left-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
-                <Play className="h-3 w-3 fill-current" aria-hidden />
+            {isNew || hasVideo ? (
+              <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
+                {isNew ? <LessonNewMark /> : null}
+                {hasVideo ? (
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
+                    <Play className="h-3 w-3 fill-current" aria-hidden />
+                  </span>
+                ) : null}
               </span>
             ) : null}
           </span>

@@ -55,9 +55,10 @@ export default function ManageView() {
   const openCreate = () => { setCreateClassId(null); setLegacyCapture(false); setEditing(null); };
   const selectTab = (nextTab: ManageTab) => { setEditing(undefined); setTab(nextTab); };
 
-  return <main data-manage-workspace className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:overflow-hidden lg:pb-0">
-    <MasterPageShell variant="wide" className={editing !== undefined ? 'lg:grid lg:h-full lg:max-w-none lg:grid-cols-[minmax(0,1fr)_440px] lg:items-stretch lg:gap-0 lg:!px-0 lg:!py-0' : 'lg:px-8'}>
-      <div className={editing !== undefined ? 'min-w-0 lg:min-h-0 lg:overflow-y-auto lg:px-8 lg:pt-4 lg:pb-16' : 'min-w-0'}>
+  return <main data-manage-workspace className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:pb-0">
+    <MasterPageShell variant="wide" className={editing !== undefined ? 'lg:grid lg:h-full lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,1fr)_440px] lg:items-stretch lg:gap-0 lg:!px-0 lg:!py-0' : 'lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8'}>
+      <div className={editing !== undefined ? 'min-w-0 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8 lg:pt-4 lg:pb-4' : 'min-w-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden'}>
+      <div className="shrink-0">
       <MasterPageHeader title="수업 관리" />
       <div className="mt-3 flex items-center justify-between gap-6">
       <div className="grid h-10 w-full max-w-[280px] grid-cols-2 rounded-[12px] border border-slate-200 bg-white p-0.5" role="tablist" aria-label="수업 관리 보기">
@@ -65,6 +66,7 @@ export default function ManageView() {
         <button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => selectTab('attendance')} className={`rounded-[10px] px-4 text-[13px] font-semibold transition-colors ${tab === 'attendance' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>출석부</button>
       </div>
       <Link href="/spokedu-master/classes" className="inline-flex min-h-9 shrink-0 items-center px-1 text-[13px] font-medium text-slate-600 hover:text-slate-950">수업반 관리 →</Link>
+      </div>
       </div>
       {data.status === 'loading' || data.status === 'idle' ? <MasterState kind="loading" title="수업 데이터를 불러오는 중입니다." className="mt-6" /> : null}
       {data.status === 'error' ? <MasterState kind="error" title="수업 데이터를 불러오지 못했습니다." action={<button type="button" onClick={() => void data.reload()} className={SPM_SECONDARY_BTN}>다시 시도</button>} className="mt-6" /> : null}

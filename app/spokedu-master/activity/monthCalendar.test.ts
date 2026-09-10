@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MasterSessionDto } from '../types/operational';
-import { buildMonthCalendar, moveMonth } from './monthCalendar';
+import { buildMonthCalendar, moveMonth, clampDayToMonth } from './monthCalendar';
 
 const session = (id: string, startAt: string): MasterSessionDto => ({ id, classId: 'c', className: 'A반', startAt, startedAt: null, endAt: startAt, status: 'scheduled', memo: null, completedAt: null, programs: [], attendance: [], createdAt: '', updatedAt: '' });
 
@@ -19,5 +19,10 @@ describe('month Session calendar', () => {
 
   it('moves across year boundaries', () => {
     expect(moveMonth('2026-12', 1)).toBe('2027-01');
+  });
+
+  it('clamps a selected day into a shorter month', () => {
+    expect(clampDayToMonth('2026-01-31', '2026-02')).toBe('2026-02-28');
+    expect(clampDayToMonth('2026-03-15', '2026-04')).toBe('2026-04-15');
   });
 });

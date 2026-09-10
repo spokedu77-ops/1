@@ -13,7 +13,8 @@ describe('SPOMOVE Family-first Hub', () => {
   });
 
   it('lets a direct search bypass the selected Family', () => {
-    expect(hub).toContain("family: nextQuery ? 'all' : urlState.family");
+    expect(hub).toContain("family: q ? 'all' : urlState.family");
+    expect(hub).toContain('const selectedFamilyId = searchQuery.trim()');
     expect(hub).toContain('filterPresetsByCatalogFamily(visiblePresets, selectedFamilyId)');
   });
 

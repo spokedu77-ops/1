@@ -12,12 +12,15 @@ import { MASTER_ACTION_COPY, SPM_PRIMARY_BTN_FULL, SPM_SECONDARY_BTN } from '../
 import { buildActivitySessionHref } from '../lib/masterNavigationContext';
 import { getMasterRequestErrorMessage } from '../lib/masterRequestError';
 import { splitLessonTitle } from '../lib/lessonDisplay';
+import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import { buildScheduleOccurrencePreview, occurrenceOverlaps, type MasterScheduleCadence, type MasterScheduleRule } from '../lib/recurringSchedule';
 import { buildSessionDraftDateTimes, formatSeoulSessionDay, formatSeoulSessionTime, seoulDateTimeInputToIso } from '../lib/sessionDateTime';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset, officialPresetSessionHref } from '../spomove/officialSpomovePresets';
-import { isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
-import { useMasterStore } from '../store';
+import { isHubListedPreset, isHubRunnablePreset } from '../spomove/movements/isHubVisiblePreset';
+import { buildSpomovePresetSearchHaystack } from '../spomove/spomovePresetDisplayModel';
+import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
+import { useMasterStore, useProfile } from '../store';
 import type { MasterSessionDto, MasterSessionProgramDto, MasterSessionStatus, SaveSessionInput } from '../types/operational';
 import { SessionActivityPicker, type ActivityPickerItem } from './SessionActivityPicker';
 
@@ -25,6 +28,19 @@ type RepeatMode = 'none' | MasterScheduleCadence;
 const REPEAT_LABEL: Record<RepeatMode, string> = { none: '없음', weekly: '매주', biweekly: '격주' };
 
 const statusLabel = (status: MasterSessionStatus) => status === 'completed' ? '완료' : status === 'cancelled' ? '취소' : '예정';
+
+function useCloseDetailsOnOutside(ref: { current: HTMLDetailsElement | null }) {
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      const node = ref.current;
+      if (!node?.open) return;
+      if (event.target instanceof Node && node.contains(event.target)) return;
+      node.removeAttribute('open');
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [ref]);
+}
 
 export function SessionDetailSheet({
   session,
@@ -40,6 +56,8 @@ export function SessionDetailSheet({
   onClose: () => void;
 }) {
   const data = useOperationalData();
+  const profile = useProfile();
+  const favoritesOwnerId = getFavoritesOwnerId(profile);
   const canUseRecords = useMasterCanUseRecords();
   const canUseSpomove = useMasterCanUseSpomove();
   const libraryPrograms = useMasterStore((state) => state.programs);
@@ -63,6 +81,8 @@ export function SessionDetailSheet({
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const captureRef = useRef<SessionCaptureHandle | null>(null);
+  const sessionMenuRef = useRef<HTMLDetailsElement | null>(null);
+  useCloseDetailsOnOutside(sessionMenuRef);
   const selectedClass = data.classes.find((item) => item.id === classId) ?? null;
   const actions = getSessionActionPolicy(status);
   const currentRoster = data.students.filter((student) => selectedClass?.studentIds.includes(student.id));
@@ -72,7 +92,7 @@ export function SessionDetailSheet({
   const roster = [...currentRoster, ...historicalRoster];
   const allStudentsPresent = roster.length > 0 && roster.every((student) => attendance[student.id] === 'present');
   const catalogIds = useMemo(() => new Set(libraryPrograms.map((item) => Number(item.id))), [libraryPrograms]);
-  const favoriteRefs = useMasterStore((state) => data.ownerId ? state.favoriteContentRefsByOwner[data.ownerId] : undefined) ?? [];
+  const favoriteRefs = useMasterStore((state) => favoritesOwnerId ? state.favoriteContentRefsByOwner[favoritesOwnerId] : undefined) ?? [];
 
   useEffect(() => {
     if (!programsLoaded) void reloadPrograms();
@@ -112,9 +132,30 @@ export function SessionDetailSheet({
     .map((item) => ({ key: `program:${item.id}`, title: item.title, description: [item.category, item.grade, item.space].filter(Boolean).join(' · ') }));
   const availableSpomove: ActivityPickerItem[] = canUseSpomove ? OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset)
     .filter((item) => !programs.some((program) => program.sourceType === 'spomove' && program.spomovePresetId === item.id))
-    .map((item) => ({ key: `spomove:${item.id}`, title: item.title, description: item.description || item.recommendedUse })) : [];
-  const favoriteKeys = new Set(favoriteRefs.map((ref) => `${ref.type}:${ref.id}`));
-  const favoriteActivities = [...availablePrograms, ...availableSpomove].filter((item) => favoriteKeys.has(item.key));
+    .map((item) => ({
+      key: `spomove:${item.id}`,
+      title: resolveSpomovePublicDisplayTitle(item.id, item.title),
+      description: item.description || item.recommendedUse,
+      searchText: buildSpomovePresetSearchHaystack(item),
+    })) : [];
+  const assignedProgramIds = new Set(programs.filter((item) => item.sourceType === 'program').map((item) => String(item.programId)));
+  const assignedSpomoveIds = new Set(programs.filter((item) => item.sourceType === 'spomove' && item.spomovePresetId).map((item) => item.spomovePresetId as string));
+  const favoriteActivities = favoriteRefs.flatMap<ActivityPickerItem>((ref) => {
+    if (ref.type === 'program') {
+      if (assignedProgramIds.has(ref.id)) return [];
+      const item = libraryPrograms.find((program) => program.id === ref.id);
+      return item ? [{ key: `program:${item.id}` as const, title: item.title, description: [item.category, item.grade, item.space].filter(Boolean).join(' · ') }] : [];
+    }
+    if (!canUseSpomove || assignedSpomoveIds.has(ref.id)) return [];
+    const item = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === ref.id);
+    if (!item || !isHubListedPreset(item)) return [];
+    return [{
+      key: `spomove:${item.id}` as const,
+      title: resolveSpomovePublicDisplayTitle(item.id, item.title),
+      description: item.description || item.recommendedUse,
+      searchText: buildSpomovePresetSearchHaystack(item),
+    }];
+  });
 
   const input = (nextStatus = status): SaveSessionInput => ({
     classId,
@@ -136,7 +177,7 @@ export function SessionDetailSheet({
           return item ? [{ id: `draft:${key}`, sourceType: 'program' as const, programId: Number(id), spomovePresetId: null, programTitle: item.title, sortOrder: current.length + index, isCompleted: false }] : [];
         }
         const item = findOfficialSpomovePreset(id);
-        return item ? [{ id: `draft:${key}`, sourceType: 'spomove' as const, programId: null, spomovePresetId: id, programTitle: item.title, sortOrder: current.length + index, isCompleted: false }] : [];
+        return item ? [{ id: `draft:${key}`, sourceType: 'spomove' as const, programId: null, spomovePresetId: id, programTitle: resolveSpomovePublicDisplayTitle(id, item.title), sortOrder: current.length + index, isCompleted: false }] : [];
       })]);
       setDirty(true);
       setPickerOpen(false);
@@ -147,7 +188,7 @@ export function SessionDetailSheet({
       const program = source === 'program' ? libraryPrograms.find((item) => item.id === id) : null;
       const preset = source === 'spomove' ? findOfficialSpomovePreset(id) : null;
       if (!program && !preset) return [];
-      return [{ id: `pending:${key}`, sourceType: source as 'program' | 'spomove', programId: program ? Number(id) : null, spomovePresetId: preset ? id : null, programTitle: program?.title ?? preset?.title ?? '', sortOrder: programs.length + index, isCompleted: false }];
+      return [{ id: `pending:${key}`, sourceType: source as 'program' | 'spomove', programId: program ? Number(id) : null, spomovePresetId: preset ? id : null, programTitle: program?.title ?? resolveSpomovePublicDisplayTitle(id, preset?.title), sortOrder: programs.length + index, isCompleted: false }];
     });
     setPrograms((current) => [...current, ...optimistic]);
     setPickerOpen(false);
@@ -329,8 +370,30 @@ export function SessionDetailSheet({
             </details>
           </section>
         </div> : <section aria-labelledby="session-information-heading">
-          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 id="session-information-heading" className="text-[20px] font-bold leading-6 text-slate-950">{selectedClass?.name ?? '수업 정보'}</h3><span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${status === 'completed' ? 'bg-emerald-50 text-emerald-700' : status === 'cancelled' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-700'}`}>{statusLabel(status)}</span></div><p className="mt-1 text-[13px] text-slate-500">{formatSeoulSessionDay(startAt.slice(0, 10), { month: 'long', day: 'numeric', weekday: 'long' })} · {formatSeoulSessionTime(seoulDateTimeInputToIso(startAt))}–{formatSeoulSessionTime(seoulDateTimeInputToIso(endAt))}</p></div><details className="relative shrink-0"><summary className="grid h-11 w-11 shrink-0 cursor-pointer list-none place-items-center rounded-[10px] text-slate-400 hover:bg-slate-100" aria-label="수업 관리 메뉴"><MoreHorizontal size={18} /></summary><div className="absolute right-0 top-12 z-30 min-w-40 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"><button type="button" onClick={() => setScheduleOpen((open) => !open)} className="min-h-11 w-full rounded-lg px-3 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">{scheduleOpen ? '일정 접기' : '일정 변경'}</button>{activeSession && status === 'scheduled' ? <button type="button" disabled={saving} onClick={() => { if (window.confirm('이 수업을 취소할까요?')) void persist('cancelled'); }} className="min-h-11 w-full rounded-lg px-3 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50">수업 취소</button> : null}{activeSession && status === 'cancelled' ? <><button type="button" disabled={saving} onClick={() => void persist('scheduled')} className="min-h-11 w-full rounded-lg px-3 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">취소 해제</button><button type="button" disabled={saving} onClick={() => { if (!window.confirm('취소된 수업을 삭제할까요?')) return; setSaving(true); void data.deleteCancelledSession(activeSession.id).then(onClose).catch((caught) => setError(getMasterRequestErrorMessage(caught) || '수업을 삭제하지 못했습니다.')).finally(() => setSaving(false)); }} className="min-h-11 w-full rounded-lg px-3 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50">수업 삭제</button></> : null}</div></details></div>
-          {scheduleOpen ? <div className="mt-4 space-y-3"><label className="block text-xs font-semibold text-slate-500">수업반<select value={classId} disabled={status !== 'scheduled'} onChange={(event) => { setClassId(event.target.value); setAttendance({}); setDirty(true); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800">{data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><fieldset disabled={Boolean(activeSession && !actions.editSchedule)}><legend className="text-xs font-semibold text-slate-500">일정</legend><div className="mt-1 grid grid-cols-[minmax(0,1fr)_88px_12px_88px] items-center gap-2"><input aria-label="수업 날짜" type="date" value={startAt.slice(0, 10)} onChange={(event) => { const day = event.target.value; setStartAt(`${day}${startAt.slice(10)}`); setEndAt(`${day}${endAt.slice(10)}`); setDirty(true); }} className="h-11 min-w-0 rounded-xl border border-slate-200 px-2 text-sm" /><input aria-label="시작 시간" type="time" value={startAt.slice(11, 16)} onChange={(event) => { setStartAt(`${startAt.slice(0, 11)}${event.target.value}`); setDirty(true); }} className="h-11 min-w-0 rounded-xl border border-slate-200 px-2 text-sm" /><span className="text-center text-slate-400">–</span><input aria-label="종료 시간" type="time" value={endAt.slice(11, 16)} onChange={(event) => { setEndAt(`${endAt.slice(0, 11)}${event.target.value}`); setDirty(true); }} className="h-11 min-w-0 rounded-xl border border-slate-200 px-2 text-sm" /></div></fieldset></div> : null}
+          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 id="session-information-heading" className="text-[20px] font-bold leading-6 text-slate-950">{selectedClass?.name ?? '수업 정보'}</h3><span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${status === 'completed' ? 'bg-emerald-50 text-emerald-700' : status === 'cancelled' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-700'}`}>{statusLabel(status)}</span></div><p className="mt-1 text-[13px] text-slate-500">{formatSeoulSessionDay(startAt.slice(0, 10), { month: 'long', day: 'numeric', weekday: 'long' })} · {formatSeoulSessionTime(seoulDateTimeInputToIso(startAt))}–{formatSeoulSessionTime(seoulDateTimeInputToIso(endAt))}</p></div><details ref={sessionMenuRef} className="relative shrink-0"><summary className="grid h-11 w-11 shrink-0 cursor-pointer list-none place-items-center rounded-[10px] text-slate-400 hover:bg-slate-100" aria-label="수업 관리 메뉴"><MoreHorizontal size={18} /></summary><div className="absolute right-0 top-12 z-30 min-w-40 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"><button type="button" onClick={(event) => { setScheduleOpen((open) => !open); event.currentTarget.closest('details')?.removeAttribute('open'); }} className="min-h-11 w-full rounded-lg px-3 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">{scheduleOpen ? '일정 접기' : '일정 변경'}</button>{activeSession && status === 'scheduled' ? <button type="button" disabled={saving} onClick={() => { if (window.confirm('이 수업을 취소할까요?')) void persist('cancelled'); }} className="min-h-11 w-full rounded-lg px-3 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50">수업 취소</button> : null}{activeSession && status === 'cancelled' ? <><button type="button" disabled={saving} onClick={() => void persist('scheduled')} className="min-h-11 w-full rounded-lg px-3 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50">취소 해제</button><button type="button" disabled={saving} onClick={() => { if (!window.confirm('취소된 수업을 삭제할까요?')) return; setSaving(true); void data.deleteCancelledSession(activeSession.id).then(onClose).catch((caught) => setError(getMasterRequestErrorMessage(caught) || '수업을 삭제하지 못했습니다.')).finally(() => setSaving(false)); }} className="min-h-11 w-full rounded-lg px-3 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50">수업 삭제</button></> : null}</div></details></div>
+          {scheduleOpen ? <div className="mt-5 space-y-5">
+            <label className="block text-[13px] font-semibold text-slate-700">수업반
+              <select value={classId} disabled={status !== 'scheduled'} onChange={(event) => { setClassId(event.target.value); setAttendance({}); setDirty(true); }} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800">{data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+            </label>
+            <fieldset disabled={Boolean(activeSession && !actions.editSchedule)}>
+              <legend className="text-[13px] font-semibold text-slate-700">일정</legend>
+              <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch overflow-hidden rounded-xl border border-slate-200 lg:h-12 lg:grid-cols-[minmax(0,1fr)_80px_auto_80px]">
+                <label className="relative col-span-3 min-h-12 border-b border-slate-200 lg:col-span-1 lg:border-b-0 lg:border-r">
+                  <span className="pointer-events-none absolute inset-y-0 left-3 z-10 flex items-center truncate pr-8 text-sm font-medium text-slate-900">{formatSeoulSessionDay(startAt.slice(0, 10), { month: 'long', day: 'numeric', weekday: 'long' })}</span>
+                  <input aria-label="수업 날짜" type="date" value={startAt.slice(0, 10)} onChange={(event) => { const day = event.target.value; setStartAt(`${day}${startAt.slice(10)}`); setEndAt(`${day}${endAt.slice(10)}`); setDirty(true); }} className="h-12 w-full cursor-pointer bg-transparent px-3 text-sm text-transparent [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-datetime-edit]:text-transparent" />
+                </label>
+                <label className="relative min-h-12 min-w-0">
+                  <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-sm font-medium tabular-nums text-slate-900">{startAt.slice(11, 16)}</span>
+                  <input aria-label="시작 시간" type="time" value={startAt.slice(11, 16)} onChange={(event) => { setStartAt(`${startAt.slice(0, 11)}${event.target.value}`); setDirty(true); }} className="h-12 w-full cursor-pointer bg-transparent text-center text-sm text-transparent [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:text-transparent" />
+                </label>
+                <span className="flex items-center justify-center px-3 text-sm text-slate-400" aria-hidden>–</span>
+                <label className="relative min-h-12 min-w-0">
+                  <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-sm font-medium tabular-nums text-slate-900">{endAt.slice(11, 16)}</span>
+                  <input aria-label="종료 시간" type="time" value={endAt.slice(11, 16)} onChange={(event) => { setEndAt(`${endAt.slice(0, 11)}${event.target.value}`); setDirty(true); }} className="h-12 w-full cursor-pointer bg-transparent text-center text-sm text-transparent [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-datetime-edit]:text-transparent" />
+                </label>
+              </div>
+            </fieldset>
+          </div> : null}
           {scheduleOpen && activeRules.length ? <details className="mt-3"><summary className="min-h-11 cursor-pointer py-3 text-xs font-semibold text-slate-500">활성 반복 일정 {activeRules.length}개</summary><div className="space-y-2">{activeRules.map((rule) => <div key={rule.id} className="flex items-center justify-between gap-3 border-t border-slate-100 py-2 text-xs text-slate-600"><span>{rule.cadence === 'weekly' ? '매주' : '격주'} · {rule.startTime}</span><button type="button" disabled={saving} onClick={() => void endRule(rule.id)} className="min-h-11 px-2 font-semibold text-rose-600">반복 종료</button></div>)}</div></details> : null}
         </section>}
 
@@ -341,7 +404,11 @@ export function SessionDetailSheet({
           const spomoveHref = activeSession && preset ? officialPresetSessionHref(preset, { entry: 'start', session: activeSession.id, sessionProgram: program.id, returnTo: buildActivitySessionHref(activeSession.id) }) : null;
           const detailHref = programHref ?? spomoveHref;
           const officialProgram = program.programId == null ? null : libraryPrograms.find((item) => Number(item.id) === program.programId);
-          const displayTitle = program.sourceType === 'program' && officialProgram ? splitLessonTitle(officialProgram.title).koreanTitle : preset?.title ?? program.programTitle ?? '이름 없는 활동';
+          const displayTitle = program.sourceType === 'spomove'
+            ? resolveSpomovePublicDisplayTitle(program.spomovePresetId, preset?.title ?? program.programTitle)
+            : officialProgram
+              ? splitLessonTitle(officialProgram.title).koreanTitle
+              : program.programTitle ?? '이름 없는 활동';
           const content = <span className="min-w-0 flex-1"><span className="line-clamp-2 text-[15px] font-semibold leading-[18px] text-slate-950">{displayTitle}</span><span className="mt-0.5 block text-[12px] font-medium text-slate-500">{program.sourceType === 'spomove' ? 'SPOMOVE' : '놀이체육'}</span></span>;
           return <div key={program.id} data-activity-row className="flex min-h-[56px] items-center gap-3 rounded-[12px] border border-slate-200 bg-white px-3.5"><button type="button" disabled={!activeSession || !actions.toggleActivityCompletion} onClick={() => void toggleProgram(program)} className="grid h-9 w-9 shrink-0 place-items-center" aria-label={`${displayTitle} ${program.isCompleted ? '실제 진행' : '미진행'}`}><span className={`grid h-5 w-5 place-items-center rounded-[4px] border ${program.isCompleted ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-transparent'}`}><Check size={14} /></span></button>{detailHref ? <Link href={detailHref} target={spomoveHref ? '_blank' : undefined} rel={spomoveHref ? 'noreferrer' : undefined} className="flex min-w-0 flex-1">{content}</Link> : content}{actions.reorderActivities ? <details className="group relative shrink-0"><summary className="grid h-9 w-8 cursor-pointer list-none place-items-center text-slate-400 hover:text-slate-700" aria-label="활동 관리"><ChevronRight size={17} /></summary><div className="absolute right-0 top-10 z-20 flex min-w-36 flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-lg"><button type="button" disabled={index === 0 || saving} onClick={() => void moveProgram(index, -1)} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-left text-xs font-semibold text-slate-600 hover:bg-slate-50"><ChevronUp size={15} />위로 이동</button><button type="button" disabled={index === programs.length - 1 || saving} onClick={() => void moveProgram(index, 1)} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-left text-xs font-semibold text-slate-600 hover:bg-slate-50"><ChevronDown size={15} />아래로 이동</button><button type="button" disabled={saving} onClick={() => void removeProgram(program)} className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50"><Trash2 size={14} />활동 삭제</button></div></details> : null}</div>;
         })}{!programs.length ? <p className="py-4 text-sm text-slate-500">아직 담은 활동이 없습니다.</p> : null}</div></>}</section>

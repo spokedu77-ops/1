@@ -40,10 +40,12 @@ describe('MASTER commercial cohesion contracts', () => {
     expect(MASTER_ACTION_COPY.deleteSession).toBe('수업 삭제');
     const students = read('app/spokedu-master/students/page.tsx');
     const classes = read('app/spokedu-master/classes/[classId]/page.tsx');
+    const classRoster = read('app/spokedu-master/classes/[classId]/ClassRosterSheet.tsx');
     const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
     expect(students).toContain('MASTER_ACTION_COPY.archiveStudent');
     expect(students).not.toContain('Trash2');
-    expect(classes).toContain('MASTER_ACTION_COPY.removeFromClass');
+    expect(classes).toContain('ClassRosterSheet');
+    expect(classRoster).toContain('MASTER_ACTION_COPY.removeFromClass');
     expect(activity).toContain('취소 해제');
     expect(activity).toContain('수업 삭제');
   });

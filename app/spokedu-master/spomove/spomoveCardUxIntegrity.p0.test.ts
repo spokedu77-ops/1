@@ -7,7 +7,6 @@ import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from './spomovePublicCatalogOrder';
 import {
   getSpomoveCardDisplayModel,
   resolveAudienceAdaptation,
-  resolveSpomoveCardPairKey,
 } from './spomovePresetDisplayModel';
 import { getOfficialSpomovePresetGuide } from './officialSpomovePresetGuides';
 import { supportsCueSpeedOverride } from './spomoveCueSpeed';
@@ -18,6 +17,14 @@ function read(path: string) {
 }
 
 const publicLibrary = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.catalogStatus !== 'hold');
+const publicDifficultyPairs = [
+  ['visual-reaction-mole-l1', 'visual-reaction-mole-normal-skeleton'],
+  ['visual-reaction-goalkeeper-easy-skeleton', 'visual-reaction-goalkeeper-42'],
+  ['simon-pole-arrows-41', 'simon-arrow-hard-skeleton'],
+  ['simon-pole-shape-06', 'simon-shape-hard-skeleton'],
+  ['simon-balloon-flash-05', 'simon-balloon-hard-skeleton'],
+  ['simon-mixed-gallery-exp', 'simon-random-hard-skeleton'],
+] as const;
 
 describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
   it('keeps public 72 catalog order unchanged', () => {
@@ -80,20 +87,8 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
   });
 
   it('unifies base metadata for normal/hard title pairs', () => {
-    const byPair = new Map<string, typeof publicLibrary>();
-    for (const preset of publicLibrary) {
-      const card = getSpomoveCardDisplayModel(preset);
-      if (card.publicMeta.variant) continue;
-      const key = `${preset.programGroup}::${resolveSpomoveCardPairKey(card.title)}`;
-      const list = byPair.get(key) ?? [];
-      list.push(preset);
-      byPair.set(key, list);
-    }
-
-    let pairCount = 0;
-    for (const [, members] of byPair) {
-      if (members.length < 2) continue;
-      pairCount += 1;
+    for (const ids of publicDifficultyPairs) {
+      const members = ids.map((id) => publicLibrary.find((preset) => preset.id === id)!);
       const bases = members.map((preset) => {
         const card = getSpomoveCardDisplayModel(preset);
         return {
@@ -107,7 +102,6 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
         expect(bases[index]).toEqual(bases[0]);
       }
     }
-    expect(pairCount).toBeGreaterThanOrEqual(5);
   });
 
   it('shows settings CTA only when cue speed or difficulty override exists', () => {

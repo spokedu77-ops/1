@@ -1,5 +1,8 @@
 [data-manage-workspace] {
   --manage-cal-height: 620px;
+  --manage-agenda-row: 88px;
+  --manage-agenda-gap: 10px;
+  --manage-agenda-two: calc(var(--manage-agenda-row) * 2 + var(--manage-agenda-gap));
 }
 
 [data-manage-workspace] header h1 {
@@ -14,6 +17,7 @@
 @media (min-width: 1024px) and (max-height: 960px) {
   [data-manage-workspace] {
     --manage-cal-height: 540px;
+    --manage-agenda-row: 72px;
   }
 
   [data-manage-workspace] [data-manage-agenda] > button {
@@ -38,7 +42,9 @@
 @media (min-width: 1024px) {
   [data-manage-calendar] {
     display: flex;
-    height: var(--manage-cal-height);
+    min-height: 260px;
+    max-height: var(--manage-cal-height);
+    flex: 1 1 0%;
     flex-direction: column;
   }
 
@@ -62,5 +68,17 @@
     min-height: 0;
     padding-bottom: 8px;
     scrollbar-gutter: auto;
+  }
+
+  [data-manage-workspace] [data-manage-agenda][data-agenda-count="2"] {
+    min-height: var(--manage-agenda-two);
+    overflow: visible;
+  }
+
+  [data-manage-workspace] [data-manage-agenda][data-agenda-count]:not([data-agenda-count="0"]):not([data-agenda-count="1"]):not([data-agenda-count="2"]) {
+    min-height: var(--manage-agenda-two);
+    max-height: var(--manage-agenda-two);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }

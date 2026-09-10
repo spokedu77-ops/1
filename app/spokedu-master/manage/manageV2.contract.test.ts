@@ -41,13 +41,20 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(manage).not.toContain('MasterPageHeader title="수업 관리" action=');
     expect(schedule).toContain('예정된 수업이 없습니다.');
     expect(schedule).toContain('수업 {daySessions.length}개');
+    expect(schedule).toContain('data-agenda-count={daySessions.length}');
+    expect(schedule).toContain('lg:flex lg:min-h-0 lg:flex-1 lg:flex-col');
     expect(calendar).not.toContain('overflow-visible');
     expect(calendar).toContain('whitespace-normal break-keep');
     expect(calendar).not.toContain('min-w-0 truncate');
     expect(manage).toContain("lg:grid-cols-[minmax(0,1fr)_440px]");
     expect(manage).toContain('<MasterPageShell variant="wide"');
     expect(manage).not.toContain("lg:pr-[434px]");
-    expect(calendar).not.toContain("selected ? 'z-10 ring-2");
+    expect(calendar).toContain('aria-label="이전 날"');
+    expect(calendar).toContain('aria-label="다음 날"');
+    expect(calendar).toContain('type="month"');
+    expect(calendar).toContain('aria-label="연월 선택"');
+    expect(calendar).toContain('addSeoulSessionDays(selectedDay, 1)');
+    expect(calendar).not.toContain('aria-label="이전 달"');
   });
 
   it('keeps Session activities, attendance, and completion on existing commands', () => {
@@ -86,13 +93,17 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain("return false");
   });
 
-  it('offers the existing favorites projection without rendering the whole catalog at once', () => {
+  it('offers favorites and all addable activities without truncating the catalog', () => {
     const picker = read('app/spokedu-master/manage/SessionActivityPicker.tsx');
+    expect(detail).toContain('getFavoritesOwnerId');
     expect(detail).toContain('favoriteContentRefsByOwner');
     expect(detail).toContain('favorites={favoriteActivities}');
     expect(picker).toContain("'favorite'");
     expect(picker).toContain('즐겨찾기');
-    expect(picker).toContain('visible.slice(0, 80)');
+    expect(picker).toContain('visible.map((item)');
+    expect(picker).not.toContain('visible.slice(');
+    expect(detail).toContain('resolveSpomovePublicDisplayTitle');
+    expect(detail).toContain('buildSpomovePresetSearchHaystack');
   });
 
   it('projects current roster across scheduled and completed Sessions', () => {

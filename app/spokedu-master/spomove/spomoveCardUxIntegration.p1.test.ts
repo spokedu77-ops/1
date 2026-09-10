@@ -6,7 +6,6 @@ import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
 import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from './spomovePublicCatalogOrder';
 import {
   getSpomoveCardDisplayModel,
-  resolveSpomoveCardPairKey,
 } from './spomovePresetDisplayModel';
 
 function read(path: string) {
@@ -16,6 +15,14 @@ function read(path: string) {
 const publicLibrary = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.catalogStatus !== 'hold');
 const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 const preview = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
+const publicDifficultyPairs = [
+  ['visual-reaction-mole-l1', 'visual-reaction-mole-normal-skeleton'],
+  ['visual-reaction-goalkeeper-easy-skeleton', 'visual-reaction-goalkeeper-42'],
+  ['simon-pole-arrows-41', 'simon-arrow-hard-skeleton'],
+  ['simon-pole-shape-06', 'simon-shape-hard-skeleton'],
+  ['simon-balloon-flash-05', 'simon-balloon-hard-skeleton'],
+  ['simon-mixed-gallery-exp', 'simon-random-hard-skeleton'],
+] as const;
 
 describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
   it('keeps public 72 catalog order from P0', () => {
@@ -53,19 +60,8 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
   });
 
   it('keeps pair metadata structure identical for normal/hard variants', () => {
-    const byPair = new Map<string, ReturnType<typeof getSpomoveCardDisplayModel>[]>();
-    for (const preset of publicLibrary) {
-      const card = getSpomoveCardDisplayModel(preset);
-      if (card.publicMeta.variant) continue;
-      const key = `${preset.programGroup}::${resolveSpomoveCardPairKey(card.title)}`;
-      const list = byPair.get(key) ?? [];
-      list.push(card);
-      byPair.set(key, list);
-    }
-    let pairs = 0;
-    for (const cards of byPair.values()) {
-      if (cards.length < 2) continue;
-      pairs += 1;
+    for (const ids of publicDifficultyPairs) {
+      const cards = ids.map((id) => getSpomoveCardDisplayModel(publicLibrary.find((preset) => preset.id === id)!));
       const base = {
         responseType: cards[0]!.meta.responseType,
         trainingFocus: cards[0]!.meta.trainingFocus,
@@ -77,7 +73,6 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
         }).toEqual(base);
       }
     }
-    expect(pairs).toBeGreaterThanOrEqual(5);
   });
 
   it('keeps execution actions in Preview and out of Browse cards', () => {

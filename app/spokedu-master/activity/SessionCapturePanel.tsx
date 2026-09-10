@@ -9,6 +9,7 @@ import { resolvePreviousSessionMemory, selectCurrentRosterObservations } from '.
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
 import { SPM_JOURNEY_FIELD, SPM_JOURNEY_META } from '../lib/masterUiClasses';
 import { fetchSessionCaptures, saveSessionCapture } from '../lib/sessionCaptureClient';
+import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
 import type { SessionCaptureSurfaceMode } from './masterSessionWorkspaceModel';
 import { sessionSectionOrderClass } from './masterSessionWorkspaceModel';
 
@@ -153,7 +154,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
               <summary className="flex min-h-11 cursor-pointer list-none items-center text-xs font-medium text-slate-600">지난 수업 자세히 보기</summary>
               <div className="space-y-4 pb-2 text-sm text-slate-700">
                 {previousObservations.length ? <div><p className="text-xs font-bold text-slate-500">학생 기록</p><div className="mt-2 space-y-2">{previousObservations.map((observation) => <p key={observation.id}><strong>{observation.studentName}</strong> · {observation.memo}</p>)}</div></div> : null}
-                {previousActivities.length ? <div><p className="text-xs font-bold text-slate-500">지난 활동</p><p className="mt-2 font-medium">{previousActivities.map((activity) => activity.programTitle ?? (activity.sourceType === 'spomove' ? 'SPOMOVE' : '이름 없는 활동')).join(', ')}</p></div> : null}
+                {previousActivities.length ? <div><p className="text-xs font-bold text-slate-500">지난 활동</p><p className="mt-2 font-medium">{previousActivities.map((activity) => activity.sourceType === 'spomove' ? resolveSpomovePublicDisplayTitle(activity.spomovePresetId, activity.programTitle) : activity.programTitle ?? '이름 없는 활동').join(', ')}</p></div> : null}
                 {guidanceStudents.length ? <div><p className="text-xs font-bold text-slate-500">지도 참고</p><div className="mt-2 space-y-2">{guidanceStudents.map((student) => <p key={student.id}><strong>{student.name}</strong> · {student.guidanceNote}</p>)}</div></div> : null}
               </div>
             </details>

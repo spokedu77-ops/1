@@ -9,9 +9,10 @@ const capture = readFileSync('app/spokedu-master/activity/SessionCapturePanel.ts
 describe('UI Foundation v3.2 deep operational contract', () => {
   it('uses operational page grammar for Class detail without a student card grid', () => {
     expect(classDetail).toContain('MasterPageShell variant="operational"');
-    expect(classDetail).toContain('MasterPageHeader');
-    expect(classDetail).toContain('학생 명단');
-    expect(classDetail).toContain('지난 수업');
+    expect(classDetail).toContain('<ClassRosterSheet');
+    expect(classDetail).toContain('<AttendanceProjectionTable');
+    expect(classDetail).toContain('학생 관리');
+    expect(classDetail).toContain('출석부');
     expect(classDetail).not.toContain('CLASS DETAIL');
     expect(classDetail).not.toContain('grid-cols-3');
   });

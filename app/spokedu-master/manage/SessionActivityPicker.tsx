@@ -9,6 +9,7 @@ export type ActivityPickerItem = {
   key: `program:${string}` | `spomove:${string}`;
   title: string;
   description: string;
+  searchText?: string;
 };
 
 export function SessionActivityPicker({
@@ -34,9 +35,8 @@ export function SessionActivityPicker({
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('ko');
     const items = source === 'program' ? programs : source === 'spomove' ? spomove : favorites;
-    return items.filter((item) => !normalized || `${item.title} ${item.description}`.toLocaleLowerCase('ko').includes(normalized));
+    return items.filter((item) => !normalized || `${item.title} ${item.description} ${item.searchText ?? ''}`.toLocaleLowerCase('ko').includes(normalized));
   }, [favorites, programs, query, source, spomove]);
-  const displayed = visible.slice(0, 80);
 
   const close = () => {
     setSelected([]);
@@ -65,11 +65,10 @@ export function SessionActivityPicker({
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="활동 검색" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
       </label>
       <div className="mt-3 divide-y divide-slate-100">
-        {displayed.map((item) => {
+        {visible.map((item) => {
           const checked = selected.includes(item.key);
           return <label key={item.key} className="flex min-h-16 cursor-pointer items-center gap-3 py-2"><input type="checkbox" checked={checked} onChange={() => setSelected((current) => checked ? current.filter((key) => key !== item.key) : [...current, item.key])} className="h-5 w-5 rounded border-slate-300 accent-emerald-600" /><span className="min-w-0"><strong className="block truncate text-sm font-semibold text-slate-800">{item.title}</strong>{item.description ? <small className="mt-0.5 block truncate text-xs text-slate-500">{item.description}</small> : null}</span></label>;
         })}
-        {visible.length > displayed.length ? <p className="py-3 text-center text-xs text-slate-400">검색어를 입력하면 나머지 활동도 찾을 수 있습니다.</p> : null}
         {!visible.length ? <p className="py-8 text-center text-sm text-slate-400">추가할 활동이 없습니다.</p> : null}
       </div>
     </BottomSheet>

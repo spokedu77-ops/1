@@ -194,6 +194,7 @@ function ProgramCard({
       onPrimaryAction={onPrimaryAction}
       primaryActionDisabled={primaryActionDisabled}
       editorial
+      isNew={program.isNew}
     />
   );
 }
@@ -280,6 +281,7 @@ function RecommendationProgramCard({
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
+      isNew={program.isNew}
     />
   );
 }
@@ -624,6 +626,9 @@ export default function LibraryView() {
                 더 보기 ({visiblePrograms.length}/{filteredPrograms.length})
               </button>
             </div>
+          ) : null}
+          {!hasSearchIntent && !hasMorePrograms && filteredPrograms.length > 0 ? (
+            <p className="mt-10 pb-2 text-center text-[13px] font-medium text-slate-400">업데이트 예정</p>
           ) : null}
           {filteredPrograms.length === 0 ? (
               <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">

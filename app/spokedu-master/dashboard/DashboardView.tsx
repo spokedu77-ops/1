@@ -57,6 +57,7 @@ import {
 } from '../spomove/officialSpomovePresets';
 import { SpomoveGuidelineSheet, type SpomoveContentLoadState } from '../spomove/SpomoveGuidelineSheet';
 import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
+import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
 import { canReproduceSpomoveSameSettings } from '../spomove/movements/canReproduceSpomoveSameSettings';
 import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
@@ -270,6 +271,7 @@ function WeeklyProgramCard({
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
+      isNew={program.isNew}
     />
   );
 }
@@ -381,7 +383,7 @@ function RecentSpomoveReuseCard({
   const snapshot = activity.spomoveSnapshot;
   const cueSeconds = snapshot?.cueSeconds ?? activity.cueSeconds ?? preset?.cueSeconds;
   const shelf = preset ? getHomeSpomoveShelfCopy(preset) : null;
-  const displayTitle = shelf?.title ?? activity.programTitle;
+  const displayTitle = shelf?.title ?? resolveSpomovePublicDisplayTitle(activity.programId, activity.programTitle);
   const contextLine = [
     shelf?.typeLabel,
     cueSeconds ? `자극 ${cueSeconds}초` : null,

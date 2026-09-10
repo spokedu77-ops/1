@@ -38,8 +38,8 @@ describe('SPOMOVE hand-foot runtime contract (05A)', () => {
   it('hub display uses public naming for hand-foot', () => {
     const easy = findOfficialSpomovePreset('visual-reaction-hand-foot-easy-skeleton')!;
     const model = getSpomovePresetDisplayModel(easy);
-    expect(model.displayTitle).toBe('손발 맞춰 올리기');
-    expect(model.rootTitle).toBe('손발 맞춰 올리기');
+    expect(model.displayTitle).toBe('발 맞춰 움직이기');
+    expect(model.rootTitle).toBe('발 맞춰 움직이기');
     expect(model.variantLabel).toBe('');
   });
 });

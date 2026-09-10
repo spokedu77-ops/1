@@ -22,6 +22,7 @@ import {
 } from '../officialSpomovePresets';
 import { canLaunchInternalSpomoveCandidate } from '../internalSpomoveCandidateAccess';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
+import { resolveSpomovePublicDisplayTitle } from '../spomovePublicNaming';
 import { parseSpomoveHubReturnHref } from '../spomoveHubNavigation';
 import {
   buildActivitySessionHref,
@@ -620,6 +621,7 @@ function SpomoveSessionContent() {
   }, [beginConfiguredSession, showBriefing, state]);
 
   if (!officialPreset || !canLaunchPreset) return <UnsupportedPreset />;
+  const sessionDisplayTitle = displayModel?.displayTitle ?? resolveSpomovePublicDisplayTitle(officialPreset.id, officialPreset.title);
 
   if (state === 'running') {
     return (
@@ -717,7 +719,7 @@ function SpomoveSessionContent() {
     >
       {showBriefing ? (
         <TopBar
-          drillName={displayModel?.displayTitle ?? officialPreset.title}
+          drillName={sessionDisplayTitle}
           mode={launchMode}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
@@ -727,8 +729,8 @@ function SpomoveSessionContent() {
 
       {showBriefing ? (
         <SessionSetupShell
-          programLabel={displayModel?.programLabel ?? officialPreset.title}
-          displayTitle={displayModel?.displayTitle ?? officialPreset.title}
+          programLabel={displayModel?.programLabel ?? officialPreset.programTitle}
+          displayTitle={sessionDisplayTitle}
           compact={entryMode === 'start'}
         >
           {entryMode === 'settings' ? (
@@ -759,7 +761,7 @@ function SpomoveSessionContent() {
         <div className="absolute inset-0 min-h-0 overflow-hidden bg-[#F1F5F9]">
           <MasterSessionResult
             status={state}
-            activityTitle={displayModel?.displayTitle ?? officialPreset.title}
+            activityTitle={sessionDisplayTitle}
             elapsedMs={sessionResult.elapsedMs ?? 0}
             colorCounts={sessionResult.colorCounts ?? null}
             engineMode={sessionResult.engineMode}

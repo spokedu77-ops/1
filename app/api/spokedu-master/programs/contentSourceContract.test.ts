@@ -61,7 +61,8 @@ describe('public program lesson content sources', () => {
       'app/api/spokedu-master/programs/route.ts',
     ), 'utf8');
 
-    expect(source).toContain(".select('id,display_order')");
+    expect(source).toContain(".select('id,display_order,created_at')");
+    expect(source).toContain('isLessonCatalogNew(row.created_at)');
     expect(source).toContain("const title = cleanText(overlay?.title, '')");
     expect(source).toContain('const videoUrl = rawVideoUrl');
     expect(source).toContain("const rawCategory = cleanText(meta?.sm_theme, '')");

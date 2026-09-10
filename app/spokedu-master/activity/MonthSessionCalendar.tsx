@@ -2,9 +2,9 @@
 
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulToday } from '../lib/sessionDateTime';
+import { addSeoulSessionDays, formatSeoulSessionDay, formatSeoulSessionTime, getSeoulToday } from '../lib/sessionDateTime';
 import type { MasterSessionDto } from '../types/operational';
-import { buildMonthCalendar, moveMonth } from './monthCalendar';
+import { buildMonthCalendar, clampDayToMonth, seoulWeekdayMondayIndex } from './monthCalendar';
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -20,17 +20,39 @@ export function MonthSessionCalendar({ month, selectedDay, sessions, action, onM
   const days = buildMonthCalendar(month, sessions);
   const trailingEmptyWeek = days.slice(-7).every((item) => !item.inMonth);
   const visibleDays = trailingEmptyWeek ? days.slice(0, 35) : days;
+  const selectedWeekday = seoulWeekdayMondayIndex(selectedDay);
+
+  const selectDay = (day: string) => {
+    onDaySelect(day);
+    onMonthChange(day.slice(0, 7));
+  };
 
   return <section data-manage-calendar aria-label="월간 수업 일정" className="overflow-hidden rounded-[16px] border border-slate-200 bg-white">
     <div className="flex h-14 shrink-0 items-center justify-between gap-3 px-4">
-      <h2 className="flex items-center gap-2 text-[16px] font-bold text-slate-950"><CalendarDays size={18} />{formatSeoulSessionDay(`${month}-01`, { year: 'numeric', month: 'long' })}</h2>
+      <h2 className="flex min-w-0 items-center gap-2 text-[16px] font-bold text-slate-950">
+        <label className="relative grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-xl text-slate-600 hover:bg-slate-100">
+          <CalendarDays size={18} aria-hidden />
+          <input
+            type="month"
+            value={month}
+            aria-label="연월 선택"
+            onChange={(event) => {
+              const nextMonth = event.target.value;
+              if (!/^\d{4}-\d{2}$/.test(nextMonth)) return;
+              selectDay(clampDayToMonth(selectedDay, nextMonth));
+            }}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          />
+        </label>
+        {formatSeoulSessionDay(`${month}-01`, { year: 'numeric', month: 'long' })}
+      </h2>
       <div className="flex items-center justify-end gap-2"><div className="flex items-center gap-0.5">
-        <button type="button" onClick={() => onMonthChange(moveMonth(month, -1))} className="grid h-9 w-9 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="이전 달"><ChevronLeft size={18} /></button>
-        <button type="button" onClick={() => { onMonthChange(today.slice(0, 7)); onDaySelect(today); }} className="h-9 rounded-xl border border-slate-200 px-2.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-100">오늘</button>
-        <button type="button" onClick={() => onMonthChange(moveMonth(month, 1))} className="grid h-9 w-9 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="다음 달"><ChevronRight size={18} /></button>
+        <button type="button" onClick={() => selectDay(addSeoulSessionDays(selectedDay, -1))} className="grid h-9 w-9 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="이전 날"><ChevronLeft size={18} /></button>
+        <button type="button" onClick={() => selectDay(today)} className={`h-9 rounded-xl border px-2.5 text-[13px] font-semibold hover:bg-slate-100 ${selectedDay === today ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-700'}`}>오늘</button>
+        <button type="button" onClick={() => selectDay(addSeoulSessionDays(selectedDay, 1))} className="grid h-9 w-9 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="다음 날"><ChevronRight size={18} /></button>
       </div>{action ? <div className="shrink-0">{action}</div> : null}</div>
     </div>
-    <div className="grid h-8 shrink-0 grid-cols-7 border-y border-slate-100 px-1 text-center text-[12px] font-semibold text-slate-500">{WEEKDAYS.map((label) => <span key={label} className="self-center">{label}</span>)}</div>
+    <div className="grid h-8 shrink-0 grid-cols-7 border-y border-slate-100 px-1 text-center text-[12px] font-semibold text-slate-500">{WEEKDAYS.map((label, index) => <span key={label} className={`self-center ${index === selectedWeekday ? 'text-blue-700' : ''}`}>{label}</span>)}</div>
     <div data-manage-cal-grid className={`grid min-h-0 grid-cols-7 gap-px bg-slate-100 ${visibleDays.length === 35 ? 'grid-rows-5' : 'grid-rows-6'}`}>
       {visibleDays.map((item) => {
         const selected = item.day === selectedDay;

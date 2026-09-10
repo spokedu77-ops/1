@@ -3,7 +3,7 @@
 import { Bookmark, ChevronDown, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import {
@@ -67,6 +67,7 @@ import {
   serializeSpomoveHubUrlState,
 } from './spomoveHubNavigation';
 import { useSpomoveGuideVideo } from './useSpomoveGuideVideo';
+import { resolveSpomovePublicDisplayTitle } from './spomovePublicNaming';
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
@@ -715,7 +716,15 @@ function PresetCard({
 
 // ── 메인 뷰 ──
 
-export default function SpomoveHubView() {
+function SpomoveHubInner({
+  draftQuery,
+  setDraftQuery,
+  hydrateSearchFromUrl,
+}: {
+  draftQuery: string;
+  setDraftQuery: (query: string) => void;
+  hydrateSearchFromUrl: (query: string) => void;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const operationalData = useOperationalData();
@@ -736,8 +745,10 @@ export default function SpomoveHubView() {
   const activeProgramGroup = urlState.group as ProgramGroupTab;
   const activeThinkingLevel = urlState.difficulty as ThinkingLevelTab;
   const movementFilter = urlState.movement as MovementQuickFilter | 'all';
-  const searchQuery = urlState.q;
-  const selectedFamilyId = urlState.family === 'all' ? null : urlState.family as SpomoveCatalogFamilyId;
+  const searchQuery = draftQuery;
+  const selectedFamilyId = searchQuery.trim()
+    ? null
+    : urlState.family === 'all' ? null : urlState.family as SpomoveCatalogFamilyId;
   const hubView = urlState.view;
   const appendSessionContext = (href: string) => {
     if (!sessionContext) return href;
@@ -849,6 +860,16 @@ export default function SpomoveHubView() {
     else router.push(href, { scroll: false });
   };
 
+  const applySearchQuery = (nextQuery: string, commitUrl: boolean) => {
+    const q = nextQuery.slice(0, 80);
+    setDraftQuery(q);
+    if (commitUrl) updateHubState({ q, family: q ? 'all' : urlState.family }, true);
+  };
+
+  useEffect(() => {
+    hydrateSearchFromUrl(urlState.q);
+  }, [hydrateSearchFromUrl, urlState.q]);
+
   const addPresetToSession = async (preset: OfficialSpomovePreset) => {
     if (!sessionContext || addingPresetId) return;
     setAddingPresetId(preset.id);
@@ -865,16 +886,19 @@ export default function SpomoveHubView() {
 
   const clearHubFilters = () => {
     setFiltersOpen(false);
+    setDraftQuery('');
     router.push(getSpomoveHubHref('all'), { scroll: false });
   };
 
   const selectCatalogFamily = (familyId: SpomoveCatalogFamilyId) => {
     setFiltersOpen(false);
+    setDraftQuery('');
     updateHubState({ family: familyId, group: 'all', difficulty: 'all', movement: 'all', q: '', view: 'all' });
   };
 
   const selectAllFamilies = () => {
     setFiltersOpen(false);
+    setDraftQuery('');
     updateHubState({ family: 'all', group: 'all', difficulty: 'all', movement: 'all', q: '', view: 'all' });
   };
 
@@ -1008,23 +1032,34 @@ export default function SpomoveHubView() {
               <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="spomove-search"
-                type="search"
+                type="text"
+                inputMode="search"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 value={searchQuery}
                 onChange={(event) => {
-                  const nextQuery = event.target.value;
-                  updateHubState({ q: nextQuery, family: nextQuery ? 'all' : urlState.family }, true);
+                  setDraftQuery(event.target.value.slice(0, 80));
+                }}
+                onBlur={(event) => {
+                  const next = event.relatedTarget;
+                  if (next instanceof Node && event.currentTarget.parentElement?.contains(next)) return;
+                  const q = searchQuery.slice(0, 80);
+                  if (q === urlState.q && (!q || urlState.family === 'all')) return;
+                  applySearchQuery(searchQuery, true);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === 'Escape' && searchQuery) {
                     event.preventDefault();
-                    updateHubState({ q: '' }, true);
+                    applySearchQuery('', true);
                   }
                 }}
                 placeholder="프로그램명, 테마, 시리즈 검색"
                 className="h-11 w-full rounded-xl border border-white/15 bg-white/10 pl-10 pr-11 text-sm font-medium text-white outline-none placeholder:text-slate-400 focus:border-white/35 focus:bg-white/[0.14] focus:ring-2 focus:ring-white/10"
               />
               {searchQuery ? (
-                <button type="button" onClick={() => updateHubState({ q: '' }, true)} aria-label="검색어 지우기" className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-xl text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
+                <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => applySearchQuery('', true)} aria-label="검색어 지우기" className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-xl text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
                   <X aria-hidden className="h-4 w-4" />
                 </button>
               ) : null}
@@ -1058,7 +1093,7 @@ export default function SpomoveHubView() {
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {recentSpomoveActivities.map((activity) => {
                 const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId && isHubListedPreset(item));
-                const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : activity.programTitle;
+                const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : resolveSpomovePublicDisplayTitle(activity.programId, activity.programTitle);
                 const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
                 const snapshot = activity.spomoveSnapshot;
                 const recentHref = preset
@@ -1193,5 +1228,25 @@ export default function SpomoveHubView() {
         />
       </div>
     </main>
+  );
+}
+
+export default function SpomoveHubView() {
+  const [draftQuery, setDraftQuery] = useState('');
+  const searchHydratedRef = useRef(false);
+  const hydrateSearchFromUrl = useCallback((query: string) => {
+    if (searchHydratedRef.current) return;
+    searchHydratedRef.current = true;
+    if (query) setDraftQuery(query);
+  }, []);
+
+  return (
+    <Suspense fallback={null}>
+      <SpomoveHubInner
+        draftQuery={draftQuery}
+        setDraftQuery={setDraftQuery}
+        hydrateSearchFromUrl={hydrateSearchFromUrl}
+      />
+    </Suspense>
   );
 }

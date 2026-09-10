@@ -1,4 +1,5 @@
 import type { OfficialSpomovePreset } from '../officialSpomovePresets';
+import { resolveSpomovePublicDisplayTitle } from '../spomovePublicNaming';
 
 type SpomoveRecordDraftInput = {
   elapsedMs?: number | null;
@@ -24,7 +25,7 @@ export function buildSpomoveRecordDraft({ elapsedMs, preset, status }: SpomoveRe
   const minutes = minutesFromElapsed(elapsedMs);
   const completionLabel = status === 'done' ? '완료' : '중도 종료';
   return [
-    `[SPOMOVE 활동 기록 초안] ${preset.title} ${completionLabel}`,
+    `[SPOMOVE 활동 기록 초안] ${resolveSpomovePublicDisplayTitle(preset.id, preset.title)} ${completionLabel}`,
     `실제 움직인 시간: 약 ${minutes}분`,
     `예상 활동량: 가벼운-중간 강도의 전신 움직임, 예상 소모 열량 ${estimateCalories(minutes)}`,
     `활동 효과: ${preset.axisTitle}을 중심으로 반응, 방향 전환, 신체 조절, 집중 유지 경험을 제공합니다.`,

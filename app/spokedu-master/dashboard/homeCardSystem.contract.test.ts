@@ -27,6 +27,8 @@ describe('MASTER Home content card system', () => {
     expect(weeklyCard).not.toContain('grid-rows-');
     expect(dashboard).not.toContain('MV_HOME_WEEKLY_COPY');
     expect(dashboard).toContain('buildHomeWeeklySupportMeta');
+    expect(weeklyCard).toContain('LessonNewMark');
+    expect(dashboard).toContain('isNew={program.isNew}');
   });
 
   it('normalizes Home SPOMOVE shelf meta to responseType plus difficulty and trainingFocus', () => {

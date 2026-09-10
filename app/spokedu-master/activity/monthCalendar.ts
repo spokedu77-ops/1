@@ -11,6 +11,18 @@ export function moveMonth(month: string, offset: number) {
   return `${moved.getUTCFullYear()}-${String(moved.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
+export function clampDayToMonth(day: string, month: string) {
+  const date = Number(day.slice(8, 10));
+  const [year, monthNumber] = month.split('-').map(Number);
+  const last = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+  return `${month}-${String(Math.min(Math.max(date || 1, 1), last)).padStart(2, '0')}`;
+}
+
+export function seoulWeekdayMondayIndex(day: string) {
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(seoulDayToDate(day));
+  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(weekday);
+}
+
 export function buildMonthCalendar(month: string, sessions: MasterSessionDto[]): MonthCalendarDay[] {
   const firstDay = `${month}-01`;
   const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', weekday: 'short' }).format(seoulDayToDate(firstDay));

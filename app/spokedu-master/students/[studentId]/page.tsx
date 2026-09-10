@@ -9,6 +9,7 @@ import { MasterCollectionRow, MasterPageHeader, MasterPageShell, MasterSection }
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../../lib/sessionDateTime';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
+import { resolveSpomovePublicDisplayTitle } from '../../spomove/spomovePublicNaming';
 
 function attendanceLabel(status: 'present' | 'absent') {
   return status === 'present' ? '출석' : '결석';
@@ -61,7 +62,7 @@ export default function StudentDetailPage() {
                   <span className="min-w-0 flex-1">
                     <span className="block text-base font-semibold text-slate-900">{session.className}</span>
                     <span className="mt-1 block text-xs font-medium text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(session.startAt)}</span>
-                    {session.programs.length ? <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-medium text-slate-600">{session.programs.map((program) => <span key={program.id} className="inline-flex items-center gap-1">{program.isCompleted ? <CheckCircle2 size={12} className="text-emerald-600" /> : null}{program.programTitle ?? '이름 없는 활동'}</span>)}</span> : null}
+                    {session.programs.length ? <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-medium text-slate-600">{session.programs.map((program) => <span key={program.id} className="inline-flex items-center gap-1">{program.isCompleted ? <CheckCircle2 size={12} className="text-emerald-600" /> : null}{program.sourceType === 'spomove' ? resolveSpomovePublicDisplayTitle(program.spomovePresetId, program.programTitle) : program.programTitle ?? '이름 없는 활동'}</span>)}</span> : null}
                   </span>
                   <ChevronRight size={17} className="mt-1 shrink-0 text-slate-400" />
                 </Link>
