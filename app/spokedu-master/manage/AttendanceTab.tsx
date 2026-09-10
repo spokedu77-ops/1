@@ -31,8 +31,8 @@ export function AttendanceTab({ onShowSchedule, onSessionSelect }: { onShowSched
   if (!selectedClass) return <p className="py-10 text-center text-sm text-slate-500">출석부를 보려면 먼저 수업반을 만들어 주세요.</p>;
 
   return (
-    <section aria-labelledby="manage-attendance-heading" className="mt-7">
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+    <section aria-labelledby="manage-attendance-heading" className="mt-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <label className="text-xs font-semibold text-slate-500">수업반
           <select value={selectedClass.id} onChange={(event) => setClassId(event.target.value)} className="mt-1 block h-11 min-w-56 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800">
             {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}

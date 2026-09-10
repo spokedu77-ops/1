@@ -80,11 +80,11 @@ export type ClassAttendanceRow = {
 
 export function resolveInitialAttendanceMonth(sessions: MasterSessionDto[], classId: string, todayDay: string) {
   const currentMonth = todayDay.slice(0, 7);
-  const completed = sessions
-    .filter((session) => session.classId === classId && session.status === 'completed')
+  const relevant = sessions
+    .filter((session) => session.classId === classId && session.status !== 'cancelled')
     .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime());
-  if (completed.some((session) => getSeoulSessionDay(session.startAt).startsWith(currentMonth))) return currentMonth;
-  return completed[0] ? getSeoulSessionDay(completed[0].startAt).slice(0, 7) : currentMonth;
+  if (relevant.some((session) => getSeoulSessionDay(session.startAt).startsWith(currentMonth))) return currentMonth;
+  return relevant[0] ? getSeoulSessionDay(relevant[0].startAt).slice(0, 7) : currentMonth;
 }
 
 export function shiftAttendanceMonth(month: string, amount: number) {
@@ -117,16 +117,19 @@ export function buildClassAttendanceView(
   students: MasterStudentDto[],
   month?: string,
 ) {
-  const completedSessions = sessions
+  const monthSessions = sessions
     .filter((session) => session.classId === classItem.id
-      && session.status === 'completed'
+      && session.status !== 'cancelled'
       && (!month || getSeoulSessionDay(session.startAt).startsWith(month)))
-    .sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime());
+    .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
   const activeStudents = new Map(students.map((student) => [student.id, student]));
   const historicalNames = new Map<string, string>();
-  completedSessions.forEach((session) => session.attendance.forEach((entry) => {
-    if (!historicalNames.has(entry.studentId)) historicalNames.set(entry.studentId, entry.studentName);
-  }));
+  monthSessions.forEach((session) => {
+    if (session.status !== 'completed') return;
+    session.attendance.forEach((entry) => {
+      if (!historicalNames.has(entry.studentId)) historicalNames.set(entry.studentId, entry.studentName);
+    });
+  });
   const studentIds = new Set([...classItem.studentIds, ...historicalNames.keys()]);
   const rows = [...studentIds].map<ClassAttendanceRow>((studentId) => {
     const activeStudent = activeStudents.get(studentId);
@@ -140,11 +143,12 @@ export function buildClassAttendanceView(
       studentId,
       studentName: activeStudent?.name ?? historicalNames.get(studentId) ?? '이름 미상',
       current: classItem.studentIds.includes(studentId),
-      attendanceBySessionId: Object.fromEntries(completedSessions.flatMap((session) => {
+      attendanceBySessionId: Object.fromEntries(monthSessions.flatMap((session) => {
+        if (session.status !== 'completed') return [];
         const attendance = session.attendance.find((entry) => entry.studentId === studentId);
         return attendance ? [[session.id, attendance.status]] : [];
       })),
     };
   }).sort((a, b) => Number(b.current) - Number(a.current) || a.studentName.localeCompare(b.studentName, 'ko'));
-  return { completedSessions, rows };
+  return { sessions: monthSessions, rows };
 }

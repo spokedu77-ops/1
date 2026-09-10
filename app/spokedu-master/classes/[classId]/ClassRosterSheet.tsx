@@ -4,7 +4,8 @@ import { ArrowLeft, Check, Search, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { StudentFieldSelect } from '../../components/ui/StudentFieldSelect';
-import { SPM_PRIMARY_BTN_FULL } from '../../lib/masterActionGrammar';
+import { SPM_DESTRUCTIVE_BTN, SPM_PRIMARY_BTN_FULL, MASTER_ACTION_COPY } from '../../lib/masterActionGrammar';
+import type { MasterStudentDto } from '../../types/operational';
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { buildStudentAgeOptions } from '../../lib/studentAddPresets';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
@@ -27,7 +28,12 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<MasterStudentDto | null>(null);
   const ageOptions = buildStudentAgeOptions(data.students.map((student) => studentMetaToDisplay(student.meta)));
+  const roster = useMemo(
+    () => data.students.filter((student) => classItem?.studentIds.includes(student.id)),
+    [classItem?.studentIds, data.students],
+  );
   const results = useMemo(
     () => resolveClassRosterCandidates(data.students, classItem?.studentIds ?? [], query).slice(0, 20),
     [classItem?.studentIds, data.students, query],
@@ -38,6 +44,12 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
     .slice(0, 1);
 
   const resetFeedback = () => { setError(null); setMessage(null); };
+  const removeFromClass = async (student: MasterStudentDto) => {
+    setSaving(true); resetFeedback();
+    try { await data.removeClassStudent(classId, student.id); setPendingRemove(null); }
+    catch { setError('학생을 반에서 제외하지 못했습니다.'); }
+    finally { setSaving(false); }
+  };
   const openNew = (prefill = '') => { resetFeedback(); setName(prefill); setMeta(''); setMode('new'); };
   const openBulk = () => { resetFeedback(); setBulkText(''); setBulkNames(null); setBulkChoices({}); setMode('bulk'); };
 
@@ -102,9 +114,11 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
     setSaving(false);
   };
 
-  return <BottomSheet open title={`학생 추가 · ${className}`} onClose={onClose}>
+  return <>
+    <BottomSheet open title={`학생 관리 · ${className}`} onClose={onClose}>
     <div className="space-y-4 pb-3">
       {mode === 'search' ? <>
+        {roster.length ? <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">{roster.map((student) => <div key={student.id} className="flex min-h-12 items-center gap-3 px-3 py-2"><span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">{student.name}</span><button type="button" disabled={saving} onClick={() => setPendingRemove(student)} className="min-h-11 shrink-0 px-2 text-xs font-medium text-rose-600 disabled:opacity-40">{MASTER_ACTION_COPY.removeFromClass}</button></div>)}</div> : <p className="text-xs font-medium text-slate-500">아직 등록된 학생이 없습니다.</p>}
         <label className="block text-xs font-black text-slate-600">기존 학생 검색
           <span className="relative mt-2 block"><Search className="absolute left-3 top-3 text-slate-400" size={18} /><input autoFocus value={query} onChange={(event) => { setQuery(event.target.value); resetFeedback(); }} placeholder="이름 검색" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm font-bold outline-none focus:border-emerald-500" /></span>
         </label>
@@ -136,5 +150,7 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
       {message ? <p className="rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-700">{message}</p> : null}
       {error ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
     </div>
-  </BottomSheet>;
+  </BottomSheet>
+  {pendingRemove ? <BottomSheet open title={MASTER_ACTION_COPY.removeFromClass} onClose={() => setPendingRemove(null)}><div className="space-y-4 pb-3"><p className="text-sm font-semibold leading-6 text-slate-600"><strong className="text-slate-900">{pendingRemove.name}</strong> 학생을 <strong className="text-slate-900">{className}</strong> 명단에서 제외합니다. 학생과 과거 출석 및 수업 이력은 유지됩니다.</p>{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={saving} onClick={() => void removeFromClass(pendingRemove)} className={SPM_DESTRUCTIVE_BTN}>{saving ? '제외 중…' : MASTER_ACTION_COPY.removeFromClass}</button><button type="button" disabled={saving} onClick={() => setPendingRemove(null)} className="min-h-11 w-full text-sm font-medium text-slate-600">돌아가기</button></div></BottomSheet> : null}
+  </>;
 }

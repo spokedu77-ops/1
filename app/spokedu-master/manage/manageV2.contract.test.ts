@@ -32,6 +32,9 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(schedule).toContain('SPOMOVE ${spomoveCount}');
     expect(calendar).not.toContain('sessionDotClass');
     expect(calendar).not.toContain('점 · 칩');
+    expect(calendar).toContain('예정</span>');
+    expect(calendar).toContain('완료</span>');
+    expect(calendar).toContain('취소</span>');
     expect(schedule).not.toContain('sm:grid-cols-2');
     expect(schedule).toContain('action={hasClasses ?');
     expect(manage).toContain('<MasterPageHeader title="수업 관리" />');
@@ -39,7 +42,9 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(schedule).toContain('예정된 수업이 없습니다.');
     expect(schedule).toContain('수업 {daySessions.length}개');
     expect(calendar).not.toContain('overflow-visible');
-    expect(manage).toContain("lg:grid-cols-[minmax(0,1fr)_410px]");
+    expect(calendar).toContain('whitespace-normal break-keep');
+    expect(calendar).not.toContain('min-w-0 truncate');
+    expect(manage).toContain("lg:grid-cols-[minmax(0,1fr)_440px]");
     expect(manage).toContain('<MasterPageShell variant="wide"');
     expect(manage).not.toContain("lg:pr-[434px]");
     expect(calendar).not.toContain("selected ? 'z-10 ring-2");
@@ -62,7 +67,14 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('aria-label="수업 관리 메뉴"');
     expect(detail).not.toContain('수업 관리 <ChevronDown');
     expect(detail).toContain('h-11 w-11 shrink-0');
+    expect(detail).toContain('수업 완료 취소');
     expect(detail).toContain('h-5 w-5 place-items-center');
+    expect(detail).toContain('data-session-create');
+    expect(detail).toContain('lg:grid-cols-[minmax(0,1fr)_80px_auto_80px]');
+    expect(detail).toContain('REPEAT_LABEL');
+    expect(detail).toContain('+ 새 수업반 만들기');
+    expect(detail).toContain('aria-expanded={attendanceOpen}');
+    expect(detail).toContain('rounded-full px-3 text-[12px]');
     expect(detail).toContain('id: `pending:${key}`');
     expect(detail).toContain('setPrograms(ordered)');
     expect(detail).toContain('setPrograms(previous)');
@@ -70,6 +82,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('splitLessonTitle(officialProgram.title).koreanTitle');
     expect(detail).toContain('<ChevronRight');
     expect(sheet).toContain("lg:static lg:z-auto lg:block");
+    expect(sheet).toContain('lg:w-[440px]');
     expect(detail).toContain("return false");
   });
 

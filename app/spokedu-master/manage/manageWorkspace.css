@@ -1,0 +1,66 @@
+[data-manage-workspace] {
+  --manage-cal-height: 620px;
+}
+
+[data-manage-workspace] header h1 {
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+[data-manage-workspace] header {
+  gap: 0;
+}
+
+@media (min-width: 1024px) and (max-height: 960px) {
+  [data-manage-workspace] {
+    --manage-cal-height: 540px;
+  }
+
+  [data-manage-workspace] [data-manage-agenda] > button {
+    min-height: 72px !important;
+    padding-block: 8px !important;
+  }
+
+  [data-manage-workspace] [data-session-detail]:not(:has([data-session-create])) {
+    gap: 12px;
+  }
+
+  [data-manage-workspace] [data-activity-row] {
+    min-height: 50px;
+  }
+
+  [data-manage-workspace] [data-session-detail]:not(:has([data-session-create])) textarea {
+    min-height: 56px !important;
+    max-height: 64px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-manage-calendar] {
+    display: flex;
+    height: var(--manage-cal-height);
+    flex-direction: column;
+  }
+
+  [data-manage-calendar] [data-manage-cal-grid] {
+    min-height: 0;
+    flex: 1;
+  }
+
+  [data-manage-calendar] [data-manage-cal-grid] > button {
+    min-height: 0;
+  }
+
+  [data-manage-workspace] [data-sheet-scroll-owner] {
+    overflow-y: auto;
+    padding-bottom: 28px;
+    scrollbar-gutter: stable;
+  }
+
+  [data-manage-workspace] [data-sheet-scroll-owner]:has([data-session-create]) {
+    flex: 0 1 auto !important;
+    min-height: 0;
+    padding-bottom: 8px;
+    scrollbar-gutter: auto;
+  }
+}

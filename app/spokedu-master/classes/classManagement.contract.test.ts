@@ -42,36 +42,37 @@ describe('MASTER Class and attendance management contracts', () => {
 
   it('uses state-based Class actions instead of an abstract open action', () => {
     expect(list).toContain('MasterCollectionRow');
-    expect(list).toContain('확인할 기록');
+    expect(list).not.toContain('내 수업반');
+    expect(list).not.toContain('확인할 기록');
     expect(list).toContain('다음 일정 없음');
+    expect(list).toContain('학생 없음');
+    expect(list).toContain('다음 수업');
     expect(list).not.toContain('MASTER_ACTION_COPY.open');
   });
 
-  it('keeps Class Detail focused on current work, roster, history, and memory', () => {
-    const currentWork = detail.indexOf('<SessionSummary session=');
-    const rosterTabs = detail.indexOf('role="tablist"');
-    const recentHistory = detail.indexOf('지난 수업</h2>');
-    const memory = detail.indexOf('<ClassMemoryPanel');
-    expect(currentWork).toBeGreaterThan(-1);
-    expect(rosterTabs).toBeGreaterThan(currentWork);
-    expect(recentHistory).toBeGreaterThan(rosterTabs);
-    expect(memory).toBeGreaterThan(recentHistory);
+  it('keeps Class Detail focused on roster count and monthly attendance', () => {
+    expect(detail).not.toContain('SessionSummary');
+    expect(detail).not.toContain('ClassMemoryPanel');
+    expect(detail).not.toContain('role="tablist"');
+    expect(detail).not.toContain('학생 명단');
+    expect(detail).not.toContain('지난 출석');
+    expect(detail).not.toContain('지난 수업</h2>');
+    expect(detail).not.toContain('지금 해야 할 일');
+    expect(detail).not.toContain('이력 보기');
+    expect(detail).toContain('학생 관리');
+    expect(detail).toContain('출석부');
+    expect(detail).toContain('<ClassRosterSheet');
+    expect(detail).toContain('await data.updateClass(classItem.id, editName.trim())');
     expect(detail).not.toContain('RegularSchedulePanel');
-    expect(detail).not.toContain('다음 운영 작업');
-    expect(detail).toContain('미기록 수업 선택');
-    expect(detail).toContain('지금 해야 할 일');
-    expect(detail).toContain('지난 수업 마무리하기');
-    expect(detail).toContain('수업 준비 이어가기');
-    expect(detail).toContain('아직 지난 수업이 없습니다.');
     expect(detail).not.toContain('border border-dashed');
   });
 
   it('keeps roster mutations Class-scoped and does not soft-delete Students', () => {
     expect(rosterSheet).toContain('await data.addClassStudent(classId, studentId)');
-    expect(detail).toContain('await data.removeClassStudent(classItem.id, student.id)');
+    expect(rosterSheet).toContain('await data.removeClassStudent(classId, student.id)');
     expect(rosterSheet).toContain('classIds: [classId]');
     expect(detail).not.toContain('deleteStudent(');
-    expect(detail).toContain('과거 출석 및 수업 이력은 유지됩니다.');
+    expect(rosterSheet).toContain('과거 출석 및 수업 이력은 유지됩니다.');
     expect(rosterSheet).toContain('resolveClassRosterCandidates');
   });
 
@@ -85,9 +86,10 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(rosterSheet).toContain('명 등록 완료 ·');
   });
 
-  it('renders attendance as a completed Session projection without an attendance-book object', () => {
+  it('renders attendance as a Session projection without an attendance-book object', () => {
     expect(detail).toContain('buildClassAttendanceView');
     expect(detail).toContain('AttendanceProjectionTable');
+    expect(detail).toContain('attendanceView.sessions');
     expect(projection).toContain('overflow-x-auto');
     expect(projection).toContain('sticky left-0');
     expect(detail).toContain('shiftAttendanceMonth');
@@ -104,9 +106,10 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(activity).not.toContain('uncheckedRosterCount === 0');
   });
 
-  it('surfaces incomplete attendance and keeps every repair link Session-exact', () => {
-    expect(detail).toContain('buildIncompleteAttendanceSessions');
-    expect(detail).toContain('출석 미기록 {incompleteSessions.length}건');
-    expect(detail).toContain('session=${encodeURIComponent(incompleteSessions[0]!.id)}');
+  it('keeps incomplete-attendance helpers available without rendering Class Detail debt panels', () => {
+    const model = read('app/spokedu-master/classes/classManagementModel.ts');
+    expect(model).toContain('export function buildIncompleteAttendanceSessions');
+    expect(detail).not.toContain('buildIncompleteAttendanceSessions');
+    expect(detail).not.toContain('출석 미기록');
   });
 });

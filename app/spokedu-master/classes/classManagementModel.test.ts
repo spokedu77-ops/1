@@ -54,7 +54,8 @@ describe('MASTER Class management model', () => {
 
   it('projects completed attendance without inferring a missing row as absent', () => {
     const view = buildClassAttendanceView(classes[0]!, sessions, students);
-    expect(view.completedSessions.map((item) => item.id)).toEqual(['a-recent', 'a-old']);
+    expect(view.sessions.map((item) => item.id)).toEqual(['a-old', 'a-recent', 'a-next', 'a-next-later']);
+    expect(view.sessions.some((item) => item.status === 'cancelled')).toBe(false);
     expect(view.rows.map((row) => row.studentId)).toEqual(['student-current', 'student-removed']);
     expect(view.rows[0]?.studentName).toBe('현재 학생');
     expect(view.rows[0]?.attendanceBySessionId['a-recent']).toBeUndefined();
@@ -68,11 +69,19 @@ describe('MASTER Class management model', () => {
     expect(buildClassCards(classes, sessions, '2026-08-10T00:00:00Z')[0]?.incompleteAttendanceCount).toBe(1);
   });
 
+  it('keeps current roster rows when the month has no Sessions', () => {
+    const view = buildClassAttendanceView(classes[0]!, sessions, students, '2026-12');
+    expect(view.sessions).toEqual([]);
+    expect(view.rows.map((row) => row.studentId)).toEqual(['student-current']);
+  });
+
   it('filters the attendance projection by Seoul month and preserves exact same-day Sessions', () => {
     const sameDay = session('a-same-day', 'class-a', 'completed', '2026-08-02T05:00:00Z');
     const september = session('a-september', 'class-a', 'completed', '2026-09-02T01:00:00Z');
     const augustView = buildClassAttendanceView(classes[0]!, [...sessions, sameDay, september], students, '2026-08');
-    expect(augustView.completedSessions.map((item) => item.id)).toEqual(['a-same-day', 'a-recent', 'a-old']);
+    expect(augustView.sessions.map((item) => item.id)).toEqual(['a-old', 'a-recent', 'a-same-day']);
+    expect(augustView.sessions.some((item) => item.status === 'cancelled')).toBe(false);
+    expect(resolveInitialAttendanceMonth(sessions, 'class-a', '2026-09-15')).toBe('2026-09');
     expect(resolveInitialAttendanceMonth([...sessions, september], 'class-a', '2026-10-01')).toBe('2026-09');
     expect(shiftAttendanceMonth('2026-12', 1)).toBe('2027-01');
   });

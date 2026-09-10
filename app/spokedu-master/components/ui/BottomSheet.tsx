@@ -143,7 +143,7 @@ export function BottomSheet({
         ? [
             'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] px-4 pt-3 shadow-2xl outline-none',
             'sm:px-5 sm:pt-4',
-            'lg:h-full lg:max-h-full lg:w-[410px] lg:max-w-[410px] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:px-4 lg:pt-4 lg:shadow-none',
+            'lg:h-full lg:max-h-full lg:min-h-0 lg:w-[440px] lg:max-w-[440px] lg:rounded-none lg:border-y-0 lg:border-l lg:border-r-0 lg:px-6 lg:pt-5 lg:shadow-none',
           ].join(' ')
       : isLaunch
         ? [
@@ -156,7 +156,7 @@ export function BottomSheet({
       : `relative max-h-[88dvh] w-full max-w-[720px] rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6 ${hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`;
 
   const overlayClassName = isSession
-    ? 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm lg:static lg:z-auto lg:block lg:bg-transparent lg:px-0 lg:backdrop-blur-none'
+    ? 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm lg:static lg:z-auto lg:block lg:h-full lg:min-h-0 lg:bg-transparent lg:px-0 lg:backdrop-blur-none'
     : isLaunch
     ? 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 backdrop-blur-sm sm:items-center sm:px-6'
     : 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm sm:items-center sm:px-6';
@@ -214,7 +214,7 @@ export function BottomSheet({
         </div>
         {isLaunch || isSession || hasDetachedFooter ? (
           <>
-            <div data-sheet-scroll-owner className="min-h-0 flex-1 touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain pb-4 sm:pb-5">{children}</div>
+            <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'overflow-y-auto lg:overflow-y-auto' : 'overflow-y-auto'}`}>{children}</div>
             {footer ? <div className="shrink-0 [&>div.grid]:grid-flow-col [&>div.grid]:auto-cols-fr [&>div.grid]:grid-cols-none">{footer}</div> : null}
           </>
         ) : children}
