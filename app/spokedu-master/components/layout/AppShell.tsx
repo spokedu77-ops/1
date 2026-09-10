@@ -201,6 +201,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isPayment = pathname.startsWith(`${basePath}/payment`);
   const isLanding = pathname.startsWith(`${basePath}/landing`);
   const isLibraryDetail = pathname.startsWith(`${basePath}/library/`);
+  const isManage = pathname === `${basePath}/manage` || pathname === `${basePath}/activity`;
   const isPublicDocument = pathname === `${basePath}/terms` || pathname === `${basePath}/privacy`;
   const isProgramsEditor = pathname.startsWith('/admin/spokedu-master/programs');
   const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument || isProgramsEditor;
@@ -481,9 +482,9 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--spm-bg)] text-slate-900">
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[var(--spm-bg)]" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
-        <div className="flex min-w-0 flex-1 flex-col">
+    <div className={`${isManage ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-[var(--spm-bg)] text-slate-900`}>
+      <div className={`relative mx-auto flex w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[var(--spm-bg)] ${isManage ? 'h-dvh' : 'min-h-dvh'}`} style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
+        <div className={`flex min-w-0 flex-1 flex-col ${isManage ? 'min-h-0' : ''}`}>
           {hideChrome ? null : (
             <div className={isLibraryDetail ? 'hidden lg:block' : undefined}>
               <StatusBar />

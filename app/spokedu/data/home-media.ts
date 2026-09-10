@@ -79,6 +79,20 @@ export const HOME_MEDIA = {
     tone: 'violet',
     objectPosition: '54% 48%',
   }),
+  homeHeroInclusive: fromPhoto(SPOKEDU_IMAGES.home.fieldHeroInclusive, {
+    id: 'home-hero-inclusive',
+    label: '체육수업 Hero',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '72% 48%',
+  }),
+  homeSpomoveDiveField: fromPhoto(SPOKEDU_IMAGES.home.fieldSpomoveDive, {
+    id: 'home-spomove-dive-field',
+    label: 'SPOMOVE 현장',
+    fallbackGradient: 'from-fuchsia-500 via-violet-700 to-slate-900',
+    tone: 'violet',
+    objectPosition: '50% 78%',
+  }),
   homeCaseGeneral: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialCaseGeneral, {
     id: 'home-case-general',
     label: '일반 체육수업 사례',
@@ -113,7 +127,7 @@ export const HOME_MEDIA = {
     label: '체육수업 현장',
     fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
     tone: 'sky',
-    objectPosition: '50% 35%',
+    objectPosition: '50% 68%',
   }),
   homeHeroWide: fromPhoto(SPOKEDU_IMAGES.home.heroSpomoveClass, {
     id: 'home-hero-wide',

@@ -302,17 +302,17 @@ export function SiteHeader() {
         }`}
       >
         <div className={`${marketingSectionInner} flex h-[var(--spokedu-public-header-height)] items-center justify-between gap-4`}>
-          <BrandLogo onDark={onHero} scrollHomeOnClick size="md" />
+          <BrandLogo onDark={onHero} scrollHomeOnClick size="lg" />
 
-          <nav className="hidden h-10 items-center gap-8 lg:flex xl:gap-10" aria-label="주 메뉴">
+          <nav className="hidden h-12 items-center gap-8 lg:flex xl:gap-10" aria-label="주 메뉴">
             {siteNav.map(renderDesktopEntry)}
           </nav>
 
-          <div className="flex h-10 items-center gap-2">
+          <div className="flex h-12 items-center gap-2">
             <NavAnchor
               href={siteHeaderCta.href}
               trackLabel={siteHeaderCta.trackLabel}
-              className={`hidden h-10 items-center justify-center rounded-xl px-5 text-[15px] font-bold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
+              className={`hidden min-h-12 items-center justify-center rounded-xl px-5 text-[15px] font-bold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
                 menuOpen
                   ? 'pointer-events-none invisible'
                   : onHero

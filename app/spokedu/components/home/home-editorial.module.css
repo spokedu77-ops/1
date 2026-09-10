@@ -1,33 +1,27 @@
-/* V1 Home — a connected service journey with clear field photography. */
+/* V1 Home — field-first PE brand with one connected service journey. */
 
 .page {
-  --he-content: var(--spokedu-marketing-content-max);
-  --he-wide: var(--spokedu-marketing-content-max);
-  --he-measure: 640px;
-  --he-documentary-radius: var(--spokedu-marketing-radius-medium);
-  --he-product-radius: 11px;
-  --he-section-quiet: clamp(3.25rem, 5vw, 4.5rem);
-  --he-section-standard: clamp(4.5rem, 7vw, 6rem);
-  --he-section-feature: clamp(5.25rem, 8vw, 7.25rem);
-  --he-body-leading: 1.64;
-  --he-lead-leading: 1.66;
-  --he-caption-leading: 1.52;
+  --he-content: 75rem;
+  --he-wide: 75rem;
+  --he-measure: 40rem;
+  --he-image-radius: 1rem;
+  --he-section-quiet: clamp(3rem, 7vw, 5rem);
+  --he-section-standard: clamp(3.5rem, 8vw, 6.5rem);
+  --he-body-leading: 1.7;
+  --he-lead-leading: 1.7;
+  --he-caption-leading: 1.55;
   --he-gutter: clamp(1.25rem, 4vw, 3rem);
-  --he-signature-display: clamp(2.375rem, 3.9vw, 3.75rem);
-  --he-section-display: clamp(1.75rem, 3.2vw, 3rem);
-  --he-choice-display: clamp(1.75rem, 2.65vw, 2.5rem);
-  --he-quiet-display: clamp(1.625rem, 2.45vw, 2.5rem);
-  --he-proof-display: clamp(1.875rem, 2.9vw, 2.75rem);
-  --he-subhead-size: 1.3125rem;
+  --he-section-display: clamp(1.625rem, 2.4vw, 2.25rem);
+  --he-quiet-display: clamp(1.625rem, 2.3vw, 2.125rem);
+  --he-subhead-size: 1.25rem;
   --he-lead-size: 1.125rem;
   --he-body-size: 1.0625rem;
-  --he-meta-size: 0.96875rem;
+  --he-meta-size: 0.9375rem;
   --he-cta-size: 1rem;
   color: var(--spokedu-marketing-color-navy);
   background: var(--spokedu-marketing-color-paper);
 }
 
-.homeSignatureDisplay,
 .homeSectionDisplay,
 .homeQuietDisplay {
   margin: 0;
@@ -36,22 +30,18 @@
   letter-spacing: -0.03em;
 }
 
-.homeSignatureDisplay {
-  font-size: var(--he-signature-display);
-  line-height: 1.08;
-}
-
 .homeSectionDisplay {
   font-size: var(--he-section-display);
-  line-height: 1.12;
+  line-height: 1.22;
 }
 
 .homeQuietDisplay {
   font-size: var(--he-quiet-display);
-  line-height: 1.16;
+  line-height: 1.22;
 }
 
 .homeSubhead {
+  margin: 0;
   font-size: var(--he-subhead-size);
   font-weight: 700;
   line-height: 1.35;
@@ -60,7 +50,7 @@
 
 .homeLead {
   font-size: var(--he-lead-size);
-  line-height: 1.65;
+  line-height: var(--he-lead-leading);
 }
 
 .homeBody {
@@ -76,7 +66,7 @@
 
 .homeTextCta {
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: 3rem;
   align-items: center;
   gap: 0.1875rem;
   font-size: var(--he-cta-size);
@@ -87,306 +77,203 @@
   transition: color 180ms ease;
 }
 
-/* Text / header / CTA axis */
 .contentRail {
   width: min(var(--he-content), 100%);
   margin-inline: auto;
   padding-inline: var(--he-gutter);
 }
 
-/* Large photo / product / case grid axis */
-.visualRail {
-  width: min(var(--he-wide), 100%);
-  margin-inline: auto;
-  padding-inline: var(--he-gutter);
+.page section[id] {
+  scroll-margin-top: calc(var(--spokedu-public-header-height) + 1.5rem);
 }
 
-.measure {
-  max-width: var(--he-measure);
-}
-
-.flowRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 0.75rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.flowRow li {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.flowArrow {
-  color: var(--spokedu-marketing-color-muted);
-  opacity: 0.72;
-}
-
-.spomovePhoto :global(img) {
-  filter: brightness(1.01) contrast(1.04) saturate(1.03);
-}
-
-.photoGradeCase {
-  object-fit: cover;
-}
-
-/* V1: copy and field photography have separate, equally clear space. */
+/* —— Hero —— */
 .hero {
-  padding-block: calc(var(--spokedu-public-header-height) + 3.5rem) 3.5rem;
-  background: var(--spokedu-marketing-color-white);
-}
-.heroGrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; align-items: center; }
-.heroCopy { min-width: 0; }
-.eyebrow { margin: 0 0 1.25rem; font-size: .875rem; font-weight: 650; line-height: 1.5; color: var(--spokedu-marketing-color-blue); }
-.heroHeadingLayout { margin: 0; word-break: keep-all; overflow-wrap: anywhere; }
-.heroHeadingLayout span { display: block; }
-.heroHeadingLayout span + span { color: var(--spokedu-marketing-color-blue); margin-top: .2em; }
-.heroLead { margin: 1.5rem 0 0; max-width: 29rem; font-size: 1.125rem; line-height: 1.75; color: var(--spokedu-marketing-color-body); }
-.heroActions { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: .75rem; }
-.heroActions a { text-align: center; white-space: normal; }
-.heroFigure { min-width: 0; margin: 0; }
-.heroImageFrame { position: relative; aspect-ratio: 5 / 4; overflow: hidden; border-radius: var(--spokedu-marketing-radius-medium); background: var(--spokedu-marketing-color-paper); }
-.heroImage { object-fit: cover; object-position: 57% 76%; }
-.heroCaption { margin-top: .875rem; font-size: .875rem; line-height: 1.6; color: var(--spokedu-marketing-color-body); }
-.serviceGrid { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 2rem; border-block: 1px solid var(--spokedu-marketing-color-border); }
-.serviceCard { display: flex; min-width: 0; flex-direction: column; padding: 1.75rem 0; color: var(--spokedu-marketing-color-ink); text-decoration: none; }
-.serviceCard + .serviceCard { border-top: 1px solid var(--spokedu-marketing-color-border); }
-.serviceTop { display: flex; align-items: center; gap: 1rem; font-size: .875rem; color: var(--spokedu-marketing-color-body); }
-.serviceNumber { color: var(--spokedu-marketing-color-blue); font-weight: 650; }
-.serviceCard h3 { margin: 1.5rem 0 .75rem; font-size: 1.5rem; line-height: 1.35; font-weight: 700; letter-spacing: -.025em; }
-.serviceCard p { margin: 0; font-size: 1rem; line-height: 1.7; word-break: keep-all; overflow-wrap: anywhere; }
-.serviceAction { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: auto; padding-top: 1.75rem; font-size: 1rem; font-weight: 650; color: var(--spokedu-marketing-color-blue); }
-.serviceAction > span { font-size: 1.5rem; }
-.serviceCard:hover .serviceAction { text-decoration: underline; text-underline-offset: .25rem; }
-.caseAction { display: inline-flex; gap: .75rem; margin-top: .875rem; color: var(--spokedu-marketing-color-blue); font-size: .9375rem; font-weight: 600; }
-.page section[id] { scroll-margin-top: calc(var(--spokedu-public-header-height) + 1.5rem); }
-@media (min-width: 960px) {
-  .heroGrid { grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: 2.5rem; }
-  .heroImageFrame { aspect-ratio: 1 / 1.08; }
-  .serviceGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .serviceCard { padding: 2rem; }
-  .serviceCard:first-child { padding-left: 0; }
-  .serviceCard:last-child { padding-right: 0; }
-  .serviceCard + .serviceCard { border-top: 0; border-left: 1px solid var(--spokedu-marketing-color-border); }
-}
-@media (max-width: 599px) {
-  .hero { padding-top: calc(var(--spokedu-public-header-height) + 2.5rem); padding-bottom: 2.5rem; }
-  .heroLead { font-size: 1rem; }
-  .heroActions { flex-direction: column; align-items: stretch; }
-}
-
-/* —— Choice (quiet) —— */
-.choice {
-  padding-block: var(--he-section-quiet);
+  padding-block: calc(var(--spokedu-public-header-height) + 2.75rem) 3.5rem;
   background: var(--spokedu-marketing-color-white);
 }
 
-.choiceTitle {
-  font-size: var(--he-choice-display);
-}
-
-/* —— SPOMOVE (action-led editorial) —— */
-.spomove {
-  padding-top: var(--he-section-feature);
-  padding-bottom: 3.25rem;
-  background: #081126;
-  color: #fff;
-}
-
-.spomoveHeader {
+.heroGrid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-}
-
-.spomoveHeadline {
-  min-width: 0;
-}
-
-.spomoveSupport {
-  min-width: 0;
-}
-
-.spomoveLabel {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #afc8ff;
-}
-
-.spomoveTitle {
-  margin: 1rem 0 0;
-  max-width: none;
-  color: #fff;
-  white-space: pre-line;
-}
-
-.spomoveDefinition {
-  margin: 0;
-  max-width: 28rem;
-  color: #d8e4f4;
-}
-
-.spomoveCta {
-  margin-top: 1.5rem;
-}
-
-.spomovePhoto {
-  position: relative;
-  width: 100%;
-  min-width: 0;
-  margin-top: clamp(1.5rem, 2.5vw, 2rem);
-  aspect-ratio: 16 / 9;
-  border-radius: var(--he-documentary-radius);
-  overflow: hidden;
-  background: #132245;
-}
-
-.spomovePhotoMedia {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  border-radius: 0;
-}
-
-.spomovePrinciples {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  margin: 1.25rem 0 0;
-  padding: 0.8125rem 0 0;
-  border-top: 1px solid rgba(175, 200, 255, 0.16);
-  list-style: none;
-}
-
-.spomovePrincipleItem {
-  min-width: 0;
-}
-
-.spomovePrincipleLabel {
-  margin: 0;
-  font-size: 1.3125rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.3;
-  color: #fff;
-}
-
-.spomovePrincipleBody {
-  margin: 0.375rem 0 0;
-  max-width: 22rem;
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1.55;
-  color: #c9d8ed;
-}
-
-/* —— Subscription (product stage) —— */
-.subscription {
-  padding-top: var(--he-section-feature);
-  padding-bottom: var(--he-section-standard);
-  background: var(--spokedu-marketing-color-white);
-}
-
-.subscriptionIntro {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
   align-items: start;
 }
 
-.subscriptionTitle {
-  margin: 0;
-  max-width: none;
-  color: var(--spokedu-marketing-color-ink);
-}
-
-.subscriptionTitleLine {
-  display: block;
-}
-
-.subscriptionSupport {
+.heroCopy {
   min-width: 0;
-  max-width: 34rem;
 }
 
-.subscriptionLead {
+.eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: var(--spokedu-marketing-color-blue);
+}
+
+.heroHeadingLayout {
   margin: 0;
-  max-width: none;
+  max-width: 16em;
+  color: var(--spokedu-marketing-color-navy);
+  font-size: 2rem !important;
+  line-height: 1.25 !important;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.heroPhrase {
+  display: inline;
+  white-space: nowrap;
+}
+
+.heroLead {
+  margin: 1.25rem 0 0;
+  max-width: 36rem;
+  font-size: 1.0625rem;
+  line-height: 1.7;
   color: var(--spokedu-marketing-color-body);
 }
 
-.subscriptionFlow {
-  margin-top: 1.25rem;
-  color: var(--spokedu-marketing-color-ink);
-  font-size: 1.125rem;
-  font-weight: 700;
+.heroActions {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
-.subscriptionFlow .flowArrow {
-  opacity: 0.38;
-  font-weight: 500;
+.heroActions a {
+  text-align: center;
+  white-space: normal;
 }
 
-.subscriptionCta {
-  margin-top: 1.25rem;
-}
-
-.productStageVisual {
-  width: 100%;
+.heroFigure {
   min-width: 0;
-  margin-top: 2rem;
-  border-radius: var(--he-product-radius);
-  overflow: hidden;
-  border: 1px solid rgba(20, 33, 58, 0.08);
-  background: #f6f8fb;
-  box-shadow: 0 8px 22px rgba(8, 17, 38, 0.032);
+  margin: 0;
 }
 
-.productStageFrame {
+.heroImageFrame {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1296 / 748;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: #f6f8fb;
+  border-radius: var(--he-image-radius);
+  background: var(--spokedu-marketing-color-paper);
 }
 
-.productImageFocal {
+.heroImage {
   object-fit: cover;
-  object-position: top left;
+  object-position: 50% 68%;
 }
 
-/* —— Cases (editorial work collection) —— */
+/* —— Choice —— */
+.choice {
+  padding-block: var(--he-section-quiet);
+  background: var(--spokedu-marketing-color-white);
+  border-top: 1px solid var(--spokedu-marketing-color-border);
+}
+
+.choiceTitle {
+  max-width: var(--he-measure);
+}
+
+.serviceGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: 2rem;
+  border-block: 1px solid var(--spokedu-marketing-color-border);
+}
+
+.serviceCard {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 1.75rem 1rem;
+  margin-inline: -1rem;
+  color: var(--spokedu-marketing-color-ink);
+  text-decoration: none;
+  border-radius: var(--he-image-radius);
+  outline: 1px solid transparent;
+  transition: outline-color 180ms ease, background-color 180ms ease;
+}
+
+.serviceCard:focus-visible {
+  outline: 2px solid var(--spokedu-marketing-color-blue);
+  outline-offset: 2px;
+}
+
+.serviceCard + .serviceCard {
+  border-top: 1px solid var(--spokedu-marketing-color-border);
+}
+
+.serviceAudience {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.serviceCard h3 {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 1.375rem;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.serviceBody {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.serviceAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--spokedu-marketing-color-blue);
+}
+
+.serviceAction > span {
+  font-size: 1.25rem;
+}
+
+/* —— Cases —— */
 .cases {
-  padding-top: 3.5rem;
-  padding-bottom: 3rem;
+  padding-block: var(--he-section-standard);
   background: var(--spokedu-marketing-color-paper);
 }
 
 .casesHeader {
-  margin-bottom: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.casesHeadingBlock {
+  min-width: 0;
 }
 
 .casesTitle {
-  margin: 0;
-  font-size: var(--he-proof-display);
   color: var(--spokedu-marketing-color-ink);
 }
 
 .casesLead {
-  margin-top: 0.5rem;
-  max-width: none;
+  margin: 0.5rem 0 0;
+  max-width: 38rem;
   color: var(--spokedu-marketing-color-body);
+}
+
+.casesArchive {
+  margin: 0;
 }
 
 .casesIndex {
@@ -423,9 +310,9 @@
   position: relative;
   width: 100%;
   min-width: 0;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  border-radius: var(--he-documentary-radius);
+  border-radius: var(--he-image-radius);
   background: #e8edf4;
 }
 
@@ -434,28 +321,260 @@
   transition: transform 200ms ease;
 }
 
+.photoGradeCase {
+  object-fit: cover;
+}
+
 .caseMeta {
-  margin-top: 0.8125rem;
+  margin-top: 0.875rem;
+}
+
+.caseProofLine {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.5;
+  color: var(--spokedu-marketing-color-body);
 }
 
 .caseVenue {
-  font-size: 1.25rem;
+  margin-top: 0.35rem;
+  font-size: 1.125rem;
   color: var(--spokedu-marketing-color-ink);
 }
 
 .caseDisplayMeta {
-  margin-top: 0.3125rem;
-  color: #33475c;
+  margin: 0.4rem 0 0;
+  color: var(--spokedu-marketing-color-body);
 }
 
-.casesArchive {
+.caseAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  color: var(--spokedu-marketing-color-blue);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+/* —— SPOMOVE —— */
+.spomove {
+  padding-block: var(--he-section-standard);
+  background: var(--spokedu-marketing-color-white);
+  color: var(--spokedu-marketing-color-navy);
+}
+
+.spomoveLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.spomoveCopy {
+  min-width: 0;
+}
+
+.spomoveKicker {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.spomoveLabel {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--spokedu-marketing-color-blue);
+}
+
+.spomoveTitle {
+  margin: 0.75rem 0 0;
+  max-width: 22rem;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.spomoveDefinition {
+  margin: 1rem 0 0;
+  max-width: 36rem;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.spomoveCta {
   margin-top: 1.25rem;
 }
 
-/* —— Contact (quiet closing) —— */
+.spomovePhoto {
+  position: relative;
+  width: min(22rem, 100%);
+  min-width: 0;
+  margin: 0;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--he-image-radius);
+  overflow: hidden;
+  background: var(--spokedu-marketing-color-paper);
+  justify-self: start;
+}
+
+.spomovePhoto :global(img) {
+  filter: brightness(1.01) contrast(1.04) saturate(1.03);
+}
+
+.spomovePhotoMedia {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+}
+
+.spomoveExampleLabel {
+  margin: 1.75rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--spokedu-marketing-color-navy);
+}
+
+.spomovePrinciples {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin: 0.75rem 0 0;
+  padding: 0.875rem 0 0;
+  border-top: 1px solid var(--spokedu-marketing-color-border);
+  list-style: none;
+}
+
+.spomovePrincipleItem {
+  min-width: 0;
+}
+
+.spomovePrincipleLabel {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.spomovePrincipleBody {
+  margin: 0.35rem 0 0;
+  max-width: 24rem;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--spokedu-marketing-color-body);
+}
+
+/* —— Subscription —— */
+.subscription {
+  padding-block: var(--he-section-standard);
+  background: var(--spokedu-marketing-color-paper);
+}
+
+.subscriptionIntro {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.subscriptionTitle {
+  margin: 0;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.subscriptionTitleLine {
+  display: block;
+}
+
+.subscriptionSupport {
+  min-width: 0;
+  max-width: 36rem;
+}
+
+.subscriptionLead {
+  margin: 0;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.subscriptionCta {
+  margin-top: 1.25rem;
+}
+
+.productFeatures {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.productFeature {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.productFeatureCopy {
+  min-width: 0;
+}
+
+.productFeatureCopy p {
+  margin-top: 0.5rem;
+  color: var(--spokedu-marketing-color-body);
+}
+
+.productFeatureVisual {
+  margin: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.productStageFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--he-image-radius);
+  border: 1px solid var(--spokedu-marketing-color-border);
+  background: #f6f8fb;
+}
+
+.productImageFocal {
+  pointer-events: none;
+}
+
+.productImageCover {
+  object-fit: cover;
+  object-position: 50% 72%;
+}
+
+.productImageContain {
+  object-fit: contain;
+  object-position: center;
+}
+
+.productCaption {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--spokedu-marketing-color-muted);
+}
+
+/* —— Contact —— */
 .contact {
-  padding-top: 3.5rem;
-  padding-bottom: var(--he-section-quiet);
+  padding-block: var(--he-section-quiet);
   background: var(--spokedu-marketing-color-white);
   border-top: 1px solid var(--spokedu-marketing-color-border);
 }
@@ -468,22 +587,29 @@
 
 .contactBody {
   margin-top: 1rem;
-  max-width: 32rem;
+  max-width: 36rem;
   color: var(--spokedu-marketing-color-body);
-  white-space: pre-line;
 }
 
 .contactActions {
-  margin-top: 1.75rem;
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.contactActions a {
+  text-align: center;
+  white-space: normal;
+}
+
+.contactSupport {
+  margin-top: 1rem;
 }
 
 /* —— Text CTA —— */
 .textCta {
   composes: homeTextCta;
-}
-
-.textCtaDark {
-  color: #d2e2ff;
 }
 
 .textCtaLabel {
@@ -505,12 +631,18 @@
     text-decoration-thickness: 2px;
   }
 
-  .textCtaDark:hover {
-    color: #fff;
-  }
-
   .textCta:hover .textCtaArrow {
     transform: translateX(2px);
+  }
+
+  .serviceCard:hover {
+    background: var(--spokedu-marketing-color-paper);
+    outline-color: var(--spokedu-marketing-color-border);
+  }
+
+  .serviceCard:hover .serviceAction {
+    text-decoration: underline;
+    text-underline-offset: 0.25rem;
   }
 
   .caseLink:hover .casePhotoImage {
@@ -523,58 +655,30 @@
   }
 }
 
-@media (min-width: 1024px) {
-  .contactLayout {
-    display: grid;
-    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-    gap: clamp(2rem, 4vw, 3.5rem);
-    align-items: end;
-  }
-
-  .contactBody {
-    margin-top: 0;
-    max-width: none;
-  }
-
-  .contactActions {
-    margin-top: 1.5rem;
-  }
-}
-
 @media (min-width: 960px) {
-  .spomoveHeader {
-    grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
-    gap: clamp(2rem, 4vw, 3.5rem);
-    align-items: start;
+  .heroHeadingLayout {
+    font-size: 3.125rem !important;
+    line-height: 1.18 !important;
   }
 
-  .spomoveSupport {
-    padding-top: 1.15rem;
-  }
-
-  .spomovePhoto {
-    margin-top: 2rem;
-  }
-
-  .spomovePrinciples {
+  .serviceGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.25rem;
-    margin-top: 1.25rem;
   }
 
-  .subscriptionIntro {
-    grid-template-columns: minmax(0, 29rem) minmax(0, 1fr);
-    gap: 2rem;
-    align-items: start;
+  .serviceCard {
+    padding: 2rem 1.25rem;
+    margin-inline: 0;
   }
 
-  .subscriptionSupport {
-    padding-top: 0.45rem;
-    max-width: 36rem;
+  .serviceCard + .serviceCard {
+    border-top: 0;
+    border-left: 1px solid var(--spokedu-marketing-color-border);
   }
 
-  .productStageVisual {
-    margin-top: 2.125rem;
+  .casesHeader {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1.5rem;
   }
 
   .casesIndex {
@@ -582,12 +686,71 @@
     gap: 1.5rem;
   }
 
-  .casePhoto {
-    aspect-ratio: 4 / 3;
+  .subscriptionIntro {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2rem;
+    align-items: end;
+  }
+
+  .productFeatures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .contactLayout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: clamp(2rem, 4vw, 3.5rem);
+    align-items: end;
+  }
+
+  .contactBody {
+    margin-top: 0;
   }
 }
 
+@media (min-width: 1080px) {
+  .heroGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: 3rem;
+    align-items: center;
+  }
 
+  .heroLead {
+    font-size: 1.125rem;
+  }
+
+  .spomoveLayout {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3rem;
+    align-items: start;
+  }
+}
+
+@media (max-width: 380px) {
+  .heroPhrase {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 599px) {
+  .hero {
+    padding-top: calc(var(--spokedu-public-header-height) + 2rem);
+    padding-bottom: 2.5rem;
+  }
+
+  .heroLead,
+  .homeLead,
+  .homeBody {
+    font-size: 1rem;
+  }
+
+  .heroActions,
+  .contactActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .page *,

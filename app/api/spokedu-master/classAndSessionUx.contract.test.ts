@@ -25,11 +25,13 @@ describe('SPOKEDU MASTER class and Session operating UX', () => {
     expect(activity).not.toContain('student.group ===');
   });
 
-  it('uses a searchable multi-select program picker with SPOMOVE discovery', () => {
+  it('uses a searchable multi-select picker with SPOMOVE and favorites discovery', () => {
     const mutationRoute = read('app/api/spokedu-master/sessions/[sessionId]/programs/route.ts');
     const sourceMigration = read('supabase/migrations/20260823010000_spokedu_master_session_program_sources.sql');
     expect(picker).toContain('활동 검색');
-    expect(picker).toContain("(['program', 'spomove'] as const)");
+    expect(picker).toContain("(['program', 'spomove', 'favorite'] as const)");
+    expect(picker).toContain('즐겨찾기');
+    expect(activity).toContain('favoriteContentRefsByOwner');
     expect(activity).toContain('OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset)');
     expect(picker).toContain('setSelected');
     expect(activity).toContain('data.addSessionSpomove');

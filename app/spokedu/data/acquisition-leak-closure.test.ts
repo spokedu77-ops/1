@@ -16,14 +16,18 @@ import { programRegistry } from './programs-catalog';
 import { SPOKEDU_PATHS } from './site';
 
 describe('acquisition leak closure', () => {
-  it('keeps home choice focused on two commercial paths without sub-navigation', () => {
+  it('keeps home choice focused on three audience paths without dispatch leftovers', () => {
     expect(homePage.choice.education.headline).toBe('체육수업');
     expect(homePage.choice.subscription.tagline).toMatch(/직접 수업/);
     expect('links' in homePage.choice.education).toBe(false);
     expect(JSON.stringify(homePage.choice)).not.toContain('/dispatch');
-    expect(JSON.stringify(homePage.choice)).not.toContain('/private');
-    expect(homePage.hero.primaryCta.label).toBe('체육수업 알아보기');
-    expect(homePage.contact.primaryCta.label).toBe('문의하기');
+    expect(homePage.serviceChoices.map((item) => item.href)).toEqual([
+      SPOKEDU_PATHS.education,
+      SPOKEDU_PATHS.private,
+      SPOKEDU_PATHS.subscription,
+    ]);
+    expect(homePage.hero.primaryCta.label).toBe('수업 유형 살펴보기');
+    expect(homePage.contact.primaryCta.label).toBe('기관 수업 상담');
     expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기/);
   });
 
@@ -76,10 +80,11 @@ describe('acquisition leak closure', () => {
 
   it('routes home commercial CTAs into structured landings without repeating choice at contact', () => {
     expect(homePage.spomove.primaryCta.href).toBe(`${SPOKEDU_PATHS.spomove}`);
-    expect(homePage.hero.primaryCta.href).toBe(`${SPOKEDU_PATHS.education}`);
+    expect(homePage.hero.primaryCta.href).toBe('#choice');
     expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_PATHS.subscription}`);
-    expect(homePage.contact.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}`);
-    expect('secondaryCta' in homePage.contact).toBe(false);
+    expect(homePage.contact.primaryCta.href).toBe(`${SPOKEDU_PATHS.contact}?type=dispatch`);
+    expect(homePage.contact.secondaryCta.href).toBe(`${SPOKEDU_PATHS.contact}?type=private`);
+    expect(homePage.contact.supportCta.href).toBe(SPOKEDU_PATHS.subscription);
     expect(JSON.stringify(homePage.contact)).not.toMatch(/onboarding/);
     expect(JSON.stringify(homePage.contact)).not.toMatch(/체육수업 알아보기|구독시스템 알아보기|운영 사례 더 보기/);
   });

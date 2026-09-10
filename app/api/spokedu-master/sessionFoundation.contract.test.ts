@@ -33,10 +33,13 @@ describe('SPOKEDU MASTER Session foundation', () => {
     expect(activity).toContain('MASTER_ACTION_COPY.createSession');
   });
 
-  it('applies program UI state only after mutation success', () => {
+  it('optimistically applies reversible program UI state around mutations', () => {
     const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
-    expect(activity.indexOf('await data.updateSessionProgram')).toBeLessThan(activity.indexOf('setPrograms((current) => current.map'));
-    expect(activity.indexOf('await data.removeSessionProgram')).toBeLessThan(activity.lastIndexOf('setPrograms((current) => current.filter'));
+    const toggle = activity.slice(activity.indexOf('async function toggleProgram'), activity.indexOf('async function moveProgram'));
+    const remove = activity.slice(activity.indexOf('async function removeProgram'), activity.indexOf('async function endRule'));
+    expect(toggle.indexOf('await data.updateSessionProgram')).toBeLessThan(toggle.indexOf('setPrograms((current) => current.map'));
+    expect(remove.indexOf('setPrograms((current) => current.filter')).toBeLessThan(remove.indexOf('await data.removeSessionProgram'));
+    expect(remove).toContain('catch (caught) { setPrograms(previous)');
   });
 
   it('rejects completed program additions and cancelled attendance changes', () => {

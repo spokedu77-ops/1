@@ -2,27 +2,29 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { buildClassAttendanceView, resolveInitialAttendanceMonth, shiftAttendanceMonth } from '../classes/classManagementModel';
+import { shiftAttendanceMonth } from '../classes/classManagementModel';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { getSeoulToday } from '../lib/sessionDateTime';
 import { AttendanceProjectionTable } from './AttendanceProjectionTable';
+import { buildManageAttendanceProjection } from './manageAttendanceProjection';
+import type { MasterSessionDto } from '../types/operational';
 
-export function AttendanceTab({ onShowSchedule }: { onShowSchedule: () => void }) {
+export function AttendanceTab({ onShowSchedule, onSessionSelect }: { onShowSchedule: () => void; onSessionSelect: (session: MasterSessionDto) => void }) {
   const data = useOperationalData();
   const [classId, setClassId] = useState(() => data.classes[0]?.id ?? '');
   const selectedClass = data.classes.find((item) => item.id === classId) ?? data.classes[0] ?? null;
-  const [month, setMonth] = useState(() => selectedClass ? resolveInitialAttendanceMonth(data.sessions, selectedClass.id, getSeoulToday()) : getSeoulToday().slice(0, 7));
+  const [month, setMonth] = useState(() => getSeoulToday().slice(0, 7));
 
   useEffect(() => {
     if (!classId && data.classes[0]) setClassId(data.classes[0].id);
   }, [classId, data.classes]);
 
   useEffect(() => {
-    if (selectedClass) setMonth(resolveInitialAttendanceMonth(data.sessions, selectedClass.id, getSeoulToday()));
+    if (selectedClass) setMonth(getSeoulToday().slice(0, 7));
   }, [selectedClass?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const view = useMemo(
-    () => selectedClass ? buildClassAttendanceView(selectedClass, data.sessions, data.students, month) : { completedSessions: [], rows: [] },
+    () => selectedClass ? buildManageAttendanceProjection(selectedClass, data.sessions, data.students, month) : { sessions: [], rows: [] },
     [data.sessions, data.students, month, selectedClass],
   );
 
@@ -42,7 +44,7 @@ export function AttendanceTab({ onShowSchedule }: { onShowSchedule: () => void }
           <button type="button" onClick={() => setMonth((current) => shiftAttendanceMonth(current, 1))} className="grid h-11 w-11 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="다음 달"><ChevronRight size={18} /></button>
         </div>
       </div>
-      <AttendanceProjectionTable sessions={view.completedSessions} rows={view.rows} emptyMonthLabel={`${Number(month.slice(5, 7))}월`} emptyAction={<button type="button" onClick={onShowSchedule} className="mt-4 min-h-11 px-2 text-sm font-semibold text-slate-700 hover:text-slate-950">일정 보기</button>} />
+      <AttendanceProjectionTable sessions={view.sessions} rows={view.rows} emptyMonthLabel={`${Number(month.slice(5, 7))}월`} emptyAction={<button type="button" onClick={onShowSchedule} className="mt-4 min-h-11 px-2 text-sm font-semibold text-slate-700 hover:text-slate-950">일정 보기</button>} onSessionSelect={onSessionSelect} />
     </section>
   );
 }

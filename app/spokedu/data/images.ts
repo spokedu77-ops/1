@@ -169,6 +169,25 @@ export const SPOKEDU_IMAGES = {
       'SPOMOVE 수업 — 화면 속 자극을 보며 움직이는 아동들',
       { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home'] },
     ),
+    fieldHeroInclusive: defineImage(
+      'home',
+      'home-hero-inclusive',
+      'field-editorial/home-hero-inclusive.webp',
+      '지도자가 아이와 함께 화면과 바닥 패드를 보며 움직이는 체육수업 현장',
+      { allowedPages: ['home'] },
+    ),
+    fieldSpomoveDive: defineImage(
+      'home',
+      'home-spomove-dive-field',
+      'field-editorial/home-spomove-dive-field.webp',
+      '아이들이 화면의 길을 보고 바닥 패드 위에서 움직이는 SPOMOVE 수업 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['home'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-05.webp',
+      },
+    ),
     fieldEditorialCaseGeneral: defineImage(
       'home',
       'home-case-general',

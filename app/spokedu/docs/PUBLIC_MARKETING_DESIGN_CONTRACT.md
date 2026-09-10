@@ -30,4 +30,4 @@ Inspect desktop and mobile rendering: intended crop, natural Korean wrapping, no
 
 ## Current implementation slice
 
-Home hero, service routing, representative cases, and common navigation/footer are updated locally. Other landing pages remain a later slice. Runtime/build and rendered responsive QA are not yet completed; `AGENTS.md` requires explicit authorization for npm, TypeScript, lint, test and build verification. No commit, push or deployment is part of this change.
+Home copy, section rhythm, header CTA label, and common header/footer alignment are updated locally against the V1 rework brief. Other landing page bodies remain a later slice. Runtime/build commands were not run. Rendered visual PASS is not declared. No commit, push or deployment is part of this change.

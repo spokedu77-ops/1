@@ -97,7 +97,7 @@ export const siteNav: SiteNavEntry[] = [
 ];
 
 export const siteHeaderCta = {
-  label: '상담하기',
+  label: '수업 상담',
   href: SPOKEDU_PATHS.contact,
   trackLabel: 'header-contact',
 } as const;
