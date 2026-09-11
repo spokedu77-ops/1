@@ -9,6 +9,7 @@ import type {
   SaveSessionInput,
 } from '@/app/spokedu-master/types/operational';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
+import { CLASS_TIME_COLLISION_MESSAGE, completionAttendanceMessage, validateCompletionAttendance } from '@/app/spokedu-master/lib/sessionIntegrity';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -153,7 +154,38 @@ async function save(request: Request, sessionId: string | null) {
   if (access.plan === 'lite' && input.memo) {
     return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Premium에서 사용할 수 있습니다.' }, { status: 403 });
   }
+  if (sessionId && input.status === 'completed') {
+    return privateNoStoreJson({ error: '수업 완료는 출석 검증을 포함한 완료 요청으로 처리해 주세요.' }, { status: 400 });
+  }
   const supabase = getServiceSupabase();
+  const { data: currentSession, error: currentError } = sessionId
+    ? await supabase.from('spokedu_master_sessions')
+      .select('id,class_id,start_at,end_at')
+      .eq('id', sessionId).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle()
+    : { data: null, error: null };
+  if (currentError) {
+    await reportError(currentError, { context: 'spokedu_master.sessions.collision' });
+    return privateNoStoreJson({ error: '수업 시간 중복 여부를 확인하지 못했습니다.' }, { status: 500 });
+  }
+  if (sessionId && !currentSession) return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
+  const timeChanged = !currentSession
+    || currentSession.class_id !== input.classId
+    || new Date(currentSession.start_at).getTime() !== new Date(input.startAt).getTime()
+    || new Date(currentSession.end_at).getTime() !== new Date(input.endAt).getTime();
+  if (timeChanged) {
+    let collisionQuery = supabase.from('spokedu_master_sessions')
+      .select('id', { count: 'exact', head: true }).eq('owner_id', access.userId).eq('class_id', input.classId)
+      .is('deleted_at', null).neq('status', 'cancelled').lt('start_at', input.endAt).gt('end_at', input.startAt);
+    if (sessionId) collisionQuery = collisionQuery.neq('id', sessionId);
+    const { count: collisionCount, error: collisionError } = await collisionQuery;
+    if (collisionError) {
+      await reportError(collisionError, { context: 'spokedu_master.sessions.collision' });
+      return privateNoStoreJson({ error: '수업 시간 중복 여부를 확인하지 못했습니다.' }, { status: 500 });
+    }
+    if ((collisionCount ?? 0) > 0) {
+      return privateNoStoreJson({ error: CLASS_TIME_COLLISION_MESSAGE }, { status: 400 });
+    }
+  }
   let result: { data: unknown; error: { code?: string } | null };
   try {
     const canonicalActivities = (input.programs ?? []).map((item) => {
@@ -177,7 +209,7 @@ async function save(request: Request, sessionId: string | null) {
   }
   const { data: savedId, error } = result;
   if (error || typeof savedId !== 'string') {
-    if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: 'Invalid session data' }, { status: 400 });
+    if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : 'Invalid session data' }, { status: 400 });
     if (error?.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
     await reportError(error ?? new Error('Session RPC returned no id'), { context: 'spokedu_master.sessions' });
     return privateNoStoreJson({ error: 'Session could not be saved' }, { status: 500 });
@@ -213,14 +245,32 @@ export async function PUT(request: Request) {
   if (access.plan === 'lite' && input.memo) {
     return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Premium에서 사용할 수 있습니다.' }, { status: 403 });
   }
-  if (input.status !== 'completed' || body.attendance.some((item: unknown) => {
-    if (!isObject(item)) return true;
-    return typeof item.studentId !== 'string' || (item.status !== 'present' && item.status !== 'absent');
-  })) {
+  if (input.status !== 'completed') {
     return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
   }
 
   const supabase = getServiceSupabase();
+  const { data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
+    .select('id,class_id').eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();
+  if (sessionError) {
+    await reportError(sessionError, { context: 'spokedu_master.sessions.complete.roster' });
+    return privateNoStoreJson({ error: '수업 출석 명단을 확인하지 못했습니다.' }, { status: 500 });
+  }
+  if (!session) return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
+  if (session.class_id !== input.classId) return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
+  const { data: memberships, error: rosterError } = await supabase.from('spokedu_master_class_students')
+    .select('student_id').eq('owner_id', access.userId).eq('class_id', session.class_id);
+  if (rosterError) {
+    await reportError(rosterError, { context: 'spokedu_master.sessions.complete.roster' });
+    return privateNoStoreJson({ error: '수업 출석 명단을 확인하지 못했습니다.' }, { status: 500 });
+  }
+  const attendanceValidation = validateCompletionAttendance((memberships ?? []).map((item) => item.student_id), body.attendance);
+  if (!attendanceValidation.ok) {
+    const error = attendanceValidation.code === 'mismatch' && attendanceValidation.missingCount > 0
+      ? completionAttendanceMessage(attendanceValidation.missingCount)
+      : '출석 명단이 수업반 명단과 일치하지 않습니다.';
+    return privateNoStoreJson({ error }, { status: 400 });
+  }
   const { data: savedId, error } = await supabase.rpc('spokedu_master_complete_session', {
     p_owner_id: access.userId,
     p_session_id: body.id,
@@ -228,10 +278,16 @@ export async function PUT(request: Request) {
     p_start_at: input.startAt,
     p_end_at: input.endAt,
     p_memo: input.memo,
-    p_attendance: body.attendance,
+    p_attendance: attendanceValidation.attendance,
   });
   if (error || !savedId) {
-    if (error?.code === '22023') return privateNoStoreJson({ error: '수업 완료 정보를 확인해 주세요.' }, { status: 400 });
+    if (error?.code === '23505') return privateNoStoreJson({ error: CLASS_TIME_COLLISION_MESSAGE }, { status: 400 });
+    if (error?.code === '22023') {
+      const attendanceError = String(error.message ?? '').includes('complete attendance')
+        ? '출석 명단이 수업반 명단과 일치하지 않습니다.'
+        : '수업 완료 정보를 확인해 주세요.';
+      return privateNoStoreJson({ error: attendanceError }, { status: 400 });
+    }
     if (error?.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
     await reportError(error ?? new Error('Session completion RPC returned no id'), { context: 'spokedu_master.sessions.complete' });
     return privateNoStoreJson({ error: '수업을 완료하지 못했습니다.' }, { status: 500 });

@@ -2,6 +2,7 @@ import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { CLASS_TIME_COLLISION_MESSAGE } from '@/app/spokedu-master/lib/sessionIntegrity';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import type { MasterSessionDto, MasterSessionStatus } from '@/app/spokedu-master/types/operational';
 
@@ -25,6 +26,21 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
   }
 
   const supabase = getServiceSupabase();
+  const { data: source, error: sourceError } = await supabase.from('spokedu_master_sessions')
+    .select('class_id').eq('id', sessionId).eq('owner_id', access.userId).eq('status', 'completed').is('deleted_at', null).maybeSingle();
+  if (sourceError) {
+    await reportError(sourceError, { context: 'spokedu_master.sessions.next.source' });
+    return privateNoStoreJson({ error: '기준 수업을 확인하지 못했습니다.' }, { status: 500 });
+  }
+  if (!source) return privateNoStoreJson({ error: '완료된 기준 수업을 확인해 주세요.' }, { status: 400 });
+  const { count: collisionCount, error: collisionError } = await supabase.from('spokedu_master_sessions')
+    .select('id', { count: 'exact', head: true }).eq('owner_id', access.userId).eq('class_id', source.class_id)
+    .is('deleted_at', null).neq('status', 'cancelled').lt('start_at', endAt.toISOString()).gt('end_at', startAt.toISOString());
+  if (collisionError) {
+    await reportError(collisionError, { context: 'spokedu_master.sessions.next.collision' });
+    return privateNoStoreJson({ error: '수업 시간 중복 여부를 확인하지 못했습니다.' }, { status: 500 });
+  }
+  if ((collisionCount ?? 0) > 0) return privateNoStoreJson({ error: CLASS_TIME_COLLISION_MESSAGE }, { status: 400 });
   if (selective) {
     const { data: rows, error: selectedError } = await supabase.from('spokedu_master_session_programs')
       .select('id,source_type,program_id,spomove_preset_id').eq('owner_id', access.userId).eq('session_id', sessionId).in('id', ids);
@@ -47,7 +63,7 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
     ? await supabase.rpc('spokedu_master_create_next_session_v2', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString(), p_source_session_program_ids: ids })
     : await supabase.rpc('spokedu_master_create_next_session', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString(), p_copy_programs: body?.copyPrograms });
   if (error || typeof nextId !== 'string') {
-    if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: error.code === '23505' ? '같은 시간의 수업이 이미 있습니다.' : '완료된 수업과 선택한 활동을 확인해 주세요.' }, { status: 400 });
+    if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : '완료된 수업과 선택한 활동을 확인해 주세요.' }, { status: 400 });
     await reportError(error ?? new Error('Next Session RPC returned no id'), { context: 'spokedu_master.sessions.next' });
     return privateNoStoreJson({ error: '다음 수업을 만들지 못했습니다.' }, { status: 500 });
   }

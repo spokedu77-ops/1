@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAccess';
+import { CLASS_TIME_COLLISION_MESSAGE } from '@/app/spokedu-master/lib/sessionIntegrity';
 import type { MasterScheduleRule } from '@/app/spokedu-master/lib/recurringSchedule';
 
 const SELECT = 'id,class_id,cadence,weekday,start_time,duration_minutes,starts_on,ends_on,occurrence_limit,active,created_at,updated_at';
@@ -51,6 +52,7 @@ export async function POST(request: Request, context: { params: Promise<{ classI
   });
   if (error) {
     await supabase.from('spokedu_master_class_schedule_rules').delete().eq('id', rule.id).eq('owner_id', access.userId);
+    if (error.code === '23505') return privateNoStoreJson({ error: CLASS_TIME_COLLISION_MESSAGE }, { status: 400 });
     return privateNoStoreJson({ error: '수업 일정을 생성하지 못했습니다.' }, { status: 500 });
   }
   return privateNoStoreJson({ data: { rule: dto(rule as Record<string, unknown>), occurrences: generated ?? [] } }, { status: 201 });

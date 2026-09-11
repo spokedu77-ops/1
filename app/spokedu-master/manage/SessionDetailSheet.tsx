@@ -11,6 +11,7 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { MASTER_ACTION_COPY, SPM_PRIMARY_BTN_FULL, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
 import { buildActivitySessionHref } from '../lib/masterNavigationContext';
 import { getMasterRequestErrorMessage } from '../lib/masterRequestError';
+import { completionAttendanceMessage, validateCompletionAttendance } from '../lib/sessionIntegrity';
 import { splitLessonTitle } from '../lib/lessonDisplay';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import { buildScheduleOccurrencePreview, occurrenceOverlaps, type MasterScheduleCadence, type MasterScheduleRule } from '../lib/recurringSchedule';
@@ -230,6 +231,16 @@ export function SessionDetailSheet({
 
   async function persist(nextStatus = status) {
     if (!classId || saving) return;
+    if (nextStatus === 'completed') {
+      const validation = validateCompletionAttendance(roster.map((student) => student.id), attendanceInput());
+      if (!validation.ok) {
+        setAttendanceOpen(true);
+        setError(validation.code === 'mismatch' && validation.missingCount > 0
+          ? completionAttendanceMessage(validation.missingCount)
+          : '출석 명단을 다시 확인해 주세요.');
+        return;
+      }
+    }
     setSaving(true); setError(null);
     try {
       if (nextStatus === 'completed' && legacyCapture) {
