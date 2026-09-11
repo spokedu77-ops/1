@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from './session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 const manage = read('app/spokedu-master/manage/ManageView.tsx');
 const schedule = read('app/spokedu-master/manage/ScheduleTab.tsx');
-const detail = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+const detail = readSessionDetailSource();
 const attendance = read('app/spokedu-master/manage/AttendanceTab.tsx');
 const projection = read('app/spokedu-master/manage/AttendanceProjectionTable.tsx');
 const activityRoute = read('app/spokedu-master/activity/page.tsx');
@@ -51,7 +52,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('data.reorderSessionPrograms');
     expect(detail).toContain('data.addSessionProgram');
     expect(detail).toContain('data.addSessionSpomove');
-    expect(detail).toContain('data.completeSession(activeSession.id');
+    expect(detail).toContain('data.completeSession(draft.activeSession.id');
     expect(detail).toContain('data.saveSessionAttendance');
     expect(detail).toContain('useState(false)');
     expect(detail).toContain("'present' | 'absent'");
@@ -85,7 +86,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     const picker = read('app/spokedu-master/manage/SessionActivityPicker.tsx');
     expect(detail).toContain('getFavoritesOwnerId');
     expect(detail).toContain('favoriteContentRefsByOwner');
-    expect(detail).toContain('favorites={favoriteActivities}');
+    expect(detail).toContain('favorites={activities.favoriteActivities}');
     expect(picker).toContain("'favorite'");
     expect(picker).toContain('즐겨찾기');
     expect(picker).toContain('visible.map((item)');
@@ -104,8 +105,8 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
   });
 
   it('branches recurring creation away from single Session creation', () => {
-    expect(detail).toContain("if (!activeSession && repeatMode !== 'none')");
-    expect(detail).toContain('await createRecurringSession()');
+    expect(detail).toContain("if (!draft.activeSession && schedule.repeatMode !== 'none')");
+    expect(detail).toContain('await schedule.createRecurringSession()');
     expect(detail).toContain('buildScheduleOccurrencePreview');
     expect(detail).toContain('occurrenceOverlaps');
     expect(detail).toContain('occurrences: availableOccurrences');

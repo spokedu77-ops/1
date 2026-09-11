@@ -7,9 +7,8 @@ duplicate files. The runtime groups the shared files by option metadata in
 ## Option pools
 
 - `solo-easy`: `jump`, `kick`, `side-squat`, `lunge-reach`, `star`
-- `solo-normal`: `high-knee`, `single-leg-balance`, `side-lunge`, `bridge`,
-  `plank`, `side-plank`, `bird-dog`, `v-sit`, `seated-toe-touch`, `downward-dog`
-- `together-easy`: `partner-hold`, `partner-squat`, `partner-high-five`
+- `solo-normal`: all 40 solo poses (easy + hard; legacy variant id retained)
+- `together-easy`: 10 partner poses defined in `colorGateGuides.ts`
 
 ## File placement
 
@@ -25,6 +24,7 @@ participants inside the same image.
 
 ## Timing contract
 
-The existing signal-speed value is the gate approach time. A setting of 6
-seconds means each gate takes 6 seconds to travel from its spawn position to the
-pass line, and the next gate is spawned on the same 6-second cadence.
+The existing signal-speed value is the gate approach time. A setting of 10
+seconds means each gate takes 10 seconds to travel from its spawn position to
+the pass line, and the next gate is spawned on the same 10-second cadence.
+Motion Gate accepts 1–10 seconds in 0.5-second steps.

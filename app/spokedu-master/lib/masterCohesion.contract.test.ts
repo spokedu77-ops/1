@@ -9,6 +9,7 @@ import {
 } from './productCatalog';
 import { MASTER_ACTION_COPY } from './masterActionGrammar';
 import { getMasterRouteRequirement } from '../components/layout/masterRouteAccess';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -41,7 +42,7 @@ describe('MASTER commercial cohesion contracts', () => {
     const students = read('app/spokedu-master/students/page.tsx');
     const classes = read('app/spokedu-master/classes/[classId]/page.tsx');
     const classRoster = read('app/spokedu-master/classes/[classId]/ClassRosterSheet.tsx');
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     expect(students).toContain('MASTER_ACTION_COPY.archiveStudent');
     expect(students).not.toContain('Trash2');
     expect(classes).toContain('ClassRosterSheet');

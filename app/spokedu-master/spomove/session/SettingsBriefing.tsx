@@ -4,6 +4,7 @@ import { Play } from 'lucide-react';
 
 import {
   SPOMOVE_CUE_SPEED_OPTIONS,
+  MOTION_GATE_CUE_SPEED_OPTIONS,
   getCueSpeedGuide,
   supportsCueSpeedOverride,
   type SpomoveCueSpeedSec,
@@ -31,6 +32,9 @@ export function SettingsBriefing({
   cueFloorNotice?: string | null;
 }) {
   const showCueSpeed = supportsCueSpeedOverride(preset);
+  const cueSpeedOptions = preset.id === 'dive-color-gate-61'
+    ? MOTION_GATE_CUE_SPEED_OPTIONS
+    : SPOMOVE_CUE_SPEED_OPTIONS;
 
   return (
     <div className="space-y-4 [@media(max-height:950px)]:space-y-3" data-spm-session-settings-screen="true">
@@ -50,7 +54,7 @@ export function SettingsBriefing({
             </p>
           ) : null}
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
+            {cueSpeedOptions.map((sec) => {
               const active = cueSeconds === sec;
               const recommended = sec === recommendedCueSeconds;
               return (

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { getSafeMasterPostPaymentPath } from './masterPaymentReturn';
 import { resolveMasterContextQueryKeys } from './masterNavigationContext';
 import { isEngineDoneLessonRecord } from './masterProductTruth';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -36,7 +37,7 @@ describe('MASTER OS consistency journeys', () => {
 
   it('SPOMOVE-SESSION-01 keeps Session origin and separates engine vs lesson record', () => {
     expect(isEngineDoneLessonRecord(false)).toBe(true);
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     const result = read('app/spokedu-master/spomove/session/MasterSessionResult.tsx');
     expect(activity).toContain('session: activeSession.id');
     expect(activity).toContain('sessionProgram: program.id');
@@ -48,7 +49,7 @@ describe('MASTER OS consistency journeys', () => {
   });
 
   it('NEXT-SESSION-01 retains the command without exposing it in Manage primary UX', () => {
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     const migration = read('supabase/migrations/20260823120000_spokedu_master_create_next_session.sql');
     expect(activity).not.toContain('다음 수업 만들기');
     expect(migration).toContain('program_title_snapshot, sort_order, false');

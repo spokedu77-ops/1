@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import {
   buildActivitySessionHref,
   parseMasterWorkReturnHref,
@@ -8,8 +6,7 @@ import {
   resolveMasterContextQueryKeys,
 } from './masterNavigationContext';
 import { getSafeMasterPostPaymentPath } from './masterPaymentReturn';
-
-const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 describe('MASTER unified navigation context', () => {
   it('PAY-01 keeps Hub discovery filters on payment return', () => {
@@ -32,7 +29,7 @@ describe('MASTER unified navigation context', () => {
     expect(resolveMasterContextQueryKeys('/spokedu-master/spomove/session')).toContain('hubReturn');
     expect(resolveMasterContextQueryKeys('/spokedu-master/spomove/session')).toContain('returnTo');
     expect(resolveMasterContextQueryKeys('/spokedu-master/spomove/session')).toContain('session');
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     expect(activity).toContain('buildActivitySessionHref(activeSession.id)');
     expect(activity).toContain('session: activeSession.id');
     expect(activity).toContain('sessionProgram: program.id');

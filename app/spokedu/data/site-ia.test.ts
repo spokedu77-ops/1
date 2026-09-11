@@ -167,8 +167,10 @@ describe('spokedu site IA', () => {
       'subscription',
       'contact',
     ]);
+    expect(homePage.hero.eyebrow).toBe('아동·청소년 체육교육');
     expect(homePage.hero.lines.join(' ')).toMatch(/체육수업/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
+    expect(homePage.hero.support).toMatch(/수업자료와 SPOMOVE 콘텐츠도 직접 만듭니다/);
     expect(homePage.hero.primaryCta.href).toBe('#choice');
     expect(homePage.hero.primaryCta.label).toBe('수업 유형 보기');
     expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/subscription`);
@@ -291,10 +293,10 @@ describe('spokedu site IA', () => {
     expect(homePage.cases.cards[0]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-general.webp');
     expect(homePage.cases.cards[1]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-adapted-p05.webp');
     expect(homePage.cases.cards[2]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-spomove-p05.webp');
-    expect(homePage.cases.cards.map((card) => [card.kind, card.headline])).toEqual([
-      ['학교 늘봄', '매동초등학교 · 스포츠 스텝업'],
-      ['특수체육', '찾아가는 동행 체육교실'],
-      ['초등 · 키움센터', '동작거점형 우리동네키움센터 · SPOMOVE'],
+    expect(homePage.cases.cards.map((card) => [card.kind, card.headline, card.displayMeta])).toEqual([
+      ['정규수업', '매동초등학교 · 스포츠 스텝업', '종로거점형키움센터 연계 · 6개월 늘봄 스포츠'],
+      ['정규수업', '찾아가는 동행 체육교실', '특수체육 · 정규수업'],
+      ['정규수업', '동작거점형 우리동네키움센터', '초등학생 · 정규수업'],
     ]);
   });
 

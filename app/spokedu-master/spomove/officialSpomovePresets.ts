@@ -77,6 +77,8 @@ export type OfficialSpomovePreset = {
     flowDuration?: number;
     flowLayout?: 'sequential' | 'random';
     flowIncludeBonus?: boolean;
+    colorGateVariant?: 'solo-easy' | 'solo-normal' | 'together-easy';
+    colorGateCategory?: 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
     flankerStimulusType?: 'color' | 'number';
     flankerNestedCircleCount?: 3 | 5;
     flankerExtremeMode?: 'theme' | 'arrow';
@@ -1535,6 +1537,8 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       flowFeatures: ['colorGate'],
       flowDuration: 60,
       flowLayout: 'sequential',
+      colorGateVariant: 'solo-normal',
+      colorGateCategory: 'all',
     },
     description: '모션 게이트: 빨·노·초·파 색 관문과 5가지 포즈(jump·kick·side-squat·lunge-reach·star)를 수행하는 활동',
     salesCopy: '색상 판단과 전신 포즈 전환을 함께 훈련하는 모션 게이트',

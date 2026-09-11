@@ -1,6 +1,7 @@
 import {
   catalogItemToHomeCard,
   getFieldRecordCatalogItem,
+  type FieldRecordCatalogItem,
   type FieldRecordSlug,
 } from './field-records-catalog';
 import type { HomeMediaKey } from './home-media';
@@ -39,42 +40,40 @@ export const HOME_MAIN_CASE_SLUGS: readonly FieldRecordSlug[] = [
   'dongjak-spomove',
 ] as const;
 
-const HOME_CASE_PROOF: Partial<
-  Record<FieldRecordSlug, { kind: string; headline: string; operation: string }>
-> = {
-  'maedong-sports-stepup': {
-    kind: '학교 늘봄',
-    headline: '매동초등학교 · 스포츠 스텝업',
-    operation: '클라이밍·피클볼 등 종목을 차례로 경험하는 6개월 늘봄 연계 정규수업입니다.',
-  },
-  'donghaeng-special-pe': {
-    kind: '특수체육',
-    headline: '찾아가는 동행 체육교실',
-    operation: '특수체육 현장에서 아이와 함께 화면과 매트 위에서 움직이는 찾아가는 수업입니다.',
-  },
-  'dongjak-spomove': {
-    kind: '초등 · 키움센터',
-    headline: '동작거점형 우리동네키움센터 · SPOMOVE',
-    operation: '스크린 신호를 보고 판단·반응하며 움직이는 거점형 키움센터 집단 수업입니다.',
-  },
-};
+function homeCaseHeadline(item: FieldRecordCatalogItem, featured: boolean): string {
+  return featured ? `${item.venue} · ${item.programLabel}` : item.venue;
+}
+
+function homeCaseDisplayMeta(item: FieldRecordCatalogItem, featured: boolean): string {
+  if (featured) return item.meta;
+  const audienceHead = (item.onsite?.audience ?? item.meta).split(' · ')[0]?.trim();
+  return audienceHead ? `${audienceHead} · ${item.operationType}` : item.operationType;
+}
+
+function homeCaseOperation(item: FieldRecordCatalogItem, featured: boolean): string {
+  const description = item.description.trim();
+  if (featured) return description;
+  const primary = description.split(' — ')[0]?.trim() || description;
+  if (/[다요][.!?]?$/.test(primary)) return primary;
+  return `${primary}입니다.`;
+}
 
 function buildHomeCaseCard(
   slug: FieldRecordSlug,
   editorial: { src: string; objectPosition?: string },
+  featured = false,
 ): HomeCaseCard {
   const item = getFieldRecordCatalogItem(slug);
   const card = catalogItemToHomeCard(item);
-  const proof = HOME_CASE_PROOF[slug];
   return {
     slug: card.slug,
     venue: item.venue,
-    kind: proof?.kind ?? item.operationType,
-    headline: proof?.headline ?? `${item.venue} · ${item.programLabel}`,
-    operation: proof?.operation ?? item.description,
-    audience: proof?.kind ?? item.onsite?.audience ?? item.meta,
+    kind: item.operationType,
+    headline: homeCaseHeadline(item, featured),
+    operation: homeCaseOperation(item, featured),
+    audience: item.onsite?.audience ?? item.meta,
     lessonType: item.programLabel,
-    displayMeta: proof?.kind ?? item.meta,
+    displayMeta: homeCaseDisplayMeta(item, featured),
     href: card.href,
     trackLabel: card.trackLabel,
     mediaKey: card.mediaKey,
@@ -90,9 +89,12 @@ export const homePage = {
 
   hero: {
     id: 'hero',
-    lines: ['움직이며 배우는', '아이들의 체육수업'] as const,
-    support:
-      '학교·기관 수업과 개인·소그룹 수업을 직접 운영합니다. 현장에서 사용하는 수업자료와 SPOMOVE 콘텐츠도 만듭니다.',
+    eyebrow: '아동·청소년 체육교육',
+    lines: [
+      '학교·기관부터 개인·소그룹까지,',
+      '아이들의 체육수업을 직접 설계하고 운영합니다.',
+    ] as const,
+    support: '현장에서 사용하는 수업자료와 SPOMOVE 콘텐츠도 직접 만듭니다.',
     mediaKey: 'homeHeroMovement' as HomeMediaKey,
     primaryCta: {
       label: '수업 유형 보기',
@@ -193,7 +195,7 @@ export const homePage = {
       {
         id: 'prepare',
         title: '준비물과 진행 방법 확인',
-        body: '선택한 수업의 준비물 수량과 진행 순서를 한 화면에서 확인합니다.',
+        body: '수업 카드의 수업 준비로 들어가면 준비물과 진행 방법을 확인할 수 있습니다.',
       },
     ] as const,
     visual: {
@@ -218,10 +220,14 @@ export const homePage = {
       trackLabel: 'cta-home-cases-records',
     },
     cards: [
-      buildHomeCaseCard('maedong-sports-stepup', {
-        src: HOME_FIELD_EDITORIAL.caseGeneral,
-        objectPosition: '36% 58%',
-      }),
+      buildHomeCaseCard(
+        'maedong-sports-stepup',
+        {
+          src: HOME_FIELD_EDITORIAL.caseGeneral,
+          objectPosition: '36% 58%',
+        },
+        true,
+      ),
       buildHomeCaseCard('donghaeng-special-pe', {
         src: HOME_FIELD_EDITORIAL.caseAdapted,
         objectPosition: '48% 42%',

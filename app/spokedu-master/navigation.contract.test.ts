@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from './manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -28,7 +29,7 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
     const manage = read('app/spokedu-master/manage/ManageView.tsx');
     const schedule = read('app/spokedu-master/manage/ScheduleTab.tsx');
-    const detail = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const detail = readSessionDetailSource();
     const legacy = read('app/spokedu-master/class-record/page.tsx');
     expect(activity).toContain("import ManageView from '../manage/ManageView'");
     expect(manage).toContain('수업 관리');

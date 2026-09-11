@@ -822,22 +822,18 @@ describe('FlowPreset', () => {
 describe('Color Gate pose filtering', () => {
   const categories = ['strength', 'flexibility', 'balance', 'power-jump'] as const;
 
-  test('all uses 20 solo poses at each difficulty', () => {
+  test('easy uses 20 poses and all uses the full 40-pose solo pool', () => {
     expect(colorGatePosesForVariant('solo-easy', 'all')).toHaveLength(20);
-    expect(colorGatePosesForVariant('solo-normal', 'all')).toHaveLength(20);
+    expect(colorGatePosesForVariant('solo-normal', 'all')).toHaveLength(40);
   });
 
-  test.each(categories)('%s uses 5 poses at each difficulty', (category) => {
+  test.each(categories)('%s uses 5 easy poses and 10 total poses', (category) => {
     expect(colorGatePosesForVariant('solo-easy', category)).toHaveLength(5);
-    expect(colorGatePosesForVariant('solo-normal', category)).toHaveLength(5);
+    expect(colorGatePosesForVariant('solo-normal', category)).toHaveLength(10);
   });
 
-  test.each(['all', ...categories] as const)('together ignores %s and keeps the partner 3', (category) => {
-    expect(colorGatePosesForVariant('together-easy', category)).toEqual([
-      'partner-hold',
-      'partner-squat',
-      'partner-high-five',
-    ]);
+  test.each(['all', ...categories] as const)('together ignores %s and keeps the partner 10', (category) => {
+    expect(colorGatePosesForVariant('together-easy', category)).toHaveLength(10);
   });
 });
 

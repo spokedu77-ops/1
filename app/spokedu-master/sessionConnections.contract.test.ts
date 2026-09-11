@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from './manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('MASTER Session connections', () => {
-  const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+  const activity = readSessionDetailSource();
   const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
   const report = read('app/spokedu-master/report/page.tsx');
 

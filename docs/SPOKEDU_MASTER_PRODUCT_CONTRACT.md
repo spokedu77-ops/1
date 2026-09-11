@@ -137,6 +137,7 @@ Do not implement a candidate while its decision is PENDING.
 | PD-007 | `masterUserLoop` / `rerun_spomove` remains KEEP in the current cycle. |
 | PD-008 | Closed legacy governance ID; superseded and not reusable. It is not a behavior decision. |
 | PD-009 | Library NEW is only for newly listed 놀이체육 activities, for 14 days from catalog listed time. The unfiltered catalog end copy is 「업데이트 예정」 only. |
+| PD-010 | Session-linked roster tools use only students explicitly recorded as `present` for that Session. `absent` and unrecorded students are excluded; missing attendance must never be inferred as absence. Standalone Class Tools default to the selected Class roster and allow a non-persistent `today participant` inclusion set; this must not be represented as saved attendance. The resolved participant scope applies uniformly to random picker, team assignment, order, tournament, and ladder tools. |
 
 ## 18. Pending Decision Candidates
 

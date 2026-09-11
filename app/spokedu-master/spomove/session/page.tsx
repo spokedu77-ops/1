@@ -262,7 +262,10 @@ function SpomoveSessionContent() {
     if (typeof window !== 'undefined') {
       const pref = readPresetConfigPreference(officialPreset.id);
       if (pref?.cueSeconds != null && Number.isFinite(pref.cueSeconds)) {
-        return resolveSessionCueSeconds(officialPreset, clampCueSpeedSec(pref.cueSeconds));
+        return resolveSessionCueSeconds(
+          officialPreset,
+          clampCueSpeedSec(pref.cueSeconds, officialPreset.id === 'dive-color-gate-61' ? 10 : 6),
+        );
       }
     }
     return resolveSessionCueSeconds(officialPreset, recommendedCueSeconds);
@@ -287,7 +290,7 @@ function SpomoveSessionContent() {
     const pref = readPresetConfigPreference(officialPreset.id);
     const prefCue =
       pref?.cueSeconds != null && Number.isFinite(pref.cueSeconds)
-        ? clampCueSpeedSec(pref.cueSeconds)
+        ? clampCueSpeedSec(pref.cueSeconds, officialPreset.id === 'dive-color-gate-61' ? 10 : 6)
         : null;
     setCueSeconds(resolveSessionCueSeconds(officialPreset, prefCue));
   }, [officialPreset, recommendedCueSeconds, urlCueSeconds]);
@@ -295,10 +298,10 @@ function SpomoveSessionContent() {
   const handleCueSecondsChange = useCallback(
     (value: SpomoveCueSpeedSec) => {
       const next = value;
-      setCueSeconds(writeLastCueSeconds(next));
+      setCueSeconds(officialPreset?.id === 'dive-color-gate-61' ? next : writeLastCueSeconds(next));
       persistPresetPreference({ cue: next });
     },
-    [persistPresetPreference],
+    [officialPreset?.id, persistPresetPreference],
   );
 
   const effectiveCueSeconds = useMemo(() => {
@@ -656,6 +659,8 @@ function SpomoveSessionContent() {
           flowDuration={officialPreset.engine.flowDuration}
           flowLayout={officialPreset.engine.flowLayout}
           flowIncludeBonus={officialPreset.engine.flowIncludeBonus}
+          colorGateVariant={officialPreset.engine.colorGateVariant}
+          colorGateCategory={officialPreset.engine.colorGateCategory}
           flankerStimulusType={officialPreset.engine.flankerStimulusType}
           flankerNestedCircleCount={officialPreset.engine.flankerNestedCircleCount}
           flankerExtremeMode={officialPreset.engine.flankerExtremeMode}

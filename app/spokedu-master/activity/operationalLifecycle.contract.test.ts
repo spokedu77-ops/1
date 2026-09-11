@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
-const activity = readFileSync('app/spokedu-master/manage/SessionDetailSheet.tsx', 'utf8');
+const activity = readSessionDetailSource();
 const provider = readFileSync('app/spokedu-master/operational/OperationalDataProvider.tsx', 'utf8');
 const migration = readFileSync('supabase/migrations/20260824120000_spokedu_master_atomic_session_completion.sql', 'utf8');
 

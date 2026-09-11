@@ -1,13 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('MASTER Class and attendance management contracts', () => {
   const manage = read('app/spokedu-master/manage/ManageView.tsx');
   const schedule = read('app/spokedu-master/manage/ScheduleTab.tsx');
-  const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+  const activity = readSessionDetailSource();
   const projection = read('app/spokedu-master/manage/AttendanceProjectionTable.tsx');
   const list = read('app/spokedu-master/classes/page.tsx');
   const detail = read('app/spokedu-master/classes/[classId]/page.tsx');

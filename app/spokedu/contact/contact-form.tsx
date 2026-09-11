@@ -17,6 +17,7 @@ import {
   type StoredInquiryDraft,
 } from './inquiry-draft';
 import { submitInquiry } from './inquiry-submit';
+import { resolveContactInquiryType } from './resolve-contact-inquiry-type';
 import { createFormStartedTracker, trackCommercialEvent } from '../lib/commercial-events';
 import { externalLinkProps } from '../lib/external-link';
 import { marketingButtonPrimary, marketingInteractiveTransition, fineHover } from '../lib/ui-classes';
@@ -112,10 +113,6 @@ const accentStyles = {
     cta: 'text-slate-700',
   },
 } as const;
-
-function isInquiryType(value: string | null): value is InquiryType {
-  return contactTypeOptions.some((option) => option.id === value);
-}
 
 function normalizePhone(value: string): string {
   return value.replace(/[^\d-]/g, '');
@@ -414,7 +411,7 @@ export default function SpokeduContactForm() {
   const formRef = useRef<HTMLDivElement>(null);
   const submittingRef = useRef(false);
   const markFormStartedRef = useRef(createFormStartedTracker('other', 'contact_form'));
-  const [inquiryType, setInquiryType] = useState<InquiryType>('dispatch');
+  const [inquiryType, setInquiryType] = useState<InquiryType | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<SubmitNotice>(null);
   const [storedDraft, setStoredDraft] = useState<StoredInquiryDraft | null>(null);
@@ -425,6 +422,7 @@ export default function SpokeduContactForm() {
   const [otherForm, setOtherForm] = useState<OtherInquiryFields>(OTHER_DEFAULT);
 
   useEffect(() => {
+    if (!inquiryType) return;
     markFormStartedRef.current = createFormStartedTracker(
       inquiryType === 'curriculum' ? 'curriculum' : inquiryType === 'private' ? 'private' : inquiryType === 'other' ? 'other' : 'dispatch',
       `contact_${inquiryType}`,
@@ -447,11 +445,7 @@ export default function SpokeduContactForm() {
   useEffect(() => {
     const requestedType = searchParams.get('type');
     const wantsProposal = searchParams.get('proposal') === 'true';
-    const resolvedType: InquiryType = isInquiryType(requestedType)
-      ? requestedType
-      : wantsProposal
-        ? 'dispatch'
-        : 'private';
+    const resolvedType = resolveContactInquiryType(requestedType, searchParams.get('proposal'));
 
     setInquiryType(resolvedType);
 
@@ -480,7 +474,7 @@ export default function SpokeduContactForm() {
   }, [searchParams]);
 
   const activeOption = useMemo(
-    () => contactTypeOptions.find((option) => option.id === inquiryType) ?? contactTypeOptions[0],
+    () => contactTypeOptions.find((option) => option.id === inquiryType) ?? null,
     [inquiryType],
   );
 
@@ -532,7 +526,7 @@ export default function SpokeduContactForm() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!activeOption || submitting || submittingRef.current) return;
+    if (!inquiryType || !activeOption || submitting || submittingRef.current) return;
 
     setNotice(null);
     submittingRef.current = true;
@@ -584,7 +578,7 @@ export default function SpokeduContactForm() {
     }
   }
 
-  const inquiryTypeLabel = activeOption.title;
+  const inquiryTypeLabel = activeOption?.title ?? '';
   const commonValues =
     inquiryType === 'private'
       ? privateForm
@@ -647,6 +641,7 @@ export default function SpokeduContactForm() {
                   type="button"
                   data-track={`contact-${option.id}`}
                   data-track-label={option.selectTrackLabel}
+                  aria-pressed={active}
                   onClick={() => selectType(option.id)}
                   className={`flex h-full min-h-[10.5rem] flex-col rounded-lg border p-5 text-left transition active:scale-[0.99] sm:p-6 ${
                     isLastOdd ? 'sm:col-span-2' : ''
@@ -674,6 +669,7 @@ export default function SpokeduContactForm() {
         </section>
 
         <div ref={formRef}>
+          {inquiryType && activeOption ? (
           <form onSubmit={onSubmit} className="space-y-5 rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
             <div className="border-b border-slate-100 pb-3">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#245DFF]">상담 접수</p>
@@ -852,7 +848,8 @@ export default function SpokeduContactForm() {
                     type="button"
                     onClick={() => {
                       setNotice(null);
-                      selectType('private');
+                      setInquiryType(null);
+                      router.replace('/contact', { scroll: false });
                     }}
                     className="mt-3 min-h-11 text-sm font-semibold text-emerald-800 underline underline-offset-2"
                   >
@@ -885,6 +882,11 @@ export default function SpokeduContactForm() {
               </div>
             ) : null}
           </form>
+          ) : (
+            <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+              상담 유형을 선택하면 해당 목적에 맞는 입력 항목이 표시됩니다.
+            </p>
+          )}
         </div>
       </div>
 

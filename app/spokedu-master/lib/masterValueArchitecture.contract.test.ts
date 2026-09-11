@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('VALUE / Connected Memory continuity', () => {
-  const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+  const activity = readSessionDetailSource();
   const capture = read('app/spokedu-master/activity/SessionCapturePanel.tsx');
   const nextMigration = read('supabase/migrations/20260823120000_spokedu_master_create_next_session.sql');
   const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
@@ -13,7 +14,7 @@ describe('VALUE / Connected Memory continuity', () => {
   const evidenceLib = read('app/spokedu-master/lib/masterSubscriberValueEvidence.ts');
 
   it('PREM-01: Capture remains available only through the legacy context', () => {
-    expect(activity).toContain('legacyCapture && activeSession');
+    expect(activity).toContain('legacyCapture && draft.activeSession');
     expect(activity).toContain('<SessionCapturePanel');
     expect(capture).toContain("captureMode === 'memory'");
     expect(capture).toContain('지난 수업에서 이어갈 점');

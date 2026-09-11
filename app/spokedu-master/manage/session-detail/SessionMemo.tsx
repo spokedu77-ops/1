@@ -1,0 +1,3 @@
+export function SessionMemo({ isCreate, memo, onChange }: { isCreate: boolean; memo: string; onChange: (memo: string) => void }) {
+  return <section className={isCreate ? 'mt-6' : undefined}><div className="flex min-h-9 items-center justify-between text-sm font-semibold text-slate-700"><span>메모</span><span className="text-xs font-normal text-slate-400">선택사항</span></div><textarea value={memo} onChange={(event) => onChange(event.target.value)} placeholder="수업에 대한 메모를 남겨보세요." className={`${isCreate ? 'mt-2 h-16 min-h-[60px] max-h-[68px] resize-y' : 'min-h-[72px]'} w-full rounded-xl border border-slate-200 p-3 text-sm`} />{isCreate ? null : <p className="mt-1 text-right text-[11px] text-slate-400">{memo.length} / 500</p>}</section>;
+}

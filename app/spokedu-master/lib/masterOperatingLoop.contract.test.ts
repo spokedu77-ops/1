@@ -7,6 +7,7 @@ import {
   readSpomoveSessionOrigin,
 } from './masterNavigationContext';
 import { isEngineDoneLessonRecord, MASTER_TRUTH_ACTIVITY_COMPLETED, MASTER_TRUTH_SPOMOVE_ENGINE_DONE } from './masterProductTruth';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 describe('MASTER whole-product operating loop', () => {
   it('keeps only an internal MASTER work return', () => {
@@ -57,7 +58,7 @@ describe('MASTER whole-product operating loop', () => {
   });
 
   it('preserves general-program and tool returns to the operating Session', () => {
-    const activity = readFileSync('app/spokedu-master/manage/SessionDetailSheet.tsx', 'utf8');
+    const activity = readSessionDetailSource();
     const programNavigation = readFileSync('app/spokedu-master/activity/sessionProgramAvailability.ts', 'utf8');
     expect(activity).toContain('buildSessionProgramDetailHref({');
     expect(programNavigation).toContain("source: 'session'");

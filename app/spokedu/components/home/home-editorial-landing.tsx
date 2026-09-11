@@ -13,6 +13,7 @@ import {
   marketingButtonPrimary,
   marketingButtonPrimaryOnDark,
   marketingButtonSecondaryOnDark,
+  marketingEyebrow,
   marketingHeroDisplay,
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
@@ -78,13 +79,13 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
       <section id={homePage.hero.id} className={styles.hero} aria-labelledby="editorial-hero-heading">
         <div className={styles.contentRail}>
           <div className={styles.heroCopy}>
+            <p className={`${marketingEyebrow} ${styles.heroEyebrow}`}>{homePage.hero.eyebrow}</p>
             <h1
               id="editorial-hero-heading"
               className={`${marketingHeroDisplay} ${styles.heroHeadingLayout}`}
             >
-              {homePage.hero.lines.map((line, index) => (
+              {homePage.hero.lines.map((line) => (
                 <span key={line} className={styles.heroPhrase}>
-                  {index > 0 ? ' ' : null}
                   {line}
                 </span>
               ))}
@@ -302,8 +303,8 @@ function CaseEditorialItem({ card, featured = false }: { card: CaseCardWithThumb
           <CasePhoto card={card} featured={featured} />
         </div>
         <div className={styles.caseMeta}>
-          <p className={`${styles.caseProofLine} ${koreanText}`}>{card.kind}</p>
           <h3 className={`${styles.homeSubhead} ${styles.caseVenue} ${koreanText}`}>{card.headline}</h3>
+          <p className={`${styles.caseProofLine} ${koreanText}`}>{card.displayMeta}</p>
           <p className={`${styles.homeMeta} ${styles.caseDisplayMeta} ${koreanText}`}>{card.operation}</p>
           <span className={styles.caseAction}>
             {external ? '블로그에서 보기' : '수업 살펴보기'}
@@ -319,7 +320,7 @@ function CasePhoto({ card, featured }: { card: CaseCardWithThumb; featured?: boo
   return (
     <Image
       src={card.editorialSrc}
-      alt={`${card.kind} — ${card.headline}`}
+      alt={`${card.headline} 현장`}
       fill
       className={`${styles.casePhotoImage} ${styles.photoGradeCase}`}
       style={{ objectPosition: card.editorialObjectPosition ?? '50% 50%' }}

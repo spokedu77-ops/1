@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from '../../spokedu-master/manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 const hardening = read('supabase/migrations/20260822210000_spokedu_master_session_foundation_hardening.sql');
@@ -7,7 +8,7 @@ const hardening = read('supabase/migrations/20260822210000_spokedu_master_sessio
 describe('SPOKEDU MASTER Session foundation', () => {
   it('keeps class membership ID-based and independent from class names', () => {
     const sessions = read('app/api/spokedu-master/sessions/route.ts');
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     expect(sessions).toContain('spokedu_master_class_students(student_id)');
     expect(activity).toContain('selectedClass?.studentIds.includes(student.id)');
     expect(activity).not.toContain('student.group');
@@ -27,16 +28,16 @@ describe('SPOKEDU MASTER Session foundation', () => {
   });
 
   it('creates a Session with selected activities through the existing command', () => {
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
-    expect(activity).toContain('data.saveSession(input(nextStatus), activeSession?.id)');
+    const activity = readSessionDetailSource();
+    expect(activity).toContain('data.saveSession(draft.input(activities.programs, nextStatus), draft.activeSession?.id)');
     expect(activity).toContain('programs: activeSession ? undefined');
     expect(activity).toContain('MASTER_ACTION_COPY.createSession');
   });
 
   it('optimistically applies reversible program UI state around mutations', () => {
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     const toggle = activity.slice(activity.indexOf('async function toggleProgram'), activity.indexOf('async function moveProgram'));
-    const remove = activity.slice(activity.indexOf('async function removeProgram'), activity.indexOf('async function endRule'));
+    const remove = activity.slice(activity.indexOf('async function removeProgram'), activity.indexOf('return { programs'));
     expect(toggle.indexOf('await data.updateSessionProgram')).toBeLessThan(toggle.indexOf('setPrograms((current) => current.map'));
     expect(remove.indexOf('setPrograms((current) => current.filter')).toBeLessThan(remove.indexOf('await data.removeSessionProgram'));
     expect(remove).toContain('catch (caught) { setPrograms(previous)');

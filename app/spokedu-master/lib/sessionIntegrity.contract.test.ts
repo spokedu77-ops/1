@@ -1,16 +1,17 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 const migration = read('supabase/migrations/20260911173000_spokedu_master_session_integrity.sql');
 const sessionsRoute = read('app/api/spokedu-master/sessions/route.ts');
 const nextRoute = read('app/api/spokedu-master/sessions/[sessionId]/next/route.ts');
 const scheduleRoute = read('app/api/spokedu-master/classes/[classId]/schedule-rules/route.ts');
-const sheet = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+const sheet = readSessionDetailSource();
 
 describe('SPOKEDU MASTER session integrity contract', () => {
   it('blocks incomplete attendance at completion in client, API, and DB', () => {
-    expect(sheet).toContain('validateCompletionAttendance(roster.map((student) => student.id), attendanceInput())');
+    expect(sheet).toContain('validateCompletionAttendance(attendance.roster.map((student) => student.id), attendance.attendanceInput())');
     expect(sheet).toContain('completionAttendanceMessage(validation.missingCount)');
     expect(sessionsRoute).toContain("input.status === 'completed'");
     expect(sessionsRoute).toContain('수업 완료는 출석 검증을 포함한 완료 요청으로 처리해 주세요.');

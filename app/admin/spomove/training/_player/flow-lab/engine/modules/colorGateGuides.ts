@@ -36,8 +36,8 @@ export type ColorGateDifficulty = 'easy' | 'hard';
 /**
  * 기존 설정값을 유지한다.
  * - solo-easy: 새 40개 중 쉬움 20개
- * - solo-normal: 새 40개 중 어려움 20개 (legacy key 유지)
- * - together-easy: 기존 2인 협동 3개
+ * - solo-normal: 쉬움 + 어려움 전체 40개 (저장 호환을 위해 legacy key 유지)
+ * - together-easy: 2인 협동 10개
  */
 export type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy';
 
@@ -94,10 +94,17 @@ export const COLOR_GATE_POSE_DEFINITIONS = [
   { key: 'cossack-jump', label: '코사크 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/cossack-jump.png' },
   { key: 'straddle-jump', label: '스트래들 점프', category: 'power-jump', difficulty: 'hard', image: '/spomove/dive/color-gate/power-jump/straddle-jump.png' },
 
-  // 기존 2인 협동 포즈는 별도 유지
-  { key: 'partner-hold', label: '파트너 홀드', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/partner-hold.png' },
-  { key: 'partner-squat', label: '파트너 스쿼트', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/partner-squat.png' },
-  { key: 'partner-high-five', label: '파트너 하이파이브', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/partner-high-five.png' },
+  // 투게더 10동작
+  { key: 'partner-hold', label: '파트너 스쿼트 홀드', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/1528225d-ed67-4808-988e-6e962f156bb0.png' },
+  { key: 'partner-squat', label: '파트너 V밸런스', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/5a9b623d-b16f-4171-b380-945ee7f1304a.png' },
+  { key: 'partner-high-five', label: '파트너 하이파이브', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/ba690608-f817-4f77-9fa9-25cee0557425.png' },
+  { key: 'partner-back-to-back', label: '파트너 백투백', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/e42acf14-4946-4153-b9a1-473776b306d1.png' },
+  { key: 'partner-side-lunge', label: '파트너 사이드 런지', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/b4c03adf-8ee9-4fdb-8686-524099fe2776.png' },
+  { key: 'partner-pull-up', label: '파트너 풀업', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/528a5182-0e0b-4785-9c12-6de1fb7d300a.png' },
+  { key: 'partner-leg-touch', label: '파트너 다리 터치', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/afc808a0-8c74-409f-b16f-f0b2fce5e255.png' },
+  { key: 'partner-tunnel', label: '파트너 터널', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/4c1b42c6-6707-490d-8acf-c1a9d401055f.png' },
+  { key: 'partner-shoulder-balance', label: '파트너 어깨 밸런스', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/8f61c1fa-f873-450a-9c75-1cc98283e3f9.png' },
+  { key: 'partner-sit-to-stand', label: '파트너 앉았다 일어나기', category: 'partner', difficulty: 'easy', image: '/spomove/dive/color-gate/b8357c09-081c-4ceb-a5dc-034f23d10a30.png' },
 ] as const;
 
 export type ColorGatePoseKey = (typeof COLOR_GATE_POSE_DEFINITIONS)[number]['key'];
@@ -143,7 +150,7 @@ export const COLOR_GATE_VARIANT_POSES: Record<ColorGateVariant, readonly ColorGa
     .filter((pose) => pose.category !== 'partner' && pose.difficulty === 'easy')
     .map((pose) => pose.key),
   'solo-normal': COLOR_GATE_POSE_DEFINITIONS
-    .filter((pose) => pose.category !== 'partner' && pose.difficulty === 'hard')
+    .filter((pose) => pose.category !== 'partner')
     .map((pose) => pose.key),
   'together-easy': COLOR_GATE_POSE_DEFINITIONS
     .filter((pose) => pose.category === 'partner')
@@ -157,8 +164,12 @@ export function colorGatePosesForVariant(
   if (variant === 'together-easy') return COLOR_GATE_VARIANT_POSES['together-easy'];
   if (category === 'all') return COLOR_GATE_VARIANT_POSES[variant];
 
-  const difficulty: ColorGateDifficulty = variant === 'solo-normal' ? 'hard' : 'easy';
-  return colorGatePosesForCategory(category, difficulty);
+  if (variant === 'solo-normal') {
+    return COLOR_GATE_POSE_DEFINITIONS
+      .filter((pose) => pose.category === category)
+      .map((pose) => pose.key);
+  }
+  return colorGatePosesForCategory(category, 'easy');
 }
 
 export function getColorGatePoseDefinition(pose: ColorGatePoseKey): ColorGatePoseDefinition {

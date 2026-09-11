@@ -7,11 +7,13 @@ export function SpeedSelector({
   onChange,
   showPresets = true,
   compact = false,
+  max = 6,
 }: {
   value: number;
   onChange: (v: number) => void;
   showPresets?: boolean;
   compact?: boolean;
+  max?: number;
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? '0.3rem' : '0.5rem' }}>
@@ -87,7 +89,7 @@ export function SpeedSelector({
         <input
           type="range"
           min={1.0}
-          max={6.0}
+          max={max}
           step={0.5}
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
@@ -95,7 +97,7 @@ export function SpeedSelector({
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--range-tick)', fontWeight: 600, marginTop: '0.35rem' }}>
           <span>← 빠름 (1초)</span>
-          <span>느림 (6초) →</span>
+          <span>느림 ({max}초) →</span>
         </div>
       </div>
     </div>

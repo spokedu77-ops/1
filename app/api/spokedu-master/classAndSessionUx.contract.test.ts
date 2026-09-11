@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from '../../spokedu-master/manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
-const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+const activity = readSessionDetailSource();
 const picker = read('app/spokedu-master/manage/SessionActivityPicker.tsx');
 const classes = read('app/spokedu-master/classes/page.tsx');
 const classDetail = read('app/spokedu-master/classes/[classId]/page.tsx');

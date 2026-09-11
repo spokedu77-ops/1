@@ -389,7 +389,7 @@ describe('SPOMOVE public card meta contract', () => {
 
   it('uses the public display resolver across MASTER session-facing surfaces', () => {
     const paths = [
-      'app/spokedu-master/manage/SessionDetailSheet.tsx',
+      'app/spokedu-master/manage/session-detail/SessionActivities.tsx',
       'app/spokedu-master/activity/SessionCapturePanel.tsx',
       'app/spokedu-master/students/[studentId]/page.tsx',
       'app/spokedu-master/report/parentNoticeModel.ts',

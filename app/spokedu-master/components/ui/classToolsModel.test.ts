@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, traceLadderDestination } from './classToolsModel';
+import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination } from './classToolsModel';
 
 describe('class tools foundation contracts', () => {
   it('creates two to four randomly ordered teams with at most one member difference', () => {
@@ -12,6 +12,17 @@ describe('class tools foundation contracts', () => {
   it('traces one ladder participant independently', () => {
     expect(traceLadderDestination(0, 3, [{ level: 0, left: 0 }, { level: 2, left: 1 }])).toBe(2);
     expect(traceLadderDestination(2, 3, [{ level: 0, left: 0 }, { level: 2, left: 1 }])).toBe(1);
+  });
+
+  it('uses only explicitly present students for Session-linked roster tools', () => {
+    const roster = [{ id: 'present' }, { id: 'absent' }, { id: 'unrecorded' }];
+    const attendance = [
+      { studentId: 'present', status: 'present' as const },
+      { studentId: 'absent', status: 'absent' as const },
+    ];
+
+    expect(resolveClassToolParticipants(roster, attendance)).toEqual([{ id: 'present' }]);
+    expect(resolveClassToolParticipants(roster)).toEqual(roster);
   });
 
   it('separates activity counting from rest countdown copy', () => {

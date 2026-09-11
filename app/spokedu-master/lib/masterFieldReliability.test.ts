@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { getMasterRequestErrorMessage, MasterClientRequestError } from './masterRequestError';
 import { toMasterClientError, toNetworkMasterClientError } from './clientErrors';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
 describe('MASTER Field Reliability — work preservation / mutation / resume', () => {
   it('RESUME-01 / REL-01: SessionSheet guards unsaved attendance/memo and soft-reconciles server truth', () => {
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     expect(activity).toContain('dirty');
     expect(activity).toContain('beforeunload');
     expect(activity).toContain('저장하지 않은 변경이 있습니다');
@@ -16,7 +17,7 @@ describe('MASTER Field Reliability — work preservation / mutation / resume', (
   });
 
   it('FAIL-01: Session mutations use safe client error messages and keep retry copy', () => {
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     expect(activity).toContain('getMasterRequestErrorMessage');
     expect(activity).not.toMatch(/setError\(caught instanceof Error \? caught\.message/);
     expect(activity).toContain('수업을 저장하지 못했습니다.');
@@ -36,7 +37,7 @@ describe('MASTER Field Reliability — work preservation / mutation / resume', (
   });
 
   it('REL-06: activity toggle/reorder/remove share saving lock', () => {
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     expect(activity).toContain('|| saving) return');
     expect(activity).toMatch(/toggleProgram[\s\S]*setSaving\(true\)/);
     expect(activity).toMatch(/moveProgram[\s\S]*setSaving\(true\)/);
@@ -50,7 +51,7 @@ describe('MASTER Field Reliability — work preservation / mutation / resume', (
   });
 
   it('FIELD-LITE / FIELD-PREM keeps atomic completion and removes next-session primary UX', () => {
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     const provider = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
     expect(activity).toContain('completeSession');
     expect(activity).not.toContain('다음 수업 만들기');

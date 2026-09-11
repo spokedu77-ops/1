@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from '../../spokedu-master/manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
@@ -19,11 +20,11 @@ describe('SPOKEDU MASTER Session workflow', () => {
 
   it('uses the unique session id and keeps program completion independent', () => {
     const api = read('app/api/spokedu-master/sessions/route.ts');
-    const calendar = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const calendar = readSessionDetailSource();
     expect(api).toContain("p_session_id: sessionId");
     expect(api).toContain("'spokedu_master_save_session'");
     expect(calendar).toContain('status: nextStatus');
-    expect(calendar).toContain("input('completed')");
+    expect(calendar).toContain("draft.input(activities.programs, 'completed')");
     expect(calendar).toContain('data.updateSessionProgram');
     expect(calendar).toContain('data.saveSessionAttendance');
     expect(calendar).toContain("persist(activeSession ? 'completed' : 'scheduled')");

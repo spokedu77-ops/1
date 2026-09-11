@@ -10,6 +10,28 @@ export function distributeEvenly<T>(items: readonly T[], teamCount: number, rand
   return teams;
 }
 
+type ToolAttendanceEntry = {
+  studentId: string;
+  status: 'present' | 'absent';
+};
+
+/**
+ * Standalone tools use the selected Class roster. Session-linked tools use only
+ * students whose attendance was explicitly saved as present for that Session.
+ */
+export function resolveClassToolParticipants<T extends { id: string }>(
+  classRoster: readonly T[],
+  sessionAttendance?: readonly ToolAttendanceEntry[],
+): T[] {
+  if (!sessionAttendance) return [...classRoster];
+  const presentStudentIds = new Set(
+    sessionAttendance
+      .filter((entry) => entry.status === 'present')
+      .map((entry) => entry.studentId),
+  );
+  return classRoster.filter((student) => presentStudentIds.has(student.id));
+}
+
 export function traceLadderDestination(
   start: number,
   levelCount: number,

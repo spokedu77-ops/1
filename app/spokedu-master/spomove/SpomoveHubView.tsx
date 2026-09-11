@@ -1000,8 +1000,8 @@ function SpomoveHubInner({
       data-spm-spomove-family-preview={familyPreview ? 'true' : 'false'}
       data-spm-spomove-show-program-label={showProgramLabel ? 'true' : 'false'}
       className={familyPreview
-        ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3 xl:grid-cols-4'
-        : 'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}
+        ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-4'
+        : 'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-4'}
     >
       {presets.map((preset) => (
         <div key={preset.id} className={familyPreview ? 'w-[82vw] max-w-[320px] shrink-0 snap-start sm:w-auto sm:max-w-none' : ''}>

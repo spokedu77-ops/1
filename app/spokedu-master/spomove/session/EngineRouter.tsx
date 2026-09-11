@@ -134,6 +134,8 @@ type Props = {
   flowDuration?: number;
   flowLayout?: 'sequential' | 'random';
   flowIncludeBonus?: boolean;
+  colorGateVariant?: 'solo-easy' | 'solo-normal' | 'together-easy';
+  colorGateCategory?: 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
   flankerExtremeMode?: 'theme' | 'arrow';
@@ -204,6 +206,8 @@ export function EngineRouter({
   flowDuration,
   flowLayout,
   flowIncludeBonus,
+  colorGateVariant,
+  colorGateCategory,
   flankerStimulusType,
   flankerNestedCircleCount,
   flankerExtremeMode,
@@ -596,6 +600,8 @@ export function EngineRouter({
             flowDuration: flowDuration ?? 25,
             flowLayout: flowLayout ?? 'sequential',
             flowIncludeBonus: flowIncludeBonus ?? true,
+            colorGateVariant,
+            colorGateCategory,
           }}
           embed
           onExit={onExit}

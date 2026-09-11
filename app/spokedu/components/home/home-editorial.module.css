@@ -98,19 +98,23 @@
   min-width: 0;
 }
 
+.heroEyebrow {
+  margin: 0 0 0.75rem;
+}
+
 .heroHeadingLayout {
   margin: 0;
-  max-width: 14em;
+  max-width: min(36rem, 100%);
   color: var(--spokedu-marketing-color-navy);
   font-size: 2rem !important;
-  line-height: 1.25 !important;
+  line-height: 1.28 !important;
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  line-break: strict;
+  overflow-wrap: break-word;
 }
 
 .heroPhrase {
-  display: inline;
-  white-space: nowrap;
+  display: block;
 }
 
 .heroLead {
@@ -315,18 +319,18 @@
   margin-top: 0.875rem;
 }
 
-.caseProofLine {
+.caseVenue {
   margin: 0;
+  font-size: 1.125rem;
+  color: var(--spokedu-marketing-color-ink);
+}
+
+.caseProofLine {
+  margin: 0.35rem 0 0;
   font-size: 0.875rem;
   font-weight: 650;
   line-height: 1.5;
   color: var(--spokedu-marketing-color-body);
-}
-
-.caseVenue {
-  margin-top: 0.35rem;
-  font-size: 1.125rem;
-  color: var(--spokedu-marketing-color-ink);
 }
 
 .caseFeatured .caseVenue {
@@ -623,8 +627,9 @@
 
 @media (min-width: 960px) {
   .heroHeadingLayout {
+    max-width: 42rem;
     font-size: 3.25rem !important;
-    line-height: 1.16 !important;
+    line-height: 1.2 !important;
   }
 
   .heroFigure {

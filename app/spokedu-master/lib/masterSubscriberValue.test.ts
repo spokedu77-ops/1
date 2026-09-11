@@ -20,6 +20,7 @@ import {
 } from '../profile/subscriptionSummary';
 import { buildNextSessionDraft } from '../activity/nextSession';
 import type { MasterSessionDto } from '../types/operational';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
@@ -137,18 +138,18 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
     expect(draft.day).toBe('2026-08-26');
     expect(draft.startTime).toBeTruthy();
     expect(draft.endTime).toBeTruthy();
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     expect(activity).not.toContain('NextSessionPlanner');
   });
 
   it('VALUE-PREM-01 surfaces: Payment keeps gate context while Manage keeps capture deep-link compatibility', () => {
     const payment = read('app/spokedu-master/payment/page.tsx');
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     const manage = read('app/spokedu-master/manage/ManageView.tsx');
     const home = read('app/spokedu-master/dashboard/DashboardView.tsx');
     expect(payment).toContain('buildMasterGateDisplayModel');
     expect(payment).toContain('gateDisplay');
-    expect(activity).toContain('legacyCapture && activeSession');
+    expect(activity).toContain('legacyCapture && draft.activeSession');
     expect(manage).toContain("searchParams.get('capture') === '1'");
     expect(activity).not.toContain('PreviousActivityCarryover');
     expect(activity).not.toContain('Premium modal');

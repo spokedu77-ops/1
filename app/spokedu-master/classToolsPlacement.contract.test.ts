@@ -82,6 +82,19 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain("tab === 'picker' || tab === 'teams' || tab === 'order'");
   });
 
+  it('uses explicit Session attendance as the participant scope for every roster tool', () => {
+    const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
+    const model = read('app/spokedu-master/components/ui/classToolsModel.ts');
+
+    expect(tools).toContain('resolveClassToolParticipants(classRosterStudents, sessionContext.attendance)');
+    expect(tools).toContain('출석 체크된');
+    expect(tools).toContain('결석·미기록');
+    expect(model).toContain("entry.status === 'present'");
+    expect(tools).toContain('students={selectedStudents}');
+    expect(tools).toContain('오늘 참여 명단');
+    expect(tools).toContain('excludedStandaloneStudentIds');
+  });
+
   it('provides class-scoped tournament and ladder tools', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
 

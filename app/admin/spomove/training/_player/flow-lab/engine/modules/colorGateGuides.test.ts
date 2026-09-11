@@ -8,12 +8,9 @@ describe('Motion Gate option image pools', () => {
     const together = colorGatePosesForVariant('together-easy');
 
     expect(easy).toHaveLength(20);
-    expect(normal).toHaveLength(20);
-    expect(together).toHaveLength(3);
-    expect(together).toEqual(['partner-hold', 'partner-squat', 'partner-high-five']);
+    expect(normal).toHaveLength(40);
+    expect(together).toHaveLength(10);
 
-    const all = [...easy, ...normal, ...together];
-    expect(new Set(all).size).toBe(all.length);
-    expect(new Set(all)).toEqual(new Set(COLOR_GATE_POSE_SEQUENCE));
+    expect(new Set([...normal, ...together])).toEqual(new Set(COLOR_GATE_POSE_SEQUENCE));
   });
 });

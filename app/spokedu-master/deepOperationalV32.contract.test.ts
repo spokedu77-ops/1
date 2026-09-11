@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readSessionDetailSource } from './manage/session-detailTestSource';
 
 const classDetail = readFileSync('app/spokedu-master/classes/[classId]/page.tsx', 'utf8');
 const studentDetail = readFileSync('app/spokedu-master/students/[studentId]/page.tsx', 'utf8');
-const session = readFileSync('app/spokedu-master/manage/SessionDetailSheet.tsx', 'utf8');
+const session = readSessionDetailSource();
 const capture = readFileSync('app/spokedu-master/activity/SessionCapturePanel.tsx', 'utf8');
 
 describe('UI Foundation v3.2 deep operational contract', () => {

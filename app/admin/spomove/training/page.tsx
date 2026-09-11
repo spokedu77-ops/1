@@ -1204,6 +1204,7 @@ function SettingsScreen({
                   </button>
                 );
               })}
+              {isColorGateTheme ? <ColorGatePoseAppendix /> : null}
               {modeId === 'basic' && (
                 <button
                   className="theme-option"
@@ -2053,6 +2054,7 @@ function SettingsScreen({
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
                 showPresets={false}
                 compact={isColorGateTheme}
+                max={isColorGateTheme ? 10 : 6}
               />
             </section>
           ) : null}
@@ -2231,7 +2233,7 @@ function SettingsScreen({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5 }}>
                 {([
                   ['solo-easy', '쉬움', ''],
-                  ['solo-normal', '어려움', ''],
+                  ['solo-normal', '전체', '쉬움+어려움'],
                   ['together-easy', '투게더', ''],
                 ] as const).map(([value, label, difficulty]) => {
                   const active = launch.colorGateVariant === value;
@@ -2254,7 +2256,6 @@ function SettingsScreen({
                   );
                 })}
               </div>
-              <ColorGatePoseAppendix />
             </section>
           ) : null}
 

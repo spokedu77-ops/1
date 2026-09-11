@@ -7,7 +7,8 @@ import {
 
 /** 브리핑에서 선택 가능한 자극 속도(초) — 정수만 */
 export const SPOMOVE_CUE_SPEED_OPTIONS = [1, 2, 3, 4, 5, 6] as const;
-export type SpomoveCueSpeedSec = (typeof SPOMOVE_CUE_SPEED_OPTIONS)[number];
+export const MOTION_GATE_CUE_SPEED_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export type SpomoveCueSpeedSec = (typeof MOTION_GATE_CUE_SPEED_OPTIONS)[number];
 
 export type SpomoveCueSpeedGuide = {
   sec: SpomoveCueSpeedSec;
@@ -19,7 +20,7 @@ export type SpomoveCueSpeedGuide = {
 };
 
 /** 초별 템포·추천 대상·논거 (수업용 가이드) */
-export const SPOMOVE_CUE_SPEED_GUIDES: Record<SpomoveCueSpeedSec, SpomoveCueSpeedGuide> = {
+export const SPOMOVE_CUE_SPEED_GUIDES: Partial<Record<SpomoveCueSpeedSec, SpomoveCueSpeedGuide>> = {
   1: {
     sec: 1,
     tempoLabel: '어려움',
@@ -73,6 +74,7 @@ const STORAGE_KEY = 'spokedu-master.spomove.lastCueSeconds';
  * 골키퍼(10)는 비행 시간(초)으로 cueSeconds를 사용한다.
  */
 export function supportsCueSpeedOverride(preset: OfficialSpomovePreset): boolean {
+  if (preset.id === 'dive-color-gate-61') return true;
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') return false;
   // 순차 기억 · 순간 기억만 자극 속도(기억 시간) 허용
   if (preset.engine.mode === 'spatial' && preset.engine.level === 7) return true;
@@ -87,13 +89,13 @@ export function supportsCueSpeedOverride(preset: OfficialSpomovePreset): boolean
   return true;
 }
 
-export function clampCueSpeedSec(value: number): SpomoveCueSpeedSec {
+export function clampCueSpeedSec(value: number, max: SpomoveCueSpeedSec = 6): SpomoveCueSpeedSec {
   const rounded = Math.round(value);
-  if ((SPOMOVE_CUE_SPEED_OPTIONS as readonly number[]).includes(rounded)) {
+  if ((MOTION_GATE_CUE_SPEED_OPTIONS as readonly number[]).includes(rounded) && rounded <= max) {
     return rounded as SpomoveCueSpeedSec;
   }
   if (rounded < 1) return 1;
-  if (rounded > 6) return 6;
+  if (rounded > max) return max;
   return 3;
 }
 
@@ -136,7 +138,7 @@ export function resolveSessionCueSeconds(
   urlCueSeconds?: number | null,
 ): SpomoveCueSpeedSec {
   if (urlCueSeconds != null && Number.isFinite(urlCueSeconds)) {
-    return clampCueSpeedSec(urlCueSeconds);
+    return clampCueSpeedSec(urlCueSeconds, preset.id === 'dive-color-gate-61' ? 10 : 6);
   }
   return resolveInitialCueSeconds(preset);
 }
@@ -148,7 +150,7 @@ export function parseCueSecondsQuery(raw: string | null | undefined): number | n
 }
 
 export function getCueSpeedGuide(sec: number): SpomoveCueSpeedGuide {
-  return SPOMOVE_CUE_SPEED_GUIDES[clampCueSpeedSec(sec)];
+  return SPOMOVE_CUE_SPEED_GUIDES[clampCueSpeedSec(sec, 6)]!;
 }
 
 export function getCueSpeedDifficultyLabel(sec: number): '쉬움' | '보통' | '어려움' {

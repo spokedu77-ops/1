@@ -11,7 +11,7 @@ import { findExactSession } from '../../lib/sessionContext';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../../lib/masterNavigationContext';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
-import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
+import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
 import { createTournamentBracket, getTournamentRoundLabel, selectTournamentWinner, type TournamentParticipant } from './tournamentModel';
 
 type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 'order' | 'tournament' | 'ladder';
@@ -486,7 +486,7 @@ function ReturnTimerTab() {
                 {modeConfig.label} 시간
                 <ChevronDown size={15} className="transition-transform group-open:rotate-180" />
               </summary>
-              <div className="absolute left-0 top-[calc(100%+6px)] z-20 w-40 overflow-hidden rounded-[12px] border border-slate-200 bg-white p-1.5 shadow-[0_14px_32px_rgba(15,23,42,0.14)]" role="menu">
+              <div className="absolute bottom-[calc(100%+6px)] left-0 z-20 max-h-[min(16rem,calc(100dvh-2rem))] w-40 overflow-y-auto overscroll-contain rounded-[12px] border border-slate-200 bg-white p-1.5 shadow-[0_14px_32px_rgba(15,23,42,0.14)]" role="menu">
                 {modeConfig.options.map((seconds) => (
                   <button
                     key={seconds}
@@ -732,6 +732,51 @@ function ClassSelector({
   );
 }
 
+function SessionParticipantNote({ participantCount, rosterCount, returnHref }: { participantCount: number; rosterCount: number; returnHref: string }) {
+  const excludedCount = Math.max(0, rosterCount - participantCount);
+  return (
+    <div className="mx-auto mb-2 flex w-full max-w-[560px] flex-wrap items-center justify-center gap-x-3 gap-y-1 px-2 text-center text-[12px] font-medium text-slate-600">
+      <span>
+        출석 체크된 <strong className="font-semibold text-slate-900">{participantCount}명</strong>만 참여
+        {excludedCount > 0 ? ` · 결석·미기록 ${excludedCount}명 제외` : ''}
+      </span>
+      <Link href={returnHref} className="inline-flex min-h-11 items-center font-semibold text-blue-700">출석 확인</Link>
+    </div>
+  );
+}
+
+function StandaloneParticipantPicker({ roster, excludedStudentIds, onToggle }: { roster: StudentProfile[]; excludedStudentIds: Set<string>; onToggle: (studentId: string) => void }) {
+  const participantCount = roster.filter((student) => !excludedStudentIds.has(student.id)).length;
+  if (!roster.length) return null;
+  return (
+    <details className="group mx-auto mb-2 w-full max-w-[560px] rounded-xl border border-slate-200 bg-white">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 text-[12px] font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
+        <span>오늘 참여 명단 · {participantCount}/{roster.length}명</span>
+        <ChevronDown size={16} className="shrink-0 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="max-h-40 overflow-y-auto overscroll-contain border-t border-slate-100 p-2">
+        <div className="grid gap-1 sm:grid-cols-2">
+          {roster.map((student) => {
+            const participating = !excludedStudentIds.has(student.id);
+            return (
+              <button
+                key={student.id}
+                type="button"
+                aria-pressed={participating}
+                onClick={() => onToggle(student.id)}
+                className={`flex min-h-11 items-center justify-between rounded-lg px-3 text-left text-[13px] font-medium ${participating ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-50 text-slate-400'}`}
+              >
+                <span className="truncate">{student.name}</span>
+                <span className="ml-2 shrink-0 text-[11px] font-semibold">{participating ? '참여' : '제외'}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </details>
+  );
+}
+
 function PickerTab({ students, usingSample }: { students: StudentProfile[]; usingSample: boolean }) {
   const [picked, setPicked] = useState<StudentProfile | null>(null);
   const [spinning, setSpinning] = useState(false);
@@ -921,7 +966,7 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
   const championId = bracket.rounds.at(-1)?.[0]?.winnerId ?? null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center gap-5 overflow-y-auto px-4 py-6 pb-28 sm:px-6 sm:py-8 lg:pb-8">
+    <div className="flex h-full min-h-0 flex-col items-center gap-4 overflow-hidden px-4 py-5 sm:px-6 sm:py-6">
       <StudentModeNote usingSample={usingSample} />
       {!students.length ? <EmptyStudentsForTools /> : null}
       <div className="flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-3">
@@ -933,7 +978,7 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
       </div>
 
       {!started ? (
-        <section className="w-full max-w-[720px] rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+        <section className="flex min-h-0 w-full max-w-[720px] flex-1 flex-col rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[13px] font-bold text-slate-700">참가자 {participants.length}명</p>
             <div className="flex gap-2">
@@ -941,7 +986,7 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
               <button type="button" onClick={() => { const id = `custom-${customIdRef.current++}`; setParticipants((items) => [...items, { id, name: `참가자 ${items.length + 1}` }]); }} className="min-h-11 rounded-xl bg-blue-50 px-3 text-[12px] font-bold text-blue-700"><UserPlus size={14} className="mr-1 inline" />직접 추가</button>
             </div>
           </div>
-          <ol className="mt-4 space-y-2">
+          <ol className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1">
             {participants.map((participant, index) => (
               <li key={participant.id} className="flex min-h-12 items-center gap-2 rounded-xl bg-slate-50 px-2">
                 <span className="w-7 text-center text-[12px] font-bold text-slate-400">{index + 1}</span>
@@ -950,9 +995,11 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
               </li>
             ))}
           </ol>
-          <ActionButton onClick={startTournament} disabled={participants.filter((participant) => participant.name.trim()).length < 2} accent="#7c3aed">
-            <Trophy size={17} />대진 시작
-          </ActionButton>
+          <div className="mt-4 flex shrink-0 justify-center">
+            <ActionButton onClick={startTournament} disabled={participants.filter((participant) => participant.name.trim()).length < 2} accent="#7c3aed">
+              <Trophy size={17} />대진 시작
+            </ActionButton>
+          </div>
         </section>
       ) : (
         <div className="w-full max-w-[1120px] overflow-x-auto pb-3">
@@ -1133,10 +1180,26 @@ export default function ClassToolsView() {
   const effectiveClassKey = hasSessionContext
     ? (sessionContext?.classId ?? '')
     : classKeys.includes(selectedClassKey) ? selectedClassKey : (classKeys[0] ?? '');
-  const selectedStudents = useMemo(
+  const classRosterStudents = useMemo(
     () => students.filter((student) => operationalData.classes.find((item) => item.id === effectiveClassKey)?.studentIds.includes(student.id)),
     [effectiveClassKey, operationalData.classes, students],
   );
+  const [excludedStandaloneStudentIds, setExcludedStandaloneStudentIds] = useState<Set<string>>(() => new Set());
+  useEffect(() => { setExcludedStandaloneStudentIds(new Set()); }, [effectiveClassKey]);
+  const selectedStudents = useMemo(
+    () => sessionContext
+      ? resolveClassToolParticipants(classRosterStudents, sessionContext.attendance)
+      : classRosterStudents.filter((student) => !excludedStandaloneStudentIds.has(student.id)),
+    [classRosterStudents, excludedStandaloneStudentIds, sessionContext],
+  );
+  const toggleStandaloneParticipant = useCallback((studentId: string) => {
+    setExcludedStandaloneStudentIds((current) => {
+      const next = new Set(current);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
+  }, []);
   const usesClassRoster = tab === 'picker' || tab === 'teams' || tab === 'order' || tab === 'tournament' || tab === 'ladder';
   const usingSample = false;
   return (
@@ -1184,6 +1247,7 @@ export default function ClassToolsView() {
         {hasSessionContext && sessionContext && usesClassRoster ? (
           <div className="shrink-0 px-4 pt-3 sm:px-6">
             <ClassSelector classKeys={classKeys} classLabels={classLabels} selectedClassKey={effectiveClassKey} onChange={setSelectedClassKey} studentCount={selectedStudents.length} locked />
+            <SessionParticipantNote participantCount={selectedStudents.length} rosterCount={classRosterStudents.length} returnHref={sessionReturnHref} />
           </div>
         ) : null}
         {!usesClassRoster ? (
@@ -1202,15 +1266,26 @@ export default function ClassToolsView() {
               onChange={setSelectedClassKey}
               studentCount={selectedStudents.length}
             />
+            <StandaloneParticipantPicker roster={classRosterStudents} excludedStudentIds={excludedStandaloneStudentIds} onToggle={toggleStandaloneParticipant} />
           </div>
         ) : null}
         {usesClassRoster ? (
           <div className="min-h-0 flex-1 overflow-hidden">
-            {tab === 'picker' && <PickerTab key={`picker-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-            {tab === 'teams' && <TeamsTab key={`teams-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-            {tab === 'order' && <OrderTab key={`order-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-            {tab === 'tournament' && <TournamentTab key={`tournament-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-            {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+            {hasSessionContext && sessionContext && !selectedStudents.length ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+                <p className="text-[16px] font-semibold text-slate-900">출석 체크된 학생이 없습니다.</p>
+                <p className="text-[13px] font-medium text-slate-500">수업에서 출석을 체크한 학생만 이 도구에 참여합니다.</p>
+                <Link href={sessionReturnHref} className="inline-flex min-h-11 items-center font-semibold text-blue-700">출석 확인하기</Link>
+              </div>
+            ) : (
+              <>
+                {tab === 'picker' && <PickerTab key={`picker-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+                {tab === 'teams' && <TeamsTab key={`teams-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+                {tab === 'order' && <OrderTab key={`order-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+                {tab === 'tournament' && <TournamentTab key={`tournament-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+                {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+              </>
+            )}
           </div>
         ) : null}
       </div>

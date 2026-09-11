@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { buildSessionDraftDateTimes, getSeoulSessionDay } from '@/app/spokedu-master/lib/sessionDateTime';
+import { readSessionDetailSource } from '../../spokedu-master/manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 const migration = read('supabase/migrations/20260823020000_spokedu_master_foundation_lockdown.sql');
@@ -8,7 +9,7 @@ const students = read('app/spokedu-master/students/page.tsx');
 const provider = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
 const sessions = read('app/api/spokedu-master/sessions/route.ts');
 const programRoute = read('app/api/spokedu-master/sessions/[sessionId]/programs/route.ts');
-const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+const activity = readSessionDetailSource();
 const weeklyAgenda = read('app/spokedu-master/activity/weeklyAgenda.ts');
 
 describe('SPOKEDU MASTER final foundation lockdown', () => {

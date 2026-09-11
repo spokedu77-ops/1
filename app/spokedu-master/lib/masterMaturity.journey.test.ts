@@ -6,6 +6,7 @@ import { MASTER_PRODUCT_CATALOG } from './productCatalog';
 import { getMasterRouteRequirement } from '../components/layout/masterRouteAccess';
 import { getSessionActionPolicy } from '../activity/sessionActionPolicy';
 import { getSafeMasterPostPaymentPath } from './masterPaymentReturn';
+import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -22,7 +23,7 @@ describe('MASTER whole-product maturity journeys', () => {
   });
 
   it('PREM-01 keeps report return and legacy capture context without a completion cascade', () => {
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = readSessionDetailSource();
     const manage = read('app/spokedu-master/manage/ManageView.tsx');
     const report = read('app/spokedu-master/report/page.tsx');
     expect(activity).not.toContain('NextSessionPlanner');

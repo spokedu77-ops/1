@@ -45,7 +45,7 @@ export function ColorGatePoseAppendix() {
           <div style={{ padding: '16px 16px 12px', textAlign: 'center', borderBottom: '1px solid var(--border, #E2E8F0)' }}>
             <div style={{ fontSize: 20, fontWeight: 950, color: 'var(--text, #0F172A)' }}>모션 게이트 동작 종합 분류표</div>
             <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-muted, #64748B)', fontWeight: 700 }}>
-              4개 유형 × 쉬움·어려움 각 5개 · 투게더 3개
+              4개 유형 × 쉬움·어려움 각 5개 · 투게더 10개
             </div>
           </div>
 

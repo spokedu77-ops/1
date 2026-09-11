@@ -94,7 +94,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
 
   it('uses four-column desktop density and the Home-aligned square card ratio', () => {
     expect(hub).toContain(
-      'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+      'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-4',
     );
     expect(hub).not.toContain('min-h-[300px]');
     expect(hub).toContain('aspect-square');
