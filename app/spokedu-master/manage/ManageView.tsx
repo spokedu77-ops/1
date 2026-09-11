@@ -14,7 +14,6 @@ import type { MasterSessionDto } from '../types/operational';
 import { AttendanceTab } from './AttendanceTab';
 import { ScheduleTab } from './ScheduleTab';
 import { SessionDetailSheet } from './SessionDetailSheet';
-import './manageWorkspace.css';
 
 type ManageTab = 'schedule' | 'attendance';
 
@@ -55,13 +54,13 @@ export default function ManageView() {
   const openCreate = () => { setCreateClassId(null); setLegacyCapture(false); setEditing(null); };
   const selectTab = (nextTab: ManageTab) => { setEditing(undefined); setTab(nextTab); };
 
-  return <main data-manage-workspace className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:pb-0">
-    <MasterPageShell variant="wide" className={editing !== undefined ? 'lg:grid lg:h-full lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,1fr)_440px] lg:items-stretch lg:gap-0 lg:!px-0 lg:!py-0' : 'lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8'}>
-      <div className={editing !== undefined ? 'min-w-0 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8 lg:pt-4 lg:pb-4' : 'min-w-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden'}>
+  return <main data-manage-workspace className={`h-full min-h-0 bg-[var(--spm-bg)] pb-28 ${tab === 'attendance' ? 'overflow-y-auto' : 'overflow-y-auto lg:overflow-hidden lg:pb-0'}`}>
+    <MasterPageShell variant="wide" className={editing !== undefined ? 'lg:grid lg:h-full lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,1fr)_minmax(400px,31%)] lg:items-stretch lg:gap-0 lg:!px-0 lg:!py-0' : tab === 'attendance' ? 'lg:px-8' : 'lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8'}>
+      <div className={editing !== undefined ? 'min-w-0 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8 lg:pb-4 lg:pt-4' : tab === 'attendance' ? 'min-w-0' : 'min-w-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden'}>
       <div className="shrink-0">
       <MasterPageHeader title="수업 관리" />
       <div className="mt-3 flex items-center justify-between gap-6">
-      <div className="grid h-10 w-full max-w-[280px] grid-cols-2 rounded-[12px] border border-slate-200 bg-white p-0.5" role="tablist" aria-label="수업 관리 보기">
+      <div className="grid h-11 w-full max-w-[320px] grid-cols-2 rounded-[12px] border border-slate-200 bg-white p-0.5" role="tablist" aria-label="수업 관리 보기">
         <button type="button" role="tab" aria-selected={tab === 'schedule'} onClick={() => selectTab('schedule')} className={`rounded-[10px] px-4 text-[13px] font-semibold transition-colors ${tab === 'schedule' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>일정</button>
         <button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => selectTab('attendance')} className={`rounded-[10px] px-4 text-[13px] font-semibold transition-colors ${tab === 'attendance' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>출석부</button>
       </div>

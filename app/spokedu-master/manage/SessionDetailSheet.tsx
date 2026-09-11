@@ -335,9 +335,6 @@ export function SessionDetailSheet({
   return <>
     <BottomSheet open title={title} headerTitle={<h2 className="flex items-center gap-3 text-[18px] font-bold text-slate-950"><span className="h-2.5 w-2.5 rotate-45 border border-slate-700" aria-hidden />{title}</h2>} size="session" onClose={requestClose} footer={footer}>
       <div data-session-detail className={`flex flex-col pb-1 ${isCreate ? '' : 'gap-4'}`}>
-        <style>{isCreate
-          ? `[data-session-detail] textarea { min-height: 60px !important; height: 64px; max-height: 68px; padding-block: 8px !important; }`
-          : `[data-session-detail] textarea { min-height: 72px !important; max-height: 88px; padding-block: 10px !important; }`}</style>
         {isCreate ? <div data-session-create className="flex flex-col pt-3">
           <section>
             <label className="block text-[13px] font-semibold text-slate-700">수업반

@@ -63,31 +63,32 @@ Student records, notes, and class data are sensitive operational data. Preserve 
 
 Save, recovery, retry, drafts, offline awareness, and loading/error/empty states are product UX. Silent data loss or success UI without durable persistence is P0.
 
-## 12. Contract Hierarchy
+## 12. Decision Authority
 
-Resolve importance top-down:
+Resolve work top-down:
 
-1. Product Truth / North Star
-2. User Journey
-3. Domain Meaning
-4. Information Architecture
-5. Interaction Semantics
-6. Visual System
-7. Existing Implementation
-8. Existing Tests
+1. Product, data, and security invariants
+2. The user's current explicit request and approved Product Decisions
+3. A user-approved Target Reference for the affected surface
+4. Surface role and User Journey
+5. Visual System defaults
+6. Existing implementation
+7. Existing tests
 
-A higher contract defines importance; it does not grant permission to change a lower contract. Change authority is governed by the next section.
+Existing implementation and tests are evidence, not higher authority than an approved change. This ordering never authorizes a visual request to change data meaning, session lifecycle, persistence, owner/tenant isolation, entitlement, pricing, authentication/authorization, navigation destination meaning, SPOMOVE runtime semantics, or an approved Product Decision. Those changes remain governed by the Product Decision workflow.
 
 ## 13. Change Authority
 
 Use only this classification:
 
 - **KEEP:** preserve current product meaning and behavior; no separate product decision is required.
-- **REFINE:** improve UI, expression, structure, code shape, or visual consistency without changing product meaning. It must be explicitly within the user request or approved Sprint Brief.
+- **REFINE:** improve UI, expression, structure, code shape, or visual consistency without changing product meaning. This expressly includes layout recomposition, DOM/component structure, panel/card structure, spacing, typography hierarchy, responsive structure, content density, visual presentation of information disclosure, CSS architecture, and component splitting or consolidation. It must be explicitly within the user request or approved Sprint Brief.
 - **REPLACE CANDIDATE:** replace an existing CTA meaning, journey entry, navigation default, or workflow. Product Owner approval is required.
 - **REMOVE CANDIDATE:** delete a surface, persistence behavior, or user-visible capability. Product Owner approval is required.
 
 Product Owner approval is also required for new workflow, navigation, plan, entitlement, persistence, session-lifecycle, product-promise, or ambiguous semantics. North Star alignment is not approval.
+
+A UI structure change is not by itself a Product Change. A Product Decision Gate is required when the change alters the meaning of the workflow, stored data, state transitions, permissions, persistence, navigation destination, entitlement, or another protected invariant. Existing user-visible capabilities remain unless removal is explicitly approved.
 
 ## 14. Product Change Workflow
 
@@ -177,7 +178,9 @@ A completed [Sprint Brief](./SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md), or an exp
 
 By default, use file inspection, static reasoning, available diagnostics, link-path checks, authority-reference searches, and changed-file review. Do not run `npm`, `npx`, tests, TypeScript, ESLint, or builds unless the user explicitly requests them or an approved Sprint Brief requires them.
 
-Static verification is not a rendered visual PASS. Rendered visual PASS requires the evidence defined by the Visual System and recorded in the Surface Matrix.
+An approved implementation scope may authorize targeted unit or contract tests, TypeScript checks, lint for changed files, rendered QA, and responsive screenshot comparison. Verification remains limited to that approved scope.
+
+Static verification is not a rendered visual PASS. Visual PASS requires populated desktop and mobile review and, when a Target Reference exists, side-by-side review. The Visual System defines the evidence and the Surface Matrix records it.
 
 ## 22. Core Principle
 

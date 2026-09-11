@@ -32,18 +32,20 @@ export function AttendanceTab({ onShowSchedule, onSessionSelect }: { onShowSched
 
   return (
     <section aria-labelledby="manage-attendance-heading" className="mt-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
         <label className="text-xs font-semibold text-slate-500">수업반
           <select value={selectedClass.id} onChange={(event) => setClassId(event.target.value)} className="mt-1 block h-11 min-w-56 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800">
             {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
         </label>
-        <div className="flex items-center gap-1">
+        <div className="flex h-11 items-center gap-1" aria-label="출석 월 선택">
           <button type="button" onClick={() => setMonth((current) => shiftAttendanceMonth(current, -1))} className="grid h-11 w-11 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="이전 달"><ChevronLeft size={18} /></button>
-          <h2 id="manage-attendance-heading" className="min-w-28 text-center text-base font-semibold text-slate-900">{Number(month.slice(0, 4))}년 {Number(month.slice(5, 7))}월</h2>
+          <p className="min-w-28 text-center text-base font-semibold text-slate-900">{Number(month.slice(0, 4))}년 {Number(month.slice(5, 7))}월</p>
           <button type="button" onClick={() => setMonth((current) => shiftAttendanceMonth(current, 1))} className="grid h-11 w-11 place-items-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="다음 달"><ChevronRight size={18} /></button>
         </div>
       </div>
+
+      <h2 id="manage-attendance-heading" className="mt-8 text-xl font-bold tracking-tight text-slate-950">출석 현황</h2>
       <AttendanceProjectionTable sessions={view.sessions} rows={view.rows} emptyMonthLabel={`${Number(month.slice(5, 7))}월`} emptyAction={<button type="button" onClick={onShowSchedule} className="mt-4 min-h-11 px-2 text-sm font-semibold text-slate-700 hover:text-slate-950">일정 보기</button>} onSessionSelect={onSessionSelect} />
     </section>
   );

@@ -30,6 +30,14 @@ Evidence-based summary. Do not infer runtime behavior from pathname or component
 
 List applicable PD IDs and Product Owner decisions.
 
+## TARGET REFERENCE
+
+- Type: None / Inspiration Reference / User-approved Target Reference
+- Artifact or link:
+- Affected surface(s):
+- Approved visual attributes (composition, proportions, spacing, hierarchy, density, alignment, controls, disclosure defaults, emphasis, responsive intent):
+- MASTER adaptations required to preserve product/data/security invariants:
+
 ## IN SCOPE
 
 ## OUT OF SCOPE
@@ -43,6 +51,8 @@ Include no unrelated refactors.
 | | |
 
 ## CONTRACTS TO PRESERVE
+
+Separate protected product behavior/capabilities from visual implementation that may change. Do not list DOM, Tailwind classes, pixel values, or current component decomposition as protected contracts unless they directly implement an accessibility or semantic API.
 
 ## APPROVED CONTRACT CHANGES
 
@@ -70,7 +80,11 @@ Stop and report any unapproved entitlement, persistence, route/navigation, sessi
 
 ## TEST / QA SCOPE
 
-State the approved manual, static, automated, and rendered-QA scope. Do not assume permission to run shell verification. Static verification is not rendered visual PASS.
+State the approved manual, static, automated, and rendered-QA scope. An approved brief may explicitly authorize targeted unit/contract tests, TypeScript checking, lint for changed files, rendered QA, and responsive screenshot comparison. Do not assume permission to run shell verification when it is absent here.
+
+Tests should protect behavior, state transitions, persistence, permissions, accessibility contracts, and access to core functions—not exact Tailwind classes, pixel values, or incidental DOM hierarchy.
+
+Static verification is not rendered visual PASS. UI PASS requires at minimum populated desktop and populated mobile review. When a Target Reference exists, include side-by-side visual review.
 
 ## FINAL REPORT FORMAT
 

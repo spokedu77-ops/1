@@ -25,6 +25,8 @@ describe('admin SPOKEDU MASTER split contract', () => {
     expect(programsPage).toContain('SPOMOVE_ADMIN_TAB_OPTIONS');
     expect(programsPage).toContain("pathname.startsWith('/admin/spokedu-master/spomove')");
     expect(programsPage).toContain('SpomoveContentManager');
+    expect(programsPage).toContain('SpomoveHomeFeaturedManager');
+    expect(programsPage).toContain('SpomoveHubFamilyFeaturedManager');
     expect(programsPage).toContain('SPOMOVE_CONTENT_PACK_ID');
     expect(programsPage).toContain('핵심 키워드');
     expect(programsPage).toContain('SPOMOVE_CORE_KEYWORD_AXIS');

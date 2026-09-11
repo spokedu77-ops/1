@@ -143,7 +143,7 @@ export function BottomSheet({
         ? [
             'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] px-4 pt-3 shadow-2xl outline-none',
             'sm:px-5 sm:pt-4',
-            'lg:h-full lg:max-h-full lg:min-h-0 lg:w-[440px] lg:max-w-[440px] lg:rounded-none lg:border-y-0 lg:border-l lg:border-r-0 lg:px-6 lg:pt-5 lg:shadow-none',
+            'lg:h-full lg:max-h-full lg:min-h-0 lg:w-full lg:max-w-none lg:rounded-none lg:border-y-0 lg:border-l lg:border-r-0 lg:px-6 lg:pt-5 lg:shadow-none',
           ].join(' ')
       : isLaunch
         ? [

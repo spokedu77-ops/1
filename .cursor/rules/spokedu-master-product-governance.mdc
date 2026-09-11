@@ -7,6 +7,6 @@ alwaysApply: true
 
 Follow `/AGENTS.md` first.
 
-For MASTER work, apply the product/domain contract that AGENTS.md names: `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md`.
+For MASTER work, use the full authority chain and decision order defined by `/AGENTS.md`. Apply `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md`, then the visual, surface, and relevant domain authorities it names.
 
 This file has no independent product, visual, or implementation authority. Do not add rules here.

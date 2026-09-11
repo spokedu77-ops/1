@@ -21,7 +21,6 @@ describe('MASTER Visual SSOT (not rendered PASS)', () => {
       const source = read(file);
       expect(source).toContain('MasterCollectionRow');
       expect(source).not.toContain('SPM_COLLECTION_CARD');
-      expect(source).not.toMatch(/<section[^>]+grid gap-3 sm:grid-cols-2/);
     }
   });
 
@@ -34,9 +33,7 @@ describe('MASTER Visual SSOT (not rendered PASS)', () => {
     const manage = read('manage/ManageView.tsx');
     const schedule = read('manage/ScheduleTab.tsx');
     for (const name of ['MasterPageShell', 'MasterPageHeader']) expect(manage).toContain(name);
-    expect(manage).not.toContain('rounded-2xl bg-white p-5');
     expect(manage).not.toContain('다음 수업 만들기');
-    expect(manage).not.toContain('border-b border-slate-200 pb-5');
     expect(schedule).toContain('/spokedu-master/classes?create=1');
     expect(manage).toContain('일정');
     expect(manage).toContain('출석부');

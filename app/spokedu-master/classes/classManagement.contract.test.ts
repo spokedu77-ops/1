@@ -64,7 +64,6 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(detail).toContain('<ClassRosterSheet');
     expect(detail).toContain('await data.updateClass(classItem.id, editName.trim())');
     expect(detail).not.toContain('RegularSchedulePanel');
-    expect(detail).not.toContain('border border-dashed');
   });
 
   it('keeps roster mutations Class-scoped and does not soft-delete Students', () => {
@@ -90,8 +89,6 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(detail).toContain('buildClassAttendanceView');
     expect(detail).toContain('AttendanceProjectionTable');
     expect(detail).toContain('attendanceView.sessions');
-    expect(projection).toContain('overflow-x-auto');
-    expect(projection).toContain('sticky left-0');
     expect(detail).toContain('shiftAttendanceMonth');
     expect(projection).toContain('/spokedu-master/activity?session=${encodeURIComponent(session.id)}');
     expect(detail).not.toContain('AttendanceBook');

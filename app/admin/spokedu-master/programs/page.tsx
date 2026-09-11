@@ -80,6 +80,7 @@ import {
 } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import {
   getSpomovePresetDisplayModel,
+  sortSpomovePresetsByCatalogOrder,
   SPOMOVE_FOCUS_TAG_LABELS,
 } from '@/app/spokedu-master/spomove/spomovePresetDisplayModel';
 import { getPresetMovementSummary } from '@/app/spokedu-master/spomove/movements/presetMovementSummary';
@@ -115,6 +116,7 @@ import {
 import { ContentAuditPanel } from './ContentAuditPanel';
 import { readAdminJsonSafe } from './readAdminJsonSafe';
 import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
+import { SpomoveHubFamilyFeaturedManager } from './SpomoveHubFamilyFeaturedManager';
 import { ProgramGatewayHeroManager } from './ProgramGatewayHeroManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -1188,17 +1190,10 @@ function SpomoveEditModal({
                 <input value={draft.shortDescription ?? ''} onChange={(e) => onUpdateDraft({ shortDescription: e.target.value })} placeholder="활동 방식을 한 문장으로 설명"
                   className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
               </label>
-              <div className="grid gap-2 sm:grid-cols-[1fr_6rem]">
-                <label className="flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-bold text-slate-600">
-                  <input type="checkbox" checked={draft.isVisible !== false} onChange={(e) => onUpdateDraft({ isVisible: e.target.checked })} className="h-4 w-4 accent-indigo-600" />
-                  구독자 화면에 노출
-                </label>
-                <label className="block text-[10px] font-black text-slate-500">
-                  정렬 순서
-                  <input type="number" min={0} value={draft.sortOrder ?? preset.sortOrder} onChange={(e) => onUpdateDraft({ sortOrder: Number(e.target.value) })}
-                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
-                </label>
-              </div>
+              <label className="flex min-h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-bold text-slate-600">
+                <input type="checkbox" checked={draft.isVisible !== false} onChange={(e) => onUpdateDraft({ isVisible: e.target.checked })} className="h-4 w-4 accent-indigo-600" />
+                구독자 화면에 노출
+              </label>
               <label className="block text-[10px] font-black text-slate-500">
                 카드 태그 (쉼표로 구분, 최대 5개)
                 <input value={(draft.catalogTags ?? []).join(', ')} onChange={(e) => onUpdateDraft({ catalogTags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 5) })} placeholder="선택 반응, 양측 이동, 보통"
@@ -1348,7 +1343,7 @@ function useSpomoveContentData() {
       variantLabel: draft.variantLabel?.trim() ?? '',
       catalogTags: draft.catalogTags?.map((tag) => tag.trim()).filter(Boolean).slice(0, 5) ?? [],
       isVisible: draft.isVisible !== false,
-      sortOrder: draft.sortOrder,
+      sortOrder: previous?.sortOrder,
       coreKeywords: normalizeSpomoveCoreKeywordsList(draft.coreKeywords ?? []),
       activityMethod: draft.activityMethod?.trim() ?? '',
       activityConcept: draft.activityConcept?.trim() ?? '',
@@ -1426,9 +1421,9 @@ function SpomoveCatalogManager() {
       ) : (
         <div className="space-y-4">
           {SPOMOVE_GROUP_OPTIONS.map((group) => {
-            const presets = ADMIN_SPOMOVE_LIBRARY
-              .filter((preset) => preset.programGroup === group.key)
-              .sort((a, b) => a.sortOrder - b.sortOrder);
+            const presets = sortSpomovePresetsByCatalogOrder(
+              ADMIN_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === group.key),
+            );
             return (
               <section key={group.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -1615,7 +1610,7 @@ export function SpomoveContentManager() {
       variantLabel: draft.variantLabel?.trim() ?? '',
       catalogTags: draft.catalogTags?.map((tag) => tag.trim()).filter(Boolean).slice(0, 5) ?? [],
       isVisible: draft.isVisible !== false,
-      sortOrder: draft.sortOrder,
+      sortOrder: previous?.sortOrder,
       coreKeywords: normalizeSpomoveCoreKeywordsList(draft.coreKeywords ?? []),
       activityMethod: draft.activityMethod?.trim() ?? '',
       activityConcept: draft.activityConcept?.trim() ?? '',
@@ -2046,9 +2041,9 @@ export function SpomoveContentManager() {
           </section>
         ) : (
           SPOMOVE_GROUP_OPTIONS.map((group) => {
-            const presets = visibleContentPresets
-              .filter((preset) => preset.programGroup === group.key)
-              .sort((a, b) => a.sortOrder - b.sortOrder);
+            const presets = sortSpomovePresetsByCatalogOrder(
+              visibleContentPresets.filter((preset) => preset.programGroup === group.key),
+            );
             if (presets.length === 0) return null;
 
             return (
@@ -2324,9 +2319,9 @@ function SpomoveThumbnailManager() {
           </div>
         ) : (
           SPOMOVE_GROUP_OPTIONS.map((group) => {
-            const presets = ADMIN_SPOMOVE_LIBRARY
-              .filter((preset) => preset.programGroup === group.key)
-              .sort((a, b) => a.sortOrder - b.sortOrder);
+            const presets = sortSpomovePresetsByCatalogOrder(
+              ADMIN_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === group.key),
+            );
 
             return (
               <section key={group.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -2565,9 +2560,9 @@ function SpomoveGuideVideoManager() {
           </div>
         ) : (
           SPOMOVE_GROUP_OPTIONS.map((group) => {
-            const presets = ADMIN_SPOMOVE_LIBRARY
-              .filter((preset) => preset.programGroup === group.key)
-              .sort((a, b) => a.sortOrder - b.sortOrder);
+            const presets = sortSpomovePresetsByCatalogOrder(
+              ADMIN_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === group.key),
+            );
 
             return (
               <section key={group.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -3664,6 +3659,7 @@ export default function AdminSmProgramsPage() {
         <>
           <ProgramGatewayHeroManager domain="spomove" />
           <SpomoveHomeFeaturedManager />
+          <SpomoveHubFamilyFeaturedManager />
         </>
       ) : null}
 

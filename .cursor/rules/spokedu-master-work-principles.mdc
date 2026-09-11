@@ -5,6 +5,6 @@ alwaysApply: true
 
 # MASTER work principles — pointer only
 
-Canonical governance: `/AGENTS.md` → `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md` → `app/spokedu-master/MASTER_VISUAL_SYSTEM.md` for UI work.
+Canonical governance: `/AGENTS.md` → `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md` → `app/spokedu-master/MASTER_VISUAL_SYSTEM.md` for UI work → `app/spokedu-master/MASTER_SURFACE_MATRIX.md` → relevant domain contract → implementation.
 
 This file has no independent product or visual authority. Do not add rules here.

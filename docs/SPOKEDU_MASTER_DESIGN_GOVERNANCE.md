@@ -13,6 +13,8 @@ No fifth visual/product SSOT may be created.
 | SPOMOVE domain semantics | [SPOMOVE_PRODUCT_CONTRACT.md](../app/spokedu-master/spomove/SPOMOVE_PRODUCT_CONTRACT.md) |
 | Implementation scope | A completed [Sprint Brief](./SPOKEDU_MASTER_SPRINT_BRIEF_TEMPLATE.md) or explicit user request |
 
+Canonical entry order is `AGENTS.md` → Product Contract → Visual System → Surface Matrix → relevant domain contract → implementation. Within an approved task, the Product Contract defines the decision order, including the authority of a user-approved Target Reference. This inventory adds no independent philosophy.
+
 ## Inventory
 
 | Path | Classification | Role |
@@ -28,9 +30,9 @@ No fifth visual/product SSOT may be created.
 | `.cursor/rules/spokedu-master-product-governance.mdc` | KEEP / ENFORCEMENT | Points to repository entry and canonical contracts |
 | `.cursor/rules/spokedu-master-work-principles.mdc` | POINTER | No local philosophy |
 | `.cursor/rules/spokedu-master-cta-unity.mdc` | POINTER | No local CTA grammar |
-| `.cursor/rules/preserve-existing-behavior.mdc` | KEEP | Behavior guardrail |
+| `.cursor/rules/preserve-existing-behavior.mdc` | NARROW / ENFORCEMENT | Protects behavior and invariants, not visual implementation |
 | `.cursor/rules/no-verify-shell.mdc` | KEEP | Verification guardrail |
 
-Archived audits and static tests cannot declare rendered visual PASS. Rendered status belongs only in the Surface Matrix and requires the evidence defined by the Visual System. Home status must not be changed to PASSED without populated 390 and 1440 human review evidence.
+Archived audits and static tests cannot declare rendered visual PASS. Rendered status belongs only in the Surface Matrix and requires the evidence defined by the Visual System. A status is a QA ledger entry, never a work gate.
 
-Canonical surface roles remain distinct: Home is Editorial Discovery; Library Detail is Editorial Preparation; SPOMOVE Hub is Digital Sports Discovery; SPOMOVE Start is Execution Confirmation. Shared grammar does not require identical pages. Class Tools remains a Live Instrument exception; Session / Activity remains BLOCKED where populated lifecycle evidence is unavailable.
+Canonical surface roles remain distinct: Home is Editorial Discovery; Library Detail is Editorial Preparation; SPOMOVE Hub is Digital Sports Discovery; SPOMOVE Start is Execution Confirmation; Manage is Operational. Shared identity does not require identical composition. A user-approved Target Reference may govern visual implementation for its surface as defined by the Product Contract and Visual System, without weakening product, data, security, entitlement, persistence, or lifecycle protection.

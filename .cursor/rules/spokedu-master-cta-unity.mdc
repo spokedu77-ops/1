@@ -8,4 +8,6 @@ alwaysApply: false
 
 MASTER CTA grammar lives in `app/spokedu-master/MASTER_VISUAL_SYSTEM.md`.
 
+Apply it as the default system within the authority and Target Reference rules defined by `/AGENTS.md` and the Product Contract.
+
 This file has no independent visual authority. Do not create local CTA grammar here.

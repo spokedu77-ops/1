@@ -15,5 +15,7 @@ describe('MASTER SPOMOVE compact editor contract', () => {
     expect(source).toContain("{ key: 'advanced', label: '고급' }");
     expect(source).toContain('공식 가이드가 없을 때만 사용');
     expect(source).not.toContain('카드 한줄 설명을 입력하면 여기에 표시됩니다.');
+    expect(source).not.toContain('정렬 순서');
+    expect(source).not.toContain('순서관리');
   });
 });

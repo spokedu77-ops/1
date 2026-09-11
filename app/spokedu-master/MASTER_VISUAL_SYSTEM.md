@@ -13,7 +13,7 @@ Governance: [Design Governance](../../docs/SPOKEDU_MASTER_DESIGN_GOVERNANCE.md)
 Product authority: [Product Contract](../../docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md)
 Surface roles + rendered QA ledger: [MASTER_SURFACE_MATRIX.md](./MASTER_SURFACE_MATRIX.md)
 
-This file is the only visual authority. Other visual documents, Cursor rules, archived audits, and tests cannot override it. Screenshot review is the only visual PASS.
+This file is the only visual SSOT and supplies MASTER's default design system. It does not force identical composition, protect current implementation details, veto an approved Target Reference, or prohibit improvement of a surface. Other visual documents, Cursor rules, archived audits, and tests cannot create a competing visual philosophy. Rendered review is the only visual PASS.
 
 
 ---
@@ -31,8 +31,8 @@ Conflict:
 - Product Contract vs this file → Product Contract
 - Approved Product Decision vs visual proposal → Product Decision
 - Old visual contract / test vs this file → this file (behavior semantics unchanged)
-- User preference vs established product logic → report **conflict**; do not auto-accept taste
-- Reference chrome vs SPOKEDU product truth → product truth
+- Approved Target Reference vs Visual System default → Target Reference for the approved surface, adapted through protected product/data/security invariants
+- Reference brand, data model, or feature semantics vs SPOKEDU product truth → product truth
 
 If two options both fit this file, say **taste**. Do not invent extra visual rules elsewhere.
 
@@ -52,7 +52,14 @@ MASTER sits between a fitness content service and an operational teaching tool b
 
 ---
 
-## Reference model (problems only, never chrome)
+## Reference model
+
+References have two authority levels:
+
+- **Inspiration Reference:** a general reference. Learn from its problem-solving approach and design principles; reproduction is not required.
+- **User-approved Target Reference:** an image or artifact the user explicitly names as the target structure or finish for a surface. For that surface and approved scope, it may directly guide composition, panel proportion, spacing, typography hierarchy, content density, alignment, control placement, default expanded/collapsed state, visual emphasis, and responsive intent.
+
+A Target Reference outranks Visual System defaults for those visual decisions. The Visual System adapts the reference safely into MASTER identity; it is not a veto. Never copy reference branding, data models, product meaning, workflow semantics, permissions, entitlement, or unsupported functionality.
 
 | Source | Take | Leave |
 |--------|------|-------|
@@ -60,7 +67,7 @@ MASTER sits between a fitness content service and an operational teaching tool b
 | Nike Training Club | Sports credibility; strong workout imagery; featured collections; field-tool reading | Consumer marketing tone, lifestyle branding |
 | Netflix / modern media | Editorial recommendation ≠ search; Resume ≠ recommendation; shelf hierarchy; thumbnail differentiation | Entertainment dark UI copy |
 
-Do not paste a reference screenshot into MASTER.
+Use the table below as Inspiration References unless the user explicitly promotes one to a Target Reference.
 
 ---
 
@@ -68,14 +75,14 @@ Do not paste a reference screenshot into MASTER.
 
 Unity is **not** “every screen is the same card.”
 
-Must be the same everywhere:
+Default shared grammar:
 
 - typography, spacing rhythm, width family
 - media rules, CTA grammar, metadata grammar
 - radius family, interaction / focus states, motion
 - responsive breakpoints
 
-May feel different by job (same designer, different role):
+Composition may differ by job (same product identity, different role):
 
 | Family | Feel |
 |--------|------|
@@ -298,9 +305,9 @@ Also forbidden: “no cards = no design.” Chapters must still be obvious.
 
 ---
 
-## Canonical reference surfaces (implement only after this SSOT)
+## Surface examples
 
-Do **not** restyle Programs / Library / Favorites / Manage until these three have human visual approval at 390 and 1440 populated state.
+These examples express current defaults, not implementation gates. A user request or approved Sprint Brief may improve any surface, including one whose rendered status is PENDING, FAILED, or BLOCKED.
 
 ### A. HOME — editorial discovery
 
@@ -326,7 +333,7 @@ Product lock: Browse open; Runtime Premium; session entry ≠ autostart (PD-006)
 
 ---
 
-## Propagation (after canonical approval)
+## Surface application
 
 | Surface | Apply as |
 |---------|----------|
@@ -335,7 +342,23 @@ Product lock: Browse open; Runtime Premium; session entry ≠ autostart (PD-006)
 | Favorites | Retrieval |
 | Manage | Operational |
 
-Copy grammar, not chrome. An exception needs one sentence: **WHY THIS SURFACE IS DIFFERENT.** Unexplainable exceptions are forbidden.
+Use the shared visual identity by default while allowing composition to follow surface purpose and any approved Target Reference. MANAGE is Operational and need not inherit HOME's Editorial composition. Explain meaningful surface-specific departures during review; no departure may change protected product semantics.
+
+---
+
+## Canonical implementation over CSS patches
+
+Solve layout problems in the affected component's canonical layout. Do not use these as the default strategy:
+
+- accumulating page-specific `!important` overrides
+- controlling the same property in JSX/Tailwind and separate CSS
+- arbitrary shrinking for one screenshot height
+- shrinking typography to force content into a viewport
+- masking an internal component structure problem with outer selectors
+- accumulating page-specific `:has()` exceptions
+- visual workarounds whose purpose is to preserve an implementation-string test
+
+Evaluate responsive solutions in this order: content reflow, container resize, intentional scroll, then responsive composition. Font-size, touch-target, or hierarchy reduction is a last resort. Do not introduce a desktop-height-triggered compact mode without an explicit design requirement and rendered QA.
 
 ---
 
@@ -353,12 +376,12 @@ They implement layout roles. Width / type / rhythm in those files that disagree 
 
 | Kind | Meaning |
 |------|---------|
-| Static contract | Semantics, hierarchy, forbidden patterns, media policy, no duplicate primary |
-| Rendered visual PASS | Populated 390 **and** 1440 against this file |
+| Static contract | Product semantics, behavioral contracts, accessibility hooks, and durable visual policy that can be checked without locking classes or DOM shape |
+| Rendered visual PASS | Populated mobile and desktop review; when a Target Reference exists, side-by-side review against it |
 
 Never mix them. Empty Favorites / empty Library / fixture-less Start cannot PASS.
 
-Statuses: **PENDING** | **PASSED** | **FAILED** | **BLOCKED**
+Statuses: **PENDING** | **PASSED** | **FAILED** | **BLOCKED**. They record evidence and never grant or deny implementation permission.
 
 Live ledger: [MASTER_SURFACE_MATRIX.md](./MASTER_SURFACE_MATRIX.md). Do not revive a long audit essay. Prior Foundation audit PASSes are void.
 

@@ -19,6 +19,9 @@ export const SPOMOVE_CONTENT_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 설명';
 export const SPOMOVE_HOME_FEATURED_PACK_ID = 'spokedu_master_home_spomove_featured';
 export const SPOMOVE_HOME_FEATURED_PACK_NAME = 'SPOKEDU MASTER 홈 SPOMOVE 추천 슬롯';
 export const SPOMOVE_HOME_FEATURED_SLOT_COUNT = 4;
+export const SPOMOVE_HUB_FAMILY_FEATURED_PACK_ID = 'spokedu_master_hub_family_spomove_featured';
+export const SPOMOVE_HUB_FAMILY_FEATURED_PACK_NAME = 'SPOKEDU MASTER 허브 테마 SPOMOVE 대표 슬롯';
+export const SPOMOVE_HUB_FAMILY_FEATURED_SLOT_COUNT = 4;
 
 export type SpomoveThumbnailAssetsJson = {
   thumbnails?: Record<string, string | null | undefined>;
@@ -30,6 +33,10 @@ export type SpomoveGuideVideoAssetsJson = {
 
 export type SpomoveHomeFeaturedAssetsJson = {
   slots?: Array<string | null | undefined>;
+};
+
+export type SpomoveHubFamilyFeaturedAssetsJson = {
+  families?: Record<string, Array<string | null | undefined>>;
 };
 
 export type SpomovePresetContentOverride = {

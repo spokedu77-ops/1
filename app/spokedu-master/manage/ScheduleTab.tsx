@@ -35,9 +35,9 @@ export function ScheduleTab({
 
   return <section className="mt-3 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col" aria-labelledby="manage-calendar-heading">
     <h2 id="manage-calendar-heading" className="sr-only">수업 캘린더</h2>
-    <MonthSessionCalendar month={month} selectedDay={selectedDay} sessions={sessions} action={hasClasses ? <button type="button" onClick={onCreate} className={`${SPM_PRIMARY_BTN} !h-9 px-3 text-[13px]`}><Plus size={15} />수업 추가</button> : <Link href="/spokedu-master/classes?create=1" className={`${SPM_PRIMARY_BTN} !h-9 px-3 text-[13px]`}><Plus size={15} />수업반 만들기</Link>} onMonthChange={onMonthChange} onDaySelect={onDaySelect} />
+    <MonthSessionCalendar month={month} selectedDay={selectedDay} sessions={sessions} action={hasClasses ? <button type="button" onClick={onCreate} className={`${SPM_PRIMARY_BTN} px-4 text-[14px]`}><Plus size={16} />수업 추가</button> : <Link href="/spokedu-master/classes?create=1" className={`${SPM_PRIMARY_BTN} px-4 text-[14px]`}><Plus size={16} />수업반 만들기</Link>} onMonthChange={onMonthChange} onDaySelect={onDaySelect} />
     <div className="mt-4 flex shrink-0 items-center justify-between gap-4"><h3 className="text-[18px] font-bold text-slate-950">{formatSeoulSessionDay(selectedDay, { month: 'long', day: 'numeric', weekday: 'long' })}</h3>{daySessions.length ? <span className="text-sm font-semibold text-slate-500">수업 {daySessions.length}개</span> : null}</div>
-    <div data-manage-agenda data-agenda-count={daySessions.length} className="mt-3 min-h-0 space-y-2.5">
+    <div data-manage-agenda data-agenda-count={daySessions.length} className={`mt-3 min-h-0 space-y-2.5 ${daySessions.length > 2 ? 'lg:overflow-y-auto' : ''}`}>
       {daySessions.map((session) => {
         const programCount = session.programs.filter((item) => item.sourceType === 'program').length;
         const spomoveCount = session.programs.filter((item) => item.sourceType === 'spomove').length;

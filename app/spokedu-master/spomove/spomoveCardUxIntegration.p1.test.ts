@@ -42,7 +42,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
 
   it('distinguishes default Family landing from selected Family results', () => {
     expect(hub).toContain('selectedFamilyId === null');
-    expect(hub).toContain('familyFiltered.slice(0, 4)');
+    expect(hub).toContain('resolveHubFamilyFeaturedSpomove');
     expect(hub).toContain('familyPreview');
   });
 

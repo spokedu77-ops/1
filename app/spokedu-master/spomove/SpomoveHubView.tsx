@@ -15,6 +15,7 @@ import {
   normalizeSpomoveContentMap,
   normalizeSpomoveThumbnailMap,
   SPOMOVE_CONTENT_PACK_ID,
+  SPOMOVE_HUB_FAMILY_FEATURED_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
   type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
@@ -68,6 +69,12 @@ import {
 } from './spomoveHubNavigation';
 import { useSpomoveGuideVideo } from './useSpomoveGuideVideo';
 import { resolveSpomovePublicDisplayTitle } from './spomovePublicNaming';
+import {
+  emptyHubFamilyFeaturedSlots,
+  normalizeHubFamilyFeaturedSlots,
+  resolveHubFamilyFeaturedSpomove,
+  type SpomoveHubFamilyFeaturedSlots,
+} from '../lib/spomoveHubFamilyFeatured';
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
@@ -763,6 +770,9 @@ function SpomoveHubInner({
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [thumbnailPackLoaded, setThumbnailPackLoaded] = useState(false);
   const [contentOverrides, setContentOverrides] = useState<Record<string, SpomovePresetContentOverride>>({});
+  const [hubFamilyFeaturedSlots, setHubFamilyFeaturedSlots] = useState<SpomoveHubFamilyFeaturedSlots>(
+    emptyHubFamilyFeaturedSlots,
+  );
   const [contentLoadState, setContentLoadState] = useState<SpomoveContentLoadState>('loading');
   const [assetPackError, setAssetPackError] = useState(false);
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
@@ -804,7 +814,12 @@ function SpomoveHubInner({
         .select('assets_json')
         .eq('id', SPOMOVE_CONTENT_PACK_ID)
         .maybeSingle(),
-    ]).then(([thumbnailResult, contentResult]) => {
+      supabase
+        .from('think_asset_packs')
+        .select('assets_json')
+        .eq('id', SPOMOVE_HUB_FAMILY_FEATURED_PACK_ID)
+        .maybeSingle(),
+    ]).then(([thumbnailResult, contentResult, familyFeaturedResult]) => {
       if (!alive) return;
 
       const { data: thumbnailData, error: thumbnailError } = thumbnailResult as SpomoveThumbnailPackQueryResult;
@@ -830,6 +845,13 @@ function SpomoveHubInner({
         setContentOverrides(normalizeSpomoveContentMap(contentData?.assets_json));
         setContentLoadState('ready');
       }
+
+      const { data: familyFeaturedData, error: familyFeaturedError } = familyFeaturedResult as SpomoveContentPackQueryResult;
+      if (familyFeaturedError && familyFeaturedError.code !== 'PGRST116') {
+        setHubFamilyFeaturedSlots(emptyHubFamilyFeaturedSlots());
+      } else {
+        setHubFamilyFeaturedSlots(normalizeHubFamilyFeaturedSlots(familyFeaturedData?.assets_json));
+      }
     }).catch(() => {
       if (!alive) return;
       setAssetPackError(true);
@@ -838,6 +860,7 @@ function SpomoveHubInner({
       setThumbnailPackLoaded(true);
       setContentOverrides({});
       setContentLoadState('error');
+      setHubFamilyFeaturedSlots(emptyHubFamilyFeaturedSlots());
     });
     return () => {
       alive = false;
@@ -1160,7 +1183,15 @@ function SpomoveHubInner({
                       전체 {familyFiltered.length}개 →
                     </button>
                   </div>
-                  {renderPresetGrid(familyFiltered.slice(0, 4), `spomove-family-${family.id}`, true)}
+                  {renderPresetGrid(
+                    resolveHubFamilyFeaturedSpomove(
+                      family.id,
+                      hubFamilyFeaturedSlots[family.id],
+                      familyFiltered,
+                    ),
+                    `spomove-family-${family.id}`,
+                    true,
+                  )}
                 </div>
               );
             })}
