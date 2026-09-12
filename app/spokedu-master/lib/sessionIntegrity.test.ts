@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildCompletionRosterStudentIds,
   CLASS_TIME_COLLISION_MESSAGE,
   completionAttendanceMessage,
   findActiveClassTimeCollision,
@@ -10,6 +11,10 @@ const roster = ['s1', 's2', 's3', 's4', 's5', 's6', 's7'];
 const present = (studentId: string) => ({ studentId, status: 'present' as const });
 
 describe('session completion attendance integrity', () => {
+  it('keeps historical participants alongside the current roster when editing a completed session', () => {
+    expect(buildCompletionRosterStudentIds(['current', 'shared'], ['historical', 'shared']))
+      .toEqual(['current', 'shared', 'historical']);
+  });
   it('accepts a complete present/absent mix', () => {
     const value = roster.map((studentId, index) => ({ studentId, status: index < 5 ? 'present' as const : 'absent' as const }));
     expect(validateCompletionAttendance(roster, value)).toEqual({ ok: true, attendance: value });

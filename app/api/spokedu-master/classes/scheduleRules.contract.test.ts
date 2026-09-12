@@ -18,7 +18,8 @@ describe('recurring operations persistence', () => {
   it('validates exact owner/Class and requires explicit POST', () => {
     expect(route).toContain("requireSpokeduMasterCapability('attendance')");
     expect(route).toContain(".eq('owner_id', access.userId)");
-    expect(route).toContain("rpc('spokedu_master_materialize_schedule_rule'");
+    expect(route).toContain("rpc('spokedu_master_materialize_schedule_rule_with_activities'");
+    expect(route).toContain('p_activities: canonicalActivities');
     expect(route).not.toContain('setInterval');
   });
 });

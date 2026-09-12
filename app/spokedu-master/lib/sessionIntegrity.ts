@@ -8,6 +8,13 @@ export type CompletionAttendanceValidation =
 
 export const CLASS_TIME_COLLISION_MESSAGE = '같은 수업반의 기존 수업과 시간이 겹칩니다.';
 
+export function buildCompletionRosterStudentIds(
+  currentRosterStudentIds: readonly string[],
+  historicalAttendanceStudentIds: readonly string[],
+) {
+  return [...new Set([...currentRosterStudentIds, ...historicalAttendanceStudentIds])];
+}
+
 export function validateCompletionAttendance(rosterStudentIds: readonly string[], value: unknown): CompletionAttendanceValidation {
   if (!Array.isArray(value)) return { ok: false, code: 'invalid', missingCount: rosterStudentIds.length };
   const attendance: CompletionAttendanceEntry[] = [];

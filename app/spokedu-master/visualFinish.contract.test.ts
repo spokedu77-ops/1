@@ -39,7 +39,7 @@ describe('MASTER representative visual finish (pre-reset snapshot; not Art Direc
     expect(hub).not.toContain('시작 설정');
     expect(hub).toContain('이 수업에 추가');
     expect(hub).toContain('resolveHubFamilyFeaturedSpomove');
-    expect(hub).toContain('xl:grid-cols-4');
+    expect(hub).toContain('lg:grid-cols-4');
     expect(hub).toContain('sm:max-w-[440px]');
     expect(hub).not.toContain('PREMIUM DIGITAL MOVEMENT');
 

@@ -9,7 +9,7 @@ import type {
   SaveSessionInput,
 } from '@/app/spokedu-master/types/operational';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-import { CLASS_TIME_COLLISION_MESSAGE, completionAttendanceMessage, validateCompletionAttendance } from '@/app/spokedu-master/lib/sessionIntegrity';
+import { buildCompletionRosterStudentIds, CLASS_TIME_COLLISION_MESSAGE, completionAttendanceMessage, validateCompletionAttendance } from '@/app/spokedu-master/lib/sessionIntegrity';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -251,20 +251,28 @@ export async function PUT(request: Request) {
 
   const supabase = getServiceSupabase();
   const { data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
-    .select('id,class_id').eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();
+    .select('id,class_id,status').eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();
   if (sessionError) {
     await reportError(sessionError, { context: 'spokedu_master.sessions.complete.roster' });
     return privateNoStoreJson({ error: '수업 출석 명단을 확인하지 못했습니다.' }, { status: 500 });
   }
   if (!session) return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
   if (session.class_id !== input.classId) return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
-  const { data: memberships, error: rosterError } = await supabase.from('spokedu_master_class_students')
-    .select('student_id').eq('owner_id', access.userId).eq('class_id', session.class_id);
-  if (rosterError) {
-    await reportError(rosterError, { context: 'spokedu_master.sessions.complete.roster' });
+  const [{ data: memberships, error: rosterError }, { data: historicalAttendance, error: historicalAttendanceError }] = await Promise.all([
+    supabase.from('spokedu_master_class_students').select('student_id').eq('owner_id', access.userId).eq('class_id', session.class_id),
+    session.status === 'completed'
+      ? supabase.from('spokedu_master_session_attendance').select('student_id').eq('owner_id', access.userId).eq('session_id', session.id)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (rosterError || historicalAttendanceError) {
+    await reportError(rosterError ?? historicalAttendanceError, { context: 'spokedu_master.sessions.complete.roster' });
     return privateNoStoreJson({ error: '수업 출석 명단을 확인하지 못했습니다.' }, { status: 500 });
   }
-  const attendanceValidation = validateCompletionAttendance((memberships ?? []).map((item) => item.student_id), body.attendance);
+  const rosterStudentIds = buildCompletionRosterStudentIds(
+    (memberships ?? []).map((item) => item.student_id),
+    (historicalAttendance ?? []).map((item) => item.student_id),
+  );
+  const attendanceValidation = validateCompletionAttendance(rosterStudentIds, body.attendance);
   if (!attendanceValidation.ok) {
     const error = attendanceValidation.code === 'mismatch' && attendanceValidation.missingCount > 0
       ? completionAttendanceMessage(attendanceValidation.missingCount)

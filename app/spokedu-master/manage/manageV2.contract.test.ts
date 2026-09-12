@@ -111,7 +111,8 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('occurrenceOverlaps');
     expect(detail).toContain('occurrences: availableOccurrences');
     expect(detail).toContain('/schedule-rules`');
-    expect(detail).toContain('firstSessionId');
+    expect(detail).toContain('activities: programs.map');
+    expect(detail).not.toContain('firstSessionId');
     expect(classDetail).not.toContain('RegularSchedulePanel');
   });
 });
