@@ -43,6 +43,9 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain('data-class-tools-tabs');
     expect(tools).toContain('data-class-tools-dock');
     expect(tools).toContain('data-class-tools-content');
+    expect(tools).toContain('className="flex h-full min-h-0 flex-col pb-[86px] lg:pb-0"');
+    expect(tools).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain');
+    expect(tools).not.toContain('h-[calc(100dvh-4rem)]');
     expect(tools).toContain('현장에서 바로 사용하는 도구');
     expect(tools).toContain('수업으로 돌아가기');
     expect(tools).toContain('aria-pressed={active}');
@@ -80,6 +83,13 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).not.toContain('student.group');
     expect(tools).toContain('students={selectedStudents}');
     expect(tools).toContain("tab === 'picker' || tab === 'teams' || tab === 'order'");
+  });
+
+  it('inherits the AppShell viewport and keeps short laptop content scrollable', () => {
+    const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
+    expect(shell).toContain('const isClassTools =');
+    expect(shell).toContain('const isViewportWorkspace = isManage || isClassTools');
+    expect(shell).toContain("isViewportWorkspace ? 'h-dvh overflow-hidden' : 'min-h-dvh'");
   });
 
   it('uses explicit Session attendance as the participant scope for every roster tool', () => {

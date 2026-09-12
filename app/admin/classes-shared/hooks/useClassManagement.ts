@@ -13,12 +13,23 @@ function assertUpdatedRow(data: { id?: string } | null, error: unknown, fallback
   if (!data?.id) throw new Error(fallback);
 }
 
+type SessionRow = {
+  id?: string; title?: string; start_at?: string; end_at?: string; session_type?: string;
+  group_id?: string; users?: { name?: string; id?: string }; students_text?: string; memo?: string;
+  round_display?: string; status?: string; price?: number; mileage_option?: string;
+  round_index?: number; round_total?: number;
+};
+
 export function useClassManagement() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [allEvents, setAllEvents] = useState<SessionEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<SessionEvent[]>([]);
   const [teacherList, setTeacherList] = useState<{id: string; name: string}[]>([]);
   const [filterTeacher, setFilterTeacher] = useState('ALL');
+  /** 성공 경로에서는 null. 달력이 비어 보이는 것과 조회 실패를 구분한다. */
+  const [sessionsFetchNotice, setSessionsFetchNotice] = useState<
+    null | { type: 'error' } | { type: 'truncated' }
+  >(null);
 
   const fetchSessions = useCallback(async () => {
     if (!supabase) return;
@@ -40,14 +51,22 @@ export function useClassManagement() {
         .lte('start_at', rangeEndIso)
         .order('start_at', { ascending: true });
 
-    const [usersRes, firstSessions] = await Promise.all([
-      supabase
-        .from('users')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name', { ascending: true }),
-      sessionsInRange().range(0, PAGE - 1),
-    ]);
+    let usersRes: { data: { id: string; name: string }[] | null; error: unknown };
+    let firstSessions: { data: SessionRow[] | null; error: unknown };
+    try {
+      [usersRes, firstSessions] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id, name')
+          .eq('is_active', true)
+          .order('name', { ascending: true }),
+        sessionsInRange().range(0, PAGE - 1),
+      ]);
+    } catch (caught) {
+      devLogger.error('fetchSessions network error:', caught);
+      setSessionsFetchNotice({ type: 'error' });
+      return;
+    }
 
     if (usersRes.error) {
       devLogger.error('fetchSessions users error:', usersRes.error);
@@ -58,25 +77,45 @@ export function useClassManagement() {
 
     let data = firstSessions.data;
     const error = firstSessions.error;
+    let truncated = false;
 
-    if (!error && data && data.length === PAGE) {
+    if (error) {
+      devLogger.error('fetchSessions sessions error:', error);
+      setSessionsFetchNotice({ type: 'error' });
+      return;
+    }
+    if (!data) {
+      setSessionsFetchNotice({ type: 'error' });
+      return;
+    }
+
+    if (data.length === PAGE) {
       let offset = PAGE;
       const accumulated = [...data];
       for (;;) {
-        const { data: nextPage, error: pageErr } = await sessionsInRange().range(offset, offset + PAGE - 1);
-        if (pageErr) {
-          devLogger.error('fetchSessions sessions pagination error:', pageErr);
+        try {
+          const { data: nextPage, error: pageErr } = await sessionsInRange().range(offset, offset + PAGE - 1);
+          if (pageErr) {
+            devLogger.error('fetchSessions sessions pagination error:', pageErr);
+            truncated = true;
+            break;
+          }
+          if (!nextPage || nextPage.length === 0) break;
+          accumulated.push(...nextPage);
+          if (nextPage.length < PAGE) break;
+          offset += PAGE;
+        } catch (caught) {
+          devLogger.error('fetchSessions sessions pagination error:', caught);
+          truncated = true;
           break;
         }
-        if (!nextPage || nextPage.length === 0) break;
-        accumulated.push(...nextPage);
-        if (nextPage.length < PAGE) break;
-        offset += PAGE;
       }
       data = accumulated;
     }
 
-    if (!error && data) {
+    setSessionsFetchNotice(truncated ? { type: 'truncated' } : null);
+
+    {
       const groupTotals = buildGroupPlannedTotals(
         data as {
           group_id?: string | null;
@@ -87,12 +126,6 @@ export function useClassManagement() {
       );
       const groupCurrentRounds: Record<string, number> = {};
 
-      type SessionRow = {
-        id?: string; title?: string; start_at?: string; end_at?: string; session_type?: string;
-        group_id?: string; users?: { name?: string; id?: string }; students_text?: string; memo?: string;
-        round_display?: string; status?: string; price?: number; mileage_option?: string;
-        round_index?: number; round_total?: number;
-      };
       const events: SessionEvent[] = data.map((s: SessionRow) => {
         const title = s.title ?? '';
         const gid = s.group_id;
@@ -206,6 +239,7 @@ export function useClassManagement() {
     filterTeacher,
     setFilterTeacher,
     fetchSessions,
+    sessionsFetchNotice,
     updateMileageOnly,
     supabase,
   };

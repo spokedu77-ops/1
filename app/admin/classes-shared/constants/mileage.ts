@@ -11,3 +11,6 @@ export const MILEAGE_ACTIONS: MileageAction[] = [
   { label: '주간 베스트 포토', val: 2000 },
   { label: '주간 베스트 피드백', val: 2000 },
 ];
+
+export const MILEAGE_LABEL_POSTPONE = '수업 연기';
+export const MILEAGE_LABEL_POSTPONE_REQUEST = '수업 연기 요청';

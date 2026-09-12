@@ -1,18 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Minus, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Minus, Pencil, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
 import { devLogger } from "@/app/lib/logging/devLogger";
-import { postponeCascade } from "@/app/admin/classes-shared/lib/postponeUtils";
-import { undoPostponeCascade } from "@/app/admin/classes-shared/lib/postponeUtils";
+import {
+  MILEAGE_LABEL_POSTPONE,
+  MILEAGE_LABEL_POSTPONE_REQUEST,
+} from "@/app/admin/classes-shared/constants/mileage";
+import {
+  applySessionLinkedMileage,
+  appendMileageActionLabel,
+} from "@/app/admin/classes-shared/lib/applySessionLinkedMileage";
+import { postponeCascade, undoPostponeCascade } from "@/app/admin/classes-shared/lib/postponeUtils";
 import { extendClass } from "@/app/admin/classes-shared/lib/roundExtendUtils";
 import { omitSessionIdentityForInsertClone } from "@/app/admin/classes-shared/lib/sessionInsertClone";
-import { parseExtraTeachers, buildMemoWithExtras } from "@/app/admin/classes-shared/lib/sessionUtils";
+import { parseExtraTeachers, buildMemoWithExtras, extractMileageAction } from "@/app/admin/classes-shared/lib/sessionUtils";
 import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/admin/classes-shared/lib/plannedRoundTotal";
 import { formatRoundDisplay } from "@/app/admin/classes-shared/lib/roundFields";
-import { reindexGroupRounds, occupyingRoundCount } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
+import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
 import { findCrossGroupSlotConflicts } from "@/app/admin/classes-shared/lib/sessionRoundGuards";
 import {
   isSessionScheduleDraftDirty,
@@ -35,6 +42,8 @@ import SessionMileageModal from "./SessionMileageModal";
 import type { TeacherInput } from "@/app/admin/classes-shared/types";
 
 type RoundView = "active" | "all" | "completed";
+
+const RESTART_CYCLE_ROUNDS = 8;
 
 type Props = {
   visible: boolean;
@@ -122,7 +131,7 @@ function statusBadgeClass(label: string): string {
   }
 }
 
-/** 번들 병합 시 메인 사이클의 대표 session_type (빈도 우선, 동률이면 one_day가 아닌 타입 우선) */
+/** 활성 세션 기준 대표 session_type (빈도 우선, 동률이면 one_day가 아닌 타입 우선) */
 function resolveMainSessionTypeFromRows(rows: SessionRow[]): string | null {
   const active = rows.filter(
     (r) => r.status !== "postponed" && r.status !== "cancelled" && r.status !== "deleted"
@@ -143,31 +152,6 @@ function resolveMainSessionTypeFromRows(rows: SessionRow[]): string | null {
     return aOne - bOne;
   });
   return unique[0] ?? null;
-}
-
-/** DB에 남은 one_day_*를 regular_*로 바꿔 캘린더·다른 화면에서 개인=초록으로 일관되게 보이게 함 */
-function normalizeMergedSessionType(t: string): string {
-  if (t.includes("one_day_private")) return "regular_private";
-  if (t.includes("one_day_center")) return "regular_center";
-  if (t === "one_day") return "regular_private";
-  return t;
-}
-
-/**
- * 회차 합치기 시 타입 결정: 메인 그룹만 보면 원데이만 남아 regular_private가 누락될 수 있어
- * 번들(합칠 모든 그룹) 활성 세션을 기준으로 한다. regular_*가 하나라도 있으면 그쪽으로 통일.
- */
-function resolveMergedBundleSessionType(rows: SessionRow[]): string | null {
-  const active = rows.filter(
-    (r) => r.status !== "postponed" && r.status !== "cancelled" && r.status !== "deleted"
-  );
-  const types = active
-    .map((r) => r.session_type)
-    .filter((t): t is string => typeof t === "string" && t.length > 0);
-  if (types.includes("regular_private")) return "regular_private";
-  if (types.includes("regular_center")) return "regular_center";
-  if (types.includes("special_lecture")) return "special_lecture";
-  return resolveMainSessionTypeFromRows(rows);
 }
 
 function formatDateRange(rows: SessionRow[]) {
@@ -315,8 +299,8 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
   const [pastArchiveOpen, setPastArchiveOpen] = useState(false);
   const [sessionsByGroupId, setSessionsByGroupId] = useState<Record<string, SessionRow[]>>({});
   const [localGroupIds, setLocalGroupIds] = useState<string[]>([]);
-  const [mergingByBundle, setMergingByBundle] = useState(false);
   const [undoingPostponeSessionId, setUndoingPostponeSessionId] = useState<string | null>(null);
+  const [postponingSessionId, setPostponingSessionId] = useState<string | null>(null);
   const [scheduleDraftBySessionId, setScheduleDraftBySessionId] = useState<
     Record<string, SessionScheduleDraft>
   >({});
@@ -453,10 +437,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
       }
 
       const bundleRows = effectiveGroupIds.flatMap((gid) => map[gid] || []);
-      const resolvedType =
-        resolveMergedBundleSessionType(bundleRows) ??
-        resolveMainSessionTypeFromRows(bundleRows) ??
-        "regular_private";
+      const resolvedType = resolveMainSessionTypeFromRows(bundleRows) ?? "regular_private";
       const distinctTypes = new Set(
         bundleRows
           .map((r) => r.session_type)
@@ -542,9 +523,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
       });
       setRestartCountByGroup((prev) => {
         const next = { ...prev };
-        for (const gid of effectiveGroupIds) {
-          if (next[gid] == null) next[gid] = (map[gid] || []).length || 1;
-        }
+        for (const gid of effectiveGroupIds) if (next[gid] == null) next[gid] = RESTART_CYCLE_ROUNDS;
         return next;
       });
       setRestartWeeklyFrequencyByGroup((prev) => {
@@ -756,20 +735,71 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     await applyInlineUpdate(gid, row.id, { created_by: newMainId, memo });
   };
 
-  const handlePostpone = async (_gid: string, sessionId: string) => {
+  const handlePostpone = async (
+    _gid: string,
+    sessionId: string,
+    kind: "postpone" | "postpone_request"
+  ) => {
     if (!supabase) return;
+    if (postponingSessionId === sessionId) return;
+    const mileageLabel =
+      kind === "postpone_request" ? MILEAGE_LABEL_POSTPONE_REQUEST : MILEAGE_LABEL_POSTPONE;
+    const mileageHint =
+      kind === "postpone_request"
+        ? "마일리지 −5,000 (수업 연기 요청)이 연기 기록에 자동 반영됩니다."
+        : "마일리지 +2,500 (수업 연기)이 연기 기록에 자동 반영됩니다.";
     if (
       !confirm(
-        "「연기(일정 미루기)」: 현재 회차부터 이후 회차 날짜를 한 칸씩 미룹니다.\n회차 차감·수업료 0원 처리가 목적이면 「회차 취소(차감)」를 사용하세요.\n\n계속할까요?"
+        `「${kind === "postpone_request" ? "연기요청" : "연기"}(일정 미루기)」: 현재 회차부터 이후 회차 날짜를 한 칸씩 미룹니다.\n${mileageHint}\n회차 차감·수업료 0원 처리가 목적이면 「회차 취소(차감)」를 사용하세요.\n\n계속할까요?`
       )
     )
       return;
-    await postponeCascade(supabase, sessionId, {
-      onAfter: () => {
-        void loadAll();
-        onChanged?.();
-      },
-    });
+
+    setPostponingSessionId(sessionId);
+    try {
+      const postponedId = await postponeCascade(supabase, sessionId, {
+        onAfter: () => {
+          void loadAll();
+          onChanged?.();
+        },
+      });
+      if (!postponedId) return;
+
+      const { data: ghost, error: ghostError } = await supabase
+        .from("sessions")
+        .select("id, start_at, title, memo, mileage_option, created_by")
+        .eq("id", postponedId)
+        .maybeSingle();
+      if (ghostError || !ghost?.id) {
+        toast.error("일정은 연기되었지만 마일리지 대상 회차를 찾지 못했습니다. 마일리지에서 직접 넣어 주세요.");
+        return;
+      }
+
+      const prevAction = extractMileageAction(
+        ghost.memo || "",
+        ghost.mileage_option ?? undefined
+      ).mileageAction;
+      const nextActionStr = appendMileageActionLabel(prevAction, mileageLabel);
+      const result = await applySessionLinkedMileage(supabase, {
+        sessionId: ghost.id,
+        sessionStartAt: ghost.start_at ?? null,
+        title: ghost.title ?? null,
+        memo: ghost.memo,
+        mileage_option: ghost.mileage_option,
+        created_by: ghost.created_by ?? null,
+        nextActionStr,
+      });
+      if (!result.ok) {
+        toast.error(result.error || "일정은 연기되었지만 마일리지 반영에 실패했습니다.");
+        return;
+      }
+      if (result.warning) toast.error(`경고: ${result.warning}`);
+      else toast.success(`${mileageLabel} 마일리지가 반영되었습니다.`);
+      void loadAll();
+      onChanged?.();
+    } finally {
+      setPostponingSessionId(null);
+    }
   };
 
   // postponed 상태였던 회차를 원래 슬롯 기준으로 복구합니다.
@@ -912,89 +942,6 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     }
   };
 
-  // 1+7회차처럼 group_id가 2개로 분리된 경우, 메인(총회차가 가장 큰) group_id로 합쳐서 1개의 회차로 보이게 합니다.
-  const handleMergeCycleRounds = async () => {
-    if (!supabase) return;
-    if (mergingByBundle) return;
-
-    const gids = effectiveGroupIds.filter((gid) => (sessionsByGroupId[gid] || []).length > 0);
-    if (gids.length <= 1) return;
-
-    // 메인 = plannedTotalOfGroup이 가장 큰 사이클(동률이면 시작이 더 이른 사이클)
-    const score = (gid: string) => plannedTotalOfGroup(sessionsByGroupId[gid] || []);
-    const minStart = (gid: string) => {
-      const rows = sessionsByGroupId[gid] || [];
-      const times = rows.map((r) => new Date(r.start_at).getTime());
-      return times.length ? Math.min(...times) : Number.POSITIVE_INFINITY;
-    };
-
-    const maxTotal = Math.max(...gids.map((g) => score(g)));
-    const mainCandidates = gids.filter((g) => score(g) === maxTotal);
-    const mainGid =
-      mainCandidates.sort((a, b) => minStart(a) - minStart(b))[0] ?? gids[0] ?? "";
-    if (!mainGid) return;
-
-    const otherGids = gids.filter((g) => g !== mainGid);
-    if (otherGids.length === 0) return;
-
-    if (
-      !confirm(
-        `번들 내 사이클을 하나로 합칠까요?\n- 메인: ${mainGid.slice(0, 8)}\n- 대상: ${otherGids.length}개`
-      )
-    )
-      return;
-
-    setMergingByBundle(true);
-    try {
-      const bundleRows = gids.flatMap((g) => sessionsByGroupId[g] || []);
-      const rawMainType = resolveMergedBundleSessionType(bundleRows);
-      const mainSessionType = rawMainType ? normalizeMergedSessionType(rawMainType) : null;
-
-      // 1) 메인 group_id로 세션 group_id 이동
-      const { error: moveErr } = await supabase
-        .from("sessions")
-        .update({ group_id: mainGid })
-        .in("group_id", otherGids);
-      if (moveErr) throw moveErr;
-
-      // 1b) 편입된 세션 포함 메인 그룹 전체 session_type을 메인 사이클 대표값으로 통일 (캘린더 색상 일치)
-      if (mainSessionType) {
-        const { error: typeErr } = await supabase
-          .from("sessions")
-          .update({ session_type: mainSessionType })
-          .eq("group_id", mainGid);
-        if (typeErr) throw typeErr;
-      }
-
-      // 2) 메인 group_id 기준으로 회차 번호/총회차 재계산
-      const { data: mainRows, error: mainSelErr } = await supabase
-        .from("sessions")
-        .select("id, start_at, status, round_total, round_index")
-        .eq("group_id", mainGid);
-      if (mainSelErr) throw mainSelErr;
-
-      const allMain = (mainRows || []) as Array<{
-        id: string;
-        start_at: string;
-        status: string | null;
-        round_total: number | null;
-        round_index: number | null;
-      }>;
-
-      await reindexGroupRounds(supabase, allMain, { total: occupyingRoundCount(allMain) });
-
-      toast.success("회차를 합쳤습니다.");
-
-      await loadAll();
-      onChanged?.();
-    } catch (err) {
-      devLogger.error(err);
-      toast.error("회차 합치기에 실패했습니다.");
-    } finally {
-      setMergingByBundle(false);
-    }
-  };
-
   const handleShrinkTail = async (gid: string) => {
     if (!supabase) return;
     const sessions = sessionsByGroupId[gid] || [];
@@ -1075,7 +1022,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
       return toast.error("마지막 회차 시간이 올바르지 않아 재시작할 수 없습니다.");
     }
 
-    const count = Math.max(1, Math.floor(restartCountByGroup[gid] || sessions.length || 1));
+    const count = Math.max(1, Math.floor(restartCountByGroup[gid] ?? RESTART_CYCLE_ROUNDS));
     const intervalDays = Math.max(1, Math.floor(restartIntervalDaysByGroup[gid] || 7));
     const weeklyFreq = restartWeeklyFrequencyByGroup[gid] || 1;
     const startDate = restartStartDateByGroup[gid];
@@ -1410,6 +1357,10 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
   }, [sortedGroupIds, sessionsByGroupId, latestGroupId]);
 
   const displayTitle = useMemo(() => titleDraft.trim() || bundleTitle, [titleDraft, bundleTitle]);
+  const displayTypeLabel = bundleSessionTypesMixed
+    ? "타입 혼재"
+    : SESSION_TYPE_OPTIONS.find((o) => o.value === bundleSessionTypeDraft)?.label ??
+      (bundleSessionTypeDraft || "타입");
 
   const renderCycleSection = (gid: string) => {
     const cycleNum = sortedGroupIds.indexOf(gid) + 1;
@@ -1429,86 +1380,65 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     return (
       <section
         key={gid}
+        title={gid}
         className={
           isPastCycle
-            ? "border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/80"
-            : "border border-slate-100 rounded-2xl overflow-hidden bg-white"
+            ? "overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+            : "overflow-hidden rounded-xl border border-slate-200 bg-white"
         }
       >
                     <button
                       type="button"
                       onClick={() => toggleGroup(gid)}
-                      className={
-                        isPastCycle
-                          ? "w-full px-4 py-3 bg-slate-100/90 hover:bg-slate-100 flex items-center justify-between"
-                          : "w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between"
-                      }
+                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-slate-50"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        {open ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
-                        <span className="text-xs font-black text-slate-700 truncate">
-                          사이클 {cycleNum} · {label}
+                      <div className="flex min-w-0 items-center gap-2">
+                        {open ? <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" /> : <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />}
+                        <span className="truncate text-sm font-semibold text-slate-800">
+                          {cycleNum}사이클 · {label}
                         </span>
                         {isPastCycle ? (
-                          <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-black text-slate-600">
+                          <span className="shrink-0 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                             종료
                           </span>
                         ) : null}
                       </div>
-                      <span className="text-[11px] font-black text-slate-400">{gid.slice(0, 8)}</span>
                     </button>
 
                     {open && (
-                      <div className="p-4 space-y-3">
+                      <div className="space-y-3 border-t border-slate-100 px-3 py-3">
                         {isPastCycle ? (
-                          <p className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-[11px] font-bold leading-relaxed text-slate-600">
-                            종료된 사이클입니다. 일괄 적용·사이클 도구·연기·회차 취소는 제공하지 않으며, 아래 표에는{" "}
-                            <span className="text-slate-800">전체 회차</span>가 표시됩니다. 강사·일정·마일리지 등
-                            회차별 수정은 필요할 때만 사용하세요.
+                          <p className="text-[11px] text-slate-500">
+                            종료 사이클 · 전체 회차만 조회. 일괄 적용·도구·연기·취소는 없습니다.
                           </p>
                         ) : null}
                         {!isPastCycle ? (
-<div className="border border-slate-200 rounded-2xl overflow-hidden">
+<div className="overflow-hidden rounded-lg border border-slate-200">
                           <button
                             type="button"
                             onClick={() =>
-                              setBulkOpenByGroup((prev) => ({ ...prev, [gid]: !(prev[gid] ?? true) }))
+                              setBulkOpenByGroup((prev) => ({ ...prev, [gid]: !(prev[gid] ?? false) }))
                             }
-                            className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between gap-2"
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 hover:bg-slate-50"
                           >
-                            <span className="text-xs font-black text-slate-700">그룹 설정 · 일괄 적용</span>
-                            {(bulkOpenByGroup[gid] ?? true) ? (
-                              <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                            <span className="text-xs font-semibold text-slate-700">일괄 적용</span>
+                            {(bulkOpenByGroup[gid] ?? false) ? (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
                             ) : (
-                              <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
                             )}
                           </button>
-                          {(bulkOpenByGroup[gid] ?? true) ? (
-                            <div className="border-t border-slate-100 p-4 pt-3">
-<div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                          <h4 className="text-sm font-black text-slate-800">그룹 설정</h4>
-                          <p className="text-xs text-slate-500 font-bold mt-1">
-                            수업명은 상단에서 번들 전체로 변경합니다. 아래 일괄 적용은 회차 목록의{" "}
-                            <span className="text-slate-700">진행·예정 (연기 제외)</span>에 보이는 회차에만 반영됩니다.
-                            {isSpecialLectureGroup ? (
-                              <>
-                                {" "}
-                                <span className="text-slate-700">특강</span>은 1줄 메인·2줄 보조 일괄 적용이
-                                가능합니다. 보조를 선택하지 않으면 기존 보조는 그대로 둡니다.
-                              </>
-                            ) : (
-                              <>
-                                {" "}
-                                메인 강사·요일·시작·수업료만 일괄 반영하며, 보조는 표에서 회차별로 설정합니다 (최대
-                                메인+보조2).
-                              </>
-                            )}
+                          {(bulkOpenByGroup[gid] ?? false) ? (
+                            <div className="space-y-3 border-t border-slate-100 px-3 py-3">
+                          <p className="text-[11px] text-slate-500">
+                            목록 필터에 보이는 진행·예정 회차에만 적용됩니다.
+                            {isSpecialLectureGroup
+                              ? " 특강은 보조 일괄도 가능합니다."
+                              : " 보조는 회차 행에서 설정합니다."}
                           </p>
-                          <div className="mt-3 flex flex-col gap-3">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
-                              메인 일괄 적용
-                            </p>
-                            <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex flex-col gap-3">
+                            <div className="flex flex-wrap items-end gap-2">
+                              <span className="w-full text-[11px] font-semibold text-slate-500">메인</span>
                               <select
                                 className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold min-w-[140px]"
                                 value={bulkTeacherIdByGroup[gid] ?? ""}
@@ -1584,19 +1514,17 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                 type="button"
                                 onClick={() => void handleBulkApplyToGroup(gid)}
                                 disabled={bulkTeacherApplyingGid === gid || bulkAssistApplyingGid === gid}
-                                className="px-3 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+                                className="h-8 rounded-md bg-slate-900 px-3 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
                               >
-                                {bulkTeacherApplyingGid === gid ? "적용 중..." : "메인 일괄 적용"}
+                                {bulkTeacherApplyingGid === gid ? "적용 중..." : "메인 적용"}
                               </button>
                             </div>
                             {isSpecialLectureGroup ? (
                               <>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide">
-                                  보조 일괄 적용
-                                </p>
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex flex-wrap items-end gap-2">
+                                  <span className="w-full text-[11px] font-semibold text-slate-500">보조</span>
                                   <select
-                                    className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold min-w-[140px]"
+                                    className="min-w-[140px] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs"
                                     value={bulkAssistTeacherIdByGroup[gid] ?? ""}
                                     onChange={(e) => {
                                       const v = e.target.value;
@@ -1646,53 +1574,47 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                       bulkTeacherApplyingGid === gid ||
                                       !String(bulkAssistTeacherIdByGroup[gid] || "").trim()
                                     }
-                                    className="px-3 py-2 rounded-full text-xs font-black bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-50"
+                                    className="h-8 rounded-md bg-amber-500 px-3 text-xs font-semibold text-slate-900 hover:bg-amber-400 disabled:opacity-50"
                                   >
-                                    {bulkAssistApplyingGid === gid ? "적용 중..." : "보조 일괄 적용"}
+                                    {bulkAssistApplyingGid === gid ? "적용 중..." : "보조 적용"}
                                   </button>
                                 </div>
                               </>
                             ) : null}
                           </div>
-                        </div>
                             </div>
                           ) : null}
                         </div>
                         ) : null}
 
-                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                          <div className="text-xs font-black text-slate-700">회차 목록</div>
-                          {isPastCycle ? (
-                            <span className="text-[10px] font-bold text-slate-500">전체 회차 · 필터 미적용</span>
-                          ) : null}
-                        </div>
+                        {isPastCycle ? (
+                          <p className="text-[11px] text-slate-400">필터 없음 · 전체 회차</p>
+                        ) : null}
 
 <div
                           className={
                             cycleMainUndecided && !isPastCycle
-                              ? "rounded-2xl border-2 border-red-500 bg-red-50/70 overflow-hidden shadow-sm shadow-red-100"
-                              : "rounded-2xl border border-slate-100 overflow-hidden"
+                              ? "overflow-hidden rounded-lg border-2 border-red-400 bg-red-50/50"
+                              : "overflow-hidden rounded-lg border border-slate-200"
                           }
                         >
                           <table className="w-full table-fixed text-xs">
                             <colgroup>
-                              <col className="w-[52px]" />
-                              <col className="w-[112px]" />
-                              <col className="w-[102px]" />
-                              <col className="w-[192px]" />
-                              <col className="w-[58px]" />
-                              <col className="w-[56px]" />
-                              <col className="w-[68px]" />
+                              <col className="w-[40px]" />
+                              <col className="w-[118px]" />
+                              <col className="w-[168px]" />
+                              <col className="w-[40px]" />
+                              <col className="w-[40px]" />
+                              <col className="w-[64px]" />
                             </colgroup>
-                            <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 border-b border-slate-100">
+                            <thead className="border-b border-slate-100 bg-slate-50 text-[11px] font-medium text-slate-500">
                               <tr>
-                                <th className="px-2 py-2 text-left">회차</th>
-                                <th className="px-2 py-2 text-left">날짜</th>
-                                <th className="px-2 py-2 text-left">시간 / 저장</th>
-                                <th className="px-2 py-2 text-left">강사 / 수업료</th>
-                                <th className="px-2 py-2 text-center">마일리지</th>
-                                <th className="px-2 py-2 text-center">상태</th>
-                                <th className="px-2 py-2 text-center">액션</th>
+                                <th className="px-2 py-1.5 text-left">회차</th>
+                                <th className="px-2 py-1.5 text-left">일정</th>
+                                <th className="px-2 py-1.5 text-left">강사</th>
+                                <th className="px-2 py-1.5 text-center">마일</th>
+                                <th className="px-2 py-1.5 text-center">상태</th>
+                                <th className="px-2 py-1.5 text-center">관리</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1728,12 +1650,13 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                   const s = getTimeStatusLabel(r);
                                   const assistList = extraTeachersFromMemo(r.memo);
                                   return (
-                                    <tr key={r.id} className="border-t border-slate-100">
-                                      <td className="px-2 py-2 font-bold text-slate-700">{n}/{total}</td>
+                                    <tr key={r.id} className="border-t border-slate-100 align-top">
+                                      <td className="px-2 py-2 font-semibold text-slate-700">{n}/{total}</td>
                                       <td className="px-2 py-2">
-                                        <input
+                                        <div className="flex flex-col gap-1">
+                                          <input
                                           type="date"
-                                          className="w-full bg-transparent border rounded-lg px-2 py-1"
+                                          className="w-full max-w-full rounded-md border border-slate-200 px-1 py-1 text-[11px]"
                                           value={dateStr}
                                           onChange={(e) => {
                                             setScheduleDraftBySessionId((prev) => ({
@@ -1747,12 +1670,9 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             }));
                                           }}
                                         />
-                                      </td>
-                                      <td className="px-2 py-2">
-                                        <div className="flex flex-col gap-1 items-stretch">
                                           <input
                                             type="time"
-                                            className="w-full bg-transparent border rounded-lg px-2 py-1"
+                                            className="w-full max-w-full rounded-md border border-slate-200 px-1 py-1 text-[11px]"
                                             value={timeStr}
                                             onChange={(e) => {
                                               setScheduleDraftBySessionId((prev) => ({
@@ -1766,26 +1686,25 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               }));
                                             }}
                                           />
+                                          {scheduleDirty ? (
                                           <button
                                             type="button"
-                                            disabled={
-                                              !scheduleDirty || savingSessionScheduleId === r.id
-                                            }
+                                            disabled={savingSessionScheduleId === r.id}
                                             onClick={() => void saveSessionSchedule(gid, r)}
-                                            className="w-full px-1.5 py-1 rounded-md text-[9px] font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:pointer-events-none"
+                                            className="rounded-md bg-blue-600 px-1.5 py-1 text-[10px] font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
                                           >
                                             {savingSessionScheduleId === r.id
                                               ? "저장 중…"
-                                              : "일정 저장"}
+                                              : "저장"}
                                           </button>
+                                          ) : null}
                                         </div>
                                       </td>
-                                      <td className="px-2 py-1.5 min-w-0">
-                                        <div className="flex flex-col gap-1.5 min-w-0">
-                                          {/* 메인 강사 + 수업료 */}
-                                          <div className="flex items-center gap-1.5 min-w-0">
+                                      <td className="min-w-0 overflow-hidden px-1.5 py-1.5">
+                                        <div className="flex min-w-0 flex-col gap-1">
+                                          <div className="flex min-w-0 items-center gap-1">
                                             <select
-                                              className="min-w-0 flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-800"
+                                              className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[11px] text-slate-800"
                                               value={r.created_by ?? ""}
                                               onChange={(e) => void applyMainTeacher(gid, r, e.target.value)}
                                             >
@@ -1797,17 +1716,16 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             <input
                                               key={`price-${r.id}-${r.price ?? 0}`}
                                               type="number"
-                                              className="w-[72px] shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right text-slate-800"
+                                              className="w-[64px] shrink-0 rounded-md border border-slate-200 bg-white px-1 py-1 text-right text-[11px] text-slate-800"
                                               placeholder="수업료"
                                               defaultValue={Number(r.price) || 0}
                                               onBlur={(e) => void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })}
                                             />
                                           </div>
-                                          {/* 보조 강사 행 */}
                                           {assistList.map((ex, aidx) => (
-                                            <div key={aidx} className="flex items-center gap-1.5 min-w-0">
+                                            <div key={aidx} className="flex min-w-0 items-center gap-1">
                                               <select
-                                                className="min-w-0 flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-600"
+                                                className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[11px] text-slate-600"
                                                 value={ex.id}
                                                 onChange={(e) => void setAssistIdAt(gid, r, aidx, e.target.value)}
                                               >
@@ -1819,7 +1737,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               <input
                                                 key={`assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
                                                 type="number"
-                                                className="w-[72px] shrink-0 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-right text-slate-600"
+                                                className="w-[64px] shrink-0 rounded-md border border-slate-200 bg-white px-1 py-1 text-right text-[11px] text-slate-600"
                                                 placeholder="수업료"
                                                 defaultValue={Number(ex.price) || 0}
                                                 onBlur={(e) => void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)}
@@ -1827,30 +1745,29 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               <button
                                                 type="button"
                                                 title="보조 제거"
-                                                className="shrink-0 rounded p-1 text-slate-300 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                                                className="shrink-0 rounded p-1 text-slate-300 hover:bg-rose-50 hover:text-rose-500"
                                                 onClick={() => void removeAssistRow(gid, r, aidx)}
                                               >
                                                 <Minus size={12} strokeWidth={2.5} />
                                               </button>
                                             </div>
                                           ))}
-                                          {/* 보조 추가 */}
                                           {assistList.length < 2 && (
                                             <button
                                               type="button"
-                                              className="flex items-center gap-0.5 text-[10px] font-black text-blue-500 hover:text-blue-700 transition-colors w-fit"
+                                              className="flex w-fit items-center gap-0.5 text-[10px] font-medium text-slate-500 hover:text-slate-800"
                                               onClick={() => void addAssistRow(gid, r)}
                                             >
                                               <Plus size={11} strokeWidth={2.5} />
-                                              보조 추가
+                                              보조
                                             </button>
                                           )}
                                         </div>
                                       </td>
-                                      <td className="px-1 py-2 text-center align-top">
+                                      <td className="px-1 py-2 text-center">
                                         <button
                                           type="button"
-                                          className="px-2 py-1.5 rounded-lg text-[10px] font-black bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80 w-full max-w-[58px]"
+                                          className="rounded-md px-1.5 py-1 text-[10px] font-semibold text-amber-800 hover:bg-amber-50"
                                           onClick={() => setMileageModal({ gid, row: r })}
                                         >
                                           설정
@@ -1858,49 +1775,52 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                       </td>
                                       <td className="px-2 py-2 text-center">
                                         <span
-                                          className={`inline-flex px-2 py-1 rounded-full text-[10px] font-black ${statusBadgeClass(s.label)}`}
+                                          className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusBadgeClass(s.label)}`}
                                         >
                                           {s.label}
                                         </span>
                                       </td>
-                                      <td className="px-2 py-2 text-center">
+                                      <td className="px-1 py-2 text-center">
                                         {isPastCycle ||
                                         r.status === "cancelled" ||
                                         r.status === "deleted" ? null : (
-                                          <div className="flex flex-col items-stretch gap-1 max-w-[68px] mx-auto">
+                                          <div className="mx-auto flex max-w-[92px] flex-col items-stretch gap-1">
                                             {r.status === "postponed" ? (
                                               <button
                                                 type="button"
-                                                className="px-2.5 py-1.5 rounded-full text-[10px] font-black bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                                                className="rounded-md bg-violet-600 px-1.5 py-1 text-[10px] font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
                                                 disabled={undoingPostponeSessionId === r.id}
                                                 onClick={() => void handleUndoPostpone(r.id)}
                                               >
                                                 {undoingPostponeSessionId === r.id ? "복구 중..." : "연기 취소"}
                                               </button>
                                             ) : (
-                                              <button
-                                                type="button"
-                                                className="px-2 py-1.5 rounded-full text-[9px] font-black leading-tight bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200/80"
-                                                onClick={() => void handlePostpone(gid, r.id)}
-                                              >
-                                                연기
-                                                <span className="block text-[8px] font-bold opacity-80">
-                                                  (일정 미루기)
-                                                </span>
-                                              </button>
+                                              <>
+                                                <button
+                                                  type="button"
+                                                  className="rounded-md border border-violet-200 bg-violet-50 px-1.5 py-1 text-[10px] font-semibold text-violet-800 hover:bg-violet-100 disabled:opacity-50"
+                                                  disabled={postponingSessionId === r.id}
+                                                  onClick={() => void handlePostpone(gid, r.id, "postpone")}
+                                                >
+                                                  {postponingSessionId === r.id ? "처리 중..." : "연기"}
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  className="rounded-md border border-indigo-200 bg-indigo-50 px-1.5 py-1 text-[10px] font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-50"
+                                                  disabled={postponingSessionId === r.id}
+                                                  onClick={() => void handlePostpone(gid, r.id, "postpone_request")}
+                                                >
+                                                  {postponingSessionId === r.id ? "처리 중..." : "연기요청"}
+                                                </button>
+                                              </>
                                             )}
                                             <button
                                               type="button"
-                                              className="px-2 py-1.5 rounded-full text-[9px] font-black leading-tight bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200/80 disabled:opacity-50"
+                                              className="rounded-md border border-rose-200 bg-rose-50 px-1.5 py-1 text-[10px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
                                               disabled={deletingSessionId === r.id}
                                               onClick={() => void handleDeleteSession(gid, r.id)}
                                             >
                                               {deletingSessionId === r.id ? "차감 중..." : "회차 취소"}
-                                              {deletingSessionId === r.id ? null : (
-                                                <span className="block text-[8px] font-bold opacity-80">
-                                                  (차감)
-                                                </span>
-                                              )}
                                             </button>
                                           </div>
                                         )}
@@ -1913,7 +1833,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                         </div>
 
                         {!isPastCycle ? (
-<div className="border border-slate-200 rounded-2xl overflow-hidden">
+<div className="overflow-hidden rounded-lg border border-slate-200">
                           <button
                             type="button"
                             onClick={() =>
@@ -1922,51 +1842,39 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                 [gid]: !prev[gid],
                               }))
                             }
-                            className="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between gap-2"
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 hover:bg-slate-50"
                           >
-                            <span className="text-xs font-black text-slate-700">사이클 도구</span>
+                            <span className="text-xs font-semibold text-slate-700">도구</span>
                             {cycleToolsOpenByGroup[gid] ? (
-                              <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
                             ) : (
-                              <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
                             )}
                           </button>
                           {cycleToolsOpenByGroup[gid] ? (
-                            <div className="border-t border-slate-100 p-4 space-y-3">
-                              <div className="flex justify-end">
+                            <div className="space-y-4 border-t border-slate-100 px-3 py-3">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-semibold text-slate-500">회차 번호</span>
 <button
                               type="button"
-                              className={`px-3 py-1.5 rounded-full text-[11px] font-black border ${
+                              className={`rounded-md border px-2.5 py-1.5 text-[11px] font-semibold ${
                                 reindexingByGroup[gid]
-                                  ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
-                                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                                  ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
+                                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                               }`}
                               disabled={!!reindexingByGroup[gid]}
                               onClick={() => void handleReindexRounds(gid)}
                             >
-                              {reindexingByGroup[gid] ? "정렬 중..." : "회차 재정렬"}
+                              {reindexingByGroup[gid] ? "정렬 중..." : "날짜순 재정렬"}
                             </button>
                               </div>
-<div className="mt-3 border-t border-slate-100 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => toggleToolPanel(gid, "extend")}
-                            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
-                          >
-                            <span className="text-xs font-black text-slate-700">회차 확장</span>
-                            {isToolPanelOpen(gid, "extend") ? (
-                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
-                            )}
-                          </button>
-                          {isToolPanelOpen(gid, "extend") ? (
-                            <div className="space-y-2 px-1 pb-2 pt-1">
-                              <div className="flex items-center gap-2">
+<div className="space-y-2">
+                            <p className="text-[11px] font-semibold text-slate-500">확장</p>
+                            <div className="flex items-center gap-2">
                                 <input
                                   type="number"
                                   min={1}
-                                  className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                  className="w-16 rounded-md border border-slate-200 px-2 py-1 text-sm"
                                   value={extendCountByGroup[gid] ?? 1}
                                   onChange={(e) =>
                                     setExtendCountByGroup((prev) => ({
@@ -1975,49 +1883,31 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                     }))
                                   }
                                 />
-                                <span className="text-xs text-slate-600">회 추가</span>
+                                <span className="text-xs text-slate-600">회</span>
                                 <button
                                   type="button"
-                                  className="ml-auto px-4 py-2 rounded-full text-xs font-bold bg-blue-600 text-white hover:bg-blue-700"
+                                  className="ml-auto rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
                                   onClick={() => {
                                     const n = Math.max(1, Math.floor(extendCountByGroup[gid] ?? 1));
                                     if (!confirm(`${n}회차를 추가하시겠습니까?`)) return;
                                     void handleExtend(gid, n);
                                   }}
                                 >
-                                  회차 확장
+                                  추가
                                 </button>
                               </div>
-                            </div>
-                          ) : null}
                         </div>
 
-                        <div className="border-t border-slate-100 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => toggleToolPanel(gid, "shrink")}
-                            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
-                          >
-                            <span className="text-xs font-black text-slate-700">회차 축소/삭제</span>
-                            {isToolPanelOpen(gid, "shrink") ? (
-                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
-                            )}
-                          </button>
-                          {isToolPanelOpen(gid, "shrink") ? (
-                            <div className="space-y-2 px-1 pb-2 pt-1">
-                              <p className="text-[11px] text-slate-500 font-bold">
-                                마지막 N회차를 status='deleted'로 숨기고 회차 정보를 재계산합니다.
-                              </p>
-                              <p className="text-[11px] text-rose-600 font-bold">
-                                삭제 처리한 회차는 목록 기본 필터에서 숨겨집니다. 실행 전 대상 회차를 다시 확인해 주세요.
+                        <div className="space-y-2">
+                            <p className="text-[11px] font-semibold text-slate-500">축소</p>
+                              <p className="text-[11px] text-slate-500">
+                                마지막 N회를 삭제 처리하고 회차를 다시 매깁니다. 기본 목록에서는 숨겨집니다.
                               </p>
                               <div className="flex items-center gap-2">
                                 <input
                                   type="number"
                                   min={1}
-                                  className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                  className="w-16 rounded-md border border-slate-200 px-2 py-1 text-sm"
                                   value={shrinkCountByGroup[gid] ?? 1}
                                   onChange={(e) =>
                                     setShrinkCountByGroup((prev) => ({
@@ -2026,55 +1916,40 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                     }))
                                   }
                                 />
-                                <span className="text-xs text-slate-600">회 줄이기</span>
+                                <span className="text-xs text-slate-600">회</span>
                                 <button
                                   type="button"
-                                  className="ml-auto px-4 py-2 rounded-full text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
+                                  className="ml-auto rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
                                   disabled={!!shrinkingByGroup[gid]}
                                   onClick={() => void handleShrinkTail(gid)}
                                 >
-                                  {shrinkingByGroup[gid] ? "처리 중..." : "마지막 회차 삭제"}
+                                  {shrinkingByGroup[gid] ? "처리 중..." : "마지막 삭제"}
                                 </button>
                               </div>
-                            </div>
-                          ) : null}
                         </div>
 
-                        <div className="border-t border-slate-100 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => toggleToolPanel(gid, "restart")}
-                            className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left hover:bg-slate-50"
-                          >
-                            <span className="text-xs font-black text-slate-700">사이클 재시작</span>
-                            {isToolPanelOpen(gid, "restart") ? (
-                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" />
-                            )}
-                          </button>
-                          {isToolPanelOpen(gid, "restart") ? (
-                            <div className="space-y-3 px-1 pb-2 pt-1">
-                          <p className="text-[11px] text-slate-500 font-bold">
-                            기존 사이클은 유지하고, 새 group_id로 예정 회차를 생성합니다.
+                        <div className="space-y-2">
+                            <p className="text-[11px] font-semibold text-slate-500">사이클 재시작</p>
+                          <p className="text-[11px] text-slate-500">
+                            기존 사이클은 두고 새 그룹으로 예정 회차를 만듭니다.
                           </p>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <label className="text-xs font-black text-slate-600">회차</label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <label className="text-[11px] text-slate-600">회차</label>
                             <input
                               type="number"
                               min={1}
-                              className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
-                              value={restartCountByGroup[gid] ?? rows.length ?? 1}
+                              className="w-16 rounded-md border border-slate-200 px-2 py-1 text-sm"
+                              value={restartCountByGroup[gid] ?? RESTART_CYCLE_ROUNDS}
                               onChange={(e) =>
                                 setRestartCountByGroup((prev) => ({
                                   ...prev,
-                                  [gid]: Number(e.target.value) || 1,
+                                  [gid]: Number(e.target.value) || RESTART_CYCLE_ROUNDS,
                                 }))
                               }
                             />
-                            <label className="text-xs font-black text-slate-600 ml-2">패턴</label>
+                            <label className="text-[11px] text-slate-600">패턴</label>
                             <select
-                              className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-bold"
+                              className="rounded-md border border-slate-200 px-2 py-1 text-sm"
                               value={restartWeeklyFrequencyByGroup[gid] ?? 1}
                               onChange={(e) =>
                                 setRestartWeeklyFrequencyByGroup((prev) => ({
@@ -2088,11 +1963,11 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                             </select>
                             {(restartWeeklyFrequencyByGroup[gid] ?? 1) === 1 && (
                               <>
-                                <label className="text-xs font-black text-slate-600 ml-2">간격(일)</label>
+                                <label className="text-[11px] text-slate-600">간격(일)</label>
                                 <input
                                   type="number"
                                   min={1}
-                                  className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                  className="w-16 rounded-md border border-slate-200 px-2 py-1 text-sm"
                                   value={restartIntervalDaysByGroup[gid] ?? 7}
                                   onChange={(e) =>
                                     setRestartIntervalDaysByGroup((prev) => ({
@@ -2105,20 +1980,20 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <label className="text-xs font-black text-slate-600">시작일</label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <label className="text-[11px] text-slate-600">시작일</label>
                             <input
                               type="date"
-                              className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                              className="rounded-md border border-slate-200 px-2 py-1 text-sm"
                               value={restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}
                               onChange={(e) =>
                                 setRestartStartDateByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
                               }
                             />
-                            <label className="text-xs font-black text-slate-600">시간</label>
+                            <label className="text-[11px] text-slate-600">시간</label>
                             <input
                               type="time"
-                              className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                              className="rounded-md border border-slate-200 px-2 py-1 text-sm"
                               value={restartStartTimeByGroup[gid] ?? "10:00"}
                               onChange={(e) =>
                                 setRestartStartTimeByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
@@ -2127,7 +2002,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                           </div>
 
                           {(restartWeeklyFrequencyByGroup[gid] ?? 1) === 2 && (
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               {DAYS.map((d) => {
                                 const baseDay = new Date(
                                   `${restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}T${
@@ -2152,12 +2027,12 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                         return { ...prev, [gid]: next.length ? next : [baseDay] };
                                       });
                                     }}
-                                    className={`px-3 py-1.5 rounded-full text-xs font-black border ${
+                                    className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${
                                       isBase
-                                        ? "bg-blue-600 text-white border-blue-600 cursor-not-allowed"
+                                        ? "cursor-not-allowed border-blue-600 bg-blue-600 text-white"
                                         : isSelected
-                                          ? "bg-slate-900 text-white border-slate-900"
-                                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                                          ? "border-slate-900 bg-slate-900 text-white"
+                                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                                     }`}
                                   >
                                     {d.label}
@@ -2170,15 +2045,13 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
-                              className="ml-auto px-4 py-2 rounded-full text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
+                              className="ml-auto rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
                               disabled={!!restartingByGroup[gid]}
                               onClick={() => void handleRestartCycle(gid)}
                             >
-                              {restartingByGroup[gid] ? "생성 중..." : "사이클 재시작"}
+                              {restartingByGroup[gid] ? "생성 중..." : "재시작"}
                             </button>
                           </div>
-                            </div>
-                          ) : null}
                         </div>
                             </div>
                           ) : null}
@@ -2198,41 +2071,41 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         onClick={onClose}
       />
       <aside
-        className={`absolute right-0 top-0 h-full w-full max-w-6xl bg-white shadow-2xl border-l border-slate-100 flex flex-col transition-transform ${
+        className={`absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl border-l border-slate-100 flex flex-col transition-transform ${
           visible ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <header className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-start justify-between gap-4">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
           <div className="min-w-0 flex-1 space-y-2">
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">수업 번들</p>
             {!editingTitle ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg font-black text-slate-900 truncate">{displayTitle}</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="truncate text-base font-semibold text-slate-900">{displayTitle}</h2>
+                  <span className="text-xs text-slate-400">{groupIds.length}사이클</span>
                   <button
                     type="button"
                     onClick={() => setEditingTitle(true)}
-                    className="px-2 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0"
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800 hover:bg-slate-50"
                   >
-                    수업명 수정
+                    <Pencil className="h-3 w-3" />
+                    이름 수정
                   </button>
                   <button
                     type="button"
                     onClick={() => setSessionTypePanelOpen((o) => !o)}
-                    className={`px-2 py-1 rounded-full text-[11px] font-black shrink-0 border ${
+                    className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold ${
                       sessionTypePanelOpen
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
                     }`}
                   >
-                    수업 타입
+                    {displayTypeLabel}
                   </button>
                 </div>
                 {sessionTypePanelOpen ? (
-                  <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:flex-wrap sm:items-center">
-                    <label className="text-[11px] font-black text-slate-600 shrink-0">수업 타입 (번들 전체)</label>
+                  <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 sm:flex-row sm:flex-wrap sm:items-center">
                     <select
-                      className="min-w-[180px] flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-800"
+                      className="min-w-[180px] flex-1 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-800"
                       value={bundleSessionTypeDraft}
                       onChange={(e) => setBundleSessionTypeDraft(e.target.value)}
                     >
@@ -2250,32 +2123,32 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                       type="button"
                       disabled={savingSessionType || effectiveGroupIds.length === 0}
                       onClick={() => void handleSaveBundleSessionType()}
-                      className="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-black text-white hover:bg-slate-800 disabled:opacity-50"
+                      className="shrink-0 rounded-md bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
                     >
                       {savingSessionType ? "저장 중..." : "적용"}
                     </button>
                     {bundleSessionTypesMixed ? (
-                      <p className="w-full text-[11px] font-bold text-amber-800">
-                        세션마다 타입이 다릅니다. 적용 시 번들 전체가 위 선택값으로 통일됩니다.
+                      <p className="w-full text-[11px] text-amber-800">
+                        세션 타입이 섞여 있습니다. 적용하면 번들 전체가 통일됩니다.
                       </p>
                     ) : null}
                   </div>
                 ) : null}
               </div>
             ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
-                  className="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold"
+                  className="w-full min-w-0 rounded-md border border-slate-200 px-3 py-2 text-sm"
                   value={titleDraft}
                   onChange={(e) => setTitleDraft(e.target.value)}
                   placeholder="수업명을 입력하세요"
                 />
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
                     disabled={!titleDraft.trim() || savingTitle}
                     onClick={() => void handleSaveBundleTitle()}
-                    className="px-3 py-2 rounded-full text-xs font-black bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                   >
                     {savingTitle ? "저장 중..." : "저장"}
                   </button>
@@ -2285,42 +2158,24 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                       setEditingTitle(false);
                       void loadAll();
                     }}
-                    className="px-3 py-2 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    className="rounded-md px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100"
                   >
                     취소
                   </button>
                 </div>
               </div>
             )}
-            <p className="text-xs text-slate-500 font-bold">{groupIds.length}개 사이클</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-500 shrink-0">
-            <X className="w-5 h-5" />
+          <button type="button" onClick={onClose} className="shrink-0 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+            <X className="h-5 w-5" />
           </button>
         </header>
 
 
-          <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-4 min-h-0">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-xs font-black text-slate-600 min-w-0">
-                사이클(그룹)별로 접기/펼치기 할 수 있습니다. 완료된 일정은 아래 <span className="text-slate-800">지난 사이클</span>에
-                모입니다.
-              </div>
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => void handleMergeCycleRounds()}
-                  disabled={
-                    mergingByBundle ||
-                    effectiveGroupIds.filter((gid) => (sessionsByGroupId[gid] || []).length > 0).length <= 1
-                  }
-                  className="px-3 py-2 rounded-full text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {mergingByBundle ? "합치는 중..." : "회차 합치기"}
-                </button>
-                <div className="flex flex-col items-stretch gap-0.5">
+          <div className="min-h-0 flex-1 space-y-3 overflow-auto p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-end gap-2">
                   <select
-                    className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs font-black text-slate-700 min-w-[10rem]"
+                    className="min-w-[10rem] rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700"
                     value={roundView}
                     onChange={(e) => setRoundView(e.target.value as RoundView)}
                   >
@@ -2334,11 +2189,6 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                       <option value="completed">연기·시간 완료</option>
                     </optgroup>
                   </select>
-                  <span className="text-[10px] font-bold text-slate-400 text-right">
-                    현재 사이클 회차 목록에만 적용
-                  </span>
-                </div>
-              </div>
             </div>
 
             {loading ? (
@@ -2356,20 +2206,20 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
               <div className="space-y-3">
                 {currentGroupIds.map((gid) => renderCycleSection(gid))}
                 {pastGroupIds.length > 0 && (
-                  <section className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/90">
+                  <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                     <button
                       type="button"
                       onClick={() => setPastArchiveOpen((o) => !o)}
-                      className="w-full px-4 py-3 bg-slate-100/80 hover:bg-slate-100 flex items-center justify-between gap-2"
+                      className="flex w-full items-center justify-between gap-2 px-3 py-2.5 hover:bg-slate-100"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex min-w-0 items-center gap-2">
                         {pastArchiveOpen ? (
-                          <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                          <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
                         ) : (
-                          <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                          <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
                         )}
-                        <span className="text-xs font-black text-slate-700 truncate">
-                          지난 사이클 ({pastGroupIds.length}개) · 종료된 회차 조회
+                        <span className="truncate text-sm font-semibold text-slate-700">
+                          지난 사이클 {pastGroupIds.length}
                         </span>
                       </div>
                     </button>

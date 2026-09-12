@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { FocusEventHandler, MouseEventHandler, ReactNode } from 'react';
 import Link from 'next/link';
 import { externalLinkProps, isExternalHref } from '../../lib/external-link';
 import { trackCommercialEvent } from '../../lib/commercial-events';
@@ -16,6 +16,9 @@ type TrackedLinkProps = {
   ctaIntentId?: string;
   selectionId?: string;
   evidenceSlug?: string;
+  onMouseEnter?: MouseEventHandler<HTMLAnchorElement>;
+  onFocus?: FocusEventHandler<HTMLAnchorElement>;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 };
 
 function emitCommercialClick(props: TrackedLinkProps) {
@@ -38,9 +41,14 @@ export function TrackedLink({
   ctaIntentId,
   selectionId,
   evidenceSlug,
+  onMouseEnter,
+  onFocus,
+  onClick: consumerOnClick,
 }: TrackedLinkProps) {
-  const onClick = () =>
+  const onClick: MouseEventHandler<HTMLAnchorElement> = (event) => {
     emitCommercialClick({ href, trackLabel, children, commercialRoute, ctaIntentId, selectionId, evidenceSlug });
+    consumerOnClick?.(event);
+  };
 
   if (isExternalHref(href)) {
     return (
@@ -49,6 +57,8 @@ export function TrackedLink({
         data-track-label={trackLabel}
         className={className}
         onClick={onClick}
+        onMouseEnter={onMouseEnter}
+        onFocus={onFocus}
         {...externalLinkProps}
       >
         {children}
@@ -58,7 +68,7 @@ export function TrackedLink({
 
   if (href.startsWith('#')) {
     return (
-      <a href={href} data-track-label={trackLabel} className={className} onClick={onClick}>
+      <a href={href} data-track-label={trackLabel} className={className} onClick={onClick} onMouseEnter={onMouseEnter} onFocus={onFocus}>
         {children}
       </a>
     );
@@ -71,6 +81,8 @@ export function TrackedLink({
       data-track-label={trackLabel}
       className={className}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onFocus={onFocus}
     >
       {children}
     </Link>

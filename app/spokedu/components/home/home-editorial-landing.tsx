@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { HOME_MEDIA } from '../../data/home-media';
 import { homePage, type HomeCaseCard } from '../../data/home-page';
@@ -25,6 +25,43 @@ type CaseCardWithThumb = HomeCaseCard & { thumbnailSrc?: string };
 type HomeEditorialLandingProps = {
   caseCards: CaseCardWithThumb[];
 };
+
+const CASE_FILTERS = [
+  { id: 'all', label: '전체' },
+  { id: 'institution', label: '기관·학교' },
+  { id: 'private', label: '개인·소그룹' },
+  { id: 'event', label: '행사·특강' },
+] as const;
+
+type CaseFilter = (typeof CASE_FILTERS)[number]['id'];
+
+const SERVICE_IMAGES = [
+  { src: '/images/spokedu/dispatch/dispatch-institution-class.jpg', alt: '학교와 기관에서 진행하는 체육수업 현장', position: '50% 48%' },
+  { src: '/images/spokedu/private/private-small-group.jpg', alt: '아이와 지도자가 함께하는 소그룹 체육수업', position: '58% 45%' },
+  { src: '/images/spokedu/subscription/product-library-home.webp', alt: '지도자가 수업을 준비하는 SPOKEDU 서비스 화면', position: '50% 20%' },
+] as const;
+
+function useHomeReveal() {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const nodes = root.querySelectorAll<HTMLElement>('[data-reveal]');
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        (entry.target as HTMLElement).dataset.revealed = 'true';
+        observer.unobserve(entry.target);
+      }),
+      { rootMargin: '0px 0px -10% 0px', threshold: 0.12 },
+    );
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, []);
+
+  return rootRef;
+}
 
 function TextCta({
   href,
@@ -64,13 +101,20 @@ export function mergeHomeEditorialCaseCards(resolved: HomeFieldRecordCardWithThu
 }
 
 export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
+  const rootRef = useHomeReveal();
+  const [activeService, setActiveService] = useState(0);
+  const [activeFilter, setActiveFilter] = useState<CaseFilter>('all');
+  const [activeStep, setActiveStep] = useState(0);
   const heroMedia = HOME_MEDIA[homePage.hero.mediaKey];
   const spomoveMedia = HOME_MEDIA[homePage.spomove.mediaKey];
-  const featuredCase = caseCards[0];
-  const supportingCases = caseCards.slice(1);
+  const availableFilters = CASE_FILTERS.filter((filter) => filter.id === 'all' || caseCards.some((card) => card.categories.includes(filter.id)));
+  const visibleCases = activeFilter === 'all' ? caseCards : caseCards.filter((card) => card.categories.includes(activeFilter));
+  const featuredCase = visibleCases[0];
+  // Home keeps one dominant case and at most two supporting cases; the archive owns the full list.
+  const supportingCases = visibleCases.slice(1, 3);
 
   return (
-    <div className={`${styles.page} w-full overflow-x-clip antialiased`} data-spokedu-home-editorial="v1-connected">
+    <div ref={rootRef} className={`${styles.page} w-full overflow-x-clip antialiased`} data-spokedu-home-editorial="v2-interactive">
       <a href="#choice" className={homeSkipLink}>
         본문으로 건너뛰기
       </a>
@@ -78,7 +122,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
       {/* 01 Hero */}
       <section id={homePage.hero.id} className={styles.hero} aria-labelledby="editorial-hero-heading">
         <div className={styles.contentRail}>
-          <div className={styles.heroCopy}>
+          <div className={styles.heroCopy} data-reveal>
             <p className={`${marketingEyebrow} ${styles.heroEyebrow}`}>{homePage.hero.eyebrow}</p>
             <h1
               id="editorial-hero-heading"
@@ -100,7 +144,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               </TextCta>
             </div>
           </div>
-          <figure className={styles.heroFigure}>
+          <figure className={styles.heroFigure} data-reveal>
             <div className={styles.heroImageFrame}>
               <Image
                 src={heroMedia.src!}
@@ -117,17 +161,24 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
 
       {/* 02 Choice */}
       <section id={homePage.choice.id} className={styles.choice} aria-labelledby="editorial-choice-heading">
-        <div className={styles.contentRail}>
+        <div className={styles.contentRail} data-reveal>
           <h2 id="editorial-choice-heading" className={`${styles.homeSectionDisplay} ${styles.choiceTitle} ${koreanText}`}>
             {homePage.choice.title}
           </h2>
           <div className={styles.serviceGrid}>
-            {homePage.serviceChoices.map((service) => (
-              <TrackedLink key={service.href} href={service.href} trackLabel={service.trackLabel} className={`${styles.serviceCard} ${brandFocusRing}`}>
-                <p className={styles.serviceAudience}>{service.audience}</p>
-                <h3 className={koreanText}>{service.label}</h3>
-                <p className={`${styles.serviceBody} ${koreanText}`}>{service.description}</p>
-                <span className={styles.serviceAction}>{service.action}<span aria-hidden>→</span></span>
+            {homePage.serviceChoices.map((service, index) => (
+              <TrackedLink key={service.href} href={service.href} trackLabel={service.trackLabel} className={`${styles.serviceCard} ${index === activeService ? styles.serviceCardActive : ''} ${brandFocusRing}`}
+                onMouseEnter={() => setActiveService(index)} onFocus={() => setActiveService(index)} onClick={() => setActiveService(index)}>
+                <div className={styles.serviceImage}>
+                  <Image src={SERVICE_IMAGES[index].src} alt={SERVICE_IMAGES[index].alt} fill sizes="(min-width: 960px) 42vw, 100vw"
+                    style={{ objectPosition: SERVICE_IMAGES[index].position }} />
+                </div>
+                <div className={styles.serviceCopy}>
+                  <p className={styles.serviceAudience}>{service.audience}</p>
+                  <h3 className={koreanText}>{service.label}</h3>
+                  <p className={`${styles.serviceBody} ${koreanText}`}>{service.description}</p>
+                  <span className={styles.serviceAction}>{service.action}<span aria-hidden>→</span></span>
+                </div>
               </TrackedLink>
             ))}
           </div>
@@ -150,7 +201,15 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               </TextCta>
             </div>
           </header>
-          <ul className={styles.casesIndex}>
+          <div className={styles.caseFilters} role="group" aria-label="수업 사례 필터">
+            {availableFilters.map((filter) => (
+              <button key={filter.id} type="button" className={activeFilter === filter.id ? styles.caseFilterActive : styles.caseFilter}
+                aria-pressed={activeFilter === filter.id} onClick={() => setActiveFilter(filter.id)}>
+                {filter.label}
+              </button>
+            ))}
+          </div>
+          <ul key={activeFilter} className={styles.casesIndex}>
             {featuredCase ? (
               <li key={featuredCase.slug} className={`${styles.caseItem} ${styles.caseFeatured}`}>
                 <CaseEditorialItem card={featuredCase} featured />
@@ -161,13 +220,19 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
                 <CaseEditorialItem card={card} />
               </li>
             ))}
+            {!featuredCase ? (
+              <li className={styles.caseEmpty}>
+                <p>현재 이 유형의 공개 사례를 정리하고 있습니다.</p>
+                <TextCta href={homePage.cases.recordsCta.href} trackLabel="cta-home-cases-empty">전체 사례 보기</TextCta>
+              </li>
+            ) : null}
           </ul>
         </div>
       </section>
 
       {/* 04 SPOMOVE */}
       <section id={homePage.spomove.id} className={styles.spomove} aria-labelledby="editorial-spomove-heading">
-        <div className={styles.contentRail}>
+        <div className={styles.contentRail} data-reveal>
           <div className={styles.spomoveCopy}>
             <p className={styles.spomoveLabel}>{homePage.spomove.label}</p>
             <h2 id="editorial-spomove-heading" className={`${styles.homeSectionDisplay} ${styles.spomoveTitle} ${koreanText}`}>
@@ -210,14 +275,25 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
               />
               <p className={styles.mediaCaption}>같은 수업의 현장</p>
             </div>
+            <ol className={styles.stepRail} aria-label="SPOMOVE 반응 과정">
+              {['확인하고', '판단하고', '움직입니다'].map((label, index) => (
+                <li key={label}>
+                  <button type="button" className={index === activeStep ? styles.stepActive : styles.step}
+                    aria-pressed={index === activeStep} onMouseEnter={() => setActiveStep(index)} onFocus={() => setActiveStep(index)} onClick={() => setActiveStep(index)}>
+                    <span>{String(index + 1).padStart(2, '0')}</span>{label}
+                  </button>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </section>
 
       {/* 05 Subscription */}
       <section id={homePage.subscription.id} className={styles.subscription} aria-labelledby="editorial-subscription-heading">
-        <div className={styles.contentRail}>
-          <div className={styles.subscriptionIntro}>
+        <div className={styles.contentRail} data-reveal>
+          <div className={styles.subscriptionCopy}>
+            <p className={styles.subscriptionEyebrow}>FOR INSTRUCTORS</p>
             <h2 id="editorial-subscription-heading" className={`${styles.homeSectionDisplay} ${styles.subscriptionTitle} ${koreanText}`}>
               {homePage.subscription.titleLines.map((line) => (
                 <span key={line} className={styles.subscriptionTitleLine}>
@@ -225,42 +301,34 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
                 </span>
               ))}
             </h2>
-            <div className={styles.subscriptionSupport}>
-              <p className={`${styles.homeBody} ${styles.subscriptionLead} ${koreanText}`}>{homePage.subscription.lead}</p>
+            <p className={`${styles.homeBody} ${styles.subscriptionLead} ${koreanText}`}>{homePage.subscription.lead}</p>
+            <ul className={styles.productFeatures}>
+              {homePage.subscription.features.map((feature) => (
+                <li key={feature.id} className={styles.productFeature}>
+                  <h3 className={`${styles.homeSubhead} ${koreanText}`}>{feature.title}</h3>
+                  <p className={`${styles.homeBody} ${koreanText}`}>{feature.body}</p>
+                </li>
+              ))}
+            </ul>
+            <div className={styles.subscriptionCta}>
+              <TextCta href={homePage.subscription.primaryCta.href} trackLabel={homePage.subscription.primaryCta.trackLabel}>
+                {homePage.subscription.primaryCta.label}
+              </TextCta>
             </div>
           </div>
           <figure className={styles.productStage}>
             <div className={styles.productStageFrame}>
-              <Image
-                src={homePage.subscription.visual.src}
-                alt={homePage.subscription.visual.alt}
-                fill
-                className={`${styles.productImageFocal} ${styles.productImageCover}`}
-                sizes="(min-width: 1080px) 75rem, 92vw"
-                quality={90}
-              />
+              <Image src={homePage.subscription.visual.src} alt={homePage.subscription.visual.alt} fill
+                className={`${styles.productImageFocal} ${styles.productImageCover}`} sizes="(min-width: 1080px) 64vw, 100vw" quality={90} />
             </div>
             <figcaption className={styles.productCaption}>{homePage.subscription.visual.caption}</figcaption>
           </figure>
-          <ul className={styles.productFeatures}>
-            {homePage.subscription.features.map((feature) => (
-              <li key={feature.id} className={styles.productFeature}>
-                <h3 className={`${styles.homeSubhead} ${koreanText}`}>{feature.title}</h3>
-                <p className={`${styles.homeBody} ${koreanText}`}>{feature.body}</p>
-              </li>
-            ))}
-          </ul>
-          <div className={styles.subscriptionCta}>
-            <TextCta href={homePage.subscription.primaryCta.href} trackLabel={homePage.subscription.primaryCta.trackLabel}>
-              {homePage.subscription.primaryCta.label}
-            </TextCta>
-          </div>
         </div>
       </section>
 
       {/* 06 Contact */}
       <section id={homePage.contact.id} className={styles.contact} aria-labelledby="editorial-contact-heading">
-        <div className={styles.contentRail}>
+        <div className={styles.contentRail} data-reveal>
           <div className={styles.contactCluster}>
             <h2 id="editorial-contact-heading" className={`${styles.homeQuietDisplay} ${styles.contactTitle} ${koreanText}`}>
               {homePage.contact.title}

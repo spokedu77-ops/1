@@ -4,10 +4,33 @@ import { reindexGroupRounds, type SessionRowForReindex } from './reindexGroupRou
 import { buildRoundSnapshot } from './roundFields';
 import { findCrossGroupSlotConflicts, hasDuplicatePostponedSlot } from './sessionRoundGuards';
 import { omitSessionIdentityForInsertClone } from './sessionInsertClone';
+import { nextSessionStartIso } from './sessionIntervalPattern';
 
 function assertMutationApplied(data: { id?: string } | null, error: unknown, fallback: string) {
   if (error) throw error;
   if (!data?.id) throw new Error(fallback);
+}
+
+async function applyShiftPatchesInOrder(
+  supabase: any,
+  rows: Array<{ id: string; start_at: string; end_at: string; status?: string | null }>,
+  newStartMsByIndex: number[],
+  fallback: string
+) {
+  for (let i = 0; i < rows.length; i++) {
+    const s = rows[i]!;
+    const newStartMs = newStartMsByIndex[i]!;
+    const durationMs = new Date(s.end_at).getTime() - new Date(s.start_at).getTime();
+    const ns = new Date(newStartMs).toISOString();
+    const ne = new Date(newStartMs + durationMs).toISOString();
+    const { data, error } = await supabase
+      .from('sessions')
+      .update(buildPostponeShiftPatch(s, ns, ne))
+      .eq('id', s.id)
+      .select('id')
+      .maybeSingle();
+    assertMutationApplied(data, error, fallback);
+  }
 }
 
 /**
@@ -51,8 +74,8 @@ export async function postponeCascade(
   supabase: any,
   sessionId: string,
   options?: { onAfter?: () => void }
-) {
-  if (!sessionId) return;
+): Promise<string | null> {
+  if (!sessionId) return null;
 
   try {
     const { data: curr, error: fetchError } = await supabase
@@ -64,7 +87,7 @@ export async function postponeCascade(
     if (fetchError) throw fetchError;
     if (!curr?.group_id) {
       toast.error('그룹 정보가 없습니다.');
-      return;
+      return null;
     }
 
     const groupId = String(curr.group_id);
@@ -74,7 +97,7 @@ export async function postponeCascade(
 
     if (await hasDuplicatePostponedSlot(supabase, groupId, origStartAt)) {
       toast.error('이미 같은 날짜·시간에 연기 기록이 있습니다. 중복 연기는 할 수 없습니다.');
-      return;
+      return null;
     }
 
     const crossConflicts = await findCrossGroupSlotConflicts(supabase, {
@@ -87,7 +110,7 @@ export async function postponeCascade(
       toast.error(
         '같은 강사·수업명·시간에 다른 사이클(그룹) 수업이 이미 있습니다. 구 사이클을 정리한 뒤 연기해 주세요.'
       );
-      return;
+      return null;
     }
 
     let groupRows = await loadGroupSessionsForRounds(supabase, groupId);
@@ -125,7 +148,7 @@ export async function postponeCascade(
 
     if (activeList.length === 0) {
       toast.error('미루기 대상 회차가 없습니다.');
-      return;
+      return null;
     }
 
     const lastIdx = activeList.length - 1;
@@ -133,24 +156,30 @@ export async function postponeCascade(
       activeList.length >= 2
         ? new Date(activeList[lastIdx]!.start_at!).getTime() - new Date(activeList[lastIdx - 1]!.start_at!).getTime()
         : 7 * 24 * 60 * 60 * 1000;
+    const lastNextStartIso = nextSessionStartIso(
+      activeList[lastIdx]!.start_at!,
+      activeList.map((row) => String(row.start_at)),
+      lastGapMs
+    );
 
-    await Promise.all(
-      activeList.map(async (s, i) => {
-        const durationMs = new Date(s.end_at!).getTime() - new Date(s.start_at!).getTime();
-        const newStartMs =
-          i < lastIdx
-            ? new Date(activeList[i + 1]!.start_at!).getTime()
-            : new Date(s.start_at!).getTime() + lastGapMs;
-        const ns = new Date(newStartMs).toISOString();
-        const ne = new Date(newStartMs + durationMs).toISOString();
-        const { data, error } = await supabase
-          .from('sessions')
-          .update(buildPostponeShiftPatch(s, ns, ne))
-          .eq('id', s.id)
-          .select('id')
-          .maybeSingle();
-        assertMutationApplied(data, error, 'POSTPONE_SESSION_SHIFT_NOT_UPDATED');
-      })
+    // 뒤에서 앞으로: 마지막이 먼저 빈 칸으로 나가고, 앞 회차가 그 시각을 받는다.
+    // 예전 Promise.all은 같은 start_at을 동시에 써서 일부만 밀린 채 끝날 수 있었다.
+    const postponeStarts = activeList.map((s, i) =>
+      i < lastIdx
+        ? new Date(activeList[i + 1]!.start_at!).getTime()
+        : new Date(lastNextStartIso).getTime()
+    );
+    const postponeOrder = activeList
+      .map((s, i) => ({
+        s: s as { id: string; start_at: string; end_at: string; status?: string | null },
+        newStartMs: postponeStarts[i]!,
+      }))
+      .reverse();
+    await applyShiftPatchesInOrder(
+      supabase,
+      postponeOrder.map((row) => row.s),
+      postponeOrder.map((row) => row.newStartMs),
+      'POSTPONE_SESSION_SHIFT_NOT_UPDATED'
     );
 
     const insertBase = omitSessionIdentityForInsertClone(currFresh as Record<string, unknown>);
@@ -177,9 +206,11 @@ export async function postponeCascade(
 
     toast.success('일정이 성공적으로 연기되었습니다.');
     options?.onAfter?.();
+    return typeof insertedPostpone?.id === 'string' ? insertedPostpone.id : null;
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     toast.error('일정 연기에 실패했습니다: ' + msg);
+    return null;
   }
 }
 
@@ -225,20 +256,15 @@ export async function undoPostponeCascade(
       .filter((s) => !!s.id && !!s.start_at && !!s.end_at)
       .sort((a, b) => new Date(a.start_at!).getTime() - new Date(b.start_at!).getTime());
 
-    await Promise.all(
-      activeList.map(async (s, i) => {
-        const durationMs = new Date(s.end_at!).getTime() - new Date(s.start_at!).getTime();
-        const newStartMs = i === 0 ? origStartMs : new Date(activeList[i - 1]!.start_at!).getTime();
-        const ns = new Date(newStartMs).toISOString();
-        const ne = new Date(newStartMs + durationMs).toISOString();
-        const { data, error } = await supabase
-          .from('sessions')
-          .update(buildPostponeShiftPatch(s, ns, ne))
-          .eq('id', s.id)
-          .select('id')
-          .maybeSingle();
-        assertMutationApplied(data, error, 'UNDO_POSTPONE_SESSION_SHIFT_NOT_UPDATED');
-      })
+    const undoStarts = activeList.map((s, i) =>
+      i === 0 ? origStartMs : new Date(activeList[i - 1]!.start_at!).getTime()
+    );
+    const undoRows = activeList.map((s) => s as { id: string; start_at: string; end_at: string; status?: string | null });
+    await applyShiftPatchesInOrder(
+      supabase,
+      undoRows,
+      undoStarts,
+      'UNDO_POSTPONE_SESSION_SHIFT_NOT_UPDATED'
     );
 
     const { data: deletedPostpone, error: deleteError } = await supabase

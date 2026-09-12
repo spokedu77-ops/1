@@ -2,12 +2,14 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import { Search } from 'lucide-react';
+import { nestedRecordName } from '@/app/lib/weeklyBestFeedback';
 
 export type WeeklyBestPickerItem = {
   id: string;
   title: string;
   start_at: string;
-  users?: { name?: string } | null;
+  created_by?: string;
+  users?: { name?: string } | { name?: string }[] | null;
 };
 
 type CoachOption = { id: string; name: string };
@@ -24,8 +26,11 @@ function formatGroupDate(iso: string): string {
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short' });
 }
 
-function getCoachName(item: WeeklyBestPickerItem): string {
-  return (item.users as { name?: string } | null | undefined)?.name ?? '';
+function getCoachName(item: WeeklyBestPickerItem, coaches: CoachOption[]): string {
+  const fromJoin = nestedRecordName(item.users);
+  if (fromJoin) return fromJoin;
+  if (!item.created_by) return '';
+  return coaches.find((c) => c.id === item.created_by)?.name ?? '';
 }
 
 type WeeklyBestSessionPickerProps<T extends WeeklyBestPickerItem> = {
@@ -176,7 +181,9 @@ export function WeeklyBestSessionPicker<T extends WeeklyBestPickerItem>({
                             <p className="text-sm font-bold text-slate-800 line-clamp-1">{item.title}</p>
                             {renderBadge?.(item)}
                           </div>
-                          <p className="mt-0.5 text-[11px] text-slate-500">{getCoachName(item)}</p>
+                          <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+                            {getCoachName(item, coaches) || '강사 미확인'}
+                          </p>
                           {summary && (
                             <p className="mt-1 text-xs text-slate-600 line-clamp-1">{summary.replace(/\n/g, ' ')}</p>
                           )}
@@ -193,7 +200,12 @@ export function WeeklyBestSessionPicker<T extends WeeklyBestPickerItem>({
             <div className="border-b border-slate-200 px-4 py-2">
               <p className="text-[10px] font-black uppercase text-slate-400">미리보기</p>
               {selectedItem && (
-                <p className="mt-0.5 truncate text-xs font-bold text-slate-700">{selectedItem.title}</p>
+                <>
+                  <p className="mt-0.5 truncate text-xs font-bold text-slate-700">{selectedItem.title}</p>
+                  <p className="truncate text-[11px] font-semibold text-slate-500">
+                    {getCoachName(selectedItem, coaches) || '강사 미확인'}
+                  </p>
+                </>
               )}
             </div>
             <div className="flex-1 overflow-y-auto p-4 text-sm text-slate-700 whitespace-pre-wrap">

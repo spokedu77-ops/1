@@ -13,12 +13,17 @@ import type { FeedbackFields } from '@/app/lib/feedbackValidation';
 import { sessionFileDisplayName } from '@/app/lib/feedbackValidation';
 import {
   CENTER_SESSION_TYPE_VALUES,
+  PRIVATE_TUTORING_SESSION_TYPE_VALUES,
   isCenterSessionType,
 } from '@/app/admin/classes/lib/sessionTypeCategory';
 import {
   formatFeedbackFieldsForDisplay,
+  formatWeeklyBestBylineFromSession,
   formatWeeklyBestFeedbackText,
+  nestedRecordName,
+  normalizeSessionPhotoUrls,
 } from '@/app/lib/weeklyBestFeedback';
+import { fetchWeeklyBestPhotoByline } from '@/app/lib/weeklyBestPhotoCredit';
 import { WeeklyBestSessionPicker } from '@/app/admin/notice/WeeklyBestSessionPicker';
 
 const CATEGORIES = [
@@ -81,6 +86,7 @@ export interface WeeklyBest {
   content: string | null;
   lesson_plan_session_id: string | null;
   photo_urls: string[];
+  photo_session_id?: string | null;
   feedback_session_id: string | null;
   feedback_note: string | null;
   created_at: string;
@@ -100,6 +106,15 @@ type WbFeedbackSession = {
 
 type WbFeedbackScope = 'private' | 'center';
 
+type WbPhotoSession = {
+  id: string;
+  title: string;
+  start_at: string;
+  created_by: string;
+  photo_url?: unknown;
+  users?: { name?: string } | { name?: string }[] | null;
+};
+
 type WbLessonSession = {
   id: string;
   title: string;
@@ -111,12 +126,17 @@ type WbLessonSession = {
 
 type MainTab = 'notice' | 'weekly_best';
 
+const SESSION_CREDIT_SELECT = 'title, start_at, created_by, users:created_by(name)';
+
 function WeeklyBestCard({
   row,
   onDelete,
   onEdit,
   detailLesson,
+  detailLessonByline,
+  detailPhotoByline,
   detailFeedback,
+  detailFeedbackByline,
   isExpanded,
   onToggle,
 }: {
@@ -124,7 +144,10 @@ function WeeklyBestCard({
   onDelete: (id: string) => void;
   onEdit?: (row: WeeklyBest) => void;
   detailLesson: string | null;
+  detailLessonByline: string | null;
+  detailPhotoByline: string | null;
   detailFeedback: string | null;
+  detailFeedbackByline: string | null;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
@@ -152,12 +175,18 @@ function WeeklyBestCard({
           )}
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 지도안</h4>
+            {detailLessonByline ? (
+              <p className="mb-2 text-xs font-bold text-slate-600">{detailLessonByline}</p>
+            ) : null}
             <div className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl min-h-[80px]">
               {row.lesson_plan_session_id ? (detailLesson ?? '로딩 중...') : '— 없음'}
             </div>
           </section>
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 포토</h4>
+            {detailPhotoByline ? (
+              <p className="mb-2 text-xs font-bold text-slate-600">{detailPhotoByline}</p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {row.photo_urls?.length ? row.photo_urls.map((url, i) => (
                 <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-24 h-24 rounded-lg overflow-hidden border border-slate-200 cursor-pointer">
@@ -168,6 +197,9 @@ function WeeklyBestCard({
           </section>
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 피드백</h4>
+            {detailFeedbackByline ? (
+              <p className="mb-2 text-xs font-bold text-slate-600">{detailFeedbackByline}</p>
+            ) : null}
             <div className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl min-h-[80px]">
               {row.feedback_session_id || row.feedback_note ? (detailFeedback ?? '로딩 중...') : '— 없음'}
             </div>
@@ -214,28 +246,47 @@ function WeeklyBestList({
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detailLesson, setDetailLesson] = useState<string | null>(null);
+  const [detailLessonByline, setDetailLessonByline] = useState<string | null>(null);
+  const [detailPhotoByline, setDetailPhotoByline] = useState<string | null>(null);
   const [detailFeedback, setDetailFeedback] = useState<string | null>(null);
+  const [detailFeedbackByline, setDetailFeedbackByline] = useState<string | null>(null);
 
   useEffect(() => {
     setDetailLesson(null);
+    setDetailLessonByline(null);
+    setDetailPhotoByline(null);
     setDetailFeedback(null);
+    setDetailFeedbackByline(null);
     if (!supabase || !expandedId) return;
     const row = list.find((r) => r.id === expandedId);
     if (!row) return;
-    if (!row.lesson_plan_session_id && !row.feedback_session_id && !row.feedback_note) return;
+    if (!row.lesson_plan_session_id && !row.photo_session_id && !(row.photo_urls?.length) && !row.feedback_session_id && !row.feedback_note) return;
     (async () => {
-      const [lpRes, fbRes] = await Promise.all([
+      const [lpRes, fbRes, lessonSess, photoByline, feedbackSess] = await Promise.all([
         row.lesson_plan_session_id
           ? supabase.from('lesson_plans').select('content').eq('session_id', row.lesson_plan_session_id).maybeSingle()
           : Promise.resolve({ data: null }),
         row.feedback_session_id
           ? supabase.from('sessions').select('feedback_fields, students_text, file_url, session_type').eq('id', row.feedback_session_id).maybeSingle()
           : Promise.resolve({ data: null }),
+        row.lesson_plan_session_id
+          ? supabase.from('sessions').select(SESSION_CREDIT_SELECT).eq('id', row.lesson_plan_session_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        fetchWeeklyBestPhotoByline(supabase, {
+          photoSessionId: row.photo_session_id,
+          photoUrls: row.photo_urls,
+        }),
+        row.feedback_session_id
+          ? supabase.from('sessions').select(SESSION_CREDIT_SELECT).eq('id', row.feedback_session_id).maybeSingle()
+          : Promise.resolve({ data: null }),
       ]);
       setDetailLesson(lpRes.data?.content ?? null);
+      setDetailLessonByline(formatWeeklyBestBylineFromSession(lessonSess.data) || null);
+      setDetailPhotoByline(photoByline);
       setDetailFeedback(
         formatWeeklyBestFeedbackText(row.feedback_note, fbRes.data as WbFeedbackSession | null),
       );
+      setDetailFeedbackByline(formatWeeklyBestBylineFromSession(feedbackSess.data) || null);
     })();
   }, [supabase, expandedId, list]);
 
@@ -263,7 +314,10 @@ function WeeklyBestList({
           onDelete={onDelete}
           onEdit={onEdit}
           detailLesson={expandedId === row.id ? detailLesson : null}
+          detailLessonByline={expandedId === row.id ? detailLessonByline : null}
+          detailPhotoByline={expandedId === row.id ? detailPhotoByline : null}
           detailFeedback={expandedId === row.id ? detailFeedback : null}
+          detailFeedbackByline={expandedId === row.id ? detailFeedbackByline : null}
           isExpanded={expandedId === row.id}
           onToggle={() => setExpandedId(expandedId === row.id ? null : row.id)}
         />
@@ -336,22 +390,34 @@ function WeeklyBestCardWithState({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [detailLesson, setDetailLesson] = useState<string | null>(null);
+  const [detailLessonByline, setDetailLessonByline] = useState<string | null>(null);
+  const [detailPhotoByline, setDetailPhotoByline] = useState<string | null>(null);
   const [detailFeedback, setDetailFeedback] = useState<string | null>(null);
+  const [detailFeedbackByline, setDetailFeedbackByline] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabase || !isExpanded) return;
-    if (!row.lesson_plan_session_id && !row.feedback_session_id && !row.feedback_note) return;
+    if (!row.lesson_plan_session_id && !row.photo_session_id && !(row.photo_urls?.length) && !row.feedback_session_id && !row.feedback_note) return;
     (async () => {
-      const [lpRes, fbRes] = await Promise.all([
+      const [lpRes, fbRes, lessonSess, photoByline, feedbackSess] = await Promise.all([
         row.lesson_plan_session_id ? supabase.from('lesson_plans').select('content').eq('session_id', row.lesson_plan_session_id).maybeSingle() : Promise.resolve({ data: null }),
         row.feedback_session_id ? supabase.from('sessions').select('feedback_fields, students_text, file_url, session_type').eq('id', row.feedback_session_id).maybeSingle() : Promise.resolve({ data: null }),
+        row.lesson_plan_session_id ? supabase.from('sessions').select(SESSION_CREDIT_SELECT).eq('id', row.lesson_plan_session_id).maybeSingle() : Promise.resolve({ data: null }),
+        fetchWeeklyBestPhotoByline(supabase, {
+          photoSessionId: row.photo_session_id,
+          photoUrls: row.photo_urls,
+        }),
+        row.feedback_session_id ? supabase.from('sessions').select(SESSION_CREDIT_SELECT).eq('id', row.feedback_session_id).maybeSingle() : Promise.resolve({ data: null }),
       ]);
       setDetailLesson(lpRes.data?.content ?? null);
+      setDetailLessonByline(formatWeeklyBestBylineFromSession(lessonSess.data) || null);
+      setDetailPhotoByline(photoByline);
       setDetailFeedback(
         formatWeeklyBestFeedbackText(row.feedback_note, fbRes.data as WbFeedbackSession | null),
       );
+      setDetailFeedbackByline(formatWeeklyBestBylineFromSession(feedbackSess.data) || null);
     })();
-  }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.feedback_session_id, row.feedback_note]);
+  }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.photo_session_id, row.photo_urls, row.feedback_session_id, row.feedback_note]);
 
   return (
     <WeeklyBestCard
@@ -359,7 +425,10 @@ function WeeklyBestCardWithState({
       onDelete={onDelete}
       onEdit={onEdit}
       detailLesson={detailLesson}
+      detailLessonByline={detailLessonByline}
+      detailPhotoByline={detailPhotoByline}
       detailFeedback={detailFeedback}
+      detailFeedbackByline={detailFeedbackByline}
       isExpanded={isExpanded}
       onToggle={() => setIsExpanded((v) => !v)}
     />
@@ -395,6 +464,7 @@ export default function NoticePage() {
     content: string;
     lesson_plan_session_id: string;
     photo_urls: string[];
+    photo_session_id: string;
     feedback_session_id: string;
     feedback_note: string;
   }>({
@@ -402,6 +472,7 @@ export default function NoticePage() {
     content: '',
     lesson_plan_session_id: '',
     photo_urls: [],
+    photo_session_id: '',
     feedback_session_id: '',
     feedback_note: '',
   });
@@ -409,6 +480,7 @@ export default function NoticePage() {
   const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([]);
   const [wbCoachFilter, setWbCoachFilter] = useState('all');
   const [lessonSessions, setLessonSessions] = useState<WbLessonSession[]>([]);
+  const [photoSessions, setPhotoSessions] = useState<WbPhotoSession[]>([]);
   const [feedbackSessions, setFeedbackSessions] = useState<WbFeedbackSession[]>([]);
   const [wbStepLoading, setWbStepLoading] = useState(false);
   const [wbSaving, setWbSaving] = useState(false);
@@ -497,7 +569,7 @@ export default function NoticePage() {
       const { start, end } = getWeeklyBestDateRange();
       let q = supabase
         .from('sessions')
-        .select('id, title, start_at, created_by, lesson_plans(content), users!created_by(id, name)')
+        .select('id, title, start_at, created_by, lesson_plans(content), users:created_by(id, name)')
         .gte('start_at', start.toISOString())
         .lte('start_at', end.toISOString())
         .order('start_at', { ascending: false });
@@ -525,7 +597,7 @@ export default function NoticePage() {
       const { start, end } = getWeeklyBestDateRange();
       let q = supabase
         .from('sessions')
-        .select('id, title, start_at, created_by, feedback_fields, students_text, file_url, session_type, users!created_by(id, name)')
+        .select('id, title, start_at, created_by, feedback_fields, students_text, file_url, session_type, users:created_by(id, name)')
         .gte('start_at', start.toISOString())
         .lte('start_at', end.toISOString())
         .order('start_at', { ascending: false });
@@ -533,7 +605,7 @@ export default function NoticePage() {
       if (wbFeedbackScope === 'center') {
         q = q.in('session_type', [...CENTER_SESSION_TYPE_VALUES]);
       } else {
-        q = q.in('session_type', ['one_day', 'one_day_private', 'regular_private']);
+        q = q.in('session_type', [...PRIVATE_TUTORING_SESSION_TYPE_VALUES]);
       }
       const { data, error } = await q;
       if (error) throw error;
@@ -551,6 +623,29 @@ export default function NoticePage() {
       setWbStepLoading(false);
     }
   }, [supabase, getWeeklyBestDateRange, wbCoachFilter, wbFeedbackScope]);
+
+  const fetchPhotoCandidates = useCallback(async () => {
+    if (!supabase) return;
+    setWbStepLoading(true);
+    try {
+      const { start, end } = getWeeklyBestDateRange();
+      let q = supabase
+        .from('sessions')
+        .select('id, title, start_at, created_by, photo_url, users:created_by(id, name)')
+        .gte('start_at', start.toISOString())
+        .lte('start_at', end.toISOString())
+        .order('start_at', { ascending: false });
+      if (wbCoachFilter !== 'all') q = q.eq('created_by', wbCoachFilter);
+      const { data, error } = await q;
+      if (error) throw error;
+      setPhotoSessions((data ?? []) as WbPhotoSession[]);
+    } catch (err) {
+      devLogger.error('[notice] fetch photo candidates error:', err);
+      toast.error(err instanceof Error ? err.message : '포토 후보를 불러오지 못했습니다.');
+    } finally {
+      setWbStepLoading(false);
+    }
+  }, [supabase, getWeeklyBestDateRange, wbCoachFilter]);
 
   useEffect(() => {
     if (showWeeklyBestWizard && wizardStep === 1 && coaches.length === 0 && supabase) {
@@ -573,6 +668,10 @@ export default function NoticePage() {
   useEffect(() => {
     if (showWeeklyBestWizard && wizardStep === 2) fetchLessonCandidates();
   }, [showWeeklyBestWizard, wizardStep, fetchLessonCandidates]);
+
+  useEffect(() => {
+    if (showWeeklyBestWizard && wizardStep === 3) fetchPhotoCandidates();
+  }, [showWeeklyBestWizard, wizardStep, fetchPhotoCandidates]);
 
   useEffect(() => {
     if (showWeeklyBestWizard && wizardStep === 4) fetchFeedbackCandidates();
@@ -598,6 +697,7 @@ export default function NoticePage() {
       content: '',
       lesson_plan_session_id: '',
       photo_urls: [],
+      photo_session_id: '',
       feedback_session_id: '',
       feedback_note: '',
     });
@@ -644,6 +744,7 @@ export default function NoticePage() {
       content: row.content ?? '',
       lesson_plan_session_id: row.lesson_plan_session_id ?? '',
       photo_urls: [...(row.photo_urls ?? [])],
+      photo_session_id: row.photo_session_id ?? '',
       feedback_session_id: row.feedback_session_id ?? '',
       feedback_note: row.feedback_note ?? '',
     });
@@ -685,6 +786,10 @@ export default function NoticePage() {
       toast.error('제목을 입력해주세요.');
       return;
     }
+    if (wbForm.photo_urls.length > 0 && !wbForm.photo_session_id) {
+      toast.error('사진 강사(수업)를 선택해 주세요. 그래야 이름이 표시됩니다.');
+      return;
+    }
     if (wbFeedbackScope === 'center') {
       if (!wbForm.feedback_session_id) {
         toast.error('센터 수업을 선택해주세요.');
@@ -702,6 +807,7 @@ export default function NoticePage() {
         content: wbForm.content || null,
         lesson_plan_session_id: wbForm.lesson_plan_session_id || null,
         photo_urls: wbForm.photo_urls,
+        photo_session_id: wbForm.photo_session_id || null,
         feedback_session_id: wbForm.feedback_session_id || null,
         feedback_note:
           wbFeedbackScope === 'center' && wbForm.feedback_note.trim()
@@ -1208,7 +1314,7 @@ export default function NoticePage() {
 
       {showWeeklyBestWizard && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-md">
-          <div className={`bg-white w-full max-h-[90vh] overflow-y-auto rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col ${wizardStep === 2 || wizardStep === 4 ? 'max-w-2xl' : 'max-w-lg'}`}>
+          <div className={`bg-white w-full max-h-[90vh] overflow-y-auto rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col ${wizardStep === 2 || wizardStep === 3 || wizardStep === 4 ? 'max-w-2xl' : 'max-w-lg'}`}>
             <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
               <h3 className="text-lg font-black text-slate-900">
                 {editingWeeklyBestId ? '주간베스트 수정' : '주간베스트 작성'} ({wizardStep}/4)
@@ -1259,7 +1365,7 @@ export default function NoticePage() {
                     anchorDate={wizardOpenDate}
                     onAnchorDateChange={setWizardOpenDate}
                     dateRangeLabel={wbDateRangeLabel}
-                    getSearchText={(s) => `${s.title} ${(s.users as { name?: string })?.name ?? ''} ${getLessonPlanContent(s)}`}
+                    getSearchText={(s) => `${s.title} ${nestedRecordName(s.users)} ${getLessonPlanContent(s)}`}
                     getSummary={(s) => getLessonPlanContent(s)}
                     renderPreview={(item) => (item ? getLessonPlanContent(item) || '— 내용 없음' : null)}
                   />
@@ -1271,10 +1377,51 @@ export default function NoticePage() {
               )}
               {wizardStep === 3 && (
                 <>
-                  <p className="text-[11px] text-slate-500">사진을 업로드하세요. (없으면 없음으로 넘어갈 수 있습니다)</p>
+                  <p className="text-[11px] text-slate-500">
+                    누구 사진인지 수업을 먼저 고르세요. 수업 사진이 있으면 가져오고, 없어도 강사명이 붙습니다.
+                  </p>
+                  <WeeklyBestSessionPicker
+                    items={photoSessions}
+                    selectedId={wbForm.photo_session_id}
+                    onSelect={(id) => {
+                      const s = photoSessions.find((row) => row.id === id);
+                      const photos = s ? normalizeSessionPhotoUrls(s.photo_url) : [];
+                      setWbForm((p) => ({
+                        ...p,
+                        photo_session_id: id,
+                        photo_urls: photos.length > 0 ? photos : id ? p.photo_urls : p.photo_urls,
+                      }));
+                    }}
+                    loading={wbStepLoading}
+                    emptyMessage="해당 기간에 수업이 없습니다."
+                    coaches={coaches}
+                    coachFilter={wbCoachFilter}
+                    onCoachFilterChange={setWbCoachFilter}
+                    anchorDate={wizardOpenDate}
+                    onAnchorDateChange={setWizardOpenDate}
+                    dateRangeLabel={wbDateRangeLabel}
+                    getSearchText={(s) => `${s.title} ${nestedRecordName(s.users)}`}
+                    getSummary={(s) => {
+                      const n = normalizeSessionPhotoUrls(s.photo_url).length;
+                      return n > 0 ? `사진 ${n}장` : '';
+                    }}
+                    renderPreview={(item) => {
+                      if (!item) return null;
+                      const photos = normalizeSessionPhotoUrls(item.photo_url);
+                      if (photos.length === 0) return '— 사진 없음';
+                      return (
+                        <div className="flex flex-wrap gap-2">
+                          {photos.map((url) => (
+                            <img key={url} src={url} alt="" className="h-20 w-20 rounded-lg object-cover border border-slate-200" />
+                          ))}
+                        </div>
+                      );
+                    }}
+                  />
+                  <p className="text-[11px] text-slate-500">세션에 없는 사진을 추가로 올릴 수도 있습니다.</p>
                   <label
                     htmlFor="weekly-best-wizard-photo"
-                    className="w-full min-h-[120px] border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all cursor-pointer touch-manipulation"
+                    className="w-full min-h-[72px] border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all cursor-pointer touch-manipulation py-4"
                   >
                     <input
                       id="weekly-best-wizard-photo"
@@ -1285,8 +1432,8 @@ export default function NoticePage() {
                       className="sr-only"
                       onChange={handleWbPhotoUpload}
                     />
-                    <Camera size={32} />
-                    <span className="text-sm font-bold">사진 선택</span>
+                    <Camera size={24} />
+                    <span className="text-sm font-bold">추가 사진 업로드</span>
                   </label>
                   {wbForm.photo_urls.length > 0 && (
                     <div className="flex flex-wrap gap-2">
@@ -1304,7 +1451,19 @@ export default function NoticePage() {
                   )}
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setWizardStep(2)} className="flex-1 min-h-[48px] bg-slate-100 text-slate-700 rounded-2xl font-bold">이전</button>
-                    <button type="button" onClick={() => setWizardStep(4)} className="flex-1 min-h-[48px] bg-slate-900 text-white rounded-2xl font-bold">다음: 베스트 피드백 선택</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (wbForm.photo_urls.length > 0 && !wbForm.photo_session_id) {
+                          toast.error('사진 강사(수업)를 선택해 주세요. 그래야 이름이 표시됩니다.');
+                          return;
+                        }
+                        setWizardStep(4);
+                      }}
+                      className="flex-1 min-h-[48px] bg-slate-900 text-white rounded-2xl font-bold"
+                    >
+                      다음: 베스트 피드백 선택
+                    </button>
                   </div>
                 </>
               )}
@@ -1362,7 +1521,7 @@ export default function NoticePage() {
                     anchorDate={wizardOpenDate}
                     onAnchorDateChange={setWizardOpenDate}
                     dateRangeLabel={wbDateRangeLabel}
-                    getSearchText={(s) => `${s.title} ${(s.users as { name?: string })?.name ?? ''} ${getFeedbackSessionPreview(s)}`}
+                    getSearchText={(s) => `${s.title} ${nestedRecordName(s.users)} ${getFeedbackSessionPreview(s)}`}
                     getSummary={(s) => getFeedbackSessionPreview(s)}
                     renderPreview={(item) => (item ? getFeedbackPreviewFull(item) : null)}
                   />

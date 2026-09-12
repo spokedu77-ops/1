@@ -16,6 +16,7 @@ interface WeeklyBest {
   content: string | null;
   lesson_plan_session_id: string | null;
   photo_urls: string[];
+  photo_session_id?: string | null;
   feedback_session_id: string | null;
   feedback_note: string | null;
   created_at: string;
@@ -71,16 +72,22 @@ function TeacherWeeklyBestCard({
   supabase: ReturnType<typeof getSupabaseBrowserClient> | null;
 }) {
   const [detailLesson, setDetailLesson] = useState<string | null | undefined>(undefined);
+  const [detailLessonByline, setDetailLessonByline] = useState<string | null>(null);
+  const [detailPhotoByline, setDetailPhotoByline] = useState<string | null>(null);
   const [detailFeedback, setDetailFeedback] = useState<string | null | undefined>(undefined);
+  const [detailFeedbackByline, setDetailFeedbackByline] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabase || !isExpanded) return;
-    if (!row.lesson_plan_session_id && !row.feedback_session_id && !row.feedback_note) return;
+    if (!row.lesson_plan_session_id && !row.photo_session_id && !(row.photo_urls?.length) && !row.feedback_session_id && !row.feedback_note) return;
     (async () => {
       setDetailError(null);
       setDetailLesson(row.lesson_plan_session_id ? undefined : null);
+      setDetailLessonByline(null);
+      setDetailPhotoByline(null);
       setDetailFeedback(row.feedback_session_id || row.feedback_note ? undefined : null);
+      setDetailFeedbackByline(null);
 
       try {
         const res = await fetch('/api/teacher/weekly-best-detail', {
@@ -100,16 +107,22 @@ function TeacherWeeklyBestCard({
         const json = (await res.json().catch(() => null)) as
           | {
               lessonPlanContent?: string | null;
+              lessonByline?: string | null;
+              photoByline?: string | null;
               feedback?: {
                 displayText?: string | null;
+                byline?: string | null;
               } | null;
             }
           | null;
 
         setDetailLesson(json?.lessonPlanContent ?? null);
+        setDetailLessonByline(typeof json?.lessonByline === 'string' ? json.lessonByline : null);
+        setDetailPhotoByline(typeof json?.photoByline === 'string' ? json.photoByline : null);
         const displayText =
           typeof json?.feedback?.displayText === 'string' ? json.feedback.displayText.trim() : '';
         setDetailFeedback(displayText || null);
+        setDetailFeedbackByline(typeof json?.feedback?.byline === 'string' ? json.feedback.byline : null);
       } catch (err) {
         devLogger.error('[teacher weekly-best detail fetch]', err);
         setDetailError('네트워크 오류로 불러오지 못했습니다.');
@@ -117,7 +130,7 @@ function TeacherWeeklyBestCard({
         setDetailFeedback(null);
       }
     })();
-  }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.feedback_session_id, row.feedback_note]);
+  }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.photo_session_id, row.photo_urls, row.feedback_session_id, row.feedback_note]);
 
   return (
     <div className="bg-white rounded-[28px] transition-all duration-300 border overflow-hidden shadow-sm hover:border-amber-100 border-amber-100/80">
@@ -145,6 +158,9 @@ function TeacherWeeklyBestCard({
           )}
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 지도안</h4>
+            {detailLessonByline ? (
+              <p className="mb-2 text-xs font-bold text-slate-600">{detailLessonByline}</p>
+            ) : null}
             <div className="text-[14px] text-slate-600 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-100 min-h-[60px]">
               {detailError
                 ? detailError
@@ -155,6 +171,9 @@ function TeacherWeeklyBestCard({
           </section>
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 포토</h4>
+            {detailPhotoByline ? (
+              <p className="mb-2 text-xs font-bold text-slate-600">{detailPhotoByline}</p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {row.photo_urls?.length ? row.photo_urls.map((url, i) => (
                 <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-lg overflow-hidden border border-slate-200 cursor-pointer">
@@ -165,6 +184,9 @@ function TeacherWeeklyBestCard({
           </section>
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 피드백</h4>
+            {detailFeedbackByline ? (
+              <p className="mb-2 text-xs font-bold text-slate-600">{detailFeedbackByline}</p>
+            ) : null}
             <div className="text-[14px] text-slate-600 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-100 min-h-[60px]">
               {detailError
                 ? detailError

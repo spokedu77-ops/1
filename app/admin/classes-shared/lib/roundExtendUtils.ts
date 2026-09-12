@@ -4,6 +4,7 @@ import { omitSessionIdentityForInsertClone } from './sessionInsertClone';
 import { resolvePlannedTotal, resolvePlannedTotalAfterExtend } from './plannedRoundTotal';
 import { formatRoundDisplay } from './roundFields';
 import { reindexGroupRounds } from './reindexGroupRounds';
+import { buildExtendedStartIsos } from './sessionIntervalPattern';
 
 function formatErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -63,12 +64,10 @@ export async function extendClass(
     }
 
     const last = activeSessions[activeSessions.length - 1];
-
-    const lastStart = new Date(last.start_at);
     const first = activeSessions[0];
     const second = activeSessions[1];
 
-    // 간격 추론: 동일 요일 패턴이라고 가정하고 평균 간격 사용 (기본 7일)
+    // 매주 하루: 첫 간격(기본 7일). 주 2회는 buildExtendedStartIsos가 요일 패턴을 씀.
     let dayInterval = 7;
     if (second) {
       const firstStart = new Date(first.start_at).getTime();
@@ -76,6 +75,13 @@ export async function extendClass(
       const diffDays = Math.round((secondStart - firstStart) / (1000 * 60 * 60 * 24));
       if (diffDays > 0) dayInterval = diffDays;
     }
+    const fallbackGapMs = dayInterval * 24 * 60 * 60 * 1000;
+    const startIsos = buildExtendedStartIsos(
+      last.start_at,
+      activeSessions.map((s: { start_at: string }) => String(s.start_at)),
+      addCount,
+      fallbackGapMs
+    );
 
     const newTotal = resolvePlannedTotalAfterExtend(sessions, addCount);
     const planned = resolvePlannedTotal(sessions);
@@ -111,8 +117,7 @@ export async function extendClass(
     const insertBaseSafe = omitSessionIdentityForInsertClone(insertBase as Record<string, unknown>);
 
     for (let i = 1; i <= addCount; i++) {
-      const start = new Date(lastStart);
-      start.setDate(start.getDate() + dayInterval * i);
+      const start = new Date(startIsos[i - 1]!);
       const end = new Date(start);
       end.setMinutes(end.getMinutes() + baseDuration);
 

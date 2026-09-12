@@ -9,7 +9,8 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { requireTeacherMaterialsAccess } from '@/app/lib/server/teacherAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { formatWeeklyBestFeedbackText } from '@/app/lib/weeklyBestFeedback';
+import { formatWeeklyBestBylineFromSession, formatWeeklyBestFeedbackText } from '@/app/lib/weeklyBestFeedback';
+import { fetchWeeklyBestPhotoByline } from '@/app/lib/weeklyBestPhotoCredit';
 
 export const runtime = 'nodejs';
 
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     const svc = getServiceSupabase();
     const { data: wb, error: wbErr } = await svc
       .from('weekly_best')
-      .select('lesson_plan_session_id, feedback_session_id, feedback_note')
+      .select('*')
       .eq('id', weeklyBestId)
       .maybeSingle();
 
@@ -53,17 +54,14 @@ export async function POST(req: Request) {
     }
 
     const lessonPlanSessionId = wb.lesson_plan_session_id as string | null;
+    const photoSessionId =
+      wb && typeof wb === 'object' && 'photo_session_id' in wb && typeof wb.photo_session_id === 'string'
+        ? wb.photo_session_id
+        : null;
     const feedbackSessionId = wb.feedback_session_id as string | null;
 
-    if (!lessonPlanSessionId && !feedbackSessionId) {
-      const noteOnly = typeof wb.feedback_note === 'string' ? wb.feedback_note.trim() : '';
-      return NextResponse.json(
-        { lessonPlanContent: null, feedback: noteOnly ? { displayText: noteOnly } : null },
-        { status: 200 },
-      );
-    }
-
-    const [lpRes, fbRes] = await Promise.all([
+    const sessionCreditSelect = 'title, start_at, users:created_by(name)';
+    const [lpRes, fbRes, lessonSessRes, photoByline, feedbackSessRes] = await Promise.all([
       lessonPlanSessionId
         ? svc.from('lesson_plans').select('content').eq('session_id', lessonPlanSessionId).maybeSingle()
         : Promise.resolve({ data: null, error: null as { message: string } | null }),
@@ -73,6 +71,18 @@ export async function POST(req: Request) {
             .select('feedback_fields, students_text, file_url, session_type')
             .eq('id', feedbackSessionId)
             .maybeSingle()
+        : Promise.resolve({ data: null, error: null as { message: string } | null }),
+      lessonPlanSessionId
+        ? svc.from('sessions').select(sessionCreditSelect).eq('id', lessonPlanSessionId).maybeSingle()
+        : Promise.resolve({ data: null, error: null as { message: string } | null }),
+      fetchWeeklyBestPhotoByline(svc, {
+        photoSessionId,
+        photoUrls: Array.isArray((wb as { photo_urls?: unknown }).photo_urls)
+          ? ((wb as { photo_urls: unknown[] }).photo_urls.filter((u): u is string => typeof u === 'string'))
+          : [],
+      }),
+      feedbackSessionId
+        ? svc.from('sessions').select(sessionCreditSelect).eq('id', feedbackSessionId).maybeSingle()
         : Promise.resolve({ data: null, error: null as { message: string } | null }),
     ]);
 
@@ -85,6 +95,12 @@ export async function POST(req: Request) {
 
     const lpData = lpRes && 'data' in lpRes ? lpRes.data : null;
     const fbData = fbRes && 'data' in fbRes ? (fbRes.data as FeedbackRow | null) : null;
+    const lessonByline = formatWeeklyBestBylineFromSession(
+      lessonSessRes && 'data' in lessonSessRes ? lessonSessRes.data : null,
+    );
+    const feedbackByline = formatWeeklyBestBylineFromSession(
+      feedbackSessRes && 'data' in feedbackSessRes ? feedbackSessRes.data : null,
+    );
 
     const feedbackNote = typeof wb.feedback_note === 'string' ? wb.feedback_note : null;
     const displayText = formatWeeklyBestFeedbackText(feedbackNote, fbData);
@@ -94,10 +110,13 @@ export async function POST(req: Request) {
         lessonPlanContent: lpData && typeof lpData === 'object' && 'content' in lpData
           ? (lpData as { content: string | null }).content ?? null
           : null,
+        lessonByline: lessonByline || null,
+        photoByline: photoByline || null,
         feedback: fbData || feedbackNote
           ? {
               ...fbData,
               displayText,
+              byline: feedbackByline || null,
             }
           : null,
       },

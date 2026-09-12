@@ -966,7 +966,7 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
   const championId = bracket.rounds.at(-1)?.[0]?.winnerId ?? null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center gap-4 overflow-hidden px-4 py-5 sm:px-6 sm:py-6">
+    <div className="flex h-full min-h-0 flex-col items-center gap-4 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
       <StudentModeNote usingSample={usingSample} />
       {!students.length ? <EmptyStudentsForTools /> : null}
       <div className="flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-3">
@@ -1203,7 +1203,7 @@ export default function ClassToolsView() {
   const usesClassRoster = tab === 'picker' || tab === 'teams' || tab === 'order' || tab === 'tournament' || tab === 'ladder';
   const usingSample = false;
   return (
-    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
+    <div className="flex h-full min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
       <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3">
           <div className="min-w-0">
@@ -1251,7 +1251,7 @@ export default function ClassToolsView() {
           </div>
         ) : null}
         {!usesClassRoster ? (
-          <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {tab === 'stopwatch' && <StopwatchTab />}
             {tab === 'return-timer' && <ReturnTimerTab />}
             {tab === 'scoreboard' && <ScoreboardTab />}
@@ -1270,7 +1270,7 @@ export default function ClassToolsView() {
           </div>
         ) : null}
         {usesClassRoster ? (
-          <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {hasSessionContext && sessionContext && !selectedStudents.length ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
                 <p className="text-[16px] font-semibold text-slate-900">출석 체크된 학생이 없습니다.</p>

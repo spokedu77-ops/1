@@ -5,6 +5,7 @@
 type SessionTypeCategory =
   | "private_one"
   | "private"
+  | "group"
   | "center"
   | "one_day_center"
   | "special_lecture"
@@ -17,6 +18,14 @@ export const CENTER_SESSION_TYPE_VALUES = [
   "special_lecture",
 ] as const;
 
+/** 과외 검수·수업안 탭에서 센터와 구분하는 DB 값 */
+export const PRIVATE_TUTORING_SESSION_TYPE_VALUES = [
+  "one_day",
+  "one_day_private",
+  "regular_private",
+  "regular_group",
+] as const;
+
 export type CenterSessionTypeValue = (typeof CENTER_SESSION_TYPE_VALUES)[number];
 
 export function isCenterSessionType(type: string | null | undefined): boolean {
@@ -24,11 +33,16 @@ export function isCenterSessionType(type: string | null | undefined): boolean {
   return (CENTER_SESSION_TYPE_VALUES as readonly string[]).includes(t);
 }
 
+export function isRegularGroupSessionType(type: string | null | undefined): boolean {
+  return String(type ?? "").trim() === "regular_group";
+}
+
 function getSessionTypeCategory(type: string | null | undefined): SessionTypeCategory {
   const t = String(type ?? "").trim();
   if (!t) return "unknown";
   if (t === "one_day_private" || t === "one_day") return "private_one";
   if (t === "regular_private") return "private";
+  if (t === "regular_group") return "group";
   if (t === "regular_center") return "center";
   if (t === "one_day_center") return "one_day_center";
   if (t === "special_lecture") return "special_lecture";
@@ -45,13 +59,15 @@ export const SESSION_TYPE_OPTIONS: {
   value:
     | "one_day_private"
     | "regular_private"
+    | "regular_group"
     | "regular_center"
     | "one_day_center"
     | "special_lecture";
   label: string;
 }[] = [
   { value: "one_day_private", label: "과외 1회차 수업" },
-  { value: "regular_private", label: "과외 수업" },
+  { value: "regular_private", label: "과외 (개인)" },
+  { value: "regular_group", label: "과외 (그룹)" },
   { value: "regular_center", label: "센터 수업" },
   { value: "one_day_center", label: "원데이 (센터)" },
   { value: "special_lecture", label: "특강" },
@@ -68,6 +84,8 @@ export function monthRowToneClassesForSessionType(type: string | null | undefine
       return "bg-teal-200 border-2 border-teal-600 shadow-sm";
     case "private":
       return "bg-emerald-200 border-2 border-emerald-600 shadow-sm";
+    case "group":
+      return "bg-lime-200 border-2 border-lime-600 shadow-sm";
     case "center":
       return "bg-blue-200 border-2 border-blue-600 shadow-sm";
     case "one_day_center":
@@ -87,6 +105,8 @@ export function themeColorHexForSessionType(type: string | null | undefined): st
       return "#0f7663";
     case "private":
       return "#047857";
+    case "group":
+      return "#4d7c0f";
     case "center":
       return "#1d4ed8";
     case "one_day_center":

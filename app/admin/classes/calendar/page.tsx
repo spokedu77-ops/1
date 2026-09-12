@@ -34,6 +34,7 @@ export default function ClassManagementCalendar() {
     allEvents,
     filteredEvents,
     teacherList,
+    sessionsFetchNotice,
     fetchSessions,
     filterTeacher,
     setFilterTeacher,
@@ -303,6 +304,40 @@ export default function ClassManagementCalendar() {
 
         <div ref={calendarScrollAreaRef} className="flex-1 min-h-0 overflow-auto bg-slate-50">
           <div className="p-3 w-full max-w-[1600px] mx-auto min-w-0">
+            {sessionsFetchNotice?.type === 'error' ? (
+              <div
+                role="alert"
+                className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2"
+              >
+                <p className="text-xs font-bold text-rose-900">
+                  수업 일정을 불러오지 못했습니다. 빈 달이 아니라 조회가 실패한 상태입니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void fetchSessions()}
+                  className="shrink-0 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-black text-rose-800"
+                >
+                  다시 불러오기
+                </button>
+              </div>
+            ) : null}
+            {sessionsFetchNotice?.type === 'truncated' ? (
+              <div
+                role="status"
+                className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2"
+              >
+                <p className="text-xs font-bold text-amber-950">
+                  일부 일정만 불러왔습니다. 뒤쪽 달이 빠져 있을 수 있습니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void fetchSessions()}
+                  className="shrink-0 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-black text-amber-900"
+                >
+                  다시 불러오기
+                </button>
+              </div>
+            ) : null}
             <MobileThreeDayView
               days={mobileThreeDays}
               eventsByDay={eventsByDay}

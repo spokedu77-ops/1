@@ -14,6 +14,65 @@ export function normalizeSessionFileUrls(fileUrl: unknown): string[] {
   return fileUrl.filter((u): u is string => typeof u === 'string' && !!u.trim());
 }
 
+export function normalizeSessionPhotoUrls(photoUrl: unknown): string[] {
+  if (Array.isArray(photoUrl)) {
+    return photoUrl.filter((u): u is string => typeof u === 'string' && !!u.trim());
+  }
+  if (typeof photoUrl === 'string') {
+    return photoUrl
+      .split(',')
+      .map((u) => u.trim())
+      .filter((u) => u.startsWith('http'));
+  }
+  return [];
+}
+
+export function nestedRecordName(users: unknown): string {
+  if (Array.isArray(users)) {
+    const first = users[0];
+    if (first && typeof first === 'object' && 'name' in first) {
+      const name = (first as { name?: unknown }).name;
+      return typeof name === 'string' ? name.trim() : '';
+    }
+    return '';
+  }
+  if (users && typeof users === 'object' && 'name' in users) {
+    const name = (users as { name?: unknown }).name;
+    return typeof name === 'string' ? name.trim() : '';
+  }
+  return '';
+}
+
+export function formatWeeklyBestByline(input: {
+  teacherName?: string | null;
+  title?: string | null;
+  startAt?: string | null;
+}): string {
+  const date = input.startAt
+    ? new Date(input.startAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })
+    : '';
+  return [input.teacherName?.trim(), input.title?.trim(), date].filter(Boolean).join(' · ');
+}
+
+export function formatWeeklyBestBylineFromSession(
+  row:
+    | {
+        title?: string | null;
+        start_at?: string | null;
+        users?: unknown;
+      }
+    | null
+    | undefined,
+  fallbackTeacherName = '',
+): string {
+  if (!row) return fallbackTeacherName.trim();
+  return formatWeeklyBestByline({
+    teacherName: nestedRecordName(row.users) || fallbackTeacherName,
+    title: row.title,
+    startAt: row.start_at ?? null,
+  });
+}
+
 export function formatFeedbackFieldsForDisplay(f: FeedbackFields): string {
   const parts: string[] = [];
   if (f.main_activity) parts.push(`✅ 주요 활동\n${f.main_activity}`);

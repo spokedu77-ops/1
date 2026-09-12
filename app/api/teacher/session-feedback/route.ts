@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { parseExtraTeachers } from '@/app/admin/classes-shared/lib/sessionUtils';
 import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { canTeacherEditSession } from '@/app/lib/server/teacherSessionAccess';
 import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
@@ -218,40 +217,6 @@ export async function POST(req: Request) {
     }
     if (!updated) {
       return NextResponse.json({ error: '저장이 반영되지 않았습니다.' }, { status: 500 });
-    }
-
-    const teacherId = row.created_by;
-    const sessionTitle = row.title ?? null;
-    const memo = typeof row.memo === 'string' ? row.memo : '';
-
-    if (teacherId && String(teacherId).trim()) {
-      const { error: logErr } = await svc.from('session_count_logs').insert({
-        teacher_id: teacherId,
-        session_id: sessionId,
-        session_title: sessionTitle,
-        count_change: 1,
-        reason: '수업 완료',
-      });
-      if (logErr && logErr.code !== '23505' && logErr.code !== '23503') {
-        devLogger.error('[teacher/session-feedback] session_count_logs', logErr);
-      }
-    }
-
-    if (memo.includes('EXTRA_TEACHERS:')) {
-      const { extraTeachers } = parseExtraTeachers(memo);
-      for (const ex of extraTeachers) {
-        if (!ex.id) continue;
-        const { error: exLog } = await svc.from('session_count_logs').insert({
-          teacher_id: ex.id,
-          session_id: sessionId,
-          session_title: sessionTitle,
-          count_change: 1,
-          reason: '수업 완료 (보조)',
-        });
-        if (exLog && exLog.code !== '23505' && exLog.code !== '23503') {
-          devLogger.error('[teacher/session-feedback] session_count_logs extra', exLog);
-        }
-      }
     }
 
     return NextResponse.json({ ok: true });

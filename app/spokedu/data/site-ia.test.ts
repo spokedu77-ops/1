@@ -220,8 +220,9 @@ describe('spokedu site IA', () => {
       'maedong-sports-stepup',
       'donghaeng-special-pe',
       'dongjak-spomove',
+      'dasarang-oneday',
     ]);
-    expect(homePage.cases.cards).toHaveLength(3);
+    expect(homePage.cases.cards).toHaveLength(4);
     expect(homePage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
     expect(homePage.cases.cards.every((card) => !('ctaLabel' in card))).toBe(true);
   });
@@ -256,15 +257,16 @@ describe('spokedu site IA', () => {
     expect(spomoveBlock).not.toMatch(/spomoveSpread|spomoveMicro|직접 수업하며 만든 대표 콘텐츠|스트룹/);
     expect('flow' in homePage.spomove).toBe(false);
 
-    expect(subscriptionBlock).toMatch(/subscriptionIntro/);
-    expect(subscriptionBlock).toMatch(/subscriptionSupport/);
+    expect(subscriptionBlock).toMatch(/subscriptionCopy/);
+    expect(subscriptionBlock).toMatch(/subscriptionEyebrow/);
     expect(subscriptionBlock).toMatch(/productFeatures/);
     expect(subscriptionBlock).toMatch(/productStage/);
     expect(subscriptionBlock).not.toMatch(/productStageFooter|productProofCopy|prepare-dishcone-bingo/);
     expect(cssSource).not.toMatch(/productStageFooter|spomoveFooter|spomoveMicro|productProof|casesGrid|caseRow|spomoveSpread/);
 
-    expect(homePage.cases.cards).toHaveLength(3);
-    expect(casesBlock).not.toMatch(/ctaLabel|사례 보기/);
+    expect(homePage.cases.cards).toHaveLength(4);
+    expect(casesBlock).not.toMatch(/ctaLabel/);
+    expect(casesBlock).toMatch(/cta-home-cases-empty/);
     expect(casesBlock).toMatch(/casesIndex/);
     expect(casesBlock).toMatch(/casesArchive/);
     expect(casesBlock).toMatch(/caseFeatured/);
@@ -293,10 +295,12 @@ describe('spokedu site IA', () => {
     expect(homePage.cases.cards[0]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-general.webp');
     expect(homePage.cases.cards[1]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-adapted-p05.webp');
     expect(homePage.cases.cards[2]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-spomove-p05.webp');
+    expect(homePage.cases.cards[3]?.editorialSrc).toBe('/images/spokedu/records/dasarang-oneday-field.jpg');
     expect(homePage.cases.cards.map((card) => [card.kind, card.headline, card.displayMeta])).toEqual([
       ['정규수업', '매동초등학교 · 스포츠 스텝업', '종로거점형키움센터 연계 · 6개월 늘봄 스포츠'],
       ['정규수업', '찾아가는 동행 체육교실', '특수체육 · 정규수업'],
       ['정규수업', '동작거점형 우리동네키움센터', '초등학생 · 정규수업'],
+      ['원데이·행사', '다사랑영등포지역아동센터', '초등 2~6학년 · 원데이·행사'],
     ]);
   });
 

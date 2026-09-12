@@ -119,6 +119,7 @@ export interface SessionWithFeedback {
   session_type?:
     | 'regular_center'
     | 'regular_private'
+    | 'regular_group'
     | 'one_day'
     | 'one_day_center'
     | 'one_day_private'

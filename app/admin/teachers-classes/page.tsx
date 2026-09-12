@@ -53,6 +53,7 @@ interface Session {
   session_type:
     | 'regular_center'
     | 'regular_private'
+    | 'regular_group'
     | 'one_day'
     | 'one_day_center'
     | 'one_day_private'
@@ -159,7 +160,12 @@ export default function MasterQCPage() {
 }
 
 /** 피드백 검수: 과외(개인/원데이) vs 센터 구분 — 수업안 조회와 별도 */
-const FEEDBACK_SESSION_TYPES_PRIVATE = ['one_day', 'one_day_private', 'regular_private'] as const satisfies readonly Session['session_type'][];
+const FEEDBACK_SESSION_TYPES_PRIVATE = [
+  'one_day',
+  'one_day_private',
+  'regular_private',
+  'regular_group',
+] as const satisfies readonly Session['session_type'][];
 const FEEDBACK_SESSION_TYPES_CENTER = [...CENTER_SESSION_TYPE_VALUES] as const satisfies readonly Session['session_type'][];
 
 /** lesson-plans-sessions API와 동일한 KST 주간(월 00:00 ~ 일 23:59) UTC 구간 */
@@ -462,6 +468,9 @@ function FeedbackReviewTab({
         return '원데이';
       case 'one_day_private':
       case 'regular_private':
+        return '개인';
+      case 'regular_group':
+        return '그룹';
       default:
         return '개인';
     }
@@ -477,6 +486,9 @@ function FeedbackReviewTab({
         return '원데이 수업';
       case 'one_day_private':
       case 'regular_private':
+        return '개인 수업';
+      case 'regular_group':
+        return '그룹 수업';
       default:
         return '개인 수업';
     }

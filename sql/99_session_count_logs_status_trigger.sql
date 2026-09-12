@@ -1,7 +1,7 @@
 -- ==========================================
 -- session_count_logs 자동 동기화 트리거
--- - sessions.status 가 finished/verified 로
---   바뀌는 순간마다 session_count_logs 적재
+-- - sessions.status 가 finished/verified 이면 적재
+-- - 그 상태를 벗어나거나 세션이 삭제되면 해당 session_id 로그 삭제
 -- - 주강사: sessions.created_by
 -- - 보조강사: sessions.memo 의 EXTRA_TEACHERS:[{id,...}, ...]
 -- - 중복 방지: UNIQUE(session_id, teacher_id) + ON CONFLICT DO NOTHING
@@ -103,23 +103,49 @@ BEGIN
 END;
 $$;
 
--- rows inserted/updated 후 동기화 트리거 함수
+CREATE OR REPLACE FUNCTION public.clear_session_count_logs_for_session(p_session_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog
+AS $$
+BEGIN
+  DELETE FROM public.session_count_logs
+  WHERE session_id = p_session_id;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.trg_session_count_logs_sync()
 RETURNS trigger
 LANGUAGE plpgsql
+SET search_path = pg_catalog
 AS $$
 BEGIN
-  -- status가 finished/verified가 될 때만 동기화
+  IF TG_OP = 'DELETE' THEN
+    PERFORM public.clear_session_count_logs_for_session(OLD.id);
+    RETURN OLD;
+  END IF;
+
   IF NEW.status IN ('finished', 'verified') THEN
     PERFORM public.sync_session_count_logs_for_session(NEW.id);
+  ELSIF TG_OP = 'UPDATE' THEN
+    PERFORM public.clear_session_count_logs_for_session(NEW.id);
   END IF;
+
   RETURN NEW;
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_session_count_logs_sync ON public.sessions;
+DROP TRIGGER IF EXISTS trg_session_count_logs_sync_delete ON public.sessions;
+
 CREATE TRIGGER trg_session_count_logs_sync
 AFTER INSERT OR UPDATE OF status ON public.sessions
 FOR EACH ROW
-WHEN (NEW.status IN ('finished', 'verified'))
+EXECUTE FUNCTION public.trg_session_count_logs_sync();
+
+CREATE TRIGGER trg_session_count_logs_sync_delete
+AFTER DELETE ON public.sessions
+FOR EACH ROW
 EXECUTE FUNCTION public.trg_session_count_logs_sync();
 

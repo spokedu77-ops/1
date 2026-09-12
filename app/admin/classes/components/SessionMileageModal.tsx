@@ -4,13 +4,9 @@ import { useEffect, useState } from "react";
 import { Check, Star, X } from "lucide-react";
 import { toast } from "sonner";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase/browser";
-import { devLogger } from "@/app/lib/logging/devLogger";
 import { MILEAGE_ACTIONS } from "@/app/admin/classes-shared/constants/mileage";
-import {
-  extractMileageAction,
-  getMileageTotal,
-  parseExtraTeachers,
-} from "@/app/admin/classes-shared/lib/sessionUtils";
+import { extractMileageAction } from "@/app/admin/classes-shared/lib/sessionUtils";
+import { applySessionLinkedMileage } from "@/app/admin/classes-shared/lib/applySessionLinkedMileage";
 
 type Props = {
   open: boolean;
@@ -23,24 +19,6 @@ type Props = {
   created_by: string | null;
   onSaved: () => void;
 };
-
-function formatSessionDate(dateIso: string): string {
-  return new Date(dateIso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "Asia/Seoul",
-  });
-}
-
-function buildSessionTitleWithDate(title: string | null, dateIso?: string | null): string {
-  const base = (title ?? "")
-    .replace(/\s*\([^()]*\d{4}[^()]*\d{1,2}[^()]*\d{1,2}[^()]*\)\s*$/, "")
-    .trim();
-  if (!dateIso) return base;
-  const dateStr = formatSessionDate(dateIso);
-  return base ? `${base} (${dateStr})` : dateStr;
-}
 
 export default function SessionMileageModal({
   open,
@@ -83,97 +61,23 @@ export default function SessionMileageModal({
       return;
     }
 
-    const prevStr = extractMileageAction(memo || "", mileage_option ?? undefined).mileageAction;
-    const oldTotal = getMileageTotal(prevStr, MILEAGE_ACTIONS);
-    const newTotal = getMileageTotal(mileageAction, MILEAGE_ACTIONS);
-    const diff = newTotal - oldTotal;
-
     setSaving(true);
     try {
-      const { error: sessionError } = await supabase
-        .from("sessions")
-        .update({ mileage_option: mileageAction })
-        .eq("id", sessionId);
-      if (sessionError) throw sessionError;
-
-      const sessionTitle = buildSessionTitleWithDate(title, sessionStartAt);
-      const { extraTeachers } = parseExtraTeachers(memo || "");
-      const extras = extraTeachers.slice(0, 2).filter((t) => t.id);
-      const mainId =
-        created_by && String(created_by).trim() ? String(created_by).trim() : null;
-      const teacherIds: string[] = [];
-      if (mainId) teacherIds.push(mainId);
-      for (const ex of extras) {
-        if (ex.id && !teacherIds.includes(ex.id)) teacherIds.push(ex.id);
+      const result = await applySessionLinkedMileage(supabase, {
+        sessionId,
+        sessionStartAt,
+        title,
+        memo,
+        mileage_option,
+        created_by,
+        nextActionStr: mileageAction,
+      });
+      if (!result.ok) {
+        toast.error(result.error || "마일리지 저장에 실패했습니다.");
+        return;
       }
-
-      // 포인트는 선택 합(newTotal) 기준으로만 맞춤 (목록은 아래에서 최종 1건으로 교체)
-      if (diff !== 0) {
-        for (const teacherId of teacherIds) {
-          const { data: user } = await supabase
-            .from("users")
-            .select("points")
-            .eq("id", teacherId)
-            .single();
-          await supabase
-            .from("users")
-            .update({ points: (user?.points ?? 0) + diff })
-            .eq("id", teacherId);
-        }
-      }
-
-      // 이 세션의 기존 [수업연동] 로그는 목록에서 제거하고, 최종 선택만 남긴다.
-      const { error: clearLogError } = await supabase
-        .from("mileage_logs")
-        .delete()
-        .eq("session_id", sessionId)
-        .like("reason", "[수업연동%");
-      if (clearLogError) {
-        devLogger.error("수업연동 마일리지 로그 정리 에러:", clearLogError);
-        toast.error("경고: 마일리지는 반영되었지만 이전 로그 정리에 실패했습니다.");
-      }
-
-      if (newTotal !== 0 && teacherIds.length > 0) {
-        const reasonVerb = newTotal < 0 ? "차감" : "원복";
-        const rows: Array<{
-          teacher_id: string;
-          amount: number;
-          reason: string;
-          session_title: string;
-          session_id: string;
-          session_started_at: string | null;
-        }> = [];
-        if (mainId) {
-          rows.push({
-            teacher_id: mainId,
-            amount: newTotal,
-            reason: `[수업연동] ${reasonVerb}: ${mileageAction}`,
-            session_title: sessionTitle,
-            session_id: sessionId,
-            session_started_at: sessionStartAt,
-          });
-        }
-        for (const ex of extras) {
-          if (!ex.id) continue;
-          rows.push({
-            teacher_id: ex.id,
-            amount: newTotal,
-            reason: `[수업연동/보조] ${reasonVerb}: ${mileageAction}`,
-            session_title: sessionTitle,
-            session_id: sessionId,
-            session_started_at: sessionStartAt,
-          });
-        }
-        if (rows.length > 0) {
-          const { error: logError } = await supabase.from("mileage_logs").insert(rows);
-          if (logError) {
-            devLogger.error("마일리지 로그 저장 에러:", logError);
-            toast.error("경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.");
-          }
-        }
-      }
-
-      toast.success("마일리지가 저장되었습니다.");
+      if (result.warning) toast.error(`경고: ${result.warning}`);
+      else toast.success("마일리지가 저장되었습니다.");
       onSaved();
       onClose();
     } catch (error: unknown) {

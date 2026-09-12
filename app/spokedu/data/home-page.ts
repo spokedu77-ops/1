@@ -32,6 +32,7 @@ export type HomeCaseCard = {
   editorialObjectPosition?: string;
   blogImageIndex?: number;
   thumbnailSrc?: string;
+  categories: readonly ('institution' | 'private' | 'event' | 'spomove')[];
 };
 
 export const HOME_MAIN_CASE_SLUGS: readonly FieldRecordSlug[] = [
@@ -81,6 +82,11 @@ function buildHomeCaseCard(
     editorialObjectPosition: editorial.objectPosition,
     blogImageIndex: card.blogImageIndex,
     thumbnailSrc: card.thumbnailSrc,
+    categories: [
+      'institution',
+      ...(item.operationType === '원데이·행사' ? ['event' as const] : []),
+      ...(item.programLabel === 'SPOMOVE' ? ['spomove' as const] : []),
+    ],
   };
 }
 
@@ -235,6 +241,10 @@ export const homePage = {
       buildHomeCaseCard('dongjak-spomove', {
         src: HOME_FIELD_EDITORIAL.caseSpomove,
         objectPosition: '48% 46%',
+      }),
+      buildHomeCaseCard('dasarang-oneday', {
+        src: '/images/spokedu/records/dasarang-oneday-field.jpg',
+        objectPosition: '50% 52%',
       }),
     ],
   },

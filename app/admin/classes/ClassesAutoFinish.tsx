@@ -11,7 +11,7 @@ function isTransientFetchError(error: unknown): boolean {
 
 /**
  * ?? ?? ??????? ???: ?????
- * POST /api/sessions/auto-finish (finished + session_count_logs).
+ * POST /api/sessions/auto-finish (status → finished; session_count_logs is DB trigger).
  */
 export default function ClassesAutoFinish() {
   useEffect(() => {

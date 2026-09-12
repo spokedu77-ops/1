@@ -29,6 +29,7 @@ import { resolveDefaultSessionPrice } from '../lib/bulkSessionDefaults';
 const CREATE_TYPE_ICONS: Record<(typeof SESSION_TYPE_OPTIONS)[number]['value'], string> = {
   one_day_private: '🎓',
   regular_private: '🏠',
+  regular_group: '👥',
   regular_center: '🏢',
   one_day_center: '🎉',
   special_lecture: '⭐',

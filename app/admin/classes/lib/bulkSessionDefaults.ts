@@ -1,4 +1,4 @@
-import { isCenterSessionType } from "@/app/admin/classes/lib/sessionTypeCategory";
+import { isCenterSessionType, isRegularGroupSessionType } from "@/app/admin/classes/lib/sessionTypeCategory";
 import {
   computeTier,
   effectiveFees,
@@ -57,6 +57,7 @@ export function resolveDefaultSessionPrice(
     tierFeeMap
   );
   if (isCenterSessionType(sessionType)) return fees.fee_center_main;
+  if (isRegularGroupSessionType(sessionType)) return fees.fee_group;
   return fees.fee_private;
 }
 

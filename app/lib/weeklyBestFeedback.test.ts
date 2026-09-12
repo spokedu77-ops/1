@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatWeeklyBestByline,
   formatWeeklyBestFeedbackText,
+  nestedRecordName,
   normalizeSessionFileUrls,
 } from '@/app/lib/weeklyBestFeedback';
 
@@ -8,6 +10,24 @@ describe('normalizeSessionFileUrls', () => {
   it('빈·잘못된 값은 제외한다', () => {
     expect(normalizeSessionFileUrls(null)).toEqual([]);
     expect(normalizeSessionFileUrls(['', '  ', 'https://x/a.pdf'])).toEqual(['https://x/a.pdf']);
+  });
+});
+
+describe('nestedRecordName / formatWeeklyBestByline', () => {
+  it('users 객체·배열에서 강사명을 읽는다', () => {
+    expect(nestedRecordName({ name: '김강사' })).toBe('김강사');
+    expect(nestedRecordName([{ name: '이강사' }])).toBe('이강사');
+    expect(nestedRecordName(null)).toBe('');
+  });
+
+  it('강사·수업명·날짜 한 줄을 만든다', () => {
+    expect(
+      formatWeeklyBestByline({
+        teacherName: '김강사',
+        title: '송파 13남',
+        startAt: '2026-09-10T03:00:00.000Z',
+      }),
+    ).toContain('김강사');
   });
 });
 
