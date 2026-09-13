@@ -8,17 +8,17 @@ import type { PublicNoteBlock, PublicNoteDocument } from '@/app/lib/server/publi
 import { buildChildrenByParentBlock, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
 import { resolveVideoEmbedContent, videoProviderLabel } from '@/app/lib/note/videoEmbed';
-import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '@/app/admin/note/_components/noteBulletInput';
-import { normalizeTableContent } from '@/app/admin/note/_lib/noteTableBlock';
-import { codeLanguageLabel, readCodeLanguage } from '@/app/admin/note/_lib/noteCodeBlock';
+import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '@/app/lib/note/listItemMarkers';
+import { normalizeTableContent } from '@/app/lib/note/noteTableBlock';
+import { codeLanguageLabel, readCodeLanguage } from '@/app/lib/note/noteCodeBlock';
 import {
   imageBlockAlignClass,
   imageCaptionAlignClass,
   imageFrameWidthStyle,
   readImageAlign,
   readImageWidthPercent,
-} from '@/app/admin/note/_lib/noteImageBlock';
-import { VideoEmbedFrame } from '@/app/admin/note/_components/VideoEmbedFrame';
+} from '@/app/lib/note/noteImageBlock';
+import { VideoEmbedFrame } from '@/app/note/_components/VideoEmbedFrame';
 
 function listItemContent(content: Record<string, unknown> | null | undefined) {
   if (!content) return content;

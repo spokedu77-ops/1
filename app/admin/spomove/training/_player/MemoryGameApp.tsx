@@ -26,6 +26,15 @@ import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTrain
 import { WormholeReactionTraining } from './components/WormholeReactionTraining';
 import { NumberCartReactionTraining, normalizeNumberCartRounds } from './components/NumberCartReactionTraining';
 import { ColorTrackerReactionTraining, normalizeColorTrackerRounds } from './components/ColorTrackerReactionTraining';
+import {
+  TargetTrackingReactionTraining,
+  type ShellTrackingDifficulty,
+  type ShellTrackingSeconds,
+  type ShellTrackingShuffleCount,
+} from './components/TargetTrackingReactionTraining';
+import { RelativeCompassReactionTraining, type RelativeCompassDifficulty, type RelativeCompassSeconds } from './components/RelativeCompassReactionTraining';
+import { ShapeCompletionReactionTraining } from './components/ShapeCompletionReactionTraining';
+import { normalizeShapeCompletionDifficulty, normalizeShapeCompletionSeconds, type ShapeCompletionDifficulty, type ShapeCompletionSeconds } from './lib/shapeCompletionPuzzle';
 import { GoalkeeperReactionTraining } from './components/GoalkeeperReactionTraining';
 import { ColorMemoryGridReactionTraining } from './components/ColorMemoryGridReactionTraining';
 import { VirusOutbreakReactionTraining } from './components/VirusOutbreakReactionTraining';
@@ -193,6 +202,17 @@ type Settings = {
   colorMemoryGridMode: 'flicker' | 'oneshot';
   /** reactTrain level 13 (바이러스 폭증): easy/normal/hard */
   virusOutbreakDifficulty: 'easy' | 'normal' | 'hard';
+  shellTrackingDifficulty: ShellTrackingDifficulty;
+  shellTrackingTargetSeconds: ShellTrackingSeconds;
+  shellTrackingShuffleCount: ShellTrackingShuffleCount;
+  shellTrackingResponseSeconds: ShellTrackingSeconds;
+  relativeCompassDifficulty: RelativeCompassDifficulty;
+  relativeCompassStartSeconds: RelativeCompassSeconds;
+  relativeCompassResponseSeconds: RelativeCompassSeconds;
+  relativeCompassEnabled: boolean;
+  shapeCompletionDifficulty: ShapeCompletionDifficulty;
+  shapeCompletionResponseSeconds: ShapeCompletionSeconds;
+  shapeCompletionEnabled: boolean;
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount: 1 | 2;
   /** ???????????????????????????????6???????????? 1~10??????????????????????????????????????????????ㅻ깹??????????????????????????????????????????*/
@@ -250,6 +270,17 @@ const defaultSettings: Settings = {
   colorMemoryGridSize: 4,
   colorMemoryGridMode: 'flicker',
   virusOutbreakDifficulty: 'normal',
+  shellTrackingDifficulty: 'normal',
+  shellTrackingTargetSeconds: 3,
+  shellTrackingShuffleCount: 6,
+  shellTrackingResponseSeconds: 3,
+  relativeCompassDifficulty: 'normal',
+  relativeCompassStartSeconds: 3,
+  relativeCompassResponseSeconds: 3,
+  relativeCompassEnabled: false,
+  shapeCompletionDifficulty: 'normal',
+  shapeCompletionResponseSeconds: 4,
+  shapeCompletionEnabled: false,
   simonPoleCount: 1,
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -319,6 +350,16 @@ export type MemoryGameAutoLaunch = {
   colorMemoryGridMode?: 'flicker' | 'oneshot';
   /** reactTrain level 13 (바이러스 폭증): easy/normal/hard */
   virusOutbreakDifficulty?: 'easy' | 'normal' | 'hard';
+  shellTrackingDifficulty?: ShellTrackingDifficulty;
+  shellTrackingTargetSeconds?: ShellTrackingSeconds;
+  shellTrackingShuffleCount?: ShellTrackingShuffleCount;
+  shellTrackingResponseSeconds?: ShellTrackingSeconds;
+  relativeCompassDifficulty?: RelativeCompassDifficulty;
+  relativeCompassStartSeconds?: RelativeCompassSeconds;
+  relativeCompassResponseSeconds?: RelativeCompassSeconds;
+  shapeCompletionDifficulty?: ShapeCompletionDifficulty;
+  shapeCompletionResponseSeconds?: ShapeCompletionSeconds;
+  shapeCompletionEnabled?: boolean;
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount?: 1 | 2;
   /** ???????????????????????????????ㅻ깹????????????????7??????0) ?????????????????????????????????산뭐??????????????????????????????????????????*/
@@ -382,6 +423,13 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       colorMemoryGridSize: s.colorMemoryGridSize,
       colorMemoryGridMode: s.colorMemoryGridMode,
       virusOutbreakDifficulty: s.virusOutbreakDifficulty,
+      shellTrackingDifficulty: s.shellTrackingDifficulty,
+      shellTrackingTargetSeconds: s.shellTrackingTargetSeconds,
+      shellTrackingShuffleCount: s.shellTrackingShuffleCount,
+      shellTrackingResponseSeconds: s.shellTrackingResponseSeconds,
+      relativeCompassDifficulty: s.relativeCompassDifficulty,
+      relativeCompassStartSeconds: s.relativeCompassStartSeconds,
+      relativeCompassResponseSeconds: s.relativeCompassResponseSeconds,
       simonPoleCount: s.simonPoleCount,
       memoryColorSlots: [...s.memoryColorSlots],
     },
@@ -686,6 +734,35 @@ export default function MemoryGameApp({
         diveEnvironmentTheme: normalizeDiveThemeId(autoDiveTheme),
         memoryColorSlots: normalizeMemoryColorSlots(autoLaunch.memoryColorSlots),
         colorGateCategory: autoLaunch.colorGateCategory ?? 'all',
+        shellTrackingDifficulty:
+          autoLaunch.shellTrackingDifficulty === 'easy' || autoLaunch.shellTrackingDifficulty === 'hard'
+            ? autoLaunch.shellTrackingDifficulty
+            : 'normal',
+        shellTrackingTargetSeconds: ([2, 3, 4, 5, 6] as const).includes(autoLaunch.shellTrackingTargetSeconds as ShellTrackingSeconds)
+          ? autoLaunch.shellTrackingTargetSeconds as ShellTrackingSeconds
+          : 3,
+        shellTrackingShuffleCount: ([4, 6, 8, 10, 12] as const).includes(autoLaunch.shellTrackingShuffleCount as ShellTrackingShuffleCount)
+          ? autoLaunch.shellTrackingShuffleCount as ShellTrackingShuffleCount
+          : 6,
+        shellTrackingResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(autoLaunch.shellTrackingResponseSeconds as ShellTrackingSeconds)
+          ? autoLaunch.shellTrackingResponseSeconds as ShellTrackingSeconds
+          : 3,
+        relativeCompassDifficulty:
+          autoLaunch.relativeCompassDifficulty === 'easy' || autoLaunch.relativeCompassDifficulty === 'hard'
+            ? autoLaunch.relativeCompassDifficulty
+            : 'normal',
+        relativeCompassStartSeconds: ([2, 3, 4, 5, 6] as const).includes(autoLaunch.relativeCompassStartSeconds as RelativeCompassSeconds)
+          ? autoLaunch.relativeCompassStartSeconds as RelativeCompassSeconds
+          : 3,
+        relativeCompassResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(autoLaunch.relativeCompassResponseSeconds as RelativeCompassSeconds)
+          ? autoLaunch.relativeCompassResponseSeconds as RelativeCompassSeconds
+          : 3,
+        relativeCompassEnabled:
+          normalized.mode === 'basic' && targetLevel === 7 && autoLaunch.relativeCompassDifficulty !== undefined,
+        shapeCompletionDifficulty: normalizeShapeCompletionDifficulty(autoLaunch.shapeCompletionDifficulty),
+        shapeCompletionResponseSeconds: normalizeShapeCompletionSeconds(autoLaunch.shapeCompletionResponseSeconds),
+        shapeCompletionEnabled:
+          normalized.mode === 'basic' && targetLevel === 8 && autoLaunch.shapeCompletionEnabled === true,
       };
       autoLaunchCfgRef.current = merged;
       setSettings(merged);
@@ -715,6 +792,7 @@ export default function MemoryGameApp({
         if (value === 201 && (next.handFootDifficulty !== 'easy' && next.handFootDifficulty !== 'normal' && next.handFootDifficulty !== 'hard')) next.handFootDifficulty = 'easy';
         next.reactTrainConcurrent = 2;
       }
+      if (key === 'level' && s.mode === 'basic' && value === 7) next.relativeCompassEnabled = true;
       if (key === 'variantColorTheme' && typeof window !== 'undefined' && typeof value === 'string') {
         localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, value);
         if (value !== 'color') next.basicNumberOverlay = 'none';
@@ -1003,7 +1081,9 @@ export default function MemoryGameApp({
         // spatial(?????????????????????????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲???????????????????????????????????????????????????????????????????????????????????????warmup ?????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐????????????????????????
         const resolvedForStart = resolveTrainingEngine(cfg.mode, cfg.level);
         const nextScreen: Screen =
-          cfg.mode === 'spatial' && isInstantMemoryLevel(cfg.level)
+          cfg.mode === 'basic' && ((cfg.level === 7 && cfg.relativeCompassEnabled) || (cfg.level === 8 && cfg.shapeCompletionEnabled))
+            ? 'visualReaction'
+            : cfg.mode === 'spatial' && isInstantMemoryLevel(cfg.level)
             ? 'visualReaction'
             : cfg.mode === 'spatial'
               ? 'memory'
@@ -1410,7 +1490,7 @@ export default function MemoryGameApp({
                 {M.levels.map((lv, lvIdx) => {
                   const active =
                     settings.mode === 'basic'
-                      ? catalogBasicUiLevel(settings.level) === lv.id
+                      ? (lv.id === 8 ? settings.level === 8 && settings.shapeCompletionEnabled : catalogBasicUiLevel(settings.level) === lv.id && !settings.shapeCompletionEnabled)
                       : settings.mode === 'spatial'
                         ? catalogSpatialUiLevel(settings.level) === lv.id
                         : settings.level === lv.id;
@@ -1419,8 +1499,12 @@ export default function MemoryGameApp({
                     key={lv.id}
                     type="button"
                     onClick={() => {
+                      if (settings.mode === 'basic' && lv.id === 8) {
+                        setSettings((current) => ({ ...current, level: 8, shapeCompletionEnabled: true, relativeCompassEnabled: false }));
+                        return;
+                      }
                       if (settings.mode === 'basic' && lv.id === 7) {
-                        set('level', isModifiedQuadrantLevel(settings.level) ? settings.level : 7);
+                        setSettings((current) => ({ ...current, level: isModifiedQuadrantLevel(current.level) && !current.shapeCompletionEnabled ? current.level : 7, shapeCompletionEnabled: false }));
                         return;
                       }
                       if (settings.mode === 'basic' && lv.id === 5) {
@@ -1468,7 +1552,7 @@ export default function MemoryGameApp({
                   </button>
                 )}
               </div>
-              {settings.mode === 'basic' && isModifiedQuadrantLevel(settings.level) ? (
+              {settings.mode === 'basic' && isModifiedQuadrantLevel(settings.level) && !settings.relativeCompassEnabled && !settings.shapeCompletionEnabled ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>단계</div>
                   <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -1478,7 +1562,7 @@ export default function MemoryGameApp({
                         <button
                           key={stage}
                           type="button"
-                          onClick={() => set('level', modifiedQuadrantLevelFromStage(stage))}
+                          onClick={() => setSettings((current) => ({ ...current, level: modifiedQuadrantLevelFromStage(stage), shapeCompletionEnabled: false }))}
                           style={{
                             flex: 1,
                             padding: '0.55rem 0.4rem',
@@ -2034,7 +2118,7 @@ export default function MemoryGameApp({
             )}
             {settings.mode !== 'flow' && (
               <>
-                {settings.mode === 'reactTrain' && (settings.level === 5 || reactTrainEngineLevelForUi(settings.level) === 9) ? null : spatialBasicRandomSpeed ? (
+                {(settings.mode === 'basic' && ((settings.level === 7 && settings.relativeCompassEnabled) || (settings.level === 8 && settings.shapeCompletionEnabled))) || (settings.mode === 'reactTrain' && (settings.level === 5 || reactTrainEngineLevelForUi(settings.level) === 9 || reactTrainEngineLevelForUi(settings.level) === 14)) ? null : spatialBasicRandomSpeed ? (
                   <div style={S.sec}>
                     {stepNum(stepSpeed, "Signal speed")}
                     <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600 }}>
@@ -2063,6 +2147,19 @@ export default function MemoryGameApp({
                   </div>
                 )}
 
+                {settings.mode === 'basic' && settings.level === 7 && settings.relativeCompassEnabled ? (
+                  <>
+                    <div style={S.sec}>{stepNum(stepSpeed, '난이도')}<div style={{ display: 'flex', gap: '0.4rem' }}>{([['easy', '쉬움'], ['normal', '보통'], ['hard', '어려움']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => set('relativeCompassDifficulty', value)} style={{ flex: 1, padding: '0.65rem', borderRadius: '0.75rem', border: `2px solid ${settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--border)'}`, background: settings.relativeCompassDifficulty === value ? '#FFF7ED' : 'var(--card)', fontWeight: 800 }}>{label}</button>)}</div></div>
+                    <div style={S.sec}>{stepNum(stepSpeed + 1, '시작 위치 확인 · 반응 시간')}<SpeedSelector value={settings.relativeCompassStartSeconds} min={2} max={6} step={1} showPresets={false} onChange={(value) => setSettings((current) => ({ ...current, relativeCompassStartSeconds: value as RelativeCompassSeconds, relativeCompassResponseSeconds: value as RelativeCompassSeconds }))} /></div>
+                  </>
+                ) : null}
+
+                {settings.mode === 'basic' && settings.level === 8 && settings.shapeCompletionEnabled ? (
+                  <>
+                    <div style={S.sec}>{stepNum(stepSpeed, '난이도')}<div style={{ display: 'flex', gap: '0.4rem' }}>{([['easy', '쉬움'], ['normal', '보통'], ['hard', '어려움']] as const).map(([value, label]) => <button key={value} type="button" onClick={() => set('shapeCompletionDifficulty', value)} style={{ flex: 1, padding: '0.65rem', borderRadius: '0.75rem', border: `2px solid ${settings.shapeCompletionDifficulty === value ? '#F97316' : 'var(--border)'}`, background: settings.shapeCompletionDifficulty === value ? '#FFF7ED' : 'var(--card)', fontWeight: 800 }}>{label}</button>)}</div></div>
+                    <div style={S.sec}>{stepNum(stepSpeed + 1, '반응 시간')}<SpeedSelector value={settings.shapeCompletionResponseSeconds} min={2} max={6} step={1} showPresets={false} onChange={(value) => set('shapeCompletionResponseSeconds', normalizeShapeCompletionSeconds(value))} /></div>
+                  </>
+                ) : null}
                 {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 9 ? (
                   <div style={S.sec}>
                     {stepNum(stepSpeed, 'Choose speed')}
@@ -2095,6 +2192,43 @@ export default function MemoryGameApp({
                       ))}
                     </div>
                   </div>
+                ) : null}
+
+                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 14 ? (
+                  <>
+                    {([
+                      { label: '섞기 속도', key: 'shellTrackingDifficulty' as const, values: [['easy', '쉬움'], ['normal', '보통'], ['hard', '어려움']] as const },
+                      { label: '목표 확인', key: 'shellTrackingTargetSeconds' as const, values: [2, 3, 4, 5, 6] as const },
+                      { label: '섞기 횟수', key: 'shellTrackingShuffleCount' as const, values: [4, 6, 8, 10, 12] as const },
+                      { label: '반응 시간', key: 'shellTrackingResponseSeconds' as const, values: [2, 3, 4, 5, 6] as const },
+                    ] as const).map((group) => (
+                      <div style={S.sec} key={group.key}>
+                        {stepNum(stepSpeed, group.label)}
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          {group.values.map((raw) => {
+                            const value = Array.isArray(raw) ? raw[0] : raw;
+                            const label = Array.isArray(raw) ? raw[1] : `${raw}${group.key === 'shellTrackingShuffleCount' ? '회' : '초'}`;
+                            const active = settings[group.key] === value;
+                            return (
+                              <button key={String(value)} type="button" onClick={() => set(group.key, value)} style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem', border: `2px solid ${active ? '#F97316' : 'var(--border)'}`, background: active ? '#FFF7ED' : 'var(--card)', color: 'var(--text)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    <div style={S.sec}>
+                      {stepNum(stepReps, '반복 횟수')}
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {[5, 10, 15, 20].map((n) => (
+                          <button key={n} type="button" onClick={() => setSettings((s) => ({ ...s, timeMode: 'reps', targetReps: n }))} style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem', border: `2px solid ${settings.targetReps === n ? '#F97316' : 'var(--border)'}`, background: settings.targetReps === n ? '#FFF7ED' : 'var(--card)', color: 'var(--text)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            {n}회
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 ) : null}
 
                 {settings.mode === 'spatial' && settings.level === 6 ? (
@@ -2144,6 +2278,7 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 ) : null}
+
                 {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 9 ? (
                   <div style={S.sec}>
                     {stepNum(stepReps, "Choose rounds")}
@@ -2172,7 +2307,7 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 ) : null}
-                {((settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) !== 8 && reactTrainEngineLevelForUi(settings.level) !== 9) ||
+                {((settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) !== 8 && reactTrainEngineLevelForUi(settings.level) !== 9 && reactTrainEngineLevelForUi(settings.level) !== 14) ||
                   (settings.mode === 'spatial' && isInstantMemoryLevel(settings.level))) ? (
                   <div style={S.sec}>
                     {stepNum(stepReps, "Choose duration")}
@@ -2385,7 +2520,18 @@ export default function MemoryGameApp({
     return (
       <div ref={visualReactionContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
         <style>{CSS}</style>
-        {countdown !== null ? (
+        {settings.mode === 'basic' && settings.level === 8 && settings.shapeCompletionEnabled ? (
+          <ShapeCompletionReactionTraining targetRounds={settings.targetReps} difficulty={settings.shapeCompletionDifficulty} responseSeconds={settings.shapeCompletionResponseSeconds} onExit={stop} onComplete={handleReactTrainComplete} />
+        ) : settings.mode === 'basic' && settings.level === 7 && settings.relativeCompassEnabled ? (
+          <RelativeCompassReactionTraining
+            targetRounds={settings.targetReps}
+            difficulty={settings.relativeCompassDifficulty}
+            startSeconds={settings.relativeCompassStartSeconds}
+            responseSeconds={settings.relativeCompassResponseSeconds}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : countdown !== null ? (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
@@ -2409,6 +2555,16 @@ export default function MemoryGameApp({
                 ? settings.virusOutbreakDifficulty
                 : 'normal'
             }
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : reactEngineLevel === 14 ? (
+          <TargetTrackingReactionTraining
+            targetRounds={settings.targetReps}
+            difficulty={settings.shellTrackingDifficulty}
+            targetSeconds={settings.shellTrackingTargetSeconds}
+            shuffleCount={settings.shellTrackingShuffleCount}
+            responseSeconds={settings.shellTrackingResponseSeconds}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -2719,7 +2875,7 @@ export default function MemoryGameApp({
         elapsedMs={elapsedMs}
         colorCounts={colorCounts}
         levelLabel={resultLevelLabel(cfg.mode, cfg.level)}
-        programTitle={autoLaunch?.programTitle}
+        programTitle={autoLaunch?.programTitle ?? (cfg.mode === 'basic' && cfg.level === 8 && cfg.shapeCompletionEnabled ? '맞는 조각 찾아가기' : cfg.mode === 'basic' && cfg.level === 7 && cfg.relativeCompassEnabled ? '내 자리에서 방향 따라가기' : undefined)}
         student={student ? { name: student.name, color: student.color } : null}
         onBack={goToList}
         onRetry={() => {

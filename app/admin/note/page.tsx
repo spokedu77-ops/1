@@ -10,7 +10,7 @@ const noteLoading = (
 );
 
 const AdminNotePageContent = dynamic(
-  () => import('./AdminNotePageContent'),
+  () => import('./_lite/NoteLiteApp').then((m) => m.NoteLiteApp),
   {
     ssr: false,
     loading: () => noteLoading,

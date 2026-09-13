@@ -41,6 +41,7 @@ export type MasterSessionDto = {
   completedAt: string | null;
   programs: MasterSessionProgramDto[];
   attendance: MasterSessionAttendanceDto[];
+  rosterLockedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   scheduleRuleId?: string | null;

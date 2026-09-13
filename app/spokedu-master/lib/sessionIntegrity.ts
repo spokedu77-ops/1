@@ -7,12 +7,51 @@ export type CompletionAttendanceValidation =
   | { ok: false; code: 'duplicate' | 'invalid' | 'mismatch'; missingCount: number };
 
 export const CLASS_TIME_COLLISION_MESSAGE = '같은 수업반의 기존 수업과 시간이 겹칩니다.';
+export const LOCKED_ROSTER_MESSAGE = '완료된 수업의 학생 명단은 바꿀 수 없습니다.';
 
 export function buildCompletionRosterStudentIds(
   currentRosterStudentIds: readonly string[],
   historicalAttendanceStudentIds: readonly string[],
 ) {
   return [...new Set([...currentRosterStudentIds, ...historicalAttendanceStudentIds])];
+}
+
+export function isSessionRosterLocked(session: { rosterLockedAt?: string | null } | null | undefined) {
+  return Boolean(session?.rosterLockedAt);
+}
+
+export function lockedRosterStudentIdsEqual(lockedStudentIds: readonly string[], submittedStudentIds: readonly string[]) {
+  const locked = new Set(lockedStudentIds);
+  const submitted = new Set(submittedStudentIds);
+  return locked.size === submitted.size && [...locked].every((id) => submitted.has(id));
+}
+
+export function resolveSessionAttendanceRoster(
+  session: { rosterLockedAt?: string | null; attendance?: ReadonlyArray<{ studentId: string; studentName: string }>; status?: string } | null,
+  selectedClass: { studentIds: readonly string[] } | null,
+  students: ReadonlyArray<{ id: string; name: string }>,
+) {
+  if (isSessionRosterLocked(session)) {
+    return (session?.attendance ?? []).map((item) => ({ id: item.studentId, name: item.studentName }));
+  }
+  const currentRoster = students.filter((student) => selectedClass?.studentIds.includes(student.id));
+  const historicalRoster = session?.status === 'completed'
+    ? (session.attendance ?? [])
+      .filter((entry) => !currentRoster.some((student) => student.id === entry.studentId))
+      .map((entry) => ({ id: entry.studentId, name: entry.studentName }))
+    : [];
+  return [...currentRoster, ...historicalRoster];
+}
+
+export function buildSessionCompletionRosterStudentIds(
+  session: { rosterLockedAt?: string | null },
+  currentRosterStudentIds: readonly string[],
+  historicalAttendanceStudentIds: readonly string[],
+) {
+  if (isSessionRosterLocked(session)) {
+    return [...new Set(historicalAttendanceStudentIds)];
+  }
+  return buildCompletionRosterStudentIds(currentRosterStudentIds, historicalAttendanceStudentIds);
 }
 
 export function validateCompletionAttendance(rosterStudentIds: readonly string[], value: unknown): CompletionAttendanceValidation {

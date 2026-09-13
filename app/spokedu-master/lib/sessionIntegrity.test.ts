@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCompletionRosterStudentIds,
+  buildSessionCompletionRosterStudentIds,
   CLASS_TIME_COLLISION_MESSAGE,
   completionAttendanceMessage,
   findActiveClassTimeCollision,
+  lockedRosterStudentIdsEqual,
+  resolveSessionAttendanceRoster,
   validateCompletionAttendance,
 } from './sessionIntegrity';
 
@@ -43,6 +46,85 @@ describe('session completion attendance integrity', () => {
 
   it('keeps the zero-roster policy unchanged', () => {
     expect(validateCompletionAttendance([], [])).toEqual({ ok: true, attendance: [] });
+  });
+});
+
+describe('session roster lock', () => {
+  const students = [
+    { id: 'a', name: 'A' },
+    { id: 'b', name: 'B' },
+    { id: 'c', name: 'C' },
+    { id: 'd', name: 'D' },
+  ];
+  const classAbc = { studentIds: ['a', 'b', 'c'] };
+  const classAbd = { studentIds: ['a', 'b', 'd'] };
+  const lockedAttendance = [
+    { studentId: 'a', studentName: 'A' },
+    { studentId: 'b', studentName: 'B' },
+    { studentId: 'c', studentName: 'C' },
+  ];
+
+  it('shows the current class roster for a scheduled session', () => {
+    expect(resolveSessionAttendanceRoster({ status: 'scheduled', rosterLockedAt: null, attendance: [] }, classAbc, students))
+      .toEqual([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }]);
+    expect(buildSessionCompletionRosterStudentIds({ rosterLockedAt: null }, ['a', 'b', 'c'], [])).toEqual(['a', 'b', 'c']);
+  });
+
+  it('keeps locked completed attendance as the roster after class membership changes', () => {
+    expect(resolveSessionAttendanceRoster({
+      status: 'completed',
+      rosterLockedAt: '2026-09-14T00:00:00.000Z',
+      attendance: lockedAttendance,
+    }, classAbd, students)).toEqual([
+      { id: 'a', name: 'A' },
+      { id: 'b', name: 'B' },
+      { id: 'c', name: 'C' },
+    ]);
+    expect(buildSessionCompletionRosterStudentIds({ rosterLockedAt: '2026-09-14T00:00:00.000Z' }, ['a', 'b', 'd'], ['a', 'b', 'c']))
+      .toEqual(['a', 'b', 'c']);
+  });
+
+  it('allows present/absent changes on the locked set and rejects add or remove', () => {
+    const locked = ['a', 'b', 'c'];
+    expect(lockedRosterStudentIdsEqual(locked, ['a', 'b', 'c'])).toBe(true);
+    expect(validateCompletionAttendance(locked, [
+      { studentId: 'a', status: 'absent' },
+      { studentId: 'b', status: 'present' },
+      { studentId: 'c', status: 'present' },
+    ])).toMatchObject({ ok: true });
+    expect(lockedRosterStudentIdsEqual(locked, ['a', 'b', 'c', 'd'])).toBe(false);
+    expect(validateCompletionAttendance(locked, [
+      { studentId: 'a', status: 'present' },
+      { studentId: 'b', status: 'present' },
+      { studentId: 'c', status: 'present' },
+      { studentId: 'd', status: 'present' },
+    ])).toMatchObject({ ok: false, code: 'mismatch' });
+    expect(lockedRosterStudentIdsEqual(locked, ['a', 'b'])).toBe(false);
+    expect(validateCompletionAttendance(locked, [
+      { studentId: 'a', status: 'present' },
+      { studentId: 'b', status: 'present' },
+    ])).toMatchObject({ ok: false, code: 'mismatch' });
+  });
+
+  it('accepts an empty locked roster', () => {
+    expect(validateCompletionAttendance([], [])).toEqual({ ok: true, attendance: [] });
+    expect(resolveSessionAttendanceRoster({
+      status: 'completed',
+      rosterLockedAt: '2026-09-14T00:00:00.000Z',
+      attendance: [],
+    }, { studentIds: ['d'] }, students)).toEqual([]);
+  });
+
+  it('keeps the legacy current-plus-historical roster when unlocked', () => {
+    expect(resolveSessionAttendanceRoster({
+      rosterLockedAt: null,
+      status: 'completed',
+      attendance: [{ studentId: 'c', studentName: 'C-then' }],
+    }, { studentIds: ['a', 'd'] }, students)).toEqual([
+      { id: 'a', name: 'A' },
+      { id: 'd', name: 'D' },
+      { id: 'c', name: 'C-then' },
+    ]);
   });
 });
 

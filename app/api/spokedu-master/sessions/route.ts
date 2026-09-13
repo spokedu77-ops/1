@@ -9,13 +9,13 @@ import type {
   SaveSessionInput,
 } from '@/app/spokedu-master/types/operational';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-import { buildCompletionRosterStudentIds, CLASS_TIME_COLLISION_MESSAGE, completionAttendanceMessage, validateCompletionAttendance } from '@/app/spokedu-master/lib/sessionIntegrity';
+import { buildSessionCompletionRosterStudentIds, CLASS_TIME_COLLISION_MESSAGE, LOCKED_ROSTER_MESSAGE, completionAttendanceMessage, validateCompletionAttendance } from '@/app/spokedu-master/lib/sessionIntegrity';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const SESSION_SELECT = `
-  id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, parent_notice, completed_at, schedule_rule_id, created_at, updated_at,
+  id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, parent_notice, completed_at, schedule_rule_id, created_at, updated_at, roster_locked_at,
   spokedu_master_session_programs(id, source_type, program_id, spomove_preset_id, program_title_snapshot, sort_order, is_completed),
   spokedu_master_session_attendance(id, student_id, student_name_snapshot, status)
 `;
@@ -34,6 +34,7 @@ type SessionRow = {
   schedule_rule_id: string | null;
   created_at: string;
   updated_at: string;
+  roster_locked_at: string | null;
   spokedu_master_session_programs: Array<{
     id: string; source_type: 'program' | 'spomove'; program_id: number | string | null;
     spomove_preset_id: string | null; program_title_snapshot: string | null;
@@ -71,6 +72,7 @@ function toSessionDto(row: SessionRow): MasterSessionDto {
     attendance: (row.spokedu_master_session_attendance ?? []).map((item) => ({
       id: item.id, studentId: item.student_id, studentName: item.student_name_snapshot, status: item.status,
     })),
+    rosterLockedAt: row.roster_locked_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -209,7 +211,11 @@ async function save(request: Request, sessionId: string | null) {
   }
   const { data: savedId, error } = result;
   if (error || typeof savedId !== 'string') {
-    if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : 'Invalid session data' }, { status: 400 });
+    if (error?.code === '22023' || error?.code === '23505') {
+      return privateNoStoreJson({
+        error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : 'Invalid session data',
+      }, { status: 400 });
+    }
     if (error?.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
     await reportError(error ?? new Error('Session RPC returned no id'), { context: 'spokedu_master.sessions' });
     return privateNoStoreJson({ error: 'Session could not be saved' }, { status: 500 });
@@ -251,7 +257,8 @@ export async function PUT(request: Request) {
 
   const supabase = getServiceSupabase();
   const { data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
-    .select('id,class_id,status').eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();
+    .select('id,class_id,status,roster_locked_at')
+    .eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();
   if (sessionError) {
     await reportError(sessionError, { context: 'spokedu_master.sessions.complete.roster' });
     return privateNoStoreJson({ error: '수업 출석 명단을 확인하지 못했습니다.' }, { status: 500 });
@@ -260,7 +267,7 @@ export async function PUT(request: Request) {
   if (session.class_id !== input.classId) return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
   const [{ data: memberships, error: rosterError }, { data: historicalAttendance, error: historicalAttendanceError }] = await Promise.all([
     supabase.from('spokedu_master_class_students').select('student_id').eq('owner_id', access.userId).eq('class_id', session.class_id),
-    session.status === 'completed'
+    session.status === 'completed' || session.roster_locked_at
       ? supabase.from('spokedu_master_session_attendance').select('student_id').eq('owner_id', access.userId).eq('session_id', session.id)
       : Promise.resolve({ data: [], error: null }),
   ]);
@@ -268,15 +275,18 @@ export async function PUT(request: Request) {
     await reportError(rosterError ?? historicalAttendanceError, { context: 'spokedu_master.sessions.complete.roster' });
     return privateNoStoreJson({ error: '수업 출석 명단을 확인하지 못했습니다.' }, { status: 500 });
   }
-  const rosterStudentIds = buildCompletionRosterStudentIds(
+  const rosterStudentIds = buildSessionCompletionRosterStudentIds(
+    { rosterLockedAt: session.roster_locked_at },
     (memberships ?? []).map((item) => item.student_id),
     (historicalAttendance ?? []).map((item) => item.student_id),
   );
   const attendanceValidation = validateCompletionAttendance(rosterStudentIds, body.attendance);
   if (!attendanceValidation.ok) {
-    const error = attendanceValidation.code === 'mismatch' && attendanceValidation.missingCount > 0
-      ? completionAttendanceMessage(attendanceValidation.missingCount)
-      : '출석 명단이 수업반 명단과 일치하지 않습니다.';
+    const error = session.roster_locked_at && attendanceValidation.code === 'mismatch'
+      ? LOCKED_ROSTER_MESSAGE
+      : attendanceValidation.code === 'mismatch' && attendanceValidation.missingCount > 0
+        ? completionAttendanceMessage(attendanceValidation.missingCount)
+        : '출석 명단이 수업반 명단과 일치하지 않습니다.';
     return privateNoStoreJson({ error }, { status: 400 });
   }
   const { data: savedId, error } = await supabase.rpc('spokedu_master_complete_session', {
@@ -291,9 +301,12 @@ export async function PUT(request: Request) {
   if (error || !savedId) {
     if (error?.code === '23505') return privateNoStoreJson({ error: CLASS_TIME_COLLISION_MESSAGE }, { status: 400 });
     if (error?.code === '22023') {
-      const attendanceError = String(error.message ?? '').includes('complete attendance')
-        ? '출석 명단이 수업반 명단과 일치하지 않습니다.'
-        : '수업 완료 정보를 확인해 주세요.';
+      const message = error && 'message' in error && typeof error.message === 'string' ? error.message : '';
+      const attendanceError = message.includes('locked roster')
+        ? LOCKED_ROSTER_MESSAGE
+        : message.includes('complete attendance')
+          ? '출석 명단이 수업반 명단과 일치하지 않습니다.'
+          : '수업 완료 정보를 확인해 주세요.';
       return privateNoStoreJson({ error: attendanceError }, { status: 400 });
     }
     if (error?.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });

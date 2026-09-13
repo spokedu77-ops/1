@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { isSessionRosterLocked, resolveSessionAttendanceRoster } from '../../lib/sessionIntegrity';
 import type { MasterClassDto, MasterSessionDto, MasterStudentDto } from '../../types/operational';
 
 export function useSessionAttendance({
@@ -34,19 +35,30 @@ export function useSessionAttendance({
   const historicalRoster = useMemo(() => status === 'completed' ? (activeSession?.attendance ?? [])
     .filter((entry) => !currentRoster.some((student) => student.id === entry.studentId))
     .map((entry) => ({ id: entry.studentId, name: entry.studentName })) : [], [activeSession, currentRoster, status]);
-  const roster = useMemo(() => [...currentRoster, ...historicalRoster], [currentRoster, historicalRoster]);
+  const roster = useMemo(
+    () => resolveSessionAttendanceRoster(activeSession ?? session, selectedClass, students),
+    [activeSession, selectedClass, session, students],
+  );
   const allStudentsPresent = roster.length > 0 && roster.every((student) => attendance[student.id] === 'present');
+  const rosterLocked = isSessionRosterLocked(activeSession ?? session);
   const attendanceInput = () => Object.entries(attendance).map(([studentId, attendanceStatus]) => ({ studentId, status: attendanceStatus }));
 
   const updateAttendance = (studentId: string, value: 'present' | 'absent') => {
-    setAttendance((current) => current[studentId] === value
-      ? Object.fromEntries(Object.entries(current).filter(([id]) => id !== studentId))
-      : { ...current, [studentId]: value });
+    setAttendance((current) => {
+      if (rosterLocked) return { ...current, [studentId]: value };
+      return current[studentId] === value
+        ? Object.fromEntries(Object.entries(current).filter(([id]) => id !== studentId))
+        : { ...current, [studentId]: value };
+    });
     setDirty(true);
   };
 
   const toggleAllAttendance = () => {
     setAttendance((current) => {
+      if (rosterLocked) {
+        const nextStatus = allStudentsPresent ? 'absent' as const : 'present' as const;
+        return { ...current, ...Object.fromEntries(roster.map((student) => [student.id, nextStatus])) };
+      }
       if (allStudentsPresent) {
         const next = { ...current };
         for (const student of roster) delete next[student.id];

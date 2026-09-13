@@ -71,6 +71,10 @@ function findGuidePhase(mode: string, level: number): GuidePhase | undefined {
   const exact = guide.phases.find((p) => p.num === numStr);
   if (exact) return exact;
 
+  // 전용 Target Tracking은 기존 reactTrain 가이드의 첫 단계(풍선)로 폴백하지 않는다.
+  if (mode === 'reactTrain' && level === 14) return undefined;
+  if (mode === 'basic' && level === 7) return undefined;
+
   const prefix = guide.phases.find((p) => p.num.startsWith(String(displayNum)));
   if (prefix) return prefix;
 
@@ -379,6 +383,77 @@ export function resolveTrainingResultRichContent(
   const elapsedLabel = formatElapsedSeconds(elapsedMs);
   const volumeLabel = describeSessionVolume(cfg);
   const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal);
+  const shapeCompletionTitle = '맞는 조각 찾아가기';
+  if (cfg.mode === 'basic' && cfg.level === 8 && options?.programTitle === shapeCompletionTitle) {
+    const shapePhaseName = '필요한 조각 추론과 공간 선택';
+    const shapeFeel = '형태를 끝까지 완성했어요';
+    return {
+      praise: '오늘도 멋지게 해냈어요!',
+      praiseSub: `${withObjectParticle(shapeCompletionTitle)} 끝까지 완주했어요.`,
+      activityFeel: shapeFeel,
+      elapsedLabel,
+      volumeLabel,
+      sessionHighlight: `${shapeCompletionTitle} · ${volumeLabel}`,
+      sessionSnapshot: [
+        { id: 'program', label: '프로그램', value: shapeCompletionTitle },
+        { id: 'activity', label: '활동', value: shapePhaseName },
+        { id: 'volume', label: '설정 분량', value: volumeLabel },
+        { id: 'elapsed', label: '진행 시간', value: elapsedLabel },
+        { id: 'feel', label: '오늘 느낌', value: shapeFeel },
+      ],
+      colorDominantLine: null,
+      programTitle: shapeCompletionTitle,
+      phaseName: shapePhaseName,
+      programSummary: '현재 조각과 완성 형태를 비교해 필요한 조각을 찾고, 해당 후보의 SPOMAT 위치로 이동했어요.',
+      benefitTags: ['형태 지각', '부분·전체 관계', '공간 선택'],
+      benefitLine: '보이지 않는 조각을 머릿속으로 완성하고 움직임으로 연결해요',
+      coachTip: '현재 조각에 없는 부분을 먼저 찾은 뒤, 완성 형태와 정확히 맞는 후보를 골라보세요.',
+      selfCheckItems: [
+        { id: 'finish', label: '끝까지 해냈나요?' },
+        { id: 'compare', label: '현재 조각과 완성 형태를 비교했나요?' },
+        { id: 'piece', label: '필요한 조각을 정확히 찾았나요?' },
+        { id: 'move', label: '선택한 후보의 자리로 이동했나요?' },
+      ],
+    };
+  }
+  const relativeCompassTitle = '내 자리에서 방향 따라가기';
+  const isRelativeCompass =
+    cfg.mode === 'basic' &&
+    cfg.level === 7 &&
+    options?.programTitle === relativeCompassTitle;
+
+  if (isRelativeCompass) {
+    const relativePhaseName = '내 위치 기준 방향 전환';
+    const relativeFeel = '방향을 정확히 따라갔어요';
+    return {
+      praise: '오늘도 멋지게 해냈어요!',
+      praiseSub: `${withObjectParticle(relativeCompassTitle)} 끝까지 완주했어요.`,
+      activityFeel: relativeFeel,
+      elapsedLabel,
+      volumeLabel,
+      sessionHighlight: `${relativeCompassTitle} · ${volumeLabel}`,
+      sessionSnapshot: [
+        { id: 'program', label: '프로그램', value: relativeCompassTitle },
+        { id: 'activity', label: '활동', value: relativePhaseName },
+        { id: 'volume', label: '설정 분량', value: volumeLabel },
+        { id: 'elapsed', label: '진행 시간', value: elapsedLabel },
+        { id: 'feel', label: '오늘 느낌', value: relativeFeel },
+      ],
+      colorDominantLine: null,
+      programTitle: relativeCompassTitle,
+      phaseName: relativePhaseName,
+      programSummary: '시작 위치를 확인하고, 내 위치를 기준으로 화살표 방향을 바꾸어 목표 자리까지 이동했어요.',
+      benefitTags: ['공간 방향', '위치 기억', '방향 전환'],
+      benefitLine: '내 위치가 바뀌어도 방향을 다시 계산하고 정확하게 움직여요',
+      coachTip: '시작 위치를 먼저 확인한 뒤, 화살표를 내 몸의 위치 기준으로 바꾸어 생각해 보세요.',
+      selfCheckItems: [
+        { id: 'finish', label: '끝까지 해냈나요?' },
+        { id: 'start', label: '시작 위치를 정확히 확인했나요?' },
+        { id: 'direction', label: '내 위치 기준으로 방향을 바꿔 생각했나요?' },
+        { id: 'target', label: '목표 자리까지 정확히 이동했나요?' },
+      ],
+    };
+  }
 
   return {
     praise,

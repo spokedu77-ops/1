@@ -5,38 +5,6 @@ alwaysApply: false
 
 # admin/note — 완벽화 전용 모드
 
-## 목표
+**새 기능·블록 타입 확장 금지.** 라이트 메모장의 저장·순서·체크만 버그 없이 유지한다.
 
-**새 기능·블록 타입·UI 확장 금지.** 이미 구현된 편집·동기화·DnD·하위페이지만 **버그 0·회귀 0**에 집중한다.
-
-## 허용
-
-- 기존 기능 버그 수정 (최소 diff)
-- **데이터 보존(ZERO LOSS)** 위반 수정 — `note-data-preservation.mdc` 최우선
-- `note-sync-invariants.mdc` 불변식 준수 수정 (reducer/pipeline/open)
-- `note-editing-contracts.mdc` C1–C6 준수 수정 (Enter/undo/placement/marquee/paste)
-- 단위·스모크·회귀 테스트 추가
-- CI `verify:admin-note` + `build` 통과
-
-## 금지
-
-- 새 블록 타입, column 3열, paste 확장, 미디어 편집 등 **기능 로드맵 항목**
-- hook별 ad-hoc guard·캐시 분기 추가 (open/pipeline/reducer로 흡수)
-- 증상만 가리는 UI 땜빵 (표시≠스토어 이중 진실 유지)
-- **본문·순서 침묵 회귀를 “편의상” 허용하는 동기화 완화**
-
-## 완료 정의 (기존 범위)
-
-1. `scripts/admin-note-smoke-qa.mjs` 전체 통과
-2. `scripts/admin-note-regression-qa.mjs` 전체 통과
-3. `npm run verify:admin-note` 통과
-4. 수동: 하위페이지 todo 체크, DnD 삽입선, 2인 타이핑 되돌림 없음, 삭제 좀비 없음, 문서 전환 깜빡임 없음
-5. 수동(문서 종류 무관·`note-editing-contracts`): 루트·하위페이지 각각 `+`체크리스트 / mid-Enter 서식 유지·실패 시 본문 복구 / Ctrl+Z 타이핑 되돌림 / DnD·page transfer 맨 위 배치·마퀴 zone 스코프 / 멀티블록 복사→구조 붙여넣기
-
-## 수정 순서 (고정)
-
-1. **데이터 보존** — ACK≡materialize, shared content authority, order signature
-2. **SSOT** — 표시 = store = blocksRef (`noteDisplayBlocks`, `noteDocumentOpen`, `patchContent`)
-3. **동기화** — op-log 단일 경로, 캐시/reconcile 부작용 제거
-4. **편집 동작** — 키보드·DnD·cross-select 스모크 기준
-5. **동시 편집** — 되돌림·좀비 (서버 비원자성 문서화·완화만)
+코드 SSOT: `app/lib/note/noteLiteInvariants.ts`

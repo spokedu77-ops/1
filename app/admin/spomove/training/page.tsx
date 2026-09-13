@@ -352,6 +352,16 @@ type LaunchSettings = {
   colorMemoryGridMode: 'flicker' | 'oneshot';
   /** 시지각반응(reactTrain) 바이러스 폭증(13) 전용: easy/normal/hard */
   virusOutbreakDifficulty: 'easy' | 'normal' | 'hard';
+  shellTrackingDifficulty: 'easy' | 'normal' | 'hard';
+  shellTrackingTargetSeconds: 2 | 3 | 4 | 5 | 6;
+  shellTrackingShuffleCount: 4 | 6 | 8 | 10 | 12;
+  shellTrackingResponseSeconds: 2 | 3 | 4 | 5 | 6;
+  relativeCompassDifficulty: 'easy' | 'normal' | 'hard';
+  relativeCompassStartSeconds: 2 | 3 | 4 | 5 | 6;
+  relativeCompassResponseSeconds: 2 | 3 | 4 | 5 | 6;
+  shapeCompletionDifficulty: 'easy' | 'normal' | 'hard';
+  shapeCompletionResponseSeconds: 2 | 3 | 4 | 5 | 6;
+  shapeCompletionEnabled: boolean;
   /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
   simonPoleCount: 1 | 2;
   /** 변형 사분할(7·8·9) — easy 고정(레거시 필드) */
@@ -398,6 +408,16 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   colorMemoryGridSize: 4,
   colorMemoryGridMode: 'flicker',
   virusOutbreakDifficulty: 'normal',
+  shellTrackingDifficulty: 'normal',
+  shellTrackingTargetSeconds: 3,
+  shellTrackingShuffleCount: 6,
+  shellTrackingResponseSeconds: 3,
+  relativeCompassDifficulty: 'normal',
+  relativeCompassStartSeconds: 3,
+  relativeCompassResponseSeconds: 3,
+  shapeCompletionDifficulty: 'normal',
+  shapeCompletionResponseSeconds: 4,
+  shapeCompletionEnabled: false,
   simonPoleCount: 1,
   bodyLabelMode: 'easy',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
@@ -451,6 +471,25 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
       auto.virusOutbreakDifficulty === 'easy' || auto.virusOutbreakDifficulty === 'hard'
         ? auto.virusOutbreakDifficulty
         : fallback.virusOutbreakDifficulty,
+    shellTrackingDifficulty:
+      auto.shellTrackingDifficulty === 'easy' || auto.shellTrackingDifficulty === 'hard'
+        ? auto.shellTrackingDifficulty
+        : fallback.shellTrackingDifficulty,
+    shellTrackingTargetSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.shellTrackingTargetSeconds as 2 | 3 | 4 | 5 | 6)
+      ? auto.shellTrackingTargetSeconds as 2 | 3 | 4 | 5 | 6
+      : fallback.shellTrackingTargetSeconds,
+    shellTrackingShuffleCount: ([4, 6, 8, 10, 12] as const).includes(auto.shellTrackingShuffleCount as 4 | 6 | 8 | 10 | 12)
+      ? auto.shellTrackingShuffleCount as 4 | 6 | 8 | 10 | 12
+      : fallback.shellTrackingShuffleCount,
+    shellTrackingResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.shellTrackingResponseSeconds as 2 | 3 | 4 | 5 | 6)
+      ? auto.shellTrackingResponseSeconds as 2 | 3 | 4 | 5 | 6
+      : fallback.shellTrackingResponseSeconds,
+    relativeCompassDifficulty: auto.relativeCompassDifficulty === 'easy' || auto.relativeCompassDifficulty === 'hard' ? auto.relativeCompassDifficulty : fallback.relativeCompassDifficulty,
+    relativeCompassStartSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassStartSeconds,
+    relativeCompassResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassResponseSeconds,
+    shapeCompletionDifficulty: auto.shapeCompletionDifficulty === 'easy' || auto.shapeCompletionDifficulty === 'hard' ? auto.shapeCompletionDifficulty : fallback.shapeCompletionDifficulty,
+    shapeCompletionResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.shapeCompletionResponseSeconds,
+    shapeCompletionEnabled: auto.shapeCompletionEnabled === true,
     simonPoleCount: auto.simonPoleCount === 2 ? 2 : fallback.simonPoleCount,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
@@ -467,6 +506,16 @@ function isFlowColorGateLevel(modeId: string, levelId: number): boolean {
 }
 
 function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchSettings): LaunchSettings {
+  if (modeId === 'basic' && levelId === 7) {
+    return {
+      ...launch,
+      timeMode: 'reps',
+      targetReps: [5, 10, 15, 20].includes(launch.targetReps) ? launch.targetReps : 10,
+      relativeCompassDifficulty: launch.relativeCompassDifficulty === 'easy' || launch.relativeCompassDifficulty === 'hard' ? launch.relativeCompassDifficulty : 'normal',
+      relativeCompassStartSeconds: ([2, 3, 4, 5, 6] as const).includes(launch.relativeCompassStartSeconds) ? launch.relativeCompassStartSeconds : 3,
+      relativeCompassResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(launch.relativeCompassResponseSeconds) ? launch.relativeCompassResponseSeconds : 3,
+    };
+  }
   if (isFlowColorGateLevel(modeId, levelId)) {
     const featuresOk = launch.flowFeatures.length === 1 && launch.flowFeatures[0] === 'colorGate';
     const durationOk = (COLOR_GATE_STAGE_SECONDS as readonly number[]).includes(launch.flowDuration);
@@ -590,6 +639,16 @@ function TrainingPortal({
     colorMemoryGridSize: launch.colorMemoryGridSize,
     colorMemoryGridMode: launch.colorMemoryGridMode,
     virusOutbreakDifficulty: launch.virusOutbreakDifficulty,
+    shellTrackingDifficulty: launch.shellTrackingDifficulty,
+    shellTrackingTargetSeconds: launch.shellTrackingTargetSeconds,
+    shellTrackingShuffleCount: launch.shellTrackingShuffleCount,
+    shellTrackingResponseSeconds: launch.shellTrackingResponseSeconds,
+    relativeCompassDifficulty: launch.relativeCompassDifficulty,
+    relativeCompassStartSeconds: launch.relativeCompassStartSeconds,
+    relativeCompassResponseSeconds: launch.relativeCompassStartSeconds,
+    shapeCompletionDifficulty: launch.shapeCompletionDifficulty,
+    shapeCompletionResponseSeconds: launch.shapeCompletionResponseSeconds,
+    shapeCompletionEnabled: launch.shapeCompletionEnabled,
     simonPoleCount: launch.simonPoleCount,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
@@ -602,7 +661,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.colorGateVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.colorGateVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -1102,7 +1161,7 @@ function SettingsScreen({
               {(m?.levels ?? []).map((lv) => {
                 const active =
                   modeId === 'basic'
-                    ? catalogBasicUiLevel(levelId) === lv.id
+                    ? (lv.id === 8 ? levelId === 8 && launch.shapeCompletionEnabled : catalogBasicUiLevel(levelId) === lv.id && !launch.shapeCompletionEnabled)
                     : modeId === 'spatial'
                       ? catalogSpatialUiLevel(levelId) === lv.id
                       : levelId === lv.id;
@@ -1113,6 +1172,9 @@ function SettingsScreen({
                     type="button"
                     onClick={() => {
                       setLevelId((current) => {
+                        if (modeId === 'basic' && lv.id === 8) {
+                          return 8;
+                        }
                         if (modeId === 'basic' && lv.id === 7) {
                           return isModifiedQuadrantLevel(current) ? current : 7;
                         }
@@ -1132,6 +1194,8 @@ function SettingsScreen({
                       });
                       setLaunch((s) => {
                         let next = launchSettingsForLevel(modeId, lv.id, s);
+                        if (modeId === 'basic' && lv.id === 8) next = { ...next, shapeCompletionEnabled: true };
+                        else if (modeId === 'basic') next = { ...next, shapeCompletionEnabled: false };
                         if (isReactTrain) {
                           const mapped = resolveReactTrainUiLevel(lv.id);
                           next = {
@@ -1166,6 +1230,17 @@ function SettingsScreen({
                               ...next,
                               timeMode: 'time',
                               duration: [30, 60, 120, 180].includes(next.duration) ? next.duration : 120,
+                            };
+                          }
+                          if (engineLevel === 14) {
+                            next = {
+                              ...next,
+                              timeMode: 'reps',
+                              targetReps: [5, 10, 15, 20].includes(next.targetReps) ? next.targetReps : 10,
+                              shellTrackingDifficulty: 'normal',
+                              shellTrackingTargetSeconds: 3,
+                              shellTrackingShuffleCount: 6,
+                              shellTrackingResponseSeconds: 3,
                             };
                           }
                         }
@@ -2021,8 +2096,50 @@ function SettingsScreen({
             </section>
           ) : null}
 
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 14 ? (
+            <section style={{ marginBottom: 26 }}>
+              {([
+                { label: '난이도', field: 'shellTrackingDifficulty' as const, options: [['easy', '쉬움', '600ms'], ['normal', '보통', '400ms'], ['hard', '어려움', '250ms']] as const },
+              ] as const).map((group) => (
+                <div key={group.field} style={{ marginBottom: 18 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>{group.label}</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {group.options.map(([value, label, sub]) => {
+                      const active = launch[group.field] === value;
+                      return (
+                        <button key={String(value)} type="button" onClick={() => setLaunch((s) => ({ ...s, [group.field]: value, shellTrackingShuffleCount: value === 'easy' ? 4 : value === 'hard' ? 10 : 6 }))} style={{ flex: '1 1 70px', padding: '10px 8px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontSize: 14, fontWeight: active ? 900 : 700, cursor: 'pointer', textAlign: 'center' }}>
+                          {active ? '✓ ' : ''}{label}
+                          {sub ? <div style={{ marginTop: 3, fontSize: 10, color: active ? accent : T.muted }}>{sub} · {value === 'easy' ? 4 : value === 'hard' ? 10 : 6}회</div> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>목표·반응 시간</label>
+                <SpeedSelector value={launch.shellTrackingTargetSeconds} min={2} max={6} step={1} showPresets={false} compact onChange={(value) => setLaunch((s) => ({ ...s, shellTrackingTargetSeconds: value as 2 | 3 | 4 | 5 | 6, shellTrackingResponseSeconds: value as 2 | 3 | 4 | 5 | 6 }))} />
+              </div>
+            </section>
+          ) : null}
+
+          {modeId === 'basic' && levelId === 8 && launch.shapeCompletionEnabled ? (
+            <section style={{ marginBottom: 22 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+              <div style={{ display: 'flex', gap: 8 }}>{([['easy', '쉬움'], ['normal', '보통'], ['hard', '어려움']] as const).map(([value, label]) => { const active = launch.shapeCompletionDifficulty === value; return <button key={value} type="button" onClick={() => setLaunch((current) => ({ ...current, shapeCompletionDifficulty: value }))} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontWeight: active ? 900 : 700 }}>{label}</button>; })}</div>
+              <div style={{ marginTop: 16 }}><label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>반응 시간</label><SpeedSelector value={launch.shapeCompletionResponseSeconds} min={2} max={6} step={1} compact showPresets={false} onChange={(value) => setLaunch((current) => ({ ...current, shapeCompletionResponseSeconds: Math.min(6, Math.max(2, Math.round(value))) as 2 | 3 | 4 | 5 | 6 }))} /></div>
+            </section>
+          ) : null}
+          {modeId === 'basic' && levelId === 7 ? (
+            <section style={{ marginBottom: 22 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+              <div style={{ display: 'flex', gap: 8 }}>{([['easy', '쉬움', '직선 1방향'], ['normal', '보통', '직선+대각선'], ['hard', '어려움', '2방향 연속']] as const).map(([value, label, detail]) => { const active = launch.relativeCompassDifficulty === value; return <button key={value} type="button" onClick={() => setLaunch((s) => ({ ...s, relativeCompassDifficulty: value }))} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontWeight: active ? 900 : 700, cursor: 'pointer' }}>{label}<span style={{ display: 'block', marginTop: 3, fontSize: 10, color: active ? accent : T.muted }}>{detail}</span></button>; })}</div>
+              <div style={{ marginTop: 16 }}><label style={{ display: 'block', marginBottom: 8, fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>시작 위치 확인 · 반응 시간</label><SpeedSelector value={launch.relativeCompassStartSeconds} min={2} max={6} step={1} compact showPresets={false} onChange={(value) => setLaunch((s) => ({ ...s, relativeCompassStartSeconds: value as 2 | 3 | 4 | 5 | 6, relativeCompassResponseSeconds: value as 2 | 3 | 4 | 5 | 6 }))} /></div>
+            </section>
+          ) : null}
+
           {/* 속도 / 순간 기억 기억 시간 */}
-          {(!isFlowOrChallenge || isColorGateTheme) && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {(!isFlowOrChallenge || isColorGateTheme) && !(modeId === 'basic' && (levelId === 7 || (levelId === 8 && launch.shapeCompletionEnabled))) && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: isColorGateTheme ? 10 : 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: isColorGateTheme ? 6 : 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -2429,7 +2546,7 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9)
+                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 14)
                     ? '라운드'
                     : isReactTrain || (isSpatial && isInstantMemoryLevel(levelId))
                       ? '훈련 시간'
@@ -2488,6 +2605,17 @@ function SettingsScreen({
                           cursor: 'pointer',
                         }}
                       >
+                        {r}라운드
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : isReactTrain && reactTrainEngineLevelForUi(levelId) === 14 ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[5, 10, 15, 20].map((r) => {
+                    const active = launch.targetReps === r;
+                    return (
+                      <button key={r} type="button" onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))} style={{ flex: '1 1 90px', padding: '11px 10px', borderRadius: 12, border: `1.5px solid ${active ? accent : T.border}`, background: active ? `${accent}16` : T.card, color: active ? accent : T.textDim, fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 900 : 700, cursor: 'pointer' }}>
                         {r}라운드
                       </button>
                     );
@@ -2556,7 +2684,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 변형 사분할: 단계 1~3 */}
-          {modeId === 'basic' && isModifiedQuadrantLevel(levelId) ? (
+          {modeId === 'basic' && isModifiedQuadrantLevel(levelId) && levelId !== 7 && !launch.shapeCompletionEnabled ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>단계</label>
@@ -2571,7 +2699,7 @@ function SettingsScreen({
                     <button
                       key={stage}
                       type="button"
-                      onClick={() => setLevelId(modifiedQuadrantLevelFromStage(stage))}
+                      onClick={() => { setLevelId(modifiedQuadrantLevelFromStage(stage)); setLaunch((current) => ({ ...current, shapeCompletionEnabled: false })); }}
                       style={{
                         flex: 1,
                         padding: '11px 8px',
