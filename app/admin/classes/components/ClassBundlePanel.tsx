@@ -274,8 +274,6 @@ function isArchivedPastCycleGroup(
   return isPastCycleGroup(list);
 }
 
-type ToolPanelKey = "extend" | "shrink" | "restart";
-
 export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClose, onChanged }: Props) {
   const [supabase] = useState(() =>
     typeof window !== "undefined" ? getSupabaseBrowserClient() : null
@@ -341,11 +339,6 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
   const [bundleSessionTypeDraft, setBundleSessionTypeDraft] = useState("regular_private");
   const [bundleSessionTypesMixed, setBundleSessionTypesMixed] = useState(false);
   const [savingSessionType, setSavingSessionType] = useState(false);
-
-  /** 회차 확장 / 축소 / 재시작 블록 접기(기본 접힘) */
-  const [toolPanelOpenByGroup, setToolPanelOpenByGroup] = useState<
-    Record<string, Partial<Record<ToolPanelKey, boolean>>>
-  >({});
 
   /** 일괄 적용 블록 — 현재 사이클에서 기본 펼침 */
   const [bulkOpenByGroup, setBulkOpenByGroup] = useState<Record<string, boolean>>({});
@@ -611,15 +604,6 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
   const toggleGroup = (gid: string) => {
     setOpenGroupIds((prev) => ({ ...prev, [gid]: !prev[gid] }));
   };
-
-  const toggleToolPanel = (gid: string, key: ToolPanelKey) => {
-    setToolPanelOpenByGroup((prev) => {
-      const cur = prev[gid] ?? {};
-      return { ...prev, [gid]: { ...cur, [key]: !cur[key] } };
-    });
-  };
-
-  const isToolPanelOpen = (gid: string, key: ToolPanelKey) => !!toolPanelOpenByGroup[gid]?.[key];
 
   const applyInlineUpdate = async (
     gid: string,

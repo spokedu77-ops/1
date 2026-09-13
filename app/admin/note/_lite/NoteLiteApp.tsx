@@ -175,7 +175,7 @@ export function NoteLiteApp() {
       setDirty(true);
       await persistSnapshot(id, withSeed);
     }
-  }, [docs, flushOpen, router]);
+  }, [docs, flushOpen, persistSnapshot, router]);
 
   const scheduleSave = useCallback(() => {
     const id = openIdRef.current;

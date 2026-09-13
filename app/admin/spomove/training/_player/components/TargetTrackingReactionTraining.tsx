@@ -151,6 +151,7 @@ export function TargetTrackingReactionTraining({
   useEffect(() => {
     let mounted = true;
     const tokenRef = runTokenRef;
+    const timers = timersRef.current;
 
     const runRound = async (roundNumber: number) => {
       const token = ++tokenRef.current;
@@ -161,10 +162,10 @@ export function TargetTrackingReactionTraining({
       setTargetNodeId(targetId);
       setAnswerPos(null);
       setPhase('TARGET');
-      if (!(await wait(targetSeconds * 1000, token, tokenRef, timersRef.current))) return;
+      if (!(await wait(targetSeconds * 1000, token, tokenRef, timers))) return;
 
       setPhase('HIDE');
-      if (!(await wait(HIDE_DURATION_MS, token, tokenRef, timersRef.current))) return;
+      if (!(await wait(HIDE_DURATION_MS, token, tokenRef, timers))) return;
 
       setPhase('TRACK');
       for (let i = 0; i < shuffleCount; i += 1) {
@@ -177,23 +178,23 @@ export function TargetTrackingReactionTraining({
         nodeA.currentPosIdx = posB;
         nodeB.currentPosIdx = posA;
         setNodes(roundNodes.map((node) => ({ ...node })));
-        if (!(await wait(swapDuration, token, tokenRef, timersRef.current))) return;
+        if (!(await wait(swapDuration, token, tokenRef, timers))) return;
       }
 
       setPhase('RESPONSE');
-      if (!(await wait(responseSeconds * 1000, token, tokenRef, timersRef.current))) return;
+      if (!(await wait(responseSeconds * 1000, token, tokenRef, timers))) return;
 
       const targetNode = roundNodes.find((node) => node.id === targetId);
       if (!targetNode) return;
       setAnswerPos(targetNode.currentPosIdx);
       setPhase('ANSWER');
-      if (!(await wait(ANSWER_DURATION_MS, token, tokenRef, timersRef.current))) return;
+      if (!(await wait(ANSWER_DURATION_MS, token, tokenRef, timers))) return;
 
       completedRoundsRef.current = roundNumber;
       if (roundNumber >= totalRounds) complete();
       else {
         setPhase('NEXT_ROUND');
-        if (await wait(0, token, tokenRef, timersRef.current)) void runRound(roundNumber + 1);
+        if (await wait(0, token, tokenRef, timers)) void runRound(roundNumber + 1);
       }
     };
 
@@ -208,8 +209,8 @@ export function TargetTrackingReactionTraining({
       stopCountdown();
       unbindResize();
       tokenRef.current += 1;
-      timersRef.current.forEach(window.clearTimeout);
-      timersRef.current.clear();
+      timers.forEach(window.clearTimeout);
+      timers.clear();
     };
   }, [complete, responseSeconds, shuffleCount, swapDuration, targetSeconds, totalRounds]);
 
