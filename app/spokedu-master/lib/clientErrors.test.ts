@@ -33,6 +33,8 @@ describe('SPOKEDU MASTER client error sanitization', () => {
   it('maps conflicts to a safe reusable-request message', () => {
     expect(toMasterClientError(409, 'raw order_id conflict').message)
       .toBe('이미 처리되었거나 다시 사용할 수 없는 요청입니다.');
+    expect(toMasterClientError(409, '같은 이름의 수업반이 이미 있습니다.').message)
+      .toBe('같은 이름의 수업반이 이미 있습니다.');
   });
 
   it('removes raw DB, UUID, stack, student, email, and body-like details from validation messages', () => {

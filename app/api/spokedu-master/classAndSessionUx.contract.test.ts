@@ -7,6 +7,7 @@ const activity = readSessionDetailSource();
 const sessionIntegrity = read('app/spokedu-master/lib/sessionIntegrity.ts');
 const picker = read('app/spokedu-master/manage/SessionActivityPicker.tsx');
 const classes = read('app/spokedu-master/classes/page.tsx');
+const classCreateSheet = read('app/spokedu-master/classes/ClassCreateSheet.tsx');
 const classDetail = read('app/spokedu-master/classes/[classId]/page.tsx');
 
 describe('SPOKEDU MASTER class and Session operating UX', () => {
@@ -16,7 +17,8 @@ describe('SPOKEDU MASTER class and Session operating UX', () => {
     expect(createRoute).toContain("from('spokedu_master_classes')");
     expect(updateRoute).toContain(".eq('id', classId)");
     expect(updateRoute).toContain(".eq('owner_id', access.userId)");
-    expect(classes).toContain('await data.createClass(name.trim())');
+    expect(classes).toContain('<ClassCreateSheet');
+    expect(classCreateSheet).toContain('await data.createClass(name.trim())');
     expect(classDetail).toContain('await data.updateClass(classItem.id, editName.trim())');
     expect(activity).not.toContain('ClassManagerSheet');
   });

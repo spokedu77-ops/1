@@ -34,7 +34,7 @@ describe('MASTER Visual SSOT (not rendered PASS)', () => {
     const schedule = read('manage/ScheduleTab.tsx');
     for (const name of ['MasterPageShell', 'MasterPageHeader']) expect(manage).toContain(name);
     expect(manage).not.toContain('다음 수업 만들기');
-    expect(schedule).toContain('/spokedu-master/classes?create=1');
+    expect(schedule).toContain('buildClassCreateFromSessionHref(selectedDay)');
     expect(manage).toContain('일정');
     expect(manage).toContain('출석부');
     expect(manage).not.toContain('내 수업반');

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getMasterRequestErrorMessage } from '../../lib/masterRequestError';
+import { getMasterRequestErrorMessage, masterFetchJson } from '../../lib/masterRequestError';
 import { buildScheduleOccurrencePreview, occurrenceOverlaps, type MasterScheduleCadence, type MasterScheduleRule } from '../../lib/recurringSchedule';
 import { seoulDateTimeInputToIso } from '../../lib/sessionDateTime';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
@@ -41,21 +41,11 @@ export function useSessionSchedule({
   useEffect(() => {
     if (!classId) return;
     let cancelled = false;
-    void fetch(`/api/spokedu-master/classes/${classId}/schedule-rules`, { cache: 'no-store' })
-      .then(async (response) => {
-        const json = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(json?.error || '반복 일정을 불러오지 못했습니다.');
-        return json;
-      })
+    void masterFetchJson<{ data?: MasterScheduleRule[] }>(`/api/spokedu-master/classes/${classId}/schedule-rules`)
       .then((json) => { if (!cancelled) setRules(json.data ?? []); })
-      .catch((caught) => {
-        if (!cancelled) {
-          setRules([]);
-          setError(getMasterRequestErrorMessage(caught) || '반복 일정을 불러오지 못했습니다.');
-        }
-      });
+      .catch(() => { if (!cancelled) setRules([]); });
     return () => { cancelled = true; };
-  }, [classId, setError]);
+  }, [classId]);
 
   const setRepeatMode = (mode: RepeatMode) => { setRepeatModeState(mode); setDirty(true); };
 
@@ -69,19 +59,31 @@ export function useSessionSchedule({
     if (conflicts.length && !window.confirm(`${conflicts.length}개 회차는 기존 일정과 겹쳐 생성되지 않습니다. 계속할까요?`)) return;
     const availableOccurrences = occurrences.filter((item) => !conflicts.includes(item));
     if (!availableOccurrences.length) throw new Error('생성할 수 있는 반복 일정이 없습니다.');
-    const response = await fetch(`/api/spokedu-master/classes/${classId}/schedule-rules`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ cadence: repeatMode, weekday, startTime, durationMinutes, startsOn: startDay, occurrences: availableOccurrences, memo: input(programs, 'scheduled').memo, activities: programs.map((program) => ({ sourceType: program.sourceType, programId: program.programId, spomovePresetId: program.spomovePresetId })) }) });
-    const json = await response.json();
-    if (!response.ok) throw new Error(json.error || '반복 일정을 만들지 못했습니다.');
+    await masterFetchJson(`/api/spokedu-master/classes/${classId}/schedule-rules`, {
+      method: 'POST',
+      body: JSON.stringify({
+        cadence: repeatMode,
+        weekday,
+        startTime,
+        durationMinutes,
+        startsOn: startDay,
+        occurrences: availableOccurrences,
+        memo: input(programs, 'scheduled').memo,
+        activities: programs.map((program) => ({ sourceType: program.sourceType, programId: program.programId, spomovePresetId: program.spomovePresetId })),
+      }),
+    });
     await data.reload('soft');
   }
 
   async function endRule(ruleId: string) {
     setSaving(true); setError(null);
     try {
-      const response = await fetch(`/api/spokedu-master/classes/${classId}/schedule-rules/${ruleId}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ active: false }) });
-      if (!response.ok) throw new Error('반복 일정을 종료하지 못했습니다.');
+      await masterFetchJson(`/api/spokedu-master/classes/${classId}/schedule-rules/${ruleId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ active: false }),
+      });
       setRules((current) => current.map((rule) => rule.id === ruleId ? { ...rule, active: false } : rule));
-    } catch (caught) { setError(getMasterRequestErrorMessage(caught) || '반복 일정을 종료하지 못했습니다.'); }
+    } catch (caught) { setError(getMasterRequestErrorMessage(caught, '반복 일정을 종료하지 못했습니다.')); }
     finally { setSaving(false); }
   }
 

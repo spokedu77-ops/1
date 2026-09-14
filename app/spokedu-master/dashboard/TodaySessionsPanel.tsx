@@ -160,6 +160,9 @@ export function HomeContinuityPanel({ sessions, classes, loading, error, onRetry
       aria-labelledby="home-continuity-heading"
       className={MV_REENTRY_OBJECT}
     >
+      <span className="grid h-[72px] w-[72px] shrink-0 place-items-center rounded-[12px] bg-slate-100/70 text-slate-400" aria-hidden>
+        <Clock3 size={22} strokeWidth={1.8} />
+      </span>
       <div className={MV_REENTRY_IDENTITY}>
         <p className={MV_META}>이어갈 수업</p>
         <h2 id="home-continuity-heading" className={`${MV_CONTENT_TITLE} mt-1 truncate`}>{item.className}</h2>
@@ -184,6 +187,9 @@ export function HomeNextSessionPanel({ sessions, classes }: { sessions: MasterSe
   if (!next) return null;
   return (
     <section data-dashboard-section="next-session" className={MV_REENTRY_OBJECT}>
+      <span className="grid h-[72px] w-[72px] shrink-0 place-items-center rounded-[12px] bg-slate-100/70 text-slate-400" aria-hidden>
+        <CalendarPlus size={22} strokeWidth={1.8} />
+      </span>
       <div className={MV_REENTRY_IDENTITY}>
         <p className={MV_META}>내 다음 수업</p>
         <h2 className={`${MV_CONTENT_TITLE} mt-1 truncate`}>{next.className}</h2>

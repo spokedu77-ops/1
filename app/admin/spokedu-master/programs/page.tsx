@@ -118,6 +118,7 @@ import { readAdminJsonSafe } from './readAdminJsonSafe';
 import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
 import { SpomoveHubFamilyFeaturedManager } from './SpomoveHubFamilyFeaturedManager';
 import { ProgramGatewayHeroManager } from './ProgramGatewayHeroManager';
+import { HomeMediaManager } from './HomeMediaManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'home-ready' | 'image-needed';
@@ -3650,6 +3651,7 @@ export default function AdminSmProgramsPage() {
 
       {activeTab === 'programs' ? (
         <>
+          <HomeMediaManager />
           <ProgramGatewayHeroManager domain="lesson" />
           <WeeklyRecommendationManager items={items} onSaved={load} />
         </>

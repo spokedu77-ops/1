@@ -30,14 +30,24 @@ describe('MASTER Class and attendance management contracts', () => {
     expect(activity).not.toContain('ClassManagerSheet');
     expect(activity).not.toContain('ClassNameRow');
     expect(activity).not.toContain('수업반 관리</button>');
-    expect(schedule).toContain('/spokedu-master/classes?create=1');
+    expect(schedule).toContain('buildClassCreateFromSessionHref(selectedDay)');
     expect(manage).toContain("setCreateClassId(resolution.classId)");
     expect(manage).toContain('유효하지 않은 수업반입니다.');
   });
 
-  it('creates Classes with one field and routes to the exact new Class', () => {
-    expect(list).toContain("await data.createClass(name.trim())");
+  it('creates Classes with one field and returns to Session create when started from 수업 추가', () => {
+    const createSheet = read('app/spokedu-master/classes/ClassCreateSheet.tsx');
+    expect(createSheet).toContain("await data.createClass(name.trim())");
+    expect(list).toContain('buildManageSessionCreateHref(created.id, sessionReturnDate)');
     expect(list).toContain('router.push(`/spokedu-master/classes/${created.id}`)');
+    expect(list).toContain('buildManageDateHref(sessionReturnDate)');
+    expect(list).toContain('parseSessionClassCreateReturnDate');
+    expect(activity).toContain('<ClassCreateSheet nested');
+    expect(activity).toContain('inert={classCreateOpen}');
+    expect(activity).toContain('draft.setClassId(created.id)');
+    expect(read('app/spokedu-master/components/ui/BottomSheet.tsx')).toContain('createPortal(overlay, document.body)');
+    expect(read('app/spokedu-master/components/ui/BottomSheet.tsx')).toContain('if (nested) event.stopImmediatePropagation()');
+    expect(activity).not.toContain('buildClassCreateFromSessionHref(startAt)');
     expect(list).toContain("searchParams.get('create') !== '1'");
   });
 

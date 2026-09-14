@@ -60,7 +60,7 @@ describe('lesson discovery and execution flow contract', () => {
     expect(todayModel).toContain('href: workState.href');
     expect(dashboard).not.toContain('resolveMasterHomePriority');
     expect(dashboard).not.toContain('data-home-priority');
-    expect(dashboard).toContain("{'이번 주,\\n어떤 수업을 해볼까요?'}");
+    expect(dashboard).toContain('title="이번 주 SPOKEDU 추천"');
     expect(todayPanel).toContain("session.status === 'scheduled'");
     expect(todayPanel).not.toContain('출석 확인하기');
     expect(weeklyIndex).toBeGreaterThan(featuredIndex);

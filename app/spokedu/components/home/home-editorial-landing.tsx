@@ -52,7 +52,7 @@ function useHomeReveal() {
 function ArrowLink({ href, trackLabel, children, light = false }: { href: string; trackLabel: string; children: ReactNode; light?: boolean }) {
   return (
     <TrackedLink href={href} trackLabel={trackLabel} className={`${styles.arrowLink} ${light ? styles.arrowLinkLight : ''} ${brandFocusRing}`}>
-      <span>{children}</span><span aria-hidden>↗</span>
+      <span>{children}</span><span aria-hidden>→</span>
     </TrackedLink>
   );
 }
@@ -107,23 +107,29 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
       <a href="#choice" className={homeSkipLink}>본문으로 건너뛰기</a>
 
       <section id={homePage.hero.id} className={styles.hero} aria-labelledby="home-hero-heading">
-        <Image src={heroMedia.src!} alt={heroMedia.alt} fill priority sizes="100vw" className={styles.heroImage} />
-        <div className={styles.heroVeil} />
         <div className={`${styles.rail} ${styles.heroInner}`}>
           <div className={styles.heroCopy} data-reveal>
             <p className={styles.eyebrow}>{homePage.hero.eyebrow}</p>
-            <h1 id="home-hero-heading" className={`${marketingHeroDisplay} ${styles.heroHeadingLayout}`}>
+            <h1 id="home-hero-heading" className={`${marketingHeroDisplay} !text-[clamp(44px,5vw,68px)] max-[480px]:!text-[38px] ${styles.heroHeadingLayout}`}>
               {HERO_LINES.map((line) => <span key={line}>{line}</span>)}
             </h1>
             <p className={`${styles.heroLead} ${koreanText}`}>{homePage.hero.support}</p>
           </div>
-          <nav className={styles.intent} aria-label="방문 목적 선택" data-reveal>
+          <figure className={styles.heroFigure} data-reveal>
+            <Image src={heroMedia.src!} alt={heroMedia.alt} fill priority sizes="(min-width: 960px) 58vw, 100vw" className={styles.heroImage} />
+          </figure>
+        </div>
+      </section>
+
+      <section className={styles.intentBridge} aria-label="방문 목적">
+        <div className={styles.rail} data-reveal>
+          <nav className={styles.intent} aria-label="방문 목적 선택">
             <p>무엇을 찾고 계신가요?</p>
             <TrackedLink href={homePage.hero.primaryCta.href} trackLabel={homePage.hero.primaryCta.trackLabel} className={`${styles.intentRow} ${brandFocusRing}`}>
-              <span>01</span><strong>수업을 맡기고 싶어요</strong><i aria-hidden>↗</i>
+              <span>01</span><strong>수업을 맡기고 싶어요</strong><i aria-hidden>→</i>
             </TrackedLink>
             <TrackedLink href={homePage.hero.secondaryCta.href} trackLabel={homePage.hero.secondaryCta.trackLabel} className={`${styles.intentRow} ${brandFocusRing}`}>
-              <span>02</span><strong>지도자용 수업자료를 찾고 있어요</strong><i aria-hidden>↗</i>
+              <span>02</span><strong>지도자용 수업자료를 찾고 있어요</strong><i aria-hidden>→</i>
             </TrackedLink>
           </nav>
         </div>
@@ -141,7 +147,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
                 <button key={item.href} type="button" role="tab" aria-selected={activeService === index}
                   aria-controls="selected-service" className={activeService === index ? styles.serviceSelected : styles.serviceOption}
                   onClick={() => setActiveService(index)}>
-                  <span>{String(index + 1).padStart(2, '0')}</span><strong>{item.label}</strong><i aria-hidden>↗</i>
+                  <span>{String(index + 1).padStart(2, '0')}</span><strong>{item.label}</strong><i aria-hidden>→</i>
                 </button>
               ))}
             </div>
@@ -234,7 +240,7 @@ function SystemPanel() {
 }
 
 function NextRow({ n, title, desc, href, trackLabel }: { n: string; title: string; desc: string; href: string; trackLabel: string; label?: string }) {
-  return <TrackedLink href={href} trackLabel={trackLabel} className={`${styles.nextRow} ${brandFocusRing}`}><span>{n}</span><div><h3>{title}</h3><p>{desc}</p></div><i aria-hidden>↗</i></TrackedLink>;
+  return <TrackedLink href={href} trackLabel={trackLabel} className={`${styles.nextRow} ${brandFocusRing}`}><span>{n}</span><div><h3>{title}</h3><p>{desc}</p></div><i aria-hidden>→</i></TrackedLink>;
 }
 
 export default HomeEditorialLanding;

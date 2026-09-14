@@ -63,7 +63,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('MoreHorizontal');
     expect(detail).toContain('aria-label="수업 관리 메뉴"');
     expect(detail).not.toContain('수업 관리 <ChevronDown');
-    expect(detail).not.toContain('수업 완료 취소');
+    expect(detail).toContain('수업 완료 취소');
     expect(detail).toContain('data-session-create');
     expect(detail).toContain('REPEAT_LABEL');
     expect(detail).toContain('+ 새 수업반 만들기');

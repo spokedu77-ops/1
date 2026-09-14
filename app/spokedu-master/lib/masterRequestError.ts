@@ -1,10 +1,10 @@
-import { toMasterClientError, toNetworkMasterClientError, type MasterClientError } from './clientErrors';
+import { getSafeMasterErrorMessage, isSafeValidationMessage, toMasterClientError, toNetworkMasterClientError, type MasterClientError } from './clientErrors';
 
 export class MasterClientRequestError extends Error {
   readonly clientError: MasterClientError;
 
   constructor(clientError: MasterClientError) {
-    super(clientError.kind);
+    super(clientError.message);
     this.name = 'MasterClientRequestError';
     this.clientError = clientError;
   }
@@ -15,13 +15,28 @@ export function getMasterRequestError(caught: unknown): MasterClientError | null
   return null;
 }
 
-export function getMasterRequestErrorMessage(caught: unknown): string {
-  return getMasterRequestError(caught)?.message ?? toNetworkMasterClientError().message;
+function isLikelyNetworkError(caught: unknown) {
+  if (caught instanceof TypeError) return true;
+  const message = caught instanceof Error ? caught.message : '';
+  return /failed to fetch|networkerror|load failed/i.test(message);
+}
+
+export function getMasterRequestErrorMessage(caught: unknown, fallback?: string): string {
+  const client = getMasterRequestError(caught);
+  if (client) return client.message;
+  if (isLikelyNetworkError(caught)) return toNetworkMasterClientError().message;
+  if (caught instanceof Error && isSafeValidationMessage(caught.message)) return caught.message.trim();
+  return fallback?.trim() || getSafeMasterErrorMessage('unexpected');
 }
 
 async function readJson<T>(response: Response): Promise<T> {
   const text = await response.text();
-  return text ? (JSON.parse(text) as T) : ({} as T);
+  if (!text) return {} as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new MasterClientRequestError(toMasterClientError(response.ok ? 500 : response.status));
+  }
 }
 
 export async function masterFetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -41,6 +56,6 @@ export async function masterFetchJson<T>(url: string, init?: RequestInit): Promi
     return json;
   } catch (caught) {
     if (caught instanceof MasterClientRequestError) throw caught;
-    throw new MasterClientRequestError(toNetworkMasterClientError());
+    throw new MasterClientRequestError(isLikelyNetworkError(caught) ? toNetworkMasterClientError() : toMasterClientError(500));
   }
 }

@@ -24,6 +24,10 @@ describe('MASTER Field Reliability — work preservation / mutation / resume', (
 
     const network = getMasterRequestErrorMessage(new MasterClientRequestError(toNetworkMasterClientError()));
     expect(network).toContain('인터넷');
+    expect(getMasterRequestErrorMessage(new Error('생성할 수 있는 반복 일정이 없습니다.'), '수업을 저장하지 못했습니다.'))
+      .toBe('생성할 수 있는 반복 일정이 없습니다.');
+    expect(getMasterRequestErrorMessage(new Error('duplicate key violates constraint'), '수업을 저장하지 못했습니다.'))
+      .toBe('수업을 저장하지 못했습니다.');
     const validation = getMasterRequestErrorMessage(new MasterClientRequestError(toMasterClientError(400, 'spokedu_master_sessions constraint')));
     expect(validation).not.toMatch(/spokedu_master_|constraint/i);
   });

@@ -56,6 +56,8 @@ export const SPM_JOURNEY_FIELD =
  * Do not remap MasterPageShell here — that would restyle Programs/Library before canonical approval.
  */
 export const MV_EDITORIAL_WIDTH = 'mx-auto w-full max-w-[1120px]';
+/** Home opening: editorial rail plus one 32px desktop gutter on each side. */
+export const MV_HOME_FEATURE_WIDTH = 'mx-auto w-full max-w-[1184px]';
 export const MV_HOME_DISPLAY =
   'max-w-xl whitespace-pre-line text-[30px] font-semibold leading-[1.12] text-[color:var(--spm-t)] sm:text-[32px] lg:text-[36px]';
 export const MV_SECTION_TITLE =
@@ -73,10 +75,10 @@ export const MV_CONTENT_TITLE = 'text-[18px] font-semibold leading-snug text-[co
 export const MV_META = 'text-[12px] font-medium leading-5 text-slate-500 sm:text-[13px]';
 export const MV_HEADING_TO_SHELF = 'mb-4 sm:mb-5';
 export const MV_REENTRY_OBJECT =
-  'flex w-full max-w-[600px] flex-wrap items-center gap-x-3.5 gap-y-0 rounded-[14px] border border-slate-200/60 bg-white/60 px-3.5 py-2.5 sm:flex-nowrap';
-export const MV_REENTRY_IDENTITY = 'min-w-0 flex-[0_1_auto]';
+  'flex h-full min-h-[108px] w-[86vw] max-w-[360px] shrink-0 snap-start items-center gap-3 rounded-[14px] border border-slate-200/60 bg-white/70 px-3 py-3 lg:w-auto lg:max-w-none';
+export const MV_REENTRY_IDENTITY = 'min-w-0 flex-1';
 export const MV_REENTRY_SECONDARY =
-  'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-slate-700 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
+  'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
 export const MV_EXTENSION_TITLE =
   'text-[17px] font-semibold leading-snug text-slate-800';
 export const MV_HOME_START_QUIET = MV_QUIET_ACTION;

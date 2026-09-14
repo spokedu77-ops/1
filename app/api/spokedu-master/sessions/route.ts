@@ -9,7 +9,7 @@ import type {
   SaveSessionInput,
 } from '@/app/spokedu-master/types/operational';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-import { buildSessionCompletionRosterStudentIds, CLASS_TIME_COLLISION_MESSAGE, COMPLETED_RESTORE_FORBIDDEN_MESSAGE, LOCKED_ROSTER_MESSAGE, completionAttendanceMessage, validateCompletionAttendance } from '@/app/spokedu-master/lib/sessionIntegrity';
+import { buildSessionCompletionRosterStudentIds, CLASS_TIME_COLLISION_MESSAGE, LOCKED_ROSTER_MESSAGE, completionAttendanceMessage, validateCompletionAttendance } from '@/app/spokedu-master/lib/sessionIntegrity';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -190,9 +190,6 @@ async function save(request: Request, sessionId: string | null) {
     return privateNoStoreJson({ error: '수업 시간 중복 여부를 확인하지 못했습니다.' }, { status: 500 });
   }
   if (sessionId && !currentSession) return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
-  if (currentSession?.status === 'completed' && input.status === 'scheduled') {
-    return privateNoStoreJson({ error: COMPLETED_RESTORE_FORBIDDEN_MESSAGE }, { status: 400 });
-  }
   const timeChanged = !currentSession
     || currentSession.class_id !== input.classId
     || new Date(currentSession.start_at).getTime() !== new Date(input.startAt).getTime()
@@ -235,13 +232,8 @@ async function save(request: Request, sessionId: string | null) {
   const { data: savedId, error } = result;
   if (error || typeof savedId !== 'string') {
     if (error?.code === '22023' || error?.code === '23505') {
-      const message = error && 'message' in error && typeof error.message === 'string' ? error.message : '';
       return privateNoStoreJson({
-        error: error.code === '23505'
-          ? CLASS_TIME_COLLISION_MESSAGE
-          : message.includes('completed session cannot return')
-            ? COMPLETED_RESTORE_FORBIDDEN_MESSAGE
-            : 'Invalid session data',
+        error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : 'Invalid session data',
       }, { status: 400 });
     }
     if (error?.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });

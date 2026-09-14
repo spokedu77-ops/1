@@ -62,16 +62,15 @@ describe('SPOKEDU MASTER session roster lock', () => {
     expect(capture).not.toContain('classStudentIds');
   });
 
-  it('removes completed restore in UI, policy, API, and DB while keeping cancelled restore', () => {
-    expect(getSessionActionPolicy('completed').restore).toBe(false);
+  it('keeps completed restore while locking roster until the session is reopened', () => {
+    const restoreMigration = read('supabase/migrations/20260914153000_spokedu_master_restore_completed_session.sql');
+    expect(getSessionActionPolicy('completed').restore).toBe(true);
     expect(getSessionActionPolicy('cancelled').restore).toBe(true);
-    expect(policy).toMatch(/completed:[\s\S]*restore: false/);
-    expect(sheet).not.toContain('수업 완료 취소');
-    expect(sessionsRoute).toContain("currentSession?.status === 'completed' && input.status === 'scheduled'");
-    expect(sessionsRoute).toContain('COMPLETED_RESTORE_FORBIDDEN_MESSAGE');
-    expect(wiringMigration).toContain("if old.status='completed' and new.status='scheduled' then");
-    expect(wiringMigration).toContain("if v_old.status='completed' and p_status='scheduled' then");
-    expect(wiringMigration).toContain("or (old.status='cancelled' and new.status='scheduled')");
-    expect(wiringMigration).toContain("or (v_old.status='cancelled' and p_status='scheduled')");
+    expect(policy).toMatch(/completed:[\s\S]*restore: true/);
+    expect(sheet).toContain('수업 완료 취소');
+    expect(sessionsRoute).not.toContain('COMPLETED_RESTORE_FORBIDDEN_MESSAGE');
+    expect(restoreMigration).toContain("old.status in ('cancelled','completed') and new.status='scheduled'");
+    expect(restoreMigration).toContain("v_old.status in ('cancelled','completed') and p_status='scheduled'");
+    expect(restoreMigration).toContain('new.roster_locked_at := null');
   });
 });

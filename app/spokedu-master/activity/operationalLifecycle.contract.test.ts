@@ -33,14 +33,13 @@ describe('MASTER operational lifecycle integrity', () => {
     expect(restore).toContain("v_old.status='cancelled' and p_status='scheduled'");
   });
 
-  it('rejects completed restore while keeping cancelled restore', () => {
-    const wiring = readFileSync('supabase/migrations/20260914020000_spokedu_master_session_roster_lock_wiring.sql', 'utf8');
-    expect(wiring).toContain("if old.status='completed' and new.status='scheduled' then");
-    expect(wiring).toContain("if v_old.status='completed' and p_status='scheduled' then");
-    expect(wiring).toContain("or (old.status='cancelled' and new.status='scheduled')");
-    expect(wiring).not.toContain('delete from public.spokedu_master_session_programs');
-    expect(activity).not.toContain('수업 완료 취소');
-    expect(activity).toContain("status === 'cancelled'");
+  it('reopens completed sessions without deleting their recorded contents', () => {
+    const restore = readFileSync('supabase/migrations/20260914153000_spokedu_master_restore_completed_session.sql', 'utf8');
+    expect(restore).toContain("old.status in ('cancelled','completed') and new.status='scheduled'");
+    expect(restore).toContain("v_old.status in ('cancelled','completed') and p_status='scheduled'");
+    expect(restore).toContain('new.roster_locked_at := null');
+    expect(restore).not.toContain('delete from public.spokedu_master_session_programs');
+    expect(activity).toContain('수업 완료 취소');
     expect(activity).toContain("void persist('scheduled')");
   });
 });

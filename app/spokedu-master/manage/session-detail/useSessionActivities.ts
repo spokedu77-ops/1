@@ -112,7 +112,7 @@ export function useSessionActivities({
       }
     } catch (caught) {
       setPrograms((current) => current.filter((item) => !optimistic.some((pending) => pending.id === item.id)));
-      setError(getMasterRequestErrorMessage(caught) || '활동을 추가하지 못했습니다.');
+      setError(getMasterRequestErrorMessage(caught, '활동을 추가하지 못했습니다.'));
     } finally { setSaving(false); }
   }
 
@@ -120,7 +120,7 @@ export function useSessionActivities({
     if (!activeSession || !canToggleCompletion || saving) return;
     setSaving(true); setError(null);
     try { await data.updateSessionProgram(activeSession.id, program.id, !program.isCompleted); setPrograms((current) => current.map((item) => item.id === program.id ? { ...item, isCompleted: !item.isCompleted } : item)); }
-    catch (caught) { setError(getMasterRequestErrorMessage(caught) || '활동 상태를 저장하지 못했습니다.'); }
+    catch (caught) { setError(getMasterRequestErrorMessage(caught, '활동 상태를 저장하지 못했습니다.')); }
     finally { setSaving(false); }
   }
 
@@ -133,7 +133,7 @@ export function useSessionActivities({
     const previous = programs;
     setPrograms(ordered); setSaving(true);
     try { setPrograms(await data.reorderSessionPrograms(activeSession.id, ordered.map((item) => item.id))); }
-    catch (caught) { setPrograms(previous); setError(getMasterRequestErrorMessage(caught) || '활동 순서를 저장하지 못했습니다.'); }
+    catch (caught) { setPrograms(previous); setError(getMasterRequestErrorMessage(caught, '활동 순서를 저장하지 못했습니다.')); }
     finally { setSaving(false); }
   }
 
@@ -144,7 +144,7 @@ export function useSessionActivities({
     setPrograms((current) => current.filter((item) => item.id !== program.id).map((item, sortOrder) => ({ ...item, sortOrder })));
     setSaving(true); setError(null);
     try { await data.removeSessionProgram(activeSession.id, program.id); }
-    catch (caught) { setPrograms(previous); setError(getMasterRequestErrorMessage(caught) || '활동을 삭제하지 못했습니다.'); }
+    catch (caught) { setPrograms(previous); setError(getMasterRequestErrorMessage(caught, '활동을 삭제하지 못했습니다.')); }
     finally { setSaving(false); }
   }
 

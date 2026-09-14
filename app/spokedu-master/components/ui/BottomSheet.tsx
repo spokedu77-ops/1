@@ -3,6 +3,7 @@
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export function BottomSheet({
   open,
@@ -13,6 +14,8 @@ export function BottomSheet({
   footer,
   onClose,
   size = 'default',
+  nested = false,
+  inert = false,
   initialFocusSelector,
 }: {
   open: boolean;
@@ -23,12 +26,15 @@ export function BottomSheet({
   footer?: ReactNode;
   onClose: () => void | boolean;
   size?: 'default' | 'document' | 'preview' | 'launch' | 'session';
+  nested?: boolean;
+  inert?: boolean;
   initialFocusSelector?: string;
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const onCloseRef = useRef(onClose);
+  const inertRef = useRef(inert);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const [desktopSession, setDesktopSession] = useState(false);
 
@@ -44,6 +50,10 @@ export function BottomSheet({
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    inertRef.current = inert;
+  }, [inert]);
 
   useEffect(() => {
     if (!open) return;
@@ -78,7 +88,7 @@ export function BottomSheet({
     const windowY = window.scrollY;
 
     const previousOverflow = document.body.style.overflow;
-    if (!desktopSession) document.body.style.overflow = 'hidden';
+    if (nested || !desktopSession) document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => {
       const initialFocusTarget = initialFocusSelector && dialogRef.current
         ? dialogRef.current.querySelector<HTMLElement>(initialFocusSelector)
@@ -87,13 +97,17 @@ export function BottomSheet({
     });
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (inertRef.current) return;
       if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopPropagation();
+        if (nested) event.stopImmediatePropagation();
         onCloseRef.current();
         return;
       }
 
       if (event.key !== 'Tab' || !dialogRef.current || desktopSession) return;
+      if (nested) event.stopImmediatePropagation();
 
       const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -112,12 +126,13 @@ export function BottomSheet({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, nested);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, nested);
       document.body.style.overflow = previousOverflow;
-      previousFocusRef.current?.focus({ preventScroll: true });
+      if (previousFocusRef.current?.isConnected) previousFocusRef.current.focus({ preventScroll: true });
+      if (nested) return;
       const restore = () => {
         for (const snapshot of scrollSnapshots) {
           snapshot.el.scrollTop = snapshot.top;
@@ -128,7 +143,7 @@ export function BottomSheet({
       restore();
       requestAnimationFrame(restore);
     };
-  }, [desktopSession, initialFocusSelector, open]);
+  }, [desktopSession, initialFocusSelector, nested, open]);
 
   if (!open) return null;
 
@@ -155,14 +170,15 @@ export function BottomSheet({
       ? 'relative max-h-[92dvh] w-full max-w-[1360px] overflow-y-auto rounded-t-[14px] p-4 shadow-2xl outline-none sm:rounded-[14px] sm:p-6'
       : `relative max-h-[88dvh] w-full max-w-[720px] rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6 ${hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`;
 
+  const overlayZ = nested ? 'z-[100]' : 'z-[90]';
   const overlayClassName = isSession
-    ? 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm lg:static lg:z-auto lg:block lg:h-full lg:min-h-0 lg:bg-transparent lg:px-0 lg:backdrop-blur-none'
+    ? `fixed inset-0 ${overlayZ} flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm lg:static lg:z-auto lg:block lg:h-full lg:min-h-0 lg:bg-transparent lg:px-0 lg:backdrop-blur-none`
     : isLaunch
-    ? 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 backdrop-blur-sm sm:items-center sm:px-6'
-    : 'fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm sm:items-center sm:px-6';
+    ? `fixed inset-0 ${overlayZ} flex items-end justify-center bg-slate-950/45 backdrop-blur-sm sm:items-center sm:px-6`
+    : `fixed inset-0 ${overlayZ} flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm sm:items-center sm:px-6`;
 
-  return (
-    <div className={overlayClassName} role="presentation">
+  const overlay = (
+    <div className={overlayClassName} role="presentation" {...(inert ? { inert: true } : {})}>
       <button type="button" aria-label={`${title} 닫기`} className={`absolute inset-0 cursor-default ${isSession ? 'lg:hidden' : ''}`} onClick={onClose} />
       <div
         ref={dialogRef}
@@ -214,11 +230,13 @@ export function BottomSheet({
         </div>
         {isLaunch || isSession || hasDetachedFooter ? (
           <>
-            <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'overflow-y-auto lg:overflow-y-auto' : 'overflow-y-auto'}`}>{children}</div>
+            <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'overflow-y-auto pr-4 lg:overflow-y-auto lg:pr-5' : 'overflow-y-auto pr-3'}`} style={isSession ? { scrollbarGutter: 'stable' } : undefined}>{children}</div>
             {footer ? <div className="shrink-0 [&>div.grid]:grid-flow-col [&>div.grid]:auto-cols-fr [&>div.grid]:grid-cols-none">{footer}</div> : null}
           </>
         ) : children}
       </div>
     </div>
   );
+
+  return nested ? createPortal(overlay, document.body) : overlay;
 }

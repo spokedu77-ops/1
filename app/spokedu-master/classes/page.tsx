@@ -4,13 +4,14 @@ import { ChevronRight, Plus, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { BottomSheet } from '../components/ui/BottomSheet';
 import { MasterStatePanel } from '../components/ui/MasterStatePanel';
 import { MasterCollectionRow, MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
 import { formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
 import { useOperationalData } from '../operational/OperationalDataProvider';
-import { SPM_PRIMARY_BTN_FULL, SPM_SECONDARY_BTN, MASTER_ACTION_COPY } from '../lib/masterActionGrammar';
+import { SPM_SECONDARY_BTN, MASTER_ACTION_COPY } from '../lib/masterActionGrammar';
+import { buildManageDateHref, buildManageSessionCreateHref, parseSessionClassCreateReturnDate } from '../lib/masterNavigationContext';
 import { buildClassCards } from './classManagementModel';
+import { ClassCreateSheet } from './ClassCreateSheet';
 
 function nextSessionMeta(startAt: string) {
   const day = getSeoulSessionDay(startAt);
@@ -23,37 +24,25 @@ export default function ClassesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [createOpen, setCreateOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [sessionReturnDate, setSessionReturnDate] = useState<string | null>(null);
   const cards = useMemo(() => buildClassCards(data.classes, data.sessions, new Date()), [data.classes, data.sessions]);
 
   useEffect(() => {
     if (searchParams.get('create') !== '1') return;
+    setSessionReturnDate(parseSessionClassCreateReturnDate(searchParams.get('from'), searchParams.get('date')));
     setCreateOpen(true);
     router.replace('/spokedu-master/classes', { scroll: false });
   }, [router, searchParams]);
 
-  const createClass = async () => {
-    if (!name.trim() || saving) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const created = await data.createClass(name.trim());
-      setCreateOpen(false);
-      setName('');
-      router.push(`/spokedu-master/classes/${created.id}`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '수업반을 만들지 못했습니다.');
-    } finally {
-      setSaving(false);
-    }
+  const closeCreate = () => {
+    setCreateOpen(false);
+    if (sessionReturnDate) router.push(buildManageDateHref(sessionReturnDate));
   };
 
   return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
     <MasterPageShell variant="operational">
       <Link href="/spokedu-master/manage" className="mb-4 inline-flex min-h-11 items-center px-4 text-[13px] font-medium text-slate-500 lg:px-5">← 수업 관리</Link>
-      <MasterPageHeader className="px-4 lg:px-5" title="수업반" description="학생 명단과 수업 일정을 관리합니다." action={<button type="button" onClick={() => { setError(null); setCreateOpen(true); }} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-800"><Plus size={16} />{MASTER_ACTION_COPY.createClass}</button>} />
+      <MasterPageHeader className="px-4 lg:px-5" title="수업반" description="학생 명단과 수업 일정을 관리합니다." action={<button type="button" onClick={() => { setSessionReturnDate(null); setCreateOpen(true); }} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-800"><Plus size={16} />{MASTER_ACTION_COPY.createClass}</button>} />
 
       {data.status === 'loading' || data.status === 'idle' ? <MasterStatePanel kind="loading" title="수업반을 불러오는 중입니다." className="mt-5" /> : null}
       {data.status === 'error' ? <MasterStatePanel kind="error" title="수업반을 불러오지 못했습니다." description="현재 화면을 유지한 채 다시 불러올 수 있습니다." action={<button type="button" onClick={() => void data.reload()} className={SPM_SECONDARY_BTN}>다시 시도</button>} className="mt-5" /> : null}
@@ -69,6 +58,15 @@ export default function ClassesPage() {
       </div> : null}
       {data.status === 'ready' && !cards.length ? <MasterStatePanel kind="empty" title="아직 만든 수업반이 없습니다." description="첫 수업반을 만들면 학생과 일정을 연결할 수 있습니다." icon={<Users size={24} />} className="mt-5" /> : null}
     </MasterPageShell>
-    {createOpen ? <BottomSheet open title="수업반 만들기" onClose={() => setCreateOpen(false)}><div className="space-y-4 pb-3"><label className="block text-[13px] font-medium text-slate-600">수업반 이름 *<input autoFocus value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void createClass(); }} placeholder="예: 양화초 늘봄체육" className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-medium outline-none focus:border-slate-400" /></label>{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-medium text-rose-700">{error}</p> : null}<button type="button" disabled={!name.trim() || saving} onClick={() => void createClass()} className={SPM_PRIMARY_BTN_FULL}>{saving ? '만드는 중…' : MASTER_ACTION_COPY.createClass}</button></div></BottomSheet> : null}
+    {createOpen ? <ClassCreateSheet
+      open
+      onClose={closeCreate}
+      onCreated={(created) => {
+        setCreateOpen(false);
+        router.push(sessionReturnDate
+          ? buildManageSessionCreateHref(created.id, sessionReturnDate)
+          : `/spokedu-master/classes/${created.id}`);
+      }}
+    /> : null}
   </main>;
 }

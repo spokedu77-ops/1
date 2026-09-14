@@ -1,7 +1,6 @@
 'use client';
 
 import { CalendarDays, ChevronRight, MoreHorizontal } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import type { getSessionActionPolicy } from '../../activity/sessionActionPolicy';
 import { formatSeoulSessionDay, formatSeoulSessionTime, seoulDateTimeInputToIso } from '../../lib/sessionDateTime';
@@ -30,9 +29,9 @@ function ScheduleFields({ startAt, endAt, setStartAt, setEndAt, setDirty }: { st
   </div>;
 }
 
-export function SessionInformation({ isCreate, activeSession, selectedClass, classes, classId, startAt, endAt, status, actions, scheduleOpen, repeatMode, activeRules, saving, setClassId, setStartAt, setEndAt, setScheduleOpen, setRepeatMode, resetAttendance, setDirty, persist, deleteCancelledSession, endRule }: {
+export function SessionInformation({ isCreate, activeSession, selectedClass, classes, classId, startAt, endAt, status, actions, scheduleOpen, repeatMode, activeRules, saving, setClassId, setStartAt, setEndAt, setScheduleOpen, setRepeatMode, resetAttendance, setDirty, persist, deleteCancelledSession, endRule, onCreateClass }: {
   isCreate: boolean; activeSession: MasterSessionDto | null; selectedClass: MasterClassDto | null; classes: MasterClassDto[]; classId: string; startAt: string; endAt: string; status: MasterSessionStatus; actions: ReturnType<typeof getSessionActionPolicy>; scheduleOpen: boolean; repeatMode: RepeatMode; activeRules: MasterScheduleRule[]; saving: boolean;
-  setClassId: (value: string) => void; setStartAt: (value: string) => void; setEndAt: (value: string) => void; setScheduleOpen: (update: boolean | ((open: boolean) => boolean)) => void; setRepeatMode: (mode: RepeatMode) => void; resetAttendance: () => void; setDirty: (dirty: boolean) => void; persist: (status: MasterSessionStatus) => Promise<void>; deleteCancelledSession: () => void; endRule: (ruleId: string) => Promise<void>;
+  setClassId: (value: string) => void; setStartAt: (value: string) => void; setEndAt: (value: string) => void; setScheduleOpen: (update: boolean | ((open: boolean) => boolean)) => void; setRepeatMode: (mode: RepeatMode) => void; resetAttendance: () => void; setDirty: (dirty: boolean) => void; persist: (status: MasterSessionStatus) => Promise<void>; deleteCancelledSession: () => void; endRule: (ruleId: string) => Promise<void>; onCreateClass: () => void;
 }) {
   const sessionMenuRef = useRef<HTMLDetailsElement | null>(null);
   useEffect(() => {
@@ -42,7 +41,7 @@ export function SessionInformation({ isCreate, activeSession, selectedClass, cla
   }, []);
 
   if (isCreate) return <div data-session-create className="flex flex-col pt-3">
-    <section><label className="block text-[13px] font-semibold text-slate-700">수업반<select value={classId} onChange={(event) => { setClassId(event.target.value); resetAttendance(); setDirty(true); }} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800">{classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><Link href="/spokedu-master/classes?create=1" className="mt-1.5 block text-[13px] font-medium leading-5 text-slate-500 hover:text-slate-950">+ 새 수업반 만들기</Link></section>
+    <section><label className="block text-[13px] font-semibold text-slate-700">수업반<select value={classId} onChange={(event) => { setClassId(event.target.value); resetAttendance(); setDirty(true); }} className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800">{classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><button type="button" onClick={onCreateClass} className="mt-1.5 block text-[13px] font-medium leading-5 text-slate-500 hover:text-slate-950">+ 새 수업반 만들기</button></section>
     <section className="mt-6"><h3 className="text-[13px] font-semibold text-slate-700">일정</h3><ScheduleFields startAt={startAt} endAt={endAt} setStartAt={setStartAt} setEndAt={setEndAt} setDirty={setDirty} /></section>
     <section className="mt-[22px]"><details className="relative border-b border-slate-100"><summary className="flex h-11 cursor-pointer list-none items-center justify-between gap-3"><span className="text-sm font-semibold text-slate-950">반복</span><span className="inline-flex items-center gap-1 text-sm text-slate-500">{REPEAT_LABEL[repeatMode]}{repeatMode !== 'none' ? ' · 4회' : ''}<ChevronRight size={16} /></span></summary><div className="absolute right-0 z-20 mt-1 min-w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">{(['none', 'weekly', 'biweekly'] as const).map((mode) => <button key={mode} type="button" onClick={(event) => { setRepeatMode(mode); event.currentTarget.closest('details')?.removeAttribute('open'); }} className={`min-h-11 w-full rounded-lg px-3 text-left text-sm font-medium ${repeatMode === mode ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-slate-50'}`}>{REPEAT_LABEL[mode]}{mode !== 'none' ? ' · 4회 생성' : ''}</button>)}</div></details></section>
   </div>;

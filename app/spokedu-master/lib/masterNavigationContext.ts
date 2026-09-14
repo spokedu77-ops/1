@@ -21,7 +21,7 @@ export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> =
   '/spokedu-master/activity': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
   '/spokedu-master/manage': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
   '/spokedu-master/students': [],
-  '/spokedu-master/classes': ['create'],
+  '/spokedu-master/classes': ['create', 'from', 'date'],
   '/spokedu-master/class-tools': ['session', 'returnTo', 'source'],
   '/spokedu-master/spomove': ['view', 'group', 'difficulty', 'movement', 'q', 'session', 'returnTo', 'source'],
   '/spokedu-master/spomove/session': [
@@ -69,6 +69,26 @@ export function isMasterNestedReturnKey(key: string) {
 
 export function buildActivitySessionHref(sessionId: string) {
   return `/spokedu-master/activity?session=${encodeURIComponent(sessionId)}`;
+}
+
+export function buildClassCreateFromSessionHref(date: string) {
+  const day = date.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return '/spokedu-master/classes?create=1';
+  return `/spokedu-master/classes?create=1&from=session&date=${encodeURIComponent(day)}`;
+}
+
+export function parseSessionClassCreateReturnDate(from: string | null, date: string | null) {
+  const day = date?.trim() ?? '';
+  if (from !== 'session' || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+  return day;
+}
+
+export function buildManageDateHref(date: string) {
+  return `/spokedu-master/manage?date=${encodeURIComponent(date)}`;
+}
+
+export function buildManageSessionCreateHref(classId: string, date: string) {
+  return `/spokedu-master/manage?date=${encodeURIComponent(date)}&create=1&class=${encodeURIComponent(classId)}`;
 }
 
 export function parseMasterWorkReturnHref(

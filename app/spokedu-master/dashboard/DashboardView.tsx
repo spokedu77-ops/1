@@ -7,6 +7,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 
 const WEEKLY_RECOMMENDATION_COUNT = 4;
@@ -69,11 +70,16 @@ import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
 import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
 import {
+  HOME_MEDIA_FALLBACK,
+  HOME_MEDIA_PACK_ID,
+  normalizeMasterHomeMedia,
+} from '../lib/homeMediaAssets';
+import {
   MV_CONTENT_TITLE,
   MV_EDITORIAL_WIDTH,
   MV_EXTENSION_TITLE,
   MV_HEADING_TO_SHELF,
-  MV_HOME_DISPLAY,
+  MV_HOME_FEATURE_WIDTH,
   MV_HOME_START_QUIET,
   MV_META,
   MV_QUIET_ACTION,
@@ -91,6 +97,10 @@ type SpomoveThumbnailPackQueryResult = {
 
 type SpomoveContentPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
 type SpomoveFeaturedPackQueryResult = { data: { assets_json?: unknown } | null; error: { code?: string } | null };
+type HomeMediaPackQueryResult = {
+  data: { assets_json?: unknown; updated_at?: string | null } | null;
+  error: { code?: string } | null;
+};
 
 function getFirstStartPaths() {
   return [
@@ -272,6 +282,7 @@ function WeeklyProgramCard({
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
       isNew={program.isNew}
+      presentation="home"
     />
   );
 }
@@ -445,7 +456,7 @@ function RecentSpomoveReuseCard({
         href={recentHref}
         data-spm-spomove-recent-action="rerun"
         data-spm-spomove-recent-reproduce={canReproduce ? '1' : '0'}
-        className={`${MV_REENTRY_SECONDARY} ml-[84px] sm:ml-0`}
+        className={MV_REENTRY_SECONDARY}
       >
         다시 시작
         <ArrowRight size={15} aria-hidden />
@@ -489,7 +500,7 @@ function RecentLessonReuseCard({
         </Link>
         <p className={`${MV_META} mt-0.5 truncate`}>{contextLine}</p>
       </div>
-      <Link href={recentHref} data-spm-lesson-recent-action="resume" className={`${MV_REENTRY_SECONDARY} ml-[84px] sm:ml-0`}>
+      <Link href={recentHref} data-spm-lesson-recent-action="resume" className={MV_REENTRY_SECONDARY}>
         {activity.action === 'video_started' ? '이어 보기' : '다시 보기'}
         <ArrowRight size={15} aria-hidden />
       </Link>
@@ -675,6 +686,8 @@ function EntitledDashboardView() {
     null,
     null,
   ]);
+  const [homeHeroPath, setHomeHeroPath] = useState<string | null>(null);
+  const [homeHeroCacheBust, setHomeHeroCacheBust] = useState<number | undefined>();
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
   const guideVideo = useSpomoveGuideVideo(previewSpomove?.id ?? null, isPremium);
   const launchMode = usePreferredLaunchMode();
@@ -750,6 +763,34 @@ function EntitledDashboardView() {
       .catch(() => {
         if (!alive) return;
         setFeaturedSpomoveSlotIds([null, null, null, null]);
+      });
+
+    void supabase
+      .from('think_asset_packs')
+      .select('assets_json, updated_at')
+      .eq('id', HOME_MEDIA_PACK_ID)
+      .maybeSingle()
+      .then((homeMediaResult: HomeMediaPackQueryResult) => {
+        if (!alive) return;
+        const { data, error } = homeMediaResult;
+        if (error && error.code !== 'PGRST116') {
+          setHomeHeroPath(null);
+          setHomeHeroCacheBust(undefined);
+          return;
+        }
+        const next = normalizeMasterHomeMedia(data?.assets_json);
+        setHomeHeroPath(next.heroImage);
+        setHomeHeroCacheBust(
+          resolveSpomovePackCacheBust(
+            data?.updated_at as string | undefined,
+            next.heroImage ? [next.heroImage] : [],
+          ),
+        );
+      })
+      .catch(() => {
+        if (!alive) return;
+        setHomeHeroPath(null);
+        setHomeHeroCacheBust(undefined);
       });
     return () => {
       alive = false;
@@ -847,46 +888,101 @@ function EntitledDashboardView() {
       onRetry={() => void reloadOperationalData()}
     />
   );
+  const homeHeroSrc = homeHeroPath
+    ? withPublicUrlCacheBust(getPublicUrl(homeHeroPath), homeHeroCacheBust)
+    : HOME_MEDIA_FALLBACK.heroImage;
+  const operationalClassIds = new Set(operationalClasses.map((item) => item.id));
+  const hasOperationalReentry = operationalSessions.some((session) => {
+    if (session.status !== 'scheduled') return false;
+    if (session.startedAt || session.programs.some((program) => program.isCompleted)) return true;
+    return operationalClassIds.has(session.classId) && new Date(session.startAt).getTime() > Date.now();
+  });
+  const showContinuityChapter = !isFirstUser && (latestRecentActivity != null || hasOperationalReentry);
 
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-12">
-      <section data-dashboard-chapter="opening" className="px-4 pb-8 pt-4 sm:px-6 lg:pb-7 lg:pt-2">
-        <div className={MV_EDITORIAL_WIDTH}>
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className={MV_HOME_DISPLAY} style={{ fontFamily: 'var(--spm-font-display, inherit)' }}>
-          {'이번 주,\n어떤 수업을 해볼까요?'}
-        </h1>
-        <Link href="/spokedu-master/activity" className={`${MV_QUIET_ACTION} shrink-0`}>
-          수업 일정 보기
-          <ArrowRight size={15} />
-        </Link>
-      </header>
-
-      <div className="mt-5 flex flex-col gap-3 empty:hidden lg:mt-[18px]">
-        {!isFirstUser ? continuityEntry : null}
-        {latestRecentActivity?.action === 'spomove_started' ? (
-          <RecentSpomoveReuseCard
-            activity={latestRecentActivity}
-            thumbnailUrl={resolveSpomoveThumbnailUrl(
-              spomoveThumbnailPaths[latestRecentActivity.programId],
-              spomoveThumbnailCacheBust,
-            )}
-            onOpenGuide={setPreviewSpomove}
-            launchMode={launchMode}
-          />
-        ) : latestRecentActivity && latestLessonProgram ? (
-          <RecentLessonReuseCard activity={latestRecentActivity} program={latestLessonProgram} />
-        ) : null}
-        {!isFirstUser ? <HomeNextSessionPanel sessions={operationalSessions} classes={operationalClasses} /> : null}
-        {isFirstUser ? <FirstStartGuide /> : null}
-      </div>
+      <section data-dashboard-chapter="opening" className="lg:px-4 lg:pt-4">
+        <div className={`${MV_HOME_FEATURE_WIDTH} relative isolate flex min-h-[288px] overflow-hidden bg-slate-950 sm:min-h-[320px] lg:min-h-[350px] lg:rounded-[18px]`}>
+        <Image
+          src={homeHeroSrc}
+          alt="SPOKEDU 체육 수업 현장"
+          fill
+          priority
+          sizes="(min-width: 1216px) 1184px, 100vw"
+          className="-z-20 object-cover object-center"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" aria-hidden />
+        <div className={`${MV_EDITORIAL_WIDTH} flex w-full items-end px-4 pb-7 pt-14 sm:px-6 sm:pb-9 lg:px-0`}>
+          <header className="max-w-[610px] text-white">
+            <p className="text-[12px] font-semibold leading-5 text-white/70 sm:text-[13px]">
+              SPOKEDU MASTER · MOVEMENT BECOMES LEARNING
+            </p>
+            <h1
+              className="mt-3 whitespace-pre-line text-[32px] font-semibold leading-[1.08] text-white sm:text-[38px] lg:text-[42px]"
+              style={{ fontFamily: 'var(--spm-font-display, inherit)' }}
+            >
+              {'움직임이 배움이 되는\n오늘의 수업을 준비하세요'}
+            </h1>
+            <p className="mt-3 max-w-[520px] text-[15px] font-normal leading-6 text-white/80 sm:text-[16px]">
+              놀이체육과 디지털 활동을 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              <Link href="/spokedu-master/library" className="spm-btn-primary inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-semibold focus-visible:outline-none">
+                수업 찾아보기 <ArrowRight size={15} aria-hidden />
+              </Link>
+              <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                수업 일정 보기
+              </Link>
+            </div>
+          </header>
+        </div>
         </div>
       </section>
+
+      {isFirstUser ? (
+        <div data-dashboard-chapter="first-start" className="px-4 pb-0 pt-8 sm:px-6">
+          <div className={MV_EDITORIAL_WIDTH}>
+            <FirstStartGuide />
+          </div>
+        </div>
+      ) : null}
+
+      {showContinuityChapter ? (
+        <section data-dashboard-chapter="continuity" aria-labelledby="continuity-heading" className="px-4 pb-0 pt-8 sm:px-6">
+          <div className={MV_EDITORIAL_WIDTH}>
+            <SectionHeader
+              title="이어서 준비"
+              titleId="continuity-heading"
+              href="/spokedu-master/activity"
+              action="전체 보기"
+            />
+            <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
+              <div className="flex w-max snap-x snap-mandatory items-stretch gap-3 lg:grid lg:w-full lg:grid-cols-3 lg:snap-none">
+                {latestRecentActivity?.action === 'spomove_started' ? (
+                  <RecentSpomoveReuseCard
+                    activity={latestRecentActivity}
+                    thumbnailUrl={resolveSpomoveThumbnailUrl(
+                      spomoveThumbnailPaths[latestRecentActivity.programId],
+                      spomoveThumbnailCacheBust,
+                    )}
+                    onOpenGuide={setPreviewSpomove}
+                    launchMode={launchMode}
+                  />
+                ) : latestRecentActivity && latestLessonProgram ? (
+                  <RecentLessonReuseCard activity={latestRecentActivity} program={latestLessonProgram} />
+                ) : null}
+                <HomeNextSessionPanel sessions={operationalSessions} classes={operationalClasses} />
+                {continuityEntry}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section
         data-dashboard-section="featured-flow"
         aria-label="이번 주 수업 추천"
-        className="bg-white px-4 pb-8 pt-11 sm:px-6"
+        className="px-4 pb-0 pt-12 sm:px-6"
       >
         <div className={MV_EDITORIAL_WIDTH}>
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
@@ -935,11 +1031,11 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="spomove-extension"
         aria-labelledby="spomove-heading"
-        className="w-full bg-white px-4 pb-12 sm:px-6"
+        className="w-full px-4 pb-12 pt-14 sm:px-6"
       >
-        <div className={`${MV_EDITORIAL_WIDTH} border-t border-slate-100 pt-8`}>
+        <div className={MV_EDITORIAL_WIDTH}>
         <SectionHeader
-          title="SPOMOVE로 확장하기"
+          title="SPOMOVE 추천"
           titleId="spomove-heading"
           description="놀이체육을 디지털 자극 활동으로 확장합니다."
           href="/spokedu-master/spomove"

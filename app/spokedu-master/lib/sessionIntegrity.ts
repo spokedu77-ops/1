@@ -8,7 +8,6 @@ export type CompletionAttendanceValidation =
 
 export const CLASS_TIME_COLLISION_MESSAGE = '같은 수업반의 기존 수업과 시간이 겹칩니다.';
 export const LOCKED_ROSTER_MESSAGE = '완료된 수업의 학생 명단은 바꿀 수 없습니다.';
-export const COMPLETED_RESTORE_FORBIDDEN_MESSAGE = '완료된 수업은 예정 상태로 되돌릴 수 없습니다.';
 
 export function buildCompletionRosterStudentIds(
   currentRosterStudentIds: readonly string[],

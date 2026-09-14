@@ -1,9 +1,10 @@
 'use client';
 
-import { BookOpen, CalendarDays, CircleUserRound, Heart, Home, WifiOff, Wrench } from 'lucide-react';
+import { BookOpen, CalendarDays, CircleUserRound, Heart, Home, Search, WifiOff, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
+import { MV_HOME_FEATURE_WIDTH } from '../../lib/masterUiClasses';
 import { MASTER_NAV_ITEMS } from './masterNavLabels';
 
 const NAV_ICONS = {
@@ -36,13 +37,14 @@ function isActivePath(pathname: string, href: string) {
 export function StatusBar() {
   const pathname = usePathname();
   const operational = useOperationalStatus();
+  const isHome = pathname === '/spokedu-master/dashboard';
 
   return (
     <header
       className="sticky top-0 z-40 flex min-h-16 shrink-0 items-center border-b px-4 pt-[env(safe-area-inset-top)] sm:px-6 lg:px-8"
       style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(22px)', borderColor: '#e2e8f0' }}
     >
-      <div className="mx-auto flex w-full max-w-[1376px] items-center justify-between gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+      <div className={`${isHome ? MV_HOME_FEATURE_WIDTH : 'mx-auto w-full max-w-[1376px]'} flex items-center justify-between gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center`}>
         <Link
           href="/spokedu-master/dashboard"
           className="flex min-h-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] lg:justify-self-start"
@@ -77,6 +79,16 @@ export function StatusBar() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 lg:justify-self-end">
+          <form action="/spokedu-master/library" method="get" className="relative hidden w-[180px] lg:block xl:w-[260px] 2xl:w-[300px]" role="search">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <input
+              type="search"
+              name="q"
+              placeholder="수업 활동, 키워드로 검색하세요"
+              aria-label="놀이체육 활동 검색"
+              className="h-10 w-full rounded-full border border-slate-200 bg-slate-100/80 pl-9 pr-3 text-[13px] font-medium text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus-visible:ring-2 focus-visible:ring-slate-200"
+            />
+          </form>
           {!operational.online ? <span
             className="hidden min-h-9 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-black sm:inline-flex"
             style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb-strong)' }}

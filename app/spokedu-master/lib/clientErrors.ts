@@ -47,7 +47,11 @@ export function toMasterClientError(status: number, rawMessage?: string | null):
     return { kind: 'forbidden', message: getSafeMasterErrorMessage('forbidden'), status };
   }
   if (status === 409) {
-    return { kind: 'validation', message: CONFLICT_ERROR_MESSAGE, status };
+    return {
+      kind: 'validation',
+      message: isSafeValidationMessage(rawMessage) ? rawMessage.trim() : CONFLICT_ERROR_MESSAGE,
+      status,
+    };
   }
   if (status >= 400 && status < 500) {
     return { kind: 'validation', message: getSafeMasterErrorMessage('validation', rawMessage), status };
