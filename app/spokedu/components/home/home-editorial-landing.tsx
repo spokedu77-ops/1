@@ -6,6 +6,7 @@ import { HOME_MEDIA } from '../../data/home-media';
 import { homePage, type HomeCaseCard } from '../../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../../lib/resolve-field-records';
 import { brandFocusRing, homeSkipLink, koreanText, marketingHeroDisplay, marketingSectionDisplay } from '../../lib/ui-classes';
+import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
 import styles from './home-editorial.module.css';
 
@@ -25,12 +26,7 @@ const FIELD_TABS: readonly { id: FieldTab; label: string; note: string }[] = [
   { id: 'system', label: 'SYSTEM', note: '스포키듀 구독시스템' },
 ];
 
-const HERO_LINES = [
-  '학교·기관부터',
-  '개인·소그룹까지,',
-  '아이들의 체육수업을',
-  '직접 설계하고 운영합니다.',
-] as const;
+const HERO_LINES = homePage.hero.lines;
 
 function useHomeReveal() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -49,10 +45,19 @@ function useHomeReveal() {
   return rootRef;
 }
 
+function Arrow({ className = '' }: { className?: string }) {
+  return (
+    <span className={`${styles.arrow} ${className}`} aria-hidden>
+      <HomeChevron />
+    </span>
+  );
+}
+
 function ArrowLink({ href, trackLabel, children, light = false }: { href: string; trackLabel: string; children: ReactNode; light?: boolean }) {
   return (
     <TrackedLink href={href} trackLabel={trackLabel} className={`${styles.arrowLink} ${light ? styles.arrowLinkLight : ''} ${brandFocusRing}`}>
-      <span>{children}</span><span aria-hidden>→</span>
+      <span>{children}</span>
+      <Arrow />
     </TrackedLink>
   );
 }
@@ -103,61 +108,63 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
   }, []);
 
   return (
-    <div ref={rootRef} className={styles.page} data-spokedu-home-editorial="integrated-v3">
+    <div ref={rootRef} className={styles.page} data-spokedu-home-editorial="integrated-v5">
       <a href="#choice" className={homeSkipLink}>본문으로 건너뛰기</a>
 
       <section id={homePage.hero.id} className={styles.hero} aria-labelledby="home-hero-heading">
-        <div className={`${styles.rail} ${styles.heroInner}`}>
-          <div className={styles.heroCopy} data-reveal>
+        <figure className={styles.heroMedia}>
+          <Image src={heroMedia.src!} alt={heroMedia.alt} fill priority quality={90} sizes="100vw" className={styles.heroImage} style={{ objectPosition: heroMedia.objectPosition ?? '50% 58%' }} />
+        </figure>
+        <div className={styles.heroStage}>
+          <div className={styles.heroContent}>
             <p className={styles.eyebrow}>{homePage.hero.eyebrow}</p>
-            <h1 id="home-hero-heading" className={`${marketingHeroDisplay} !text-[clamp(44px,5vw,68px)] max-[480px]:!text-[38px] ${styles.heroHeadingLayout}`}>
-              {HERO_LINES.map((line) => <span key={line}>{line}</span>)}
+            <h1 id="home-hero-heading" className={`${marketingHeroDisplay} ${koreanText} ${styles.heroHeading}`}>
+              {HERO_LINES.map((line, index) => (
+                <span key={line}>{index > 0 ? ` ${line}` : line}</span>
+              ))}
             </h1>
             <p className={`${styles.heroLead} ${koreanText}`}>{homePage.hero.support}</p>
           </div>
-          <figure className={styles.heroFigure} data-reveal>
-            <Image src={heroMedia.src!} alt={heroMedia.alt} fill priority sizes="(min-width: 960px) 58vw, 100vw" className={styles.heroImage} />
-          </figure>
-        </div>
-      </section>
-
-      <section className={styles.intentBridge} aria-label="방문 목적">
-        <div className={styles.rail} data-reveal>
           <nav className={styles.intent} aria-label="방문 목적 선택">
             <p>무엇을 찾고 계신가요?</p>
             <TrackedLink href={homePage.hero.primaryCta.href} trackLabel={homePage.hero.primaryCta.trackLabel} className={`${styles.intentRow} ${brandFocusRing}`}>
-              <span>01</span><strong>수업을 맡기고 싶어요</strong><i aria-hidden>→</i>
+              <span>01</span><strong>수업 상담하기</strong><Arrow />
             </TrackedLink>
             <TrackedLink href={homePage.hero.secondaryCta.href} trackLabel={homePage.hero.secondaryCta.trackLabel} className={`${styles.intentRow} ${brandFocusRing}`}>
-              <span>02</span><strong>지도자용 수업자료를 찾고 있어요</strong><i aria-hidden>→</i>
+              <span>02</span><strong>수업자료·구독 둘러보기</strong><Arrow />
             </TrackedLink>
           </nav>
         </div>
       </section>
 
       <section id={homePage.choice.id} className={styles.explorer} aria-labelledby="service-heading">
-        <div className={styles.rail} data-reveal>
-          <header className={styles.sectionHeader}>
-            <p className={styles.sectionCode}>02 / SERVICE EXPLORER</p>
-            <h2 id="service-heading" className={marketingSectionDisplay}>필요한 서비스를 선택하세요.</h2>
-          </header>
+        <div data-reveal>
+          <div className={styles.rail}>
+            <header className={styles.sectionHeader}>
+              <p className={styles.sectionCode}>02 / SERVICE EXPLORER</p>
+              <h2 id="service-heading" className={marketingSectionDisplay}>필요한 서비스를 선택하세요.</h2>
+            </header>
+          </div>
           <div className={styles.explorerGrid}>
             <div className={styles.serviceSelector} role="tablist" aria-label="서비스 선택">
               {homePage.serviceChoices.map((item, index) => (
                 <button key={item.href} type="button" role="tab" aria-selected={activeService === index}
                   aria-controls="selected-service" className={activeService === index ? styles.serviceSelected : styles.serviceOption}
                   onClick={() => setActiveService(index)}>
-                  <span>{String(index + 1).padStart(2, '0')}</span><strong>{item.label}</strong><i aria-hidden>→</i>
+                  <span>{String(index + 1).padStart(2, '0')}</span><strong>{item.label}</strong><Arrow />
                 </button>
               ))}
             </div>
             <article id="selected-service" role="tabpanel" className={styles.serviceStage} key={service.href}>
               <div className={styles.serviceVisual}>
-                <Image src={serviceImage.src} alt={serviceImage.alt} fill sizes="(min-width: 960px) 62vw, 100vw" style={{ objectPosition: serviceImage.position }} />
-                <span>{service.audience}</span>
+                <Image src={serviceImage.src} alt={serviceImage.alt} fill sizes="(min-width: 960px) 72vw, 100vw" style={{ objectPosition: serviceImage.position }} />
               </div>
               <div className={styles.serviceDetail}>
-                <div><h3>{service.label}</h3><p className={koreanText}>{service.description}</p></div>
+                <div>
+                  <p className={styles.sectionCode}>{service.audience}</p>
+                  <h3>{service.label}</h3>
+                  <p className={koreanText}>{service.description}</p>
+                </div>
                 <ArrowLink href={service.href} trackLabel={service.trackLabel}>{service.action}</ArrowLink>
               </div>
             </article>
@@ -227,8 +234,8 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
 }
 
 function FieldPanel() {
-  const media = HOME_MEDIA[homePage.hero.mediaKey];
-  return <div className={styles.panelGrid}><div className={styles.panelMedia}><Image src={media.src!} alt={media.alt} fill sizes="(min-width: 960px) 66vw, 100vw" /></div><div className={styles.panelCopy}><p>직접 운영하는 체육수업</p><h3>대상과 환경에 맞춰 수업을 직접 설계하고 운영합니다.</h3><ArrowLink href="/records" trackLabel="cta-home-built-field" light>운영 사례 보기</ArrowLink></div></div>;
+  const media = HOME_MEDIA.homeHeroField;
+  return <div className={styles.panelGrid}><div className={styles.panelMedia}><Image src={media.src!} alt={media.alt} fill sizes="(min-width: 960px) 72vw, 100vw" style={{ objectPosition: media.objectPosition ?? '58% 48%' }} /></div><div className={styles.panelCopy}><p>직접 운영하는 체육수업</p><h3>대상과 환경에 맞춰 수업을 직접 설계하고 운영합니다.</h3><ArrowLink href="/records" trackLabel="cta-home-built-field" light>운영 사례 보기</ArrowLink></div></div>;
 }
 
 function ContentPanel() {
@@ -240,7 +247,13 @@ function SystemPanel() {
 }
 
 function NextRow({ n, title, desc, href, trackLabel }: { n: string; title: string; desc: string; href: string; trackLabel: string; label?: string }) {
-  return <TrackedLink href={href} trackLabel={trackLabel} className={`${styles.nextRow} ${brandFocusRing}`}><span>{n}</span><div><h3>{title}</h3><p>{desc}</p></div><i aria-hidden>→</i></TrackedLink>;
+  return (
+    <TrackedLink href={href} trackLabel={trackLabel} className={`${styles.nextRow} ${brandFocusRing}`}>
+      <span>{n}</span>
+      <div><h3>{title}</h3><p>{desc}</p></div>
+      <Arrow />
+    </TrackedLink>
+  );
 }
 
 export default HomeEditorialLanding;

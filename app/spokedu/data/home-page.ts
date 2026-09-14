@@ -101,7 +101,7 @@ export const homePage = {
       '아이들의 체육수업을 직접 설계하고 운영합니다.',
     ] as const,
     support: '현장에서 사용하는 수업자료와 SPOMOVE 콘텐츠도 직접 만듭니다.',
-    mediaKey: 'homeHeroMovement' as HomeMediaKey,
+    mediaKey: 'homeHeroClassroom' as HomeMediaKey,
     primaryCta: {
       label: '수업 유형 보기',
       href: '#choice',

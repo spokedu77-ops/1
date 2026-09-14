@@ -282,6 +282,7 @@ function RecommendationProgramCard({
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
       isNew={program.isNew}
+      presentation="library-featured"
     />
   );
 }
@@ -315,7 +316,7 @@ function RecommendationShelf({
         </button>
       </div>
       <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
-        <div className="flex w-max snap-x snap-mandatory items-start gap-5 lg:grid lg:w-auto lg:grid-cols-4 lg:gap-6 lg:snap-none">
+        <div className="flex w-max snap-x snap-mandatory items-start gap-4 lg:grid lg:w-auto lg:grid-cols-4 lg:gap-5 lg:snap-none">
           {programs.map((program, index) => (
             <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-auto lg:max-w-none lg:shrink">
               <RecommendationProgramCard
@@ -516,7 +517,7 @@ export default function LibraryView() {
           ? '이용 기간이 종료되어 수업 라이브러리를 불러올 수 없습니다. 구독을 시작하면 전체 수업을 이용할 수 있습니다.'
           : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
-      <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto px-4 py-16 sm:px-6 lg:px-8" style={{ background: 'var(--spm-bg)' }}>
+      <main className="mx-auto flex h-full w-full max-w-[1120px] items-center justify-center overflow-y-auto px-4 py-16 sm:px-6" style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center shadow-sm">
           <Lock className="mx-auto h-6 w-6 text-[color:var(--spm-t3)]" />
           <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
@@ -564,7 +565,7 @@ export default function LibraryView() {
         <section id="library-catalog" className="scroll-mt-6">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <h2 className="text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]">전체 놀이체육</h2>
-            <div className="flex min-w-0 flex-wrap items-center gap-2 lg:w-[460px]">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 lg:w-[480px]">
               <label className="relative block min-w-[200px] flex-1">
                 <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
                 <input
@@ -572,7 +573,7 @@ export default function LibraryView() {
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="활동 이름, 교구, 종목 검색"
                   aria-label="놀이체육 활동 검색"
-                  className="h-11 w-full rounded-[12px] border border-slate-300 bg-white pl-10 pr-3 text-[14px] font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-500 focus-visible:ring-2 focus-visible:ring-slate-200"
+                  className="h-11 w-full rounded-[12px] border border-slate-200 bg-slate-100/80 pl-10 pr-3 text-[14px] font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)]/15"
                 />
               </label>
               <button
@@ -699,7 +700,7 @@ function ProgramGrid({
   addingProgramId: string | null;
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+    <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
       {programs.map((program, index) => (
         <ProgramCard
           key={program.id}

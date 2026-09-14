@@ -100,7 +100,9 @@ export const SPOKEDU_PLACEHOLDER_IMAGE_ASSETS: readonly string[] = [] as const;
 
 export const SPOKEDU_IMAGES = {
   brand: {
-    logo: defineImage('brand', 'spokedu-logo', 'spokedu-logo.png', 'SPOKEDU 로고'),
+    logo: defineImage('brand', 'spokedu-logo', 'spokedu-logo.png', 'SPOKEDU', {
+      externalSrc: '/images/brand/spokedu-logo-blue.png',
+    }),
     logoWhite: defineImage('brand', 'spokedu-logo-white', 'spokedu-logo-white.png', 'SPOKEDU 로고 (화이트)'),
     spomat: defineImage(
       'brand',
@@ -147,6 +149,13 @@ export const SPOKEDU_IMAGES = {
       'home-hero-movement',
       'home-hero-movement.jpg',
       '아동·청소년 체육수업 현장 — 지도자와 참여 활동',
+    ),
+    heroClassroom: defineImage(
+      'home',
+      'home-hero-classroom',
+      'hero-spokedu-classroom.png',
+      '교실 체육수업 현장 — 아이들이 지도자와 함께 움직이는 장면',
+      { allowedPages: ['home'], externalSrc: '/images/home/hero-spokedu-classroom.png' },
     ),
     fieldEditorialHero: defineImage(
       'home',

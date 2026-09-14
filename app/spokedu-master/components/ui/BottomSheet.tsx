@@ -156,9 +156,9 @@ export function BottomSheet({
       ? `relative max-h-[88dvh] w-full max-w-[1160px] rounded-t-[16px] p-4 shadow-2xl outline-none sm:rounded-[16px] sm:p-5 ${hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`
       : isSession
         ? [
-            'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] px-4 pt-3 shadow-2xl outline-none',
+            'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] border border-slate-200 bg-white px-4 pt-3 shadow-2xl outline-none',
             'sm:px-5 sm:pt-4',
-            'lg:h-full lg:max-h-full lg:min-h-0 lg:w-full lg:max-w-none lg:rounded-none lg:border-y-0 lg:border-l lg:border-r-0 lg:px-6 lg:pt-5 lg:shadow-none',
+            'lg:h-full lg:max-h-full lg:min-h-0 lg:w-full lg:max-w-none lg:rounded-none lg:border-y-0 lg:border-r-0 lg:border-l lg:border-slate-200 lg:bg-white lg:px-6 lg:pt-5 lg:shadow-none',
           ].join(' ')
       : isLaunch
         ? [
@@ -184,8 +184,7 @@ export function BottomSheet({
         ref={dialogRef}
         className={`${panelClassName} ${isSession ? 'lg:pointer-events-auto' : ''}`}
         style={{
-          background: '#ffffff',
-          border: '1px solid #e2e8f0',
+          ...(isSession ? {} : { background: '#ffffff', border: '1px solid #e2e8f0' }),
           paddingBottom: hasDetachedFooter ? 0 : 'max(16px, env(safe-area-inset-bottom))',
         }}
         role="dialog"
@@ -220,8 +219,10 @@ export function BottomSheet({
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="grid h-11 w-11 place-items-center rounded-[10px] outline-none ring-offset-2 focus-visible:ring-2"
-            style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b' }}
+            className={isSession
+              ? 'grid h-11 w-11 place-items-center rounded-[12px] text-slate-500 outline-none hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)]'
+              : 'grid h-11 w-11 place-items-center rounded-[10px] outline-none ring-offset-2 focus-visible:ring-2'}
+            style={isSession ? undefined : { background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b' }}
             aria-label={`${title} 닫기`}
           >
             <X size={17} color="currentColor" />

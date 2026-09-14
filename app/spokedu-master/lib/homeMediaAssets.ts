@@ -2,7 +2,7 @@ export const HOME_MEDIA_PACK_ID = 'spokedu_master_home_media';
 export const HOME_MEDIA_PACK_NAME = 'SPOKEDU MASTER 홈 미디어';
 
 export const HOME_MEDIA_FALLBACK = {
-  heroImage: '/images/spokedu/home/field-editorial/home-hero-field.webp',
+  heroImage: '/images/spokedu/home/field-editorial/home-hero-running.webp',
 } as const;
 
 export type MasterHomeMedia = {

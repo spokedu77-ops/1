@@ -78,8 +78,8 @@ export default function ProgramsPage() {
       >
         <MasterPageHeader title="프로그램" description="수업에 맞는 프로그램을 선택하세요." />
 
-        <div className="flex flex-1 items-start py-10 sm:py-12 lg:items-center lg:pb-28 lg:pt-10">
-          <div className="grid w-full gap-6 md:grid-cols-2 lg:gap-8">
+        <div className="flex flex-1 items-start py-10 sm:py-12 lg:items-center lg:pb-24 lg:pt-10">
+          <div className="grid w-full gap-5 md:grid-cols-2 lg:gap-6">
             <ProgramGatewayCard
               title="놀이체육"
               description="다양한 교구와 움직임으로 구성하는 현장 체육활동"
@@ -119,7 +119,7 @@ function ProgramGatewayCard({
   return (
     <Link
       href={href}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
+      className="group flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-slate-200/80 bg-white transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-slate-200">
         {image ? (
@@ -136,10 +136,10 @@ function ProgramGatewayCard({
           <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100" aria-hidden="true" />
         )}
       </div>
-      <div className="flex flex-1 flex-col px-5 pb-5 pt-[18px] sm:px-6 sm:pb-6 sm:pt-5">
-        <h2 className="text-[24px] font-semibold tracking-[-0.02em] text-slate-950">{title}</h2>
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
+        <h2 className="text-[24px] font-semibold leading-tight tracking-[-0.02em] text-slate-950">{title}</h2>
         <p className="mt-2 text-[15px] font-normal leading-6 text-slate-600">{description}</p>
-        <span className="mt-4 inline-flex min-h-11 items-center gap-1.5 self-start text-[14px] font-semibold text-slate-700 transition-colors group-hover:text-slate-950 sm:mt-5">
+        <span className="mt-3 inline-flex min-h-11 items-center gap-1.5 self-start text-[14px] font-semibold text-slate-600 transition-colors group-hover:text-slate-950 sm:mt-4">
           {action}
           <span aria-hidden="true">→</span>
         </span>

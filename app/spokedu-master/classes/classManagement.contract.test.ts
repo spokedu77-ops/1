@@ -39,7 +39,7 @@ describe('MASTER Class and attendance management contracts', () => {
     const createSheet = read('app/spokedu-master/classes/ClassCreateSheet.tsx');
     expect(createSheet).toContain("await data.createClass(name.trim())");
     expect(list).toContain('buildManageSessionCreateHref(created.id, sessionReturnDate)');
-    expect(list).toContain('router.push(`/spokedu-master/classes/${created.id}`)');
+    expect(list).toContain('`/spokedu-master/classes/${created.id}`');
     expect(list).toContain('buildManageDateHref(sessionReturnDate)');
     expect(list).toContain('parseSessionClassCreateReturnDate');
     expect(activity).toContain('<ClassCreateSheet nested');

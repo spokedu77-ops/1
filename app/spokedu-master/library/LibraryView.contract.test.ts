@@ -86,7 +86,8 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain('WeeklyEditorialCard');
     expect(source).toContain('cleanSquareMedia');
     expect(source).toContain('return ordered.slice(0, 4)');
-    expect(source).toContain('lg:grid-cols-4 lg:gap-6');
+    expect(source).toContain('lg:grid-cols-4 lg:gap-5');
+    expect(source).toContain('presentation="library-featured"');
     expect(source).not.toContain('BrowseSection');
     expect(source).toContain('업데이트 예정');
     expect(source).toContain('isNew={program.isNew}');

@@ -15,8 +15,10 @@ const navigation = read('app/spokedu-master/lib/masterNavigationContext.ts');
 describe('SPOKEDU MASTER Manage V2 contract', () => {
   it('owns the canonical two-tab IA and keeps activity as a compatibility route', () => {
     expect(manage).toContain("type ManageTab = 'schedule' | 'attendance'");
-    expect(manage).toContain('>일정</button>');
-    expect(manage).toContain('>출석부</button>');
+    expect(manage).toContain("role=\"tab\" aria-selected={tab === 'schedule'}");
+    expect(manage).toContain("role=\"tab\" aria-selected={tab === 'attendance'}");
+    expect(manage).toContain('}>일정{');
+    expect(manage).toContain('}>출석부{');
     expect(manage).not.toContain('내 수업반');
     expect(activityRoute).toContain("import ManageView from '../manage/ManageView'");
     expect(manage).toContain('resolveActivityQuery(searchParams');

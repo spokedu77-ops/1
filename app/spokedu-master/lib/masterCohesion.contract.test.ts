@@ -53,7 +53,7 @@ describe('MASTER commercial cohesion contracts', () => {
 
   it('keeps operational primary CTAs on the brand token', () => {
     for (const path of [
-      'app/spokedu-master/classes/page.tsx',
+      'app/spokedu-master/manage/session-detail/SessionActions.tsx',
       'app/spokedu-master/students/page.tsx',
       'app/spokedu-master/manage/ScheduleTab.tsx',
       'app/spokedu-master/dashboard/TodaySessionsPanel.tsx',

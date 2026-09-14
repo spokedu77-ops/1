@@ -31,7 +31,7 @@ export function InstructionalThumb({
   sizes: string;
   priority?: boolean;
   className?: string;
-  presentation?: 'default' | 'home-clean-square' | 'full-visible-4-3';
+  presentation?: 'default' | 'home-clean-square' | 'home-cover-4-3' | 'full-visible-4-3';
   fallback?: ReactNode;
 }) {
   const imageSrc = normalizeImageSrc(src);
@@ -40,6 +40,7 @@ export function InstructionalThumb({
   const unoptimized = isRemoteImage(imageSrc) && !imageSrc.includes('.supabase.co');
   const svg = isSvgSrc(imageSrc);
   const cleanSquare = presentation === 'home-clean-square';
+  const homeCoverFourThree = presentation === 'home-cover-4-3';
   const fullVisibleFourThree = presentation === 'full-visible-4-3';
 
   const failOver = (event: { currentTarget: HTMLImageElement }) => {
@@ -57,7 +58,19 @@ export function InstructionalThumb({
       className={`relative overflow-hidden rounded-[16px] bg-slate-200 ${cleanSquare ? 'aspect-square w-full' : 'aspect-[4/3] w-full'} ${className ?? ''}`.trim()}
     >
       {showImage ? (
-        fullVisibleFourThree ? (
+        homeCoverFourThree ? (
+          <Image
+            src={imageSrc}
+            alt={alt}
+            fill
+            sizes={sizes}
+            quality={75}
+            priority={priority}
+            unoptimized={unoptimized}
+            className="h-full w-full object-cover object-center"
+            onError={failOver}
+          />
+        ) : fullVisibleFourThree ? (
           <Image
             src={imageSrc}
             alt={alt}

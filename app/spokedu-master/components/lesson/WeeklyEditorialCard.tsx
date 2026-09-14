@@ -1,9 +1,9 @@
 'use client';
 
-import { Bookmark, Play } from 'lucide-react';
+import { Bookmark, Heart, Play } from 'lucide-react';
 
 import { InstructionalThumb } from '../media/InstructionalThumb';
-import { MV_CONTENT_TITLE, MV_META } from '../../lib/masterUiClasses';
+import { MV_CONTENT_TITLE, MV_HOME_CARD_META, MV_HOME_CARD_TITLE, MV_META } from '../../lib/masterUiClasses';
 import { CategoryIcon } from '../ui/ProgramThumb';
 import { LessonNewMark } from './LessonCatalogCard';
 
@@ -36,14 +36,15 @@ export function WeeklyEditorialCard({
   sizes?: string;
   cleanSquareMedia?: boolean;
   isNew?: boolean;
-  presentation?: 'default' | 'home';
+  presentation?: 'default' | 'home' | 'library-featured';
 }) {
   const type = category.trim();
   const support = (supportMeta ?? '').trim();
-  const favoriteChrome = presentation === 'home'
+  const isHomeFamily = presentation === 'home' || presentation === 'library-featured';
+  const favoriteChrome = isHomeFamily
     ? favorite
-      ? 'text-amber-500'
-      : 'text-slate-600 hover:text-slate-900'
+      ? 'text-amber-500 hover:text-amber-600'
+      : 'text-slate-500 hover:text-slate-900'
     : favorite
       ? 'bg-white text-amber-500 shadow-sm'
       : 'bg-white/90 text-slate-600 shadow-sm hover:bg-white hover:text-slate-900';
@@ -54,8 +55,8 @@ export function WeeklyEditorialCard({
         type="button"
         onClick={onPreview}
         className={`flex w-full cursor-pointer flex-col items-stretch text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] ${
-          presentation === 'home'
-            ? 'rounded-[16px]'
+          isHomeFamily
+            ? 'overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 hover:border-slate-300'
             : 'overflow-hidden rounded-[16px] border border-slate-100/80 bg-white transition-colors duration-200 hover:border-slate-200'
         }`}
         aria-label={`${title} 미리보기`}
@@ -66,11 +67,11 @@ export function WeeklyEditorialCard({
               src={heroImageUrl}
               sizes={sizes}
               priority={priority}
-              presentation={cleanSquareMedia ? 'home-clean-square' : 'default'}
-              className={`${presentation === 'home' ? '' : 'rounded-b-none'} transition-transform duration-200 group-hover:scale-[1.015]`}
+              presentation={isHomeFamily ? 'home-cover-4-3' : cleanSquareMedia ? 'home-clean-square' : 'default'}
+              className={`${isHomeFamily ? 'rounded-none' : 'rounded-b-none'} transition-opacity duration-200 group-hover:opacity-95`}
             />
           ) : (
-            <span className={`relative flex w-full items-center justify-center overflow-hidden bg-slate-200 transition-transform duration-200 group-hover:scale-[1.015] ${presentation === 'home' ? 'rounded-[16px]' : 'rounded-t-[15px]'} ${cleanSquareMedia ? 'aspect-square' : 'aspect-[4/3]'}`}>
+            <span className={`relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-slate-200 transition-opacity duration-200 group-hover:opacity-95 ${isHomeFamily ? '' : 'rounded-t-[15px]'}`}>
               <CategoryIcon category={category} size={36} color="rgba(15,23,42,0.45)" />
             </span>
           )}
@@ -78,17 +79,17 @@ export function WeeklyEditorialCard({
             <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
               {isNew ? <LessonNewMark /> : null}
               {hasVideo ? (
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
+                <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-white/75 text-slate-700">
                   <Play className="h-3 w-3 fill-current" aria-hidden />
                 </span>
               ) : null}
             </span>
           ) : null}
         </span>
-        <div className={presentation === 'home' ? 'pt-2.5' : 'px-3 pb-3.5 pt-2.5'}>
-          {type ? <span className={`${MV_META} block`}>{type}</span> : null}
-          <span className={`${MV_CONTENT_TITLE} mt-1.5 block line-clamp-1 transition-colors duration-200 group-hover:text-slate-700`}>{title}</span>
-          {support ? <span className={`${MV_META} ${presentation === 'home' ? 'mt-1.5' : 'mt-3'} block text-slate-600`}>{support}</span> : null}
+        <div className={isHomeFamily ? 'px-3.5 pb-3.5 pt-3' : 'px-3 pb-3.5 pt-2.5'}>
+          {type ? <span className={`${isHomeFamily ? MV_HOME_CARD_META : MV_META} block truncate`}>{isHomeFamily && support ? `${type} · ${support}` : type}</span> : null}
+          <span className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 group-hover:text-slate-700`}>{title}</span>
+          {support && !isHomeFamily ? <span className={`${MV_META} mt-3 block truncate text-slate-600`}>{support}</span> : null}
         </div>
       </button>
 
@@ -96,14 +97,14 @@ export function WeeklyEditorialCard({
         <button
           type="button"
           onClick={onFavorite}
-          className={`absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:w-9 ${favoriteChrome}`}
+          className={`absolute right-2 top-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 ${favoriteChrome}`}
           aria-pressed={favorite}
           aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
           title={!favoriteEnabled ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
           disabled={!favoriteEnabled}
         >
-          <span className={presentation === 'home' ? 'grid h-8 w-8 place-items-center rounded-full bg-white/90' : undefined}>
-            <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} aria-hidden />
+          <span className={isHomeFamily ? 'grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-white/80' : undefined}>
+            {isHomeFamily ? <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} aria-hidden /> : <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} aria-hidden />}
           </span>
         </button>
       ) : null}

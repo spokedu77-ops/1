@@ -1,6 +1,6 @@
 'use client';
 
-import { Bookmark, Play } from 'lucide-react';
+import { Heart, Play } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -69,8 +69,8 @@ export function FavoriteRetrievalCard({
         className="absolute right-1.5 top-1.5 z-20 grid h-11 w-11 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--spm-acc)]"
         aria-label={removeAriaLabel ?? `${title} 즐겨찾기에서 제거`}
       >
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-white/75 text-[color:var(--spm-acc)] ring-1 ring-slate-900/5 backdrop-blur-sm transition-colors group-hover:bg-white/90">
-          <Bookmark className="h-4 w-4 fill-current" aria-hidden />
+        <span className="grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-white/80 text-amber-500 ring-1 ring-slate-900/5 backdrop-blur-sm transition-colors group-hover:bg-white/95">
+          <Heart className="h-4 w-4 fill-current" aria-hidden />
         </span>
       </button>
     </article>

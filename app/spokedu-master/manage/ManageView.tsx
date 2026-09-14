@@ -8,6 +8,7 @@ import { getMonthKey } from '../activity/monthCalendar';
 import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
 import { MasterState } from '../components/ui/MasterStatePanel';
 import { SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
+import { MV_QUIET_ACTION } from '../lib/masterUiClasses';
 import { getSeoulSessionDay, getSeoulToday } from '../lib/sessionDateTime';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import type { MasterSessionDto } from '../types/operational';
@@ -55,16 +56,16 @@ export default function ManageView() {
   const selectTab = (nextTab: ManageTab) => { setEditing(undefined); setTab(nextTab); };
 
   return <main data-manage-workspace className={`h-full min-h-0 bg-[var(--spm-bg)] pb-28 ${tab === 'attendance' ? 'overflow-y-auto' : 'overflow-y-auto lg:overflow-hidden lg:pb-0'}`}>
-    <MasterPageShell variant="wide" className={editing !== undefined ? 'lg:grid lg:h-full lg:min-h-0 lg:max-w-none lg:grid-cols-[minmax(0,1fr)_minmax(400px,31%)] lg:items-stretch lg:gap-0 lg:!px-0 lg:!py-0' : tab === 'attendance' ? 'lg:px-8' : 'lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8'}>
+    <MasterPageShell variant="wide" className={editing !== undefined ? 'lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(400px,31%)] lg:items-stretch lg:gap-0 lg:!px-0 lg:!py-0' : tab === 'attendance' ? 'lg:px-8' : 'lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8'}>
       <div className={editing !== undefined ? 'min-w-0 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8 lg:pb-4 lg:pt-4' : tab === 'attendance' ? 'min-w-0' : 'min-w-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden'}>
       <div className="shrink-0">
       <MasterPageHeader title="수업 관리" />
-      <div className="mt-3 flex items-center justify-between gap-6">
-      <div className="grid h-11 w-full max-w-[320px] grid-cols-2 rounded-[12px] border border-slate-200 bg-white p-0.5" role="tablist" aria-label="수업 관리 보기">
-        <button type="button" role="tab" aria-selected={tab === 'schedule'} onClick={() => selectTab('schedule')} className={`rounded-[10px] px-4 text-[13px] font-semibold transition-colors ${tab === 'schedule' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>일정</button>
-        <button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => selectTab('attendance')} className={`rounded-[10px] px-4 text-[13px] font-semibold transition-colors ${tab === 'attendance' ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>출석부</button>
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+      <div className="flex h-11 items-center gap-0.5" role="tablist" aria-label="수업 관리 보기">
+        <button type="button" role="tab" aria-selected={tab === 'schedule'} onClick={() => selectTab('schedule')} className={`relative h-11 px-3 text-[14px] font-semibold transition-colors ${tab === 'schedule' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}>일정{tab === 'schedule' ? <span className="absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-[var(--spm-acc)]" aria-hidden /> : null}</button>
+        <button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => selectTab('attendance')} className={`relative h-11 px-3 text-[14px] font-semibold transition-colors ${tab === 'attendance' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}>출석부{tab === 'attendance' ? <span className="absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-[var(--spm-acc)]" aria-hidden /> : null}</button>
       </div>
-      <Link href="/spokedu-master/classes" className="inline-flex min-h-9 shrink-0 items-center px-1 text-[13px] font-medium text-slate-600 hover:text-slate-950">수업반 관리 →</Link>
+      <Link href="/spokedu-master/classes" className={`${MV_QUIET_ACTION} px-1 text-[14px] font-medium`}>수업반 관리 →</Link>
       </div>
       </div>
       {data.status === 'loading' || data.status === 'idle' ? <MasterState kind="loading" title="수업 데이터를 불러오는 중입니다." className="mt-6" /> : null}

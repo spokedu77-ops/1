@@ -36,7 +36,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(hub).toContain('composeSpomovePublicCardMetaParts');
     expect(hub).not.toContain('decisionMeta');
     expect(hub).not.toContain('supportingMeta');
-    expect(hub).toContain('min-h-[84px]');
+    expect(hub).toContain('data-spm-spomove-card-meta');
     expect(hub).not.toContain('useSearchParams().get(\'programGroup\')');
   });
 
@@ -83,7 +83,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     expect(preview).toContain('시작 설정');
     expect(preview).toContain('spm-btn-primary');
     expect(hub).not.toContain('<Play ');
-    expect(hub).toContain("import { Bookmark, ChevronDown, Search, X } from 'lucide-react'");
+    expect(hub).toContain("import { ChevronDown, Heart, Search, X } from 'lucide-react'");
     expect(hub).toContain('h-11 w-11');
   });
 
@@ -94,7 +94,7 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
 
   it('uses four-column desktop density and the Home-aligned square card ratio', () => {
     expect(hub).toContain(
-      'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-4',
+      'grid grid-cols-1 items-start gap-4 min-[431px]:grid-cols-2 lg:grid-cols-4 lg:gap-5',
     );
     expect(hub).not.toContain('min-h-[300px]');
     expect(hub).toContain('aspect-square');

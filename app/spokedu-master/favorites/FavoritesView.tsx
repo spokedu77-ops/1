@@ -1,6 +1,7 @@
 'use client';
 
-import { Bookmark } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -279,9 +280,16 @@ export default function FavoritesView() {
           </section>
         ) : (
           <section className="mt-12 text-center">
-            <Bookmark className="mx-auto h-7 w-7 text-slate-300" />
+            <Heart className="mx-auto h-7 w-7 text-slate-300" />
             <h2 className="mt-3 text-[20px] font-semibold text-slate-900">{emptyTitle}</h2>
-            {resolvedFavoriteItems.length === 0 ? <p className="mt-2 text-[14px] text-slate-500">프로그램에서 자주 쓸 활동을 저장해 보세요.</p> : null}
+            {resolvedFavoriteItems.length === 0 ? (
+              <>
+                <p className="mt-2 text-[14px] text-slate-500">활동에서 하트를 눌러 자주 쓰는 콘텐츠를 모아보세요.</p>
+                <Link href="/spokedu-master/library" className="mt-4 inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
+                  놀이체육 둘러보기
+                </Link>
+              </>
+            ) : null}
           </section>
         )}
       </div>

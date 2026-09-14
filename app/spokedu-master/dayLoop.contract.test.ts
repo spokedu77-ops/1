@@ -18,7 +18,8 @@ describe('SPOKEDU MASTER Session day loop', () => {
     const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
     const todaySessions = read('app/spokedu-master/dashboard/todaySessionsModel.ts');
     const workState = read('app/spokedu-master/lib/masterSessionWorkState.ts');
-    expect(dashboard).toContain('TodaySessionsPanel');
+    expect(dashboard).toContain('HomeContinueCard');
+    expect(dashboard).toContain('href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`}');
     expect(todaySessions).toContain('href: workState.href');
     expect(workState).toContain('buildActivitySessionHref(session.id)');
   });

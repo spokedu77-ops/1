@@ -19,7 +19,8 @@ describe('value summary API contract', () => {
     expect(route).toContain('available: false');
   });
   it('keeps Home focused on Weekly curation and one continuity action', () => {
-    expect(home).toContain('HomeContinuityPanel');
+    expect(home).toContain('HomeContinueCard');
+    expect(home).toContain('data-dashboard-chapter="continuity"');
     expect(home).toContain('data-dashboard-section="featured-flow"');
     expect(home).not.toContain('surface="home"');
     expect(home).not.toContain('data-dashboard-section="operations-flow"');

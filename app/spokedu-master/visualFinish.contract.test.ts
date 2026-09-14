@@ -7,7 +7,7 @@ const read = (file: string) => fs.readFileSync(path.join(process.cwd(), 'app/spo
 describe('MASTER representative visual finish (pre-reset snapshot; not Art Direction PASS)', () => {
   it('keeps Home editorial and media-first without strong content shadows', () => {
     const home = read('dashboard/DashboardView.tsx');
-    expect(home).toContain("{'이번 주,\\n어떤 수업을 해볼까요?'}");
+    expect(home).toContain("{'움직임이 배움이 되는\\n오늘의 수업을 준비하세요'}");
     expect(home).toContain('ensureWeeklyRecommendationCount');
     expect(home).toContain('featuredSpomove.slice(0, 4)');
     expect(home).toContain('snap-mandatory');
@@ -21,7 +21,7 @@ describe('MASTER representative visual finish (pre-reset snapshot; not Art Direc
     expect(library).toContain('MasterPageHeader title="놀이체육"');
     expect(library).toContain('placeholder="활동 이름, 교구, 종목 검색"');
     expect(library).not.toContain('shadow-[0_10px_24px');
-    expect(card).toContain('Bookmark');
+    expect(card).toContain('Heart');
     expect(card).toContain("favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'");
   });
 
@@ -33,7 +33,7 @@ describe('MASTER representative visual finish (pre-reset snapshot; not Art Direc
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
     expect(hub).toContain('SPOMOVE_CATALOG_FAMILIES');
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
-    expect(hub).toContain('Bookmark');
+    expect(hub).toContain('Heart');
     expect(hub).not.toContain('data-spm-spomove-card-action="start"');
     expect(hub).not.toContain('활동 준비');
     expect(hub).not.toContain('시작 설정');

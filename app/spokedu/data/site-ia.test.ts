@@ -278,7 +278,7 @@ describe('spokedu site IA', () => {
   it('keeps Home media roles distinct and backed by approved assets', () => {
     const spomoveDetail = HOME_MEDIA[homePage.spomove.mediaKey];
 
-    expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.heroMovement);
+    expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.heroClassroom);
     expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.home.fieldSpomoveDive);
     expect(canUseSpokeduImageOnPage(spomoveDetail.asset!, 'home')).toBe(true);
     expect(homePage.spomove.screen.src).toBe(HOME_FIELD_EDITORIAL.spomoveDive);

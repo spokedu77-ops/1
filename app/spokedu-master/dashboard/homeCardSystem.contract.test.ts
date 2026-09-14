@@ -9,7 +9,8 @@ const followUp = readFileSync('app/spokedu-master/components/information/SystemD
 const programsGateway = readFileSync('app/spokedu-master/programs/page.tsx', 'utf8');
 const homeMedia = readFileSync('app/spokedu-master/lib/homeMediaAssets.ts', 'utf8');
 const homeMediaAdmin = readFileSync('app/admin/spokedu-master/programs/HomeMediaManager.tsx', 'utf8');
-const reentryClasses = readFileSync('app/spokedu-master/lib/masterUiClasses.ts', 'utf8');
+const continueCard = readFileSync('app/spokedu-master/dashboard/HomeContinueCard.tsx', 'utf8');
+const homeUiClasses = readFileSync('app/spokedu-master/lib/masterUiClasses.ts', 'utf8');
 
 describe('MASTER Home content card system', () => {
   it('keeps Home weekly as four editorial cards, not Library catalog grammar', () => {
@@ -18,7 +19,11 @@ describe('MASTER Home content card system', () => {
     expect(dashboard).toContain('ensureWeeklyRecommendationCount');
     expect(dashboard).not.toContain('variant="home"');
     expect(weeklyCard).toContain('InstructionalThumb');
-    expect(weeklyCard).toContain("presentation === 'home' ? '' : 'rounded-b-none'");
+    expect(weeklyCard).toContain("const isHomeFamily = presentation === 'home' || presentation === 'library-featured'");
+    expect(weeklyCard).toContain("presentation={isHomeFamily ? 'home-cover-4-3'");
+    expect(weeklyCard).toContain('border border-slate-200/80 bg-white');
+    expect(weeklyCard).toContain('MV_HOME_CARD_TITLE');
+    expect(weeklyCard).toContain("<Heart className={`h-4 w-4");
     expect(thumb).toContain('object-contain object-center');
     expect(thumb).toContain('aspect-[4/3] w-full');
     expect(thumb).toContain('object-cover object-center blur-xl');
@@ -50,21 +55,25 @@ describe('MASTER Home content card system', () => {
     expect(dashboard).toContain('data-dashboard-section="spomove-extension"');
     expect(dashboard).toContain('featuredSpomove.slice(0, 4)');
     expect(dashboard).toContain('data-spm-spomove-card-action="start"');
-    expect(dashboard).toContain('MV_HOME_START_QUIET');
-    expect(dashboard).not.toContain('<Play');
+    expect(dashboard).toContain('presentation="home-cover-4-3"');
+    expect(dashboard).toContain('<Play className="h-3.5 w-3.5 fill-current"');
+    expect(dashboard).toContain("<Heart className={`h-4 w-4");
   });
 
-  it('keeps Recent as a compact re-entry object and removes the Home navy band', () => {
-    expect(dashboard).toContain('MV_REENTRY_OBJECT');
+  it('uses one compact presentation for recent, next, and favorite without a Home navy band', () => {
+    expect(dashboard).toContain('HomeContinueCard');
     expect(dashboard).toContain('RecentLessonReuseCard');
+    expect(dashboard).toContain('kicker="내 다음 수업"');
+    expect(dashboard).toContain('kicker="즐겨찾기"');
+    expect(dashboard).toContain('favoriteContentRefsByOwner');
     expect(dashboard).toContain('[...validLessonActivities, ...validSpomoveActivities]');
     expect(dashboard).toContain("latestRecentActivity?.action === 'spomove_started'");
     expect(dashboard).not.toContain('SPM_SECONDARY_BTN');
     expect(dashboard).not.toContain('bg-[var(--spm-spomove-surface)]');
     expect(dashboard).toContain('놀이체육을 디지털 자극 활동으로 확장합니다.');
     expect(dashboard).toContain('title="SPOMOVE 추천"');
-    expect(reentryClasses).toContain('w-[86vw]');
-    expect(reentryClasses).toContain('lg:w-auto');
+    expect(continueCard).toContain('w-[86vw]');
+    expect(continueCard).toContain('lg:w-auto');
     expect(dashboard).toContain('lg:grid-cols-3');
     expect(dashboard.indexOf('data-dashboard-chapter="opening"')).toBeLessThan(
       dashboard.indexOf('data-dashboard-chapter="continuity"'),
@@ -75,7 +84,7 @@ describe('MASTER Home content card system', () => {
     expect(dashboard.indexOf('data-dashboard-section="weekly"')).toBeLessThan(
       dashboard.indexOf('data-dashboard-section="spomove-extension"'),
     );
-    expect(reentryClasses).toContain("MV_HOME_FEATURE_WIDTH = 'mx-auto w-full max-w-[1184px]'");
+    expect(homeUiClasses).toContain("MV_HOME_FEATURE_WIDTH = 'mx-auto w-full max-w-[1184px]'");
     expect(dashboard).toContain('MV_HOME_FEATURE_WIDTH');
   });
 
@@ -114,12 +123,15 @@ describe('MASTER Home content card system', () => {
   it('keeps the Home hero replaceable without taking ownership of content thumbnails', () => {
     expect(dashboard).toContain('HOME_MEDIA_PACK_ID');
     expect(dashboard).toContain('HOME_MEDIA_FALLBACK.heroImage');
-    expect(homeMedia).toContain("heroImage: '/images/spokedu/home/field-editorial/home-hero-field.webp'");
+    expect(homeMedia).toContain("heroImage: '/images/spokedu/home/field-editorial/home-hero-running.webp'");
     expect(homeMedia).toContain('spokedu-master/home-media/heroImage.');
     expect(homeMediaAdmin).toContain('optimizeToWebP(file, OPTIMIZE)');
     expect(homeMediaAdmin).toContain('홈 대표 이미지');
     expect(homeMediaAdmin).toContain('기본값으로 복원');
     expect(homeMediaAdmin).toContain('href="/spokedu-master/dashboard"');
     expect(homeMediaAdmin).not.toContain('SPOMOVE_THUMBNAIL_PACK_ID');
+    expect(dashboard).toContain('object-[58%_40%] sm:object-[center_40%]');
+    expect(dashboard).toContain('HomeScheduleThumb');
+    expect(dashboard).toContain('!aspect-[3/2]');
   });
 });

@@ -157,7 +157,8 @@ describe('commercial launch architecture contracts', () => {
 
     expect(session).toContain('ErrorBoundary');
     expect(session).toContain('fallbackHref="/spokedu-master/spomove"');
-    expect(dashboard).toContain('TodaySessionsPanel');
+    expect(dashboard).toContain('HomeContinueCard');
+    expect(dashboard).toContain('href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`}');
     expect(dashboard).toContain('data-dashboard-section="featured-flow"');
     expect(dashboard).not.toContain('HomeOpsBoard');
   });

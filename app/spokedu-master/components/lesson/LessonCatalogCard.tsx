@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, BookOpen, Bookmark, Check, Lock, Play } from 'lucide-react';
+import { ArrowRight, BookOpen, Check, Heart, Lock, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -204,7 +204,7 @@ export function LessonCatalogCard({
     return (
       <article
         {...articleProps}
-        className="group relative min-w-0 overflow-hidden rounded-[16px] border border-slate-100/80 bg-white transition-colors duration-200 hover:border-slate-200"
+        className="group relative min-w-0 overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 hover:border-slate-300"
       >
         <button
           type="button"
@@ -218,11 +218,11 @@ export function LessonCatalogCard({
                 src={heroImageUrl}
                 sizes={sizes}
                 priority={priority}
-                presentation="home-clean-square"
+                presentation="home-cover-4-3"
                 className="rounded-none transition-transform duration-200 group-hover:scale-[1.015]"
               />
             ) : (
-              <span className="relative flex aspect-square w-full items-center justify-center bg-slate-200">
+              <span className="relative flex aspect-[4/3] w-full items-center justify-center bg-slate-200">
                 <CategoryIcon category={categoryFallback} size={36} color="rgba(15,23,42,0.45)" />
               </span>
             )}
@@ -256,7 +256,7 @@ export function LessonCatalogCard({
             title={!favoriteEnabled ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
             disabled={!favoriteEnabled}
           >
-            <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+            <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
           </button>
         ) : null}
 
@@ -367,7 +367,7 @@ export function LessonCatalogCard({
             }
             disabled={!favoriteEnabled}
           >
-            <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+            <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
           </button>
         ) : null}
 

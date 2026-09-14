@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Bookmark, ChevronDown, Search, X } from 'lucide-react';
+import { ChevronDown, Heart, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -212,7 +212,7 @@ function ThemeLabelBadge({ theme }: { theme?: string }) {
   if (!label) return null;
   return (
     <div className="absolute bottom-3 left-3">
-      <span className="rounded-full bg-black/30 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-[2px]">
+      <span className="rounded-full bg-black/30 px-2.5 py-1 text-[12px] font-medium text-white/90 backdrop-blur-[2px]">
         {label} 테마
       </span>
     </div>
@@ -514,7 +514,7 @@ function DiveVisual({ isBonus }: { isBonus?: boolean }) {
           strokeLinecap="round"
         />
       </svg>
-      <span className="z-10 text-[11px] font-black tracking-[0.35em] text-[color-mix(in_srgb,var(--spm-acc)_55%,white)]/70">
+      <span className="z-10 text-[12px] font-semibold tracking-[0.18em] text-[color-mix(in_srgb,var(--spm-acc)_55%,white)]/70">
         {isBonus ? 'BONUS' : 'DIVE'}
       </span>
       <div className="absolute bottom-3 right-3">
@@ -607,7 +607,7 @@ function CardVisual({
       )}
       {!preset.isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-[1px]">
-          <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white">
+          <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[12px] font-semibold text-white">
             {preset.readyLabel ?? '제공 예정'}
           </span>
         </div>
@@ -647,6 +647,8 @@ function PresetCard({
   const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
   const subtitleParts = composeSpomovePublicCardMetaParts(card.publicMeta);
+  const primaryMeta = [card.publicMeta.core, card.publicMeta.difficulty].filter(Boolean).join(' · ');
+  const supportMeta = card.publicMeta.variant || displayModel.supportMetaParts[0] || '';
 
   const inner = (
     <>
@@ -661,13 +663,15 @@ function PresetCard({
         aria-pressed={favorite}
         aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
         title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-        className={`absolute right-1 top-1 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:right-2.5 sm:top-2.5 sm:h-8 sm:w-8 ${
+        className={`absolute right-1 top-1 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:right-2 sm:top-2 ${
           favorite
-            ? 'bg-amber-50 text-amber-600 shadow-sm ring-1 ring-amber-200/80'
-            : 'bg-white/70 text-slate-400 hover:bg-white/90 hover:text-slate-600'
+            ? 'text-amber-500'
+            : 'text-slate-500 hover:text-slate-900'
         }`}
       >
-        <Bookmark className={`h-3.5 w-3.5 ${favorite ? 'fill-current' : ''}`} />
+        <span className="grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-white/80 ring-1 ring-slate-900/5">
+          <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+        </span>
       </button>
       <button
         type="button"
@@ -689,11 +693,10 @@ function PresetCard({
           imageFailed={imageFailed}
           onImageError={() => setImageFailed(true)}
         />
-        <div className="flex min-h-[84px] w-full flex-col justify-center px-3.5 py-3" data-spm-spomove-card-body="true">
-          <h3 className="line-clamp-2 text-[15px] font-semibold leading-5 text-slate-950">{displayModel.rootTitle}</h3>
-          <p className="mt-1 truncate text-[12px] font-medium text-slate-500">
-            {subtitleParts.join(' · ')}
-          </p>
+        <div className="w-full px-3.5 pb-3.5 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={subtitleParts.join(' · ')}>
+          <p className="truncate text-[13px] font-medium leading-5 text-slate-500">{primaryMeta}</p>
+          <h3 className="mt-1 line-clamp-2 text-[17px] font-semibold leading-snug text-slate-950">{displayModel.rootTitle}</h3>
+          <p className="mt-2 truncate text-[13px] font-medium leading-5 text-slate-500">{supportMeta || '\u00a0'}</p>
         </div>
       </button>
       {onAddToSession ? (
@@ -708,14 +711,14 @@ function PresetCard({
 
   if (!preset.isReady) {
     return (
-      <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white opacity-75">
+      <article className="relative flex h-full flex-col overflow-hidden rounded-[16px] border border-slate-200/80 bg-white opacity-75">
         {inner}
       </article>
     );
   }
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-colors hover:border-slate-400 focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors hover:border-slate-300 focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
       {inner}
     </article>
   );
@@ -1000,8 +1003,8 @@ function SpomoveHubInner({
       data-spm-spomove-family-preview={familyPreview ? 'true' : 'false'}
       data-spm-spomove-show-program-label={showProgramLabel ? 'true' : 'false'}
       className={familyPreview
-        ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-4'
-        : 'grid grid-cols-1 gap-4 min-[431px]:grid-cols-2 lg:grid-cols-4'}
+        ? 'flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-4 lg:gap-5'
+        : 'grid grid-cols-1 items-start gap-4 min-[431px]:grid-cols-2 lg:grid-cols-4 lg:gap-5'}
     >
       {presets.map((preset) => (
         <div key={preset.id} className={familyPreview ? 'w-[82vw] max-w-[320px] shrink-0 snap-start sm:w-auto sm:max-w-none' : ''}>
@@ -1026,7 +1029,7 @@ function SpomoveHubInner({
 
   return (
     <main className="h-full overflow-y-auto" style={{ background: 'var(--spm-bg)' }}>
-      <div className="mx-auto flex w-full max-w-7xl flex-col px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-16">
+      <div className="mx-auto flex w-full max-w-[1120px] flex-col px-4 pb-24 pt-4 sm:px-6 lg:px-0 lg:pb-16">
         {sessionContext ? (
           <div className="mb-4 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
             <p className="min-w-0 truncate text-xs font-semibold text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>
@@ -1039,7 +1042,7 @@ function SpomoveHubInner({
             일부 활동 이미지·가이드가 일시적으로 불러와지지 않았습니다. 활동 실행은 계속할 수 있습니다.
           </div>
         ) : null}
-        <header aria-label="SPOMOVE 프로그램" className="spm-spomove-surface rounded-[20px] px-5 py-5 text-white sm:px-7 sm:py-6" data-spm-spomove-digital-header="true">
+        <header aria-label="SPOMOVE 프로그램" className="spm-spomove-surface rounded-[18px] px-5 py-5 text-white sm:px-7 sm:py-6" data-spm-spomove-digital-header="true">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <div className="min-w-0">
               <h1 className="text-[28px] font-semibold leading-none tracking-[-0.03em] sm:text-[32px]">SPOMOVE</h1>
@@ -1136,7 +1139,7 @@ function SpomoveHubInner({
                   <article key={`${activity.ownerId}-${activity.programId}-${activity.occurredAt}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="line-clamp-2 text-sm font-semibold text-slate-950">{title}</p>
                     {activity.cueSeconds ? (
-                      <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                      <p className="mt-1 text-[12px] font-medium text-slate-500">
                         자극 {activity.cueSeconds}초
                       </p>
                     ) : null}

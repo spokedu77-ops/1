@@ -31,17 +31,18 @@ export function BrandLogo({
   size = 'sm',
 }: BrandLogoProps) {
   const asset = onDark ? SPOKEDU_IMAGES.brand.logoWhite : SPOKEDU_IMAGES.brand.logo;
+  const intrinsic = onDark ? { width: 220, height: 36 } : { width: 714, height: 120 };
 
   const img = (
     <Image
       src={asset.src}
-      alt={asset.alt}
-      width={220}
-      height={36}
+      alt="SPOKEDU"
+      width={intrinsic.width}
+      height={intrinsic.height}
       unoptimized
       className={`${sizeClass[size]} bg-transparent object-contain object-left`}
-      style={{ background: 'transparent' }}
-      priority={size === 'sm'}
+      style={{ width: 'auto', background: 'transparent' }}
+      priority={size === 'lg' || size === 'sm'}
     />
   );
 

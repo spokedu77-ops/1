@@ -4,7 +4,9 @@ import { getSpomoveCardDisplayModel, getSpomovePresetDisplayModel } from '../spo
 
 export type HomeSpomoveShelfCopy = {
   typeLabel: string;
+  difficulty: string;
   title: string;
+  supportMeta: string;
   support: string;
 };
 
@@ -18,10 +20,14 @@ export function getHomeSpomoveShelfCopy(
 ): HomeSpomoveShelfCopy {
   const display = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
+  const difficulty = card.meta.difficulty?.replace(/^난이도\s*/u, '').trim() || '';
+  const trainingFocus = card.meta.trainingFocus?.trim() || '';
   return {
     typeLabel: card.meta.responseType?.trim() || '',
+    difficulty,
     title: display.displayTitle,
-    support: [card.meta.difficulty, card.meta.trainingFocus]
+    supportMeta: trainingFocus,
+    support: [difficulty, trainingFocus]
       .map((value) => value?.replace(/^난이도\s*/u, '').trim())
       .filter((value): value is string => Boolean(value))
       .slice(0, 2)

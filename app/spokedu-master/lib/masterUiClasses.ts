@@ -74,6 +74,13 @@ export const MV_QUIET_ACTION_INVERSE =
 export const MV_CONTENT_TITLE = 'text-[18px] font-semibold leading-snug text-[color:var(--spm-t)]';
 export const MV_META = 'text-[12px] font-medium leading-5 text-slate-500 sm:text-[13px]';
 export const MV_HEADING_TO_SHELF = 'mb-4 sm:mb-5';
+export const MV_HOME_SECTION_TITLE = 'break-keep text-[22px] font-bold leading-[30px] tracking-normal text-[color:var(--spm-t)]';
+export const MV_HOME_SECTION_COPY = 'mt-1 max-w-xl text-[14px] font-medium leading-5 tracking-normal text-slate-600';
+export const MV_HOME_SECTION_ACTION = 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-semibold leading-[18px] tracking-normal text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
+export const MV_HOME_CARD_KICKER = 'text-[13px] font-semibold leading-[18px] tracking-normal text-[var(--spm-cta)]';
+export const MV_HOME_CARD_TITLE = 'text-[16px] font-bold leading-[22px] tracking-normal text-[color:var(--spm-t)]';
+export const MV_HOME_CARD_META = 'text-[13px] font-medium leading-[18px] tracking-normal text-slate-500';
+export const MV_HOME_CARD_ACTION = 'text-[13px] font-semibold leading-[18px] tracking-normal text-slate-600';
 export const MV_REENTRY_OBJECT =
   'flex h-full min-h-[108px] w-[86vw] max-w-[360px] shrink-0 snap-start items-center gap-3 rounded-[14px] border border-slate-200/60 bg-white/70 px-3 py-3 lg:w-auto lg:max-w-none';
 export const MV_REENTRY_IDENTITY = 'min-w-0 flex-1';
@@ -81,4 +88,4 @@ export const MV_REENTRY_SECONDARY =
   'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
 export const MV_EXTENSION_TITLE =
   'text-[17px] font-semibold leading-snug text-slate-800';
-export const MV_HOME_START_QUIET = MV_QUIET_ACTION;
+export const MV_HOME_START_QUIET = `inline-flex min-h-11 shrink-0 items-center gap-1 ${MV_HOME_CARD_ACTION} transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]`;

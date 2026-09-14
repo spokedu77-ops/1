@@ -129,6 +129,13 @@ export const HOME_MEDIA = {
     tone: 'sky',
     objectPosition: '50% 68%',
   }),
+  homeHeroClassroom: fromPhoto(SPOKEDU_IMAGES.home.heroClassroom, {
+    id: 'home-hero-classroom',
+    label: '교실 체육수업 현장',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '50% 58%',
+  }),
   homeHeroWide: fromPhoto(SPOKEDU_IMAGES.home.heroSpomoveClass, {
     id: 'home-hero-wide',
     label: 'SPOMOVE 기관 수업',
