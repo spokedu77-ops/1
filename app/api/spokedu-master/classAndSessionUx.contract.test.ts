@@ -4,6 +4,7 @@ import { readSessionDetailSource } from '../../spokedu-master/manage/session-det
 
 const read = (path: string) => readFileSync(path, 'utf8');
 const activity = readSessionDetailSource();
+const sessionIntegrity = read('app/spokedu-master/lib/sessionIntegrity.ts');
 const picker = read('app/spokedu-master/manage/SessionActivityPicker.tsx');
 const classes = read('app/spokedu-master/classes/page.tsx');
 const classDetail = read('app/spokedu-master/classes/[classId]/page.tsx');
@@ -21,7 +22,8 @@ describe('SPOKEDU MASTER class and Session operating UX', () => {
   });
 
   it('directs an empty roster to ID-based membership management', () => {
-    expect(activity).toContain('selectedClass?.studentIds.includes(student.id)');
+    expect(sessionIntegrity).toContain('selectedClass?.studentIds.includes(student.id)');
+    expect(activity).toContain('resolveSessionAttendanceRoster(activeSession ?? session, selectedClass, students)');
     expect(activity).toContain('등록된 학생이 없습니다.');
     expect(activity).not.toContain('student.group ===');
   });
