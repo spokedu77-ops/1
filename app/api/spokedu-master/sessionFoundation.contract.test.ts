@@ -10,7 +10,7 @@ describe('SPOKEDU MASTER Session foundation', () => {
     const sessions = read('app/api/spokedu-master/sessions/route.ts');
     const activity = readSessionDetailSource();
     expect(sessions).toContain('spokedu_master_class_students(student_id)');
-    expect(activity).toContain('selectedClass?.studentIds.includes(student.id)');
+    expect(read('app/spokedu-master/lib/sessionIntegrity.ts')).toContain('selectedClass?.studentIds.includes(student.id)');
     expect(activity).not.toContain('student.group');
   });
 

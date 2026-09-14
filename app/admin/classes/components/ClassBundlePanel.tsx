@@ -1578,27 +1578,27 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
 <div
                           className={
                             cycleMainUndecided && !isPastCycle
-                              ? "overflow-hidden rounded-lg border-2 border-red-400 bg-red-50/50"
-                              : "overflow-hidden rounded-lg border border-slate-200"
+                              ? "overflow-x-auto rounded-lg border-2 border-red-400 bg-red-50/50"
+                              : "overflow-x-auto rounded-lg border border-slate-200"
                           }
                         >
-                          <table className="w-full table-fixed text-xs">
+                          <table className="w-full min-w-[36rem] table-fixed text-xs">
                             <colgroup>
-                              <col className="w-[40px]" />
-                              <col className="w-[118px]" />
-                              <col className="w-[168px]" />
-                              <col className="w-[40px]" />
-                              <col className="w-[40px]" />
-                              <col className="w-[64px]" />
+                              <col className="w-[2.75rem]" />
+                              <col className="w-[7.5rem]" />
+                              <col />
+                              <col className="w-[2.75rem]" />
+                              <col className="w-[3.5rem]" />
+                              <col className="w-[5.75rem]" />
                             </colgroup>
                             <thead className="border-b border-slate-100 bg-slate-50 text-[11px] font-medium text-slate-500">
                               <tr>
-                                <th className="px-2 py-1.5 text-left">회차</th>
-                                <th className="px-2 py-1.5 text-left">일정</th>
-                                <th className="px-2 py-1.5 text-left">강사</th>
-                                <th className="px-2 py-1.5 text-center">마일</th>
-                                <th className="px-2 py-1.5 text-center">상태</th>
-                                <th className="px-2 py-1.5 text-center">관리</th>
+                                <th className="px-1.5 py-1.5 text-left whitespace-nowrap">회차</th>
+                                <th className="px-2 py-1.5 text-left whitespace-nowrap">일정</th>
+                                <th className="px-2 py-1.5 text-left whitespace-nowrap">강사</th>
+                                <th className="px-1 py-1.5 text-center whitespace-nowrap">마일</th>
+                                <th className="px-1 py-1.5 text-center whitespace-nowrap">상태</th>
+                                <th className="px-1 py-1.5 text-center whitespace-nowrap">관리</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1635,7 +1635,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                   const assistList = extraTeachersFromMemo(r.memo);
                                   return (
                                     <tr key={r.id} className="border-t border-slate-100 align-top">
-                                      <td className="px-2 py-2 font-semibold text-slate-700">{n}/{total}</td>
+                                      <td className="px-1.5 py-2 font-semibold text-slate-700 whitespace-nowrap">{n}/{total}</td>
                                       <td className="px-2 py-2">
                                         <div className="flex flex-col gap-1">
                                           <input
@@ -1751,15 +1751,15 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                       <td className="px-1 py-2 text-center">
                                         <button
                                           type="button"
-                                          className="rounded-md px-1.5 py-1 text-[10px] font-semibold text-amber-800 hover:bg-amber-50"
+                                          className="whitespace-nowrap rounded-md px-1.5 py-1 text-[10px] font-semibold text-amber-800 hover:bg-amber-50"
                                           onClick={() => setMileageModal({ gid, row: r })}
                                         >
                                           설정
                                         </button>
                                       </td>
-                                      <td className="px-2 py-2 text-center">
+                                      <td className="px-1 py-2 text-center">
                                         <span
-                                          className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusBadgeClass(s.label)}`}
+                                          className={`inline-flex whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusBadgeClass(s.label)}`}
                                         >
                                           {s.label}
                                         </span>
@@ -1768,11 +1768,11 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                         {isPastCycle ||
                                         r.status === "cancelled" ||
                                         r.status === "deleted" ? null : (
-                                          <div className="mx-auto flex max-w-[92px] flex-col items-stretch gap-1">
+                                          <div className="flex w-full flex-col items-stretch gap-1">
                                             {r.status === "postponed" ? (
                                               <button
                                                 type="button"
-                                                className="rounded-md bg-violet-600 px-1.5 py-1 text-[10px] font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+                                                className="whitespace-nowrap rounded-md bg-violet-600 px-1 py-1 text-[10px] font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
                                                 disabled={undoingPostponeSessionId === r.id}
                                                 onClick={() => void handleUndoPostpone(r.id)}
                                               >
@@ -1782,7 +1782,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               <>
                                                 <button
                                                   type="button"
-                                                  className="rounded-md border border-violet-200 bg-violet-50 px-1.5 py-1 text-[10px] font-semibold text-violet-800 hover:bg-violet-100 disabled:opacity-50"
+                                                  className="whitespace-nowrap rounded-md border border-violet-200 bg-violet-50 px-1 py-1 text-[10px] font-semibold text-violet-800 hover:bg-violet-100 disabled:opacity-50"
                                                   disabled={postponingSessionId === r.id}
                                                   onClick={() => void handlePostpone(gid, r.id, "postpone")}
                                                 >
@@ -1790,7 +1790,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                                 </button>
                                                 <button
                                                   type="button"
-                                                  className="rounded-md border border-indigo-200 bg-indigo-50 px-1.5 py-1 text-[10px] font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-50"
+                                                  className="whitespace-nowrap rounded-md border border-indigo-200 bg-indigo-50 px-1 py-1 text-[10px] font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-50"
                                                   disabled={postponingSessionId === r.id}
                                                   onClick={() => void handlePostpone(gid, r.id, "postpone_request")}
                                                 >
@@ -1800,7 +1800,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             )}
                                             <button
                                               type="button"
-                                              className="rounded-md border border-rose-200 bg-rose-50 px-1.5 py-1 text-[10px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
+                                              className="whitespace-nowrap rounded-md border border-rose-200 bg-rose-50 px-1 py-1 text-[10px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
                                               disabled={deletingSessionId === r.id}
                                               onClick={() => void handleDeleteSession(gid, r.id)}
                                             >

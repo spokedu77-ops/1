@@ -3,6 +3,7 @@ import {
   buildCompletionRosterStudentIds,
   buildSessionCompletionRosterStudentIds,
   CLASS_TIME_COLLISION_MESSAGE,
+  COMPLETED_RESTORE_FORBIDDEN_MESSAGE,
   completionAttendanceMessage,
   findActiveClassTimeCollision,
   lockedRosterStudentIdsEqual,
@@ -152,6 +153,18 @@ describe('session class time collision integrity', () => {
 
   it('allows the same time on a different class', () => {
     expect(findActiveClassTimeCollision({ classId: 'class-2', startAt: scheduled.startAt, endAt: scheduled.endAt }, [scheduled])).toBeNull();
+  });
+
+  it('allows an adjacent same-class session that only touches at the boundary', () => {
+    expect(findActiveClassTimeCollision({
+      classId: 'class-1',
+      startAt: '2026-09-11T11:00:00.000Z',
+      endAt: '2026-09-11T12:00:00.000Z',
+    }, [scheduled])).toBeNull();
+  });
+
+  it('keeps the completed restore rejection message stable', () => {
+    expect(COMPLETED_RESTORE_FORBIDDEN_MESSAGE).toBe('완료된 수업은 예정 상태로 되돌릴 수 없습니다.');
   });
 
   it('allows recreating a cancelled or deleted session slot', () => {

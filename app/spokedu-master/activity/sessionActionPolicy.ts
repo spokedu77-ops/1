@@ -50,7 +50,7 @@ const POLICIES: Record<MasterSessionStatus, SessionActionPolicy> = {
     createNextSession: true,
     complete: false,
     cancel: false,
-    restore: true,
+    restore: false,
     deletePermanently: false,
   },
   cancelled: {

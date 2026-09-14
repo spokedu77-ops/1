@@ -9,7 +9,6 @@ export function useSessionAttendance({
   activeSession,
   selectedClass,
   students,
-  status,
   saving,
   dirty,
   setDirty,
@@ -18,7 +17,6 @@ export function useSessionAttendance({
   activeSession: MasterSessionDto | null;
   selectedClass: MasterClassDto | null;
   students: MasterStudentDto[];
-  status: MasterSessionDto['status'];
   saving: boolean;
   dirty: boolean;
   setDirty: (dirty: boolean) => void;
@@ -31,10 +29,6 @@ export function useSessionAttendance({
     setAttendance(Object.fromEntries(session.attendance.map((item) => [item.studentId, item.status])));
   }, [dirty, saving, session]);
 
-  const currentRoster = useMemo(() => students.filter((student) => selectedClass?.studentIds.includes(student.id)), [selectedClass, students]);
-  const historicalRoster = useMemo(() => status === 'completed' ? (activeSession?.attendance ?? [])
-    .filter((entry) => !currentRoster.some((student) => student.id === entry.studentId))
-    .map((entry) => ({ id: entry.studentId, name: entry.studentName })) : [], [activeSession, currentRoster, status]);
   const roster = useMemo(
     () => resolveSessionAttendanceRoster(activeSession ?? session, selectedClass, students),
     [activeSession, selectedClass, session, students],
@@ -69,5 +63,5 @@ export function useSessionAttendance({
     setDirty(true);
   };
 
-  return { attendance, setAttendance, attendanceOpen, setAttendanceOpen, currentRoster, historicalRoster, roster, allStudentsPresent, attendanceInput, updateAttendance, toggleAllAttendance };
+  return { attendance, setAttendance, attendanceOpen, setAttendanceOpen, roster, allStudentsPresent, attendanceInput, updateAttendance, toggleAllAttendance };
 }

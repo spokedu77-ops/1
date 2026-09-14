@@ -108,6 +108,35 @@ const LESSON_PLAN_DEFAULT_TEMPLATE = `2026.00.00.(요일) 00:00 ~ 00:00 - n회�
 -
 -`;
 
+/** 수업안 첫 줄 `2026.09.07.(월요일)…` — 템플릿 `00.00`은 무시 */
+function parseLessonPlanHeaderDate(content: string): Date | null {
+  const firstLine = content.split(/\r?\n/).find((line) => line.trim())?.trim() ?? '';
+  const matched = firstLine.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+  if (!matched) return null;
+  const year = Number(matched[1]);
+  const month = Number(matched[2]);
+  const day = Number(matched[3]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  if (year < 2000 || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const parsed = new Date(year, month - 1, day, 12, 0, 0, 0);
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) return null;
+  return parsed;
+}
+
+function localCalendarDayValue(date: Date): number {
+  return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+}
+
+/** 세션이 미래로 밀려도 본문 날짜가 있으면 그날을 이전 목록 기준으로 쓴다. */
+function previousPlanListAt(content: string, sessionStartAt: string): Date | null {
+  const sessionDate = new Date(sessionStartAt);
+  if (!Number.isFinite(sessionDate.getTime())) return null;
+  const dayDate = parseLessonPlanHeaderDate(content) ?? sessionDate;
+  const listAt = new Date(dayDate);
+  listAt.setHours(sessionDate.getHours(), sessionDate.getMinutes(), sessionDate.getSeconds(), 0);
+  return listAt;
+}
+
 const SESSION_FILES_BUCKET = 'session-files';
 
 /** Supabase Storage 공개/서명 URL에서 `session-files` 버킷 기준 객체 경로 */
@@ -532,13 +561,17 @@ function MyClassesContent() {
       setCurrentSessionLessonPlanId(current.id);
     }
     const sessionsWithPlans = (sessionsRes.data || []) as Array<{ id: string; title: string; start_at: string; group_id?: string | null; lesson_plans: { content?: string }[] }>;
+    const currentDay = localCalendarDayValue(new Date(selectedEvent.start_at));
     const sameClass = sessionsWithPlans.filter(s => s.id !== selectedEvent.id && ((selectedEvent.group_id && s.group_id === selectedEvent.group_id) || getBaseTitle(s.title) === baseTitle));
     const prev: PreviousLessonPlan[] = [];
     sameClass.forEach(s => {
       const raw = s.lesson_plans;
       const lp = Array.isArray(raw) ? raw[0] : raw && typeof raw === 'object' ? raw : null;
       const content = lp && typeof (lp as { content?: string }).content === 'string' ? (lp as { content: string }).content : '';
-      if (content.trim()) prev.push({ sessionId: s.id, start_at: s.start_at, content });
+      if (!content.trim()) return;
+      const listAt = previousPlanListAt(content, s.start_at);
+      if (!listAt || localCalendarDayValue(listAt) >= currentDay) return;
+      prev.push({ sessionId: s.id, start_at: listAt.toISOString(), content });
     });
     prev.sort((a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime());
     setPreviousPlans(prev);
@@ -1014,7 +1047,7 @@ function MyClassesContent() {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-400 py-4 px-4 bg-white rounded-2xl border border-slate-100">
-                    같은 수업의 이전 회차 수업안이 없습니다. 다른 날짜에 작성한 같은 수업 수업안이 여기 목록으로 표시됩니다.
+                    같은 수업의 이전 날짜 수업안이 없습니다. 본문에 적힌 날짜가 이 수업보다 앞선 수업안만 표시됩니다.
                   </p>
                 )}
               </div>

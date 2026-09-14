@@ -41,7 +41,7 @@ describe('SPOKEDU MASTER final foundation lockdown', () => {
   it('backfills and reads historical student name snapshots', () => {
     expect(migration).toContain('student_name_snapshot');
     expect(sessions).toContain('studentName: item.student_name_snapshot');
-    expect(activity).toContain('entry.studentName');
+    expect(read('app/spokedu-master/lib/sessionIntegrity.ts')).toContain('entry.studentName');
   });
 
   it('clears scheduled attendance when the class changes', () => {
@@ -54,7 +54,7 @@ describe('SPOKEDU MASTER final foundation lockdown', () => {
 
   it('preserves completed historical participants after membership removal', () => {
     expect(migration).toContain('historical participant cannot be removed');
-    expect(activity).toContain('historicalRoster');
+    expect(read('app/spokedu-master/lib/sessionIntegrity.ts')).toContain('historicalRoster');
   });
 
   it('allows completed attendance status correction without replacing snapshots', () => {

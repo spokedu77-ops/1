@@ -19,7 +19,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
   session: MasterSessionDto;
   sessions: MasterSessionDto[];
   students: MasterStudentDto[];
-  classStudentIds: string[];
+  sessionRoster: Array<{ id: string; name: string }>;
   canUseRecords: boolean;
   captureMode: SessionCaptureSurfaceMode;
   showInlinePremiumUpsell: boolean;
@@ -30,7 +30,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
   session,
   sessions,
   students,
-  classStudentIds,
+  sessionRoster,
   canUseRecords,
   captureMode,
   showInlinePremiumUpsell,
@@ -49,14 +49,17 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
   const [loadError, setLoadError] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const roster = useMemo(
-    () => students.filter((student) => classStudentIds.includes(student.id)),
-    [classStudentIds, students],
+    () => sessionRoster.map((item) => {
+      const student = students.find((candidate) => candidate.id === item.id);
+      return { id: item.id, name: item.name, guidanceNote: student?.guidanceNote };
+    }),
+    [sessionRoster, students],
   );
   const capture = captures.find((item) => item.sessionId === session.id) ?? null;
   const previous = resolvePreviousSessionMemory({ currentSession: session, classSessions: sessions, captures });
-  const currentRosterIds = useMemo(() => new Set(classStudentIds), [classStudentIds]);
+  const currentRosterIds = useMemo(() => new Set(sessionRoster.map((item) => item.id)), [sessionRoster]);
   const previousObservations = selectCurrentRosterObservations(previous?.capture ?? null, currentRosterIds);
-  const guidanceStudents = students.filter((student) => currentRosterIds.has(student.id) && Boolean(student.guidanceNote?.trim()));
+  const guidanceStudents = roster.filter((student) => Boolean(student.guidanceNote?.trim()));
   const previousActivities = previous?.session.programs ?? [];
   const hasPreviousMemory = Boolean(
     previous?.capture?.applicationIdea?.trim()

@@ -28,7 +28,7 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
   const draft = useSessionDraft({ session, initialDay, initialClassId, classes: data.classes, canUseRecords, onClose });
   const actions = getSessionActionPolicy(draft.status);
   const selectedClass = data.classes.find((item) => item.id === draft.classId) ?? null;
-  const attendance = useSessionAttendance({ session, activeSession: draft.activeSession, selectedClass, students: data.students, status: draft.status, saving: draft.saving, dirty: draft.dirty, setDirty: draft.setDirty });
+  const attendance = useSessionAttendance({ session, activeSession: draft.activeSession, selectedClass, students: data.students, saving: draft.saving, dirty: draft.dirty, setDirty: draft.setDirty });
   const activities = useSessionActivities({ session, activeSession: draft.activeSession, data, canUseSpomove, saving: draft.saving, dirty: draft.dirty, canRemove: actions.removeActivities, canToggleCompletion: actions.toggleActivityCompletion, setSaving: draft.setSaving, setDirty: draft.setDirty, setError: draft.setError });
   const schedule = useSessionSchedule({ initialSession: session, classId: draft.classId, startAt: draft.startAt, endAt: draft.endAt, programs: activities.programs, data, input: draft.input, setSaving: draft.setSaving, setDirty: draft.setDirty, setError: draft.setError });
   const isCreate = !draft.activeSession;
@@ -72,7 +72,9 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
     void data.deleteCancelledSession(draft.activeSession.id).then(onClose).catch((caught) => draft.setError(getMasterRequestErrorMessage(caught) || '수업을 삭제하지 못했습니다.')).finally(() => draft.setSaving(false));
   }
 
-  const footer = draft.status === 'cancelled' ? undefined : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} persist={persist} />;
+  const footer = draft.status === 'cancelled' || (draft.status === 'completed' && !draft.dirty)
+    ? undefined
+    : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} persist={persist} />;
 
   return <>
     <BottomSheet open title={title} headerTitle={<h2 className="flex items-center gap-3 text-[18px] font-bold text-slate-950"><span className="h-2.5 w-2.5 rotate-45 border border-slate-700" aria-hidden />{title}</h2>} size="session" onClose={draft.requestClose} footer={footer}>
@@ -81,7 +83,7 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
         <SessionActivities isCreate={isCreate} activeSession={draft.activeSession} programs={activities.programs} libraryPrograms={activities.libraryPrograms} catalogIds={activities.catalogIds} programsLoaded={activities.programsLoaded} actions={actions} saving={draft.saving} openPicker={() => activities.setPickerOpen(true)} toggleProgram={activities.toggleProgram} moveProgram={activities.moveProgram} removeProgram={activities.removeProgram} />
         {draft.activeSession && actions.editAttendance ? <SessionAttendance attendance={attendance.attendance} attendanceOpen={attendance.attendanceOpen} roster={attendance.roster} allStudentsPresent={attendance.allStudentsPresent} setAttendanceOpen={attendance.setAttendanceOpen} toggleAllAttendance={attendance.toggleAllAttendance} updateAttendance={attendance.updateAttendance} /> : null}
         {canUseRecords && draft.status !== 'cancelled' ? <SessionMemo isCreate={isCreate} memo={draft.memo} onChange={(memo) => { draft.setMemo(memo); draft.setDirty(true); }} /> : null}
-        {legacyCapture && draft.activeSession ? <SessionCapturePanel ref={captureRef} session={draft.activeSession} sessions={data.sessions} students={data.students} classStudentIds={selectedClass?.studentIds ?? []} canUseRecords={canUseRecords} captureMode="emphasized" showInlinePremiumUpsell={false} order={6} memo={draft.memo} onMemoChange={draft.setMemo} /> : null}
+        {legacyCapture && draft.activeSession ? <SessionCapturePanel ref={captureRef} session={draft.activeSession} sessions={data.sessions} students={data.students} sessionRoster={attendance.roster} canUseRecords={canUseRecords} captureMode="emphasized" showInlinePremiumUpsell={false} order={6} memo={draft.memo} onMemoChange={draft.setMemo} /> : null}
         {draft.error ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700">{draft.error}</p> : null}
       </div>
     </BottomSheet>

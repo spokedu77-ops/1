@@ -238,40 +238,36 @@ describe('spokedu site IA', () => {
     );
     const homePageSource = readFileSync(join(process.cwd(), 'app/spokedu/data/home-page.ts'), 'utf8');
 
-    const spomoveBlock = landingSource.slice(
-      landingSource.indexOf('{/* 04 SPOMOVE */}'),
-      landingSource.indexOf('{/* 05 Subscription'),
-    );
-    const subscriptionBlock = landingSource.slice(
-      landingSource.indexOf('{/* 05 Subscription'),
-      landingSource.indexOf('{/* 06 Contact */}'),
-    );
-    const casesBlock = landingSource.slice(
-      landingSource.indexOf('{/* 03 Cases */}'),
-      landingSource.indexOf('{/* 04 SPOMOVE */}'),
-    );
+    expect(landingSource).toMatch(/type FieldTab = 'field' \| 'content' \| 'system'/);
+    expect(landingSource).toMatch(/label: 'FIELD'[\s\S]*label: 'CONTENT'[\s\S]*label: 'SYSTEM'/);
+    expect(landingSource).toMatch(/role="tablist" aria-label="현장 기반 서비스 구조"/);
+    expect(landingSource).toMatch(/role="tabpanel"/);
+    expect(landingSource).toMatch(/activeFieldTab === 'field'[\s\S]*<FieldPanel/);
+    expect(landingSource).toMatch(/activeFieldTab === 'content'[\s\S]*<ContentPanel/);
+    expect(landingSource).toMatch(/activeFieldTab === 'system'[\s\S]*<SystemPanel/);
 
-    expect(spomoveBlock).toMatch(/spomoveCopy/);
-    expect(spomoveBlock).toMatch(/spomovePhoto/);
-    expect(spomoveBlock).toMatch(/spomoveScreen/);
-    expect(spomoveBlock).not.toMatch(/spomoveSpread|spomoveMicro|직접 수업하며 만든 대표 콘텐츠|스트룹/);
+    expect(landingSource).toMatch(/function ContentPanel/);
+    expect(landingSource).toMatch(/homePage\.spomove\.screen\.src/);
+    expect(landingSource).toMatch(/href=\{homePage\.spomove\.primaryCta\.href\}/);
+    expect(landingSource).not.toMatch(/spomoveSpread|spomoveMicro|직접 수업하며 만든 대표 콘텐츠|스트룹/);
     expect('flow' in homePage.spomove).toBe(false);
 
-    expect(subscriptionBlock).toMatch(/subscriptionCopy/);
-    expect(subscriptionBlock).toMatch(/subscriptionEyebrow/);
-    expect(subscriptionBlock).toMatch(/productFeatures/);
-    expect(subscriptionBlock).toMatch(/productStage/);
-    expect(subscriptionBlock).not.toMatch(/productStageFooter|productProofCopy|prepare-dishcone-bingo/);
+    expect(landingSource).toMatch(/function SystemPanel/);
+    expect(landingSource).toMatch(/homePage\.subscription\.visual\.src/);
+    expect(landingSource).toMatch(/href=\{homePage\.subscription\.primaryCta\.href\}/);
+    expect(landingSource).not.toMatch(/productStageFooter|productProofCopy|prepare-dishcone-bingo/);
     expect(cssSource).not.toMatch(/productStageFooter|spomoveFooter|spomoveMicro|productProof|casesGrid|caseRow|spomoveSpread/);
 
     expect(homePage.cases.cards).toHaveLength(4);
-    expect(casesBlock).not.toMatch(/ctaLabel/);
-    expect(casesBlock).toMatch(/cta-home-cases-empty/);
-    expect(casesBlock).toMatch(/casesIndex/);
-    expect(casesBlock).toMatch(/casesArchive/);
-    expect(casesBlock).toMatch(/caseFeatured/);
-    expect(casesBlock).toMatch(/caseSupporting/);
-    expect(casesBlock.indexOf('casesArchive')).toBeLessThan(casesBlock.indexOf('casesIndex'));
+    expect(landingSource).toMatch(/caseCards\.map\(\(card, index\)/);
+    expect(landingSource).toMatch(/homePage\.cases\.recordsCta\.href/);
+    expect(landingSource).toMatch(/styles\.recordRail/);
+    expect(landingSource).toMatch(/aria-label="이전 운영 사례"[\s\S]*aria-label="다음 운영 사례"/);
+    expect(landingSource).toMatch(/disabled=\{recordPosition\.atStart\}[\s\S]*disabled=\{recordPosition\.atEnd\}/);
+    expect(landingSource).not.toMatch(/CASE_FILTERS|activeFilter|caseFeatured|caseSupporting/);
+    expect(cssSource).toMatch(/scroll-snap-type:\s*x mandatory/);
+    expect(cssSource).toMatch(/\.recordRail\s*{[^}]*scrollbar-width:\s*none/);
+    expect(cssSource).toMatch(/\.recordRail::-webkit-scrollbar\s*{[^}]*display:\s*none/);
     expect(cssSource).not.toMatch(/caseItem:first-child/);
     expect(homePageSource).not.toMatch(/HOME_FEATURED_CASE_SLUG/);
     expect(JSON.stringify(homePage.spomove)).not.toMatch(/향상|개선|치료|인지|주의력|반응속도|스트룹/);
