@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { canAccessProgram, requireMoveReportTrackInstructor } from '@/app/lib/server/moveReportAuth';
 import ChildRecordClient from '../../../../components/ChildRecordClient';
+import LiveAssetRecommendations from '../../../../components/LiveAssetRecommendations';
 
 type Props = { params: Promise<{ id: string; childId: string }> };
 
@@ -43,6 +44,7 @@ export default async function MoveTrackChildRecordPage({ params }: Props) {
           childIds={childIds}
           sessionNumber={session.session_number}
         />
+        <LiveAssetRecommendations sessionId={sessionId} childId={childId} />
       </div>
     </main>
   );
