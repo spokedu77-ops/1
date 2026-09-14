@@ -1,3 +1,5 @@
+import type { ProcessState, SelectionDecision, TaskState } from './learningLoop';
+
 /**
  * MOVE TRACK session child record validation (API layer).
  * observation_opportunity_band NULL rules — DB hard constraint 아님 (Rev.2 #1).
@@ -20,9 +22,26 @@ export type SessionChildRecordInput = {
   frw_status?: FrwStatus | null;
   observation_note?: string | null;
   movement_experiences?: Array<{ domain: string; subtag: string }>;
+  primary_skill?: string | null;
+  skill_level?: number | null;
+  task_state?: TaskState | null;
+  process_state?: ProcessState | null;
+  selection_recommendation?: SelectionDecision | null;
+  selection_decision?: SelectionDecision | null;
 };
 
 export type ValidationIssue = { field: string; message: string; code: string };
+
+const TASK_STATES = new Set<TaskState>(['unstable', 'forming', 'stable']);
+const PROCESS_STATES = new Set<ProcessState>(['unstable', 'forming', 'stable', 'not_observed']);
+const DECISIONS = new Set<SelectionDecision>([
+  'access_reset',
+  'stabilize',
+  'fade_support',
+  'generalize',
+  'advance',
+  'transfer',
+]);
 
 function hasStructuredObservedValue(input: SessionChildRecordInput): boolean {
   return (
@@ -33,6 +52,12 @@ function hasStructuredObservedValue(input: SessionChildRecordInput): boolean {
     || input.spomove_used != null
     || input.frw_seconds != null
     || input.frw_status != null
+    || input.primary_skill != null
+    || input.skill_level != null
+    || input.task_state != null
+    || input.process_state != null
+    || input.selection_recommendation != null
+    || input.selection_decision != null
   );
 }
 
@@ -72,6 +97,7 @@ export function validateSessionChildRecord(input: SessionChildRecordInput): Vali
     { field: 'participation_level', min: 0, max: 4 },
     { field: 'support_level', min: 0, max: 4 },
     { field: 'independent_initiation', min: 0, max: 3 },
+    { field: 'skill_level', min: 1, max: 5 },
   ];
 
   for (const { field, min, max } of rangeChecks) {
@@ -80,6 +106,29 @@ export function validateSessionChildRecord(input: SessionChildRecordInput): Vali
     if (typeof v !== 'number' || v < min || v > max) {
       issues.push({ field, code: 'out_of_range', message: `${field} must be NULL or ${min}-${max}` });
     }
+  }
+
+  if (input.primary_skill != null) {
+    const value = input.primary_skill.trim();
+    if (value.length < 1 || value.length > 80) {
+      issues.push({ field: 'primary_skill', code: 'invalid_primary_skill', message: '대표 기술 값이 올바르지 않습니다.' });
+    }
+  }
+
+  if (input.task_state != null && !TASK_STATES.has(input.task_state)) {
+    issues.push({ field: 'task_state', code: 'invalid_task_state', message: '오늘 수행 값이 올바르지 않습니다.' });
+  }
+
+  if (input.process_state != null && !PROCESS_STATES.has(input.process_state)) {
+    issues.push({ field: 'process_state', code: 'invalid_process_state', message: '과정 관찰 값이 올바르지 않습니다.' });
+  }
+
+  if (input.selection_recommendation != null && !DECISIONS.has(input.selection_recommendation)) {
+    issues.push({ field: 'selection_recommendation', code: 'invalid_selection_recommendation', message: '추천 방향 값이 올바르지 않습니다.' });
+  }
+
+  if (input.selection_decision != null && !DECISIONS.has(input.selection_decision)) {
+    issues.push({ field: 'selection_decision', code: 'invalid_selection_decision', message: '다음 방향 값이 올바르지 않습니다.' });
   }
 
   if (input.spomove_used === false) {
