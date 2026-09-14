@@ -1,4 +1,5 @@
 import type { SessionChildRecordInput } from '@/app/lib/move-report/track/recordValidation';
+import { recommendSelection } from '@/app/lib/move-report/track/learningLoop';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type MovementExperienceRow = { domain: string; subtag: string };
@@ -27,6 +28,12 @@ export function normalizeRecordPayload(body: unknown): SessionChildRecordInput &
     frw_seconds: b.frw_seconds === undefined ? null : (b.frw_seconds as number | null),
     frw_status: (b.frw_status as SessionChildRecordInput['frw_status']) ?? null,
     observation_note: (b.observation_note as string | null) ?? null,
+    primary_skill: typeof b.primary_skill === 'string' ? b.primary_skill.trim() || null : null,
+    skill_level: b.skill_level === undefined ? null : (b.skill_level as number | null),
+    task_state: (b.task_state as SessionChildRecordInput['task_state']) ?? null,
+    process_state: (b.process_state as SessionChildRecordInput['process_state']) ?? null,
+    selection_decision: (b.selection_decision as SessionChildRecordInput['selection_decision']) ?? null,
+    selection_recommendation: null,
     is_draft: b.is_draft !== false,
     movement_experiences: Array.isArray(b.movement_experiences)
       ? (b.movement_experiences as MovementExperienceRow[]).filter((m) => m.domain && m.subtag)
@@ -42,6 +49,12 @@ export function normalizeRecordPayload(body: unknown): SessionChildRecordInput &
     input.spomove_used = null;
     input.frw_seconds = null;
     input.frw_status = null;
+    input.primary_skill = null;
+    input.skill_level = null;
+    input.task_state = null;
+    input.process_state = null;
+    input.selection_recommendation = null;
+    input.selection_decision = null;
     input.movement_experiences = [];
   }
 
@@ -53,6 +66,12 @@ export function normalizeRecordPayload(body: unknown): SessionChildRecordInput &
     input.spomove_used = null;
     input.frw_seconds = null;
     input.frw_status = null;
+    input.primary_skill = null;
+    input.skill_level = null;
+    input.task_state = null;
+    input.process_state = null;
+    input.selection_recommendation = null;
+    input.selection_decision = null;
     input.movement_experiences = [];
   }
 
@@ -60,6 +79,8 @@ export function normalizeRecordPayload(body: unknown): SessionChildRecordInput &
     input.frw_seconds = null;
     input.frw_status = null;
   }
+
+  input.selection_recommendation = recommendSelection(input);
 
   return input;
 }
@@ -88,6 +109,12 @@ export async function upsertSessionChildRecord(
     frw_seconds: input.frw_seconds,
     frw_status: input.frw_status,
     observation_note: input.observation_note?.trim() || null,
+    primary_skill: input.primary_skill?.trim() || null,
+    skill_level: input.skill_level,
+    task_state: input.task_state,
+    process_state: input.process_state,
+    selection_recommendation: input.selection_recommendation,
+    selection_decision: input.selection_decision,
     is_draft: input.is_draft !== false,
     updated_by: userId,
   };

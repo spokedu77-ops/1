@@ -14,6 +14,19 @@ import {
   SELF_REENGAGEMENT,
   SUPPORT_LEVELS,
 } from '@/app/lib/move-report/track/fieldConstants';
+import {
+  DISPLAY_DIRECTIONS,
+  PRIMARY_SKILLS,
+  PROCESS_STATES,
+  TASK_STATES,
+  decisionForDisplayDirection,
+  defaultPrimarySkillForSession,
+  recommendSelection,
+  toDisplayDirection,
+  type ProcessState,
+  type SelectionDecision,
+  type TaskState,
+} from '@/app/lib/move-report/track/learningLoop';
 
 type Props = {
   sessionId: string;
@@ -37,6 +50,11 @@ type FormState = {
   frw_status: string | null;
   observation_note: string;
   movementKeys: string[];
+  primary_skill: string | null;
+  skill_level: number | null;
+  task_state: TaskState | null;
+  process_state: ProcessState | null;
+  selection_decision: SelectionDecision | null;
 };
 
 function movementKey(domain: string, subtag: string) {
@@ -50,7 +68,7 @@ function parseMovementKeys(keys: string[]) {
   });
 }
 
-const INITIAL: FormState = {
+const BASE_INITIAL: FormState = {
   attendance_status: 'present',
   absence_reason: null,
   observation_opportunity_band: null,
@@ -63,12 +81,18 @@ const INITIAL: FormState = {
   frw_status: null,
   observation_note: '',
   movementKeys: [],
+  primary_skill: null,
+  skill_level: null,
+  task_state: null,
+  process_state: null,
+  selection_decision: null,
 };
 
 export default function ChildRecordClient({ sessionId, childId, childIds, sessionNumber }: Props) {
   const router = useRouter();
+  const defaultSkill = useMemo(() => defaultPrimarySkillForSession(sessionNumber), [sessionNumber]);
   const [childName, setChildName] = useState('');
-  const [form, setForm] = useState<FormState>(INITIAL);
+  const [form, setForm] = useState<FormState>({ ...BASE_INITIAL, primary_skill: defaultSkill });
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [saveError, setSaveError] = useState('');
@@ -90,6 +114,31 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
       })),
     [canObservedStable],
   );
+
+  const recommendation = useMemo(
+    () =>
+      recommendSelection({
+        attendance_status: form.attendance_status,
+        observation_opportunity_band: form.observation_opportunity_band,
+        primary_skill: form.primary_skill,
+        skill_level: form.skill_level,
+        task_state: form.task_state,
+        process_state: form.process_state,
+        support_level: form.support_level,
+      }),
+    [
+      form.attendance_status,
+      form.observation_opportunity_band,
+      form.primary_skill,
+      form.skill_level,
+      form.task_state,
+      form.process_state,
+      form.support_level,
+    ],
+  );
+
+  const recommendationDirection = toDisplayDirection(recommendation);
+  const selectedDirection = toDisplayDirection(form.selection_decision) ?? recommendationDirection;
 
   useEffect(() => {
     let cancelled = false;
@@ -119,7 +168,14 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
             movementKeys: (movement_experiences ?? []).map((m: { domain: string; subtag: string }) =>
               movementKey(m.domain, m.subtag),
             ),
+            primary_skill: record.primary_skill ?? defaultSkill,
+            skill_level: record.skill_level,
+            task_state: record.task_state,
+            process_state: record.process_state,
+            selection_decision: record.selection_decision,
           });
+        } else {
+          setForm({ ...BASE_INITIAL, primary_skill: defaultSkill });
         }
       } catch (e) {
         if (!cancelled) setSaveError(e instanceof Error ? e.message : '불러오기 실패');
@@ -130,7 +186,7 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
     return () => {
       cancelled = true;
     };
-  }, [sessionId, childId]);
+  }, [sessionId, childId, defaultSkill]);
 
   const persist = useCallback(
     async (draft: boolean) => {
@@ -171,11 +227,44 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
     (partial: Partial<FormState>) => {
       setForm((prev) => {
         let next = { ...prev, ...partial };
+        const learningLoopChanged = [
+          'observation_opportunity_band',
+          'primary_skill',
+          'skill_level',
+          'task_state',
+          'process_state',
+          'support_level',
+        ].some((key) => Object.prototype.hasOwnProperty.call(partial, key));
+
+        if (learningLoopChanged && !Object.prototype.hasOwnProperty.call(partial, 'selection_decision')) {
+          next = { ...next, selection_decision: null };
+        }
         if (partial.observation_opportunity_band !== undefined && partial.observation_opportunity_band !== 'three_plus') {
           if (next.frw_status === 'observed_stable') next = { ...next, frw_status: null };
         }
         if (partial.attendance_status === 'absent') {
-          next = { ...INITIAL, attendance_status: 'absent', absence_reason: prev.absence_reason };
+          next = { ...BASE_INITIAL, attendance_status: 'absent', absence_reason: prev.absence_reason };
+        }
+        if (partial.attendance_status === 'present' && prev.attendance_status === 'absent') {
+          next = { ...BASE_INITIAL, attendance_status: 'present', primary_skill: defaultSkill };
+        }
+        if (partial.observation_opportunity_band === null && next.attendance_status === 'present') {
+          next = {
+            ...next,
+            participation_level: null,
+            support_level: null,
+            independent_initiation: null,
+            self_reengagement: null,
+            spomove_used: null,
+            frw_seconds: null,
+            frw_status: null,
+            movementKeys: [],
+            primary_skill: null,
+            skill_level: null,
+            task_state: null,
+            process_state: null,
+            selection_decision: null,
+          };
         }
         if (partial.spomove_used === false) {
           next = { ...next, frw_seconds: null, frw_status: null };
@@ -184,7 +273,7 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
       });
       scheduleAutosave();
     },
-    [scheduleAutosave],
+    [scheduleAutosave, defaultSkill],
   );
 
   const toggleMovement = useCallback(
@@ -198,6 +287,13 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
       scheduleAutosave();
     },
     [scheduleAutosave],
+  );
+
+  const chooseDirection = useCallback(
+    (direction: (typeof DISPLAY_DIRECTIONS)[number]['value']) => {
+      patch({ selection_decision: decisionForDisplayDirection(direction, recommendation) });
+    },
+    [patch, recommendation],
   );
 
   const saveAndNext = useCallback(async () => {
@@ -302,157 +398,244 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
             {form.observation_opportunity_band != null && (
               <>
                 <section className="mr-track-section">
-                  <h2 className="mr-track-section-label">Participation</h2>
-                  <div className="mr-track-level-grid">
-                    {PARTICIPATION_LEVELS.map((l) => (
+                  <h2 className="mr-track-section-label">핵심 기록</h2>
+                  <p className="mr-track-hint">대표 기술 1개만 보고 다음 수업 방향을 정합니다.</p>
+
+                  <label className="mr-track-domain-label" htmlFor="primary-skill">대표 기술</label>
+                  <select
+                    id="primary-skill"
+                    className="mr-track-input"
+                    value={form.primary_skill ?? ''}
+                    onChange={(e) => patch({ primary_skill: e.target.value || null })}
+                  >
+                    <option value="">선택</option>
+                    {PRIMARY_SKILLS.map((skill) => (
+                      <option key={skill} value={skill}>{skill}</option>
+                    ))}
+                  </select>
+
+                  <p className="mr-track-domain-label">과제 수준</p>
+                  <div className="mr-track-chips">
+                    {[1, 2, 3, 4, 5].map((level) => (
                       <button
-                        key={l.value}
+                        key={level}
                         type="button"
-                        className={`mr-track-level${form.participation_level === l.value ? ' mr-track-level--on' : ''}`}
-                        onClick={() => patch({ participation_level: l.value })}
+                        className={`mr-track-chip${form.skill_level === level ? ' mr-track-chip--on' : ''}`}
+                        onClick={() => patch({ skill_level: level })}
                       >
-                        <span className="mr-track-level-num">{l.label}</span>
-                        <span className="mr-track-level-title">{l.title}</span>
+                        L{level}
                       </button>
                     ))}
                   </div>
-                </section>
+                  <p className="mr-track-hint">L1~L5는 학생 등급이 아니라 이 기술의 과제 복잡도입니다.</p>
 
-                <section className="mr-track-section">
-                  <h2 className="mr-track-section-label">Support</h2>
+                  <p className="mr-track-domain-label">오늘 수행</p>
+                  <div className="mr-track-chips">
+                    {TASK_STATES.map((state) => (
+                      <button
+                        key={state.value}
+                        type="button"
+                        className={`mr-track-chip${form.task_state === state.value ? ' mr-track-chip--on' : ''}`}
+                        onClick={() => patch({ task_state: state.value })}
+                      >
+                        {state.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="mr-track-domain-label">도움 수준</p>
                   <div className="mr-track-level-grid mr-track-level-grid--5">
-                    {SUPPORT_LEVELS.map((l) => (
+                    {SUPPORT_LEVELS.map((level) => (
                       <button
-                        key={l.value}
+                        key={level.value}
                         type="button"
-                        className={`mr-track-level${form.support_level === l.value ? ' mr-track-level--on' : ''}`}
-                        onClick={() => patch({ support_level: l.value })}
+                        title={`${level.title} · ${level.desc}`}
+                        className={`mr-track-level${form.support_level === level.value ? ' mr-track-level--on' : ''}`}
+                        onClick={() => patch({ support_level: level.value })}
                       >
-                        <span className="mr-track-level-num">{l.label}</span>
+                        <span className="mr-track-level-num">{level.label}</span>
                       </button>
                     ))}
                   </div>
-                </section>
 
-                <section className="mr-track-section">
-                  <h2 className="mr-track-section-label">Independent Initiation</h2>
-                  <div className="mr-track-chips">
-                    {INDEPENDENT_INITIATION.map((l) => (
-                      <button
-                        key={l.value}
-                        type="button"
-                        className={`mr-track-chip${form.independent_initiation === l.value ? ' mr-track-chip--on' : ''}`}
-                        onClick={() => patch({ independent_initiation: l.value })}
-                      >
-                        {l.label} {l.title}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="mr-track-section">
-                  <h2 className="mr-track-section-label">Self Re-engagement</h2>
-                  <div className="mr-track-chips">
-                    {SELF_REENGAGEMENT.map((o) => {
-                      const val = o.value === 'null' ? null : o.value === 'true';
-                      const on = form.self_reengagement === val;
-                      return (
-                        <button
-                          key={o.value}
-                          type="button"
-                          className={`mr-track-chip${on ? ' mr-track-chip--on' : ''}`}
-                          onClick={() => patch({ self_reengagement: val })}
-                        >
-                          {o.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-
-                <section className="mr-track-section">
-                  <h2 className="mr-track-section-label">SPOMOVE</h2>
-                  <div className="mr-track-chips">
-                    <button
-                      type="button"
-                      className={`mr-track-chip${form.spomove_used === true ? ' mr-track-chip--on' : ''}`}
-                      onClick={() => patch({ spomove_used: true })}
-                    >
-                      예
-                    </button>
-                    <button
-                      type="button"
-                      className={`mr-track-chip${form.spomove_used === false ? ' mr-track-chip--on' : ''}`}
-                      onClick={() => patch({ spomove_used: false })}
-                    >
-                      아니오
-                    </button>
-                  </div>
-                  {form.spomove_used === true && (
-                    <>
-                      <p className="mr-track-hint">Functional Response Window — Reaction Time 아님</p>
-                      <div className="mr-track-chips">
-                        {FRW_SECONDS.map((s) => (
-                          <button
-                            key={s.value}
-                            type="button"
-                            className={`mr-track-chip${form.frw_seconds === s.value ? ' mr-track-chip--on' : ''}`}
-                            onClick={() => patch({ frw_seconds: s.value })}
-                          >
-                            {s.label}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="mr-track-chips">
-                        {frwStatusOptions.map((s) => (
-                          <button
-                            key={s.value}
-                            type="button"
-                            disabled={s.disabled}
-                            className={`mr-track-chip${form.frw_status === s.value ? ' mr-track-chip--on' : ''}${s.disabled ? ' mr-track-chip--disabled' : ''}`}
-                            onClick={() => patch({ frw_status: s.value })}
-                          >
-                            {s.label}
-                          </button>
-                        ))}
-                      </div>
-                    </>
+                  <p className="mr-track-domain-label">다음 방향</p>
+                  {recommendationDirection && (
+                    <p className="mr-track-hint">
+                      추천: {DISPLAY_DIRECTIONS.find((d) => d.value === recommendationDirection)?.label}
+                    </p>
                   )}
+                  <div className="mr-track-chips">
+                    {DISPLAY_DIRECTIONS.map((direction) => (
+                      <button
+                        key={direction.value}
+                        type="button"
+                        title={direction.desc}
+                        className={`mr-track-chip${selectedDirection === direction.value ? ' mr-track-chip--on' : ''}`}
+                        onClick={() => chooseDirection(direction.value)}
+                      >
+                        {direction.label}
+                      </button>
+                    ))}
+                  </div>
                 </section>
 
-                <section className="mr-track-section">
-                  <h2 className="mr-track-section-label">Movement Experience (실제 참여)</h2>
-                  {MOVEMENT_DOMAINS.map((d) => (
-                    <div key={d.id} className="mr-track-domain">
-                      <p className="mr-track-domain-label">{d.label}</p>
-                      <div className="mr-track-chips">
-                        {d.subtags.map((tag) => {
-                          const key = movementKey(d.id, tag);
-                          return (
-                            <button
-                              key={key}
-                              type="button"
-                              className={`mr-track-chip mr-track-chip--sm${form.movementKeys.includes(key) ? ' mr-track-chip--on' : ''}`}
-                              onClick={() => toggleMovement(d.id, tag)}
-                            >
-                              {tag}
-                            </button>
-                          );
-                        })}
-                      </div>
+                <details className="mr-track-section">
+                  <summary className="mr-track-section-label">추가 관찰</summary>
+                  <p className="mr-track-hint">필요한 회기에만 펼쳐서 기록합니다.</p>
+
+                  <div className="mr-track-domain">
+                    <p className="mr-track-domain-label">움직임 과정</p>
+                    <div className="mr-track-chips">
+                      {PROCESS_STATES.map((state) => (
+                        <button
+                          key={state.value}
+                          type="button"
+                          className={`mr-track-chip${form.process_state === state.value ? ' mr-track-chip--on' : ''}`}
+                          onClick={() => patch({ process_state: state.value })}
+                        >
+                          {state.label}
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                </section>
+                  </div>
+
+                  <div className="mr-track-domain">
+                    <p className="mr-track-domain-label">Participation</p>
+                    <div className="mr-track-level-grid">
+                      {PARTICIPATION_LEVELS.map((level) => (
+                        <button
+                          key={level.value}
+                          type="button"
+                          className={`mr-track-level${form.participation_level === level.value ? ' mr-track-level--on' : ''}`}
+                          onClick={() => patch({ participation_level: level.value })}
+                        >
+                          <span className="mr-track-level-num">{level.label}</span>
+                          <span className="mr-track-level-title">{level.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mr-track-domain">
+                    <p className="mr-track-domain-label">Independent Initiation</p>
+                    <div className="mr-track-chips">
+                      {INDEPENDENT_INITIATION.map((level) => (
+                        <button
+                          key={level.value}
+                          type="button"
+                          className={`mr-track-chip${form.independent_initiation === level.value ? ' mr-track-chip--on' : ''}`}
+                          onClick={() => patch({ independent_initiation: level.value })}
+                        >
+                          {level.label} {level.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mr-track-domain">
+                    <p className="mr-track-domain-label">Self Re-engagement</p>
+                    <div className="mr-track-chips">
+                      {SELF_REENGAGEMENT.map((option) => {
+                        const val = option.value === 'null' ? null : option.value === 'true';
+                        const on = form.self_reengagement === val;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            className={`mr-track-chip${on ? ' mr-track-chip--on' : ''}`}
+                            onClick={() => patch({ self_reengagement: val })}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mr-track-domain">
+                    <p className="mr-track-domain-label">SPOMOVE</p>
+                    <div className="mr-track-chips">
+                      <button
+                        type="button"
+                        className={`mr-track-chip${form.spomove_used === true ? ' mr-track-chip--on' : ''}`}
+                        onClick={() => patch({ spomove_used: true })}
+                      >
+                        예
+                      </button>
+                      <button
+                        type="button"
+                        className={`mr-track-chip${form.spomove_used === false ? ' mr-track-chip--on' : ''}`}
+                        onClick={() => patch({ spomove_used: false })}
+                      >
+                        아니오
+                      </button>
+                    </div>
+                    {form.spomove_used === true && (
+                      <>
+                        <p className="mr-track-hint">Functional Response Window — Reaction Time 아님</p>
+                        <div className="mr-track-chips">
+                          {FRW_SECONDS.map((seconds) => (
+                            <button
+                              key={seconds.value}
+                              type="button"
+                              className={`mr-track-chip${form.frw_seconds === seconds.value ? ' mr-track-chip--on' : ''}`}
+                              onClick={() => patch({ frw_seconds: seconds.value })}
+                            >
+                              {seconds.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="mr-track-chips">
+                          {frwStatusOptions.map((status) => (
+                            <button
+                              key={status.value}
+                              type="button"
+                              disabled={status.disabled}
+                              className={`mr-track-chip${form.frw_status === status.value ? ' mr-track-chip--on' : ''}${status.disabled ? ' mr-track-chip--disabled' : ''}`}
+                              onClick={() => patch({ frw_status: status.value })}
+                            >
+                              {status.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mr-track-domain">
+                    <p className="mr-track-domain-label">Movement Experience</p>
+                    {MOVEMENT_DOMAINS.map((domain) => (
+                      <div key={domain.id} className="mr-track-domain">
+                        <p className="mr-track-domain-label">{domain.label}</p>
+                        <div className="mr-track-chips">
+                          {domain.subtags.map((tag) => {
+                            const key = movementKey(domain.id, tag);
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                className={`mr-track-chip mr-track-chip--sm${form.movementKeys.includes(key) ? ' mr-track-chip--on' : ''}`}
+                                onClick={() => toggleMovement(domain.id, tag)}
+                              >
+                                {tag}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </>
             )}
 
             <section className="mr-track-section">
-              <h2 className="mr-track-section-label">Observation Note</h2>
+              <h2 className="mr-track-section-label">메모</h2>
               <textarea
                 className="mr-track-textarea"
                 maxLength={150}
                 rows={3}
-                placeholder="의미 있는 변화·행동 (Meaningful Change)"
+                placeholder="필요한 경우 핵심 성공·어려움만 한 줄로 기록"
                 value={form.observation_note}
                 onChange={(e) => patch({ observation_note: e.target.value })}
               />
@@ -463,8 +646,8 @@ export default function ChildRecordClient({ sessionId, childId, childIds, sessio
 
         {warnings.length > 0 && (
           <div className="mr-track-warn">
-            {warnings.map((w) => (
-              <p key={w}>{w}</p>
+            {warnings.map((warning) => (
+              <p key={warning}>{warning}</p>
             ))}
           </div>
         )}
