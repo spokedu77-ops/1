@@ -38,13 +38,13 @@ export function rankSpecialPeAssets(
   return [...assets]
     .filter((asset) => asset.title && asset.level_min <= asset.level_max)
     .sort((a, b) => {
-      const aStage = stageOrder.indexOf(a.stage);
-      const bStage = stageOrder.indexOf(b.stage);
-      if (aStage !== bStage) return aStage - bStage;
-
       const aLevelMatch = input.level >= a.level_min && input.level <= a.level_max ? 0 : 1;
       const bLevelMatch = input.level >= b.level_min && input.level <= b.level_max ? 0 : 1;
       if (aLevelMatch !== bLevelMatch) return aLevelMatch - bLevelMatch;
+
+      const aStage = stageOrder.indexOf(a.stage);
+      const bStage = stageOrder.indexOf(b.stage);
+      if (aStage !== bStage) return aStage - bStage;
 
       if (a.priority !== b.priority) return a.priority - b.priority;
       return a.map_id - b.map_id;
