@@ -14,11 +14,20 @@ import { buildSessionCompletionRosterStudentIds, CLASS_TIME_COLLISION_MESSAGE, L
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const SESSION_SELECT_CORE = `
+  id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, parent_notice, completed_at, schedule_rule_id, created_at, updated_at,
+  spokedu_master_session_programs(id, source_type, program_id, spomove_preset_id, program_title_snapshot, sort_order, is_completed),
+  spokedu_master_session_attendance(id, student_id, student_name_snapshot, status)
+`;
 const SESSION_SELECT = `
   id, class_id, class_name_snapshot, start_at, started_at, end_at, status, memo, parent_notice, completed_at, schedule_rule_id, created_at, updated_at, roster_locked_at,
   spokedu_master_session_programs(id, source_type, program_id, spomove_preset_id, program_title_snapshot, sort_order, is_completed),
   spokedu_master_session_attendance(id, student_id, student_name_snapshot, status)
 `;
+
+function isMissingRosterLockedAtColumn(error: { message?: string } | null) {
+  return Boolean(error && String(error.message ?? '').includes('roster_locked_at'));
+}
 
 type SessionRow = {
   id: string;
@@ -72,7 +81,7 @@ function toSessionDto(row: SessionRow): MasterSessionDto {
     attendance: (row.spokedu_master_session_attendance ?? []).map((item) => ({
       id: item.id, studentId: item.student_id, studentName: item.student_name_snapshot, status: item.status,
     })),
-    rosterLockedAt: row.roster_locked_at,
+    rosterLockedAt: row.roster_locked_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -116,10 +125,16 @@ function normalizeInput(value: unknown): SaveSessionInput {
 
 async function loadAggregate(ownerId: string, sessionId?: string) {
   const supabase = getServiceSupabase();
-  let query = supabase.from('spokedu_master_sessions').select(SESSION_SELECT)
-    .eq('owner_id', ownerId).is('deleted_at', null).order('start_at', { ascending: true });
-  if (sessionId) query = query.eq('id', sessionId);
-  const { data, error } = await query;
+  const run = (select: string) => {
+    let query = supabase.from('spokedu_master_sessions').select(select)
+      .eq('owner_id', ownerId).is('deleted_at', null).order('start_at', { ascending: true });
+    if (sessionId) query = query.eq('id', sessionId);
+    return query;
+  };
+  let { data, error } = await run(SESSION_SELECT);
+  if (isMissingRosterLockedAtColumn(error)) {
+    ({ data, error } = await run(SESSION_SELECT_CORE));
+  }
   if (error) throw error;
   return ((data ?? []) as unknown as SessionRow[]).map(toSessionDto);
 }
@@ -128,6 +143,7 @@ export async function GET() {
   const access = await requireSpokeduMasterCapability('attendance');
   if (!access.ok) return withPrivateNoStore(access.response);
   const supabase = getServiceSupabase();
+  try {
   const [{ data: classes, error: classError }, sessionsResult] = await Promise.all([
     supabase.from('spokedu_master_classes').select('id,name,created_at,updated_at,spokedu_master_class_students(student_id)')
       .eq('owner_id', access.userId).is('deleted_at', null).order('name'),
@@ -145,6 +161,10 @@ export async function GET() {
       sessions: sessionsResult.map((session) => access.plan === 'lite' ? { ...session, memo: null } : session),
     },
   });
+  } catch (error) {
+    await reportError(error, { context: 'spokedu_master.sessions.list' });
+    return privateNoStoreJson({ error: 'Sessions could not be loaded' }, { status: 500 });
+  }
 }
 
 async function save(request: Request, sessionId: string | null) {
@@ -256,9 +276,15 @@ export async function PUT(request: Request) {
   }
 
   const supabase = getServiceSupabase();
-  const { data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
+  let { data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
     .select('id,class_id,status,roster_locked_at')
     .eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();
+  if (isMissingRosterLockedAtColumn(sessionError)) {
+    ({ data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
+      .select('id,class_id,status')
+      .eq('id', body.id).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle());
+    if (session) session = { ...session, roster_locked_at: null };
+  }
   if (sessionError) {
     await reportError(sessionError, { context: 'spokedu_master.sessions.complete.roster' });
     return privateNoStoreJson({ error: '수업 출석 명단을 확인하지 못했습니다.' }, { status: 500 });

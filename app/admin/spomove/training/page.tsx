@@ -359,6 +359,7 @@ type LaunchSettings = {
   relativeCompassDifficulty: 'easy' | 'normal' | 'hard';
   relativeCompassStartSeconds: 2 | 3 | 4 | 5 | 6;
   relativeCompassResponseSeconds: 2 | 3 | 4 | 5 | 6;
+  relativeCompassEnabled: boolean;
   shapeCompletionDifficulty: 'easy' | 'normal' | 'hard';
   shapeCompletionResponseSeconds: 2 | 3 | 4 | 5 | 6;
   shapeCompletionEnabled: boolean;
@@ -415,6 +416,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   relativeCompassDifficulty: 'normal',
   relativeCompassStartSeconds: 3,
   relativeCompassResponseSeconds: 3,
+  relativeCompassEnabled: false,
   shapeCompletionDifficulty: 'normal',
   shapeCompletionResponseSeconds: 4,
   shapeCompletionEnabled: false,
@@ -487,6 +489,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     relativeCompassDifficulty: auto.relativeCompassDifficulty === 'easy' || auto.relativeCompassDifficulty === 'hard' ? auto.relativeCompassDifficulty : fallback.relativeCompassDifficulty,
     relativeCompassStartSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassStartSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassStartSeconds,
     relativeCompassResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.relativeCompassResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.relativeCompassResponseSeconds,
+    relativeCompassEnabled: auto.relativeCompassEnabled === true,
     shapeCompletionDifficulty: auto.shapeCompletionDifficulty === 'easy' || auto.shapeCompletionDifficulty === 'hard' ? auto.shapeCompletionDifficulty : fallback.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: ([2, 3, 4, 5, 6] as const).includes(auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6) ? auto.shapeCompletionResponseSeconds as 2 | 3 | 4 | 5 | 6 : fallback.shapeCompletionResponseSeconds,
     shapeCompletionEnabled: auto.shapeCompletionEnabled === true,
@@ -646,6 +649,7 @@ function TrainingPortal({
     relativeCompassDifficulty: launch.relativeCompassDifficulty,
     relativeCompassStartSeconds: launch.relativeCompassStartSeconds,
     relativeCompassResponseSeconds: launch.relativeCompassStartSeconds,
+    relativeCompassEnabled: launch.relativeCompassEnabled,
     shapeCompletionDifficulty: launch.shapeCompletionDifficulty,
     shapeCompletionResponseSeconds: launch.shapeCompletionResponseSeconds,
     shapeCompletionEnabled: launch.shapeCompletionEnabled,
@@ -661,7 +665,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.colorGateVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.colorGateVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.relativeCompassEnabled}-${launch.shapeCompletionEnabled}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -994,6 +998,11 @@ function SettingsScreen({
   const isSimon = modeId === 'simon';
   const isFlowOrChallenge = modeId === 'flow';
   const isColorGateTheme = isFlowColorGateLevel(modeId, levelId);
+  const compactSettingsMenu =
+    (isReactTrain && [6, 8, 10, 13].includes(reactTrainEngineLevelForUi(levelId))) ||
+    (modeId === 'simon' && levelId === 3) ||
+    (modeId === 'flanker' && levelId === 3) ||
+    (isSpatial && isInstantMemoryLevel(levelId));
 
   useEffect(() => {
     if (!isFlowOrChallenge) return;
@@ -1018,6 +1027,19 @@ function SettingsScreen({
         .settings-body.dive-fit .settings-columns {
           gap: 12px;
         }
+        .settings-body.compact-menu { padding: 14px 20px 18px; }
+        .settings-body.compact-menu .settings-shell > h1 { font-size: 18px !important; }
+        .settings-body.compact-menu .settings-shell > p { margin-top: 4px !important; line-height: 1.35 !important; }
+        .settings-body.compact-menu .settings-guide { margin-top: 8px !important; }
+        .settings-body.compact-menu .settings-guide > button { padding: 8px 12px !important; }
+        .settings-body.compact-menu .settings-divider { margin: 8px 0 10px !important; }
+        .settings-body.compact-menu .settings-columns { gap: 14px; }
+        .settings-body.compact-menu .settings-column > section { margin-bottom: 11px !important; }
+        .settings-body.compact-menu .theme-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+        .settings-body.compact-menu .theme-option { min-height: 31px; padding: 5px 8px !important; border-radius: 9px !important; }
+        .settings-body.compact-menu .theme-option span { font-size: 11px !important; line-height: 1.2; }
+        .settings-body.compact-menu .settings-column section button { padding-top: 7px !important; padding-bottom: 7px !important; border-radius: 9px !important; }
+        .settings-body.compact-menu .settings-column section p { line-height: 1.35 !important; }
         .settings-shell {
           width: 100%;
           max-width: 1040px;
@@ -1078,7 +1100,7 @@ function SettingsScreen({
         </span>
       </header>
 
-      <div className={`settings-body${isFlowOrChallenge ? ' dive-fit' : ''}`}>
+      <div className={`settings-body${isFlowOrChallenge ? ' dive-fit' : ''}${compactSettingsMenu ? ' compact-menu' : ''}`}>
         <div className="settings-shell">
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
             트레이닝 설정
@@ -1090,7 +1112,7 @@ function SettingsScreen({
           )}
 
           {/* 가이드 */}
-          <div style={{ marginTop: isFlowOrChallenge ? 10 : 18, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div className="settings-guide" style={{ marginTop: isFlowOrChallenge ? 10 : 18, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
             <button
               type="button"
               onClick={() => setGuideOpen((v) => !v)}
@@ -1144,7 +1166,7 @@ function SettingsScreen({
             ) : null}
           </div>
 
-          <div style={{ height: 1, background: T.border, margin: isFlowOrChallenge ? '10px 0 12px' : '18px 0 20px' }} />
+          <div className="settings-divider" style={{ height: 1, background: T.border, margin: isFlowOrChallenge ? '10px 0 12px' : '18px 0 20px' }} />
 
           <div className="settings-columns">
             <div className="settings-column">
@@ -1161,7 +1183,7 @@ function SettingsScreen({
               {(m?.levels ?? []).map((lv) => {
                 const active =
                   modeId === 'basic'
-                    ? (lv.id === 8 ? levelId === 8 && launch.shapeCompletionEnabled : catalogBasicUiLevel(levelId) === lv.id && !launch.shapeCompletionEnabled)
+                    ? (lv.id === 7 ? levelId === 7 && launch.relativeCompassEnabled : lv.id === 8 ? levelId === 8 && launch.shapeCompletionEnabled : catalogBasicUiLevel(levelId) === lv.id && !launch.relativeCompassEnabled && !launch.shapeCompletionEnabled)
                     : modeId === 'spatial'
                       ? catalogSpatialUiLevel(levelId) === lv.id
                       : levelId === lv.id;
@@ -1194,8 +1216,9 @@ function SettingsScreen({
                       });
                       setLaunch((s) => {
                         let next = launchSettingsForLevel(modeId, lv.id, s);
-                        if (modeId === 'basic' && lv.id === 8) next = { ...next, shapeCompletionEnabled: true };
-                        else if (modeId === 'basic') next = { ...next, shapeCompletionEnabled: false };
+                        if (modeId === 'basic' && lv.id === 7) next = { ...next, relativeCompassEnabled: true, shapeCompletionEnabled: false };
+                        else if (modeId === 'basic' && lv.id === 8) next = { ...next, relativeCompassEnabled: false, shapeCompletionEnabled: true };
+                        else if (modeId === 'basic') next = { ...next, relativeCompassEnabled: false, shapeCompletionEnabled: false };
                         if (isReactTrain) {
                           const mapped = resolveReactTrainUiLevel(lv.id);
                           next = {

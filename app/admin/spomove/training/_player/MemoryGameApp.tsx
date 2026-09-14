@@ -357,6 +357,7 @@ export type MemoryGameAutoLaunch = {
   relativeCompassDifficulty?: RelativeCompassDifficulty;
   relativeCompassStartSeconds?: RelativeCompassSeconds;
   relativeCompassResponseSeconds?: RelativeCompassSeconds;
+  relativeCompassEnabled?: boolean;
   shapeCompletionDifficulty?: ShapeCompletionDifficulty;
   shapeCompletionResponseSeconds?: ShapeCompletionSeconds;
   shapeCompletionEnabled?: boolean;
@@ -758,7 +759,7 @@ export default function MemoryGameApp({
           ? autoLaunch.relativeCompassResponseSeconds as RelativeCompassSeconds
           : 3,
         relativeCompassEnabled:
-          normalized.mode === 'basic' && targetLevel === 7 && autoLaunch.relativeCompassDifficulty !== undefined,
+          normalized.mode === 'basic' && targetLevel === 7 && autoLaunch.relativeCompassEnabled === true,
         shapeCompletionDifficulty: normalizeShapeCompletionDifficulty(autoLaunch.shapeCompletionDifficulty),
         shapeCompletionResponseSeconds: normalizeShapeCompletionSeconds(autoLaunch.shapeCompletionResponseSeconds),
         shapeCompletionEnabled:

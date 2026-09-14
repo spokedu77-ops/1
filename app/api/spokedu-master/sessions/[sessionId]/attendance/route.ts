@@ -17,9 +17,15 @@ export async function PUT(request: Request, context: { params: Promise<{ session
     return privateNoStoreJson({ error: 'Invalid attendance' }, { status: 400 });
   }
   const supabase = getServiceSupabase();
-  const { data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
+  let { data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
     .select('roster_locked_at,spokedu_master_session_attendance(student_id)')
     .eq('id', sessionId).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();
+  if (sessionError && String(sessionError.message ?? '').includes('roster_locked_at')) {
+    ({ data: session, error: sessionError } = await supabase.from('spokedu_master_sessions')
+      .select('spokedu_master_session_attendance(student_id)')
+      .eq('id', sessionId).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle());
+    if (session) session = { ...session, roster_locked_at: null };
+  }
   if (sessionError) return privateNoStoreJson({ error: 'Attendance could not be saved' }, { status: 500 });
   if (!session) return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
   if (session.roster_locked_at) {
