@@ -78,11 +78,15 @@ export function recommendSelection(input: {
 }): SelectionDecision | null {
   if (input.attendance_status !== 'present') return null;
   if (input.observation_opportunity_band == null) return null;
-  if (!input.primary_skill || input.skill_level == null || input.task_state == null) return null;
+  if (!input.primary_skill || input.skill_level == null || input.task_state == null || input.support_level == null) return null;
 
   if (input.task_state !== 'stable') return 'stabilize';
   if (input.process_state === 'unstable' || input.process_state === 'forming') return 'stabilize';
-  if ((input.support_level ?? 0) >= 2) return 'fade_support';
+  if (input.support_level >= 2) return 'fade_support';
+
+  // Sparse observation is not enough to recommend expanding the condition.
+  // This is a conservative SPOKEDU operating rule, not a universal clinical cutoff.
+  if (input.observation_opportunity_band !== 'three_plus') return 'stabilize';
 
   // A single session cannot establish generalization strongly enough to auto-advance.
   // The conservative default is to verify the same skill at the same level in another condition.
