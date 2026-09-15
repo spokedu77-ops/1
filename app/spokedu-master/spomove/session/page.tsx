@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
+import { type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
@@ -251,6 +252,7 @@ function SpomoveSessionContent() {
   );
 
   const [state, setState] = useState<SessionState>('idle');
+  const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>('space');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activationBlocked, setActivationBlocked] = useState<
     null | 'fullscreenBlocked' | 'audioBlocked' | 'bothBlocked'
@@ -656,6 +658,7 @@ function SpomoveSessionContent() {
           camouflagePlacement={officialPreset.engine.camouflagePlacement}
           camouflagePlacementResponse={officialPreset.engine.camouflagePlacementResponse}
           flowFeatures={officialPreset.engine.flowFeatures}
+          diveEnvironmentTheme={diveEnvironmentTheme}
           flowDuration={officialPreset.engine.flowDuration}
           flowLayout={officialPreset.engine.flowLayout}
           flowIncludeBonus={officialPreset.engine.flowIncludeBonus}
@@ -740,6 +743,8 @@ function SpomoveSessionContent() {
         >
           {entryMode === 'settings' ? (
             <SettingsBriefing
+              diveEnvironmentTheme={diveEnvironmentTheme}
+              onDiveEnvironmentThemeChange={setDiveEnvironmentTheme}
               preset={officialPreset}
               startDisabled={bgmLoading || !canStartSession}
               cueSeconds={effectiveCueSeconds}

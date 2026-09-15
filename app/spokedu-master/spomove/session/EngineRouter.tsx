@@ -11,6 +11,7 @@ import { normalizeColorTrackerRounds } from '@/app/admin/spomove/training/_playe
 import { normalizeNumberCartRounds } from '@/app/admin/spomove/training/_player/components/NumberCartReactionTraining';
 import { resolveReactTrainUiLevel } from '@/app/admin/spomove/training/_player/constants';
 import { StartCountdownGate } from '@/app/admin/spomove/training/_player/lib/reactTrainStartCountdown';
+import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import {
@@ -131,6 +132,7 @@ type Props = {
   /** Simon L4 내부 후보: preset 배치 존중. 없으면 legacy variant */
   camouflagePlacementResponse?: 'legacy' | 'preset';
   flowFeatures?: string[];
+  diveEnvironmentTheme?: DiveThemeId;
   flowDuration?: number;
   flowLayout?: 'sequential' | 'random';
   flowIncludeBonus?: boolean;
@@ -203,6 +205,7 @@ export function EngineRouter({
   camouflagePlacement,
   camouflagePlacementResponse,
   flowFeatures,
+  diveEnvironmentTheme,
   flowDuration,
   flowLayout,
   flowIncludeBonus,
@@ -597,6 +600,7 @@ export function EngineRouter({
             warmup: 3,
             audioMode: soundEnabled ? 'beep' : 'off',
             flowFeatures: resolvedFlowFeatures,
+            diveEnvironmentTheme,
             flowDuration: flowDuration ?? 25,
             flowLayout: flowLayout ?? 'sequential',
             flowIncludeBonus: flowIncludeBonus ?? true,

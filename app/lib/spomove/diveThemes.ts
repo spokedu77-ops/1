@@ -22,7 +22,7 @@ export type DiveThemeEntry = {
 /** Admin UI 표시 라벨 (이름 확정 전 임시) */
 export const DIVE_THEME_UI: ReadonlyArray<{ id: DiveThemeId; label: string }> = [
   { id: 'space', label: 'SPACE' },
-  { id: 'theme2', label: '테마 2' },
+  { id: 'theme2', label: 'SPORTS ARENA' },
   { id: 'theme3', label: '테마 3' },
   { id: 'theme4', label: '테마 4' },
   { id: 'theme5', label: '테마 5' },
