@@ -199,14 +199,14 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
       minimumPlan: context.minimumPlan,
       eyebrow: '방금 하려던 작업',
       title: resourceTitle ? `${resourceTitle} 활동을 준비하려고 했습니다.` : 'SPOMOVE 활동을 준비하려고 했습니다.',
-      description: 'SPOMOVE는 수업을 다양하게 만드는 디지털 움직임 콘텐츠입니다. Premium 결제 후 선택한 활동과 수업 맥락을 잃지 않고 그대로 이어갑니다.',
+      description: 'SPOMOVE는 수업을 다양하게 만드는 디지털 움직임 콘텐츠입니다. 프리미엄 결제 후 선택한 활동과 수업 맥락을 잃지 않고 그대로 이어갑니다.',
       resourceTitle,
       evidence: [
         { label: '복귀 위치', value: 'SPOMOVE 실행 화면' },
         { label: '수업 흐름', value: '도입, 집중 전환, 반응 활동' },
-        { label: '권한', value: 'Premium' },
+        { label: '권한', value: '프리미엄' },
       ],
-      ctaLabel: 'Premium으로 활동 준비',
+      ctaLabel: '프리미엄으로 활동 준비',
       paymentHref,
     };
   }
@@ -217,14 +217,14 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
       minimumPlan: context.minimumPlan,
       eyebrow: '방금 하려던 작업',
       title: resourceTitle ? `${resourceTitle} 기록을 이어가려고 했습니다.` : '수업 기록을 이어가려고 했습니다.',
-      description: '기존 수업 기록은 유지됩니다. Premium에서 지난 메모와 학생 맥락을 다음 수업 준비에 다시 활용하고, 하던 기록으로 돌아갑니다.',
+      description: '기존 수업 기록은 유지됩니다. 프리미엄에서 지난 메모와 학생 맥락을 다음 수업 준비에 다시 활용하고, 하던 기록으로 돌아갑니다.',
       resourceTitle,
       evidence: [
         { label: '복귀 위치', value: '기록 작성 화면' },
         { label: '활용', value: '수업 근거와 보호자 안내' },
-        { label: '권한', value: 'Premium' },
+        { label: '권한', value: '프리미엄' },
       ],
-      ctaLabel: 'Premium으로 기록 계속하기',
+      ctaLabel: '프리미엄으로 기록 계속하기',
       paymentHref,
     };
   }
@@ -235,7 +235,7 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
       minimumPlan: context.minimumPlan,
       eyebrow: '방금 하려던 작업',
       title: '수업반과 출석부를 이어서 사용하려고 했습니다.',
-      description: 'Lite에서 수업반, 학생 명단, 일정과 출석을 이어 사용해 매주 같은 운영 정보를 다시 만들지 않습니다.',
+      description: 'Lite에서 수업반, 학생 명단, 일정과 출석을 이어 사용해 수업마다 같은 운영 정보를 다시 만들지 않습니다.',
       resourceTitle,
       evidence: [
         { label: '복귀 위치', value: '방금 보던 수업 운영 화면' },

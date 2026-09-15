@@ -12,8 +12,7 @@ import {
 import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { extractExactSectionLines, parseTextareaLines, parseVariationMethod } from '@/app/spokedu-master/lib/lessonContentContract';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-import { selectWeeklyRecommendationSlots } from '@/app/spokedu-master/lib/weeklyRecommendations';
-import { getProgramHomeReadiness, isProgramHomeRecommendationEligible } from '@/app/spokedu-master/lib/program-meta';
+import { isFreePreviewProgramId, selectWeeklyProgramsById } from '@/app/spokedu-master/lib/commercialProgramAccess';
 import { isLessonCatalogNew } from '@/app/spokedu-master/lib/lessonCatalogNew';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
@@ -154,12 +153,15 @@ function normalizeProgramForMaster(program: Program): Program {
   };
 }
 
-function canAccessProProgramDetails(access: MasterAccessResult): boolean {
-  return access.ok && (access.isAdmin || access.plan === 'premium' || access.plan === 'team' || access.plan === 'admin');
+function canAccessProgramDetails(access: MasterAccessResult, program: Program): boolean {
+  if (isFreePreviewProgramId(program.id)) return true;
+  if (!access.ok) return false;
+  if (access.isAdmin || access.plan === 'premium' || access.plan === 'team' || access.plan === 'admin') return true;
+  return access.plan === 'lite' && !program.isPro;
 }
 
-function redactProgramForAccess(program: Program, canAccessProDetails: boolean): Program {
-  if (!program.isPro || canAccessProDetails) return program;
+function redactProgramForAccess(program: Program, canAccessDetails: boolean): Program {
+  if (canAccessDetails) return program;
   return {
     ...program,
     steps: [],
@@ -381,26 +383,12 @@ async function reportInvalidMasterPrograms(invalid: Array<{ curriculumId: number
   });
 }
 
-function normalizeProgramTitle(title: string) {
-  return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
-}
-
 function selectHomePrograms(programs: Program[]) {
-  return selectWeeklyRecommendationSlots(programs.filter((program) => !program.isPro), {
-    isRecommendationEligible: isProgramHomeRecommendationEligible,
-    compareFallback: (a, b) =>
-      Number(b.isHot) - Number(a.isHot) ||
-      getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
-      Number(Boolean(pickBestHeroUrl(b.lessonDetail?.heroImageUrl, b.thumbnailUrl))) - Number(Boolean(pickBestHeroUrl(a.lessonDetail?.heroImageUrl, a.thumbnailUrl))) ||
-      Number(Boolean(b.lessonDetail?.videoUrl)) - Number(Boolean(a.lessonDetail?.videoUrl)) ||
-      Number(b.isNew) - Number(a.isNew) ||
-      (a.homeSortOrder ?? 9999) - (b.homeSortOrder ?? 9999),
-    normalizeTitle: normalizeProgramTitle,
-  }).programs;
+  return selectWeeklyProgramsById(programs);
 }
 
 export async function GET(request?: Request) {
-  const access = await requireSpokeduMasterCapability('library');
+  const access = await requireSpokeduMasterCapability('libraryBrowse');
   if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
@@ -482,8 +470,9 @@ export async function GET(request?: Request) {
     return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
   }
 
-  const canAccessProDetails = canAccessProProgramDetails(access);
-  const visiblePrograms = programs.map((program) => redactProgramForAccess(program, canAccessProDetails));
+  const visiblePrograms = programs.map((program) =>
+    redactProgramForAccess(program, canAccessProgramDetails(access, program)),
+  );
   const responsePrograms = request && new URL(request.url).searchParams.get('surface') === 'home'
     ? selectHomePrograms(visiblePrograms)
     : visiblePrograms;

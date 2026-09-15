@@ -16,6 +16,8 @@ import {
   isDirectVideoUrl,
 } from '../../lib/program-media';
 import { useIsPremium, useMasterStore } from '../../store';
+import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
+import { isFreePreviewProgramId } from '../../lib/commercialProgramAccess';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { AssignProgramToSessionButton } from '../../components/session/AssignProgramToSessionButton';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
@@ -39,6 +41,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const operationalData = useOperationalData();
   const programs = useMasterStore((state) => state.programs);
   const isPremium = useIsPremium();
+  const accessSnapshot = useMasterAccessSnapshot();
   const profile = useMasterStore((state) => state.profile);
   const ownerId = getFavoritesOwnerId(profile);
   const storedFavoriteRefs = useMasterStore((state) =>
@@ -152,7 +155,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
     );
   }
 
-  if (program.isPro && !isPremium) {
+  const programLocked = !isFreePreviewProgramId(program.id)
+    && (!accessSnapshot.canUseLibrary || (program.isPro && !isPremium));
+
+  if (programLocked) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[var(--spm-bg)] px-6 text-center">
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-[18px] border border-amber-200 bg-amber-50 text-amber-600">

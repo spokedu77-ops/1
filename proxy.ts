@@ -7,7 +7,8 @@ const CANONICAL_ORIGIN = 'https://spokedu.kr';
 
 const SPOKEDU_MASTER_PUBLIC_PREFIXES = [
   '/spokedu-master/landing',
-  '/spokedu-master/payment',
+  '/spokedu-master/login',
+  '/spokedu-master/auth',
   '/spokedu-master/privacy',
   '/spokedu-master/terms',
   '/spokedu-master/parent',
@@ -115,13 +116,13 @@ export async function proxy(request: NextRequest) {
   if (isSpokeduMasterProtectedPath(pathname) && !canBypassSpokeduMasterAuthForQa(request)) {
     const response = NextResponse.next();
     const supabase = createSupabaseProxyClient(request, response);
-    if (!supabase) return redirectWithNext(request, '/login');
+    if (!supabase) return redirectWithNext(request, '/spokedu-master/login');
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) return redirectWithNext(request, '/login');
+    if (!user) return redirectWithNext(request, '/spokedu-master/login');
 
     // MASTER entitlement is intentionally not evaluated in proxy.
     // The canonical server check lives behind /api/spokedu-master/access and

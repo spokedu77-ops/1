@@ -1,6 +1,5 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
+import { PolicyHeader } from '../components/policy/PolicyHeader';
 import {
   MASTER_PRODUCT_CATALOG,
   MASTER_SUPPORT_EMAIL,
@@ -14,30 +13,23 @@ export const metadata: Metadata = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-8">
-      <h2 className="mb-3 text-[17px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{title}</h2>
-      <div className="space-y-3 text-[13px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>{children}</div>
+      <h2 className="mb-3 text-[20px] font-semibold leading-7" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{title}</h2>
+      <div className="space-y-3 text-[15px] font-normal leading-7" style={{ color: 'var(--spm-t2)' }}>{children}</div>
     </section>
   );
 }
 
-export default function TermsPage() {
+export default async function TermsPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+  const { from } = await searchParams;
   const lite = MASTER_PRODUCT_CATALOG.lite;
   const premium = MASTER_PRODUCT_CATALOG.premium;
   const center = MASTER_PRODUCT_CATALOG.center;
 
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-      <header className="flex items-center gap-3 px-[22px] pb-6 pt-[22px] sm:px-8">
-        <Link href="/spokedu-master/landing" className="grid h-10 w-10 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="서비스 소개로 돌아가기">
-          <ArrowLeft size={18} color="var(--spm-t2)" />
-        </Link>
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
-          <h1 className="text-[18px] font-black">이용약관</h1>
-        </div>
-      </header>
+      <PolicyHeader title="이용약관" fromProfile={from === 'profile'} />
 
-      <main className="mx-auto max-w-[720px] px-[22px] pb-12 sm:px-8">
+      <main className="mx-auto max-w-[760px] px-5 pb-12 sm:px-8">
         <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 7월 1일</p>
 
         <Section title="1. 목적">
@@ -51,7 +43,7 @@ export default function TermsPage() {
 
         <Section title="3. 이용권과 결제">
           <p>{lite.displayName}는 {lite.priceLabel} {lite.billingCycleLabel} 상품이며 SPOMOVE를 제외한 MASTER 기본 기능을 제공합니다.</p>
-          <p>{premium.displayName}은 {premium.priceLabel} {premium.billingCycleLabel} 상품이며 SPOMOVE를 포함한 전체 기능과 SPOMAT 회원가 자격을 제공합니다.</p>
+          <p>{premium.displayName}은 {premium.priceLabel} {premium.billingCycleLabel} 상품이며 라이트 기능에 수업 기록과 SPOMOVE를 추가로 제공하고 SPOMAT 회원가 자격을 제공합니다.</p>
           <p>{center.displayName}은 {center.priceLabel} 상품이며 직접 결제를 제공하지 않습니다. 기관 도입은 별도 문의로 안내합니다.</p>
           <p>무료 체험 상품은 제공하지 않습니다. 신규 사용자는 결제 성공 또는 별도 계약이 확인된 경우에만 유료 기능 권한을 받을 수 있습니다.</p>
         </Section>
@@ -78,7 +70,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="8. 데이터 삭제와 탈퇴">
-          <p>프로필에서 제공하는 기능은 MASTER 운영 데이터 삭제입니다. 학생 정보, 수업 기록, 학생별 기록, 저장한 안내문, 현재 기기의 MASTER 로컬 작업 데이터를 삭제합니다.</p>
+          <p>프로필에서 제공하는 기능은 MASTER 운영 데이터 삭제입니다. 학생 정보, 수업·출석 기록, 학생별 기록, 저장한 안내문, 즐겨찾기와 현재 기기의 MASTER 로컬 작업 데이터를 삭제합니다.</p>
           <p>로그인 계정, 이용권 결제 주문, 결제·환불 증빙, 법령상 보관이 필요한 기록은 삭제 대상이 아닙니다.</p>
           <p>회원 탈퇴는 자동 처리 기능을 제공하지 않습니다. 탈퇴 요청은 본인 확인 후 처리되며 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 문의해 주세요.</p>
         </Section>

@@ -18,7 +18,9 @@ export type MasterAccessSnapshot = {
   cancelAtPeriodEnd: boolean;
   isAdmin: boolean;
   isCenterOrTeam: boolean;
+  canBrowseLibrary: boolean;
   canUseLibrary: boolean;
+  freePreviewProgramIds: readonly string[];
   canUseClassTools: boolean;
   canUseAttendance: boolean;
   canUseRecords: boolean;

@@ -84,8 +84,8 @@ export type PublicProductContract = {
 
 const HANDOFF_PATHS = {
   landing: '/spokedu-master/landing',
-  onboardingLogin: '/login?next=/spokedu-master/onboarding',
-  dashboardLogin: '/login?next=/spokedu-master/dashboard',
+  onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding',
+  dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard',
   payment: '/spokedu-master/payment',
   shop: '/spokedu-master/shop',
 } as const;
@@ -95,7 +95,7 @@ function catalogSubscriptionToPublic(key: 'lite' | 'premium'): PublicProductPlan
   const hasPublicPrice = item.purchasable && item.monthlyPriceKrw != null;
   return {
     code: key,
-    displayName: key === 'lite' ? 'Lite' : 'Premium',
+    displayName: key === 'lite' ? 'Lite' : '프리미엄',
     monthlyPriceKrw: hasPublicPrice ? item.monthlyPriceKrw : null,
     priceLabel: hasPublicPrice ? item.priceLabel : null,
     billingCycle: 'monthly',
@@ -152,7 +152,7 @@ export function getPublicProductContract(): PublicProductContract {
 
   cached = {
     schemaVersion: PUBLIC_PRODUCT_CONTRACT_SCHEMA_VERSION,
-    productDisplayName: '스포키듀 구독시스템',
+    productDisplayName: 'SPOKEDU MASTER',
     annualSold: false,
     freeStartSupported: true,
     freeScopeNote:
@@ -163,7 +163,7 @@ export function getPublicProductContract(): PublicProductContract {
       pricesPublished: false,
       memberPriceRequiresPremium: true,
       shopHref: HANDOFF_PATHS.shop,
-      confirmLabel: '구독시스템에서 확인',
+      confirmLabel: 'SPOKEDU MASTER에서 확인',
       purchaseGuideLabel: '구매 안내 확인',
     },
     handoff,

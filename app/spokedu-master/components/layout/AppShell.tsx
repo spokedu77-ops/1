@@ -14,7 +14,8 @@ import { hasMasterEntitlement } from '../../lib/masterAccessModel';
 import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvider';
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../../store';
-import { getMasterRouteRequirement, getSafeMasterReturnPath, isProtectedMasterRoute, type MasterCapability } from './masterRouteAccess';
+import { getMasterRouteRequirement, isProtectedMasterRoute, type MasterCapability } from './masterRouteAccess';
+import { buildMasterLoginHref } from '../../lib/masterLoginReturn';
 import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -27,14 +28,14 @@ type MasterAccessGuard = {
 };
 
 function currentLoginRedirectHref() {
-  if (typeof window === 'undefined') return '/login';
-  const next = getSafeMasterReturnPath(`${window.location.pathname}${window.location.search}`);
-  return `/login?next=${encodeURIComponent(next)}`;
+  if (typeof window === 'undefined') return '/spokedu-master/login';
+  return buildMasterLoginHref(`${window.location.pathname}${window.location.search}`);
 }
 
 function hasRouteCapability(snapshot: MasterAccessSnapshot | null, capability: MasterCapability) {
   if (!snapshot) return false;
   if (capability === 'authenticated') return snapshot.authenticated;
+  if (capability === 'libraryBrowse') return snapshot.authenticated;
   if (capability === 'library') return snapshot.canUseLibrary;
   if (capability === 'classTools') return snapshot.canUseClassTools;
   if (capability === 'attendance') return snapshot.canUseAttendance;
@@ -229,7 +230,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     setCurrentPathWithQuery(buildCurrentMasterPath(pathname, params));
   }, [pathname]);
   const gateContext = useMemo(() => {
-    if (routeRequirement.capability === 'authenticated' || routeRequirement.capability === 'classTools') return null;
+    if (routeRequirement.capability === 'authenticated' || routeRequirement.capability === 'classTools' || routeRequirement.capability === 'libraryBrowse') return null;
     return buildMasterGateContext({
       capability: routeRequirement.capability,
       pathname,
@@ -463,7 +464,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       <div className="min-h-dvh bg-black text-white" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
         {isAccessGuardPending ? (
           <MasterAccessCheckingState />
-        ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && accessGuard.snapshot ? (
+        ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && routeRequirement.capability !== 'libraryBrowse' && accessGuard.snapshot ? (
           <SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} model={gateDisplayModel} />
         ) : isAccessGuardDenied ? (
           <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />
@@ -495,7 +496,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
           <main className="min-h-0 flex-1 overflow-hidden bg-[var(--spm-bg)]">
             {isAccessGuardPending ? (
               <MasterAccessCheckingState />
-            ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && accessGuard.snapshot ? (
+            ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && routeRequirement.capability !== 'libraryBrowse' && accessGuard.snapshot ? (
               <SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} model={gateDisplayModel} />
             ) : isAccessGuardDenied ? (
               <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />

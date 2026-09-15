@@ -20,6 +20,7 @@ export function ProgramPreviewModal({
   program,
   autoplayVideo,
   isPremium = true,
+  accessLocked,
   favorite,
   onFavorite,
   isTodayLesson = false,
@@ -32,6 +33,7 @@ export function ProgramPreviewModal({
   program: Program;
   autoplayVideo: boolean;
   isPremium?: boolean;
+  accessLocked?: boolean;
   favorite?: boolean;
   onFavorite?: () => void;
   isTodayLesson?: boolean;
@@ -41,7 +43,7 @@ export function ProgramPreviewModal({
   onPlaybackStarted?: () => void;
   onClose: () => void;
 }) {
-  const locked = program.isPro && !isPremium;
+  const locked = accessLocked ?? (program.isPro && !isPremium);
   const model = buildLessonDisplayModel(program);
   const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
 

@@ -111,7 +111,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
 
     expect(access).toContain("return '구독 선택'");
     expect(access).toContain("return '구독 다시 선택'");
-    expect(source).not.toContain('이용권 선택');
+    expect(library).toContain('이용권 선택하기');
     expect(source).not.toContain('이용권 다시 구독하기');
     expect(source).not.toContain('이용권 다시 선택');
     expect(favorites).toContain('즐겨찾기');

@@ -5,10 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, Mail, Shield } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { MasterEmailOtpForm } from '@/app/components/auth/MasterEmailOtpForm';
-import { useMasterEmailOtp } from '@/app/components/auth/useMasterEmailOtp';
-import { applyLoginSessionPreference, readKeepLoggedInPreference } from '@/app/lib/auth/sessionPersistence';
-import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
 import { toMasterClientError } from '../lib/clientErrors';
 import {
   MASTER_CENTER_INQUIRY_HREF,
@@ -26,6 +22,7 @@ import {
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
 import { buildMasterGateDisplayModel, readMasterGateContextFromSearchParams, type MasterGateContext } from '../lib/masterGateIntent';
+import { buildMasterLoginHref } from '../lib/masterLoginReturn';
 
 declare global {
   interface Window {
@@ -36,6 +33,12 @@ declare global {
 }
 
 type PaidPlanId = 'lite' | 'premium';
+
+type UpgradeQuote = { amountDueNow: number; nextBillingAt: string; nextBillingAmount: number };
+
+function formatBillingDate(value: string) {
+  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Seoul' }).format(new Date(value));
+}
 
 const BILLING_NOTICE = [
   '선택 즉시 첫 결제가 진행됩니다.',
@@ -150,16 +153,13 @@ function PaymentContent() {
   const requestedPlan = isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : 'lite';
   const initialPlan = gateContext.allowedPlans.includes(requestedPlan) ? requestedPlan : gateContext.minimumPlan;
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanId>(initialPlan);
-  const masterOtp = useMasterEmailOtp();
-  const [isAuthed, setIsAuthed] = useState(false);
   const [userId, setUserId] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [subscription, setSubscription] = useState<SubscriptionSummaryData | null>(null);
+  const [upgradeQuote, setUpgradeQuote] = useState<UpgradeQuote | null>(null);
   const [loading, setLoading] = useState(true);
   const [workingPlan, setWorkingPlan] = useState<PaidPlanId | null>(null);
   const [error, setError] = useState('');
-  const [keepLoggedIn] = useState(() => readKeepLoggedInPreference());
-
-  const email = isAuthed ? (masterOtp.email || '') : masterOtp.email;
   const directProducts = useMemo(() => getDirectPurchaseMasterProducts(), []);
   const subscriptionDisplay = getSubscriptionDisplaySummary(subscription);
   const paymentPageMode = getPaymentPageMode(subscription);
@@ -186,49 +186,42 @@ function PaymentContent() {
         const supabase = getSupabaseBrowserClient();
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          setIsAuthed(true);
-          masterOtp.setEmail(session.user.email ?? '');
           setUserId(session.user.id);
+          setUserEmail(session.user.email ?? '');
           const res = await fetch('/api/spokedu-master/subscription', { cache: 'no-store' });
           const json = await res.json() as { error?: string };
           if (!res.ok) {
             setError(toMasterClientError(res.status, json.error).message);
           } else {
-            setSubscription(normalizeSubscriptionSummary(json));
+            const normalized = normalizeSubscriptionSummary(json);
+            setSubscription(normalized);
+            if (getPaymentPageMode(normalized) === 'liteUpgrade') {
+              const quoteResponse = await fetch('/api/spokedu-master/payment/billing/upgrade-quote', { cache: 'no-store' });
+              const quote = await quoteResponse.json().catch(() => null) as (UpgradeQuote & { error?: string }) | null;
+              if (quoteResponse.ok && quote) setUpgradeQuote(quote);
+              else setError(quote?.error ?? '업그레이드 결제 금액을 확인하지 못했습니다.');
+            }
           }
+        } else {
+          window.location.replace(buildMasterLoginHref(`${window.location.pathname}${window.location.search}`));
+          return;
         }
       } finally {
         setLoading(false);
       }
     };
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 마운트 시 1회만 세션 로드
   }, []);
 
-  const handleOtpSubmit = async () => {
-    setError('');
-    const result = await masterOtp.submit();
-    if (!result.ok) {
-      setError(result.message);
-      return;
-    }
-    if (result.kind === 'sent') return;
-    applyLoginSessionPreference(keepLoggedIn);
-    rememberLastUsedAppFromPath('/spokedu-master/payment');
-    setIsAuthed(true);
-    setUserId(result.user.id);
-    masterOtp.setEmail(result.user.email ?? masterOtp.email);
-  };
-
-  const startBillingAuth = (plan: PaidPlanId) => {
+  const startBillingAuth = async (plan: PaidPlanId) => {
     setSelectedPlan(plan);
     setError('');
-    if (!isAuthed || !userId) {
+    if (!userId) {
       setError('결제를 시작하려면 먼저 로그인해 주세요.');
       return;
     }
     if (!gateContext.allowedPlans.includes(plan)) {
-      setError(`${gateContext.minimumPlan === 'premium' ? 'Premium' : 'Lite'} 이상이 필요한 작업입니다.`);
+      setError(`${gateContext.minimumPlan === 'premium' ? '프리미엄' : 'Lite'} 이상이 필요한 작업입니다.`);
       return;
     }
     if (!canStartPaidPlanCheckout(subscription, plan)) {
@@ -239,6 +232,27 @@ function PaymentContent() {
       }
       return;
     }
+    if (paymentPageMode === 'liteUpgrade' && plan === 'premium') {
+      if (!upgradeQuote) {
+        setError('업그레이드 결제 금액을 확인하는 중입니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+      setWorkingPlan(plan);
+      try {
+        const response = await fetch('/api/spokedu-master/payment/billing/issue', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ planId: 'premium', customerKey: buildCustomerKey(userId) }),
+        });
+        const result = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+        if (!response.ok || result?.ok !== true) throw new Error(result?.error ?? '업그레이드 결제에 실패했습니다.');
+        window.location.assign('/spokedu-master/subscription?upgraded=1');
+      } catch (upgradeError) {
+        setError(upgradeError instanceof Error ? upgradeError.message : '업그레이드 결제에 실패했습니다.');
+        setWorkingPlan(null);
+      }
+      return;
+    }
+
     const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
     if (!clientKey || !window.TossPayments) {
       setError('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
@@ -276,7 +290,7 @@ function PaymentContent() {
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
           <h1 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            {paymentPageMode === 'liteUpgrade' ? 'Premium으로 이어가기' : gateDisplay ? '하던 작업 이어가기' : '구독 선택'}
+            {paymentPageMode === 'liteUpgrade' ? '프리미엄으로 이어가기' : gateDisplay ? '하던 작업 이어가기' : '구독 선택'}
           </h1>
         </div>
       </header>
@@ -304,8 +318,8 @@ function PaymentContent() {
             </h2>
             <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
               {paymentPageMode === 'liteUpgrade'
-                ? 'Lite의 완전한 수업 운영은 그대로 유지됩니다. Premium에서는 SPOMOVE로 활동 선택을 넓히고, 지난 기록과 학생 맥락을 다음 준비에 다시 활용합니다.'
-                : 'Lite는 콘텐츠 발견부터 수업 구성·운영까지 완결됩니다. Premium은 SPOMOVE와 더 깊은 기록 재사용으로 다음 수업에서 다시 찾고 판단하는 일을 줄입니다.'}
+                ? 'Lite의 완전한 수업 운영은 그대로 유지됩니다. 프리미엄에서는 SPOMOVE로 활동 선택을 넓히고, 지난 기록과 학생 맥락을 다음 준비에 다시 활용합니다.'
+                : 'Lite는 콘텐츠 발견부터 수업 구성·운영까지 완결됩니다. 프리미엄은 SPOMOVE와 더 깊은 기록 재사용으로 다음 수업에서 다시 찾고 판단하는 일을 줄입니다.'}
             </p>
           </section>
         )}
@@ -332,11 +346,15 @@ function PaymentContent() {
             {paymentPageMode === 'liteUpgrade' ? (
               <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
                 <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 콘텐츠 발견부터 수업 운영까지 완결되어 있습니다. Premium으로 올리면 SPOMOVE로 활동을 넓히고 지난 기록을 다음 준비에 다시 활용할 수 있습니다.
+                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 콘텐츠 발견부터 수업 운영까지 완결되어 있습니다. 프리미엄으로 올리면 SPOMOVE로 활동을 넓히고 지난 기록을 다음 준비에 다시 활용할 수 있습니다.
                 </p>
-                <p className="mt-2 text-[13px] font-black leading-6" style={{ color: 'var(--spm-t)' }}>
-                  이번 결제 금액은 28,900원입니다. 기존 라이트 잔여기간의 차감·환급 없이 결제 성공 시점부터 프리미엄 1개월과 새 결제주기가 시작됩니다.
-                </p>
+                {upgradeQuote ? (
+                  <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>오늘 결제</dt><dd className="mt-1 text-[16px] font-black">{upgradeQuote.amountDueNow.toLocaleString('ko-KR')}원</dd></div>
+                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>다음 결제일</dt><dd className="mt-1 text-[16px] font-black">{formatBillingDate(upgradeQuote.nextBillingAt)}</dd></div>
+                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>다음 결제 금액</dt><dd className="mt-1 text-[16px] font-black">{upgradeQuote.nextBillingAmount.toLocaleString('ko-KR')}원</dd></div>
+                  </dl>
+                ) : null}
               </section>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2">
@@ -358,12 +376,12 @@ function PaymentContent() {
                     }
                     disabledHint={
                       !planAllowedForIntent
-                        ? '지금 이어가려던 작업은 Premium이 필요합니다.'
+                        ? '지금 이어가려던 작업은 프리미엄이 필요합니다.'
                         : paymentPageMode === 'liteUpgrade' && planId === 'lite'
                           ? '현재 라이트 이용 중입니다.'
                           : undefined
                     }
-                    onSelect={() => startBillingAuth(planId)}
+                    onSelect={() => void startBillingAuth(planId)}
                   />
                 );
               })}
@@ -404,34 +422,13 @@ function PaymentContent() {
             </section>
 
             <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-              <p className="text-[13px] font-black">계정 확인</p>
-              <div className="mt-3 text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                <p>결제수단 인증을 시작하려면 먼저 로그인해 주세요.</p>
-                <p className="mt-1">금액은 서버의 상품 계약으로 다시 검증됩니다.</p>
+              <p className="text-[13px] font-black">결제 계정</p>
+              <div className="mt-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
+                <p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{userEmail}</p>
+                <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
+                  금액은 서버의 상품 계약으로 다시 계산하고 검증합니다.
+                </p>
               </div>
-
-              {!isAuthed ? (
-                <MasterEmailOtpForm
-                  variant="payment"
-                  email={masterOtp.email}
-                  otp={masterOtp.otp}
-                  otpSent={masterOtp.otpSent}
-                  loading={masterOtp.loading}
-                  message={masterOtp.message}
-                  sendLabel="인증 코드 받기"
-                  verifyLabel="인증 확인"
-                  onEmailChange={masterOtp.setEmail}
-                  onOtpChange={masterOtp.setOtp}
-                  onSubmit={() => void handleOtpSubmit()}
-                />
-              ) : (
-                <div className="mt-4 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
-                  <p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{email}</p>
-                  <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
-                    이용권 카드의 선택 버튼으로 결제수단 인증을 시작합니다.
-                  </p>
-                </div>
-              )}
             </section>
           </>
         )}
