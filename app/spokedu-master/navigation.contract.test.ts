@@ -20,10 +20,10 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(nav).toContain("key: 'manage'");
     expect(nav).not.toContain("href: '/spokedu-master/profile'");
     expect(desktop).toContain('href="/spokedu-master/profile"');
-    expect(desktop).toContain('action="/spokedu-master/library"');
-    expect(desktop).toContain('method="get"');
-    expect(desktop).toContain('name="q"');
-    expect(desktop).toContain('hidden w-[180px] lg:block');
+    expect(desktop).not.toContain('action="/spokedu-master/library"');
+    expect(desktop).not.toContain('role="search"');
+    expect(desktop).not.toContain('name="q"');
+    expect(desktop).not.toContain('Search');
     expect(mobile).not.toContain('name="q"');
     expect(nav).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
     expect(nav).not.toContain("href: '/spokedu-master/plan'");

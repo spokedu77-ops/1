@@ -50,7 +50,7 @@ type SessionRow = {
     sort_order: number; is_completed: boolean;
   }>;
   spokedu_master_session_attendance: Array<{
-    id: string; student_id: string; student_name_snapshot: string; status: 'present' | 'absent';
+    id: string; student_id: string; student_name_snapshot: string; status: 'pending' | 'present' | 'absent';
   }>;
 };
 
@@ -78,8 +78,11 @@ function toSessionDto(row: SessionRow): MasterSessionDto {
         sortOrder: item.sort_order,
         isCompleted: item.is_completed,
       })),
-    attendance: (row.spokedu_master_session_attendance ?? []).map((item) => ({
+    attendance: (row.spokedu_master_session_attendance ?? []).filter((item): item is typeof item & { status: 'present' | 'absent' } => item.status !== 'pending').map((item) => ({
       id: item.id, studentId: item.student_id, studentName: item.student_name_snapshot, status: item.status,
+    })),
+    roster: (row.spokedu_master_session_attendance ?? []).map((item) => ({
+      studentId: item.student_id, studentName: item.student_name_snapshot,
     })),
     rosterLockedAt: row.roster_locked_at ?? null,
     createdAt: row.created_at,

@@ -28,6 +28,8 @@ export type MasterSessionAttendanceDto = {
   status: MasterSessionAttendanceStatus;
 };
 
+export type MasterSessionRosterDto = Pick<MasterSessionAttendanceDto, 'studentId' | 'studentName'>;
+
 export type MasterSessionDto = {
   id: string;
   classId: string;
@@ -41,6 +43,7 @@ export type MasterSessionDto = {
   completedAt: string | null;
   programs: MasterSessionProgramDto[];
   attendance: MasterSessionAttendanceDto[];
+  roster?: MasterSessionRosterDto[];
   rosterLockedAt?: string | null;
   createdAt: string;
   updatedAt: string;

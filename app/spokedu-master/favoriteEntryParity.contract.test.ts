@@ -22,4 +22,10 @@ describe('MASTER favorite entry parity', () => {
     expect(lessonCard).toMatch(/h-11 w-11|size-11|min-h-11/);
     expect(spomove).toContain('h-11 w-11');
   });
+
+  it('uses one Favorites-only 4:3 cover presentation for both content families', () => {
+    const favorites = read('app/spokedu-master/favorites/FavoritesView.tsx');
+    expect(favorites.match(/presentation="favorites-cover-4-3"/g)).toHaveLength(2);
+    expect(favorites).not.toContain('presentation="full-visible-4-3"');
+  });
 });

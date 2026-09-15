@@ -13,7 +13,7 @@ export async function PUT(request: Request, context: { params: Promise<{ session
     const value = item as Record<string, unknown>;
     return { studentId: value.studentId, status: value.status };
   });
-  if (attendance.some((item: { studentId: unknown; status: unknown }) => typeof item.studentId !== 'string' || (item.status !== 'present' && item.status !== 'absent'))) {
+  if (attendance.some((item: { studentId: unknown; status: unknown }) => typeof item.studentId !== 'string' || (item.status !== 'pending' && item.status !== 'present' && item.status !== 'absent'))) {
     return privateNoStoreJson({ error: 'Invalid attendance' }, { status: 400 });
   }
   const supabase = getServiceSupabase();
@@ -28,6 +28,9 @@ export async function PUT(request: Request, context: { params: Promise<{ session
   }
   if (sessionError) return privateNoStoreJson({ error: 'Attendance could not be saved' }, { status: 500 });
   if (!session) return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
+  if (!session.roster_locked_at && attendance.some((item: { status: unknown }) => item.status === 'pending')) {
+    return privateNoStoreJson({ error: 'Invalid attendance' }, { status: 400 });
+  }
   if (session.roster_locked_at) {
     const lockedIds = ((session.spokedu_master_session_attendance ?? []) as Array<{ student_id: string }>).map((item) => item.student_id);
     const submittedIds = attendance.map((item: { studentId: unknown }) => String(item.studentId));

@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { resolveActivityQuery } from '../activity/activityQuery';
 import { getMonthKey } from '../activity/monthCalendar';
 import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
@@ -15,6 +15,9 @@ import type { MasterSessionDto } from '../types/operational';
 import { AttendanceTab } from './AttendanceTab';
 import { ScheduleTab } from './ScheduleTab';
 import { SessionDetailSheet } from './SessionDetailSheet';
+import { NextSessionSheet } from './session-detail/NextSessionSheet';
+import { PreviousSessionPickerSheet } from './PreviousSessionPickerSheet';
+import { resolvePreviousSessionCandidates } from './previousSessionCandidates';
 
 type ManageTab = 'schedule' | 'attendance';
 
@@ -30,6 +33,9 @@ export default function ManageView() {
   const [createClassId, setCreateClassId] = useState<string | null>(null);
   const [legacyCapture, setLegacyCapture] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [previousPickerOpen, setPreviousPickerOpen] = useState(false);
+  const [previousSource, setPreviousSource] = useState<MasterSessionDto | null>(null);
+  const previousCandidates = useMemo(() => resolvePreviousSessionCandidates(data.sessions, selectedDay), [data.sessions, selectedDay]);
 
   useEffect(() => {
     if (data.status !== 'ready') return;
@@ -53,6 +59,7 @@ export default function ManageView() {
   }, [data.classes, data.sessions, data.status, searchParams]);
 
   const openCreate = () => { setCreateClassId(null); setLegacyCapture(false); setEditing(null); };
+  const openCreatedSession = (created: MasterSessionDto) => { const day = getSeoulSessionDay(created.startAt); setSelectedDay(day); setVisibleMonth(getMonthKey(day)); setLegacyCapture(false); setEditing(created); };
   const selectTab = (nextTab: ManageTab) => { setEditing(undefined); setTab(nextTab); };
 
   return <main data-manage-workspace className={`h-full min-h-0 bg-[var(--spm-bg)] pb-28 ${tab === 'attendance' ? 'overflow-y-auto' : 'overflow-y-auto lg:overflow-hidden lg:pb-0'}`}>
@@ -60,21 +67,23 @@ export default function ManageView() {
       <div className={editing !== undefined ? 'min-w-0 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8 lg:pb-4 lg:pt-4' : tab === 'attendance' ? 'min-w-0' : 'min-w-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden'}>
       <div className="shrink-0">
       <MasterPageHeader title="수업 관리" />
-      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-      <div className="flex h-11 items-center gap-0.5" role="tablist" aria-label="수업 관리 보기">
-        <button type="button" role="tab" aria-selected={tab === 'schedule'} onClick={() => selectTab('schedule')} className={`relative h-11 px-3 text-[14px] font-semibold transition-colors ${tab === 'schedule' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}>일정{tab === 'schedule' ? <span className="absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-[var(--spm-acc)]" aria-hidden /> : null}</button>
-        <button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => selectTab('attendance')} className={`relative h-11 px-3 text-[14px] font-semibold transition-colors ${tab === 'attendance' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}>출석부{tab === 'attendance' ? <span className="absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-[var(--spm-acc)]" aria-hidden /> : null}</button>
+      <div className="mt-4 flex items-center justify-between gap-4 border-b border-slate-200">
+      <div className="flex h-11 items-center gap-1" role="tablist" aria-label="수업 관리 보기">
+        <button type="button" role="tab" aria-selected={tab === 'schedule'} onClick={() => selectTab('schedule')} className={`relative h-11 px-3 text-[14px] font-semibold transition-colors ${tab === 'schedule' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}>일정{tab === 'schedule' ? <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[var(--spm-acc)]" aria-hidden /> : null}</button>
+        <button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => selectTab('attendance')} className={`relative h-11 px-3 text-[14px] font-semibold transition-colors ${tab === 'attendance' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}>출석부{tab === 'attendance' ? <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[var(--spm-acc)]" aria-hidden /> : null}</button>
       </div>
-      <Link href="/spokedu-master/classes" className={`${MV_QUIET_ACTION} px-1 text-[14px] font-medium`}>수업반 관리 →</Link>
+      <Link href="/spokedu-master/classes" className={`${MV_QUIET_ACTION} px-1`}>수업반 관리 →</Link>
       </div>
       </div>
       {data.status === 'loading' || data.status === 'idle' ? <MasterState kind="loading" title="수업 데이터를 불러오는 중입니다." className="mt-6" /> : null}
       {data.status === 'error' ? <MasterState kind="error" title="수업 데이터를 불러오지 못했습니다." action={<button type="button" onClick={() => void data.reload()} className={SPM_SECONDARY_BTN}>다시 시도</button>} className="mt-6" /> : null}
       {routeError ? <MasterState kind="attention" title={routeError} className="mt-6" /> : null}
-      {data.status === 'ready' && tab === 'schedule' ? <ScheduleTab month={visibleMonth} selectedDay={selectedDay} sessions={data.sessions} hasClasses={data.classes.length > 0} detailOpen={editing !== undefined} onMonthChange={setVisibleMonth} onDaySelect={(day) => { setSelectedDay(day); setVisibleMonth(getMonthKey(day)); }} onSessionSelect={(session) => { setLegacyCapture(false); setEditing(session); }} onCreate={openCreate} /> : null}
+      {data.status === 'ready' && tab === 'schedule' ? <ScheduleTab month={visibleMonth} selectedDay={selectedDay} sessions={data.sessions} hasClasses={data.classes.length > 0} detailOpen={editing !== undefined} canClonePrevious={previousCandidates.length > 0} onMonthChange={setVisibleMonth} onDaySelect={(day) => { setSelectedDay(day); setVisibleMonth(getMonthKey(day)); }} onSessionSelect={(session) => { setLegacyCapture(false); setEditing(session); }} onClonePrevious={() => { setEditing(undefined); setPreviousPickerOpen(true); }} onCreate={openCreate} /> : null}
       {data.status === 'ready' && tab === 'attendance' ? <AttendanceTab onShowSchedule={() => selectTab('schedule')} onSessionSelect={(session) => { setLegacyCapture(false); setEditing(session); }} /> : null}
       </div>
-      {editing !== undefined ? <SessionDetailSheet key={editing?.id ?? `new-${selectedDay}-${createClassId ?? 'default'}`} session={editing === null ? null : data.sessions.find((item) => item.id === editing.id) ?? editing} initialDay={selectedDay} initialClassId={createClassId} legacyCapture={legacyCapture} onClose={() => setEditing(undefined)} /> : null}
+      {editing !== undefined ? <SessionDetailSheet key={editing?.id ?? `new-${selectedDay}-${createClassId ?? 'default'}`} session={editing === null ? null : data.sessions.find((item) => item.id === editing.id) ?? editing} initialDay={selectedDay} initialClassId={createClassId} legacyCapture={legacyCapture} onClose={() => setEditing(undefined)} onSessionCreated={openCreatedSession} /> : null}
     </MasterPageShell>
+    {previousPickerOpen ? <PreviousSessionPickerSheet open candidates={previousCandidates} onClose={() => setPreviousPickerOpen(false)} onSelect={(source) => { setPreviousPickerOpen(false); setPreviousSource(source); }} /> : null}
+    {previousSource ? <NextSessionSheet key={`${previousSource.id}-${selectedDay}`} source={previousSource} initialTargetDay={selectedDay} nested={false} open onClose={() => setPreviousSource(null)} onCreated={(created) => { setPreviousSource(null); openCreatedSession(created); }} /> : null}
   </main>;
 }

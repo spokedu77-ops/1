@@ -40,10 +40,11 @@ describe('MASTER Home content card system', () => {
     expect(dashboard).toContain('isNew={program.isNew}');
   });
 
-  it('normalizes Home SPOMOVE shelf meta to responseType plus difficulty and trainingFocus', () => {
-    expect(shelf).toContain('card.meta.responseType');
-    expect(shelf).toContain('card.meta.difficulty');
+  it('normalizes Home SPOMOVE shelf into core, difficulty, title, and variant slots', () => {
+    expect(shelf).toContain('card.publicMeta.core');
+    expect(shelf).toContain('card.publicMeta.difficulty');
     expect(shelf).toContain('card.meta.trainingFocus');
+    expect(shelf).toContain('resolveSpomovePublicCardSupport');
     expect(shelf).not.toContain('programLabel');
     expect(dashboard).toContain('getHomeSpomoveShelfCopy');
     expect(dashboard).not.toContain('MV_HOME_SPOMOVE_COPY');
@@ -60,12 +61,16 @@ describe('MASTER Home content card system', () => {
     expect(dashboard).toContain("<Heart className={`h-4 w-4");
   });
 
-  it('uses one compact presentation for recent, next, and favorite without a Home navy band', () => {
+  it('uses one compact presentation for recent, next, and recent class tools without a Home navy band', () => {
     expect(dashboard).toContain('HomeContinueCard');
     expect(dashboard).toContain('RecentLessonReuseCard');
     expect(dashboard).toContain('kicker="내 다음 수업"');
-    expect(dashboard).toContain('kicker="즐겨찾기"');
-    expect(dashboard).toContain('favoriteContentRefsByOwner');
+    expect(dashboard).toContain('kicker="최근 수업도구"');
+    expect(dashboard).toContain('buildClassToolHref(recentClassTool.id)');
+    expect(dashboard).toContain('media={<HomeScheduleThumb startAt={nextSession.startAt} />}');
+    expect(dashboard).toContain('mediaSize="compact"');
+    expect(continueCard).toContain("mediaSize === 'compact' ? 'h-16 w-16' : 'h-20 w-20'");
+    expect(dashboard).not.toContain('nextSessionProgram');
     expect(dashboard).toContain('[...validLessonActivities, ...validSpomoveActivities]');
     expect(dashboard).toContain("latestRecentActivity?.action === 'spomove_started'");
     expect(dashboard).not.toContain('SPM_SECONDARY_BTN');

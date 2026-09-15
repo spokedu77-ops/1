@@ -31,7 +31,7 @@ export function InstructionalThumb({
   sizes: string;
   priority?: boolean;
   className?: string;
-  presentation?: 'default' | 'home-clean-square' | 'home-cover-4-3' | 'full-visible-4-3';
+  presentation?: 'default' | 'home-clean-square' | 'home-cover-4-3' | 'full-visible-4-3' | 'favorites-cover-4-3';
   fallback?: ReactNode;
 }) {
   const imageSrc = normalizeImageSrc(src);
@@ -42,6 +42,7 @@ export function InstructionalThumb({
   const cleanSquare = presentation === 'home-clean-square';
   const homeCoverFourThree = presentation === 'home-cover-4-3';
   const fullVisibleFourThree = presentation === 'full-visible-4-3';
+  const favoritesCoverFourThree = presentation === 'favorites-cover-4-3';
 
   const failOver = (event: { currentTarget: HTMLImageElement }) => {
     const fallbackSrc = getImageFallbackSrc(imageSrc);
@@ -58,7 +59,7 @@ export function InstructionalThumb({
       className={`relative overflow-hidden rounded-[16px] bg-slate-200 ${cleanSquare ? 'aspect-square w-full' : 'aspect-[4/3] w-full'} ${className ?? ''}`.trim()}
     >
       {showImage ? (
-        homeCoverFourThree ? (
+        homeCoverFourThree || favoritesCoverFourThree ? (
           <Image
             src={imageSrc}
             alt={alt}

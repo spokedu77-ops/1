@@ -2,11 +2,17 @@
 
 import {
   ArrowRight,
-  Bookmark,
   CheckCircle2,
   FileText,
   Heart,
+  LayoutList,
+  ListOrdered,
   Play,
+  Route,
+  Shuffle,
+  Timer,
+  Trophy,
+  Users,
   UsersRound,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -28,6 +34,7 @@ import {
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { resolveHomeFeaturedSpomove } from '../lib/spomoveHomeFeatured';
 import { WeeklyEditorialCard } from '../components/lesson/WeeklyEditorialCard';
+import { ContentCardMetaLine } from '../components/content/ContentCardMetaLine';
 import { InstructionalThumb } from '../components/media/InstructionalThumb';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
@@ -73,6 +80,7 @@ import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
 import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
+import { buildClassToolHref, getClassToolDefinition, type ClassToolId } from '../lib/classTools';
 import {
   HOME_MEDIA_FALLBACK,
   HOME_MEDIA_PACK_ID,
@@ -258,13 +266,24 @@ function HomeScheduleThumb({ startAt }: { startAt: string }) {
   const weekday = formatSeoulSessionDay(dayKey, { weekday: 'short' }).replace('요일', '');
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-blue-50/80 px-2 text-center" aria-hidden>
-      <span className="text-[12px] font-semibold leading-4 tracking-normal text-blue-700">{Number(month)}월</span>
-      <strong className="mt-0.5 text-[30px] font-bold leading-8 tabular-nums text-slate-950">{Number(day)}</strong>
-      <span className="mt-0.5 text-[12px] font-semibold leading-4 tracking-normal text-slate-500">{weekday} · {formatSeoulSessionTime(startAt)}</span>
+    <div className="flex h-full w-full flex-col items-center justify-center bg-blue-50/80 px-1 py-1.5 text-center" aria-hidden>
+      <span className="text-[10px] font-semibold leading-[11px] tracking-normal text-blue-700">{Number(month)}월</span>
+      <strong className="my-0.5 text-[24px] font-bold leading-6 tabular-nums text-slate-950">{Number(day)}</strong>
+      <span className="whitespace-nowrap text-[10px] font-semibold leading-[11px] tracking-normal text-slate-500">{weekday} · {formatSeoulSessionTime(startAt)}</span>
     </div>
   );
 }
+
+const HOME_CLASS_TOOL_ICONS: Record<ClassToolId, typeof Timer> = {
+  stopwatch: Timer,
+  timer: Timer,
+  scoreboard: LayoutList,
+  picker: Shuffle,
+  teams: Users,
+  order: ListOrdered,
+  tournament: Trophy,
+  ladder: Route,
+};
 
 function WeeklyProgramCard({
   program,
@@ -389,7 +408,7 @@ function SpomoveCard({
           )}
         />
         <div className="px-3.5 pb-0 pt-2.5">
-          <p className={`${MV_HOME_CARD_META} truncate`}>{[displayModel.typeLabel, displayModel.difficulty].filter(Boolean).join(' · ')}</p>
+          <ContentCardMetaLine primary={displayModel.typeLabel} secondary={displayModel.difficulty} className={MV_HOME_CARD_META} />
           <h3 className={`${MV_HOME_CARD_TITLE} mt-1 line-clamp-2 transition-colors duration-200 group-hover/preview:text-slate-700`}>{displayModel.title}</h3>
         </div>
       </button>
@@ -625,7 +644,6 @@ export default function DashboardView() {
 function EntitledDashboardView() {
   const {
     homePrograms: programs,
-    programs: libraryPrograms,
     homeProgramsLoaded: programsLoaded,
     homeProgramsError: programsError,
     recentProgramActivities,
@@ -636,7 +654,7 @@ function EntitledDashboardView() {
     toggleFavoriteProgram,
     isFavoriteContent,
     toggleFavoriteContent,
-    favoriteContentRefsByOwner,
+    lastClassToolByOwner,
   } = useMasterStore();
   const {
     students: serverStudents,
@@ -831,30 +849,15 @@ function EntitledDashboardView() {
     if (!latestRecentActivity || latestRecentActivity.action === 'spomove_started') return null;
     return programs.find((program) => program.id === latestRecentActivity.programId) ?? null;
   }, [latestRecentActivity, programs]);
-  const allPrograms = useMemo(() => uniquePrograms([...programs, ...libraryPrograms]), [libraryPrograms, programs]);
   const nextSession = useMemo(() => {
     const classIds = new Set(operationalClasses.map((item) => item.id));
     return operationalSessions
       .filter((session) => session.status === 'scheduled' && !session.startedAt && !session.programs.some((item) => item.isCompleted) && classIds.has(session.classId) && new Date(session.startAt).getTime() > Date.now())
       .sort((left, right) => left.startAt.localeCompare(right.startAt))[0] ?? null;
   }, [operationalClasses, operationalSessions]);
-  const nextSessionProgram = useMemo(() => {
-    const programId = nextSession?.programs.find((item) => item.sourceType === 'program')?.programId;
-    return programId == null ? null : allPrograms.find((program) => String(program.id) === String(programId)) ?? null;
-  }, [allPrograms, nextSession]);
-  const firstFavorite = useMemo(() => {
-    const refs = favoritesOwnerId ? favoriteContentRefsByOwner[favoritesOwnerId] ?? [] : [];
-    for (const ref of refs) {
-      if (ref.type === 'program') {
-        const program = allPrograms.find((item) => item.id === ref.id);
-        if (program) return { type: 'program' as const, program };
-      } else {
-        const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === ref.id);
-        if (preset) return { type: 'spomove' as const, preset };
-      }
-    }
-    return null;
-  }, [allPrograms, favoriteContentRefsByOwner, favoritesOwnerId]);
+  const lastClassTool = recentActivityOwnerId ? lastClassToolByOwner[recentActivityOwnerId] ?? null : null;
+  const recentClassTool = getClassToolDefinition(lastClassTool?.id ?? 'stopwatch');
+  const RecentClassToolIcon = HOME_CLASS_TOOL_ICONS[recentClassTool.id];
 
   const openPreview = (program: Program, autoplayVideo = false) => {
     setPreviewAutoplay(autoplayVideo);
@@ -904,7 +907,7 @@ function EntitledDashboardView() {
   const homeHeroSrc = homeHeroPath
     ? withPublicUrlCacheBust(getPublicUrl(homeHeroPath), homeHeroCacheBust)
     : HOME_MEDIA_FALLBACK.heroImage;
-  const showContinuityChapter = !isFirstUser && (latestRecentActivity != null || nextSession != null || firstFavorite != null);
+  const showContinuityChapter = !isFirstUser;
 
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-12">
@@ -919,7 +922,7 @@ function EntitledDashboardView() {
           className="-z-20 object-cover object-[58%_40%] sm:object-[center_40%]"
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" aria-hidden />
-        <div className={`${MV_EDITORIAL_WIDTH} flex w-full items-end px-4 pb-7 pt-14 sm:px-6 sm:pb-9 lg:px-0`}>
+        <div className={`${MV_EDITORIAL_WIDTH} flex w-full items-end px-5 pb-7 pt-14 sm:px-6 sm:pb-9 lg:px-6 min-[1216px]:px-0`}>
           <header className="max-w-[610px] text-white">
             <p className="text-[12px] font-semibold leading-5 text-white/70 sm:text-[13px]">
               SPOKEDU MASTER · MOVEMENT BECOMES LEARNING
@@ -984,49 +987,22 @@ function EntitledDashboardView() {
                     meta={`${formatSeoulSessionDay(getSeoulSessionDay(nextSession.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · ${formatSeoulSessionTime(nextSession.startAt)}`}
                     actionLabel="수업 준비"
                     href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`}
-                    media={nextSessionProgram ? (
-                      <InstructionalThumb
-                        src={getHeroImage(nextSessionProgram) ?? ''}
-                        alt=""
-                        sizes="80px"
-                        className="!h-full !w-full !aspect-auto rounded-[13px]"
-                      />
-                    ) : <HomeScheduleThumb startAt={nextSession.startAt} />}
+                    mediaSize="compact"
+                    media={<HomeScheduleThumb startAt={nextSession.startAt} />}
                   />
                 ) : null}
-                {firstFavorite?.type === 'program' ? (
-                  <HomeContinueCard
-                    kicker="즐겨찾기"
-                    title={getProgramTitle(firstFavorite.program)}
-                    meta={buildHomeWeeklySupportMeta(firstFavorite.program)}
-                    actionLabel="수업 보기"
-                    href={`/spokedu-master/library/${encodeURIComponent(firstFavorite.program.id)}`}
-                    media={(
-                      <InstructionalThumb
-                        src={getHeroImage(firstFavorite.program) ?? ''}
-                        alt=""
-                        sizes="80px"
-                        className="!h-full !w-full !aspect-auto rounded-[13px]"
-                      />
-                    )}
-                  />
-                ) : firstFavorite?.type === 'spomove' ? (
-                  <HomeContinueCard
-                    kicker="즐겨찾기"
-                    title={getHomeSpomoveShelfCopy(firstFavorite.preset, spomoveContentMap[firstFavorite.preset.id]).title}
-                    meta={getHomeSpomoveShelfCopy(firstFavorite.preset, spomoveContentMap[firstFavorite.preset.id]).support || 'SPOMOVE 활동'}
-                    actionLabel="활동 보기"
-                    href="/spokedu-master/favorites"
-                    media={(
-                      <SpomoveLayeredThumb
-                        src={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[firstFavorite.preset.id], spomoveThumbnailCacheBust)}
-                        sizes="80px"
-                        className="!h-full !w-full !aspect-auto rounded-[13px]"
-                        fallback={<span className="grid h-full w-full place-items-center text-slate-400" aria-hidden><Bookmark size={22} /></span>}
-                      />
-                    )}
-                  />
-                ) : null}
+                <HomeContinueCard
+                  kicker="최근 수업도구"
+                  title={recentClassTool.label}
+                  meta={recentClassTool.description}
+                  actionLabel="도구 열기"
+                  href={buildClassToolHref(recentClassTool.id)}
+                  media={(
+                    <span className="grid h-full w-full place-items-center bg-blue-50/80 text-blue-700" aria-hidden>
+                      <RecentClassToolIcon size={30} strokeWidth={1.8} />
+                    </span>
+                  )}
+                />
               </div>
             </div>
           </div>

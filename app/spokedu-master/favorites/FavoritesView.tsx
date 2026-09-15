@@ -24,14 +24,14 @@ import { MV_EDITORIAL_WIDTH, spmChipClass } from '../lib/masterUiClasses';
 import { programHasPlayableVideo } from '../lib/program-media';
 import { useIsPremium, useMasterStore } from '../store';
 import { isHubListedPreset } from '../spomove/movements/isHubVisiblePreset';
-import { OFFICIAL_SPOMOVE_LIBRARY, type OfficialSpomovePreset } from '../spomove/officialSpomovePresets';
+import { OFFICIAL_SPOMOVE_LIBRARY, publicOfficialPresetSessionHref, type OfficialSpomovePreset } from '../spomove/officialSpomovePresets';
 import { SpomoveGuidelineSheet } from '../spomove/SpomoveGuidelineSheet';
 import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import {
-  composeSpomovePublicCardMetaParts,
   getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
+  resolveSpomovePublicCardSupport,
 } from '../spomove/spomovePresetDisplayModel';
 import { useSpomoveGuideVideo } from '../spomove/useSpomoveGuideVideo';
 import { FavoriteRetrievalCard } from './FavoriteRetrievalCard';
@@ -43,7 +43,9 @@ type FavoriteDisplayItem = {
   key: string;
   title: string;
   accessTitle: string;
-  supportMeta: string;
+  primaryMeta: string;
+  secondaryMeta: string;
+  supportMeta?: string;
 } & (
   | {
       type: 'program';
@@ -161,7 +163,8 @@ export default function FavoritesView() {
           key: `program:${ref.id}`,
           title,
           accessTitle: title,
-          supportMeta: buildHomeWeeklySupportMeta(program),
+          primaryMeta: model.theme || '체육 수업',
+          secondaryMeta: buildHomeWeeklySupportMeta(program),
           href: `/spokedu-master/library/${encodeURIComponent(program.id)}`,
           heroImageUrl: model.heroImageUrl ?? '',
           theme: model.theme,
@@ -178,9 +181,11 @@ export default function FavoritesView() {
         type: 'spomove',
         ref,
         key: `spomove:${ref.id}`,
-        title: model.rootTitle,
+        title: card.title,
         accessTitle: model.displayTitle,
-        supportMeta: composeSpomovePublicCardMetaParts(card.publicMeta).join(' · '),
+        primaryMeta: card.publicMeta.core,
+        secondaryMeta: card.publicMeta.difficulty,
+        supportMeta: resolveSpomovePublicCardSupport(card.publicMeta, model.supportMetaParts),
         preset,
       });
     }
@@ -221,7 +226,8 @@ export default function FavoritesView() {
                 return (
                   <FavoriteRetrievalCard
                     key={item.key}
-                    contentType="놀이체육"
+                    primaryMeta={item.primaryMeta}
+                    secondaryMeta={item.secondaryMeta}
                     title={item.title}
                     supportMeta={item.supportMeta}
                     hasVideo={item.hasVideo}
@@ -234,7 +240,7 @@ export default function FavoritesView() {
                         src={item.heroImageUrl}
                         alt=""
                         sizes="(min-width: 1280px) 360px, (min-width: 640px) 50vw, 92vw"
-                        presentation="full-visible-4-3"
+                        presentation="favorites-cover-4-3"
                         className="rounded-none"
                         fallback={(
                           <div className="grid h-full w-full place-items-center bg-slate-200" aria-hidden>
@@ -251,9 +257,12 @@ export default function FavoritesView() {
               return (
                 <FavoriteRetrievalCard
                   key={item.key}
-                  contentType="SPOMOVE"
+                  primaryMeta={item.primaryMeta}
+                  secondaryMeta={item.secondaryMeta}
                   title={item.title}
                   supportMeta={item.supportMeta}
+                  playHref={publicOfficialPresetSessionHref(item.preset, { entry: 'start', hubReturn: '/spokedu-master/favorites' })}
+                  playAriaLabel={`${item.accessTitle} 바로 시작`}
                   onOpen={() => openSpomove(item.preset)}
                   openAriaLabel={`${item.accessTitle} 활동 준비 열기`}
                   removeAriaLabel={`${item.accessTitle} 즐겨찾기에서 제거`}
@@ -263,7 +272,7 @@ export default function FavoritesView() {
                       src={thumbnailUrl}
                       alt=""
                       sizes="(min-width: 1280px) 360px, (min-width: 640px) 50vw, 92vw"
-                      presentation="full-visible-4-3"
+                      presentation="favorites-cover-4-3"
                       className="rounded-none"
                       fallback={(
                         <div className="grid h-full w-full grid-cols-2 gap-1 bg-slate-950 p-4" aria-hidden>

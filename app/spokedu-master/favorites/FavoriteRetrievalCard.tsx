@@ -5,12 +5,16 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { MV_CONTENT_TITLE, MV_META } from '../lib/masterUiClasses';
+import { ContentCardMetaLine } from '../components/content/ContentCardMetaLine';
 
 type FavoriteRetrievalCardProps = {
   media: ReactNode;
-  contentType: '놀이체육' | 'SPOMOVE';
+  primaryMeta: string;
+  secondaryMeta?: string;
   title: string;
   supportMeta?: string;
+  playHref?: string;
+  playAriaLabel?: string;
   hasVideo?: boolean;
   openAriaLabel: string;
   removeAriaLabel?: string;
@@ -21,9 +25,12 @@ type FavoriteRetrievalCardProps = {
 
 export function FavoriteRetrievalCard({
   media,
-  contentType,
+  primaryMeta,
+  secondaryMeta,
   title,
   supportMeta,
+  playHref,
+  playAriaLabel,
   hasVideo = false,
   openAriaLabel,
   removeAriaLabel,
@@ -46,11 +53,26 @@ export function FavoriteRetrievalCard({
       </div>
 
       <div className="flex flex-1 flex-col px-3.5 pb-3.5 pt-3">
-        <p className={`${MV_META} truncate`}>{contentType}</p>
+        <ContentCardMetaLine primary={primaryMeta} secondary={secondaryMeta} />
         <h2 className={`${MV_CONTENT_TITLE} mt-1.5 line-clamp-1 transition-colors duration-200 group-hover:text-slate-700`}>
           {title}
         </h2>
-        <p className={`${MV_META} mt-3 min-h-5 truncate text-slate-600`}>{supportMeta || '\u00a0'}</p>
+        {supportMeta || playHref ? (
+          <div className="mt-1 flex min-h-11 items-center gap-2">
+            <p className={`${MV_META} min-w-0 flex-1 truncate text-slate-600`}>{supportMeta || '\u00a0'}</p>
+            {playHref ? (
+              <Link
+                href={playHref}
+                className="relative z-20 grid h-11 w-11 shrink-0 place-items-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+                aria-label={playAriaLabel ?? `${title} 바로 시작`}
+              >
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100">
+                  <Play className="h-3.5 w-3.5 fill-current" aria-hidden />
+                </span>
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {href ? (

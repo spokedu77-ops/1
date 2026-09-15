@@ -28,25 +28,26 @@ export function AttendanceTab({ onShowSchedule, onSessionSelect }: { onShowSched
     [data.sessions, data.students, month, selectedClass],
   );
 
-  if (!selectedClass) return <p className="py-10 text-center text-sm text-slate-500">출석부를 보려면 먼저 수업반을 만들어 주세요.</p>;
+  if (!selectedClass) return <p className="py-10 text-center text-sm text-slate-500">먼저 수업반을 만들어 주세요.</p>;
 
   return (
-    <section aria-labelledby="manage-attendance-heading" className="mt-5">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <label className="flex items-center gap-2 text-xs font-medium text-slate-500">수업반
-          <select value={selectedClass.id} onChange={(event) => setClassId(event.target.value)} className="h-11 min-w-40 rounded-[12px] border border-slate-200/80 bg-transparent px-3 text-sm font-medium text-slate-800">
+    <section aria-labelledby="manage-attendance-heading" className="mt-5 pb-4">
+      <h2 id="manage-attendance-heading" className="text-[20px] font-semibold tracking-tight text-slate-950">출석부</h2>
+      <div className="mt-4 flex flex-col gap-2 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <label className="min-w-0">
+          <span className="sr-only">수업반</span>
+          <select aria-label="수업반 선택" value={selectedClass.id} onChange={(event) => setClassId(event.target.value)} className="h-11 max-w-full rounded-[10px] border-0 bg-transparent px-1 pr-8 text-[15px] font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500/30">
             {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
         </label>
-        <div className="flex h-11 items-center" aria-label="출석 월 선택">
-          <button type="button" onClick={() => setMonth((current) => shiftAttendanceMonth(current, -1))} className="grid h-11 w-11 place-items-center rounded-[12px] text-slate-500 hover:bg-slate-100" aria-label="이전 달"><ChevronLeft size={18} /></button>
+        <div className="flex h-11 items-center justify-center self-center sm:self-auto" aria-label="출석 월 선택">
+          <button type="button" onClick={() => setMonth((current) => shiftAttendanceMonth(current, -1))} className="grid h-11 w-11 place-items-center rounded-[10px] text-slate-500 hover:bg-slate-100" aria-label="이전 달"><ChevronLeft size={18} /></button>
           <p className="min-w-28 text-center text-[15px] font-semibold text-slate-900">{Number(month.slice(0, 4))}년 {Number(month.slice(5, 7))}월</p>
-          <button type="button" onClick={() => setMonth((current) => shiftAttendanceMonth(current, 1))} className="grid h-11 w-11 place-items-center rounded-[12px] text-slate-500 hover:bg-slate-100" aria-label="다음 달"><ChevronRight size={18} /></button>
+          <button type="button" onClick={() => setMonth((current) => shiftAttendanceMonth(current, 1))} className="grid h-11 w-11 place-items-center rounded-[10px] text-slate-500 hover:bg-slate-100" aria-label="다음 달"><ChevronRight size={18} /></button>
         </div>
       </div>
 
-      <h2 id="manage-attendance-heading" className="mt-5 text-[18px] font-semibold tracking-tight text-slate-950">출석 현황</h2>
-      <AttendanceProjectionTable sessions={view.sessions} rows={view.rows} emptyMonthLabel={`${Number(month.slice(5, 7))}월`} emptyAction={<button type="button" onClick={onShowSchedule} className="mt-4 min-h-11 px-2 text-sm font-semibold text-slate-700 hover:text-slate-950">일정 보기</button>} onSessionSelect={onSessionSelect} />
+      <AttendanceProjectionTable presentation="manage-responsive" sessions={view.sessions} rows={view.rows} emptyMonthLabel={`${Number(month.slice(5, 7))}월`} emptyAction={<button type="button" onClick={onShowSchedule} className="mt-3 min-h-11 text-sm font-semibold text-slate-600 hover:text-slate-950">일정 보기 →</button>} onSessionSelect={onSessionSelect} />
     </section>
   );
 }

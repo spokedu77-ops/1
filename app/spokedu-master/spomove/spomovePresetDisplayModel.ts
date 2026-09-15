@@ -385,6 +385,15 @@ export function titleIncludesDifficulty(title: string): boolean {
   return TITLE_DIFFICULTY_PATTERN.test(title);
 }
 
+export function resolveSpomovePublicCardSupport(
+  meta: SpomovePublicCardMeta,
+  fallbackParts: readonly string[] = [],
+): string {
+  const variant = meta.variant?.trim();
+  if (variant && !titleIncludesDifficulty(variant)) return variant;
+  return fallbackParts.find((part) => part.trim() && !titleIncludesDifficulty(part))?.trim() ?? '';
+}
+
 /** Pair scan용: 제목에서 난이도 suffix를 제거한 base */
 export function resolveSpomoveCardPairKey(title: string): string {
   return title
@@ -544,7 +553,7 @@ export function getSpomoveCardDisplayModel(
   const meta = buildCardMeta(preset, base.displayTitle, { includeAudienceAdaptation: false });
   return {
     programLabel: base.programLabel,
-    title: base.rootTitle,
+    title: resolveSpomoveCardPairKey(base.rootTitle),
     variantLabel: publicMeta.variant ?? '',
     publicMeta,
     meta,

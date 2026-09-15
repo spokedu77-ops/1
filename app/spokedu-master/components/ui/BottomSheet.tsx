@@ -156,9 +156,9 @@ export function BottomSheet({
       ? `relative max-h-[88dvh] w-full max-w-[1160px] rounded-t-[16px] p-4 shadow-2xl outline-none sm:rounded-[16px] sm:p-5 ${hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`
       : isSession
         ? [
-            'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] border border-slate-200 bg-white px-4 pt-3 shadow-2xl outline-none',
+            'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[16px] border border-slate-200 bg-white px-4 pt-3 shadow-xl outline-none',
             'sm:px-5 sm:pt-4',
-            'lg:h-full lg:max-h-full lg:min-h-0 lg:w-full lg:max-w-none lg:rounded-none lg:border-y-0 lg:border-r-0 lg:border-l lg:border-slate-200 lg:bg-white lg:px-6 lg:pt-5 lg:shadow-none',
+            'lg:h-full lg:max-h-full lg:min-h-0 lg:w-full lg:max-w-none lg:rounded-none lg:border-y-0 lg:border-r-0 lg:border-l lg:border-slate-200 lg:bg-white lg:px-5 lg:pt-4 lg:shadow-none',
           ].join(' ')
       : isLaunch
         ? [
@@ -197,7 +197,7 @@ export function BottomSheet({
         ) : null}
         <div
           className={`flex shrink-0 items-center justify-between gap-3 ${
-            size === 'preview' || isLaunch || isSession ? 'mb-2.5' : 'mb-5'
+            size === 'preview' || isLaunch ? 'mb-2.5' : isSession ? 'mb-4' : 'mb-5'
           }`}
         >
           {headerTitle ? (
@@ -207,7 +207,7 @@ export function BottomSheet({
           ) : (
             <h2
               id={titleId}
-              className={`${isSession ? 'text-[17px] font-semibold' : `font-black ${isLaunch ? 'text-[16px] sm:text-[17px]' : 'text-[18px]'}`}`}
+              className={`${isSession ? 'text-[19px] font-semibold leading-6' : `font-black ${isLaunch ? 'text-[16px] sm:text-[17px]' : 'text-[18px]'}`}`}
               style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0 }}
             >
               {title}
@@ -231,7 +231,7 @@ export function BottomSheet({
         </div>
         {isLaunch || isSession || hasDetachedFooter ? (
           <>
-            <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'overflow-y-auto pr-4 lg:overflow-y-auto lg:pr-5' : 'overflow-y-auto pr-3'}`} style={isSession ? { scrollbarGutter: 'stable' } : undefined}>{children}</div>
+            <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'overflow-y-auto pr-0 lg:overflow-y-auto' : 'overflow-y-auto pr-3'}`} style={isSession ? { scrollbarGutter: 'stable' } : undefined}>{children}</div>
             {footer ? <div className="shrink-0 [&>div.grid]:grid-flow-col [&>div.grid]:auto-cols-fr [&>div.grid]:grid-cols-none">{footer}</div> : null}
           </>
         ) : children}

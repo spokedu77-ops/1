@@ -6,6 +6,7 @@ import { InstructionalThumb } from '../media/InstructionalThumb';
 import { MV_CONTENT_TITLE, MV_HOME_CARD_META, MV_HOME_CARD_TITLE, MV_META } from '../../lib/masterUiClasses';
 import { CategoryIcon } from '../ui/ProgramThumb';
 import { LessonNewMark } from './LessonCatalogCard';
+import { ContentCardMetaLine } from '../content/ContentCardMetaLine';
 
 export function WeeklyEditorialCard({
   title,
@@ -87,9 +88,12 @@ export function WeeklyEditorialCard({
           ) : null}
         </span>
         <div className={isHomeFamily ? 'px-3.5 pb-3.5 pt-3' : 'px-3 pb-3.5 pt-2.5'}>
-          {type ? <span className={`${isHomeFamily ? MV_HOME_CARD_META : MV_META} block truncate`}>{isHomeFamily && support ? `${type} · ${support}` : type}</span> : null}
+          <ContentCardMetaLine
+            primary={type}
+            secondary={support}
+            className={isHomeFamily ? MV_HOME_CARD_META : MV_META}
+          />
           <span className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 group-hover:text-slate-700`}>{title}</span>
-          {support && !isHomeFamily ? <span className={`${MV_META} mt-3 block truncate text-slate-600`}>{support}</span> : null}
         </div>
       </button>
 

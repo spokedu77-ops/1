@@ -6,8 +6,9 @@ import type { ReactNode } from 'react';
 
 import { MV_HOME_CARD_ACTION, MV_HOME_CARD_KICKER, MV_HOME_CARD_META, MV_HOME_CARD_TITLE } from '../lib/masterUiClasses';
 
-export function HomeContinueCard({ media, kicker, title, meta, actionLabel, href }: {
+export function HomeContinueCard({ media, mediaSize = 'default', kicker, title, meta, actionLabel, href }: {
   media: ReactNode;
+  mediaSize?: 'default' | 'compact';
   kicker: string;
   title: string;
   meta: string;
@@ -16,7 +17,7 @@ export function HomeContinueCard({ media, kicker, title, meta, actionLabel, href
 }) {
   return (
     <article className="flex h-[108px] w-[86vw] max-w-[360px] shrink-0 snap-start items-center gap-3 rounded-[15px] border border-slate-200/80 bg-white p-3 lg:w-auto lg:max-w-none">
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-[12px] bg-slate-100">{media}</div>
+      <div className={`${mediaSize === 'compact' ? 'h-16 w-16' : 'h-20 w-20'} shrink-0 overflow-hidden rounded-[12px] bg-slate-100`}>{media}</div>
       <div className="flex min-w-0 flex-1 flex-col justify-center self-stretch">
         <p className={MV_HOME_CARD_KICKER}>{kicker}</p>
         <h3 className={`${MV_HOME_CARD_TITLE} line-clamp-1`}>{title}</h3>

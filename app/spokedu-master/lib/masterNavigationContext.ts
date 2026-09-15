@@ -5,7 +5,7 @@
  *
  * OBJECT: session, sessionProgram, class, student, program, preset
  * DISCOVERY: view, group, difficulty, movement, q, from
- * WORK: date, create, entry, mode, cueSeconds, sound, rounds, difficulty
+ * WORK: date, create, entry, mode, cueSeconds, sound, rounds, difficulty, tool
  * RETURN: returnTo (Session / work), hubReturn (SPOMOVE exploration)
  * COMMERCIAL: intent / next / journeyId live on Gate/Payment routes, not here
  *
@@ -22,7 +22,7 @@ export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> =
   '/spokedu-master/manage': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
   '/spokedu-master/students': [],
   '/spokedu-master/classes': ['create', 'from', 'date'],
-  '/spokedu-master/class-tools': ['session', 'returnTo', 'source'],
+  '/spokedu-master/class-tools': ['session', 'returnTo', 'source', 'tool'],
   '/spokedu-master/spomove': ['view', 'group', 'difficulty', 'movement', 'q', 'session', 'returnTo', 'source'],
   '/spokedu-master/spomove/session': [
     'preset',

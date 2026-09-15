@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CalendarDays, CircleUserRound, Heart, Home, Search, WifiOff, Wrench } from 'lucide-react';
+import { BookOpen, CalendarDays, CircleUserRound, Heart, Home, WifiOff, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
@@ -79,16 +79,6 @@ export function StatusBar() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 lg:justify-self-end">
-          <form action="/spokedu-master/library" method="get" className="relative hidden w-[180px] lg:block xl:w-[260px] 2xl:w-[300px]" role="search">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
-            <input
-              type="search"
-              name="q"
-              placeholder="수업 활동, 키워드로 검색하세요"
-              aria-label="놀이체육 활동 검색"
-              className="h-10 w-full rounded-full border border-slate-200 bg-slate-100/80 pl-9 pr-3 text-[13px] font-medium text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus-visible:ring-2 focus-visible:ring-slate-200"
-            />
-          </form>
           {!operational.online ? <span
             className="hidden min-h-9 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-black sm:inline-flex"
             style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb-strong)' }}

@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { isSessionRosterLocked, resolveSessionAttendanceRoster } from '../../lib/sessionIntegrity';
 import type { MasterClassDto, MasterSessionDto, MasterStudentDto } from '../../types/operational';
 
+function resultEntries(session: MasterSessionDto | null | undefined) {
+  return session?.attendance.map((item) => [item.studentId, item.status] as const) ?? [];
+}
+
 export function useSessionAttendance({
   session,
   activeSession,
@@ -21,12 +25,12 @@ export function useSessionAttendance({
   dirty: boolean;
   setDirty: (dirty: boolean) => void;
 }) {
-  const [attendance, setAttendance] = useState<Record<string, 'present' | 'absent'>>(Object.fromEntries(session?.attendance.map((item) => [item.studentId, item.status]) ?? []));
+  const [attendance, setAttendance] = useState<Record<string, 'present' | 'absent'>>(Object.fromEntries(resultEntries(session)));
   const [attendanceOpen, setAttendanceOpen] = useState(false);
 
   useEffect(() => {
     if (!session || saving || dirty) return;
-    setAttendance(Object.fromEntries(session.attendance.map((item) => [item.studentId, item.status])));
+    setAttendance(Object.fromEntries(resultEntries(session)));
   }, [dirty, saving, session]);
 
   const roster = useMemo(
@@ -36,6 +40,9 @@ export function useSessionAttendance({
   const allStudentsPresent = roster.length > 0 && roster.every((student) => attendance[student.id] === 'present');
   const rosterLocked = isSessionRosterLocked(activeSession ?? session);
   const attendanceInput = () => Object.entries(attendance).map(([studentId, attendanceStatus]) => ({ studentId, status: attendanceStatus }));
+  const attendancePersistenceInput = () => rosterLocked
+    ? roster.map((student) => ({ studentId: student.id, status: attendance[student.id] ?? 'pending' as const }))
+    : attendanceInput();
 
   const updateAttendance = (studentId: string, value: 'present' | 'absent') => {
     setAttendance((current) => {
@@ -63,5 +70,5 @@ export function useSessionAttendance({
     setDirty(true);
   };
 
-  return { attendance, setAttendance, attendanceOpen, setAttendanceOpen, roster, allStudentsPresent, attendanceInput, updateAttendance, toggleAllAttendance };
+  return { attendance, setAttendance, attendanceOpen, setAttendanceOpen, roster, allStudentsPresent, attendanceInput, attendancePersistenceInput, updateAttendance, toggleAllAttendance };
 }

@@ -9,6 +9,7 @@ const SESSION_DETAIL_SOURCE_FILES = [
   'manage/session-detail/SessionAttendance.tsx',
   'manage/session-detail/SessionMemo.tsx',
   'manage/session-detail/SessionActions.tsx',
+  'manage/session-detail/NextSessionSheet.tsx',
   'manage/session-detail/useSessionDraft.ts',
   'manage/session-detail/useSessionSchedule.ts',
   'manage/session-detail/useSessionActivities.ts',

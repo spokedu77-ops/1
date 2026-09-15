@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { ChevronDown, Heart, Search, X } from 'lucide-react';
+import { ChevronDown, Heart, Play, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -48,6 +48,7 @@ import {
   composeSpomovePublicCardMetaParts,
   getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
+  resolveSpomovePublicCardSupport,
   sortSpomovePresetsByCatalogOrder,
   buildSpomoveProgramGroupSections,
 } from './spomovePresetDisplayModel';
@@ -69,6 +70,7 @@ import {
 } from './spomoveHubNavigation';
 import { useSpomoveGuideVideo } from './useSpomoveGuideVideo';
 import { resolveSpomovePublicDisplayTitle } from './spomovePublicNaming';
+import { ContentCardMetaLine } from '../components/content/ContentCardMetaLine';
 import {
   emptyHubFamilyFeaturedSlots,
   normalizeHubFamilyFeaturedSlots,
@@ -629,6 +631,7 @@ function PresetCard({
   addedToSession,
   addingToSession,
   sessionBuildAction,
+  startHref,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
@@ -642,13 +645,13 @@ function PresetCard({
   addedToSession?: boolean;
   addingToSession?: boolean;
   sessionBuildAction: string;
+  startHref?: string;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
   const subtitleParts = composeSpomovePublicCardMetaParts(card.publicMeta);
-  const primaryMeta = [card.publicMeta.core, card.publicMeta.difficulty].filter(Boolean).join(' · ');
-  const supportMeta = card.publicMeta.variant || displayModel.supportMetaParts[0] || '';
+  const supportMeta = resolveSpomovePublicCardSupport(card.publicMeta, displayModel.supportMetaParts);
 
   const inner = (
     <>
@@ -694,11 +697,23 @@ function PresetCard({
           onImageError={() => setImageFailed(true)}
         />
         <div className="w-full px-3.5 pb-3.5 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={subtitleParts.join(' · ')}>
-          <p className="truncate text-[13px] font-medium leading-5 text-slate-500">{primaryMeta}</p>
-          <h3 className="mt-1 line-clamp-2 text-[17px] font-semibold leading-snug text-slate-950">{displayModel.rootTitle}</h3>
-          <p className="mt-2 truncate text-[13px] font-medium leading-5 text-slate-500">{supportMeta || '\u00a0'}</p>
+          <ContentCardMetaLine primary={card.publicMeta.core} secondary={card.publicMeta.difficulty} />
+          <h3 className="mt-1 line-clamp-2 text-[17px] font-semibold leading-snug text-slate-950">{card.title}</h3>
+          <p className={`mt-2 truncate text-[13px] font-medium leading-5 text-slate-500 ${startHref ? 'pr-10' : ''}`}>{supportMeta || '\u00a0'}</p>
         </div>
       </button>
+      {startHref && preset.isReady ? (
+        <Link
+          href={startHref}
+          data-spm-spomove-card-action="start"
+          aria-label={`${card.title} 바로 시작`}
+          className="absolute bottom-0.5 right-1 z-10 grid h-11 w-11 place-items-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+        >
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100">
+            <Play className="h-3.5 w-3.5 fill-current" aria-hidden />
+          </span>
+        </Link>
+      ) : null}
       {onAddToSession ? (
         <div className="border-t border-slate-100 px-3 py-3" data-spm-spomove-session-action="true">
           <button type="button" onClick={onAddToSession} disabled={addedToSession || addingToSession} className="spm-btn-primary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-3 text-sm font-semibold disabled:bg-emerald-100 disabled:text-emerald-700">
@@ -1021,6 +1036,7 @@ function SpomoveHubInner({
             addedToSession={Boolean(sessionContext?.programs.some((program) => program.sourceType === 'spomove' && program.spomovePresetId === preset.id))}
             addingToSession={addingPresetId === preset.id}
             sessionBuildAction={sessionBuildAction}
+            startHref={sessionContext ? undefined : publicOfficialPresetSessionHref(preset, { entry: 'start', hubReturn: hubReturnHref })}
           />
         </div>
       ))}
@@ -1054,7 +1070,7 @@ function SpomoveHubInner({
               </p>
             </div>
             <div className="relative w-full sm:max-w-[440px]">
-              <label htmlFor="spomove-search" className="sr-only">프로그램명, 테마, 시리즈 검색</label>
+              <label htmlFor="spomove-search" className="sr-only">SPOMOVE 검색</label>
               <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 id="spomove-search"
@@ -1081,7 +1097,7 @@ function SpomoveHubInner({
                     applySearchQuery('', true);
                   }
                 }}
-                placeholder="프로그램명, 테마, 시리즈 검색"
+                placeholder="SPOMOVE 검색"
                 className="h-11 w-full rounded-xl border border-white/15 bg-white/10 pl-10 pr-11 text-sm font-medium text-white outline-none placeholder:text-slate-400 focus:border-white/35 focus:bg-white/[0.14] focus:ring-2 focus:ring-white/10"
               />
               {searchQuery ? (

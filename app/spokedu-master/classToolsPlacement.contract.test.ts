@@ -5,12 +5,12 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('SPOKEDU MASTER class tools placement', () => {
-  it('keeps class tools out of discovery entry points', () => {
+  it('keeps the recent class tool on Home while excluding it from lesson discovery cards', () => {
     const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
     const library = read('app/spokedu-master/library/LibraryView.tsx');
     const preview = read('app/spokedu-master/components/lesson/ProgramPreviewModal.tsx');
 
-    expect(dashboard).not.toContain('/spokedu-master/class-tools');
+    expect(dashboard).toContain('buildClassToolHref(recentClassTool.id)');
     expect(library).not.toContain('/spokedu-master/class-tools');
     expect(preview).not.toContain('/spokedu-master/class-tools');
   });
@@ -49,6 +49,14 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain('현장에서 바로 사용하는 도구');
     expect(tools).toContain('수업으로 돌아가기');
     expect(tools).toContain('aria-pressed={active}');
+    expect(tools).toContain('grid-cols-4');
+    expect(tools).toContain('sm:flex');
+    expect(tools).toContain('sm:overflow-x-auto');
+    expect(tools).toContain('flex-col');
+    expect(tools).toContain('sm:flex-row');
+    expect(tools).toContain("parseClassToolId(searchParams.get('tool'))");
+    expect(tools).toContain('recordLastClassTool(id)');
+    expect(tools).toContain("if (requestedTool) recordLastClassTool(requestedTool)");
   });
 
   it('separates activity and rest countdowns while preserving custom minutes/seconds', () => {

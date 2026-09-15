@@ -84,6 +84,19 @@ describe('session roster lock', () => {
       .toEqual(['a', 'b', 'c']);
   });
 
+  it('uses a locked roster snapshot even when the new Session has no attendance results', () => {
+    expect(resolveSessionAttendanceRoster({
+      status: 'scheduled',
+      rosterLockedAt: '2026-09-15T00:00:00.000Z',
+      roster: lockedAttendance,
+      attendance: [],
+    }, classAbd, students)).toEqual([
+      { id: 'a', name: 'A' },
+      { id: 'b', name: 'B' },
+      { id: 'c', name: 'C' },
+    ]);
+  });
+
   it('allows present/absent changes on the locked set and rejects add or remove', () => {
     const locked = ['a', 'b', 'c'];
     expect(lockedRosterStudentIdsEqual(locked, ['a', 'b', 'c'])).toBe(true);

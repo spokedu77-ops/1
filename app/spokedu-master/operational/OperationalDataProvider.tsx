@@ -9,9 +9,9 @@ import type {
   CreateStudentInput,
   MasterClassDto,
   MasterSessionDto,
+  MasterSessionAttendanceStatus,
   MasterStudentDto,
   SaveSessionInput,
-  MasterSessionAttendanceStatus,
   UpdateStudentInput,
 } from '../types/operational';
 
@@ -32,14 +32,14 @@ type OperationalDataContextValue = {
   completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<MasterSessionDto>;
   saveParentNotice: (sessionId: string, parentNotice: string) => Promise<void>;
   deleteCancelledSession: (sessionId: string) => Promise<void>;
-  createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms?: boolean; sourceSessionProgramIds?: string[] }) => Promise<MasterSessionDto>;
+  createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string }) => Promise<MasterSessionDto>;
   carryoverSessionPrograms: (targetSessionId: string, sourceSessionId: string, sourceSessionProgramIds: string[]) => Promise<MasterSessionDto['programs']>;
   addSessionProgram: (sessionId: string, programId: number) => Promise<MasterSessionDto['programs'][number]>;
   addSessionSpomove: (sessionId: string, spomovePresetId: string) => Promise<MasterSessionDto['programs'][number]>;
   removeSessionProgram: (sessionId: string, sessionProgramId: string) => Promise<void>;
   updateSessionProgram: (sessionId: string, sessionProgramId: string, isCompleted: boolean) => Promise<void>;
   reorderSessionPrograms: (sessionId: string, sessionProgramIds: string[]) => Promise<MasterSessionDto['programs']>;
-  saveSessionAttendance: (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<void>;
+  saveSessionAttendance: (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus | 'pending' }>) => Promise<void>;
   addClassStudent: (classId: string, studentId: string) => Promise<void>;
   removeClassStudent: (classId: string, studentId: string) => Promise<void>;
   status: OperationalDataStatus;
@@ -96,22 +96,26 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     }
 
     const task = (async () => {
-    try {
-      const [studentsJson, sessionsJson] = await Promise.all([
-        masterFetchJson<{ data?: MasterStudentDto[] }>('/api/spokedu-master/students'),
-        masterFetchJson<{ data?: { classes?: MasterClassDto[]; sessions?: MasterSessionDto[] } }>('/api/spokedu-master/sessions'),
-      ]);
+      const studentsRequest = masterFetchJson<{ data?: MasterStudentDto[] }>('/api/spokedu-master/students')
+        .then((studentsJson) => {
+          if (activeOwnerRef.current !== ownerId) return;
+          setStudents(studentsJson.data ?? []);
+        });
+      const scheduleRequest = masterFetchJson<{ data?: { classes?: MasterClassDto[]; sessions?: MasterSessionDto[] } }>('/api/spokedu-master/sessions')
+        .then((sessionsJson) => {
+          if (activeOwnerRef.current !== ownerId) return;
+          setClasses(sessionsJson.data?.classes ?? []);
+          setSessions(sessionsJson.data?.sessions ?? []);
+        });
+      const results = await Promise.allSettled([studentsRequest, scheduleRequest]);
       if (activeOwnerRef.current !== ownerId) return;
-      setStudents(studentsJson.data ?? []);
-      setClasses(sessionsJson.data?.classes ?? []);
-      setSessions(sessionsJson.data?.sessions ?? []);
+      const rejected = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+      if (rejected) {
+        setError(getProviderErrorMessage(rejected.reason));
+        if (mode === 'hard') setStatus('error');
+        return;
+      }
       setStatus('ready');
-    } catch (caught) {
-      if (activeOwnerRef.current !== ownerId) return;
-      if (mode === 'hard') clearData();
-      setError(getProviderErrorMessage(caught));
-      setStatus('error');
-    }
     })();
     reloadInFlightRef.current = { ownerId, promise: task };
     try {
@@ -221,7 +225,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     setSessions((current) => current.filter((session) => session.id !== sessionId));
   }, []);
 
-  const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms?: boolean; sourceSessionProgramIds?: string[] }) => {
+  const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string }) => {
     const json = await masterFetchJson<{ data: MasterSessionDto }>(`/api/spokedu-master/sessions/${sourceSessionId}/next`, {
       body: JSON.stringify(input),
       method: 'POST',
@@ -288,9 +292,9 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
-  const saveSessionAttendance = useCallback(async (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => {
+  const saveSessionAttendance = useCallback(async (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus | 'pending' }>) => {
     await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance }) });
-    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, attendance: attendance.map((entry) => ({
+    setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, attendance: attendance.filter((entry): entry is typeof entry & { status: MasterSessionAttendanceStatus } => entry.status !== 'pending').map((entry) => ({
       id: item.attendance.find((old) => old.studentId === entry.studentId)?.id ?? entry.studentId,
       studentName: item.attendance.find((old) => old.studentId === entry.studentId)?.studentName
         ?? students.find((student) => student.id === entry.studentId)?.name ?? '이름 미확인 학생',

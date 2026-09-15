@@ -42,6 +42,7 @@ import { createLegacyOperationalArchiveFromPersistedStore } from '../lib/legacyO
 import type { Lesson, Notification, Program, Session, UserProfile } from '../types';
 import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
 import { OFFICIAL_SPOMOVE_LIBRARY } from '../spomove/officialSpomovePresets';
+import { parseClassToolId, type ClassToolId } from '../lib/classTools';
 
 type ActiveSession = {
   drillId: string;
@@ -56,6 +57,11 @@ type OperationalStatus = {
   online: boolean;
   lastSyncAt: string | null;
   retryQueue: RetryQueueItem[];
+};
+
+export type LastClassTool = {
+  id: ClassToolId;
+  usedAt: string;
 };
 
 export type ContentLoadError = 'unauthorized' | 'forbidden' | 'server' | 'network' | null;
@@ -99,6 +105,8 @@ interface MasterState {
   pendingRecentProgramActivities: RecentProgramActivityInput[];
   recentActivityOwnerResolved: boolean;
   recordRecentProgramActivity: (activity: RecentProgramActivityInput) => void;
+  lastClassToolByOwner: Record<string, LastClassTool>;
+  recordLastClassTool: (id: ClassToolId) => void;
   favoriteContentRefsByOwner: FavoritesByOwner;
   pendingLegacyFavoriteIdsByOwner: Record<string, string[]>;
   pendingLegacyFavoriteIds: string[];
@@ -218,6 +226,20 @@ type PersistedMasterState = Partial<MasterState> & {
   favoriteProgramIdsByOwner?: Record<string, string[]>;
   pendingLegacyFavoriteProgramIds?: string[];
 };
+
+function normalizeLastClassToolByOwner(value: unknown): Record<string, LastClassTool> {
+  if (!value || typeof value !== 'object') return {};
+  const normalized: Record<string, LastClassTool> = {};
+  for (const [ownerId, raw] of Object.entries(value)) {
+    if (!ownerId.startsWith('id:') && !ownerId.startsWith('email:')) continue;
+    if (!raw || typeof raw !== 'object') continue;
+    const entry = raw as { id?: unknown; usedAt?: unknown };
+    const id = parseClassToolId(typeof entry.id === 'string' ? entry.id : null);
+    if (!id || typeof entry.usedAt !== 'string') continue;
+    normalized[ownerId] = { id, usedAt: entry.usedAt };
+  }
+  return normalized;
+}
 
 const OFFICIAL_SPOMOVE_ID_SET = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
 
@@ -352,6 +374,7 @@ export function migrateMasterStore(persisted: unknown, persistedVersion?: number
         })),
     pendingRecentProgramActivities: [],
     recentActivityOwnerResolved: false,
+    lastClassToolByOwner: normalizeLastClassToolByOwner(stateWithoutLegacyOperational.lastClassToolByOwner),
     favoriteContentRefsByOwner,
     pendingLegacyFavoriteIdsByOwner,
     pendingLegacyFavoriteIds,
@@ -498,16 +521,19 @@ export const useMasterStore = create<MasterState>()(
             ),
           );
           const favoriteContentRefsByOwner = { ...state.favoriteContentRefsByOwner };
+          const lastClassToolByOwner = { ...state.lastClassToolByOwner };
           const pendingLegacyFavoriteIdsByOwner = { ...state.pendingLegacyFavoriteIdsByOwner };
           const todayLessonByOwner = { ...state.todayLessonByOwner };
           for (const ownerId of ownerIds) {
             delete favoriteContentRefsByOwner[ownerId];
+            delete lastClassToolByOwner[ownerId];
             delete pendingLegacyFavoriteIdsByOwner[ownerId];
             delete todayLessonByOwner[ownerId];
           }
           return {
             ...clearedLocalWorkspace(state),
             favoriteContentRefsByOwner,
+            lastClassToolByOwner,
             pendingLegacyFavoriteIdsByOwner,
             pendingLegacyFavoriteIds: [],
             todayLessonByOwner,
@@ -562,6 +588,7 @@ export const useMasterStore = create<MasterState>()(
           pendingRecentProgramActivities: [],
           recentActivityOwnerResolved: false,
           favoriteContentRefsByOwner: {},
+          lastClassToolByOwner: {},
           pendingLegacyFavoriteIdsByOwner: {},
           pendingLegacyFavoriteIds: [],
         })),
@@ -776,6 +803,18 @@ export const useMasterStore = create<MasterState>()(
             ),
           };
         }),
+      lastClassToolByOwner: {},
+      recordLastClassTool: (id) =>
+        set((state) => {
+          const owner = getRecentActivityOwner(state.profile);
+          if (!owner) return {};
+          return {
+            lastClassToolByOwner: {
+              ...state.lastClassToolByOwner,
+              [owner.ownerId]: { id, usedAt: new Date().toISOString() },
+            },
+          };
+        }),
       favoriteContentRefsByOwner: {},
       pendingLegacyFavoriteIdsByOwner: {},
       pendingLegacyFavoriteIds: [],
@@ -868,7 +907,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 18,
+      version: 19,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
@@ -880,6 +919,7 @@ export const useMasterStore = create<MasterState>()(
         classTimerRunning: state.classTimerRunning,
         classTimerStartedAt: state.classTimerStartedAt,
         recentProgramActivities: state.recentProgramActivities,
+        lastClassToolByOwner: state.lastClassToolByOwner,
         favoriteContentRefsByOwner: state.favoriteContentRefsByOwner,
         pendingLegacyFavoriteIdsByOwner: state.pendingLegacyFavoriteIdsByOwner,
         pendingLegacyFavoriteIds: state.pendingLegacyFavoriteIds,

@@ -35,7 +35,9 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(calendar).toContain('예정</span>');
     expect(calendar).toContain('완료</span>');
     expect(calendar).toContain('취소</span>');
-    expect(schedule).toContain('action={hasClasses ?');
+    expect(schedule).toContain('canClonePrevious ?');
+    expect(schedule).toContain('직전 수업으로 만들기');
+    expect(schedule).toContain('onClonePrevious');
     expect(manage).toContain('<MasterPageHeader title="수업 관리" />');
     expect(manage).not.toContain('MasterPageHeader title="수업 관리" action=');
     expect(schedule).toContain('예정된 수업이 없습니다.');
@@ -67,7 +69,8 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).not.toContain('수업 관리 <ChevronDown');
     expect(detail).toContain('수업 완료 취소');
     expect(detail).toContain('data-session-create');
-    expect(detail).toContain('REPEAT_LABEL');
+    expect(detail).not.toContain('REPEAT_LABEL');
+    expect(detail).not.toContain("(['none', 'weekly', 'biweekly'] as const)");
     expect(detail).toContain('+ 새 수업반 만들기');
     expect(detail).toContain('aria-expanded={attendanceOpen}');
     expect(detail).toContain('id: `pending:${key}`');
@@ -103,17 +106,26 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(classDetail).toContain('<AttendanceProjectionTable');
     expect(projection).not.toContain('AttendanceBook');
     expect(projection).toContain("session.status === 'completed'");
+    expect(attendance).toContain('presentation="manage-responsive"');
+    expect(projection).toContain('data-attendance-session-selector');
+    expect(projection).toContain('w-max table-fixed');
+    expect(projection).toContain('w-44 min-w-44 max-w-44');
+    expect(projection).toContain('w-28 min-w-28 max-w-28');
+    expect(projection).toContain('출석 {summary.present} · 결석 {summary.absent} · 미확인 {summary.pending}');
+    expect(projection).toContain("compactAttendanceMark('pending')");
+    expect(projection).toContain('hidden md:block');
+    expect(projection).toContain('md:hidden');
     expect(attendance).toContain('일정 보기');
   });
 
-  it('branches recurring creation away from single Session creation', () => {
-    expect(detail).toContain("if (!draft.activeSession && schedule.repeatMode !== 'none')");
-    expect(detail).toContain('await schedule.createRecurringSession()');
-    expect(detail).toContain('buildScheduleOccurrencePreview');
-    expect(detail).toContain('occurrenceOverlaps');
-    expect(detail).toContain('occurrences: availableOccurrences');
-    expect(detail).toContain('/schedule-rules`');
-    expect(detail).toContain('activities: programs.map');
+  it('removes recurrence UI while retaining the legacy backend outside this surface', () => {
+    expect(detail).not.toContain('schedule.repeatMode');
+    expect(detail).not.toContain('createRecurringSession');
+    expect(detail).not.toContain('buildScheduleOccurrencePreview');
+    expect(detail).not.toContain('occurrenceOverlaps');
+    expect(detail).not.toContain('occurrences: availableOccurrences');
+    expect(detail).not.toContain('/schedule-rules`');
+    expect(detail).not.toContain('활성 반복 일정');
     expect(detail).not.toContain('firstSessionId');
     expect(classDetail).not.toContain('RegularSchedulePanel');
   });

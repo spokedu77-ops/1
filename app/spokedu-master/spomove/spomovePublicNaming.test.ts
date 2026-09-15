@@ -258,11 +258,13 @@ describe('SPOMOVE public naming apply', () => {
     expect(matchesQuery('stroop-arrow-reverse-08', '화살표 방향·색 따라가기')).toBe(true);
   });
 
-  it('keeps favorites card title on rootTitle and aria on displayTitle', () => {
+  it('keeps favorites card title difficulty-free and aria on displayTitle', () => {
     const source = readFileSync(join(process.cwd(), 'app/spokedu-master/favorites/FavoritesView.tsx'), 'utf8');
-    expect(source).toContain('title: model.rootTitle');
+    expect(source).toContain('title: card.title');
     expect(source).toContain('accessTitle: model.displayTitle');
-    expect(source).toContain('composeSpomovePublicCardMetaParts(card.publicMeta)');
+    expect(source).toContain('primaryMeta: card.publicMeta.core');
+    expect(source).toContain('secondaryMeta: card.publicMeta.difficulty');
+    expect(source).toContain('resolveSpomovePublicCardSupport');
   });
 
   it('does not put SPOMAT movement copy on color-number public naming', () => {

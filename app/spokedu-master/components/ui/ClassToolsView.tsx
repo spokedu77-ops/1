@@ -9,23 +9,24 @@ import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { findExactSession } from '../../lib/sessionContext';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../../lib/masterNavigationContext';
+import { CLASS_TOOLS, parseClassToolId, type ClassToolId } from '../../lib/classTools';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
 import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
 import { createTournamentBracket, getTournamentRoundLabel, selectTournamentWinner, type TournamentParticipant } from './tournamentModel';
 
-type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 'order' | 'tournament' | 'ladder';
+const TAB_ICONS: Record<ClassToolId, typeof Timer> = {
+  stopwatch: Timer,
+  timer: Timer,
+  scoreboard: LayoutList,
+  picker: Shuffle,
+  teams: Users,
+  order: ListOrdered,
+  tournament: Trophy,
+  ladder: Route,
+};
 
-const TABS: { id: TabId; label: string; shortLabel: string; group: string; icon: typeof Timer }[] = [
-  { id: 'stopwatch', label: '스탑워치', shortLabel: '스톱워치', group: '시간', icon: Timer },
-  { id: 'return-timer', label: '타이머', shortLabel: '타이머', group: '시간', icon: Timer },
-  { id: 'scoreboard', label: '점수판', shortLabel: '점수', group: '진행', icon: LayoutList },
-  { id: 'picker', label: '무작위 선택', shortLabel: '뽑기', group: '명단', icon: Shuffle },
-  { id: 'teams', label: '팀 나누기', shortLabel: '팀', group: '명단', icon: Users },
-  { id: 'order', label: '진행 순서', shortLabel: '순서', group: '명단', icon: ListOrdered },
-  { id: 'tournament', label: '토너먼트', shortLabel: '대진', group: '경쟁', icon: Trophy },
-  { id: 'ladder', label: '사다리타기', shortLabel: '사다리', group: '경쟁', icon: Route },
-];
+const TABS = CLASS_TOOLS.map((tool) => ({ ...tool, icon: TAB_ICONS[tool.id] }));
 
 function shuffleItems<T>(items: T[]) {
   const copied = [...items];
@@ -1156,9 +1157,11 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
 }
 
 export default function ClassToolsView() {
-  const [tab, setTab] = useState<TabId>('stopwatch');
   const operationalData = useOperationalData();
   const searchParams = useSearchParams();
+  const requestedTool = parseClassToolId(searchParams.get('tool'));
+  const [tab, setTab] = useState<ClassToolId>(() => requestedTool ?? 'stopwatch');
+  const recordLastClassTool = useMasterStore((state) => state.recordLastClassTool);
   const requestedSessionId = searchParams.get('session');
   const sessionContext = findExactSession(operationalData.sessions, requestedSessionId);
   const sessionReturnHref = parseMasterWorkReturnHref(
@@ -1185,6 +1188,10 @@ export default function ClassToolsView() {
     [effectiveClassKey, operationalData.classes, students],
   );
   const [excludedStandaloneStudentIds, setExcludedStandaloneStudentIds] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    setTab(requestedTool ?? 'stopwatch');
+    if (requestedTool) recordLastClassTool(requestedTool);
+  }, [recordLastClassTool, requestedTool]);
   useEffect(() => { setExcludedStandaloneStudentIds(new Set()); }, [effectiveClassKey]);
   const selectedStudents = useMemo(
     () => sessionContext
@@ -1218,20 +1225,23 @@ export default function ClassToolsView() {
           ) : null}
         </div>
       </header>
-      <div data-class-tools-tabs data-class-tools-dock className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-200 bg-white px-2 py-2 sm:justify-center sm:px-4">
+      <div data-class-tools-tabs data-class-tools-dock className="grid shrink-0 grid-cols-4 gap-1 overflow-hidden border-b border-slate-200 bg-white px-2 py-2 sm:flex sm:justify-center sm:overflow-x-auto sm:px-4">
         {TABS.map(({ id, label, shortLabel, group, icon: Icon }) => {
           const active = tab === id;
           return (
             <button
               key={id}
               type="button"
-              onClick={() => setTab(id)}
+              onClick={() => {
+                setTab(id);
+                recordLastClassTool(id);
+              }}
               aria-pressed={active}
               aria-label={`${group} · ${label}`}
-              className={`flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[12px] font-medium transition sm:px-3.5 ${active ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
+              className={`flex h-11 min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-[10px] px-1 text-[12px] font-medium transition sm:shrink-0 sm:flex-row sm:gap-1.5 sm:overflow-visible sm:rounded-xl sm:px-3.5 ${active ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
             >
               <Icon size={16} aria-hidden="true" />
-              <span className="sm:hidden">{shortLabel}</span>
+              <span className="leading-none sm:hidden">{shortLabel}</span>
               <span className="hidden sm:inline">{label}</span>
             </button>
           );
@@ -1253,7 +1263,7 @@ export default function ClassToolsView() {
         {!usesClassRoster ? (
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {tab === 'stopwatch' && <StopwatchTab />}
-            {tab === 'return-timer' && <ReturnTimerTab />}
+            {tab === 'timer' && <ReturnTimerTab />}
             {tab === 'scoreboard' && <ScoreboardTab />}
           </div>
         ) : null}

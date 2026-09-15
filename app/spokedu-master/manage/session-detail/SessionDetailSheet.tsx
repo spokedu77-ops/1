@@ -16,23 +16,25 @@ import { SessionActivities } from './SessionActivities';
 import { SessionAttendance } from './SessionAttendance';
 import { SessionInformation } from './SessionInformation';
 import { SessionMemo } from './SessionMemo';
+import { NextSessionSheet } from './NextSessionSheet';
 import { useSessionActivities } from './useSessionActivities';
 import { useSessionAttendance } from './useSessionAttendance';
 import { useSessionDraft } from './useSessionDraft';
 import { useSessionSchedule } from './useSessionSchedule';
 
-export function SessionDetailSheet({ session, initialDay, initialClassId, legacyCapture, onClose }: { session: MasterSessionDto | null; initialDay: string; initialClassId?: string | null; legacyCapture: boolean; onClose: () => void }) {
+export function SessionDetailSheet({ session, initialDay, initialClassId, legacyCapture, onClose, onSessionCreated }: { session: MasterSessionDto | null; initialDay: string; initialClassId?: string | null; legacyCapture: boolean; onClose: () => void; onSessionCreated: (session: MasterSessionDto) => void }) {
   const data = useOperationalData();
   const canUseRecords = useMasterCanUseRecords();
   const canUseSpomove = useMasterCanUseSpomove();
   const captureRef = useRef<SessionCaptureHandle | null>(null);
   const [classCreateOpen, setClassCreateOpen] = useState(false);
+  const [nextSessionOpen, setNextSessionOpen] = useState(false);
   const draft = useSessionDraft({ session, initialDay, initialClassId, classes: data.classes, canUseRecords, onClose });
   const actions = getSessionActionPolicy(draft.status);
   const selectedClass = data.classes.find((item) => item.id === draft.classId) ?? null;
   const attendance = useSessionAttendance({ session, activeSession: draft.activeSession, selectedClass, students: data.students, saving: draft.saving, dirty: draft.dirty, setDirty: draft.setDirty });
   const activities = useSessionActivities({ session, activeSession: draft.activeSession, data, canUseSpomove, saving: draft.saving, dirty: draft.dirty, canRemove: actions.removeActivities, canToggleCompletion: actions.toggleActivityCompletion, setSaving: draft.setSaving, setDirty: draft.setDirty, setError: draft.setError });
-  const schedule = useSessionSchedule({ initialSession: session, classId: draft.classId, startAt: draft.startAt, endAt: draft.endAt, programs: activities.programs, data, input: draft.input, setSaving: draft.setSaving, setDirty: draft.setDirty, setError: draft.setError });
+  const schedule = useSessionSchedule({ initialSession: session });
   const isCreate = !draft.activeSession;
   const title = draft.activeSession ? '수업 상세' : '수업 추가';
 
@@ -52,15 +54,10 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
         const captureSaved = await captureRef.current?.save() ?? true;
         if (!captureSaved) throw new Error('수업 기록을 저장하지 못했습니다.');
       }
-      if (!draft.activeSession && schedule.repeatMode !== 'none') {
-        await schedule.createRecurringSession();
-        onClose();
-        return;
-      }
       const saved = nextStatus === 'completed' && draft.activeSession
         ? await data.completeSession(draft.activeSession.id, draft.input(activities.programs, 'completed'), attendance.attendanceInput())
         : await data.saveSession(draft.input(activities.programs, nextStatus), draft.activeSession?.id);
-      if (draft.activeSession && nextStatus === 'scheduled') await data.saveSessionAttendance(saved.id, attendance.attendanceInput());
+      if (draft.activeSession && nextStatus === 'scheduled') await data.saveSessionAttendance(saved.id, attendance.attendancePersistenceInput());
       draft.setActiveSession(saved); draft.setStatus(saved.status);
       draft.setDirty(false);
       if (nextStatus === 'completed' || !draft.activeSession) onClose();
@@ -77,17 +74,22 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
   const footer = draft.status === 'cancelled' ? undefined : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} persist={persist} />;
 
   return <>
-    <BottomSheet open title={title} size="session" inert={classCreateOpen} onClose={draft.requestClose} footer={footer}>
+    <BottomSheet open title={title} size="session" inert={classCreateOpen || nextSessionOpen} onClose={draft.requestClose} footer={footer}>
       <div data-session-detail className="flex flex-col pb-1">
-        <SessionInformation isCreate={isCreate} activeSession={draft.activeSession} selectedClass={selectedClass} classes={data.classes} classId={draft.classId} startAt={draft.startAt} endAt={draft.endAt} status={draft.status} actions={actions} scheduleOpen={schedule.scheduleOpen} repeatMode={schedule.repeatMode} activeRules={schedule.activeRules} saving={draft.saving} setClassId={draft.setClassId} setStartAt={draft.setStartAt} setEndAt={draft.setEndAt} setScheduleOpen={schedule.setScheduleOpen} setRepeatMode={schedule.setRepeatMode} resetAttendance={() => attendance.setAttendance({})} setDirty={draft.setDirty} persist={persist} deleteCancelledSession={deleteCancelledSession} endRule={schedule.endRule} onCreateClass={() => setClassCreateOpen(true)} />
+        <SessionInformation isCreate={isCreate} activeSession={draft.activeSession} selectedClass={selectedClass} classes={data.classes} classId={draft.classId} startAt={draft.startAt} endAt={draft.endAt} status={draft.status} actions={actions} scheduleOpen={schedule.scheduleOpen} saving={draft.saving} setClassId={draft.setClassId} setStartAt={draft.setStartAt} setEndAt={draft.setEndAt} setScheduleOpen={schedule.setScheduleOpen} resetAttendance={() => attendance.setAttendance({})} setDirty={draft.setDirty} persist={persist} deleteCancelledSession={deleteCancelledSession} onCreateClass={() => setClassCreateOpen(true)} />
         <SessionActivities isCreate={isCreate} activeSession={draft.activeSession} programs={activities.programs} libraryPrograms={activities.libraryPrograms} catalogIds={activities.catalogIds} programsLoaded={activities.programsLoaded} actions={actions} saving={draft.saving} openPicker={() => activities.setPickerOpen(true)} toggleProgram={activities.toggleProgram} moveProgram={activities.moveProgram} removeProgram={activities.removeProgram} />
         {draft.activeSession && actions.editAttendance ? <SessionAttendance attendance={attendance.attendance} attendanceOpen={attendance.attendanceOpen} roster={attendance.roster} allStudentsPresent={attendance.allStudentsPresent} setAttendanceOpen={attendance.setAttendanceOpen} toggleAllAttendance={attendance.toggleAllAttendance} updateAttendance={attendance.updateAttendance} /> : null}
         {canUseRecords && draft.status !== 'cancelled' ? <SessionMemo isCreate={isCreate} memo={draft.memo} onChange={(memo) => { draft.setMemo(memo); draft.setDirty(true); }} /> : null}
         {legacyCapture && draft.activeSession ? <SessionCapturePanel ref={captureRef} session={draft.activeSession} sessions={data.sessions} students={data.students} sessionRoster={attendance.roster} canUseRecords={canUseRecords} captureMode="emphasized" showInlinePremiumUpsell={false} order={6} memo={draft.memo} onMemoChange={draft.setMemo} /> : null}
+        {draft.activeSession && actions.createNextSession ? <section className="mt-5 border-t border-slate-100 py-4">
+          <p className="text-sm text-slate-600">다음 수업도 예정되어 있나요?</p>
+          <button type="button" onClick={() => setNextSessionOpen(true)} className="mt-1 min-h-11 text-sm font-semibold text-[var(--spm-acc)] hover:text-slate-950">다음 수업 만들기 →</button>
+        </section> : null}
         {draft.error ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700">{draft.error}</p> : null}
       </div>
     </BottomSheet>
     <SessionActivityPicker open={activities.pickerOpen} programs={activities.availablePrograms} spomove={activities.availableSpomove} favorites={activities.favoriteActivities} saving={draft.saving} onAdd={activities.addActivities} onClose={() => activities.setPickerOpen(false)} />
     {isCreate && classCreateOpen ? <ClassCreateSheet nested open onClose={() => setClassCreateOpen(false)} onCreated={(created) => { draft.setClassId(created.id); attendance.setAttendance({}); draft.setDirty(true); setClassCreateOpen(false); }} /> : null}
+    {draft.activeSession && nextSessionOpen ? <NextSessionSheet source={draft.activeSession} open onClose={() => setNextSessionOpen(false)} onCreated={(created) => { setNextSessionOpen(false); onSessionCreated(created); }} /> : null}
   </>;
 }

@@ -28,6 +28,18 @@ describe('OperationalDataProvider server-first contract', () => {
     expect(text).toContain("mode === 'hard'");
   });
 
+  it('publishes schedule data independently of the student request and keeps soft refresh data visible', () => {
+    const text = source();
+
+    expect(text).toContain('const studentsRequest =');
+    expect(text).toContain('const scheduleRequest =');
+    expect(text).toContain('setClasses(sessionsJson.data?.classes ?? [])');
+    expect(text).toContain('setSessions(sessionsJson.data?.sessions ?? [])');
+    expect(text).toContain('Promise.allSettled([studentsRequest, scheduleRequest])');
+    expect(text).toContain("if (mode === 'hard') setStatus('error')");
+    expect(text).not.toContain('const [studentsJson, sessionsJson] = await Promise.all');
+  });
+
   it('uses only server operational APIs and never falls back to legacy storage', () => {
     const text = source();
 

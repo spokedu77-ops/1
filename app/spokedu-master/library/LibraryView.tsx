@@ -571,7 +571,7 @@ export default function LibraryView() {
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="활동 이름, 교구, 종목 검색"
+                  placeholder="놀이체육 검색"
                   aria-label="놀이체육 활동 검색"
                   className="h-11 w-full rounded-[12px] border border-slate-200 bg-slate-100/80 pl-10 pr-3 text-[14px] font-medium text-slate-950 outline-none placeholder:text-slate-400 focus:border-slate-300 focus:bg-white focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)]/15"
                 />

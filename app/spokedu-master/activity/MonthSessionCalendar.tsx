@@ -27,8 +27,8 @@ export function MonthSessionCalendar({ month, selectedDay, sessions, action, onM
     onMonthChange(day.slice(0, 7));
   };
 
-  return <section data-manage-calendar aria-label="월간 수업 일정" className="overflow-hidden rounded-[16px] border border-slate-200/80 bg-white lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
-    <div className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 px-3 sm:px-4">
+  return <section data-manage-calendar aria-label="월간 수업 일정" className="overflow-hidden rounded-[16px] border border-slate-200 bg-white lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+    <div className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 px-3 py-1.5 sm:px-4">
       <h2 className="flex min-w-0 items-center gap-1.5 text-[16px] font-semibold text-slate-950">
         <label className="relative grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-[12px] text-slate-500 hover:bg-slate-100 hover:text-slate-800">
           <CalendarDays size={18} aria-hidden />
@@ -57,9 +57,9 @@ export function MonthSessionCalendar({ month, selectedDay, sessions, action, onM
       {visibleDays.map((item) => {
         const selected = item.day === selectedDay;
         const isToday = item.day === today;
-        return <button key={item.day} type="button" onClick={() => { onDaySelect(item.day); if (!item.inMonth) onMonthChange(item.day.slice(0, 7)); }} className={`relative min-h-[88px] min-w-0 overflow-hidden p-1.5 text-left outline-none transition-colors focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--spm-acc)] lg:min-h-0 ${!item.inMonth ? 'text-slate-300' : 'text-slate-700'} ${selected ? 'bg-blue-50/80' : 'hover:bg-slate-50/80'}`} aria-pressed={selected} aria-label={`${formatSeoulSessionDay(item.day, { month: 'long', day: 'numeric' })}, 수업 ${item.sessions.length}개`}>
-          <span className={`grid h-6 w-6 place-items-center rounded-full text-[12px] font-semibold ${isToday ? 'bg-blue-600 text-white' : selected ? 'text-blue-700' : ''}`}>{Number(item.day.slice(8, 10))}</span>
-          {item.sessions.length ? <div className="mt-0.5 space-y-0.5">{item.sessions.slice(0, 2).map((session) => <span key={session.id} className="flex min-w-0 items-start gap-1 text-[11px] font-medium leading-[15px] text-slate-600" title={`${formatSeoulSessionTime(session.startAt)} ${session.className}`}><i className={`mt-[4px] h-1.5 w-1.5 shrink-0 rounded-full ${session.status === 'completed' ? 'bg-emerald-500' : session.status === 'cancelled' ? 'bg-red-500' : 'bg-blue-600'}`} /><span className={`min-w-0 whitespace-normal break-keep ${session.status === 'cancelled' ? 'text-slate-400 line-through' : ''}`}>{formatSeoulSessionTime(session.startAt)} {session.className}</span></span>)}{item.sessions.length > 2 ? <span className="block pl-2.5 text-[10px] font-medium text-slate-400">+{item.sessions.length - 2}</span> : null}</div> : null}
+        return <button key={item.day} type="button" onClick={() => { onDaySelect(item.day); if (!item.inMonth) onMonthChange(item.day.slice(0, 7)); }} className={`relative min-h-[88px] min-w-0 overflow-hidden p-1.5 text-left outline-none transition-colors focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--spm-acc)] lg:min-h-0 ${!item.inMonth ? 'text-slate-300' : 'text-slate-700'} ${selected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200' : 'hover:bg-slate-50/80'}`} aria-pressed={selected} aria-label={`${formatSeoulSessionDay(item.day, { month: 'long', day: 'numeric' })}, 수업 ${item.sessions.length}개`}>
+          <span className={`grid h-6 w-6 place-items-center rounded-full text-[13px] font-semibold ${isToday ? 'bg-blue-600 text-white' : selected ? 'text-blue-700' : ''}`}>{Number(item.day.slice(8, 10))}</span>
+          {item.sessions.length ? <div className="mt-0.5 space-y-0.5">{item.sessions.slice(0, 2).map((session) => <span key={session.id} className="flex min-w-0 items-start gap-1 text-[12px] font-medium leading-4 text-slate-600" title={`${formatSeoulSessionTime(session.startAt)} ${session.className}`}><i className={`mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full ${session.status === 'completed' ? 'bg-emerald-500' : session.status === 'cancelled' ? 'bg-red-500' : 'bg-blue-600'}`} /><span className={`min-w-0 whitespace-normal break-keep ${session.status === 'cancelled' ? 'text-slate-400 line-through' : ''}`}>{formatSeoulSessionTime(session.startAt)} {session.className}</span></span>)}{item.sessions.length > 2 ? <span className="block pl-2.5 text-[12px] font-medium text-slate-400">+{item.sessions.length - 2}</span> : null}</div> : null}
         </button>;
       })}
     </div>

@@ -19,7 +19,7 @@ describe('MASTER representative visual finish (pre-reset snapshot; not Art Direc
     const library = read('library/LibraryView.tsx');
     const card = read('components/lesson/LessonCatalogCard.tsx');
     expect(library).toContain('MasterPageHeader title="놀이체육"');
-    expect(library).toContain('placeholder="활동 이름, 교구, 종목 검색"');
+    expect(library).toContain('placeholder="놀이체육 검색"');
     expect(library).not.toContain('shadow-[0_10px_24px');
     expect(card).toContain('Heart');
     expect(card).toContain("favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'");

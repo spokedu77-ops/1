@@ -1,6 +1,6 @@
 import type { SpomovePresetContentOverride } from '@/app/lib/spomove/spomoveOfficialAssets';
 import type { OfficialSpomovePreset } from '../spomove/officialSpomovePresets';
-import { getSpomoveCardDisplayModel, getSpomovePresetDisplayModel } from '../spomove/spomovePresetDisplayModel';
+import { getSpomoveCardDisplayModel, getSpomovePresetDisplayModel, resolveSpomovePublicCardSupport } from '../spomove/spomovePresetDisplayModel';
 
 export type HomeSpomoveShelfCopy = {
   typeLabel: string;
@@ -20,17 +20,14 @@ export function getHomeSpomoveShelfCopy(
 ): HomeSpomoveShelfCopy {
   const display = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
-  const difficulty = card.meta.difficulty?.replace(/^난이도\s*/u, '').trim() || '';
+  const difficulty = card.publicMeta.difficulty;
   const trainingFocus = card.meta.trainingFocus?.trim() || '';
+  const supportMeta = resolveSpomovePublicCardSupport(card.publicMeta, display.supportMetaParts) || trainingFocus;
   return {
-    typeLabel: card.meta.responseType?.trim() || '',
+    typeLabel: card.publicMeta.core || card.meta.responseType?.trim() || '',
     difficulty,
-    title: display.displayTitle,
-    supportMeta: trainingFocus,
-    support: [difficulty, trainingFocus]
-      .map((value) => value?.replace(/^난이도\s*/u, '').trim())
-      .filter((value): value is string => Boolean(value))
-      .slice(0, 2)
-      .join(' · '),
+    title: card.title,
+    supportMeta,
+    support: supportMeta,
   };
 }

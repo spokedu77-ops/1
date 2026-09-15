@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { CategoryIcon } from '../ui/ProgramThumb';
 import { InstructionalThumb } from '../media/InstructionalThumb';
-import { MV_CONTENT_TITLE, MV_META } from '../../lib/masterUiClasses';
+import { MV_CONTENT_TITLE } from '../../lib/masterUiClasses';
+import { ContentCardMetaLine } from '../content/ContentCardMetaLine';
 import {
   getImageFallbackSrc,
   isRemoteImage,
@@ -187,7 +188,6 @@ export function LessonCatalogCard({
   const { title, subtitle } = splitLessonCardTitle(rawTitle);
   const eyebrow = (decisionMeta ?? categoryFallback).trim() || categoryFallback;
   const description = (supportMeta ?? subtitle).trim();
-  const descriptionParts = description.split(/\s*·\s*/).map((part) => part.trim()).filter(Boolean).slice(0, 3);
   const cornerText = variant === 'home' ? cornerLabel?.replace(/^추천\s*/u, '') : cornerLabel;
   const showUsed = variant === 'library' && used;
   const showFavorite = variant === 'library' && Boolean(onFavorite);
@@ -238,11 +238,10 @@ export function LessonCatalogCard({
             ) : null}
           </span>
           <span className="block px-3 pb-3.5 pt-2.5">
-            {eyebrow ? <span className={`${MV_META} block`}>{eyebrow}</span> : null}
+            <ContentCardMetaLine primary={eyebrow} secondary={description} />
             <span className={`${MV_CONTENT_TITLE} mt-1.5 block line-clamp-1 transition-colors duration-200 group-hover:text-slate-700`}>
               {title}
             </span>
-            {description ? <span className={`${MV_META} mt-3 block text-slate-600`}>{description}</span> : null}
           </span>
         </button>
 
@@ -401,14 +400,7 @@ export function LessonCatalogCard({
 
       <div className="flex h-[96px] shrink-0 flex-col gap-2 bg-white p-3">
         <div className="flex h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
-          {descriptionParts.length > 0 ? descriptionParts.map((part, index) => (
-            <span
-              key={`${part}-${index}`}
-              className="min-w-0 truncate after:mx-1.5 after:text-[color:var(--spm-t3)] after:content-['·'] last:after:content-none"
-            >
-              {part}
-            </span>
-          )) : <span className="text-[12px] font-semibold leading-5 text-slate-400">&nbsp;</span>}
+          {description ? <span className="min-w-0 truncate">{description}</span> : <span className="text-[12px] font-semibold leading-5 text-slate-400">&nbsp;</span>}
         </div>
 
         {locked ? (

@@ -27,12 +27,12 @@ export function lockedRosterStudentIdsEqual(lockedStudentIds: readonly string[],
 }
 
 export function resolveSessionAttendanceRoster(
-  session: { rosterLockedAt?: string | null; attendance?: ReadonlyArray<{ studentId: string; studentName: string }>; status?: string } | null,
+  session: { rosterLockedAt?: string | null; roster?: ReadonlyArray<{ studentId: string; studentName: string }>; attendance?: ReadonlyArray<{ studentId: string; studentName: string }>; status?: string } | null,
   selectedClass: { studentIds: readonly string[] } | null,
   students: ReadonlyArray<{ id: string; name: string }>,
 ) {
   if (isSessionRosterLocked(session)) {
-    return (session?.attendance ?? []).map((item) => ({ id: item.studentId, name: item.studentName }));
+    return (session?.roster ?? session?.attendance ?? []).map((item) => ({ id: item.studentId, name: item.studentName }));
   }
   const currentRoster = students.filter((student) => selectedClass?.studentIds.includes(student.id));
   const historicalRoster = session?.status === 'completed'

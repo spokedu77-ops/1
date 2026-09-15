@@ -75,15 +75,17 @@ describe('SPOMOVE-MASTER-CARD-UX-P1-01', () => {
     }
   });
 
-  it('keeps execution actions in Preview and out of Browse cards', () => {
+  it('keeps detailed execution settings in Preview and a compact direct-start affordance in Browse cards', () => {
     expect(hub).not.toContain('활동 준비');
     expect(hub).not.toContain('시작 설정');
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(preview).toContain('활동 준비');
     expect(preview).toContain('시작 설정');
     expect(preview).toContain('spm-btn-primary');
-    expect(hub).not.toContain('<Play ');
-    expect(hub).toContain("import { ChevronDown, Heart, Search, X } from 'lucide-react'");
+    expect(hub).toContain('<Play ');
+    expect(hub).toContain("import { ChevronDown, Heart, Play, Search, X } from 'lucide-react'");
+    expect(hub).toContain('data-spm-spomove-card-action="start"');
+    expect(hub).toContain('startHref={sessionContext ? undefined');
     expect(hub).toContain('h-11 w-11');
   });
 
