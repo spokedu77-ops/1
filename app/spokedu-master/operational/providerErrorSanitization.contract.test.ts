@@ -15,7 +15,7 @@ describe('SPOKEDU MASTER provider error sanitization contract', () => {
 
     expect(source).toContain('masterFetchJson');
     expect(source).toContain('getMasterRequestErrorMessage(caught)');
-    expect(source).toContain('setError(getProviderErrorMessage(caught))');
+    expect(source).toMatch(/setError\(getProviderErrorMessage\((?:caught|rejected\.reason)\)\)/);
     expect(source).not.toContain('setError(caught instanceof Error ? caught.message');
     expect(source).not.toContain('throw new Error(json.error');
     expect(source).not.toContain('`HTTP ${response.status}`');

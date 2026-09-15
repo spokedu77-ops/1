@@ -45,7 +45,7 @@ describe('lesson discovery and execution flow contract', () => {
 
     expect(dashboard).not.toContain('HomeOpsBoard');
     expect(dashboard).toContain('HomeContinueCard');
-    expect(dashboard).toContain('favoriteContentRefsByOwner');
+    expect(dashboard).toContain('isFavoriteContent');
     expect(dashboard).not.toContain('resolveHomeAnchor');
     expect(dashboard).toContain('WeeklyProgramCard');
     expect(dashboard).not.toContain('WeeklyFeaturedCard');

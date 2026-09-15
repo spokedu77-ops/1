@@ -33,7 +33,7 @@ describe('VALUE / Connected Memory continuity', () => {
     const featuredIdx = dashboard.indexOf('data-dashboard-section="featured-flow"');
     expect(continuityIdx).toBeGreaterThan(-1);
     expect(featuredIdx).toBeGreaterThan(-1);
-    expect(dashboard).toContain('favoriteContentRefsByOwner');
+    expect(dashboard).toContain('isFavoriteContent');
     expect(dashboard).not.toContain('data-dashboard-section="operations-flow"');
     expect(dashboard).not.toContain('surface="home"');
     expect(panel).toContain("surface === 'home'");
