@@ -7,15 +7,27 @@ import { Suspense, useEffect, useState } from 'react';
 import { MasterEmailOtpForm } from '@/app/components/auth/MasterEmailOtpForm';
 import { useMasterEmailOtp } from '@/app/components/auth/useMasterEmailOtp';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { applyLoginSessionPreference } from '@/app/lib/auth/sessionPersistence';
-import { getSafeMasterLoginReturnPath } from '../lib/masterLoginReturn';
+import { applyLoginSessionPreference, clearLoginSessionMarkers } from '@/app/lib/auth/sessionPersistence';
+import {
+  getSafeMasterLoginReturnPath,
+  resolveMasterEntryAccess,
+  type MasterEntryAccess,
+} from '../lib/masterLoginReturn';
 
 async function resolveMasterDestination(next: string) {
-  const response = await fetch('/api/spokedu-master/profile', { cache: 'no-store' });
-  if (!response.ok) return next;
-  const json = await response.json() as { data?: { onboardingDone?: boolean } | null };
-  if (json.data?.onboardingDone) return next;
-  return `/spokedu-master/onboarding?next=${encodeURIComponent(next)}`;
+  const response = await fetch('/api/spokedu-master/access', {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+  const access = response.ok
+    ? await response.json() as MasterEntryAccess
+    : null;
+  const decision = resolveMasterEntryAccess(response.status, access, next);
+  if (decision.clearBrowserSession) {
+    await getSupabaseBrowserClient().auth.signOut({ scope: 'local' }).catch(() => undefined);
+    clearLoginSessionMarkers();
+  }
+  return decision.destination;
 }
 
 function MasterLoginContent() {
@@ -30,10 +42,8 @@ function MasterLoginContent() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { data } = await getSupabaseBrowserClient().auth.getUser();
-      if (!data.user || cancelled) return;
       const destination = await resolveMasterDestination(next);
-      if (!cancelled) router.replace(destination);
+      if (!cancelled && destination) router.replace(destination);
     })().finally(() => {
       if (!cancelled) setChecking(false);
     });
@@ -62,7 +72,8 @@ function MasterLoginContent() {
     const result = await otp.submit();
     if (!result.ok || result.kind === 'sent') return;
     applyLoginSessionPreference(true);
-    router.replace(await resolveMasterDestination(next));
+    const destination = await resolveMasterDestination(next);
+    if (destination) router.replace(destination);
     router.refresh();
   };
 

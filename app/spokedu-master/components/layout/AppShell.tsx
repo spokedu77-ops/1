@@ -14,7 +14,7 @@ import { hasMasterEntitlement } from '../../lib/masterAccessModel';
 import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvider';
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../../store';
-import { getMasterRouteRequirement, isProtectedMasterRoute, type MasterCapability } from './masterRouteAccess';
+import { getMasterRouteRequirement, getSafeMasterReturnPath, isProtectedMasterRoute, type MasterCapability } from './masterRouteAccess';
 import { buildMasterLoginHref } from '../../lib/masterLoginReturn';
 import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
 
@@ -184,8 +184,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const syncFavoriteProgramsFromServer = useMasterStore((state) => state.syncFavoriteProgramsFromServer);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const syncMasterProfile = useMasterStore((state) => state.syncMasterProfile);
-  const [storeHydrated, setStoreHydrated] = useState(false);
-  const [subscriptionSynced, setSubscriptionSynced] = useState(false);
   const [accessGuard, setAccessGuard] = useState<MasterAccessGuard>({
     pathname: '',
     status: 'checking',
@@ -252,11 +250,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     setGateJourneyId(`journey_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`);
   }, [gateJourneyId, routeGateDenied]);
   useEffect(() => {
-    if (isLanding || isPublicDocument) {
-      setSubscriptionSynced(true);
-      return;
-    }
-    void Promise.all([syncSubscription(), syncMasterProfile()]).finally(() => setSubscriptionSynced(true));
+    if (isLanding || isPublicDocument) return;
+    void Promise.all([syncSubscription(), syncMasterProfile()]);
   }, [isLanding, isPublicDocument, syncMasterProfile, syncSubscription]);
 
   const canLoadEntitledContent =
@@ -270,12 +265,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     else void loadPrograms();
     void syncFavoriteProgramsFromServer();
   }, [accessGuard.status, basePath, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, pathname, syncFavoriteProgramsFromServer]);
-
-  useEffect(() => {
-    setStoreHydrated(useMasterStore.persist.hasHydrated());
-    const unsubscribe = useMasterStore.persist.onFinishHydration(() => setStoreHydrated(true));
-    return unsubscribe;
-  }, []);
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
@@ -329,8 +318,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     }
   }, []);
 
-  const onboardingDone = accessGuard.snapshot?.onboardingDone ?? profile?.onboardingDone ?? false;
-
   useEffect(() => {
     if (!accessGuard.snapshot || !profile) return;
     const serverFields = {
@@ -342,12 +329,13 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, [accessGuard.snapshot?.onboardingDone, profile, setProfile]);
 
   useEffect(() => {
-    if (isAdmin || isLanding || isPublicDocument || !storeHydrated || !subscriptionSynced) return;
-    if (isProtectedRoute && accessGuard.status !== 'allowed') return;
-    if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !onboardingDone) {
-      router.replace(`${basePath}/onboarding`);
+    if (isAdmin || isLanding || isPublicDocument || !isProtectedRoute) return;
+    if (accessGuard.pathname !== pathname || accessGuard.status !== 'allowed' || !accessGuard.snapshot) return;
+    if (!isSession && !isOnboarding && !isParentView && !isPayment && !accessGuard.snapshot.onboardingDone) {
+      const next = getSafeMasterReturnPath(currentPathWithQuery);
+      router.replace(`${basePath}/onboarding?next=${encodeURIComponent(next)}`);
     }
-  }, [accessGuard.status, accessGuard.snapshot?.onboardingDone, basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, onboardingDone, profile, router, storeHydrated, subscriptionSynced]);
+  }, [accessGuard, basePath, currentPathWithQuery, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, pathname, router]);
 
   useEffect(() => {
     if (!isProtectedRoute) {

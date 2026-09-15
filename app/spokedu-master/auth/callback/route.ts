@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+import { getSpokeduMasterAccessSnapshot } from '@/app/lib/server/spokeduMasterAccess';
 import { getSpokeduMasterProfile, upsertSpokeduMasterProfile } from '@/app/lib/server/spokeduMasterProfile';
 import { getSafeMasterLoginReturnPath } from '../../lib/masterLoginReturn';
 
@@ -32,7 +33,12 @@ export async function GET(request: Request) {
     if (created.error) return NextResponse.redirect(new URL('/spokedu-master/login?error=profile_create', url.origin));
   }
 
-  const destination = profile.row?.onboarding_done
+  const access = await getSpokeduMasterAccessSnapshot();
+  if (!access.ok) {
+    return NextResponse.redirect(new URL('/spokedu-master/login?error=access_check', url.origin));
+  }
+
+  const destination = access.snapshot.onboardingDone
     ? next
     : `/spokedu-master/onboarding?next=${encodeURIComponent(next)}`;
   return NextResponse.redirect(new URL(destination, url.origin));

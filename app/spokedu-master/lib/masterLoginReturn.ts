@@ -45,3 +45,41 @@ export function buildMasterLoginHref(value: string | null | undefined) {
   const next = getSafeMasterLoginReturnPath(value);
   return `/spokedu-master/login?next=${encodeURIComponent(next)}`;
 }
+
+export type MasterEntryAccess = {
+  authenticated: true;
+  onboardingDone: boolean;
+  isAdmin: boolean;
+};
+
+export type MasterEntryDecision = {
+  destination: string | null;
+  clearBrowserSession: boolean;
+};
+
+export function resolveMasterEntryDestination(
+  access: MasterEntryAccess,
+  next: string,
+) {
+  const safeNext = getSafeMasterLoginReturnPath(next);
+  return access.onboardingDone
+    ? safeNext
+    : `/spokedu-master/onboarding?next=${encodeURIComponent(safeNext)}`;
+}
+
+export function resolveMasterEntryAccess(
+  status: number,
+  access: MasterEntryAccess | null,
+  next: string,
+): MasterEntryDecision {
+  if (status === 401) {
+    return { destination: null, clearBrowserSession: true };
+  }
+  if (status < 200 || status >= 300 || access?.authenticated !== true) {
+    return { destination: null, clearBrowserSession: false };
+  }
+  return {
+    destination: resolveMasterEntryDestination(access, next),
+    clearBrowserSession: false,
+  };
+}

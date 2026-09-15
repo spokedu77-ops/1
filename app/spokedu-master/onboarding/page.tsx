@@ -58,10 +58,10 @@ export default function OnboardingPage() {
   const [programTypes, setProgramTypes] = useState<string[]>(profile?.programTypes ?? []);
 
   useEffect(() => {
-    if (serverOnboardingDone || profile?.onboardingDone) {
+    if (serverOnboardingDone) {
       router.replace(returnPath);
     }
-  }, [profile?.onboardingDone, returnPath, router, serverOnboardingDone]);
+  }, [returnPath, router, serverOnboardingDone]);
 
   const profileValid = name.trim().length > 0 && name.trim().length <= 20;
   const canNext = useMemo(() => {
