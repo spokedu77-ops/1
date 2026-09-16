@@ -65,7 +65,7 @@ describe('SPOKEDU MASTER billing API contracts', () => {
   });
 
   it('does not expose billing keys in API responses or monitoring tags', () => {
-    expect(issueRoute).toContain('providerBillingKeySecretId: billingKeySecretId');
+    expect(issueRoute).toContain('providerBillingKeySecretId: isUpgrade ? null : billingKeySecretId');
     expect(issueRoute).not.toContain('providerBillingKey: billing.billingKey');
     const responseSection = issueRoute.slice(issueRoute.lastIndexOf('return NextResponse.json'));
     expect(responseSection).not.toContain('billingKey');

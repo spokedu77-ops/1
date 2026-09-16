@@ -18,7 +18,7 @@ describe('MASTER public product contract', () => {
     expect(contract.schemaVersion).toBe(PUBLIC_PRODUCT_CONTRACT_SCHEMA_VERSION);
     expect(contract.annualSold).toBe(false);
     expect(contract.freeStartSupported).toBe(true);
-    expect(contract.productDisplayName).toBe('스포키듀 구독시스템');
+    expect(contract.productDisplayName).toBe('SPOKEDU MASTER');
 
     const lite = getPublicPlan('lite');
     const premium = getPublicPlan('premium');

@@ -121,4 +121,12 @@ describe('LibraryView favorites contract', () => {
     expect(loadingIndex).toBeGreaterThan(-1);
     expect(catalogIndex).toBeGreaterThan(loadingIndex);
   });
+
+  it('uses recovery actions that match each catalog load failure', () => {
+    expect(source).toContain("programsError === 'unauthorized'");
+    expect(source).toContain("buildMasterLoginHref('/spokedu-master/library')");
+    expect(source).toContain("programsError === 'forbidden'");
+    expect(source).toContain('href=\"/spokedu-master/payment\"');
+    expect(source).toContain('onClick={() => void reloadPrograms()}');
+  });
 });

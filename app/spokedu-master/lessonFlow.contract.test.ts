@@ -52,7 +52,8 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).not.toContain('data-weekly-featured');
     expect(dashboard).toContain('이번 주 놀이체육 추천');
     expect(dashboard).toContain('놀이체육 더 보기');
-    expect(dashboard).toContain('!program.isPro');
+    expect(dashboard).toContain('selectWeeklyProgramsById(programs)');
+    expect(dashboard).toContain('isFreePreviewProgramId(program.id)');
     expect(dashboard).toContain('data-dashboard-section="spomove-extension"');
     expect(dashboard).toContain('featuredSpomove.slice(0, 4)');
     expect(dashboard).not.toContain('data-dashboard-section="spomove-discovery"');

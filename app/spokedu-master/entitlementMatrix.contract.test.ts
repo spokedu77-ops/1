@@ -25,6 +25,7 @@ function row(overrides: Partial<SpokeduMasterSubscriptionRow>): SpokeduMasterSub
 /** Locked capability matrix: server snapshot ↔ catalog ↔ GateWall / TabBar / routes. */
 const CAPABILITY_MATRIX = {
   free: {
+    canBrowseLibrary: true,
     canUseLibrary: false,
     canUseClassTools: true,
     canUseAttendance: false,
@@ -32,6 +33,7 @@ const CAPABILITY_MATRIX = {
     canUseSpomove: false,
   },
   lite: {
+    canBrowseLibrary: true,
     canUseLibrary: true,
     canUseClassTools: true,
     canUseAttendance: true,
@@ -39,6 +41,7 @@ const CAPABILITY_MATRIX = {
     canUseSpomove: false,
   },
   premium: {
+    canBrowseLibrary: true,
     canUseLibrary: true,
     canUseClassTools: true,
     canUseAttendance: true,
@@ -46,8 +49,9 @@ const CAPABILITY_MATRIX = {
     canUseSpomove: true,
   },
   expired: {
+    canBrowseLibrary: true,
     canUseLibrary: false,
-    canUseClassTools: false,
+    canUseClassTools: true,
     canUseAttendance: false,
     canUseRecords: false,
     canUseSpomove: false,
@@ -107,12 +111,16 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
   });
 
   it('keeps product catalog entitlements aligned with the same matrix', () => {
-    expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements).toEqual(CAPABILITY_MATRIX.lite);
-    expect(MASTER_PRODUCT_CATALOG.premium.featureEntitlements).toEqual(CAPABILITY_MATRIX.premium);
+    const { canBrowseLibrary: _liteBrowse, ...liteCapabilities } = CAPABILITY_MATRIX.lite;
+    const { canBrowseLibrary: _premiumBrowse, ...premiumCapabilities } = CAPABILITY_MATRIX.premium;
+    expect(_liteBrowse).toBe(true);
+    expect(_premiumBrowse).toBe(true);
+    expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements).toEqual(liteCapabilities);
+    expect(MASTER_PRODUCT_CATALOG.premium.featureEntitlements).toEqual(premiumCapabilities);
   });
 
   it('maps protected routes to the matrix capability keys', () => {
-    expect(getMasterRouteRequirement('/spokedu-master/library').capability).toBe('library');
+    expect(getMasterRouteRequirement('/spokedu-master/library').capability).toBe('libraryBrowse');
     expect(getMasterRouteRequirement('/spokedu-master/programs').capability).toBe('library');
     expect(getMasterRouteRequirement('/spokedu-master/favorites').capability).toBe('library');
     expect(getMasterRouteRequirement('/spokedu-master/manage').capability).toBe('attendance');

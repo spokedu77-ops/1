@@ -17,7 +17,7 @@ const TAB_ICONS = {
 
 const TAB_CAPABILITIES = {
   dashboard: 'authenticated',
-  programs: 'library',
+  programs: 'libraryBrowse',
   favorites: 'library',
   manage: 'attendance',
   'class-tools': 'classTools',
@@ -44,6 +44,7 @@ function isActivePath(pathname: string, href: string) {
 function canUseTab(snapshot: MasterAccessSnapshot | null | undefined, capability: MasterCapability) {
   if (!snapshot) return true;
   if (capability === 'authenticated') return snapshot.authenticated;
+  if (capability === 'libraryBrowse') return snapshot.canBrowseLibrary;
   if (capability === 'library') return snapshot.canUseLibrary;
   if (capability === 'classTools') return snapshot.canUseClassTools;
   if (capability === 'attendance') return snapshot.canUseAttendance;

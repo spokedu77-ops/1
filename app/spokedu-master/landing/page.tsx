@@ -58,19 +58,6 @@ const PRICING = [
     badgeColor: 'var(--spm-acc)',
     recommended: true,
   },
-  {
-    id: 'center',
-    title: 'Center',
-    badge: '기관·센터용',
-    price: MASTER_PRODUCT_CATALOG.center.priceLabel,
-    period: MASTER_PRODUCT_CATALOG.center.billingCycleLabel,
-    desc: '여러 수업을 운영하는 센터와 기관을 위한 플랜',
-    includes: ['프리미엄 기능 전체', '센터 수업 콘텐츠 활용', '기관 제출용 안내문', '추가 계정·기관 도입 별도 문의'],
-    accent: 'var(--spm-grn-a12)',
-    border: 'var(--spm-grn-a38)',
-    badgeColor: 'var(--spm-grn)',
-    recommended: false,
-  },
 ] as const;
 
 const STATS = [
@@ -82,7 +69,7 @@ const STATS = [
 
 const FLOW = [
   { num: '1', label: '오늘 수업 결정', caption: '오늘 일정과 수업반을 보고 라이브러리에서 활동을 고릅니다', color: 'var(--spm-acc-a14)', accent: 'var(--spm-acc)' },
-  { num: '2', label: '현장에서 바로 운영', caption: '출석·활동·수업 도구를 한 Session에서 사용하고, Premium에서는 SPOMOVE까지 이어갑니다', color: 'var(--spm-grn-a12)', accent: 'var(--spm-grn)' },
+  { num: '2', label: '현장에서 바로 운영', caption: '출석·활동·수업 도구를 한 Session에서 사용하고, 프리미엄에서는 SPOMOVE까지 이어갑니다', color: 'var(--spm-grn-a12)', accent: 'var(--spm-grn)' },
   { num: '3', label: '기록하고 다음 수업 연결', caption: '완료한 활동과 메모, 안내문을 남겨 다음 준비를 더 빠르게 시작합니다', color: 'var(--spm-amb-a12)', accent: 'var(--spm-amb)' },
 ] as const;
 
@@ -129,10 +116,10 @@ export default function LandingPage() {
           <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/login?next=/spokedu-master/dashboard" className="flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+          <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
             로그인
           </Link>
-          <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none">
+          <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none">
             시작하기
           </Link>
         </div>
@@ -162,7 +149,7 @@ export default function LandingPage() {
               콘텐츠는 시작을 빠르게 하고, 일정·출석·도구는 현장 운영을 매끄럽게 하며, 누적 기록은 다음 수업 준비를 더 쉽게 만듭니다.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black focus-visible:outline-none sm:w-auto sm:min-w-[200px]">
+            <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black focus-visible:outline-none sm:w-auto sm:min-w-[200px]">
               <Play size={16} fill="currentColor" />
               SPOKEDU MASTER 시작하기
             </Link>
@@ -247,7 +234,7 @@ export default function LandingPage() {
           <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>플랜과 가격</p>
           <h2 className="mb-4 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 품질에 맞는 플랜</h2>
           <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>라이트·프리미엄 월 자동결제 · 센터는 별도 문의</p>
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-[660px] gap-5 sm:grid-cols-2">
             {PRICING.map((p) => (
               <div key={p.id} className="rounded-[22px] p-6" style={{ background: p.accent, border: `1.5px solid ${p.border}` }}>
                 {p.recommended ? (
@@ -259,9 +246,9 @@ export default function LandingPage() {
                   <h3 className="text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{p.title}</h3>
                   <div className="text-right">
                     <span className="text-[24px] font-black" style={{ color: 'var(--spm-t)' }}>
-                      {p.id === 'center' ? p.price : `${p.price}원`}
+                      {p.price}원
                     </span>
-                    {p.id !== 'center' ? <span className="ml-1 text-[12px]" style={{ color: 'var(--spm-t3)' }}>/{p.period}</span> : null}
+                    <span className="ml-1 text-[12px]" style={{ color: 'var(--spm-t3)' }}>/{p.period}</span>
                   </div>
                 </div>
                 <p className="mt-2 text-[13px] font-medium" style={{ color: 'var(--spm-t2)' }}>{p.desc}</p>
@@ -273,18 +260,20 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link
-                  href={p.id === 'center' ? MASTER_CENTER_INQUIRY_HREF : `/spokedu-master/payment${p.id === 'premium' ? '?plan=premium' : p.id === 'lite' ? '?plan=lite' : ''}`}
-                  className={
-                    p.id === 'center'
-                      ? 'mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white'
-                      : 'spm-btn-primary mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black focus-visible:outline-none'
-                  }
-                  style={p.id === 'center' ? { background: 'var(--spm-grn-a80)' } : undefined}
+                  href={`/spokedu-master/payment${p.id === 'premium' ? '?plan=premium' : '?plan=lite'}`}
+                  className="spm-btn-primary mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black focus-visible:outline-none"
                 >
-                  {p.id === 'center' ? 'Center 도입 상담' : `${p.title} 시작하기`}
+                  {p.title} 시작하기
                 </Link>
               </div>
             ))}
+          </div>
+          <div className="mx-auto mt-8 flex max-w-[660px] flex-col gap-4 border-t border-[color:var(--spm-br2)] pt-7 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-[18px] font-semibold" style={{ color: 'var(--spm-t)' }}>센터·기관 이용</h3>
+              <p className="mt-2 text-[13px] leading-6" style={{ color: 'var(--spm-t2)' }}>이용 인원과 운영 방식에 맞춰 별도로 안내합니다. 직접 결제 없이 상담을 통해 도입합니다.</p>
+            </div>
+            <a href={MASTER_CENTER_INQUIRY_HREF} className="inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-[var(--spm-acc)]">센터·기관 이용 문의 <ChevronRight size={16} /></a>
           </div>
           <div className="mt-8 flex items-start gap-3 rounded-[14px] px-5 py-4" style={{ background: 'var(--spm-grn-a07)', border: '1px solid var(--spm-grn-a16)' }}>
             <Shield size={16} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
@@ -308,11 +297,11 @@ export default function LandingPage() {
             수업 도구는 로그인 후 바로 써 보고, 라이브러리는 라이트부터, 기록·안내문·SPOMOVE는 프리미엄에서 이용해 보세요.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black focus-visible:outline-none">
+          <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black focus-visible:outline-none">
             <Play size={16} fill="currentColor" />
             시작하기
           </Link>
-          <Link href="/login?next=/spokedu-master/dashboard" className="inline-flex h-14 items-center rounded-[14px] px-8 text-[15px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="inline-flex h-14 items-center rounded-[14px] px-8 text-[15px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             로그인
           </Link>
           </div>

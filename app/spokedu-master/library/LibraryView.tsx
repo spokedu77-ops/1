@@ -28,6 +28,9 @@ import {
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
 import { spmChipClass } from '../lib/masterUiClasses';
+import { buildMasterLoginHref } from '../lib/masterLoginReturn';
+import { isFreePreviewProgramId } from '../lib/commercialProgramAccess';
+import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
   isMasterParticipantFormat,
@@ -338,7 +341,7 @@ function RecommendationShelf({
 export default function LibraryView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { programs, programsLoaded, programsError } = useMasterStore();
+  const { programs, programsLoaded, programsError, reloadPrograms } = useMasterStore();
   const profile = useMasterStore((state) => state.profile);
   const ownerId = getFavoritesOwnerId(profile);
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
@@ -353,6 +356,9 @@ export default function LibraryView() {
   const contentMode = resolveMasterContentMode({ requestedSessionId: sessionId, hasExactScheduledSession: Boolean(sessionContext) });
   const primaryActionLabel = getMasterContentPrimaryAction(contentMode);
   const isPremium = useIsPremium();
+  const accessSnapshot = useMasterAccessSnapshot();
+  const isProgramLocked = (program: Program) =>
+    !isFreePreviewProgramId(program.id) && (!accessSnapshot.canUseLibrary || (program.isPro && !isPremium));
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [visibleCount, setVisibleCount] = useState(LIBRARY_PAGE_SIZE);
   const [filters, setFilters] = useState<ActiveFilters>(() => {
@@ -522,9 +528,19 @@ export default function LibraryView() {
           <Lock className="mx-auto h-6 w-6 text-[color:var(--spm-t3)]" />
           <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
-          <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
-            다시 구독하기
-          </Link>
+          {programsError === 'unauthorized' ? (
+            <Link href={buildMasterLoginHref('/spokedu-master/library')} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
+              로그인하기
+            </Link>
+          ) : programsError === 'forbidden' ? (
+            <Link href="/spokedu-master/payment" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
+              이용권 선택하기
+            </Link>
+          ) : (
+            <button type="button" onClick={() => void reloadPrograms()} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
+              다시 시도
+            </button>
+          )}
         </section>
       </main>
     );
@@ -606,7 +622,7 @@ export default function LibraryView() {
 
           <ProgramGrid
             programs={visiblePrograms}
-            isPremium={isPremium}
+            isProgramLocked={isProgramLocked}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
             favoriteEnabled={ownerId != null}
             sourceLibraryView="all"
@@ -655,6 +671,7 @@ export default function LibraryView() {
           program={selected.program}
           autoplayVideo={selected.autoplayVideo}
           isPremium={isPremium}
+          accessLocked={isProgramLocked(selected.program)}
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
           onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
           sourceLibraryView="all"
@@ -676,7 +693,7 @@ export default function LibraryView() {
 
 function ProgramGrid({
   programs,
-  isPremium,
+  isProgramLocked,
   isFavorite,
   favoriteEnabled,
   sourceLibraryView,
@@ -688,7 +705,7 @@ function ProgramGrid({
   addingProgramId,
 }: {
   programs: Program[];
-  isPremium: boolean;
+  isProgramLocked: (program: Program) => boolean;
   isFavorite: (programId: string) => boolean;
   favoriteEnabled: boolean;
   sourceLibraryView: 'all';
@@ -705,7 +722,7 @@ function ProgramGrid({
         <ProgramCard
           key={program.id}
           program={program}
-          locked={program.isPro && !isPremium}
+          locked={isProgramLocked(program)}
           favorite={isFavorite(program.id)}
           favoriteEnabled={favoriteEnabled}
           detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
@@ -719,7 +736,7 @@ function ProgramGrid({
           }
           primaryActionLabel={primaryActionLabel}
           onPrimaryAction={onAddToSession ? () => onAddToSession(program) : undefined}
-          primaryActionDisabled={addingProgramId !== null || program.isPro && !isPremium}
+          primaryActionDisabled={addingProgramId !== null || isProgramLocked(program)}
         />
       ))}
     </div>

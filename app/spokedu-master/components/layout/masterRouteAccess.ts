@@ -1,4 +1,4 @@
-export type MasterCapability = 'authenticated' | 'library' | 'classTools' | 'attendance' | 'records' | 'spomove';
+export type MasterCapability = 'authenticated' | 'libraryBrowse' | 'library' | 'classTools' | 'attendance' | 'records' | 'spomove';
 
 export type MasterRouteRequirement = {
   capability: MasterCapability;
@@ -12,7 +12,8 @@ export function isProtectedMasterRoute(pathname: string, basePath: string) {
     `${basePath}/terms`,
     `${basePath}/privacy`,
     `${basePath}/parent`,
-    `${basePath}/payment`,
+    `${basePath}/login`,
+    `${basePath}/auth`,
   ];
   if (publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
     return false;
@@ -41,7 +42,7 @@ export function getMasterRouteRequirement(pathname: string, basePath = '/spokedu
     return { capability: 'attendance' };
   }
   if (pathname === `${basePath}/library` || pathname.startsWith(`${basePath}/library/`)) {
-    return { capability: 'library' };
+    return { capability: 'libraryBrowse' };
   }
   if (pathname === `${basePath}/class-tools` || pathname.startsWith(`${basePath}/class-tools/`)) {
     return { capability: 'classTools' };

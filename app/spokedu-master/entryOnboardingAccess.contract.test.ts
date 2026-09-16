@@ -18,7 +18,9 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
   it('keeps onboarding to account setup only', () => {
     const source = read('app/spokedu-master/onboarding/page.tsx');
 
-    expect(source).toContain("router.replace('/spokedu-master/dashboard')");
+    expect(source).toContain("router.replace(searchParams.has('next') ? returnPath : '/spokedu-master/classes?create=1')");
+    expect(source).toContain('if (serverOnboardingDone)');
+    expect(source).not.toContain('serverOnboardingDone || profile?.onboardingDone');
     expect(source).toContain('시작하기');
     expect(source).toContain('/api/spokedu-master/profile');
     expect(source).not.toContain('trialEndsAt');
@@ -62,10 +64,22 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
     expect(shell).toContain('buildMasterGateContext');
     expect(shell).toContain('buildMasterGateDisplayModel');
     expect(shell).toContain('accessGuard.snapshot?.onboardingDone');
+    expect(shell).toContain('!accessGuard.snapshot.onboardingDone');
+    expect(shell).not.toContain('accessGuard.snapshot?.onboardingDone ?? profile?.onboardingDone');
     expect(shell).not.toContain('isTrialExpired');
     expect(shell).not.toContain('MASTER_CENTER_INQUIRY_HREF');
     expect(shell).not.toContain("plan === 'lite'");
     expect(shell).not.toContain("plan === 'premium'");
+  });
+
+  it('uses the server access snapshot as the login redirect authority', () => {
+    const login = read('app/spokedu-master/login/page.tsx');
+
+    expect(login).toContain("fetch('/api/spokedu-master/access'");
+    expect(login).toContain("signOut({ scope: 'local' })");
+    expect(login).toContain('clearLoginSessionMarkers()');
+    expect(login).not.toContain('.auth.getUser()');
+    expect(login).not.toContain("fetch('/api/spokedu-master/profile'");
   });
 
   it('does not keep duplicate page-level gates for protected feature pages', () => {

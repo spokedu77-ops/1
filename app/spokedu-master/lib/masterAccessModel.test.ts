@@ -25,7 +25,9 @@ const freeSnapshot: MasterAccessSnapshot = {
   cancelAtPeriodEnd: false,
   isAdmin: false,
   isCenterOrTeam: false,
+  canBrowseLibrary: true,
   canUseLibrary: false,
+  freePreviewProgramIds: ['68'],
   canUseClassTools: true,
   canUseAttendance: false,
   canUseRecords: false,
@@ -63,7 +65,9 @@ describe('masterAccessModel', () => {
       getEntitlementPaymentHref({
         ...liteSnapshot,
         subscriptionStatus: 'expired',
-        canUseLibrary: false,
+        canBrowseLibrary: true,
+  canUseLibrary: false,
+  freePreviewProgramIds: ['68'],
         canUseClassTools: false,
         canUseAttendance: false,
         canUseRecords: false,
@@ -96,7 +100,7 @@ describe('commercial launch architecture contracts', () => {
     const appShell = read('app/spokedu-master/components/layout/AppShell.tsx');
 
     expect(provider).toContain('MasterAccessProvider');
-    expect(dashboard).toContain('EntitlementPreviewHome');
+    expect(dashboard).toContain('selectWeeklyProgramsById(programs)');
     expect(dashboard).toContain('EntitledDashboardView');
     expect(preview).toContain('이용권이 필요합니다');
     expect(appShell).toContain('MasterAccessProvider');
@@ -142,7 +146,7 @@ describe('commercial launch architecture contracts', () => {
     const provider = read('app/spokedu-master/access/MasterAccessProvider.tsx');
 
     expect(dashboard).toContain('useMasterAccessSnapshot');
-    expect(dashboard).toContain('hasMasterEntitlement(accessSnapshot)');
+    expect(dashboard).toContain('isFreePreviewProgramId(program.id)');
     expect(dashboard).not.toContain('canUseSpomove(');
     expect(classRecord).toContain("redirect('/spokedu-master/activity')");
     expect(shop).toContain('useMasterCanBuySpomat');

@@ -27,6 +27,7 @@ const FIELD_TABS: readonly { id: FieldTab; label: string; note: string }[] = [
 ];
 
 const HERO_LINES = homePage.hero.lines;
+const HERO_AUDIENCE_PHRASE = '개인·소그룹까지,';
 
 function useHomeReveal() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -119,21 +120,19 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
           <div className={styles.heroContent}>
             <p className={styles.eyebrow}>{homePage.hero.eyebrow}</p>
             <h1 id="home-hero-heading" className={`${marketingHeroDisplay} ${koreanText} ${styles.heroHeading}`}>
-              {HERO_LINES.map((line, index) => (
-                <span key={line}>{index > 0 ? ` ${line}` : line}</span>
-              ))}
+              {HERO_LINES[0].replace(HERO_AUDIENCE_PHRASE, '')}<span className={styles.heroAudiencePhrase}>{HERO_AUDIENCE_PHRASE}</span>{' '}{HERO_LINES[1]}
             </h1>
             <p className={`${styles.heroLead} ${koreanText}`}>{homePage.hero.support}</p>
+            <nav className={styles.intent} aria-label="방문 목적 선택">
+              <p>무엇을 찾고 계신가요?</p>
+              <TrackedLink href={homePage.hero.primaryCta.href} trackLabel={homePage.hero.primaryCta.trackLabel} className={`${styles.intentRow} ${brandFocusRing}`}>
+                <span>01</span><strong>수업 상담하기</strong><Arrow />
+              </TrackedLink>
+              <TrackedLink href={homePage.hero.secondaryCta.href} trackLabel={homePage.hero.secondaryCta.trackLabel} className={`${styles.intentRow} ${brandFocusRing}`}>
+                <span>02</span><strong>수업자료·구독 둘러보기</strong><Arrow />
+              </TrackedLink>
+            </nav>
           </div>
-          <nav className={styles.intent} aria-label="방문 목적 선택">
-            <p>무엇을 찾고 계신가요?</p>
-            <TrackedLink href={homePage.hero.primaryCta.href} trackLabel={homePage.hero.primaryCta.trackLabel} className={`${styles.intentRow} ${brandFocusRing}`}>
-              <span>01</span><strong>수업 상담하기</strong><Arrow />
-            </TrackedLink>
-            <TrackedLink href={homePage.hero.secondaryCta.href} trackLabel={homePage.hero.secondaryCta.trackLabel} className={`${styles.intentRow} ${brandFocusRing}`}>
-              <span>02</span><strong>수업자료·구독 둘러보기</strong><Arrow />
-            </TrackedLink>
-          </nav>
         </div>
       </section>
 

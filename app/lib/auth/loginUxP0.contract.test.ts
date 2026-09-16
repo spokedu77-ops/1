@@ -30,7 +30,7 @@ describe('SPOKEDU login UX P0 contracts', () => {
 
   it('routes MASTER landing login CTAs through /login with next', () => {
     const landing = read('app/spokedu-master/landing/page.tsx');
-    expect(landing).toContain('href="/login?next=/spokedu-master/dashboard"');
+    expect(landing).toContain('href="/spokedu-master/login?next=/spokedu-master/dashboard"');
     expect(landing).not.toContain('href="/spokedu-master/dashboard"');
     expect(landing).toContain('LandingLoggedInBanner');
   });
@@ -38,8 +38,8 @@ describe('SPOKEDU login UX P0 contracts', () => {
   it('keeps MASTER login/start handoffs in the marketing route contract', () => {
     const site = read('app/spokedu/data/site.ts');
     const landing = read('app/spokedu-master/landing/page.tsx');
-    expect(site).toContain("dashboardLogin: '/login?next=/spokedu-master/dashboard'");
-    expect(site).toContain("onboardingLogin: '/login?next=/spokedu-master/onboarding'");
+    expect(site).toContain("dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard'");
+    expect(site).toContain("onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding'");
     expect(landing).toContain('SPOKEDU MASTER 시작하기');
   });
 

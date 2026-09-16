@@ -11,6 +11,7 @@ import {
 export type SpokeduMasterPaymentSource =
   | 'initial'
   | 'renewal'
+  | 'upgrade'
   | 'webhook'
   | 'cancel'
   | 'partial_cancel_review_required';
@@ -27,6 +28,7 @@ export type ApplySpokeduMasterPaymentInput = {
   providerCustomerKey?: string | null;
   providerBillingKeySecretId?: string | null;
   billingCycleKey?: string | null;
+  periodOverride?: { periodStart: string; periodEnd: string; nextBillingAt: string };
 };
 
 export type ApplySpokeduMasterPaymentResult =
@@ -106,7 +108,10 @@ function mapRpcReason(reason: string | null | undefined): ApplySpokeduMasterPaym
 export function validateSpokeduMasterPaymentApplyInput(input: ApplySpokeduMasterPaymentInput): ApplySpokeduMasterPaymentResult | null {
   if (!isSpokeduMasterPaidPlan(input.plan)) return reject(400, 'invalid_plan', 'Invalid order plan');
   if (parseSpokeduMasterOrderId(input.orderId) !== input.plan) return reject(400, 'plan_mismatch', 'Invalid order plan');
-  if (!Number.isInteger(input.amount) || input.amount !== SPOKEDU_MASTER_PLAN_CONFIG[input.plan].amount) {
+  const validAmount = input.source === 'upgrade'
+    ? Number.isInteger(input.amount) && input.amount > 0 && input.amount <= SPOKEDU_MASTER_PLAN_CONFIG.premium.amount - SPOKEDU_MASTER_PLAN_CONFIG.lite.amount
+    : Number.isInteger(input.amount) && input.amount === SPOKEDU_MASTER_PLAN_CONFIG[input.plan].amount;
+  if (!validAmount) {
     return reject(400, 'amount_mismatch', 'Invalid order amount');
   }
   if (!input.userId || !input.orderId || !input.paymentKey || !input.eventKey) {
@@ -121,7 +126,8 @@ export async function applySpokeduMasterPayment(
   const validation = validateSpokeduMasterPaymentApplyInput(input);
   if (validation) return validation;
 
-  const { periodStart, periodEnd, nextBillingAt } = calculateSpokeduMasterPaymentPeriod(input.approvedAt);
+  const { periodStart, periodEnd, nextBillingAt } = input.periodOverride
+    ?? calculateSpokeduMasterPaymentPeriod(input.approvedAt);
   const service = getServiceSupabase();
 
   const { data, error } = await service.rpc('spokedu_master_apply_payment', {
@@ -132,7 +138,7 @@ export async function applySpokeduMasterPayment(
     p_amount: input.amount,
     p_period_start: input.source === 'cancel' || input.source === 'partial_cancel_review_required' ? null : periodStart,
     p_period_end: input.source === 'cancel' || input.source === 'partial_cancel_review_required' ? null : periodEnd,
-    p_next_billing_at: input.source === 'renewal' || input.source === 'initial' || input.source === 'webhook' ? nextBillingAt : null,
+    p_next_billing_at: input.source === 'renewal' || input.source === 'initial' || input.source === 'webhook' || input.source === 'upgrade' ? nextBillingAt : null,
     p_event_key: input.eventKey,
     p_source: input.source,
     p_provider_customer_key: input.providerCustomerKey ?? null,

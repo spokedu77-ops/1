@@ -217,7 +217,7 @@ export default function SubscriptionPage() {
             해지 후에도 <strong>{cancelEndDate ?? '현재 이용 기간 종료일'}</strong>까지 이용할 수 있으며
             다음 결제일부터는 자동결제되지 않습니다.
             {data?.plan === 'premium' || data?.plan === 'pro'
-              ? ' 종료 후에도 수업·출석 데이터는 유지되며, Premium 기록·SPOMOVE 접근만 종료일 이후 제한됩니다.'
+              ? ' 종료 후에도 수업·출석 데이터는 유지되며, 프리미엄 기록·SPOMOVE 접근만 종료일 이후 제한됩니다.'
               : ' 종료 후에도 수업·출석 데이터는 유지됩니다.'}
           </p>
           {cancelError ? (

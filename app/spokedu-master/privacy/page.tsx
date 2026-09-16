@@ -1,6 +1,5 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
+import { PolicyHeader } from '../components/policy/PolicyHeader';
 import { MASTER_SUPPORT_EMAIL } from '../lib/productCatalog';
 
 export const metadata: Metadata = {
@@ -10,26 +9,19 @@ export const metadata: Metadata = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-8">
-      <h2 className="mb-3 text-[17px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{title}</h2>
-      <div className="space-y-3 text-[13px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>{children}</div>
+      <h2 className="mb-3 text-[20px] font-semibold leading-7" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{title}</h2>
+      <div className="space-y-3 text-[15px] font-normal leading-7" style={{ color: 'var(--spm-t2)' }}>{children}</div>
     </section>
   );
 }
 
-export default function PrivacyPage() {
+export default async function PrivacyPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+  const { from } = await searchParams;
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-      <header className="flex items-center gap-3 px-[22px] pb-6 pt-[22px] sm:px-8">
-        <Link href="/spokedu-master/landing" className="grid h-10 w-10 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="서비스 소개로 돌아가기">
-          <ArrowLeft size={18} color="var(--spm-t2)" />
-        </Link>
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
-          <h1 className="text-[18px] font-black">개인정보처리방침</h1>
-        </div>
-      </header>
+      <PolicyHeader title="개인정보처리방침" fromProfile={from === 'profile'} />
 
-      <main className="mx-auto max-w-[720px] px-[22px] pb-12 sm:px-8">
+      <main className="mx-auto max-w-[760px] px-5 pb-12 sm:px-8">
         <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 6월 28일</p>
 
         <Section title="1. 수집·처리하는 정보">
@@ -40,6 +32,7 @@ export default function PrivacyPage() {
             <li>학생 이름·그룹</li>
             <li>출석 상태, 관찰·수행·메모, 수업 기록</li>
             <li>안내문 작성·저장 내용</li>
+            <li>즐겨찾기한 수업 콘텐츠</li>
             <li>결제 주문 식별 정보와 이용권 상태</li>
             <li>접속·오류·서비스 이용 기록</li>
           </ul>
@@ -61,13 +54,12 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="4. 데이터 구분">
-          <p>서비스 운영 데이터에는 학생 정보, 수업 기록, 안내문, 로컬 작업 데이터가 포함됩니다.</p>
+          <p>서비스 운영 데이터에는 학생 정보, 수업·출석 및 학생별 기록, 안내문, 즐겨찾기와 로컬 작업 데이터가 포함됩니다.</p>
           <p>인증 계정, 결제 증빙, 법정 보관 정보는 운영 데이터 삭제와 별도로 보관될 수 있습니다.</p>
         </Section>
 
         <Section title="5. 보유 기간">
           <p>서비스 운영 데이터는 사용자가 직접 삭제하거나 탈퇴 처리가 완료될 때까지 보관될 수 있습니다. 다만 결제·분쟁·법정 보관이 필요한 정보는 관련 법령상 필요한 기간 동안 보관될 수 있습니다.</p>
-          <p>구체적인 법정 보관 기간과 파기 절차는 법률 전문가 검토가 필요한 항목입니다.</p>
         </Section>
 
         <Section title="6. 이용자의 권리">

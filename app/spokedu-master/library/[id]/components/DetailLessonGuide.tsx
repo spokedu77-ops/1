@@ -515,6 +515,7 @@ export function DetailLessonGuide({
   heroTitleRef?: Ref<HTMLHeadingElement>;
 }) {
   const title = splitLessonTitle(model.title);
+  const hasMethod = model.activityMethod.length > 0;
   const hasOverview = Boolean(model.coachScript) || model.briefingNotes.length > 0;
   const hasPhysicalPreparation = Boolean(model.setupImageUrl) || model.equipment.length > 0 || model.setupNotes.length > 0;
   const showPrepare = hasPhysicalPreparation || hasOverview;
@@ -552,10 +553,10 @@ export function DetailLessonGuide({
 
       <section
         data-detail-row="execution"
-        className={`${DETAIL_ROW_CLASS} min-[900px]:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)] min-[900px]:grid-rows-[30px_auto]`}
+        className={`${DETAIL_ROW_CLASS} ${hasMethod ? 'min-[900px]:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)] min-[900px]:grid-rows-[30px_auto]' : 'min-[900px]:grid-cols-1'}`}
       >
         <VideoPanel model={model} video={video} />
-        <MethodPanel model={model} />
+        {hasMethod ? <MethodPanel model={model} /> : null}
       </section>
 
       {showPrepare ? (

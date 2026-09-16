@@ -457,8 +457,8 @@ export function SpomoveGuidelineSheet({
                 {guideVideoState === 'locked' ? (
                   <div className={`${SPOMOVE_VIDEO_FRAME_ASPECT_CLASS} flex items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 px-5 text-center`}>
                     <div>
-                      <p className="text-sm font-bold text-slate-800">Premium에서 영상과 실행이 열립니다.</p>
-                      <Link href={lockedStartHref} className="mt-2 inline-block text-sm font-semibold text-[var(--spm-acc)]">Premium 확인</Link>
+                      <p className="text-sm font-bold text-slate-800">프리미엄에서 영상과 실행이 열립니다.</p>
+                      <Link href={lockedStartHref} className="mt-2 inline-block text-sm font-semibold text-[var(--spm-acc)]">프리미엄 확인</Link>
                     </div>
                   </div>
                 ) : guideVideoState === 'loading' ? (

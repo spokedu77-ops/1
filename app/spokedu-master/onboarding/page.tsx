@@ -2,10 +2,11 @@
 
 import { ArrowRight, BookOpen, CalendarDays, Check, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useOptionalMasterAccessContext } from '../access/MasterAccessProvider';
 import { useMasterStore, useProfile } from '../store';
 import type { UserRole } from '../types';
+import { getSafeMasterLoginReturnPath } from '../lib/masterLoginReturn';
 
 const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등'];
 const PROGRAM_TYPES = ['대근육 활동', 'SPOMOVE', '민첩성', '협동 활동', '체력'];
@@ -41,6 +42,8 @@ function ToggleChip({ label, active, onClick }: { label: string; active: boolean
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnPath = getSafeMasterLoginReturnPath(searchParams.get('next'));
   const accessContext = useOptionalMasterAccessContext();
   const serverOnboardingDone = accessContext?.snapshot.onboardingDone ?? false;
   const profile = useProfile();
@@ -55,10 +58,10 @@ export default function OnboardingPage() {
   const [programTypes, setProgramTypes] = useState<string[]>(profile?.programTypes ?? []);
 
   useEffect(() => {
-    if (serverOnboardingDone || profile?.onboardingDone) {
-      router.replace('/spokedu-master/dashboard');
+    if (serverOnboardingDone) {
+      router.replace(returnPath);
     }
-  }, [profile?.onboardingDone, router, serverOnboardingDone]);
+  }, [returnPath, router, serverOnboardingDone]);
 
   const profileValid = name.trim().length > 0 && name.trim().length <= 20;
   const canNext = useMemo(() => {
@@ -103,7 +106,7 @@ export default function OnboardingPage() {
           programTypes,
           onboardingDone: true,
         });
-        router.replace('/spokedu-master/classes?create=1');
+        router.replace(searchParams.has('next') ? returnPath : '/spokedu-master/classes?create=1');
       })
       .catch(() => {
         setSaveError('시작 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');

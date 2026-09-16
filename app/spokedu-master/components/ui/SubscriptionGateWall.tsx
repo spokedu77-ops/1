@@ -9,7 +9,7 @@ import type { MasterGateDisplayModel } from '../../lib/masterGateIntent';
 export type { MasterAccessSnapshot };
 
 type SubscriptionGateWallProps = {
-  requirement: Exclude<MasterCapability, 'authenticated'>;
+  requirement: Exclude<MasterCapability, 'authenticated' | 'libraryBrowse'>;
   snapshot: MasterAccessSnapshot;
   model?: MasterGateDisplayModel | null;
 };
@@ -64,7 +64,7 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
           <Lock size={24} className="text-slate-700" />
         </div>
         <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
-          {model?.eyebrow ?? (subscriptionBlockedFeature ? 'Premium 필요' : '이용권 필요')}
+          {model?.eyebrow ?? (subscriptionBlockedFeature ? '프리미엄 필요' : '이용권 필요')}
         </p>
         <h2 className="mt-2 text-[27px] font-black leading-tight text-slate-950">
           {model?.title ?? copy.title}

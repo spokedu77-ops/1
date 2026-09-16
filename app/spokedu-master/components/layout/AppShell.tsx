@@ -15,6 +15,7 @@ import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvi
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../../store';
 import { getMasterRouteRequirement, getSafeMasterReturnPath, isProtectedMasterRoute, type MasterCapability } from './masterRouteAccess';
+import { buildMasterLoginHref } from '../../lib/masterLoginReturn';
 import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -27,14 +28,14 @@ type MasterAccessGuard = {
 };
 
 function currentLoginRedirectHref() {
-  if (typeof window === 'undefined') return '/login';
-  const next = getSafeMasterReturnPath(`${window.location.pathname}${window.location.search}`);
-  return `/login?next=${encodeURIComponent(next)}`;
+  if (typeof window === 'undefined') return '/spokedu-master/login';
+  return buildMasterLoginHref(`${window.location.pathname}${window.location.search}`);
 }
 
 function hasRouteCapability(snapshot: MasterAccessSnapshot | null, capability: MasterCapability) {
   if (!snapshot) return false;
   if (capability === 'authenticated') return snapshot.authenticated;
+  if (capability === 'libraryBrowse') return snapshot.authenticated;
   if (capability === 'library') return snapshot.canUseLibrary;
   if (capability === 'classTools') return snapshot.canUseClassTools;
   if (capability === 'attendance') return snapshot.canUseAttendance;
@@ -183,8 +184,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const syncFavoriteProgramsFromServer = useMasterStore((state) => state.syncFavoriteProgramsFromServer);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const syncMasterProfile = useMasterStore((state) => state.syncMasterProfile);
-  const [storeHydrated, setStoreHydrated] = useState(false);
-  const [subscriptionSynced, setSubscriptionSynced] = useState(false);
   const [accessGuard, setAccessGuard] = useState<MasterAccessGuard>({
     pathname: '',
     status: 'checking',
@@ -229,7 +228,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     setCurrentPathWithQuery(buildCurrentMasterPath(pathname, params));
   }, [pathname]);
   const gateContext = useMemo(() => {
-    if (routeRequirement.capability === 'authenticated' || routeRequirement.capability === 'classTools') return null;
+    if (routeRequirement.capability === 'authenticated' || routeRequirement.capability === 'classTools' || routeRequirement.capability === 'libraryBrowse') return null;
     return buildMasterGateContext({
       capability: routeRequirement.capability,
       pathname,
@@ -251,11 +250,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     setGateJourneyId(`journey_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`);
   }, [gateJourneyId, routeGateDenied]);
   useEffect(() => {
-    if (isLanding || isPublicDocument) {
-      setSubscriptionSynced(true);
-      return;
-    }
-    void Promise.all([syncSubscription(), syncMasterProfile()]).finally(() => setSubscriptionSynced(true));
+    if (isLanding || isPublicDocument) return;
+    void Promise.all([syncSubscription(), syncMasterProfile()]);
   }, [isLanding, isPublicDocument, syncMasterProfile, syncSubscription]);
 
   const canLoadEntitledContent =
@@ -269,12 +265,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     else void loadPrograms();
     void syncFavoriteProgramsFromServer();
   }, [accessGuard.status, basePath, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, pathname, syncFavoriteProgramsFromServer]);
-
-  useEffect(() => {
-    setStoreHydrated(useMasterStore.persist.hasHydrated());
-    const unsubscribe = useMasterStore.persist.onFinishHydration(() => setStoreHydrated(true));
-    return unsubscribe;
-  }, []);
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
@@ -328,8 +318,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     }
   }, []);
 
-  const onboardingDone = accessGuard.snapshot?.onboardingDone ?? profile?.onboardingDone ?? false;
-
   useEffect(() => {
     if (!accessGuard.snapshot || !profile) return;
     const serverFields = {
@@ -341,12 +329,13 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, [accessGuard.snapshot?.onboardingDone, profile, setProfile]);
 
   useEffect(() => {
-    if (isAdmin || isLanding || isPublicDocument || !storeHydrated || !subscriptionSynced) return;
-    if (isProtectedRoute && accessGuard.status !== 'allowed') return;
-    if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !onboardingDone) {
-      router.replace(`${basePath}/onboarding`);
+    if (isAdmin || isLanding || isPublicDocument || !isProtectedRoute) return;
+    if (accessGuard.pathname !== pathname || accessGuard.status !== 'allowed' || !accessGuard.snapshot) return;
+    if (!isSession && !isOnboarding && !isParentView && !isPayment && !accessGuard.snapshot.onboardingDone) {
+      const next = getSafeMasterReturnPath(currentPathWithQuery);
+      router.replace(`${basePath}/onboarding?next=${encodeURIComponent(next)}`);
     }
-  }, [accessGuard.status, accessGuard.snapshot?.onboardingDone, basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, onboardingDone, profile, router, storeHydrated, subscriptionSynced]);
+  }, [accessGuard, basePath, currentPathWithQuery, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, pathname, router]);
 
   useEffect(() => {
     if (!isProtectedRoute) {
@@ -463,7 +452,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       <div className="min-h-dvh bg-black text-white" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
         {isAccessGuardPending ? (
           <MasterAccessCheckingState />
-        ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && accessGuard.snapshot ? (
+        ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && routeRequirement.capability !== 'libraryBrowse' && accessGuard.snapshot ? (
           <SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} model={gateDisplayModel} />
         ) : isAccessGuardDenied ? (
           <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />
@@ -495,7 +484,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
           <main className="min-h-0 flex-1 overflow-hidden bg-[var(--spm-bg)]">
             {isAccessGuardPending ? (
               <MasterAccessCheckingState />
-            ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && accessGuard.snapshot ? (
+            ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && routeRequirement.capability !== 'libraryBrowse' && accessGuard.snapshot ? (
               <SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} model={gateDisplayModel} />
             ) : isAccessGuardDenied ? (
               <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />

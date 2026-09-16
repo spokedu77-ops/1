@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   ArrowRight,
@@ -19,8 +19,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 
-const WEEKLY_RECOMMENDATION_COUNT = 4;
-
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
@@ -38,18 +36,11 @@ import { ContentCardMetaLine } from '../components/content/ContentCardMetaLine';
 import { InstructionalThumb } from '../components/media/InstructionalThumb';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
-import { cleanText, hasBrokenText } from '../lib/clean';
 import { buildHomeWeeklySupportMeta, splitLessonTitle } from '../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   programHasPlayableVideo,
-  resolveProgramHero,
 } from '../lib/program-media';
-import {
-  getProgramHomeReadiness,
-  isProgramHomeRecommendationEligible,
-} from '../lib/program-meta';
-import { sortProgramsByAgeGroupPreference } from '../lib/homeAgePreference';
 import { isMasterFirstUser } from '../lib/masterUserLoop';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
@@ -71,10 +62,8 @@ import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
 import { canReproduceSpomoveSameSettings } from '../spomove/movements/canReproduceSpomoveSameSettings';
 import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
-import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
+import { isFreePreviewProgramId, selectWeeklyProgramsById } from '../lib/commercialProgramAccess';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
-import { hasMasterEntitlement } from '../lib/masterAccessModel';
-import { EntitlementPreviewHome } from './EntitlementPreviewHome';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { Program } from '../types';
@@ -120,52 +109,6 @@ function getFirstStartPaths() {
   ] as const;
 }
 
-function isPlaceholderText(value?: string | null) {
-  const text = (value ?? '').trim();
-  return !text || hasBrokenText(text) || /확인 필요|활동 공간 확인|조정|미정|undefined|null/i.test(text);
-}
-
-function displayText(value: string | undefined, fallback: string) {
-  const text = cleanText(value, fallback);
-  return isPlaceholderText(text) ? fallback : text;
-}
-
-function getProgramTitle(program: Program) {
-  return displayText(program.title, 'SPOKEDU 수업');
-}
-
-function getHeroImage(program: Program) {
-  return resolveProgramHero(program);
-}
-
-function normalizeTitle(title: string) {
-  return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
-}
-
-function uniquePrograms(programs: Program[]) {
-  const seen = new Set<string>();
-  return programs.filter((program) => {
-    const key = normalizeTitle(getProgramTitle(program));
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function getHomeSortOrder(program: Program) {
-  return program.homeSortOrder ?? 9999;
-}
-
-function compareHomePrograms(a: Program, b: Program) {
-  return (
-    Number(b.isHot) - Number(a.isHot) ||
-    getHomeSortOrder(a) - getHomeSortOrder(b) ||
-    getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
-    Number(Boolean(getHeroImage(b))) - Number(Boolean(getHeroImage(a))) ||
-    Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
-    Number(b.isNew) - Number(a.isNew)
-  );
-}
 
 function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
   if (!path) return '';
@@ -183,30 +126,6 @@ function SpomoveThumbnailPlaceholder() {
       aria-hidden="true"
     />
   );
-}
-
-/** 추천 슬롯을 최대 4개까지 풀에서 보충한다. */
-function ensureWeeklyRecommendationCount(
-  selected: Program[],
-  pool: Program[],
-  count = WEEKLY_RECOMMENDATION_COUNT,
-): Program[] {
-  const result = selected.slice(0, count);
-  if (result.length >= count) return result;
-
-  const usedIds = new Set(result.map((program) => program.id));
-  const usedTitles = new Set(result.map((program) => normalizeTitle(getProgramTitle(program))).filter(Boolean));
-
-  for (const program of pool) {
-    if (result.length >= count) break;
-    const titleKey = normalizeTitle(getProgramTitle(program));
-    if (!titleKey || usedIds.has(program.id) || usedTitles.has(titleKey)) continue;
-    result.push(program);
-    usedIds.add(program.id);
-    usedTitles.add(titleKey);
-  }
-
-  return result;
 }
 
 function withDiscoveryReturn(href: string, returnTo: string, source: 'home') {
@@ -634,14 +553,11 @@ void SpomoveCard;
 void ActivityPanel;
 
 export default function DashboardView() {
-  const accessSnapshot = useMasterAccessSnapshot();
-  if (!hasMasterEntitlement(accessSnapshot)) {
-    return <EntitlementPreviewHome snapshot={accessSnapshot} />;
-  }
   return <EntitledDashboardView />;
 }
 
 function EntitledDashboardView() {
+  const accessSnapshot = useMasterAccessSnapshot();
   const {
     homePrograms: programs,
     homeProgramsLoaded: programsLoaded,
@@ -665,6 +581,8 @@ function EntitledDashboardView() {
   const profile = useProfile();
   const favoritesOwnerId = getFavoritesOwnerId(profile);
   const isPremium = useIsPremium();
+  const isProgramLocked = (program: Program) =>
+    !isFreePreviewProgramId(program.id) && (!accessSnapshot.canUseLibrary || (program.isPro && !isPremium));
   const recentActivityOwnerId = recentActivityOwnerResolved
     ? getRecentActivityOwnerId(profile)
     : null;
@@ -813,30 +731,8 @@ function EntitledDashboardView() {
     };
   }, []);
 
-  const weeklySelection = useMemo(
-    () =>
-      selectWeeklyRecommendationSlots(programs, {
-        isRecommendationEligible: (program) => !program.isPro && isProgramHomeRecommendationEligible(program),
-        compareFallback: (a, b) =>
-          Number(b.isHot) - Number(a.isHot) ||
-          getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
-          Number(Boolean(getHeroImage(b))) - Number(Boolean(getHeroImage(a))) ||
-          Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
-          Number(b.isNew) - Number(a.isNew) ||
-          getHomeSortOrder(a) - getHomeSortOrder(b),
-        normalizeTitle,
-      }),
-    [programs],
-  );
-  const programPool = useMemo(() => uniquePrograms(programs.filter((program) => !program.isPro)).sort(compareHomePrograms), [programs]);
-  const weeklyPrograms = useMemo(
-    () =>
-      sortProgramsByAgeGroupPreference(
-        ensureWeeklyRecommendationCount(weeklySelection.programs, programPool, WEEKLY_RECOMMENDATION_COUNT),
-        profile?.ageGroups,
-      ),
-    [programPool, profile?.ageGroups, weeklySelection.programs],
-  );
+  const programPool = programs;
+  const weeklyPrograms = useMemo(() => selectWeeklyProgramsById(programs), [programs]);
   const featuredSpomove = useMemo(
     () => resolveHomeFeaturedSpomove(featuredSpomoveSlotIds),
     [featuredSpomoveSlotIds],
@@ -863,17 +759,6 @@ function EntitledDashboardView() {
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' && programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
-      console.warn('[SPOKEDU MASTER] Weekly recommendations could not be filled to four items.');
-    }
-    if (process.env.NODE_ENV !== 'production' && weeklySelection.slotConflicts.length > 0) {
-      console.warn('[SPOKEDU MASTER] Conflicting explicit weekly slots.', weeklySelection.slotConflicts);
-    }
-    if (process.env.NODE_ENV !== 'production' && weeklySelection.slotDiagnostics.length > 0) {
-      console.warn('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.', weeklySelection.slotDiagnostics);
-    }
-  }, [programPool.length, programsLoaded, weeklyPrograms.length, weeklySelection.slotConflicts, weeklySelection.slotDiagnostics]);
 
   if (!mounted) return <DashboardSkeleton />;
 
@@ -893,7 +778,7 @@ function EntitledDashboardView() {
           <h1 className={MV_SECTION_TITLE}>수업 라이브러리를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-[15px] font-normal leading-6 text-slate-600">{message}</p>
           {isUnauthorized ? (
-            <Link href="/login?next=/spokedu-master/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold focus-visible:outline-none">로그인하기</Link>
+            <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold focus-visible:outline-none">로그인하기</Link>
           ) : isForbidden ? (
             <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[14px] font-semibold focus-visible:outline-none">다시 구독하기</Link>
           ) : (
@@ -1098,6 +983,7 @@ function EntitledDashboardView() {
           program={selectedProgram}
           autoplayVideo={previewAutoplay}
           isPremium={isPremium}
+          accessLocked={isProgramLocked(selectedProgram)}
           favorite={isFavoriteProgram(favoritesOwnerId, selectedProgram.id)}
           onFavorite={favoritesOwnerId ? () => toggleFavoriteProgram(favoritesOwnerId, selectedProgram.id) : undefined}
           onPlaybackStarted={() => {

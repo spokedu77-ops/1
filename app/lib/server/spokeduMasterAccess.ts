@@ -4,7 +4,7 @@ import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminA
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getSpokeduMasterProfile } from '@/app/lib/server/spokeduMasterProfile';
-import { canAccessTeacherMaterials } from '@/app/lib/server/teacherAuth';
+import { FREE_PREVIEW_PROGRAM_IDS } from '@/app/spokedu-master/lib/commercialProgramAccess';
 
 const EXPIRED_ACCESS_MESSAGE =
   '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 이용권을 다시 선택해 주세요.';
@@ -38,7 +38,9 @@ export type SpokeduMasterAccessSnapshot = {
   cancelAtPeriodEnd: boolean;
   isAdmin: boolean;
   isCenterOrTeam: boolean;
+  canBrowseLibrary: boolean;
   canUseLibrary: boolean;
+  freePreviewProgramIds: readonly string[];
   canUseClassTools: boolean;
   canUseAttendance: boolean;
   canUseRecords: boolean;
@@ -49,10 +51,11 @@ export type MasterAccessSnapshotResult =
   | { ok: true; userId: string; snapshot: SpokeduMasterAccessSnapshot }
   | MasterAccessFail;
 
-export type SpokeduMasterServerCapability = 'library' | 'classTools' | 'attendance' | 'records' | 'spomove';
+export type SpokeduMasterServerCapability = 'libraryBrowse' | 'library' | 'classTools' | 'attendance' | 'records' | 'spomove';
 
 const CAPABILITY_FIELD: Record<SpokeduMasterServerCapability, keyof Pick<SpokeduMasterAccessSnapshot,
-  'canUseLibrary' | 'canUseClassTools' | 'canUseAttendance' | 'canUseRecords' | 'canUseSpomove'>> = {
+  'canBrowseLibrary' | 'canUseLibrary' | 'canUseClassTools' | 'canUseAttendance' | 'canUseRecords' | 'canUseSpomove'>> = {
+  libraryBrowse: 'canBrowseLibrary',
   library: 'canUseLibrary',
   classTools: 'canUseClassTools',
   attendance: 'canUseAttendance',
@@ -134,9 +137,21 @@ export function evaluateSpokeduMasterEntitlement(
 }
 
 function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: SpokeduMasterAccessSnapshot['subscriptionStatus'], isAdmin: boolean) {
+  const freeFallback = {
+    canBrowseLibrary: true,
+    canUseLibrary: false,
+    freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
+    canUseClassTools: true,
+    canUseAttendance: false,
+    canUseRecords: false,
+    canUseSpomove: false,
+  };
+
   if (isAdmin || (plan === 'team' && status === 'active')) {
     return {
+      canBrowseLibrary: true,
       canUseLibrary: true,
+      freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
       canUseClassTools: true,
       canUseAttendance: true,
       canUseRecords: true,
@@ -144,29 +159,13 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     };
   }
 
-  if (status === 'none' && plan === 'free') {
-    return {
-      canUseLibrary: false,
-      canUseClassTools: true,
-      canUseAttendance: false,
-      canUseRecords: false,
-      canUseSpomove: false,
-    };
-  }
-
-  if (status !== 'active') {
-    return {
-      canUseLibrary: false,
-      canUseClassTools: false,
-      canUseAttendance: false,
-      canUseRecords: false,
-      canUseSpomove: false,
-    };
-  }
+  if (status !== 'active' || plan === 'free') return freeFallback;
 
   if (plan === 'lite') {
     return {
+      canBrowseLibrary: true,
       canUseLibrary: true,
+      freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
       canUseClassTools: true,
       canUseAttendance: true,
       canUseRecords: false,
@@ -176,7 +175,9 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
 
   if (plan === 'premium') {
     return {
+      canBrowseLibrary: true,
       canUseLibrary: true,
+      freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
       canUseClassTools: true,
       canUseAttendance: true,
       canUseRecords: true,
@@ -184,13 +185,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     };
   }
 
-  return {
-    canUseLibrary: false,
-    canUseClassTools: false,
-    canUseAttendance: false,
-    canUseRecords: false,
-    canUseSpomove: false,
-  };
+  return freeFallback;
 }
 
 export function buildSpokeduMasterAccessSnapshot(input: {
@@ -236,16 +231,6 @@ export function buildSpokeduMasterAccessSnapshot(input: {
 
 type ServiceSupabase = ReturnType<typeof getServiceSupabase>;
 
-function inactiveTeacherResponse(): MasterAccessFail {
-  return {
-    ok: false,
-    response: NextResponse.json(
-      { error: 'Forbidden', reason: 'inactive_teacher' },
-      { status: 403 },
-    ),
-  };
-}
-
 export async function ensureSpokeduMasterEntitlement(
   serviceSupabase: ServiceSupabase,
   userId: string,
@@ -282,9 +267,6 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
     const isAdmin = await isPlatformAdminUser(user, serverSupabase);
     if (isAdmin) {
       return { ok: true, userId: user.id, isAdmin: true, plan: 'admin' };
-    }
-    if (!(await canAccessTeacherMaterials(user, serverSupabase))) {
-      return inactiveTeacherResponse();
     }
 
     const serviceSupabase = getServiceSupabase();
@@ -361,9 +343,6 @@ export async function requireSpokeduMasterSession(): Promise<MasterSessionResult
     }
 
     const isAdmin = await isPlatformAdminUser(user, serverSupabase);
-    if (!isAdmin && !(await canAccessTeacherMaterials(user, serverSupabase))) {
-      return inactiveTeacherResponse();
-    }
 
     return {
       ok: true,
@@ -407,9 +386,6 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
         userId: user.id,
         snapshot: buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: true }),
       };
-    }
-    if (!(await canAccessTeacherMaterials(user, serverSupabase))) {
-      return inactiveTeacherResponse();
     }
 
     const serviceSupabase = getServiceSupabase();
