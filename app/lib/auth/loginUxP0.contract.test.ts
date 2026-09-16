@@ -10,7 +10,7 @@ describe('SPOKEDU login UX P0 contracts', () => {
     expect(login).toContain('router.replace(redirectPath)');
     expect(login).toContain('sessionChecked');
     expect(login).toContain("serverCheck.reason === 'no-session'");
-    expect(login).toContain('await supabase.auth.signOut()');
+    expect(login).toContain("await supabase.auth.signOut({ scope: 'local' })");
     expect(login).toContain('enforceSessionOnlyPolicy');
   });
 

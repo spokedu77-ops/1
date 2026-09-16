@@ -113,7 +113,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
   const handleLogout = async () => {
     try {
-      await getSupabaseBrowserClient().auth.signOut();
+      await getSupabaseBrowserClient().auth.signOut({ scope: 'local' });
     } catch (error) {
       devLogger.error('Logout error:', error);
     } finally {

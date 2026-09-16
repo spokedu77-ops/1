@@ -299,7 +299,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
 }
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
-type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy';
+type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
 type ColorGateCategoryFilter = 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
 
 type LaunchSettings = {
@@ -2358,30 +2358,46 @@ function SettingsScreen({
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>모션 게이트 옵션</label>
               </div>
               <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>유형</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8, opacity: launch.colorGateVariant === 'together-easy' ? 0.45 : 1 }}>
-                {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성']] as const).map(([value, label]) => {
-                  const active = launch.colorGateCategory === value;
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5, marginBottom: 8 }}>
+                {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더']] as const).map(([value, label]) => {
+                  const isTogether = value === 'together';
+                  const active = isTogether
+                    ? launch.colorGateVariant === 'together-easy' || launch.colorGateVariant === 'together-normal'
+                    : launch.colorGateCategory === value && launch.colorGateVariant !== 'together-easy' && launch.colorGateVariant !== 'together-normal';
                   return (
-                    <button key={value} type="button" disabled={launch.colorGateVariant === 'together-easy'} onClick={() => setLaunch((s) => ({ ...s, colorGateCategory: value }))}
-                      style={{ flex: '1 1 72px', minWidth: 0, padding: '7px 4px', borderRadius: 10, border: `1.5px solid ${active ? '#38BDF8' : T.border}`, background: active ? 'rgba(56,189,248,0.14)' : T.card, color: active ? '#38BDF8' : T.textDim, fontFamily: 'inherit', fontSize: 12, fontWeight: 900, cursor: launch.colorGateVariant === 'together-easy' ? 'not-allowed' : 'pointer', textAlign: 'center' }}>
+                    <button key={value} type="button" onClick={() => setLaunch((s) => {
+                      if (value === 'together') {
+                        return { ...s, colorGateVariant: s.colorGateVariant === 'solo-normal' ? 'together-normal' : 'together-easy' };
+                      }
+                      return {
+                        ...s,
+                        colorGateCategory: value,
+                        colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant === 'together-easy' ? 'solo-easy' : s.colorGateVariant,
+                      };
+                    })}
+                      style={{ minWidth: 0, minHeight: 40, padding: '7px 4px', borderRadius: 10, border: `1.5px solid ${active ? '#38BDF8' : T.border}`, background: active ? 'rgba(56,189,248,0.14)' : T.card, color: active ? '#38BDF8' : T.textDim, fontFamily: 'inherit', fontSize: 12, lineHeight: 1.2, fontWeight: 900, cursor: 'pointer', textAlign: 'center', wordBreak: 'keep-all' }}>
                       {label}
                     </button>
                   );
                 })}
               </div>
               <div style={{ marginBottom: 4, fontSize: 11, fontWeight: 800, color: T.muted }}>난이도</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 5 }}>
                 {([
-                  ['solo-easy', '쉬움', ''],
-                  ['solo-normal', '전체', '쉬움+어려움'],
-                  ['together-easy', '투게더', ''],
+                  ['single', '단일', '기본 동작'],
+                  ['compound', '복합', '전체 동작'],
                 ] as const).map(([value, label, difficulty]) => {
-                  const active = launch.colorGateVariant === value;
+                  const active = value === 'single'
+                    ? launch.colorGateVariant === 'solo-easy' || launch.colorGateVariant === 'together-easy'
+                    : launch.colorGateVariant === 'solo-normal' || launch.colorGateVariant === 'together-normal';
                   return (
                     <button
                       key={value}
                       type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, colorGateVariant: value }))}
+                      onClick={() => setLaunch((s) => {
+                        const isTogether = s.colorGateVariant === 'together-easy' || s.colorGateVariant === 'together-normal';
+                        return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : (isTogether ? 'together-normal' : 'solo-normal') };
+                      })}
                       style={{
                         minWidth: 0, padding: '8px 4px', borderRadius: 10,
                         border: `1.5px solid ${active ? '#06B6D4' : T.border}`,

@@ -136,7 +136,7 @@ type Props = {
   flowDuration?: number;
   flowLayout?: 'sequential' | 'random';
   flowIncludeBonus?: boolean;
-  colorGateVariant?: 'solo-easy' | 'solo-normal' | 'together-easy';
+  colorGateVariant?: 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
   colorGateCategory?: 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;

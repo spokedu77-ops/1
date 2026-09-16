@@ -37,9 +37,10 @@ export type ColorGateDifficulty = 'easy' | 'hard';
  * 기존 설정값을 유지한다.
  * - solo-easy: 새 40개 중 쉬움 20개
  * - solo-normal: 쉬움 + 어려움 전체 40개 (저장 호환을 위해 legacy key 유지)
- * - together-easy: 2인 협동 10개
+ * - together-easy: 2인 협동 단일 동작 5개
+ * - together-normal: 2인 협동 복합 구성 전체 10개
  */
-export type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy';
+export type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
 
 export const COLOR_GATE_POSE_DEFINITIONS = [
   // 근력 · 근지구력 — easy 5
@@ -143,7 +144,7 @@ export function colorGatePosesForCategory(
 /**
  * 기존 3개 난이도 옵션과 호환되는 런타임 포즈 풀.
  * category가 all이면 솔로 4개 체력 유형 전체를 사용하고, 특정 유형이면 해당 5개만 사용한다.
- * together-easy는 category와 무관하게 기존 2인 협동 포즈만 사용한다.
+ * together 계열은 category와 무관하게 2인 협동 포즈만 사용한다.
  */
 export const COLOR_GATE_VARIANT_POSES: Record<ColorGateVariant, readonly ColorGatePoseKey[]> = {
   'solo-easy': COLOR_GATE_POSE_DEFINITIONS
@@ -154,6 +155,10 @@ export const COLOR_GATE_VARIANT_POSES: Record<ColorGateVariant, readonly ColorGa
     .map((pose) => pose.key),
   'together-easy': COLOR_GATE_POSE_DEFINITIONS
     .filter((pose) => pose.category === 'partner')
+    .slice(0, 5)
+    .map((pose) => pose.key),
+  'together-normal': COLOR_GATE_POSE_DEFINITIONS
+    .filter((pose) => pose.category === 'partner')
     .map((pose) => pose.key),
 };
 
@@ -161,7 +166,9 @@ export function colorGatePosesForVariant(
   variant: ColorGateVariant,
   category: ColorGateCategoryFilter = 'all',
 ): readonly ColorGatePoseKey[] {
-  if (variant === 'together-easy') return COLOR_GATE_VARIANT_POSES['together-easy'];
+  if (variant === 'together-easy' || variant === 'together-normal') {
+    return COLOR_GATE_VARIANT_POSES[variant];
+  }
   if (category === 'all') return COLOR_GATE_VARIANT_POSES[variant];
 
   if (variant === 'solo-normal') {

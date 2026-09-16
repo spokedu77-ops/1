@@ -68,7 +68,7 @@ describe('MASTER Home content card system', () => {
     expect(dashboard).toContain('kicker="최근 수업도구"');
     expect(dashboard).toContain('buildClassToolHref(recentClassTool.id)');
     expect(dashboard).toContain('media={<HomeScheduleThumb startAt={nextSession.startAt} />}');
-    expect(dashboard).toContain('mediaSize="compact"');
+    expect(dashboard).not.toContain('mediaSize="compact"');
     expect(continueCard).toContain("mediaSize === 'compact' ? 'h-16 w-16' : 'h-20 w-20'");
     expect(dashboard).not.toContain('nextSessionProgram');
     expect(dashboard).toContain('[...validLessonActivities, ...validSpomoveActivities]');

@@ -872,7 +872,6 @@ function EntitledDashboardView() {
                     meta={`${formatSeoulSessionDay(getSeoulSessionDay(nextSession.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · ${formatSeoulSessionTime(nextSession.startAt)}`}
                     actionLabel="수업 준비"
                     href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`}
-                    mediaSize="compact"
                     media={<HomeScheduleThumb startAt={nextSession.startAt} />}
                   />
                 ) : null}

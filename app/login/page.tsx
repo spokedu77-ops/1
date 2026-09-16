@@ -36,9 +36,11 @@ function LoginContent() {
     void (async () => {
       try {
         const supabase = getSupabaseBrowserClient();
-        await enforceSessionOnlyPolicy(() => supabase.auth.signOut());
+        await enforceSessionOnlyPolicy(() => supabase.auth.signOut({ scope: 'local' }));
         const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError && isRefreshTokenError(sessionError)) await supabase.auth.signOut();
+        if (sessionError && isRefreshTokenError(sessionError)) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+        }
         else if (data.session?.user) {
           const redirectPath = await resolvePostLoginRedirect(nextSafe, supabase, data.session.user);
           reportLoginUxEvent('auto_redirect_from_login', { redirectPath, activeTab: 'ops' });
@@ -64,7 +66,7 @@ function LoginContent() {
       applyLoginSessionPreference(keepLoggedIn);
       const destination = await resolvePostLoginRedirect(nextSafe, supabase, result.data.user);
       if (type === 'admin' && !nextSafe && destination !== '/admin') {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' });
         setError('관리자 권한이 없는 계정입니다.');
         return;
       }

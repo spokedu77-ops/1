@@ -833,7 +833,8 @@ describe('Color Gate pose filtering', () => {
   });
 
   test.each(['all', ...categories] as const)('together ignores %s and keeps the partner 10', (category) => {
-    expect(colorGatePosesForVariant('together-easy', category)).toHaveLength(10);
+    expect(colorGatePosesForVariant('together-easy', category)).toHaveLength(5);
+    expect(colorGatePosesForVariant('together-normal', category)).toHaveLength(10);
   });
 });
 

@@ -46,7 +46,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
-    void enforceSessionOnlyPolicy(() => supabase.auth.signOut()).then((signedOut) => {
+    void enforceSessionOnlyPolicy(() => supabase.auth.signOut({ scope: 'local' })).then((signedOut) => {
       if (signedOut) reportLoginUxEvent('ephemeral_session_cleared');
     });
     return registerEphemeralBrowserSession();

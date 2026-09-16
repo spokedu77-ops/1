@@ -21,7 +21,7 @@ describe('profile local workspace cleanup contract', () => {
       source.indexOf('const handleLogout'),
       source.indexOf('const handleDeleteMasterData'),
     );
-    expect(logout).toContain('await supabase.auth.signOut()');
+    expect(logout).toContain("await getSupabaseBrowserClient().auth.signOut({ scope: 'local' })");
     expect(logout).toContain('finally');
     expect(logout.indexOf('resetProfile()')).toBeGreaterThan(logout.indexOf('finally'));
     expect(logout.indexOf("router.replace('/spokedu-master/landing')"))

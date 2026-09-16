@@ -60,7 +60,7 @@ export default function SpokeduGatePage() {
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error && isRefreshTokenError(error)) {
-          await supabase.auth.signOut();
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
           if (!cancelled) setCheckDone(true);
           return;
         }

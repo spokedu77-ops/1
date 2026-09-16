@@ -6,7 +6,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import html2canvas from 'html2canvas';
 import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp, FileText, X } from 'lucide-react';
 import { ADMIN_NAMES } from '@/app/lib/constants/admin';
 
@@ -369,29 +368,77 @@ export default function UltimateSettlementPage() {
   };
 
   const downloadImage = async (teacher: ReportTeacher) => {
-    const container = document.createElement('div');
-    container.style.position = 'absolute'; container.style.left = '-9999px'; container.style.top = '-9999px';
-    container.style.width = '500px'; container.style.padding = '40px'; container.style.backgroundColor = '#ffffff';
-    container.innerHTML = `
-      <div style="border: 2px solid #f0f0f0; border-radius: 24px; padding: 32px; font-family: sans-serif;">
-        <h1 style="margin: 0; font-size: 24px; color: #111;">${teacher.name} T 정산 내역</h1>
-        <p style="color: #999; font-size: 13px; margin-top: 6px;">${year}년 ${month}월 ${period === 'first' ? '1-15일' : '16-말일'}</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 24px 0;" />
-        <div style="margin-bottom: 24px; background: #f8fafc; padding: 20px; border-radius: 16px;">
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-bottom: 8px;"><span>세전 합계</span><span>${(teacher.grossTotal || 0).toLocaleString()}원</span></div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #ef4444; margin-bottom: 12px;"><span>원천징수(3.3%)</span><span>-${(teacher.tax || 0).toLocaleString()}원</span></div>
-          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 12px;">
-            <span style="font-weight: bold; font-size: 13px; color: #1e293b;">실지급액</span>
-            <span style="font-size: 24px; font-weight: 900; color: #2563eb;">${(teacher.netPay || 0).toLocaleString()}원</span>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(container);
-    const canvas = await html2canvas(container, { scale: 2 });
-    const link = document.createElement('a'); link.href = canvas.toDataURL('image/png');
-    link.download = `${teacher.name}_정산서_${year}_${month}.png`; link.click();
-    document.body.removeChild(container);
+    try {
+      await document.fonts?.ready;
+      const scale = 2;
+      const width = 580;
+      const height = 350;
+      const canvas = document.createElement('canvas');
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context unavailable');
+      ctx.scale(scale, scale);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = '#f0f0f0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(40, 40, 500, 270, 24);
+      ctx.stroke();
+
+      const left = 72;
+      const right = 508;
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#111111';
+      ctx.font = '700 24px "Malgun Gothic", sans-serif';
+      ctx.fillText(`${teacher.name} T 정산 내역`, left, 72);
+      ctx.fillStyle = '#999999';
+      ctx.font = '500 13px "Malgun Gothic", sans-serif';
+      ctx.fillText(`${year}년 ${month}월 ${period === 'first' ? '1-15일' : '16-말일'}`, left, 108);
+
+      ctx.strokeStyle = '#eeeeee';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(left, 145);
+      ctx.lineTo(right, 145);
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.roundRect(left, 169, right - left, 109, 16);
+      ctx.fill();
+
+      const drawRow = (label: string, value: string, y: number, color: string, font: string) => {
+        ctx.fillStyle = color;
+        ctx.font = font;
+        ctx.textAlign = 'left';
+        ctx.fillText(label, 92, y);
+        ctx.textAlign = 'right';
+        ctx.fillText(value, 488, y);
+      };
+      drawRow('세전 합계', `${(teacher.grossTotal || 0).toLocaleString()}원`, 188, '#666666', '500 12px "Malgun Gothic", sans-serif');
+      drawRow('원천징수(3.3%)', `-${(teacher.tax || 0).toLocaleString()}원`, 214, '#ef4444', '500 12px "Malgun Gothic", sans-serif');
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.beginPath();
+      ctx.moveTo(92, 241);
+      ctx.lineTo(488, 241);
+      ctx.stroke();
+      drawRow('실지급액', '', 252, '#1e293b', '700 13px "Malgun Gothic", sans-serif');
+      ctx.fillStyle = '#2563eb';
+      ctx.font = '900 24px "Malgun Gothic", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${(teacher.netPay || 0).toLocaleString()}원`, 488, 247);
+
+      const dataUrl = canvas.toDataURL('image/png', 1);
+      const link = document.createElement('a'); link.href = dataUrl;
+      link.download = `${teacher.name}_정산서_${year}_${month}.png`; link.click();
+    } catch (error) {
+      devLogger.error('Settlement receipt image error:', error);
+      toast.error('정산서 이미지를 만들지 못했습니다. 다시 시도해 주세요.');
+    }
   };
 
   const addAdjItem = async (teacherId: string) => {

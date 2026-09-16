@@ -26,7 +26,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const handleLogout = async () => {
     if (!confirm('로그아웃 하시겠습니까?')) return;
     const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
     clearLoginSessionMarkers();
     if (error) {
       toast.error('로그아웃 중 오류가 발생했습니다.');

@@ -20,7 +20,9 @@ describe('SPOKEDU MASTER proxy/access authority contract', () => {
 
   it('allows proxy to do only login routing for protected MASTER paths', () => {
     expect(proxySource).toContain('isSpokeduMasterProtectedPath(pathname)');
-    expect(proxySource).toContain("if (!user) return redirectWithNext(request, '/spokedu-master/login')");
+    expect(proxySource).toContain("return redirectWithNext(request, '/spokedu-master/login', response)");
+    expect(proxySource).toContain('clearStaleSupabaseAuthCookies(request, response)');
+    expect(proxySource).toContain('cookieSource?.cookies.getAll()');
     expect(proxySource).toContain('MASTER entitlement is intentionally not evaluated in proxy');
   });
 

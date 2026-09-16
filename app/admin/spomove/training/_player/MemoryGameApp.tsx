@@ -126,7 +126,7 @@ type Screen =
   | 'result';
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
-type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy';
+type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
 
 type Settings = {
   mode: string;
@@ -1506,7 +1506,12 @@ export default function MemoryGameApp({
                         return;
                       }
                       if (settings.mode === 'basic' && lv.id === 7) {
-                        setSettings((current) => ({ ...current, level: isModifiedQuadrantLevel(current.level) && !current.shapeCompletionEnabled ? current.level : 7, shapeCompletionEnabled: false }));
+                        setSettings((current) => ({
+                          ...current,
+                          level: 7,
+                          relativeCompassEnabled: true,
+                          shapeCompletionEnabled: false,
+                        }));
                         return;
                       }
                       if (settings.mode === 'basic' && lv.id === 5) {
@@ -2041,27 +2046,49 @@ export default function MemoryGameApp({
                   <div style={S.sec}>
                     {stepNum(5, '모션 게이트 옵션')}
                     <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>유형</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.85rem', opacity: settings.colorGateVariant === 'together-easy' ? 0.45 : 1 }}>
-                      {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성']] as const).map(([value, label]) => (
-                        <button key={value} type="button" disabled={settings.colorGateVariant === 'together-easy'} onClick={() => setSettings((s) => ({ ...s, colorGateCategory: value }))}
-                          style={{ flex: '1 1 110px', padding: '0.65rem 0.5rem', borderRadius: '0.8rem', cursor: settings.colorGateVariant === 'together-easy' ? 'not-allowed' : 'pointer', fontFamily: 'inherit', color: settings.colorGateCategory === value ? '#38BDF8' : 'var(--text)', fontWeight: 800, border: `2px solid ${settings.colorGateCategory === value ? '#38BDF8' : 'var(--border)'}`, background: settings.colorGateCategory === value ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem', marginBottom: '0.85rem' }}>
+                      {([['all', '전체'], ['strength', '근력·근지구력'], ['flexibility', '유연성'], ['balance', '평형성'], ['power-jump', '순발력·민첩성'], ['together', '투게더']] as const).map(([value, label]) => {
+                        const isTogether = value === 'together';
+                        const active = isTogether
+                          ? settings.colorGateVariant === 'together-easy' || settings.colorGateVariant === 'together-normal'
+                          : settings.colorGateCategory === value && settings.colorGateVariant !== 'together-easy' && settings.colorGateVariant !== 'together-normal';
+                        return (
+                        <button key={value} type="button" onClick={() => setSettings((s) => {
+                          if (value === 'together') {
+                            return { ...s, colorGateVariant: s.colorGateVariant === 'solo-normal' ? 'together-normal' : 'together-easy' };
+                          }
+                          return {
+                            ...s,
+                            colorGateCategory: value,
+                            colorGateVariant: s.colorGateVariant === 'together-normal' ? 'solo-normal' : s.colorGateVariant === 'together-easy' ? 'solo-easy' : s.colorGateVariant,
+                          };
+                        })}
+                          style={{ minWidth: 0, minHeight: 48, padding: '0.65rem 0.35rem', borderRadius: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', color: active ? '#38BDF8' : 'var(--text)', fontWeight: 800, fontSize: '0.8rem', lineHeight: 1.25, wordBreak: 'keep-all', border: `2px solid ${active ? '#38BDF8' : 'var(--border)'}`, background: active ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
                           {label}
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                     <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>난이도</div>
-                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.5rem' }}>
                       {([
-                        ['solo-easy', '쉬움', '기본 동작'],
-                        ['solo-normal', '전체', '쉬움+어려움 동작'],
-                        ['together-easy', '투게더', '2인 협동 동작 10개'],
-                      ] as const).map(([value, label, detail]) => (
-                        <button key={value} type="button" onClick={() => setSettings((s) => ({ ...s, colorGateVariant: value }))}
-                          style={{ padding: '0.75rem', borderRadius: '0.8rem', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text)', border: `2px solid ${settings.colorGateVariant === value ? '#38BDF8' : 'var(--border)'}`, background: settings.colorGateVariant === value ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
+                        ['single', '단일', '기본 동작'],
+                        ['compound', '복합', '전체 동작'],
+                      ] as const).map(([value, label, detail]) => {
+                        const active = value === 'single'
+                          ? settings.colorGateVariant === 'solo-easy' || settings.colorGateVariant === 'together-easy'
+                          : settings.colorGateVariant === 'solo-normal' || settings.colorGateVariant === 'together-normal';
+                        return (
+                        <button key={value} type="button" onClick={() => setSettings((s) => {
+                          const isTogether = s.colorGateVariant === 'together-easy' || s.colorGateVariant === 'together-normal';
+                          return { ...s, colorGateVariant: value === 'single' ? (isTogether ? 'together-easy' : 'solo-easy') : (isTogether ? 'together-normal' : 'solo-normal') };
+                        })}
+                          style={{ padding: '0.75rem', borderRadius: '0.8rem', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text)', border: `2px solid ${active ? '#38BDF8' : 'var(--border)'}`, background: active ? 'rgba(56,189,248,0.10)' : 'var(--card)' }}>
                           <strong>{label}</strong>
                           <span style={{ display: 'block', marginTop: '0.2rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>{detail}</span>
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                     <ColorGatePoseAppendix />
                   </div>

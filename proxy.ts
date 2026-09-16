@@ -62,12 +62,25 @@ function canBypassSpokeduMasterAuthForQa(request: NextRequest): boolean {
   return process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH === '1' && request.cookies.get('spm-qa-auth-bypass')?.value === '1';
 }
 
-function redirectWithNext(request: NextRequest, targetPath: string): NextResponse {
+function redirectWithNext(
+  request: NextRequest,
+  targetPath: string,
+  cookieSource?: NextResponse,
+): NextResponse {
   const redirectUrl = request.nextUrl.clone();
   redirectUrl.pathname = targetPath;
   redirectUrl.search = '';
   redirectUrl.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
-  return NextResponse.redirect(redirectUrl);
+  const redirect = NextResponse.redirect(redirectUrl);
+  cookieSource?.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+  return redirect;
+}
+
+function clearStaleSupabaseAuthCookies(request: NextRequest, response: NextResponse): void {
+  request.cookies.getAll().forEach((cookie) => {
+    if (!cookie.name.startsWith('sb-') || !cookie.name.includes('auth-token')) return;
+    response.cookies.set(cookie.name, '', { expires: new Date(0), maxAge: 0, path: '/' });
+  });
 }
 
 export async function proxy(request: NextRequest) {
@@ -120,9 +133,13 @@ export async function proxy(request: NextRequest) {
 
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser();
 
-    if (!user) return redirectWithNext(request, '/spokedu-master/login');
+    if (!user) {
+      if (userError) clearStaleSupabaseAuthCookies(request, response);
+      return redirectWithNext(request, '/spokedu-master/login', response);
+    }
 
     // MASTER entitlement is intentionally not evaluated in proxy.
     // The canonical server check lives behind /api/spokedu-master/access and
