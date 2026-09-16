@@ -283,9 +283,8 @@ class SimonBalloon {
     this.dead = false;
     this.wobble = (Math.random() - 0.5) * 0.4;
     this.t = 0;
-    // 신호 속도(cueMs)에 맞춰 성장 후 터짐 — 다음 풍선 스폰과 같은 주기
-    const cue = Math.max(800, g.cueMs);
-    this.triggerMs = cue;
+    // 풍선 안에서 3·2·1을 각각 정확히 1초씩 보여준 뒤 터진다.
+    this.triggerMs = 3000;
   }
 
   update(
@@ -322,6 +321,17 @@ class SimonBalloon {
     if (this.dead) return;
     if (this.y - this.r > g.H) return;
     drawBubbleBody(ctx, g, this.x, this.y, this.r, this.color.main);
+    const countdown = Math.max(1, Math.ceil((this.triggerMs - this.t) / 1000));
+    ctx.save();
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(0,0,0,.65)';
+    ctx.lineWidth = Math.max(4, this.r * 0.055);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `900 ${Math.max(34, this.r * 0.9)}px "Noto Sans KR", sans-serif`;
+    ctx.strokeText(String(countdown), this.x, this.y);
+    ctx.fillText(String(countdown), this.x, this.y);
+    ctx.restore();
   }
 }
 
@@ -968,7 +978,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
 
     const computeSpawnInt = () => {
       /* 풍선 사이먼: 신호 속도(초) = A→B 스폰 간격 */
-      if (variant === 'balloonSimon') return Math.round(fallTimeSec * 1000);
+      if (variant === 'balloonSimon') return 3000;
       /* 초등 친화: 최소 간격 상향 + 단계별 간격 완화(동시 스폰 체감 완화) */
       const base = Math.max(560, 1780 - (lv - 1) * 130);
       /* FLOW: concurrent 수에 따라 스폰 간격 조정 */
@@ -986,7 +996,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
 
     /** 실제 히트 간격: 스폰보다 우선 체감되는 연속 자극 간 최소 시간 */
     const computeMinStimGapMs = () => {
-      if (variant === 'balloonSimon') return Math.round(fallTimeSec * 1000);
+      if (variant === 'balloonSimon') return 3000;
       if (variant === 'flow') return Math.max(560, 1020 - (lv - 1) * 64);
       if (variant === 'flash') return Math.max(460, 860 - (lv - 1) * 56);
       return Math.max(520, 980 - (lv - 1) * 62);

@@ -273,8 +273,8 @@ export function EngineRouter({
   }
 
   if (mode === 'simon' && level === 5) {
-    const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
-    const sp = speedSec ?? 3;
+    const sp = 3;
+    const dur = (rounds ?? Math.max(1, Math.round((durationSec ?? 60) / 3))) * sp;
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <VisualReactionTraining

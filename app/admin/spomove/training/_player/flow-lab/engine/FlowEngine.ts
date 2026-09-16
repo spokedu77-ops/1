@@ -562,7 +562,9 @@ export class FlowEngine {
       this.ensureColorGateManager();
     }
     this.setPhase('countdown');
-    let n = 3;
+    const seconds = 3;
+    const startedAt = performance.now();
+    let n = seconds;
     const tick = () => {
       this.cb.onCountdown?.(n);
       if (n <= 0) {
@@ -572,7 +574,8 @@ export class FlowEngine {
         return;
       }
       n--;
-      this.countdownTimer = setTimeout(tick, 1000);
+      const nextDeadline = startedAt + (seconds - n) * 1000;
+      this.countdownTimer = setTimeout(tick, Math.max(0, nextDeadline - performance.now()));
     };
     tick();
   }

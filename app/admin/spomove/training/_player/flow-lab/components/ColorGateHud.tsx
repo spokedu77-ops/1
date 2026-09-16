@@ -31,18 +31,18 @@ export default function ColorGateHud({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '14px clamp(12px, 4vw, 24px) 20px',
+        padding: 'clamp(18px, 3vh, 34px) clamp(16px, 4vw, 40px) 28px',
         pointerEvents: 'none',
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 70%, transparent 100%)',
         boxSizing: 'border-box',
       }}
     >
       <p style={{
-        fontSize: '0.62rem',
+        fontSize: 'clamp(0.72rem, 1.5vw, 1rem)',
         fontWeight: 800,
         letterSpacing: '0.28em',
         color: 'rgba(255,255,255,0.75)',
-        marginBottom: 6,
+        marginBottom: 10,
         textAlign: 'center',
         wordBreak: 'keep-all',
       }}>
@@ -50,14 +50,14 @@ export default function ColorGateHud({
       </p>
 
       <p style={{
-        fontSize: 'clamp(1.5rem, 5.5vw, 2.6rem)',
+        fontSize: 'clamp(2.75rem, 9vw, 6.5rem)',
         fontWeight: 900,
         fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
         letterSpacing: '0.06em',
         color: color.bg,
         WebkitTextStroke: '1px rgba(255,255,255,0.35)',
         textShadow: '0 2px 12px rgba(0,0,0,0.8)',
-        marginBottom: 4,
+        marginBottom: 10,
         textAlign: 'center',
         wordBreak: 'keep-all',
         whiteSpace: 'nowrap',
@@ -66,27 +66,27 @@ export default function ColorGateHud({
       </p>
 
       <p style={{
-        fontSize: 'clamp(0.95rem, 3.2vw, 1.3rem)',
+        fontSize: 'clamp(1.5rem, 4.5vw, 3rem)',
         fontWeight: 900,
         color: '#fff',
         letterSpacing: '0.04em',
-        marginBottom: 6,
+        marginBottom: 10,
         textAlign: 'center',
         wordBreak: 'keep-all',
         overflowWrap: 'break-word',
-        maxWidth: 'min(92vw, 28rem)',
+        maxWidth: 'min(94vw, 56rem)',
       }}>
         {poseLabel}
       </p>
 
       <p style={{
-        fontSize: 'clamp(0.78rem, 2.2vw, 0.9rem)',
+        fontSize: 'clamp(1.1rem, 3vw, 2rem)',
         fontWeight: 700,
         color: 'rgba(255,255,255,0.92)',
         textAlign: 'center',
         width: '100%',
-        maxWidth: 'min(92vw, 28rem)',
-        lineHeight: 1.5,
+        maxWidth: 'min(94vw, 64rem)',
+        lineHeight: 1.4,
         marginBottom: 8,
         wordBreak: 'keep-all',
         overflowWrap: 'break-word',
@@ -97,7 +97,7 @@ export default function ColorGateHud({
 
       {passCount !== undefined && passCount > 0 ? (
         <span style={{
-          fontSize: '0.68rem',
+          fontSize: 'clamp(0.85rem, 1.8vw, 1.1rem)',
           fontWeight: 800,
           padding: '0.2rem 0.75rem',
           borderRadius: '9999px',
