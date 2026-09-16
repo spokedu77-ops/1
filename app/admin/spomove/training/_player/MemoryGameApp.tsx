@@ -126,6 +126,7 @@ type Screen =
   | 'result';
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
+export type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
 
 type Settings = {
@@ -168,6 +169,7 @@ type Settings = {
   stroopWordRuleMode: 'switch' | 'reverse';
   /** ???????????????????????????????????????곕춴???????? ????????????????????????????????????*/
   flowFeatures: Set<FlowFeatureKey>;
+  sportsArenaFeatures: Set<SportsArenaFeatureKey>;
   /** ???????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲?????????????????????????????????????????????????????????????????????????????????????????????????????????????????ㅻ깹?????????????????????????????????????????????????????ㅻ깹???????????????????????????????????????????????*/
   /** Hub 파노라마 환경 테마 (space · theme2~5) */
   diveEnvironmentTheme: DiveThemeId;
@@ -252,6 +254,7 @@ const defaultSettings: Settings = {
   stroopWordResponse: 'voice' as const,
   stroopWordRuleMode: 'switch' as const,
   flowFeatures: new Set<FlowFeatureKey>(),
+  sportsArenaFeatures: new Set<SportsArenaFeatureKey>(),
   diveEnvironmentTheme: 'space',
   flowDuration: 60,
   flowLayout: 'sequential',
@@ -321,6 +324,7 @@ export type MemoryGameAutoLaunch = {
   stroopWordRuleMode?: 'switch' | 'reverse';
   /** Flow 2.0: ?????????????????????????????????????????????????곕춴???????? ???????????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲??????????????????????????????????????????????????????????????????????????????????????????????????????????Set<FlowFeatureKey>?????????????????????????????????ㅻ깹???????????*/
   flowFeatures?: string[];
+  sportsArenaFeatures?: SportsArenaFeatureKey[];
   /** Hub 파노라마 환경 테마 */
   diveEnvironmentTheme?: DiveThemeId;
   flowDuration?: number;
@@ -408,8 +412,11 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       stroopWordResponse: s.stroopWordResponse,
       stroopWordRuleMode: s.stroopWordRuleMode,
       flowFeatures: [...s.flowFeatures],
+      sportsArenaFeatures: [...s.sportsArenaFeatures],
       diveEnvironmentTheme: s.diveEnvironmentTheme,
       flowDuration: s.flowDuration,
+      flowLayout: s.flowLayout,
+      flowIncludeBonus: s.flowIncludeBonus,
       colorGateVariant: s.colorGateVariant,
       colorGateCategory: s.colorGateCategory,
       reactTrainConcurrent: s.reactTrainConcurrent,
@@ -531,12 +538,12 @@ export default function MemoryGameApp({
   const saveFlowPreset = () => {
     const name = prompt('Preset name', `Preset ${flowPresets.length + 1}`);
     if (!name) return;
-    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], environmentTheme: settings.diveEnvironmentTheme, duration: settings.flowDuration, colorGateCategory: settings.colorGateCategory }];
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], sportsArenaFeatures: [...settings.sportsArenaFeatures], environmentTheme: settings.diveEnvironmentTheme, duration: settings.flowDuration, includeBonus: settings.flowIncludeBonus, colorGateCategory: settings.colorGateCategory }];
     setFlowPresets(next);
     saveFlowPresets(next);
   };
   const loadFlowPreset = (p: FlowPreset) => {
-    setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, colorGateCategory: p.colorGateCategory ?? 'all' }));
+    setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), sportsArenaFeatures: new Set(p.sportsArenaFeatures ?? []), diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all' }));
   };
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
@@ -715,6 +722,7 @@ export default function MemoryGameApp({
     if (autoLaunch) {
       const {
         flowFeatures: flowFeaturesArr,
+        sportsArenaFeatures: sportsArenaFeaturesArr,
         diveEnvironmentTheme: autoDiveTheme,
         ...restAutoLaunch
       } = autoLaunch;
@@ -733,6 +741,7 @@ export default function MemoryGameApp({
         flowFeatures: flowFeaturesArr?.length
           ? new Set(flowFeaturesArr as FlowFeatureKey[])
           : defaultSettings.flowFeatures,
+        sportsArenaFeatures: new Set(sportsArenaFeaturesArr ?? []),
         diveEnvironmentTheme: normalizeDiveThemeId(autoDiveTheme),
         memoryColorSlots: normalizeMemoryColorSlots(autoLaunch.memoryColorSlots),
         colorGateCategory: autoLaunch.colorGateCategory ?? 'all',
@@ -1926,7 +1935,7 @@ export default function MemoryGameApp({
                         <button
                           key={id}
                           type="button"
-                          onClick={() => setSettings((s) => ({ ...s, diveEnvironmentTheme: id }))}
+                          onClick={() => setSettings((s) => ({ ...s, diveEnvironmentTheme: id, flowDuration: id === 'theme2' && ![15, 20, 25, 30, 35].includes(s.flowDuration) ? 20 : s.flowDuration }))}
                           style={{
                             flex: '1 1 88px',
                             padding: '0.65rem 0.5rem',
@@ -1955,7 +1964,28 @@ export default function MemoryGameApp({
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
                     Selected obstacle actions are added to DIVE stages.
                   </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                  {settings.diveEnvironmentTheme === 'theme2' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                      {([
+                        ['side', '↔️', 'SIDE MOVE', 'LEFT / RIGHT가 혼합되어 진행됩니다.'],
+                        ['jump', '⬆️', 'JUMP', '점프 스테이지를 추가합니다.'],
+                        ['duck', '⬇️', 'DUCK', '숙이기 스테이지를 추가합니다.'],
+                      ] as const).map(([key, icon, label, desc]) => {
+                        const active = settings.sportsArenaFeatures.has(key);
+                        return (
+                          <button key={key} type="button" onClick={() => setSettings((current) => {
+                            const next = new Set(current.sportsArenaFeatures);
+                            if (next.has(key)) next.delete(key); else next.add(key);
+                            return { ...current, sportsArenaFeatures: next };
+                          })} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.75rem 0.9rem', borderRadius: '1rem', border: `2px solid ${active ? '#22C55E' : 'var(--border)'}`, background: active ? 'rgba(34,197,94,0.08)' : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                            <span style={{ fontSize: '1.3rem', lineHeight: 1 }}>{icon}</span>
+                            <div><div style={{ fontWeight: 800, fontSize: '0.9rem', color: active ? '#16A34A' : 'var(--text)' }}>{active ? '✓ ' : ''}{label}</div><div style={{ marginTop: '0.15rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{desc}</div></div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                  <div style={{ display: settings.diveEnvironmentTheme === 'theme2' ? 'none' : 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                     {SELECTABLE_MODULE_KEYS.map((key) => {
                       const mod = FLOW_MODULES[key];
                       const icon = mod.icon;
@@ -2002,7 +2032,7 @@ export default function MemoryGameApp({
                     })}
                   </div>
                 </div>
-                <div style={S.sec}>
+                <div style={{ ...S.sec, display: settings.diveEnvironmentTheme === 'theme2' ? 'none' : undefined }}>
                   {stepNum(5, '모션 게이트')}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
                     모션 게이트는 브릿지 없이 공유 배경에서 색 포즈 관문만 진행합니다.
@@ -2042,7 +2072,7 @@ export default function MemoryGameApp({
                     </div>
                   </button>
                 </div>
-                {settings.flowFeatures.has('colorGate') && (
+                {settings.diveEnvironmentTheme !== 'theme2' && settings.flowFeatures.has('colorGate') && (
                   <div style={S.sec}>
                     {stepNum(5, '모션 게이트 옵션')}
                     <div style={{ marginBottom: '0.45rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-muted)' }}>유형</div>
@@ -2099,7 +2129,7 @@ export default function MemoryGameApp({
                     Select the duration for each DIVE stage.
                   </p>
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    {(settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1
+                    {(settings.diveEnvironmentTheme !== 'theme2' && settings.flowFeatures.has('colorGate') && settings.flowFeatures.size === 1
                       ? [45, 60, 90, 120, 150]
                       : [15, 20, 25, 30, 35]
                     ).map((n) => (
@@ -2115,6 +2145,12 @@ export default function MemoryGameApp({
                       </button>
                     ))}
                   </div>
+                </div>
+                <div style={S.sec}>
+                  <button type="button" onClick={() => setSettings((current) => ({ ...current, flowIncludeBonus: !current.flowIncludeBonus }))} style={{ width: '100%', minHeight: 48, borderRadius: '0.8rem', border: `2px solid ${settings.flowIncludeBonus ? '#F59E0B' : 'var(--border)'}`, background: settings.flowIncludeBonus ? 'rgba(245,158,11,0.10)' : 'var(--card)', color: settings.flowIncludeBonus ? '#F59E0B' : 'var(--text)', fontWeight: 800, cursor: 'pointer' }}>
+                    {settings.flowIncludeBonus ? '✓ ' : ''}BONUS · 60초
+                  </button>
+                  {settings.diveEnvironmentTheme === 'theme2' ? <p style={{ margin: '0.65rem 0 0', fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-muted)' }}>예상 총 훈련시간: {(1 + settings.sportsArenaFeatures.size) * settings.flowDuration + (settings.flowIncludeBonus ? 60 : 0)}초</p> : null}
                 </div>
                 <div style={S.sec}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
@@ -2680,7 +2716,7 @@ export default function MemoryGameApp({
 
   if (screen === 'flow') {
     if (settings.mode === 'flow' && settings.level === 1 && settings.diveEnvironmentTheme === 'theme2') {
-      return <UnityDiveThemeClient durationSec={settings.flowDuration} onComplete={handleFlowComplete} onExit={stop} />;
+      return <UnityDiveThemeClient config={{ stageDuration: settings.flowDuration, side: settings.sportsArenaFeatures.has('side'), jump: settings.sportsArenaFeatures.has('jump'), duck: settings.sportsArenaFeatures.has('duck'), bonus: settings.flowIncludeBonus }} durationSec={(1 + settings.sportsArenaFeatures.size) * settings.flowDuration + (settings.flowIncludeBonus ? 60 : 0)} onComplete={handleFlowComplete} onExit={stop} />;
     }
     // SELECTABLE_MODULE_KEYS ?????????????????????????????????????????????????????????????????????????????????????????????????????? ??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????ㅻ깹??????????????????????????釉먮폁?????????????????
     const selectedModules = [

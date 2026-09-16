@@ -23,6 +23,8 @@ export interface FlowPreset {
   environmentTheme: DiveThemeId;
   duration: number;
   colorGateCategory?: ColorGateCategoryFilter;
+  sportsArenaFeatures?: Array<'side' | 'jump' | 'duck'>;
+  includeBonus?: boolean;
 }
 
 function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
@@ -48,6 +50,10 @@ function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
     features: features as string[],
     environmentTheme,
     duration,
+    sportsArenaFeatures: Array.isArray(raw.sportsArenaFeatures)
+      ? raw.sportsArenaFeatures.filter((feature): feature is 'side' | 'jump' | 'duck' => feature === 'side' || feature === 'jump' || feature === 'duck')
+      : [],
+    includeBonus: typeof raw.includeBonus === 'boolean' ? raw.includeBonus : undefined,
     colorGateCategory:
       raw.colorGateCategory === 'strength'
       || raw.colorGateCategory === 'flexibility'
