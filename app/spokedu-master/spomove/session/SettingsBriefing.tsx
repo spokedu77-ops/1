@@ -14,6 +14,8 @@ import type { OfficialSpomovePreset } from '../officialSpomovePresets';
 import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 
+type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
+
 /** Session Settings adjusts only values that can change this run. */
 export function SettingsBriefing({
   preset,
@@ -23,6 +25,12 @@ export function SettingsBriefing({
   onCueSecondsChange,
   diveEnvironmentTheme,
   onDiveEnvironmentThemeChange,
+  sportsArenaFeatures,
+  onSportsArenaFeaturesChange,
+  flowDuration,
+  onFlowDurationChange,
+  flowIncludeBonus,
+  onFlowIncludeBonusChange,
   onStart,
   cueFloorNotice,
 }: {
@@ -33,6 +41,12 @@ export function SettingsBriefing({
   onCueSecondsChange: (value: SpomoveCueSpeedSec) => void;
   diveEnvironmentTheme: DiveThemeId;
   onDiveEnvironmentThemeChange: (value: DiveThemeId) => void;
+  sportsArenaFeatures: SportsArenaFeatureKey[];
+  onSportsArenaFeaturesChange: (value: SportsArenaFeatureKey[]) => void;
+  flowDuration: number;
+  onFlowDurationChange: (value: number) => void;
+  flowIncludeBonus: boolean;
+  onFlowIncludeBonusChange: (value: boolean) => void;
   onStart: () => void;
   cueFloorNotice?: string | null;
 }) {
@@ -102,7 +116,31 @@ export function SettingsBriefing({
           </div>
         </section>
       ) : null}
-      <button
+      {preset.engine.mode === 'flow' && preset.engine.level === 1 && diveEnvironmentTheme === 'theme2' ? (
+        <section aria-label="SPORTS ARENA 수업 설정" className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-white">추가 동작 선택</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {([
+                ['side', 'SIDE MOVE', '좌/우 회피'],
+                ['jump', 'JUMP', '장애물 점프'],
+                ['duck', 'DUCK', '장애물 숙이기'],
+              ] as const).map(([key, label, detail]) => {
+                const active = sportsArenaFeatures.includes(key);
+                return <button key={key} type="button" aria-pressed={active} onClick={() => onSportsArenaFeaturesChange(active ? sportsArenaFeatures.filter((feature) => feature !== key) : [...sportsArenaFeatures, key])} className={`min-h-12 rounded-xl px-3 text-left text-sm font-bold ${active ? 'bg-[var(--spm-acc)] text-white' : 'border border-white/15 bg-black/30 text-white/80'}`}><span className="block">{label}</span><span className="block text-[11px] font-semibold opacity-65">{detail}</span></button>;
+              })}
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-white">스테이지당 시간</p>
+            <div className="mt-2 grid grid-cols-5 gap-2">
+              {[15, 20, 25, 30, 35].map((seconds) => <button key={seconds} type="button" aria-pressed={flowDuration === seconds} onClick={() => onFlowDurationChange(seconds)} className={`min-h-11 rounded-xl text-sm font-bold ${flowDuration === seconds ? 'bg-[var(--spm-acc)] text-white' : 'border border-white/15 bg-black/30 text-white/80'}`}>{seconds}초</button>)}
+            </div>
+          </div>
+          <button type="button" aria-pressed={flowIncludeBonus} onClick={() => onFlowIncludeBonusChange(!flowIncludeBonus)} className={`min-h-12 w-full rounded-xl px-4 text-sm font-bold ${flowIncludeBonus ? 'bg-amber-400 text-slate-950' : 'border border-white/15 bg-black/30 text-white/80'}`}>{flowIncludeBonus ? '✓ ' : ''}BONUS · 60초</button>
+          <p className="text-[12px] font-bold text-white/60">예상 총 훈련시간: {(1 + sportsArenaFeatures.length) * flowDuration + (flowIncludeBonus ? 60 : 0)}초</p>
+        </section>
+      ) : null}      <button
         type="button"
         onClick={onStart}
         disabled={startDisabled}

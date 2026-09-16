@@ -132,6 +132,7 @@ type Props = {
   /** Simon L4 내부 후보: preset 배치 존중. 없으면 legacy variant */
   camouflagePlacementResponse?: 'legacy' | 'preset';
   flowFeatures?: string[];
+  sportsArenaFeatures?: Array<'side' | 'jump' | 'duck'>;
   diveEnvironmentTheme?: DiveThemeId;
   flowDuration?: number;
   flowLayout?: 'sequential' | 'random';
@@ -205,6 +206,7 @@ export function EngineRouter({
   camouflagePlacement,
   camouflagePlacementResponse,
   flowFeatures,
+  sportsArenaFeatures,
   diveEnvironmentTheme,
   flowDuration,
   flowLayout,
@@ -600,6 +602,7 @@ export function EngineRouter({
             warmup: 3,
             audioMode: soundEnabled ? 'beep' : 'off',
             flowFeatures: resolvedFlowFeatures,
+            sportsArenaFeatures,
             diveEnvironmentTheme,
             flowDuration: flowDuration ?? 25,
             flowLayout: flowLayout ?? 'sequential',

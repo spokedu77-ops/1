@@ -43,6 +43,7 @@ import { getActivityFamily } from '../movements/activityFamilies';
 import { SessionSetupShell } from './SessionSetupShell';
 import { StartBriefing } from './StartBriefing';
 import { SettingsBriefing } from './SettingsBriefing';
+type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 import { MasterSessionResult } from './MasterSessionResult';
 import {
   isInteractiveKeyTarget,
@@ -253,6 +254,13 @@ function SpomoveSessionContent() {
 
   const [state, setState] = useState<SessionState>('idle');
   const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>('space');
+  const [sportsArenaFeatures, setSportsArenaFeatures] = useState<SportsArenaFeatureKey[]>([]);
+  const [flowDuration, setFlowDuration] = useState(() => officialPreset?.engine.flowDuration ?? 20);
+  const [flowIncludeBonus, setFlowIncludeBonus] = useState(() => officialPreset?.engine.flowIncludeBonus ?? true);
+  const handleDiveEnvironmentThemeChange = useCallback((theme: DiveThemeId) => {
+    setDiveEnvironmentTheme(theme);
+    if (theme === 'theme2') setFlowDuration((seconds) => [15, 20, 25, 30, 35].includes(seconds) ? seconds : 20);
+  }, []);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activationBlocked, setActivationBlocked] = useState<
     null | 'fullscreenBlocked' | 'audioBlocked' | 'bothBlocked'
@@ -658,10 +666,11 @@ function SpomoveSessionContent() {
           camouflagePlacement={officialPreset.engine.camouflagePlacement}
           camouflagePlacementResponse={officialPreset.engine.camouflagePlacementResponse}
           flowFeatures={officialPreset.engine.flowFeatures}
+          sportsArenaFeatures={sportsArenaFeatures}
           diveEnvironmentTheme={diveEnvironmentTheme}
-          flowDuration={officialPreset.engine.flowDuration}
+          flowDuration={diveEnvironmentTheme === 'theme2' ? flowDuration : officialPreset.engine.flowDuration}
           flowLayout={officialPreset.engine.flowLayout}
-          flowIncludeBonus={officialPreset.engine.flowIncludeBonus}
+          flowIncludeBonus={diveEnvironmentTheme === 'theme2' ? flowIncludeBonus : officialPreset.engine.flowIncludeBonus}
           colorGateVariant={officialPreset.engine.colorGateVariant}
           colorGateCategory={officialPreset.engine.colorGateCategory}
           flankerStimulusType={officialPreset.engine.flankerStimulusType}
@@ -744,7 +753,13 @@ function SpomoveSessionContent() {
           {entryMode === 'settings' ? (
             <SettingsBriefing
               diveEnvironmentTheme={diveEnvironmentTheme}
-              onDiveEnvironmentThemeChange={setDiveEnvironmentTheme}
+              onDiveEnvironmentThemeChange={handleDiveEnvironmentThemeChange}
+              sportsArenaFeatures={sportsArenaFeatures}
+              onSportsArenaFeaturesChange={setSportsArenaFeatures}
+              flowDuration={flowDuration}
+              onFlowDurationChange={setFlowDuration}
+              flowIncludeBonus={flowIncludeBonus}
+              onFlowIncludeBonusChange={setFlowIncludeBonus}
               preset={officialPreset}
               startDisabled={bgmLoading || !canStartSession}
               cueSeconds={effectiveCueSeconds}

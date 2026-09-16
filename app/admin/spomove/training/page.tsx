@@ -299,6 +299,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
 }
 
 type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
+type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
 type ColorGateCategoryFilter = 'all' | 'strength' | 'flexibility' | 'balance' | 'power-jump';
 
@@ -324,8 +325,10 @@ type LaunchSettings = {
   stroopArrowMode: 'basic' | 'bg';
   stroopWordDifficulty: 'basic' | 'bg';
   flowFeatures: FlowFeatureKey[];
+  sportsArenaFeatures: SportsArenaFeatureKey[];
   diveEnvironmentTheme: DiveThemeId;
   flowDuration: number;
+  flowIncludeBonus: boolean;
   colorGateVariant: ColorGateVariant;
   colorGateCategory: ColorGateCategoryFilter;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
@@ -392,8 +395,10 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   stroopArrowMode: 'basic',
   stroopWordDifficulty: 'basic',
   flowFeatures: [],
+  sportsArenaFeatures: [],
   diveEnvironmentTheme: 'space',
   flowDuration: 60,
+  flowIncludeBonus: true,
   colorGateVariant: 'solo-easy',
   colorGateCategory: 'all',
   reactTrainConcurrent: 2,
@@ -447,8 +452,10 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     stroopArrowMode: auto.stroopArrowMode === 'bg' ? 'bg' : (fallback.stroopArrowMode ?? 'basic'),
     stroopWordDifficulty: auto.stroopWordDifficulty === 'bg' ? 'bg' : (fallback.stroopWordDifficulty ?? 'basic'),
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
+    sportsArenaFeatures: (auto.sportsArenaFeatures ?? fallback.sportsArenaFeatures) as SportsArenaFeatureKey[],
     diveEnvironmentTheme: normalizeDiveThemeId(auto.diveEnvironmentTheme ?? fallback.diveEnvironmentTheme),
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
+    flowIncludeBonus: auto.flowIncludeBonus ?? fallback.flowIncludeBonus,
     colorGateVariant: auto.colorGateVariant ?? fallback.colorGateVariant,
     colorGateCategory: auto.colorGateCategory ?? 'all',
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
@@ -625,8 +632,10 @@ function TrainingPortal({
     stroopArrowMode: launch.stroopArrowMode,
     stroopWordDifficulty: launch.stroopWordDifficulty,
     flowFeatures: launch.flowFeatures,
+    sportsArenaFeatures: launch.sportsArenaFeatures,
     diveEnvironmentTheme: launch.diveEnvironmentTheme,
     flowDuration: launch.flowDuration,
+    flowIncludeBonus: launch.flowIncludeBonus,
     colorGateVariant: launch.colorGateVariant,
     colorGateCategory: launch.colorGateCategory,
     reactTrainConcurrent: launch.reactTrainConcurrent,
@@ -665,7 +674,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.colorGateVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.relativeCompassEnabled}-${launch.shapeCompletionEnabled}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerExtremeMode}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.stroopArrowMode}-${launch.stroopWordDifficulty}-${launch.flowFeatures.join(',')}-${launch.sportsArenaFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.flowIncludeBonus}-${launch.colorGateVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.moleBonusTimeEnabled}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.goalkeeperBonusTimeEnabled}-${launch.handFootDifficulty}-${launch.colorMemoryGridSize}-${launch.colorMemoryGridMode}-${launch.virusOutbreakDifficulty}-${launch.shellTrackingDifficulty}-${launch.shellTrackingTargetSeconds}-${launch.shellTrackingShuffleCount}-${launch.shellTrackingResponseSeconds}-${launch.relativeCompassDifficulty}-${launch.relativeCompassStartSeconds}-${launch.relativeCompassResponseSeconds}-${launch.relativeCompassEnabled}-${launch.shapeCompletionEnabled}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -955,13 +964,13 @@ function SettingsScreen({
   const saveFlowPreset = () => {
     const name = window.prompt('즐겨찾기 이름', `세팅 ${flowPresets.length + 1}`);
     if (!name) return;
-    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], environmentTheme: launch.diveEnvironmentTheme, duration: launch.flowDuration, colorGateCategory: launch.colorGateCategory }];
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], sportsArenaFeatures: [...launch.sportsArenaFeatures], environmentTheme: launch.diveEnvironmentTheme, duration: launch.flowDuration, includeBonus: launch.flowIncludeBonus, colorGateCategory: launch.colorGateCategory }];
     const result = saveFlowPresets(next);
     if (!result.success) { setFlowPresetError(result.error); return; }
     setFlowPresets(next);
     setFlowPresetError(null);
   };
-  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, colorGateCategory: p.colorGateCategory ?? 'all' }));
+  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], sportsArenaFeatures: [...(p.sportsArenaFeatures ?? [])], diveEnvironmentTheme: p.environmentTheme, flowDuration: p.duration, flowIncludeBonus: p.includeBonus ?? s.flowIncludeBonus, colorGateCategory: p.colorGateCategory ?? 'all' }));
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
     const result = saveFlowPresets(next);
@@ -2429,7 +2438,7 @@ function SettingsScreen({
                     <button
                       key={id}
                       type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, diveEnvironmentTheme: id }))}
+                      onClick={() => setLaunch((s) => ({ ...s, diveEnvironmentTheme: id, flowDuration: id === 'theme2' && !ACTION_MOVE_STAGE_SECONDS.includes(s.flowDuration as (typeof ACTION_MOVE_STAGE_SECONDS)[number]) ? DEFAULT_ACTION_MOVE_STAGE_SEC : s.flowDuration }))}
                       style={{
                         flex: '1 1 88px',
                         padding: '7px 5px',
@@ -2482,8 +2491,30 @@ function SettingsScreen({
             </section>
           ) : null}
 
+          {isFlowOrChallenge && !isColorGateTheme && launch.diveEnvironmentTheme === 'theme2' ? (
+            <section style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>추가 동작 선택</label>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
+                {([
+                  { key: 'side' as const, icon: '↔️', label: 'SIDE MOVE', detail: '좌/우 회피' },
+                  { key: 'jump' as const, icon: '⬆️', label: 'JUMP', detail: '장애물 점프' },
+                  { key: 'duck' as const, icon: '⬇️', label: 'DUCK', detail: '장애물 숙이기' },
+                ]).map(({ key, icon, label, detail }) => {
+                  const active = launch.sportsArenaFeatures.includes(key);
+                  return (
+                    <button key={key} type="button" onClick={() => setLaunch((current) => ({ ...current, sportsArenaFeatures: active ? current.sportsArenaFeatures.filter((feature) => feature !== key) : [...current.sportsArenaFeatures, key] }))} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 10, border: `1.5px solid ${active ? '#22C55E' : T.border}`, background: active ? 'rgba(34,197,94,0.10)' : T.card, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                      <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{icon}</span>
+                      <span><strong style={{ display: 'block', fontSize: 12, color: active ? '#16A34A' : T.text }}>{active ? '✓ ' : ''}{label}</strong><small style={{ color: T.muted }}>{detail}</small></span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
           {/* Flow 전용: 추가 동작 선택 */}
-          {isFlowOrChallenge && !isColorGateTheme ? (
+          {isFlowOrChallenge && !isColorGateTheme && launch.diveEnvironmentTheme !== 'theme2' ? (
             <section style={{ marginBottom: 10 }}>
               <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>추가 동작 선택</label>
@@ -2534,6 +2565,14 @@ function SettingsScreen({
             </section>
           ) : null}
 
+          {isFlowOrChallenge && !isColorGateTheme ? (
+            <section style={{ marginBottom: 10 }}>
+              <button type="button" onClick={() => setLaunch((current) => ({ ...current, flowIncludeBonus: !current.flowIncludeBonus }))} style={{ width: '100%', minHeight: 44, borderRadius: 10, border: `1.5px solid ${launch.flowIncludeBonus ? '#F59E0B' : T.border}`, background: launch.flowIncludeBonus ? 'rgba(245,158,11,0.10)' : T.card, color: launch.flowIncludeBonus ? '#F59E0B' : T.textDim, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {launch.flowIncludeBonus ? '✓ ' : ''}BONUS · 60초
+              </button>
+              {launch.diveEnvironmentTheme === 'theme2' ? <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 800, color: T.muted }}>예상 총 훈련시간: {(1 + launch.sportsArenaFeatures.length) * launch.flowDuration + (launch.flowIncludeBonus ? 60 : 0)}초</p> : null}
+            </section>
+          ) : null}
           {/* Flow 전용: 즐겨찾기 */}
           {isFlowOrChallenge && !isColorGateTheme ? (
             <section style={{ marginBottom: 10 }}>
