@@ -138,7 +138,7 @@ export function SettingsBriefing({
             </div>
           </div>
           <button type="button" aria-pressed={flowIncludeBonus} onClick={() => onFlowIncludeBonusChange(!flowIncludeBonus)} className={`min-h-12 w-full rounded-xl px-4 text-sm font-bold ${flowIncludeBonus ? 'bg-amber-400 text-slate-950' : 'border border-white/15 bg-black/30 text-white/80'}`}>{flowIncludeBonus ? '✓ ' : ''}BONUS · 60초</button>
-          <p className="text-[12px] font-bold text-white/60">예상 총 훈련시간: {(1 + sportsArenaFeatures.length) * flowDuration + (flowIncludeBonus ? 60 : 0)}초</p>
+          <p className="text-[12px] font-bold text-white/60">예상 총 훈련시간: {10 + sportsArenaFeatures.length * flowDuration + (flowIncludeBonus ? 60 : 0)}초</p>
         </section>
       ) : null}      <button
         type="button"

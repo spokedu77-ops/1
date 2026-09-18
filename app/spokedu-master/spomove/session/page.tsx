@@ -796,7 +796,7 @@ function SpomoveSessionContent() {
             intervalMode={effectiveOperation?.timing.pattern === 'interval'}
             intervalWork={effectiveOperation?.timing.pattern === 'interval' ? effectiveOperation.timing.workSeconds : undefined}
             intervalSets={effectiveOperation?.timing.pattern === 'interval' ? effectiveOperation.timing.sets : undefined}
-            flowDuration={officialPreset.engine.flowDuration}
+            flowDuration={diveEnvironmentTheme === 'theme2' ? flowDuration : officialPreset.engine.flowDuration}
             settings={[
               `SPOMAT ${matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}장`,
               `자극 ${effectiveCueSeconds}초`,

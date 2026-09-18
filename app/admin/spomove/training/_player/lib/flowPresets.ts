@@ -50,10 +50,10 @@ function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
     features: features as string[],
     environmentTheme,
     duration,
-    sportsArenaFeatures: Array.isArray(raw.sportsArenaFeatures)
-      ? raw.sportsArenaFeatures.filter((feature): feature is 'side' | 'jump' | 'duck' => feature === 'side' || feature === 'jump' || feature === 'duck')
-      : [],
-    includeBonus: typeof raw.includeBonus === 'boolean' ? raw.includeBonus : undefined,
+    ...(Array.isArray(raw.sportsArenaFeatures)
+      ? { sportsArenaFeatures: raw.sportsArenaFeatures.filter((feature): feature is 'side' | 'jump' | 'duck' => feature === 'side' || feature === 'jump' || feature === 'duck') }
+      : {}),
+    ...(typeof raw.includeBonus === 'boolean' ? { includeBonus: raw.includeBonus } : {}),
     colorGateCategory:
       raw.colorGateCategory === 'strength'
       || raw.colorGateCategory === 'flexibility'

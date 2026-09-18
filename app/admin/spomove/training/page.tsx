@@ -2570,7 +2570,7 @@ function SettingsScreen({
               <button type="button" onClick={() => setLaunch((current) => ({ ...current, flowIncludeBonus: !current.flowIncludeBonus }))} style={{ width: '100%', minHeight: 44, borderRadius: 10, border: `1.5px solid ${launch.flowIncludeBonus ? '#F59E0B' : T.border}`, background: launch.flowIncludeBonus ? 'rgba(245,158,11,0.10)' : T.card, color: launch.flowIncludeBonus ? '#F59E0B' : T.textDim, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {launch.flowIncludeBonus ? '✓ ' : ''}BONUS · 60초
               </button>
-              {launch.diveEnvironmentTheme === 'theme2' ? <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 800, color: T.muted }}>예상 총 훈련시간: {(1 + launch.sportsArenaFeatures.length) * launch.flowDuration + (launch.flowIncludeBonus ? 60 : 0)}초</p> : null}
+              {launch.diveEnvironmentTheme === 'theme2' ? <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 800, color: T.muted }}>예상 총 훈련시간: {10 + launch.sportsArenaFeatures.length * launch.flowDuration + (launch.flowIncludeBonus ? 60 : 0)}초</p> : null}
             </section>
           ) : null}
           {/* Flow 전용: 즐겨찾기 */}

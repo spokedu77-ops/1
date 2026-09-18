@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <title>SPOMOVE</title>
+  <style>
+    html, body, #unity-canvas { width:100%; height:100%; margin:0; padding:0; border:0; display:block; overflow:hidden; background:#231F20; }
+    #unity-canvas { position:fixed; inset:0; }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <script src="Build/player_release_test.loader.js"></script>
+  <script>
+    const canvas = document.querySelector('#unity-canvas');
+    let spomoveUnityInstance = null;
+    const pendingMessages = [];
+    function deliverToUnity(method, value) {
+      if (!spomoveUnityInstance) { pendingMessages.push([method, value]); return; }
+      spomoveUnityInstance.SendMessage('DIVE_WebBridge', method, value || '');
+    }
+    window.addEventListener('message', (event) => {
+      const message = event.data || {};
+      if (message.type === 'SPOMOVE_SESSION_CONFIG') {
+        const payload = typeof message.config === 'string' ? message.config : JSON.stringify(message.config || message.payload || {});
+        deliverToUnity('ConfigureSession', payload);
+      } else if (message.type === 'SPOMOVE_SESSION_START' || message.type === 'START') {
+        deliverToUnity('StartSession', '');
+      } else if (message.type === 'SPOMOVE_SESSION_STOP' || message.type === 'STOP') {
+        deliverToUnity('StopSession', '');
+      }
+    });
+    createUnityInstance(canvas, {
+      arguments: [],
+      dataUrl: 'Build/player_release_test.data',
+      frameworkUrl: 'Build/player_release_test.framework.js',
+      codeUrl: 'Build/player_release_test.wasm',
+      streamingAssetsUrl: 'StreamingAssets',
+      companyName: "DefaultCompany",
+      productName: "SPOMOVE",
+      productVersion: "0.1.0",
+    }).then((unityInstance) => {
+      spomoveUnityInstance = unityInstance;
+      pendingMessages.splice(0).forEach(([method, value]) => deliverToUnity(method, value));
+      window.parent.postMessage({ type: 'SPOMOVE_UNITY_READY' }, '*');
+    }).catch((message) => console.error('SPOMOVE Unity startup failed', message));
+  </script>
+</body>
+</html>
