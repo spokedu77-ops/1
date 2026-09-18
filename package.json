@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:dive": "node scripts/dev-dive.mjs",
     "dev:turbo": "next dev",
     "dev:webpack": "next dev --webpack",
     "build": "next build",
