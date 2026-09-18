@@ -14,6 +14,10 @@ import {
 const BLOCK_SELECT =
   'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, version';
 
+function isUniqueViolation(error: { message?: string; code?: string }): boolean {
+  return error.code === '23505' || /duplicate key value violates unique constraint/i.test(error.message ?? '');
+}
+
 function asLiteBlock(row: Record<string, unknown>, documentId: string): NoteLiteBlock | null {
   const type = typeof row.type === 'string' ? row.type : '';
   if (!isNoteLiteBlockType(type)) return null;
@@ -119,6 +123,16 @@ export async function PUT(
       return NextResponse.json({ error: 'block cannot parent itself' }, { status: 400 });
     }
 
+    const seenIncoming = new Set<string>();
+    const uniqueIncoming: NoteLiteBlock[] = [];
+    for (let i = incoming.length - 1; i >= 0; i -= 1) {
+      const block = incoming[i]!;
+      if (seenIncoming.has(block.id)) continue;
+      seenIncoming.add(block.id);
+      uniqueIncoming.push(block);
+    }
+    uniqueIncoming.reverse();
+
     const supabase = getServiceSupabase();
     const { data: existingAll, error: existingError } = await supabase
       .from('note_blocks')
@@ -133,14 +147,14 @@ export async function PUT(
     if (
       shouldRejectEmptySnapshot({
         existingLiveCount: existingLiveIds.size,
-        incomingCount: incoming.length,
+        incomingCount: uniqueIncoming.length,
         allowEmpty,
       })
     ) {
       return NextResponse.json({ error: 'EMPTY_SNAPSHOT_REJECTED' }, { status: 409 });
     }
 
-    const ordered = assignSiblingOrdersFromEncounter(incoming);
+    const ordered = assignSiblingOrdersFromEncounter(uniqueIncoming);
     const incomingIds = new Set(ordered.map((b) => b.id));
     const now = new Date().toISOString();
     const toDelete = [...existingLiveIds].filter((id) => !incomingIds.has(id));
@@ -183,7 +197,16 @@ export async function PUT(
           created_by: auth.userId,
           version: 1,
         });
-        if (error) throw new Error(error.message);
+        if (error && isUniqueViolation(error)) {
+          const { error: retryError } = await supabase
+            .from('note_blocks')
+            .update(payload)
+            .eq('id', block.id);
+          if (retryError) throw new Error(retryError.message);
+        } else if (error) {
+          throw new Error(error.message);
+        }
+        existingAnyIds.add(block.id);
       }
     }
 

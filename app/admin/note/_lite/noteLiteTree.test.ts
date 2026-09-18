@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyLiteBlock, detectMarkdownType, indentBlock, insertBlockAfter, moveBlockAfter, moveBlockBefore } from './noteLiteTree';
+import { createEmptyLiteBlock, detectMarkdownType, indentBlock, insertBlockAfter, moveBlockAfter, moveBlockBefore, moveBlockDown, moveBlockUp } from './noteLiteTree';
 import { siblingRelativeOrderSignature } from '@/app/lib/note/noteLiteInvariants';
 
 describe('noteLiteTree', () => {
@@ -42,6 +42,22 @@ describe('noteLiteTree', () => {
     rows = insertBlockAfter(rows, 'b', c);
     const moved = moveBlockAfter(rows, 'a', 'c');
     expect(moved.filter((x) => !x.parent_block_id).map((x) => x.id)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('moveBlockUp/Down swap sibling order and keep nested children', () => {
+    const a = { ...createEmptyLiteBlock('d', 'text', null), id: 'a' };
+    const b = { ...createEmptyLiteBlock('d', 'text', null), id: 'b' };
+    const c = { ...createEmptyLiteBlock('d', 'text', null), id: 'c' };
+    let rows = insertBlockAfter([], null, a);
+    rows = insertBlockAfter(rows, 'a', b);
+    rows = insertBlockAfter(rows, 'b', c);
+    rows = indentBlock(rows, 'c');
+    const up = moveBlockUp(rows, 'b');
+    expect(up.filter((x) => !x.parent_block_id).map((x) => x.id)).toEqual(['b', 'a']);
+    expect(up.find((x) => x.id === 'c')?.parent_block_id).toBe('b');
+    const down = moveBlockDown(up, 'b');
+    expect(down.filter((x) => !x.parent_block_id).map((x) => x.id)).toEqual(['a', 'b']);
+    expect(down.find((x) => x.id === 'c')?.parent_block_id).toBe('b');
   });
 });
 

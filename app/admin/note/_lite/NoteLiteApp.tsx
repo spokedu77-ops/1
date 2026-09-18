@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Check,
@@ -23,6 +23,8 @@ import {
   mergeIntoPrevious,
   moveBlockAfter,
   moveBlockBefore,
+  moveBlockDown,
+  moveBlockUp,
   outdentBlock,
   removeBlock,
   setBlockType,
@@ -84,6 +86,7 @@ export function NoteLiteApp() {
   const hydratedRef = useRef(hydrated);
   const dirtyRef = useRef(dirty);
   const saveTimer = useRef<number | null>(null);
+  const persistTail = useRef(Promise.resolve());
   blocksRef.current = blocks;
   openIdRef.current = openId;
   hydratedRef.current = hydrated;
@@ -104,33 +107,45 @@ export function NoteLiteApp() {
     }
   }, []);
 
-  const persistSnapshot = useCallback(async (documentId: string, nextBlocks: NoteLiteBlock[]) => {
-    if (
-      !canClientPersistSnapshot({
-        hydrated: hydratedRef.current,
-        openDocumentId: documentId,
-        snapshotDocumentId: documentId,
-      })
-    ) {
-      return false;
-    }
-    setSaveState('saving');
-    const res = await fetch(`/api/admin/note/lite/documents/${documentId}/snapshot`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blocks: nextBlocks }),
+  const persistSnapshot = useCallback((documentId: string, nextBlocks: NoteLiteBlock[]) => {
+    const job = persistTail.current.then(async () => {
+      if (
+        !canClientPersistSnapshot({
+          hydrated: hydratedRef.current,
+          openDocumentId: documentId,
+          snapshotDocumentId: documentId,
+        })
+      ) {
+        return false;
+      }
+      const payload = openIdRef.current === documentId ? blocksRef.current : nextBlocks;
+      setSaveState('saving');
+      const res = await fetch(`/api/admin/note/lite/documents/${documentId}/snapshot`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blocks: payload }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setSaveState('error');
+        setError(
+          body.error === 'EMPTY_SNAPSHOT_REJECTED'
+            ? '빈 저장으로 기존 글을 덮을 수 없습니다.'
+            : (body.error || '저장 실패'),
+        );
+        return false;
+      }
+      setDirty(false);
+      setSaveState('saved');
+      setError(null);
+      return true;
     });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      setSaveState('error');
-      setError(body.error === 'EMPTY_SNAPSHOT_REJECTED' ? '빈 저장으로 기존 글을 덮을 수 없습니다.' : (body.error || '저장 실패'));
-      return false;
-    }
-    setDirty(false);
-    setSaveState('saved');
-    setError(null);
-    return true;
+    persistTail.current = job.then(
+      () => undefined,
+      () => undefined,
+    );
+    return job;
   }, []);
 
   const flushOpen = useCallback(async () => {
@@ -415,6 +430,14 @@ export function NoteLiteApp() {
                   }
                   onIndent={() => mutate((prev) => indentBlock(prev, block.id))}
                   onOutdent={() => mutate((prev) => outdentBlock(prev, block.id))}
+                  onMoveUp={() => {
+                    mutate((prev) => moveBlockUp(prev, block.id));
+                    setFocusBlockId(block.id);
+                  }}
+                  onMoveDown={() => {
+                    mutate((prev) => moveBlockDown(prev, block.id));
+                    setFocusBlockId(block.id);
+                  }}
                   onToggle={() => mutate((prev) => toggleTodoChecked(prev, block.id))}
                   onInsert={() => {
                     const created = createEmptyLiteBlock(block.document_id, 'text', block.parent_block_id);
@@ -503,6 +526,8 @@ function LiteBlockRow({
   onBackspaceEmpty,
   onIndent,
   onOutdent,
+  onMoveUp,
+  onMoveDown,
   onToggle,
   onInsert,
   onConvert,
@@ -525,6 +550,8 @@ function LiteBlockRow({
   onBackspaceEmpty: () => void;
   onIndent: () => void;
   onOutdent: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
   onToggle: () => void;
   onInsert: () => void;
   onConvert: (type: NoteLiteBlockType) => void;
@@ -559,6 +586,10 @@ function LiteBlockRow({
     return () => window.removeEventListener('mousedown', onDown);
   }, [menuOpen]);
 
+  useLayoutEffect(() => {
+    fitLiteTextarea(textareaRef.current);
+  }, [text, size]);
+
   useEffect(() => {
     if (!requestFocus) return;
     const el = textareaRef.current;
@@ -567,6 +598,7 @@ function LiteBlockRow({
       el.focus();
       const len = el.value.length;
       el.setSelectionRange(len, len);
+      fitLiteTextarea(el);
       onFocusedRef.current();
     });
     return () => window.cancelAnimationFrame(id);
@@ -576,7 +608,7 @@ function LiteBlockRow({
 
   return (
     <div
-      className={`group relative ${isDragging ? 'opacity-40' : ''}`}
+      className={`group relative min-w-0 ${isDragging ? 'opacity-40' : ''}`}
       style={{ paddingLeft: depth * 22 }}
       onDragOver={(e) => {
         e.preventDefault();
@@ -591,7 +623,7 @@ function LiteBlockRow({
       {dropBefore ? (
         <div className="absolute left-12 right-0 top-0 z-10 h-0.5 rounded-full bg-sky-500" />
       ) : null}
-      <div className="flex items-start">
+      <div className="flex min-w-0 items-start">
         <div
           className={`mt-0.5 flex w-11 shrink-0 items-center justify-end gap-px ${
             showChrome ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
@@ -687,14 +719,14 @@ function LiteBlockRow({
           disabled={disabled}
           value={text}
           rows={1}
-          className={`ml-1.5 min-h-[28px] w-full resize-none bg-transparent py-0.5 outline-none ${size} ${
+          wrap="soft"
+          className={`ml-1.5 min-h-[28px] min-w-0 flex-1 resize-none overflow-hidden break-words bg-transparent py-0.5 outline-none [field-sizing:content] [scrollbar-width:none] [-ms-overflow-style:none] ${size} ${
             block.content.checked ? 'text-neutral-400 line-through' : ''
           }`}
           placeholder=""
           onChange={(e) => {
             onChangeText(e.target.value);
-            e.currentTarget.style.height = 'auto';
-            e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+            fitLiteTextarea(e.currentTarget);
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -710,11 +742,23 @@ function LiteBlockRow({
               if (e.shiftKey) onOutdent();
               else onIndent();
             }
+            if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+              e.preventDefault();
+              if (e.key === 'ArrowUp') onMoveUp();
+              else onMoveDown();
+            }
           }}
         />
       </div>
     </div>
   );
+}
+
+function fitLiteTextarea(el: HTMLTextAreaElement | null) {
+  if (!el) return;
+  el.style.overflow = 'hidden';
+  el.style.height = '0px';
+  el.style.height = `${el.scrollHeight}px`;
 }
 
 function DragDots() {

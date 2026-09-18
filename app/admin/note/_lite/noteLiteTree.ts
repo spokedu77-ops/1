@@ -1,6 +1,7 @@
 import {
   assignSiblingOrdersFromEncounter,
   blockText,
+  sortLiteBlocksForDisplay,
   type NoteLiteBlock,
   type NoteLiteBlockType,
 } from '@/app/lib/note/noteLiteInvariants';
@@ -179,6 +180,32 @@ export function moveBlockAfter(
   const next = [...rest];
   next.splice(afterIdx + 1, 0, ...subtree);
   return assignSiblingOrdersFromEncounter(next);
+}
+
+function siblingsInVisualOrder(blocks: NoteLiteBlock[], parentId: string | null): NoteLiteBlock[] {
+  return sortLiteBlocksForDisplay(blocks).filter((b) => b.parent_block_id === parentId);
+}
+
+/** 같은 들여쓰기(형제) 안에서 한 칸 위로. 자식 블록은 함께 이동. */
+export function moveBlockUp(blocks: NoteLiteBlock[], id: string): NoteLiteBlock[] {
+  const current = blocks.find((b) => b.id === id);
+  if (!current) return blocks;
+  const siblings = siblingsInVisualOrder(blocks, current.parent_block_id);
+  const pos = siblings.findIndex((b) => b.id === id);
+  if (pos <= 0) return blocks;
+  const prev = siblings[pos - 1]!;
+  return moveBlockBefore(blocks, id, prev.id);
+}
+
+/** 같은 들여쓰기(형제) 안에서 한 칸 아래로. 자식 블록은 함께 이동. */
+export function moveBlockDown(blocks: NoteLiteBlock[], id: string): NoteLiteBlock[] {
+  const current = blocks.find((b) => b.id === id);
+  if (!current) return blocks;
+  const siblings = siblingsInVisualOrder(blocks, current.parent_block_id);
+  const pos = siblings.findIndex((b) => b.id === id);
+  if (pos < 0 || pos >= siblings.length - 1) return blocks;
+  const next = siblings[pos + 1]!;
+  return moveBlockAfter(blocks, id, next.id);
 }
 
 export function detectMarkdownType(text: string): { type: NoteLiteBlockType; text: string } | null {
