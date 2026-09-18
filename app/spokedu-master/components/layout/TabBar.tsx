@@ -2,10 +2,9 @@
 
 import { BookOpen, CalendarDays, Heart, Home, Lock, Wrench } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
-import type { MasterCapability } from './masterRouteAccess';
 import { MASTER_NAV_ITEMS } from './masterNavLabels';
+import { hasMasterRouteCapability } from './masterRouteAccess';
 
 const TAB_ICONS = {
   dashboard: Home,
@@ -14,14 +13,6 @@ const TAB_ICONS = {
   manage: CalendarDays,
   'class-tools': Wrench,
 } as const;
-
-const TAB_CAPABILITIES = {
-  dashboard: 'authenticated',
-  programs: 'libraryBrowse',
-  favorites: 'library',
-  manage: 'attendance',
-  'class-tools': 'classTools',
-} as const satisfies Record<keyof typeof TAB_ICONS, MasterCapability>;
 
 function buildPrimaryTabs(basePath: string) {
   return MASTER_NAV_ITEMS.filter(
@@ -33,7 +24,7 @@ function buildPrimaryTabs(basePath: string) {
     label: item.label,
     shortLabel: item.shortLabel,
     Icon: TAB_ICONS[item.key],
-    capability: TAB_CAPABILITIES[item.key],
+    capability: item.capability,
   }));
 }
 
@@ -41,21 +32,15 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function canUseTab(snapshot: MasterAccessSnapshot | null | undefined, capability: MasterCapability) {
-  if (!snapshot) return true;
-  if (capability === 'authenticated') return snapshot.authenticated;
-  if (capability === 'libraryBrowse') return snapshot.canBrowseLibrary;
-  if (capability === 'library') return snapshot.canUseLibrary;
-  if (capability === 'classTools') return snapshot.canUseClassTools;
-  if (capability === 'attendance') return snapshot.canUseAttendance;
-  if (capability === 'records') return snapshot.canUseRecords;
-  return snapshot.canUseSpomove;
-}
-
-export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) {
+export function TabBar({
+  basePath = '/spokedu-master',
+  snapshot = null,
+}: {
+  basePath?: string;
+  snapshot?: MasterAccessSnapshot | null;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const accessContext = useOptionalMasterAccessContext();
   const primaryTabs = buildPrimaryTabs(basePath);
 
   const go = (href: string) => {
@@ -88,7 +73,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
               isActivePath(pathname, href) ||
               (href.endsWith('/programs') && (isActivePath(pathname, `${basePath}/library`) || isActivePath(pathname, `${basePath}/spomove`))) ||
               (href.endsWith('/manage') && (isActivePath(pathname, `${basePath}/activity`) || isActivePath(pathname, `${basePath}/classes`) || isActivePath(pathname, `${basePath}/class-record`)));
-            const locked = !canUseTab(accessContext?.snapshot, capability);
+            const locked = snapshot != null && !hasMasterRouteCapability(snapshot, capability);
             return (
               <button
                 key={href}
@@ -96,7 +81,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
                 onClick={() => go(href)}
                 className="flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-[16px] transition-opacity active:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
                 aria-current={active ? 'page' : undefined}
-                aria-label={label}
+                aria-label={locked ? `${label} (Lite 이상)` : label}
               >
                 <span
                   className="relative grid h-7 w-7 place-items-center rounded-[9px]"

@@ -20,7 +20,6 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
   if (programIds.length) {
     const { data: published } = await supabase.from('spokedu_pro_programs').select('source_center_curriculum_id').in('source_center_curriculum_id', programIds).eq('is_published', true);
     if (new Set((published ?? []).map((row) => Number(row.source_center_curriculum_id))).size !== new Set(programIds).size) return privateNoStoreJson({ error: '현재 이용할 수 없는 놀이체육 활동이 포함되어 있습니다.' }, { status: 400 });
-    if (access.plan === 'lite') { const { data: proRows } = await supabase.from('spokedu_master_program_meta').select('curriculum_id').in('curriculum_id', programIds).eq('sm_is_pro', true); if ((proRows ?? []).length) return privateNoStoreJson({ error: '현재 이용권으로 가져올 수 없는 활동이 포함되어 있습니다.' }, { status: 403 }); }
   }
   const { error } = await supabase.rpc('spokedu_master_carryover_session_programs', { p_owner_id: access.userId, p_source_session_id: sourceSessionId, p_target_session_id: targetSessionId, p_source_session_program_ids: ids });
   if (error) return privateNoStoreJson({ error: error.code === '22023' ? '이전 수업과 대상 수업을 확인해 주세요.' : '선택한 활동을 가져오지 못했습니다.' }, { status: error.code === '22023' ? 400 : 500 });

@@ -78,9 +78,9 @@ export function LessonPreviewContent({
             data-preview-column="content"
             className="min-w-0 rounded-[14px] border border-amber-200 bg-amber-50/80 p-4"
           >
-            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-amber-800">프리미엄 전용</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-amber-800">Lite에서 이용</p>
             <p className="mt-2 text-[13px] font-semibold leading-6 text-amber-950">
-              준비물, 코치 스크립트, 활동 방법, 참고 영상은 프리미엄 이용권에서 확인할 수 있습니다.
+              Lite에서 전체 수업 자료를 이용할 수 있습니다. 준비물, 활동 방법, 참고 영상은 Lite에서 확인할 수 있습니다.
             </p>
           </aside>
         ) : null}

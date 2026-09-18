@@ -62,7 +62,8 @@ import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
 import { canReproduceSpomoveSameSettings } from '../spomove/movements/canReproduceSpomoveSameSettings';
 import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
-import { isFreePreviewProgramId, selectWeeklyProgramsById } from '../lib/commercialProgramAccess';
+import { buildProgramLessonGateHref } from '../lib/masterGateIntent';
+import { FREE_PREVIEW_PROGRAM_ID, getProgramAccessBadge, isProgramLessonLocked, selectWeeklyProgramsById } from '../lib/commercialProgramAccess';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
@@ -102,10 +103,16 @@ type HomeMediaPackQueryResult = {
   error: { code?: string } | null;
 };
 
-function getFirstStartPaths() {
+function getFirstStartPaths(canUseAttendance: boolean) {
+  if (!canUseAttendance) {
+    return [
+      { title: '무료 수업 보기', description: '지정된 놀이체육 1개를 상세부터 영상까지 체험하세요.', href: `/spokedu-master/library/${FREE_PREVIEW_PROGRAM_ID}` },
+      { title: '수업 도구 열기', description: '타이머, 팀 나누기, 랜덤 뽑기를 바로 사용할 수 있습니다.', href: '/spokedu-master/class-tools' },
+    ] as const;
+  }
   return [
-    { title: '좋은 활동부터 찾아보기', description: '수업에 맞는 프로그램을 둘러보세요.', href: '/spokedu-master/programs' },
-    { title: '수업부터 만들기', description: '수업반과 이번 주 일정을 한 번에 준비하세요.', href: '/spokedu-master/manage' },
+    { title: '좋은 활동부터 찾아보기', description: '수업에 맞는 프로그램을 둘러보세요.', href: '/spokedu-master/library' },
+    { title: '수업반 준비하기', description: '수업반과 이번 주 일정을 한 번에 준비하세요.', href: '/spokedu-master/manage' },
   ] as const;
 }
 
@@ -209,14 +216,18 @@ function WeeklyProgramCard({
   onPreview,
   favorite,
   favoriteEnabled,
+  favoriteHint,
   onFavorite,
+  accessBadge,
   priority = false,
 }: {
   program: Program;
   onPreview: (program: Program) => void;
   favorite: boolean;
   favoriteEnabled: boolean;
+  favoriteHint?: string;
   onFavorite: () => void;
+  accessBadge?: '무료 체험' | 'Lite' | null;
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
@@ -233,7 +244,9 @@ function WeeklyProgramCard({
       onPreview={() => onPreview(program)}
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
+      favoriteHint={favoriteHint}
       onFavorite={onFavorite}
+      accessBadge={accessBadge}
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
@@ -243,18 +256,20 @@ function WeeklyProgramCard({
   );
 }
 
-function FirstStartGuide() {
-  const firstStartPaths = getFirstStartPaths();
+function FirstStartGuide({ canUseAttendance }: { canUseAttendance: boolean }) {
+  const firstStartPaths = getFirstStartPaths(canUseAttendance);
   return (
     <section
       data-dashboard-section="first-start"
       aria-labelledby="first-start-heading"
     >
       <h2 id="first-start-heading" className={MV_SECTION_TITLE}>
-        첫 수업을 시작해 보세요
+        놀이체육과 수업 도구부터 시작해 보세요
       </h2>
       <p className="mt-2 max-w-xl text-[15px] font-normal leading-6 text-slate-600">
-        콘텐츠부터 찾아도, 수업부터 만들어도 같은 준비 흐름으로 이어집니다.
+        {canUseAttendance
+          ? '콘텐츠부터 찾아도, 수업반부터 준비해도 같은 준비 흐름으로 이어집니다.'
+          : '무료 수업 1개를 체험하고, 라이브러리를 둘러보고, 수업 도구를 바로 사용할 수 있습니다.'}
       </p>
       <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
         {firstStartPaths.map(({ title, description, href }) => (
@@ -582,7 +597,11 @@ function EntitledDashboardView() {
   const favoritesOwnerId = getFavoritesOwnerId(profile);
   const isPremium = useIsPremium();
   const isProgramLocked = (program: Program) =>
-    !isFreePreviewProgramId(program.id) && (!accessSnapshot.canUseLibrary || (program.isPro && !isPremium));
+    isProgramLessonLocked({ programId: program.id, canUseLibrary: accessSnapshot.canUseLibrary });
+  const favoriteEnabled = favoritesOwnerId != null && accessSnapshot.canUseLibrary;
+  const favoriteHint = accessSnapshot.canUseLibrary
+    ? '로그인 후 즐겨찾기할 수 있습니다'
+    : 'Lite에서 즐겨찾기할 수 있습니다';
   const recentActivityOwnerId = recentActivityOwnerResolved
     ? getRecentActivityOwnerId(profile)
     : null;
@@ -822,12 +841,17 @@ function EntitledDashboardView() {
               놀이체육과 디지털 활동을 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
             </p>
             <div className="mt-5 flex flex-wrap gap-2.5">
-              <Link href="/spokedu-master/library" className="spm-btn-primary inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-semibold focus-visible:outline-none">
-                수업 찾아보기 <ArrowRight size={15} aria-hidden />
+              <Link href={`/spokedu-master/library/${FREE_PREVIEW_PROGRAM_ID}`} className="spm-btn-primary inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-semibold focus-visible:outline-none">
+                무료 수업 보기 <ArrowRight size={15} aria-hidden />
               </Link>
-              <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                수업 일정 보기
+              <Link href="/spokedu-master/class-tools" className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                수업 도구 열기
               </Link>
+              {accessSnapshot.canUseAttendance ? (
+                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                  수업 일정 보기
+                </Link>
+              ) : null}
             </div>
           </header>
         </div>
@@ -837,7 +861,7 @@ function EntitledDashboardView() {
       {isFirstUser ? (
         <div data-dashboard-chapter="first-start" className="px-4 pb-0 pt-8 sm:px-6">
           <div className={MV_EDITORIAL_WIDTH}>
-            <FirstStartGuide />
+            <FirstStartGuide canUseAttendance={accessSnapshot.canUseAttendance} />
           </div>
         </div>
       ) : null}
@@ -917,8 +941,10 @@ function EntitledDashboardView() {
                       program={program}
                       onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
                       favorite={isFavoriteProgram(favoritesOwnerId, program.id)}
-                      favoriteEnabled={favoritesOwnerId != null}
+                      favoriteEnabled={favoriteEnabled}
+                      favoriteHint={favoriteHint}
                       onFavorite={() => toggleFavoriteProgram(favoritesOwnerId, program.id)}
+                      accessBadge={getProgramAccessBadge({ programId: program.id, canUseLibrary: accessSnapshot.canUseLibrary })}
                       priority={index < 2}
                     />
                   </div>
@@ -967,7 +993,7 @@ function EntitledDashboardView() {
                   onOpenGuide={setPreviewSpomove}
                   launchMode={launchMode}
                   favorite={isFavoriteContent(favoritesOwnerId, { type: 'spomove', id: preset.id })}
-                  favoriteEnabled={favoritesOwnerId != null}
+                  favoriteEnabled={favoriteEnabled}
                   onFavorite={() => toggleFavoriteContent(favoritesOwnerId, { type: 'spomove', id: preset.id })}
                 />
               </div>
@@ -983,8 +1009,9 @@ function EntitledDashboardView() {
           autoplayVideo={previewAutoplay}
           isPremium={isPremium}
           accessLocked={isProgramLocked(selectedProgram)}
+          lockHref={buildProgramLessonGateHref(selectedProgram.id)}
           favorite={isFavoriteProgram(favoritesOwnerId, selectedProgram.id)}
-          onFavorite={favoritesOwnerId ? () => toggleFavoriteProgram(favoritesOwnerId, selectedProgram.id) : undefined}
+          onFavorite={favoriteEnabled ? () => toggleFavoriteProgram(favoritesOwnerId, selectedProgram.id) : undefined}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({
               programId: selectedProgram.id,

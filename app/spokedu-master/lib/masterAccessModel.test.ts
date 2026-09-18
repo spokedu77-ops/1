@@ -102,16 +102,17 @@ describe('commercial launch architecture contracts', () => {
     expect(provider).toContain('MasterAccessProvider');
     expect(dashboard).toContain('selectWeeklyProgramsById(programs)');
     expect(dashboard).toContain('EntitledDashboardView');
-    expect(preview).toContain('이용권이 필요합니다');
+    expect(preview).toContain('놀이체육 둘러보기, 무료 수업 1개, 수업 도구는 계속 사용할 수 있습니다');
     expect(appShell).toContain('MasterAccessProvider');
-    expect(appShell).toContain('hasMasterEntitlement');
+    expect(appShell).toContain('canBrowseLibrary');
   });
 
   it('loads operational data from Lite attendance access while gating entitled content centrally', () => {
     const appShell = read('app/spokedu-master/components/layout/AppShell.tsx');
     const operational = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
 
-    expect(appShell).toContain('canLoadEntitledContent');
+    expect(appShell).toContain('canBrowseLibrary');
+    expect(appShell).toContain('canSyncFavorites');
     expect(operational).toContain('useMasterCanUseAttendance');
     expect(operational).toContain('!canUseAttendance');
   });
@@ -146,7 +147,7 @@ describe('commercial launch architecture contracts', () => {
     const provider = read('app/spokedu-master/access/MasterAccessProvider.tsx');
 
     expect(dashboard).toContain('useMasterAccessSnapshot');
-    expect(dashboard).toContain('isFreePreviewProgramId(program.id)');
+    expect(dashboard).toContain('isProgramLessonLocked');
     expect(dashboard).not.toContain('canUseSpomove(');
     expect(classRecord).toContain("redirect('/spokedu-master/activity')");
     expect(shop).toContain('useMasterCanBuySpomat');

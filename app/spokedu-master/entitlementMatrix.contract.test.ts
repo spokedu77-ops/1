@@ -121,7 +121,7 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
 
   it('maps protected routes to the matrix capability keys', () => {
     expect(getMasterRouteRequirement('/spokedu-master/library').capability).toBe('libraryBrowse');
-    expect(getMasterRouteRequirement('/spokedu-master/programs').capability).toBe('library');
+    expect(getMasterRouteRequirement('/spokedu-master/programs').capability).toBe('libraryBrowse');
     expect(getMasterRouteRequirement('/spokedu-master/favorites').capability).toBe('library');
     expect(getMasterRouteRequirement('/spokedu-master/manage').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/class-tools').capability).toBe('classTools');
@@ -131,26 +131,33 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     expect(getMasterRouteRequirement('/spokedu-master/students').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('records');
     expect(getMasterRouteRequirement('/spokedu-master/report').capability).toBe('records');
-    expect(getMasterRouteRequirement('/spokedu-master/spomove').capability).toBe('library');
+    expect(getMasterRouteRequirement('/spokedu-master/spomove').capability).toBe('spomove');
     expect(getMasterRouteRequirement('/spokedu-master/spomove/session').capability).toBe('spomove');
     expect(getMasterRouteRequirement('/spokedu-master/dashboard').capability).toBe('authenticated');
   });
 
-  it('keeps TabBar and AppShell capability checks on the same snapshot flags', () => {
+  it('keeps TabBar, StatusBar, and AppShell capability checks on the same snapshot flags', () => {
     const tabBar = read('app/spokedu-master/components/layout/TabBar.tsx');
+    const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
     const appShell = read('app/spokedu-master/components/layout/AppShell.tsx');
+    const nav = read('app/spokedu-master/components/layout/masterNavLabels.ts');
+    const routeAccess = read('app/spokedu-master/components/layout/masterRouteAccess.ts');
 
-    for (const source of [tabBar, appShell]) {
-      expect(source).toContain("capability === 'library'");
-      expect(source).toContain('snapshot.canUseLibrary');
-      expect(source).toContain("capability === 'classTools'");
-      expect(source).toContain('snapshot.canUseClassTools');
-      expect(source).toContain("capability === 'attendance'");
-      expect(source).toContain('snapshot.canUseAttendance');
-      expect(source).toContain("capability === 'records'");
-      expect(source).toContain('snapshot.canUseRecords');
-      expect(source).toContain('snapshot.canUseSpomove');
-    }
+    expect(nav).toContain("capability: 'libraryBrowse'");
+    expect(nav).toContain("capability: 'library'");
+    expect(nav).toContain("capability: 'attendance'");
+    expect(nav).toContain("capability: 'classTools'");
+    expect(tabBar).toContain('hasMasterRouteCapability');
+    expect(statusBar).toContain('hasMasterRouteCapability');
+    expect(appShell).toContain('hasMasterRouteCapability');
+    expect(appShell).toContain('canBrowseLibrary');
+    expect(appShell).toContain('canSyncFavorites');
+    expect(routeAccess).toContain('snapshot.canUseLibrary');
+    expect(routeAccess).toContain('snapshot.canBrowseLibrary');
+    expect(routeAccess).toContain('snapshot.canUseClassTools');
+    expect(routeAccess).toContain('snapshot.canUseAttendance');
+    expect(routeAccess).toContain('snapshot.canUseRecords');
+    expect(routeAccess).toContain('snapshot.canUseSpomove');
   });
 
   it('keeps GateWall copy honest for Lite→Premium records/SPOMOVE and expired renewals', () => {
@@ -158,7 +165,7 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     expect(gate).toContain('기록 누적은 프리미엄에서 이용할 수 있습니다');
     expect(gate).toContain('이미 쌓인 기록은 유지됩니다');
     expect(gate).toContain('SPOMOVE는 프리미엄에서 이용할 수 있습니다');
-    expect(gate).toContain('수업 도구를 다시 쓰려면 이용권이 필요합니다');
+    expect(gate).toContain('수업 도구는 Free에서도 사용할 수 있습니다');
     expect(gate).toContain('spm-btn-primary');
   });
 

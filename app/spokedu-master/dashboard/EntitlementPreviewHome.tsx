@@ -51,12 +51,12 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
           SPOKEDU MASTER
         </p>
         <h1 className="mt-2 text-[28px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
-          {isLapsed ? '이용 기간이 종료되었습니다' : '이용권이 필요합니다'}
+          {isLapsed ? '이용 기간이 종료되었습니다' : 'Lite로 수업 운영을 이어갈 수 있습니다'}
         </h1>
         <p className="mt-3 max-w-[560px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           {isLapsed
-            ? '수업 라이브러리, 기록, 안내문을 다시 쓰려면 구독을 선택해 주세요. 기존 계정과 프로필은 그대로 유지됩니다.'
-            : '수업 도구는 로그인 후 바로 써 볼 수 있습니다. 라이브러리·기록·안내문·SPOMOVE는 이용권에서 이어집니다.'}
+            ? '놀이체육 둘러보기, 무료 수업 1개, 수업 도구는 계속 사용할 수 있습니다. 수업반·출석·기록은 유지되며, 다시 열려면 필요한 이용권을 선택해 주세요.'
+            : '수업 도구와 놀이체육 둘러보기는 Free에서도 바로 사용할 수 있습니다. 수업반·즐겨찾기·출석은 Lite, 기록과 SPOMOVE는 Premium에서 이어집니다.'}
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link

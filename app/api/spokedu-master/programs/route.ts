@@ -12,7 +12,7 @@ import {
 import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { extractExactSectionLines, parseTextareaLines, parseVariationMethod } from '@/app/spokedu-master/lib/lessonContentContract';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-import { isFreePreviewProgramId, selectWeeklyProgramsById } from '@/app/spokedu-master/lib/commercialProgramAccess';
+import { canAccessProgramLessonContent, selectWeeklyProgramsById } from '@/app/spokedu-master/lib/commercialProgramAccess';
 import { isLessonCatalogNew } from '@/app/spokedu-master/lib/lessonCatalogNew';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
@@ -154,10 +154,11 @@ function normalizeProgramForMaster(program: Program): Program {
 }
 
 function canAccessProgramDetails(access: MasterAccessResult, program: Program): boolean {
-  if (isFreePreviewProgramId(program.id)) return true;
   if (!access.ok) return false;
-  if (access.isAdmin || access.plan === 'premium' || access.plan === 'team' || access.plan === 'admin') return true;
-  return access.plan === 'lite' && !program.isPro;
+  return canAccessProgramLessonContent({
+    programId: program.id,
+    canUseLibrary: Boolean(access.canUseLibrary || access.isAdmin),
+  });
 }
 
 function redactProgramForAccess(program: Program, canAccessDetails: boolean): Program {

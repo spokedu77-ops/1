@@ -1,3 +1,5 @@
+import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
+
 export type MasterCapability = 'authenticated' | 'libraryBrowse' | 'library' | 'classTools' | 'attendance' | 'records' | 'spomove';
 
 export type MasterRouteRequirement = {
@@ -21,22 +23,40 @@ export function isProtectedMasterRoute(pathname: string, basePath: string) {
   return pathname === basePath || pathname.startsWith(`${basePath}/`);
 }
 
+export function hasMasterRouteCapability(
+  snapshot: MasterAccessSnapshot | null | undefined,
+  capability: MasterCapability,
+) {
+  if (!snapshot) return false;
+  if (capability === 'authenticated') return snapshot.authenticated;
+  if (capability === 'libraryBrowse') return snapshot.canBrowseLibrary;
+  if (capability === 'library') return snapshot.canUseLibrary;
+  if (capability === 'classTools') return snapshot.canUseClassTools;
+  if (capability === 'attendance') return snapshot.canUseAttendance;
+  if (capability === 'records') return snapshot.canUseRecords;
+  return snapshot.canUseSpomove;
+}
+
 export function getMasterRouteRequirement(pathname: string, basePath = '/spokedu-master'): MasterRouteRequirement {
   if (
     pathname === `${basePath}/spomove/session` ||
     pathname.startsWith(`${basePath}/spomove/session/`)
+    || pathname === `${basePath}/spomove`
+    || pathname.startsWith(`${basePath}/spomove/`)
   ) {
     return { capability: 'spomove' };
   }
   if (
-    pathname === `${basePath}/programs` ||
-    pathname.startsWith(`${basePath}/programs/`) ||
     pathname === `${basePath}/favorites` ||
-    pathname.startsWith(`${basePath}/favorites/`) ||
-    pathname === `${basePath}/spomove` ||
-    pathname.startsWith(`${basePath}/spomove/`)
+    pathname.startsWith(`${basePath}/favorites/`)
   ) {
     return { capability: 'library' };
+  }
+  if (
+    pathname === `${basePath}/programs` ||
+    pathname.startsWith(`${basePath}/programs/`)
+  ) {
+    return { capability: 'libraryBrowse' };
   }
   if (pathname === `${basePath}/manage` || pathname.startsWith(`${basePath}/manage/`)) {
     return { capability: 'attendance' };

@@ -21,6 +21,8 @@ export function ProgramPreviewModal({
   autoplayVideo,
   isPremium = true,
   accessLocked,
+  lockHref = '/spokedu-master/payment?plan=lite',
+  lockLabel = 'Lite로 열기',
   favorite,
   onFavorite,
   isTodayLesson = false,
@@ -34,6 +36,8 @@ export function ProgramPreviewModal({
   autoplayVideo: boolean;
   isPremium?: boolean;
   accessLocked?: boolean;
+  lockHref?: string;
+  lockLabel?: string;
   favorite?: boolean;
   onFavorite?: () => void;
   isTodayLesson?: boolean;
@@ -43,7 +47,8 @@ export function ProgramPreviewModal({
   onPlaybackStarted?: () => void;
   onClose: () => void;
 }) {
-  const locked = accessLocked ?? (program.isPro && !isPremium);
+  const locked = accessLocked ?? false;
+  void isPremium;
   const model = buildLessonDisplayModel(program);
   const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
 
@@ -106,7 +111,7 @@ export function ProgramPreviewModal({
             {locked ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">
                 <Lock className="h-3 w-3" />
-                프리미엄
+                Lite
               </span>
             ) : null}
             {hasSpomoveLink(program) ? (
@@ -127,11 +132,11 @@ export function ProgramPreviewModal({
             </button>
             {locked ? (
               <Link
-                href="/spokedu-master/payment?plan=premium"
+                href={lockHref}
                 className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none sm:h-10 sm:w-[168px]"
               >
                 <Lock className="h-4 w-4" />
-                프리미엄으로 열기
+                {lockLabel}
               </Link>
             ) : (
               <Link

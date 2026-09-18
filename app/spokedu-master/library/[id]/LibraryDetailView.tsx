@@ -17,7 +17,8 @@ import {
 } from '../../lib/program-media';
 import { useIsPremium, useMasterStore } from '../../store';
 import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
-import { isFreePreviewProgramId } from '../../lib/commercialProgramAccess';
+import { isProgramLessonLocked } from '../../lib/commercialProgramAccess';
+import { buildProgramLessonGateHref } from '../../lib/masterGateIntent';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { AssignProgramToSessionButton } from '../../components/session/AssignProgramToSessionButton';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
@@ -155,8 +156,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
     );
   }
 
-  const programLocked = !isFreePreviewProgramId(program.id)
-    && (!accessSnapshot.canUseLibrary || (program.isPro && !isPremium));
+  const programLocked = isProgramLessonLocked({
+    programId: program.id,
+    canUseLibrary: accessSnapshot.canUseLibrary,
+  });
+  const favoriteEnabled = ownerId != null && accessSnapshot.canUseLibrary;
+  const programGateHref = buildProgramLessonGateHref(program.id);
 
   if (programLocked) {
     return (
@@ -164,12 +169,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-[18px] border border-amber-200 bg-amber-50 text-amber-600">
           <FileText className="h-7 w-7" />
         </div>
-        <h1 className="mt-5 text-xl font-semibold text-[color:var(--spm-t)]">프리미엄 전용 수업입니다.</h1>
+        <h1 className="mt-5 text-xl font-semibold text-[color:var(--spm-t)]">Lite에서 전체 수업 자료를 이용할 수 있습니다.</h1>
         <p className="mt-2 max-w-md text-sm font-medium leading-6 text-[color:var(--spm-t2)]">
-          이 수업의 전체 지도안, 코칭 스크립트, 영상 자료는 프리미엄 이용권에서 열람할 수 있습니다.
+          이 수업의 전체 지도안, 코칭 스크립트, 영상 자료는 Lite에서 열람할 수 있습니다.
         </p>
         <div className="mt-6 grid w-full max-w-sm gap-2 sm:grid-cols-2">
-          <Link href="/spokedu-master/payment?plan=premium" className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold focus-visible:outline-none">프리미엄 보기</Link>
+          <Link href={programGateHref} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold focus-visible:outline-none">Lite로 열기</Link>
           <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-semibold text-[color:var(--spm-t2)]">라이브러리로</Link>
         </div>
       </main>
@@ -205,7 +210,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           {model.title}
         </p>
         <div className="h-11 w-11">
-          <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--spm-t2)] ring-1 transition duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none lg:hidden ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : ownerId ? 'bg-white/70 ring-slate-200/70 hover:bg-white' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200/70'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} disabled={!ownerId}>
+          <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--spm-t2)] ring-1 transition duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none lg:hidden ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : favoriteEnabled ? 'bg-white/70 ring-slate-200/70 hover:bg-white' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200/70'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favoriteEnabled ? (favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가') : 'Lite에서 즐겨찾기할 수 있습니다'} disabled={!favoriteEnabled}>
             <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
           <span aria-hidden className="hidden h-11 w-11 lg:block" />
@@ -238,7 +243,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                     <Copy className="h-4 w-4 shrink-0" /> {planCopyStatus === 'success' ? '복사 완료' : planCopyStatus === 'error' ? '다시 시도' : '지도안 복사'}
                   </button>
                 </div>
-                <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`hidden h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-[color:var(--spm-t2)] ring-1 transition duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none lg:inline-flex ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : ownerId ? 'bg-white ring-slate-200 hover:bg-slate-50' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} disabled={!ownerId}>
+                <button type="button" onClick={() => toggleFavoriteProgram(ownerId, program.id)} className={`hidden h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-[color:var(--spm-t2)] ring-1 transition duration-200 ease-out hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none lg:inline-flex ${favorite ? 'bg-amber-50/90 text-amber-600 ring-amber-200/90' : favoriteEnabled ? 'bg-white ring-slate-200 hover:bg-slate-50' : 'cursor-not-allowed bg-[var(--spm-s3)] text-[color:var(--spm-t3)] ring-slate-200'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} title={favoriteEnabled ? (favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가') : 'Lite에서 즐겨찾기할 수 있습니다'} disabled={!favoriteEnabled}>
                   <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
                 </button>
               </div>

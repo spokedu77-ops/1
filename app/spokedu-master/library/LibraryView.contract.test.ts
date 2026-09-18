@@ -21,7 +21,8 @@ describe('LibraryView favorites contract', () => {
   });
 
   it('keeps the Lite resource catalog complete and separate from operational history', () => {
-    expect(source).toContain('programs.filter((program) => !program.isPro)');
+    expect(source).toContain('programs.filter');
+    expect(source).not.toContain('programs.filter((program) => !program.isPro)');
     expect(source).not.toContain('recentProgramRecords');
     expect(source).not.toContain('usedProgramIds');
   });

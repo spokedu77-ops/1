@@ -2,15 +2,17 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useProfile } from './store';
+import { useOptionalMasterAccessContext } from './access/MasterAccessProvider';
 
 export default function SpokeduMasterPage() {
   const router = useRouter();
-  const profile = useProfile();
+  const access = useOptionalMasterAccessContext();
+  const onboardingDone = access?.snapshot.onboardingDone;
 
   useEffect(() => {
-    router.replace(profile?.onboardingDone ? '/spokedu-master/dashboard' : '/spokedu-master/onboarding');
-  }, [profile?.onboardingDone, router]);
+    if (onboardingDone == null) return;
+    router.replace(onboardingDone ? '/spokedu-master/dashboard' : '/spokedu-master/onboarding');
+  }, [onboardingDone, router]);
 
   return (
     <div className="grid min-h-dvh place-items-center px-6" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
@@ -20,7 +22,7 @@ export default function SpokeduMasterPage() {
           SPOKEDU MASTER로 이동하는 중입니다
         </h1>
         <p className="mt-3 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-          온보딩 상태를 확인하고 알맞은 시작 화면을 여는 중입니다.
+          서버 권한을 확인하고 알맞은 시작 화면을 여는 중입니다.
         </p>
         <div className="mx-auto mt-6 h-1.5 w-40 overflow-hidden rounded-full" style={{ background: 'var(--spm-s3)' }}>
           <div className="h-full w-1/2 animate-pulse rounded-full" style={{ background: 'var(--spm-acc)' }} />

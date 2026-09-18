@@ -10,18 +10,23 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
   it('routes the app root by onboarding completion without forcing payment', () => {
     const source = read('app/spokedu-master/page.tsx');
 
-    expect(source).toContain("profile?.onboardingDone ? '/spokedu-master/dashboard' : '/spokedu-master/onboarding'");
-    expect(source).not.toContain('/spokedu-master/payment');
+    expect(source).toContain('useOptionalMasterAccessContext');
+    expect(source).toContain('access?.snapshot.onboardingDone');
+    expect(source).toContain("onboardingDone ? '/spokedu-master/dashboard' : '/spokedu-master/onboarding'");
+    expect(source).not.toContain('profile?.onboardingDone');
     expect(source).not.toContain('plan=');
   });
 
   it('keeps onboarding to account setup only', () => {
     const source = read('app/spokedu-master/onboarding/page.tsx');
 
-    expect(source).toContain("router.replace(searchParams.has('next') ? returnPath : '/spokedu-master/classes?create=1')");
+    expect(source).toContain("router.replace(searchParams.has('next') ? returnPath : '/spokedu-master/dashboard')");
     expect(source).toContain('if (serverOnboardingDone)');
     expect(source).not.toContain('serverOnboardingDone || profile?.onboardingDone');
-    expect(source).toContain('시작하기');
+    expect(source).toContain('MASTER 시작하기');
+    expect(source).not.toContain("'/spokedu-master/classes?create=1'");
+    expect(source).not.toContain('수업반 등록');
+    expect(source).not.toContain('첫 수업 만들기');
     expect(source).toContain('/api/spokedu-master/profile');
     expect(source).not.toContain('trialEndsAt');
     expect(source).not.toContain('무료 체험');

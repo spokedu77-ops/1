@@ -10,11 +10,10 @@ import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { SubscriptionGateWall } from '../ui/SubscriptionGateWall';
 import { MasterAccessProvider } from '../../access/MasterAccessProvider';
 import type { MasterAccessApiResponse, MasterAccessSnapshot } from '../../lib/masterAccessModel';
-import { hasMasterEntitlement } from '../../lib/masterAccessModel';
 import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvider';
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../../store';
-import { getMasterRouteRequirement, getSafeMasterReturnPath, isProtectedMasterRoute, type MasterCapability } from './masterRouteAccess';
+import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterRouteCapability, isProtectedMasterRoute } from './masterRouteAccess';
 import { buildMasterLoginHref } from '../../lib/masterLoginReturn';
 import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
 
@@ -32,15 +31,8 @@ function currentLoginRedirectHref() {
   return buildMasterLoginHref(`${window.location.pathname}${window.location.search}`);
 }
 
-function hasRouteCapability(snapshot: MasterAccessSnapshot | null, capability: MasterCapability) {
-  if (!snapshot) return false;
-  if (capability === 'authenticated') return snapshot.authenticated;
-  if (capability === 'libraryBrowse') return snapshot.authenticated;
-  if (capability === 'library') return snapshot.canUseLibrary;
-  if (capability === 'classTools') return snapshot.canUseClassTools;
-  if (capability === 'attendance') return snapshot.canUseAttendance;
-  if (capability === 'records') return snapshot.canUseRecords;
-  return snapshot.canUseSpomove;
+function hasRouteCapability(snapshot: MasterAccessSnapshot | null, capability: Parameters<typeof hasMasterRouteCapability>[1]) {
+  return hasMasterRouteCapability(snapshot, capability);
 }
 
 function isLegacyRootServiceWorker(registration: ServiceWorkerRegistration) {
@@ -136,10 +128,10 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
             SPOKEDU MASTER
           </p>
           <h1 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-[32px]">
-            SPOKEDU MASTER 이용 권한이 필요합니다.
+            SPOKEDU MASTER 접근을 확인할 수 없습니다.
           </h1>
           <p className="mt-3 text-[14px] font-semibold leading-6 text-slate-500">
-            수업 라이브러리, 학생 기록, 저장 안내문을 사용하려면 구독을 시작해 주세요.
+            로그인 상태를 다시 확인한 뒤, Free로 놀이체육과 수업 도구부터 이용할 수 있습니다.
           </p>
 
           <div className="mt-6 grid gap-2">
@@ -254,26 +246,26 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     void Promise.all([syncSubscription(), syncMasterProfile()]);
   }, [isLanding, isPublicDocument, syncMasterProfile, syncSubscription]);
 
-  const canLoadEntitledContent =
-    accessGuard.snapshot != null && hasMasterEntitlement(accessGuard.snapshot);
+  const canBrowseLibrary = accessGuard.snapshot?.canBrowseLibrary === true;
+  const canSyncFavorites = accessGuard.snapshot?.canUseLibrary === true;
 
   useEffect(() => {
     if (isLanding || isPublicDocument) return;
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
-    if (!canLoadEntitledContent) return;
+    if (!canBrowseLibrary) return;
     if (pathname === `${basePath}/dashboard`) void loadHomePrograms();
     else void loadPrograms();
-    void syncFavoriteProgramsFromServer();
-  }, [accessGuard.status, basePath, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, pathname, syncFavoriteProgramsFromServer]);
+    if (canSyncFavorites) void syncFavoriteProgramsFromServer();
+  }, [accessGuard.status, basePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, pathname, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
       if (isLanding || isPublicDocument || document.visibilityState !== 'visible') return;
       if (isProtectedRoute && accessGuard.status !== 'allowed') return;
-      if (!canLoadEntitledContent) return;
+      if (!canBrowseLibrary) return;
       if (pathname === `${basePath}/dashboard`) return;
       void reloadPrograms();
-      void syncFavoriteProgramsFromServer();
+      if (canSyncFavorites) void syncFavoriteProgramsFromServer();
     };
     window.addEventListener('focus', refreshProgramsOnFocus);
     document.addEventListener('visibilitychange', refreshProgramsOnFocus);
@@ -281,7 +273,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', refreshProgramsOnFocus);
       document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
     };
-  }, [accessGuard.status, basePath, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, pathname, reloadPrograms, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, basePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, pathname, reloadPrograms, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
@@ -478,7 +470,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         <div className={`flex min-w-0 flex-1 flex-col ${isViewportWorkspace ? 'min-h-0' : ''}`}>
           {hideChrome ? null : (
             <div className={isLibraryDetail ? 'hidden lg:block' : undefined}>
-              <StatusBar />
+              <StatusBar snapshot={accessGuard.snapshot} />
             </div>
           )}
           <main className="min-h-0 flex-1 overflow-hidden bg-[var(--spm-bg)]">
@@ -508,7 +500,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
             )}
           </main>
           {hideChrome ? null : <FloatingTimerPill />}
-          {hideChrome ? null : <TabBar basePath={basePath} />}
+          {hideChrome ? null : <TabBar basePath={basePath} snapshot={accessGuard.snapshot} />}
         </div>
       </div>
     </div>

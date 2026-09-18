@@ -16,6 +16,7 @@ type MasterAccessOk = {
   userId: string;
   isAdmin: boolean;
   plan: MasterPlan;
+  canUseLibrary?: boolean;
 };
 
 type MasterAccessFail = {
@@ -266,7 +267,7 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
 
     const isAdmin = await isPlatformAdminUser(user, serverSupabase);
     if (isAdmin) {
-      return { ok: true, userId: user.id, isAdmin: true, plan: 'admin' };
+      return { ok: true, userId: user.id, isAdmin: true, plan: 'admin', canUseLibrary: true };
     }
 
     const serviceSupabase = getServiceSupabase();
@@ -298,6 +299,7 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
         userId: user.id,
         isAdmin: false,
         plan: entitlement.plan,
+        canUseLibrary: true,
       };
     }
 
@@ -444,12 +446,14 @@ export async function requireSpokeduMasterCapability(
   const access = await getSpokeduMasterAccessSnapshot();
   if (!access.ok) return access;
   if (!access.snapshot[CAPABILITY_FIELD[capability]]) {
+    const error = capability === 'records' || capability === 'spomove'
+      ? 'Premium 이용권이 필요한 기능입니다.'
+      : capability === 'library' || capability === 'attendance'
+        ? 'Lite 이용권이 필요한 기능입니다.'
+        : EXPIRED_ACCESS_MESSAGE;
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: capability === 'records' || capability === 'spomove' ? 'Premium 이용권이 필요한 기능입니다.' : EXPIRED_ACCESS_MESSAGE },
-        { status: 403 },
-      ),
+      response: NextResponse.json({ error }, { status: 403 }),
     };
   }
   return {
@@ -457,5 +461,6 @@ export async function requireSpokeduMasterCapability(
     userId: access.userId,
     isAdmin: access.snapshot.isAdmin,
     plan: access.snapshot.isAdmin ? 'admin' : access.snapshot.plan as MasterPlan,
+    canUseLibrary: access.snapshot.canUseLibrary,
   };
 }

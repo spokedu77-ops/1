@@ -41,6 +41,13 @@ export default defineConfig({
       'app/spokedu-master/serviceTruthfulness.test.ts',
       'app/spokedu-master/operational/providerErrorSanitization.contract.test.ts',
       'app/spokedu-master/students/studentHistory.contract.test.ts',
+      'app/spokedu-master/lib/commercialProgramAccess.test.ts',
+      'app/spokedu-master/commercialTierGate.contract.test.ts',
+      'app/spokedu-master/entitlementMatrix.contract.test.ts',
+      'app/spokedu-master/entryOnboardingAccess.contract.test.ts',
+      'app/spokedu-master/components/layout/masterRouteAccess.test.ts',
+      'app/api/spokedu-master/programs/programPatchAccess.test.ts',
+      'app/lib/server/spokeduMasterAccess.snapshot.test.ts',
     ],
   },
   resolve: {

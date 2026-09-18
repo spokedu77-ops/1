@@ -17,7 +17,9 @@ export function WeeklyEditorialCard({
   onPreview,
   favorite = false,
   favoriteEnabled = false,
+  favoriteHint = '로그인 후 즐겨찾기할 수 있습니다',
   onFavorite,
+  accessBadge = null,
   priority = false,
   sizes = '(min-width: 1280px) 250px, (min-width: 768px) 45vw, 82vw',
   cleanSquareMedia = false,
@@ -32,7 +34,9 @@ export function WeeklyEditorialCard({
   onPreview: () => void;
   favorite?: boolean;
   favoriteEnabled?: boolean;
+  favoriteHint?: string;
   onFavorite?: () => void;
+  accessBadge?: '무료 체험' | 'Lite' | null;
   priority?: boolean;
   sizes?: string;
   cleanSquareMedia?: boolean;
@@ -76,8 +80,13 @@ export function WeeklyEditorialCard({
               <CategoryIcon category={category} size={36} color="rgba(15,23,42,0.45)" />
             </span>
           )}
-          {isNew || hasVideo ? (
+          {isNew || hasVideo || accessBadge ? (
             <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
+              {accessBadge ? (
+                <span className={`rounded-[6px] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${accessBadge === '무료 체험' ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-amber-950'}`}>
+                  {accessBadge}
+                </span>
+              ) : null}
               {isNew ? <LessonNewMark /> : null}
               {hasVideo ? (
                 <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-white/75 text-slate-700">
@@ -104,7 +113,7 @@ export function WeeklyEditorialCard({
           className={`absolute right-2 top-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 ${favoriteChrome}`}
           aria-pressed={favorite}
           aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-          title={!favoriteEnabled ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+          title={!favoriteEnabled ? favoriteHint : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
           disabled={!favoriteEnabled}
         >
           <span className={isHomeFamily ? 'grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-white/80' : undefined}>

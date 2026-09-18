@@ -1,11 +1,13 @@
 'use client';
 
-import { BookOpen, CalendarDays, CircleUserRound, Heart, Home, WifiOff, Wrench } from 'lucide-react';
+import { BookOpen, CalendarDays, CircleUserRound, Heart, Home, Lock, WifiOff, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
 import { MV_HOME_FEATURE_WIDTH } from '../../lib/masterUiClasses';
+import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
 import { MASTER_NAV_ITEMS } from './masterNavLabels';
+import { hasMasterRouteCapability } from './masterRouteAccess';
 
 const NAV_ICONS = {
   dashboard: Home,
@@ -19,6 +21,7 @@ const APP_LINKS = MASTER_NAV_ITEMS.map((item) => ({
   href: item.href,
   label: item.label,
   Icon: NAV_ICONS[item.key],
+  capability: item.capability,
 }));
 
 function isActivePath(pathname: string, href: string) {
@@ -34,7 +37,7 @@ function isActivePath(pathname: string, href: string) {
   return false;
 }
 
-export function StatusBar() {
+export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot | null }) {
   const pathname = usePathname();
   const operational = useOperationalStatus();
   const isHome = pathname === '/spokedu-master/dashboard';
@@ -61,17 +64,20 @@ export function StatusBar() {
           className="hidden min-w-0 max-w-full items-center gap-1 overflow-x-auto lg:flex lg:justify-self-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="SPOKEDU MASTER 데스크톱 메뉴"
         >
-          {APP_LINKS.map(({ href, label, Icon }) => {
+          {APP_LINKS.map(({ href, label, Icon, capability }) => {
             const active = isActivePath(pathname, href);
+            const locked = snapshot != null && !hasMasterRouteCapability(snapshot, capability);
             return (
               <Link
                 key={href}
                 href={href}
                 className={`relative flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] px-2.5 text-[12px] font-semibold transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] xl:gap-2 xl:px-3 xl:text-[13px] ${active ? 'text-slate-950' : 'text-slate-600'}`}
                 aria-current={active ? 'page' : undefined}
+                aria-label={locked ? `${label} (Lite 이상)` : label}
               >
                 <Icon size={16} strokeWidth={1.9} className="shrink-0" />
                 <span className="whitespace-nowrap">{label}</span>
+                {locked ? <Lock size={11} className="shrink-0 text-slate-400" aria-hidden /> : null}
                 {active ? <span className="absolute bottom-1 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full bg-slate-950" aria-hidden /> : null}
               </Link>
             );

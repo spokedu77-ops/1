@@ -29,7 +29,8 @@ import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
 import { spmChipClass } from '../lib/masterUiClasses';
 import { buildMasterLoginHref } from '../lib/masterLoginReturn';
-import { isFreePreviewProgramId } from '../lib/commercialProgramAccess';
+import { getProgramAccessBadge, isProgramLessonLocked } from '../lib/commercialProgramAccess';
+import { buildProgramLessonGateHref } from '../lib/masterGateIntent';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
@@ -42,7 +43,7 @@ import { useOperationalData } from '../operational/OperationalDataProvider';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../lib/masterNavigationContext';
 import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { getMasterContentPrimaryAction, resolveMasterContentMode } from '../lib/masterProductTruth';
-import { useIsPremium, useMasterStore } from '../store';
+import { useMasterStore } from '../store';
 import type { Program } from '../types';
 import {
   filterProgramsByReason,
@@ -151,10 +152,12 @@ function parseReasonId(value: string | null): LibrarySelectionReasonId | null {
 function ProgramCard({
   program,
   locked,
+  lockHref,
   favorite,
   onPreview,
   onFavorite,
   favoriteEnabled,
+  favoriteHint,
   detailHref,
   priority = false,
   primaryActionLabel,
@@ -163,10 +166,12 @@ function ProgramCard({
 }: {
   program: Program;
   locked: boolean;
+  lockHref: string;
   favorite: boolean;
   onPreview: () => void;
   onFavorite: () => void;
   favoriteEnabled: boolean;
+  favoriteHint: string;
   detailHref: string;
   priority?: boolean;
   primaryActionLabel: string;
@@ -188,8 +193,11 @@ function ProgramCard({
       decisionMeta={decisionMeta}
       supportMeta={supportMeta}
       locked={locked}
+      lockHref={lockHref}
+      lockLabel="Lite로 열기"
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
+      favoriteHint={favoriteHint}
       onFavorite={onFavorite}
       priority={priority}
       sizes="(min-width: 1280px) 300px, (min-width: 768px) 50vw, 100vw"
@@ -256,14 +264,18 @@ function RecommendationProgramCard({
   onPreview,
   favorite,
   favoriteEnabled,
+  favoriteHint,
   onFavorite,
+  accessBadge,
   priority = false,
 }: {
   program: Program;
   onPreview: () => void;
   favorite: boolean;
   favoriteEnabled: boolean;
+  favoriteHint: string;
   onFavorite: () => void;
+  accessBadge?: '무료 체험' | 'Lite' | null;
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
@@ -280,7 +292,9 @@ function RecommendationProgramCard({
       onPreview={onPreview}
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
+      favoriteHint={favoriteHint}
       onFavorite={onFavorite}
+      accessBadge={accessBadge}
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
       cleanSquareMedia
@@ -297,7 +311,9 @@ function RecommendationShelf({
   onViewAll,
   isFavorite,
   favoriteEnabled,
+  favoriteHint,
   onFavorite,
+  canUseLibrary,
   priority = false,
 }: {
   title: string;
@@ -306,7 +322,9 @@ function RecommendationShelf({
   onViewAll: () => void;
   isFavorite: (programId: string) => boolean;
   favoriteEnabled: boolean;
+  favoriteHint: string;
   onFavorite: (programId: string) => void;
+  canUseLibrary: boolean;
   priority?: boolean;
 }) {
   return (
@@ -327,7 +345,9 @@ function RecommendationShelf({
                 onPreview={() => onPreview(program)}
                 favorite={isFavorite(program.id)}
                 favoriteEnabled={favoriteEnabled}
+                favoriteHint={favoriteHint}
                 onFavorite={() => onFavorite(program.id)}
+                accessBadge={getProgramAccessBadge({ programId: program.id, canUseLibrary })}
                 priority={priority && index < 2}
               />
             </div>
@@ -355,10 +375,13 @@ export default function LibraryView() {
   const sessionReturnHref = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-master/activity');
   const contentMode = resolveMasterContentMode({ requestedSessionId: sessionId, hasExactScheduledSession: Boolean(sessionContext) });
   const primaryActionLabel = getMasterContentPrimaryAction(contentMode);
-  const isPremium = useIsPremium();
   const accessSnapshot = useMasterAccessSnapshot();
   const isProgramLocked = (program: Program) =>
-    !isFreePreviewProgramId(program.id) && (!accessSnapshot.canUseLibrary || (program.isPro && !isPremium));
+    isProgramLessonLocked({ programId: program.id, canUseLibrary: accessSnapshot.canUseLibrary });
+  const favoriteEnabled = ownerId != null && accessSnapshot.canUseLibrary;
+  const favoriteHint = accessSnapshot.canUseLibrary
+    ? '로그인 후 즐겨찾기할 수 있습니다'
+    : 'Lite에서 즐겨찾기할 수 있습니다';
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [visibleCount, setVisibleCount] = useState(LIBRARY_PAGE_SIZE);
   const [filters, setFilters] = useState<ActiveFilters>(() => {
@@ -402,7 +425,7 @@ export default function LibraryView() {
 
   // The full catalog stays discoverable; access-gated lessons are locked by ProgramGrid.
   const pool = programs;
-  const recommendationPool = useMemo(() => programs.filter((program) => !program.isPro), [programs]);
+  const recommendationPool = useMemo(() => programs, [programs]);
 
   const viewPool = pool;
   const classroomPrograms = useMemo(() => selectRecommendationPrograms(recommendationPool, 'space', '교실'), [recommendationPool]);
@@ -565,7 +588,9 @@ export default function LibraryView() {
             onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
             onViewAll={() => viewAllRecommendation({ group: 'space', value: '교실' })}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
-            favoriteEnabled={ownerId != null}
+            favoriteEnabled={favoriteEnabled}
+            favoriteHint={favoriteHint}
+            canUseLibrary={accessSnapshot.canUseLibrary}
             onFavorite={(programId) => toggleFavoriteProgram(ownerId, programId)}
           />
           <RecommendationShelf
@@ -574,7 +599,9 @@ export default function LibraryView() {
             onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
             onViewAll={() => viewAllRecommendation({ group: 'target', value: '미취학' })}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
-            favoriteEnabled={ownerId != null}
+            favoriteEnabled={favoriteEnabled}
+            favoriteHint={favoriteHint}
+            canUseLibrary={accessSnapshot.canUseLibrary}
             onFavorite={(programId) => toggleFavoriteProgram(ownerId, programId)}
           />
 
@@ -624,7 +651,8 @@ export default function LibraryView() {
             programs={visiblePrograms}
             isProgramLocked={isProgramLocked}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
-            favoriteEnabled={ownerId != null}
+            favoriteEnabled={favoriteEnabled}
+            favoriteHint={favoriteHint}
             sourceLibraryView="all"
             sourceLibrarySearch={sourceLibrarySearch}
           toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
@@ -670,10 +698,10 @@ export default function LibraryView() {
         <ProgramPreviewModal
           program={selected.program}
           autoplayVideo={selected.autoplayVideo}
-          isPremium={isPremium}
           accessLocked={isProgramLocked(selected.program)}
+          lockHref={buildProgramLessonGateHref(selected.program.id)}
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
-          onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
+          onFavorite={favoriteEnabled ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
           sourceLibraryView="all"
           sourceLibrarySearch={sourceLibrarySearch}
           onPlaybackStarted={() => {
@@ -696,6 +724,7 @@ function ProgramGrid({
   isProgramLocked,
   isFavorite,
   favoriteEnabled,
+  favoriteHint,
   sourceLibraryView,
   sourceLibrarySearch,
   toggleFavorite,
@@ -708,6 +737,7 @@ function ProgramGrid({
   isProgramLocked: (program: Program) => boolean;
   isFavorite: (programId: string) => boolean;
   favoriteEnabled: boolean;
+  favoriteHint: string;
   sourceLibraryView: 'all';
   sourceLibrarySearch: string;
   toggleFavorite: (id: string) => void;
@@ -723,8 +753,10 @@ function ProgramGrid({
           key={program.id}
           program={program}
           locked={isProgramLocked(program)}
+          lockHref={buildProgramLessonGateHref(program.id)}
           favorite={isFavorite(program.id)}
           favoriteEnabled={favoriteEnabled}
+          favoriteHint={favoriteHint}
           detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
           priority={index < 4}
           onFavorite={() => toggleFavorite(program.id)}

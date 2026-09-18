@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getMasterRouteRequirement, getSafeMasterReturnPath, isProtectedMasterRoute } from './masterRouteAccess';
+import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterRouteCapability, isProtectedMasterRoute } from './masterRouteAccess';
 
 const basePath = '/spokedu-master';
 
@@ -10,9 +10,7 @@ describe('SPOKEDU MASTER route access policy', () => {
     '/spokedu-master/terms',
     '/spokedu-master/privacy',
     '/spokedu-master/parent/shared-token',
-    '/spokedu-master/payment',
-    '/spokedu-master/payment/success',
-    '/spokedu-master/payment/cancel',
+    '/spokedu-master/login',
   ])('keeps %s public', (pathname) => {
     expect(isProtectedMasterRoute(pathname, basePath)).toBe(false);
   });
@@ -40,9 +38,9 @@ describe('SPOKEDU MASTER route access policy', () => {
     ['/spokedu-master/payment', 'authenticated'],
     ['/spokedu-master/onboarding', 'authenticated'],
     ['/spokedu-master/shop', 'authenticated'],
-    ['/spokedu-master/library', 'library'],
-    ['/spokedu-master/library/42', 'library'],
-    ['/spokedu-master/programs', 'library'],
+    ['/spokedu-master/library', 'libraryBrowse'],
+    ['/spokedu-master/library/42', 'libraryBrowse'],
+    ['/spokedu-master/programs', 'libraryBrowse'],
     ['/spokedu-master/favorites', 'library'],
     ['/spokedu-master/manage', 'attendance'],
     ['/spokedu-master/class-tools', 'classTools'],
@@ -53,7 +51,7 @@ describe('SPOKEDU MASTER route access policy', () => {
     ['/spokedu-master/students', 'attendance'],
     ['/spokedu-master/students/student-a', 'records'],
     ['/spokedu-master/report', 'records'],
-    ['/spokedu-master/spomove', 'library'],
+    ['/spokedu-master/spomove', 'spomove'],
     ['/spokedu-master/spomove/session', 'spomove'],
   ])('maps %s to %s capability', (pathname, capability) => {
     expect(getMasterRouteRequirement(pathname, basePath).capability).toBe(capability);
@@ -89,5 +87,30 @@ describe('SPOKEDU MASTER route access policy', () => {
 
   it('does not treat an unknown MASTER child as an allowed return target', () => {
     expect(getSafeMasterReturnPath('/spokedu-master/unknown-future-screen')).toBe('/spokedu-master/dashboard');
+  });
+
+  it('evaluates route capabilities from the access snapshot flags', () => {
+    const free = {
+      authenticated: true as const,
+      onboardingDone: true,
+      plan: 'free' as const,
+      subscriptionStatus: 'none' as const,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+      isAdmin: false,
+      isCenterOrTeam: false,
+      canBrowseLibrary: true,
+      canUseLibrary: false,
+      freePreviewProgramIds: ['68'],
+      canUseClassTools: true,
+      canUseAttendance: false,
+      canUseRecords: false,
+      canUseSpomove: false,
+    };
+    expect(hasMasterRouteCapability(free, 'libraryBrowse')).toBe(true);
+    expect(hasMasterRouteCapability(free, 'classTools')).toBe(true);
+    expect(hasMasterRouteCapability(free, 'library')).toBe(false);
+    expect(hasMasterRouteCapability(free, 'attendance')).toBe(false);
+    expect(hasMasterRouteCapability(free, 'spomove')).toBe(false);
   });
 });

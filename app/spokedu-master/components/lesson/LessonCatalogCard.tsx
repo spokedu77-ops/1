@@ -18,7 +18,7 @@ import {
  * SPOMOVE 홈 카드와 같은 골격
  * - 정사각 썸네일 + 코너 배지
  * - 액센트 라벨 → 제목 → 한 줄 설명 → 솔리드 CTA
- * - 프리미엄 카드 = isPro 잠금 수업 (SPOMOVE와 별개)
+ * - Lite 잠금 카드 = Free에서 상세가 막힌 놀이체육 (SPOMOVE와 별개)
  */
 
 /** SVG 플레이스홀더만 fill. 실사진은 cover로 비율 유지(잘림 허용). */
@@ -142,9 +142,12 @@ export type LessonCatalogCardProps = {
   supportMeta?: string;
   cornerLabel?: string;
   locked?: boolean;
+  lockHref?: string;
+  lockLabel?: string;
   used?: boolean;
   favorite?: boolean;
   favoriteEnabled?: boolean;
+  favoriteHint?: string;
   onFavorite?: () => void;
   priority?: boolean;
   variant?: LessonCatalogCardVariant;
@@ -168,9 +171,12 @@ export function LessonCatalogCard({
   supportMeta,
   cornerLabel,
   locked = false,
+  lockHref = '/spokedu-master/payment?plan=lite',
+  lockLabel = 'Lite로 열기',
   used = false,
   favorite = false,
   favoriteEnabled = false,
+  favoriteHint = '로그인 후 즐겨찾기할 수 있습니다',
   onFavorite,
   priority = false,
   variant = 'library',
@@ -252,7 +258,7 @@ export function LessonCatalogCard({
             className={`absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:w-9 ${favorite ? 'bg-white text-amber-500 shadow-sm' : 'bg-white/90 text-slate-600 shadow-sm hover:bg-white hover:text-slate-900'}`}
             aria-pressed={favorite}
             aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-            title={!favoriteEnabled ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+            title={!favoriteEnabled ? favoriteHint : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
             disabled={!favoriteEnabled}
           >
             <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
@@ -263,10 +269,10 @@ export function LessonCatalogCard({
           <div className="border-t border-slate-100 px-3 py-3">
             {locked ? (
               <Link
-                href="/spokedu-master/payment?plan=premium"
+                href={lockHref}
                 className="inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-semibold text-amber-800"
               >
-                프리미엄 자료
+                {lockLabel}
               </Link>
             ) : (
               <button
@@ -357,13 +363,7 @@ export function LessonCatalogCard({
             }`}
             aria-pressed={favorite}
             aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-            title={
-              !favoriteEnabled
-                ? '로그인 후 즐겨찾기할 수 있습니다'
-                : favorite
-                  ? '즐겨찾기에서 제거'
-                  : '즐겨찾기에 추가'
-            }
+            title={!favoriteEnabled ? favoriteHint : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
             disabled={!favoriteEnabled}
           >
             <Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
@@ -405,10 +405,10 @@ export function LessonCatalogCard({
 
         {locked ? (
           <Link
-            href="/spokedu-master/payment?plan=premium"
+            href={lockHref}
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-semibold text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
           >
-            프리미엄 자료
+            {lockLabel}
           </Link>
         ) : onPrimaryAction ? (
           <button

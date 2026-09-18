@@ -53,7 +53,7 @@ describe('lesson discovery and execution flow contract', () => {
     expect(dashboard).toContain('이번 주 놀이체육 추천');
     expect(dashboard).toContain('놀이체육 더 보기');
     expect(dashboard).toContain('selectWeeklyProgramsById(programs)');
-    expect(dashboard).toContain('isFreePreviewProgramId(program.id)');
+    expect(dashboard).toContain('isProgramLessonLocked');
     expect(dashboard).toContain('data-dashboard-section="spomove-extension"');
     expect(dashboard).toContain('featuredSpomove.slice(0, 4)');
     expect(dashboard).not.toContain('data-dashboard-section="spomove-discovery"');
@@ -82,7 +82,10 @@ describe('lesson discovery and execution flow contract', () => {
 
   it('offers content-first and Session-first entry as peer paths', () => {
     expect(dashboard).toContain('좋은 활동부터 찾아보기');
-    expect(dashboard).toContain('수업부터 만들기');
-    expect(dashboard).toContain('콘텐츠부터 찾아도, 수업부터 만들어도');
+    expect(dashboard).toContain('수업반 준비하기');
+    expect(dashboard).toContain('무료 수업 보기');
+    expect(dashboard).toContain('수업 도구 열기');
+    expect(dashboard).not.toContain('수업부터 만들기');
+    expect(dashboard).not.toContain('콘텐츠부터 찾아도, 수업부터 만들어도');
   });
 });

@@ -167,6 +167,18 @@ export function buildMasterGateContext(args: {
   };
 }
 
+export function buildProgramLessonGateHref(programId: string, currentPath?: string) {
+  const fallback = `/spokedu-master/library/${encodeURIComponent(programId)}`;
+  const next = currentPath ? getSafeMasterPostPaymentPath(currentPath, fallback) : fallback;
+  return buildMasterPaymentHref({
+    intent: 'open_library',
+    minimumPlan: 'lite',
+    next,
+    journeyId: createJourneyId(),
+    gateSurface: 'library_detail',
+  });
+}
+
 export function buildMasterPaymentHref(context: Pick<MasterGateContext, 'intent' | 'minimumPlan' | 'next' | 'journeyId' | 'gateSurface'>) {
   if (!context.intent) {
     return `/spokedu-master/payment?plan=${context.minimumPlan}`;
@@ -252,14 +264,14 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
     minimumPlan: context.minimumPlan,
     eyebrow: '방금 하려던 작업',
     title: resourceTitle ? `${resourceTitle}을 열려고 했습니다.` : '수업 라이브러리를 열려고 했습니다.',
-    description: 'Lite에서 좋은 놀이체육 콘텐츠를 자유롭게 찾고 판단할 수 있습니다. 결제 후 방금 보려던 활동으로 바로 돌아갑니다.',
+    description: 'Lite에서 전체 수업 자료를 이용할 수 있습니다. 결제 후 방금 보려던 활동으로 바로 돌아갑니다.',
     resourceTitle,
     evidence: [
       { label: '복귀 위치', value: '수업 라이브러리' },
       { label: '포함', value: '준비물, 진행 순서, 지도 포인트' },
       { label: '최소 권한', value: 'Lite' },
     ],
-    ctaLabel: 'Lite로 자료 계속 보기',
+    ctaLabel: 'Lite로 열기',
     paymentHref,
   };
 }
