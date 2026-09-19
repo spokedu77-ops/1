@@ -50,6 +50,13 @@ scripts/pdf-pages/page-*.png
 # production
 /build
 
+# Local/test Unity WebGL builds (production theme2 remains tracked)
+/public/spomove/dive/unity/player_release_test/
+/public/spomove/dive/unity/theme2_backup_*/
+/public/spomove/dive/unity/theme2_camera_test/
+/public/spomove/dive/unity/theme2_session_test/
+/public/spomove/dive/unity/*_test/
+
 # misc
 .DS_Store
 *.pem

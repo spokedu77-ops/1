@@ -35,6 +35,7 @@
     "audit:spomove-family": "tsx scripts/generate-spomove-family-audit.ts",
     "generate:spomove-guide-source-digest": "node scripts/generate-spomove-guide-source-digest.mjs",
     "check:spomove-guide-source-digest": "node scripts/generate-spomove-guide-source-digest.mjs --check",
+    "check:unity-build-size": "node scripts/check-unity-build-repo-size.mjs",
     "audit:spomove-guides": "tsx scripts/audit-spomove-published-guides.ts",
     "verify:spomove-family-audit": "tsx scripts/verify-spomove-family-audit.ts",
     "test:spomove-audit": "vitest run app/spokedu-master/spomove/movements/movementAudit.test.ts",
