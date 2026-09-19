@@ -15,7 +15,6 @@ import type { FlowStageConfig } from './engine/modules/stageBuilder';
 import ColorGateHud from './components/ColorGateHud';
 import {
   buildColorGateCue,
-  buildColorGateInstruction,
   COLOR_GATE_POSE_LABELS,
   preloadColorGatePoseImages,
   type ColorGatePoseKey,
@@ -238,7 +237,6 @@ export default function FlowGameClient({
       <ColorGateHud
         gateColorId={gateColorId}
         cueWord={buildColorGateCue(gateColorId)}
-        shortInstruction={buildColorGateInstruction(gateColorId, gatePose)}
         poseLabel={COLOR_GATE_POSE_LABELS[gatePose]}
         passCount={gatePassCount}
       />

@@ -36,16 +36,24 @@ type StageEventPayload = {
 type ActiveStage = { index: number; name: string; duration: number };
 type PrepareCard = Pick<StageEventPayload, 'stageName' | 'introTitle' | 'introDescription' | 'introBadge' | 'introDuration'>;
 
-const UNITY_SESSION_URL = '/spomove/dive/unity/player_release_test/index.html';
+const LOCAL_UNITY_SESSION_URL = '/spomove/dive/unity/player_release_test/index.html';
+const PRODUCTION_UNITY_SESSION_URL = '/spomove/dive/unity/theme2/index.html';
 const COUNTDOWN_SECONDS = 3;
 const GO_DISPLAY_MS = 450;
 const THEME_READY_TIMEOUT_MS = 30_000;
 
+export function isLocalDiveHostname(hostname: string) {
+  return hostname === 'localhost' || hostname === '127.0.0.1';
+}
+
 export default function UnityDiveThemeClient({ config, durationSec, onComplete, onExit, onSessionStart, onSessionStop }: Props) {
   const { stageDuration, side, jump, duck, bonus } = config;
+  const useLocalSinglePlayer = typeof window !== 'undefined' && isLocalDiveHostname(window.location.hostname);
+  const UNITY_SESSION_URL = useLocalSinglePlayer ? LOCAL_UNITY_SESSION_URL : PRODUCTION_UNITY_SESSION_URL;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const frameRef = useRef<number | null>(null);
   const goTimerRef = useRef<number | null>(null);
+  const productionCompletionTimerRef = useRef<number | null>(null);
   const themeReadyTimerRef = useRef<number | null>(null);
   const finishedRef = useRef(false);
   const readyRef = useRef(false);
@@ -70,8 +78,13 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
   const [loadError, setLoadError] = useState('');
 
   const stageCount = 1 + Number(side) + Number(jump) + Number(duck) + Number(bonus);
+  const productionDurationSec = stageDuration * (1 + Number(side) + Number(jump) + Number(duck)) + (bonus ? 60 : 0);
   const configPayload = useMemo<SportsArenaSessionConfig>(
     () => ({ themeId: 'sports-arena', stageDuration, side, jump, duck, bonus }),
+    [bonus, duck, jump, side, stageDuration],
+  );
+  const productionConfigPayload = useMemo(
+    () => ({ stageDuration, side, jump, duck, bonus }),
     [bonus, duck, jump, side, stageDuration],
   );
 
@@ -96,6 +109,7 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
     stopStageClock();
     clearThemeReadyTimer();
     if (goTimerRef.current !== null) window.clearTimeout(goTimerRef.current);
+    if (productionCompletionTimerRef.current !== null) window.clearTimeout(productionCompletionTimerRef.current);
     postToUnity('SPOMOVE_SESSION_STOP');
     if (sessionAudioStartedRef.current) {
       sessionAudioStartedRef.current = false;
@@ -123,11 +137,14 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
   }, [durationSec, stopStageClock]);
 
   const startUnitySession = useCallback(() => {
-    setPhase('waiting');
+    setPhase(useLocalSinglePlayer ? 'waiting' : 'running');
     postToUnity('SPOMOVE_SESSION_START');
     sessionAudioStartedRef.current = true;
     callbacksRef.current.onSessionStart();
-  }, [postToUnity]);
+    if (!useLocalSinglePlayer) {
+      productionCompletionTimerRef.current = window.setTimeout(() => finish('complete'), Math.max(1, productionDurationSec) * 1000);
+    }
+  }, [finish, postToUnity, productionDurationSec, useLocalSinglePlayer]);
 
   const startCountdown = useCallback(() => {
     const countdownStartedAt = performance.now();
@@ -203,6 +220,11 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
         if (readyRef.current) return;
         console.info('[SPORTS_ARENA] receive SPOMOVE_UNITY_READY');
         readyRef.current = true;
+        if (!useLocalSinglePlayer) {
+          postToUnity('SPOMOVE_SESSION_CONFIG', { config: productionConfigPayload });
+          startCountdown();
+          return;
+        }
         setPhase('theme-loading');
         postToUnity('SPOMOVE_SESSION_CONFIG', { config: configPayload });
         clearThemeReadyTimer();
@@ -239,13 +261,14 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
       stopStageClock();
       clearThemeReadyTimer();
       if (goTimerRef.current !== null) window.clearTimeout(goTimerRef.current);
+      if (productionCompletionTimerRef.current !== null) window.clearTimeout(productionCompletionTimerRef.current);
       if (!finishedRef.current && readyRef.current) postToUnity('SPOMOVE_SESSION_STOP');
       if (sessionAudioStartedRef.current) {
         sessionAudioStartedRef.current = false;
         callbacksRef.current.onSessionStop();
       }
     };
-  }, [clearThemeReadyTimer, configPayload, finish, handleStageEvent, postToUnity, startCountdown, stopStageClock]);
+  }, [clearThemeReadyTimer, configPayload, finish, handleStageEvent, postToUnity, productionConfigPayload, startCountdown, stopStageClock, useLocalSinglePlayer]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', background: '#000', overflow: 'hidden' }}>

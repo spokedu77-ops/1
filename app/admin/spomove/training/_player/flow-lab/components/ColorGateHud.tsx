@@ -5,16 +5,16 @@ import { GATE_COLORS, type GateColorId } from '../engine/modules/colorGateGuides
 interface ColorGateHudProps {
   gateColorId: GateColorId;
   cueWord: string;
-  shortInstruction: string;
   poseLabel: string;
   passCount?: number;
 }
+
+const HUD_SANS = "'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif";
 
 /** 브릿지 위 3D 문과 함께 쓰는 상단 안내 HUD (화면 전체 배경 없음) */
 export default function ColorGateHud({
   gateColorId,
   cueWord,
-  shortInstruction,
   poseLabel,
   passCount,
 }: ColorGateHudProps) {
@@ -52,15 +52,18 @@ export default function ColorGateHud({
       <p style={{
         fontSize: 'clamp(2.75rem, 9vw, 6.5rem)',
         fontWeight: 900,
-        fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
-        letterSpacing: '0.06em',
+        fontFamily: HUD_SANS,
+        fontStyle: 'normal',
+        fontStretch: 'normal',
+        letterSpacing: 0,
+        lineHeight: 1.05,
         color: color.bg,
-        WebkitTextStroke: '1px rgba(255,255,255,0.35)',
         textShadow: '0 2px 12px rgba(0,0,0,0.8)',
         marginBottom: 10,
         textAlign: 'center',
         wordBreak: 'keep-all',
         whiteSpace: 'nowrap',
+        transform: 'none',
       }}>
         {cueWord}
       </p>
@@ -68,31 +71,19 @@ export default function ColorGateHud({
       <p style={{
         fontSize: 'clamp(1.5rem, 4.5vw, 3rem)',
         fontWeight: 900,
+        fontFamily: HUD_SANS,
+        fontStyle: 'normal',
+        letterSpacing: 0,
         color: '#fff',
-        letterSpacing: '0.04em',
+        textShadow: '0 2px 10px rgba(0,0,0,0.75)',
         marginBottom: 10,
         textAlign: 'center',
         wordBreak: 'keep-all',
         overflowWrap: 'break-word',
         maxWidth: 'min(94vw, 56rem)',
+        transform: 'none',
       }}>
-        {poseLabel}
-      </p>
-
-      <p style={{
-        fontSize: 'clamp(1.1rem, 3vw, 2rem)',
-        fontWeight: 700,
-        color: 'rgba(255,255,255,0.92)',
-        textAlign: 'center',
-        width: '100%',
-        maxWidth: 'min(94vw, 64rem)',
-        lineHeight: 1.4,
-        marginBottom: 8,
-        wordBreak: 'keep-all',
-        overflowWrap: 'break-word',
-        whiteSpace: 'pre-line',
-      }}>
-        {shortInstruction}
+        {`「${poseLabel}」`}
       </p>
 
       {passCount !== undefined && passCount > 0 ? (

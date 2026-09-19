@@ -20,6 +20,8 @@ const GATE_SPAWN_Z = -2800;
 const GATE_DESPAWN_OFFSET_Z = 900;
 const FIRST_SPAWN_DELAY_SEC = 1.6;
 const HUD_VISIBLE_DISTANCE = 3200;
+/** 벽이 화면 위 글자와 겹치기 전에 HUD를 내린다. */
+const HUD_HIDE_DISTANCE = 720;
 const APPROACH_Z = -520;
 const PASS_Z = 320;
 const SCALE_LERP = 8;
@@ -150,7 +152,12 @@ export class ColorGateManager {
 
       const delta = gate.group.position.z - playerZ;
       const absDist = Math.abs(delta);
-      if (delta <= 0 && absDist < HUD_VISIBLE_DISTANCE && absDist < nearestDist) {
+      if (
+        delta <= 0
+        && absDist < HUD_VISIBLE_DISTANCE
+        && absDist > HUD_HIDE_DISTANCE
+        && absDist < nearestDist
+      ) {
         nearestDist = absDist;
         nearest = gate;
       }
