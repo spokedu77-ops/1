@@ -45,7 +45,15 @@ const BILLING_NOTICE = [
   '이후 매월 최초 결제일에 자동 결제됩니다.',
   '언제든 구독 해지를 예약할 수 있습니다.',
   '해지 후에도 결제된 이용 기간 종료일까지 사용할 수 있습니다.',
-  '무료 체험은 제공하지 않습니다.',
+  '기간제 유료 무료체험은 제공하지 않습니다.',
+] as const;
+
+const UPGRADE_BILLING_NOTICE = [
+  '오늘 결제는 라이트 잔여 이용기간 가치를 반영한 서버 계산 차액입니다.',
+  '기존 라이트 결제를 별도 환불하지 않습니다.',
+  '결제 성공 즉시 프리미엄 권한이 적용됩니다.',
+  '다음 결제일은 기존 라이트 이용 종료일이며, 그때 프리미엄 월 요금이 청구됩니다.',
+  '해지 예약 중에는 즉시 업그레이드할 수 없습니다.',
 ] as const;
 
 function isPaidPlanId(value: string | null): value is PaidPlanId {
@@ -346,7 +354,7 @@ function PaymentContent() {
             {paymentPageMode === 'liteUpgrade' ? (
               <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
                 <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 콘텐츠 발견부터 수업 운영까지 완결되어 있습니다. 프리미엄으로 올리면 SPOMOVE로 활동을 넓히고 지난 기록을 다음 준비에 다시 활용할 수 있습니다.
+                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 콘텐츠 발견부터 수업 운영까지 완결되어 있습니다. 프리미엄으로 올리면 SPOMOVE로 활동을 넓히고 지난 기록을 다음 준비에 다시 활용할 수 있습니다. 오늘 결제액은 라이트 잔여 기간을 반영한 차액이며, 프리미엄 정가를 새로 1개월 결제하지 않습니다.
                 </p>
                 {upgradeQuote ? (
                   <dl className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -391,7 +399,7 @@ function PaymentContent() {
               <Shield size={18} color="var(--spm-grn)" />
               <h3 className="mt-3 text-[15px] font-black">정기결제 안내</h3>
               <ul className="mt-3 space-y-2">
-                {BILLING_NOTICE.map((item) => (
+                {(paymentPageMode === 'liteUpgrade' ? UPGRADE_BILLING_NOTICE : BILLING_NOTICE).map((item) => (
                   <li key={item} className="flex gap-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
                     <CheckCircle2 size={14} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
                     <span>{item}</span>

@@ -98,6 +98,20 @@ Runs only on `workflow_dispatch` when a Vercel Preview base URL is provided. Acc
 
 Use Toss sandbox and staging DB for release verification. Never use production Toss keys or production DB for this checklist.
 
+### Lite → Premium upgrade (proration)
+
+Final policy, matching `calculateSpokeduMasterLiteUpgradeQuote()` and billing `issue`:
+
+- Active Lite may upgrade to Premium immediately.
+- Charge only the server-calculated remaining share of the Lite/Premium monthly difference.
+- Do not refund Lite separately and start a new Premium month at list price.
+- Premium entitlement applies on payment success. The current Lite period end remains the next billing date, at Premium monthly price.
+- The client must not send a trusted amount. If `body.amount` is present it must equal the server quote.
+- `cancel_at_period_end` Lite cannot self-serve upgrade; operators handle those requests.
+- Expired Lite is a new Premium checkout at list price, not an upgrade quote.
+
+Verify quote UI (`오늘 결제` / `다음 결제일` / `다음 결제 금액`) against `GET /api/spokedu-master/payment/billing/upgrade-quote` before charging.
+
 ### Staging payment E2E (Lite / Premium)
 
 Run against a disposable QA account with Toss **test** keys only.

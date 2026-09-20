@@ -388,7 +388,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
     });
   });
 
-  it('starts a fresh Premium month at 28,900 won when upgrading an active Lite subscription', async () => {
+  it('starts a fresh Premium month only for a full-price Premium order, not Lite proration upgrades', async () => {
     db.subscriptions.push({
       user_id: USER_ID,
       plan: 'lite',
@@ -679,6 +679,325 @@ describe('SPOKEDU MASTER payment webhook', () => {
     await expect(response.json()).resolves.toEqual({ received: true, ignored: true });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(getServiceSupabase).not.toHaveBeenCalled();
+  });
+
+  it('activates a new Premium payment at list price', async () => {
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: PAYMENT_KEY, orderId: ORDER_ID, status: 'DONE' },
+    }, 'premium-initial-transmission'));
+
+    expect(response.status).toBe(200);
+    expect(db.orders.get(ORDER_ID)).toMatchObject({ amount: 28900, status: 'active' });
+    expect(db.subscriptions[0]).toMatchObject({ plan: 'premium', status: 'active', current_amount: 28900 });
+  });
+
+  it('renews Lite at list price from a renewal order', async () => {
+    const renewalOrderId = 'spm-lite-renewal-sub-20261001';
+    db.orders.clear();
+    db.orders.set(renewalOrderId, {
+      order_id: renewalOrderId,
+      user_id: USER_ID,
+      plan: 'lite',
+      amount: 9900,
+      status: 'pending',
+      billing_cycle_key: 'sub-id:20261001',
+    });
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'lite',
+      status: 'active',
+      current_period_end: '2026-10-01T00:00:00.000Z',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: 'lite-renew-key',
+      orderId: renewalOrderId,
+      totalAmount: 9900,
+      balanceAmount: 9900,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: 'lite-renew-key', orderId: renewalOrderId, status: 'DONE' },
+    }, 'lite-renew-transmission'));
+
+    expect(response.status).toBe(200);
+    expect(db.subscriptions).toHaveLength(1);
+    expect(db.subscriptions[0]).toMatchObject({ plan: 'lite', status: 'active', toss_order_id: renewalOrderId });
+  });
+
+  it('renews Premium at list price from a renewal order', async () => {
+    const renewalOrderId = 'spm-premium-renewal-sub-20261001';
+    db.orders.clear();
+    db.orders.set(renewalOrderId, {
+      order_id: renewalOrderId,
+      user_id: USER_ID,
+      plan: 'premium',
+      amount: 28900,
+      status: 'pending',
+      billing_cycle_key: 'sub-id:20261001',
+    });
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'premium',
+      status: 'active',
+      current_period_end: '2026-10-01T00:00:00.000Z',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: 'premium-renew-key',
+      orderId: renewalOrderId,
+      totalAmount: 28900,
+      balanceAmount: 28900,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: 'premium-renew-key', orderId: renewalOrderId, status: 'DONE' },
+    }, 'premium-renew-transmission'));
+
+    expect(response.status).toBe(200);
+    expect(db.subscriptions).toHaveLength(1);
+    expect(db.subscriptions[0]).toMatchObject({ plan: 'premium', toss_order_id: renewalOrderId, current_amount: 28900 });
+  });
+
+  it('recovers a Lite to Premium prorated upgrade independently of billing/issue', async () => {
+    const upgradeOrderId = 'spm-premium-initial-upgrade-1';
+    const upgradeKey = `upgrade:${USER_ID}:premium:2026-07-01T00:00:00.000Z`;
+    db.orders.clear();
+    db.orders.set(upgradeOrderId, {
+      order_id: upgradeOrderId,
+      user_id: USER_ID,
+      plan: 'premium',
+      amount: 9500,
+      status: 'pending',
+      billing_cycle_key: upgradeKey,
+    });
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'lite',
+      status: 'active',
+      period_start: '2026-06-01T00:00:00.000Z',
+      period_end: '2026-07-01T00:00:00.000Z',
+      current_period_start: '2026-06-01T00:00:00.000Z',
+      current_period_end: '2026-07-01T00:00:00.000Z',
+      current_amount: 9900,
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: 'upgrade-payment-key',
+      orderId: upgradeOrderId,
+      totalAmount: 9500,
+      balanceAmount: 9500,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: 'upgrade-payment-key', orderId: upgradeOrderId, status: 'DONE' },
+    }, 'upgrade-proration-transmission'));
+
+    expect(response.status).toBe(200);
+    expect(db.orders.get(upgradeOrderId)).toMatchObject({ amount: 9500, status: 'active' });
+    expect(db.subscriptions).toHaveLength(1);
+    expect(db.subscriptions[0]).toMatchObject({
+      plan: 'premium',
+      status: 'active',
+      current_amount: 9500,
+      period_start: '2026-06-01T00:00:00.000Z',
+      period_end: '2026-07-01T00:00:00.000Z',
+      toss_order_id: upgradeOrderId,
+      toss_payment_key: 'upgrade-payment-key',
+    });
+  });
+
+  it('rejects an upgrade webhook when Toss totalAmount does not match the stored order amount', async () => {
+    const upgradeOrderId = 'spm-premium-initial-upgrade-mismatch';
+    db.orders.clear();
+    db.orders.set(upgradeOrderId, {
+      order_id: upgradeOrderId,
+      user_id: USER_ID,
+      plan: 'premium',
+      amount: 9500,
+      status: 'pending',
+      billing_cycle_key: `upgrade:${USER_ID}:premium:2026-07-01T00:00:00.000Z`,
+    });
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'lite',
+      status: 'active',
+      current_period_start: '2026-06-01T00:00:00.000Z',
+      current_period_end: '2026-07-01T00:00:00.000Z',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: 'upgrade-mismatch-key',
+      orderId: upgradeOrderId,
+      totalAmount: 28900,
+      balanceAmount: 28900,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: 'upgrade-mismatch-key', orderId: upgradeOrderId, status: 'DONE' },
+    }, 'upgrade-amount-mismatch'));
+
+    expect(response.status).toBe(400);
+    expect(db.calls.subscriptionUpsert).toBe(0);
+  });
+
+  it('rejects an upgrade cycle key when the stored plan is not premium', async () => {
+    const orderId = 'spm-lite-initial-not-premium-upgrade';
+    db.orders.clear();
+    db.orders.set(orderId, {
+      order_id: orderId,
+      user_id: USER_ID,
+      plan: 'lite',
+      amount: 9500,
+      status: 'pending',
+      billing_cycle_key: `upgrade:${USER_ID}:premium:2026-07-01T00:00:00.000Z`,
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: 'lite-upgrade-key',
+      orderId,
+      totalAmount: 9500,
+      balanceAmount: 9500,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: 'lite-upgrade-key', orderId, status: 'DONE' },
+    }, 'upgrade-wrong-plan'));
+
+    expect(response.status).toBe(400);
+    expect(db.calls.subscriptionUpsert).toBe(0);
+  });
+
+  it('rejects an upgrade amount of zero', async () => {
+    const orderId = 'spm-premium-initial-upgrade-zero';
+    db.orders.clear();
+    db.orders.set(orderId, {
+      order_id: orderId,
+      user_id: USER_ID,
+      plan: 'premium',
+      amount: 0,
+      status: 'pending',
+      billing_cycle_key: `upgrade:${USER_ID}:premium:2026-07-01T00:00:00.000Z`,
+    });
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'lite',
+      status: 'active',
+      current_period_start: '2026-06-01T00:00:00.000Z',
+      current_period_end: '2026-07-01T00:00:00.000Z',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: 'upgrade-zero-key',
+      orderId,
+      totalAmount: 0,
+      balanceAmount: 0,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: 'upgrade-zero-key', orderId, status: 'DONE' },
+    }, 'upgrade-zero'));
+
+    expect(response.status).toBe(400);
+  });
+
+  it('rejects an upgrade amount above the Lite-Premium difference', async () => {
+    const orderId = 'spm-premium-initial-upgrade-over';
+    db.orders.clear();
+    db.orders.set(orderId, {
+      order_id: orderId,
+      user_id: USER_ID,
+      plan: 'premium',
+      amount: 19001,
+      status: 'pending',
+      billing_cycle_key: `upgrade:${USER_ID}:premium:2026-07-01T00:00:00.000Z`,
+    });
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'lite',
+      status: 'active',
+      current_period_start: '2026-06-01T00:00:00.000Z',
+      current_period_end: '2026-07-01T00:00:00.000Z',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: 'upgrade-over-key',
+      orderId,
+      totalAmount: 19001,
+      balanceAmount: 19001,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: 'upgrade-over-key', orderId, status: 'DONE' },
+    }, 'upgrade-over'));
+
+    expect(response.status).toBe(400);
+  });
+
+  it('rejects an initial Premium order that is not the catalog list price', async () => {
+    db.orders.set(ORDER_ID, {
+      order_id: ORDER_ID,
+      user_id: USER_ID,
+      plan: 'premium',
+      amount: 15000,
+      status: 'pending',
+      billing_cycle_key: `initial:${USER_ID}:premium`,
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      totalAmount: 15000,
+      balanceAmount: 15000,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: PAYMENT_KEY, orderId: ORDER_ID, status: 'DONE' },
+    }, 'initial-not-list-price'));
+
+    expect(response.status).toBe(400);
+    expect(db.calls.subscriptionUpsert).toBe(0);
+  });
+
+  it('does not extend the period again when the same upgrade payment is already applied', async () => {
+    const upgradeOrderId = 'spm-premium-initial-upgrade-applied';
+    const upgradeKey = `upgrade:${USER_ID}:premium:2026-07-01T00:00:00.000Z`;
+    db.orders.clear();
+    db.orders.set(upgradeOrderId, {
+      order_id: upgradeOrderId,
+      user_id: USER_ID,
+      plan: 'premium',
+      amount: 9500,
+      status: 'active',
+      payment_key: 'upgrade-payment-key',
+      billing_cycle_key: upgradeKey,
+    });
+    db.subscriptions.push({
+      user_id: USER_ID,
+      plan: 'premium',
+      status: 'active',
+      period_end: '2026-07-01T00:00:00.000Z',
+      current_period_start: '2026-06-01T00:00:00.000Z',
+      current_period_end: '2026-07-01T00:00:00.000Z',
+      toss_order_id: upgradeOrderId,
+      toss_payment_key: 'upgrade-payment-key',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
+      paymentKey: 'upgrade-payment-key',
+      orderId: upgradeOrderId,
+      totalAmount: 9500,
+      balanceAmount: 9500,
+    })), { status: 200 })));
+
+    const response = await POST(webhookRequest({
+      eventType: 'PAYMENT_STATUS_CHANGED',
+      data: { paymentKey: 'upgrade-payment-key', orderId: upgradeOrderId, status: 'DONE' },
+    }, 'upgrade-already-applied'));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ alreadyApplied: true, periodEnd: '2026-07-01T00:00:00.000Z' });
+    expect(db.calls.subscriptionUpsert).toBe(0);
+    expect(db.subscriptions).toHaveLength(1);
+    expect(db.subscriptions[0].period_end).toBe('2026-07-01T00:00:00.000Z');
   });
 
   it('returns 500 without leaking internal DB errors', async () => {

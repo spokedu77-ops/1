@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { hashForMonitoring, reportError } from '@/app/lib/monitoring/errorReporter';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import {
-  SPOKEDU_MASTER_PLAN_CONFIG,
+  classifySpokeduMasterBillingMode,
+  validateSpokeduMasterChargedAmount,
+} from '@/app/lib/server/spokeduMasterBillingMode';
+import {
   isSpokeduMasterPaidPlan,
   parseSpokeduMasterOrderId,
 } from '@/app/lib/server/spokeduMasterPayment';
@@ -167,25 +170,56 @@ async function handleDonePayment(
     return { status: 'rejected' as const, reason: 'order_plan_mismatch' };
   }
 
-  const expectedAmount = SPOKEDU_MASTER_PLAN_CONFIG[orderRow.plan].amount;
-  if (orderRow.amount !== expectedAmount || payment.totalAmount !== expectedAmount) {
-    return { status: 'rejected' as const, reason: 'amount_mismatch' };
+  const billingMode = classifySpokeduMasterBillingMode({
+    orderId: payment.orderId,
+    userId: orderRow.user_id,
+    plan: orderRow.plan,
+    billingCycleKey: orderRow.billing_cycle_key,
+  });
+  if (billingMode === 'invalid') {
+    return { status: 'rejected' as const, reason: 'order_plan_mismatch' };
+  }
+
+  const amountCheck = validateSpokeduMasterChargedAmount({
+    mode: billingMode,
+    plan: orderRow.plan,
+    orderAmount: orderRow.amount,
+    tossTotalAmount: payment.totalAmount,
+  });
+  if (amountCheck !== 'ok') {
+    return { status: 'rejected' as const, reason: amountCheck };
   }
 
   const { data: subscription } = await service
     .from('spokedu_master_subscriptions')
-    .select('current_period_end,pending_billing_key_secret_id')
+    .select('current_period_start,current_period_end,period_start,period_end,pending_billing_key_secret_id')
     .eq('user_id', orderRow.user_id)
     .maybeSingle();
   const subscriptionRow = subscription as {
+    current_period_start?: string | null;
     current_period_end?: string | null;
+    period_start?: string | null;
+    period_end?: string | null;
     pending_billing_key_secret_id?: string | null;
   } | null;
 
   let approvedAt = payment.approvedAt;
-  if (payment.orderId.includes('-renewal-')) {
-    const currentPeriodEnd = subscriptionRow?.current_period_end;
+  if (billingMode === 'renewal') {
+    const currentPeriodEnd = subscriptionRow?.current_period_end ?? subscriptionRow?.period_end;
     approvedAt = currentPeriodEnd ?? payment.approvedAt;
+  }
+
+  const upgradePeriodStart = subscriptionRow?.current_period_start ?? subscriptionRow?.period_start ?? null;
+  const upgradePeriodEnd = subscriptionRow?.current_period_end ?? subscriptionRow?.period_end ?? null;
+  const periodOverride = billingMode === 'upgrade' && upgradePeriodStart && upgradePeriodEnd
+    ? {
+        periodStart: upgradePeriodStart,
+        periodEnd: upgradePeriodEnd,
+        nextBillingAt: upgradePeriodEnd,
+      }
+    : undefined;
+  if (billingMode === 'upgrade' && !periodOverride) {
+    return { status: 'rejected' as const, reason: 'invalid_period' };
   }
 
   const applied = await applySpokeduMasterPayment({
@@ -193,13 +227,16 @@ async function handleDonePayment(
     orderId: payment.orderId,
     paymentKey: payment.paymentKey,
     plan: orderRow.plan,
-    amount: expectedAmount,
+    amount: orderRow.amount,
     approvedAt,
     eventKey,
-    source: 'webhook',
+    source: billingMode === 'upgrade' ? 'upgrade' : 'webhook',
     providerCustomerKey: `spm_${orderRow.user_id.replaceAll('-', '')}`,
-    providerBillingKeySecretId: subscriptionRow?.pending_billing_key_secret_id ?? null,
+    providerBillingKeySecretId: billingMode === 'upgrade'
+      ? null
+      : subscriptionRow?.pending_billing_key_secret_id ?? null,
     billingCycleKey: orderRow.billing_cycle_key ?? null,
+    periodOverride,
   });
 
   if (!applied.ok) {

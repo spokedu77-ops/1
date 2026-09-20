@@ -104,6 +104,34 @@ describe('applySpokeduMasterPayment', () => {
     });
   });
 
+  it('accepts a bounded upgrade difference and still rejects list-price mismatch for webhook charges', async () => {
+    mockRpc({
+      status: 'processed',
+      alreadyApplied: false,
+      periodEnd: '2026-07-01T00:00:00.000Z',
+    });
+
+    await expect(applySpokeduMasterPayment({
+      ...input,
+      source: 'upgrade',
+      amount: 9500,
+      eventKey: 'upgrade:order:payment',
+      billingCycleKey: `upgrade:${input.userId}:premium:2026-07-01T00:00:00.000Z`,
+      periodOverride: {
+        periodStart: '2026-06-01T00:00:00.000Z',
+        periodEnd: '2026-07-01T00:00:00.000Z',
+        nextBillingAt: '2026-07-01T00:00:00.000Z',
+      },
+    })).resolves.toMatchObject({ ok: true, plan: 'premium' });
+
+    await expect(applySpokeduMasterPayment({
+      ...input,
+      source: 'webhook',
+      amount: 9500,
+      eventKey: 'webhook:order:payment',
+    })).resolves.toMatchObject({ ok: false, code: 'amount_mismatch' });
+  });
+
   it('maps duplicate billing cycles to conflicts', async () => {
     mockRpc({ status: 'rejected', reason: 'billing_cycle_already_processed' });
 

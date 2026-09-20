@@ -17,6 +17,8 @@ describe('SPOKEDU MASTER landing billing copy', () => {
     expect(landing).not.toContain('신용카드 없이 시작');
     expect(landing).not.toContain('14일 후 자동 만료');
     expect(landing).not.toContain('결제 후 30일 이용');
+    expect(landing).not.toContain('라이브러리는 라이트부터');
+    expect(landing).toContain('전체 수업 자료 이용은 Lite부터');
   });
 
   it('keeps Landing pricing includes on catalog VALUE PROMISE SSOT', () => {

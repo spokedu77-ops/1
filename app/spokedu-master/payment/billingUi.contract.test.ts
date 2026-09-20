@@ -84,11 +84,17 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(payment).toContain('canStartPaidPlanCheckout');
     expect(payment).toContain('getPaymentPageMode');
     expect(payment).toContain('프리미엄으로 업그레이드');
+    expect(payment).toContain('UPGRADE_BILLING_NOTICE');
+    expect(payment).toContain('오늘 결제는 라이트 잔여 이용기간 가치를 반영한 서버 계산 차액입니다.');
+    expect(payment).toContain('planId: \'premium\', customerKey:');
     expect(payment).not.toContain('blocksNewPayment');
     expect(subscription).toContain('canUpgradeToPremium');
     expect(subscription).toContain('upgradeHref');
     expect(subscription).toContain('display.upgradeLabel');
-    expect(read('app/spokedu-master/profile/subscriptionSummary.ts')).toContain("upgradeLabel: canUpgrade ? '프리미엄으로 업그레이드' : null");
+    expect(subscription).toContain('라이트 잔여 기간을 반영한 차액만 결제');
+    expect(read('app/spokedu-master/terms/page.tsx')).toContain('서버가 차액을 계산하고, 그 차액만 즉시 결제합니다');
+    expect(read('app/spokedu-master/terms/page.tsx')).not.toContain('프리미엄 정가 28,900원이 새로 결제됩니다');
+    expect(read('app/spokedu-master/terms/page.tsx')).not.toContain('기존 라이트 잔여기간에 대한 차액 계산이나 별도 환급은 없으며');
     expect(subscription).toContain('/spokedu-master/payment');
     expect(profile).not.toContain('/spokedu-master/payment?plan=');
     for (const source of [payment, success, cancel, subscription, profile]) {

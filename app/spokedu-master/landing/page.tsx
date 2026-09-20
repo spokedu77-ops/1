@@ -294,7 +294,7 @@ export default function LandingPage() {
             오늘 첫 수업을 골라보세요
           </h2>
           <p className="mt-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>
-            수업 도구는 로그인 후 바로 써 보고, 라이브러리는 라이트부터, 기록·안내문·SPOMOVE는 프리미엄에서 이용해 보세요.
+            수업 도구는 로그인 후 바로 써 보고, 전체 수업 자료 이용은 Lite부터, 기록·안내문·SPOMOVE는 프리미엄에서 이용해 보세요.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black focus-visible:outline-none">

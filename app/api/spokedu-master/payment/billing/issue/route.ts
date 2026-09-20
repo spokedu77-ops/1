@@ -122,6 +122,9 @@ export async function POST(request: Request) {
   const activePlan = normalizePaidPlan(activeRow?.plan);
   const activePeriodEnd = activeRow?.current_period_end ?? activeRow?.period_end ?? null;
   const isUpgrade = activeSubscription && activePlan === 'lite' && plan === 'premium';
+  if (isUpgrade && activeRow?.cancel_at_period_end === true) {
+    return fail(409, '해지 예약 중에는 이용권을 바로 변경할 수 없습니다. 고객센터로 문의해 주세요.');
+  }
   const upgradeQuote = isUpgrade && activeRow
     ? calculateSpokeduMasterLiteUpgradeQuote({
         periodStart: activeRow.current_period_start ?? activeRow.period_start ?? '',

@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   providerConfigured: vi.fn(() => true),
   pay: vi.fn(),
   storeKey: vi.fn(),
+  readKey: vi.fn(),
   deleteKey: vi.fn(async () => true),
   applyPayment: vi.fn(),
   reportError: vi.fn(async () => undefined),
@@ -36,6 +37,7 @@ vi.mock('@/app/lib/server/spokeduMasterBillingProvider', () => ({
 }));
 vi.mock('@/app/lib/server/spokeduMasterBillingKeyVault', () => ({
   storeSpokeduMasterBillingKey: mocks.storeKey,
+  readSpokeduMasterBillingKey: mocks.readKey,
   deleteSpokeduMasterBillingKey: mocks.deleteKey,
 }));
 vi.mock('@/app/lib/server/spokeduMasterPaymentApply', () => ({
@@ -195,6 +197,214 @@ describe('billing issue recoverable charge flow', () => {
     expect(mocks.markFailed).toHaveBeenCalledWith(expect.objectContaining({
       lastErrorCode: 'initial_payment_exception',
       recoverable: true,
+    }));
+  });
+});
+
+describe('billing issue plan policy', () => {
+  const customerKey = `spm_${USER_ID.replaceAll('-', '')}`;
+  const litePeriod = {
+    plan: 'lite',
+    status: 'active',
+    period_start: '2026-09-01T00:00:00.000Z',
+    period_end: '2026-10-01T00:00:00.000Z',
+    current_period_start: '2026-09-01T00:00:00.000Z',
+    current_period_end: '2026-10-01T00:00:00.000Z',
+    provider_customer_key: customerKey,
+    provider_billing_key_secret_id: SECRET_ID,
+    cancel_at_period_end: false,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.providerConfigured.mockReturnValue(true);
+    mocks.createServerSupabaseClient.mockResolvedValue({
+      auth: { getUser: async () => ({ data: { user: { id: USER_ID, email: 'qa@example.test' } } }) },
+    });
+    mocks.claim.mockImplementation(async () => ({ claimed: true, error: null }));
+    mocks.findPayment.mockResolvedValue(null);
+    mocks.readKey.mockResolvedValue('existing-billing-key');
+    mocks.pay.mockResolvedValue({ paymentKey: 'upgrade-payment-key', approvedAt: '2026-09-20T00:00:00.000Z' });
+    mocks.applyPayment.mockResolvedValue({
+      ok: true,
+      alreadyApplied: false,
+      plan: 'premium',
+      periodEnd: '2026-10-01T00:00:00.000Z',
+      nextBillingAt: '2026-10-01T00:00:00.000Z',
+    });
+  });
+
+  it('charges the server upgrade quote for active Lite → Premium and ignores a matching client amount', async () => {
+    const { calculateSpokeduMasterLiteUpgradeQuote } = await import('@/app/lib/server/spokeduMasterProration');
+    const quote = calculateSpokeduMasterLiteUpgradeQuote({
+      periodStart: litePeriod.period_start,
+      periodEnd: litePeriod.period_end,
+    });
+    expect(quote).not.toBeNull();
+    const state: State = { subscription: { ...litePeriod }, order: null };
+    installService(state);
+
+    const response = await POST(request({
+      planId: 'premium',
+      amount: quote!.amountDueNow,
+      customerKey,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.issueBillingKey).not.toHaveBeenCalled();
+    expect(mocks.pay).toHaveBeenCalledWith(expect.objectContaining({
+      amount: quote!.amountDueNow,
+      plan: 'premium',
+    }));
+    expect(mocks.applyPayment).toHaveBeenCalledWith(expect.objectContaining({
+      source: 'upgrade',
+      amount: quote!.amountDueNow,
+      periodOverride: expect.objectContaining({
+        periodEnd: quote!.periodEnd,
+        nextBillingAt: quote!.nextBillingAt,
+      }),
+    }));
+  });
+
+  it('rejects client amount tampering on Lite → Premium upgrade', async () => {
+    const state: State = { subscription: { ...litePeriod }, order: null };
+    installService(state);
+
+    const response = await POST(request({
+      planId: 'premium',
+      amount: 28900,
+      customerKey,
+    }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: '결제 금액이 서버 견적과 일치하지 않습니다.' });
+    expect(mocks.pay).not.toHaveBeenCalled();
+  });
+
+  it('blocks Lite → Lite repurchase while Lite is active', async () => {
+    const state: State = { subscription: { ...litePeriod }, order: null };
+    installService(state);
+
+    const response = await POST(request({
+      planId: 'lite',
+      amount: 9900,
+      customerKey,
+    }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({ error: '이미 활성화된 이용권입니다.', plan: 'lite' });
+    expect(mocks.pay).not.toHaveBeenCalled();
+  });
+
+  it('blocks Premium → Premium repurchase', async () => {
+    const state: State = {
+      subscription: {
+        ...litePeriod,
+        plan: 'premium',
+        current_amount: 28900,
+      },
+      order: null,
+    };
+    installService(state);
+
+    const response = await POST(request({
+      planId: 'premium',
+      amount: 28900,
+      customerKey,
+    }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({ error: '이미 활성화된 이용권입니다.', plan: 'premium' });
+  });
+
+  it('blocks Lite upgrade while cancel_at_period_end is scheduled', async () => {
+    const state: State = {
+      subscription: { ...litePeriod, cancel_at_period_end: true },
+      order: null,
+    };
+    installService(state);
+
+    const response = await POST(request({
+      planId: 'premium',
+      customerKey,
+    }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      error: '해지 예약 중에는 이용권을 바로 변경할 수 없습니다. 고객센터로 문의해 주세요.',
+    });
+    expect(mocks.pay).not.toHaveBeenCalled();
+  });
+
+  it('starts Free → Lite at the catalog list price', async () => {
+    const state: State = { subscription: null, order: null };
+    installService(state);
+    mocks.issueBillingKey.mockResolvedValue({ billingKey: 'new-key', customerKey });
+    mocks.storeKey.mockResolvedValue(SECRET_ID);
+    mocks.applyPayment.mockResolvedValue({
+      ok: true,
+      alreadyApplied: false,
+      plan: 'lite',
+      periodEnd: '2026-10-20T00:00:00.000Z',
+      nextBillingAt: '2026-10-20T00:00:00.000Z',
+    });
+
+    const response = await POST(request({
+      planId: 'lite',
+      amount: 9900,
+      authKey: 'auth-key',
+      customerKey,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.pay).toHaveBeenCalledWith(expect.objectContaining({ amount: 9900, plan: 'lite' }));
+    expect(mocks.applyPayment).toHaveBeenCalledWith(expect.objectContaining({ source: 'initial', amount: 9900, plan: 'lite' }));
+  });
+
+  it('starts Free → Premium at the catalog list price', async () => {
+    const state: State = { subscription: null, order: null };
+    installService(state);
+    mocks.issueBillingKey.mockResolvedValue({ billingKey: 'new-key', customerKey });
+    mocks.storeKey.mockResolvedValue(SECRET_ID);
+
+    const response = await POST(request({
+      planId: 'premium',
+      amount: 28900,
+      authKey: 'auth-key',
+      customerKey,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.pay).toHaveBeenCalledWith(expect.objectContaining({ amount: 28900, plan: 'premium' }));
+    expect(mocks.applyPayment).toHaveBeenCalledWith(expect.objectContaining({ source: 'initial', amount: 28900, plan: 'premium' }));
+  });
+
+  it('treats expired Lite as a new Premium checkout, not a proration upgrade', async () => {
+    const state: State = {
+      subscription: {
+        ...litePeriod,
+        status: 'expired',
+        period_end: '2026-08-01T00:00:00.000Z',
+        current_period_end: '2026-08-01T00:00:00.000Z',
+      },
+      order: null,
+    };
+    installService(state);
+    mocks.issueBillingKey.mockResolvedValue({ billingKey: 'new-key', customerKey });
+    mocks.storeKey.mockResolvedValue(SECRET_ID);
+
+    const response = await POST(request({
+      planId: 'premium',
+      amount: 28900,
+      authKey: 'auth-key',
+      customerKey,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.pay).toHaveBeenCalledWith(expect.objectContaining({ amount: 28900, plan: 'premium' }));
+    expect(mocks.applyPayment).toHaveBeenCalledWith(expect.objectContaining({
+      source: 'initial',
+      amount: 28900,
     }));
   });
 });

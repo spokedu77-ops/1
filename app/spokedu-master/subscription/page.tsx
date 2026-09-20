@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import {
   getSubscriptionDisplaySummary,
@@ -104,7 +105,9 @@ function SubscriptionStatusCard({
   );
 }
 
-export default function SubscriptionPage() {
+function SubscriptionPageContent() {
+  const searchParams = useSearchParams();
+  const justUpgraded = searchParams.get('upgraded') === '1';
   const [data, setData] = useState<SubscriptionSummaryData | null>(null);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -194,6 +197,14 @@ export default function SubscriptionPage() {
           </section>
         ) : (
           <div className="space-y-4">
+            {justUpgraded && display.planLabel === '프리미엄' ? (
+              <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-br2)' }}>
+                <p className="text-[14px] font-black">프리미엄으로 전환되었습니다.</p>
+                <p className="mt-1 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+                  라이트 잔여 기간을 반영한 차액만 결제되었고, 지금 바로 기록과 SPOMOVE를 사용할 수 있습니다. 다음 결제일은 기존 이용 종료일입니다.
+                </p>
+              </section>
+            ) : null}
             <SubscriptionStatusCard display={display} onCancel={() => setConfirmOpen(true)} />
             <MasterValueEvidencePanel
               plan={data?.plan === 'pro' ? 'premium' : data?.plan === 'premium' || data?.plan === 'lite' || data?.plan === 'team' ? data.plan : 'free'}
@@ -248,5 +259,17 @@ export default function SubscriptionPage() {
         </div>
       </BottomSheet>
     </div>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-dvh items-center justify-center" style={{ background: 'var(--spm-bg)' }}>
+        <Loader2 size={22} className="animate-spin" color="var(--spm-t3)" />
+      </div>
+    }>
+      <SubscriptionPageContent />
+    </Suspense>
   );
 }

@@ -67,6 +67,10 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     expect(source).not.toContain('replaced: true');
     expect(source).toContain("activePlan !== 'lite' || plan !== 'premium'");
     expect(source).toContain("const billingMode = isUpgrade ? 'upgrade' : 'initial'");
+    expect(source).toContain('cancel_at_period_end === true');
+    expect(source).toContain('calculateSpokeduMasterLiteUpgradeQuote');
+    expect(read('app/api/spokedu-master/payment/webhook/route.ts')).toContain('classifySpokeduMasterBillingMode');
+    expect(read('app/api/spokedu-master/payment/webhook/route.ts')).toContain("source: billingMode === 'upgrade' ? 'upgrade' : 'webhook'");
     expect(source).toContain('expectedCustomerKey');
     expect(source).toContain('claimSpokeduMasterBillingOrder');
   });

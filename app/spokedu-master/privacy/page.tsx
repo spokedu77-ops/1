@@ -22,12 +22,13 @@ export default async function PrivacyPage({ searchParams }: { searchParams: Prom
       <PolicyHeader title="개인정보처리방침" fromProfile={from === 'profile'} />
 
       <main className="mx-auto max-w-[760px] px-5 pb-12 sm:px-8">
-        <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 6월 28일</p>
+        <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 9월 20일</p>
 
         <Section title="1. 수집·처리하는 정보">
           <p>회사는 현재 서비스 제공에 필요한 범위에서 다음 정보를 처리합니다.</p>
           <ul className="list-disc space-y-1 pl-5">
             <li>계정 이메일</li>
+            <li>카카오 로그인 시 카카오가 제공하는 계정 식별 정보와, 동의한 범위의 이메일·프로필</li>
             <li>프로필 이름·소속</li>
             <li>학생 이름·그룹</li>
             <li>출석 상태, 관찰·수행·메모, 수업 기록</li>
@@ -49,8 +50,9 @@ export default async function PrivacyPage({ searchParams }: { searchParams: Prom
             <li>Supabase: 인증 계정과 서비스 운영 데이터 저장</li>
             <li>Vercel: 웹 서비스 호스팅</li>
             <li>토스페이먼츠: 결제 처리</li>
+            <li>카카오: 카카오 계정 로그인(OAuth)</li>
           </ul>
-          <p>실제 사용하지 않는 분석·공유 서비스는 위탁 대상으로 기재하지 않습니다.</p>
+          <p>실제 사용하지 않는 분석·공유 서비스는 위탁 대상으로 기재하지 않습니다. 운영 오류 대응을 위해 이메일·결제키 등 민감값을 제외한 제한적 오류 요약이 운영 알림 채널로 전달될 수 있습니다.</p>
         </Section>
 
         <Section title="4. 데이터 구분">

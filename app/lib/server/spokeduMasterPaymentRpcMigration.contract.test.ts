@@ -26,7 +26,11 @@ const observableCronSql = readFileSync(
   join(process.cwd(), 'supabase/migrations/20260822191000_spokedu_master_billing_cron_observability.sql'),
   'utf8',
 );
-const sql = `${recurringSql}\n${vaultSql}\n${cronSql}\n${planConstraintFixSql}\n${phase1Sql}\n${observableCronSql}`;
+const upgradeProrationSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260920120000_spokedu_master_apply_payment_upgrade_proration.sql'),
+  'utf8',
+);
+const sql = `${recurringSql}\n${vaultSql}\n${cronSql}\n${planConstraintFixSql}\n${phase1Sql}\n${observableCronSql}\n${upgradeProrationSql}`;
 
 describe('spokedu_master recurring billing migration contract', () => {
   it('defines recurring subscription state and Vault billing key reference', () => {
@@ -49,6 +53,10 @@ describe('spokedu_master recurring billing migration contract', () => {
     expect(sql).toContain("plan IN ('lite', 'premium')");
     expect(sql).toContain("WHEN 'lite' THEN 9900");
     expect(sql).toContain("WHEN 'premium' THEN 28900");
+    expect(upgradeProrationSql).toContain("'upgrade'");
+    expect(upgradeProrationSql).toContain('p_amount > 19000');
+    expect(upgradeProrationSql).toContain("p_source = 'upgrade'");
+    expect(upgradeProrationSql).toContain('CASE WHEN p_source = \'upgrade\' THEN 28900 ELSE p_amount END');
     expect(sql).not.toContain("WHEN 'pro' THEN 39900");
     expect(sql).not.toContain("WHEN 'team' THEN 79000");
   });

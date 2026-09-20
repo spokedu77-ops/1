@@ -183,6 +183,8 @@ describe('subscriptionSummary', () => {
 
     expect(getSubscriptionDisplaySummary(value).description).toContain('해지 예약 중에는 이용권 변경이 제한됩니다');
     expect(getSubscriptionDisplaySummary(value).description).toContain('고객센터');
+    expect(getPaymentPageMode(value)).toBe('blocked');
+    expect(canStartPaidPlanCheckout(value, 'premium')).toBe(false);
   });
 
   it('shows expired paid subscriptions as ended', () => {
