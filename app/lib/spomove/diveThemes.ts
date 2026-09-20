@@ -1,5 +1,9 @@
 /**
  * DIVE 통합 환경 테마 — Asset Hub 파노라마와 Admin/플레이어 UI 공용.
+ *
+ * 파노라마 원본은 Hub storage pack(`themes/iiwarmup/spomove_dive/...`)이다.
+ * public 정적 경로 `/spomove/dive/environments/{theme}/panorama.webp`는
+ * 저장소에 없으므로 요청하지 않는다. 엔트리가 없으면 색 스카이박스로 둔다.
  */
 
 export const DIVE_THEME_IDS = ['space', 'theme2', 'theme3', 'theme4', 'theme5'] as const;
@@ -38,27 +42,21 @@ export function normalizeDiveThemeId(value: unknown): DiveThemeId {
   return 'space';
 }
 
-/** Hub·DB에 없을 때 public 정적 폴백 */
-export function divePanoramaStaticFallback(themeId: DiveThemeId): string {
-  return `/spomove/dive/environments/${themeId}/panorama.webp`;
-}
-
 export type DivePanoramaUrls = {
   highUrl?: string;
-  lowUrl: string;
+  lowUrl?: string;
   yawDeg: number;
 };
 
 export function resolveDivePanoramaUrls(
-  themeId: DiveThemeId,
+  _themeId: DiveThemeId,
   entry: DiveThemeEntry | null | undefined,
   getPreviewUrl: (path: string | null | undefined) => string | null,
 ): DivePanoramaUrls {
-  const staticFallback = divePanoramaStaticFallback(themeId);
   if (!entry) {
-    return { lowUrl: staticFallback, yawDeg: 0 };
+    return { yawDeg: 0 };
   }
-  const lowUrl = getPreviewUrl(entry.panoramaLowPath) ?? staticFallback;
+  const lowUrl = getPreviewUrl(entry.panoramaLowPath) ?? undefined;
   const highUrl = entry.hasHighRes ? (getPreviewUrl(entry.panoramaPath) ?? undefined) : undefined;
   return { highUrl, lowUrl, yawDeg: entry.yawDeg ?? 0 };
 }
