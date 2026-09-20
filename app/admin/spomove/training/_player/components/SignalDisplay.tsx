@@ -18,6 +18,18 @@ function clampUnitPosition(value: number, safeRatio: number) {
   return Math.min(1 - safeRatio, Math.max(safeRatio, value));
 }
 
+function arrowRotationDeg(arrowId: string | undefined): number {
+  if (arrowId === 'up') return 0;
+  if (arrowId === 'up-right') return 45;
+  if (arrowId === 'right') return 90;
+  if (arrowId === 'down-right') return 135;
+  if (arrowId === 'down') return 180;
+  if (arrowId === 'down-left') return 225;
+  if (arrowId === 'left') return 270;
+  if (arrowId === 'up-left') return 315;
+  return -90;
+}
+
 /** postimg 등 **직링크**만 사용 (next/image·최적화 경로 없음 — 환경마다 깨지는 문제 방지). */
 function VariantFruitImg({ slide }: { slide: FruitSlide }) {
   return (
@@ -382,7 +394,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'arrow') {
     const arrowId = content?.id as string | undefined;
     const fillHex = (content?.fillHex as string | undefined) ?? '#FFFFFF';
-    const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
+    const rot = arrowRotationDeg(arrowId);
     return (
       <div key={animKey} className="signal-blink" style={C}>
         <svg

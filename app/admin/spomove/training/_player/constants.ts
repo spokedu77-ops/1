@@ -122,7 +122,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 4, name: '2분할 자극', enName: '2-Split Stimulus', desc: '2분할 패널형 화면의 좌우 두 패널에 서로 다른 색·테마 이미지 신호가 나타납니다. 옵션: 7개 테마.' },
       { id: 5, name: '3분할 자극', enName: '3-Split Stimulus', desc: '3분할 패널형 화면의 세 패널에 서로 다른 색·테마 이미지 신호가 나타납니다. 옵션: 7개 테마.' },
       { id: 6, name: '랜덤분할 자극', enName: 'Random-Split Stimulus', desc: '전면 1개·2패널·3패널이 20%·30%·50% 확률로 랜덤 제시됩니다. 옵션: 7개 테마.' },
-      { id: 7, name: '내 자리에서 방향 따라가기', enName: 'Relative Compass', desc: '현재 위치를 기준으로 방향을 해석하고 이동한 위치를 다음 문제의 새로운 기준으로 사용합니다.' },
+      { id: 7, name: '내 자리에서 방향 따라가기', enName: 'Relative Compass', desc: '시작 색에 선 뒤, 중앙 화살표 방향으로 한 칸 이동하고 그 자리에 남아 다음 신호를 받습니다. 난이도: 화살표/색상 화살표/대각선.' },
       { id: 8, name: '맞는 조각 찾아가기', enName: 'Shape Completion', desc: '현재 조각과 완성 형태를 비교해 필요한 조각을 찾고 해당 SPOMAT 위치로 이동합니다.' },
     ],
   },

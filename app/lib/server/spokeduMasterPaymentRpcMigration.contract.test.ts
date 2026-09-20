@@ -30,7 +30,15 @@ const upgradeProrationSql = readFileSync(
   join(process.cwd(), 'supabase/migrations/20260920120000_spokedu_master_apply_payment_upgrade_proration.sql'),
   'utf8',
 );
-const sql = `${recurringSql}\n${vaultSql}\n${cronSql}\n${planConstraintFixSql}\n${phase1Sql}\n${observableCronSql}\n${upgradeProrationSql}`;
+const pendingStoreSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260920180000_spokedu_master_store_billing_key_pending.sql'),
+  'utf8',
+);
+const vaultDeleteSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260920190000_spokedu_master_vault_secret_delete.sql'),
+  'utf8',
+);
+const sql = `${recurringSql}\n${vaultSql}\n${cronSql}\n${planConstraintFixSql}\n${phase1Sql}\n${observableCronSql}\n${upgradeProrationSql}\n${pendingStoreSql}\n${vaultDeleteSql}`;
 
 describe('spokedu_master recurring billing migration contract', () => {
   it('defines recurring subscription state and Vault billing key reference', () => {
@@ -107,6 +115,22 @@ describe('spokedu_master recurring billing migration contract', () => {
     expect(phase1Sql).toContain('pending_billing_key_secret_id');
     expect(phase1Sql).toContain('v_subscription.pending_billing_key_secret_id IS DISTINCT FROM p_provider_billing_key_secret_id');
     expect(phase1Sql).toContain('pending_billing_key_secret_id = NULL');
+    const storeFn = phase1Sql.slice(
+      phase1Sql.indexOf('CREATE OR REPLACE FUNCTION public.spokedu_master_store_billing_key'),
+      phase1Sql.indexOf('CREATE OR REPLACE FUNCTION public.spokedu_master_read_billing_key'),
+    );
+    expect(storeFn).toContain('SET pending_billing_key_secret_id = v_new_secret_id');
+    expect(storeFn).not.toContain('provider_billing_key_secret_id = v_new_secret_id');
+    expect(storeFn).toContain('provider_billing_key = NULL');
+    expect(storeFn).toContain('v_old_pending_secret_id');
+    expect(storeFn).not.toContain('vault.delete_secret(v_old_secret_id)');
+    expect(pendingStoreSql).toContain('CREATE OR REPLACE FUNCTION public.spokedu_master_delete_vault_secret(p_secret_id uuid)');
+    expect(pendingStoreSql).toContain('SET pending_billing_key_secret_id = v_new_secret_id');
+    expect(pendingStoreSql).not.toContain('provider_billing_key_secret_id = v_new_secret_id');
+    expect(vaultDeleteSql).toContain('DELETE FROM vault.secrets WHERE id = p_secret_id');
+    expect(vaultDeleteSql).toContain('PERFORM public.spokedu_master_delete_vault_secret');
+    expect(vaultDeleteSql).not.toContain('PERFORM vault.delete_secret');
+    expect(vaultDeleteSql).not.toContain('DELETE FROM vault.secrets WHERE name');
   });
 
   it('removes plaintext billing key writes from the active apply RPC signature', () => {

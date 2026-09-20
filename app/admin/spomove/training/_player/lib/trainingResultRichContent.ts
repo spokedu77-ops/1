@@ -423,8 +423,8 @@ export function resolveTrainingResultRichContent(
     options?.programTitle === relativeCompassTitle;
 
   if (isRelativeCompass) {
-    const relativePhaseName = '내 위치 기준 방향 전환';
-    const relativeFeel = '방향을 정확히 따라갔어요';
+    const relativePhaseName = '내 자리에서 방향 따라가기';
+    const relativeFeel = '화살표 방향으로 한 칸 이동했어요';
     return {
       praise: '오늘도 멋지게 해냈어요!',
       praiseSub: `${withObjectParticle(relativeCompassTitle)} 끝까지 완주했어요.`,
@@ -442,15 +442,15 @@ export function resolveTrainingResultRichContent(
       colorDominantLine: null,
       programTitle: relativeCompassTitle,
       phaseName: relativePhaseName,
-      programSummary: '시작 위치를 확인하고, 내 위치를 기준으로 화살표 방향을 바꾸어 목표 자리까지 이동했어요.',
+      programSummary: '시작 색에 선 뒤, 지금 자리에서 화살표 방향으로 한 칸 이동하고 그 자리에 남아 다음 신호를 받았어요.',
       benefitTags: ['공간 방향', '위치 기억', '방향 전환'],
-      benefitLine: '내 위치가 바뀌어도 방향을 다시 계산하고 정확하게 움직여요',
-      coachTip: '시작 위치를 먼저 확인한 뒤, 화살표를 내 몸의 위치 기준으로 바꾸어 생각해 보세요.',
+      benefitLine: '가운데로 돌아가지 않고, 선 칸에서 다음 방향으로 이어 가요',
+      coachTip: '시작 색을 먼저 확인하고, 화살표가 뜨면 지금 자리에서 한 칸만 이동하게 하세요. 돌아오지 않습니다.',
       selfCheckItems: [
         { id: 'finish', label: '끝까지 해냈나요?' },
-        { id: 'start', label: '시작 위치를 정확히 확인했나요?' },
-        { id: 'direction', label: '내 위치 기준으로 방향을 바꿔 생각했나요?' },
-        { id: 'target', label: '목표 자리까지 정확히 이동했나요?' },
+        { id: 'start', label: '시작 색 패드에 섰나요?' },
+        { id: 'direction', label: '화살표 방향으로 한 칸 이동했나요?' },
+        { id: 'stay', label: '제자리로 돌아오지 않고 그 자리에 남았나요?' },
       ],
     };
   }
