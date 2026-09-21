@@ -3,6 +3,7 @@
 import { toast } from 'sonner';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save, Trash2, BookOpen, Calendar, ChevronDown } from 'lucide-react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
@@ -198,6 +199,11 @@ export default function MileageDetailModal({
   const [editReason, setEditReason] = useState<string>('');
   const [lastAdditionalLog, setLastAdditionalLog] = useState<MileageLog | null>(null);
   const [tierFeeMap, setTierFeeMap] = useState<TierFeeMap>(() => cloneTierFeeMap(HARD_CODED_TIER_FEES));
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const tierFeePreview = useMemo(() => {
     if (hideAppliedFeePreview) return null;
@@ -451,8 +457,10 @@ export default function MileageDetailModal({
       ?? log.session_started_at
       ?? log.created_at;
 
-  return (
-    <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 cursor-default" onClick={onClose}>
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4 cursor-default" onClick={onClose}>
       <div className="bg-white w-full max-w-xl rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="p-6 sm:p-8 overflow-y-auto">
           <div className="flex justify-between items-start mb-6">
@@ -658,6 +666,7 @@ export default function MileageDetailModal({
           <button onClick={onClose} className="w-full py-4 bg-slate-100 text-slate-900 rounded-2xl font-black text-xs hover:bg-slate-200 transition-all cursor-pointer">CLOSE</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
