@@ -167,22 +167,22 @@ describe('spokedu site IA', () => {
       'subscription',
       'contact',
     ]);
-    expect(homePage.hero.eyebrow).toBe('아동·청소년 체육교육');
-    expect(homePage.hero.lines.join(' ')).toMatch(/체육수업/);
+    expect(homePage.hero.eyebrow).toBe('아동 · 청소년 · 특수 체육교육');
+    expect(homePage.hero.lines.join(' ')).toMatch(/MOVEMENT BECOMES LEARNING/);
     expect(homePage.hero.lines.join(' ')).not.toMatch(/검증한/);
-    expect(homePage.hero.support).toMatch(/수업자료와 SPOMOVE 콘텐츠도 직접 만듭니다/);
+    expect(homePage.hero.support).toMatch(/현장에서 필요한 프로그램과 시스템을 만듭니다/);
     expect(homePage.hero.primaryCta.href).toBe('#choice');
-    expect(homePage.hero.primaryCta.label).toBe('수업 유형 보기');
+    expect(homePage.hero.primaryCta.label).toBe('수업 알아보기');
     expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/subscription`);
-    expect(homePage.hero.secondaryCta.label).toBe('지도자용 자료 보기');
+    expect(homePage.hero.secondaryCta.label).toBe('수업자료 둘러보기');
     expect('tertiaryCta' in homePage.hero).toBe(false);
-    expect(homePage.choice.title).toBe('필요한 서비스를 선택하세요.');
+    expect(homePage.choice.title).toBe('무엇을 찾고 계신가요?');
     expect(homePage.choice.education.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/education`);
     expect(homePage.choice.subscription.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/subscription`);
     expect(homePage.serviceChoices.map((item) => item.action)).toEqual([
-      '기관 수업 안내',
-      '개인 수업 안내',
-      '구독 서비스 안내',
+      '수업 보기',
+      '자세히 보기',
+      'MASTER 둘러보기',
     ]);
     expect(JSON.stringify(homePage)).not.toMatch(/FIELD|CONTENT|SYSTEM/);
     expect('why' in homePage).toBe(false);
@@ -194,7 +194,7 @@ describe('spokedu site IA', () => {
     expect(homePage.spomove.definition).not.toMatch(/향상|개선|반드시 성장|무료|바로 이용|동일한 제품은 아닙니다|스트룹/);
     expect('micro' in homePage.spomove).toBe(false);
     expect(homePage.subscription.flow).toEqual(['찾기', '준비', '진행', '기록']);
-    expect(homePage.cases.title).toBe('이런 현장에서 수업하고 있습니다.');
+    expect(homePage.cases.title).toBe('수업은 현장에서 증명됩니다.');
     expect(homePage.cases.lead).not.toMatch(/\n/);
     expect(homePage.spomove.definition).not.toMatch(/\n/);
     expect(homePage.hero.support).not.toMatch(/\n/);
@@ -205,7 +205,7 @@ describe('spokedu site IA', () => {
     expect(homePage.contact.primaryCta.label).toBe('기관 수업 상담');
     expect(homePage.contact.secondaryCta.href).toBe(`${SPOKEDU_PATHS.contact}?type=private`);
     expect(homePage.contact.supportCta.href).toBe(SPOKEDU_PATHS.subscription);
-    expect(homePage.contact.title).toBe('수업을 함께 준비해볼까요?');
+    expect(homePage.contact.title).toBe('어디에서 시작하시겠어요?');
     expect(JSON.stringify(homePage.contact)).not.toMatch(/onboarding|스포키듀 마스터/);
     expect(JSON.stringify(homePage.hero)).not.toMatch(/SPO-MAT|9,900|15,015/);
   });
@@ -221,8 +221,10 @@ describe('spokedu site IA', () => {
       'donghaeng-special-pe',
       'dongjak-spomove',
       'dasarang-oneday',
+      'yangcheon-paps',
+      'seodaemun-event-booth',
     ]);
-    expect(homePage.cases.cards).toHaveLength(4);
+    expect(homePage.cases.cards).toHaveLength(6);
     expect(homePage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
     expect(homePage.cases.cards.every((card) => !('ctaLabel' in card))).toBe(true);
   });
@@ -247,7 +249,6 @@ describe('spokedu site IA', () => {
     expect(landingSource).toMatch(/activeFieldTab === 'system'[\s\S]*<SystemPanel/);
 
     expect(landingSource).toMatch(/function ContentPanel/);
-    expect(landingSource).toMatch(/homePage\.spomove\.screen\.src/);
     expect(landingSource).toMatch(/href=\{homePage\.spomove\.primaryCta\.href\}/);
     expect(landingSource).not.toMatch(/spomoveSpread|spomoveMicro|직접 수업하며 만든 대표 콘텐츠|스트룹/);
     expect('flow' in homePage.spomove).toBe(false);
@@ -258,7 +259,7 @@ describe('spokedu site IA', () => {
     expect(landingSource).not.toMatch(/productStageFooter|productProofCopy|prepare-dishcone-bingo/);
     expect(cssSource).not.toMatch(/productStageFooter|spomoveFooter|spomoveMicro|productProof|casesGrid|caseRow|spomoveSpread/);
 
-    expect(homePage.cases.cards).toHaveLength(4);
+    expect(homePage.cases.cards).toHaveLength(6);
     expect(landingSource).toMatch(/caseCards\.map\(\(card, index\)/);
     expect(landingSource).toMatch(/homePage\.cases\.recordsCta\.href/);
     expect(landingSource).toMatch(/styles\.recordRail/);
@@ -278,11 +279,11 @@ describe('spokedu site IA', () => {
   it('keeps Home media roles distinct and backed by approved assets', () => {
     const spomoveDetail = HOME_MEDIA[homePage.spomove.mediaKey];
 
-    expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.heroClassroom);
+    expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.fieldGymMotion);
     expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.home.fieldSpomoveDive);
     expect(canUseSpokeduImageOnPage(spomoveDetail.asset!, 'home')).toBe(true);
     expect(homePage.spomove.screen.src).toBe(HOME_FIELD_EDITORIAL.spomoveDive);
-    expect(homePage.subscription.visual.src).toBe('/images/spokedu/subscription/library-program-cards.png');
+    expect(homePage.subscription.visual.src).toBe(HOME_FIELD_EDITORIAL.masterUi);
     expect(homePage.subscription.features.map((feature) => feature.id)).toEqual(['find', 'prepare']);
     expect(homePage.subscription.features.map((feature) => feature.title)).toEqual([
       '대상에 맞는 수업 찾기',
@@ -292,11 +293,15 @@ describe('spokedu site IA', () => {
     expect(homePage.cases.cards[1]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-adapted-p05.webp');
     expect(homePage.cases.cards[2]?.editorialSrc).toBe('/images/spokedu/home/field-editorial/home-case-spomove-p05.webp');
     expect(homePage.cases.cards[3]?.editorialSrc).toBe('/images/spokedu/records/dasarang-oneday-field.jpg');
+    expect(homePage.cases.cards[4]?.editorialSrc).toBe('/images/spokedu/records/yangcheon-paps.jpg');
+    expect(homePage.cases.cards[5]?.editorialSrc).toBe('/images/spokedu/records/seodaemun-event-booth.jpg');
     expect(homePage.cases.cards.map((card) => [card.kind, card.headline, card.displayMeta])).toEqual([
-      ['정규수업', '매동초등학교 · 스포츠 스텝업', '종로거점형키움센터 연계 · 6개월 늘봄 스포츠'],
-      ['정규수업', '찾아가는 동행 체육교실', '특수체육 · 정규수업'],
-      ['정규수업', '동작거점형 우리동네키움센터', '초등학생 · 정규수업'],
-      ['원데이·행사', '다사랑영등포지역아동센터', '초등 2~6학년 · 원데이·행사'],
+      ['정규수업', '매동초등학교', '스포츠 스텝업 · 종로'],
+      ['정규수업', '찾아가는 동행 체육교실', '특수체육 · 서울 중구'],
+      ['정규수업', '동작거점형 우리동네키움센터', 'SPOMOVE · 동작'],
+      ['원데이·행사', '다사랑영등포지역아동센터', '원데이 · 영등포'],
+      ['정규수업', '양천거점형키움센터', 'PAPS · 양천'],
+      ['원데이·행사', '서대문구 독립문공원 어린이날 축제', '원데이·행사 · 서대문'],
     ]);
   });
 

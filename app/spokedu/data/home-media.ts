@@ -55,6 +55,20 @@ function visualMedia(item: Omit<HomeMediaItem, 'type' | 'src' | 'poster' | 'fall
 }
 
 export const HOME_MEDIA = {
+  homeHeroGymMotion: fromPhoto(SPOKEDU_IMAGES.home.fieldGymMotion, {
+    id: 'home-hero-gym-motion',
+    label: '체육관 허들 수업',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '62% 48%',
+  }),
+  homeMasterUi: fromPhoto(SPOKEDU_IMAGES.home.fieldMasterUi, {
+    id: 'home-master-ui',
+    label: 'SPOKEDU MASTER 화면',
+    fallbackGradient: 'from-slate-200 via-slate-100 to-white',
+    tone: 'slate',
+    objectPosition: '50% 18%',
+  }),
   homeHeroField: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialHero, {
     id: 'home-hero-field',
     label: '체육수업 Hero',

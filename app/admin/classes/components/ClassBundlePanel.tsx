@@ -45,6 +45,16 @@ type RoundView = "active" | "all" | "completed";
 
 const RESTART_CYCLE_ROUNDS = 8;
 
+/** 회차 행: 강사/수업료는 고정폭, 남는 폭은 맨 오른쪽 1fr */
+const SESSION_ROW_GRID =
+  "grid w-full min-w-0 grid-cols-[2.6rem_12.75rem_8.25rem_6.5rem_2.5rem_3rem_max-content_minmax(0,1fr)] items-start gap-x-2";
+
+const SESSION_CONTROL =
+  "box-border h-8 w-full min-w-0 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-800";
+
+const SESSION_PRICE_CONTROL =
+  `${SESSION_CONTROL} [appearance:textfield] text-right tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`;
+
 type Props = {
   visible: boolean;
   bundleTitle: string;
@@ -1578,30 +1588,20 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
 <div
                           className={
                             cycleMainUndecided && !isPastCycle
-                              ? "overflow-x-auto rounded-lg border-2 border-red-400 bg-red-50/50"
-                              : "overflow-x-auto rounded-lg border border-slate-200"
+                              ? "overflow-hidden rounded-lg border-2 border-red-400 bg-red-50/50"
+                              : "overflow-hidden rounded-lg border border-slate-200"
                           }
                         >
-                          <table className="w-full min-w-[36rem] table-fixed text-xs">
-                            <colgroup>
-                              <col className="w-[2.75rem]" />
-                              <col className="w-[7.5rem]" />
-                              <col />
-                              <col className="w-[2.75rem]" />
-                              <col className="w-[3.5rem]" />
-                              <col className="w-[5.75rem]" />
-                            </colgroup>
-                            <thead className="border-b border-slate-100 bg-slate-50 text-[11px] font-medium text-slate-500">
-                              <tr>
-                                <th className="px-1.5 py-1.5 text-left whitespace-nowrap">회차</th>
-                                <th className="px-2 py-1.5 text-left whitespace-nowrap">일정</th>
-                                <th className="px-2 py-1.5 text-left whitespace-nowrap">강사</th>
-                                <th className="px-1 py-1.5 text-center whitespace-nowrap">마일</th>
-                                <th className="px-1 py-1.5 text-center whitespace-nowrap">상태</th>
-                                <th className="px-1 py-1.5 text-center whitespace-nowrap">관리</th>
-                              </tr>
-                            </thead>
-                            <tbody>
+                          <div className={`${SESSION_ROW_GRID} border-b border-slate-100 bg-slate-50 px-2 py-2 text-[11px] font-medium text-slate-500`}>
+                            <div>회차</div>
+                            <div>일정</div>
+                            <div>강사</div>
+                            <div className="text-right">수업료</div>
+                            <div className="text-center">마일</div>
+                            <div className="text-center">상태</div>
+                            <div>관리</div>
+                            <div />
+                          </div>
                               {rows
                                 .filter((r) => {
                                   if (r.status === "deleted") return false;
@@ -1634,13 +1634,12 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                   const s = getTimeStatusLabel(r);
                                   const assistList = extraTeachersFromMemo(r.memo);
                                   return (
-                                    <tr key={r.id} className="border-t border-slate-100 align-top">
-                                      <td className="px-1.5 py-2 font-semibold text-slate-700 whitespace-nowrap">{n}/{total}</td>
-                                      <td className="px-2 py-2">
-                                        <div className="flex flex-col gap-1">
+                                    <div key={r.id} className={`${SESSION_ROW_GRID} border-t border-slate-100 px-2 py-2`}>
+                                      <div className="pt-1.5 text-xs font-semibold text-slate-700 whitespace-nowrap">{n}/{total}</div>
+                                      <div className="flex w-full min-w-0 flex-col gap-1">
                                           <input
                                           type="date"
-                                          className="w-full max-w-full rounded-md border border-slate-200 px-1 py-1 text-[11px]"
+                                          className={SESSION_CONTROL}
                                           value={dateStr}
                                           onChange={(e) => {
                                             setScheduleDraftBySessionId((prev) => ({
@@ -1656,7 +1655,8 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                         />
                                           <input
                                             type="time"
-                                            className="w-full max-w-full rounded-md border border-slate-200 px-1 py-1 text-[11px]"
+                                            lang="en-GB"
+                                            className={SESSION_CONTROL}
                                             value={timeStr}
                                             onChange={(e) => {
                                               setScheduleDraftBySessionId((prev) => ({
@@ -1675,7 +1675,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             type="button"
                                             disabled={savingSessionScheduleId === r.id}
                                             onClick={() => void saveSessionSchedule(gid, r)}
-                                            className="rounded-md bg-blue-600 px-1.5 py-1 text-[10px] font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+                                            className="h-8 rounded-md bg-blue-600 px-2 text-[11px] font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
                                           >
                                             {savingSessionScheduleId === r.id
                                               ? "저장 중…"
@@ -1683,12 +1683,9 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                           </button>
                                           ) : null}
                                         </div>
-                                      </td>
-                                      <td className="min-w-0 overflow-hidden px-1.5 py-1.5">
-                                        <div className="flex min-w-0 flex-col gap-1">
-                                          <div className="flex min-w-0 items-center gap-1">
+                                      <div className="flex min-w-0 flex-col gap-1">
                                             <select
-                                              className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[11px] text-slate-800"
+                                              className={SESSION_CONTROL}
                                               value={r.created_by ?? ""}
                                               onChange={(e) => void applyMainTeacher(gid, r, e.target.value)}
                                             >
@@ -1697,19 +1694,10 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                                 <option key={t.id} value={t.id}>{t.name}</option>
                                               ))}
                                             </select>
-                                            <input
-                                              key={`price-${r.id}-${r.price ?? 0}`}
-                                              type="number"
-                                              className="w-[64px] shrink-0 rounded-md border border-slate-200 bg-white px-1 py-1 text-right text-[11px] text-slate-800"
-                                              placeholder="수업료"
-                                              defaultValue={Number(r.price) || 0}
-                                              onBlur={(e) => void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })}
-                                            />
-                                          </div>
                                           {assistList.map((ex, aidx) => (
                                             <div key={aidx} className="flex min-w-0 items-center gap-1">
                                               <select
-                                                className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[11px] text-slate-600"
+                                                className={`${SESSION_CONTROL} text-slate-600`}
                                                 value={ex.id}
                                                 onChange={(e) => void setAssistIdAt(gid, r, aidx, e.target.value)}
                                               >
@@ -1718,14 +1706,6 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                                   <option key={t.id} value={t.id}>{t.name}</option>
                                                 ))}
                                               </select>
-                                              <input
-                                                key={`assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
-                                                type="number"
-                                                className="w-[64px] shrink-0 rounded-md border border-slate-200 bg-white px-1 py-1 text-right text-[11px] text-slate-600"
-                                                placeholder="수업료"
-                                                defaultValue={Number(ex.price) || 0}
-                                                onBlur={(e) => void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)}
-                                              />
                                               <button
                                                 type="button"
                                                 title="보조 제거"
@@ -1739,7 +1719,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                           {assistList.length < 2 && (
                                             <button
                                               type="button"
-                                              className="flex w-fit items-center gap-0.5 text-[10px] font-medium text-slate-500 hover:text-slate-800"
+                                              className="flex h-8 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-500 hover:text-slate-800"
                                               onClick={() => void addAssistRow(gid, r)}
                                             >
                                               <Plus size={11} strokeWidth={2.5} />
@@ -1747,32 +1727,51 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             </button>
                                           )}
                                         </div>
-                                      </td>
-                                      <td className="px-1 py-2 text-center">
+                                      <div className="flex flex-col gap-1">
+                                            <input
+                                              key={`price-${r.id}-${r.price ?? 0}`}
+                                              type="number"
+                                              className={SESSION_PRICE_CONTROL}
+                                              placeholder="수업료"
+                                              defaultValue={Number(r.price) || 0}
+                                              onBlur={(e) => void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })}
+                                            />
+                                          {assistList.map((ex, aidx) => (
+                                              <input
+                                                key={`assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
+                                                type="number"
+                                                className={`${SESSION_PRICE_CONTROL} text-slate-600`}
+                                                placeholder="수업료"
+                                                defaultValue={Number(ex.price) || 0}
+                                                onBlur={(e) => void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)}
+                                              />
+                                          ))}
+                                        </div>
+                                      <div className="pt-1 text-center">
                                         <button
                                           type="button"
-                                          className="whitespace-nowrap rounded-md px-1.5 py-1 text-[10px] font-semibold text-amber-800 hover:bg-amber-50"
+                                          className="whitespace-nowrap rounded-md px-1.5 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-50"
                                           onClick={() => setMileageModal({ gid, row: r })}
                                         >
                                           설정
                                         </button>
-                                      </td>
-                                      <td className="px-1 py-2 text-center">
+                                      </div>
+                                      <div className="pt-1.5 text-center">
                                         <span
                                           className={`inline-flex whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusBadgeClass(s.label)}`}
                                         >
                                           {s.label}
                                         </span>
-                                      </td>
-                                      <td className="px-1 py-2 text-center">
+                                      </div>
+                                      <div className="pt-0.5">
                                         {isPastCycle ||
                                         r.status === "cancelled" ||
                                         r.status === "deleted" ? null : (
-                                          <div className="flex w-full flex-col items-stretch gap-1">
+                                          <div className="flex flex-wrap items-center gap-1">
                                             {r.status === "postponed" ? (
                                               <button
                                                 type="button"
-                                                className="whitespace-nowrap rounded-md bg-violet-600 px-1 py-1 text-[10px] font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+                                                className="whitespace-nowrap rounded-md bg-violet-600 px-2 py-1.5 text-[11px] font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
                                                 disabled={undoingPostponeSessionId === r.id}
                                                 onClick={() => void handleUndoPostpone(r.id)}
                                               >
@@ -1782,7 +1781,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               <>
                                                 <button
                                                   type="button"
-                                                  className="whitespace-nowrap rounded-md border border-violet-200 bg-violet-50 px-1 py-1 text-[10px] font-semibold text-violet-800 hover:bg-violet-100 disabled:opacity-50"
+                                                  className="whitespace-nowrap rounded-md border border-violet-200 bg-violet-50 px-2 py-1.5 text-[11px] font-semibold text-violet-800 hover:bg-violet-100 disabled:opacity-50"
                                                   disabled={postponingSessionId === r.id}
                                                   onClick={() => void handlePostpone(gid, r.id, "postpone")}
                                                 >
@@ -1790,7 +1789,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                                 </button>
                                                 <button
                                                   type="button"
-                                                  className="whitespace-nowrap rounded-md border border-indigo-200 bg-indigo-50 px-1 py-1 text-[10px] font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-50"
+                                                  className="whitespace-nowrap rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1.5 text-[11px] font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-50"
                                                   disabled={postponingSessionId === r.id}
                                                   onClick={() => void handlePostpone(gid, r.id, "postpone_request")}
                                                 >
@@ -1800,7 +1799,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             )}
                                             <button
                                               type="button"
-                                              className="whitespace-nowrap rounded-md border border-rose-200 bg-rose-50 px-1 py-1 text-[10px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
+                                              className="whitespace-nowrap rounded-md border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
                                               disabled={deletingSessionId === r.id}
                                               onClick={() => void handleDeleteSession(gid, r.id)}
                                             >
@@ -1808,12 +1807,11 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             </button>
                                           </div>
                                         )}
-                                      </td>
-                                    </tr>
+                                      </div>
+                                      <div />
+                                    </div>
                                   );
                                 })}
-                            </tbody>
-                          </table>
                         </div>
 
                         {!isPastCycle ? (
@@ -2055,7 +2053,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         onClick={onClose}
       />
       <aside
-        className={`absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl border-l border-slate-100 flex flex-col transition-transform ${
+        className={`absolute right-0 top-0 h-full w-full max-w-5xl bg-white shadow-2xl border-l border-slate-100 flex flex-col transition-transform ${
           visible ? "translate-x-0" : "translate-x-full"
         }`}
       >

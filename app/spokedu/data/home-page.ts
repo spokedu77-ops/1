@@ -8,13 +8,24 @@ import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_PATHS } from './site';
 
 export const HOME_FIELD_EDITORIAL = {
-  hero: '/images/spokedu/home/field-editorial/home-hero-field.webp',
+  hero: '/images/spokedu/home/field-editorial/home-hero-gym-motion.jpg',
+  field: '/images/spokedu/home/field-editorial/home-hero-field.webp',
+  masterUi: '/images/spokedu/home/field-editorial/home-master-ui.png',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
   spomoveDive: '/images/spokedu/home/field-editorial/home-spomove-dive-field.webp',
   caseGeneral: '/images/spokedu/home/field-editorial/home-case-general.webp',
   caseAdapted: '/images/spokedu/home/field-editorial/home-case-adapted-p05.webp',
   caseSpomove: '/images/spokedu/home/field-editorial/home-case-spomove-p05.webp',
 } as const;
+
+const HOME_STORY_REGION: Partial<Record<FieldRecordSlug, string>> = {
+  'maedong-sports-stepup': '종로',
+  'donghaeng-special-pe': '서울 중구',
+  'dongjak-spomove': '동작',
+  'dasarang-oneday': '영등포',
+  'yangcheon-paps': '양천',
+  'seodaemun-event-booth': '서대문',
+};
 
 export type HomeCaseCard = {
   slug: string;
@@ -41,14 +52,13 @@ export const HOME_MAIN_CASE_SLUGS: readonly FieldRecordSlug[] = [
   'dongjak-spomove',
 ] as const;
 
-function homeCaseHeadline(item: FieldRecordCatalogItem, featured: boolean): string {
-  return featured ? `${item.venue} · ${item.programLabel}` : item.venue;
+function homeCaseHeadline(item: FieldRecordCatalogItem, _featured: boolean): string {
+  return item.venue;
 }
 
-function homeCaseDisplayMeta(item: FieldRecordCatalogItem, featured: boolean): string {
-  if (featured) return item.meta;
-  const audienceHead = (item.onsite?.audience ?? item.meta).split(' · ')[0]?.trim();
-  return audienceHead ? `${audienceHead} · ${item.operationType}` : item.operationType;
+function homeCaseDisplayMeta(item: FieldRecordCatalogItem, _featured: boolean): string {
+  const region = HOME_STORY_REGION[item.slug];
+  return region ? `${item.programLabel} · ${region}` : item.programLabel;
 }
 
 function homeCaseOperation(item: FieldRecordCatalogItem, featured: boolean): string {
@@ -95,20 +105,17 @@ export const homePage = {
 
   hero: {
     id: 'hero',
-    eyebrow: '아동·청소년 체육교육',
-    lines: [
-      '학교·기관부터 개인·소그룹까지,',
-      '아이들의 체육수업을 직접 설계하고 운영합니다.',
-    ] as const,
-    support: '현장에서 사용하는 수업자료와 SPOMOVE 콘텐츠도 직접 만듭니다.',
-    mediaKey: 'homeHeroClassroom' as HomeMediaKey,
+    eyebrow: '아동 · 청소년 · 특수 체육교육',
+    lines: ['MOVEMENT BECOMES', 'LEARNING.'] as const,
+    support: '학교와 기관에서 직접 수업하고 현장에서 필요한 프로그램과 시스템을 만듭니다.',
+    mediaKey: 'homeHeroGymMotion' as HomeMediaKey,
     primaryCta: {
-      label: '수업 유형 보기',
+      label: '수업 알아보기',
       href: '#choice',
       trackLabel: 'cta-home-education-hero',
     },
     secondaryCta: {
-      label: '지도자용 자료 보기',
+      label: '수업자료 둘러보기',
       href: SPOKEDU_PATHS.subscription,
       trackLabel: 'cta-home-subscription-hero',
     },
@@ -116,7 +123,7 @@ export const homePage = {
 
   choice: {
     id: 'choice',
-    title: '필요한 서비스를 선택하세요.',
+    title: '무엇을 찾고 계신가요?',
     education: {
       headline: '체육수업',
       tagline: 'SPOKEDU가 직접 수업합니다.',
@@ -143,26 +150,29 @@ export const homePage = {
     {
       audience: '학교·기관 담당자',
       label: '기관·학교 수업',
-      description: '정기수업부터 특강·행사까지, 기관의 대상과 공간에 맞춰 운영합니다.',
+      stageTitle: '기관·학교 체육수업',
+      description: '학교와 기관의 환경과 대상에 맞춰 수업을 설계하고 운영합니다.',
       href: SPOKEDU_PATHS.education,
       trackLabel: 'cta-home-choice-education',
-      action: '기관 수업 안내',
+      action: '수업 보기',
     },
     {
       audience: '아이·학부모',
       label: '개인·소그룹 수업',
-      description: '아이의 운동 경험과 수업 목표를 확인하고, 함께할 수업 방식을 안내합니다.',
+      stageTitle: '개인·소그룹 수업',
+      description: '아이의 움직임과 참여 수준에 맞춰 수업을 진행합니다.',
       href: SPOKEDU_PATHS.private,
       trackLabel: 'cta-home-choice-private',
-      action: '개인 수업 안내',
+      action: '자세히 보기',
     },
     {
       audience: '체육 지도자',
       label: '수업자료·구독',
-      description: '놀이체육 자료와 SPOMOVE로 수업을 찾고 준비합니다.',
+      stageTitle: '스포키듀 구독시스템',
+      description: '수업자료부터 SPOMOVE까지 실제 수업 준비에 사용하는 콘텐츠를 한 곳에서.',
       href: SPOKEDU_PATHS.subscription,
       trackLabel: 'cta-home-choice-subscription',
-      action: '구독 서비스 안내',
+      action: 'MASTER 둘러보기',
     },
   ],
 
@@ -205,9 +215,12 @@ export const homePage = {
       },
     ] as const,
     visual: {
-      src: '/images/spokedu/subscription/library-program-cards.png',
-      alt: '조건 필터와 수업명·활동 썸네일이 보이는 라이브러리 화면',
+      src: HOME_FIELD_EDITORIAL.masterUi,
+      alt: 'SPOKEDU MASTER 실제 화면 — 놀이체육 추천과 SPOMOVE 추천',
       caption: '실제 서비스 화면',
+      explorerCrop: '50% 14%',
+      libraryCrop: '50% 40%',
+      productCrop: '50% 74%',
     },
     primaryCta: {
       label: '수업자료·구독 안내',
@@ -218,10 +231,10 @@ export const homePage = {
 
   cases: {
     id: 'cases',
-    title: '이런 현장에서 수업하고 있습니다.',
-    lead: '학교의 정기수업부터 포용 체육까지, 실제 운영한 수업을 만나보세요.',
+    title: '수업은 현장에서 증명됩니다.',
+    lead: '실제 운영한 수업을 넘겨보며 현장을 확인하세요.',
     recordsCta: {
-      label: '수업 사례 전체 보기',
+      label: 'ALL RECORDS',
       href: SPOKEDU_PATHS.records,
       trackLabel: 'cta-home-cases-records',
     },
@@ -246,13 +259,21 @@ export const homePage = {
         src: '/images/spokedu/records/dasarang-oneday-field.jpg',
         objectPosition: '50% 52%',
       }),
+      buildHomeCaseCard('yangcheon-paps', {
+        src: '/images/spokedu/records/yangcheon-paps.jpg',
+        objectPosition: '50% 42%',
+      }),
+      buildHomeCaseCard('seodaemun-event-booth', {
+        src: '/images/spokedu/records/seodaemun-event-booth.jpg',
+        objectPosition: '48% 40%',
+      }),
     ],
   },
 
   contact: {
     id: 'contact',
-    title: '수업을 함께 준비해볼까요?',
-    lead: '기관·학교 수업과 개인·소그룹 수업은 상담 유형을 나눠 안내합니다.',
+    title: '어디에서 시작하시겠어요?',
+    lead: '기관·학교, 개인·소그룹, 지도자 경로 중 하나를 고르면 됩니다.',
     primaryCta: {
       label: '기관 수업 상담',
       href: `${SPOKEDU_PATHS.contact}?type=dispatch`,

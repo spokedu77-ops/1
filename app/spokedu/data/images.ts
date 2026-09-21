@@ -164,6 +164,20 @@ export const SPOKEDU_IMAGES = {
       '서울위례초등학교 체육수업 — 지도자와 아동이 함께하는 놀이체육 현장',
       { allowedPages: ['home'] },
     ),
+    fieldGymMotion: defineImage(
+      'home',
+      'home-hero-gym-motion',
+      'field-editorial/home-hero-gym-motion.jpg',
+      '체육관 허들 수업 — 아이들이 달리고 뛰어넘는 현장',
+      { allowedPages: ['home'] },
+    ),
+    fieldMasterUi: defineImage(
+      'home',
+      'home-master-ui',
+      'field-editorial/home-master-ui.png',
+      'SPOKEDU MASTER 실제 화면 — 놀이체육 추천과 SPOMOVE 추천',
+      { kind: 'screen', allowedPages: ['home', 'curriculum'] },
+    ),
     fieldEditorialWhy: defineImage(
       'home',
       'home-why-field',
@@ -485,7 +499,7 @@ export type PageImageSlot = {
 
 /** 페이지별 이미지 슬롯 (운영·교체 참고) */
 export const spokeduPageImageMap: PageImageSlot[] = [
-  { page: 'Home', section: 'Hero', asset: SPOKEDU_IMAGES.home.hero },
+  { page: 'Home', section: 'Hero', asset: SPOKEDU_IMAGES.home.fieldGymMotion },
   { page: 'Brand', section: 'Logo', asset: SPOKEDU_IMAGES.brand.logo },
   { page: 'Brand', section: 'Spomat', asset: SPOKEDU_IMAGES.brand.spomat },
   { page: 'Home', section: 'Living Proof / LAB', asset: SPOKEDU_IMAGES.home.labScene },

@@ -2,6 +2,7 @@
 
 import {
   ArrowRight,
+  CalendarPlus,
   CheckCircle2,
   FileText,
   Heart,
@@ -197,6 +198,22 @@ function HomeScheduleThumb({ startAt }: { startAt: string }) {
       <strong className="my-0.5 text-[24px] font-bold leading-6 tabular-nums text-slate-950">{Number(day)}</strong>
       <span className="whitespace-nowrap text-[10px] font-semibold leading-[11px] tracking-normal text-slate-500">{weekday} · {formatSeoulSessionTime(startAt)}</span>
     </div>
+  );
+}
+
+function HomeEmptyScheduleThumb() {
+  return (
+    <span className="grid h-full w-full place-items-center bg-slate-50 text-slate-400" aria-hidden>
+      <CalendarPlus size={22} strokeWidth={1.8} />
+    </span>
+  );
+}
+
+function HomeEmptyRecentThumb() {
+  return (
+    <span className="grid h-full w-full place-items-center bg-slate-50 text-slate-400" aria-hidden>
+      <Play size={22} strokeWidth={1.8} />
+    </span>
   );
 }
 
@@ -877,7 +894,7 @@ function EntitledDashboardView() {
             />
             <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
               <div className="flex w-max snap-x snap-mandatory items-stretch gap-4 lg:grid lg:w-full lg:grid-cols-3 lg:snap-none">
-                {latestRecentActivity?.action === 'spomove_started' ? (
+                {latestRecentActivity?.action === 'spomove_started' && OFFICIAL_SPOMOVE_LIBRARY.some((item) => item.id === latestRecentActivity.programId) ? (
                   <RecentSpomoveReuseCard
                     activity={latestRecentActivity}
                     thumbnailUrl={resolveSpomoveThumbnailUrl(
@@ -888,7 +905,16 @@ function EntitledDashboardView() {
                   />
                 ) : latestRecentActivity && latestLessonProgram ? (
                   <RecentLessonReuseCard activity={latestRecentActivity} program={latestLessonProgram} />
-                ) : null}
+                ) : (
+                  <HomeContinueCard
+                    kicker="최근 활동"
+                    title="최근 본 수업이 없습니다"
+                    meta="놀이체육이나 SPOMOVE를 열면 여기에 이어집니다"
+                    actionLabel="수업 찾아보기"
+                    href="/spokedu-master/library"
+                    media={<HomeEmptyRecentThumb />}
+                  />
+                )}
                 {nextSession ? (
                   <HomeContinueCard
                     kicker="내 다음 수업"
@@ -898,7 +924,16 @@ function EntitledDashboardView() {
                     href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`}
                     media={<HomeScheduleThumb startAt={nextSession.startAt} />}
                   />
-                ) : null}
+                ) : (
+                  <HomeContinueCard
+                    kicker="내 다음 수업"
+                    title="다음 일정 없음"
+                    meta="수업 일정을 만들면 여기에 이어집니다"
+                    actionLabel="수업 일정 보기"
+                    href="/spokedu-master/activity"
+                    media={<HomeEmptyScheduleThumb />}
+                  />
+                )}
                 <HomeContinueCard
                   kicker="최근 수업도구"
                   title={recentClassTool.label}

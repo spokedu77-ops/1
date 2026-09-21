@@ -80,6 +80,9 @@ describe('MASTER Home content card system', () => {
     expect(continueCard).toContain('w-[86vw]');
     expect(continueCard).toContain('lg:w-auto');
     expect(dashboard).toContain('lg:grid-cols-3');
+    expect(dashboard).toContain('title="다음 일정 없음"');
+    expect(dashboard).toContain('title="최근 본 수업이 없습니다"');
+    expect(dashboard).toContain('HomeEmptyScheduleThumb');
     expect(dashboard.indexOf('data-dashboard-chapter="opening"')).toBeLessThan(
       dashboard.indexOf('data-dashboard-chapter="continuity"'),
     );
