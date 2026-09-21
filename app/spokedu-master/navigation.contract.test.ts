@@ -54,6 +54,8 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(profile).toContain('/spokedu-master/subscription');
     expect(profile).toContain('MASTER_DATA_DELETE_CONFIRMATION');
     expect(profile).toContain('handleLogout');
+    expect(profile).toContain('flex-col gap-3 py-4 sm:flex-row');
+    expect(profile).toContain('title={profile?.email || \'이메일 정보 없음\'}');
   });
 
   it('keeps hidden routes protected by the direct URL policy', () => {
@@ -65,6 +67,21 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
     expect(shell).toContain('const isLogin = pathname === `${basePath}/login`');
     expect(shell).toContain('isProgramsEditor || isLogin');
+  });
+
+  it('keeps the mobile tab bar fixed and reserves matching content clearance', () => {
+    const mobile = read('app/spokedu-master/components/layout/TabBar.tsx');
+    const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
+    const metrics = read('app/spokedu-master/components/layout/tabBarMetrics.ts');
+    expect(mobile).toContain('lg:hidden');
+    expect(mobile).toContain("aria-label=\"SPOKEDU MASTER 주요 메뉴\"");
+    expect(mobile).toContain('data-spm-tabbar="true"');
+    expect(mobile).toContain('fixed inset-x-0 bottom-0');
+    expect(mobile).toContain('env(safe-area-inset-bottom, 0px)');
+    expect(metrics).toContain('calc(70px + max(8px, env(safe-area-inset-bottom, 0px)))');
+    expect(shell).toContain("hideChrome ? null : <TabBar");
+    expect(shell).toContain('pb-[var(--spm-tabbar-clearance)] lg:pb-0');
+    expect(shell).toContain('[SPM_TABBAR_CLEARANCE_VAR]: SPM_TABBAR_CLEARANCE');
   });
 
   it('keeps authenticated MASTER paths out of robots allow rules', () => {

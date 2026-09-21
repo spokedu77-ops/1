@@ -1210,7 +1210,7 @@ export default function ClassToolsView() {
   const usesClassRoster = tab === 'picker' || tab === 'teams' || tab === 'order' || tab === 'tournament' || tab === 'ladder';
   const usingSample = false;
   return (
-    <div className="flex h-full min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
+    <div className="flex h-full min-h-0 flex-col" style={{ background: 'var(--spm-bg)' }}>
       <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3">
           <div className="min-w-0">

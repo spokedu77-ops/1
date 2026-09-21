@@ -51,11 +51,12 @@ export function TabBar({
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 shrink-0 border-t px-2 pt-2 lg:hidden"
+        data-spm-tabbar="true"
+        className="fixed inset-x-0 bottom-0 z-50 border-t px-2 pt-2 lg:hidden"
         style={{
           borderColor: 'var(--spm-br2)',
           background: 'color-mix(in srgb, var(--spm-bg) 92%, transparent)',
-          paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
+          paddingBottom: 'max(8px, env(safe-area-inset-bottom, 0px))',
           backdropFilter: 'blur(20px)',
         }}
         aria-label="SPOKEDU MASTER 주요 메뉴"

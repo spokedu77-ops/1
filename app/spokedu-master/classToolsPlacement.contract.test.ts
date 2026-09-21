@@ -25,7 +25,7 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(navLabels).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
     expect(navLabels).toContain("href: '/spokedu-master/manage', label: '수업 관리'");
     expect(tabBar).toContain("'class-tools': Wrench");
-    expect(tabBar).toContain("'class-tools': 'classTools'");
+    expect(tabBar).toContain('hasMasterRouteCapability(snapshot, capability)');
     expect(detail).not.toContain('/spokedu-master/class-tools');
   });
 
@@ -43,7 +43,9 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain('data-class-tools-tabs');
     expect(tools).toContain('data-class-tools-dock');
     expect(tools).toContain('data-class-tools-content');
-    expect(tools).toContain('className="flex h-full min-h-0 flex-col pb-[86px] lg:pb-0"');
+    expect(tools).toContain('className="flex h-full min-h-0 flex-col"');
+    expect(tools).not.toContain('pb-[86px]');
+    expect(read('app/spokedu-master/components/layout/AppShell.tsx')).toContain('pb-[var(--spm-tabbar-clearance)]');
     expect(tools).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain');
     expect(tools).not.toContain('h-[calc(100dvh-4rem)]');
     expect(tools).toContain('현장에서 바로 사용하는 도구');
@@ -115,9 +117,10 @@ describe('SPOKEDU MASTER class tools placement', () => {
 
   it('provides class-scoped tournament and ladder tools', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
+    const catalog = read('app/spokedu-master/lib/classTools.ts');
 
-    expect(tools).toContain("{ id: 'tournament', label: '토너먼트'");
-    expect(tools).toContain("{ id: 'ladder', label: '사다리타기'");
+    expect(catalog).toContain("{ id: 'tournament', label: '토너먼트'");
+    expect(catalog).toContain("{ id: 'ladder', label: '사다리타기'");
     expect(tools).toContain('function TournamentTab');
     expect(tools).toContain('function LadderTab');
     expect(tools).toContain("tab === 'tournament' && <TournamentTab");

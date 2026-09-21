@@ -167,10 +167,16 @@ function SpokeduMasterProfileContent() {
         <header><p className="text-[13px] font-medium text-slate-500">계정과 설정</p><h1 className="mt-1 text-[30px] font-semibold leading-tight text-slate-950">프로필</h1></header>
         <div className="mt-10 space-y-10">
           <SettingsSection title="내 정보">
-            <div className="flex items-center gap-4 py-4">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-slate-200 text-[17px] font-semibold text-slate-700">{initial}</div>
-              <dl className="min-w-0 flex-1 space-y-1 text-[14px]"><div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">이름</dt><dd className="truncate font-medium text-slate-800">{profile?.name ?? '선생님'}</dd></div><div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">이메일</dt><dd className="truncate text-slate-700">{profile?.email || '이메일 정보 없음'}</dd></div><div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">소속</dt><dd className="truncate text-slate-700">{profile?.school || '미입력'}</dd></div></dl>
-              <button type="button" onClick={() => setProfileOpen(true)} className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-[10px] border border-slate-300 px-3 text-[14px] font-semibold text-slate-700"><Pencil size={15} />편집</button>
+            <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:gap-4">
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-slate-200 text-[17px] font-semibold text-slate-700">{initial}</div>
+                <dl className="min-w-0 flex-1 space-y-1 text-[14px]">
+                  <div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">이름</dt><dd className="min-w-0 truncate font-medium text-slate-800" title={profile?.name ?? '선생님'}>{profile?.name ?? '선생님'}</dd></div>
+                  <div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">이메일</dt><dd className="min-w-0 truncate text-slate-700" title={profile?.email || '이메일 정보 없음'}>{profile?.email || '이메일 정보 없음'}</dd></div>
+                  <div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">소속</dt><dd className="min-w-0 truncate text-slate-700" title={profile?.school || '미입력'}>{profile?.school || '미입력'}</dd></div>
+                </dl>
+              </div>
+              <button type="button" onClick={() => setProfileOpen(true)} className="flex min-h-11 w-fit shrink-0 items-center gap-1.5 rounded-[10px] border border-slate-300 px-3 text-[14px] font-semibold text-slate-700"><Pencil size={15} />편집</button>
             </div>
           </SettingsSection>
           <section><h2 className="mb-2 text-[18px] font-semibold text-slate-900">이용권</h2><SubscriptionSummaryCard display={display} loadStatus={subscriptionSummaryStatus} onRetry={() => void loadSubscriptionSummary()} /></section>

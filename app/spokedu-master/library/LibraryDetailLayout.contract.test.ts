@@ -217,6 +217,7 @@ describe('SPOKEDU MASTER library detail final IA', () => {
   it('keeps mobile actions sticky while moving desktop actions and favorite into the hero', () => {
     expect(guide).toContain('lg:grid-cols-[minmax(0,1fr)_auto]');
     expect(view).toContain('max-lg:fixed');
+    expect(view).toContain('max-lg:bottom-[var(--spm-tabbar-clearance,0px)]');
     expect(view).toContain('transition-none lg:hidden');
     expect(view).toContain('aria-hidden className="hidden h-11 w-11 lg:block"');
     expect(view).toContain('hidden h-11 w-11');

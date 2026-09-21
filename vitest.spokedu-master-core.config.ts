@@ -41,6 +41,7 @@ export default defineConfig({
       'app/spokedu-master/lib/sessionRosterLock.contract.test.ts',
       'app/spokedu-master/lib/sessionDateTime.test.ts',
       'app/spokedu-master/navigation.contract.test.ts',
+      'app/spokedu-master/tabBarClearance.contract.test.ts',
       'app/spokedu-master/lessonFlow.contract.test.ts',
       'app/spokedu-master/terminology.contract.test.ts',
       'app/spokedu-master/serviceTruthfulness.test.ts',

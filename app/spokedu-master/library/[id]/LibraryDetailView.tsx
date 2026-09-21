@@ -235,7 +235,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
             <div className="max-lg:contents lg:mt-0">
               <div
                 data-detail-actions
-                className="flex w-full gap-2 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-40 max-lg:max-w-none max-lg:border-t max-lg:border-slate-200/80 max-lg:bg-[color-mix(in_srgb,var(--spm-s1)_94%,transparent)] max-lg:px-4 max-lg:py-3 max-lg:shadow-[0_-8px_24px_rgba(15,23,42,0.08)] max-lg:backdrop-blur-xl max-lg:[padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] lg:w-auto lg:justify-end"
+                className="flex w-full gap-2 max-lg:fixed max-lg:inset-x-0 max-lg:bottom-[var(--spm-tabbar-clearance,0px)] max-lg:z-40 max-lg:max-w-none max-lg:border-t max-lg:border-slate-200/80 max-lg:bg-[color-mix(in_srgb,var(--spm-s1)_94%,transparent)] max-lg:px-4 max-lg:py-3 max-lg:shadow-[0_-8px_24px_rgba(15,23,42,0.08)] max-lg:backdrop-blur-xl lg:w-auto lg:justify-end"
               >
                 <AssignProgramToSessionButton program={program} targetSessionId={fromSession ? sessionId : null} returnHref={fromSession ? workReturnHref : null} className={`${SPM_PRIMARY_BTN} h-11 min-h-11 rounded-[10px] px-3 text-[14px] font-semibold max-lg:flex-1 lg:w-[190px]`} />
                 <div data-detail-support-actions className="shrink-0">

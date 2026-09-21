@@ -1,11 +1,12 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
+import { SPM_TABBAR_CLEARANCE, SPM_TABBAR_CLEARANCE_VAR } from './tabBarMetrics';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { SubscriptionGateWall } from '../ui/SubscriptionGateWall';
 import { MasterAccessProvider } from '../../access/MasterAccessProvider';
@@ -71,7 +72,7 @@ function FloatingTimerPill() {
   return (
     <div
       className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4 lg:bottom-4"
-      style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+      style={{ bottom: `var(${SPM_TABBAR_CLEARANCE_VAR}, ${SPM_TABBAR_CLEARANCE})` }}
     >
       <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-slate-700 bg-slate-950/95 px-4 py-2.5 shadow-xl">
         <span className={`h-2 w-2 rounded-full ${running ? 'bg-emerald-400' : 'bg-amber-400'}`} />
@@ -467,14 +468,20 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   return (
     <div className={`${isViewportWorkspace ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-[var(--spm-bg)] text-slate-900`}>
-      <div className={`relative mx-auto flex w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[var(--spm-bg)] ${isViewportWorkspace ? 'h-dvh' : 'min-h-dvh'}`} style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
+      <div
+        className={`relative mx-auto flex w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[var(--spm-bg)] ${isViewportWorkspace ? 'h-dvh' : 'min-h-dvh'}`}
+        style={{
+          fontFamily: SPOKEDU_MASTER_FONT,
+          ...(hideChrome ? {} : { [SPM_TABBAR_CLEARANCE_VAR]: SPM_TABBAR_CLEARANCE }),
+        } as CSSProperties}
+      >
         <div className={`flex min-w-0 flex-1 flex-col ${isViewportWorkspace ? 'min-h-0' : ''}`}>
           {hideChrome ? null : (
             <div className={isLibraryDetail ? 'hidden lg:block' : undefined}>
               <StatusBar snapshot={accessGuard.snapshot} />
             </div>
           )}
-          <main className="min-h-0 flex-1 overflow-hidden bg-[var(--spm-bg)]">
+          <main className={`min-h-0 flex-1 overflow-hidden bg-[var(--spm-bg)] ${hideChrome ? '' : 'pb-[var(--spm-tabbar-clearance)] lg:pb-0'}`}>
             {isAccessGuardPending ? (
               <MasterAccessCheckingState />
             ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && routeRequirement.capability !== 'libraryBrowse' && accessGuard.snapshot ? (
