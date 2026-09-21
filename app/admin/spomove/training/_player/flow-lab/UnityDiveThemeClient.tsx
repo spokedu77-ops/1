@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-export type SportsArenaSessionConfig = {
-  themeId: 'sports-arena';
+export type DiveSessionConfig = {
+  themeId: string;
   stageDuration: number;
   side: boolean;
   jump: boolean;
@@ -12,7 +12,7 @@ export type SportsArenaSessionConfig = {
 };
 
 type Props = {
-  config: SportsArenaSessionConfig;
+  config: DiveSessionConfig;
   durationSec: number;
   onComplete: () => void;
   onExit: () => void;
@@ -38,6 +38,8 @@ type PrepareCard = Pick<StageEventPayload, 'stageName' | 'introTitle' | 'introDe
 
 const LOCAL_UNITY_SESSION_URL = '/spomove/dive/unity/player_release_test/index.html';
 const PRODUCTION_UNITY_SESSION_URL = '/spomove/dive/unity/theme2/index.html';
+const PRODUCTION_SINGLE_PLAYER_ENABLED = process.env.NEXT_PUBLIC_DIVE_SINGLE_PLAYER_ENABLED === '1';
+const PRODUCTION_SINGLE_PLAYER_URL = process.env.NEXT_PUBLIC_DIVE_UNITY_PLAYER_URL?.trim() ?? '';
 const COUNTDOWN_SECONDS = 3;
 const GO_DISPLAY_MS = 450;
 const THEME_READY_TIMEOUT_MS = 30_000;
@@ -46,10 +48,26 @@ export function isLocalDiveHostname(hostname: string) {
   return hostname === 'localhost' || hostname === '127.0.0.1';
 }
 
+export function isSafeProductionSinglePlayerUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !isLocalDiveHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+export function resolveDivePlayer(hostname: string, productionEnabled: boolean, productionUrl: string) {
+  if (isLocalDiveHostname(hostname)) return { contract: 'single-player' as const, url: LOCAL_UNITY_SESSION_URL };
+  if (productionEnabled && isSafeProductionSinglePlayerUrl(productionUrl)) return { contract: 'single-player' as const, url: productionUrl };
+  return { contract: 'legacy-theme2' as const, url: PRODUCTION_UNITY_SESSION_URL };
+}
+
 export default function UnityDiveThemeClient({ config, durationSec, onComplete, onExit, onSessionStart, onSessionStop }: Props) {
-  const { stageDuration, side, jump, duck, bonus } = config;
-  const useLocalSinglePlayer = typeof window !== 'undefined' && isLocalDiveHostname(window.location.hostname);
-  const UNITY_SESSION_URL = useLocalSinglePlayer ? LOCAL_UNITY_SESSION_URL : PRODUCTION_UNITY_SESSION_URL;
+  const { themeId, stageDuration, side, jump, duck, bonus } = config;
+  const player = typeof window === 'undefined' ? { contract: 'legacy-theme2' as const, url: PRODUCTION_UNITY_SESSION_URL } : resolveDivePlayer(window.location.hostname, PRODUCTION_SINGLE_PLAYER_ENABLED, PRODUCTION_SINGLE_PLAYER_URL);
+  const usesSinglePlayerContract = player.contract === 'single-player';
+  const unityTargetOrigin = typeof window === 'undefined' ? '' : new URL(player.url, window.location.href).origin;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const frameRef = useRef<number | null>(null);
   const goTimerRef = useRef<number | null>(null);
@@ -79,9 +97,9 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
 
   const stageCount = 1 + Number(side) + Number(jump) + Number(duck) + Number(bonus);
   const productionDurationSec = stageDuration * (1 + Number(side) + Number(jump) + Number(duck)) + (bonus ? 60 : 0);
-  const configPayload = useMemo<SportsArenaSessionConfig>(
-    () => ({ themeId: 'sports-arena', stageDuration, side, jump, duck, bonus }),
-    [bonus, duck, jump, side, stageDuration],
+  const configPayload = useMemo<DiveSessionConfig>(
+    () => ({ themeId, stageDuration, side, jump, duck, bonus }),
+    [bonus, duck, jump, side, stageDuration, themeId],
   );
   const productionConfigPayload = useMemo(
     () => ({ stageDuration, side, jump, duck, bonus }),
@@ -89,9 +107,9 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
   );
 
   const postToUnity = useCallback((type: 'SPOMOVE_SESSION_CONFIG' | 'SPOMOVE_SESSION_START' | 'SPOMOVE_SESSION_STOP', extra?: object) => {
-    console.info(`[SPORTS_ARENA] send ${type}`, extra ?? '');
-    iframeRef.current?.contentWindow?.postMessage({ type, ...extra }, window.location.origin);
-  }, []);
+    console.info(`[DIVE] send ${type}`, extra ?? '');
+    iframeRef.current?.contentWindow?.postMessage({ type, ...extra }, unityTargetOrigin);
+  }, [unityTargetOrigin]);
 
   const clearThemeReadyTimer = useCallback(() => {
     if (themeReadyTimerRef.current !== null) window.clearTimeout(themeReadyTimerRef.current);
@@ -137,14 +155,14 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
   }, [durationSec, stopStageClock]);
 
   const startUnitySession = useCallback(() => {
-    setPhase(useLocalSinglePlayer ? 'waiting' : 'running');
+    setPhase(usesSinglePlayerContract ? 'waiting' : 'running');
     postToUnity('SPOMOVE_SESSION_START');
     sessionAudioStartedRef.current = true;
     callbacksRef.current.onSessionStart();
-    if (!useLocalSinglePlayer) {
+    if (!usesSinglePlayerContract) {
       productionCompletionTimerRef.current = window.setTimeout(() => finish('complete'), Math.max(1, productionDurationSec) * 1000);
     }
-  }, [finish, postToUnity, productionDurationSec, useLocalSinglePlayer]);
+  }, [finish, postToUnity, productionDurationSec, usesSinglePlayerContract]);
 
   const startCountdown = useCallback(() => {
     const countdownStartedAt = performance.now();
@@ -209,8 +227,8 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       const iframeWindow = iframeRef.current?.contentWindow;
-      if (!iframeWindow || event.source !== iframeWindow || event.origin !== window.location.origin) {
-        if ((event.data as { type?: string } | null)?.type?.includes('THEME')) console.warn('[SPORTS_ARENA] ignored message', { type: event.data.type, origin: event.origin, sourceMatches: event.source === iframeWindow });
+      if (!iframeWindow || event.source !== iframeWindow || event.origin !== unityTargetOrigin) {
+        if ((event.data as { type?: string } | null)?.type?.includes('THEME')) console.warn('[DIVE] ignored message', { type: event.data.type, origin: event.origin, sourceMatches: event.source === iframeWindow });
         return;
       }
       const data = event.data as { type?: string } | null;
@@ -218,9 +236,9 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
 
       if (data.type === 'SPOMOVE_UNITY_READY') {
         if (readyRef.current) return;
-        console.info('[SPORTS_ARENA] receive SPOMOVE_UNITY_READY');
+        console.info('[DIVE] receive SPOMOVE_UNITY_READY');
         readyRef.current = true;
-        if (!useLocalSinglePlayer) {
+        if (!usesSinglePlayerContract) {
           postToUnity('SPOMOVE_SESSION_CONFIG', { config: productionConfigPayload });
           startCountdown();
           return;
@@ -229,22 +247,22 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
         postToUnity('SPOMOVE_SESSION_CONFIG', { config: configPayload });
         clearThemeReadyTimer();
         themeReadyTimerRef.current = window.setTimeout(() => {
-          console.error('[SPORTS_ARENA] THEME_READY timeout', { timeoutMs: THEME_READY_TIMEOUT_MS, config: configPayload });
-          setLoadError('SPORTS ARENA 테마를 불러오지 못했습니다. 콘솔의 THEME_READY 로그를 확인해 주세요.');
+          console.error('[DIVE] THEME_READY timeout', { timeoutMs: THEME_READY_TIMEOUT_MS, config: configPayload });
+          setLoadError(`${themeId} 테마 준비 응답이 지연되고 있습니다. THEME_READY 로그를 확인해 주세요.`);
           setPhase('error');
         }, THEME_READY_TIMEOUT_MS);
         return;
       }
       if (data.type === 'THEME_READY') {
-        console.info('[SPORTS_ARENA] receive THEME_READY');
+        console.info('[DIVE] receive THEME_READY', { themeId });
         clearThemeReadyTimer();
         startCountdown();
         return;
       }
       if (data.type === 'THEME_ERROR') {
         clearThemeReadyTimer();
-        const message = (event.data as { message?: string }).message || 'SPORTS ARENA 테마를 불러오지 못했습니다.';
-        console.error('[SPORTS_ARENA] receive THEME_ERROR', message);
+        const message = (event.data as { message?: string }).message || `${themeId} 테마를 불러오지 못했습니다.`;
+        console.error('[DIVE] receive THEME_ERROR', message);
         setLoadError(message);
         setPhase('error');
         return;
@@ -268,11 +286,11 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
         callbacksRef.current.onSessionStop();
       }
     };
-  }, [clearThemeReadyTimer, configPayload, finish, handleStageEvent, postToUnity, productionConfigPayload, startCountdown, stopStageClock, useLocalSinglePlayer]);
+  }, [clearThemeReadyTimer, configPayload, finish, handleStageEvent, postToUnity, productionConfigPayload, startCountdown, stopStageClock, themeId, unityTargetOrigin, usesSinglePlayerContract]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', background: '#000', overflow: 'hidden' }}>
-      {active ? <iframe ref={iframeRef} src={UNITY_SESSION_URL} title="SPORTS ARENA" allowFullScreen style={{ width: '100%', height: '100%', border: 0, background: '#000', display: 'block', visibility: phase === 'loading' || phase === 'theme-loading' ? 'hidden' : 'visible', opacity: phase === 'loading' || phase === 'theme-loading' ? 0 : 1 }} /> : null}
+      {active ? <iframe ref={iframeRef} src={player.url} title="DIVE Single Player" allowFullScreen style={{ width: '100%', height: '100%', border: 0, background: '#000', display: 'block', opacity: phase === 'loading' || phase === 'theme-loading' ? 0 : 1 }} /> : null}
 
       {active && (phase === 'loading' || phase === 'theme-loading') ? <div role="status" aria-live="polite" style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: '#020617', color: '#fff', zIndex: 20 }}><div style={{ textAlign: 'center', fontWeight: 900 }}><div style={{ width: 42, height: 42, margin: '0 auto 14px', border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'sportsArenaSpin 0.8s linear infinite' }} />SPORTS ARENA 로딩 중</div></div> : null}
 
@@ -291,7 +309,7 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
 
       {active ? <button type="button" onClick={() => finish('exit')} style={{ position: 'absolute', top: 10, right: 14, zIndex: 40, minWidth: 82, padding: '0.5rem 0.75rem', background: 'rgba(15,23,42,0.88)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '0.7rem', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer' }}>✕ 나가기</button> : null}
       {active && phase === 'error' ? <div role={'alert'} style={{ position: 'absolute', inset: 0, zIndex: 30, display: 'grid', placeItems: 'center', background: '#020617', color: '#fff', padding: 24 }}><div style={{ maxWidth: 560, textAlign: 'center' }}><strong style={{ display: 'block', marginBottom: 12, fontSize: 24 }}>SPORTS ARENA 로딩 오류</strong><p style={{ margin: 0, color: '#CBD5E1', lineHeight: 1.6 }}>{loadError}</p></div></div> : null}
-      <style>{`iframe[title='SPORTS ARENA'] { visibility: visible !important; } @keyframes sportsArenaSpin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes sportsArenaSpin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
