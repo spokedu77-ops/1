@@ -3,7 +3,9 @@ import { PolicyHeader } from '../components/policy/PolicyHeader';
 import { MASTER_SUPPORT_EMAIL } from '../lib/productCatalog';
 
 export const metadata: Metadata = {
-  title: '개인정보처리방침 · SPOKEDU MASTER',
+  title: {
+    absolute: '개인정보처리방침 · SPOKEDU MASTER',
+  },
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

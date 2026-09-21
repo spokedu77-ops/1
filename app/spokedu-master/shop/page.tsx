@@ -1,9 +1,9 @@
 'use client';
 
 import { Package, ShoppingBag } from 'lucide-react';
-import { useMasterCanBuySpomat } from '../access/MasterAccessProvider';
+import { useMasterCanBuySpomat, useSpomatShopAvailable } from '../access/MasterAccessProvider';
 import { SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
-import { SPOMAT_BULK_INQUIRY_HREF } from '../lib/businessInfo';
+import { SPOMAT_BULK_INQUIRY_HREF, SPOMAT_PURCHASE_INQUIRY_HREF } from '../lib/businessInfo';
 
 const SPOMAT_SPECS = [
   { label: '규격', value: '60 × 60cm' },
@@ -18,6 +18,11 @@ const PURCHASE_HREF = '/api/spokedu-master/shop/spomat/purchase';
 
 export default function SpokeduMasterShopPage() {
   const isPremiumMember = useMasterCanBuySpomat();
+  const shopPurchaseOnline = useSpomatShopAvailable();
+  const ctaHref = shopPurchaseOnline ? PURCHASE_HREF : SPOMAT_PURCHASE_INQUIRY_HREF;
+  const ctaLabel = shopPurchaseOnline
+    ? (isPremiumMember ? '회원가로 구매하기' : 'SPOMAT 구매하기')
+    : '구매 문의';
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -76,12 +81,12 @@ export default function SpokeduMasterShopPage() {
           </div>
 
           <a
-            href={PURCHASE_HREF}
+            href={ctaHref}
             className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-black text-white"
             style={{ background: 'var(--spm-acc)' }}
           >
             <ShoppingBag size={16} />
-            {isPremiumMember ? '회원가로 구매하기' : 'SPOMAT 구매하기'}
+            {ctaLabel}
           </a>
 
           {!isPremiumMember && (

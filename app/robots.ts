@@ -12,7 +12,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        allow: [
+          '/',
+          '/spokedu-master/landing',
+          '/spokedu-master/terms',
+          '/spokedu-master/privacy',
+        ],
         disallow: [
           '/admin',
           '/api',

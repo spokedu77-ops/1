@@ -60,4 +60,20 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const routeAccess = read('app/spokedu-master/components/layout/masterRouteAccess.ts');
     expect(routeAccess).toContain('return pathname === basePath || pathname.startsWith(`${basePath}/`)');
   });
+
+  it('hides app chrome on login and public documents', () => {
+    const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
+    expect(shell).toContain('const isLogin = pathname === `${basePath}/login`');
+    expect(shell).toContain('isProgramsEditor || isLogin');
+  });
+
+  it('keeps authenticated MASTER paths out of robots allow rules', () => {
+    const robots = read('app/robots.ts');
+    expect(robots).toContain("'/spokedu-master/landing'");
+    expect(robots).toContain("'/spokedu-master/terms'");
+    expect(robots).toContain("'/spokedu-master/privacy'");
+    expect(robots).toContain("'/spokedu-master'");
+    expect(robots).not.toContain("'/spokedu-master/dashboard'");
+    expect(robots).not.toContain("'/spokedu-master/library'");
+  });
 });

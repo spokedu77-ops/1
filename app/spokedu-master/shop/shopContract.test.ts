@@ -35,10 +35,13 @@ describe('SPOMAT shop UI contract', () => {
     expect(shop).not.toContain("plan === 'premium'");
   });
 
-  it('purchase CTA points to server redirect route', () => {
+  it('purchase CTA keeps the server redirect route and falls back to inquiry when purchase is offline', () => {
     const shop = read('app/spokedu-master/shop/page.tsx');
 
     expect(shop).toContain('/api/spokedu-master/shop/spomat/purchase');
+    expect(shop).toContain('useSpomatShopAvailable');
+    expect(shop).toContain('SPOMAT_PURCHASE_INQUIRY_HREF');
+    expect(shop).toContain('구매 문의');
     expect(shop).not.toMatch(/href=["']https?:\/\//);
   });
 
@@ -84,7 +87,7 @@ describe('SPOMAT purchase redirect route contract', () => {
     expect(route).not.toContain('SPOMAT_DEFAULT_PREMIUM_URL');
     expect(route).not.toContain('https://example.com/spomat');
     expect(route).not.toContain('https://example.com/spomat-premium');
-    expect(route).toContain('구매 링크가 아직 연결되지 않았습니다');
+    expect(route).toContain("'/spokedu-master/shop'");
   });
 
   it('route checks server-side plan, not client params', () => {
@@ -95,7 +98,6 @@ describe('SPOMAT purchase redirect route contract', () => {
     expect(route).toContain('isPlatformAdminUser');
     expect(route).not.toContain('searchParams');
     expect(route).not.toContain('request.nextUrl');
-    expect(route).not.toContain('GET(request');
   });
 
   it('route uses env vars without fallback defaults for purchase URLs', () => {
@@ -110,17 +112,19 @@ describe('SPOMAT purchase redirect route contract', () => {
     expect(route).not.toMatch(/redirect\(['"]https?:/);
   });
 
-  it('route returns 503 for invalid public URL (no implicit redirect)', () => {
+  it('route sends users back to shop inquiry instead of a 503 purchase page', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
-    expect(route).toContain('503');
+    expect(route).toContain("'/spokedu-master/shop'");
+    expect(route).toContain('NextResponse.redirect');
     expect(route).toContain('isSafePurchaseUrl(publicUrl)');
+    expect(route).not.toMatch(/status: 503/);
   });
 
   it('route does not silently fallback premium users to public URL', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
-    expect(route).toContain('회원가 구매 링크가 아직 연결되지 않았습니다');
+    expect(route).toContain("'/spokedu-master/shop'");
     expect(route).toContain('isSafePurchaseUrl(premiumUrl)');
   });
 

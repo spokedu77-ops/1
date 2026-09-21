@@ -30,13 +30,15 @@ describe('MASTER public product contract', () => {
     expect(premium?.priceLabel).toBe(MASTER_PRODUCT_CATALOG.premium.priceLabel);
   });
 
-  it('keeps Free as class-tools-only entitlement (not weekly recommendation access)', () => {
+  it('keeps Free as browse + one preview + class tools, not weekly recommendation access', () => {
     const free = getPublicPlan('free');
     const contract = getPublicProductContract();
     expect(free?.purchasable).toBe(false);
     expect(free?.priceLabel).toBeNull();
-    expect(free?.featureSummary).toEqual(['무료 수업 도구']);
+    expect(free?.featureSummary).toEqual(['수업 도구', '라이브러리 탐색', '무료 프로그램 체험']);
     expect(contract.freeScopeNote).toMatch(/수업 도구/);
+    expect(contract.freeScopeNote).toMatch(/라이브러리 탐색/);
+    expect(contract.freeScopeNote).toMatch(/무료 프로그램 체험/);
     expect(contract.freeScopeNote).toMatch(/entitlement가 아닙니다|이용 entitlement/);
     expect(contract.plans.map((p) => p.code)).toEqual(['free', 'lite', 'premium']);
     expect(contract.plans.some((p) => p.code === ('center' as never))).toBe(false);

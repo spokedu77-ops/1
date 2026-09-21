@@ -7,7 +7,9 @@ import {
 } from '../lib/productCatalog';
 
 export const metadata: Metadata = {
-  title: '이용약관 · SPOKEDU MASTER',
+  title: {
+    absolute: '이용약관 · SPOKEDU MASTER',
+  },
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

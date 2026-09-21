@@ -196,8 +196,9 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isClassTools = pathname === `${basePath}/class-tools` || pathname.startsWith(`${basePath}/class-tools/`);
   const isViewportWorkspace = isManage || isClassTools;
   const isPublicDocument = pathname === `${basePath}/terms` || pathname === `${basePath}/privacy`;
+  const isLogin = pathname === `${basePath}/login` || pathname.startsWith(`${basePath}/auth`);
   const isProgramsEditor = pathname.startsWith('/admin/spokedu-master/programs');
-  const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument || isProgramsEditor;
+  const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument || isProgramsEditor || isLogin;
   const isProtectedRoute = isProtectedMasterRoute(pathname, basePath);
   const routeRequirement = getMasterRouteRequirement(pathname, basePath);
   const isAccessGuardPending =

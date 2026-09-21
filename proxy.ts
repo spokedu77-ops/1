@@ -13,6 +13,7 @@ const SPOKEDU_MASTER_PUBLIC_PREFIXES = [
   '/spokedu-master/terms',
   '/spokedu-master/parent',
   '/spokedu-master/onboarding',
+  '/spokedu-master/manifest.webmanifest',
 ];
 
 function createSupabaseProxyClient(request: NextRequest, response: NextResponse) {

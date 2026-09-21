@@ -32,4 +32,10 @@ describe('SPOKEDU MASTER proxy/access authority contract', () => {
     expect(proxySource).toContain("request.cookies.get('spm-qa-auth-bypass')?.value === '1'");
     expect(proxySource).toContain('isSpokeduMasterProtectedPath(pathname) && !canBypassSpokeduMasterAuthForQa(request)');
   });
+
+  it('publishes only static MASTER public assets, not authenticated app routes', () => {
+    expect(proxySource).toContain("'/spokedu-master/manifest.webmanifest'");
+    expect(proxySource).not.toContain("'/spokedu-master/dashboard'");
+    expect(proxySource).not.toContain("'/spokedu-master/library'");
+  });
 });

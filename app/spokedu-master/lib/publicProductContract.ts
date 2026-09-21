@@ -3,7 +3,7 @@
  * entitlement key · 내부 결제 코드 · 실험 플래그는 노출하지 않는다.
  * 가격·purchasable은 productCatalog에서만 파생한다 (숫자 재선언 금지).
  *
- * Free SSOT (entitlement): 수업 도구만.
+ * Free SSOT (entitlement): 수업 도구 + 라이브러리 탐색 + 지정 무료 프로그램 체험.
  * 대시보드의 「추천 미리보기 1장」은 entitlement가 아니며 공개 기능 범위에 넣지 않는다.
  * Center: Lite/Premium peer 플랜이 아니라 sales_inquiry 전용.
  */
@@ -117,7 +117,7 @@ const FREE_PLAN: PublicProductPlan = {
   billingCycleLabel: '로그인 후 이용',
   purchasable: false,
   contactRequired: false,
-  featureSummary: ['무료 수업 도구'],
+  featureSummary: ['수업 도구', '라이브러리 탐색', '무료 프로그램 체험'],
   includesSpomove: false,
   spomatMemberEligible: false,
 };
@@ -156,7 +156,7 @@ export function getPublicProductContract(): PublicProductContract {
     annualSold: false,
     freeStartSupported: true,
     freeScopeNote:
-      '무료 범위는 로그인 후 수업 도구입니다. 대시보드의 추천 미리보기는 이용 entitlement가 아닙니다.',
+      '무료 범위는 로그인 후 수업 도구, 라이브러리 탐색, 지정 무료 프로그램 체험입니다. 대시보드의 추천 미리보기는 이용 entitlement가 아닙니다.',
     plans: [FREE_PLAN, catalogSubscriptionToPublic('lite'), catalogSubscriptionToPublic('premium')],
     centerInquiry: CENTER_INQUIRY,
     spomat: {

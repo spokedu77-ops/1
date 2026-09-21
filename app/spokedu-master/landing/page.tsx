@@ -11,7 +11,7 @@ const FEATURES = [
     ic: 'var(--spm-acc)',
     title: '라이브러리',
     desc: '유아부터 초등까지, 실내외 환경에 맞는 수업이 태그와 검색으로 정리되어 있습니다. 연령·환경·준비물 기준으로 오늘 쓸 수업을 빠르게 고를 수 있습니다.',
-    items: ['연령·환경·준비물 필터', '즐겨찾기와 최근 사용', '수업 준비 키트 연결'],
+    items: ['연령·환경·준비물 필터', '검색으로 오늘 수업 찾기', '수업 준비 키트 연결'],
   },
   {
     icon: Zap,
@@ -36,7 +36,7 @@ const PRICING = [
     id: 'lite',
     title: 'Lite',
     badge: '수업 운영 기본',
-    price: MASTER_PRODUCT_CATALOG.lite.priceLabel.replace(/원$/, ''),
+    price: MASTER_PRODUCT_CATALOG.lite.priceLabel,
     period: MASTER_PRODUCT_CATALOG.lite.billingCycleLabel,
     desc: getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite),
     includes: getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite),
@@ -49,7 +49,7 @@ const PRICING = [
     id: 'premium',
     title: '프리미엄',
     badge: '가장 인기',
-    price: MASTER_PRODUCT_CATALOG.premium.priceLabel.replace(/원$/, ''),
+    price: MASTER_PRODUCT_CATALOG.premium.priceLabel,
     period: MASTER_PRODUCT_CATALOG.premium.billingCycleLabel,
     desc: getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium),
     includes: getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium),
@@ -85,7 +85,9 @@ const LANDING_DESCRIPTION =
   '체육 수업 콘텐츠와 수업반·일정·출석·기록을 하나의 Session으로 연결하는 체육수업 운영 서비스입니다.';
 
 export const metadata = {
-  title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
+  title: {
+    absolute: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
+  },
   description: LANDING_DESCRIPTION,
   robots: { index: true, follow: true },
   openGraph: {
@@ -245,10 +247,10 @@ export default function LandingPage() {
                 <div className="flex items-end justify-between">
                   <h3 className="text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{p.title}</h3>
                   <div className="text-right">
-                    <span className="text-[24px] font-black" style={{ color: 'var(--spm-t)' }}>
-                      {p.price}원
-                    </span>
-                    <span className="ml-1 text-[12px]" style={{ color: 'var(--spm-t3)' }}>/{p.period}</span>
+                    <p className="whitespace-nowrap text-[24px] font-black" style={{ color: 'var(--spm-t)' }}>
+                      {p.price}
+                    </p>
+                    <p className="mt-0.5 whitespace-nowrap text-[12px]" style={{ color: 'var(--spm-t3)' }}>{p.period}</p>
                   </div>
                 </div>
                 <p className="mt-2 text-[13px] font-medium" style={{ color: 'var(--spm-t2)' }}>{p.desc}</p>
