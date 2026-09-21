@@ -73,7 +73,7 @@
   z-index: 0;
   margin: 0;
 }
-.heroImage { object-fit: cover; object-position: 62% 48%; }
+.heroImage { object-fit: cover; object-position: 68% 42%; }
 .hero::before {
   content: '';
   position: absolute;
@@ -162,12 +162,12 @@
 .homeQuietDisplay span { display: block; }
 .explorerGrid {
   display: grid;
-  grid-template-columns: minmax(14.5rem, 17.5rem) minmax(0, 1fr);
-  align-items: stretch;
-  width: min(94vw, 118rem);
+  grid-template-columns: minmax(15rem, 26%) minmax(0, 1fr);
+  align-items: start;
+  width: min(92vw, 110rem);
   margin-left: max(var(--gutter), calc((100% - min(var(--text-rail), 100%)) / 2 + var(--gutter)));
   margin-right: 0;
-  column-gap: clamp(1.5rem, 3vw, 3.5rem);
+  column-gap: clamp(1.25rem, 2.4vw, 2.75rem);
 }
 .serviceSelectorWrap { padding-top: .15rem; }
 .serviceSelector { border-top: 1px solid var(--home-divider); }
@@ -234,13 +234,17 @@
 }
 .serviceVisual {
   position: relative;
-  min-height: clamp(22rem, 46vw, 38rem);
+  width: 100%;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #e8edf4;
   border-radius: 0;
 }
 .serviceVisual img { object-fit: cover; }
-.serviceVisualProduct { background: #eef2f7; }
+.serviceVisualProduct {
+  background: #eef2f7;
+}
+.serviceVisualProduct img { object-fit: contain; }
 .serviceDetail {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -407,7 +411,7 @@
 
 @media (max-width: 959px) {
   .hero, .heroStage { min-height: 36rem; }
-  .heroImage { object-position: 72% 46%; }
+  .heroImage { object-position: 78% 38%; }
   .heroContent { width: min(36rem, calc(100% - 2 * var(--gutter))); margin-left: var(--gutter); }
   .heroHeading { max-width: none; }
   .explorerGrid {
@@ -419,7 +423,7 @@
   .serviceSelector { display: block; }
   .serviceSelected { transform: none; }
   .serviceStage { padding: 1.15rem 0 0; }
-  .serviceVisual { min-height: 18.5rem; }
+  .serviceVisual { aspect-ratio: 16 / 9; min-height: 0; }
   .recordTrack { width: 100%; margin-left: 0; padding-left: var(--gutter); }
   .recordItem { flex: 0 0 78vw; max-width: none; }
   .fieldStage, .panelStage { min-height: 22rem; width: 100%; }

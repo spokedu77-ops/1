@@ -105,7 +105,7 @@ INPUT / QUESTION / EVIDENCE / OUTPUT / HANDOFF를 페이지 작업 전에 정의
 | Home | SPOKEDU는 무엇을 하는 브랜드인가? | Brand orchestration. 체육수업 또는 구독시스템. |
 | `/education` | 우리 기관에서 체육수업을 맡길 수 있는가? | Structure = legacy `/info/dispatch`. Visual = Home. Program lineup = one SSOT; card + detail modal is progressive disclosure (not a third product catalog). → `/contact?type=dispatch` |
 | `/private` | 개인·소그룹에서는 어떤 방식으로 수업하는가? | Human / calm / personal → `/contact?type=private` |
-| `/spomove` | SPOMOVE는 무엇이며 무엇이 다른가? | Content first. Then 기관 → `/education`, 지도자 → `/subscription` |
+| `/spomove` | SPOMOVE는 무엇이며 어떻게 움직이는가? | SEE → RESPOND → EXPERIENCE → ADAPT → APPLY → PROVE → CONNECT → START. Catalog, 기관 → `/education?program=spomove`, 지도자 → `/subscription`, 도구 → `/spomat`, 증거 → `/records` |
 | `/subscription` | 지도자가 실제 수업에서 왜 이 시스템을 사용하는가? | Product UI. 찾기→준비→진행→기록. Handoff MASTER. No public purchase page. |
 | `/records` | 실제 어디에서 무엇을 운영했는가? | Editorial evidence archive. |
 | `/records/[slug]` | 이 프로젝트에서는 실제로 무엇을 했는가? | `/education` / `/subscription` / `/contact` by type |
@@ -139,6 +139,17 @@ COPY는 evidence를 해석한다. COPY가 evidence를 대신하지 않는다.
 SPOMOVE: 실제 화면 + 실제 움직임.
 구독시스템: 실제 제품 UI.
 운영 사례: 실제 기관 + 대상 + 운영 형태.
+
+HOME 이미지 역할:
+
+| Role | 사용 | AI / directed visual |
+|---|---|---|
+| BRAND | Hero | 가능. 브랜드 첫 장면 |
+| SERVICE | Service Explorer 컨셉 visual | 가능. 서비스 성격 설명 |
+| PROOF | FIELD RECORDS, Built FIELD | 금지. 실제 현장 사진만 |
+| PRODUCT | MASTER / 실제 제품 화면 | 금지. 실제 UI만 |
+
+BRAND CAN BE DIRECTED. PROOF MUST BE REAL. PRODUCT MUST BE REAL.
 
 ---
 

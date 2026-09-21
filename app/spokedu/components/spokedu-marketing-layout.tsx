@@ -31,10 +31,10 @@ export const spokeduMarketingMetadata: Metadata = {
     url: SPOKEDU_PATHS.home,
     images: [
       {
-        url: SPOKEDU_IMAGES.home.hero.src,
+        url: SPOKEDU_IMAGES.home.fieldGymMotion.src,
         width: 1920,
-        height: 1280,
-        alt: SPOKEDU_IMAGES.home.hero.alt,
+        height: 1080,
+        alt: SPOKEDU_IMAGES.home.fieldGymMotion.alt,
       },
     ],
   },
@@ -42,7 +42,7 @@ export const spokeduMarketingMetadata: Metadata = {
     card: 'summary_large_image',
     title: seoMeta.home.title,
     description: seoMeta.home.description,
-    images: [SPOKEDU_IMAGES.home.hero.src],
+    images: [SPOKEDU_IMAGES.home.fieldGymMotion.src],
   },
 };
 

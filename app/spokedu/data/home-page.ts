@@ -9,6 +9,8 @@ import { SPOKEDU_PATHS } from './site';
 
 export const HOME_FIELD_EDITORIAL = {
   hero: '/images/spokedu/home/field-editorial/home-hero-gym-motion.jpg',
+  serviceInstitution: '/images/spokedu/home/field-editorial/home-service-institution.jpg',
+  servicePrivate: '/images/spokedu/home/field-editorial/home-service-private.jpg',
   field: '/images/spokedu/home/field-editorial/home-hero-field.webp',
   masterUi: '/images/spokedu/home/field-editorial/home-master-ui.png',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
@@ -155,6 +157,7 @@ export const homePage = {
       href: SPOKEDU_PATHS.education,
       trackLabel: 'cta-home-choice-education',
       action: '수업 보기',
+      mediaKey: 'homeServiceInstitution' as HomeMediaKey,
     },
     {
       audience: '아이·학부모',
@@ -164,6 +167,7 @@ export const homePage = {
       href: SPOKEDU_PATHS.private,
       trackLabel: 'cta-home-choice-private',
       action: '자세히 보기',
+      mediaKey: 'homeServicePrivate' as HomeMediaKey,
     },
     {
       audience: '체육 지도자',
@@ -173,6 +177,7 @@ export const homePage = {
       href: SPOKEDU_PATHS.subscription,
       trackLabel: 'cta-home-choice-subscription',
       action: 'MASTER 둘러보기',
+      mediaKey: 'homeMasterUi' as HomeMediaKey,
     },
   ],
 

@@ -18,7 +18,14 @@ export type SpokeduImageCategory =
 
 /** `placeholder-copy`: 다른 슬롯 사진 임시 복사 — 전용 실사로 교체 예정 */
 export type SpokeduImageAssetStatus = 'production' | 'placeholder-copy';
-export type SpokeduImageKind = 'field-photo' | 'screen' | 'document' | 'product' | 'diagram' | 'brand';
+export type SpokeduImageKind =
+  | 'field-photo'
+  | 'directed-visual'
+  | 'screen'
+  | 'document'
+  | 'product'
+  | 'diagram'
+  | 'brand';
 export type SpokeduImageProgram =
   | 'private'
   | 'dispatch'
@@ -107,8 +114,8 @@ export const SPOKEDU_IMAGES = {
     spomat: defineImage(
       'brand',
       'spomat',
-      'spomat.png',
-      'SPOMAT — SPOMOVE 4색 반응 패드 (초록·빨강·파랑·노랑)',
+      'spomat-layout.png',
+      'SPOMAT 2×2 — 위 빨강·노랑, 아래 초록·파랑',
       { kind: 'product', programs: ['spomove'], allowedPages: ['home', 'programs', 'programs/spomove', 'curriculum'] },
     ),
   },
@@ -168,8 +175,22 @@ export const SPOKEDU_IMAGES = {
       'home',
       'home-hero-gym-motion',
       'field-editorial/home-hero-gym-motion.jpg',
-      '체육관 허들 수업 — 아이들이 달리고 뛰어넘는 현장',
-      { allowedPages: ['home'] },
+      '체육관 허들 수업 — 아동이 허들을 넘고 지도자가 옆에서 지도하는 장면',
+      { kind: 'directed-visual', allowedPages: ['home'] },
+    ),
+    serviceInstitution: defineImage(
+      'home',
+      'home-service-institution',
+      'field-editorial/home-service-institution.jpg',
+      '학교·기관 체육수업 — 여러 아동이 링 코스를 달리고 지도자가 수업을 운영하는 장면',
+      { kind: 'directed-visual', programs: ['dispatch'], allowedPages: ['home'] },
+    ),
+    servicePrivate: defineImage(
+      'home',
+      'home-service-private',
+      'field-editorial/home-service-private.jpg',
+      '개인·소그룹 체육수업 — 지도자가 가까이에서 밸런스 활동을 지도하는 장면',
+      { kind: 'directed-visual', programs: ['private'], allowedPages: ['home'] },
     ),
     fieldMasterUi: defineImage(
       'home',
@@ -305,6 +326,30 @@ export const SPOKEDU_IMAGES = {
       'SPOMOVE 빔 기반 에듀테크 놀이체육 수업',
       { kind: 'field-photo', programs: ['spomove'], allowedPages: ['home', 'programs', 'programs/spomove', 'dispatch', 'records'] },
     ),
+    spomoveClassConnected: defineImage(
+      'programs',
+      'program-spomove-class-connected',
+      'program-spomove.jpg',
+      'SPOMOVE 수업 — 화면 자극, SPOMAT, 아이들의 움직임이 한 장면에 연결된 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-03.webp',
+      },
+    ),
+    spomoveColorScreenField: defineImage(
+      'programs',
+      'program-spomove-color-screen-field',
+      'program-spomove.jpg',
+      'SPOMOVE 색상 반응 — 화면의 색 자극을 보고 SPOMAT 위에서 움직이는 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-04.webp',
+      },
+    ),
     spomoveHeroField: defineImage(
       'programs',
       'program-spomove-hero-field',
@@ -333,12 +378,120 @@ export const SPOKEDU_IMAGES = {
       'programs',
       'program-spomove-color-reaction-field',
       'program-spomove.jpg',
-      'SPOMOVE 컬러 반응 현장 — 화면 색 신호와 4색 패드를 연결해 움직이는 장면',
+      'SPOMOVE 1:1 — 화면의 2×2 색 자극을 보고 패드에서 움직이는 특수·소그룹 현장',
       {
         kind: 'field-photo',
         programs: ['spomove'],
         allowedPages: ['programs', 'programs/spomove'],
         externalSrc: '/spokedu/programs/spomove/assets/spe/spe-06.webp',
+      },
+    ),
+    spomoveScreenColor: defineImage(
+      'programs',
+      'program-spomove-screen-color',
+      'program-spomove.jpg',
+      'SPOMOVE 실제 화면 — 색 블록이 흐르며 색 반응을 요구하는 장면',
+      {
+        kind: 'screen',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-07.webp',
+      },
+    ),
+    spomoveScreenDirection: defineImage(
+      'programs',
+      'program-spomove-screen-direction',
+      'program-spomove.jpg',
+      'SPOMOVE 실제 화면 — 네 방향에서 자극이 나타나는 방향 반응 장면',
+      {
+        kind: 'screen',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-09.webp',
+      },
+    ),
+    spomoveScreenFlash: defineImage(
+      'programs',
+      'program-spomove-screen-flash',
+      'program-spomove.jpg',
+      'SPOMOVE 실제 화면 — 목표 색이 순간적으로 나타나는 장면',
+      {
+        kind: 'screen',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-08.webp',
+      },
+    ),
+    spomoveAssocField: defineImage(
+      'programs',
+      'program-spomove-assoc-field',
+      'program-spomove.jpg',
+      'SPOMOVE 연상 반응 — 바나나 이미지를 보고 패드 위에서 움직이는 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-12.webp',
+      },
+    ),
+    spomoveActionField: defineImage(
+      'programs',
+      'program-spomove-action-field',
+      'program-spomove.jpg',
+      'SPOMOVE 액션 반응 — 화면 속 캐릭터를 보고 전신으로 움직이는 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-13.webp',
+      },
+    ),
+    spomoveVariationField: defineImage(
+      'programs',
+      'program-spomove-variation-field',
+      'program-spomove.jpg',
+      'SPOMOVE 난이도 변형 — 숫자 자극과 교구를 결합한 수업 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/edu/edu-11.webp',
+      },
+    ),
+    spomoveWhoEarly: defineImage(
+      'programs',
+      'program-spomove-who-early',
+      'program-spomove.jpg',
+      'SPOMOVE 유아·초등 — 패드에 도착한 뒤 움직임으로 반응하는 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/spe/spe-07.webp',
+      },
+    ),
+    spomoveWhoAdapted: defineImage(
+      'programs',
+      'program-spomove-who-adapted',
+      'program-spomove.jpg',
+      'SPOMOVE 특수체육 — 화면을 보고 다음 신호를 기다리며 준비하는 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/spe/spe-10.webp',
+      },
+    ),
+    spomoveWhoSmall: defineImage(
+      'programs',
+      'program-spomove-who-small',
+      'program-spomove.jpg',
+      'SPOMOVE 소그룹 — 여러 색 패드를 오가며 스스로 이동하는 현장',
+      {
+        kind: 'field-photo',
+        programs: ['spomove'],
+        allowedPages: ['programs', 'programs/spomove'],
+        externalSrc: '/spokedu/programs/spomove/assets/spe/spe-09.webp',
       },
     ),
     paps: defineImage(
@@ -500,6 +653,9 @@ export type PageImageSlot = {
 /** 페이지별 이미지 슬롯 (운영·교체 참고) */
 export const spokeduPageImageMap: PageImageSlot[] = [
   { page: 'Home', section: 'Hero', asset: SPOKEDU_IMAGES.home.fieldGymMotion },
+  { page: 'Home', section: 'Explorer — 기관·학교', asset: SPOKEDU_IMAGES.home.serviceInstitution },
+  { page: 'Home', section: 'Explorer — 개인·소그룹', asset: SPOKEDU_IMAGES.home.servicePrivate },
+  { page: 'Home', section: 'Explorer — 수업자료·구독', asset: SPOKEDU_IMAGES.home.fieldMasterUi },
   { page: 'Brand', section: 'Logo', asset: SPOKEDU_IMAGES.brand.logo },
   { page: 'Brand', section: 'Spomat', asset: SPOKEDU_IMAGES.brand.spomat },
   { page: 'Home', section: 'Living Proof / LAB', asset: SPOKEDU_IMAGES.home.labScene },

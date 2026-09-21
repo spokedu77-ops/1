@@ -34,10 +34,10 @@ export const spomatPage = {
     title: '2×2 색 위치',
     lead: '네 칸의 위치가 화면 신호와 대응합니다.',
     cells: [
-      { name: 'GREEN', ko: '초록', hex: '#22C55E' },
-      { name: 'RED', ko: '빨강', hex: '#EF4444' },
-      { name: 'BLUE', ko: '파랑', hex: '#3B82F6' },
-      { name: 'YELLOW', ko: '노랑', hex: '#EAB308' },
+      { name: 'RED', ko: '빨강', hex: '#FF0000' },
+      { name: 'YELLOW', ko: '노랑', hex: '#FFFF00' },
+      { name: 'GREEN', ko: '초록', hex: '#00FF00' },
+      { name: 'BLUE', ko: '파랑', hex: '#0000FF' },
     ] as const,
   },
 

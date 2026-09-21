@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { HOME_MEDIA } from '../../data/home-media';
-import { HOME_FIELD_EDITORIAL, homePage, type HomeCaseCard } from '../../data/home-page';
+import { HOME_IMAGE_SLOTS } from '../../data/home-image-roles';
+import { homePage, type HomeCaseCard } from '../../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../../lib/resolve-field-records';
 import { brandFocusRing, homeSkipLink, koreanText, marketingHeroDisplay, marketingSectionDisplay } from '../../lib/ui-classes';
 import { HomeChevron } from './home-chevron';
@@ -14,15 +15,10 @@ type CaseCardWithThumb = HomeCaseCard & { thumbnailSrc?: string };
 type HomeEditorialLandingProps = { caseCards: CaseCardWithThumb[] };
 type FieldTab = 'field' | 'content' | 'system';
 
-const SERVICE_IMAGES = [
-  { src: '/images/spokedu/dispatch/dispatch-institution-class.jpg', alt: '학교와 기관에서 진행하는 체육수업 현장', position: '50% 48%', fit: 'cover' as const },
-  { src: '/images/spokedu/private/private-small-group.jpg', alt: '아이와 지도자가 함께하는 소그룹 체육수업', position: '58% 45%', fit: 'cover' as const },
-  {
-    src: HOME_FIELD_EDITORIAL.masterUi,
-    alt: 'SPOKEDU MASTER 실제 화면 — 이어서 준비와 놀이체육 추천',
-    position: homePage.subscription.visual.explorerCrop,
-    fit: 'cover' as const,
-  },
+const SERVICE_SLOTS = [
+  HOME_IMAGE_SLOTS['explorer-institution'],
+  HOME_IMAGE_SLOTS['explorer-private'],
+  HOME_IMAGE_SLOTS['explorer-subscription'],
 ] as const;
 
 const FIELD_TABS: readonly { id: FieldTab; label: string; note: string }[] = [
@@ -67,7 +63,11 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
   const [recordPosition, setRecordPosition] = useState({ atStart: true, atEnd: false });
   const heroMedia = HOME_MEDIA[homePage.hero.mediaKey];
   const service = homePage.serviceChoices[activeService];
-  const serviceImage = SERVICE_IMAGES[activeService];
+  const serviceMedia = HOME_MEDIA[service.mediaKey];
+  const serviceSlot = SERVICE_SLOTS[activeService];
+  const serviceIsProduct = serviceSlot.origin === 'product-ui';
+  const serviceFit = serviceIsProduct ? 'contain' : 'cover';
+  const servicePosition = serviceMedia.objectPosition ?? (serviceIsProduct ? '50% 50%' : '50% 48%');
 
   const updateRecordPosition = () => {
     const rail = recordRailRef.current;
@@ -106,7 +106,7 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
             quality={90}
             sizes="100vw"
             className={styles.heroImage}
-            style={{ objectPosition: heroMedia.objectPosition ?? '62% 48%' }}
+            style={{ objectPosition: heroMedia.objectPosition ?? '68% 42%' }}
           />
         </figure>
         <div className={styles.heroStage}>
@@ -154,13 +154,13 @@ export function HomeEditorialLanding({ caseCards }: HomeEditorialLandingProps) {
             </div>
           </div>
           <article id="selected-service" role="tabpanel" className={styles.serviceStage} key={service.href}>
-            <div className={`${styles.serviceVisual} ${activeService === 2 ? styles.serviceVisualProduct : ''}`}>
+            <div className={`${styles.serviceVisual} ${serviceIsProduct ? styles.serviceVisualProduct : ''}`}>
               <Image
-                src={serviceImage.src}
-                alt={serviceImage.alt}
+                src={serviceMedia.src!}
+                alt={serviceMedia.alt}
                 fill
-                sizes="(min-width: 960px) 78vw, 100vw"
-                style={{ objectFit: serviceImage.fit, objectPosition: serviceImage.position }}
+                sizes="(min-width: 960px) 72vw, 100vw"
+                style={{ objectFit: serviceFit, objectPosition: servicePosition }}
               />
             </div>
             <div className={styles.serviceDetail}>

@@ -60,14 +60,28 @@ export const HOME_MEDIA = {
     label: '체육관 허들 수업',
     fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
     tone: 'sky',
-    objectPosition: '62% 48%',
+    objectPosition: '68% 42%',
+  }),
+  homeServiceInstitution: fromPhoto(SPOKEDU_IMAGES.home.serviceInstitution, {
+    id: 'home-service-institution',
+    label: '기관·학교 수업',
+    fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '52% 48%',
+  }),
+  homeServicePrivate: fromPhoto(SPOKEDU_IMAGES.home.servicePrivate, {
+    id: 'home-service-private',
+    label: '개인·소그룹 수업',
+    fallbackGradient: 'from-violet-500 via-indigo-600 to-slate-800',
+    tone: 'violet',
+    objectPosition: '48% 42%',
   }),
   homeMasterUi: fromPhoto(SPOKEDU_IMAGES.home.fieldMasterUi, {
     id: 'home-master-ui',
     label: 'SPOKEDU MASTER 화면',
     fallbackGradient: 'from-slate-200 via-slate-100 to-white',
     tone: 'slate',
-    objectPosition: '50% 18%',
+    objectPosition: '50% 50%',
   }),
   homeHeroField: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialHero, {
     id: 'home-hero-field',
@@ -77,7 +91,7 @@ export const HOME_MEDIA = {
     /** Left copy zone; crop upper gym wall — keep instructor + children mid-right */
     objectPosition: '58% 62%',
   }),
-  /** Same asset as Home Hero; Education uses bottom copy — keep subjects above scrim */
+  /** Education shared field photo — not the Home Hero directed visual. */
   homeHeroFieldEducation: fromPhoto(SPOKEDU_IMAGES.home.fieldEditorialHero, {
     id: 'home-hero-field-education',
     label: '체육수업 Hero (교육)',
@@ -350,6 +364,20 @@ export const HOME_MEDIA = {
     tone: 'violet',
     objectPosition: '50% 45%',
   }),
+  spomoveClassConnected: fromPhoto(SPOKEDU_IMAGES.programs.spomoveClassConnected, {
+    id: 'spomove-class-connected',
+    label: '화면·패드·움직임',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-950',
+    tone: 'sky',
+    objectPosition: '50% 62%',
+  }),
+  spomoveColorScreenField: fromPhoto(SPOKEDU_IMAGES.programs.spomoveColorScreenField, {
+    id: 'spomove-color-screen-field',
+    label: '색상 반응 현장',
+    fallbackGradient: 'from-amber-300 via-orange-600 to-slate-950',
+    tone: 'amber',
+    objectPosition: '50% 42%',
+  }),
   spomoveHeroField: fromPhoto(SPOKEDU_IMAGES.programs.spomoveHeroField, {
     id: 'spomove-hero-field',
     label: 'SPOMOVE 현장',
@@ -393,10 +421,70 @@ export const HOME_MEDIA = {
   }),
   spomoveColorReactionField: fromPhoto(SPOKEDU_IMAGES.programs.spomoveColorReactionField, {
     id: 'spomove-color-reaction-field',
-    label: '컬러 반응 현장',
+    label: '1:1 화면 반응',
     fallbackGradient: 'from-sky-500 via-blue-700 to-slate-950',
     tone: 'sky',
     objectPosition: '50% 48%',
+  }),
+  spomoveScreenColor: fromPhoto(SPOKEDU_IMAGES.programs.spomoveScreenColor, {
+    id: 'spomove-screen-color',
+    label: '색상 반응 화면',
+    fallbackGradient: 'from-amber-400 via-orange-600 to-slate-950',
+    tone: 'amber',
+  }),
+  spomoveScreenDirection: fromPhoto(SPOKEDU_IMAGES.programs.spomoveScreenDirection, {
+    id: 'spomove-screen-direction',
+    label: '방향 반응 화면',
+    fallbackGradient: 'from-indigo-400 via-blue-700 to-slate-950',
+    tone: 'indigo',
+  }),
+  spomoveScreenFlash: fromPhoto(SPOKEDU_IMAGES.programs.spomoveScreenFlash, {
+    id: 'spomove-screen-flash',
+    label: '순간 반응 화면',
+    fallbackGradient: 'from-blue-400 via-sky-600 to-slate-950',
+    tone: 'sky',
+  }),
+  spomoveAssocField: fromPhoto(SPOKEDU_IMAGES.programs.spomoveAssocField, {
+    id: 'spomove-assoc-field',
+    label: '연상 반응 현장',
+    fallbackGradient: 'from-amber-300 via-yellow-600 to-slate-950',
+    tone: 'amber',
+    objectPosition: '50% 55%',
+  }),
+  spomoveActionField: fromPhoto(SPOKEDU_IMAGES.programs.spomoveActionField, {
+    id: 'spomove-action-field',
+    label: '액션 반응 현장',
+    fallbackGradient: 'from-lime-300 via-yellow-600 to-slate-950',
+    tone: 'lime',
+    objectPosition: '50% 48%',
+  }),
+  spomoveVariationField: fromPhoto(SPOKEDU_IMAGES.programs.spomoveVariationField, {
+    id: 'spomove-variation-field',
+    label: '난이도 변형 현장',
+    fallbackGradient: 'from-sky-400 via-blue-700 to-slate-950',
+    tone: 'sky',
+    objectPosition: '50% 52%',
+  }),
+  spomoveWhoEarly: fromPhoto(SPOKEDU_IMAGES.programs.spomoveWhoEarly, {
+    id: 'spomove-who-early',
+    label: '유아·초등 현장',
+    fallbackGradient: 'from-sky-400 via-blue-700 to-slate-950',
+    tone: 'sky',
+    objectPosition: '50% 50%',
+  }),
+  spomoveWhoAdapted: fromPhoto(SPOKEDU_IMAGES.programs.spomoveWhoAdapted, {
+    id: 'spomove-who-adapted',
+    label: '특수체육 현장',
+    fallbackGradient: 'from-slate-400 via-slate-700 to-slate-950',
+    tone: 'slate',
+    objectPosition: '50% 48%',
+  }),
+  spomoveWhoSmall: fromPhoto(SPOKEDU_IMAGES.programs.spomoveWhoSmall, {
+    id: 'spomove-who-small',
+    label: '소그룹 현장',
+    fallbackGradient: 'from-indigo-400 via-blue-700 to-slate-950',
+    tone: 'indigo',
+    objectPosition: '50% 50%',
   }),
   spomoveDiveScreen: visualMedia({
     id: 'spomove-dive-screen',

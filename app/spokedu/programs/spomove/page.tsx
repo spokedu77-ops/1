@@ -4,9 +4,9 @@ import SpomoveProgramLanding from '../../components/spomove-program-landing';
 import { buildSpokeduPageMetadata, buildProgramDetailOgImage } from '../../data/seo';
 
 export const metadata = buildSpokeduPageMetadata({
-  title: 'SPOMOVE | 화면의 정보를 움직임으로 연결하는 신체활동 콘텐츠',
+  title: 'SPOMOVE | 움직임에 반응하는 시지각 놀이체육',
   description:
-    '색상·위치·방향·숫자·순서를 확인하고 규칙에 따라 움직이는 SPOMOVE. 기관수업과 지도자용 구독시스템에서 활용하는 스포키듀 콘텐츠입니다.',
+    '화면의 자극을 보고 판단하고 움직이는 SPOKEDU의 디지털 움직임 프로그램입니다.',
   canonical: '/spomove',
   keywords: ['SPOMOVE', 'SPOMAT', '아동 체육', '기관 체육수업', '구독시스템', '에듀테크 체육'],
   pageKey: 'programs',

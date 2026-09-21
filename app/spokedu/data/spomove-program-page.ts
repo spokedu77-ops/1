@@ -24,12 +24,8 @@ const spomoveMediaRequirement = (
   ...(options?.allowVisualFallback ? { allowVisualFallback: true } : {}),
 });
 
-/** SPOMOVE 공개 사례 — 적용이 데이터상 확인되는 건만 */
-export const SPOMOVE_LANDING_CASE_SLUGS = [
-  'dongjak-spomove',
-  'dasarang-oneday',
-  'seodaemun-event-booth',
-] as const satisfies readonly FieldRecordSlug[];
+/** SPOMOVE 공개 사례 — 사진이 SPOMOVE 적용을 직접 보여주는 건만 */
+export const SPOMOVE_LANDING_CASE_SLUGS = ['dongjak-spomove'] as const satisfies readonly FieldRecordSlug[];
 
 export type SpomoveLandingCaseCard = {
   slug: FieldRecordSlug;
@@ -69,30 +65,31 @@ export const spomoveProgramPage = {
   sectionOrder: [
     'hero',
     'flow',
-    'content',
-    'spomat',
-    'usePaths',
+    'experience',
+    'variation',
+    'audience',
     'cases',
+    'spomat',
+    'master',
     'catalogFinal',
   ] as const,
 
   hero: {
     id: 'hero',
     kicker: 'SPOMOVE',
-    lines: ['화면의 정보를 움직임으로 연결하는', 'SPOMOVE'] as const,
-    subtitle:
-      '색상·위치·방향·이미지·숫자·순서 등 시각 정보를 확인한 뒤, 제시된 규칙에 따라 움직입니다. 체육교육 현장과 지도자용 구독시스템에서 활용할 수 있습니다.',
-    mediaKey: 'spomoveHeroField' as HomeMediaKey,
+    lines: ['움직임에 반응하는', '시지각 놀이체육'] as const,
+    subtitle: '화면의 자극을 보고 판단하고 움직이는 SPOKEDU의 디지털 움직임 프로그램입니다.',
+    mediaKey: 'spomoveClassConnected' as HomeMediaKey,
     mediaRequirement: spomoveMediaRequirement('field-photo'),
     primaryCta: {
-      label: 'SPOMOVE 프로그램 보기',
-      href: '#content',
-      trackLabel: 'spomove-hero-content',
+      label: 'SPOMOVE 체험하기',
+      href: '#experience',
+      trackLabel: 'spomove-hero-experience',
     },
     secondaryCta: {
-      label: '활용 사례 보기',
-      href: '#cases',
-      trackLabel: 'spomove-hero-cases',
+      label: '프로그램 보기',
+      href: `${SPOKEDU_PATHS.spomoveCatalog}`,
+      trackLabel: 'spomove-hero-catalog',
     },
   },
 
@@ -105,25 +102,26 @@ export const spomoveProgramPage = {
 
   flow: {
     id: 'flow',
-    eyebrow: '작동 방식',
-    title: '확인하고 판단하고 수행하고 조절합니다',
-    lead: '화면의 시각 자극을 읽은 뒤, 규칙에 맞는 움직임을 선택·실행하고 수업 목적에 따라 난이도를 맞춥니다.',
+    eyebrow: 'RESPOND',
+    titleLines: ['보고,', '판단하고,', '움직입니다.'] as const,
+    title: '보고, 판단하고, 움직입니다.',
+    mediaKey: 'spomoveColorScreenField' as HomeMediaKey,
+    mediaRequirement: spomoveMediaRequirement('field-photo'),
     steps: [
       {
-        label: '확인',
-        body: '색상·위치·방향·이미지·숫자·순서 등 화면 정보를 확인합니다.',
+        label: 'SEE',
+        axis: 'SCREEN',
+        body: '화면에서 색상·방향·형태·동작 자극을 확인합니다.',
       },
       {
-        label: '판단',
-        body: '제시된 규칙과 목표 자극에 따라 움직일 위치나 방법을 선택합니다.',
+        label: 'DECIDE',
+        axis: 'DECISION',
+        body: '자극을 구분하고 어떤 움직임을 할지 판단합니다.',
       },
       {
-        label: '수행',
-        body: 'SPOMAT 또는 수업 공간에서 점프·이동·터치·균형·교구 조작 등으로 반응합니다.',
-      },
-      {
-        label: '조절',
-        body: '연령과 수행 방식에 맞춰 제시 시간·속도·규칙·동작을 조절합니다.',
+        label: 'MOVE',
+        axis: 'MOVEMENT',
+        body: 'SPOMAT과 공간 위에서 실제 움직임을 수행합니다.',
       },
     ] as const,
   },
@@ -167,6 +165,65 @@ export const spomoveProgramPage = {
     },
   },
 
+  experience: {
+    id: 'experience',
+    eyebrow: 'EXPERIENCE',
+    titleLines: ['하나의 화면이', '여러 움직임으로 이어집니다.'] as const,
+    catalogCta: {
+      label: '전체 프로그램 보기',
+      href: `${SPOKEDU_PATHS.spomoveCatalog}`,
+      trackLabel: 'spomove-experience-catalog',
+    },
+  },
+
+  variation: {
+    id: 'variation',
+    eyebrow: 'ADAPT',
+    titleLines: ['같은 활동도', '다르게 설계할 수 있습니다.'] as const,
+    tracks: [
+      { label: '자극 시간', from: '2초', to: '6초' },
+      { label: '과제 구조', from: '단순', via: '선택', to: '복합' },
+      { label: '참여 방식', from: '1인', via: '협동', to: '그룹' },
+      { label: '움직임', from: '기본', to: '복합' },
+    ] as const,
+  },
+
+  who: {
+    id: 'audience',
+    eyebrow: 'APPLY',
+    titleLines: ['대상에 맞게', '활용합니다.'] as const,
+    items: [
+      {
+        id: 'early',
+        label: '유아·초등',
+        body: '기본 움직임과 반응 활동을 중심으로 활용합니다.',
+        mediaKey: 'spomoveWhoEarly' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('field-photo'),
+      },
+      {
+        id: 'school',
+        label: '학교·기관',
+        body: '정규수업과 특별활동에 적용할 수 있습니다. 모든 기관수업에 필수는 아닙니다.',
+        mediaKey: 'spomoveVariationField' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('field-photo'),
+      },
+      {
+        id: 'adapted',
+        label: '특수체육',
+        body: '자극시간과 과제 난이도를 조절해 단계적으로 적용합니다.',
+        mediaKey: 'spomoveWhoAdapted' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('field-photo'),
+      },
+      {
+        id: 'small',
+        label: '느린학습자·소그룹',
+        body: '반복과 선택 과제를 통해 참여 수준에 맞춰 운영합니다.',
+        mediaKey: 'spomoveWhoSmall' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('field-photo'),
+      },
+    ] as const,
+  },
+
   /** @deprecated reactionLevels — content.levels 사용. 미디어·레거시 호환 */
   reactionLevels: {
     eyebrow: '난이도',
@@ -198,17 +255,20 @@ export const spomoveProgramPage = {
   spomat: {
     id: 'spomat',
     eyebrow: 'SPOMAT',
-    title: 'SPOMAT은 SPOMOVE를 실행하는 물리적 도구입니다',
-    body: '화면의 색·위치 신호가 바닥 패드의 위치로 이어지도록 돕는 실행 도구입니다. SPOMOVE 콘텐츠 자체와 동일한 제품이 아닙니다.',
+    titleLines: ['화면의 자극을', '실제 움직임으로 연결합니다.'] as const,
+    title: '화면의 자극을 실제 움직임으로 연결합니다.',
+    body: '2×2 컬러 SPOMAT을 활용해 방향, 위치, 이동, 점프 등 다양한 움직임으로 연결합니다.',
     mediaKey: 'spomovePadSystem' as HomeMediaKey,
+    usageMediaKey: 'spomoveColorReactionField' as HomeMediaKey,
+    usageMediaRequirement: spomoveMediaRequirement('field-photo'),
     mediaRequirement: spomoveMediaRequirement('product'),
     points: [
       { title: '2×2 구조', body: '네 칸의 위치가 화면 신호와 대응합니다.' },
-      { title: '색 위치', body: '초록·빨강·파랑·노랑 위치를 기준으로 움직입니다.' },
+      { title: '색 위치', body: '위는 빨강·노랑, 아래는 초록·파랑입니다.' },
       { title: '실행 보조', body: '점프·이동·터치 등 실제 움직임을 공간에서 수행하게 합니다.' },
       { title: '난이도 조절', body: '규칙·속도·제시 시간을 수업 목적에 맞춰 바꿉니다.' },
     ] as const,
-    note: '구매·요금 안내는 이번 페이지에서 다루지 않습니다. SPOMAT 상세와 구매 안내는 별도 경로에서 확인하세요.',
+    note: '구매·요금 안내는 이번 페이지에서 다루지 않습니다.',
     detailHref: `${SPOKEDU_BASE_PATH}/spomat`,
     detailLabel: 'SPOMAT 자세히 보기',
     detailTrackLabel: 'spomove-spomat-detail',
@@ -218,7 +278,7 @@ export const spomoveProgramPage = {
   padSystem: {
     eyebrow: '핵심 구조',
     title: 'SPOMAT이 움직임의 기준이 됩니다',
-    body: '화면 신호가 발 위치(빨강·노랑·초록·파랑)로 이어집니다. SPOMAT은 SPOMOVE 실행을 돕는 도구입니다.',
+    body: '화면 신호가 발 위치(빨강·노랑 / 초록·파랑)로 이어집니다. SPOMAT은 SPOMOVE 실행을 돕는 도구입니다.',
     mediaKey: 'spomovePadSystem' as HomeMediaKey,
     mediaRequirement: spomoveMediaRequirement('product'),
     points: [
@@ -260,15 +320,30 @@ export const spomoveProgramPage = {
 
   cases: {
     id: 'cases',
-    eyebrow: '현장 활용',
-    title: '실제 SPOMOVE 운영 기록',
-    lead: '공개된 사례 중 SPOMOVE 적용이 확인되는 기록을 골랐습니다. 효과·발달 결과를 단정하지 않습니다.',
+    eyebrow: 'PROVE',
+    titleLines: ['실제 수업에서', '사용하고 있습니다.'] as const,
+    title: '실제 수업에서 사용하고 있습니다.',
     recordsCta: {
-      label: 'SPOMOVE 운영 사례 보기',
+      label: '운영 사례 보기',
       href: `${SPOKEDU_BASE_PATH}/records`,
       trackLabel: 'spomove-cases-records',
     },
     cards: SPOMOVE_LANDING_CASE_SLUGS.map(buildSpomoveCaseCard),
+  },
+
+  master: {
+    id: 'master',
+    eyebrow: 'CONNECT',
+    titleLines: ['SPOMOVE 프로그램은', 'SPOKEDU MASTER에서 관리합니다.'] as const,
+    body: '프로그램을 찾고 수업에 맞는 활동을 선택해 활용할 수 있습니다.',
+    visualSrc: '/images/spokedu/home/field-editorial/home-master-ui.png',
+    visualAlt: 'SPOKEDU MASTER 실제 화면 — SPOMOVE 추천',
+    objectPosition: '50% 74%',
+    primaryCta: {
+      label: 'SPOMOVE 프로그램 보기',
+      href: `${SPOKEDU_PATHS.spomoveCatalog}`,
+      trackLabel: 'spomove-master-catalog',
+    },
   },
 
   /** 활동 예시 — 콘텐츠 섹션 미리보기 + 미디어 테스트 슬롯 */
@@ -276,49 +351,55 @@ export const spomoveProgramPage = {
     title: '프로그램 예시',
     items: [
       {
-        title: '리듬챌린지',
-        description: '화면 신호에 맞춰 리듬과 타이밍을 유지하며 움직입니다.',
+        title: '색상 반응',
+        description: '화면의 색을 보고 해당 위치로 움직입니다.',
+        mediaKey: 'spomoveScreenColor' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('screen'),
+        fit: 'contain' as const,
+      },
+      {
+        title: '방향 반응',
+        description: '자극이 나타난 방향을 보고 이동합니다.',
+        mediaKey: 'spomoveScreenDirection' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('screen'),
+        fit: 'contain' as const,
+      },
+      {
+        title: '연상 반응',
+        description: '이미지와 색을 연결해 반응합니다.',
+        mediaKey: 'spomoveAssocField' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('field-photo'),
+        fit: 'cover' as const,
+      },
+      {
+        title: '순간 반응',
+        description: '짧게 나타난 목표를 보고 바로 움직입니다.',
+        mediaKey: 'spomoveScreenFlash' as HomeMediaKey,
+        mediaRequirement: spomoveMediaRequirement('screen'),
+        fit: 'contain' as const,
+      },
+      {
+        title: '모션게이트',
+        description: '화면의 길을 보고 몸을 이동합니다.',
         mediaKey: 'spomoveRhythmField' as HomeMediaKey,
         mediaRequirement: spomoveMediaRequirement('field-photo'),
+        fit: 'cover' as const,
       },
       {
-        title: '사이먼 효과 활동',
-        description: '자극이 나타난 위치가 아니라 정해진 규칙에 따라 반응합니다.',
-        mediaKey: 'spomoveSimonScreen' as HomeMediaKey,
-        mediaRequirement: spomoveMediaRequirement('screen', { allowVisualFallback: true }),
-      },
-      {
-        title: '플랭커 활동',
-        description: '주변 자극을 구분하고 중심 목표에 맞춰 움직입니다.',
-        mediaKey: 'spomoveFlankerScreen' as HomeMediaKey,
-        mediaRequirement: spomoveMediaRequirement('screen', { allowVisualFallback: true }),
-      },
-      {
-        title: '스트룹 과제 활동',
-        description: '글자 의미와 색 정보가 충돌하는 상황에서 규칙을 선택합니다.',
-        mediaKey: 'spomoveStroopScreen' as HomeMediaKey,
-        mediaRequirement: spomoveMediaRequirement('screen', { allowVisualFallback: true }),
-      },
-      {
-        title: '컬러 반응 점프',
-        description: '색과 방향 신호를 보고 빠르게 선택해 이동합니다.',
-        mediaKey: 'spomoveColorReactionField' as HomeMediaKey,
+        title: '액션 무브',
+        description: '화면 속 대상에 전신으로 반응합니다.',
+        mediaKey: 'spomoveActionField' as HomeMediaKey,
         mediaRequirement: spomoveMediaRequirement('field-photo'),
-      },
-      {
-        title: 'DIVE 몰입 활동',
-        description: '가상 공간의 게임형 장애물을 보고 전신으로 반응합니다.',
-        mediaKey: 'spomoveDiveScreen' as HomeMediaKey,
-        mediaRequirement: spomoveMediaRequirement('screen', { allowVisualFallback: true }),
+        fit: 'cover' as const,
       },
     ],
   },
 
   catalogFinal: {
     id: 'catalog-final',
-    eyebrow: '다음 단계',
-    title: '프로그램 목록을 보고, 이용 경로를 선택하세요',
-    lead: '전체 프로그램 카탈로그에서 구성을 확인하고, 기관 도입 또는 구독 이용으로 이어가세요.',
+    eyebrow: 'START',
+    titleLines: ['SPOMOVE를', '수업에 적용해보세요.'] as const,
+    title: 'SPOMOVE를 수업에 적용해보세요.',
     catalogCta: {
       label: '전체 프로그램 보기',
       href: `${SPOKEDU_PATHS.spomoveCatalog}`,
@@ -330,14 +411,14 @@ export const spomoveProgramPage = {
       trackLabel: 'spomove-final-tabs',
     },
     primary: {
-      label: '기관 도입 문의',
-      href: institutionInquiryHref,
-      trackLabel: 'spomove-final-dispatch',
+      label: 'SPOMOVE 이용하기',
+      href: `${SPOKEDU_PATHS.subscription}`,
+      trackLabel: 'spomove-final-use',
     },
     secondary: {
-      label: '구독시스템 알아보기',
-      href: `${SPOKEDU_PATHS.subscription}`,
-      trackLabel: 'spomove-final-curriculum',
+      label: '도입 문의하기',
+      href: institutionInquiryHref,
+      trackLabel: 'spomove-final-dispatch',
     },
   },
 
@@ -430,9 +511,9 @@ export const spomoveProgramPage = {
   },
 
   finalCta: {
-    title: 'SPOMOVE를 우리 기관에 맞게 운영하고 싶다면',
-    description: '공간, 인원, 대상 연령, 운영 일정을 확인한 뒤 적합한 수업 형태로 안내드립니다.',
-    label: '기관 도입 문의',
+    title: 'SPOMOVE를 수업에 적용해보세요.',
+    description: '',
+    label: '도입 문의하기',
     href: institutionInquiryHref,
     trackLabel: 'program-spomove-dispatch-final',
   },

@@ -1,40 +1,21 @@
 'use client';
 
+import Image from 'next/image';
+import { useState, type ReactNode } from 'react';
 import { HOME_MEDIA, type HomeMediaKey } from '../data/home-media';
 import { spomoveProgramPage } from '../data/spomove-program-page';
 import {
-  brandBlue,
-  brandInk,
-  homeBandSoftBlue,
-  homeBandWhite,
-  homeBodyLead,
   brandFocusRing,
-  marketingCardInteractive,
-  homePhotoGrade,
-  homeSectionEyebrow,
+  koreanText,
   marketingHeroDisplay,
   marketingHeroDisplaySectionScale,
   marketingSectionDisplay,
-  marketingSectionPadCompact,
-  koreanText,
-  marketingButtonPrimary,
-  marketingButtonSecondary,
-  marketingSectionInner,
 } from '../lib/ui-classes';
-import { ExternalPhoto } from './external-photo';
-import { SpomatPhoto } from './spomat-photo';
-import { MediaPanel } from './visual';
 import { HomeChevron } from './home/home-chevron';
 import { TrackedLink } from './home/tracked-link';
+import styles from './spomove-program.module.css';
 
-/** SPOMAT 실물 배치 — 좌상 초록 · 우상 빨강 · 좌하 파랑 · 우하 노랑 */
-const PAD_CELLS = [
-  { name: 'GREEN', ko: '초록', hex: '#22C55E' },
-  { name: 'RED', ko: '빨강', hex: '#EF4444' },
-  { name: 'BLUE', ko: '파랑', hex: '#3B82F6' },
-  { name: 'YELLOW', ko: '노랑', hex: '#EAB308' },
-] as const;
-
+/** 구조화 화면 패널 — 현장 사진이 없을 때만 쓰던 레거시 슬롯 호환 */
 export const spomoveActivityVisuals: Partial<
   Record<
     HomeMediaKey,
@@ -46,68 +27,71 @@ export const spomoveActivityVisuals: Partial<
       tone: string;
     }
   >
-> = {
-  spomoveSimonScreen: {
-    eyebrow: 'SIMON',
-    title: '위치 충돌',
-    cues: ['자극 위치', '정답 색', '반응 억제', '패드 선택'],
-    answer: '보이는 위치가 아니라 규칙에 맞는 색 패드로 이동',
-    tone: 'from-red-500 via-violet-700 to-slate-950',
-  },
-  spomoveFlankerScreen: {
-    eyebrow: 'FLANKER',
-    title: '방해 자극 분리',
-    cues: ['주변 화살표', '가운데 목표', '선택 주의', '정확도'],
-    answer: '주변 정보는 버리고 가운데 목표 방향만 선택',
-    tone: 'from-blue-500 via-indigo-700 to-slate-950',
-  },
-  spomoveStroopScreen: {
-    eyebrow: 'STROOP',
-    title: '의미와 색 충돌',
-    cues: ['글자 의미', '표시 색', '규칙 전환', '반응 통제'],
-    answer: '읽히는 단어가 아니라 현재 규칙의 색 정보를 선택',
-    tone: 'from-emerald-500 via-teal-700 to-slate-950',
-  },
-  spomoveDiveScreen: {
-    eyebrow: 'DIVE',
-    title: '가상 공간 반응',
-    cues: ['색 게이트', '장애물', '점프·회피', '전신 반응'],
-    answer: '화면 속 신호를 보고 4색 패드와 몸 동작으로 수행',
-    tone: 'from-cyan-500 via-blue-800 to-slate-950',
-  },
-};
+> = {};
 
-function SpomoveActivityVisualPanel({ mediaKey }: { mediaKey: HomeMediaKey }) {
-  const visual = spomoveActivityVisuals[mediaKey];
-  if (!visual) return null;
-
+function Arrow() {
   return (
-    <div
-      className={`absolute inset-0 flex h-full w-full flex-col justify-between overflow-hidden bg-gradient-to-br ${visual.tone} p-4 text-white`}
-      data-spomove-activity-visual={mediaKey}
+    <span className={styles.arrow} aria-hidden>
+      <HomeChevron />
+    </span>
+  );
+}
+
+function ArrowLink({
+  href,
+  trackLabel,
+  children,
+  commercialRoute,
+  ctaIntentId,
+}: {
+  href: string;
+  trackLabel: string;
+  children: ReactNode;
+  commercialRoute?: 'dispatch' | 'curriculum';
+  ctaIntentId?: string;
+}) {
+  return (
+    <TrackedLink
+      href={href}
+      trackLabel={trackLabel}
+      commercialRoute={commercialRoute}
+      ctaIntentId={ctaIntentId}
+      className={`${styles.arrowLink} ${brandFocusRing}`}
     >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.08]"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
-          backgroundSize: '26px 26px',
-        }}
-      />
-      <div className="relative">
-        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/65">{visual.eyebrow}</p>
-        <p className={`mt-1 text-lg font-black leading-tight ${koreanText}`}>{visual.title}</p>
-      </div>
-      <div className="relative grid grid-cols-2 gap-2">
-        {visual.cues.map((cue, index) => (
-          <div key={cue} className="rounded-xl border border-white/20 bg-white/12 px-2.5 py-2 backdrop-blur-sm">
-            <span className="block text-[10px] font-black text-white/55">{String(index + 1).padStart(2, '0')}</span>
-            <span className={`mt-0.5 block text-[12px] font-bold leading-tight ${koreanText}`}>{cue}</span>
-          </div>
-        ))}
-      </div>
-      <p className={`relative text-[11px] font-medium leading-relaxed text-white/72 ${koreanText}`}>{visual.answer}</p>
-    </div>
+      <span>{children}</span>
+      <Arrow />
+    </TrackedLink>
+  );
+}
+
+function FieldImage({
+  mediaKey,
+  sizes,
+  priority = false,
+  objectPosition,
+  objectFit = 'cover',
+}: {
+  mediaKey: HomeMediaKey;
+  sizes: string;
+  priority?: boolean;
+  objectPosition?: string;
+  objectFit?: 'cover' | 'contain';
+}) {
+  const media = HOME_MEDIA[mediaKey];
+  if (!media.src) return null;
+  return (
+    <Image
+      src={media.src}
+      alt={media.alt}
+      fill
+      priority={priority}
+      quality={90}
+      sizes={sizes}
+      style={{
+        objectFit,
+        objectPosition: objectPosition ?? media.objectPosition ?? '50% 50%',
+      }}
+    />
   );
 }
 
@@ -116,404 +100,313 @@ function SpomoveActivityVisualPanel({ mediaKey }: { mediaKey: HomeMediaKey }) {
  */
 export default function SpomoveProgramLanding() {
   const page = spomoveProgramPage;
+  const [activeActivity, setActiveActivity] = useState(0);
+  const [activeWho, setActiveWho] = useState(0);
+  const activity = page.activities.items[activeActivity] ?? page.activities.items[0];
+  const who = page.who.items[activeWho] ?? page.who.items[0];
   const heroMedia = HOME_MEDIA[page.hero.mediaKey];
+  const proof = page.cases.cards[0];
+  const activityFit = 'fit' in activity && activity.fit === 'contain' ? 'contain' : 'cover';
 
   return (
-    <main
-      className="w-full overflow-x-clip bg-[#F5F7FB]"
-      data-spokedu-spomove-sections={page.sectionOrder.length}
-    >
-      <section id={page.hero.id} className={`${marketingSectionPadCompact} bg-white`}>
-        <div className={`${marketingSectionInner} grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center`}>
-          <div className="min-w-0">
-            <p className={homeSectionEyebrow}>{page.hero.kicker}</p>
-            <h1 className={`${marketingHeroDisplay} ${marketingHeroDisplaySectionScale} mt-3`}>
-              <span className="block">{page.hero.lines[0]}</span>
-              <span className="mt-1.5 block text-[#245DFF]">{page.hero.lines[1]}</span>
+    <main className={styles.page} data-spokedu-spomove-sections="response-in-motion">
+      <section id={page.hero.id} className={styles.hero} aria-labelledby="spomove-hero-heading">
+        <figure className={styles.heroMedia}>
+          {heroMedia.src ? (
+            <Image
+              src={heroMedia.src}
+              alt={heroMedia.alt}
+              fill
+              priority
+              quality={90}
+              sizes="100vw"
+              style={{ objectFit: 'cover', objectPosition: heroMedia.objectPosition ?? '48% 42%' }}
+            />
+          ) : null}
+        </figure>
+        <div className={styles.heroStage}>
+          <div className={styles.heroContent}>
+            <p className={styles.heroEyebrow}>{page.hero.kicker}</p>
+            <h1
+              id="spomove-hero-heading"
+              className={`${marketingHeroDisplay} ${marketingHeroDisplaySectionScale} ${styles.heroHeading}`}
+            >
+              <span>{page.hero.lines[0]}</span>
+              <span>{page.hero.lines[1]}</span>
             </h1>
-            <p className={`${homeBodyLead} mt-4`}>{page.hero.subtitle}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <p className={`${styles.heroLead} ${koreanText}`}>{page.hero.subtitle}</p>
+            <nav className={styles.heroCtas} aria-label="다음 행동">
               <TrackedLink
                 href={page.hero.primaryCta.href}
                 trackLabel={page.hero.primaryCta.trackLabel}
-                className={`${marketingButtonPrimary} h-12 min-h-12 px-7 ${brandFocusRing}`}
+                className={`${styles.heroCta} ${brandFocusRing}`}
               >
-                {page.hero.primaryCta.label}
+                <span>{page.hero.primaryCta.label}</span>
+                <Arrow />
               </TrackedLink>
               <TrackedLink
                 href={page.hero.secondaryCta.href}
                 trackLabel={page.hero.secondaryCta.trackLabel}
-                className={`${marketingButtonSecondary} h-12 min-h-12 px-7 ${brandFocusRing}`}
+                className={`${styles.heroCta} ${brandFocusRing}`}
               >
-                {page.hero.secondaryCta.label}
+                <span>{page.hero.secondaryCta.label}</span>
+                <Arrow />
               </TrackedLink>
-            </div>
-          </div>
-          <div className="relative min-h-[14rem] overflow-hidden rounded-[1.5rem] ring-1 ring-[#DCE3EE] sm:min-h-[18rem]">
-            <MediaPanel
-              media={heroMedia}
-              className={`absolute inset-0 h-full w-full rounded-none border-0 ${homePhotoGrade}`}
-              sizes="card2"
-              photoPriority
-              priority
-              objectFit="cover"
-            />
+            </nav>
           </div>
         </div>
       </section>
 
-      <section id={page.flow.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-flow-heading">
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{page.flow.eyebrow}</p>
-          <h2 id="spomove-flow-heading" className={`${marketingSectionDisplay} mt-3`}>
-            {page.flow.title}
+      <section id={page.flow.id} className={`${styles.band} ${styles.bandQuiet}`} aria-labelledby="spomove-flow-heading">
+        <div className={`${styles.rail} ${styles.split}`}>
+          <div>
+            <p className={styles.sectionCode}>02 / {page.flow.eyebrow}</p>
+            <h2 id="spomove-flow-heading" className={`${marketingSectionDisplay} ${styles.heading}`}>
+              <span>{page.flow.titleLines[0]}</span>
+              <span>{page.flow.titleLines[1]}</span>
+              <span>{page.flow.titleLines[2]}</span>
+            </h2>
+            <ol className={styles.sequence}>
+              {page.flow.steps.map((step) => (
+                <li key={step.label} className={styles.sequenceStep}>
+                  <p className={styles.sequenceAxis}>{step.axis}</p>
+                  <p className={styles.sequenceLabel}>{step.label}</p>
+                  <p className={`${styles.sequenceBody} ${koreanText}`}>{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className={styles.wideVisual}>
+            <FieldImage mediaKey={page.flow.mediaKey} sizes="(min-width: 960px) 70vw, 100vw" objectPosition="50% 42%" />
+          </div>
+        </div>
+      </section>
+
+      <section
+        id={page.experience.id}
+        className={`${styles.band} ${styles.bandStrong}`}
+        aria-labelledby="spomove-experience-heading"
+      >
+        <div className={styles.explorerGrid}>
+          <div>
+            <p className={styles.sectionCode}>03 / {page.experience.eyebrow}</p>
+            <h2 id="spomove-experience-heading" className={`${marketingSectionDisplay} ${styles.heading}`}>
+              <span>{page.experience.titleLines[0]}</span>
+              <span>{page.experience.titleLines[1]}</span>
+            </h2>
+            <div className={styles.selector} role="tablist" aria-label="대표 활동">
+              {page.activities.items.map((item, index) => (
+                <button
+                  key={item.title}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeActivity === index}
+                  aria-controls="selected-activity"
+                  className={activeActivity === index ? styles.optionActive : styles.option}
+                  onClick={() => setActiveActivity(index)}
+                >
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <strong className={koreanText}>{item.title}</strong>
+                </button>
+              ))}
+            </div>
+          </div>
+          <article id="selected-activity" role="tabpanel" className={styles.stage}>
+            <div className={`${styles.stageVisual} ${activityFit === 'contain' ? styles.stageVisualProduct : ''}`}>
+              <FieldImage
+                mediaKey={activity.mediaKey}
+                sizes="(min-width: 960px) 72vw, 100vw"
+                objectFit={activityFit}
+              />
+            </div>
+            <div className={styles.stageDetail}>
+              <p className={`${styles.stageCaption} ${koreanText}`}>{activity.description}</p>
+              <ArrowLink href={page.experience.catalogCta.href} trackLabel={page.experience.catalogCta.trackLabel}>
+                {page.experience.catalogCta.label}
+              </ArrowLink>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section
+        id={page.variation.id}
+        className={`${styles.band} ${styles.bandShort}`}
+        aria-labelledby="spomove-variation-heading"
+      >
+        <div className={styles.rail}>
+          <p className={styles.sectionCode}>04 / {page.variation.eyebrow}</p>
+          <h2 id="spomove-variation-heading" className={`${marketingSectionDisplay} ${styles.heading}`}>
+            <span>{page.variation.titleLines[0]}</span>
+            <span>{page.variation.titleLines[1]}</span>
           </h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-            {page.flow.lead}
-          </p>
-          <ol className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {page.flow.steps.map((step, index) => (
-              <li
-                key={step.label}
-                className="rounded-[1.15rem] border border-[#D6E3FF] bg-white px-4 py-4 shadow-[0_8px_24px_rgba(15,33,70,0.04)]"
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: PAD_CELLS[index]?.hex }}
-                    aria-hidden
-                  />
-                  <span className="text-[11px] font-bold tracking-[0.14em]" style={{ color: brandBlue }}>
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                </div>
-                <h3 className={`mt-2 text-[15px] font-bold ${koreanText}`} style={{ color: brandInk }}>
-                  {step.label}
-                </h3>
-                <p className={`mt-1.5 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{step.body}</p>
+          <ol className={styles.progression}>
+            {page.variation.tracks.map((track) => (
+              <li key={track.label} className={styles.progressionRow}>
+                <p className={styles.progressionLabel}>{track.label}</p>
+                <p className={styles.progressionPath} aria-label={`${track.from}에서 ${track.to}`}>
+                  <span>{track.from}</span>
+                  {'via' in track && track.via ? (
+                    <>
+                      <span className={styles.progressionRule} aria-hidden />
+                      <span>{track.via}</span>
+                    </>
+                  ) : null}
+                  <span className={styles.progressionRule} aria-hidden />
+                  <span>{track.to}</span>
+                </p>
               </li>
             ))}
           </ol>
         </div>
       </section>
 
-      <section id={page.content.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`} aria-labelledby="spomove-content-heading">
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{page.content.eyebrow}</p>
-          <h2 id="spomove-content-heading" className={`${marketingSectionDisplay} mt-3`}>
-            {page.content.title}
-          </h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-            {page.content.lead}
-          </p>
-          <ul className="mt-8 grid grid-cols-1 gap-4 min-[800px]:grid-cols-3">
-            {page.content.levels.map((level) => (
-              <li
-                key={level.id}
-                className="flex h-full flex-col rounded-[1.25rem] border border-[#DCE3EE] bg-[#F5F7FB] px-5 py-5 sm:px-6"
-              >
-                <h3 className={`text-lg font-bold ${koreanText}`} style={{ color: brandInk }}>
-                  {level.title}
-                </h3>
-                <p className={`mt-2 flex-1 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{level.body}</p>
-                <ul className="mt-3 flex flex-wrap gap-1.5">
-                  {level.tags.map((tag) => (
-                    <li
-                      key={tag}
-                      className="rounded-full border border-[#D6E3FF] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#2C446D]"
-                    >
-                      {tag}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-
-          <h3 className={`mt-10 text-lg font-bold sm:text-xl ${koreanText}`} style={{ color: brandInk }}>
-            {page.activities.title}
-          </h3>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {page.activities.items.map((item, index) => {
-              const media = HOME_MEDIA[item.mediaKey];
-              const isStructuredVisual = media.type === 'visual';
-              return (
-                <li key={item.title} className="overflow-hidden rounded-[1.25rem] border border-[#DCE3EE] bg-white">
-                  <div className="relative aspect-[16/10]">
-                    {isStructuredVisual ? (
-                      <SpomoveActivityVisualPanel mediaKey={item.mediaKey} />
-                    ) : (
-                      <MediaPanel
-                        media={media}
-                        className={`absolute inset-0 h-full w-full rounded-none border-0 ${homePhotoGrade}`}
-                        photoPriority={index === 0}
-                        objectFit="cover"
-                      />
-                    )}
-                  </div>
-                  <div className="px-4 py-4">
-                    <p className={`font-bold text-[#14213A] ${koreanText}`}>{item.title}</p>
-                    <p className={`mt-1 text-sm text-[#536279] ${koreanText}`}>{item.description}</p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <TrackedLink
-            href={page.content.catalogCta.href}
-            trackLabel={page.content.catalogCta.trackLabel}
-            className={`mt-6 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#245DFF] ${brandFocusRing}`}
-          >
-            {page.content.catalogCta.label}
-            <HomeChevron />
-          </TrackedLink>
-        </div>
-      </section>
-
-      <section id={page.spomat.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-spomat-heading">
-        <div className={`${marketingSectionInner} grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] lg:items-start`}>
+      <section id={page.who.id} className={`${styles.band} ${styles.bandMedium}`} aria-labelledby="spomove-who-heading">
+        <div className={styles.explorerGrid}>
           <div>
-            <div className="flex items-center gap-2">
-              <SpomatPhoto size="sm" bare />
-              <p className={homeSectionEyebrow}>{page.spomat.eyebrow}</p>
-            </div>
-            <h2 id="spomove-spomat-heading" className={`${marketingSectionDisplay} mt-3`}>
-              {page.spomat.title}
+            <p className={styles.sectionCode}>05 / {page.who.eyebrow}</p>
+            <h2 id="spomove-who-heading" className={`${marketingSectionDisplay} ${styles.heading}`}>
+              <span>{page.who.titleLines[0]}</span>
+              <span>{page.who.titleLines[1]}</span>
             </h2>
-            <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-              {page.spomat.body}
-            </p>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-              {page.spomat.points.map((point, index) => (
-                <li key={point.title} className="rounded-[1.05rem] border border-[#D6E3FF] bg-white px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: PAD_CELLS[index]?.hex }}
-                      aria-hidden
-                    />
-                    <h3 className={`font-bold ${koreanText}`} style={{ color: brandInk }}>
-                      {point.title}
-                    </h3>
-                  </div>
-                  <p className={`mt-1.5 text-sm text-[#536279] ${koreanText}`}>{point.body}</p>
-                </li>
-              ))}
-            </ul>
-            <p className={`mt-5 text-sm text-[#6D7B90] ${koreanText}`}>{page.spomat.note}</p>
-            {'detailHref' in page.spomat && page.spomat.detailHref ? (
-              <TrackedLink
-                href={page.spomat.detailHref}
-                trackLabel={page.spomat.detailTrackLabel}
-                className={`${marketingButtonSecondary} mt-4 h-11 ${brandFocusRing}`}
-              >
-                {page.spomat.detailLabel}
-                <HomeChevron />
-              </TrackedLink>
-            ) : null}
-          </div>
-          <div className="mx-auto w-full max-w-[18rem] lg:mx-0">
-            <div className="overflow-hidden rounded-[1.5rem] border border-[#DCE3EE] bg-white p-2.5 shadow-sm">
-              <div className="relative aspect-square overflow-hidden rounded-[1.15rem] bg-[#F5F7FB]">
-                <MediaPanel
-                  media={HOME_MEDIA[page.spomat.mediaKey]}
-                  className="absolute inset-0 h-full w-full rounded-none border-0"
-                  objectFit="contain"
-                />
-              </div>
-            </div>
-            <p className={`mt-2 text-center text-xs font-semibold text-[#536279] ${koreanText}`}>SPOMAT · 4색 반응 패드</p>
-            <ul className="mt-2 grid grid-cols-2 gap-1.5" aria-label="SPOMAT 색 구성">
-              {PAD_CELLS.map((pad) => (
-                <li
-                  key={pad.name}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#DCE3EE] bg-white px-2 py-1.5 text-xs font-semibold text-[#37455C]"
+            <div className={styles.selector} role="tablist" aria-label="활용 대상">
+              {page.who.items.map((item, index) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeWho === index}
+                  aria-controls="selected-audience"
+                  className={activeWho === index ? styles.optionActive : styles.option}
+                  onClick={() => setActiveWho(index)}
                 >
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: pad.hex }} aria-hidden />
-                  {pad.ko}
-                </li>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <strong className={koreanText}>{item.label}</strong>
+                </button>
               ))}
-            </ul>
+            </div>
           </div>
+          <article id="selected-audience" role="tabpanel" className={styles.stage}>
+            <div className={styles.stageVisual}>
+              <FieldImage mediaKey={who.mediaKey} sizes="(min-width: 960px) 72vw, 100vw" />
+            </div>
+            <p className={`${styles.stageCaption} ${koreanText}`}>{who.body}</p>
+          </article>
         </div>
       </section>
 
-      <section id={page.usePaths.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`} aria-labelledby="spomove-paths-heading">
-        <div className={marketingSectionInner}>
-          <p className={homeSectionEyebrow}>{page.usePaths.eyebrow}</p>
-          <h2 id="spomove-paths-heading" className={`${marketingSectionDisplay} mt-3`}>
-            {page.usePaths.title}
+      <section id={page.cases.id} className={`${styles.band} ${styles.bandProof}`} aria-labelledby="spomove-cases-heading">
+        <div className={styles.rail}>
+          <p className={styles.sectionCode}>06 / {page.cases.eyebrow}</p>
+          <h2 id="spomove-cases-heading" className={`${marketingSectionDisplay} ${styles.heading}`}>
+            <span>{page.cases.titleLines[0]}</span>
+            <span>{page.cases.titleLines[1]}</span>
           </h2>
-          <p className={`mt-3 max-w-2xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-            {page.usePaths.lead}
-          </p>
-          <ul className="mt-8 grid grid-cols-1 gap-4 min-[800px]:grid-cols-2">
-            {page.usePaths.items.map((item) => (
-              <li key={item.id} className="min-w-0">
-                <TrackedLink
-                  href={item.href}
-                  trackLabel={item.trackLabel}
-                  commercialRoute={item.id === 'institution' ? 'dispatch' : 'curriculum'}
-                  ctaIntentId={item.trackLabel}
-                  className={`${marketingCardInteractive} ${brandFocusRing} group flex h-full flex-col overflow-hidden`}
-                >
-                  <div className="flex min-h-[13rem] flex-col px-5 py-5 sm:px-6 sm:py-6">
-                    <p className="text-[12px] font-bold tracking-[0.08em]" style={{ color: brandBlue }}>
-                      {item.badge}
-                    </p>
-                    <h3 className={`mt-1.5 text-lg font-bold sm:text-xl ${koreanText}`} style={{ color: brandInk }}>
-                      {item.title}
-                    </h3>
-                    <p className={`mt-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>{item.body}</p>
-                    <ul className="mt-3.5 flex flex-wrap gap-1.5">
-                      {item.bullets.map((bullet) => (
-                        <li
-                          key={bullet}
-                          className="rounded-full border border-[#D6E3FF] bg-[#EAF1FF] px-2.5 py-1 text-[11px] font-semibold text-[#2C446D]"
-                        >
-                          {bullet}
-                        </li>
-                      ))}
-                    </ul>
-                    <span
-                      className="mt-auto inline-flex items-center gap-1.5 pt-5 text-[15px] font-semibold"
-                      style={{ color: brandBlue }}
-                    >
-                      {item.ctaLabel}
-                      <HomeChevron />
-                    </span>
-                  </div>
-                </TrackedLink>
-              </li>
-            ))}
-          </ul>
         </div>
-      </section>
-
-      <section id={page.cases.id} className={`${marketingSectionPadCompact} ${homeBandSoftBlue}`} aria-labelledby="spomove-cases-heading">
-        <div className={marketingSectionInner}>
-          <div className="flex flex-col gap-4 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between">
-            <div className="max-w-2xl">
-              <p className={homeSectionEyebrow}>{page.cases.eyebrow}</p>
-              <h2 id="spomove-cases-heading" className={`${marketingSectionDisplay} mt-3`}>
-                {page.cases.title}
-              </h2>
-              <p className={`mt-3 text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
-                {page.cases.lead}
-              </p>
-            </div>
-            <TrackedLink
-              href={page.cases.recordsCta.href}
-              trackLabel={page.cases.recordsCta.trackLabel}
-              className={`${marketingButtonSecondary} h-11 shrink-0 px-5 ${brandFocusRing}`}
-            >
-              {page.cases.recordsCta.label}
+        {proof ? (
+          <div className={styles.breakout}>
+            <TrackedLink href={proof.href} trackLabel={proof.trackLabel} className={`${styles.proofLink} ${brandFocusRing}`}>
+              <figure className={styles.proofFigure}>
+                {proof.thumbnailSrc ? (
+                  <Image
+                    src={proof.thumbnailSrc}
+                    alt={`${proof.venue} 현장`}
+                    fill
+                    sizes="92vw"
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <FieldImage mediaKey={proof.mediaKey} sizes="92vw" />
+                )}
+                <figcaption className={styles.proofCaption}>
+                  <p className={styles.proofMeta}>
+                    {proof.venue}
+                  </p>
+                  <h3 className={koreanText}>{proof.programLabel} {proof.operationType}</h3>
+                  <p className={`${styles.proofBody} ${koreanText}`}>{proof.description}</p>
+                </figcaption>
+              </figure>
             </TrackedLink>
           </div>
-          <ul className="mt-8 grid grid-cols-1 gap-4 min-[800px]:grid-cols-3">
-            {page.cases.cards.map((card) => {
-              const media = HOME_MEDIA[card.mediaKey];
-              return (
-                <li key={card.slug} className="min-w-0">
-                  <TrackedLink
-                    href={card.href}
-                    trackLabel={card.trackLabel}
-                    className={`${marketingCardInteractive} ${brandFocusRing} group flex h-full flex-col overflow-hidden`}
-                  >
-                    <div className="relative aspect-[16/10] overflow-hidden">
-                      {card.thumbnailSrc ? (
-                        <ExternalPhoto
-                          src={card.thumbnailSrc}
-                          alt={`${card.programLabel} — ${card.venue}`}
-                          className="absolute inset-0 h-full w-full"
-                          fit="cover"
-                          quality={90}
-                          sizes="(max-width: 800px) 100vw, 33vw"
-                        />
-                      ) : (
-                        <MediaPanel
-                          media={media}
-                          className={`absolute inset-0 h-full w-full border-0 rounded-none ${homePhotoGrade}`}
-                          sizes="gateCard"
-                          objectFit="cover"
-                        />
-                      )}
-                    </div>
-                    <div className="flex min-h-[11rem] flex-col px-5 py-5">
-                      <p className="text-[12px] font-semibold" style={{ color: brandBlue }}>
-                        {card.operationType} · {card.programLabel}
-                      </p>
-                      <h3 className={`mt-1.5 text-base font-bold sm:text-lg ${koreanText}`} style={{ color: brandInk }}>
-                        {card.venue}
-                      </h3>
-                      <p className={`mt-1 text-sm font-medium text-[#6D7B90] ${koreanText}`}>{card.audience}</p>
-                      <p className={`mt-2 line-clamp-2 text-sm leading-relaxed text-[#536279] ${koreanText}`}>
-                        {card.description}
-                      </p>
-                      <span
-                        className="mt-auto inline-flex items-center gap-1.5 pt-4 text-[15px] font-semibold"
-                        style={{ color: brandBlue }}
-                      >
-                        {card.ctaLabel}
-                        <HomeChevron />
-                      </span>
-                    </div>
-                  </TrackedLink>
-                </li>
-              );
-            })}
-          </ul>
+        ) : null}
+        <div className={styles.rail}>
+          <ArrowLink href={page.cases.recordsCta.href} trackLabel={page.cases.recordsCta.trackLabel}>
+            {page.cases.recordsCta.label}
+          </ArrowLink>
         </div>
       </section>
 
-      <section id={page.catalogFinal.id} className={`${marketingSectionPadCompact} ${homeBandWhite}`}>
-        <div className={marketingSectionInner}>
-          <div className="overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white px-5 py-8 shadow-[0_18px_50px_rgba(15,33,70,0.07)] sm:px-8 sm:py-10">
-            <p className="text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: brandBlue }}>
-              {page.catalogFinal.eyebrow}
-            </p>
-            <h2 className={`${marketingSectionDisplay} mt-3 text-[1.65rem] sm:text-[2rem]`}>{page.catalogFinal.title}</h2>
-            <p className={`mt-3 max-w-xl text-[15px] leading-relaxed text-[#536279] ${koreanText}`}>
-              {page.catalogFinal.lead}
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <TrackedLink
-                href={page.catalogFinal.catalogCta.href}
-                trackLabel={page.catalogFinal.catalogCta.trackLabel}
-                className={`${marketingButtonSecondary} h-11 px-5 ${brandFocusRing}`}
-              >
-                {page.catalogFinal.catalogCta.label}
-              </TrackedLink>
-              <TrackedLink
-                href={page.catalogFinal.materialsLink.href}
-                trackLabel={page.catalogFinal.materialsLink.trackLabel}
-                className={`inline-flex h-11 items-center text-[14px] font-semibold text-[#536279] underline-offset-4 hover:underline ${brandFocusRing} ${koreanText}`}
-              >
-                {page.catalogFinal.materialsLink.label}
-              </TrackedLink>
-            </div>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <TrackedLink
-                href={page.catalogFinal.primary.href}
-                trackLabel={page.catalogFinal.primary.trackLabel}
-                commercialRoute="dispatch"
-                ctaIntentId={page.catalogFinal.primary.trackLabel}
-                selectionId="spomove"
-                className={`${marketingButtonPrimary} h-12 min-h-12 px-7 ${brandFocusRing}`}
-              >
-                {page.catalogFinal.primary.label}
-              </TrackedLink>
-              <TrackedLink
-                href={page.catalogFinal.secondary.href}
-                trackLabel={page.catalogFinal.secondary.trackLabel}
-                commercialRoute="curriculum"
-                ctaIntentId={page.catalogFinal.secondary.trackLabel}
-                className={`${marketingButtonSecondary} h-12 min-h-12 px-7 ${brandFocusRing}`}
-              >
-                {page.catalogFinal.secondary.label}
-              </TrackedLink>
-            </div>
+      <section id={page.spomat.id} className={`${styles.band} ${styles.bandQuiet}`} aria-labelledby="spomove-spomat-heading">
+        <div className={`${styles.rail} ${styles.split}`}>
+          <div>
+            <p className={styles.sectionCode}>07 / {page.spomat.eyebrow}</p>
+            <h2 id="spomove-spomat-heading" className={`${marketingSectionDisplay} ${styles.heading}`}>
+              <span>{page.spomat.titleLines[0]}</span>
+              <span>{page.spomat.titleLines[1]}</span>
+            </h2>
+            <p className={`${styles.lead} ${koreanText}`}>{page.spomat.body}</p>
+            <ArrowLink href={page.spomat.detailHref} trackLabel={page.spomat.detailTrackLabel}>
+              {page.spomat.detailLabel}
+            </ArrowLink>
           </div>
+          <div className={styles.wideVisual}>
+            <FieldImage mediaKey={page.spomat.usageMediaKey} sizes="(min-width: 960px) 70vw, 100vw" />
+          </div>
+        </div>
+      </section>
+
+      <section id={page.master.id} className={`${styles.band} ${styles.bandStrong} ${styles.bandMaster}`} aria-labelledby="spomove-master-heading">
+        <div className={styles.rail}>
+          <p className={styles.sectionCode}>08 / {page.master.eyebrow}</p>
+          <h2 id="spomove-master-heading" className={`${marketingSectionDisplay} ${styles.headingWide}`}>
+            <span>{page.master.titleLines[0]}</span>
+            <span>{page.master.titleLines[1]}</span>
+          </h2>
+          <p className={`${styles.lead} ${koreanText}`}>{page.master.body}</p>
+        </div>
+        <div className={styles.breakout}>
+          <div className={styles.masterVisual}>
+            <Image
+              src={page.master.visualSrc}
+              alt={page.master.visualAlt}
+              fill
+              sizes="(min-width: 960px) 92vw, 100vw"
+              style={{ objectFit: 'contain', objectPosition: page.master.objectPosition }}
+            />
+          </div>
+        </div>
+        <div className={styles.rail}>
+          <ArrowLink href={page.master.primaryCta.href} trackLabel={page.master.primaryCta.trackLabel}>
+            {page.master.primaryCta.label}
+          </ArrowLink>
+        </div>
+      </section>
+
+      <section id={page.catalogFinal.id} className={styles.final} aria-labelledby="spomove-final-heading">
+        <div className={styles.rail}>
+          <p className={styles.sectionCode}>09 / {page.catalogFinal.eyebrow}</p>
+          <h2 id="spomove-final-heading" className={`${marketingSectionDisplay} ${styles.heading}`}>
+            <span>{page.catalogFinal.titleLines[0]}</span>
+            <span>{page.catalogFinal.titleLines[1]}</span>
+          </h2>
+          <nav className={styles.finalCtas} aria-label="이용">
+            <ArrowLink
+              href={page.catalogFinal.primary.href}
+              trackLabel={page.catalogFinal.primary.trackLabel}
+              commercialRoute="curriculum"
+              ctaIntentId={page.catalogFinal.primary.trackLabel}
+            >
+              {page.catalogFinal.primary.label}
+            </ArrowLink>
+            <ArrowLink
+              href={page.catalogFinal.secondary.href}
+              trackLabel={page.catalogFinal.secondary.trackLabel}
+              commercialRoute="dispatch"
+              ctaIntentId={page.catalogFinal.secondary.trackLabel}
+            >
+              {page.catalogFinal.secondary.label}
+            </ArrowLink>
+          </nav>
         </div>
       </section>
     </main>

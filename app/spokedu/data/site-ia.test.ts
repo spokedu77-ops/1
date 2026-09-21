@@ -7,6 +7,7 @@ import { spomoveActivityVisuals } from '../components/spomove-program-landing';
 import { aboutFounder } from './about-founder';
 import { curriculumPage } from './curriculum-page';
 import { HOME_MEDIA } from './home-media';
+import { HOME_IMAGE_SLOTS } from './home-image-roles';
 import { dispatchPage } from './dispatch-page';
 import { HOME_FIELD_EDITORIAL, HOME_MAIN_CASE_SLUGS, homePage } from './home-page';
 import * as privateModule from './private-page';
@@ -280,6 +281,23 @@ describe('spokedu site IA', () => {
     const spomoveDetail = HOME_MEDIA[homePage.spomove.mediaKey];
 
     expect(HOME_MEDIA[homePage.hero.mediaKey].asset).toBe(SPOKEDU_IMAGES.home.fieldGymMotion);
+    expect(SPOKEDU_IMAGES.home.fieldGymMotion.kind).toBe('directed-visual');
+    expect(HOME_IMAGE_SLOTS.hero.role).toBe('brand');
+    expect(HOME_IMAGE_SLOTS.hero.directedVisualAllowed).toBe(true);
+    expect(homePage.serviceChoices.map((item) => item.mediaKey)).toEqual([
+      'homeServiceInstitution',
+      'homeServicePrivate',
+      'homeMasterUi',
+    ]);
+    expect(HOME_MEDIA.homeServiceInstitution.asset).toBe(SPOKEDU_IMAGES.home.serviceInstitution);
+    expect(HOME_MEDIA.homeServicePrivate.asset).toBe(SPOKEDU_IMAGES.home.servicePrivate);
+    expect(SPOKEDU_IMAGES.home.serviceInstitution.kind).toBe('directed-visual');
+    expect(SPOKEDU_IMAGES.home.servicePrivate.kind).toBe('directed-visual');
+    expect(SPOKEDU_IMAGES.home.fieldMasterUi.kind).toBe('screen');
+    expect(HOME_IMAGE_SLOTS['explorer-subscription'].directedVisualAllowed).toBe(false);
+    expect(HOME_IMAGE_SLOTS['field-records'].directedVisualAllowed).toBe(false);
+    expect(HOME_IMAGE_SLOTS['built-field'].origin).toBe('field-photo');
+    expect(homePage.cases.cards.every((card) => !card.editorialSrc.includes('home-service-') && !card.editorialSrc.includes('home-hero-gym-motion'))).toBe(true);
     expect(spomoveDetail.asset).toBe(SPOKEDU_IMAGES.home.fieldSpomoveDive);
     expect(canUseSpokeduImageOnPage(spomoveDetail.asset!, 'home')).toBe(true);
     expect(homePage.spomove.screen.src).toBe(HOME_FIELD_EDITORIAL.spomoveDive);
@@ -472,13 +490,31 @@ describe('spokedu site IA', () => {
   });
 
   it('exposes SPOMOVE static landing with dual paths and catalog fallback contracts', () => {
-    expect(spomoveProgramPage.sectionOrder).toHaveLength(7);
-    expect(spomoveProgramPage.hero.lines.join(' ')).toMatch(/화면|움직임|SPOMOVE/);
-    expect(spomoveProgramPage.flow.steps.map((step) => step.label)).toEqual(['확인', '판단', '수행', '조절']);
+    expect(spomoveProgramPage.sectionOrder).toEqual([
+      'hero',
+      'flow',
+      'experience',
+      'variation',
+      'audience',
+      'cases',
+      'spomat',
+      'master',
+      'catalogFinal',
+    ]);
+    expect(spomoveProgramPage.hero.lines.join(' ')).toMatch(/움직임|시지각/);
+    expect(spomoveProgramPage.flow.steps.map((step) => step.label)).toEqual(['SEE', 'DECIDE', 'MOVE']);
+    expect(spomoveProgramPage.variation.tracks.map((track) => track.label)).toEqual([
+      '자극 시간',
+      '과제 구조',
+      '참여 방식',
+      '움직임',
+    ]);
+    expect(spomoveProgramPage.who.items.map((item) => item.id)).toEqual(['early', 'school', 'adapted', 'small']);
     expect(spomoveProgramPage.content.levels.map((level) => level.id)).toEqual(['simple', 'choice', 'complex']);
-    expect(spomoveProgramPage.content.catalogCta.href).toBe(`${SPOKEDU_PATHS.spomoveCatalog}`);
-    expect(spomoveProgramPage.spomat.title).toMatch(/SPOMAT/);
-    expect(spomoveProgramPage.spomat.body).toMatch(/도구/);
+    expect(spomoveProgramPage.experience.catalogCta.href).toBe(`${SPOKEDU_PATHS.spomoveCatalog}`);
+    expect(spomoveProgramPage.spomat.title).toMatch(/움직임/);
+    expect(spomoveProgramPage.spomat.body).toMatch(/SPOMAT/);
+    expect(spomoveProgramPage.spomat.detailHref).toContain('/spomat');
     expect(spomoveProgramPage.usePaths.items.map((item) => item.id)).toEqual(['institution', 'subscription']);
     expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'institution')?.href).toContain('/education');
     expect(spomoveProgramPage.usePaths.items.find((item) => item.id === 'institution')?.href).toContain('program=spomove');
@@ -491,9 +527,11 @@ describe('spokedu site IA', () => {
     expect(spomoveProgramPage.cases.cards.every((card) => /SPOMOVE|spomove|에듀테크|반응/i.test(`${card.programLabel} ${card.description} ${card.audience}`))).toBe(
       true,
     );
-    expect(spomoveProgramPage.catalogFinal.primary.href).toContain('/education');
-    expect(spomoveProgramPage.catalogFinal.secondary.href).toBe(`${SPOKEDU_PATHS.subscription}`);
+    expect(spomoveProgramPage.catalogFinal.primary.href).toBe(`${SPOKEDU_PATHS.subscription}`);
+    expect(spomoveProgramPage.catalogFinal.secondary.href).toContain('/education');
+    expect(spomoveProgramPage.catalogFinal.secondary.href).toContain('program=spomove');
     expect(JSON.stringify(spomoveProgramPage)).not.toMatch(/SPO-MAT|집중력이 향상|인지능력이|발달 회복|치료 효과|검증된 효과|9,900|15,?015/);
+    expect(spomoveProgramPage.who.items.find((item) => item.id === 'school')?.body).toMatch(/필수는 아닙니다/);
     expect(spomoveProgramPage.usePaths.items[0]?.body).toMatch(/필수는 아닙니다/);
     expect(spomoveProgramPage.usePaths.items[0]?.body).not.toMatch(/필수로 포함됩니다|반드시 포함/);
   });
@@ -506,11 +544,17 @@ describe('spokedu site IA', () => {
     ];
     const activityMediaKeys = spomoveProgramPage.activities.items.map((item) => item.mediaKey);
 
-    expect(activityMediaKeys).toContain('spomoveRhythmField');
-    expect(activityMediaKeys).toContain('spomoveSimonScreen');
-    expect(activityMediaKeys).toContain('spomoveFlankerScreen');
-    expect(activityMediaKeys).toContain('spomoveStroopScreen');
-    expect(activityMediaKeys).toContain('spomoveColorReactionField');
+    expect(activityMediaKeys).toEqual([
+      'spomoveScreenColor',
+      'spomoveScreenDirection',
+      'spomoveAssocField',
+      'spomoveScreenFlash',
+      'spomoveRhythmField',
+      'spomoveActionField',
+    ]);
+    expect(new Set(activityMediaKeys).size).toBe(6);
+    expect(activityMediaKeys).not.toContain('spomoveFlankerScreen');
+    expect(activityMediaKeys).not.toContain('spomoveStroopScreen');
     expect(activityMediaKeys).not.toContain('proofCenter');
     expect(activityMediaKeys).not.toContain('proofClass');
     expect(activityMediaKeys).not.toContain('trackDispatch');
@@ -533,6 +577,38 @@ describe('spokedu site IA', () => {
       if (!media.asset) continue;
       expect(getSpokeduImageUsageErrors(media.asset, requirement), slot.mediaKey).toEqual([]);
     }
+  });
+
+  it('keeps SPOMOVE landing visuals unique and SPOMAT layout canonical', () => {
+    const srcs = [
+      HOME_MEDIA[spomoveProgramPage.hero.mediaKey].src,
+      HOME_MEDIA[spomoveProgramPage.flow.mediaKey].src,
+      HOME_MEDIA[spomoveProgramPage.spomat.usageMediaKey].src,
+      spomoveProgramPage.master.visualSrc,
+      ...spomoveProgramPage.who.items.map((item) => HOME_MEDIA[item.mediaKey].src),
+      ...spomoveProgramPage.activities.items.map((item) => HOME_MEDIA[item.mediaKey].src),
+      ...spomoveProgramPage.cases.cards.map((card) => card.thumbnailSrc ?? HOME_MEDIA[card.mediaKey].src),
+    ].filter((src): src is string => Boolean(src));
+
+    expect(new Set(srcs).size).toBe(srcs.length);
+    expect(spomoveProgramPage.cases.cards.map((card) => card.slug)).toEqual(['dongjak-spomove']);
+    expect(HOME_MEDIA[spomoveProgramPage.spomat.mediaKey].src).toContain('spomat-layout.png');
+    expect(HOME_MEDIA[spomoveProgramPage.spomat.usageMediaKey].src).toContain('spe-06');
+    expect(spomoveProgramPage.spomat.points[1]?.body).toMatch(/빨강·노랑/);
+    expect(spomoveProgramPage.spomat.points[1]?.body).toMatch(/초록·파랑/);
+
+    for (const item of spomoveProgramPage.who.items) {
+      const media = HOME_MEDIA[item.mediaKey];
+      expect(media.asset, `${item.mediaKey} must expose its backing image asset`).toBeDefined();
+      if (!media.asset) continue;
+      expect(getSpokeduImageUsageErrors(media.asset, item.mediaRequirement), item.mediaKey).toEqual([]);
+    }
+    expect(
+      getSpokeduImageUsageErrors(
+        HOME_MEDIA[spomoveProgramPage.spomat.usageMediaKey].asset!,
+        spomoveProgramPage.spomat.usageMediaRequirement,
+      ),
+    ).toEqual([]);
   });
 });
 
