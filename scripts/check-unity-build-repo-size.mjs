@@ -3,7 +3,10 @@ import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const UNITY_ROOT = 'public/spomove/dive/unity/';
-const PRODUCTION_THEME2_ROOT = `${UNITY_ROOT}theme2/`;
+const PRODUCTION_ROOTS = [
+  `${UNITY_ROOT}theme2/`,
+  `${UNITY_ROOT}player/`,
+];
 const LARGE_BINARY_BYTES = 40 * 1024 * 1024;
 const TEST_BUILD_PATTERN = /(?:player_release_test|theme2_backup_[^/]+|theme2_camera_test|theme2_session_test|[^/]+_test)\//;
 const UNITY_BINARY_PATTERN = /\.(?:data|wasm)$/i;
@@ -18,7 +21,7 @@ const violations = [];
 
 for (const path of stagedPaths) {
   const normalizedPath = path.replaceAll('\\', '/');
-  if (!normalizedPath.startsWith(UNITY_ROOT) || normalizedPath.startsWith(PRODUCTION_THEME2_ROOT)) continue;
+  if (!normalizedPath.startsWith(UNITY_ROOT) || PRODUCTION_ROOTS.some((root) => normalizedPath.startsWith(root))) continue;
 
   let size = 0;
   try {
@@ -40,7 +43,7 @@ for (const path of stagedPaths) {
 if (violations.length > 0) {
   console.error('Unity build repository size guard failed:');
   for (const violation of violations) console.error(`- ${violation}`);
-  console.error(`Production allowlist: ${PRODUCTION_THEME2_ROOT}`);
+  console.error(`Production allowlist: ${PRODUCTION_ROOTS.join(', ')}`);
   process.exit(1);
 }
 

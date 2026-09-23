@@ -1,0 +1,30 @@
+{
+    "schema": "spokedu-dive-addressables-deployment-manifest-v1",
+    "generatedUtc": "2026-09-22T22:44:07.1128471Z",
+    "profile": "DIVE Remote Production",
+    "buildTarget": "WebGL",
+    "remoteBuildPath": "ProductionAddressables/spomove/dive/addressables/[BuildTarget]",
+    "remoteLoadPathTemplate": "[DIVE.CDNBaseUrl]/spomove/dive/addressables/[BuildTarget]",
+    "cdnBaseUrl": "https://spokedu.kr",
+    "note": "Golden Theme production cutover for spokedu.kr.",
+    "files": [
+        {
+            "filename": "catalog_0.1.0.bin",
+            "bytes": 2370,
+            "sha256": "3ef2a085108ef4b6d5a68e94a1772817755bf7402f26bc000aca0da4b2816712",
+            "role": "Addressables catalog"
+        },
+        {
+            "filename": "catalog_0.1.0.hash",
+            "bytes": 32,
+            "sha256": "ca1af3ea15aac14074d7eec69528f5cd06a02dfc67fc3b51f1e49aa87501a8d3",
+            "role": "catalog hash"
+        },
+        {
+            "filename": "divetheme-goldentheme01_assets_all_c1d8316736ea32471365065597e5edbf.bundle",
+            "bytes": 7458013,
+            "sha256": "bf100684b05ace11e55ae725bc736798f35926b44c3309f774ae5f53d7415a40",
+            "role": "Golden Theme 01 bundle"
+        }
+    ]
+}

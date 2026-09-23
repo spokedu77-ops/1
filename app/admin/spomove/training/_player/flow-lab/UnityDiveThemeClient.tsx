@@ -37,18 +37,28 @@ type ActiveStage = { index: number; name: string; duration: number };
 type PrepareCard = Pick<StageEventPayload, 'stageName' | 'introTitle' | 'introDescription' | 'introBadge' | 'introDuration'>;
 
 const LOCAL_UNITY_SESSION_URL = '/spomove/dive/unity/player_release_test/index.html';
+const DEFAULT_PRODUCTION_SINGLE_PLAYER_URL = '/spomove/dive/unity/player/index.html';
 const PRODUCTION_UNITY_SESSION_URL = '/spomove/dive/unity/theme2/index.html';
-const PRODUCTION_SINGLE_PLAYER_ENABLED = process.env.NEXT_PUBLIC_DIVE_SINGLE_PLAYER_ENABLED === '1';
-const PRODUCTION_SINGLE_PLAYER_URL = process.env.NEXT_PUBLIC_DIVE_UNITY_PLAYER_URL?.trim() ?? '';
+const PRODUCTION_SINGLE_PLAYER_ENABLED = isProductionSinglePlayerEnabled(process.env.NEXT_PUBLIC_DIVE_SINGLE_PLAYER_ENABLED);
+const PRODUCTION_SINGLE_PLAYER_URL = resolveProductionSinglePlayerUrl(process.env.NEXT_PUBLIC_DIVE_UNITY_PLAYER_URL);
 const COUNTDOWN_SECONDS = 3;
 const GO_DISPLAY_MS = 450;
 const THEME_READY_TIMEOUT_MS = 30_000;
+
+export function isProductionSinglePlayerEnabled(value: string | undefined) {
+  return value !== '0';
+}
+
+export function resolveProductionSinglePlayerUrl(value: string | undefined) {
+  return value?.trim() || DEFAULT_PRODUCTION_SINGLE_PLAYER_URL;
+}
 
 export function isLocalDiveHostname(hostname: string) {
   return hostname === 'localhost' || hostname === '127.0.0.1';
 }
 
 export function isSafeProductionSinglePlayerUrl(value: string) {
+  if (value.startsWith('/') && !value.startsWith('//')) return true;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' && !isLocalDiveHostname(url.hostname);
@@ -65,7 +75,11 @@ export function resolveDivePlayer(hostname: string, productionEnabled: boolean, 
 
 export default function UnityDiveThemeClient({ config, durationSec, onComplete, onExit, onSessionStart, onSessionStop }: Props) {
   const { themeId, stageDuration, side, jump, duck, bonus } = config;
-  const player = typeof window === 'undefined' ? { contract: 'legacy-theme2' as const, url: PRODUCTION_UNITY_SESSION_URL } : resolveDivePlayer(window.location.hostname, PRODUCTION_SINGLE_PLAYER_ENABLED, PRODUCTION_SINGLE_PLAYER_URL);
+  const player = resolveDivePlayer(
+    typeof window === 'undefined' ? 'production.invalid' : window.location.hostname,
+    PRODUCTION_SINGLE_PLAYER_ENABLED,
+    PRODUCTION_SINGLE_PLAYER_URL,
+  );
   const usesSinglePlayerContract = player.contract === 'single-player';
   const unityTargetOrigin = typeof window === 'undefined' ? '' : new URL(player.url, window.location.href).origin;
   const iframeRef = useRef<HTMLIFrameElement>(null);
