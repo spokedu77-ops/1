@@ -26,11 +26,27 @@ export type DiveThemeEntry = {
 /** Admin UI 표시 라벨 (이름 확정 전 임시) */
 export const DIVE_THEME_UI: ReadonlyArray<{ id: DiveThemeId; label: string }> = [
   { id: 'space', label: 'SPACE' },
-  { id: 'theme2', label: 'SPORTS ARENA' },
-  { id: 'theme3', label: '테마 3' },
+  { id: 'theme2', label: '놀이공원' },
+  { id: 'theme3', label: '정글' },
   { id: 'theme4', label: '테마 4' },
   { id: 'theme5', label: '테마 5' },
 ];
+
+export type DiveActionMoveUnityTheme = 'theme2' | 'theme3';
+export type DiveUnityThemeId = 'golden-theme-01' | 'jungle-adventure-01';
+
+const DIVE_UNITY_THEME_IDS: Record<DiveActionMoveUnityTheme, DiveUnityThemeId> = {
+  theme2: 'golden-theme-01',
+  theme3: 'jungle-adventure-01',
+};
+
+export function isDiveActionMoveUnityTheme(themeId: unknown): themeId is DiveActionMoveUnityTheme {
+  return themeId === 'theme2' || themeId === 'theme3';
+}
+
+export function resolveDiveUnityThemeId(themeId: DiveThemeId): DiveUnityThemeId | null {
+  return isDiveActionMoveUnityTheme(themeId) ? DIVE_UNITY_THEME_IDS[themeId] : null;
+}
 
 export function isDiveThemeId(value: unknown): value is DiveThemeId {
   return typeof value === 'string' && (DIVE_THEME_IDS as readonly string[]).includes(value);

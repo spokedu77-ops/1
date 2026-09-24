@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -50,7 +50,12 @@ import {
   type SpomoveMemoryColorId,
 } from './_player/lib/memoryColorSlots';
 import { loadFlowPresets, saveFlowPresets, type FlowPreset } from './_player/lib/flowPresets';
-import { DIVE_THEME_UI, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
+import {
+  diveActionMoveDurationSec,
+  formatDiveActionMoveDuration,
+  formatDiveActionMoveDurationDetail,
+} from '@/app/lib/spomove/diveActionMoveTiming';
+import { DIVE_THEME_UI, isDiveActionMoveUnityTheme, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { VariantAppendixFullscreen } from './_player/components/VariantAppendixFullscreen';
 import { ColorGatePoseAppendix } from './_player/components/ColorGatePoseAppendix';
 import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
@@ -567,6 +572,19 @@ type PagePhase =
   | { tag: 'settings'; modeId: string; levelId?: number; launch?: LaunchSettings }
   | { tag: 'training'; modeId: string; levelId: number; launch: LaunchSettings };
 
+function diveAdminChoiceStyle(active: boolean, accent: string, tone: 'cyan' | 'amber' = 'cyan'): CSSProperties {
+  const color = tone === 'amber' ? '#F59E0B' : accent;
+  return {
+    minHeight: 44,
+    borderRadius: 12,
+    border: `1.5px solid ${active ? color : T.border}`,
+    background: active ? `${color}18` : T.card,
+    color: active ? color : T.textDim,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+  };
+}
+
 function SettingsGuideVideoIframe({ videoUrl, accent }: { videoUrl?: string | null; accent: string }) {
   const src = videoUrl?.trim() ? youtubeWatchOrShareToEmbedSrc(videoUrl) : null;
   if (!src) return null;
@@ -962,7 +980,7 @@ function SettingsScreen({
   const { data: diveEnvData } = useSpomoveDiveEnvironments();
 
   const saveFlowPreset = () => {
-    const name = window.prompt('즐겨찾기 이름', `세팅 ${flowPresets.length + 1}`);
+    const name = window.prompt('프리셋 이름', `세팅 ${flowPresets.length + 1}`);
     if (!name) return;
     const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], sportsArenaFeatures: [...launch.sportsArenaFeatures], environmentTheme: launch.diveEnvironmentTheme, duration: launch.flowDuration, includeBonus: launch.flowIncludeBonus, colorGateCategory: launch.colorGateCategory }];
     const result = saveFlowPresets(next);
@@ -1133,8 +1151,12 @@ function SettingsScreen({
             >
               <span style={{ color: accent, fontSize: 11, fontWeight: 800, width: 18 }}>{guideOpen ? '▼' : '▶'}</span>
               <span style={{ fontSize: 13, fontWeight: 700 }}>
-                엔진 · 난이도 안내 {guideBlock ? `· ${modeLabelKoEn(modeId)}` : ''}
-                <span style={{ fontWeight: 600, color: T.muted }}> ({levelLabelKoEn(modeId, levelId)})</span>
+                {isFlowOrChallenge ? '활동 안내 · DIVE' : (
+                  <>
+                    엔진 · 난이도 안내 {guideBlock ? `· ${modeLabelKoEn(modeId)}` : ''}
+                    <span style={{ fontWeight: 600, color: T.muted }}> ({levelLabelKoEn(modeId, levelId)})</span>
+                  </>
+                )}
               </span>
             </button>
             {guideOpen ? (
@@ -1183,7 +1205,7 @@ function SettingsScreen({
           {/* 세부 테마 */}
           <section style={{ marginBottom: isFlowOrChallenge ? 10 : 18 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>세부 테마</label>
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>{isFlowOrChallenge ? '활동 유형' : '세부 테마'}</label>
               <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
                 {levelLabelKoEn(modeId, levelId)}
               </div>
@@ -2426,7 +2448,7 @@ function SettingsScreen({
 
           {/* Flow 전용: Hub 파노라마 환경 테마 */}
           {isFlowOrChallenge ? (
-            <section style={{ marginBottom: 10 }}>
+            <section style={{ marginBottom: 12 }}>
               <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>환경 테마</label>
               </div>
@@ -2438,20 +2460,18 @@ function SettingsScreen({
                     <button
                       key={id}
                       type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, diveEnvironmentTheme: id, flowDuration: id === 'theme2' && !ACTION_MOVE_STAGE_SECONDS.includes(s.flowDuration as (typeof ACTION_MOVE_STAGE_SECONDS)[number]) ? DEFAULT_ACTION_MOVE_STAGE_SEC : s.flowDuration }))}
+                      onClick={() => setLaunch((s) => ({ ...s, diveEnvironmentTheme: id, flowDuration: isDiveActionMoveUnityTheme(id) && !ACTION_MOVE_STAGE_SECONDS.includes(s.flowDuration as (typeof ACTION_MOVE_STAGE_SECONDS)[number]) ? DEFAULT_ACTION_MOVE_STAGE_SEC : s.flowDuration }))}
                       style={{
+                        ...diveAdminChoiceStyle(active, accent),
                         flex: '1 1 88px',
-                        padding: '7px 5px',
-                        borderRadius: 10,
-                        border: `1.5px solid ${active ? '#8B5CF6' : T.border}`,
-                        background: active ? 'rgba(139,92,246,0.16)' : T.card,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
+                        padding: '8px 10px',
                         textAlign: 'center',
+                        whiteSpace: 'nowrap',
+                        wordBreak: 'keep-all',
                       }}
                       title={hasHub ? 'Hub 파노라마' : '정적 폴백'}
                     >
-                      <div style={{ fontWeight: 900, fontSize: 12, color: active ? '#8B5CF6' : T.text }}>{active ? '✓ ' : ''}{label}</div>
+                      <div style={{ fontWeight: 900, fontSize: 12, lineHeight: 1.2 }}>{active ? '✓ ' : ''}{label}</div>
                       {!hasHub ? <div style={{ fontSize: 9, color: T.muted, marginTop: 2 }}>폴백</div> : null}
                     </button>
                   );
@@ -2462,9 +2482,9 @@ function SettingsScreen({
 
           {/* Flow 전용: 스테이지 시간 */}
           {isFlowOrChallenge ? (
-            <section style={{ marginBottom: 10 }}>
+            <section style={{ marginBottom: 12 }}>
               <div style={{ marginBottom: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>스테이지당 시간</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>{isColorGateTheme ? '스테이지당 시간' : '스테이지 시간'}</label>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {(isColorGateTheme ? COLOR_GATE_STAGE_SECONDS : ACTION_MOVE_STAGE_SECONDS).map((sec) => {
@@ -2475,12 +2495,13 @@ function SettingsScreen({
                       type="button"
                       onClick={() => setLaunch((s) => ({ ...s, flowDuration: sec }))}
                       style={{
-                        flex: '1 1 60px', padding: '7px 6px', borderRadius: 10,
-                        border: `1.5px solid ${active ? '#3B82F6' : T.border}`,
-                        background: active ? 'rgba(59,130,246,0.14)' : T.card,
-                        color: active ? '#3B82F6' : T.textDim,
-                        fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 900 : 700,
-                        cursor: 'pointer', textAlign: 'center',
+                        ...diveAdminChoiceStyle(active, accent),
+                        flex: '1 1 60px',
+                        padding: '8px 10px',
+                        fontSize: 13,
+                        fontWeight: active ? 900 : 700,
+                        textAlign: 'center',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {sec}초
@@ -2491,22 +2512,21 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {isFlowOrChallenge && !isColorGateTheme && launch.diveEnvironmentTheme === 'theme2' ? (
-            <section style={{ marginBottom: 10 }}>
+          {isFlowOrChallenge && !isColorGateTheme && isDiveActionMoveUnityTheme(launch.diveEnvironmentTheme) ? (
+            <section style={{ marginBottom: 12 }}>
               <div style={{ marginBottom: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>추가 동작 선택</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>액션 구성</label>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
                 {([
-                  { key: 'side' as const, icon: '↔️', label: 'SIDE MOVE', detail: '좌/우 회피' },
-                  { key: 'jump' as const, icon: '⬆️', label: 'JUMP', detail: '장애물 점프' },
-                  { key: 'duck' as const, icon: '⬇️', label: 'DUCK', detail: '장애물 숙이기' },
-                ]).map(({ key, icon, label, detail }) => {
+                  { key: 'side' as const, label: 'SIDE', detail: '좌·우 이동' },
+                  { key: 'jump' as const, label: 'JUMP', detail: '장애물 뛰어넘기' },
+                  { key: 'duck' as const, label: 'DUCK', detail: '숙여 통과하기' },
+                ]).map(({ key, label, detail }) => {
                   const active = launch.sportsArenaFeatures.includes(key);
                   return (
-                    <button key={key} type="button" onClick={() => setLaunch((current) => ({ ...current, sportsArenaFeatures: active ? current.sportsArenaFeatures.filter((feature) => feature !== key) : [...current.sportsArenaFeatures, key] }))} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 10, border: `1.5px solid ${active ? '#22C55E' : T.border}`, background: active ? 'rgba(34,197,94,0.10)' : T.card, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                      <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{icon}</span>
-                      <span><strong style={{ display: 'block', fontSize: 12, color: active ? '#16A34A' : T.text }}>{active ? '✓ ' : ''}{label}</strong><small style={{ color: T.muted }}>{detail}</small></span>
+                    <button key={key} type="button" onClick={() => setLaunch((current) => ({ ...current, sportsArenaFeatures: active ? current.sportsArenaFeatures.filter((feature) => feature !== key) : [...current.sportsArenaFeatures, key] }))} style={{ ...diveAdminChoiceStyle(active, accent), display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', textAlign: 'left', wordBreak: 'keep-all' }}>
+                      <span><strong style={{ display: 'block', fontSize: 12, lineHeight: 1.2, whiteSpace: 'nowrap' }}>{active ? '✓ ' : ''}{label}</strong><small style={{ color: active ? accent : T.muted, whiteSpace: 'nowrap' }}>{detail}</small></span>
                     </button>
                   );
                 })}
@@ -2514,7 +2534,7 @@ function SettingsScreen({
             </section>
           ) : null}
           {/* Flow 전용: 추가 동작 선택 */}
-          {isFlowOrChallenge && !isColorGateTheme && launch.diveEnvironmentTheme !== 'theme2' ? (
+          {isFlowOrChallenge && !isColorGateTheme && !isDiveActionMoveUnityTheme(launch.diveEnvironmentTheme) ? (
             <section style={{ marginBottom: 10 }}>
               <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>추가 동작 선택</label>
@@ -2542,20 +2562,17 @@ function SettingsScreen({
                         });
                       }}
                       style={{
+                        ...diveAdminChoiceStyle(active, accent),
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
                         padding: '8px 10px',
-                        borderRadius: 10,
-                        border: `1.5px solid ${active ? '#22C55E' : T.border}`,
-                        background: active ? 'rgba(34,197,94,0.10)' : T.card,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
                         textAlign: 'left',
+                        wordBreak: 'keep-all',
                       }}
                     >
                       <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{icon}</span>
-                      <span style={{ fontWeight: 900, fontSize: 12, color: active ? '#16A34A' : T.text }}>
+                      <span style={{ fontWeight: 900, fontSize: 12, color: active ? accent : T.text }}>
                         {active ? '✓ ' : ''}{label}
                       </span>
                     </button>
@@ -2566,31 +2583,49 @@ function SettingsScreen({
           ) : null}
 
           {isFlowOrChallenge && !isColorGateTheme ? (
-            <section style={{ marginBottom: 10 }}>
-              <button type="button" onClick={() => setLaunch((current) => ({ ...current, flowIncludeBonus: !current.flowIncludeBonus }))} style={{ width: '100%', minHeight: 44, borderRadius: 10, border: `1.5px solid ${launch.flowIncludeBonus ? '#F59E0B' : T.border}`, background: launch.flowIncludeBonus ? 'rgba(245,158,11,0.10)' : T.card, color: launch.flowIncludeBonus ? '#F59E0B' : T.textDim, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <section style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>보너스</label>
+              </div>
+              <button type="button" onClick={() => setLaunch((current) => ({ ...current, flowIncludeBonus: !current.flowIncludeBonus }))} style={{ ...diveAdminChoiceStyle(launch.flowIncludeBonus, accent, 'amber'), width: '100%', padding: '8px 10px', fontSize: 13, fontWeight: 900, whiteSpace: 'nowrap' }}>
                 {launch.flowIncludeBonus ? '✓ ' : ''}BONUS · 60초
               </button>
-              {launch.diveEnvironmentTheme === 'theme2' ? <p style={{ margin: '6px 0 0', fontSize: 11, fontWeight: 800, color: T.muted }}>예상 총 훈련시간: {10 + launch.sportsArenaFeatures.length * launch.flowDuration + (launch.flowIncludeBonus ? 60 : 0)}초</p> : null}
+              {isDiveActionMoveUnityTheme(launch.diveEnvironmentTheme) ? (() => {
+                const actionMoveSelection = {
+                  side: launch.sportsArenaFeatures.includes('side'),
+                  jump: launch.sportsArenaFeatures.includes('jump'),
+                  duck: launch.sportsArenaFeatures.includes('duck'),
+                  bonus: launch.flowIncludeBonus,
+                };
+                const detail = formatDiveActionMoveDurationDetail(actionMoveSelection, launch.flowDuration);
+                return (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>예상 활동 시간</div>
+                    <div style={{ marginTop: 4, fontSize: 18, fontWeight: 900, color: T.text, whiteSpace: 'nowrap' }}>{formatDiveActionMoveDuration(diveActionMoveDurationSec(actionMoveSelection, launch.flowDuration))}</div>
+                    {detail ? <div style={{ marginTop: 2, fontSize: 11, fontWeight: 700, color: T.textDim, wordBreak: 'keep-all' }}><span style={{ whiteSpace: 'nowrap' }}>{detail}</span></div> : null}
+                  </div>
+                );
+              })() : null}
             </section>
           ) : null}
-          {/* Flow 전용: 즐겨찾기 */}
+          {/* Flow 전용: 프리셋 */}
           {isFlowOrChallenge && !isColorGateTheme ? (
-            <section style={{ marginBottom: 10 }}>
+            <section style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>즐겨찾기</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>프리셋</label>
                 <button
                   type="button"
                   onClick={saveFlowPreset}
-                  style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B', background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)', borderRadius: 8, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ fontSize: 11, fontWeight: 800, color: accent, background: `${accent}18`, border: `1px solid ${accent}55`, borderRadius: 12, minHeight: 32, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
                 >
-                  + 현재 설정 저장
+                  + 프리셋 저장
                 </button>
               </div>
               {flowPresetError && (
                 <p style={{ margin: '0 0 6px', fontSize: 11, color: '#F87171' }}>저장 실패: {flowPresetError}</p>
               )}
               {flowPresets.length === 0 ? (
-                <p style={{ margin: 0, fontSize: 11, color: T.textDim }}>저장된 즐겨찾기가 없습니다. 설정 후 저장하세요.</p>
+                <p style={{ margin: 0, fontSize: 11, color: T.textDim, wordBreak: 'keep-all' }}>저장된 프리셋이 없습니다. 설정 후 저장하세요.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {flowPresets.map((p) => (

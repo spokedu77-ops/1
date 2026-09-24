@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { TrainingResultScreen } from '@/app/admin/spomove/training/_player/components/TrainingResultScreen';
+import type { DiveActionMoveSession } from '@/app/admin/spomove/training/_player/lib/diveActionMoveReport';
 import {
   resultLevelLabel,
   settingsToTrainingResultConfig,
@@ -27,6 +28,7 @@ export function MasterSessionResult({
   intervalWork,
   intervalSets,
   flowDuration,
+  diveActionMove = null,
   recordHref,
   hubHref,
   leaveHref,
@@ -49,6 +51,8 @@ export function MasterSessionResult({
   intervalWork?: number;
   intervalSets?: number;
   flowDuration?: number;
+  /** flow 1 액션무브만. 다른 엔진 결과는 null. */
+  diveActionMove?: DiveActionMoveSession | null;
   recordHref: string | null;
   hubHref: string;
   /** TopBar/목록 — Dashboard/Favorites/Hub/Session 원점 */
@@ -84,8 +88,9 @@ export function MasterSessionResult({
       elapsedMs={elapsedMs}
       colorCounts={colorCounts}
       levelLabel={resultLevelLabel(engineMode, engineLevel)}
-      title={done ? '훈련 완료' : '수업을 종료했습니다'}
-      statusBadge={done ? '정상 완료' : '중도 종료'}
+      title={diveActionMove ? (done ? 'DIVE 활동 완료' : '수업을 종료했습니다') : (done ? '훈련 완료' : '수업을 종료했습니다')}
+      statusBadge={diveActionMove ? (done ? '활동 완료' : '중도 종료') : (done ? '정상 완료' : '중도 종료')}
+      diveActionMove={diveActionMove ? { ...diveActionMove, completed: done } : null}
       programTitle={activityTitle}
       sessionSettings={{
         title: '사용한 설정',

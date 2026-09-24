@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
-import { type DiveThemeId } from '@/app/lib/spomove/diveThemes';
+import { isDiveActionMoveUnityTheme, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
@@ -259,7 +259,7 @@ function SpomoveSessionContent() {
   const [flowIncludeBonus, setFlowIncludeBonus] = useState(() => officialPreset?.engine.flowIncludeBonus ?? true);
   const handleDiveEnvironmentThemeChange = useCallback((theme: DiveThemeId) => {
     setDiveEnvironmentTheme(theme);
-    if (theme === 'theme2') setFlowDuration((seconds) => [15, 20, 25, 30, 35].includes(seconds) ? seconds : 20);
+    if (isDiveActionMoveUnityTheme(theme)) setFlowDuration((seconds) => [15, 20, 25, 30, 35].includes(seconds) ? seconds : 20);
   }, []);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activationBlocked, setActivationBlocked] = useState<
@@ -668,9 +668,9 @@ function SpomoveSessionContent() {
           flowFeatures={officialPreset.engine.flowFeatures}
           sportsArenaFeatures={sportsArenaFeatures}
           diveEnvironmentTheme={diveEnvironmentTheme}
-          flowDuration={diveEnvironmentTheme === 'theme2' ? flowDuration : officialPreset.engine.flowDuration}
+          flowDuration={isDiveActionMoveUnityTheme(diveEnvironmentTheme) ? flowDuration : officialPreset.engine.flowDuration}
           flowLayout={officialPreset.engine.flowLayout}
-          flowIncludeBonus={diveEnvironmentTheme === 'theme2' ? flowIncludeBonus : officialPreset.engine.flowIncludeBonus}
+          flowIncludeBonus={isDiveActionMoveUnityTheme(diveEnvironmentTheme) ? flowIncludeBonus : officialPreset.engine.flowIncludeBonus}
           colorGateVariant={officialPreset.engine.colorGateVariant}
           colorGateCategory={officialPreset.engine.colorGateCategory}
           flankerStimulusType={officialPreset.engine.flankerStimulusType}
@@ -796,7 +796,24 @@ function SpomoveSessionContent() {
             intervalMode={effectiveOperation?.timing.pattern === 'interval'}
             intervalWork={effectiveOperation?.timing.pattern === 'interval' ? effectiveOperation.timing.workSeconds : undefined}
             intervalSets={effectiveOperation?.timing.pattern === 'interval' ? effectiveOperation.timing.sets : undefined}
-            flowDuration={diveEnvironmentTheme === 'theme2' ? flowDuration : officialPreset.engine.flowDuration}
+            flowDuration={isDiveActionMoveUnityTheme(diveEnvironmentTheme) ? flowDuration : officialPreset.engine.flowDuration}
+            diveActionMove={
+              sessionResult.engineMode === 'flow' && sessionResult.engineLevel === 1
+                ? {
+                    completed: state === 'done',
+                    stageDurationSec: isDiveActionMoveUnityTheme(diveEnvironmentTheme)
+                      ? flowDuration
+                      : (officialPreset.engine.flowDuration ?? null),
+                    environmentTheme: diveEnvironmentTheme,
+                    sportsArenaFeatures,
+                    flowFeatures: officialPreset.engine.flowFeatures,
+                    flowIncludeBonus: isDiveActionMoveUnityTheme(diveEnvironmentTheme)
+                      ? flowIncludeBonus
+                      : officialPreset.engine.flowIncludeBonus,
+                    flowLayout: officialPreset.engine.flowLayout,
+                  }
+                : null
+            }
             settings={[
               `SPOMAT ${matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}장`,
               `자극 ${effectiveCueSeconds}초`,

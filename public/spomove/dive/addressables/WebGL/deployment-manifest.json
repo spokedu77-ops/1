@@ -1,30 +1,36 @@
-{
-    "schema": "spokedu-dive-addressables-deployment-manifest-v1",
-    "generatedUtc": "2026-09-24T05:10:30.8502363Z",
-    "profile": "DIVE Remote Production",
-    "buildTarget": "WebGL",
-    "remoteBuildPath": "ProductionAddressables/spomove/dive/addressables/[BuildTarget]",
-    "remoteLoadPathTemplate": "[DIVE.CDNBaseUrl]/spomove/dive/addressables/[BuildTarget]",
-    "cdnBaseUrl": "https://spokedu.kr",
-    "note": "Golden Theme production cutover for spokedu.kr.",
-    "files": [
-        {
-            "filename": "catalog_0.1.0.bin",
-            "bytes": 2370,
-            "sha256": "3ef2a085108ef4b6d5a68e94a1772817755bf7402f26bc000aca0da4b2816712",
-            "role": "Addressables catalog"
-        },
-        {
-            "filename": "catalog_0.1.0.hash",
-            "bytes": 32,
-            "sha256": "ca1af3ea15aac14074d7eec69528f5cd06a02dfc67fc3b51f1e49aa87501a8d3",
-            "role": "catalog hash"
-        },
-        {
-            "filename": "divetheme-goldentheme01_assets_all_c1d8316736ea32471365065597e5edbf.bundle",
-            "bytes": 7458013,
-            "sha256": "bf100684b05ace11e55ae725bc736798f35926b44c3309f774ae5f53d7415a40",
-            "role": "Golden Theme 01 bundle"
-        }
-    ]
+﻿{
+    "schema":  "spokedu-dive-addressables-deployment-manifest-v1",
+    "generatedUtc":  "2026-09-24T08:37:24.9902130Z",
+    "profile":  "DIVE Remote Production",
+    "buildTarget":  "WebGL",
+    "remoteBuildPath":  "ProductionAddressables/spomove/dive/addressables/[BuildTarget]",
+    "remoteLoadPathTemplate":  "[DIVE.CDNBaseUrl]/spomove/dive/addressables/[BuildTarget]",
+    "cdnBaseUrl":  "https://spokedu.kr",
+    "note":  "Golden Theme 01 and Jungle Adventure 01 production package.",
+    "files":  [
+                  {
+                      "filename":  "catalog_0.1.0.bin",
+                      "bytes":  2994,
+                      "sha256":  "9cc348c2881b6ecfecd4dd03996c8f975f16517b342ceefad609cba99ec14c3c",
+                      "role":  "Addressables catalog"
+                  },
+                  {
+                      "filename":  "catalog_0.1.0.hash",
+                      "bytes":  32,
+                      "sha256":  "693887a6532982e72a75692b90c338f46861f882cadc052a5103d22292232cad",
+                      "role":  "catalog hash"
+                  },
+                  {
+                      "filename":  "divetheme-goldentheme01_assets_all_0b8fb513a0f3319a94653388a345f5dc.bundle",
+                      "bytes":  7692896,
+                      "sha256":  "95d3b56b4d1bf6d2a95eb16e44cfe116915d61222e39119574b650018b9d60dd",
+                      "role":  "Golden Theme 01 bundle"
+                  },
+                  {
+                      "filename":  "divetheme-jungleadventure01_assets_all_a82e07e3cee4637da11244f741ffdc4a.bundle",
+                      "bytes":  1936636,
+                      "sha256":  "b1f82b5ce832fc2e5dba562a43623779958919e895258a01aa9a0cc28620a08f",
+                      "role":  "Jungle Adventure 01 bundle"
+                  }
+              ]
 }

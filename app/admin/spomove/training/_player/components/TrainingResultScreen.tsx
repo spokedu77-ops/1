@@ -4,6 +4,10 @@ import React, { useMemo } from 'react';
 import { MODES } from '../constants';
 import { CSS, S } from '../styles';
 import { useViewportScrollLock } from '../lib/lockViewportScroll';
+import {
+  buildDiveActionMoveReport,
+  type DiveActionMoveSession,
+} from '../lib/diveActionMoveReport';
 import { resolveTrainingResultRichContent } from '../lib/trainingResultRichContent';
 import {
   RESULT_COLOR_ORDER,
@@ -34,6 +38,8 @@ type Props = {
   /** 훈련 정리 카드 안(코칭 팁 아래)에 표시. footer에 끼워 넣지 않음 */
   sessionSettings?: TrainingResultSessionSettings | null;
   footer?: React.ReactNode;
+  /** DIVE 액션무브 결과만. 없으면 기존 훈련 리포트를 유지한다. */
+  diveActionMove?: DiveActionMoveSession | null;
   onBack: () => void;
   onRetry: () => void;
   retryLabel?: string;
@@ -96,6 +102,19 @@ const RESULT_CSS = `
       max-width: 28rem !important;
     }
   }
+  .tr-dive-report {
+    word-break: keep-all;
+    overflow-wrap: normal;
+    --tr-pad: clamp(0.65rem, 1.55vmin, 0.95rem);
+    --tr-gap: clamp(0.45rem, 1.2vmin, 0.75rem);
+  }
+  .tr-dive-report .tr-dive-nowrap {
+    white-space: nowrap;
+  }
+  .tr-dive-report .tr-dive-copy {
+    word-break: keep-all;
+    overflow-wrap: normal;
+  }
   @media (max-width: 420px) {
     .tr-result-header {
       grid-template-columns: auto 1fr auto !important;
@@ -126,6 +145,7 @@ export function TrainingResultScreen({
   student,
   sessionSettings = null,
   footer,
+  diveActionMove = null,
   onBack,
   onRetry,
   retryLabel = '다시 실행',
@@ -137,8 +157,12 @@ export function TrainingResultScreen({
     [cfg, elapsedMs, colorCounts, programTitle],
   );
 
+  const dive = useMemo(
+    () => (diveActionMove ? buildDiveActionMoveReport(diveActionMove, elapsedMs) : null),
+    [diveActionMove, elapsedMs],
+  );
   const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
-  const showColorBreakdown = colorCounts != null && colorTotal > 0;
+  const showColorBreakdown = !dive && colorCounts != null && colorTotal > 0;
 
   useViewportScrollLock(true);
 
@@ -162,7 +186,7 @@ export function TrainingResultScreen({
 
   return (
     <div
-      className="tr-result-root"
+      className={dive ? 'tr-result-root tr-dive-report' : 'tr-result-root'}
       style={{
         position: 'fixed',
         inset: 0,
@@ -314,11 +338,17 @@ export function TrainingResultScreen({
                   <span style={{ fontSize: 'var(--tr-label)', fontWeight: 700, color: student.color }}>{student.name}</span>
                 </div>
               ) : null}
-              <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 900, lineHeight: 1.15 }}>{title}</div>
-              <p style={{ margin: 0, fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, lineHeight: 1.4 }}>
-                {rich.praiseSub}
+              <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 900, lineHeight: 1.15 }}>{dive ? dive.title : title}</div>
+              <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: 0, fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, lineHeight: 1.4 }}>
+                {dive ? dive.subtitle : rich.praiseSub}
               </p>
+              {dive?.actionLine ? (
+                <p className="tr-dive-copy" style={{ margin: 0, fontSize: 'var(--tr-body)', fontWeight: 850, lineHeight: 1.35 }}>
+                  {dive.actionLine}
+                </p>
+              ) : null}
               <p
+                className={dive ? 'tr-dive-copy' : undefined}
                 style={{
                   margin: 0,
                   fontSize: 'var(--tr-label)',
@@ -328,9 +358,14 @@ export function TrainingResultScreen({
                   wordBreak: 'keep-all',
                 }}
               >
-                {rich.sessionHighlight}
+                {dive ? (
+                  <>
+                    DIVE 액션무브
+                    {dive.stageLine ? <> · <span className="tr-dive-nowrap">{dive.stageLine}</span></> : null}
+                  </>
+                ) : rich.sessionHighlight}
               </p>
-              {statusBadge ? (
+              {(dive ? dive.statusBadge : statusBadge) ? (
                 <span
                   style={{
                     display: 'inline-flex',
@@ -343,7 +378,7 @@ export function TrainingResultScreen({
                     border: `1px solid ${accent}44`,
                   }}
                 >
-                  {statusBadge}
+                  {dive ? dive.statusBadge : statusBadge}
                 </span>
               ) : null}
             </div>
@@ -358,8 +393,12 @@ export function TrainingResultScreen({
               }}
             >
               {[
-                { label: '진행 시간', value: rich.elapsedLabel },
-                { label: '설정 분량', value: rich.volumeLabel },
+                dive
+                  ? { label: '활동 시간', value: dive.activityTimeValue, nowrap: true }
+                  : { label: '진행 시간', value: rich.elapsedLabel, nowrap: false },
+                dive
+                  ? { label: '스테이지 시간', value: dive.stageTimeValue, nowrap: true }
+                  : { label: '설정 분량', value: rich.volumeLabel, nowrap: false },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -376,7 +415,7 @@ export function TrainingResultScreen({
                   }}
                 >
                   <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{stat.label}</span>
-                  <span style={{ fontSize: 'var(--tr-stat)', fontWeight: 900, lineHeight: 1.15 }}>{stat.value}</span>
+                  <span className={stat.nowrap ? 'tr-dive-nowrap' : undefined} style={{ fontSize: 'var(--tr-stat)', fontWeight: 900, lineHeight: 1.15 }}>{stat.value}</span>
                 </div>
               ))}
               <div
@@ -393,9 +432,9 @@ export function TrainingResultScreen({
                   minHeight: 0,
                 }}
               >
-                <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>오늘 느낌</span>
-                <span style={{ fontSize: 'var(--tr-body)', fontWeight: 900, lineHeight: 1.2, textAlign: 'right', wordBreak: 'keep-all' }}>
-                  {rich.activityFeel}
+                <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{dive ? '세션 상태' : '오늘 느낌'}</span>
+                <span className={dive ? 'tr-dive-nowrap' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 900, lineHeight: 1.2, textAlign: 'right', wordBreak: 'keep-all' }}>
+                  {dive ? dive.sessionStatusValue : rich.activityFeel}
                 </span>
               </div>
             </div>
@@ -412,8 +451,9 @@ export function TrainingResultScreen({
               }}
             >
               <div>
-                <h2 style={sectionTitle}>오늘의 포인트</h2>
+                <h2 style={sectionTitle}>{dive ? '오늘의 움직임' : '오늘의 포인트'}</h2>
                 <p
+                  className={dive ? 'tr-dive-copy' : undefined}
                   style={{
                     margin: '0.4rem 0 0',
                     fontSize: 'var(--tr-body)',
@@ -425,12 +465,12 @@ export function TrainingResultScreen({
                     paddingLeft: '0.55rem',
                   }}
                 >
-                  {rich.benefitLine}
+                  {dive ? dive.movementBody : rich.benefitLine}
                 </p>
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                {rich.benefitTags.map((tag) => (
+                {(dive ? dive.tags : rich.benefitTags).map((tag) => (
                   <span
                     key={`left-${tag}`}
                     style={{
@@ -528,19 +568,25 @@ export function TrainingResultScreen({
             ) : (
               <>
                 <div style={{ flexShrink: 0 }}>
-                  <h2 style={sectionTitle}>세션 스냅샷</h2>
-                  <p style={{ margin: '0.2rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, wordBreak: 'keep-all' }}>
-                    이번 과제는 색상 빈도 대신 활동 요약으로 정리합니다.
+                  <h2 style={sectionTitle}>{dive ? '오늘의 DIVE' : '세션 스냅샷'}</h2>
+                  <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.2rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, wordBreak: 'keep-all' }}>
+                    {dive
+                      ? '이번 세션에서 진행한 액션과 활동 구성을 정리합니다.'
+                      : '이번 과제는 색상 빈도 대신 활동 요약으로 정리합니다.'}
                   </p>
                 </div>
 
                 <div className="tr-fill-stack" style={{ gap: '0.45rem' }}>
-                  {rich.sessionSnapshot.map((item) => (
+                  {(dive
+                    ? dive.snapshot
+                    : rich.sessionSnapshot.map((item) => ({ ...item, nowrap: false }))
+                  ).map((item) => (
                     <div
                       key={item.id}
                       className="tr-fill-row"
                       style={{
                         justifyContent: 'space-between',
+                        alignItems: 'center',
                         gap: '0.7rem',
                         padding: '0.6rem 0.7rem',
                         borderRadius: '0.7rem',
@@ -548,13 +594,14 @@ export function TrainingResultScreen({
                         border: '1px solid var(--border)',
                       }}
                     >
-                      <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{item.label}</span>
-                      <span style={{ fontSize: 'var(--tr-body)', fontWeight: 900, textAlign: 'right', wordBreak: 'keep-all' }}>{item.value}</span>
+                      <span className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800, flexShrink: dive ? 0 : undefined }}>{item.label}</span>
+                      <span className={item.nowrap ? 'tr-dive-nowrap' : dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 900, textAlign: 'right', wordBreak: 'keep-all', minWidth: 0 }}>{item.value}</span>
                     </div>
                   ))}
                 </div>
 
                 <p
+                  className={dive ? 'tr-dive-copy' : undefined}
                   style={{
                     margin: 0,
                     flexShrink: 0,
@@ -569,7 +616,9 @@ export function TrainingResultScreen({
                     padding: '0.6rem 0.7rem',
                   }}
                 >
-                  방향·기억·말하기처럼 색 빈도를 따로 기록하지 않는 활동입니다.
+                  {dive
+                    ? '화면의 신호에 맞춰 방향을 바꾸고 점프하고 숙이며 연속적인 움직임을 경험하는 활동입니다.'
+                    : '방향·기억·말하기처럼 색 빈도를 따로 기록하지 않는 활동입니다.'}
                 </p>
               </>
             )}
@@ -578,9 +627,9 @@ export function TrainingResultScreen({
           {/* ── 오른쪽: 훈련 정리 + 코칭 팁 ── */}
           <section className="tr-result-card" style={{ ...card, gap: '0.7rem' }}>
             <div style={{ flexShrink: 0 }}>
-              <h2 style={sectionTitle}>훈련 정리</h2>
-              <h3 style={{ margin: '0.25rem 0 0', fontSize: 'var(--tr-title)', fontWeight: 900, lineHeight: 1.25 }}>
-                {rich.programTitle}
+              <h2 style={sectionTitle}>{dive ? '움직임 리포트' : '훈련 정리'}</h2>
+              <h3 className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.25rem 0 0', fontSize: 'var(--tr-title)', fontWeight: 900, lineHeight: 1.25 }}>
+                {dive ? 'DIVE 액션무브' : rich.programTitle}
               </h3>
             </div>
 
@@ -593,9 +642,11 @@ export function TrainingResultScreen({
                 padding: '0.7rem',
               }}
             >
-              <div style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: accent }}>{mo?.tag ?? 'SPOMOVE 훈련'}</div>
-              <p style={{ margin: '0.35rem 0 0', fontSize: 'var(--tr-body)', lineHeight: 1.5, color: 'var(--text)', fontWeight: 650, wordBreak: 'keep-all' }}>
-                {rich.programSummary}
+              <div className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: accent }}>{dive ? '시각 신호 · 방향 전환 · 전신 반응' : (mo?.tag ?? 'SPOMOVE 훈련')}</div>
+              <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.35rem 0 0', fontSize: 'var(--tr-body)', lineHeight: 1.5, color: 'var(--text)', fontWeight: 650, wordBreak: 'keep-all' }}>
+                {dive
+                  ? '화면의 신호를 보며 좌우 이동과 점프, 숙이기 동작을 연속해서 수행하는 활동입니다.'
+                  : rich.programSummary}
               </p>
             </div>
 
@@ -609,10 +660,12 @@ export function TrainingResultScreen({
               }}
             >
               <div style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
-                다음 시도 팁
+                {dive ? '다음 활동 포인트' : '다음 시도 팁'}
               </div>
-              <p style={{ margin: 0, fontSize: 'var(--tr-body)', lineHeight: 1.5, fontWeight: 700, color: 'var(--text)', wordBreak: 'keep-all' }}>
-                {rich.coachTip}
+              <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: 0, fontSize: 'var(--tr-body)', lineHeight: 1.5, fontWeight: 700, color: 'var(--text)', wordBreak: 'keep-all' }}>
+                {dive
+                  ? '다음 신호를 미리 확인하며 동작 사이의 흐름이 끊기지 않도록 움직여 보세요.'
+                  : rich.coachTip}
               </p>
             </div>
 
@@ -661,7 +714,7 @@ export function TrainingResultScreen({
             <div style={{ flex: '1 1 auto', minHeight: 'min-content', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <h2 style={{ ...sectionTitle, flexShrink: 0 }}>스스로 점검</h2>
               <div className="tr-fill-stack" style={{ gap: '0.4rem' }}>
-                {rich.selfCheckItems.map((item, index) => (
+                {(dive ? dive.selfChecks : rich.selfCheckItems).map((item, index) => (
                   <div
                     key={item.id}
                     className="tr-fill-row"
@@ -691,7 +744,7 @@ export function TrainingResultScreen({
                     >
                       {index + 1}
                     </span>
-                    <span style={{ fontSize: 'var(--tr-body)', fontWeight: 750, lineHeight: 1.3, color: 'var(--text)', wordBreak: 'keep-all' }}>
+                    <span className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 750, lineHeight: 1.3, color: 'var(--text)', wordBreak: 'keep-all' }}>
                       {item.label}
                     </span>
                   </div>

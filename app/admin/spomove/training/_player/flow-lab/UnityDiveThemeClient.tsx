@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { diveActionMoveStageCount } from '@/app/lib/spomove/diveActionMoveTiming';
+
 export type DiveSessionConfig = {
   themeId: string;
   stageDuration: number;
@@ -75,6 +77,7 @@ export function resolveDivePlayer(hostname: string, productionEnabled: boolean, 
 
 export default function UnityDiveThemeClient({ config, durationSec, onComplete, onExit, onSessionStart, onSessionStop }: Props) {
   const { themeId, stageDuration, side, jump, duck, bonus } = config;
+  const themeLabel = themeId === 'jungle-adventure-01' ? '정글' : '놀이공원';
   const player = resolveDivePlayer(
     typeof window === 'undefined' ? 'production.invalid' : window.location.hostname,
     PRODUCTION_SINGLE_PLAYER_ENABLED,
@@ -109,7 +112,8 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
   const [progress, setProgress] = useState(0);
   const [loadError, setLoadError] = useState('');
 
-  const stageCount = 1 + Number(side) + Number(jump) + Number(duck) + Number(bonus);
+  const stageCount = diveActionMoveStageCount({ side, jump, duck, bonus });
+  // legacy-theme2 rollback completion timer. Single Player progress uses durationSec.
   const productionDurationSec = stageDuration * (1 + Number(side) + Number(jump) + Number(duck)) + (bonus ? 60 : 0);
   const configPayload = useMemo<DiveSessionConfig>(
     () => ({ themeId, stageDuration, side, jump, duck, bonus }),
@@ -306,7 +310,7 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
     <div style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', background: '#000', overflow: 'hidden' }}>
       {active ? <iframe ref={iframeRef} src={player.url} title="DIVE Single Player" allowFullScreen style={{ width: '100%', height: '100%', border: 0, background: '#000', display: 'block', opacity: phase === 'loading' || phase === 'theme-loading' ? 0 : 1 }} /> : null}
 
-      {active && (phase === 'loading' || phase === 'theme-loading') ? <div role="status" aria-live="polite" style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: '#020617', color: '#fff', zIndex: 20 }}><div style={{ textAlign: 'center', fontWeight: 900 }}><div style={{ width: 42, height: 42, margin: '0 auto 14px', border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'sportsArenaSpin 0.8s linear infinite' }} />SPORTS ARENA 로딩 중</div></div> : null}
+      {active && (phase === 'loading' || phase === 'theme-loading') ? <div role="status" aria-live="polite" style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: '#020617', color: '#fff', zIndex: 20 }}><div style={{ textAlign: 'center', fontWeight: 900 }}><div style={{ width: 42, height: 42, margin: '0 auto 14px', border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'sportsArenaSpin 0.8s linear infinite' }} />{themeLabel} 로딩 중</div></div> : null}
 
       {active && phase === 'countdown' ? <div aria-live="assertive" style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,0.72)', color: '#fff', zIndex: 25 }}><div style={{ fontSize: countdownLabel === 'GO!' ? 'clamp(64px,16vw,140px)' : 'clamp(100px,26vw,220px)', fontWeight: 900, lineHeight: 1 }}>{countdownLabel}</div></div> : null}
 
@@ -322,7 +326,7 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
       </> : null}
 
       {active ? <button type="button" onClick={() => finish('exit')} style={{ position: 'absolute', top: 10, right: 14, zIndex: 40, minWidth: 82, padding: '0.5rem 0.75rem', background: 'rgba(15,23,42,0.88)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '0.7rem', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer' }}>✕ 나가기</button> : null}
-      {active && phase === 'error' ? <div role={'alert'} style={{ position: 'absolute', inset: 0, zIndex: 30, display: 'grid', placeItems: 'center', background: '#020617', color: '#fff', padding: 24 }}><div style={{ maxWidth: 560, textAlign: 'center' }}><strong style={{ display: 'block', marginBottom: 12, fontSize: 24 }}>SPORTS ARENA 로딩 오류</strong><p style={{ margin: 0, color: '#CBD5E1', lineHeight: 1.6 }}>{loadError}</p></div></div> : null}
+      {active && phase === 'error' ? <div role={'alert'} style={{ position: 'absolute', inset: 0, zIndex: 30, display: 'grid', placeItems: 'center', background: '#020617', color: '#fff', padding: 24 }}><div style={{ maxWidth: 560, textAlign: 'center' }}><strong style={{ display: 'block', marginBottom: 12, fontSize: 24 }}>{themeLabel} 로딩 오류</strong><p style={{ margin: 0, color: '#CBD5E1', lineHeight: 1.6 }}>{loadError}</p></div></div> : null}
       <style>{`@keyframes sportsArenaSpin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
