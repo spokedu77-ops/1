@@ -1,6 +1,6 @@
 {
     "schema": "spokedu-dive-addressables-deployment-manifest-v1",
-    "generatedUtc": "2026-09-22T22:44:07.1128471Z",
+    "generatedUtc": "2026-09-24T05:10:30.8502363Z",
     "profile": "DIVE Remote Production",
     "buildTarget": "WebGL",
     "remoteBuildPath": "ProductionAddressables/spomove/dive/addressables/[BuildTarget]",
