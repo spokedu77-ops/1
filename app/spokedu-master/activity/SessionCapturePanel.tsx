@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type { MasterClassRecordDto } from '../types/legacyOperational';
 import type { MasterSessionDto, MasterStudentDto } from '../types/operational';
 import { resolvePreviousSessionMemory, selectCurrentRosterObservations } from '../lib/sessionMemory';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
 import { SPM_JOURNEY_FIELD, SPM_JOURNEY_META } from '../lib/masterUiClasses';
 import { fetchSessionCaptures, saveSessionCapture } from '../lib/sessionCaptureClient';
+import { shouldApplyServerSessionCapture } from './sessionCaptureDraft';
 import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
 import type { SessionCaptureSurfaceMode } from './masterSessionWorkspaceModel';
 import { sessionSectionOrderClass } from './masterSessionWorkspaceModel';
@@ -48,6 +49,20 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
   const [dirty, setDirty] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const dirtyRef = useRef(false);
+  const activeSessionIdRef = useRef(session.id);
+  const markDirty = () => {
+    dirtyRef.current = true;
+    setDirty(true);
+  };
+  if (activeSessionIdRef.current !== session.id) {
+    activeSessionIdRef.current = session.id;
+    dirtyRef.current = false;
+    setDirty(false);
+    setNextNote('');
+    setObservations({});
+    setSaveError(false);
+  }
   const roster = useMemo(
     () => sessionRoster.map((item) => {
       const student = students.find((candidate) => candidate.id === item.id);
@@ -73,18 +88,29 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
 
   useEffect(() => {
     if (!needsCaptureData) return;
+    const requestedSessionId = session.id;
+    let cancelled = false;
     const limit = captureMode === 'memory' ? 8 : 40;
     void fetchSessionCaptures(`class=${encodeURIComponent(session.classId)}&limit=${limit}`).then((result) => {
+      if (cancelled) return;
       if (result.status === 'error') {
         setLoadError(true);
         return;
       }
       setLoadError(false);
       setCaptures(result.data);
-      const current = result.data.find((item) => item.sessionId === session.id);
+      if (!shouldApplyServerSessionCapture({
+        dirty: dirtyRef.current,
+        requestedSessionId,
+        activeSessionId: activeSessionIdRef.current,
+      })) return;
+      const current = result.data.find((item) => item.sessionId === requestedSessionId);
       setNextNote(current?.applicationIdea ?? '');
       setObservations(Object.fromEntries(current?.students.map((student) => [student.studentId, student.memo ?? '']).filter(([id]) => id) ?? []));
     });
+    return () => {
+      cancelled = true;
+    };
   }, [needsCaptureData, captureMode, session.classId, session.id]);
 
   useEffect(() => {
@@ -107,6 +133,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
         observations: Object.entries(observations).filter(([, memo]) => memo.trim()).map(([studentId, memo]) => ({ studentId, memo })),
       });
       setCaptures((items) => [...items.filter((item) => item.sessionId !== session.id), saved]);
+      dirtyRef.current = false;
       setDirty(false);
       setSaving(false);
       return true;
@@ -180,13 +207,13 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
         {canUseRecords ? <div className="py-4">
           <label className="block text-sm font-semibold text-slate-800">
             다음 시간에 이어갈 점 <span className="font-medium text-slate-400">· 선택</span>
-            <textarea value={nextNote} onChange={(event) => { setNextNote(event.target.value); setDirty(true); }} className={`mt-2 min-h-20 ${SPM_JOURNEY_FIELD}`} placeholder="다음 시간에는 공의 거리를 조금 늘려보기" maxLength={500} />
+            <textarea value={nextNote} onChange={(event) => { setNextNote(event.target.value); markDirty(); }} className={`mt-2 min-h-20 ${SPM_JOURNEY_FIELD}`} placeholder="다음 시간에는 공의 거리를 조금 늘려보기" maxLength={500} />
           </label>
         </div> : null}
         {canUseRecords ? <details className="py-2" open={open || undefined} onToggle={(event) => setOpen(event.currentTarget.open)}>
           <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-sm font-medium text-slate-700"><span>학생별 기록</span><span className={SPM_JOURNEY_META}>{Object.values(observations).filter((value) => value.trim()).length}/{roster.length}명</span></summary>
           <div className="space-y-3 pb-3">
-            {roster.map((student) => <label key={student.id} className="block text-sm font-medium text-slate-700">{student.name}<textarea value={observations[student.id] ?? ''} onChange={(event) => { setObservations((items) => ({ ...items, [student.id]: event.target.value })); setDirty(true); }} className={`mt-1 min-h-16 ${SPM_JOURNEY_FIELD}`} placeholder="짧은 관찰 기록" maxLength={1000} /></label>)}
+            {roster.map((student) => <label key={student.id} className="block text-sm font-medium text-slate-700">{student.name}<textarea value={observations[student.id] ?? ''} onChange={(event) => { setObservations((items) => ({ ...items, [student.id]: event.target.value })); markDirty(); }} className={`mt-1 min-h-16 ${SPM_JOURNEY_FIELD}`} placeholder="짧은 관찰 기록" maxLength={1000} /></label>)}
             {!roster.length ? <p className="text-sm font-medium text-slate-400">현재 수업반 학생이 없습니다.</p> : null}
           </div>
         </details> : null}
@@ -234,7 +261,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
                     value={observations[student.id] ?? ''}
                     onChange={(event) => {
                       setObservations((items) => ({ ...items, [student.id]: event.target.value }));
-                      setDirty(true);
+                      markDirty();
                     }}
                     className="min-h-20 w-full rounded-lg border border-slate-200 p-2 text-sm"
                     placeholder="오늘 관찰한 사실을 짧게 적어주세요."
@@ -251,7 +278,7 @@ export const SessionCapturePanel = forwardRef<SessionCaptureHandle, {
               value={nextNote}
               onChange={(event) => {
                 setNextNote(event.target.value);
-                setDirty(true);
+                markDirty();
               }}
               className="mt-1 min-h-20 w-full rounded-lg border border-slate-200 p-2 text-sm"
               placeholder="예: 2단계 설명을 짧게 하고 시범을 먼저 보여주기"

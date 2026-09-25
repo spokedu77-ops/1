@@ -358,6 +358,20 @@ join public.spokedu_master_subscriptions subscription
   on subscription.toss_order_id = payment_order.order_id
 where subscription.user_id <> payment_order.user_id;
 
+select
+  case
+    when position('delete from public.spokedu_master_session_attendance' in pg_get_functiondef('public.spokedu_master_delete_operational_data(uuid)'::regprocedure)) > 0
+     and position('delete from public.spokedu_master_sessions' in pg_get_functiondef('public.spokedu_master_delete_operational_data(uuid)'::regprocedure)) > 0
+     and position('delete from public.spokedu_master_classes' in pg_get_functiondef('public.spokedu_master_delete_operational_data(uuid)'::regprocedure)) > 0
+     and position('spokedu_master_subscriptions' in pg_get_functiondef('public.spokedu_master_delete_operational_data(uuid)'::regprocedure)) = 0
+     and has_function_privilege('anon', 'public.spokedu_master_delete_operational_data(uuid)', 'execute') is false
+     and has_function_privilege('authenticated', 'public.spokedu_master_delete_operational_data(uuid)', 'execute') is false
+     and has_function_privilege('service_role', 'public.spokedu_master_delete_operational_data(uuid)', 'execute') is true
+    then 'ok' else 'fail'
+  end as status,
+  'operational_delete_covers_sessions' as check_name,
+  '' as details;
+
 with failure_counts(check_name, failure_count) as (
   select 'required_tables_exist', count(*)
   from (
@@ -471,6 +485,18 @@ with failure_counts(check_name, failure_count) as (
     group by event_key
     having count(*) > 1
   ) duplicated
+  union all
+  select 'operational_delete_covers_sessions',
+    case
+      when position('delete from public.spokedu_master_session_attendance' in pg_get_functiondef('public.spokedu_master_delete_operational_data(uuid)'::regprocedure)) > 0
+       and position('delete from public.spokedu_master_sessions' in pg_get_functiondef('public.spokedu_master_delete_operational_data(uuid)'::regprocedure)) > 0
+       and position('delete from public.spokedu_master_classes' in pg_get_functiondef('public.spokedu_master_delete_operational_data(uuid)'::regprocedure)) > 0
+       and position('spokedu_master_subscriptions' in pg_get_functiondef('public.spokedu_master_delete_operational_data(uuid)'::regprocedure)) = 0
+       and has_function_privilege('anon', 'public.spokedu_master_delete_operational_data(uuid)', 'execute') is false
+       and has_function_privilege('authenticated', 'public.spokedu_master_delete_operational_data(uuid)', 'execute') is false
+       and has_function_privilege('service_role', 'public.spokedu_master_delete_operational_data(uuid)', 'execute') is true
+      then 0 else 1
+    end
   union all
   select 'payment_order_subscription_owner_mismatch', count(*)
   from public.spokedu_master_payment_orders payment_order

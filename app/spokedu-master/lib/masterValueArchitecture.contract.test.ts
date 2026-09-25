@@ -13,11 +13,14 @@ describe('VALUE / Connected Memory continuity', () => {
   const panel = read('app/spokedu-master/components/value/MasterValueEvidencePanel.tsx');
   const evidenceLib = read('app/spokedu-master/lib/masterSubscriberValueEvidence.ts');
 
-  it('PREM-01: Capture remains available only through the legacy context', () => {
-    expect(activity).toContain('legacyCapture && draft.activeSession');
+  it('PREM-01: next sessions show memory without the capture deep link, and the deep link still opens the editor', () => {
+    expect(activity).toContain('resolveSessionWorkspacePresentation');
+    expect(activity).toContain("legacyCapture ? 'emphasized'");
+    expect(activity).toContain('presentation?.captureMode');
     expect(activity).toContain('<SessionCapturePanel');
     expect(capture).toContain("captureMode === 'memory'");
     expect(capture).toContain('지난 수업에서 이어갈 점');
+    expect(activity).not.toContain('legacyCapture && draft.activeSession');
     expect(activity).not.toMatch(/setMemo\(previous/);
   });
 

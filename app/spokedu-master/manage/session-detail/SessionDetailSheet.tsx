@@ -3,9 +3,11 @@
 import { useRef, useState } from 'react';
 import { useMasterCanUseRecords, useMasterCanUseSpomove } from '../../access/MasterAccessProvider';
 import { SessionCapturePanel, type SessionCaptureHandle } from '../../activity/SessionCapturePanel';
+import { resolveSessionWorkspacePresentation } from '../../activity/masterSessionWorkspaceModel';
 import { getSessionActionPolicy } from '../../activity/sessionActionPolicy';
 import { BottomSheet } from '../../components/ui/BottomSheet';
 import { getMasterRequestErrorMessage } from '../../lib/masterRequestError';
+import { deriveMasterSessionWorkState } from '../../lib/masterSessionWorkState';
 import { completionAttendanceMessage, validateCompletionAttendance } from '../../lib/sessionIntegrity';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { MasterSessionDto } from '../../types/operational';
@@ -37,6 +39,14 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
   const schedule = useSessionSchedule({ initialSession: session });
   const isCreate = !draft.activeSession;
   const title = draft.activeSession ? '수업 상세' : '수업 추가';
+  const workState = draft.activeSession ? deriveMasterSessionWorkState(draft.activeSession, selectedClass) : null;
+  const presentation = workState ? resolveSessionWorkspacePresentation({
+    workState,
+    actions,
+    programs: activities.programs,
+    startedAt: draft.activeSession?.startedAt ?? null,
+  }) : null;
+  const captureMode = legacyCapture ? 'emphasized' as const : presentation?.captureMode ?? 'hidden';
 
   async function persist(nextStatus = draft.status) {
     if (!draft.classId || draft.saving) return;
@@ -50,8 +60,8 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
     }
     draft.setSaving(true); draft.setError(null);
     try {
-      if (nextStatus === 'completed' && legacyCapture) {
-        const captureSaved = await captureRef.current?.save() ?? true;
+      if (nextStatus === 'completed' && captureRef.current) {
+        const captureSaved = await captureRef.current?.save() ?? false;
         if (!captureSaved) throw new Error('수업 기록을 저장하지 못했습니다.');
       }
       const saved = nextStatus === 'completed' && draft.activeSession
@@ -80,7 +90,7 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
         <SessionActivities isCreate={isCreate} activeSession={draft.activeSession} programs={activities.programs} libraryPrograms={activities.libraryPrograms} catalogIds={activities.catalogIds} programsLoaded={activities.programsLoaded} actions={actions} saving={draft.saving} openPicker={() => activities.setPickerOpen(true)} toggleProgram={activities.toggleProgram} moveProgram={activities.moveProgram} removeProgram={activities.removeProgram} />
         {draft.activeSession && actions.editAttendance ? <SessionAttendance attendance={attendance.attendance} attendanceOpen={attendance.attendanceOpen} roster={attendance.roster} allStudentsPresent={attendance.allStudentsPresent} setAttendanceOpen={attendance.setAttendanceOpen} toggleAllAttendance={attendance.toggleAllAttendance} updateAttendance={attendance.updateAttendance} /> : null}
         {canUseRecords && draft.status !== 'cancelled' ? <SessionMemo isCreate={isCreate} memo={draft.memo} onChange={(memo) => { draft.setMemo(memo); draft.setDirty(true); }} /> : null}
-        {legacyCapture && draft.activeSession ? <SessionCapturePanel ref={captureRef} session={draft.activeSession} sessions={data.sessions} students={data.students} sessionRoster={attendance.roster} canUseRecords={canUseRecords} captureMode="emphasized" showInlinePremiumUpsell={false} order={6} memo={draft.memo} onMemoChange={draft.setMemo} /> : null}
+        {draft.activeSession && captureMode !== 'hidden' ? <SessionCapturePanel ref={captureRef} session={draft.activeSession} sessions={data.sessions} students={data.students} sessionRoster={attendance.roster} canUseRecords={canUseRecords} captureMode={captureMode} showInlinePremiumUpsell={legacyCapture ? false : Boolean(presentation?.showInlinePremiumUpsell)} order={presentation?.sectionOrder.capture ?? 6} memo={draft.memo} onMemoChange={draft.setMemo} /> : null}
         {draft.activeSession && actions.createNextSession ? <section className="mt-5 border-t border-slate-100 py-4">
           <p className="text-sm text-slate-600">다음 수업도 예정되어 있나요?</p>
           <button type="button" onClick={() => setNextSessionOpen(true)} className="mt-1 min-h-11 text-sm font-semibold text-[var(--spm-acc)] hover:text-slate-950">다음 수업 만들기 →</button>

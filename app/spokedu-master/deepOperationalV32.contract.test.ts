@@ -32,7 +32,7 @@ describe('UI Foundation v3.2 deep operational contract', () => {
     expect(session).toContain('수업 활동');
     expect(session).toContain('출석');
     expect(session).toContain('메모');
-    expect(session).not.toContain('resolveSessionWorkspacePresentation');
+    expect(session).toContain('resolveSessionWorkspacePresentation');
     expect(session).not.toContain("presentationKind === 'RUN'");
     expect(session).not.toContain('SPM_JOURNEY_SURFACE');
     expect(session).not.toContain('SPM_JOURNEY_EYEBROW');

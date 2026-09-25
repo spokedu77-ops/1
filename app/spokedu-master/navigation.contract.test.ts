@@ -43,7 +43,8 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(detail).toContain('수업 상세');
     expect(detail).toContain('수업 활동');
     expect(detail).not.toContain('수업 시작');
-    expect(detail).not.toContain('resolveSessionWorkspacePresentation');
+    expect(detail).toContain('resolveSessionWorkspacePresentation');
+    expect(detail).toContain("legacyCapture ? 'emphasized'");
     expect(activity).not.toContain('/spokedu-master/class-record');
     expect(manage).not.toContain('ClassManagerSheet');
     expect(legacy).toContain("redirect('/spokedu-master/activity')");

@@ -2,7 +2,7 @@
 
 import { ChevronRight, MoreHorizontal, Pencil, Plus, Users } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { MasterStatePanel } from '../components/ui/MasterStatePanel';
 import { MasterCollectionRow, MasterPageHeader, MasterPageShell, MasterSection } from '../components/ui/MasterPrimitives';
@@ -11,6 +11,7 @@ import { SPM_DESTRUCTIVE_BTN, SPM_PRIMARY_BTN, SPM_PRIMARY_BTN_FULL, SPM_SECONDA
 import { buildStudentAgeOptions } from '../lib/studentAddPresets';
 import { studentMetaToDisplay } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
+import { claimStudentCreateSubmit, studentCreateLegacyId } from './studentCreateSubmit';
 import type { MasterStudentDto } from '../types/operational';
 
 type StudentDraft = {
@@ -34,6 +35,8 @@ export default function StudentsPage() {
   const [editing, setEditing] = useState<MasterStudentDto | null>(null);
   const [draft, setDraft] = useState<StudentDraft>(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [draftLegacyId, setDraftLegacyId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingArchive, setPendingArchive] = useState<MasterStudentDto | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +45,7 @@ export default function StudentsPage() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('add') !== '1') return;
     setDraft(EMPTY_DRAFT);
+    setDraftLegacyId(crypto.randomUUID());
     setAddOpen(true);
     window.history.replaceState(window.history.state, '', window.location.pathname);
   }, []);
@@ -61,13 +65,15 @@ export default function StudentsPage() {
   };
 
   const saveNew = async () => {
-    if (!draft.name.trim() || saving) return;
+    if (!draft.name.trim() || !claimStudentCreateSubmit(savingRef)) return;
+    const legacyId = studentCreateLegacyId(draftLegacyId, () => crypto.randomUUID());
+    if (!draftLegacyId) setDraftLegacyId(legacyId);
     setSaving(true); setError(null);
     try {
-      await data.createStudent({ legacyId: crypto.randomUUID(), name: draft.name.trim(), meta: draft.meta, guidanceNote: draft.guidanceNote.trim() || null, classIds: draft.classIds });
-      setDraft(EMPTY_DRAFT); setAddOpen(false);
+      await data.createStudent({ legacyId, name: draft.name.trim(), meta: draft.meta, guidanceNote: draft.guidanceNote.trim() || null, classIds: draft.classIds });
+      setDraft(EMPTY_DRAFT); setDraftLegacyId(null); setAddOpen(false);
     } catch { setError('학생을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
-    finally { setSaving(false); }
+    finally { savingRef.current = false; setSaving(false); }
   };
 
   const saveEdit = async () => {
@@ -97,7 +103,7 @@ export default function StudentsPage() {
   </div>;
 
   return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8"><MasterPageShell variant="operational">
-    <MasterPageHeader title="학생" description="학생을 수업반에 등록하면 수업의 출석 명단으로 자동 연결됩니다." action={<button type="button" onClick={() => { setDraft(EMPTY_DRAFT); setError(null); setAddOpen(true); }} className={SPM_PRIMARY_BTN}><Plus size={16} />{MASTER_ACTION_COPY.addStudent}</button>} />
+    <MasterPageHeader title="학생" description="학생을 수업반에 등록하면 수업의 출석 명단으로 자동 연결됩니다." action={<button type="button" onClick={() => { setDraft(EMPTY_DRAFT); setDraftLegacyId(crypto.randomUUID()); setError(null); setAddOpen(true); }} className={SPM_PRIMARY_BTN}><Plus size={16} />{MASTER_ACTION_COPY.addStudent}</button>} />
     {data.status === 'loading' || data.status === 'idle' ? <MasterStatePanel kind="loading" title="학생 명단을 불러오는 중입니다." className="mt-5" /> : null}
     {data.status === 'error' ? <MasterStatePanel kind="error" title="학생 명단을 불러오지 못했습니다." description="현재 화면을 유지한 채 다시 불러올 수 있습니다." action={<button type="button" onClick={() => void data.reload()} className={SPM_SECONDARY_BTN}>다시 시도</button>} className="mt-5" /> : null}
     {error && !addOpen && !editing ? <p className="mt-4 rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}

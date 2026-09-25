@@ -60,7 +60,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('data.saveSessionAttendance');
     expect(detail).toContain('useState(false)');
     expect(detail).toContain("'present' | 'absent'");
-    expect(detail).not.toContain('resolveSessionWorkspacePresentation');
+    expect(detail).toContain('resolveSessionWorkspacePresentation');
     expect(detail).not.toContain('PreviousActivityCarryover');
     expect(detail).not.toContain('NextSessionPlanner');
     expect(detail).not.toContain('수업 시작');

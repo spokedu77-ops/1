@@ -149,7 +149,8 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
     const home = read('app/spokedu-master/dashboard/DashboardView.tsx');
     expect(payment).toContain('buildMasterGateDisplayModel');
     expect(payment).toContain('gateDisplay');
-    expect(activity).toContain('legacyCapture && draft.activeSession');
+    expect(activity).toContain("legacyCapture ? 'emphasized'");
+    expect(activity).toContain('presentation?.captureMode');
     expect(manage).toContain("searchParams.get('capture') === '1'");
     expect(activity).not.toContain('PreviousActivityCarryover');
     expect(activity).not.toContain('Premium modal');
