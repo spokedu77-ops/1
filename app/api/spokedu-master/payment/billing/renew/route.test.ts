@@ -33,11 +33,13 @@ vi.mock('@/app/lib/monitoring/errorReporter', () => ({
 import { POST, calculateRenewalRetryAt } from './route';
 
 type Row = Record<string, unknown>;
+const billingRunPatches: Row[] = [];
 
 function installService(subscriptions: Row[], orders: Map<string, Row>) {
   const service = {
     from(table: string) {
       const filters: Record<string, unknown> = {};
+      const ors: string[] = [];
       let updatePatch: Row | null = null;
       let limitCount = Number.POSITIVE_INFINITY;
       let isDueLookup = false;
@@ -45,7 +47,10 @@ function installService(subscriptions: Row[], orders: Map<string, Row>) {
         select() { isDueLookup = table === 'spokedu_master_subscriptions'; return query; },
         eq(column: string, value: unknown) { filters[column] = value; return query; },
         lte() { return query; },
-        or() { return query; },
+        or(expression: string) {
+          ors.push(expression);
+          return query;
+        },
         order() { return query; },
         limit(value: number) { limitCount = value; return query; },
         async maybeSingle() {
@@ -68,6 +73,8 @@ function installService(subscriptions: Row[], orders: Map<string, Row>) {
             const now = Date.now();
             const due = subscriptions
               .filter((row) => row.status === 'active' && row.cancel_at_period_end === false)
+              .filter((row) => !ors.includes('plan.in.(lite,premium),plan_id.in.(lite,premium)')
+                || row.plan === 'lite' || row.plan === 'premium' || row.plan_id === 'lite' || row.plan_id === 'premium')
               .filter((row) => Date.parse(String(row.next_billing_at)) <= now)
               .filter((row) => !row.next_retry_at || Date.parse(String(row.next_retry_at)) <= now)
               .sort((a, b) => Date.parse(String(a.next_billing_at)) - Date.parse(String(b.next_billing_at)))
@@ -78,6 +85,7 @@ function installService(subscriptions: Row[], orders: Map<string, Row>) {
             const row = subscriptions.find((candidate) => candidate.id === filters.id);
             if (row) Object.assign(row, updatePatch);
           }
+          if (updatePatch && table === 'spokedu_master_billing_runs') billingRunPatches.push({ ...updatePatch });
           if (updatePatch && table === 'spokedu_master_payment_orders') {
             const order = orders.get(String(filters.order_id));
             if (order) Object.assign(order, updatePatch);
@@ -101,6 +109,7 @@ function cronRequest() {
 describe('billing renewal queue behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    billingRunPatches.length = 0;
     process.env.CRON_SECRET = 'cron-test-secret';
     process.env.TOSS_SECRET_KEY = 'test_toss_secret';
     mocks.providerConfigured.mockReturnValue(true);
@@ -171,6 +180,47 @@ describe('billing renewal queue behavior', () => {
   it('uses bounded exponential retry windows', () => {
     const now = Date.parse('2026-08-22T00:00:00.000Z');
     expect(calculateRenewalRetryAt(0, now)).toBe('2026-08-22T02:00:00.000Z');
+    expect(calculateRenewalRetryAt(1, now)).toBe('2026-08-22T04:00:00.000Z');
+    expect(calculateRenewalRetryAt(2, now)).toBe('2026-08-22T08:00:00.000Z');
+    expect(calculateRenewalRetryAt(3, now)).toBe('2026-08-22T16:00:00.000Z');
+    expect(calculateRenewalRetryAt(4, now)).toBe('2026-08-23T00:00:00.000Z');
     expect(calculateRenewalRetryAt(10, now)).toBe('2026-08-23T00:00:00.000Z');
+  });
+
+  it('excludes team fixtures from the renewal charge queue and records a clean run', async () => {
+    const dueAt = new Date(Date.now() - 60_000).toISOString();
+    const team = {
+      id: 'team-qa',
+      user_id: 'user-team',
+      plan: 'team',
+      plan_id: 'team',
+      status: 'active',
+      current_period_end: dueAt,
+      next_billing_at: dueAt,
+      cancel_at_period_end: false,
+      provider_customer_key: null,
+      provider_billing_key_secret_id: null,
+      renewal_retry_count: 0,
+    };
+    installService([team], new Map());
+    const response = await POST(new Request('https://example.test/api/spokedu-master/payment/billing/renew', {
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer cron-test-secret',
+        'x-spokedu-billing-run-id': '11111111-1111-4111-8111-111111111111',
+      },
+    }));
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      checked: 0,
+      attempted: 0,
+      succeeded: 0,
+      failed: 0,
+      skipped: 0,
+    });
+    expect(mocks.pay).not.toHaveBeenCalled();
+    expect(team.renewal_retry_count).toBe(0);
+    expect(billingRunPatches.at(-1)).toMatchObject({ status: 'succeeded', error_code: null, skipped: 0 });
   });
 });

@@ -115,4 +115,25 @@ describe('SPOKEDU MASTER billing cancellation route', () => {
       secretId,
     });
   });
+
+  it('returns the existing cancellation when the request is repeated', async () => {
+    mockAuthUser(user);
+    const query = mockSubscription({
+      current_period_end: '2099-06-30T00:00:00.000Z',
+      period_end: '2099-06-30T00:00:00.000Z',
+      provider_billing_key_secret_id: null,
+      cancel_at_period_end: true,
+    });
+
+    const response = await POST();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      cancelAtPeriodEnd: true,
+      periodEnd: '2099-06-30T00:00:00.000Z',
+    });
+    expect(query.update).not.toHaveBeenCalled();
+    expect(deleteSpokeduMasterBillingKey).not.toHaveBeenCalled();
+  });
 });

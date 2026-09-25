@@ -76,6 +76,7 @@ describe('SPOKEDU MASTER billing API contracts', () => {
   it('renews only due active subscriptions that are not cancellation scheduled', () => {
     expect(renewRoute).toContain(".eq('status', 'active')");
     expect(renewRoute).toContain(".eq('cancel_at_period_end', false)");
+    expect(renewRoute).toContain(".or('plan.in.(lite,premium),plan_id.in.(lite,premium)')");
     expect(renewRoute).toContain(".lte('next_billing_at', now)");
     expect(renewRoute).toContain('.limit(20)');
     expect(renewRoute).toContain('renewal_payment_failed');

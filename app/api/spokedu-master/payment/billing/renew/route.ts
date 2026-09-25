@@ -129,6 +129,7 @@ async function runRenewal(request: Request) {
     .select('id,user_id,plan,plan_id,status,current_period_end,next_billing_at,provider_customer_key,provider_billing_key_secret_id,renewal_retry_count')
     .eq('status', 'active')
     .eq('cancel_at_period_end', false)
+    .or('plan.in.(lite,premium),plan_id.in.(lite,premium)')
     .lte('next_billing_at', now)
     .or(`next_retry_at.is.null,next_retry_at.lte.${now}`)
     .order('next_billing_at', { ascending: true })
