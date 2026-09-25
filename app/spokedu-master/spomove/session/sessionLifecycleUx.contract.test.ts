@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { SPOMOVE_SESSION_ENGINE_LAYER, SPOMOVE_SESSION_OVERLAY_LAYER } from './sessionOverlayLayer';
 
 const read = (name: string) => readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/session', name), 'utf8');
 const page = read('page.tsx');
@@ -26,9 +27,23 @@ describe('SPOMOVE session lifecycle UX', () => {
     expect(settings).not.toContain('getSpomoveDifficultyOptions');
   });
 
+  it('keeps session overlays above the engine layer', () => {
+    expect(SPOMOVE_SESSION_OVERLAY_LAYER).toBeGreaterThan(SPOMOVE_SESSION_ENGINE_LAYER);
+    const activation = page.slice(page.indexOf('activationBlocked ? createPortal'), page.indexOf('exitConfirmationOpen ? createPortal'));
+    const exit = page.slice(page.indexOf('exitConfirmationOpen ? createPortal'), page.indexOf(') : null}'));
+    expect(activation).toContain('zIndex: SPOMOVE_SESSION_OVERLAY_LAYER');
+    expect(activation).toContain('createPortal');
+    expect(exit).toContain('zIndex: SPOMOVE_SESSION_OVERLAY_LAYER');
+    expect(exit).toContain('fixed inset-0');
+    expect(exit).toContain('createPortal');
+  });
+
   it('requires explicit confirmation before an engine exit becomes ended', () => {
     expect(page).toContain('onExit={() => setExitConfirmationOpen(true)}');
     expect(page).toContain('수업을 종료할까요?');
+    expect(page).toContain('SPOMOVE_SESSION_OVERLAY_LAYER');
+    expect(page).toContain('createPortal');
+    expect(page).toContain('fixed inset-0');
     expect(page).toContain('계속하기');
     expect(page).toContain("finishSession('ended')");
     expect(page).toContain("finishSession('done', payload)");

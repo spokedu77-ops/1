@@ -4,6 +4,7 @@ import { Maximize, Minimize, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { isDiveActionMoveUnityTheme, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
@@ -15,6 +16,7 @@ import { useMasterStore } from '../../store';
 import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import { EngineRouter, type EngineCompletePayload } from './EngineRouter';
+import { SPOMOVE_SESSION_OVERLAY_LAYER } from './sessionOverlayLayer';
 import { lockViewportScroll } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
 import {
   findOfficialSpomovePreset,
@@ -699,17 +701,20 @@ function SpomoveSessionContent() {
             finishSession('done', payload);
           }}
         />
-        {activationBlocked ? (
-          <div className="absolute inset-x-3 top-[max(0.75rem,env(safe-area-inset-top))] z-50 mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-white/15 bg-black/80 p-3 text-white shadow-xl backdrop-blur">
+        {activationBlocked ? createPortal(
+          <div className="pointer-events-none fixed inset-x-0 top-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }}>
+            <div className="pointer-events-auto mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-white/15 bg-black/80 p-3 text-white shadow-xl backdrop-blur">
             <p className="min-w-0 flex-1 text-[13px] font-bold leading-5">
               {activationBlocked === 'audioBlocked' ? '소리를 사용할 수 없어 화면은 계속 실행됩니다.' : activationBlocked === 'fullscreenBlocked' ? '전체화면을 사용할 수 없어 일반 화면으로 실행합니다.' : '전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.'}
             </p>
             <button type="button" onClick={unlockActivation} className="min-h-11 shrink-0 rounded-xl bg-white px-3 text-xs font-black text-black">다시 시도</button>
             <button type="button" onClick={() => setActivationBlocked(null)} aria-label="안내 닫기" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white/70"><X className="h-4 w-4" /></button>
-          </div>
+            </div>
+          </div>,
+          document.body,
         ) : null}
-        {exitConfirmationOpen ? (
-          <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/70 px-5" role="dialog" aria-modal="true" aria-labelledby="spomove-exit-title">
+        {exitConfirmationOpen ? createPortal(
+          <div className="fixed inset-0 flex items-center justify-center bg-black/70 px-5" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }} role="dialog" aria-modal="true" aria-labelledby="spomove-exit-title">
             <section className="w-full max-w-sm rounded-[22px] border border-white/15 bg-slate-950 p-5 text-white shadow-2xl">
               <h2 id="spomove-exit-title" className="text-xl font-black">수업을 종료할까요?</h2>
               <p className="mt-2 text-sm font-semibold text-white/60">지금까지 진행한 시간은 중도 종료로 남길 수 있습니다.</p>
@@ -718,7 +723,8 @@ function SpomoveSessionContent() {
                 <button type="button" onClick={() => { setExitConfirmationOpen(false); finishSession('ended'); }} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">수업 종료</button>
               </div>
             </section>
-          </div>
+          </div>,
+          document.body,
         ) : null}
       </div>
     );

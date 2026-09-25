@@ -54,6 +54,7 @@ export default defineConfig({
       'app/spokedu-master/components/layout/masterRouteAccess.test.ts',
       'app/api/spokedu-master/programs/programPatchAccess.test.ts',
       'app/lib/server/spokeduMasterAccess.snapshot.test.ts',
+      'app/spokedu-master/spomove/session/sessionOverlayLayer.contract.test.ts',
     ],
   },
   resolve: {
