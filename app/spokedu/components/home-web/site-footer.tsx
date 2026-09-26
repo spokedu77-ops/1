@@ -1,0 +1,6 @@
+import Link from 'next/link';
+import { brandContactLinks, brandProfile } from '../../data/brand';
+import { SPOKEDU_IMAGES } from '../../data/images';
+import { SPOKEDU_PATHS } from '../../data/public-routes';
+import styles from './home-web.module.css';
+export function SiteFooter() { return <footer className={styles.footer}><div className={styles.footerTop}><Link href={SPOKEDU_PATHS.home} className={styles.footerLogo} aria-label="SPOKEDU 홈"><img src={SPOKEDU_IMAGES.brand.logo.src} alt="SPOKEDU" /></Link><div className={styles.footerCompany}><div><span>{brandProfile.nameKo} · 대표 {brandProfile.representative}</span><small>사업자등록번호 {brandProfile.businessRegistrationNumber} · 통신판매업 {brandProfile.mailOrderStatus}</small><small>{brandProfile.businessAddress}</small></div><div><a href={brandContactLinks.phone}>{brandProfile.phone}</a><a href={brandContactLinks.email}>{brandProfile.email}</a></div></div><div className={styles.footerChannels}><a href="https://blog.naver.com/spokedu77">BLOG</a><a href="https://pf.kakao.com/_VGWxeb/chat">KAKAO</a><span>INSTAGRAM</span></div></div><div className={styles.footerBottom}><span>© 2026 SPOKEDU. All rights reserved.</span><span>MOVEMENT BECOMES LEARNING.</span></div></footer>; }

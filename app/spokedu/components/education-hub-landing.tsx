@@ -1,697 +1,462 @@
-'use client';
+"use client";
 
-import { Fragment, useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import Image from 'next/image';
-import { HOME_MEDIA } from '../data/home-media';
-import { educationHubPage, type EducationHubCaseCard, type EducationProgram } from '../data/education-hub';
-import {
-  brandFocusRing,
-  homePhotoGrade,
-  koreanBody,
-  koreanDisplay,
-  marketingButtonPrimaryOnDark,
-  marketingHeroDisplay,
-  marketingHeroDisplaySectionScale,
-  marketingSectionDisplay,
-} from '../lib/ui-classes';
-import { MediaPanel } from './visual';
-import { TrackedLink } from './home/tracked-link';
-import styles from './education-hub.module.css';
+import Link from "next/link";
+import { useState } from "react";
+import { SiteFooter } from "./home-web/site-footer";
+import { SiteHeader } from "./home-web/site-header";
+import styles from "./education-hub.module.css";
 
-type ProgramFamily = EducationProgram;
-type ProcessIconId = (typeof educationHubPage.process.steps)[number]['icon'];
-type ReviewAccent = 'blue' | 'cyan' | 'teal';
+const CONDITIONS = [
+  [
+    "01",
+    "공간",
+    "교실, 활동실, 강당, 체육관 등 사용 가능한 공간에 맞춰 이동 동선과 교구 구성을 조정합니다.",
+  ],
+  [
+    "02",
+    "인원",
+    "소그룹부터 반 단위, 다인원 활동까지 인원에 맞춰 대기와 참여 구조를 설계합니다.",
+  ],
+  [
+    "03",
+    "연령",
+    "유아, 초등, 청소년과 특수·통합 환경까지 수행 수준과 이해 속도에 맞게 규칙을 조정합니다.",
+  ],
+  [
+    "04",
+    "운영",
+    "정규수업, 방학특강, 원데이, 행사 등 회기와 목적에 맞춰 프로그램을 구성합니다.",
+  ],
+] as const;
 
-const REVIEW_ACCENTS: readonly ReviewAccent[] = ['blue', 'cyan', 'teal'];
+const FLOW = [
+  [
+    "01",
+    "이동운동기술",
+    "기본 움직임과 신체조절을 바탕으로 안정적인 움직임을 준비합니다.",
+    "/images/spokedu/records/gangdong-health-pe.jpg",
+  ],
+  [
+    "02",
+    "스포무브: 시지각 움직임 놀이체육",
+    "화면의 정보를 보고 판단한 뒤 움직임으로 반응합니다.",
+    "/images/spokedu/programs/program-spomove.jpg",
+  ],
+  [
+    "03",
+    "조작운동기술",
+    "던지기, 받기, 차기, 타격 등 다양한 교구를 활용해 움직임 기술을 확장합니다.",
+    "/images/spokedu/private/private-tool-activity.jpg",
+  ],
+  [
+    "04",
+    "팀 활동",
+    "협동과 규칙 이해를 바탕으로 팀 게임과 스포츠 활동으로 연결합니다.",
+    "/images/spokedu/records/maedong-sports-stepup.jpg",
+  ],
+] as const;
 
-function WrapUnits({ parts, className }: { parts: readonly string[]; className?: string }) {
-  return (
-    <span className={`${styles.wrapUnits} ${className ?? ''}`}>
-      {parts.map((part, index) => (
-        <span key={`${part}-${index}`} className={styles.wrapUnit}>
-          {part}
-          {index < parts.length - 1 ? ' ·' : ''}
-        </span>
-      ))}
-    </span>
-  );
-}
+const FORMATS = [
+  [
+    "01",
+    "정기수업",
+    "주 1회 또는 정해진 회기에 맞춰 연속적인 커리큘럼으로 운영합니다.",
+  ],
+  [
+    "02",
+    "방학·특강",
+    "방학 또는 특정 기간에 맞춰 스포츠와 놀이체육을 집중적으로 구성합니다.",
+  ],
+  [
+    "03",
+    "원데이·행사",
+    "가족체육, 미니운동회, 체험 프로그램 등 짧은 시간 안에 참여도가 높은 프로그램을 운영합니다.",
+  ],
+  [
+    "04",
+    "특수·포용 체육",
+    "참여자의 수행 수준과 특성에 맞춰 속도, 규칙, 거리, 교구와 촉진 수준을 조정합니다.",
+  ],
+] as const;
 
-function ChipList({ parts }: { parts: readonly string[] }) {
-  return (
-    <ul className={styles.chipList}>
-      {parts.map((part) => (
-        <li key={part}>{part}</li>
-      ))}
-    </ul>
-  );
-}
+const CONTENT = [
+  [
+    "01",
+    "FUNCTIONAL MOVE",
+    "기초 움직임과 신체조절",
+    "/images/spokedu/programs/program-paps-running.jpg",
+  ],
+  [
+    "02",
+    "TEAM BUILDING",
+    "협동과 규칙 이해",
+    "/images/spokedu/records/maedong-sports-stepup.jpg",
+  ],
+  [
+    "03",
+    "SPOMOVE",
+    "시지각과 움직임 반응",
+    "/images/spokedu/records/dongjak-spomove.jpg",
+  ],
+  [
+    "04",
+    "MONTHLY SPORTS",
+    "종목별 스포츠 경험",
+    "/images/spokedu/private/curriculum-basketball.jpg",
+  ],
+  [
+    "05",
+    "MINI OLYMPICS",
+    "팀 경기와 이벤트",
+    "/images/spokedu/dispatch/dispatch-oneday-event.jpg",
+  ],
+  [
+    "06",
+    "CUSTOM",
+    "기관 목적에 맞춘 프로그램",
+    "/images/spokedu/dispatch/dispatch-institution-class.jpg",
+  ],
+] as const;
 
-function ReviewStars({ visible }: { visible: boolean }) {
-  if (!visible) return null;
-  return (
-    <span className={styles.stars} aria-hidden>
-      {Array.from({ length: 5 }, (_, index) => (
-        <span key={index}>★</span>
-      ))}
-    </span>
-  );
-}
+const CASES = [
+  [
+    "매동초등학교",
+    "학교 · 정기수업",
+    "학년과 인원에 맞춰 종목을 순환하며 연속적인 스포츠 수업을 운영했습니다.",
+    "/images/spokedu/records/maedong-sports-stepup.jpg",
+    "https://blog.naver.com/spokedutogether/224288711414",
+  ],
+  [
+    "서울 중구 찾아가는 동행 체육교실",
+    "특수·통합 · 정기수업",
+    "참여자의 수행 수준에 따라 거리, 속도, 규칙과 촉진 수준을 조정했습니다.",
+    "/images/spokedu/records/donghaeng-special-pe-field.jpg",
+    "https://blog.naver.com/spokedutogether/224338186918",
+  ],
+  [
+    "동작거점형 우리동네키움센터",
+    "기관 · SPOMOVE",
+    "화면 자극과 실제 움직임을 연결해 인지와 움직임을 함께 경험하도록 구성했습니다.",
+    "/images/spokedu/records/dongjak-spomove.jpg",
+    "/records/dongjak-spomove",
+  ],
+] as const;
 
-function NeutralMark() {
-  return (
-    <span className={styles.compareDash} aria-hidden>
-      –
-    </span>
-  );
-}
-
-function CheckMark() {
-  return (
-    <svg className={styles.compareCheck} viewBox="0 0 20 20" aria-hidden>
-      <path
-        d="M4.2 10.4 8 14.1 15.8 5.9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ProcessIcon({ icon }: { icon: ProcessIconId }) {
-  return (
-    <span className={styles.processIcon} aria-hidden>
-      <svg viewBox="0 0 24 24" aria-hidden>
-        {icon === 'checklist' ? (
-          <>
-            <path d="M8 4.5h8.5A2.5 2.5 0 0 1 19 7v12.5A2.5 2.5 0 0 1 16.5 22h-9A2.5 2.5 0 0 1 5 19.5V7A2.5 2.5 0 0 1 7.5 4.5H8" />
-            <path d="M9 4.5V3.8A1.8 1.8 0 0 1 10.8 2h2.4A1.8 1.8 0 0 1 15 3.8v.7" />
-            <path d="m8.5 12 1.8 1.8 4.4-4.4" />
-            <path d="M8.5 17.5H15" />
-          </>
-        ) : null}
-        {icon === 'plan' ? (
-          <>
-            <path d="M5 7.5h14v12H5z" />
-            <path d="M8 4.5v3M16 4.5v3M5 11h14" />
-            <path d="M8.5 14.5h3M8.5 17.5h7" />
-          </>
-        ) : null}
-        {icon === 'field' ? (
-          <>
-            <circle cx="12" cy="6.2" r="2" />
-            <path d="M8.2 21.2 10.4 13l-2.6-2.4 4.2-1.4 2.3 3.6 2.7-1.4" />
-            <path d="M10.4 13 8 21.2M13.2 14.8 15.6 21" />
-          </>
-        ) : null}
-      </svg>
-    </span>
-  );
-}
-
-function TextCta({
-  href,
-  trackLabel,
-  children,
-  dark = false,
-}: {
-  href: string;
-  trackLabel: string;
-  children: ReactNode;
-  dark?: boolean;
-}) {
-  return (
-    <TrackedLink
-      href={href}
-      trackLabel={trackLabel}
-      className={`${styles.textCta} ${dark ? styles.textCtaDark : ''} ${brandFocusRing} ${koreanDisplay}`}
-    >
-      <span className={styles.textCtaLabel}>{children}</span>
-      <span className={styles.textCtaArrow} aria-hidden>
-        →
-      </span>
-    </TrackedLink>
-  );
-}
-
-function FieldMedia({
-  mediaKey,
-  caption,
-  variant,
-}: {
-  mediaKey: keyof typeof HOME_MEDIA;
-  caption: string;
-  variant: 'primary' | 'secondary';
-}) {
-  return (
-    <figure className={`${styles.fieldFigure} ${variant === 'primary' ? styles.fieldFigurePrimary : styles.fieldFigureSecondary}`}>
-      <div className={styles.fieldPhoto}>
-        <MediaPanel
-          media={HOME_MEDIA[mediaKey]}
-          className={`${styles.mediaFill} border-0 ${homePhotoGrade}`}
-          sizes={variant === 'primary' ? '(min-width: 960px) 58vw, 92vw' : '(min-width: 960px) 38vw, 92vw'}
-          objectFit="cover"
-        />
-      </div>
-      <figcaption className={koreanBody}>{caption}</figcaption>
-    </figure>
-  );
-}
+const FAQ = [
+  [
+    "수업 비용은 어떻게 정해지나요?",
+    "대상, 인원, 회기, 수업시간, 지역과 필요한 교구에 따라 달라집니다. 조건을 확인한 뒤 운영안과 함께 안내드립니다.",
+  ],
+  [
+    "최소 몇 회부터 가능한가요?",
+    "원데이부터 정기수업까지 운영 가능하며 목적에 따라 적합한 회기 구성을 제안합니다.",
+  ],
+  [
+    "기관에서 교구를 준비해야 하나요?",
+    "프로그램에 필요한 교구는 운영 방식에 따라 협의하며 SPOKEDU가 준비해 진행할 수 있습니다.",
+  ],
+  [
+    "특수·통합 환경에서도 가능한가요?",
+    "가능합니다. 참여자의 수행 수준과 특성에 맞춰 규칙, 거리, 속도와 촉진 수준을 조정합니다.",
+  ],
+  [
+    "어느 지역까지 운영하나요?",
+    "수업 지역과 일정에 따라 운영 가능 여부가 달라질 수 있으므로 문의 시 기관 위치를 함께 알려주세요.",
+  ],
+] as const;
 
 export function EducationHubLanding() {
-  const { hero, fit, operating, comparison, adjustment, cases, proof, reviews, process, faq, contact } =
-    educationHubPage;
-  const [selectedProgram, setSelectedProgram] = useState<ProgramFamily | null>(null);
-  const closeProgramDetail = useCallback(() => setSelectedProgram(null), []);
+  const [activeContent, setActiveContent] = useState(0);
+  const [openFaqs, setOpenFaqs] = useState<boolean[]>(() =>
+    FAQ.map(() => false),
+  );
+  const selectedContent = CONTENT[activeContent];
+
+  const toggleFaq = (index: number) => {
+    setOpenFaqs((current) =>
+      current.map((isOpen, itemIndex) =>
+        itemIndex === index ? !isOpen : isOpen,
+      ),
+    );
+  };
 
   return (
-    <main
-      className={styles.page}
-      data-spokedu-education="institution-sales"
-      data-spokedu-education-sections={educationHubPage.sectionOrder.length}
-    >
-      <section id={hero.id} className={styles.hero} aria-labelledby="education-hero-heading">
-        <div className={styles.heroMedia}>
-          <MediaPanel
-            media={HOME_MEDIA[hero.mediaKey]}
-            className={`absolute inset-0 h-full w-full border-0 rounded-none ${homePhotoGrade}`}
-            sizes="100vw"
-            photoPriority
-            priority
-            objectFit="cover"
-          />
-        </div>
-        <div className={styles.heroScrim} aria-hidden />
-        <div className={styles.heroCopy}>
-          <div className={styles.contentRail}>
-            <p className={`${styles.eyebrow} ${koreanDisplay}`}>{hero.eyebrow}</p>
-            <h1
-              id="education-hero-heading"
-              className={`${marketingHeroDisplay} ${marketingHeroDisplaySectionScale} ${koreanDisplay}`}
-            >
-              <span>{hero.lines[0]}</span>
-              <span>{hero.lines[1]}</span>
-            </h1>
-            <p className={`${styles.heroLead} ${koreanBody}`}>{hero.lead}</p>
-            <div className={styles.heroActions}>
-              <TrackedLink
-                href={hero.primaryCta.href}
-                trackLabel={hero.primaryCta.trackLabel}
-                commercialRoute="dispatch"
-                ctaIntentId={hero.primaryCta.trackLabel}
-                className={`${marketingButtonPrimaryOnDark} ${brandFocusRing} ${koreanDisplay}`}
-              >
-                {hero.primaryCta.label}
-              </TrackedLink>
-              <TextCta href={hero.secondaryCta.href} trackLabel={hero.secondaryCta.trackLabel} dark>
-                {hero.secondaryCta.label}
-              </TextCta>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id={fit.id} className={styles.fit} aria-labelledby="education-fit-heading">
-        <div className={styles.contentRail}>
-          <div className={styles.fitLayout}>
-            <header className={styles.fitIntro}>
-              <h2 id="education-fit-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-                {fit.title}
-              </h2>
-              <p className={`${styles.sectionLead} ${koreanBody}`}>{fit.lead}</p>
-              <p className={`${styles.fitStatementBody} ${koreanBody}`}>{fit.statement}</p>
-            </header>
-            <ul className={styles.fitGrid}>
-              {fit.items.map((item) => (
-                <li key={item.label}>
-                  <p className={`${styles.fitLabel} ${koreanDisplay}`}>{item.label}</p>
-                  <h3 className={koreanDisplay}>
-                    <WrapUnits parts={item.condition} />
-                  </h3>
-                  <p className={koreanBody}>{item.response}</p>
-                  <p className={`${styles.fitItemNote} ${koreanBody}`}>{item.note}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <p className={`${styles.institutionLine} ${koreanBody}`}>
-            <strong className={koreanDisplay}>적합 기관</strong>
-            <WrapUnits parts={fit.institutions} />
-          </p>
-          <p className={`${styles.fitNote} ${koreanBody}`}>{fit.smallSpace}</p>
-        </div>
-      </section>
-
-      <section id={operating.id} className={styles.operating} aria-labelledby="education-operating-heading">
-        <div className={styles.contentRail}>
-          <div className={styles.operatingChapter}>
-            <div className={styles.operatingCopy}>
-              <header className={styles.sectionHeader}>
-                <h2 id="education-operating-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-                  {operating.title}
-                </h2>
-                <p className={`${styles.sectionLead} ${koreanBody}`}>{operating.lead}</p>
-              </header>
-              <div className={styles.formatList}>
-                {operating.formats.map((format) => (
-                  <article key={format.id}>
-                    <h3 className={koreanDisplay}>{format.title}</h3>
-                    <p className={koreanBody}>{format.body}</p>
-                    <p className={`${styles.formatExample} ${koreanBody}`}>{format.example}</p>
-                  </article>
-                ))}
+    <div className={styles.page} data-education-p0="desktop-static">
+      <SiteHeader />
+      <main>
+        <section className={styles.hero} aria-labelledby="edu-hero">
+          <div className={styles.heroInner}>
+            <div className={styles.heroCopy}>
+              <p className={styles.label}>기관 · 학교 체육수업</p>
+              <h1 id="edu-hero">
+                <span>기관의 환경에 맞춰</span>
+                <span>체육수업을 설계합니다.</span>
+              </h1>
+              <p className={styles.lead}>
+                학교와 기관의 대상, 인원, 공간과 일정에 맞춰
+                <br />
+                SPOKEDU가 직접 수업을 설계하고 운영합니다.
+              </p>
+              <div className={styles.actions}>
+                <Link className={styles.primary} href="/contact">
+                  수업 문의하기
+                </Link>
+                <Link className={styles.secondary} href="/records">
+                  운영 사례 보기
+                </Link>
               </div>
             </div>
-            <div className={styles.fieldStage} id="field-stage">
-              {operating.fieldMedia.map((item, index) => (
-                <FieldMedia
-                  key={item.mediaKey}
-                  {...item}
-                  variant={index === 0 ? 'primary' : 'secondary'}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="programs" className={styles.programs} aria-labelledby="education-programs-heading">
-        <div className={styles.contentRail}>
-          <header className={styles.lineupIntro}>
-            <h2 id="education-programs-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-              {operating.lineupTitle}
-            </h2>
-            <p className={`${styles.sectionLead} ${koreanBody}`}>{operating.lineupLead}</p>
-          </header>
-          <ul className={styles.programGrid}>
-            {operating.lineup.map((program) => (
-              <li key={program.id}>
-                <ProgramCard program={program} onSelect={setSelectedProgram} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section id={comparison.id} className={styles.comparison} aria-labelledby="education-comparison-heading">
-        <div className={styles.contentRail}>
-          <p className={`${styles.darkBadge} ${koreanDisplay}`}>{comparison.badge}</p>
-          <h2 id="education-comparison-heading" className={`${styles.darkTitle} ${koreanDisplay}`}>
-            {comparison.title}
-          </h2>
-          <p className={`${styles.darkLead} ${koreanBody}`}>{comparison.lead}</p>
-          <table className={styles.compareTable} aria-labelledby="education-comparison-heading">
-            <thead>
-              <tr>
-                <th scope="col" className={`${styles.compareAxisHead} ${koreanDisplay}`}>
-                  {comparison.axisLabel}
-                </th>
-                <th scope="col" className={`${styles.compareOursHead} ${koreanDisplay}`}>
-                  {comparison.ours}
-                </th>
-                <th scope="col" className={`${styles.compareTheirsHead} ${koreanDisplay}`}>
-                  {comparison.theirs}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparison.rows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row" className={`${styles.compareLabel} ${koreanDisplay}`}>
-                    {row.label}
-                  </th>
-                  <td className={`${styles.compareOursCell} ${koreanBody}`}>
-                    <span className={`${styles.compareCellKicker} ${koreanDisplay}`} aria-hidden>
-                      {comparison.ours}
-                    </span>
-                    <span className={styles.compareOursValue}>
-                      <CheckMark />
-                      <span>{row.spokedu}</span>
-                    </span>
-                  </td>
-                  <td className={`${styles.compareOtherCell} ${koreanBody}`}>
-                    <span className={`${styles.compareCellKicker} ${koreanDisplay}`} aria-hidden>
-                      {comparison.theirs}
-                    </span>
-                    <span className={styles.compareOtherValue}>
-                      <NeutralMark />
-                      <span>{row.other}</span>
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="spomove" className={styles.spomoveFeature} aria-labelledby="education-spomove-heading">
-        <div className={styles.visualRail}>
-          <div className={styles.spomoveProof}>
-            <div className={styles.spomovePhoto}>
-              <MediaPanel
-                media={HOME_MEDIA[operating.spomove.mediaKey]}
-                className={`${styles.mediaFill} border-0 ${homePhotoGrade}`}
-                sizes="(min-width: 1100px) 58vw, 100vw"
-                objectFit="cover"
+            <div className={styles.heroImage}>
+              <img
+                src="/images/spokedu/dispatch/dispatch-institution-class.jpg"
+                alt="지도자와 여러 아동이 스포츠 교구를 활용해 움직이는 기관 체육수업"
               />
             </div>
-            <div className={styles.spomoveCopy}>
-              <p className={`${styles.meta} ${koreanDisplay}`}>{operating.spomove.eyebrow}</p>
-              <h2 id="education-spomove-heading" className={`${styles.spomoveTitle} ${koreanDisplay}`}>
-                {operating.spomove.title}
+          </div>
+        </section>
+
+        <section className={styles.conditions} aria-labelledby="edu-conditions">
+          <div className={styles.grid}>
+            <header>
+              <h2 id="edu-conditions">
+                조건이 달라지면
+                <br />
+                수업도 달라집니다.
               </h2>
-              <p className={koreanBody}>{operating.spomove.body}</p>
-              <p className={`${styles.spomoveNote} ${koreanBody}`}>{operating.spomove.note}</p>
+              <p>
+                같은 프로그램을 모든 현장에 반복하지 않습니다.
+                <br />
+                공간과 인원, 연령과 운영 목적에 맞춰
+                <br />
+                수업의 구성과 진행 방식을 조정합니다.
+              </p>
+            </header>
+            <div className={styles.rows}>
+              {CONDITIONS.map(([n, title, body]) => (
+                <article key={n}>
+                  <span>{n}</span>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </article>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id={adjustment.id} className={styles.adjustment} aria-labelledby="education-adjustment-heading">
-        <div className={styles.contentRail}>
-          <header className={styles.sectionHeader}>
-            <h2 id="education-adjustment-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-              {adjustment.title}
-            </h2>
-            <p className={`${styles.sectionLead} ${koreanBody}`}>{adjustment.lead}</p>
-          </header>
-          <ol className={styles.mechanism}>
-            {adjustment.items.map((item) => (
-              <li key={item.label}>
-                <span className={styles.mechanismIndex} aria-hidden>
-                  {item.n}
-                </span>
-                <h3 className={koreanDisplay}>{item.label}</h3>
-                <p className={`${styles.mechanismKeys} ${koreanBody}`}>
-                  <WrapUnits parts={item.keys} />
-                </p>
-                <p className={koreanBody}>{item.body}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <section id={cases.id} className={styles.cases} aria-labelledby="education-cases-heading">
-        <div className={styles.contentRail}>
-          <header className={styles.sectionHeader}>
-            <h2 id="education-cases-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-              {cases.title}
-            </h2>
-            <p className={`${styles.sectionLead} ${koreanBody}`}>{cases.lead}</p>
-          </header>
-          <ul className={styles.caseGrid}>
-            {cases.cards.map((card) => (
-              <li key={card.slug}>
-                <CaseItem card={card} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section id={proof.id} className={styles.proof} aria-label={proof.regionLabel}>
-        <div className={styles.contentRail}>
-          <ul className={styles.proofStrip}>
-            {proof.items.map((item) => (
-              <li key={item.label}>
-                <p className={`${styles.proofLabel} ${koreanDisplay}`}>{item.label}</p>
-                <p className={`${styles.proofBody} ${koreanBody}`}>{item.body}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section id={reviews.id} className={styles.reviews} aria-labelledby="education-reviews-heading">
-        <div className={styles.contentRail}>
-          <p className={`${styles.darkBadge} ${koreanDisplay}`}>{reviews.badge}</p>
-          <h2 id="education-reviews-heading" className={`${styles.darkTitle} ${koreanDisplay}`}>
-            {reviews.title}
-          </h2>
-          <p className={`${styles.darkLead} ${koreanBody}`}>{reviews.lead}</p>
-          <ul className={styles.reviewGrid}>
-            {reviews.items.map((item, index) => (
-              <li key={item.org} data-accent={REVIEW_ACCENTS[index] ?? 'blue'}>
-                <blockquote>
-                  <ReviewStars visible={item.showStars} />
-                  <p className={`${styles.reviewHeadline} ${koreanDisplay}`}>{item.headline}</p>
-                  <p className={`${styles.reviewQuote} ${koreanBody}`}>{item.quote}</p>
-                  <footer className={styles.reviewIdentity}>
-                    <cite className={`${styles.reviewName} ${koreanDisplay}`}>{item.name}</cite>
-                    <span className={`${styles.reviewOrg} ${koreanBody}`}>{item.org}</span>
-                  </footer>
-                </blockquote>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <div className={styles.closingPaper}>
-      <section id={process.id} className={styles.process} aria-labelledby="education-process-heading">
-        <div className={styles.contentRail}>
-          <header className={styles.sectionHeader}>
-            <h2 id="education-process-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-              {process.title}
-            </h2>
-            <p className={`${styles.sectionLead} ${koreanBody}`}>{process.lead}</p>
-          </header>
-          <div className={styles.processTrack}>
-            {process.steps.map((step, index) => (
-              <Fragment key={step.n}>
-                {index > 0 ? (
-                  <div className={styles.processConnector} aria-hidden>
-                    <span className={styles.processConnectorLine} />
-                    <span className={styles.processConnectorArrow} />
+        <section className={styles.flow} aria-labelledby="edu-flow">
+          <div className={styles.rail}>
+            <header className={styles.sectionHead}>
+              <h2 id="edu-flow">
+                하나의 활동이 아니라
+                <br />
+                수업의 흐름을 설계합니다.
+              </h2>
+              <p>
+                수업 목적과 대상에 따라 구성은 달라지지만 기본적인 움직임에서
+                인지·반응, 조작기술과 협동 활동까지 자연스럽게 이어지도록 수업을
+                설계합니다.
+              </p>
+            </header>
+            <div className={styles.flowGrid}>
+              {FLOW.map(([n, title, body, src]) => (
+                <article key={n}>
+                  <div>
+                    <span>{n}</span>
+                    <h3>{title}</h3>
+                    <p>{body}</p>
                   </div>
-                ) : null}
-                <article className={styles.processCard}>
-                  <div className={styles.processHead}>
-                    <span className={styles.processIndex}>{step.n}</span>
-                    <ProcessIcon icon={step.icon} />
-                  </div>
-                  <h3 className={koreanDisplay}>{step.title}</h3>
-                  <p className={koreanBody}>{step.body}</p>
-                  <ChipList parts={step.keys} />
+                  <img src={src} alt={`${title} 실제 수업 장면`} />
                 </article>
-              </Fragment>
-            ))}
+              ))}
+            </div>
+            <p className={styles.note}>
+              ※ 대상과 목적에 따라 활동의 순서와 구성은 달라질 수 있으며
+              SPOMOVE는 모든 수업에 필수로 포함되는 프로그램이 아닙니다.
+            </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id={faq.id} className={styles.faq} aria-labelledby="education-faq-heading">
-        <div className={styles.contentRail}>
-          <h2 id="education-faq-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-            {faq.title}
-          </h2>
-          <div className={styles.faqList}>
-            {faq.items.map((item) => (
-              <details key={item.q}>
-                <summary className={koreanDisplay}>{item.q}</summary>
-                <p className={koreanBody}>{item.a}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-      </div>
-
-      <section id={contact.id} className={styles.contact} aria-labelledby="education-contact-heading">
-        <div className={styles.contentRail}>
-          <div>
-            <h2 id="education-contact-heading" className={`${marketingSectionDisplay} ${styles.sectionTitle} ${koreanDisplay}`}>
-              <span>{contact.titleLines[0]}</span>
-              <span>{contact.titleLines[1]}</span>
+        <section className={styles.formats} aria-labelledby="edu-format">
+          <div className={styles.grid}>
+            <h2 id="edu-format">
+              목적에 맞는 방식으로
+              <br />
+              운영합니다.
             </h2>
-            <p className={koreanBody}>{contact.lead}</p>
+            <div className={styles.darkRows}>
+              {FORMATS.map(([n, title, body]) => (
+                <article key={n}>
+                  <span>{n}</span>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </article>
+              ))}
+            </div>
           </div>
-          <TrackedLink
-            href={contact.primaryCta.href}
-            trackLabel={contact.primaryCta.trackLabel}
-            commercialRoute="dispatch"
-            ctaIntentId={contact.primaryCta.trackLabel}
-            className={`${styles.contactButton} ${brandFocusRing} ${koreanDisplay}`}
-          >
-            {contact.primaryCta.label}
-          </TrackedLink>
-        </div>
-      </section>
-      {selectedProgram ? (
-        <ProgramDetailModal program={selectedProgram} onClose={closeProgramDetail} />
-      ) : null}
-    </main>
-  );
-}
+        </section>
 
-function ProgramCard({
-  program,
-  onSelect,
-}: {
-  program: ProgramFamily;
-  onSelect: (program: ProgramFamily) => void;
-}) {
-  return (
-    <button
-      type="button"
-      className={`${styles.programCard} ${brandFocusRing}`}
-      onClick={() => onSelect(program)}
-    >
-      <span className={`${styles.programCardTitle} ${koreanDisplay}`}>{program.name}</span>
-      <span className={`${styles.programCardDescription} ${koreanBody}`}>{program.description}</span>
-      <span className={`${styles.programCardMeta} ${koreanBody}`}>
-        <WrapUnits parts={program.use} />
-      </span>
-      <span className={`${styles.programCardAction} ${koreanDisplay}`}>
-        <span className={styles.programCardActionLabel}>활동 내용 보기</span>
-        <span className={styles.programCardActionArrow} aria-hidden>
-          →
-        </span>
-      </span>
-    </button>
-  );
-}
-
-function ProgramDetailModal({
-  program,
-  onClose,
-}: {
-  program: ProgramFamily;
-  onClose: () => void;
-}) {
-  const titleId = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const restoreFocusRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    closeRef.current?.focus();
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-      if (event.key !== 'Tab' || !dialogRef.current) return;
-      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusable.length === 0) {
-        event.preventDefault();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener('keydown', onKeyDown);
-      restoreFocusRef.current?.focus();
-    };
-  }, [onClose]);
-
-  return (
-    <div className={styles.programModalBackdrop} onClick={onClose}>
-      <div
-        ref={dialogRef}
-        className={styles.programModal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <button
-          ref={closeRef}
-          type="button"
-          className={`${styles.programModalClose} ${brandFocusRing}`}
-          onClick={onClose}
-          aria-label="닫기"
-        >
-          ×
-        </button>
-        <div className={styles.programModalBody}>
-          <h3 id={titleId} className={`${styles.programModalTitle} ${koreanDisplay}`}>
-            {program.name}
-          </h3>
-          <p className={`${styles.programModalIntro} ${koreanBody}`}>{program.details.intro}</p>
-          {'mediaKey' in program.details ? (
-            <div className={styles.programModalPhoto}>
-              <MediaPanel
-                media={HOME_MEDIA[program.details.mediaKey]}
-                className={`${styles.mediaFill} border-0 ${homePhotoGrade}`}
-                sizes="(min-width: 640px) 620px, 92vw"
-                objectFit="cover"
+        <section className={styles.content} aria-labelledby="edu-content">
+          <div className={styles.rail}>
+            <header className={styles.sectionHead}>
+              <h2 id="edu-content">
+                수업 목적에 맞춰
+                <br />
+                활동을 조합합니다.
+              </h2>
+              <p>
+                한 가지 프로그램을 반복하기보다 목적과 대상에 맞는 활동을
+                선택하고 조합합니다.
+              </p>
+            </header>
+            <div className={styles.contentGrid}>
+              <div className={styles.contentList}>
+                {CONTENT.map(([n, title, body], index) => (
+                  <button
+                    key={n}
+                    type={"button"}
+                    className={
+                      index === activeContent ? styles.contentActive : undefined
+                    }
+                    aria-pressed={index === activeContent}
+                    onMouseEnter={() => setActiveContent(index)}
+                    onFocus={() => setActiveContent(index)}
+                    onClick={() => setActiveContent(index)}
+                  >
+                    <span>{n}</span>
+                    <strong>{title}</strong>
+                    <p>{body}</p>
+                  </button>
+                ))}
+              </div>
+              <figure className={styles.contentVisual}>
+                <img
+                  key={selectedContent[3]}
+                  src={selectedContent[3]}
+                  alt={selectedContent[1] + " 실제 체육수업"}
+                />
+                <figcaption>
+                  <strong>{selectedContent[1]}</strong>
+                  <span>{selectedContent[2]}</span>
+                </figcaption>
+              </figure>
+              <img
+                src="/images/spokedu/programs/program-paps-running.jpg"
+                alt="달리기와 이동운동으로 기초 움직임과 신체조절을 경험하는 실제 체육수업"
               />
             </div>
-          ) : null}
-          <div className={styles.programModalSection}>
-            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>이런 기관에 적합</h4>
-            <ul className={koreanBody}>
-              {program.details.recommendedFor.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
+            <Link className={styles.textLink} href="/spomove">
+              SPOMOVE 자세히 보기 →
+            </Link>
           </div>
-          <div className={styles.programModalSection}>
-            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>활용 예시</h4>
-            <ul className={koreanBody}>
-              {program.details.activities.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className={styles.programModalSection}>
-            <h4 className={`${styles.programModalHeading} ${koreanDisplay}`}>운영 흐름</h4>
-            <ul className={koreanBody}>
-              {program.details.formats.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+        </section>
 
-function CaseItem({ card }: { card: EducationHubCaseCard }) {
-  return (
-    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`${styles.caseLink} ${brandFocusRing}`}>
-      <article>
-        <div className={styles.casePhoto}>
-          <Image
-            src={card.thumbnailSrc}
-            alt={`${card.venue} ${card.context} 수업 현장`}
-            fill
-            className={styles.directPhoto}
-            style={{ objectPosition: card.objectPosition }}
-            sizes="(min-width: 960px) 30vw, 92vw"
-          />
-        </div>
-        <div className={styles.caseMeta}>
-          <h3 className={koreanDisplay}>{card.venue}</h3>
-          <p className={koreanBody}>{card.context}</p>
-          <small className={koreanBody}>{card.description}</small>
-        </div>
-      </article>
-    </TrackedLink>
+        <section className={styles.proof} aria-labelledby="edu-proof">
+          <div className={styles.rail}>
+            <p className={styles.orangeLabel}>FIELD RECORDS</p>
+            <header className={styles.sectionHead}>
+              <h2 id="edu-proof">
+                같은 수업을
+                <br />
+                어디에나 반복하지 않습니다.
+              </h2>
+              <p>
+                현장마다 공간과 인원, 참여자의 특성이 다르기 때문에 수업의
+                동선과 규칙, 교구와 진행 속도를 함께 조정합니다.
+              </p>
+            </header>
+            <div className={styles.caseLayout}>
+              {CASES.map(([title, type, body, src, href], i) => (
+                <Link
+                  key={title}
+                  href={href}
+                  className={i === 0 ? styles.caseLarge : styles.caseSmall}
+                >
+                  <img src={src} alt={`${title} 실제 수업 현장`} />
+                  <div>
+                    <span>{type}</span>
+                    <h3>{title}</h3>
+                    <p>{body}</p>
+                    <b aria-hidden="true">↗</b>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <Link className={styles.textLink} href="/records">
+              전체 수업사례 보기 →
+            </Link>
+          </div>
+        </section>
+
+        <section className={styles.process} aria-labelledby="edu-process">
+          <div className={styles.rail}>
+            <div className={styles.processTop}>
+              <div>
+                <h2 id="edu-process">
+                  조건이 아직 정리되지 않아도
+                  <br />
+                  괜찮습니다.
+                </h2>
+                <p>
+                  기관명과 예상 인원, 희망 일정 정도만 알려주셔도
+                  <br />
+                  가능한 운영 방식부터 함께 확인합니다.
+                </p>
+              </div>
+              <div className={styles.processRows}>
+                {[
+                  ["01", "조건 확인", "대상 · 인원 · 공간 · 일정"],
+                  ["02", "운영안 구성", "프로그램 · 회기 · 강사 · 교구"],
+                  ["03", "현장 운영", "수업 진행 · 현장 조정 · 운영 공유"],
+                ].map(([n, t, b]) => (
+                  <div key={n}>
+                    <span>{n}</span>
+                    <strong>{t}</strong>
+                    <p>{b}</p>
+                  </div>
+                ))}
+              </div>
+              <aside>
+                <Link href="/contact">기관 체육수업 문의하기 →</Link>
+                <a href="https://pf.kakao.com/_VGWxeb/chat">
+                  카카오채널 문의 가능
+                </a>
+              </aside>
+            </div>
+            <div className={styles.faq}>
+              <h3>자주 묻는 질문</h3>
+              {FAQ.map(([q, a], index) => {
+                const panelId = "education-faq-panel-" + index;
+                const isOpen = openFaqs[index];
+                return (
+                  <div className={styles.faqItem} key={q}>
+                    <button
+                      type={"button"}
+                      aria-expanded={isOpen}
+                      aria-controls={panelId}
+                      onClick={() => toggleFaq(index)}
+                    >
+                      {q}
+                      <span aria-hidden="true">＋</span>
+                    </button>
+                    <div
+                      id={panelId}
+                      className={styles.faqPanel}
+                      data-open={isOpen ? "true" : "false"}
+                      role={"region"}
+                      aria-label={q}
+                    >
+                      <div>
+                        <p>{a}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

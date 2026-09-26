@@ -5,6 +5,9 @@ export const brandProfile = {
   representative: '최지훈',
   phone: '010-4437-9294',
   email: 'spokedu77@gmail.com',
+  businessRegistrationNumber: '311-63-00356',
+  mailOrderStatus: '신고 완료',
+  businessAddress: '서울특별시 강동구 성내동 430-2, 7층 1호',
   serviceArea: '서울·경기 중심 상담 가능',
 } as const;
 

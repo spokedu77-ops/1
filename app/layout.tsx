@@ -36,6 +36,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const publicMarketing = isPublicMarketingPath(pathname ?? '');
   const hideSidebar = publicMarketing || isFullscreenPath(pathname ?? '');
+  const homeSticky = pathname === '/' || pathname === '';
   const { isDesktopOpen, toggleDesktop } = useAppSidebar();
   const fullscreenWrapStyle = hideSidebar && !publicMarketing
     ? { minHeight: 'var(--viewport-height-px, 100dvh)', height: 'var(--viewport-height-px, 100dvh)', width: '100vw', maxWidth: '100%' }
@@ -83,7 +84,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
         <QueryProvider>
           <I18nProvider>
             <Toaster position="top-center" richColors closeButton />
-            <div className={`flex ${hideSidebar ? 'w-full overflow-x-hidden' : 'min-h-screen'}`} style={fullscreenWrapStyle}>
+            <div className={`flex ${hideSidebar ? `w-full${homeSticky ? '' : ' overflow-x-hidden'}` : 'min-h-screen'}`} style={fullscreenWrapStyle}>
               {!hideSidebar && (
                 <Sidebar
                   isDesktopOpen={isDesktopOpen}
@@ -95,7 +96,7 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
                 style={mainFullscreenStyle}
                 className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                   hideSidebar
-                    ? `${publicMarketing ? 'block' : 'flex flex-col min-h-0'} pr-0 mr-0 overflow-x-hidden`
+                    ? `${publicMarketing ? 'block' : 'flex flex-col min-h-0'} pr-0 mr-0${homeSticky ? '' : ' overflow-x-hidden'}`
                     : `pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0${isDesktopOpen ? ' md:ml-64' : ' md:ml-0'}`
                 }`}
               >

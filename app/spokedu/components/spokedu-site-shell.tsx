@@ -4,8 +4,10 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
+  SPOKEDU_PATHS,
   isSpokeduContactPath,
   isSpokeduFullBleedPath,
+  isSpokeduHomePath,
   isSpomoveCatalogPath,
 } from '../data/public-routes';
 import { captureAcquisitionFromLocation } from '../lib/acquisition';
@@ -15,6 +17,8 @@ import { SiteFooter, SiteHeader } from './site-chrome';
 export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isContactPage = isSpokeduContactPath(pathname);
+  const isHomePage = isSpokeduHomePath(pathname);
+  const isEducationPage = pathname === SPOKEDU_PATHS.education || pathname === '/spokedu/education';
   const isSpomoveCatalogPage = isSpomoveCatalogPath(pathname);
   /** Full-bleed pages own their header spacing and horizontal padding. */
   const isFullBleedPage = isSpokeduFullBleedPath(pathname);
@@ -31,17 +35,17 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <SiteHeader />
+      {isHomePage || isEducationPage ? null : <SiteHeader />}
       <main
         className={
-          isFullBleedPage
+          isFullBleedPage || isEducationPage
             ? 'w-full max-w-none px-0 py-0'
             : 'mx-auto w-full max-w-6xl px-5 pb-5 pt-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:px-8 sm:pb-10 sm:pt-[calc(4.25rem+env(safe-area-inset-top,0px))]'
         }
       >
         {children}
       </main>
-      {isContactPage || isSpomoveCatalogPage ? null : <SiteFooter />}
+      {isHomePage || isEducationPage || isContactPage || isSpomoveCatalogPage ? null : <SiteFooter />}
     </>
   );
 }

@@ -1,0 +1,5 @@
+import Link from 'next/link';
+import { SPOKEDU_PATHS } from '../../data/public-routes';
+import { HOME_SPOMOVE_VISUAL } from './home-web-assets';
+import styles from './home-web.module.css';
+export function SpomoveStage() { return <section className={`${styles.section} ${styles.spomove}`} aria-labelledby="home-spomove-heading"><div className={styles.sectionGrid}><div className={styles.spomoveCopy}><p className={styles.kicker}>SPOMOVE</p><p className={styles.spomoveLine}>SEE · DECIDE · MOVE</p><h2 id="home-spomove-heading" className={styles.title}>보고 판단하고 움직입니다.</h2><p className={styles.body}>SPOMOVE는 시각적 자극에 대한 인지, 판단, 움직임을<br />통합적으로 경험하는 SPOKEDU의 대표적인 체육 콘텐츠입니다.</p><Link href={SPOKEDU_PATHS.spomove} className={styles.orangeButton}>SPOMOVE 자세히 보기 <span aria-hidden="true">→</span></Link></div><div className={styles.spomoveVisual}><img src={HOME_SPOMOVE_VISUAL.src} alt={HOME_SPOMOVE_VISUAL.alt} /><div className={styles.modes}><span><b>●</b> 색상 인지</span><span><b>▲</b> 선택 반응</span><span><b>■</b> 복합 인지</span></div></div></div></section>; }
