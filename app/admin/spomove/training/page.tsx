@@ -1085,19 +1085,25 @@ function SettingsScreen({
           flex-direction: column;
           gap: 8px;
         }
-        @media (max-width: 599px) {
+        .settings-body button {
+          min-height: 44px !important;
+        }
+        @media (max-width: 767px) {
           .settings-body {
-            padding: 18px 12px 24px;
+            padding: 18px 12px calc(24px + env(safe-area-inset-bottom));
           }
           .settings-columns {
-            grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
-            gap: 10px;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
           }
+          .settings-body button { min-height: 44px; }
+          .settings-body.compact-menu,
+          .settings-body.dive-fit { padding: 14px 12px calc(20px + env(safe-area-inset-bottom)); }
           .theme-options {
-            gap: 5px;
+            gap: 8px;
           }
           .theme-option {
-            min-height: 32px;
+            min-height: 44px;
             padding: 6px 8px !important;
             border-radius: 9px !important;
           }
@@ -1106,16 +1112,20 @@ function SettingsScreen({
             line-height: 1.25;
           }
         }
+        @media (max-height: 520px) and (orientation: landscape) {
+          .settings-body { padding-top: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+          .settings-columns { gap: 12px; }
+        }
       `}</style>
       <header style={{
-        height: 52, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12,
-        padding: '0 24px', borderBottom: `1px solid ${T.border}`, background: T.bg,
+        minHeight: 52, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12,
+        padding: 'max(4px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 4px max(12px, env(safe-area-inset-left))', borderBottom: `1px solid ${T.border}`, background: T.bg,
       }}>
         <button
           type="button"
           onClick={onBack}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8,
+            display: 'flex', minHeight: 44, alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8,
             border: `1px solid ${T.border}`, background: 'transparent', color: T.muted,
             fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em',
           }}

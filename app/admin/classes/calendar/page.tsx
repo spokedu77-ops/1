@@ -243,7 +243,7 @@ export default function ClassManagementCalendar() {
                 onClick={() =>
                   setThreeDayCenter((prev) => addLocalDays(startOfLocalDay(prev), -1))
                 }
-                className="p-1.5 hover:bg-white rounded-md transition-all"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md transition-all hover:bg-white"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -254,7 +254,7 @@ export default function ClassManagementCalendar() {
                   setThreeDayCenter(t);
                   setMonthAnchor(new Date(t.getFullYear(), t.getMonth(), 1));
                 }}
-                className="px-2 py-1 text-[11px] font-black rounded-md hover:bg-white transition-all whitespace-nowrap"
+                className="min-h-[44px] px-3 py-1 text-[11px] font-black rounded-md hover:bg-white transition-all whitespace-nowrap"
               >
                 오늘
               </button>
@@ -264,7 +264,7 @@ export default function ClassManagementCalendar() {
                 onClick={() =>
                   setThreeDayCenter((prev) => addLocalDays(startOfLocalDay(prev), 1))
                 }
-                className="p-1.5 hover:bg-white rounded-md transition-all"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md transition-all hover:bg-white"
               >
                 <ChevronRight size={16} />
               </button>
@@ -277,12 +277,12 @@ export default function ClassManagementCalendar() {
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               href="/admin/classes/list?create=1"
-              className="px-4 py-2 rounded-full text-xs font-black bg-blue-600 text-white hover:bg-blue-700"
+              className="inline-flex min-h-[44px] items-center px-4 py-2 rounded-full text-xs font-black bg-blue-600 text-white hover:bg-blue-700"
             >
               새 수업 개설
             </Link>
             <select
-              className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-black text-slate-700 max-w-[160px]"
+              className="min-h-[44px] bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-black text-slate-700 max-w-[160px]"
               value={filterTeacher}
               onChange={(e) => setFilterTeacher(e.target.value)}
             >
@@ -295,7 +295,7 @@ export default function ClassManagementCalendar() {
             </select>
             <Link
               href="/admin/classes/list"
-              className="px-4 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800"
+              className="inline-flex min-h-[44px] items-center px-4 py-2 rounded-full text-xs font-black bg-slate-900 text-white hover:bg-slate-800"
             >
               리스트로 이동
             </Link>

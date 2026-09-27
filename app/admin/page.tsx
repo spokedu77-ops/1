@@ -635,7 +635,7 @@ export default function SpokeduHQDashboard() {
                   <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
                   <Link
                     href="/admin/classes/calendar"
-                    className="text-[9px] font-bold text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline"
+                    className="inline-flex min-h-[44px] items-center text-[9px] font-bold text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline"
                   >
                     캘린더
                   </Link>
@@ -696,7 +696,7 @@ export default function SpokeduHQDashboard() {
                   <button
                     type="button"
                     onClick={openPostponeModal}
-                    className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition-colors cursor-pointer"
+                    className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-rose-600 px-3 py-1 text-[10px] font-bold text-white hover:bg-rose-700 transition-colors cursor-pointer"
                   >
                     <Plus className="h-3 w-3" />
                     등록
@@ -731,7 +731,7 @@ export default function SpokeduHQDashboard() {
                                 type="button"
                                 onClick={() => handleDeleteNotice(n.id)}
                                 disabled={deletingNoticeId === n.id}
-                                className="rounded p-0.5 text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
                               >
                                 {deletingNoticeId === n.id
                                   ? <Loader2 className="h-3.5 w-3.5 animate-spin" />

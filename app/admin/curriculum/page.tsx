@@ -1588,7 +1588,7 @@ export default function AdminCurriculumPage() {
                <>
                  {/* 개인 수업 카테고리: 3행 × 4열 그리드 (총 12개) */}
                  <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4">
-                   <div className="grid grid-cols-4 gap-2">
+                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
                      {personalCategories.map((c) => {
                        const active = c === categoryTab;
                        return (
@@ -1623,7 +1623,7 @@ export default function AdminCurriculumPage() {
                                key={st}
                                type="button"
                                onClick={() => handleCategorySelect(categoryTab, st)}
-                               className={`px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-colors touch-manipulation
+                               className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-colors touch-manipulation
                                  ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200'}`}
                              >
                                {subTabDisplayLabel(categoryTab, st)}
@@ -1808,7 +1808,7 @@ export default function AdminCurriculumPage() {
                      <button type="button" onClick={() => setCenterViewMode('center')} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold text-sm mb-2">
                        <ArrowLeft size={18} /> 커리큘럼으로
                      </button>
-                     <div className="w-full grid grid-cols-6 gap-2 auto-rows-fr">
+                     <div className="grid w-full grid-cols-2 gap-2 auto-rows-fr sm:grid-cols-6">
                        {EQUIPMENT_GUIDE_NUMBERS.map((num) => {
                          const chipLabel = equipmentGuideChipLabelByNumber.get(num) ?? `${num}번 교구`;
                          return (
@@ -2153,7 +2153,7 @@ export default function AdminCurriculumPage() {
       )}
 
       {is8huiSlotPickerOpen && (
-        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
           <div className="relative bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
@@ -2182,9 +2182,9 @@ export default function AdminCurriculumPage() {
       )}
 
       {isDetailModalOpen && selectedItem && (
-         <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
+         <div className="fixed inset-0 z-[320] flex items-end justify-center p-0 sm:items-center sm:p-4">
              <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
-             <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+             <div className="relative flex max-h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[24px] bg-[#1A1A1A] shadow-2xl sm:max-h-[90vh] sm:rounded-[32px]">
                  {isPersonalItem(selectedItem) && selectedItem.category === '신체 기능향상 8회기' ? (
                    <>
                      <div className="p-6 border-b border-slate-700 flex justify-between items-start">
@@ -2444,9 +2444,9 @@ export default function AdminCurriculumPage() {
       )}
       
       {isInputModalOpen && (
-        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
-          <form onSubmit={handleSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left">
+          <form onSubmit={handleSubmit} className="relative max-h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-lg space-y-6 overflow-y-auto rounded-t-[24px] bg-white p-5 text-left shadow-2xl sm:max-h-[90vh] sm:rounded-[32px] sm:p-8">
             <div className="flex justify-between items-center text-left">
               <h2 className="text-2xl font-black">{editingId ? '커리큘럼 수정' : '새 커리큘럼 등록'}</h2>
               <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
@@ -2516,7 +2516,7 @@ export default function AdminCurriculumPage() {
                     {LESSON_THEME_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <div className="space-y-2 text-left">
                     <label className="text-xs font-black text-slate-400 uppercase text-left">대상</label>
                     <div className="grid grid-cols-2 gap-2">
@@ -2660,9 +2660,9 @@ export default function AdminCurriculumPage() {
       )}
 
       {isPersonalModalOpen && (
-        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
-          <form onSubmit={handlePersonalSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar text-left">
+          <form onSubmit={handlePersonalSubmit} className="relative max-h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-lg space-y-6 overflow-y-auto rounded-t-[24px] bg-white p-5 text-left shadow-2xl sm:max-h-[90vh] sm:rounded-[32px] sm:p-8">
             <div className="flex justify-between items-center text-left">
               <h2 className="text-2xl font-black">{personalEditingId ? '개인 수업 수정' : '개인 수업 등록'}</h2>
               <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
@@ -2735,9 +2735,9 @@ export default function AdminCurriculumPage() {
       )}
 
       {is8huiModalOpen && editing8huiSubTab != null && (
-        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => dismissCurriculumOverlay()} />
-          <form onSubmit={handle8huiSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
+          <form onSubmit={handle8huiSubmit} className="relative max-h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-lg space-y-5 overflow-y-auto rounded-t-[24px] bg-white p-5 text-left shadow-2xl sm:max-h-[90vh] sm:rounded-[32px] sm:p-8">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{editing8huiId ? '루틴 프로그램 수정' : `${editing8huiSubTab} 등록`}</h2>
               <button type="button" onClick={() => dismissCurriculumOverlay()} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
@@ -2784,9 +2784,9 @@ export default function AdminCurriculumPage() {
       )}
 
       {isEquipmentEditOpen && (
-        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentEdit} />
-          <form onSubmit={handleEquipmentSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
+          <form onSubmit={handleEquipmentSubmit} className="relative max-h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-lg space-y-5 overflow-y-auto rounded-t-[24px] bg-white p-5 text-left shadow-2xl sm:max-h-[90vh] sm:rounded-[32px] sm:p-8">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">{editingEquipmentId ? '활동 수정' : '활동 등록'}</h2>
               <button type="button" onClick={closeEquipmentEdit} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">
@@ -2831,9 +2831,9 @@ export default function AdminCurriculumPage() {
       )}
 
       {isEquipmentMasterEditOpen && (
-        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex items-end justify-center p-0 sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={closeEquipmentMasterEdit} />
-          <form onSubmit={handleEquipmentMasterSubmit} className="relative bg-white w-full max-w-lg rounded-[32px] p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto text-left">
+          <form onSubmit={handleEquipmentMasterSubmit} className="relative max-h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-lg space-y-5 overflow-y-auto rounded-t-[24px] bg-white p-5 text-left shadow-2xl sm:max-h-[90vh] sm:rounded-[32px] sm:p-8">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-black">「{selectedEquipmentDisplayName}」 편집</h2>
               <button type="button" onClick={closeEquipmentMasterEdit} className="p-2 rounded-full hover:bg-slate-100 text-slate-400">

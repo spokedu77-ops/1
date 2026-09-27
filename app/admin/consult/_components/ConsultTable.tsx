@@ -52,7 +52,7 @@ export function ConsultTable({
       </div>
 
       <div className="hidden overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40 shadow-2xl shadow-black/40 md:block">
-        <div className="overflow-x-auto">
+        <div className="internal-table-scroll">
           <table className="min-w-[920px] w-full divide-y divide-slate-800 text-left text-sm">
             <thead className="bg-slate-900/90">
               <tr>

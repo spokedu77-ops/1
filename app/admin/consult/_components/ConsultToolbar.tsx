@@ -34,11 +34,11 @@ export function ConsultToolbar({
   return (
     <>
       <div className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6 lg:px-8">
+        <div className="internal-toolbar mx-auto max-w-7xl px-4 py-4 sm:gap-4 sm:px-6 lg:px-8">
           <div className="flex items-start gap-3 sm:items-center">
             <Link
               href="/admin"
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-slate-800"
+              className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden />
               관리 홈
@@ -52,7 +52,7 @@ export function ConsultToolbar({
             type="button"
             onClick={onRefresh}
             disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700 disabled:opacity-50 sm:w-auto"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-sm font-medium text-slate-100 transition hover:bg-slate-700 disabled:opacity-50 sm:w-auto"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             새로고침
@@ -67,7 +67,7 @@ export function ConsultToolbar({
               key={key}
               type="button"
               onClick={() => onRouteTabChange(key)}
-              className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+              className={`min-h-[44px] rounded-lg border px-3 py-2 text-sm transition ${
                 routeTab === key
                   ? 'border-indigo-400 bg-indigo-500/20 text-indigo-100'
                   : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800'

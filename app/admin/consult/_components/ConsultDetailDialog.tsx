@@ -133,7 +133,7 @@ export function ConsultDetailDialog({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border border-slate-700 bg-slate-900 shadow-2xl sm:max-h-[min(90vh,780px)] sm:rounded-xl"
+        className="internal-dialog-panel flex w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border border-slate-700 bg-slate-900 shadow-2xl sm:max-h-[min(90vh,780px)] sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-slate-800 px-5 py-4">

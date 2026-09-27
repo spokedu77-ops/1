@@ -19,6 +19,7 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const isContactPage = isSpokeduContactPath(pathname);
   const isHomePage = isSpokeduHomePath(pathname);
   const isEducationPage = pathname === SPOKEDU_PATHS.education || pathname === '/spokedu/education';
+  const isRecordsPage = pathname === SPOKEDU_PATHS.records;
   const isSpomoveCatalogPage = isSpomoveCatalogPath(pathname);
   /** Full-bleed pages own their header spacing and horizontal padding. */
   const isFullBleedPage = isSpokeduFullBleedPath(pathname);
@@ -35,17 +36,17 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {isHomePage || isEducationPage ? null : <SiteHeader />}
+      {isHomePage || isEducationPage || isRecordsPage ? null : <SiteHeader />}
       <main
         className={
-          isFullBleedPage || isEducationPage
+          isFullBleedPage || isEducationPage || isRecordsPage
             ? 'w-full max-w-none px-0 py-0'
             : 'mx-auto w-full max-w-6xl px-5 pb-5 pt-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:px-8 sm:pb-10 sm:pt-[calc(4.25rem+env(safe-area-inset-top,0px))]'
         }
       >
         {children}
       </main>
-      {isHomePage || isEducationPage || isContactPage || isSpomoveCatalogPage ? null : <SiteFooter />}
+      {isHomePage || isEducationPage || isRecordsPage || isContactPage || isSpomoveCatalogPage ? null : <SiteFooter />}
     </>
   );
 }

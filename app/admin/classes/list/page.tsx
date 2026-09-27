@@ -680,13 +680,13 @@ function ClassListPageContent() {
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
-              className="px-4 py-2 rounded-full text-sm font-bold bg-blue-600 text-white hover:bg-blue-700"
+              className="min-h-[44px] px-4 py-2 rounded-full text-sm font-bold bg-blue-600 text-white hover:bg-blue-700"
             >
               새 수업 개설
             </button>
             <Link
               href="/admin/classes/calendar"
-              className="px-4 py-2 rounded-full text-sm font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+              className="inline-flex min-h-[44px] items-center px-4 py-2 rounded-full text-sm font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
             >
               캘린더 보기
             </Link>
@@ -696,8 +696,8 @@ function ClassListPageContent() {
         {isCreateOpen && (
           <div className="fixed inset-0 z-[400]">
             <div className="absolute inset-0 bg-black/40" onClick={() => setIsCreateOpen(false)} />
-            <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
-              <div className="w-full max-w-4xl max-h-[calc(100dvh-2rem)] flex flex-col bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="absolute inset-0 flex items-end justify-center p-0 md:items-center md:p-4">
+              <div className="flex h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border border-slate-100 bg-white shadow-2xl md:h-auto md:max-h-[calc(var(--viewport-height-px,100dvh)-2rem)] md:rounded-3xl">
                 <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
                   <div>
                     <h2 className="text-lg font-black text-slate-900">수업 개설</h2>
@@ -711,14 +711,14 @@ function ClassListPageContent() {
                       setIsCreateOpen(false);
                       resetCreate();
                     }}
-                    className="px-3 py-1.5 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    className="min-h-[44px] px-3 py-1.5 rounded-full text-xs font-black bg-slate-100 text-slate-700 hover:bg-slate-200"
                   >
                     닫기
                   </button>
                 </div>
 
                 <div className="p-4 sm:p-6 space-y-6 overflow-y-auto min-h-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {SESSION_TYPE_OPTIONS.map((t) => (
                       <button
                         key={t.value}
@@ -736,7 +736,7 @@ function ClassListPageContent() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-600">수업명</label>
                       <input
@@ -764,7 +764,7 @@ function ClassListPageContent() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-600">첫 수업일</label>
                       <input
@@ -892,7 +892,7 @@ function ClassListPageContent() {
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="sticky bottom-0 z-20 -mx-4 flex flex-col gap-3 border-y border-slate-100 bg-white/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:flex-row md:items-center md:justify-between md:border-0 md:bg-transparent md:p-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`inline-flex px-3 py-1 rounded-full text-xs font-black ${
@@ -948,7 +948,8 @@ function ClassListPageContent() {
                   </div>
 
                   {createStep === 2 && (
-                    <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                    <>
+                    <div className="hidden overflow-x-auto rounded-2xl border border-slate-100 md:block">
                       <table className="min-w-full text-sm">
                         <thead className="bg-slate-50 text-xs font-bold text-slate-500">
                           <tr>
@@ -1070,6 +1071,64 @@ function ClassListPageContent() {
                         </tbody>
                       </table>
                     </div>
+                    <div className="space-y-3 md:hidden">
+                      {editableSessions.map((s, idx) => {
+                        const startDateStr = s.startAt.toISOString().split('T')[0];
+                        const timeStr = s.startAt.toTimeString().slice(0, 5);
+                        return (
+                          <div key={idx} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <span className="text-sm font-black text-slate-800">{s.roundIndex}/{editableSessions.length}회차</span>
+                              <button
+                                type="button"
+                                className="min-h-[44px] rounded-full bg-rose-50 px-4 text-xs font-black text-rose-700"
+                                onClick={() => {
+                                  const next = editableSessions.filter((_, i) => i !== idx);
+                                  setEditableSessions(next.map((row, i) => ({ ...row, roundIndex: i + 1 })));
+                                }}
+                              >
+                                삭제
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3">
+                              <label className="space-y-1 text-xs font-black text-slate-600">날짜
+                                <input type="date" className="min-h-[44px] w-full rounded-xl border bg-white px-3 text-sm" value={startDateStr} onChange={(e) => {
+                                  const next = [...editableSessions];
+                                  const d = new Date(next[idx].startAt);
+                                  const [y, m, dStr] = e.target.value.split('-').map(Number);
+                                  d.setFullYear(y, m - 1, dStr);
+                                  const duration = (next[idx].endAt.getTime() - next[idx].startAt.getTime()) / (1000 * 60);
+                                  const end = new Date(d); end.setMinutes(end.getMinutes() + duration);
+                                  next[idx] = { ...next[idx], startAt: d, endAt: end }; setEditableSessions(next);
+                                }} />
+                              </label>
+                              <label className="space-y-1 text-xs font-black text-slate-600">시간
+                                <input type="time" className="min-h-[44px] w-full rounded-xl border bg-white px-3 text-sm" value={timeStr} onChange={(e) => {
+                                  const next = [...editableSessions];
+                                  const [hh, mm] = e.target.value.split(':').map(Number);
+                                  const d = new Date(next[idx].startAt); d.setHours(hh, mm, 0, 0);
+                                  const duration = (next[idx].endAt.getTime() - next[idx].startAt.getTime()) / (1000 * 60);
+                                  const end = new Date(d); end.setMinutes(end.getMinutes() + duration);
+                                  next[idx] = { ...next[idx], startAt: d, endAt: end }; setEditableSessions(next);
+                                }} />
+                              </label>
+                              <label className="space-y-1 text-xs font-black text-slate-600">선생님
+                                <select className="min-h-[44px] w-full rounded-xl border bg-white px-3 text-sm" value={s.teacherId} onChange={(e) => {
+                                  const next = [...editableSessions]; const teacherId = e.target.value;
+                                  next[idx] = { ...next[idx], teacherId, price: resolveDefaultPrice(teacherId, createForm.type) }; setEditableSessions(next);
+                                }}><option value="">기본 강사</option>{teachers.map((t) => <option key={t.id} value={t.id}>{t.name} T</option>)}</select>
+                              </label>
+                              <label className="space-y-1 text-xs font-black text-slate-600">금액
+                                <input type="number" className="min-h-[44px] w-full rounded-xl border bg-white px-3 text-sm" value={s.price} onChange={(e) => {
+                                  const next = [...editableSessions]; next[idx] = { ...next[idx], price: Number(e.target.value) || 0 }; setEditableSessions(next);
+                                }} />
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -1082,11 +1141,12 @@ function ClassListPageContent() {
             불러오는 중...
           </div>
         ) : groups.length === 0 ? (
-          <div className="flex items-center justify-center h-40 text-slate-400 text-sm font-bold">
+          <div className="flex items-center justify-center py-20 text-slate-400 text-sm font-bold md:h-40 md:py-0">
             표시할 수업이 없습니다.
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-3 sm:mx-0">
+          <>
+          <div className="hidden overflow-x-auto -mx-3 md:block sm:mx-0">
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden min-w-[640px] sm:min-w-0">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50 text-xs font-bold text-slate-500">
@@ -1186,6 +1246,41 @@ function ClassListPageContent() {
             </table>
             </div>
           </div>
+          <div className="space-y-3 md:hidden">
+            {groups.map((g) => {
+              const firstDate = new Date(g.displayDateAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+              const statusLabel = g.timeStatus === 'ongoing' ? '진행중' : '예정';
+              const teacherName = g.displayTeacherId ? teacherMap[g.displayTeacherId] || g.displayTeacherId : '미정';
+              const teacherUndecided = !g.displayTeacherId || String(teacherName).trim() === '미정';
+              const rowKey = makeBundleCompositeKey(g.displayTeacherId, g.title);
+              const openGroup = () => {
+                const aliasRule = GROUP_ALIAS_RULES.find((r) => r.aliasTitle === g.title);
+                if (aliasRule) {
+                  const groupIds = aliasGroupIdsByTitle[aliasRule.aliasTitle] || [];
+                  if (groupIds.length > 0) { setSelectedBundle({ bundleTitle: aliasRule.aliasTitle, groupIds }); return; }
+                }
+                const ids = bundleGroupIdsByKey[makeBundleCompositeKey(g.displayTeacherId, g.title)] || [g.groupId];
+                setSelectedBundle({ bundleTitle: getBundleTitleKey(g.title) || g.title, groupIds: ids });
+              };
+              return (
+                <article key={rowKey} className={`rounded-2xl border p-4 ${teacherUndecided ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-white'}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="text-base font-black text-slate-900">{getCleanClassTitle(g.title)}</h2>
+                      <p className={`mt-1 text-sm font-bold ${teacherUndecided ? 'text-red-600' : 'text-slate-600'}`}>담당 {teacherName}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-bold ${g.timeStatus === 'ongoing' ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>{statusLabel}</span>
+                  </div>
+                  <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div><dt className="text-xs font-bold text-slate-400">다음 일정</dt><dd className="mt-1 font-bold text-slate-700">{firstDate}</dd></div>
+                    <div><dt className="text-xs font-bold text-slate-400">진행</dt><dd className="mt-1 font-bold text-slate-700">{g.roundTotal}회</dd></div>
+                  </dl>
+                  <button type="button" onClick={openGroup} className="mt-4 min-h-[44px] w-full rounded-xl bg-blue-600 px-4 text-sm font-black text-white">관리</button>
+                </article>
+              );
+            })}
+          </div>
+          </>
         )}
       </main>
 

@@ -3256,6 +3256,7 @@ export default function AdminSmProgramsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState<EditForm | null>(null);
+  const [mobilePane, setMobilePane] = useState<'list' | 'editor'>('list');
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState<CreateProgramForm>({
     title: '',
@@ -3338,6 +3339,7 @@ export default function AdminSmProgramsPage() {
   const selectItem = (item: ProgramItem) => {
     setSelectedId(item.curriculum.id);
     setForm(toForm(item));
+    setMobilePane('editor');
   };
 
   const openProgramFromAudit = (curriculumId: number) => {
@@ -3577,9 +3579,9 @@ export default function AdminSmProgramsPage() {
 
   return (
     <div className="min-h-dvh bg-slate-50 text-slate-950">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-5 py-4">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex flex-wrap items-center gap-3">
-          <Link href="/admin/spokedu-master" className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-500" aria-label="이전">
+          <Link href="/admin/spokedu-master" className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-500 sm:h-9 sm:w-9" aria-label="이전">
             <ChevronLeft size={17} />
           </Link>
           <div>
@@ -3590,13 +3592,13 @@ export default function AdminSmProgramsPage() {
                 : 'curriculum 원본은 보존하고 MASTER 라이브러리 메타와 운영 자료만 편집합니다.'}
             </p>
           </div>
-          <div className="ml-auto inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="order-last flex w-full gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-1 sm:order-none sm:ml-auto sm:w-auto">
             {tabOptions.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className="h-8 rounded-md px-3 text-[12px] font-black transition-colors"
+                className="min-h-11 shrink-0 rounded-md px-3 text-[12px] font-black transition-colors sm:min-h-8"
                 style={{
                   background: activeTab === tab.key ? '#4f46e5' : 'transparent',
                   color: activeTab === tab.key ? '#ffffff' : '#475569',
@@ -3612,7 +3614,7 @@ export default function AdminSmProgramsPage() {
             type="button"
             onClick={() => setCreateOpen(true)}
             disabled={creating}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-950 px-3 text-[12px] font-black text-white disabled:opacity-50"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-slate-950 px-3 text-[12px] font-black text-white disabled:opacity-50 sm:min-h-9"
           >
             <Plus size={14} />
             프로그램 직접 추가
@@ -3621,7 +3623,7 @@ export default function AdminSmProgramsPage() {
             type="button"
             onClick={() => void syncFromCenter()}
             disabled={syncing || loading}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-800 disabled:opacity-50"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-800 disabled:opacity-50 sm:min-h-9"
           >
             <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
             {syncing ? '동기화 확인 중' : '커리큘럼 동기화'}
@@ -3630,7 +3632,7 @@ export default function AdminSmProgramsPage() {
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-600"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-600 sm:min-h-9"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             새로고침
@@ -3639,7 +3641,7 @@ export default function AdminSmProgramsPage() {
             type="button"
             onClick={() => void save()}
             disabled={!selected || !form || saving}
-            className="spm-btn-primary inline-flex h-9 items-center gap-2 rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none disabled:opacity-50"
+            className="spm-btn-primary inline-flex min-h-11 items-center gap-2 rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none disabled:opacity-50 sm:min-h-9"
           >
             <Save size={14} />
             {saving ? '저장 중' : '저장'}
@@ -3684,8 +3686,15 @@ export default function AdminSmProgramsPage() {
       ) : activeTab === 'spomove-guide-videos' ? (
         <SpomoveGuideVideoManager />
       ) : (
-      <main className="grid min-h-[calc(100dvh-73px)] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
-        <aside className="border-r border-slate-200 bg-white">
+      <>
+      {!isSpomoveAdmin ? (
+        <div className="sticky top-[73px] z-10 grid grid-cols-2 border-b border-slate-200 bg-white p-2 md:hidden">
+          <button type="button" onClick={() => setMobilePane('list')} className={`min-h-11 rounded-lg text-sm font-black ${mobilePane === 'list' ? 'bg-slate-950 text-white' : 'text-slate-600'}`}>목록</button>
+          <button type="button" onClick={() => setMobilePane('editor')} disabled={!selected || !form} className={`min-h-11 rounded-lg text-sm font-black disabled:opacity-40 ${mobilePane === 'editor' ? 'bg-slate-950 text-white' : 'text-slate-600'}`}>편집</button>
+        </div>
+      ) : null}
+      <main className="grid min-h-[calc(100dvh-73px)] grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
+        <aside className={`${mobilePane === 'list' ? 'block' : 'hidden'} border-r border-slate-200 bg-white md:block`}>
           <div className="space-y-3 border-b border-slate-200 p-4">
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-lg bg-indigo-50 p-3">
@@ -3707,7 +3716,7 @@ export default function AdminSmProgramsPage() {
                   key={filter.key}
                   type="button"
                   onClick={() => setActiveFilter(filter.key)}
-                  className="h-8 rounded-full border px-3 text-[11px] font-black"
+                  className="min-h-11 rounded-full border px-3 text-[11px] font-black md:min-h-8"
                   style={{
                     borderColor: activeFilter === filter.key ? '#4f46e5' : '#e2e8f0',
                     background: activeFilter === filter.key ? '#eef2ff' : '#ffffff',
@@ -3744,7 +3753,7 @@ export default function AdminSmProgramsPage() {
                   key={item.curriculum.id}
                   type="button"
                   onClick={() => selectItem(item)}
-                  className="mb-2 block w-full rounded-lg border p-3 text-left transition-colors"
+                  className="mb-2 block min-h-16 w-full rounded-lg border p-3 text-left transition-colors"
                   style={{ borderColor: selectedNow ? '#6366f1' : '#e2e8f0', background: selectedNow ? '#eef2ff' : '#ffffff' }}
                   title={missingText ? `부족한 항목: ${missingText}` : summaryText}
                 >
@@ -3758,17 +3767,17 @@ export default function AdminSmProgramsPage() {
                       <p className="mt-1 text-[10px] font-black text-slate-400">{quality.score}점 · {quality.grade}</p>
                     </div>
                   </div>
-                  <div className="mt-2">
+                  <div className="mt-2 hidden md:block">
                     <QualityFlags report={quality} />
                   </div>
-                  <p className="mt-2 line-clamp-2 text-[11px] font-bold leading-4 text-slate-500">{summaryText}</p>
+                  <p className="mt-2 hidden line-clamp-2 text-[11px] font-bold leading-4 text-slate-500 md:block">{summaryText}</p>
                 </button>
               );
             })}
           </div>
         </aside>
 
-        <section className="min-w-0 overflow-y-auto p-4 sm:p-6">
+        <section className={`${mobilePane === 'editor' ? 'block' : 'hidden'} min-w-0 overflow-y-auto p-4 sm:p-6 md:block`}>
           {selected && form ? (
             <div className="mx-auto max-w-[1500px] space-y-5">
               <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -3884,6 +3893,7 @@ export default function AdminSmProgramsPage() {
           )}
         </section>
       </main>
+      </>
       )}
     </div>
   );

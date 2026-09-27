@@ -250,6 +250,93 @@ body {
   font-size: 1rem;
 }
 
+/* Admin / Teacher shared responsive foundation. Public and subscriber surfaces are excluded. */
+[data-internal-shell="admin"],
+[data-internal-shell="teacher"],
+.teacher-shell {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.teacher-shell {
+  --teacher-bottom-nav-height: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.internal-page-header,
+.internal-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.internal-table-scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.internal-table-scroll::after {
+  content: "";
+  position: sticky;
+  right: 0;
+  display: block;
+  width: 1rem;
+  height: 1px;
+  margin-left: auto;
+  box-shadow: 10px 0 18px 12px rgba(15, 23, 42, 0.18);
+  pointer-events: none;
+}
+
+.internal-dialog-panel {
+  width: min(100% - 2rem, 42rem);
+  max-height: calc(var(--viewport-height-px, 100dvh) - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.internal-calendar-frame {
+  width: 100%;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+/* The shell header owns vertical navigation; direct page headers stay in flow. */
+.teacher-shell > div > main > header.sticky {
+  position: static;
+}
+
+@media (max-width: 1023px) {
+  .internal-page-header,
+  .internal-toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .internal-page-header,
+  .internal-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .internal-dialog-panel {
+    width: calc(100% - 1.5rem);
+    max-height: calc(var(--viewport-height-px, 100dvh) - 1.5rem);
+  }
+
+  .internal-dialog-actions {
+    position: sticky;
+    bottom: 0;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* 클릭·탭 가능한 요소는 기본 포인터 (텍스트 필드/textarea 제외) */
 @layer base {
   a,

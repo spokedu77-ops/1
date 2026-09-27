@@ -36,6 +36,8 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const publicMarketing = isPublicMarketingPath(pathname ?? '');
   const hideSidebar = publicMarketing || isFullscreenPath(pathname ?? '');
+  const isAdminShell = pathname?.startsWith('/admin') ?? false;
+  const isTeacherShell = pathname?.startsWith('/teacher') ?? false;
   const homeSticky = pathname === '/' || pathname === '';
   const { isDesktopOpen, toggleDesktop } = useAppSidebar();
   const fullscreenWrapStyle = hideSidebar && !publicMarketing
@@ -94,10 +96,21 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
 
               <ContentRoot
                 style={mainFullscreenStyle}
+                data-internal-shell={isAdminShell ? 'admin' : isTeacherShell ? 'teacher' : undefined}
                 className={`flex-1 w-full min-w-0 transition-all duration-300 ${
                   hideSidebar
                     ? `${publicMarketing ? 'block' : 'flex flex-col min-h-0'} pr-0 mr-0${homeSticky ? '' : ' overflow-x-hidden'}`
-                    : `pt-[calc(3rem+env(safe-area-inset-top,0px))] md:pt-0${isDesktopOpen ? ' md:ml-64' : ' md:ml-0'}`
+                    : `${isAdminShell ? 'pt-[calc(3rem+env(safe-area-inset-top,0px))] min-[1200px]:pt-0' : ''}${
+                        isTeacherShell
+                          ? ''
+                          : isAdminShell
+                            ? isDesktopOpen
+                              ? ' min-[1200px]:ml-64'
+                              : ' min-[1200px]:ml-0'
+                            : isDesktopOpen
+                              ? ' md:ml-64'
+                              : ' md:ml-0'
+                      }`
                 }`}
               >
                 {children}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Check,
+  ChevronLeft,
   Loader2,
   Plus,
   Trash2,
@@ -80,6 +81,7 @@ export function NoteLiteApp() {
   const [dropBeforeId, setDropBeforeId] = useState<string | null>(null);
   const [dropAtEnd, setDropAtEnd] = useState(false);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
+  const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
 
   const blocksRef = useRef(blocks);
   const openIdRef = useRef(openId);
@@ -253,6 +255,7 @@ export function NoteLiteApp() {
     }
     setDocs((prev) => [json.document!, ...prev]);
     await openDocument(json.document.id, [json.document!, ...docs]);
+    setMobileEditorOpen(true);
   };
 
   const renameDoc = async (nextTitle: string) => {
@@ -300,13 +303,13 @@ export function NoteLiteApp() {
 
   return (
     <div className="flex h-[var(--viewport-height-px,100dvh)] bg-[#f7f7f5] text-neutral-900">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-neutral-200 bg-white">
+      <aside className={`${mobileEditorOpen ? 'hidden' : 'flex'} w-full shrink-0 flex-col border-r border-neutral-200 bg-white md:flex md:w-64`}>
         <div className="flex items-center justify-between px-3 py-3">
           <p className="text-sm font-semibold">메모</p>
           <button
             type="button"
             onClick={() => void createDoc()}
-            className="rounded-md p-1.5 text-neutral-600 hover:bg-neutral-100"
+            className="grid h-11 w-11 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100"
             aria-label="새 메모"
           >
             <Plus size={16} />
@@ -318,7 +321,10 @@ export function NoteLiteApp() {
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
           ) : docs.length === 0 ? (
-            <p className="px-2 py-6 text-xs text-neutral-400">메모가 없습니다.</p>
+            <div className="flex flex-col items-center gap-3 px-2 py-16 text-xs text-neutral-400">
+              <p>메모가 없습니다.</p>
+              <button type="button" onClick={() => void createDoc()} className="min-h-11 rounded-lg bg-neutral-900 px-4 font-semibold text-white">새 메모</button>
+            </div>
           ) : (
             docs.map((d) => (
               <div
@@ -329,14 +335,17 @@ export function NoteLiteApp() {
               >
                 <button
                   type="button"
-                  className="min-w-0 flex-1 truncate px-2 py-2 text-left text-sm"
-                  onClick={() => void openDocument(d.id)}
+                  className="min-h-11 min-w-0 flex-1 truncate px-2 py-2 text-left text-sm"
+                  onClick={() => {
+                    setMobileEditorOpen(true);
+                    void openDocument(d.id);
+                  }}
                 >
                   {d.title || '제목 없음'}
                 </button>
                 <button
                   type="button"
-                  className="hidden p-2 text-neutral-400 hover:text-rose-600 group-hover:block"
+                  className="grid h-11 w-11 place-items-center text-neutral-400 hover:text-rose-600 md:hidden md:group-hover:grid"
                   onClick={() => void deleteDoc(d.id)}
                   aria-label="삭제"
                 >
@@ -348,8 +357,11 @@ export function NoteLiteApp() {
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3">
+      <main className={`${mobileEditorOpen ? 'flex' : 'hidden'} min-w-0 flex-1 flex-col md:flex`}>
+        <header className="flex items-center justify-between gap-3 border-b border-neutral-200 px-3 py-2 md:px-6 md:py-3">
+          <button type="button" onClick={() => setMobileEditorOpen(false)} className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100 md:hidden" aria-label="메모 목록으로 돌아가기">
+            <ChevronLeft size={20} />
+          </button>
           <input
             className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none"
             value={title}

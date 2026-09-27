@@ -68,7 +68,7 @@ export function MonthExcelEventRow({
     <button
       type="button"
       onClick={() => onOpen(ev)}
-      className={`w-full text-left border-b border-slate-200/80 last:border-b-0 px-0.5 py-1 min-w-0 flex flex-col gap-0.5 ${monthRowTone(ev)} hover:brightness-[0.97]`}
+      className={`flex min-h-[44px] w-full min-w-0 flex-col gap-0.5 border-b border-slate-200/80 px-1 py-1 text-left last:border-b-0 md:min-h-0 md:px-0.5 ${monthRowTone(ev)} hover:brightness-[0.97]`}
     >
       <div className="flex items-start gap-1 min-w-0">
         <span className="shrink-0 text-[9px] font-black text-slate-600 tabular-nums w-9">

@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Home, BookOpen, Calendar, Package, MoreHorizontal, Receipt, X, LogOut, Zap } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -21,6 +21,15 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const isInactiveTeacher = materialsAccess === 'denied';
 
   const isActive = (path: string) => pathname === path;
+
+  useEffect(() => {
+    if (!isMoreOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMoreOpen]);
 
   // 로그아웃 핸들러 (쿠키 기반 세션 사용 → PWA/웹 동일 동작)
   const handleLogout = async () => {
@@ -41,10 +50,10 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   ].filter((menu) => !isInactiveTeacher || menu.id === '/teacher/report');
 
   return (
-    <div className="min-h-screen w-full bg-[#F9FBFF] block relative overflow-x-hidden">
+    <div className="teacher-shell relative block min-h-screen w-full bg-[#F9FBFF]">
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200/50 pt-[env(safe-area-inset-top)] flex justify-center">
         <div className="max-w-2xl w-full h-16 px-6 flex items-center justify-between font-sans">
-          <button onClick={() => router.push(isInactiveTeacher ? '/teacher/report' : '/teacher')} className="flex items-center gap-3 cursor-pointer outline-none group text-left">
+          <button onClick={() => router.push(isInactiveTeacher ? '/teacher/report' : '/teacher')} className="group flex min-h-[44px] items-center gap-3 text-left outline-none">
             <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-100 group-hover:scale-105 transition-transform">S</div>
             <div className="flex flex-col">
               <h1 className="text-[15px] font-black text-slate-900 uppercase leading-none tracking-tight text-indigo-600">SPOKEDU</h1>
@@ -56,7 +65,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       </header>
 
       <div className="w-full flex justify-center">
-        <main className="w-full max-w-2xl px-6 pt-8 pb-40 min-h-[calc(100vh-64px)]">
+        <main className="w-full min-w-0 max-w-2xl px-4 pt-8 sm:px-6 min-h-[calc(100vh-64px)] pb-[calc(var(--teacher-bottom-nav-height)+2rem)]">
           {blockMaterialsRoute ? (
             <TeacherMaterialsDenied />
           ) : isMaterialsGatedRoute && materialsAccess === 'loading' ? (
@@ -71,14 +80,17 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       </div>
 
       {isMoreOpen && (
-        <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setIsMoreOpen(false)}>
+        <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setIsMoreOpen(false)} role="presentation">
           <div 
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-xl bg-white rounded-[32px] p-8 shadow-2xl animate-in slide-in-from-bottom-5 duration-300"
+            className="absolute left-1/2 w-[calc(100%_-_1.5rem)] max-w-xl -translate-x-1/2 overflow-y-auto rounded-[32px] bg-white p-5 shadow-2xl animate-in slide-in-from-bottom-5 duration-300 sm:p-8 bottom-[calc(var(--teacher-bottom-nav-height)+0.75rem)] max-h-[calc(var(--viewport-height-px,100dvh)_-_var(--teacher-bottom-nav-height)_-_1.5rem)]"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="teacher-more-title"
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-black text-slate-900 text-lg uppercase tracking-tighter italic">More Service</h3>
-              <button onClick={() => setIsMoreOpen(false)} className="p-2 bg-slate-100 rounded-full cursor-pointer hover:bg-slate-200 transition-colors">
+              <h3 id="teacher-more-title" className="font-black text-slate-900 text-lg uppercase tracking-tighter italic">More Service</h3>
+              <button onClick={() => setIsMoreOpen(false)} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors" aria-label="더보기 닫기">
                 <X size={18} />
               </button>
             </div>
@@ -106,7 +118,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center bg-white/95 backdrop-blur-xl border-t border-slate-100 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_10px_rgba(0,0,0,0.02)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex min-h-[var(--teacher-bottom-nav-height)] justify-center bg-white/95 backdrop-blur-xl border-t border-slate-100 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_10px_rgba(0,0,0,0.02)]">
         <div className="max-w-2xl w-full h-20 px-4 flex justify-around items-center">
           {(isInactiveTeacher ? [
             { id: '/teacher/report', label: '정산 확인', icon: Receipt },
@@ -119,7 +131,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
             <button 
               key={item.id} 
               onClick={() => router.push(item.id)} 
-              className={`flex flex-col items-center gap-1 cursor-pointer transition-all ${isActive(item.id) ? 'text-indigo-600' : 'text-slate-300 hover:text-slate-400'}`}
+              className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 transition-all ${isActive(item.id) ? 'text-indigo-600' : 'text-slate-300 hover:text-slate-400'}`}
             >
               <div className={`p-2 rounded-xl transition-colors ${isActive(item.id) ? 'bg-indigo-50' : ''}`}>
                 <item.icon size={22} strokeWidth={isActive(item.id) ? 2.5 : 2} />
@@ -130,7 +142,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
           
           <button 
             onClick={() => setIsMoreOpen(true)} 
-            className={`flex flex-col items-center gap-1 cursor-pointer transition-all ${isMoreOpen ? 'text-indigo-600' : 'text-slate-300 hover:text-slate-400'}`}
+            className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 transition-all ${isMoreOpen ? 'text-indigo-600' : 'text-slate-300 hover:text-slate-400'}`}
           >
             <div className={`p-2 rounded-xl ${isMoreOpen ? 'bg-indigo-50' : ''}`}>
               <MoreHorizontal size={22} strokeWidth={isMoreOpen ? 2.5 : 2} />

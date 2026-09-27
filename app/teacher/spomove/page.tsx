@@ -1611,6 +1611,7 @@ button {
 
 .spm-home-btn {
   position: fixed;
+  min-height: 44px;
   top: max(12px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   z-index: 10001;
@@ -1670,6 +1671,55 @@ button {
   .spm-sym {
     min-height: 56px;
   }
+}
+
+@media (max-width: 767px) {
+  .spm-page {
+    min-height: 100dvh;
+    padding-top: max(18px, env(safe-area-inset-top));
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+
+  .spm-foot {
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(calc(100% - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)), 492px);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .spm-btn-back,
+  .spm-btn-next,
+  .spm-btn-star,
+  .spm-modal-cancel,
+  .spm-modal-save,
+  .spm-home-btn,
+  .spm-home-btn-left,
+  .spm-g-quit {
+    min-height: 44px;
+  }
+
+  .spm-game { min-height: 100dvh; }
+  .spm-g-stage { min-width: 0; min-height: min(72vw, 320px); width: 100%; padding: 16px; }
+  .spm-g-hint { bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .spm-g-quit {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .spm-modal-backdrop {
+    padding: 0 max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+  .spm-modal { max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; }
+  .spm-inter { min-height: 100dvh; padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+  .spm-complete { min-height: 100dvh; padding-top: max(72px, calc(env(safe-area-inset-top) + 56px)); padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .spm-page { padding-top: 10px; padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
+  .spm-topbar { position: relative; top: auto; padding: 12px 14px; }
+  .spm-foot { bottom: max(8px, env(safe-area-inset-bottom)); padding: 8px; }
+  .spm-inter, .spm-complete { padding-top: max(12px, env(safe-area-inset-top)); }
+  .spm-inter-card, .spm-complete-card { padding: 18px; }
 }
 
 /* ── 프리셋 목록 ──────────────────────────────────────────── */

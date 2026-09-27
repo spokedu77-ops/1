@@ -1,274 +1,409 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { motion, useReducedMotion } from 'framer-motion';
-import { useMemo, useState } from 'react';
-import { LandingSection } from './landing-section';
-import { MediaPanel } from './visual';
-import { recordFilters, recordsPage, type RecordFilterId } from '../data/records-page';
-import { HOME_MEDIA } from '../data/home-media';
-import type { FieldRecordWithThumbnail } from '../lib/resolve-field-records';
-import { ExternalPhoto } from './external-photo';
-import {
-  brandFocusRing,
-  marketingInteractiveTransition,
-  fineHover,
-} from '../lib/ui-classes';
-import { externalLinkProps, isExternalHref } from '../lib/external-link';
-import { inferTrackFromHref } from '../lib/tracking';
-import { LandingFinalCta } from './landing-final-cta';
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { FieldRecordWithThumbnail } from "../lib/resolve-field-records";
+import { SiteFooter } from "./home-web/site-footer";
+import { SiteHeader } from "./home-web/site-header";
+import styles from "./records-landing.module.css";
 
-const recordsPageStack =
-  'flex w-full flex-col gap-8 overflow-x-clip pb-8 sm:gap-10 sm:pb-10 lg:pb-12';
+type RecordEntry = {
+  number: string;
+  venue: string;
+  type: string;
+  meta?: string;
+  description: string;
+  image: string;
+  href: string;
+  external?: boolean;
+  category?: RecordFilter;
+};
 
-const focusRing = brandFocusRing;
+type RecordFilter = "all" | "regular" | "event";
 
-function matchesFilter(record: FieldRecordWithThumbnail, filter: RecordFilterId): boolean {
-  if (filter === 'all') return true;
-  return record.filters.includes(filter);
-}
+const FILTERS: readonly { id: RecordFilter; label: string }[] = [
+  { id: "all", label: "전체" },
+  { id: "regular", label: "정규수업" },
+  { id: "event", label: "원데이·행사" },
+];
 
-function isOnsiteRecord(record: FieldRecordWithThumbnail): boolean {
-  return Boolean(record.blogHref) || (!isExternalHref(record.href) && record.href.includes('/records/'));
-}
+const FEATURED: readonly RecordEntry[] = [
+  {
+    number: "01",
+    venue: "매동초등학교",
+    type: "학교 · 정규수업",
+    description:
+      "학년과 인원에 맞춰 종목을 순환하며 연속적인 스포츠 수업을 운영했습니다.",
+    image: "/images/spokedu/records/maedong-sports-stepup.jpg",
+    href: "https://blog.naver.com/spokedutogether/224288711414",
+    external: true,
+  },
+  {
+    number: "02",
+    venue: "서울 중구 찾아가는 동행 체육교실",
+    type: "특수·통합 · 정규수업",
+    description:
+      "참여자의 수행 수준에 따라 거리, 속도, 규칙과 촉진 수준을 조정했습니다.",
+    image: "/images/spokedu/records/donghaeng-special-pe-field.jpg",
+    href: "https://blog.naver.com/spokedutogether/224338186918",
+    external: true,
+  },
+  {
+    number: "03",
+    venue: "동작거점형 우리동네키움센터",
+    type: "키움센터 · 정규수업",
+    description:
+      "스크린 신호를 보고 판단한 뒤 움직임으로 반응하도록 구성한 정규 수업입니다.",
+    image: "/images/spokedu/records/dongjak-spomove.jpg",
+    href: "/records/dongjak-spomove",
+  },
+];
 
-function splitMeta(meta: string): string[] {
-  return meta
-    .split(/[·•]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+const ARCHIVE: readonly RecordEntry[] = [
+  {
+    number: "01",
+    venue: "동작거점형 우리동네키움센터",
+    type: "정규수업 · SPOMOVE",
+    meta: "초등학생 · SPOMOVE 에듀테크",
+    description: "화면 신호를 보고 판단·반응하며 움직이는 SPOMOVE 정규수업.",
+    image: "/images/spokedu/records/dongjak-spomove.jpg",
+    href: "/records/dongjak-spomove",
+    category: "regular",
+  },
+  {
+    number: "02",
+    venue: "양천거점형키움센터",
+    type: "정규수업 · PAPS",
+    meta: "초등 1~2학년 · PAPS 놀이체육",
+    description: "PAPS 체력 요소를 놀이체육으로 재구성한 저학년 정규수업.",
+    image: "/images/spokedu/records/yangcheon-paps.jpg",
+    href: "/records/yangcheon-paps",
+    category: "regular",
+  },
+  {
+    number: "03",
+    venue: "다사랑영등포지역아동센터",
+    type: "원데이·행사",
+    meta: "초등 2~6학년 · 90분 펑셔널 놀이체육",
+    description:
+      "학년 혼합 아동이 협동·기능 활동을 순환하도록 구성한 90분 원데이 수업.",
+    image: "/images/spokedu/records/dasarang-oneday-field.jpg",
+    href: "/records/dasarang-oneday",
+    category: "event",
+  },
+  {
+    number: "04",
+    venue: "서대문구 독립문공원 어린이날 축제",
+    type: "원데이·행사",
+    meta: "SPOMOVE 체험부스 · 어린이날 행사",
+    description:
+      "가족과 아동이 짧은 시간에 참여할 수 있도록 구성한 회전형 체험부스.",
+    image: "/images/spokedu/records/seodaemun-event-booth.jpg",
+    href: "/records/seodaemun-event-booth",
+    category: "event",
+  },
+  {
+    number: "05",
+    venue: "매동초등학교",
+    type: "정규수업 · 스포츠 스텝업",
+    meta: "6개월 늘봄 스포츠",
+    description:
+      "학년과 인원에 맞춰 여러 종목을 순환하며 운영한 연속 스포츠 수업.",
+    image: "/images/spokedu/records/maedong-sports-stepup.jpg",
+    href: "https://blog.naver.com/spokedutogether/224288711414",
+    external: true,
+    category: "regular",
+  },
+  {
+    number: "06",
+    venue: "찾아가는 동행 체육교실",
+    type: "정규수업 · 특수체육",
+    meta: "특수체육 · 찾아가는 동행체육",
+    description:
+      "수행 수준에 따라 거리와 속도, 규칙과 촉진 수준을 조정한 체육수업.",
+    image: "/images/spokedu/records/donghaeng-special-pe-field.jpg",
+    href: "https://blog.naver.com/spokedutogether/224338186918",
+    external: true,
+    category: "regular",
+  },
+  {
+    number: "07",
+    venue: "강동구 보건소 연계 수업",
+    type: "정규수업 · 일반체육",
+    meta: "일반체육 · 보건소 연계",
+    description:
+      "지역 보건소와 연계해 참여자의 조건과 현장 환경에 맞춰 운영한 정규수업.",
+    image: "/images/spokedu/records/gangdong-health-pe.jpg",
+    href: "https://blog.naver.com/spokedu77/224119622722",
+    external: true,
+    category: "regular",
+  },
+  {
+    number: "08",
+    venue: "신월 2동 주민센터",
+    type: "원데이·행사 · 전연령 통합체육",
+    meta: "전연령 · 통합체육 · 주민센터",
+    description:
+      "여러 연령이 한 현장에서 함께 참여할 수 있도록 구성한 통합 체육활동.",
+    image: "/images/spokedu/records/shinwol-integrated-pe.jpg",
+    href: "https://blog.naver.com/spokedu77/224104727469",
+    external: true,
+    category: "event",
+  },
+];
 
-function RecordCard({
-  record,
-  photoPriority = false,
+function RecordLink({
+  entry,
+  className,
+  children,
 }: {
-  record: FieldRecordWithThumbnail;
-  photoPriority?: boolean;
+  entry: RecordEntry;
+  className: string;
+  children: ReactNode;
 }) {
-  const external = isExternalHref(record.href);
-  const onsite = isOnsiteRecord(record);
-  const metaItems = splitMeta(record.meta);
-  const className = `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${marketingInteractiveTransition} ${focusRing}`;
-  const inner = (
-    <>
-      {record.thumbnailSrc ? (
-        <div className="relative aspect-[5/4] max-h-[220px] shrink-0 overflow-hidden bg-slate-200 sm:aspect-[16/10] sm:max-h-none">
-          <ExternalPhoto
-            src={record.thumbnailSrc}
-            alt={`${record.venue} 수업 사례`}
-            className="absolute inset-0 h-full w-full"
-            priority={photoPriority}
-          />
-          {onsite ? (
-            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#0B1F46] shadow-sm">
-              온사이트 요약
-            </span>
-          ) : null}
-        </div>
-      ) : (
-        <div className="relative">
-          <MediaPanel
-            media={HOME_MEDIA[record.mediaKey]}
-            className="aspect-[5/4] max-h-[220px] shrink-0 rounded-none border-0 sm:aspect-[16/10] sm:max-h-none"
-            sizes="card3"
-            photoPriority={photoPriority}
-          />
-          {onsite ? (
-            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#0B1F46] shadow-sm">
-              온사이트 요약
-            </span>
-          ) : null}
-        </div>
-      )}
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="rounded-full bg-[#EAF1FF] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#174BE6]">
-            {record.operationType}
-          </span>
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-700">
-            {record.programLabel}
-          </span>
-          {onsite ? (
-            <span className="rounded-full bg-slate-950 px-2 py-1 text-[10px] font-bold text-white">사례 요약</span>
-          ) : (
-            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
-              외부 후기
-            </span>
-          )}
-          {metaItems.map((item) => (
-            <span key={item} className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
-              {item}
-            </span>
-          ))}
-        </div>
-        <h3 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-slate-950 [word-break:keep-all]">
-          {record.venue}
-        </h3>
-        <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
-          {record.description}
-        </p>
-        <span
-          className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-[#174BE6] ${fineHover}group-hover:text-[#0B1F46]`}
-        >
-          {record.ctaLabel} →
-        </span>
-        {onsite ? (
-          <p className="mt-1 text-xs text-slate-500 [word-break:keep-all]">블로그 원문은 요약 페이지에서 이어집니다</p>
-        ) : null}
-      </div>
-    </>
-  );
-
-  if (external) {
+  if (entry.external) {
     return (
       <a
-        href={record.href}
-        {...externalLinkProps}
-        data-track="external-naver-blog"
-        data-track-label={record.trackLabel}
         className={className}
+        href={entry.href}
+        target="_blank"
+        rel="noopener noreferrer"
       >
-        {inner}
+        {children}
       </a>
     );
   }
 
   return (
-    <Link
-      href={record.href}
-      data-track={inferTrackFromHref(record.href)}
-      data-track-label={record.trackLabel}
-      className={className}
-    >
-      {inner}
+    <Link className={className} href={entry.href}>
+      {children}
     </Link>
   );
 }
 
-/** 목록형 페이지 헤더 — 사진은 카드에만 (히어로·카드 썸네일 중복 방지) */
-function RecordsPageHeader() {
-  const reducedMotion = useReducedMotion();
-
-  return (
-    <header className="border-b border-slate-200/80 pb-6 sm:pb-7">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#245DFF]">
-        {recordsPage.hero.kicker}
-      </p>
-      <motion.h1
-        className="mt-2 max-w-2xl text-2xl font-black tracking-tight text-slate-950 [word-break:keep-all] sm:text-3xl"
-        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-        animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-      >
-        {recordsPage.hero.lines.join(' ')}
-      </motion.h1>
-      <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] [word-break:keep-all]">
-        {recordsPage.hero.subtitle}
-      </p>
-      <dl className="mt-5 grid gap-2 sm:grid-cols-3">
-        {recordsPage.hero.stats.map(({ value, label }) => (
-          <div key={label} className="rounded-xl border border-slate-200/80 bg-white px-4 py-3">
-            <dt className="text-xs font-medium text-slate-500">{label}</dt>
-            <dd className="mt-1 text-xl font-black text-slate-950">{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <ul className="mt-4 flex flex-wrap gap-2" aria-label="운영 현장 유형">
-        {recordsPage.hero.venueTypes.map((venue) => (
-          <li
-            key={venue}
-            className="rounded-full border border-slate-200/80 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600"
-          >
-            {venue}
-          </li>
-        ))}
-      </ul>
-    </header>
-  );
-}
-
-type RecordsLandingProps = {
+export function RecordsLanding({
+  fieldRecords,
+}: {
   fieldRecords: FieldRecordWithThumbnail[];
-};
+}) {
+  const caseCount = fieldRecords.length;
+  const [activeFilter, setActiveFilter] = useState<RecordFilter>("all");
+  const [isFiltering, setIsFiltering] = useState(false);
+  const filterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibleRecords =
+    activeFilter === "all"
+      ? ARCHIVE
+      : ARCHIVE.filter((entry) => entry.category === activeFilter);
 
-export function RecordsLanding({ fieldRecords }: RecordsLandingProps) {
-  const reducedMotion = useReducedMotion();
-  const [activeFilter, setActiveFilter] = useState<RecordFilterId>('all');
+  useEffect(() => {
+    const readFilterFromUrl = () => {
+      const type = new URL(window.location.href).searchParams.get("type");
+      setActiveFilter(type === "regular" || type === "event" ? type : "all");
+      setIsFiltering(false);
+    };
 
-  const visibleFilters = useMemo(
-    () =>
-      recordFilters.filter((filter) => {
-        if (filter.id === 'all') return true;
-        return fieldRecords.some((record) => record.filters.includes(filter.id));
-      }),
-    [fieldRecords],
-  );
+    readFilterFromUrl();
+    window.addEventListener("popstate", readFilterFromUrl);
+    return () => {
+      window.removeEventListener("popstate", readFilterFromUrl);
+      if (filterTimer.current) clearTimeout(filterTimer.current);
+    };
+  }, []);
 
-  const filteredRecords = useMemo(() => {
-    const list = fieldRecords.filter((r) => matchesFilter(r, activeFilter));
-    return [...list].sort((a, b) => Number(isOnsiteRecord(b)) - Number(isOnsiteRecord(a)));
-  }, [activeFilter, fieldRecords]);
+  const changeFilter = (nextFilter: RecordFilter) => {
+    if (nextFilter === activeFilter || isFiltering) return;
+    setIsFiltering(true);
+    if (filterTimer.current) clearTimeout(filterTimer.current);
+    filterTimer.current = setTimeout(() => {
+      const url = new URL(window.location.href);
+      if (nextFilter === "all") url.searchParams.delete("type");
+      else url.searchParams.set("type", nextFilter);
+      window.history.pushState({}, "", url);
+      setActiveFilter(nextFilter);
+      setIsFiltering(false);
+    }, 180);
+  };
 
   return (
-    <div className={recordsPageStack}>
-      <RecordsPageHeader />
+    <div className={styles.page}>
+      <SiteHeader />
+      <main>
+        <section className={styles.hero} aria-labelledby="records-title">
+          <div className={styles.rail}>
+            <div className={styles.heroCopy}>
+              <p className={styles.eyebrow}>FIELD RECORDS</p>
+              <h1 id="records-title">
+                수업은
+                <br />
+                현장에서 증명됩니다.
+              </h1>
+              <p className={styles.heroBody}>
+                학교와 키움센터, 복지기관과 지역 현장에서
+                <br />
+                대상과 공간, 운영 목적에 맞춰 진행한
+                <br />
+                SPOKEDU의 실제 수업 기록입니다.
+              </p>
+            </div>
+            <dl className={styles.stats}>
+              <div>
+                <dt>{String(caseCount).padStart(2, "0")}</dt>
+                <dd>공개 운영 사례</dd>
+              </div>
+              <div>
+                <dt>07</dt>
+                <dd>기관 유형</dd>
+              </div>
+              <div>
+                <dt>02</dt>
+                <dd>운영 방식</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
 
-      <LandingSection className="space-y-4 sm:space-y-5">
-        <div
-          className="flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin]"
-          role="tablist"
-          aria-label="수업 사례 분류"
-        >
-          {visibleFilters.map((filter) => {
-            const active = activeFilter === filter.id;
-            return (
-              <button
-                key={filter.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveFilter(filter.id)}
-                className={`shrink-0 rounded-full border px-3.5 py-2 text-sm font-semibold transition ${focusRing} ${
-                  active
-                    ? 'border-[#9FC0FF] bg-[#EAF1FF] text-[#0B1F46]'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                {filter.label}
-              </button>
-            );
-          })}
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-3">
-          {filteredRecords.map((record, index) => (
-            <motion.div
-              key={record.slug}
-              initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.04 * index }}
-              className="min-h-0"
+        <section className={styles.featured} aria-labelledby="featured-title">
+          <div className={styles.rail}>
+            <p className={styles.eyebrow}>주요 수업사례</p>
+            <h2 id="featured-title">
+              서로 다른 현장에서
+              <br />
+              다르게 운영했습니다.
+            </h2>
+            <div className={styles.featuredGrid}>
+              {FEATURED.map((entry, index) => (
+                <RecordLink
+                  key={entry.number}
+                  entry={entry}
+                  className={
+                    index === 0 ? styles.featuredLarge : styles.featuredSmall
+                  }
+                >
+                  <Image
+                    src={entry.image}
+                    alt={`${entry.venue} 수업 현장`}
+                    fill
+                    sizes={index === 0 ? "760px" : "500px"}
+                    priority
+                  />
+                  <span className={styles.featuredShade} aria-hidden="true" />
+                  <span className={styles.featuredCaption}>
+                    <span className={styles.featuredType}>
+                      {entry.number} &nbsp; {entry.type}
+                    </span>
+                    <strong>{entry.venue}</strong>
+                    <span className={styles.featuredDescription}>
+                      {entry.description}
+                    </span>
+                    <span className={styles.arrow} aria-hidden="true">
+                      {entry.external ? "↗" : "→"}
+                    </span>
+                  </span>
+                </RecordLink>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.archive} aria-labelledby="archive-title">
+          <div className={styles.rail}>
+            <div className={styles.archiveIntro}>
+              <div>
+                <p className={styles.eyebrow}>전체 수업사례</p>
+                <h2 id="archive-title">
+                  운영 형태별로
+                  <br />
+                  수업사례를 확인해보세요.
+                </h2>
+              </div>
+              <p>
+                정규수업부터 원데이·행사까지
+                <br />
+                공개된 운영 기록을 확인할 수 있습니다.
+              </p>
+            </div>
+            <nav className={styles.filters} aria-label="사례 필터">
+              {FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={
+                    activeFilter === filter.id ? styles.filterActive : undefined
+                  }
+                  aria-pressed={activeFilter === filter.id}
+                  onClick={() => changeFilter(filter.id)}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </nav>
+            <div
+              className={`${styles.archiveGrid} ${isFiltering ? styles.archiveGridFiltering : ""}`}
+              aria-live="polite"
+              aria-busy={isFiltering}
             >
-              <RecordCard record={record} photoPriority={index === 0} />
-            </motion.div>
-          ))}
-        </div>
-      </LandingSection>
+              {visibleRecords.map((entry) => (
+                <RecordLink
+                  key={entry.number}
+                  entry={entry}
+                  className={styles.archiveItem}
+                >
+                  <div className={styles.archiveImage}>
+                    <Image
+                      src={entry.image}
+                      alt={`${entry.venue} 수업 현장`}
+                      fill
+                      sizes="617px"
+                    />
+                  </div>
+                  <div className={styles.archiveHeading}>
+                    <span>{entry.number}</span>
+                    <p>{entry.type}</p>
+                  </div>
+                  <h3>{entry.venue}</h3>
+                  <p className={styles.archiveMeta}>{entry.meta}</p>
+                  <p className={styles.archiveDescription}>
+                    {entry.description}
+                  </p>
+                  <strong className={styles.archiveLink}>
+                    {entry.external ? "현장 후기 보기 ↗" : "사례 보기 →"}
+                  </strong>
+                </RecordLink>
+              ))}
+            </div>
+          </div>
+        </section>
 
-      <LandingFinalCta
-        title={recordsPage.cta.title}
-        description={recordsPage.cta.description}
-        tone="light"
-        backgroundMedia={HOME_MEDIA.trackDispatch}
-        links={[
-          {
-            label: recordsPage.cta.label,
-            href: recordsPage.cta.href,
-            trackLabel: recordsPage.cta.trackLabel,
-            variant: 'primary',
-          },
-        ]}
-      />
+        <section className={styles.inquiry} aria-labelledby="inquiry-title">
+          <div className={styles.rail}>
+            <div>
+              <p className={styles.eyebrow}>기관 체육수업 문의</p>
+              <h2 id="inquiry-title">
+                비슷한 조건의
+                <br />
+                수업을 찾고 계신가요?
+              </h2>
+            </div>
+            <div className={styles.inquiryActions}>
+              <p>
+                대상 연령과 인원, 공간과 운영 목적을 알려주시면
+                <br />
+                가능한 수업 형태부터 함께 확인합니다.
+              </p>
+              <div>
+                <Link className={styles.primaryCta} href="/contact">
+                  기관 체육수업 문의하기 <span aria-hidden="true">→</span>
+                </Link>
+                <Link className={styles.secondaryCta} href="/education">
+                  기관 체육수업 알아보기 <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <SiteFooter />
     </div>
   );
 }

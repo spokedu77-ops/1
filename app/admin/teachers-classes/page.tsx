@@ -887,7 +887,7 @@ function FeedbackReviewTab({
           <button
             type="button"
             onClick={() => setFeedbackScope('private')}
-            className={`flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            className={`min-h-[44px] flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
               feedbackScope === 'private' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
@@ -896,7 +896,7 @@ function FeedbackReviewTab({
           <button
             type="button"
             onClick={() => setFeedbackScope('center')}
-            className={`flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            className={`min-h-[44px] flex-1 min-w-[8rem] px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
               feedbackScope === 'center' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
@@ -913,7 +913,7 @@ function FeedbackReviewTab({
                 onClick={() =>
                   setSelectedDate((prev) => addDaysToYmd(prev, feedbackScope === 'center' ? -7 : -1))
                 }
-                className="shrink-0 flex items-center justify-center w-10 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer transition-colors"
+                className="shrink-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer transition-colors"
               >
                 <ChevronLeft size={20} strokeWidth={2.5} />
               </button>
@@ -932,7 +932,7 @@ function FeedbackReviewTab({
                       el.click();
                     }
                   }}
-                  className="shrink-0 flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 cursor-pointer transition-colors"
+                  className="shrink-0 flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 cursor-pointer transition-colors"
                 >
                   <Calendar size={18} />
                 </button>
@@ -952,7 +952,7 @@ function FeedbackReviewTab({
                 onClick={() =>
                   setSelectedDate((prev) => addDaysToYmd(prev, feedbackScope === 'center' ? 7 : 1))
                 }
-                className="shrink-0 flex items-center justify-center w-10 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer transition-colors"
+                className="shrink-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer transition-colors"
               >
                 <ChevronRight size={20} strokeWidth={2.5} />
               </button>
@@ -965,7 +965,7 @@ function FeedbackReviewTab({
               <p className="text-[11px] text-slate-500 font-bold px-1">일간 조회: 선택한 날짜의 수업만</p>
             )}
           </div>
-          <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
+          <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="min-h-[44px] flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
             <option value="all">전체 강사</option>
             {coachFilterOptions.map((c) => (
               <option key={c.id} value={c.id}>
@@ -998,7 +998,7 @@ function FeedbackReviewTab({
                 <button 
                   key={filter}
                   onClick={() => setStatusFilter(filter as 'all' | 'empty' | 'done' | 'verified')}
-                  className={`shrink-0 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`min-h-[44px] shrink-0 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     statusFilter === filter ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
@@ -1033,7 +1033,7 @@ function FeedbackReviewTab({
       {loading ? (
         <div className="py-40 text-center font-black text-slate-300 animate-pulse">Syncing...</div>
       ) : filteredAndSearchedSessions.length === 0 && feedbackScope !== 'center' ? (
-        <div className="bg-white rounded-[40px] py-32 text-center border border-dashed border-slate-300">
+        <div className="bg-white rounded-[40px] py-12 md:py-32 text-center border border-dashed border-slate-300">
           <p className="text-slate-400 font-bold">
             {searchTerm || statusFilter !== 'all'
               ? '검색 결과가 없습니다.'
@@ -1043,7 +1043,7 @@ function FeedbackReviewTab({
       ) : (
         <div className="space-y-4">
           {feedbackScope === 'center' && (
-            <div className="grid grid-cols-8 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+            <div className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm md:grid md:grid-cols-8 md:overflow-visible">
               {[{ dayIndex: 'all' as const, label: '전체', sessions: filteredAndSearchedSessions }, ...centerWeekdayGroups].map((item) => {
                 const selected = selectedCenterWeekday === item.dayIndex;
                 return (
@@ -1051,7 +1051,7 @@ function FeedbackReviewTab({
                     key={String(item.dayIndex)}
                     type="button"
                     onClick={() => setSelectedCenterWeekday(item.dayIndex)}
-                    className={`min-w-0 rounded-xl px-1 py-2.5 text-xs font-black transition-colors ${selected ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                    className={`min-h-[44px] min-w-[64px] shrink-0 rounded-xl px-2 py-2.5 text-xs font-black transition-colors md:min-w-0 ${selected ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
                   >
                     <span className="block truncate">{item.label}</span>
                     <span className={`mt-0.5 block text-[9px] ${selected ? 'text-slate-300' : 'text-slate-400'}`}>{item.sessions.length}</span>
@@ -1160,11 +1160,11 @@ function FeedbackReviewTab({
                         toast.info('링크 코드를 불러오는 중입니다. 잠시 후 다시 눌러 주세요.');
                         void fetchListData();
                       }} 
-                      className={`p-2 rounded-xl ${isVerified ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}
+                      className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl ${isVerified ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}
                     >
                       <Send size={14} />
                     </button>
-                    <button className="flex-1 min-w-[4rem] py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 transition-colors">검수</button>
+                    <button className="min-h-[44px] flex-1 min-w-[4rem] py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 transition-colors">검수</button>
                   </div>
                 </div>
               </div>
@@ -1194,11 +1194,11 @@ function FeedbackReviewTab({
       {/* 모달 */}
       {isModalOpen && selectedEvent && (
         <div
-          className="fixed inset-0 z-[999] flex items-end justify-center bg-slate-900/40 p-0 backdrop-blur-md sm:items-center sm:p-4"
+          className="fixed inset-0 z-[999] flex items-end justify-center bg-slate-900/40 p-0 backdrop-blur-md md:items-center md:p-4"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:max-h-[90vh] sm:rounded-[48px]"
+            className="flex max-h-[calc(var(--viewport-height-px,100dvh)-0.75rem)] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl md:max-h-[calc(var(--viewport-height-px,100dvh)-2rem)] md:rounded-[48px]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex shrink-0 items-start justify-between gap-3 border-b p-4 sm:gap-4 sm:p-8">
@@ -1212,7 +1212,7 @@ function FeedbackReviewTab({
                   </button>
                 </div>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="shrink-0 rounded-lg p-1 text-slate-300 hover:bg-slate-100 hover:text-slate-900 cursor-pointer" aria-label="닫기">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-300 hover:bg-slate-100 hover:text-slate-900 cursor-pointer" aria-label="닫기">
                 <X size={28} className="sm:h-8 sm:w-8" />
               </button>
             </div>

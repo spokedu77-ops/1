@@ -659,7 +659,7 @@ function MyClassesContent() {
               <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">SPOKEDU</p>
               <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">MY SCHEDULE</h1>
             </div>
-            <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 bg-white border rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer transition-all active:scale-95">오늘</button>
+            <button onClick={() => setCurrentDate(new Date())} className="min-h-11 px-4 py-2 bg-white border rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer transition-all active:scale-95">오늘</button>
           </div>
           <div className="flex items-center justify-between bg-white p-2 rounded-2xl shadow-sm border">
             <button
@@ -780,8 +780,8 @@ function MyClassesContent() {
       </div>
 
       {selectedEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)}>
-          <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-slate-900/60 p-0 pb-[calc(var(--teacher-bottom-nav-height)+env(safe-area-inset-bottom))] backdrop-blur-sm md:items-center md:p-4" onClick={() => setSelectedEvent(null)}>
+          <div className="flex max-h-[calc(var(--viewport-height-px,100dvh)-var(--teacher-bottom-nav-height)-env(safe-area-inset-bottom))] w-full max-w-2xl flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl animate-in zoom-in duration-200 md:max-h-[90vh] md:rounded-[40px]" onClick={e => e.stopPropagation()}>
             <div className="px-4 sm:px-8 py-4 sm:py-6 border-b flex justify-between items-center bg-white sticky top-0 z-10 text-left">
               <div>
                 <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight uppercase">Session Report</h2>
@@ -797,7 +797,7 @@ function MyClassesContent() {
                 >
                   <FileText size={16} /> <span className="hidden sm:inline">수업안 작성</span><span className="sm:hidden">수업안</span>
                 </button>
-                <button type="button" onClick={() => setSelectedEvent(null)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors p-1"><X size={24} /></button>
+                <button type="button" onClick={() => setSelectedEvent(null)} className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900" aria-label="닫기"><X size={24} /></button>
               </div>
             </div>
 
@@ -838,7 +838,7 @@ function MyClassesContent() {
                                   : [],
                               }));
                             }}
-                            className="text-slate-300 hover:text-red-500 cursor-pointer"
+                            className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-xl text-slate-300 hover:bg-red-50 hover:text-red-500"
                           >
                             <X size={16} />
                           </button>
@@ -961,11 +961,11 @@ function MyClassesContent() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block ml-1">
                     Photos ({photoUrls.length})
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {photoUrls.map((url, i) => (
                       <div key={i} className="relative aspect-square">
                         <img src={url} className="w-full h-full rounded-2xl object-cover border-2 border-white shadow-md" alt="" referrerPolicy="no-referrer" />
-                        <button onClick={() => setPhotoUrls(photoUrls.filter((_, idx) => idx !== i))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg cursor-pointer"><X size={12} /></button>
+                        <button onClick={() => setPhotoUrls(photoUrls.filter((_, idx) => idx !== i))} className="absolute -right-2 -top-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-red-500 text-white shadow-lg" aria-label="사진 삭제"><X size={16} /></button>
                       </div>
                     ))}
                     <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center bg-white text-slate-300 hover:bg-slate-50 hover:border-blue-400 cursor-pointer transition-all active:scale-95">
@@ -984,7 +984,7 @@ function MyClassesContent() {
               )}
             </div>
 
-            <div className="p-4 sm:p-8 bg-white border-t flex gap-4">
+            <div className="sticky bottom-0 flex gap-3 border-t bg-white p-4 sm:gap-4 sm:p-8">
               {selectedEvent.status === 'finished' && (
                 <button onClick={handleResetStatus} disabled={uploading} className="flex-1 bg-slate-100 text-slate-400 py-5 rounded-[22px] font-black text-sm cursor-pointer hover:bg-red-50 transition-all uppercase">Reset</button>
               )}
@@ -998,8 +998,8 @@ function MyClassesContent() {
 
       {/* 수업안 작성/수정 모달 */}
       {isLessonPlanModalOpen && selectedEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4" onClick={() => setIsLessonPlanModalOpen(false)}>
-          <div className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-slate-900/60 p-0 pb-[calc(var(--teacher-bottom-nav-height)+env(safe-area-inset-bottom))] backdrop-blur-sm md:items-center md:p-4" onClick={() => setIsLessonPlanModalOpen(false)}>
+          <div className="flex max-h-[calc(var(--viewport-height-px,100dvh)-var(--teacher-bottom-nav-height)-env(safe-area-inset-bottom))] w-full max-w-2xl flex-col rounded-t-[28px] bg-white shadow-2xl md:max-h-[90vh] md:rounded-[40px]" onClick={e => e.stopPropagation()}>
             <div className="px-4 sm:px-8 py-4 sm:py-6 border-b flex justify-between items-center bg-white text-left">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">수업안</h2>
@@ -1007,7 +1007,7 @@ function MyClassesContent() {
                   {selectedEvent.title} · {new Date(selectedEvent.start_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}
                 </p>
               </div>
-              <button type="button" onClick={() => setIsLessonPlanModalOpen(false)} className="cursor-pointer text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
+              <button type="button" onClick={() => setIsLessonPlanModalOpen(false)} className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900" aria-label="닫기"><X size={24} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 bg-slate-50/30 text-left">
               {/* 이전 수업안: 항상 표시 (없을 때 안내 문구) */}
