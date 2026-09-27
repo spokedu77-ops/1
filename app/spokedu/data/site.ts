@@ -34,8 +34,8 @@ export type { BrandChannel };
 /** MASTER handoff — 마케팅 사이트 경로 상수 (가격·권한 SSOT 아님) */
 export const MASTER_HANDOFF = {
   landing: '/spokedu-master/landing',
-  onboardingLogin: '/login?next=/spokedu-master/onboarding',
-  dashboardLogin: '/login?next=/spokedu-master/dashboard',
+  onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding',
+  dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard',
   payment: '/spokedu-master/payment',
   shop: '/spokedu-master/shop',
 } as const;

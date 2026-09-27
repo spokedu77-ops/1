@@ -1,274 +1,309 @@
-﻿import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 
 function read(path: string) {
-  return readFileSync(join(process.cwd(), path), 'utf8');
+  return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
-const session = read('app/spokedu-master/spomove/session/page.tsx');
-const guidelineSheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
-const recordDraft = read('app/spokedu-master/spomove/session/spomoveRecordDraft.ts');
-const startBriefing = read('app/spokedu-master/spomove/session/StartBriefing.tsx');
-const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefing.tsx');
-const setupShell = read('app/spokedu-master/spomove/session/SessionSetupShell.tsx');
-const cueSpeed = read('app/spokedu-master/spomove/spomoveCueSpeed.ts');
-const padLayoutView = read('app/spokedu-master/spomove/SpomovePadLayoutView.tsx');
-const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
-const masterResult = read('app/spokedu-master/spomove/session/MasterSessionResult.tsx');
+const hub = read("app/spokedu-master/spomove/SpomoveHubView.tsx");
+const session = read("app/spokedu-master/spomove/session/page.tsx");
+const guidelineSheet = read(
+  "app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx",
+);
+const recordDraft = read(
+  "app/spokedu-master/spomove/session/spomoveRecordDraft.ts",
+);
+const startBriefing = read(
+  "app/spokedu-master/spomove/session/StartBriefing.tsx",
+);
+const settingsBriefing = read(
+  "app/spokedu-master/spomove/session/SettingsBriefing.tsx",
+);
+const setupShell = read(
+  "app/spokedu-master/spomove/session/SessionSetupShell.tsx",
+);
+const cueSpeed = read("app/spokedu-master/spomove/spomoveCueSpeed.ts");
+const padLayoutView = read(
+  "app/spokedu-master/spomove/SpomovePadLayoutView.tsx",
+);
+const dashboard = read("app/spokedu-master/dashboard/DashboardView.tsx");
+const masterResult = read(
+  "app/spokedu-master/spomove/session/MasterSessionResult.tsx",
+);
 
-describe('SPOMOVE pilot flow contract', () => {
-  it('opens Preview from discovery cards without execution actions', () => {
-    expect(hub).toContain('sortSpomovePresetsByDisplayTitle');
-    expect(hub).toContain('미리보기 열기');
+describe("SPOMOVE pilot flow contract", () => {
+  it("opens Preview from discovery cards without execution actions", () => {
+    expect(hub).toContain("sortSpomovePresetsByDisplayTitle");
+    expect(hub).toContain("미리보기 열기");
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="settings"');
-    expect(hub).not.toContain('가이드 보기');
-    expect(hub).not.toContain('바로 실행');
-    expect(hub).not.toContain('빠른 시작');
-    expect(hub).toContain('최근 SPOMOVE');
-    expect(hub).toContain('resolveMasterContentMode');
-    expect(hub).toContain('getMasterContentPrimaryAction');
+    expect(hub).not.toContain("가이드 보기");
+    expect(hub).not.toContain("바로 실행");
+    expect(hub).not.toContain("빠른 시작");
+    expect(hub).toContain("최근 SPOMOVE");
+    expect(hub).toContain("resolveMasterContentMode");
+    expect(hub).toContain("getMasterContentPrimaryAction");
   });
 
-  it('keeps normal program cards separate from recent rerun actions', () => {
+  it("keeps normal program cards separate from recent rerun actions", () => {
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
-    expect(hub).not.toContain('data-spm-spomove-card-action="start"');
+    expect(hub).not.toContain("startHref={");
     expect(hub).toContain('data-spm-spomove-recent-action="rerun"');
 
     const presetCardBlock = hub.slice(
-      hub.indexOf('function PresetCard'),
-      hub.indexOf('function SpomoveHubInner'),
+      hub.indexOf("function PresetCard"),
+      hub.indexOf("function SpomoveHubInner"),
     );
     expect(presetCardBlock).toContain('data-spm-spomove-card-action="preview"');
-    expect(presetCardBlock).not.toContain('data-spm-spomove-card-action="start"');
-    expect(presetCardBlock).not.toContain('data-spm-spomove-recent-action="rerun"');
+    expect(presetCardBlock).not.toContain(
+      'data-spm-spomove-recent-action="rerun"',
+    );
   });
 
-  it('shows recent SPOMOVE re-entry without exposing other owners', () => {
-    expect(hub).toContain('최근 SPOMOVE');
-    expect(hub).toContain('최근 사용한 활동');
-    expect(hub).toContain('활동 선택');
-    expect(hub).toContain('아직 실행한 SPOMOVE 활동이 없습니다.');
-    expect(hub).toContain('activity.ownerId === ownerId');
+  it("shows recent SPOMOVE re-entry without exposing other owners", () => {
+    expect(hub).toContain("최근 SPOMOVE");
+    expect(hub).toContain("최근 사용한 활동");
+    expect(hub).toContain("활동 선택");
+    expect(hub).toContain("아직 실행한 SPOMOVE 활동이 없습니다.");
+    expect(hub).toContain("activity.ownerId === ownerId");
     expect(hub).toContain("activity.action === 'spomove_started'");
-    expect(hub).toContain('slice(0, 3)');
+    expect(hub).toContain("slice(0, 3)");
   });
 
-  it('loads launch-confirm preview without pad layout clutter', () => {
-    expect(hub).toContain('useSpomoveGuideVideo');
-    expect(hub).toContain('SPOMOVE_CONTENT_PACK_ID');
-    expect(hub).toContain('normalizeSpomoveContentMap');
+  it("loads launch-confirm preview without pad layout clutter", () => {
+    expect(hub).toContain("useSpomoveGuideVideo");
+    expect(hub).toContain("SPOMOVE_CONTENT_PACK_ID");
+    expect(hub).toContain("normalizeSpomoveContentMap");
     expect(hub).toContain("useState<SpomoveContentLoadState>('loading')");
     expect(hub).toContain("setContentLoadState('error')");
-    expect(hub).toContain('contentLoadState={contentLoadState}');
+    expect(hub).toContain("contentLoadState={contentLoadState}");
     expect(dashboard).toContain("useState<SpomoveContentLoadState>('loading')");
     expect(dashboard).toContain("setSpomoveContentLoadState('error')");
-    expect(dashboard).toContain('contentLoadState={spomoveContentLoadState}');
-    expect(hub).toContain('SharedSpomoveGuidelineSheet');
-    expect(hub).toContain('parseSpomoveHubUrlState');
-    expect(hub).toContain('hubView={hubView}');
-    expect(hub).toContain('SPOMOVE_CATALOG_FAMILIES');
-    expect(hub).toContain('filterPresetsByCatalogFamily');
-    expect(hub).toContain('sortSpomovePresetsByCatalogOrder');
-    expect(hub).not.toContain('contentOverride?.sortOrder ?? preset.sortOrder');
-    expect(hub).not.toContain('showAxisSections');
-    expect(hub).not.toContain('SPOMOVE_AXIS_ORDER');
-    expect(guidelineSheet).not.toContain('SpomovePadLayoutView');
-    expect(guidelineSheet).toContain('SpomoveScreenPreview');
+    expect(dashboard).toContain("contentLoadState={spomoveContentLoadState}");
+    expect(hub).toContain("SharedSpomoveGuidelineSheet");
+    expect(hub).toContain("parseSpomoveHubUrlState");
+    expect(hub).toContain("hubView={hubView}");
+    expect(hub).toContain("SPOMOVE_CATALOG_FAMILIES");
+    expect(hub).toContain("filterPresetsByCatalogFamily");
+    expect(hub).toContain("sortSpomovePresetsByCatalogOrder");
+    expect(hub).not.toContain("contentOverride?.sortOrder ?? preset.sortOrder");
+    expect(hub).not.toContain("showAxisSections");
+    expect(hub).not.toContain("SPOMOVE_AXIS_ORDER");
+    expect(guidelineSheet).not.toContain("SpomovePadLayoutView");
+    expect(guidelineSheet).toContain("SpomoveScreenPreview");
     expect(guidelineSheet).toContain('size="preview"');
     expect(guidelineSheet).toContain('data-preview-column="media"');
-    expect(guidelineSheet).toContain('contentOverride');
-    expect(guidelineSheet).toContain('buildSpomoveGuideDisplayModel');
-    expect(guidelineSheet).toContain('활동 목표');
-    expect(guidelineSheet).toContain('준비');
-    expect(guidelineSheet).toContain('활동 방법');
-    expect(guidelineSheet).toContain('지도 포인트');
-    expect(guidelineSheet).toContain('난이도 조절 · 관찰 기준');
-    expect(guidelineSheet).not.toContain('선택적 상세');
-    expect(guidelineSheet).not.toContain('교사 핵심단서(Cue)');
-    expect(guidelineSheet).not.toContain('아이에게 하는 말');
-    expect(guidelineSheet).toContain('min-[1024px]:grid');
-    expect(guidelineSheet).not.toContain('1.55fr');
-    expect(guidelineSheet).not.toContain('lg:overflow-y-auto');
-    expect(guidelineSheet).toContain('sticky bottom-0');
-    expect(guidelineSheet).toContain('spm-btn-primary');
-    expect(guidelineSheet).not.toContain('활동 예시 영상');
-    expect(guidelineSheet).not.toContain('실제 운영 예시 영상입니다.');
-    expect(guidelineSheet).toContain('활동 요소');
+    expect(guidelineSheet).toContain("contentOverride");
+    expect(guidelineSheet).toContain("buildSpomoveGuideDisplayModel");
+    expect(guidelineSheet).toContain("활동 목표");
+    expect(guidelineSheet).toContain("준비");
+    expect(guidelineSheet).toContain("활동 방법");
+    expect(guidelineSheet).toContain("지도 포인트");
+    expect(guidelineSheet).toContain("난이도 조절 · 관찰 기준");
+    expect(guidelineSheet).not.toContain("선택적 상세");
+    expect(guidelineSheet).not.toContain("교사 핵심단서(Cue)");
+    expect(guidelineSheet).not.toContain("아이에게 하는 말");
+    expect(guidelineSheet).toContain("min-[1024px]:grid");
+    expect(guidelineSheet).not.toContain("1.55fr");
+    expect(guidelineSheet).not.toContain("lg:overflow-y-auto");
+    expect(guidelineSheet).toContain("sticky bottom-0");
+    expect(guidelineSheet).toContain("spm-btn-primary");
+    expect(guidelineSheet).not.toContain("활동 예시 영상");
+    expect(guidelineSheet).not.toContain("실제 운영 예시 영상입니다.");
+    expect(guidelineSheet).toContain("활동 요소");
     expect(guidelineSheet).toContain("contentLoadState === 'loading'");
     expect(guidelineSheet).toContain("contentLoadState === 'error'");
-    expect(guidelineSheet).toContain('getSpomovePresetDisplayModel(preset, contentOverride)');
-    expect(guidelineSheet).not.toContain('세부 안내 예정');
-    expect(guidelineSheet).not.toContain('등록된 활동 목표 정보가 없습니다.');
-    expect(guidelineSheet).not.toContain('등록된 진행 안내가 없습니다.');
-    expect(guidelineSheet).not.toContain('등록된 지도 포인트가 없습니다.');
-    expect(guidelineSheet).toContain('기본 실행 정보만 제공됩니다.');
-    expect(guidelineSheet).toContain('resolveSpomoveBriefingReadiness');
-    expect(guidelineSheet).not.toContain('PublishedGuideContent');
-    expect(guidelineSheet).not.toContain('GuideModeNotice');
-    expect(guidelineSheet).not.toContain('PreparingGuideContent');
-    expect(guidelineSheet).not.toContain('핵심 키워드');
-    expect(guidelineSheet).not.toContain('매트 바로 밖');
-    expect(guidelineSheet).not.toContain('소집단');
-    expect(guidelineSheet).not.toContain('{activityMethod.title}');
-    expect(guidelineSheet).toContain('활동 준비');
-    expect(guidelineSheet).toContain('시작 설정');
-    expect(guidelineSheet).not.toContain('바로 시작');
-    expect(guidelineSheet).not.toContain('바로 실행');
-    expect(guidelineSheet).not.toContain('안내 더보기');
-    expect(guidelineSheet).not.toContain('상세보기');
-    expect(guidelineSheet).not.toContain('설정 변경');
+    expect(guidelineSheet).toContain(
+      "getSpomovePresetDisplayModel(preset, contentOverride)",
+    );
+    expect(guidelineSheet).not.toContain("세부 안내 예정");
+    expect(guidelineSheet).not.toContain("등록된 활동 목표 정보가 없습니다.");
+    expect(guidelineSheet).not.toContain("등록된 진행 안내가 없습니다.");
+    expect(guidelineSheet).not.toContain("등록된 지도 포인트가 없습니다.");
+    expect(guidelineSheet).toContain("기본 실행 정보만 제공됩니다.");
+    expect(guidelineSheet).toContain("resolveSpomoveBriefingReadiness");
+    expect(guidelineSheet).not.toContain("PublishedGuideContent");
+    expect(guidelineSheet).not.toContain("GuideModeNotice");
+    expect(guidelineSheet).not.toContain("PreparingGuideContent");
+    expect(guidelineSheet).not.toContain("핵심 키워드");
+    expect(guidelineSheet).not.toContain("매트 바로 밖");
+    expect(guidelineSheet).not.toContain("소집단");
+    expect(guidelineSheet).not.toContain("{activityMethod.title}");
+    expect(guidelineSheet).toContain("활동 준비");
+    expect(guidelineSheet).toContain("시작 설정");
+    expect(guidelineSheet).not.toContain("바로 시작");
+    expect(guidelineSheet).not.toContain("바로 실행");
+    expect(guidelineSheet).not.toContain("안내 더보기");
+    expect(guidelineSheet).not.toContain("상세보기");
+    expect(guidelineSheet).not.toContain("설정 변경");
   });
 
-  it('keeps Public Hub free of editorial production-status filters and badges', () => {
-    expect(hub).not.toContain('세부 안내 예정');
-    expect(hub).not.toContain('공식 가이드');
-    expect(hub).not.toContain('기본 안내');
-    expect(hub).not.toContain('가이드 현황');
-    expect(hub).not.toContain('GUIDE_STATUS_FILTERS');
-    expect(hub).not.toContain('guideStatusFilter');
-    expect(hub).not.toContain('getGuideStatusBadge');
-    expect(hub).not.toContain('resolveGuideStatusFilter');
-    expect(dashboard).not.toContain('세부 안내 예정');
-    expect(dashboard).not.toContain('가이드 현황');
+  it("keeps Public Hub free of editorial production-status filters and badges", () => {
+    expect(hub).not.toContain("세부 안내 예정");
+    expect(hub).not.toContain("공식 가이드");
+    expect(hub).not.toContain("기본 안내");
+    expect(hub).not.toContain("가이드 현황");
+    expect(hub).not.toContain("GUIDE_STATUS_FILTERS");
+    expect(hub).not.toContain("guideStatusFilter");
+    expect(hub).not.toContain("getGuideStatusBadge");
+    expect(hub).not.toContain("resolveGuideStatusFilter");
+    expect(dashboard).not.toContain("세부 안내 예정");
+    expect(dashboard).not.toContain("가이드 현황");
   });
 
-  it('separates start (entry=start) from settings and keeps Public without autostart', () => {
+  it("separates start (entry=start) from settings and keeps Public without autostart", () => {
     expect(hub).not.toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="dive"');
-    expect(hub).not.toContain('빠른 시작');
-    expect(guidelineSheet).toContain('시작 설정');
+    expect(hub).not.toContain("빠른 시작");
+    expect(guidelineSheet).toContain("시작 설정");
     expect(guidelineSheet).toContain("sessionHref('settings')");
     expect(guidelineSheet).toContain("sessionHref('start')");
-    expect(hub).not.toContain('writeFamilyMovement');
-    expect(hub).toContain('publicOfficialPresetSessionHref');
-    expect(session).toContain('activationBlocked');
-    expect(session).toContain('전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.');
-    expect(session).not.toContain('MovementHud');
-    expect(guidelineSheet).not.toContain('autostart: true');
-    expect(guidelineSheet).toContain('활동 준비');
-    expect(guidelineSheet).not.toContain('바로 시작');
-    expect(guidelineSheet).not.toContain('바로 실행');
-    expect(guidelineSheet).toContain('data-spm-spomove-guide-action="start-official"');
-    expect(guidelineSheet).toContain('data-spm-spomove-launch-confirm');
-    expect(guidelineSheet).not.toContain('공식 추천으로 시작');
-    expect(session).toContain('resolveLegacyAutostart');
-    expect(session).toContain('resolveSessionCueSeconds');
-    expect(session).toContain('parseCueSecondsQuery');
-    expect(session).toContain('leaveSession');
-    expect(session).toContain('parseSpomoveHubReturnHref');
-    expect(session).toContain('hubReturn');
+    expect(hub).not.toContain("writeFamilyMovement");
+    expect(hub).toContain("publicOfficialPresetSessionHref");
+    expect(session).toContain("activationBlocked");
+    expect(session).toContain(
+      "전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.",
+    );
+    expect(session).not.toContain("MovementHud");
+    expect(guidelineSheet).not.toContain("autostart: true");
+    expect(guidelineSheet).toContain("활동 준비");
+    expect(guidelineSheet).not.toContain("바로 시작");
+    expect(guidelineSheet).not.toContain("바로 실행");
+    expect(guidelineSheet).toContain(
+      'data-spm-spomove-guide-action="start-official"',
+    );
+    expect(guidelineSheet).toContain("data-spm-spomove-launch-confirm");
+    expect(guidelineSheet).not.toContain("공식 추천으로 시작");
+    expect(session).toContain("resolveLegacyAutostart");
+    expect(session).toContain("resolveSessionCueSeconds");
+    expect(session).toContain("parseCueSecondsQuery");
+    expect(session).toContain("leaveSession");
+    expect(session).toContain("parseSpomoveHubReturnHref");
+    expect(session).toContain("hubReturn");
   });
 
-  it('keeps StartBriefing confirmation-only and cue editing in SettingsBriefing', () => {
-    expect(hub).toContain('publicOfficialPresetSessionHref');
-    expect(hub).not.toContain('data-spm-spomove-card-action="start"');
-    expect(guidelineSheet).toContain('data-spm-spomove-guide-action="start-official"');
-    expect(startBriefing).not.toContain('SPOMOVE_CUE_SPEED_OPTIONS');
-    expect(startBriefing).not.toContain('onCueSecondsChange');
-    expect(startBriefing).toContain('현재 실행값');
-    expect(settingsBriefing).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
-    expect(settingsBriefing).toContain('onCueSecondsChange');
-    expect(startBriefing).toContain('실행 시작');
-    expect(startBriefing).toContain('`SPOMAT ${matCount}장 · 자극 ${cueSeconds}초`');
-    expect(startBriefing).not.toContain('movementSummary');
-    expect(startBriefing).not.toContain('전체화면 준비');
-    expect(startBriefing).not.toContain('소리 사용');
-    expect(startBriefing).toContain('border border-white/20');
-    expect(startBriefing).not.toContain('바로 시작');
-    expect(startBriefing).not.toContain('바로 실행');
+  it("keeps StartBriefing confirmation-only and cue editing in SettingsBriefing", () => {
+    expect(hub).toContain("publicOfficialPresetSessionHref");
+    expect(hub).not.toContain("startHref={");
+    expect(guidelineSheet).toContain(
+      'data-spm-spomove-guide-action="start-official"',
+    );
+    expect(startBriefing).not.toContain("SPOMOVE_CUE_SPEED_OPTIONS");
+    expect(startBriefing).not.toContain("onCueSecondsChange");
+    expect(startBriefing).toContain("현재 실행값");
+    expect(settingsBriefing).toContain("SPOMOVE_CUE_SPEED_OPTIONS");
+    expect(settingsBriefing).toContain("onCueSecondsChange");
+    expect(startBriefing).toContain("실행 시작");
+    expect(startBriefing).toContain(
+      "`SPOMAT ${matCount}장 · 자극 ${cueSeconds}초`",
+    );
+    expect(startBriefing).not.toContain("movementSummary");
+    expect(startBriefing).not.toContain("전체화면 준비");
+    expect(startBriefing).not.toContain("소리 사용");
+    expect(startBriefing).toContain("border border-white/20");
+    expect(startBriefing).not.toContain("바로 시작");
+    expect(startBriefing).not.toContain("바로 실행");
   });
 
-  it('uses mat layout briefing and 1-6 second recommended speed instead of current-setting movement copy', () => {
-    expect(startBriefing).toContain('SpomovePadLayoutView');
-    expect(settingsBriefing).toContain('SpomovePadLayoutView');
-    expect(startBriefing).toContain('현재 실행값');
-    expect(settingsBriefing).not.toContain('현재 설정');
-    expect(setupShell).not.toContain('launchModeLabel');
-    expect(setupShell).not.toContain('큰 화면');
-    expect(cueSpeed).toContain('SPOMOVE_CUE_SPEED_OPTIONS = [1, 2, 3, 4, 5, 6]');
+  it("uses mat layout briefing and 1-6 second recommended speed instead of current-setting movement copy", () => {
+    expect(startBriefing).toContain("SpomovePadLayoutView");
+    expect(settingsBriefing).toContain("SpomovePadLayoutView");
+    expect(startBriefing).toContain("현재 실행값");
+    expect(settingsBriefing).not.toContain("현재 설정");
+    expect(setupShell).not.toContain("launchModeLabel");
+    expect(setupShell).not.toContain("큰 화면");
+    expect(cueSpeed).toContain(
+      "SPOMOVE_CUE_SPEED_OPTIONS = [1, 2, 3, 4, 5, 6]",
+    );
     expect(cueSpeed).toContain("if (value >= 5) return '쉬움'");
     expect(cueSpeed).toContain("if (value >= 3) return '보통'");
     expect(cueSpeed).toContain("return '어려움'");
-    expect(startBriefing).not.toContain('난이도 {cueDifficulty}');
-    expect(settingsBriefing).not.toContain('난이도 {cueDifficulty}');
-    expect(startBriefing).not.toContain('sec === 3');
-    expect(settingsBriefing).toContain('sec === recommendedCueSeconds');
-    expect(startBriefing).not.toContain('추천');
-    expect(settingsBriefing).toContain('추천');
-    expect(padLayoutView).not.toContain('학생이 화면을 바라보는 기준입니다.');
-    expect(padLayoutView).toContain('화면 ↑');
-    expect(padLayoutView).not.toContain('학생 위치');
-    expect(padLayoutView).toContain('/images/spokedu/brand/spomat-layout.png');
-    expect(padLayoutView).toContain('aspect-square');
-    expect(settingsBriefing).not.toContain('meta=');
-    expect(settingsBriefing).not.toContain('적용될 설정');
+    expect(startBriefing).not.toContain("난이도 {cueDifficulty}");
+    expect(settingsBriefing).not.toContain("난이도 {cueDifficulty}");
+    expect(startBriefing).not.toContain("sec === 3");
+    expect(settingsBriefing).toContain("sec === recommendedCueSeconds");
+    expect(startBriefing).not.toContain("추천");
+    expect(settingsBriefing).toContain("추천");
+    expect(padLayoutView).not.toContain("학생이 화면을 바라보는 기준입니다.");
+    expect(padLayoutView).toContain("화면 ↑");
+    expect(padLayoutView).not.toContain("학생 위치");
+    expect(padLayoutView).toContain("/images/spokedu/brand/spomat-layout.png");
+    expect(padLayoutView).toContain("aspect-square");
+    expect(settingsBriefing).not.toContain("meta=");
+    expect(settingsBriefing).not.toContain("적용될 설정");
   });
 
-  it('reproduces recent same-settings or downgrades the label', () => {
-    expect(hub).toContain('canReproduceSpomoveSameSettings');
-    expect(hub).toContain('같은 설정으로 시작');
-    expect(hub).toContain('이 활동으로 시작');
-    expect(hub).toContain('data-spm-spomove-recent-reproduce');
-    expect(session).not.toContain('difficultyValue');
+  it("reproduces recent same-settings or downgrades the label", () => {
+    expect(hub).toContain("canReproduceSpomoveSameSettings");
+    expect(hub).toContain("같은 설정으로 시작");
+    expect(hub).toContain("이 활동으로 시작");
+    expect(hub).toContain("data-spm-spomove-recent-reproduce");
+    expect(session).not.toContain("difficultyValue");
   });
 
-  it('keeps Start/Settings briefings without nested details modal', () => {
-    expect(session).toContain('StartBriefing');
-    expect(session).toContain('SettingsBriefing');
-    expect(session).not.toContain('자세히 보기');
-    expect(session).not.toContain('OfficialEngineBriefing');
-    expect(session).toContain('reopenStartConfirmation');
+  it("keeps Start/Settings briefings without nested details modal", () => {
+    expect(session).toContain("StartBriefing");
+    expect(session).toContain("SettingsBriefing");
+    expect(session).not.toContain("자세히 보기");
+    expect(session).not.toContain("OfficialEngineBriefing");
+    expect(session).toContain("reopenStartConfirmation");
     expect(session).not.toContain("event.code === 'Space' && state === 'done'");
   });
 
-  it('prevents duplicate session starts and records only real starts', () => {
-    expect(session).toContain('startLockedRef');
+  it("prevents duplicate session starts and records only real starts", () => {
+    expect(session).toContain("startLockedRef");
     expect(session).toContain("setState('running')");
-    expect(session).toContain('recordRecentProgramActivity({');
+    expect(session).toContain("recordRecentProgramActivity({");
     expect(session).toContain("action: 'spomove_started'");
   });
 
-  it('separates completed and early-ended sessions', () => {
-    expect(session).toContain("type SessionState = 'idle' | 'running' | 'done' | 'ended'");
-    expect(session).not.toContain('오늘의 동작');
+  it("separates completed and early-ended sessions", () => {
+    expect(session).toContain(
+      "type SessionState = 'idle' | 'running' | 'done' | 'ended'",
+    );
+    expect(session).not.toContain("오늘의 동작");
     expect(session).toContain("finishSession('ended')");
     expect(session).toContain("finishSession('done', payload)");
-    expect(session).toContain('MasterSessionResult');
-    expect(masterResult).toContain('중도 종료');
-    expect(masterResult).toContain('훈련 완료');
+    expect(session).toContain("MasterSessionResult");
+    expect(masterResult).toContain("중도 종료");
+    expect(masterResult).toContain("훈련 완료");
   });
 
-  it('connects lesson-context completion to class records and keeps standalone sessions separate', () => {
-    expect(session).toContain('recordProgramHref');
-    expect(session).toContain('buildSpomoveRecordDraft');
-    expect(session).toContain('buildSpomoveRecordHref');
-    expect(session).not.toContain('/spokedu-master/class-record?program=${officialPreset.id}');
-    expect(session).toContain('/spokedu-master/activity');
-    expect(masterResult).toContain('같은 설정으로 다시 실행');
-    expect(session).toContain('reopenStartConfirmation');
-    expect(masterResult).toContain('활동 목록으로');
+  it("connects lesson-context completion to class records and keeps standalone sessions separate", () => {
+    expect(session).toContain("recordProgramHref");
+    expect(session).toContain("buildSpomoveRecordDraft");
+    expect(session).toContain("buildSpomoveRecordHref");
+    expect(session).not.toContain(
+      "/spokedu-master/class-record?program=${officialPreset.id}",
+    );
+    expect(session).toContain("/spokedu-master/activity");
+    expect(masterResult).toContain("같은 설정으로 다시 실행");
+    expect(session).toContain("reopenStartConfirmation");
+    expect(masterResult).toContain("활동 목록으로");
   });
 
-  it('returns an exact Session build to its preserved work context without creating a Session', () => {
-    expect(hub).toContain('await operationalData.addSessionSpomove(sessionContext.id, preset.id)');
-    expect(hub).toContain('router.push(returnTo)');
-    expect(hub).not.toContain('createSession(');
+  it("returns an exact Session build to its preserved work context without creating a Session", () => {
+    expect(hub).toContain(
+      "await operationalData.addSessionSpomove(sessionContext.id, preset.id)",
+    );
+    expect(hub).toContain("router.push(returnTo)");
+    expect(hub).not.toContain("createSession(");
   });
 
-  it('keeps SPOMOVE class-record drafts as general estimates, not sensor-precise metrics', () => {
-    expect(recordDraft).toContain('실제 움직인 시간: 약');
-    expect(recordDraft).toContain('예상 소모 열량');
-    expect(recordDraft).toContain('센서 기반 정밀 측정값이 아니라 수업 기록용 일반 추정치');
-    expect(recordDraft).toContain('spomoveDraft');
+  it("keeps SPOMOVE class-record drafts as general estimates, not sensor-precise metrics", () => {
+    expect(recordDraft).toContain("실제 움직인 시간: 약");
+    expect(recordDraft).toContain("예상 소모 열량");
+    expect(recordDraft).toContain(
+      "센서 기반 정밀 측정값이 아니라 수업 기록용 일반 추정치",
+    );
+    expect(recordDraft).toContain("spomoveDraft");
   });
 
-  it('keeps user-facing hub copy in valid UTF-8 Korean', () => {
+  it("keeps user-facing hub copy in valid UTF-8 Korean", () => {
     expect(hub).not.toMatch(/[\u0080-\u009f]/);
-    expect(hub).not.toContain('\ufffd');
+    expect(hub).not.toContain("\ufffd");
     expect(hub).not.toMatch(/[怨諛鍮異醫珥]/);
   });
 });

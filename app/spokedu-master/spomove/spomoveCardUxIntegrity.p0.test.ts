@@ -1,94 +1,116 @@
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
-import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
-import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from './spomovePublicCatalogOrder';
+import { OFFICIAL_SPOMOVE_LIBRARY } from "./officialSpomovePresets";
+import { SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER } from "./spomovePublicCatalogOrder";
 import {
   getSpomoveCardDisplayModel,
   resolveAudienceAdaptation,
-} from './spomovePresetDisplayModel';
-import { getOfficialSpomovePresetGuide } from './officialSpomovePresetGuides';
-import { supportsCueSpeedOverride } from './spomoveCueSpeed';
-import { getSpomoveDifficultyKind } from './spomoveDifficulty';
+} from "./spomovePresetDisplayModel";
+import { getOfficialSpomovePresetGuide } from "./officialSpomovePresetGuides";
+import { supportsCueSpeedOverride } from "./spomoveCueSpeed";
+import { getSpomoveDifficultyKind } from "./spomoveDifficulty";
 
 function read(path: string) {
-  return readFileSync(join(process.cwd(), path), 'utf8');
+  return readFileSync(join(process.cwd(), path), "utf8");
 }
 
-const publicLibrary = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.catalogStatus !== 'hold');
+const publicLibrary = OFFICIAL_SPOMOVE_LIBRARY.filter(
+  (preset) => preset.catalogStatus !== "hold",
+);
 const publicDifficultyPairs = [
-  ['visual-reaction-mole-l1', 'visual-reaction-mole-normal-skeleton'],
-  ['visual-reaction-goalkeeper-easy-skeleton', 'visual-reaction-goalkeeper-42'],
-  ['simon-pole-arrows-41', 'simon-arrow-hard-skeleton'],
-  ['simon-pole-shape-06', 'simon-shape-hard-skeleton'],
-  ['simon-balloon-flash-05', 'simon-balloon-hard-skeleton'],
-  ['simon-mixed-gallery-exp', 'simon-random-hard-skeleton'],
+  ["visual-reaction-mole-l1", "visual-reaction-mole-normal-skeleton"],
+  ["visual-reaction-goalkeeper-easy-skeleton", "visual-reaction-goalkeeper-42"],
+  ["simon-pole-arrows-41", "simon-arrow-hard-skeleton"],
+  ["simon-pole-shape-06", "simon-shape-hard-skeleton"],
+  ["simon-balloon-flash-05", "simon-balloon-hard-skeleton"],
+  ["simon-mixed-gallery-exp", "simon-random-hard-skeleton"],
 ] as const;
 
-describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
-  it('keeps public 72 catalog order unchanged', () => {
+describe("SPOMOVE-CARD-UX-INTEGRITY-P0-01", () => {
+  it("keeps public 72 catalog order unchanged", () => {
     expect(publicLibrary).toHaveLength(72);
-    expect(publicLibrary.map((preset) => preset.id)).toEqual([...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER]);
+    expect(publicLibrary.map((preset) => preset.id)).toEqual([
+      ...SPOMOVE_PUBLIC_CATALOG_FLAT_ORDER,
+    ]);
   });
 
-  it('exposes at most 3 semantic badges per public card', () => {
+  it("exposes at most 3 semantic badges per public card", () => {
     for (const preset of publicLibrary) {
       const card = getSpomoveCardDisplayModel(preset);
       expect(card.badges.length).toBeLessThanOrEqual(3);
       expect(card.badges.length).toBeGreaterThan(0);
       for (const badge of card.badges) {
-        expect(badge.slot).toMatch(/^(difficulty|responseType|trainingFocus|audience|adaptation|adjustable)$/);
+        expect(badge.slot).toMatch(
+          /^(difficulty|responseType|trainingFocus|audience|adaptation|adjustable)$/,
+        );
         expect(badge.value.trim().length).toBeGreaterThan(0);
-        expect(badge.value.endsWith('·')).toBe(false);
-        expect(badge.value).not.toContain('·');
+        expect(badge.value.endsWith("·")).toBe(false);
+        expect(badge.value).not.toContain("·");
       }
       const values = card.badges.map((badge) => badge.value);
       expect(new Set(values).size).toBe(values.length);
     }
   });
 
-  it('does not put bare difficulty words on public badges', () => {
+  it("does not put bare difficulty words on public badges", () => {
     for (const preset of publicLibrary) {
       const card = getSpomoveCardDisplayModel(preset);
-      const difficultyBadges = card.badges.filter((badge) => badge.slot === 'difficulty');
+      const difficultyBadges = card.badges.filter(
+        (badge) => badge.slot === "difficulty",
+      );
       for (const badge of difficultyBadges) {
         expect(badge.value).toMatch(/^난이도 (쉬움|보통|어려움)$/u);
       }
       const labelValues = card.badges.map((badge) => badge.value);
-      expect(labelValues.filter((value) => value === '보통' || value === '어려움' || value === '쉬움')).toHaveLength(0);
-      const hasNormal = labelValues.some((value) => value.includes('보통'));
-      const hasHard = labelValues.some((value) => value.includes('어려움'));
+      expect(
+        labelValues.filter(
+          (value) => value === "보통" || value === "어려움" || value === "쉬움",
+        ),
+      ).toHaveLength(0);
+      const hasNormal = labelValues.some((value) => value.includes("보통"));
+      const hasHard = labelValues.some((value) => value.includes("어려움"));
       expect(hasNormal && hasHard).toBe(false);
     }
   });
 
-  it('keeps audience and adaptation as separate semantic axes', () => {
+  it("keeps audience and adaptation as separate semantic axes", () => {
     for (const preset of publicLibrary) {
       const guide = getOfficialSpomovePresetGuide(preset);
       const split = resolveAudienceAdaptation(guide.targetGroups);
       const card = getSpomoveCardDisplayModel(preset);
-      expect(card.meta.audience ?? split.audience ?? '').not.toMatch(/전학년·특수|저학년·특수|고학년·특수/);
-      expect(Object.values(card.meta).join(' ')).not.toContain('초등 전학년·특수');
+      expect(card.meta.audience ?? split.audience ?? "").not.toMatch(
+        /전학년·특수|저학년·특수|고학년·특수/,
+      );
+      expect(Object.values(card.meta).join(" ")).not.toContain(
+        "초등 전학년·특수",
+      );
       if (card.meta.adaptation) {
-        expect(card.meta.adaptation).toBe('특수체육 활용');
+        expect(card.meta.adaptation).toBe("특수체육 활용");
       }
     }
   });
 
-  it('ignores CMS catalogTags for public card badges', () => {
+  it("ignores CMS catalogTags for public card badges", () => {
     const preset = publicLibrary[0]!;
     const polluted = getSpomoveCardDisplayModel(preset, {
-      catalogTags: ['보통', '어려움', '초등 전학년·특수', '오염태그'],
+      catalogTags: ["보통", "어려움", "초등 전학년·특수", "오염태그"],
     });
     const clean = getSpomoveCardDisplayModel(preset);
-    expect(polluted.badges.map((badge) => badge.value)).toEqual(clean.badges.map((badge) => badge.value));
-    expect(polluted.badges.some((badge) => badge.value === '오염태그')).toBe(false);
+    expect(polluted.badges.map((badge) => badge.value)).toEqual(
+      clean.badges.map((badge) => badge.value),
+    );
+    expect(polluted.badges.some((badge) => badge.value === "오염태그")).toBe(
+      false,
+    );
   });
 
-  it('unifies base metadata for normal/hard title pairs', () => {
+  it("unifies base metadata for normal/hard title pairs", () => {
     for (const ids of publicDifficultyPairs) {
-      const members = ids.map((id) => publicLibrary.find((preset) => preset.id === id)!);
+      const members = ids.map((id) =>
+        publicLibrary.find((preset) => preset.id === id)!,
+      );
       const bases = members.map((preset) => {
         const card = getSpomoveCardDisplayModel(preset);
         return {
@@ -104,15 +126,16 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     }
   });
 
-  it('shows settings CTA only when cue speed or difficulty override exists', () => {
+  it("shows settings CTA only when cue speed or difficulty override exists", () => {
     for (const preset of publicLibrary) {
       const showSettings =
-        supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
+        supportsCueSpeedOverride(preset) ||
+        Boolean(getSpomoveDifficultyKind(preset));
       const card = getSpomoveCardDisplayModel(preset);
       if (showSettings) {
         expect(
-          card.meta.adjustable === '시간 조절' ||
-            card.meta.adjustable === '난이도 조절' ||
+          card.meta.adjustable === "시간 조절" ||
+            card.meta.adjustable === "난이도 조절" ||
             supportsCueSpeedOverride(preset) ||
             Boolean(getSpomoveDifficultyKind(preset)),
         ).toBe(true);
@@ -120,21 +143,23 @@ describe('SPOMOVE-CARD-UX-INTEGRITY-P0-01', () => {
     }
   });
 
-  it('hub card surface follows P0 action and badge contract', () => {
-    const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
-    expect(hub).toContain('getSpomoveCardDisplayModel');
-    expect(hub).toContain('data-spm-spomove-card-body');
-    expect(hub).not.toContain('활동 준비');
-    expect(hub).not.toContain('시작 설정');
+  it("hub card surface follows P0 action and badge contract", () => {
+    const hub = read("app/spokedu-master/spomove/SpomoveHubView.tsx");
+    expect(hub).toContain("getSpomoveCardDisplayModel");
+    expect(hub).toContain("data-spm-spomove-card-body");
+    expect(hub).not.toContain("활동 준비");
+    expect(hub).not.toContain("시작 설정");
     expect(hub).not.toContain("after:content-['·']");
-    expect(hub).not.toContain('supportMetaParts.slice');
-    expect(hub).not.toContain('displayModel.variantLabel');
-    expect(hub).not.toContain('catalogTags');
-    expect(hub).not.toContain('<Play ');
-    expect(hub).toContain("import { ChevronDown, Heart, Search, X } from 'lucide-react'");
+    expect(hub).not.toContain("supportMetaParts.slice");
+    expect(hub).not.toContain("displayModel.variantLabel");
+    expect(hub).not.toContain("catalogTags");
+    expect(hub).not.toContain("startHref={");
+    expect(hub).toContain(
+      "import { ChevronDown, Heart, Play, Search, X } from 'lucide-react'",
+    );
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
-    expect(hub).toContain('data-spm-spomove-session-action');
-    expect(hub).toContain('이 수업에 추가');
-    expect(hub).toContain('h-11 w-11');
+    expect(hub).toContain("data-spm-spomove-session-action");
+    expect(hub).toContain("이 수업에 추가");
+    expect(hub).toContain("h-11 w-11");
   });
 });

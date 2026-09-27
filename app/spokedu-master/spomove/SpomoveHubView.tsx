@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { ChevronDown, Heart, Play, Search, X } from 'lucide-react';
 import Link from 'next/link';
@@ -1036,7 +1036,6 @@ function SpomoveHubInner({
             addedToSession={Boolean(sessionContext?.programs.some((program) => program.sourceType === 'spomove' && program.spomovePresetId === preset.id))}
             addingToSession={addingPresetId === preset.id}
             sessionBuildAction={sessionBuildAction}
-            startHref={sessionContext ? undefined : publicOfficialPresetSessionHref(preset, { entry: 'start', hubReturn: hubReturnHref })}
           />
         </div>
       ))}

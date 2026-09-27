@@ -1,64 +1,80 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { readSessionDetailSource } from "../manage/session-detailTestSource";
 
-import { getSafeMasterPostPaymentPath } from './masterPaymentReturn';
-import { resolveMasterContextQueryKeys } from './masterNavigationContext';
-import { isEngineDoneLessonRecord } from './masterProductTruth';
-import { readSessionDetailSource } from '../manage/session-detailTestSource';
+import { getSafeMasterPostPaymentPath } from "./masterPaymentReturn";
+import { resolveMasterContextQueryKeys } from "./masterNavigationContext";
+import { isEngineDoneLessonRecord } from "./masterProductTruth";
 
-const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
+const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
-describe('MASTER OS consistency journeys', () => {
-  it('PAYMENT-RETURN-01 preserves SPOMOVE Hub discovery through payment', () => {
-    expect(resolveMasterContextQueryKeys('/spokedu-master/spomove')).toEqual([
-      'view',
-      'group',
-      'difficulty',
-      'movement',
-      'q',
-      'session',
-      'returnTo',
-      'source',
+describe("MASTER OS consistency journeys", () => {
+  it("PAYMENT-RETURN-01 preserves SPOMOVE Hub discovery through payment", () => {
+    expect(resolveMasterContextQueryKeys("/spokedu-master/spomove")).toEqual([
+      "view",
+      "group",
+      "difficulty",
+      "movement",
+      "q",
+      "session",
+      "returnTo",
+      "source",
     ]);
     expect(
       getSafeMasterPostPaymentPath(
-        '/spokedu-master/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction',
-      ),
-    ).toBe('/spokedu-master/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction');
-    expect(
-      getSafeMasterPostPaymentPath(
-        '/spokedu-master/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session',
+        "/spokedu-master/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction",
       ),
     ).toBe(
-      '/spokedu-master/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session',
+      "/spokedu-master/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction",
+    );
+    expect(
+      getSafeMasterPostPaymentPath(
+        "/spokedu-master/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session",
+      ),
+    ).toBe(
+      "/spokedu-master/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session",
     );
   });
 
-  it('SPOMOVE-SESSION-01 keeps Session origin and separates engine vs lesson record', () => {
+  it("SPOMOVE-SESSION-01 keeps Session origin and separates engine vs lesson record", () => {
+    const activity = readSessionDetailSource();
     expect(isEngineDoneLessonRecord(false)).toBe(true);
-    const activity = readSessionDetailSource();
-    const result = read('app/spokedu-master/spomove/session/MasterSessionResult.tsx');
-    expect(activity).toContain('session: activeSession.id');
-    expect(activity).toContain('sessionProgram: program.id');
-    expect(result).toContain('수업으로 돌아가기');
-    expect(result).toContain('완료로 표시하고 수업으로');
-    expect(resolveMasterContextQueryKeys('/spokedu-master/spomove/session')).toEqual(
-      expect.arrayContaining(['session', 'sessionProgram', 'returnTo', 'hubReturn']),
+    const result = read(
+      "app/spokedu-master/spomove/session/MasterSessionResult.tsx",
+    );
+    expect(activity).toContain("session: activeSession.id");
+    expect(activity).toContain("sessionProgram: program.id");
+    expect(result).toContain("수업으로 돌아가기");
+    expect(result).toContain("완료로 표시하고 수업으로");
+    expect(
+      resolveMasterContextQueryKeys("/spokedu-master/spomove/session"),
+    ).toEqual(
+      expect.arrayContaining([
+        "session",
+        "sessionProgram",
+        "returnTo",
+        "hubReturn",
+      ]),
     );
   });
 
-  it('NEXT-SESSION-01 retains the command without exposing it in Manage primary UX', () => {
-    const activity = readSessionDetailSource();
-    const migration = read('supabase/migrations/20260823120000_spokedu_master_create_next_session.sql');
-    expect(activity).not.toContain('다음 수업 만들기');
-    expect(migration).toContain('program_title_snapshot, sort_order, false');
-    expect(migration).not.toContain('spokedu_master_session_attendance');
+  it("NEXT-SESSION-01 retains the command without exposing it in Manage primary UX", () => {
+    const migration = read(
+      "supabase/migrations/20260823120000_spokedu_master_create_next_session.sql",
+    );
+    expect(
+      read("app/spokedu-master/manage/session-detail/SessionActions.tsx"),
+    ).not.toContain("다음 수업 만들기");
+    expect(migration).toContain("program_title_snapshot, sort_order, false");
+    expect(migration).not.toContain("spokedu_master_session_attendance");
   });
 
-  it('assign copy uses 수업에 추가 grammar', () => {
-    const assign = read('app/spokedu-master/components/session/AssignProgramToSessionButton.tsx');
-    expect(assign).toContain('수업에 추가');
-    expect(assign).not.toContain('수업에 배정');
+  it("assign copy uses 수업에 추가 grammar", () => {
+    const assign = read(
+      "app/spokedu-master/components/session/AssignProgramToSessionButton.tsx",
+    );
+    expect(assign).toContain("수업에 추가");
+    expect(assign).not.toContain("수업에 배정");
   });
 });

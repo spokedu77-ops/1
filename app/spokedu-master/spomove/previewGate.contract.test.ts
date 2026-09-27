@@ -1,131 +1,147 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
 
-import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
-import { getActivityFamily } from './movements/activityFamilies';
-import { getMovementProfile } from './movements/movementProfiles';
-import { getPresetMovementSummary } from './movements/presetMovementSummary';
+import { OFFICIAL_SPOMOVE_LIBRARY } from "./officialSpomovePresets";
+import { getActivityFamily } from "./movements/activityFamilies";
+import { getMovementProfile } from "./movements/movementProfiles";
+import { getPresetMovementSummary } from "./movements/presetMovementSummary";
 
 function read(path: string) {
-  return readFileSync(join(process.cwd(), path), 'utf8');
+  return readFileSync(join(process.cwd(), path), "utf8");
 }
 
 /**
  * Phase 0 — 즉시 실행·과밀 설정·양산형 설명 손상 중단.
  */
-describe('SPOMOVE preview gate (Phase 0)', () => {
-  const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
-  const preview = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
-  const session = read('app/spokedu-master/spomove/session/page.tsx');
-  const hrefSource = read('app/spokedu-master/spomove/officialSpomovePresets.ts');
-  const contract = read('app/spokedu-master/spomove/SPOMOVE_PRODUCT_CONTRACT.md');
-  const configurator = read('app/spokedu-master/spomove/movements/MovementConfigurator.tsx');
+describe("SPOMOVE preview gate (Phase 0)", () => {
+  const hub = read("app/spokedu-master/spomove/SpomoveHubView.tsx");
+  const preview = read("app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx");
+  const session = read("app/spokedu-master/spomove/session/page.tsx");
+  const hrefSource = read(
+    "app/spokedu-master/spomove/officialSpomovePresets.ts",
+  );
+  const contract = read(
+    "app/spokedu-master/spomove/SPOMOVE_PRODUCT_CONTRACT.md",
+  );
+  const configurator = read(
+    "app/spokedu-master/spomove/movements/MovementConfigurator.tsx",
+  );
 
-  it('1) running 중 MovementHud 없음 — Engine만', () => {
-    expect(session).not.toContain('MovementHud');
-    expect(session).not.toContain('hud_collapsed');
+  it("1) running 중 MovementHud 없음 — Engine만", () => {
+    expect(session).not.toContain("MovementHud");
+    expect(session).not.toContain("hud_collapsed");
     expect(session).toContain("state === 'running'");
-    expect(session).toContain('<EngineRouter');
+    expect(session).toContain("<EngineRouter");
     expect(session).not.toContain("state === 'movementIntro'");
-    expect(session).not.toContain('오늘의 동작');
+    expect(session).not.toContain("오늘의 동작");
   });
 
-  it('2) Hub는 Preview로 진입하고 실행 액션은 Preview가 소유한다', () => {
+  it("2) Hub는 Preview로 진입하고 실행 액션은 Preview가 소유한다", () => {
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="settings"');
-    expect(hub).not.toContain('빠른 시작');
-    expect(preview).toContain('시작 설정');
-    expect(preview).toContain('활동 준비');
+    expect(hub).not.toContain("빠른 시작");
+    expect(preview).toContain("시작 설정");
+    expect(preview).toContain("활동 준비");
     expect(preview).toContain("sessionHref('settings')");
     expect(preview).toContain("sessionHref('start')");
-    expect(hub).not.toContain('writeFamilyMovement');
-    expect(hub).not.toContain('{preset.description}');
-    expect(hub).toContain('같은 설정으로 시작');
-    expect(hub).not.toContain('같은 설정 실행');
+    expect(hub).not.toContain("writeFamilyMovement");
+    expect(hub).not.toContain("{preset.description}");
+    expect(hub).toContain("같은 설정으로 시작");
+    expect(hub).not.toContain("같은 설정 실행");
   });
 
-  it('2b) Session entry·legacyAutostart·Briefing 분리', () => {
-    const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefing.tsx');
-    expect(session).toContain('parseSessionEntryMode');
-    expect(session).toContain('resolveLegacyAutostart');
-    expect(session).toContain('entryParam:');
-    expect(session).toContain('StartBriefing');
-    expect(session).toContain('SettingsBriefing');
-    expect(session).toContain('beginConfiguredSession');
-    expect(session).toContain('reopenStartConfirmation');
-    expect(session).toContain('isInteractiveKeyTarget');
-    expect(session).toContain("event.code === 'Space' && state === 'idle' && showBriefing");
+  it("2b) Session entry·legacyAutostart·Briefing 분리", () => {
+    const settingsBriefing = read(
+      "app/spokedu-master/spomove/session/SettingsBriefing.tsx",
+    );
+    expect(session).toContain("parseSessionEntryMode");
+    expect(session).toContain("resolveLegacyAutostart");
+    expect(session).toContain("entryParam:");
+    expect(session).toContain("StartBriefing");
+    expect(session).toContain("SettingsBriefing");
+    expect(session).toContain("beginConfiguredSession");
+    expect(session).toContain("reopenStartConfirmation");
+    expect(session).toContain("isInteractiveKeyTarget");
+    expect(session).toContain(
+      "event.code === 'Space' && state === 'idle' && showBriefing",
+    );
     expect(session).not.toContain("event.code === 'Space' && state === 'done'");
-    expect(settingsBriefing).toContain('SpomovePadLayoutView');
-    expect(settingsBriefing).toContain('getSpomovePadLayoutVariant');
+    expect(settingsBriefing).toContain("SpomovePadLayoutView");
+    expect(settingsBriefing).toContain("getSpomovePadLayoutVariant");
   });
 
-  it('2e) 일반 Session은 runtime movement를 저장·기록·URL 재생성하지 않는다', () => {
-    expect(session).not.toContain('readFamilyMovement');
-    expect(session).not.toContain('writeFamilyMovement');
-    expect(session).not.toContain('appendMovementUsageEvent');
-    expect(session).not.toContain('createMovementSessionId');
-    expect(session).not.toContain('parseMovementQuery');
-    expect(session).not.toContain('movementSource');
-    expect(session).not.toContain('movementLabel');
-    expect(session).not.toContain('사용한 동작');
+  it("2e) 일반 Session은 runtime movement를 저장·기록·URL 재생성하지 않는다", () => {
+    expect(session).not.toContain("readFamilyMovement");
+    expect(session).not.toContain("writeFamilyMovement");
+    expect(session).not.toContain("appendMovementUsageEvent");
+    expect(session).not.toContain("createMovementSessionId");
+    expect(session).not.toContain("parseMovementQuery");
+    expect(session).not.toContain("movementSource");
+    expect(session).not.toContain("movementLabel");
+    expect(session).not.toContain("사용한 동작");
   });
 
-  it('2c) Hub 카드·썸네일은 같은 Preview 모달 루트', () => {
-    expect(hub).not.toContain('활동 준비');
+  it("2c) Hub 카드·썸네일은 같은 Preview 모달 루트", () => {
+    expect(hub).not.toContain("활동 준비");
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
-    expect(hub).toContain('onPreview();');
-    expect(hub).toContain('미리보기 열기');
-    expect(hub).not.toContain('가이드 보기');
-    expect(hub).not.toContain('바로 실행');
-    expect(hub).not.toContain('바로 시작');
+    expect(hub).toContain("onPreview();");
+    expect(hub).toContain("미리보기 열기");
+    expect(hub).not.toContain("가이드 보기");
+    expect(hub).not.toContain("바로 실행");
+    expect(hub).not.toContain("startHref={");
     expect(hub).not.toContain('data-spm-spomove-card-action="guide"');
-    expect(hub).not.toContain('사전 설정된 공식 조건으로 실행');
+    expect(hub).not.toContain("사전 설정된 공식 조건으로 실행");
   });
 
-  it('2d) Compact side-rule 안내', () => {
-    expect(configurator).toContain('compactMovementInstruction');
+  it("2d) Compact side-rule 안내", () => {
+    expect(configurator).toContain("compactMovementInstruction");
   });
 
-  it('3) MQ2~3는 bodyCueBuiltIn — 일반 movement summary 없음', () => {
+  it("3) MQ2~3는 bodyCueBuiltIn — 일반 movement summary 없음", () => {
     const mqBody = OFFICIAL_SPOMOVE_LIBRARY.filter((p) =>
-      ['reaction-cognition-mq2-33', 'reaction-cognition-mq3-34'].includes(p.id),
+      ["reaction-cognition-mq2-33", "reaction-cognition-mq3-34"].includes(p.id),
     );
     expect(mqBody.length).toBeGreaterThanOrEqual(2);
     for (const preset of mqBody) {
-      expect(preset.activityFamilyId).toBe('reaction-variant-body-cue');
-      expect(preset.movementProfileId).toBe('bodyCueBuiltIn');
-      expect(getMovementProfile(preset.movementProfileId!).selectionMode).toBe('disabled');
+      expect(preset.activityFamilyId).toBe("reaction-variant-body-cue");
+      expect(preset.movementProfileId).toBe("bodyCueBuiltIn");
+      expect(getMovementProfile(preset.movementProfileId!).selectionMode).toBe(
+        "disabled",
+      );
       expect(getPresetMovementSummary(preset)).toBeNull();
-      expect(getActivityFamily(preset.activityFamilyId!)?.movementProfileId).toBe('bodyCueBuiltIn');
+      expect(
+        getActivityFamily(preset.activityFamilyId!)?.movementProfileId,
+      ).toBe("bodyCueBuiltIn");
     }
   });
 
-  it('4) cue 조건부 · difficulty 초기 URL · FS/Audio 폴백', () => {
+  it("4) cue 조건부 · difficulty 초기 URL · FS/Audio 폴백", () => {
     expect(hrefSource).toContain("if (options?.cueSeconds != null)");
-    expect(hrefSource).toContain('publicOfficialPresetSessionHref');
+    expect(hrefSource).toContain("publicOfficialPresetSessionHref");
     expect(preview).toContain("url.searchParams.set('recommendedCueSeconds'");
-    expect(session).toContain('if (recommendedCueSeconds != null)');
-    expect(session).not.toContain('urlDifficulty');
-    expect(session).not.toContain('difficultyReady');
-    expect(session).toContain('activationBlocked');
-    expect(session).toContain('전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.');
-    expect(session).toContain('unlockActivation');
+    expect(session).toContain("if (recommendedCueSeconds != null)");
+    expect(session).not.toContain("urlDifficulty");
+    expect(session).not.toContain("difficultyReady");
+    expect(session).toContain("activationBlocked");
+    expect(session).toContain(
+      "전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.",
+    );
+    expect(session).toContain("unlockActivation");
   });
 
-  it('5) Product Contract Phase 0·Catalog 정의', () => {
-    expect(contract).toContain('현재 Runtime 계약');
-    expect(contract).toContain('Catalog Family');
-    expect(contract).toContain('Activity Family');
-    expect(contract).toContain('entry=settings');
-    expect(contract).not.toContain('Sprint 1 = Movement Configurator');
+  it("5) Product Contract Phase 0·Catalog 정의", () => {
+    expect(contract).toContain("현재 Runtime 계약");
+    expect(contract).toContain("Catalog Family");
+    expect(contract).toContain("Activity Family");
+    expect(contract).toContain("entry=settings");
+    expect(contract).not.toContain("Sprint 1 = Movement Configurator");
   });
 
-  it('6) Configurator compact — 대형 도식 없음', () => {
+  it("6) Configurator compact — 대형 도식 없음", () => {
     expect(configurator).toContain("variant === 'compact'");
-    expect(configurator).not.toContain('SpomatMovementDiagram');
-    expect(configurator).not.toContain('MovementInstructionPanel');
+    expect(configurator).not.toContain("SpomatMovementDiagram");
+    expect(configurator).not.toContain("MovementInstructionPanel");
   });
 });

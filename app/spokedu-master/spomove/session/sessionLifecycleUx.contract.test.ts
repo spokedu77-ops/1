@@ -1,95 +1,111 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { SPOMOVE_SESSION_ENGINE_LAYER, SPOMOVE_SESSION_OVERLAY_LAYER } from './sessionOverlayLayer';
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+  SPOMOVE_SESSION_ENGINE_LAYER,
+  SPOMOVE_SESSION_OVERLAY_LAYER,
+} from "./sessionOverlayLayer";
 
-const read = (name: string) => readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/session', name), 'utf8');
-const page = read('page.tsx');
-const start = read('StartBriefing.tsx');
-const settings = read('SettingsBriefing.tsx');
-const result = read('MasterSessionResult.tsx');
+const read = (name: string) =>
+  readFileSync(
+    join(process.cwd(), "app/spokedu-master/spomove/session", name),
+    "utf8",
+  );
+const page = read("page.tsx");
+const start = read("StartBriefing.tsx");
+const settings = read("SettingsBriefing.tsx");
+const result = read("MasterSessionResult.tsx");
 
-describe('SPOMOVE session lifecycle UX', () => {
-  it('separates ready confirmation from editable settings', () => {
-    expect(start).toContain('data-spm-session-ready-screen');
-    expect(start).not.toContain('SPOMOVE_CUE_SPEED_OPTIONS');
-    expect(start).not.toContain('onCueSecondsChange');
-    expect(start).toContain('실행 시작');
-    expect(start).toContain('설정 변경');
-    expect(start).toContain('border border-white/20');
-    expect(start).not.toContain('movementSummary');
-    expect(start).not.toContain('전체화면 준비');
-    expect(start).not.toContain('소리 사용');
-    expect(settings).toContain('data-spm-session-settings-screen');
-    expect(settings).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
-    expect(settings).toContain('sec === recommendedCueSeconds');
-    expect(page).toContain('recommendedCueSeconds={effectiveRecommendedCueSeconds}');
-    expect(settings).not.toContain('getSpomoveDifficultyOptions');
+describe("SPOMOVE session lifecycle UX", () => {
+  it("separates ready confirmation from editable settings", () => {
+    expect(start).toContain("data-spm-session-ready-screen");
+    expect(start).not.toContain("SPOMOVE_CUE_SPEED_OPTIONS");
+    expect(start).not.toContain("onCueSecondsChange");
+    expect(start).toContain("실행 시작");
+    expect(start).toContain("설정 변경");
+    expect(start).toContain("border border-white/20");
+    expect(start).not.toContain("movementSummary");
+    expect(start).not.toContain("전체화면 준비");
+    expect(start).not.toContain("소리 사용");
+    expect(settings).toContain("data-spm-session-settings-screen");
+    expect(settings).toContain("SPOMOVE_CUE_SPEED_OPTIONS");
+    expect(settings).toContain("sec === recommendedCueSeconds");
+    expect(page).toContain(
+      "recommendedCueSeconds={effectiveRecommendedCueSeconds}",
+    );
+    expect(settings).not.toContain("getSpomoveDifficultyOptions");
   });
 
-  it('keeps session overlays above the engine layer', () => {
-    expect(SPOMOVE_SESSION_OVERLAY_LAYER).toBeGreaterThan(SPOMOVE_SESSION_ENGINE_LAYER);
-    const activation = page.slice(page.indexOf('activationBlocked ? createPortal'), page.indexOf('exitConfirmationOpen ? createPortal'));
-    const exit = page.slice(page.indexOf('exitConfirmationOpen ? createPortal'), page.indexOf(') : null}'));
-    expect(activation).toContain('zIndex: SPOMOVE_SESSION_OVERLAY_LAYER');
-    expect(activation).toContain('createPortal');
-    expect(exit).toContain('zIndex: SPOMOVE_SESSION_OVERLAY_LAYER');
-    expect(exit).toContain('fixed inset-0');
-    expect(exit).toContain('createPortal');
+  it("keeps session overlays above the engine layer", () => {
+    expect(SPOMOVE_SESSION_OVERLAY_LAYER).toBeGreaterThan(
+      SPOMOVE_SESSION_ENGINE_LAYER,
+    );
+    const activation = page.slice(
+      page.indexOf("activationBlocked ? createPortal"),
+      page.indexOf("exitConfirmationOpen ? createPortal"),
+    );
+    const exit = page.slice(
+      page.indexOf("exitConfirmationOpen ? createPortal"),
+    );
+    expect(activation).toContain("zIndex: SPOMOVE_SESSION_OVERLAY_LAYER");
+    expect(activation).toContain("createPortal");
+    expect(exit).toContain("zIndex: SPOMOVE_SESSION_OVERLAY_LAYER");
+    expect(exit).toContain("fixed inset-0");
+    expect(exit).toContain("createPortal");
   });
 
-  it('requires explicit confirmation before an engine exit becomes ended', () => {
-    expect(page).toContain('onExit={() => setExitConfirmationOpen(true)}');
-    expect(page).toContain('수업을 종료할까요?');
-    expect(page).toContain('SPOMOVE_SESSION_OVERLAY_LAYER');
-    expect(page).toContain('createPortal');
-    expect(page).toContain('fixed inset-0');
-    expect(page).toContain('계속하기');
+  it("requires explicit confirmation before an engine exit becomes ended", () => {
+    expect(page).toContain("onExit={() => setExitConfirmationOpen(true)}");
+    expect(page).toContain("수업을 종료할까요?");
+    expect(page).toContain("SPOMOVE_SESSION_OVERLAY_LAYER");
+    expect(page).toContain("createPortal");
+    expect(page).toContain("fixed inset-0");
+    expect(page).toContain("계속하기");
     expect(page).toContain("finishSession('ended')");
     expect(page).toContain("finishSession('done', payload)");
   });
 
-  it('keeps activation fallback non-blocking and touch targets usable', () => {
-    expect(page).toContain('화면은 계속 실행됩니다.');
-    expect(page).toContain('일반 화면으로 실행합니다.');
-    expect(page).toContain('다시 시도');
-    expect(page).toContain('min-h-11');
+  it("keeps activation fallback non-blocking and touch targets usable", () => {
+    expect(page).toContain("화면은 계속 실행됩니다.");
+    expect(page).toContain("일반 화면으로 실행합니다.");
+    expect(page).toContain("다시 시도");
+    expect(page).toContain("min-h-11");
   });
 
-  it('shows only measured operational facts and a context-aware action hierarchy', () => {
-    expect(result).toContain('sessionReturnHref');
-    expect(result).toContain('수업으로 돌아가기');
-    expect(result).toContain('같은 설정으로 다시 실행');
-    expect(result).toContain('완료로 표시하고 수업으로');
-    expect(result).toContain('실행 종료와 수업 활동 완료 기록은 별개입니다');
-    expect(result).not.toContain('scheduledCompletionStatus');
-    expect(result).not.toContain('오늘 느낌');
-    expect(result).not.toContain('스스로 점검');
+  it("shows only measured operational facts and a context-aware action hierarchy", () => {
+    expect(result).toContain("sessionReturnHref");
+    expect(result).toContain("수업으로 돌아가기");
+    expect(result).toContain("같은 설정으로 다시 실행");
+    expect(result).toContain("완료로 표시하고 수업으로");
+    expect(result).toContain("실행 종료와 수업 활동 완료 기록은 별개입니다");
+    expect(result).not.toContain("scheduledCompletionStatus");
+    expect(result).not.toContain("오늘 느낌");
+    expect(result).not.toContain("스스로 점검");
   });
 
-  it('does not auto-PATCH SessionProgram on engine done', () => {
-    const finishStart = page.indexOf('const finishSession = useCallback');
-    const finishEnd = page.indexOf('const beginConfiguredSession');
+  it("does not auto-PATCH SessionProgram on engine done", () => {
+    const finishStart = page.indexOf("const finishSession = useCallback");
+    const finishEnd = page.indexOf("const beginConfiguredSession");
     const finishBody = page.slice(finishStart, finishEnd);
-    expect(finishBody).not.toContain('isCompleted');
-    expect(page).toContain('markCompleteAndReturn');
+    expect(finishBody).not.toContain("isCompleted");
+    expect(page).toContain("markCompleteAndReturn");
   });
 
-  it('preserves retry settings and Session/Hub return context', () => {
-    expect(page).toContain('cueSeconds: effectiveCueSeconds');
-    expect(page).not.toContain('difficultyValue');
-    expect(page).toContain('operationCandidate');
-    expect(page).toContain('hubReturn: parseSpomoveHubReturnHref');
-    expect(page).toContain('returnTo: origin.returnTo');
-    expect(page).toContain('session: origin.sessionId');
-    expect(page).toContain('parseMasterWorkReturnHref');
+  it("preserves retry settings and Session/Hub return context", () => {
+    expect(page).toContain("cueSeconds: effectiveCueSeconds");
+    expect(page).not.toContain("difficultyValue");
+    expect(page).toContain("operationCandidate");
+    expect(page).toContain("hubReturn: parseSpomoveHubReturnHref");
+    expect(page).toContain("returnTo: origin.returnTo");
+    expect(page).toContain("session: origin.sessionId");
+    expect(page).toContain("parseMasterWorkReturnHref");
   });
 
-  it('prioritizes explicit and admin-recommended cue settings before a saved fallback', () => {
+  it("prioritizes explicit and admin-recommended cue settings before a saved fallback", () => {
     expect(page).toContain("searchParams.get('recommendedCueSeconds')");
-    expect(page).toContain('if (urlCueSeconds != null)');
-    expect(page).toContain('if (recommendedCueSeconds != null)');
-    expect(page).toContain('pref?.cueSeconds');
-    expect(page).toContain('resolveSessionCueSeconds(officialPreset, prefCue)');
+    expect(page).toContain("if (urlCueSeconds != null)");
+    expect(page).toContain("if (recommendedCueSeconds != null)");
+    expect(page).toContain("pref?.cueSeconds");
+    expect(page).toContain("resolveSessionCueSeconds(officialPreset, prefCue)");
   });
 });
