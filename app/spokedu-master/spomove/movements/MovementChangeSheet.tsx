@@ -39,7 +39,7 @@ export function MovementChangeSheet({
           <button
             type="button"
             onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600"
+            className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-600"
             aria-label="닫기"
           >
             <X className="h-4 w-4" />

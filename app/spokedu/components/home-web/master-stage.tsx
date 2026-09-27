@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Product screenshot must preserve its approved intrinsic presentation. */
 import Link from 'next/link';
 import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_MASTER_VISUAL } from './home-web-assets';

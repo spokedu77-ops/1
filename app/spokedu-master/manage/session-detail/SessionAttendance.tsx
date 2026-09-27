@@ -21,15 +21,15 @@ export function SessionAttendance({ attendance, attendanceOpen, roster, allStude
     </button>
     {attendanceOpen ? <div className="mt-1">
       <div className="flex justify-end">
-        <button type="button" onClick={toggleAllAttendance} disabled={!roster.length} aria-pressed={allStudentsPresent} className="h-8 rounded-[9px] px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">{allStudentsPresent ? '전체 해제' : '전체 출석'}</button>
+        <button type="button" onClick={toggleAllAttendance} disabled={!roster.length} aria-pressed={allStudentsPresent} className="min-h-11 rounded-[9px] px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">{allStudentsPresent ? '전체 해제' : '전체 출석'}</button>
       </div>
       <div className="divide-y divide-slate-100">
-        {roster.map((student) => <div key={student.id} data-attendance-row className="flex h-10 items-center gap-2">
+        {roster.map((student) => <div key={student.id} data-attendance-row className="flex min-h-11 items-center gap-2">
           <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-slate-800">{student.name}</span>
           <span className="inline-flex shrink-0 rounded-[9px] bg-slate-100 p-0.5">{(['present', 'absent'] as const).map((value) => {
             const selected = attendance[student.id] === value;
             const label = value === 'present' ? '출석' : '결석';
-            return <button key={value} type="button" onClick={() => updateAttendance(student.id, value)} aria-pressed={selected} className={`inline-flex h-8 min-w-[54px] items-center justify-center rounded-[7px] px-2 text-xs font-semibold transition-colors ${selected ? value === 'present' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white' : 'text-slate-500 hover:text-slate-800'}`}>
+            return <button key={value} type="button" onClick={() => updateAttendance(student.id, value)} aria-pressed={selected} className={`inline-flex min-h-11 min-w-[54px] items-center justify-center rounded-[7px] px-2 text-xs font-semibold transition-colors ${selected ? value === 'present' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white' : 'text-slate-500 hover:text-slate-800'}`}>
               {label}
             </button>;
           })}</span>

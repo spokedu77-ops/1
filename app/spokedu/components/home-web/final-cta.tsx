@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Approved CTA artwork relies on the existing native image crop. */
 import Link from 'next/link';
 import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_FINAL_VISUAL } from './home-web-assets';

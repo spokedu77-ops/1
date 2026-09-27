@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Brand logo dimensions are governed by the shared site CSS. */
 import Link from 'next/link';
 import { SPOKEDU_IMAGES } from '../../data/images';
 import { SPOKEDU_PATHS } from '../../data/public-routes';

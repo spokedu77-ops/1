@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Editorial thumbnails intentionally use native image sizing. */
 import Link from 'next/link';
 import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_SERVICE_VISUALS } from './home-web-assets';

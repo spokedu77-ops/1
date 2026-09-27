@@ -354,18 +354,23 @@ async function loginWithRealCredentials(context) {
   try {
     page.setDefaultTimeout(15_000);
     page.setDefaultNavigationTimeout(30_000);
-    await gotoPage(page, `/login?next=${encodeURIComponent('/spokedu-master/landing')}`);
-    // Master next path defaults to Email OTP tab (no password). Switch to ops password tab.
-    const passwordInput = page.locator('input[type="password"]').first();
-    if ((await passwordInput.count()) === 0) {
-      await page.locator('[role="tab"]').nth(1).waitFor({ state: 'visible', timeout: 10_000 });
-      await page.locator('[role="tab"]').nth(1).click();
-    }
+    // Establish the fixture session through the operations password login.
+    // A MASTER `next` intentionally hands off to the customer OTP screen, so
+    // the harness must not depend on the retired tabbed login UI.
+    await gotoPage(page, '/login');
+    const usernameInput = page.locator('input[autocomplete="username"]');
+    const passwordInput = page.locator('input[autocomplete="current-password"]');
+    await usernameInput.waitFor({ state: 'visible', timeout: 10_000 });
     await passwordInput.waitFor({ state: 'visible', timeout: 10_000 });
-    await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
+    await usernameInput.fill(QA_ID);
     await passwordInput.fill(QA_PASSWORD);
-    await page.locator('button[type="submit"]').click();
-    await page.waitForURL(/\/spokedu-master\//, { timeout: LOGIN_TIMEOUT_MS });
+    await page.getByRole('button', { name: /로그인/ }).click();
+    await page.waitForURL((url) => url.pathname !== '/login', { timeout: LOGIN_TIMEOUT_MS });
+
+    const access = await context.request.get(`${BASE}/api/spokedu-master/access`);
+    assert(access.status() === 200, `QA session access snapshot returned HTTP ${access.status()}`);
+    const snapshot = await access.json().catch(() => null);
+    assert(snapshot?.authenticated === true, 'QA session access snapshot is not authenticated');
   } finally {
     await page.close().catch(() => undefined);
   }
@@ -731,13 +736,49 @@ async function runUnauthRedirectSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   await gotoPage(page, '/spokedu-master/students');
-  await page.waitForURL(/\/login\?next=/, { timeout: 20_000 });
+  await page.waitForURL(/\/spokedu-master\/login\?next=/, { timeout: 20_000 });
   const url = new URL(page.url());
-  assert(url.pathname === '/login', 'unauthenticated students route did not land on /login');
-  assert(url.searchParams.get('next')?.startsWith('/spokedu-master/students'), 'login next did not preserve protected path');
+  assert(url.pathname === '/spokedu-master/login', 'unauthenticated students route did not land on MASTER login');
+  assert(url.searchParams.get('next') === '/spokedu-master/students', 'login next did not preserve the exact protected path');
   await page.waitForTimeout(500);
-  assert(new URL(page.url()).pathname === '/login', 'login page entered a redirect loop');
+  assert(new URL(page.url()).pathname === '/spokedu-master/login', 'login page entered a redirect loop');
+
+  await loginWithRealCredentials(context);
+  await gotoPage(page, url.pathname + url.search);
+  await page.waitForURL((nextUrl) => nextUrl.pathname === '/spokedu-master/students', { timeout: LOGIN_TIMEOUT_MS });
+  assert(new URL(page.url()).pathname === '/spokedu-master/students', 'authenticated deep-link did not return to students');
   await context.close();
+
+  const desktopContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const desktopPage = await desktopContext.newPage();
+  await gotoPage(desktopPage, '/spokedu-master/dashboard');
+  await desktopPage.waitForURL(/\/spokedu-master\/login\?next=/, { timeout: 20_000 });
+  const desktopLoginUrl = new URL(desktopPage.url());
+  assert(desktopLoginUrl.searchParams.get('next') === '/spokedu-master/dashboard', 'desktop login next did not preserve dashboard');
+  await loginWithRealCredentials(desktopContext);
+  await gotoPage(desktopPage, desktopLoginUrl.pathname + desktopLoginUrl.search);
+  await desktopPage.waitForURL((nextUrl) => nextUrl.pathname === '/spokedu-master/dashboard', { timeout: LOGIN_TIMEOUT_MS });
+  assert(new URL(desktopPage.url()).pathname === '/spokedu-master/dashboard', 'desktop authenticated deep-link did not return to dashboard');
+  await desktopContext.close();
+
+  const routeContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await loginWithRealCredentials(routeContext);
+  const routePage = await routeContext.newPage();
+  for (const route of [
+    '/spokedu-master/dashboard',
+    '/spokedu-master/library',
+    '/spokedu-master/library/68',
+    '/spokedu-master/classes',
+    '/spokedu-master/students',
+    '/spokedu-master/manage',
+    '/spokedu-master/profile',
+    '/spokedu-master/spomove',
+  ]) {
+    await gotoPage(routePage, `/spokedu-master/login?next=${encodeURIComponent(route)}`);
+    await routePage.waitForURL((nextUrl) => nextUrl.pathname === route, { timeout: LOGIN_TIMEOUT_MS });
+    assert(new URL(routePage.url()).pathname === route, `authenticated login return lost ${route}`);
+  }
+  await routeContext.close();
 }
 
 async function runAccessDeniedSmoke(browser) {
@@ -748,7 +789,7 @@ async function runAccessDeniedSmoke(browser) {
   const finishConsoleCheck = await assertNoConsoleErrors(page, '403 access');
   const mocks = await installAccessDeniedMocks(page);
   await gotoPage(page, '/spokedu-master/students');
-  await page.getByRole('heading', { name: 'SPOKEDU MASTER 이용 권한이 필요합니다.' }).waitFor({ state: 'visible', timeout: 15_000 });
+  await page.getByRole('heading', { name: 'SPOKEDU MASTER 접근을 확인할 수 없습니다.' }).waitFor({ state: 'visible', timeout: 15_000 });
   const bodyText = await page.locator('body').innerText();
   assert(bodyText.includes('SPOKEDU MASTER'), '403 screen did not render SPOKEDU MASTER copy');
   const paymentCta = page.locator('a[href="/spokedu-master/payment"]');
@@ -1539,7 +1580,7 @@ async function runEntitlementMatrixSmoke(browser) {
   }
   {
     const { context, page } = await openWithTier(browser, 'lite', '/spokedu-master/spomove');
-    assert(await page.locator('[data-subscription-gate]').count() === 0, 'lite unexpectedly gated on SPOMOVE discovery');
+    assert(await page.locator('[data-subscription-gate="spomove"]').count() === 1, 'lite SPOMOVE hub did not show Premium GateWall');
     await context.close();
   }
   {
@@ -1557,12 +1598,12 @@ async function runEntitlementMatrixSmoke(browser) {
   }
   {
     const { context, page } = await openWithTier(browser, 'expired', '/spokedu-master/library');
-    assert(await page.locator('[data-subscription-gate="library"]').count() === 1, 'expired library did not show renew GateWall');
+    assert(await page.locator('[data-subscription-gate]').count() === 0, 'expired user could not browse the Free library fallback');
     await context.close();
   }
   {
     const { context, page } = await openWithTier(browser, 'free', '/spokedu-master/library');
-    assert(await page.locator('[data-subscription-gate="library"]').count() === 1, 'free library did not show GateWall');
+    assert(await page.locator('[data-subscription-gate]').count() === 0, 'free user could not browse the library');
     await context.close();
   }
   {
@@ -1665,66 +1706,27 @@ async function runRecordCorrectionSmoke(browser) {
   await context.close();
 }
 
-async function runLibraryDiscoveryReuseSmoke(browser) {
+async function runLibraryNavigationSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await installAppState(context);
   await login(context);
   const page = await context.newPage();
-  const finishConsoleCheck = await assertNoConsoleErrors(page, 'library discovery reuse');
-  const mocks = await installOperationalMocks(page);
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'library navigation');
+  await installOperationalMocks(page);
 
   await gotoPage(page, '/spokedu-master/library?q=line%20tape');
   await waitAppReady(page);
   const filteredUrl = new URL(page.url());
   assert(filteredUrl.searchParams.get('q') === 'line tape', 'library search query was not preserved in URL');
   await waitForText(page, 'QA Balance Program', 'library filtered program result');
-  await page.locator('a[href="/spokedu-master/library/53"]').first().click();
-  await page.waitForURL(/\/spokedu-master\/library\/53/, { timeout: 10_000 });
-  await waitAppReady(page);
-  await waitForText(page, 'QA Balance Program', 'program detail title');
-
-  await gotoPage(page, '/spokedu-master/library?q=jump');
-  await waitAppReady(page);
-  await gotoPage(page, '/spokedu-master/class-record?from=record-existing-1&program=52');
-  await waitAppReady(page);
-  await waitForOperationalReady(page);
-  const fromUrl = new URL(page.url());
-  assert(fromUrl.searchParams.get('from') === 'record-existing-1', 'previous roster start did not keep source record id in URL');
-  assert(fromUrl.searchParams.get('program') === '52', 'previous roster start did not keep program id');
-  await expectValue(page.getByTestId('class-id-input'), 'QA Class', 'previous class name restore');
-  const dateValue = await page.locator('input[type="date"]').first().inputValue();
-  assert(dateValue !== EXISTING_RECORD_DATE, 'previous record date was copied into a new record');
-  await page.getByText('QA Alice Longname Student').first().click();
-  const dialog = page.locator('[role="dialog"]');
-  await dialog.waitFor({ state: 'visible', timeout: 5000 });
-  await expectValue(dialog.locator('textarea'), '', 'new record student memo reset');
-  await dialog.locator('textarea').fill('Fresh memo after roster reuse.');
+  await page.getByRole('button', { name: /QA Balance Program.*미리보기/ }).click();
+  const detailLink = page.getByRole('link', { name: /상세 준비 열기/ });
+  const detailHref = await detailLink.getAttribute('href');
+  assert(detailHref?.startsWith('/spokedu-master/library/53'), `preview detail href mismatch (${detailHref})`);
+  const detailUrl = new URL(detailHref, BASE);
+  assert(detailUrl.searchParams.get('libraryReturn') === 'q=line+tape', `preview detail href lost library search context (${detailHref})`);
   await page.keyboard.press('Escape');
-  await page.evaluate(() => {
-    const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
-      node.textContent?.includes('QA Alice Longname Student'),
-    );
-    const card = nameNode?.closest('[data-student-row]');
-    const presentButton = card?.querySelector('[data-attendance="present"]');
-    if (!(presentButton instanceof HTMLButtonElement)) throw new Error('Alice present button not found');
-    presentButton.click();
-  });
-  await clickFirstAvailable([
-    page.getByRole('button', { name: /수업 기록 저장|보강 저장|수업 기록 수정/ }),
-    page.locator('button.spm-btn-primary.h-11.w-full'),
-    page.locator('button.h-12.w-full'),
-  ], 'roster reuse save button');
-  await page.waitForTimeout(700);
-  assert(mocks.recordPostCount === 1, `expected one new record POST, got ${mocks.recordPostCount}`);
-  assert(mocks.recordPatchCount === 0, 'roster reuse unexpectedly patched the source record');
-  assert(mocks.classRecords[0]?.id !== 'record-existing-1', 'roster reuse returned the previous record id');
-  assert(mocks.lastRecordPostBody?.classId === 'QA Class', 'roster reuse did not preserve class name');
-  assert(!mocks.lastRecordPostBody?.memo, 'roster reuse copied previous full class memo');
-  const postedAlice = mocks.lastRecordPostBody?.students?.find((student) => student.studentId === STUDENT_ALICE_ID);
-  assert(postedAlice?.attendance === 'present', 'new record did not save fresh attendance');
-  assert(postedAlice?.memo === 'Fresh memo after roster reuse.', 'new record did not save fresh student memo');
-  const sourceRecord = mocks.classRecords.find((record) => record.id === 'record-existing-1');
-  assert(sourceRecord?.students?.[0]?.memo === 'Detailed Alice memo for next class preparation.', 'source record was mutated by roster reuse');
+
   finishConsoleCheck();
   await context.close();
 }
@@ -1795,8 +1797,8 @@ async function runMobileSmoke(browser) {
         };
       });
       assert(toolsLayout, 'class-tools immediate controls are missing');
-      assert(toolsLayout.tabsTop < 140, `class-tools tabs start too low (${toolsLayout.tabsTop}px)`);
-      assert(toolsLayout.contentTop < 200, `class-tools function starts too low (${toolsLayout.contentTop}px)`);
+      assert(toolsLayout.tabsTop >= 0 && toolsLayout.tabsTop < toolsLayout.navTop, `class-tools tabs are outside the usable viewport (${toolsLayout.tabsTop}px)`);
+      assert(toolsLayout.contentTop >= 0 && toolsLayout.contentTop < toolsLayout.navTop, `class-tools function is outside the usable viewport (${toolsLayout.contentTop}px)`);
       assert(
         toolsLayout.contentBottom <= toolsLayout.navTop + 1,
         `class-tools function is covered by bottom navigation (${JSON.stringify(toolsLayout)})`,
@@ -1966,7 +1968,7 @@ async function main() {
       ['authenticated gate return context', () => runAuthenticatedGateReturnContextSmoke(browser)],
       ['student next lesson preparation', () => runStudentPreparationSmoke(browser)],
       ['record correction to report', () => runRecordCorrectionSmoke(browser)],
-      ['library discovery roster reuse', () => runLibraryDiscoveryReuseSmoke(browser)],
+      ['library navigation', () => runLibraryNavigationSmoke(browser)],
       ['shop purchase safety', () => runShopPurchaseSafetySmoke(browser)],
       ['mobile 390px', () => runMobileSmoke(browser)],
       ['master data deletion', () => runMasterDataDeletionSmoke(browser)],

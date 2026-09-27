@@ -1,6 +1,42 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveMasterEntryAccess, resolveMasterEntryDestination } from './masterLoginReturn';
+import {
+  buildMasterLoginHref,
+  getSafeMasterLoginReturnPath,
+  resolveMasterEntryAccess,
+  resolveMasterEntryDestination,
+} from './masterLoginReturn';
+
+describe('SPOKEDU MASTER safe login return', () => {
+  it.each([
+    '/spokedu-master/dashboard', '/spokedu-master/programs', '/spokedu-master/favorites',
+    '/spokedu-master/manage', '/spokedu-master/library?q=%EB%86%8D%EA%B5%AC',
+    '/spokedu-master/class-tools', '/spokedu-master/class-record',
+    '/spokedu-master/students/student-1', '/spokedu-master/report',
+    '/spokedu-master/activity', '/spokedu-master/classes/class-1',
+    '/spokedu-master/spomove', '/spokedu-master/profile',
+    '/spokedu-master/subscription', '/spokedu-master/payment',
+    '/spokedu-master/onboarding', '/spokedu-master/shop',
+  ])('preserves an approved internal deep-link: %s', (path) => {
+    expect(getSafeMasterLoginReturnPath(path)).toBe(path);
+    expect(buildMasterLoginHref(path)).toContain(encodeURIComponent(path));
+  });
+
+  it.each([
+    'https://example.com', 'http://example.com', '//example.com',
+    'javascript:alert(1)', 'data:text/html,hello', '/admin',
+    '/spokedu-master/unknown-route', '/spokedu-master/login',
+    '/spokedu-master/auth/callback',
+  ])('falls back for a malicious or unknown return: %s', (path) => {
+    expect(getSafeMasterLoginReturnPath(path)).toBe('/spokedu-master/dashboard');
+  });
+
+  it('strips sensitive auth and payment query keys while preserving safe context', () => {
+    expect(getSafeMasterLoginReturnPath(
+      '/spokedu-master/payment/success?paymentKey=pk&orderId=order&authKey=auth&customerKey=customer&plan=premium&q=safe',
+    )).toBe('/spokedu-master/payment/success?q=safe');
+  });
+});
 
 describe('SPOKEDU MASTER server-validated entry destination', () => {
   it('keeps an anonymous user on login and requests local session cleanup', () => {
@@ -47,5 +83,13 @@ describe('SPOKEDU MASTER server-validated entry destination', () => {
       destination: null,
       clearBrowserSession: false,
     });
+  });
+
+  it.each(['expired', 'cancelled'])('returns an authenticated %s user before entitlement gating', () => {
+    expect(resolveMasterEntryAccess(
+      200,
+      { authenticated: true, onboardingDone: true, isAdmin: false },
+      '/spokedu-master/profile',
+    )).toEqual({ destination: '/spokedu-master/profile', clearBrowserSession: false });
   });
 });

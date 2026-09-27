@@ -50,7 +50,7 @@ export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot
       <div className={`${isHome ? MV_HOME_FEATURE_WIDTH : 'mx-auto w-full max-w-[1376px]'} flex items-center justify-between gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center`}>
         <Link
           href="/spokedu-master/dashboard"
-          className="flex min-h-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] lg:justify-self-start"
+          className="flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] lg:justify-self-start"
           aria-label="SPOKEDU MASTER 홈"
         >
           <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-slate-950 text-[11px] font-black text-white">SM</span>

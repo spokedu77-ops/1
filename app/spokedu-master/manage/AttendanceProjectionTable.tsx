@@ -121,7 +121,7 @@ function ManageAttendanceProjection({ sessions, rows, emptyAction, onSessionSele
           <tbody>
             {rows.map((row) => <tr key={row.studentId}>
               <th className="sticky left-0 z-10 w-44 min-w-44 max-w-44 border-b border-r border-slate-100 bg-white px-4 py-3 text-left font-medium">
-                {row.current ? <Link href={`/spokedu-master/students/${row.studentId}`} className="block max-w-36 truncate text-[15px] font-medium text-slate-800" title={row.studentName}>{row.studentName}</Link>
+                {row.current ? <Link href={`/spokedu-master/students/${row.studentId}`} className="inline-flex min-h-11 max-w-36 items-center truncate text-[15px] font-medium text-slate-800" title={row.studentName}>{row.studentName}</Link>
                   : <><span className="block max-w-36 truncate text-[15px] font-medium text-slate-700" title={row.studentName}>{row.studentName}</span><small className="text-[12px] font-medium text-slate-400">과거 참여</small></>}
               </th>
               {sessions.map((session) => <td key={session.id} className="w-28 min-w-28 max-w-28 border-b border-slate-100 px-2 py-3 text-center">{compactAttendanceMark(attendanceStatus(session, row))}</td>)}
@@ -155,7 +155,7 @@ function ManageAttendanceProjection({ sessions, rows, emptyAction, onSessionSele
       <div aria-label={`${selectedDay.full} 출석 명단`}>
         {rows.map((row) => <div key={row.studentId} className="flex min-h-[52px] items-center justify-between gap-3 border-b border-slate-100 py-2">
           <span className="min-w-0">
-            {row.current ? <Link href={`/spokedu-master/students/${row.studentId}`} className="block truncate text-[15px] font-medium text-slate-800" title={row.studentName}>{row.studentName}</Link>
+            {row.current ? <Link href={`/spokedu-master/students/${row.studentId}`} className="inline-flex min-h-11 max-w-full items-center truncate text-[15px] font-medium text-slate-800" title={row.studentName}>{row.studentName}</Link>
               : <><span className="block truncate text-[15px] font-medium text-slate-700" title={row.studentName}>{row.studentName}</span><span className="block text-[12px] font-medium text-slate-400">과거 참여</span></>}
           </span>
           {compactAttendanceMark(attendanceStatus(selectedSession, row))}
@@ -186,7 +186,7 @@ export function AttendanceProjectionTable(props: AttendanceProjectionTableProps)
         </tr></thead>
         <tbody>{rows.map((row) => <tr key={row.studentId}>
           <th className="sticky left-0 z-10 w-36 border-b border-r border-slate-100 bg-white px-3 py-3 text-left font-medium">
-            {row.current ? <Link href={`/spokedu-master/students/${row.studentId}`} className="block max-w-32 truncate font-medium text-slate-700" title={row.studentName}>{row.studentName}</Link>
+            {row.current ? <Link href={`/spokedu-master/students/${row.studentId}`} className="inline-flex min-h-11 max-w-32 items-center truncate font-medium text-slate-700" title={row.studentName}>{row.studentName}</Link>
               : <><span className="block max-w-32 truncate font-medium text-slate-700" title={row.studentName}>{row.studentName}</span><small className="text-xs font-medium text-slate-400">과거 참여</small></>}
           </th>
           {sessions.map((session) => <td key={session.id} className="w-24 border-b border-slate-100 px-3 py-3 text-center">{attendanceMark(session, row)}</td>)}

@@ -54,11 +54,11 @@ export const HOME_MAIN_CASE_SLUGS: readonly FieldRecordSlug[] = [
   'dongjak-spomove',
 ] as const;
 
-function homeCaseHeadline(item: FieldRecordCatalogItem, _featured: boolean): string {
+function homeCaseHeadline(item: FieldRecordCatalogItem): string {
   return item.venue;
 }
 
-function homeCaseDisplayMeta(item: FieldRecordCatalogItem, _featured: boolean): string {
+function homeCaseDisplayMeta(item: FieldRecordCatalogItem): string {
   const region = HOME_STORY_REGION[item.slug];
   return region ? `${item.programLabel} · ${region}` : item.programLabel;
 }
@@ -82,11 +82,11 @@ function buildHomeCaseCard(
     slug: card.slug,
     venue: item.venue,
     kind: item.operationType,
-    headline: homeCaseHeadline(item, featured),
+    headline: homeCaseHeadline(item),
     operation: homeCaseOperation(item, featured),
     audience: item.onsite?.audience ?? item.meta,
     lessonType: item.programLabel,
-    displayMeta: homeCaseDisplayMeta(item, featured),
+    displayMeta: homeCaseDisplayMeta(item),
     href: card.href,
     trackLabel: card.trackLabel,
     mediaKey: card.mediaKey,

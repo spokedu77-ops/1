@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Approved field-photo composition relies on native image sizing. */
 import Link from 'next/link';
 import { HOME_FIELD_RECORDS } from './home-web-assets';
 import styles from './home-web.module.css';

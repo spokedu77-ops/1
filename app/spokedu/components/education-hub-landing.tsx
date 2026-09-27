@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Editorial field photos intentionally retain native intrinsic sizing and crop behavior. */
 
 import Link from "next/link";
 import { useState } from "react";

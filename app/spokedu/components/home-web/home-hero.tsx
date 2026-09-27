@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Approved hero artwork relies on the existing native image crop. */
 import Link from 'next/link';
 import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_HERO_IMAGE } from './home-web-assets';

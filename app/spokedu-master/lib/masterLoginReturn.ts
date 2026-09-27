@@ -7,7 +7,33 @@ const BLOCKED_LOGIN_RETURN_KEYS = new Set([
   'orderId',
   'code',
   'token',
+  'plan',
 ]);
+
+const SAFE_MASTER_LOGIN_RETURN_EXACT = new Set(['/spokedu-master']);
+
+const SAFE_MASTER_LOGIN_RETURN_PREFIXES = [
+  '/spokedu-master/dashboard',
+  '/spokedu-master/programs',
+  '/spokedu-master/favorites',
+  '/spokedu-master/manage',
+  '/spokedu-master/library',
+  '/spokedu-master/class-tools',
+  '/spokedu-master/class-record',
+  '/spokedu-master/students',
+  '/spokedu-master/report',
+  '/spokedu-master/activity',
+  '/spokedu-master/classes',
+  '/spokedu-master/spomove',
+  '/spokedu-master/profile',
+  '/spokedu-master/subscription',
+  '/spokedu-master/payment',
+  '/spokedu-master/onboarding',
+  '/spokedu-master/shop',
+  '/spokedu-master/terms',
+  '/spokedu-master/privacy',
+  '/spokedu-master/parent',
+] as const;
 
 export function getSafeMasterLoginReturnPath(
   value: string | null | undefined,
@@ -24,8 +50,10 @@ export function getSafeMasterLoginReturnPath(
 
   if (parsed.origin !== 'https://spokedu.local') return fallback;
   if (
-    parsed.pathname !== '/spokedu-master'
-    && !parsed.pathname.startsWith('/spokedu-master/')
+    !SAFE_MASTER_LOGIN_RETURN_EXACT.has(parsed.pathname)
+    && !SAFE_MASTER_LOGIN_RETURN_PREFIXES.some(
+      (prefix) => parsed.pathname === prefix || parsed.pathname.startsWith(`${prefix}/`),
+    )
   ) {
     return fallback;
   }

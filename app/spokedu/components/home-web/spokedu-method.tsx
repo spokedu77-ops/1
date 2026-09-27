@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Approved editorial panels rely on native image crop behavior. */
 import { HOME_METHOD_VISUALS } from './home-web-assets';
 import styles from './home-web.module.css';
 const COLUMNS = [

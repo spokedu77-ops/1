@@ -167,7 +167,7 @@ function SubscriptionPageContent() {
       <header className="mx-auto flex w-full max-w-[880px] items-center gap-3 px-5 pb-4 pt-5 sm:px-8">
         <Link
           href="/spokedu-master/profile"
-          className="grid h-10 w-10 place-items-center rounded-[10px]"
+          className="grid h-11 w-11 place-items-center rounded-[10px]"
           style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}
           aria-label="이전 화면"
         >

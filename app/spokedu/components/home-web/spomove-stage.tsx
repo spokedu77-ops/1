@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- The verified SPOMAT photo crop must remain unchanged. */
 import Link from 'next/link';
 import { SPOKEDU_PATHS } from '../../data/public-routes';
 import { HOME_SPOMOVE_VISUAL } from './home-web-assets';

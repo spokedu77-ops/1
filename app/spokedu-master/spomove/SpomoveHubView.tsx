@@ -1110,11 +1110,11 @@ function SpomoveHubInner({
 
         <nav className="order-1 mt-3 overflow-x-auto border-b border-slate-200 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="SPOMOVE 프로그램 분류" data-spm-spomove-family-nav="true">
           <div className="flex min-w-max items-center gap-6 px-1">
-            <button type="button" onClick={selectAllFamilies} aria-current={selectedFamilyId === null ? 'page' : undefined} className={`relative min-h-12 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === null ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--spm-spomove-accent)]' : 'text-slate-500 hover:text-slate-800'}`}>
+            <button type="button" onClick={selectAllFamilies} aria-current={selectedFamilyId === null ? 'page' : undefined} className={`relative min-h-12 min-w-11 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === null ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--spm-spomove-accent)]' : 'text-slate-500 hover:text-slate-800'}`}>
               전체
             </button>
             {SPOMOVE_CATALOG_FAMILIES.map((family) => (
-              <button key={family.id} type="button" onClick={() => selectCatalogFamily(family.id)} aria-current={selectedFamilyId === family.id ? 'page' : undefined} className={`relative min-h-12 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === family.id ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--spm-spomove-accent)]' : 'text-slate-500 hover:text-slate-800'}`}>
+              <button key={family.id} type="button" onClick={() => selectCatalogFamily(family.id)} aria-current={selectedFamilyId === family.id ? 'page' : undefined} className={`relative min-h-12 min-w-11 whitespace-nowrap px-1 text-[14px] font-semibold ${selectedFamilyId === family.id ? 'text-slate-950 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-[var(--spm-spomove-accent)]' : 'text-slate-500 hover:text-slate-800'}`}>
                 {family.name}
               </button>
             ))}

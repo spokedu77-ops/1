@@ -22,7 +22,7 @@ export function HomeContinueCard({ media, mediaSize = 'default', kicker, title, 
         <p className={MV_HOME_CARD_KICKER}>{kicker}</p>
         <h3 className={`${MV_HOME_CARD_TITLE} line-clamp-1`}>{title}</h3>
         <p className={`${MV_HOME_CARD_META} mt-0.5 line-clamp-1`}>{meta}</p>
-        <Link href={href} className={`${MV_HOME_CARD_ACTION} mt-auto inline-flex min-h-7 w-fit items-center gap-1 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]`}>
+        <Link href={href} className={`${MV_HOME_CARD_ACTION} -mb-2 mt-auto inline-flex min-h-11 w-fit items-center gap-1 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]`}>
           {actionLabel}<ArrowRight size={15} aria-hidden />
         </Link>
       </div>
