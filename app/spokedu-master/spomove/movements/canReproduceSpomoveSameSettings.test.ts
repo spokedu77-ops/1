@@ -107,4 +107,39 @@ describe('canReproduceSpomoveSameSettings', () => {
     expect(canReproduceSpomoveSameSettings(activity, null)).toBe(false);
     expect(canReproduceSpomoveSameSettings(activity, preset)).toBe(false);
   });
+
+  it.each([
+    ['full', true, 'music/test.mp3'],
+    ['effects', true, ''],
+    ['silent', false, ''],
+    ['music', false, 'music/test.mp3'],
+  ] as const)('preserves %s in Recent same-settings', (audioMode, soundEnabled, bgmPath) => {
+    const operation = buildDeclaredOperation('immediateResponse', preset.recommendedOperation);
+    const snapshot = buildRecentConfigSnapshot({
+      presetId: preset.id,
+      cueSeconds: 3,
+      movement: null,
+      operationLayerStatus: 'ready',
+      operation,
+      launchMode: 'projector',
+      soundEnabled,
+      bgmPath,
+      diveEnvironmentTheme: 'space',
+      sportsArenaFeatures: [],
+      flowDuration: 20,
+      flowIncludeBonus: true,
+    });
+    const activity = {
+      ownerId: 'id:x',
+      programId: preset.id,
+      programTitle: 'color',
+      action: 'spomove_started',
+      occurredAt: new Date().toISOString(),
+      spomoveSnapshot: snapshot,
+    } satisfies RecentProgramActivity;
+
+    const options = recentSpomoveSessionOptions(activity, preset);
+    expect(options).toMatchObject({ audioMode, soundEnabled });
+    expect(options && 'bgmPath' in options ? options.bgmPath : undefined).toBe(bgmPath || undefined);
+  });
 });

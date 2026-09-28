@@ -181,7 +181,7 @@ export function MemoryGameLevel5({
             </div>
             <div key={`l5-${showIdx}`} className="mem-color-enter" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                <div style={{ fontSize: 'clamp(130px,30vw,300px)', fontWeight: 900, color: textColor, letterSpacing: '-0.04em', textShadow: `0 4px 60px rgba(0,0,0,0.2)`, userSelect: 'none', lineHeight: 1 }}>
+                <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,300px)', fontWeight: 400, color: textColor, letterSpacing: '-0.04em', textShadow: `0 4px 60px rgba(0,0,0,0.2)`, userSelect: 'none', lineHeight: 1 }}>
                   {currentItem.num}
                 </div>
                 <div style={{ fontSize: 'clamp(1rem,2.5vw,1.4rem)', fontWeight: 700, color: isYellow ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)', userSelect: 'none' }}>

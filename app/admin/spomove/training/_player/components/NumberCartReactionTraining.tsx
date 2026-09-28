@@ -294,13 +294,13 @@ function createArchShape(width: number, straightHeight: number, radius: number):
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap');
-.ncart{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#43b9ff;color:#172033;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.ncart{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#43b9ff;color:#172033;z-index:320;display:flex;flex-direction:column;font-family:var(--spm-font-body);overflow:hidden}
 .ncart,.ncart *{box-sizing:border-box}
 .ncart-hud{height:72px;display:flex;align-items:stretch;background:rgba(255,255,255,.82);backdrop-filter:blur(20px);border-bottom:1px solid rgba(42,77,105,.16);box-shadow:0 8px 28px rgba(55,91,120,.12);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .ncart-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(42,77,105,.14)}
 .ncart-hc.grow{flex:1;align-items:center;border-right:none}
 .ncart-hk{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(23,32,51,.48)}
-.ncart-hv{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#172033;line-height:1.1}
+.ncart-hv{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#172033;line-height:1.1}
 .ncart-hv.warn{animation:ncartw .5s ease-in-out infinite}
 @keyframes ncartw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 .ncart-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(23,32,51,.14);background:rgba(255,255,255,.42);color:rgba(23,32,51,.62);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
@@ -313,8 +313,8 @@ const css = `
 .ncart-target{position:absolute;left:50%;bottom:clamp(24%,26vh,32%);top:auto;transform:translateX(-50%);z-index:18;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 22px 9px;border-radius:12px;background:rgba(255,255,255,.72);border:1px solid rgba(184,115,28,.22);backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(70,92,112,.18);transition:opacity .3s ease,transform .3s ease}
 .ncart-target.hidden{opacity:0;transform:translateX(-50%) translateY(10px)}
 .ncart-target-k{font-size:clamp(9px,1.15vw,11px);font-weight:800;letter-spacing:.2em;color:rgba(23,32,51,.48);text-transform:uppercase;line-height:1}
-.ncart-target-v{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(40px,7.2vw,58px);line-height:.95;color:#172033;text-shadow:0 2px 0 rgba(255,255,255,.8);-webkit-text-stroke:0;white-space:nowrap}
-.ncart-target-v.expr{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(34px,6vw,52px);font-weight:400;letter-spacing:.08em;-webkit-text-stroke:0;text-shadow:0 2px 0 rgba(255,255,255,.8)}
+.ncart-target-v{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(40px,7.2vw,58px);line-height:.95;color:#172033;text-shadow:0 2px 0 rgba(255,255,255,.8);-webkit-text-stroke:0;white-space:nowrap}
+.ncart-target-v.expr{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(34px,6vw,52px);font-weight:400;letter-spacing:.08em;-webkit-text-stroke:0;text-shadow:0 2px 0 rgba(255,255,255,.8)}
 .ncart-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.16em;color:#b45309;margin-top:2px}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
@@ -902,7 +902,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     scene.add(cart);
     display.visible = true;
 
-    const SIGN_FONT = '"Bebas Neue", "Barlow Condensed", "Noto Sans KR", sans-serif';
+    const SIGN_FONT = '"Black Han Sans", "SUIT", "Pretendard", "Noto Sans KR", sans-serif';
     let lastCartSign = '';
     const updateCartSign = (text: string) => {
       lastCartSign = text;
@@ -972,7 +972,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       ctx.shadowOffsetY = 0;
       cartSignTexture.needsUpdate = true;
     };
-    void document.fonts.load('400 96px "Bebas Neue"').then(() => {
+    void document.fonts.load('400 96px "Black Han Sans"').then(() => {
       if (lastCartSign) updateCartSign(lastCartSign);
     });
 

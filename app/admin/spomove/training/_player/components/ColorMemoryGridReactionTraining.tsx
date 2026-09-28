@@ -75,12 +75,13 @@ type Props = {
   speedSec: number;
   gridSize?: ColorMemoryGridSize;
   gameMode?: ColorMemoryGridMode;
+  effectsEnabled?: boolean;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
 const css = `
-.cmgrid{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#0a0a0f;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden;user-select:none;touch-action:none}
+.cmgrid{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#0a0a0f;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:var(--spm-font-body);overflow:hidden;user-select:none;touch-action:none}
 .cmgrid,.cmgrid *{box-sizing:border-box}
 .cmgrid-hud{height:72px;display:flex;align-items:stretch;background:rgba(10,10,15,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.1);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .cmgrid-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.1)}
@@ -92,9 +93,9 @@ const css = `
 .cmgrid-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .cmgrid-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:#fff;opacity:0;transition:opacity .15s ease-out}
 .cmgrid-flash.on{opacity:1;transition:none}
-.cmgrid-center{position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .18s ease,transform .22s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(44px,8vw,104px);line-height:.9;font-weight:1000;color:#fff;text-shadow:0 0 34px rgba(0,0,0,.95),0 0 20px rgba(255,255,255,.72)}
+.cmgrid-center{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .18s ease,transform .22s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(44px,8vw,104px);line-height:.9;font-weight:400;color:#fff;text-shadow:0 0 34px rgba(0,0,0,.95),0 0 20px rgba(255,255,255,.72)}
 .cmgrid-center.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.cmgrid-center.num{font-size:clamp(72px,20vw,180px);text-shadow:0 0 40px rgba(255,255,255,.8)}
+.cmgrid-center.num{font-weight:400;font-size:clamp(72px,20vw,180px);text-shadow:0 0 40px rgba(255,255,255,.8)}
 .cmgrid-center.pill{font-size:clamp(22px,5vw,48px);background:rgba(0,0,0,.5);padding:.35em .9em;border-radius:999px;backdrop-filter:blur(10px);text-shadow:0 0 20px rgba(0,0,0,1)}
 .cmgrid-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:6px 16px;border-radius:999px;background:rgba(10,10,15,.68);border:1px solid rgba(255,255,255,.16);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#f9a8d4;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.24);backdrop-filter:blur(10px)}
 ${REACT_TRAIN_VIEWPORT_CSS}
@@ -109,7 +110,8 @@ function normalizeGameMode(v: unknown): ColorMemoryGridMode {
   return v === 'oneshot' ? 'oneshot' : 'flicker';
 }
 
-function playSfx(type: 'tick' | 'flash' | 'reveal') {
+function playSfx(type: 'tick' | 'flash' | 'reveal', effectsEnabled: boolean) {
+  if (!effectsEnabled) return;
   const ctx = getAudioCtx();
   if (!ctx) return;
   const t = ctx.currentTime;
@@ -164,6 +166,7 @@ export function ColorMemoryGridReactionTraining({
   speedSec,
   gridSize: gridSizeProp = 4,
   gameMode: gameModeProp = 'flicker',
+  effectsEnabled = true,
   onExit,
   onComplete,
 }: Props) {
@@ -407,7 +410,7 @@ export function ColorMemoryGridReactionTraining({
           showMessage(String(timeLeft), 'num');
           if (timeLeft !== g.lastTickSec) {
             g.lastTickSec = timeLeft;
-            playSfx('tick');
+            playSfx('tick', effectsEnabled);
           }
         }
         if (elapsed >= g.memorizeMs) {
@@ -415,7 +418,7 @@ export function ColorMemoryGridReactionTraining({
           g.phaseStartMs = now;
           g.lastTickSec = -1;
           hideMessage();
-          playSfx('flash');
+          playSfx('flash', effectsEnabled);
           setStatus('바뀐 색깔은? · 해당 색 패드로 · 3초', '#86efac');
         }
       } else if (g.phase === 'SEARCH') {
@@ -432,7 +435,7 @@ export function ColorMemoryGridReactionTraining({
           showMessage(String(timeLeft), 'num');
           if (timeLeft !== g.lastTickSec) {
             g.lastTickSec = timeLeft;
-            playSfx('tick');
+            playSfx('tick', effectsEnabled);
           }
         }
 
@@ -440,7 +443,7 @@ export function ColorMemoryGridReactionTraining({
           g.phase = 'REVEAL';
           g.phaseStartMs = now;
           setFlash(false);
-          playSfx('reveal');
+          playSfx('reveal', effectsEnabled);
           const target = g.tiles[g.targetIdx]!;
           const newIdx = target.newColorIdx ?? target.colorIdx;
           const oldIdx = target.colorIdx;
@@ -470,7 +473,7 @@ export function ColorMemoryGridReactionTraining({
       layoutTiles(g.phase === 'MEMORIZE' ? false : true);
     };
     const unbind = bindViewportResize(play, resize);
-    getAudioCtx();
+    if (effectsEnabled) getAudioCtx();
     if (timeRef.current) timeRef.current.textContent = String(g.durationLeft);
 
     const beginGame = () => {
@@ -498,7 +501,7 @@ export function ColorMemoryGridReactionTraining({
       if (g.timer) clearInterval(g.timer);
       setFlash(false);
     };
-  }, [complete, durationSec, gameModeProp, gridSizeProp, speedSec]);
+  }, [complete, durationSec, effectsEnabled, gameModeProp, gridSizeProp, speedSec]);
 
   return (
     <div className="cmgrid">

@@ -26,8 +26,13 @@ export class FlowAudio {
   private musicTimer: ReturnType<typeof setInterval> | null = null;
   private musicStartTime = 0;
   private unsubscribePause: (() => void) | null = null;
+  private bgmEnabled = true;
+  private sfxEnabled = true;
 
-  async init(): Promise<void> {
+  async init({ bgmEnabled = true, sfxEnabled = true }: { bgmEnabled?: boolean; sfxEnabled?: boolean } = {}): Promise<void> {
+    this.bgmEnabled = bgmEnabled;
+    this.sfxEnabled = sfxEnabled;
+    if (!bgmEnabled && !sfxEnabled) return;
     if (this.ctx) return;
     const Ctor =
       window.AudioContext ||
@@ -43,11 +48,11 @@ export class FlowAudio {
     this.masterGain.connect(this.ctx.destination);
 
     this.bgmGain = this.ctx.createGain();
-    this.bgmGain.gain.value = 1.0;
+    this.bgmGain.gain.value = bgmEnabled ? 1.0 : 0;
     this.bgmGain.connect(this.masterGain);
 
     this.sfxGain = this.ctx.createGain();
-    this.sfxGain.gain.value = 0.55;
+    this.sfxGain.gain.value = sfxEnabled ? 0.55 : 0;
     this.sfxGain.connect(this.masterGain);
 
     // 1초 분량 화이트 노이즈 버퍼 (SFX 재료)
@@ -58,7 +63,7 @@ export class FlowAudio {
   }
 
   async loadBgm(storagePath: string): Promise<boolean> {
-    if (!this.ctx || !storagePath) return false;
+    if (!this.bgmEnabled || !this.ctx || !storagePath) return false;
     const url = getStorageUrl(storagePath);
     if (!url) return false;
     try {
@@ -84,7 +89,7 @@ export class FlowAudio {
   }
 
   startMusic(): void {
-    if (!this.ctx) return;
+    if (!this.bgmEnabled || !this.ctx) return;
     this.stopMusic();
     this.musicStartTime = this.ctx.currentTime + 0.05;
 
@@ -136,6 +141,7 @@ export class FlowAudio {
   // ── SFX ────────────────────────────────────────────────────────────────────
 
   sfxJump(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
@@ -151,6 +157,7 @@ export class FlowAudio {
   }
 
   sfxLand(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain || !this.noiseBuffer) return;
     const t = this.ctx.currentTime;
     const src = this.ctx.createBufferSource();
@@ -166,6 +173,7 @@ export class FlowAudio {
   }
 
   sfxPunch(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain || !this.noiseBuffer) return;
     const t = this.ctx.currentTime;
     // sub thud
@@ -192,6 +200,7 @@ export class FlowAudio {
   }
 
   sfxKick(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain || !this.noiseBuffer) return;
     const t = this.ctx.currentTime;
     const sub = this.ctx.createOscillator();
@@ -217,6 +226,7 @@ export class FlowAudio {
   }
 
   sfxCoin(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
@@ -232,6 +242,7 @@ export class FlowAudio {
   }
 
   sfxSprint(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain || !this.noiseBuffer) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
@@ -247,6 +258,7 @@ export class FlowAudio {
   }
 
   sfxFreeze(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
@@ -262,6 +274,7 @@ export class FlowAudio {
   }
 
   sfxStageUp(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
     [440, 550, 660, 880].forEach((freq, i) => {
@@ -279,6 +292,7 @@ export class FlowAudio {
   }
 
   sfxComplete(): void {
+    if (!this.sfxEnabled) return;
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
     [523, 659, 784, 1047].forEach((freq, i) => {

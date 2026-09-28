@@ -77,7 +77,7 @@ function wait(
 }
 
 const css = `
-.ttrk{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#080b12;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.ttrk{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#080b12;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:var(--spm-font-body);overflow:hidden}
 .ttrk,.ttrk *{box-sizing:border-box}
 .ttrk-hud{height:72px;display:flex;align-items:stretch;background:rgba(8,11,18,.94);border-bottom:1px solid rgba(255,255,255,.08);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:20;flex-shrink:0}
 .ttrk-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.08)}

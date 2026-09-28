@@ -59,4 +59,19 @@ describe('public SPOMOVE session links', () => {
     const href = officialPresetSessionHref(preset, { autostart: true });
     expect(href).toContain('autostart=1');
   });
+
+  it.each(['full', 'effects', 'silent', 'music'] as const)(
+    'serializes explicit audio=%s while retaining legacy query compatibility',
+    (audioMode) => {
+      const href = publicOfficialPresetSessionHref(preset, {
+        audioMode,
+        soundEnabled: audioMode === 'full' || audioMode === 'effects',
+        bgmPath: audioMode === 'full' || audioMode === 'music' ? 'music/test.mp3' : undefined,
+      });
+      const params = new URL(href, 'https://example.test').searchParams;
+      expect(params.get('audio')).toBe(audioMode);
+      expect(params.get('sound')).toBe(audioMode === 'full' || audioMode === 'effects' ? 'on' : 'off');
+      expect(params.get('bgm')).toBe(audioMode === 'full' || audioMode === 'music' ? 'music/test.mp3' : null);
+    },
+  );
 });

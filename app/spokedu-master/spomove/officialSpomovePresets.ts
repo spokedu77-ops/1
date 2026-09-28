@@ -1,5 +1,6 @@
 import { SPOMOVE_AXIS_META, type SpomoveAxis } from '@/app/lib/spomove/spomoveAxisMeta';
 import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
+import type { SpomoveResolvedAudioMode } from './session/spomoveAudioMode';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import {
   buildOfficialSpomoveExpansionPresets,
@@ -1795,6 +1796,7 @@ export function officialPresetSessionHref(
     session?: string;
     sessionProgram?: string;
     soundEnabled?: boolean;
+    audioMode?: SpomoveResolvedAudioMode;
     diveEnvironmentTheme?: DiveThemeId;
     sportsArenaFeatures?: Array<'side' | 'jump' | 'duck'>;
     flowDuration?: number;
@@ -1814,6 +1816,7 @@ export function officialPresetSessionHref(
   if (options?.sessionProgram?.trim()) params.set('sessionProgram', options.sessionProgram.trim());
   if (options?.cueSeconds != null) params.set('cueSeconds', String(options.cueSeconds));
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
+  if (options?.audioMode) params.set('audio', options.audioMode);
   if (options?.autostart) params.set('autostart', '1');
   if (options?.difficulty) params.set('difficulty', options.difficulty);
   if (
@@ -1860,6 +1863,7 @@ export function publicOfficialPresetSessionHref(
     sessionProgram: options?.sessionProgram,
     bgmPath: options?.bgmPath,
     soundEnabled: options?.soundEnabled,
+    audioMode: options?.audioMode,
     diveEnvironmentTheme: options?.diveEnvironmentTheme,
     sportsArenaFeatures: options?.sportsArenaFeatures,
     flowDuration: options?.flowDuration,

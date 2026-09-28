@@ -3,6 +3,13 @@
 @import "tw-animate-css";
 
 @font-face {
+  font-family: "Black Han Sans";
+  src: url("/fonts/BlackHanSans-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
   font-family: "Cafe24SsurroundAir";
   src: url("/fonts/Cafe24SsurroundAir.woff") format("woff");
   font-style: normal;
@@ -184,7 +191,7 @@
   --spm-br2: rgba(15, 23, 42, 0.11);
   --spm-br3: rgba(15, 23, 42, 0.18);
   --spm-font-body: "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
-  --spm-font-display: "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --spm-font-display: "Black Han Sans", "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
 }
 
 @keyframes spmSkeleton {

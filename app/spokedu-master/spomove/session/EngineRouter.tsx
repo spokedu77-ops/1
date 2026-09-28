@@ -121,7 +121,9 @@ type Props = {
   durationSec?: number;
   speedSec?: number;
   rounds?: number;
-  soundEnabled?: boolean;
+  effectsEnabled: boolean;
+  bgmEnabled: boolean;
+  selectedBgmPath: string;
   variantColorTheme?: string;
   bodyLabelMode?: 'easy' | 'hard';
   hideBodyLabelModeControls?: boolean;
@@ -198,7 +200,9 @@ function EngineRuntime({
   durationSec,
   speedSec,
   rounds,
-  soundEnabled = true,
+  effectsEnabled,
+  bgmEnabled,
+  selectedBgmPath,
   variantColorTheme,
   bodyLabelMode,
   hideBodyLabelModeControls,
@@ -321,7 +325,7 @@ function EngineRuntime({
             timeMode: 'reps',
             targetReps: rounds ?? 20,
             warmup: 3,
-            audioMode: soundEnabled ? 'beep' : 'off',
+            audioMode: effectsEnabled ? 'beep' : 'off',
             variantColorTheme: variantColorTheme as SpomoveColorThemeId | undefined,
             bodyLabelMode: bodyLabelMode ?? 'easy',
             hideBodyLabelModeControls: hideBodyLabelModeControls ?? true,
@@ -425,6 +429,8 @@ function EngineRuntime({
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <BeatWaveReactionTraining
+            effectsEnabled={effectsEnabled}
+            showLocalSoundToggle={false}
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
@@ -545,6 +551,7 @@ function EngineRuntime({
             speedSec={sp}
             gridSize={colorMemoryGridSize === 3 || colorMemoryGridSize === 5 ? colorMemoryGridSize : 4}
             gameMode={colorMemoryGridMode === 'oneshot' ? 'oneshot' : 'flicker'}
+            effectsEnabled={effectsEnabled}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
@@ -559,7 +566,7 @@ function EngineRuntime({
             <MemoryGameLevel5
               onExit={onExit}
               onComplete={handleSpatialComplete}
-              audioMode="beep"
+              audioMode={effectsEnabled ? 'beep' : 'off'}
               speedSec={speedSec ?? 1.2}
               startDelayMs={0}
             />
@@ -574,7 +581,7 @@ function EngineRuntime({
             <MemoryGameLevel4
               onExit={onExit}
               onComplete={handleSpatialComplete}
-              audioMode="beep"
+              audioMode={effectsEnabled ? 'beep' : 'off'}
               speedSec={speedSec ?? 1.2}
               startDelayMs={0}
               spatialMemoryResponse={spatialMemoryResponse === 'movement' ? 'movement' : undefined}
@@ -590,7 +597,7 @@ function EngineRuntime({
             level={safeLevel}
             onExit={onExit}
             onComplete={handleSpatialComplete}
-            audioMode="beep"
+            audioMode={effectsEnabled ? 'beep' : 'off'}
             speedSec={speedSec ?? 1.2}
             startDelayMs={0}
           />
@@ -615,7 +622,7 @@ function EngineRuntime({
             timeMode: 'time',
             duration: 60,
             warmup: 3,
-            audioMode: soundEnabled ? 'beep' : 'off',
+            audioMode: effectsEnabled ? 'beep' : 'off',
             flowFeatures: resolvedFlowFeatures,
             sportsArenaFeatures,
             diveEnvironmentTheme,
@@ -626,6 +633,9 @@ function EngineRuntime({
             colorGateCategory,
           }}
           embed
+          flowBgmPath={selectedBgmPath}
+          flowBgmEnabled={bgmEnabled}
+          flowSfxEnabled={effectsEnabled}
           onExit={onExit}
           onComplete={handleMemoryComplete}
         />

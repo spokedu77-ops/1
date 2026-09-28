@@ -130,6 +130,8 @@ export interface FlowEngineOptions {
   stages:            FlowStageConfig[];
   motionScale?:      number;
   bgmPath?:          string;
+  bgmEnabled?:       boolean;
+  sfxEnabled?:       boolean;
   panoramaHighUrl?:  string;
   panoramaLowUrl?:   string;
   panoramaYawDeg?:   number;
@@ -255,8 +257,8 @@ export class FlowEngine {
     this.stageList    = this.opts.stages;
     this.motionScale  = Math.min(1, Math.max(0.25, this.opts.motionScale ?? 1));
 
-    await this.audio.init();
-    if (this.opts.bgmPath) await this.audio.loadBgm(this.opts.bgmPath);
+    await this.audio.init({ bgmEnabled: this.opts.bgmEnabled, sfxEnabled: this.opts.sfxEnabled });
+    if (this.opts.bgmEnabled !== false && this.opts.bgmPath) await this.audio.loadBgm(this.opts.bgmPath);
     await this.init3D(); // GLB 로드가 포함되므로 async
     if (this.disposed) return;
     // startCountdown은 start()에서 — 렌더 루프 시작 후 호출해야 blank screen 없음

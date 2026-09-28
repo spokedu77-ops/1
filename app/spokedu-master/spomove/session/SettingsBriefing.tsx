@@ -18,12 +18,16 @@ import {
 import type { OfficialSpomovePreset } from '../officialSpomovePresets';
 import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
+import type { SpomoveUserAudioMode } from './spomoveAudioMode';
 
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 
 /** Session Settings adjusts only values that can change this run. */
 export function SettingsBriefing({
   preset,
+  audioMode,
+  onAudioModeChange,
+  bgmAvailable,
   startDisabled,
   cueSeconds,
   recommendedCueSeconds,
@@ -40,6 +44,9 @@ export function SettingsBriefing({
   cueFloorNotice,
 }: {
   preset: OfficialSpomovePreset;
+  audioMode: SpomoveUserAudioMode;
+  onAudioModeChange: (mode: SpomoveUserAudioMode) => void;
+  bgmAvailable: boolean;
   startDisabled: boolean;
   cueSeconds: SpomoveCueSpeedSec;
   recommendedCueSeconds: SpomoveCueSpeedSec;
@@ -154,7 +161,35 @@ export function SettingsBriefing({
           <p className="text-[12px] font-bold text-white/60">예상 활동 시간 <span className="whitespace-nowrap">{formatDiveActionMoveDuration(actionMoveDurationSec)}</span></p>
           {actionMoveDurationDetail ? <p className="text-[11px] font-semibold text-white/45"><span className="whitespace-nowrap">{actionMoveDurationDetail}</span></p> : null}
         </section>
-      ) : null}      <button
+      ) : null}
+
+      <section aria-label="소리">
+        <p className="text-sm font-semibold text-white">소리</p>
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {([
+            ['full', bgmAvailable ? '음악 + 효과음' : '음악 + 효과음 · BGM 없음'],
+            ['effects', '효과음만'],
+            ['silent', '무음'],
+          ] as const).map(([mode, label]) => {
+            const active = audioMode === mode;
+            const disabled = mode === 'full' && !bgmAvailable;
+            return (
+              <button
+                key={mode}
+                type="button"
+                aria-pressed={active}
+                disabled={disabled}
+                onClick={() => onAudioModeChange(mode)}
+                className={`min-h-11 rounded-xl px-3 text-sm font-bold transition ${active ? 'border-2 border-white bg-[var(--spm-acc)] text-white' : 'border border-white/15 bg-black/30 text-white/80'} disabled:cursor-not-allowed disabled:opacity-45`}
+              >
+                <span aria-hidden="true">{active ? '✓ ' : ''}</span>{label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <button
         type="button"
         onClick={onStart}
         disabled={startDisabled}

@@ -33,6 +33,7 @@ type Props = {
   difficulty: RelativeCompassDifficulty;
   startSeconds: RelativeCompassSeconds;
   responseSeconds: RelativeCompassSeconds;
+  effectsEnabled?: boolean;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
@@ -52,6 +53,7 @@ export function RelativeCompassReactionTraining({
   difficulty,
   startSeconds,
   responseSeconds,
+  effectsEnabled = true,
   onExit,
   onComplete,
 }: Props) {
@@ -110,7 +112,7 @@ export function RelativeCompassReactionTraining({
       setRepsLeft(totalRounds - cueRound + 1);
       setPhase('RESPONSE');
       show(buildArrowSignal(direction, difficulty));
-      playBeep('high');
+      if (effectsEnabled) playBeep('high');
       animateProgress(responseSeconds * 1000, token);
       if (!(await wait(responseSeconds * 1000, token, tokenRef, timersRef.current))) return;
       completedRef.current = cueRound;
@@ -123,7 +125,7 @@ export function RelativeCompassReactionTraining({
       setRepsLeft(totalRounds);
       setPhase('START_POSITION');
       show(buildStartSignal(start));
-      playBeep('mid');
+      if (effectsEnabled) playBeep('mid');
       animateProgress(startSeconds * 1000, token);
       if (await wait(startSeconds * 1000, token, tokenRef, timersRef.current)) void runCue(1, start);
     };
@@ -138,7 +140,7 @@ export function RelativeCompassReactionTraining({
       unbindResize();
       cancel();
     };
-  }, [cancel, difficulty, finish, responseSeconds, startSeconds, totalRounds]);
+  }, [cancel, difficulty, effectsEnabled, finish, responseSeconds, startSeconds, totalRounds]);
 
   const bg = (signal?.bg as string | undefined) ?? '#0F172A';
   const dark = bg === '#0F172A' || bg.startsWith('#0') || bg.startsWith('#1') || bg === '#000000';

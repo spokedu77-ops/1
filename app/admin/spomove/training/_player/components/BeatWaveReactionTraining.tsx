@@ -73,18 +73,20 @@ type Props = {
   durationSec: number;
   speedLevel: number;
   speedSec: number;
+  effectsEnabled?: boolean;
+  showLocalSoundToggle?: boolean;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
 const css = `
-.bwt{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#020308;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.bwt{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#020308;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:var(--spm-font-body);overflow:hidden}
 .bwt,.bwt *{box-sizing:border-box}
 .bwt-hud{height:72px;display:flex;align-items:stretch;background:rgba(2,3,8,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .bwt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .bwt-hc.grow{flex:1;align-items:center;border-right:none}
 .bwt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
-.bwt-hv{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
+.bwt-hv{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
 .bwt-hv.warn{animation:bwtw .5s ease-in-out infinite}
 @keyframes bwtw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 .bwt-btns{align-self:center;margin-left:auto;display:flex;gap:8px}
@@ -100,7 +102,7 @@ const css = `
 .bwt-card-sub{margin:8px 0 0;font-size:clamp(12px,2vw,24px);line-height:1;font-weight:900;letter-spacing:-.05em;color:rgba(255,255,255,.8)}
 .bwt-combo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.7);z-index:40;text-align:center;pointer-events:none;opacity:0;transition:opacity .08s,transform .15s cubic-bezier(.34,1.56,.64,1)}
 .bwt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.bwt-combo-n{font-family:Bebas Neue,sans-serif;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
+.bwt-combo-n{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 .bwt-combo-w{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.4)}
 .bwt-cue{position:absolute;bottom:max(clamp(10px,2.2vw,20px),env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:15;display:flex;align-items:center;gap:clamp(6px,1.1vw,10px);padding:9px clamp(12px,2vw,18px);border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(4,7,17,.68);backdrop-filter:blur(20px);pointer-events:none;white-space:nowrap}
 .bwt-cue-label{color:rgba(255,255,255,.6);font-weight:800;letter-spacing:.1em;font-size:clamp(9px,1.1vw,12px)}
@@ -109,7 +111,7 @@ const css = `
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
-export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, onExit, onComplete }: Props) {
+export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, effectsEnabled, showLocalSoundToggle = true, onExit, onComplete }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);
@@ -123,20 +125,21 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
   const comboNRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
-  const [soundOn, setSoundOn] = useState(true);
+  const [soundOn, setSoundOn] = useState(effectsEnabled ?? true);
+  const effectiveSoundOn = effectsEnabled ?? soundOn;
   const gRef = useRef<BwGame | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   useEffect(() => subscribeSpomoveRuntimePause((isPaused) => {
     if (isPaused) void audioCtxRef.current?.suspend();
     else void audioCtxRef.current?.resume();
   }), []);
-  const soundOnRef = useRef(true);
+  const soundOnRef = useRef(effectiveSoundOn);
   const perfRef = useRef<PerfMonitor | null>(null);
   const onCompleteRef = useRef(onComplete);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
   const onExitRef = useRef(onExit);
   useEffect(() => { onExitRef.current = onExit; }, [onExit]);
-  useEffect(() => { soundOnRef.current = soundOn; }, [soundOn]);
+  useEffect(() => { soundOnRef.current = effectiveSoundOn; }, [effectiveSoundOn]);
 
   const lv = Math.max(1, Math.min(7, Math.round(speedLevel)));
   const normalizedSpeedSec = normalizeReactSpeedSec(speedSec);
@@ -564,9 +567,11 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
         </div>
         <div className="bwt-hc" style={{ borderRight: 'none', borderLeft: '1px solid rgba(255,255,255,.05)' }}>
           <div className="bwt-btns">
-            <button type="button" className="bwt-sound" onClick={() => setSoundOn(v => !v)}>
-              {soundOn ? '소리 ON' : '소리 OFF'}
-            </button>
+            {showLocalSoundToggle ? (
+              <button type="button" className="bwt-sound" onClick={() => setSoundOn(v => !v)}>
+                {soundOn ? '소리 ON' : '소리 OFF'}
+              </button>
+            ) : null}
             <button type="button" className="bwt-stop" onClick={stopGame}>STOP</button>
           </div>
         </div>

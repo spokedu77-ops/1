@@ -17,6 +17,14 @@ export function getAudioCtx(): AudioContext | null {
   return _audioCtx;
 }
 
+export function suspendExistingAudioCtx(): Promise<void> {
+  return _audioCtx?.suspend() ?? Promise.resolve();
+}
+
+export function resumeExistingAudioCtx(): Promise<void> {
+  return _audioCtx?.resume() ?? Promise.resolve();
+}
+
 type BeepType = 'high' | 'low' | 'mid' | 'chord' | 'blip';
 
 export function playBeep(type: BeepType = 'mid', durationMs = 120) {

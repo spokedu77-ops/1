@@ -253,7 +253,7 @@ export function MemoryGame({
             </div>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-                <div style={{ color: textOnColor, fontSize: 'clamp(130px,30vw,320px)', fontWeight: 900, lineHeight: 1, textShadow: '0 4px 60px rgba(0,0,0,0.25)', userSelect: 'none' }}>
+                <div style={{ color: textOnColor, fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,320px)', fontWeight: 400, lineHeight: 1, textShadow: '0 4px 60px rgba(0,0,0,0.25)', userSelect: 'none' }}>
                   {showingColor.name}
                 </div>
                 <div style={{ color: textOnColor, fontSize: 'clamp(32px,7vw,64px)', opacity: 0.35, userSelect: 'none' }}>{showingColor.symbol}</div>

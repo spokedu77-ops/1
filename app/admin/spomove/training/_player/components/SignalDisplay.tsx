@@ -491,7 +491,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'number')
     return (
       <div key={animKey} className="signal-blink" style={C}>
-        <div style={{ fontSize: 'clamp(180px,38vw,400px)', color: '#fff', lineHeight: 1, fontWeight: 900, textShadow: '0 4px 60px rgba(0,0,0,0.5)' }}>{content?.label as string}</div>
+        <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(180px,38vw,400px)', color: '#fff', lineHeight: 1, fontWeight: 400, textShadow: '0 4px 60px rgba(0,0,0,0.5)' }}>{content?.label as string}</div>
       </div>
     );
 
@@ -650,7 +650,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     const tc = col?.text ?? '#fff';
     return (
       <div key={animKey} className="signal-blink" style={C}>
-        <div style={{ fontSize: 'clamp(180px,38vw,400px)', color: tc, lineHeight: 1, fontWeight: 900, textShadow: '0 4px 60px rgba(0,0,0,0.35)' }}>{(content?.number as { label?: string })?.label}</div>
+        <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(180px,38vw,400px)', color: tc, lineHeight: 1, fontWeight: 400, textShadow: '0 4px 60px rgba(0,0,0,0.35)' }}>{(content?.number as { label?: string })?.label}</div>
       </div>
     );
   }

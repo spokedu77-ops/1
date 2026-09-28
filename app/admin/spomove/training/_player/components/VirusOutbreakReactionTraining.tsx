@@ -79,12 +79,13 @@ type Props = {
   speedLevel: number;
   speedSec: number;
   difficulty?: VirusOutbreakDifficulty;
+  effectsEnabled?: boolean;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
 const css = `
-.vburst{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#050a0f;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden;user-select:none;touch-action:none}
+.vburst{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#050a0f;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:var(--spm-font-body);overflow:hidden;user-select:none;touch-action:none}
 .vburst,.vburst *{box-sizing:border-box}
 .vburst-hud{height:72px;display:flex;align-items:stretch;background:rgba(5,10,15,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.1);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .vburst-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.1)}
@@ -97,7 +98,7 @@ const css = `
 .vburst-lens{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(circle,transparent 40%,rgba(0,0,0,.9) 80%,#000 100%)}
 .vburst-mission{position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .28s ease,transform .28s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(22px,5vw,52px);line-height:1.1;font-weight:1000;color:#fff;background:rgba(0,0,0,.7);padding:.45em 1.1em;border-radius:999px;border:2px solid rgba(255,255,255,.2);backdrop-filter:blur(10px)}
 .vburst-mission.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.vburst-count{position:absolute;left:50%;top:50%;z-index:22;pointer-events:none;transform:translate(-50%,-50%);font-size:clamp(80px,22vw,200px);font-weight:1000;color:#ff3333;text-shadow:0 0 50px #f00,0 0 20px #f00;opacity:0;transition:opacity .1s}
+.vburst-count{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;position:absolute;left:50%;top:50%;z-index:22;pointer-events:none;transform:translate(-50%,-50%);font-size:clamp(80px,22vw,200px);font-weight:400;color:#ff3333;text-shadow:0 0 50px #f00,0 0 20px #f00;opacity:0;transition:opacity .1s}
 .vburst-count.show{opacity:1}
 .vburst-warn{position:absolute;left:50%;top:12%;z-index:20;pointer-events:none;transform:translateX(-50%) scale(.85);opacity:0;transition:all .3s;padding:8px 18px;border-radius:999px;border:2px dashed #a3a3a3;background:rgba(0,0,0,.8);color:#a3a3a3;font-size:clamp(12px,2.4vw,22px);font-weight:900;white-space:nowrap}
 .vburst-warn.show{opacity:1;transform:translateX(-50%) scale(1);animation:vburstMutant 1s infinite alternate}
@@ -111,7 +112,8 @@ function normalizeDifficulty(v: unknown): VirusOutbreakDifficulty {
   return 'normal';
 }
 
-function playSfx(type: 'pop' | 'tick' | 'shutter' | 'reveal') {
+function playSfx(type: 'pop' | 'tick' | 'shutter' | 'reveal', effectsEnabled: boolean) {
+  if (!effectsEnabled) return;
   const ctx = getAudioCtx();
   if (!ctx) return;
   const t = ctx.currentTime;
@@ -202,6 +204,7 @@ function makeVirus(
 export function VirusOutbreakReactionTraining({
   durationSec,
   difficulty: difficultyProp = 'normal',
+  effectsEnabled = true,
   onExit,
   onComplete,
 }: Props) {
@@ -453,13 +456,13 @@ export function VirusOutbreakReactionTraining({
           while (g.currentCounts[i]! < targetNow) {
             g.viruses.push(makeVirus(i, g, g.questionType, g.targetColorId));
             g.currentCounts[i]!++;
-            if (Math.random() > 0.7) playSfx('pop');
+            if (Math.random() > 0.7) playSfx('pop', effectsEnabled);
           }
         }
         if (elapsed >= OUTBREAK_MS) {
           g.phase = 'SHUTTER';
           g.phaseStartMs = now;
-          playSfx('shutter');
+          playSfx('shutter', effectsEnabled);
           warnRef.current?.classList.remove('show');
           setStatus('셔터 · 해당 색 패드로', '#fbbf24');
         }
@@ -480,14 +483,14 @@ export function VirusOutbreakReactionTraining({
           countRef.current.classList.remove('show');
           void countRef.current.offsetWidth;
           countRef.current.classList.add('show');
-          if (timeLeft > 0) playSfx('tick');
+          if (timeLeft > 0) playSfx('tick', effectsEnabled);
         }
         if (elapsed >= COUNTDOWN_MS) {
           g.phase = 'REVEAL';
           g.phaseStartMs = now;
           countRef.current?.classList.remove('show');
-          playSfx('shutter');
-          playSfx('reveal');
+          playSfx('shutter', effectsEnabled);
+          playSfx('reveal', effectsEnabled);
           g.laneCount[g.targetColorId]++;
         }
       } else if (g.phase === 'REVEAL') {
@@ -528,7 +531,7 @@ export function VirusOutbreakReactionTraining({
       syncGeom();
     };
     const unbind = bindViewportResize(play, resize);
-    getAudioCtx();
+    if (effectsEnabled) getAudioCtx();
     if (timeRef.current) timeRef.current.textContent = String(g.durationLeft);
 
     const beginGame = () => {
@@ -555,7 +558,7 @@ export function VirusOutbreakReactionTraining({
       if (g.raf != null) cancelAnimationFrame(g.raf);
       if (g.timer) clearInterval(g.timer);
     };
-  }, [complete, difficultyProp, durationSec]);
+  }, [complete, difficultyProp, durationSec, effectsEnabled]);
 
   return (
     <div className="vburst">

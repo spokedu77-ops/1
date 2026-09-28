@@ -43,9 +43,10 @@ export function ReactTrainStartCountdownOverlay({ countdown }: { countdown: numb
           key={countdown}
           className="react-train-cd-pop"
           style={{
-            fontFamily: 'Bebas Neue,Barlow Condensed,sans-serif',
+            fontFamily: 'var(--spm-font-display)',
             fontSize: 'clamp(120px,30vw,260px)',
-            fontWeight: 900,
+            fontWeight: 400,
+            fontSynthesis: 'none',
             color: '#F97316',
             lineHeight: 1,
             textShadow: '0 0 48px rgba(249,115,22,0.42)',

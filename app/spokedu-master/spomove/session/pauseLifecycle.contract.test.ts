@@ -48,8 +48,8 @@ describe('MASTER SPOMOVE pause lifecycle contract', () => {
 
   it('pauses BGM and WebAudio until the user resumes', () => {
     expect(page).toContain('bgmPlayerRef.current?.pause()');
-    expect(page).toContain('getAudioCtx()?.suspend()');
-    expect(page).toContain('getAudioCtx()?.resume()');
+    expect(page).toContain('suspendExistingAudioCtx()');
+    expect(page).toContain('resumeExistingAudioCtx()');
     expect(read('app/admin/spomove/training/_player/flow-lab/engine/FlowAudio.ts'))
       .toContain('subscribeSpomoveRuntimePause');
   });

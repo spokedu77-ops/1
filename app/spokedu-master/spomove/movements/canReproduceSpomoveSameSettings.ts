@@ -15,6 +15,7 @@ import { validateOperationConfig } from '../operations/operationConstraints';
 import { getMovementProfile } from './movementProfiles';
 import { isAllowedByFamily } from './movementResolve';
 import type { SpomoveRecentConfigSnapshotV3 } from '../operations/operationTypes';
+import { legacyPairToSpomoveAudioMode } from '../session/spomoveAudioMode';
 
 /**
  * Recent 「같은 설정 실행」 가능 여부.
@@ -97,6 +98,7 @@ export function recentSpomoveSessionOptions(
     movement: current.movement,
     soundEnabled: current.soundEnabled,
     bgmPath: current.bgmPath || undefined,
+    audioMode: legacyPairToSpomoveAudioMode(current.soundEnabled, current.bgmPath),
     diveEnvironmentTheme: current.diveEnvironmentTheme,
     sportsArenaFeatures: current.sportsArenaFeatures,
     flowDuration: current.flowDuration,

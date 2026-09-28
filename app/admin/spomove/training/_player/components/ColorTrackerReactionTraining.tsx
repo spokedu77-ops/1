@@ -308,13 +308,13 @@ function lockTargetInsideQuadrant(panel: PanelArena, target: TrackerBall, quadra
 }
 
 const css = `
-.ctrk{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#111;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.ctrk{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#111;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:var(--spm-font-body);overflow:hidden}
 .ctrk,.ctrk *{box-sizing:border-box}
 .ctrk-hud{height:72px;display:flex;align-items:stretch;background:rgba(10,10,14,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .ctrk-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .ctrk-hc.grow{flex:1;align-items:center;border-right:none}
 .ctrk-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
-.ctrk-hv{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
+.ctrk-hv{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
 .ctrk-hv.warn{animation:ctrkw .5s ease-in-out infinite}
 @keyframes ctrkw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 .ctrk-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.14em;color:#a78bfa;margin-top:2px}
@@ -624,7 +624,7 @@ export function ColorTrackerReactionTraining({
       ctx.stroke();
 
       const pad = Math.max(10, panel.W * 0.028);
-      ctx.font = `900 ${Math.max(16, panel.W * 0.038)}px Barlow Condensed, Noto Sans KR, sans-serif`;
+      ctx.font = `400 ${Math.max(16, panel.W * 0.038)}px "Black Han Sans", SUIT, Pretendard, sans-serif`;
       ctx.textBaseline = 'middle';
       const labels: [number, number, number][] = [
         [pad, pad, 0],

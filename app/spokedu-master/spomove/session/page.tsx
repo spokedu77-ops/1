@@ -10,7 +10,7 @@ import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { isDiveActionMoveUnityTheme, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
-import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
+import { getAudioCtx, resumeExistingAudioCtx, suspendExistingAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 import {
   resetSpomoveRuntimeClock,
   setSpomoveRuntimePaused,
@@ -68,6 +68,15 @@ import type { MovementPick } from '../movements/movementTypes';
 import { SessionSetupShell } from './SessionSetupShell';
 import { StartBriefing } from './StartBriefing';
 import { SettingsBriefing } from './SettingsBriefing';
+import {
+  legacyPairToSpomoveAudioMode,
+  parseSpomoveAudioMode,
+  spomoveAudioModeToChannels,
+  spomoveAudioModeToLegacyPair,
+  userAudioModeWithBgmAvailability,
+  type SpomoveUserAudioMode,
+} from './spomoveAudioMode';
+import { useSpomoveWakeLock } from './useSpomoveWakeLock';
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 import { MasterSessionResult } from './MasterSessionResult';
 import {
@@ -186,6 +195,7 @@ function SpomoveSessionContent() {
     autostartParam: searchParams.get('autostart'),
   });
   const requestedBgmPath = searchParams.get('bgm') ?? '';
+  const requestedAudioMode = parseSpomoveAudioMode(searchParams.get('audio'));
   const requestedSoundEnabled = searchParams.get('sound') !== 'off';
   const programId = searchParams.get('program') ?? '';
   const programs = useMasterStore((state) => state.programs);
@@ -314,8 +324,21 @@ function SpomoveSessionContent() {
 
   const [state, setState] = useState<SessionState>('idle');
   const [launchMode, setLaunchMode] = useState<LaunchMode>(requestedLaunchMode);
-  const [soundEnabled, setSoundEnabled] = useState(requestedSoundEnabled);
+  const [audioMode, setAudioMode] = useState(() =>
+    requestedAudioMode ?? legacyPairToSpomoveAudioMode(requestedSoundEnabled, defaultSelectedBgmPath),
+  );
   const [selectedBgmPath, setSelectedBgmPath] = useState(defaultSelectedBgmPath);
+  const audioChannels = useMemo(() => spomoveAudioModeToChannels(audioMode), [audioMode]);
+  const runtimeAudioPair = useMemo(
+    () => spomoveAudioModeToLegacyPair(audioMode, selectedBgmPath),
+    [audioMode, selectedBgmPath],
+  );
+
+  useEffect(() => {
+    if (bgmLoading || selectedBgmPath) return;
+    if (audioMode === 'full') setAudioMode('effects');
+    else if (audioMode === 'music') setAudioMode('silent');
+  }, [audioMode, bgmLoading, selectedBgmPath]);
   const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>(() => normalizeDiveThemeId(searchParams.get('diveTheme')));
   const [sportsArenaFeatures, setSportsArenaFeatures] = useState<SportsArenaFeatureKey[]>(() => {
     const values = (searchParams.get('sports') ?? '').split(',');
@@ -352,6 +375,7 @@ function SpomoveSessionContent() {
     return resolveSessionCueSeconds(officialPreset, recommendedCueSeconds);
   });
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
+  useSpomoveWakeLock(state === 'running' || state === 'paused');
   const startLockedRef = useRef(false);
   const finishLockedRef = useRef(false);
   const stopRequestLockedRef = useRef(false);
@@ -379,8 +403,11 @@ function SpomoveSessionContent() {
   useEffect(() => {
     if (runtimeStateRef.current === 'idle' && !recoverySnapshot && !selectedBgmPath && defaultSelectedBgmPath) {
       setSelectedBgmPath(defaultSelectedBgmPath);
+      if (!requestedAudioMode) {
+        setAudioMode(legacyPairToSpomoveAudioMode(requestedSoundEnabled, defaultSelectedBgmPath));
+      }
     }
-  }, [defaultSelectedBgmPath, recoverySnapshot, selectedBgmPath]);
+  }, [defaultSelectedBgmPath, recoverySnapshot, requestedAudioMode, requestedSoundEnabled, selectedBgmPath]);
 
   useEffect(() => {
     if (runtimeStateRef.current !== 'idle') return;
@@ -441,8 +468,8 @@ function SpomoveSessionContent() {
     return {
       presetId: officialPreset.id,
       launchMode,
-      soundEnabled,
-      bgmPath: selectedBgmPath,
+      soundEnabled: runtimeAudioPair.soundEnabled,
+      bgmPath: runtimeAudioPair.bgmPath,
       cueSeconds: effectiveCueSeconds,
       movement,
       operationLayerStatus: resolvedOperationLayer?.status ?? (operationLayerStatus === 'pending' ? 'ready' : operationLayerStatus),
@@ -461,8 +488,7 @@ function SpomoveSessionContent() {
     officialPreset,
     operationLayerStatus,
     resolvedOperationLayer,
-    selectedBgmPath,
-    soundEnabled,
+    runtimeAudioPair,
     sportsArenaFeatures,
   ]);
 
@@ -522,7 +548,7 @@ function SpomoveSessionContent() {
       ? config.movement
       : recommendedMovement;
     setLaunchMode(config.launchMode);
-    setSoundEnabled(config.soundEnabled);
+    setAudioMode(legacyPairToSpomoveAudioMode(config.soundEnabled, config.bgmPath));
     setSelectedBgmPath(config.bgmPath && bgmList.includes(config.bgmPath) ? config.bgmPath : '');
     setCueSeconds(resolveSessionCueSeconds(officialPreset, config.cueSeconds));
     if (config.operationLayerStatus !== 'legacyDisabled' && config.operation) setOperationCandidate(config.operation);
@@ -586,9 +612,9 @@ function SpomoveSessionContent() {
   const enterRunning = useCallback(() => {
     if (!officialPreset) return;
     stopBgm();
-    if (soundEnabled) getAudioCtx();
+    if (audioChannels.effectsEnabled) getAudioCtx();
     // flow 모드: MemoryGameApp 내부 BGM이 처리하므로 session-level BgmPlayer 생략
-    const wantsSessionBgm = Boolean(selectedBgmPath && officialPreset.engine.mode !== 'flow');
+    const wantsSessionBgm = Boolean(audioChannels.bgmEnabled && selectedBgmPath && officialPreset.engine.mode !== 'flow');
     if (wantsSessionBgm && selectedBgmPath) {
       const player = new BgmPlayer();
       player.init(getPublicUrl(selectedBgmPath), 0.35);
@@ -622,8 +648,8 @@ function SpomoveSessionContent() {
   }, [
     launchMode,
     officialPreset,
+    audioChannels,
     selectedBgmPath,
-    soundEnabled,
     stopBgm,
     buildRuntimeConfig,
     persistActiveRun,
@@ -635,14 +661,16 @@ function SpomoveSessionContent() {
       void document.documentElement.requestFullscreen?.().catch(() => undefined);
     }
     try {
-      const ctx = getAudioCtx();
-      void ctx?.resume?.();
+      if (audioChannels.effectsEnabled) {
+        const ctx = getAudioCtx();
+        void ctx?.resume?.();
+      }
     } catch {
       // ignore
     }
     void bgmPlayerRef.current?.play();
     setActivationBlocked(null);
-  }, [launchMode]);
+  }, [audioChannels.effectsEnabled, launchMode]);
 
   const startOfficialSession = useCallback(() => {
     if (
@@ -736,7 +764,7 @@ function SpomoveSessionContent() {
     stopRequestLockedRef.current = true;
     setSpomoveRuntimePaused(true);
     bgmPlayerRef.current?.pause();
-    void getAudioCtx()?.suspend();
+    void suspendExistingAudioCtx();
     setExitConfirmationOpen(true);
     persistActiveRun('paused');
   }, [persistActiveRun]);
@@ -746,7 +774,7 @@ function SpomoveSessionContent() {
     setExitConfirmationOpen(false);
     setMovementSheetOpen(false);
     setSpomoveRuntimePaused(false);
-    void getAudioCtx()?.resume();
+    void resumeExistingAudioCtx();
     void bgmPlayerRef.current?.play();
     persistActiveRun('running');
   }, [persistActiveRun]);
@@ -756,7 +784,7 @@ function SpomoveSessionContent() {
     if (!setSpomoveRuntimePaused(true)) return;
     runtimeStateRef.current = 'paused';
     bgmPlayerRef.current?.pause();
-    void getAudioCtx()?.suspend();
+    void suspendExistingAudioCtx();
     setState('paused');
     persistActiveRun('paused');
   }, [persistActiveRun]);
@@ -765,7 +793,7 @@ function SpomoveSessionContent() {
     if (finishLockedRef.current || !canResumeSpomoveRuntime(runtimeStateRef.current)) return;
     if (!setSpomoveRuntimePaused(false)) return;
     runtimeStateRef.current = 'running';
-    void getAudioCtx()?.resume();
+    void resumeExistingAudioCtx();
     void bgmPlayerRef.current?.play();
     setState('running');
     persistActiveRun('running');
@@ -953,8 +981,9 @@ function SpomoveSessionContent() {
         operationLayerStatus !== 'legacyDisabled' && effectiveOperation
           ? effectiveOperation
           : null,
-      soundEnabled,
-      bgmPath: selectedBgmPath || undefined,
+      soundEnabled: runtimeAudioPair.soundEnabled,
+      bgmPath: runtimeAudioPair.bgmPath || undefined,
+      audioMode,
       diveEnvironmentTheme,
       sportsArenaFeatures,
       flowDuration,
@@ -972,8 +1001,8 @@ function SpomoveSessionContent() {
     officialPreset,
     effectiveOperation,
     operationLayerStatus,
-    selectedBgmPath,
-    soundEnabled,
+    audioMode,
+    runtimeAudioPair,
     diveEnvironmentTheme,
     sportsArenaFeatures,
     flowDuration,
@@ -1076,7 +1105,9 @@ function SpomoveSessionContent() {
           level={officialPreset.engine.level}
           speedSec={effectiveCueSeconds}
           rounds={officialPreset.rounds}
-          soundEnabled={soundEnabled}
+          effectsEnabled={audioChannels.effectsEnabled}
+          bgmEnabled={audioChannels.bgmEnabled}
+          selectedBgmPath={selectedBgmPath}
           variantColorTheme={officialPreset.engine.variantColorTheme}
           bodyLabelMode={officialPreset.engine.bodyLabelMode}
           hideBodyLabelModeControls={officialPreset.engine.hideBodyLabelModeControls}
@@ -1199,7 +1230,7 @@ function SpomoveSessionContent() {
   return (
     <div
       className={`relative h-dvh select-none bg-[#050509] text-white ${showBriefing ? 'overflow-y-auto overscroll-y-contain' : 'overflow-hidden'}`}
-      style={{ fontFamily: 'var(--spm-font-display)' }}
+      style={{ fontFamily: 'var(--spm-font-body)' }}
     >
       {showBriefing ? (
         <TopBar
@@ -1228,6 +1259,9 @@ function SpomoveSessionContent() {
               flowIncludeBonus={flowIncludeBonus}
               onFlowIncludeBonusChange={setFlowIncludeBonus}
               preset={officialPreset}
+              audioMode={(audioMode === 'music' ? 'full' : audioMode) as SpomoveUserAudioMode}
+              onAudioModeChange={(mode) => setAudioMode(userAudioModeWithBgmAvailability(mode, bgmList.length > 0))}
+              bgmAvailable={bgmList.length > 0}
               startDisabled={bgmLoading || !canStartSession}
               cueSeconds={effectiveCueSeconds}
               recommendedCueSeconds={effectiveRecommendedCueSeconds}
