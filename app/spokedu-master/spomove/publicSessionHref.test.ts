@@ -20,7 +20,16 @@ describe('public SPOMOVE session links', () => {
     expect(href).not.toContain('limb=');
   });
 
-  it('ignores runtime movement options even when passed dynamically', () => {
+  it('serializes a validated movement for mounted and persistent same-settings rerun', () => {
+    const href = publicOfficialPresetSessionHref(preset, {
+      entry: 'start',
+      movement: { baseMovement: 'handTouch', limbRule: 'free' },
+    });
+    expect(href).toContain('movement=handTouch');
+    expect(href).toContain('limb=free');
+  });
+
+  it('ignores malformed legacy movement options safely', () => {
     const href = publicOfficialPresetSessionHref(preset, {
       entry: 'start',
       movement: 'handTouch',

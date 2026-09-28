@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout, subscribeSpomoveRuntimePause } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import {
@@ -125,6 +126,10 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
   const [soundOn, setSoundOn] = useState(true);
   const gRef = useRef<BwGame | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  useEffect(() => subscribeSpomoveRuntimePause((isPaused) => {
+    if (isPaused) void audioCtxRef.current?.suspend();
+    else void audioCtxRef.current?.resume();
+  }), []);
   const soundOnRef = useRef(true);
   const perfRef = useRef<PerfMonitor | null>(null);
   const onCompleteRef = useRef(onComplete);
@@ -139,15 +144,7 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    g.running = false;
-    if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
-    if (audioCtxRef.current) void audioCtxRef.current.suspend();
-    onCompleteRef.current({
-      stims: g.stims,
-      maxCombo: g.maxCombo,
-      laneCount: [...g.laneCount] as [number, number, number, number],
-    });
+    onExitRef.current();
   }, []);
 
   const endGame = useCallback(() => {
@@ -276,7 +273,7 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
       if (!pop || !cn) return;
       cn.textContent = String(n);
       pop.classList.remove('show');
-      window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
         pop.classList.add('show');
         const el = pop as HTMLDivElement & { _ct?: ReturnType<typeof setTimeout> };
         clearTimeout(el._ct);

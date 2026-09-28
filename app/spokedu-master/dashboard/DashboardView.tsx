@@ -61,7 +61,7 @@ import {
 import { SpomoveGuidelineSheet, type SpomoveContentLoadState } from '../spomove/SpomoveGuidelineSheet';
 import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
-import { canReproduceSpomoveSameSettings } from '../spomove/movements/canReproduceSpomoveSameSettings';
+import { canReproduceSpomoveSameSettings, recentSpomoveSessionOptions } from '../spomove/movements/canReproduceSpomoveSameSettings';
 import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
 import { buildProgramLessonGateHref } from '../lib/masterGateIntent';
 import { FREE_PREVIEW_PROGRAM_ID, getProgramAccessBadge, isProgramLessonLocked, selectWeeklyProgramsById } from '../lib/commercialProgramAccess';
@@ -388,6 +388,7 @@ function RecentSpomoveReuseCard({
   const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId) ?? null;
   const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
   const snapshot = activity.spomoveSnapshot;
+  const recentOptions = preset ? recentSpomoveSessionOptions(activity, preset) : null;
   const cueSeconds = snapshot?.cueSeconds ?? activity.cueSeconds ?? preset?.cueSeconds;
   const shelf = preset ? getHomeSpomoveShelfCopy(preset) : null;
   const displayTitle = shelf?.title ?? resolveSpomovePublicDisplayTitle(activity.programId, activity.programTitle);
@@ -398,16 +399,7 @@ function RecentSpomoveReuseCard({
   const recentHref = preset
     ? withDiscoveryReturn(
         canReproduce
-          ? publicOfficialPresetSessionHref(preset, {
-              entry: 'start',
-              mode: launchMode,
-              cueSeconds: snapshot?.cueSeconds ?? activity.cueSeconds,
-              difficulty: snapshot?.difficultyValue ?? activity.difficultyValue,
-              operation:
-                snapshot && snapshot.operationLayerStatus !== 'legacyDisabled'
-                  ? snapshot.operation
-                  : null,
-            })
+          ? publicOfficialPresetSessionHref(preset, recentOptions ?? { entry: 'start', mode: launchMode })
           : publicOfficialPresetSessionHref(preset, {
               entry: 'start',
               mode: launchMode,

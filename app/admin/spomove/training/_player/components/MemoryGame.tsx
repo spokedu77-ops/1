@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { spomoveClearTimeout as clearTimeout, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { EMBED_FIXED_VIEWPORT } from '../lib/embedViewport';
 import { playBeep } from '../lib/audio';
 import { buildMemoryPatternFromSlots, DEFAULT_MEMORY_COLOR_SLOTS } from '../lib/memoryColorSlots';

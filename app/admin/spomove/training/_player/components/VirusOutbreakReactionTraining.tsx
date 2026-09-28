@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { setupCanvas } from '../lib/canvasUtils';
 import { getAudioCtx } from '../lib/audio';
@@ -201,6 +202,7 @@ function makeVirus(
 export function VirusOutbreakReactionTraining({
   durationSec,
   difficulty: difficultyProp = 'normal',
+  onExit,
   onComplete,
 }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
@@ -572,7 +574,7 @@ export function VirusOutbreakReactionTraining({
           <div className="vburst-hv" ref={timeRef}>0</div>
         </div>
         <div className="vburst-hc" style={{ borderRight: 'none' }}>
-          <button type="button" className="vburst-stop" onClick={complete}>STOP</button>
+          <button type="button" className="vburst-stop" onClick={onExit}>STOP</button>
         </div>
       </div>
       <div ref={playRef} className="vburst-play">

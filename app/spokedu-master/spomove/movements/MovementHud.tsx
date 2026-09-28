@@ -12,7 +12,7 @@ type Props = {
 export function MovementHud({ movement, collapsed, onToggleCollapsed, compact }: Props) {
   return (
     <div
-      className={`pointer-events-auto absolute z-30 ${
+      className={`pointer-events-auto fixed z-[400] ${
         compact ? 'bottom-3 left-3 right-3 sm:right-auto sm:max-w-[280px]' : 'bottom-5 left-5 max-w-[320px]'
       }`}
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
@@ -21,7 +21,7 @@ export function MovementHud({ movement, collapsed, onToggleCollapsed, compact }:
         <button
           type="button"
           onClick={onToggleCollapsed}
-          className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left"
+          className="flex min-h-11 w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left"
           aria-expanded={!collapsed}
         >
           <div className="min-w-0">

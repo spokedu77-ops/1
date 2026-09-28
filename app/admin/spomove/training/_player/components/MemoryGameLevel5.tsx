@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
+import { spomoveClearTimeout as clearTimeout, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { generateLevel4Pattern, Level4Item } from '../lib/signals';
 import { playBeep } from '../lib/audio';
 import { EMBED_FIXED_VIEWPORT } from '../lib/embedViewport';

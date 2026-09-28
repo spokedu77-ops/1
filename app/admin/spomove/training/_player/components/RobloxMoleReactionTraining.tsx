@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import {
@@ -25,6 +26,7 @@ type Props = {
   speedSec: number;
   lookMode?: MoleLookMode;
   bonusTimeEnabled?: boolean;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -198,6 +200,7 @@ export function RobloxMoleReactionTraining({
   speedSec,
   lookMode = 'classic',
   bonusTimeEnabled = false,
+  onExit,
   onComplete,
 }: Props) {
   const uid = useId();
@@ -247,15 +250,8 @@ export function RobloxMoleReactionTraining({
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    g.running = false;
-    if (g.timer) clearInterval(g.timer);
-    clearSpawnTimers();
-    onComplete({
-      stims: g.stims,
-      maxCombo: g.maxCombo,
-      laneCount: [...g.laneCount] as [number, number, number, number],
-    });
-  }, [clearSpawnTimers, onComplete]);
+    onExit();
+  }, [onExit]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

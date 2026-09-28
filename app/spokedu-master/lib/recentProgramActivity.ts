@@ -23,7 +23,9 @@ export type RecentProgramActivity = {
   difficultyKind?: string;
   difficultyValue?: string;
   /** O3 Operation Snapshot V2 — Recent 「같은 설정」 재현 */
-  spomoveSnapshot?: import('../spomove/operations/operationTypes').SpomoveSessionSnapshotV2;
+  spomoveSnapshot?: import('../spomove/operations/operationTypes').SpomoveRecentConfigSnapshot;
+  /** Runtime identity for diagnostics/handoff; never used as a rerun identity. */
+  runId?: string;
 };
 
 export type RecentProgramActivityInput = Omit<RecentProgramActivity, 'ownerId' | 'resumeHref'>;

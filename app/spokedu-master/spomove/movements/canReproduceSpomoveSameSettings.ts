@@ -12,6 +12,9 @@ import {
   resolveOperationEngineCapabilities,
 } from '../operations/operationResolve';
 import { validateOperationConfig } from '../operations/operationConstraints';
+import { getMovementProfile } from './movementProfiles';
+import { isAllowedByFamily } from './movementResolve';
+import type { SpomoveRecentConfigSnapshotV3 } from '../operations/operationTypes';
 
 /**
  * Recent 「같은 설정 실행」 가능 여부.
@@ -25,7 +28,7 @@ export function canReproduceSpomoveSameSettings(
   if (!preset) return false;
 
   const snapshot = activity.spomoveSnapshot;
-  if (!snapshot || snapshot.schemaVersion !== 2 || snapshot.presetId !== preset.id) {
+  if (!snapshot || (snapshot.schemaVersion !== 2 && snapshot.schemaVersion !== 3) || snapshot.presetId !== preset.id) {
     return false;
   }
 
@@ -37,6 +40,15 @@ export function canReproduceSpomoveSameSettings(
   const family = preset.activityFamilyId ? getActivityFamily(preset.activityFamilyId) : null;
   if (!family) return false;
 
+  if (snapshot.schemaVersion === 3) {
+    const profile = preset.movementProfileId ? getMovementProfile(preset.movementProfileId) : null;
+    if (snapshot.movement && (!profile || !isAllowedByFamily(snapshot.movement, family, profile))) return false;
+    if (snapshot.launchMode !== 'projector' && snapshot.launchMode !== 'mobile') return false;
+    if (typeof snapshot.soundEnabled !== 'boolean' || typeof snapshot.bgmPath !== 'string') return false;
+    if (!Array.isArray(snapshot.sportsArenaFeatures) || snapshot.sportsArenaFeatures.some((item) => !['side', 'jump', 'duck'].includes(item))) return false;
+    if (!Number.isFinite(snapshot.flowDuration) || typeof snapshot.flowIncludeBonus !== 'boolean') return false;
+  }
+
   const difficultyKind = getSpomoveDifficultyKind(preset);
   if (difficultyKind) {
     if (!snapshot.difficultyValue) return false;
@@ -44,11 +56,10 @@ export function canReproduceSpomoveSameSettings(
     if (!options.some((opt) => opt.value === snapshot.difficultyValue)) return false;
   }
 
-  if (snapshot.operationLayerStatus === 'legacyDisabled') return true;
-  if (!snapshot.operation) return false;
-
   const opProfileId = preset.operationProfileId ?? family.operationProfileId;
   const opProfile = getOperationProfile(opProfileId);
+  if (snapshot.operationLayerStatus === 'legacyDisabled') return opProfile.exposure === 'legacyDisabled';
+  if (!snapshot.operation) return false;
   if (opProfile.exposure === 'legacyDisabled') return true;
 
   const declared = buildDeclaredOperation(opProfileId, preset.recommendedOperation);
@@ -64,4 +75,31 @@ export function canReproduceSpomoveSameSettings(
   if (validation.status !== 'valid') return false;
 
   return true;
+}
+
+export function recentSpomoveSessionOptions(
+  activity: RecentProgramActivity,
+  preset: OfficialSpomovePreset,
+) {
+  const snapshot = activity.spomoveSnapshot;
+  if (!snapshot || !canReproduceSpomoveSameSettings(activity, preset)) return null;
+  const common = {
+    entry: 'start' as const,
+    cueSeconds: snapshot.cueSeconds,
+    difficulty: snapshot.difficultyValue,
+    operation: snapshot.operationLayerStatus !== 'legacyDisabled' ? snapshot.operation : null,
+  };
+  if (snapshot.schemaVersion === 2) return common;
+  const current = snapshot as SpomoveRecentConfigSnapshotV3;
+  return {
+    ...common,
+    mode: current.launchMode,
+    movement: current.movement,
+    soundEnabled: current.soundEnabled,
+    bgmPath: current.bgmPath || undefined,
+    diveEnvironmentTheme: current.diveEnvironmentTheme,
+    sportsArenaFeatures: current.sportsArenaFeatures,
+    flowDuration: current.flowDuration,
+    flowIncludeBonus: current.flowIncludeBonus,
+  };
 }

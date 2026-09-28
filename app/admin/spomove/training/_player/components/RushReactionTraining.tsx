@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
@@ -92,6 +93,7 @@ type Props = {
   durationSec: number;
   speedLevel: number;
   speedSec: number;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -102,7 +104,7 @@ function project(g: RushState, z: number, laneOffset: number) {
   return { x, y };
 }
 
-export function RushReactionTraining({ durationSec, speedSec, onComplete }: Props) {
+export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
@@ -117,15 +119,8 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    g.running = false;
-    if (g.timer) clearInterval(g.timer);
-    if (g.raf != null) cancelAnimationFrame(g.raf);
-    onComplete({
-      stims: g.stims,
-      maxCombo: g.maxCombo,
-      laneCount: [...g.laneCount] as [number, number, number, number],
-    });
-  }, [onComplete]);
+    onExit();
+  }, [onExit]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

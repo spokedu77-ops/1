@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
 import {
@@ -624,27 +625,6 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    g.running = false;
-    if (g.timer) {
-      clearInterval(g.timer);
-      g.timer = null;
-    }
-    if (g.raf != null) {
-      cancelAnimationFrame(g.raf);
-      g.raf = null;
-    }
-    laneExplRefs.current.forEach((el) => {
-      if (el) el.style.opacity = '0';
-    });
-    padRefs.current.forEach((p) => p?.classList.remove('lit'));
-    if (g.stims > 0) {
-      onCompleteRef.current({
-        stims: g.stims,
-        maxCombo: g.maxCombo,
-        laneCount: [...g.laneCount] as [number, number, number, number],
-      });
-      return;
-    }
     onExit();
   }, [onExit]);
 

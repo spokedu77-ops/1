@@ -28,8 +28,9 @@ describe("SPOMOVE preview gate (Phase 0)", () => {
     "app/spokedu-master/spomove/movements/MovementConfigurator.tsx",
   );
 
-  it("1) running 중 MovementHud 없음 — Engine만", () => {
-    expect(session).not.toContain("MovementHud");
+  it("1) running 중 선택형 동작은 Engine과 MovementHud가 같은 currentMovement를 사용", () => {
+    expect(session).toContain("currentMovement={");
+    expect(read("app/spokedu-master/spomove/session/EngineRouter.tsx")).toContain("<MovementHud");
     expect(session).not.toContain("hud_collapsed");
     expect(session).toContain("state === 'running'");
     expect(session).toContain("<EngineRouter");
@@ -77,10 +78,11 @@ describe("SPOMOVE preview gate (Phase 0)", () => {
     expect(session).not.toContain("writeFamilyMovement");
     expect(session).not.toContain("appendMovementUsageEvent");
     expect(session).not.toContain("createMovementSessionId");
-    expect(session).not.toContain("parseMovementQuery");
+    expect(session).toContain("parseMovementQuery");
+    expect(session).toContain("readActiveRunSnapshot");
     expect(session).not.toContain("movementSource");
-    expect(session).not.toContain("movementLabel");
-    expect(session).not.toContain("사용한 동작");
+    expect(session).toContain("movementState");
+    expect(session).toContain("movementChanges");
   });
 
   it("2c) Hub 카드·썸네일은 같은 Preview 모달 루트", () => {

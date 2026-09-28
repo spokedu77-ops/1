@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import {
@@ -131,14 +132,7 @@ export function CamouflageReactionTraining({
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    g.running = false;
-    if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
-    onCompleteRef.current({
-      stims: g.rounds,
-      maxCombo: g.rounds,
-      laneCount: [...g.laneCount] as [number, number, number, number],
-    });
+    onExitRef.current();
   }, []);
 
   const endGame = useCallback(() => {

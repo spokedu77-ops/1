@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import * as THREE from 'three';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
@@ -355,14 +356,7 @@ export function GoalkeeperReactionTraining({
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    g.running = false;
-    if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
-    onCompleteRef.current({
-      stims: g.stims,
-      maxCombo: g.maxCombo,
-      laneCount: [...g.laneCount] as [number, number, number, number],
-    });
+    onExitRef.current();
   }, []);
 
   const endGame = useCallback(() => {
@@ -509,7 +503,7 @@ export function GoalkeeperReactionTraining({
       el.textContent = text;
       el.style.color = color;
       el.classList.add('show');
-      window.setTimeout(() => el.classList.remove('show'), ms);
+      setTimeout(() => el.classList.remove('show'), ms);
     };
 
     const createShield = (x: number, y: number, colorHex: number) => {
@@ -556,14 +550,14 @@ export function GoalkeeperReactionTraining({
       g.projectiles.splice(index, 1);
       if (data.isBoss) {
         flashRef.current?.style.setProperty('opacity', '1');
-        window.setTimeout(() => flashRef.current?.style.setProperty('opacity', '0'), 90);
+        setTimeout(() => flashRef.current?.style.setProperty('opacity', '0'), 90);
         createShield(0, 0, 0xffffff);
       } else {
         createShield(corner.key.endsWith('L') ? -6 : 6, corner.key.startsWith('T') ? 4 : -3, corner.hex);
         const cue = cueRefs.current[corner.key];
         if (cue) {
           cue.style.opacity = '1';
-          window.setTimeout(() => {
+          setTimeout(() => {
             cue.style.opacity = '0';
           }, 260);
         }

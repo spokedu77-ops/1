@@ -37,7 +37,7 @@ function ChoiceCard({ title, desc, active, icon: Icon, onClick }: { title: strin
 }
 
 function ToggleChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className="h-9 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>{label}</button>;
+  return <button type="button" onClick={onClick} className="min-h-11 rounded-full px-3 text-[12px] font-bold" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s2)', color: active ? '#fff' : 'var(--spm-t2)', border: active ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>{label}</button>;
 }
 
 export default function OnboardingPage() {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
+import { spomoveClearTimeout as clearTimeout, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { generateLevel4Pattern, Level4Item } from '../lib/signals';
 import {
   COLOR_NUMBER_MEMORY_QUESTION_GUIDANCE_MOVEMENT,

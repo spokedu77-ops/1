@@ -5,6 +5,8 @@
 
 const BEAT_STEP_SEC = 0.25; // 120BPM 기준 1/4 박자
 
+import { spomoveClearInterval as clearInterval, spomoveSetInterval as setInterval, subscribeSpomoveRuntimePause } from '../../lib/runtimeClock';
+
 function getStorageUrl(path: string): string {
   if (typeof window === 'undefined') return '';
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -23,6 +25,7 @@ export class FlowAudio {
   private bgmSource: AudioBufferSourceNode | null = null;
   private musicTimer: ReturnType<typeof setInterval> | null = null;
   private musicStartTime = 0;
+  private unsubscribePause: (() => void) | null = null;
 
   async init(): Promise<void> {
     if (this.ctx) return;
@@ -30,6 +33,10 @@ export class FlowAudio {
       window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.ctx = new Ctor();
+    this.unsubscribePause = subscribeSpomoveRuntimePause((isPaused) => {
+      if (isPaused) void this.ctx?.suspend();
+      else void this.ctx?.resume();
+    });
 
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = 0.54;
@@ -333,6 +340,8 @@ export class FlowAudio {
   }
 
   dispose(): void {
+    this.unsubscribePause?.();
+    this.unsubscribePause = null;
     this.stopMusic();
     this.ctx?.close();
     this.ctx = null;

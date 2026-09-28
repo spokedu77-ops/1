@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { setupCanvas } from '../lib/canvasUtils';
 import { getAudioCtx } from '../lib/audio';
@@ -163,6 +164,7 @@ export function ColorMemoryGridReactionTraining({
   speedSec,
   gridSize: gridSizeProp = 4,
   gameMode: gameModeProp = 'flicker',
+  onExit,
   onComplete,
 }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
@@ -515,7 +517,7 @@ export function ColorMemoryGridReactionTraining({
           <div className="cmgrid-hv" ref={timeRef}>0</div>
         </div>
         <div className="cmgrid-hc" style={{ borderRight: 'none' }}>
-          <button type="button" className="cmgrid-stop" onClick={complete}>STOP</button>
+          <button type="button" className="cmgrid-stop" onClick={onExit}>STOP</button>
         </div>
       </div>
       <div ref={playRef} className="cmgrid-play">

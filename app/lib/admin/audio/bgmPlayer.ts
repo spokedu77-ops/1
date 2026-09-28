@@ -79,6 +79,7 @@ export class BgmPlayer {
 
     this._status = 'loading';
     try {
+      this.audio.loop = true;
       await this.audio.play();
       this._status = 'playing';
     } catch (error: unknown) {

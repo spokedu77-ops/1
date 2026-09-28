@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 
 import { diveActionMoveStageCount } from '@/app/lib/spomove/diveActionMoveTiming';
 
@@ -130,7 +131,7 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
   }, [unityTargetOrigin]);
 
   const clearThemeReadyTimer = useCallback(() => {
-    if (themeReadyTimerRef.current !== null) window.clearTimeout(themeReadyTimerRef.current);
+    if (themeReadyTimerRef.current !== null) clearTimeout(themeReadyTimerRef.current);
     themeReadyTimerRef.current = null;
   }, []);
 
@@ -144,8 +145,8 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
     finishedRef.current = true;
     stopStageClock();
     clearThemeReadyTimer();
-    if (goTimerRef.current !== null) window.clearTimeout(goTimerRef.current);
-    if (productionCompletionTimerRef.current !== null) window.clearTimeout(productionCompletionTimerRef.current);
+    if (goTimerRef.current !== null) clearTimeout(goTimerRef.current);
+    if (productionCompletionTimerRef.current !== null) clearTimeout(productionCompletionTimerRef.current);
     postToUnity('SPOMOVE_SESSION_STOP');
     if (sessionAudioStartedRef.current) {
       sessionAudioStartedRef.current = false;
@@ -178,7 +179,7 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
     sessionAudioStartedRef.current = true;
     callbacksRef.current.onSessionStart();
     if (!usesSinglePlayerContract) {
-      productionCompletionTimerRef.current = window.setTimeout(() => finish('complete'), Math.max(1, productionDurationSec) * 1000);
+      productionCompletionTimerRef.current = setTimeout(() => finish('complete'), Math.max(1, productionDurationSec) * 1000);
     }
   }, [finish, postToUnity, productionDurationSec, usesSinglePlayerContract]);
 
@@ -196,7 +197,7 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
         return;
       }
       setCountdownLabel('GO!');
-      goTimerRef.current = window.setTimeout(startUnitySession, GO_DISPLAY_MS);
+      goTimerRef.current = setTimeout(startUnitySession, GO_DISPLAY_MS);
     };
     frameRef.current = requestAnimationFrame(tick);
   }, [startUnitySession]);
@@ -264,7 +265,7 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
         setPhase('theme-loading');
         postToUnity('SPOMOVE_SESSION_CONFIG', { config: configPayload });
         clearThemeReadyTimer();
-        themeReadyTimerRef.current = window.setTimeout(() => {
+        themeReadyTimerRef.current = setTimeout(() => {
           console.error('[DIVE] THEME_READY timeout', { timeoutMs: THEME_READY_TIMEOUT_MS, config: configPayload });
           setLoadError(`${themeId} 테마 준비 응답이 지연되고 있습니다. THEME_READY 로그를 확인해 주세요.`);
           setPhase('error');
@@ -296,8 +297,8 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
       window.removeEventListener('message', onMessage);
       stopStageClock();
       clearThemeReadyTimer();
-      if (goTimerRef.current !== null) window.clearTimeout(goTimerRef.current);
-      if (productionCompletionTimerRef.current !== null) window.clearTimeout(productionCompletionTimerRef.current);
+      if (goTimerRef.current !== null) clearTimeout(goTimerRef.current);
+      if (productionCompletionTimerRef.current !== null) clearTimeout(productionCompletionTimerRef.current);
       if (!finishedRef.current && readyRef.current) postToUnity('SPOMOVE_SESSION_STOP');
       if (sessionAudioStartedRef.current) {
         sessionAudioStartedRef.current = false;

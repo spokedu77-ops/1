@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { EMBED_FIXED_VIEWPORT, EMBED_SAFE_TOP } from '../lib/embedViewport';
 import { playBeep } from '../lib/audio';
@@ -38,7 +39,7 @@ type Props = {
 
 function wait(ms: number, token: number, tokenRef: { current: number }, timers: Set<number>) {
   return new Promise<boolean>((resolve) => {
-    const timer = window.setTimeout(() => {
+    const timer = setTimeout(() => {
       timers.delete(timer);
       resolve(tokenRef.current === token);
     }, ms);
@@ -74,7 +75,7 @@ export function RelativeCompassReactionTraining({
 
   const cancel = useCallback(() => {
     tokenRef.current += 1;
-    timersRef.current.forEach(window.clearTimeout);
+    timersRef.current.forEach(clearTimeout);
     timersRef.current.clear();
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
@@ -83,7 +84,7 @@ export function RelativeCompassReactionTraining({
     cancel();
     completeRef.current({ stims: completedRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
   }, [cancel]);
-  const stop = useCallback(() => finish(), [finish]);
+  const stop = useCallback(() => exitRef.current(), []);
 
   useEffect(() => {
     let mounted = true;

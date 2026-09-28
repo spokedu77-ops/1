@@ -1,6 +1,7 @@
 'use client';
 
-import { lazy, Suspense, useCallback } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { setSpomoveRuntimePaused } from '@/app/admin/spomove/training/_player/lib/runtimeClock';
 import type { ReactTrainCompleteStats } from '@/app/admin/spomove/training/_player/components/VisualReactionTraining';
 import {
   laneCountToColorStimulusCounts,
@@ -14,6 +15,9 @@ import { StartCountdownGate } from '@/app/admin/spomove/training/_player/lib/rea
 import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
+import type { SpomoveCompletionReason } from './sessionResultModel';
+import { MovementHud } from '../movements/MovementHud';
+import type { ResolvedMovementConfiguration } from '../movements/movementTypes';
 import {
   resolveSimonL4CamouflageConcurrent,
   resolveSimonL4CamouflagePlacementMode,
@@ -100,6 +104,7 @@ const MemoryGameLevel5 = lazy(() =>
 const MemoryGameApp = lazy(() => import('@/app/admin/spomove/training/_player/MemoryGameApp'));
 
 export type EngineCompletePayload = {
+  completionReason: SpomoveCompletionReason;
   engineMode: OfficialSpomoveEngineMode;
   engineLevel: number;
   elapsedMs?: number;
@@ -109,6 +114,8 @@ export type EngineCompletePayload = {
 };
 
 type Props = {
+  runtimeState: 'running' | 'paused';
+  currentMovement: ResolvedMovementConfiguration | null;
   mode: OfficialSpomoveEngineMode;
   level: number;
   durationSec?: number;
@@ -184,7 +191,8 @@ function mapReactSpeedLevel(speedSec: number): number {
   return 7;
 }
 
-export function EngineRouter({
+function EngineRuntime({
+  runtimeState,
   mode,
   level,
   durationSec,
@@ -228,10 +236,14 @@ export function EngineRouter({
   intervalLaunch = null,
   onComplete,
   onExit,
-}: Props) {
+}: Omit<Props, 'currentMovement'>) {
+  useEffect(() => {
+    setSpomoveRuntimePaused(runtimeState === 'paused');
+  }, [runtimeState]);
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       onComplete({
+        completionReason: 'natural_complete',
         engineMode: mode,
         engineLevel: level,
         stims: stats.stims,
@@ -245,6 +257,7 @@ export function EngineRouter({
   const handleMemoryComplete = useCallback(
     (result: TrainingSessionResult) => {
       onComplete({
+        completionReason: 'natural_complete',
         engineMode: mode,
         engineLevel: level,
         elapsedMs: result.elapsedMs,
@@ -375,6 +388,7 @@ export function EngineRouter({
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
+            onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
         </Suspense>
@@ -442,6 +456,7 @@ export function EngineRouter({
             speedLevel={reactSpeedLevel}
             speedSec={sp}
             lookMode={effectiveMoleLook}
+            onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
         </Suspense>
@@ -517,7 +532,7 @@ export function EngineRouter({
 
   if (mode === 'spatial') {
     const handleSpatialComplete = () => {
-      onComplete({ engineMode: mode, engineLevel: level, colorCounts: null });
+      onComplete({ completionReason: 'natural_complete', engineMode: mode, engineLevel: level, colorCounts: null });
     };
     if (level === 7) {
       const dur = durationSec ?? (rounds ?? 10) * (speedSec ?? 3);
@@ -619,4 +634,22 @@ export function EngineRouter({
   }
 
   return null;
+}
+
+export function EngineRouter({ currentMovement, ...runtimeProps }: Props) {
+  const [movementHudCollapsed, setMovementHudCollapsed] = useState(false);
+
+  return (
+    <>
+      <EngineRuntime {...runtimeProps} />
+      {currentMovement ? (
+        <MovementHud
+          movement={currentMovement}
+          collapsed={movementHudCollapsed}
+          onToggleCollapsed={() => setMovementHudCollapsed((collapsed) => !collapsed)}
+          compact
+        />
+      ) : null}
+    </>
+  );
 }

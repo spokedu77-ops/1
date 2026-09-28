@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomoveDate as Date, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import * as THREE from 'three';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
@@ -351,14 +352,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    g.running = false;
-    if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.roundTimer) clearTimeout(g.roundTimer);
-    onCompleteRef.current({
-      stims: g.rounds,
-      maxCombo: g.rounds,
-      laneCount: [...g.laneCount] as [number, number, number, number],
-    });
+    onExitRef.current();
   }, []);
 
   const endGame = useCallback(() => {
@@ -1049,7 +1043,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       };
       g.roundTimer = setTimeout(tick, 1000);
 
-      window.setTimeout(() => {
+      setTimeout(() => {
         if (!gRef.current?.running) return;
         g.phase = 'TRANSIT';
         g.phaseStartMs = performance.now();

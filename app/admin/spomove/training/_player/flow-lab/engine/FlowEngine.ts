@@ -8,6 +8,7 @@
  */
 
 import * as THREE from 'three';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetTimeout as setTimeout } from '../../lib/runtimeClock';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FlowCamera, type FlowCameraUpdateInput } from './FlowCamera';
 import { FlowAudio } from './FlowAudio';

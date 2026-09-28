@@ -13,9 +13,16 @@ import {
 } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
+import { isNaturalSpomoveCompletion, type SpomoveCompletionReason } from './sessionResultModel';
+import { movementDisplayLabel } from '../movements/movementLabels';
+import type { MovementPick } from '../movements/movementTypes';
 
 export function MasterSessionResult({
-  status,
+  completionReason,
+  runId,
+  initialMovement,
+  finalMovement,
+  movementChangeCount,
   activityTitle,
   elapsedMs,
   settings,
@@ -38,7 +45,11 @@ export function MasterSessionResult({
   onMarkCompleteAndReturn,
   onRetry,
 }: {
-  status: 'done' | 'ended';
+  completionReason: SpomoveCompletionReason;
+  runId: string;
+  initialMovement: MovementPick | null;
+  finalMovement: MovementPick | null;
+  movementChangeCount: number;
   activityTitle: string;
   elapsedMs: number;
   settings: string[];
@@ -66,7 +77,7 @@ export function MasterSessionResult({
   onRetry: () => void;
 }) {
   const router = useRouter();
-  const done = status === 'done';
+  const done = isNaturalSpomoveCompletion(completionReason);
   const fromSession = Boolean(sessionReturnHref);
   const marking = markCompleteStatus === 'saving';
   const cfg = settingsToTrainingResultConfig({
@@ -81,6 +92,12 @@ export function MasterSessionResult({
     flowDuration,
   });
   const usedSettings = settings.filter(Boolean).join(' · ');
+  const movementSummary = finalMovement
+    ? `${movementDisplayLabel(finalMovement)}${movementChangeCount > 0 ? ` · 동작 변경 ${movementChangeCount}회` : ''}`
+    : null;
+  const movementTransition = initialMovement && finalMovement && movementChangeCount > 0
+    ? `${movementDisplayLabel(initialMovement)} → ${movementDisplayLabel(finalMovement)}`
+    : null;
 
   return (
     <TrainingResultScreen
@@ -111,6 +128,13 @@ export function MasterSessionResult({
               사용한 설정 · {usedSettings}
             </p>
           ) : null}
+          {movementSummary ? (
+            <p className="break-words text-[13px] font-bold leading-5 text-slate-800">
+              동작 · {movementSummary}
+              {movementTransition ? <span className="block text-xs font-semibold text-slate-500">{movementTransition}</span> : null}
+            </p>
+          ) : null}
+          <p className="text-[11px] font-semibold text-slate-400">실행 ID · {runId}</p>
           <p className="text-xs font-semibold leading-5 text-slate-500">
             {fromSession
               ? '실행 종료와 수업 활동 완료 기록은 별개입니다. 수업 화면에서 진행 체크하거나, 아래에서 완료로 표시할 수 있습니다.'

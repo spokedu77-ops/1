@@ -28,7 +28,7 @@ import { getMasterContentPrimaryAction, resolveMasterContentMode } from '../lib/
 import { spmChipClass } from '../lib/masterUiClasses';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { isHubListedPreset } from './movements/isHubVisiblePreset';
-import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomoveSameSettings';
+import { canReproduceSpomoveSameSettings, recentSpomoveSessionOptions } from './movements/canReproduceSpomoveSameSettings';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import type { MovementQuickFilter } from './movements/movementTypes';
 
@@ -1136,18 +1136,10 @@ function SpomoveHubInner({
                 const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId && isHubListedPreset(item));
                 const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : resolveSpomovePublicDisplayTitle(activity.programId, activity.programTitle);
                 const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
-                const snapshot = activity.spomoveSnapshot;
+                const recentOptions = preset ? recentSpomoveSessionOptions(activity, preset) : null;
                 const recentHref = preset
                   ? canReproduce
-                    ? publicOfficialPresetSessionHref(preset, {
-                        entry: 'start',
-                        cueSeconds: snapshot?.cueSeconds ?? activity.cueSeconds,
-                        difficulty: snapshot?.difficultyValue ?? activity.difficultyValue,
-                        operation:
-                          snapshot && snapshot.operationLayerStatus !== 'legacyDisabled'
-                            ? snapshot.operation
-                            : null,
-                      })
+                    ? publicOfficialPresetSessionHref(preset, recentOptions ?? { entry: 'start' })
                     : publicOfficialPresetSessionHref(preset, { entry: 'start' })
                   : `/spokedu-master/spomove/session?preset=${activity.programId}&mode=projector&sound=on&entry=start`;
                 return (

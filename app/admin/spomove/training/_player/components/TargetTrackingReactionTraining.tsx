@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { spomoveClearTimeout as clearTimeout, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import {
@@ -67,7 +68,7 @@ function wait(
   timers: Set<number>,
 ): Promise<boolean> {
   return new Promise((resolve) => {
-    const timer = window.setTimeout(() => {
+    const timer = setTimeout(() => {
       timers.delete(timer);
       resolve(tokenRef.current === token);
     }, ms);
@@ -128,7 +129,7 @@ export function TargetTrackingReactionTraining({
 
   const complete = useCallback(() => {
     runTokenRef.current += 1;
-    timersRef.current.forEach(window.clearTimeout);
+    timersRef.current.forEach(clearTimeout);
     timersRef.current.clear();
     onCompleteRef.current({
       stims: completedRoundsRef.current,
@@ -138,14 +139,7 @@ export function TargetTrackingReactionTraining({
   }, []);
 
   const stop = useCallback(() => {
-    runTokenRef.current += 1;
-    timersRef.current.forEach(window.clearTimeout);
-    timersRef.current.clear();
-    onCompleteRef.current({
-      stims: completedRoundsRef.current,
-      maxCombo: 0,
-      laneCount: [0, 0, 0, 0],
-    });
+    onExitRef.current();
   }, []);
 
   useEffect(() => {
@@ -209,7 +203,7 @@ export function TargetTrackingReactionTraining({
       stopCountdown();
       unbindResize();
       tokenRef.current += 1;
-      timers.forEach(window.clearTimeout);
+      timers.forEach(clearTimeout);
       timers.clear();
     };
   }, [complete, responseSeconds, shuffleCount, swapDuration, targetSeconds, totalRounds]);

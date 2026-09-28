@@ -1,4 +1,5 @@
 import { SPOMOVE_AXIS_META, type SpomoveAxis } from '@/app/lib/spomove/spomoveAxisMeta';
+import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import {
   buildOfficialSpomoveExpansionPresets,
@@ -1783,6 +1784,7 @@ export function officialPresetSessionHref(
     cueSeconds?: number;
     /** 난이도 오버라이드 (numberCart/colorTracker/mole/goalkeeper 값) */
     difficulty?: string;
+    movement?: import('./movements/movementTypes').MovementPick | null;
     /** O3 Operation Layer — ActivityOperationConfig 전체 또는 Patch */
     operation?: ActivityOperationConfig | ActivityOperationPatch | null;
     /** 세션 종료 시 SPOMOVE 허브 복귀 맥락 */
@@ -1792,12 +1794,17 @@ export function officialPresetSessionHref(
     /** Origin Session / SessionProgram for MASTER operating continuity */
     session?: string;
     sessionProgram?: string;
+    soundEnabled?: boolean;
+    diveEnvironmentTheme?: DiveThemeId;
+    sportsArenaFeatures?: Array<'side' | 'jump' | 'duck'>;
+    flowDuration?: number;
+    flowIncludeBonus?: boolean;
   },
 ) {
   const params = new URLSearchParams({
     preset: preset.id,
     rounds: String(preset.rounds),
-    sound: 'on',
+    sound: options?.soundEnabled === false ? 'off' : 'on',
     mode: options?.mode ?? 'projector',
   });
   if (options?.entry) params.set('entry', options.entry);
@@ -1809,6 +1816,19 @@ export function officialPresetSessionHref(
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');
   if (options?.difficulty) params.set('difficulty', options.difficulty);
+  if (
+    options?.movement
+    && typeof options.movement === 'object'
+    && typeof options.movement.baseMovement === 'string'
+    && typeof options.movement.limbRule === 'string'
+  ) {
+    params.set('movement', options.movement.baseMovement);
+    params.set('limb', options.movement.limbRule);
+  }
+  if (options?.diveEnvironmentTheme) params.set('diveTheme', options.diveEnvironmentTheme);
+  if (options?.sportsArenaFeatures?.length) params.set('sports', options.sportsArenaFeatures.join(','));
+  if (options?.flowDuration != null) params.set('flowDuration', String(options.flowDuration));
+  if (options?.flowIncludeBonus != null) params.set('flowBonus', options.flowIncludeBonus ? '1' : '0');
   if (options?.operation) {
     const base: ActivityOperationConfig = {
       startZone: 'onMat',
@@ -1832,12 +1852,18 @@ export function publicOfficialPresetSessionHref(
     mode: options?.mode,
     cueSeconds: options?.cueSeconds,
     difficulty: options?.difficulty,
+    movement: options?.movement,
     operation: options?.operation,
     hubReturn: options?.hubReturn,
     returnTo: options?.returnTo,
     session: options?.session,
     sessionProgram: options?.sessionProgram,
     bgmPath: options?.bgmPath,
+    soundEnabled: options?.soundEnabled,
+    diveEnvironmentTheme: options?.diveEnvironmentTheme,
+    sportsArenaFeatures: options?.sportsArenaFeatures,
+    flowDuration: options?.flowDuration,
+    flowIncludeBonus: options?.flowIncludeBonus,
     autostart: false,
   });
 }

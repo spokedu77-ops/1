@@ -7,10 +7,15 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { createPortal } from 'react-dom';
 
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
-import { isDiveActionMoveUnityTheme, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
+import { isDiveActionMoveUnityTheme, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
+import {
+  resetSpomoveRuntimeClock,
+  setSpomoveRuntimePaused,
+  spomoveRuntimeNow,
+} from '@/app/admin/spomove/training/_player/lib/runtimeClock';
 
 import { useMasterStore } from '../../store';
 import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
@@ -41,19 +46,53 @@ import {
   type SpomoveCueSpeedSec,
 } from '../spomoveCueSpeed';
 import { buildSpomoveRecordDraft, buildSpomoveRecordHref } from './spomoveRecordDraft';
+import {
+  completionReasonToSessionState,
+  type SpomoveCompletionReason,
+} from './sessionResultModel';
+import {
+  canPauseSpomoveRuntime,
+  canResumeSpomoveRuntime,
+  type SpomoveRuntimeState as SessionState,
+} from './sessionRuntimeLifecycle';
 import { getActivityFamily } from '../movements/activityFamilies';
+import { MovementChangeSheet } from '../movements/MovementChangeSheet';
+import { getMovementProfile } from '../movements/movementProfiles';
+import {
+  isAllowedByFamily,
+  resolveEffectiveMovement,
+  resolveMovementConfiguration,
+  parseMovementQuery,
+} from '../movements/movementResolve';
+import type { MovementPick } from '../movements/movementTypes';
 import { SessionSetupShell } from './SessionSetupShell';
 import { StartBriefing } from './StartBriefing';
 import { SettingsBriefing } from './SettingsBriefing';
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 import { MasterSessionResult } from './MasterSessionResult';
 import {
+  beginMovementRun,
+  changePausedMovement,
+  movementRuntimeSupport,
+  type SessionMovementState,
+} from './sessionMovementLifecycle';
+import type { SpomoveMovementResult } from './sessionResultModel';
+import {
+  buildRecentConfigSnapshot,
+  commitTerminalReceipt,
+  createSpomoveRunId,
+  discardActiveRunSnapshotForPreset,
+  readActiveRunSnapshot,
+  writeActiveRunSnapshot,
+  type SpomoveActiveRunSnapshotV1,
+  type SpomoveRuntimeConfig,
+} from './runtimeContinuity';
+import {
   isInteractiveKeyTarget,
   parseSessionEntryMode,
   resolveLegacyAutostart,
 } from './sessionEntryMode';
 import {
-  buildSpomoveSessionSnapshotV2,
   operationConfigToPatch,
   operationSummaryLine,
   parseOperationQuery,
@@ -64,7 +103,6 @@ import {
   writePresetConfigPreference,
   type ActivityOperationConfig,
 } from '../operations';
-type SessionState = 'idle' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile';
 
 function normalizeMode(mode: string | null): LaunchMode {
@@ -141,30 +179,50 @@ function SpomoveSessionContent() {
     () => (officialPreset ? getSpomovePresetDisplayModel(officialPreset) : null),
     [officialPreset],
   );
-  const launchMode = normalizeMode(searchParams.get('mode'));
+  const requestedLaunchMode = normalizeMode(searchParams.get('mode'));
   const entryMode = parseSessionEntryMode(searchParams.get('entry'));
   const legacyAutostart = resolveLegacyAutostart({
     entryParam: searchParams.get('entry'),
     autostartParam: searchParams.get('autostart'),
   });
   const requestedBgmPath = searchParams.get('bgm') ?? '';
-  const soundEnabled = searchParams.get('sound') !== 'off';
+  const requestedSoundEnabled = searchParams.get('sound') !== 'off';
   const programId = searchParams.get('program') ?? '';
   const programs = useMasterStore((state) => state.programs);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
   const { list: bgmList, loading: bgmLoading } = useSpomoveTrainingBGM();
-  const selectedBgmPath = useMemo(() => {
+  const defaultSelectedBgmPath = useMemo(() => {
     if (requestedBgmPath) return bgmList.includes(requestedBgmPath) ? requestedBgmPath : '';
     if (officialPreset && bgmList.length > 0)
       return bgmList[Math.floor(Math.random() * bgmList.length)]!;
     return '';
   }, [bgmList, officialPreset, requestedBgmPath]);
 
+  const queryMovement = useMemo(
+    () => parseMovementQuery(searchParams.get('movement'), searchParams.get('limb')),
+    [searchParams],
+  );
+
   const activityFamily = useMemo(() => {
     if (!officialPreset?.activityFamilyId) return null;
     return getActivityFamily(officialPreset.activityFamilyId);
   }, [officialPreset?.activityFamilyId]);
+
+  const movementProfile = useMemo(() => {
+    if (!officialPreset?.movementProfileId) return null;
+    return getMovementProfile(officialPreset.movementProfileId);
+  }, [officialPreset?.movementProfileId]);
+  const recommendedMovement = useMemo(() => {
+    if (!officialPreset || !activityFamily || !movementProfile) return null;
+    return resolveEffectiveMovement({
+      profile: movementProfile,
+      family: activityFamily,
+      urlMovement: queryMovement,
+      presetRecommendedMovement: officialPreset.recommendedMovement,
+    });
+  }, [activityFamily, movementProfile, officialPreset, queryMovement]);
+  const movementSupport = movementRuntimeSupport(movementProfile);
 
   const operationCapabilities = useMemo(() => {
     if (!officialPreset) return { interval: false, shuttle: false };
@@ -255,10 +313,21 @@ function SpomoveSessionContent() {
   );
 
   const [state, setState] = useState<SessionState>('idle');
-  const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>('space');
-  const [sportsArenaFeatures, setSportsArenaFeatures] = useState<SportsArenaFeatureKey[]>([]);
-  const [flowDuration, setFlowDuration] = useState(() => officialPreset?.engine.flowDuration ?? 20);
-  const [flowIncludeBonus, setFlowIncludeBonus] = useState(() => officialPreset?.engine.flowIncludeBonus ?? true);
+  const [launchMode, setLaunchMode] = useState<LaunchMode>(requestedLaunchMode);
+  const [soundEnabled, setSoundEnabled] = useState(requestedSoundEnabled);
+  const [selectedBgmPath, setSelectedBgmPath] = useState(defaultSelectedBgmPath);
+  const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>(() => normalizeDiveThemeId(searchParams.get('diveTheme')));
+  const [sportsArenaFeatures, setSportsArenaFeatures] = useState<SportsArenaFeatureKey[]>(() => {
+    const values = (searchParams.get('sports') ?? '').split(',');
+    return values.filter((value): value is SportsArenaFeatureKey => value === 'side' || value === 'jump' || value === 'duck');
+  });
+  const [flowDuration, setFlowDuration] = useState(() => {
+    const parsed = Number(searchParams.get('flowDuration'));
+    return [15, 20, 25, 30, 35].includes(parsed) ? parsed : (officialPreset?.engine.flowDuration ?? 20);
+  });
+  const [flowIncludeBonus, setFlowIncludeBonus] = useState(() => searchParams.get('flowBonus') == null
+    ? (officialPreset?.engine.flowIncludeBonus ?? true)
+    : searchParams.get('flowBonus') === '1');
   const handleDiveEnvironmentThemeChange = useCallback((theme: DiveThemeId) => {
     setDiveEnvironmentTheme(theme);
     if (isDiveActionMoveUnityTheme(theme)) setFlowDuration((seconds) => [15, 20, 25, 30, 35].includes(seconds) ? seconds : 20);
@@ -284,10 +353,45 @@ function SpomoveSessionContent() {
   });
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   const startLockedRef = useRef(false);
+  const finishLockedRef = useRef(false);
+  const stopRequestLockedRef = useRef(false);
   const sessionStartedAtRef = useRef<number | null>(null);
-  const [sessionResult, setSessionResult] = useState<EngineCompletePayload | null>(null);
+  const runStartedAtIsoRef = useRef<string | null>(null);
+  const [sessionResult, setSessionResult] = useState<(EngineCompletePayload & SpomoveMovementResult) | null>(null);
+  const runtimeStateRef = useRef<SessionState>('idle');
   const [markCompleteStatus, setMarkCompleteStatus] = useState<'idle' | 'saving' | 'error'>('idle');
   const [exitConfirmationOpen, setExitConfirmationOpen] = useState(false);
+  const [movementSheetOpen, setMovementSheetOpen] = useState(false);
+  const [recoverySnapshot, setRecoverySnapshot] = useState<SpomoveActiveRunSnapshotV1 | null>(null);
+  const [recoveryChecked, setRecoveryChecked] = useState(false);
+  const runIdRef = useRef<string | null>(null);
+  const [movementState, setMovementState] = useState<SessionMovementState>(() => ({
+    initialMovement: recommendedMovement,
+    currentMovement: recommendedMovement,
+    movementChanges: [],
+  }));
+  const movementStateRef = useRef(movementState);
+
+  useEffect(() => {
+    movementStateRef.current = movementState;
+  }, [movementState]);
+
+  useEffect(() => {
+    if (runtimeStateRef.current === 'idle' && !recoverySnapshot && !selectedBgmPath && defaultSelectedBgmPath) {
+      setSelectedBgmPath(defaultSelectedBgmPath);
+    }
+  }, [defaultSelectedBgmPath, recoverySnapshot, selectedBgmPath]);
+
+  useEffect(() => {
+    if (runtimeStateRef.current !== 'idle') return;
+    const next = {
+      initialMovement: recommendedMovement,
+      currentMovement: recommendedMovement,
+      movementChanges: [],
+    };
+    movementStateRef.current = next;
+    setMovementState(next);
+  }, [officialPreset?.id, recommendedMovement]);
 
   useEffect(() => {
     if (!officialPreset) return;
@@ -332,14 +436,126 @@ function SpomoveSessionContent() {
     return null;
   }, []);
 
+  const buildRuntimeConfig = useCallback((movement = movementStateRef.current.currentMovement): SpomoveRuntimeConfig | null => {
+    if (!officialPreset) return null;
+    return {
+      presetId: officialPreset.id,
+      launchMode,
+      soundEnabled,
+      bgmPath: selectedBgmPath,
+      cueSeconds: effectiveCueSeconds,
+      movement,
+      operationLayerStatus: resolvedOperationLayer?.status ?? (operationLayerStatus === 'pending' ? 'ready' : operationLayerStatus),
+      ...(resolvedOperationLayer?.effective ? { operation: resolvedOperationLayer.effective } : {}),
+      diveEnvironmentTheme,
+      sportsArenaFeatures,
+      flowDuration,
+      flowIncludeBonus,
+    };
+  }, [
+    diveEnvironmentTheme,
+    effectiveCueSeconds,
+    flowDuration,
+    flowIncludeBonus,
+    launchMode,
+    officialPreset,
+    operationLayerStatus,
+    resolvedOperationLayer,
+    selectedBgmPath,
+    soundEnabled,
+    sportsArenaFeatures,
+  ]);
+
+  const persistActiveRun = useCallback((phase: 'running' | 'paused', explicitRunId = runIdRef.current) => {
+    if (
+      !officialPreset ||
+      !explicitRunId ||
+      sessionStartedAtRef.current == null ||
+      (runtimeStateRef.current !== 'running' && runtimeStateRef.current !== 'paused')
+    ) return;
+    const runtimeSettings = buildRuntimeConfig();
+    if (!runtimeSettings) return;
+    writeActiveRunSnapshot({
+      version: 1,
+      runId: explicitRunId,
+      presetId: officialPreset.id,
+      phase,
+      startedAt: runStartedAtIsoRef.current ?? new Date().toISOString(),
+      elapsedActiveMs: Math.max(0, spomoveRuntimeNow() - sessionStartedAtRef.current),
+      currentMovement: movementStateRef.current.currentMovement,
+      movementChanges: movementStateRef.current.movementChanges,
+      runtimeSettings,
+      savedAt: Date.now(),
+    });
+  }, [buildRuntimeConfig, officialPreset]);
+
+  const persistRecentConfig = useCallback((movement = movementStateRef.current.currentMovement) => {
+    if (!officialPreset || !runIdRef.current) return;
+    const runtimeConfig = buildRuntimeConfig(movement);
+    if (!runtimeConfig) return;
+    const display = getSpomovePresetDisplayModel(officialPreset);
+    recordRecentProgramActivity({
+      programId: officialPreset.id,
+      programTitle: display.displayTitle,
+      action: 'spomove_started',
+      occurredAt: new Date().toISOString(),
+      activityFamilyId: officialPreset.activityFamilyId,
+      cueSeconds: effectiveCueSeconds,
+      spomoveSnapshot: buildRecentConfigSnapshot(runtimeConfig),
+      runId: runIdRef.current,
+    });
+  }, [buildRuntimeConfig, effectiveCueSeconds, officialPreset, recordRecentProgramActivity]);
+
+  useEffect(() => {
+    if (!officialPreset) {
+      if (presetId) discardActiveRunSnapshotForPreset(presetId);
+      setRecoveryChecked(true);
+      return;
+    }
+    const recovered = readActiveRunSnapshot(officialPreset.id);
+    if (!recovered) {
+      setRecoveryChecked(true);
+      return;
+    }
+    const config = recovered.runtimeSettings;
+    const recoveredMovement = config.movement && movementProfile && activityFamily && isAllowedByFamily(config.movement, activityFamily, movementProfile)
+      ? config.movement
+      : recommendedMovement;
+    setLaunchMode(config.launchMode);
+    setSoundEnabled(config.soundEnabled);
+    setSelectedBgmPath(config.bgmPath && bgmList.includes(config.bgmPath) ? config.bgmPath : '');
+    setCueSeconds(resolveSessionCueSeconds(officialPreset, config.cueSeconds));
+    if (config.operationLayerStatus !== 'legacyDisabled' && config.operation) setOperationCandidate(config.operation);
+    setDiveEnvironmentTheme(normalizeDiveThemeId(config.diveEnvironmentTheme));
+    setSportsArenaFeatures(config.sportsArenaFeatures);
+    setFlowDuration([15, 20, 25, 30, 35].includes(config.flowDuration)
+      ? config.flowDuration
+      : (officialPreset.engine.flowDuration ?? 20));
+    setFlowIncludeBonus(config.flowIncludeBonus);
+    const recoveredMovementState = {
+      initialMovement: recoveredMovement,
+      currentMovement: recoveredMovement,
+      movementChanges: [],
+    };
+    movementStateRef.current = recoveredMovementState;
+    setMovementState(recoveredMovementState);
+    setRecoverySnapshot(recovered);
+    setRecoveryChecked(true);
+  }, [activityFamily, bgmList, movementProfile, officialPreset, presetId, recommendedMovement]);
+
   const recordProgramHref = program && officialPreset && sessionResult
     ? buildSpomoveRecordHref(
         program.id,
         buildSpomoveRecordDraft({
           elapsedMs: sessionResult.elapsedMs,
           preset: officialPreset,
-          status: state === 'done' ? 'done' : 'ended',
+          completionReason: sessionResult.completionReason,
+          initialMovement: sessionResult.initialMovement,
+          finalMovement: sessionResult.finalMovement,
+          movementChangeCount: sessionResult.movementChanges.length,
         }),
+        undefined,
+        sessionResult.runId,
       )
     : program
       ? '/spokedu-master/activity'
@@ -393,42 +609,25 @@ function SpomoveSessionContent() {
       setActivationBlocked(fsBlocked ? 'fullscreenBlocked' : null);
     }
 
-    sessionStartedAtRef.current = Date.now();
+    resetSpomoveRuntimeClock();
+    sessionStartedAtRef.current = spomoveRuntimeNow();
+    runStartedAtIsoRef.current = new Date().toISOString();
+    runtimeStateRef.current = 'running';
     setState('running');
-    const display = getSpomovePresetDisplayModel(officialPreset);
-    const snapshot =
-      operationLayerStatus === 'legacyDisabled' || !operationCandidate
-        ? buildSpomoveSessionSnapshotV2({
-            presetId: officialPreset.id,
-            operationLayerStatus: 'legacyDisabled',
-            cueSeconds: effectiveCueSeconds,
-          })
-        : buildSpomoveSessionSnapshotV2({
-            presetId: officialPreset.id,
-            operationLayerStatus:
-              operationLayerStatus === 'pending' ? 'ready' : operationLayerStatus,
-            operation: operationCandidate,
-            cueSeconds: effectiveCueSeconds,
-          });
-    recordRecentProgramActivity({
-      programId: officialPreset.id,
-      programTitle: display.displayTitle,
-      action: 'spomove_started',
-      occurredAt: new Date().toISOString(),
-      activityFamilyId: officialPreset.activityFamilyId,
-      cueSeconds: effectiveCueSeconds,
-      spomoveSnapshot: snapshot,
-    });
+    const runtimeConfig = buildRuntimeConfig();
+    const activeRunId = runIdRef.current;
+    if (!runtimeConfig || !activeRunId) return;
+    persistActiveRun('running', activeRunId);
+    persistRecentConfig();
   }, [
-    effectiveCueSeconds,
     launchMode,
     officialPreset,
-    operationCandidate,
-    operationLayerStatus,
-    recordRecentProgramActivity,
     selectedBgmPath,
     soundEnabled,
     stopBgm,
+    buildRuntimeConfig,
+    persistActiveRun,
+    persistRecentConfig,
   ]);
 
   const unlockActivation = useCallback(() => {
@@ -457,8 +656,17 @@ function SpomoveSessionContent() {
     }
     lockViewportScroll();
     startLockedRef.current = true;
+    finishLockedRef.current = false;
+    stopRequestLockedRef.current = false;
+    setExitConfirmationOpen(false);
+    setMovementSheetOpen(false);
     setSessionResult(null);
     sessionStartedAtRef.current = null;
+    const nextMovementState = beginMovementRun(movementStateRef.current);
+    movementStateRef.current = nextMovementState;
+    setMovementState(nextMovementState);
+    const nextRunId = createSpomoveRunId();
+    runIdRef.current = nextRunId;
 
     if (launchMode === 'projector' && !document.fullscreenElement) {
       void document.documentElement.requestFullscreen?.().catch(() => undefined);
@@ -477,29 +685,168 @@ function SpomoveSessionContent() {
     officialPreset,
   ]);
 
-  const finishSession = useCallback((nextState: Extract<SessionState, 'done' | 'ended'>, payload?: EngineCompletePayload) => {
-    if (!officialPreset) return;
+  const finishSession = useCallback((completionReason: SpomoveCompletionReason, payload?: EngineCompletePayload) => {
+    const activeRunId = runIdRef.current;
+    if (!officialPreset || !activeRunId || finishLockedRef.current) return;
+    finishLockedRef.current = true;
+    stopRequestLockedRef.current = false;
+    setExitConfirmationOpen(false);
     stopBgm();
     exitFullscreenAfterSession();
+    persistActiveRun(runtimeStateRef.current === 'paused' ? 'paused' : 'running', activeRunId);
+    persistRecentConfig();
+    if (!commitTerminalReceipt({
+      version: 1,
+      runId: activeRunId,
+      presetId: officialPreset.id,
+      completionReason,
+      endedAt: Date.now(),
+    })) return;
     const startedAt = sessionStartedAtRef.current;
-    const fallbackElapsedMs = startedAt ? Math.max(1, Date.now() - startedAt) : 0;
+    const fallbackElapsedMs = startedAt ? Math.max(1, spomoveRuntimeNow() - startedAt) : 0;
     setSessionResult({
+      runId: activeRunId,
+      completionReason,
       engineMode: payload?.engineMode ?? officialPreset.engine.mode,
       engineLevel: payload?.engineLevel ?? officialPreset.engine.level,
       elapsedMs: payload?.elapsedMs ?? fallbackElapsedMs,
       colorCounts: payload?.colorCounts ?? null,
       stims: payload?.stims,
       maxCombo: payload?.maxCombo,
+      initialMovement: movementStateRef.current.initialMovement,
+      finalMovement: movementStateRef.current.currentMovement,
+      movementChanges: movementStateRef.current.movementChanges,
     });
-    setState(nextState);
+    const terminalState = completionReasonToSessionState(completionReason);
+    runtimeStateRef.current = terminalState;
+    setState(terminalState);
     // Product truth: SPOMOVE engine done ≠ SessionProgram completed.
     // Lesson activity completion is teacher-explicit only (Result CTA or Session checkbox).
     setMarkCompleteStatus('idle');
   }, [
     exitFullscreenAfterSession,
     officialPreset,
+    persistActiveRun,
+    persistRecentConfig,
     stopBgm,
   ]);
+
+  const requestEarlyStop = useCallback(() => {
+    if (finishLockedRef.current || stopRequestLockedRef.current) return;
+    stopRequestLockedRef.current = true;
+    setSpomoveRuntimePaused(true);
+    bgmPlayerRef.current?.pause();
+    void getAudioCtx()?.suspend();
+    setExitConfirmationOpen(true);
+    persistActiveRun('paused');
+  }, [persistActiveRun]);
+
+  const continueSession = useCallback(() => {
+    stopRequestLockedRef.current = false;
+    setExitConfirmationOpen(false);
+    setMovementSheetOpen(false);
+    setSpomoveRuntimePaused(false);
+    void getAudioCtx()?.resume();
+    void bgmPlayerRef.current?.play();
+    persistActiveRun('running');
+  }, [persistActiveRun]);
+
+  const pauseSession = useCallback(() => {
+    if (finishLockedRef.current || stopRequestLockedRef.current || !canPauseSpomoveRuntime(runtimeStateRef.current)) return;
+    if (!setSpomoveRuntimePaused(true)) return;
+    runtimeStateRef.current = 'paused';
+    bgmPlayerRef.current?.pause();
+    void getAudioCtx()?.suspend();
+    setState('paused');
+    persistActiveRun('paused');
+  }, [persistActiveRun]);
+
+  const resumeSession = useCallback(() => {
+    if (finishLockedRef.current || !canResumeSpomoveRuntime(runtimeStateRef.current)) return;
+    if (!setSpomoveRuntimePaused(false)) return;
+    runtimeStateRef.current = 'running';
+    void getAudioCtx()?.resume();
+    void bgmPlayerRef.current?.play();
+    setState('running');
+    persistActiveRun('running');
+  }, [persistActiveRun]);
+
+  const openMovementSheet = useCallback(() => {
+    if (
+      runtimeStateRef.current !== 'paused' ||
+      movementSupport !== 'supported' ||
+      !movementStateRef.current.currentMovement
+    ) return;
+    setMovementSheetOpen(true);
+  }, [movementSupport]);
+
+  const selectMovement = useCallback((nextMovement: MovementPick) => {
+    if (
+      runtimeStateRef.current !== 'paused' ||
+      movementSupport !== 'supported' ||
+      !movementProfile ||
+      !activityFamily ||
+      !isAllowedByFamily(nextMovement, activityFamily, movementProfile)
+    ) return;
+    const startedAt = sessionStartedAtRef.current;
+    const activeElapsedMs = startedAt == null ? 0 : spomoveRuntimeNow() - startedAt;
+    setMovementState((current) => {
+      const next = changePausedMovement(current, nextMovement, activeElapsedMs);
+      movementStateRef.current = next;
+      if (next !== current) queueMicrotask(() => {
+        persistActiveRun('paused');
+        persistRecentConfig(next.currentMovement);
+      });
+      return next;
+    });
+  }, [activityFamily, movementProfile, movementSupport, persistActiveRun, persistRecentConfig]);
+
+  useEffect(() => {
+    const pauseForBackground = () => {
+      if (document.visibilityState === 'hidden') {
+        pauseSession();
+        queueMicrotask(() => persistActiveRun('paused'));
+      }
+    };
+    const persistForPageHide = () => {
+      pauseSession();
+      persistActiveRun('paused');
+    };
+    document.addEventListener('visibilitychange', pauseForBackground);
+    window.addEventListener('pagehide', persistForPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', pauseForBackground);
+      window.removeEventListener('pagehide', persistForPageHide);
+    };
+  }, [pauseSession, persistActiveRun]);
+
+  useEffect(() => {
+    if (state !== 'running' && state !== 'paused') return;
+    const checkpoint = window.setInterval(
+      () => persistActiveRun(
+        runtimeStateRef.current === 'paused' || stopRequestLockedRef.current ? 'paused' : 'running',
+      ),
+      2_000,
+    );
+    return () => window.clearInterval(checkpoint);
+  }, [persistActiveRun, state]);
+
+  useEffect(() => () => resetSpomoveRuntimeClock(), []);
+
+  useEffect(() => {
+    if (state !== 'paused') return;
+    const blockPausedInput = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest('[data-spomove-pause-overlay], [data-spomove-movement-sheet]')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    window.addEventListener('keydown', blockPausedInput, true);
+    window.addEventListener('keyup', blockPausedInput, true);
+    return () => {
+      window.removeEventListener('keydown', blockPausedInput, true);
+      window.removeEventListener('keyup', blockPausedInput, true);
+    };
+  }, [state]);
 
   useEffect(() => {
     if (state === 'done' || state === 'ended') exitFullscreenAfterSession();
@@ -510,6 +857,8 @@ function SpomoveSessionContent() {
   useEffect(() => {
     if (
       !legacyAutostart ||
+      !recoveryChecked ||
+      recoverySnapshot ||
       state !== 'idle' ||
       !officialPreset ||
       bgmLoading ||
@@ -519,7 +868,7 @@ function SpomoveSessionContent() {
       return;
     }
     beginConfiguredSession();
-  }, [legacyAutostart, bgmLoading, canStartSession, officialPreset, beginConfiguredSession, state]);
+  }, [legacyAutostart, recoveryChecked, recoverySnapshot, bgmLoading, canStartSession, officialPreset, beginConfiguredSession, state]);
 
   const showBriefing = state === 'idle' && !legacyAutostart;
 
@@ -533,6 +882,29 @@ function SpomoveSessionContent() {
     );
     router.push(workReturnHref);
   }, [exitFullscreenAfterSession, router, searchParams, stopBgm]);
+
+  const finalizeInterruptedRun = useCallback(() => {
+    if (!recoverySnapshot) return;
+    commitTerminalReceipt({
+      version: 1,
+      runId: recoverySnapshot.runId,
+      presetId: recoverySnapshot.presetId,
+      completionReason: 'cancelled',
+      endedAt: Date.now(),
+    });
+    setRecoverySnapshot(null);
+  }, [recoverySnapshot]);
+
+  const restartInterruptedRun = useCallback(() => {
+    if (!recoverySnapshot) return;
+    finalizeInterruptedRun();
+    startOfficialSession();
+  }, [finalizeInterruptedRun, recoverySnapshot, startOfficialSession]);
+
+  const exitInterruptedRun = useCallback(() => {
+    finalizeInterruptedRun();
+    leaveSession();
+  }, [finalizeInterruptedRun, leaveSession]);
 
   const markCompleteAndReturn = useCallback(() => {
     const origin = readSpomoveSessionOrigin(searchParams);
@@ -562,7 +934,13 @@ function SpomoveSessionContent() {
     stopBgm();
     exitFullscreenAfterSession();
     startLockedRef.current = false;
+    finishLockedRef.current = false;
+    stopRequestLockedRef.current = false;
+    setExitConfirmationOpen(false);
+    setMovementSheetOpen(false);
     setSessionResult(null);
+    resetSpomoveRuntimeClock();
+    runtimeStateRef.current = 'idle';
     setMarkCompleteStatus('idle');
     setState('idle');
     const origin = readSpomoveSessionOrigin(searchParams);
@@ -570,10 +948,17 @@ function SpomoveSessionContent() {
       entry: 'start',
       mode: launchMode,
       cueSeconds: effectiveCueSeconds,
+      movement: movementStateRef.current.currentMovement,
       operation:
-        operationLayerStatus !== 'legacyDisabled' && operationCandidate
-          ? operationCandidate
+        operationLayerStatus !== 'legacyDisabled' && effectiveOperation
+          ? effectiveOperation
           : null,
+      soundEnabled,
+      bgmPath: selectedBgmPath || undefined,
+      diveEnvironmentTheme,
+      sportsArenaFeatures,
+      flowDuration,
+      flowIncludeBonus,
       hubReturn: parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView')),
       returnTo: origin.returnTo ?? undefined,
       session: origin.sessionId ?? undefined,
@@ -585,8 +970,14 @@ function SpomoveSessionContent() {
     exitFullscreenAfterSession,
     launchMode,
     officialPreset,
-    operationCandidate,
+    effectiveOperation,
     operationLayerStatus,
+    selectedBgmPath,
+    soundEnabled,
+    diveEnvironmentTheme,
+    sportsArenaFeatures,
+    flowDuration,
+    flowIncludeBonus,
     router,
     searchParams,
     stopBgm,
@@ -638,10 +1029,43 @@ function SpomoveSessionContent() {
   if (!officialPreset || !canLaunchPreset) return <UnsupportedPreset />;
   const sessionDisplayTitle = displayModel?.displayTitle ?? resolveSpomovePublicDisplayTitle(officialPreset.id, officialPreset.title);
 
-  if (state === 'running') {
+  if (state === 'idle' && !recoveryChecked) {
+    return <main className="min-h-dvh bg-slate-950" aria-label="이전 훈련 확인 중" />;
+  }
+
+  if (state === 'idle' && recoverySnapshot) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-slate-950 px-5 py-8 text-white">
+        <section className="w-full max-w-md rounded-[24px] border border-white/15 bg-white/[0.06] p-6 shadow-2xl">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-300">Interrupted run</p>
+          <h1 className="mt-2 text-2xl font-black">이전 훈련이 중단되었습니다.</h1>
+          <p className="mt-3 text-sm font-semibold leading-6 text-white/65">
+            점수와 현재 자극을 정확히 복원할 수 없어 이어하기는 제공하지 않습니다. 마지막 설정으로 새 훈련을 시작할 수 있습니다.
+          </p>
+          <dl className="mt-5 grid gap-2 rounded-2xl bg-black/25 p-4 text-sm">
+            <div className="flex justify-between gap-4"><dt className="text-white/55">활동</dt><dd className="text-right font-bold">{sessionDisplayTitle}</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-white/55">중단 시점</dt><dd className="font-bold">약 {Math.max(1, Math.round(recoverySnapshot.elapsedActiveMs / 1000))}초</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-white/55">복구 방식</dt><dd className="font-bold">안전하게 다시 시작</dd></div>
+          </dl>
+          <div className="mt-6 grid gap-2">
+            <button type="button" disabled={bgmLoading} onClick={restartInterruptedRun} className="min-h-12 rounded-xl bg-white px-4 text-sm font-black text-slate-950 disabled:opacity-50">{bgmLoading ? '설정 확인 중…' : '같은 설정으로 다시 시작'}</button>
+            <button type="button" onClick={exitInterruptedRun} className="min-h-11 rounded-xl border border-white/20 px-4 text-sm font-bold text-white/75">종료하고 돌아가기</button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (state === 'running' || state === 'paused') {
     return (
       <div className="relative h-dvh overflow-hidden bg-black">
         <EngineRouter
+          runtimeState={state}
+          currentMovement={
+            movementSupport === 'supported' && movementState.currentMovement && movementProfile
+              ? resolveMovementConfiguration(movementState.currentMovement, movementProfile)
+              : null
+          }
           durationSec={
             officialPreset.engine.mode === 'reactTrain' ||
             (officialPreset.engine.mode === 'spatial' && officialPreset.engine.level === 7)
@@ -696,11 +1120,21 @@ function SpomoveSessionContent() {
                 }
               : null
           }
-          onExit={() => setExitConfirmationOpen(true)}
+          onExit={requestEarlyStop}
           onComplete={(payload) => {
-            finishSession('done', payload);
+            finishSession(payload.completionReason, payload);
           }}
         />
+        {!exitConfirmationOpen ? (
+          <button
+            type="button"
+            onClick={pauseSession}
+            disabled={state === 'paused'}
+            className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-[401] min-h-11 rounded-xl border border-white/20 bg-black/70 px-4 text-sm font-black text-white backdrop-blur disabled:hidden"
+          >
+            일시정지
+          </button>
+        ) : null}
         {activationBlocked ? createPortal(
           <div className="pointer-events-none fixed inset-x-0 top-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }}>
             <div className="pointer-events-auto mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-white/15 bg-black/80 p-3 text-white shadow-xl backdrop-blur">
@@ -719,11 +1153,38 @@ function SpomoveSessionContent() {
               <h2 id="spomove-exit-title" className="text-xl font-black">수업을 종료할까요?</h2>
               <p className="mt-2 text-sm font-semibold text-white/60">지금까지 진행한 시간은 중도 종료로 남길 수 있습니다.</p>
               <div className="mt-5 grid gap-2">
-                <button type="button" autoFocus onClick={() => setExitConfirmationOpen(false)} className="min-h-12 rounded-xl bg-white text-sm font-black text-slate-950">계속하기</button>
-                <button type="button" onClick={() => { setExitConfirmationOpen(false); finishSession('ended'); }} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">수업 종료</button>
+                <button type="button" autoFocus onClick={continueSession} className="min-h-12 rounded-xl bg-white text-sm font-black text-slate-950">계속하기</button>
+                <button type="button" onClick={() => finishSession('stopped_early')} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
               </div>
             </section>
           </div>,
+          document.body,
+        ) : null}
+        {state === 'paused' && !exitConfirmationOpen && !movementSheetOpen ? createPortal(
+          <div data-spomove-pause-overlay className="fixed inset-0 flex items-center justify-center bg-black/75 px-5" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }} role="dialog" aria-modal="true" aria-labelledby="spomove-pause-title">
+            <section className="w-full max-w-sm rounded-2xl border border-white/15 bg-slate-950 p-5 text-white shadow-2xl">
+              <h2 id="spomove-pause-title" className="text-xl font-black">일시정지됨</h2>
+              <p className="mt-2 text-sm font-semibold text-white/60">준비가 되면 같은 지점에서 계속하세요.</p>
+              <div className="mt-5 grid gap-2">
+                <button type="button" autoFocus onClick={resumeSession} className="min-h-12 rounded-xl bg-white text-sm font-black text-slate-950">계속하기</button>
+                {movementSupport === 'supported' ? (
+                  <button type="button" onClick={openMovementSheet} className="min-h-11 rounded-xl border border-white/20 text-sm font-bold text-white">동작 변경</button>
+                ) : null}
+                <button type="button" onClick={() => finishSession('stopped_early')} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
+              </div>
+            </section>
+          </div>,
+          document.body,
+        ) : null}
+        {movementProfile && activityFamily && movementState.currentMovement ? createPortal(
+          <MovementChangeSheet
+            open={state === 'paused' && movementSheetOpen && movementSupport === 'supported'}
+            profile={movementProfile}
+            family={activityFamily}
+            selected={movementState.currentMovement}
+            onSelect={selectMovement}
+            onClose={() => setMovementSheetOpen(false)}
+          />,
           document.body,
         ) : null}
       </div>
@@ -791,7 +1252,11 @@ function SpomoveSessionContent() {
       {(state === 'done' || state === 'ended') && sessionResult ? (
         <div className="absolute inset-0 min-h-0 overflow-hidden bg-[#F1F5F9]">
           <MasterSessionResult
-            status={state}
+            completionReason={sessionResult.completionReason}
+            runId={sessionResult.runId}
+            initialMovement={sessionResult.initialMovement}
+            finalMovement={sessionResult.finalMovement}
+            movementChangeCount={sessionResult.movementChanges.length}
             activityTitle={sessionDisplayTitle}
             elapsedMs={sessionResult.elapsedMs ?? 0}
             colorCounts={sessionResult.colorCounts ?? null}
@@ -806,7 +1271,7 @@ function SpomoveSessionContent() {
             diveActionMove={
               sessionResult.engineMode === 'flow' && sessionResult.engineLevel === 1
                 ? {
-                    completed: state === 'done',
+                    completed: sessionResult.completionReason === 'natural_complete',
                     stageDurationSec: isDiveActionMoveUnityTheme(diveEnvironmentTheme)
                       ? flowDuration
                       : (officialPreset.engine.flowDuration ?? null),

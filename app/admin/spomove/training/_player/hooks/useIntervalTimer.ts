@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame } from '../lib/runtimeClock';
 import {
   generateSignal,
   createBasicSignalGenerator,

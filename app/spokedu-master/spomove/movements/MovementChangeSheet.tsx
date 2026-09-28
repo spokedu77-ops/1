@@ -31,14 +31,15 @@ export function MovementChangeSheet({
   const picks = listAllowedMovementPicks(profile, family);
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 p-3 sm:items-center">
+    <div data-spomove-movement-sheet className="fixed inset-0 z-[1001] flex items-end justify-center bg-black/45 p-3 sm:items-center">
       <button type="button" className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
-      <div className="relative z-[1] max-h-[80vh] w-full max-w-md overflow-auto rounded-3xl bg-white p-4 shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-labelledby="movement-change-title" className="relative z-[1] max-h-[80vh] w-full max-w-md overflow-auto rounded-3xl bg-white p-4 shadow-2xl">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-[17px] font-black text-slate-950">동작 바꾸기</h3>
+          <h3 id="movement-change-title" className="text-[17px] font-black text-slate-950">동작 바꾸기</h3>
           <button
             type="button"
             onClick={onClose}
+            autoFocus
             className="grid h-11 w-11 place-items-center rounded-full bg-slate-100 text-slate-600"
             aria-label="닫기"
           >
@@ -55,7 +56,8 @@ export function MovementChangeSheet({
                 <button
                   type="button"
                   onClick={() => onSelect(pick)}
-                  className={`w-full rounded-2xl border px-3.5 py-3 text-left transition ${
+                  aria-pressed={active}
+                  className={`min-h-11 w-full rounded-2xl border px-3.5 py-3 text-left transition ${
                     active
                       ? 'border-[var(--spm-acc)] bg-[var(--spm-acc)]/8'
                       : 'border-slate-200 bg-white hover:border-slate-300'

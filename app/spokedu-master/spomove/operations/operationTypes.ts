@@ -149,6 +149,26 @@ export type SpomoveSessionSnapshotV2 =
       difficultyValue?: string;
     };
 
+export type SpomoveRecentConfigSnapshotV3 = {
+  schemaVersion: 3;
+  presetId: string;
+  cueSeconds: number;
+  movement: MovementPick | null;
+  operationLayerStatus: 'legacyDisabled' | 'ready' | 'sanitized' | 'fallback';
+  operation?: ActivityOperationConfig;
+  difficultyKind?: string;
+  difficultyValue?: string;
+  launchMode: 'projector' | 'mobile';
+  soundEnabled: boolean;
+  bgmPath: string;
+  diveEnvironmentTheme: import('@/app/lib/spomove/diveThemes').DiveThemeId;
+  sportsArenaFeatures: Array<'side' | 'jump' | 'duck'>;
+  flowDuration: number;
+  flowIncludeBonus: boolean;
+};
+
+export type SpomoveRecentConfigSnapshot = SpomoveSessionSnapshotV2 | SpomoveRecentConfigSnapshotV3;
+
 export type IncomingSessionOverride = {
   source: 'url' | 'recent' | 'classSet';
   movement?: MovementPick;

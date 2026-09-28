@@ -166,7 +166,7 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(session).toContain(
       "전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.",
     );
-    expect(session).not.toContain("MovementHud");
+    expect(read("app/spokedu-master/spomove/session/EngineRouter.tsx")).toContain("MovementHud");
     expect(guidelineSheet).not.toContain("autostart: true");
     expect(guidelineSheet).toContain("활동 준비");
     expect(guidelineSheet).not.toContain("바로 시작");
@@ -260,12 +260,11 @@ describe("SPOMOVE pilot flow contract", () => {
   });
 
   it("separates completed and early-ended sessions", () => {
-    expect(session).toContain(
-      "type SessionState = 'idle' | 'running' | 'done' | 'ended'",
-    );
-    expect(session).not.toContain("오늘의 동작");
-    expect(session).toContain("finishSession('ended')");
-    expect(session).toContain("finishSession('done', payload)");
+    expect(session).toContain("type SpomoveRuntimeState as SessionState");
+    expect(session).toContain("state === 'running' || state === 'paused'");
+    expect(session).toContain("currentMovement={");
+    expect(session).toContain("finishSession('stopped_early')");
+    expect(session).toContain("finishSession(payload.completionReason, payload)");
     expect(session).toContain("MasterSessionResult");
     expect(masterResult).toContain("중도 종료");
     expect(masterResult).toContain("훈련 완료");

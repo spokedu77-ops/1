@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomoveClearTimeout as clearTimeout, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval, spomoveSetTimeout as setTimeout } from '../lib/runtimeClock';
 import * as THREE from 'three';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
@@ -242,17 +243,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    g.running = false;
-    if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
-    if (g.waveTimer) clearTimeout(g.waveTimer);
-    if (g.nextWaveTimer) clearTimeout(g.nextWaveTimer);
-    const quadrantLaneCount = [...g.laneCount] as [number, number, number, number];
-    onCompleteRef.current({
-      stims: g.waves,
-      maxCombo: g.waves,
-      laneCount: quadrantLaneCountToResultLaneCount(quadrantLaneCount),
-    });
+    onExitRef.current();
   }, []);
 
   const endGame = useCallback(() => {

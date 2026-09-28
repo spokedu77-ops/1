@@ -14,7 +14,7 @@ describe('SPOMOVE record draft', () => {
     const draft = buildSpomoveRecordDraft({
       elapsedMs: 125_000,
       preset,
-      status: 'done',
+      completionReason: 'natural_complete',
     });
 
     expect(draft).toContain('[SPOMOVE 활동 기록 초안] 반응 전환 테스트 완료');
@@ -28,7 +28,7 @@ describe('SPOMOVE record draft', () => {
     const draft = buildSpomoveRecordDraft({
       elapsedMs: 20_000,
       preset,
-      status: 'ended',
+      completionReason: 'stopped_early',
     });
     const href = buildSpomoveRecordHref('123', draft);
 
@@ -39,10 +39,26 @@ describe('SPOMOVE record draft', () => {
     expect(new URL(href, 'https://example.test').searchParams.get('spomoveDraft')).toContain('수업 기록용 일반 추정치');
   });
 
+  it('records the initial-to-final movement truth without adding structured persistence', () => {
+    const draft = buildSpomoveRecordDraft({
+      elapsedMs: 60_000,
+      preset,
+      completionReason: 'stopped_early',
+      initialMovement: { baseMovement: 'footTap', limbRule: 'free' },
+      finalMovement: { baseMovement: 'handTouch', limbRule: 'sameSide' },
+      movementChangeCount: 1,
+    });
+
+    expect(draft).toContain('동작:');
+    expect(draft).toContain('→');
+    expect(draft).toContain('(1회 변경)');
+    expect(draft).toContain('중도 종료');
+  });
+
   it('uses the current public title for an applied preset', () => {
     const publicPreset = findOfficialSpomovePreset('reaction-cognition-quad-fruit-10');
     expect(publicPreset).toBeTruthy();
-    expect(buildSpomoveRecordDraft({ preset: publicPreset!, status: 'done' })).toContain('네 칸 과일 색 따라가기 완료');
+    expect(buildSpomoveRecordDraft({ preset: publicPreset!, completionReason: 'natural_complete' })).toContain('네 칸 과일 색 따라가기 완료');
   });
 
   it('stores oversized drafts in session storage and links by key', () => {
@@ -60,5 +76,12 @@ describe('SPOMOVE record draft', () => {
     const draftKey = url.searchParams.get('spomoveDraftKey');
     expect(draftKey).toMatch(/^spokedu-master:spomove-draft:/);
     expect(resolveSpomoveDraftFromQuery(url.searchParams, sessionLike)).toContain('수업 기록용 일반 추정치');
+  });
+
+  it('hands off run identity as metadata without inserting it into the editable memo', () => {
+    const draft = buildSpomoveRecordDraft({ preset, completionReason: 'natural_complete' });
+    const href = buildSpomoveRecordHref('123', draft, undefined, 'run-a');
+    expect(new URL(href, 'https://example.test').searchParams.get('spomoveRunId')).toBe('run-a');
+    expect(draft).not.toContain('run-a');
   });
 });

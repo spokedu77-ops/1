@@ -1,5 +1,32 @@
 import type { TrainingResultConfig } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import { standardSpomoveDurationSec, type OfficialSpomovePreset } from '../officialSpomovePresets';
+import type { MovementChangeEvent } from './sessionMovementLifecycle';
+import type { MovementPick } from '../movements/movementTypes';
+
+export type SpomoveCompletionReason =
+  | 'natural_complete'
+  | 'stopped_early'
+  | 'cancelled'
+  | 'failed';
+
+export type SpomoveTerminalSessionState = 'done' | 'ended';
+
+export type SpomoveMovementResult = {
+  runId: string;
+  initialMovement: MovementPick | null;
+  finalMovement: MovementPick | null;
+  movementChanges: MovementChangeEvent[];
+};
+
+export function completionReasonToSessionState(
+  reason: SpomoveCompletionReason,
+): SpomoveTerminalSessionState {
+  return reason === 'natural_complete' ? 'done' : 'ended';
+}
+
+export function isNaturalSpomoveCompletion(reason: SpomoveCompletionReason): boolean {
+  return reason === 'natural_complete';
+}
 
 export function officialPresetToTrainingResultConfig(preset: OfficialSpomovePreset): TrainingResultConfig {
   const { mode, level } = preset.engine;
