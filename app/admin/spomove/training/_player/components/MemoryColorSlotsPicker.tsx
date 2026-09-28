@@ -56,7 +56,7 @@ export function MemoryColorSlotsPicker({
               background: cardBg,
             }}
           >
-            <div style={{ fontSize: 12, fontWeight: 900, color: mutedColor, textAlign: 'center' }}>{i + 1}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: mutedColor, textAlign: 'center' }}>{i + 1}</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {SPOMOVE_MEMORY_COLOR_ORDER.map((colorId) => {
                 const c = COLOR_BY_ID[colorId];
@@ -76,7 +76,7 @@ export function MemoryColorSlotsPicker({
                       color: active ? textColor : mutedColor,
                       fontFamily: 'inherit',
                       fontSize: 13,
-                      fontWeight: active ? 900 : 700,
+                      fontWeight: active ? 800 : 700,
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',

@@ -121,11 +121,11 @@ function PoseCatalog({ fullscreen }: { fullscreen: boolean }) {
           <div key={pose.key} style={{ overflow: 'hidden', border: '1px solid var(--border, #E2E8F0)', borderRadius: fullscreen ? 14 : 10, background: 'var(--subtle-bg, #F8FAFC)' }}>
             <div style={{ position: 'relative', aspectRatio: '4 / 5', background: '#fff' }}>
               <Image src={pose.image} alt={`${pose.label} 동작`} fill sizes={fullscreen ? '(max-width: 640px) 45vw, 190px' : '(max-width: 640px) 22vw, 120px'} style={{ objectFit: 'contain', padding: fullscreen ? 9 : 5 }} />
-              <span style={{ position: 'absolute', top: 7, left: 7, minWidth: fullscreen ? 28 : 20, height: fullscreen ? 28 : 20, padding: '0 5px', borderRadius: 7, background: '#0F172A', color: '#fff', display: 'grid', placeItems: 'center', fontSize: fullscreen ? 14 : 11, fontWeight: 900 }}>
+              <span style={{ position: 'absolute', top: 7, left: 7, minWidth: fullscreen ? 28 : 20, height: fullscreen ? 28 : 20, padding: '0 5px', borderRadius: 7, background: '#0F172A', color: '#fff', display: 'grid', placeItems: 'center', fontSize: fullscreen ? 14 : 11, fontWeight: 800 }}>
                 {index + 1}
               </span>
               {pose.category !== 'partner' ? (
-                <span style={{ position: 'absolute', top: 7, right: 7, padding: fullscreen ? '5px 8px' : '3px 5px', borderRadius: 6, background: pose.difficulty === 'easy' ? '#DCFCE7' : '#FEE2E2', color: pose.difficulty === 'easy' ? '#15803D' : '#B91C1C', fontSize: fullscreen ? 12 : 9, fontWeight: 900 }}>
+                <span style={{ position: 'absolute', top: 7, right: 7, padding: fullscreen ? '5px 8px' : '3px 5px', borderRadius: 6, background: pose.difficulty === 'easy' ? '#DCFCE7' : '#FEE2E2', color: pose.difficulty === 'easy' ? '#15803D' : '#B91C1C', fontSize: fullscreen ? 12 : 9, fontWeight: 800 }}>
                   {pose.difficulty === 'easy' ? '쉬움' : '어려움'}
                 </span>
               ) : null}
@@ -176,7 +176,7 @@ export function ColorGatePoseAppendix() {
   return (
     <div style={{ marginTop: 8 }}>
       <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${open ? '#38BDF8' : '#CBD5E1'}`, background: open ? '#ECFEFF' : '#fff', color: '#0F172A', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-        <span style={{ fontSize: 13, fontWeight: 900 }}>📎 (부록) 모션 게이트 동작 소개</span>
+        <span style={{ fontSize: 13, fontWeight: 800 }}>📎 (부록) 모션 게이트 동작 소개</span>
         <span style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>{open ? '▲ 닫기' : '▼ 열기'}</span>
       </button>
 

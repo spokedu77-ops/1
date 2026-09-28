@@ -43,7 +43,7 @@ export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
                 alignItems: 'center',
                 gap: '0.4rem',
                 fontSize: '0.7rem',
-                fontWeight: 900,
+                fontWeight: 800,
                 color: '#FDBA74',
                 letterSpacing: '0.08em',
                 marginBottom: '0.65rem',
@@ -118,7 +118,7 @@ export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
                   >
                     {block.icon}
                   </span>
-                  <span style={{ fontSize: '1.08rem', fontWeight: 900, color: '#0F172A' }}>{block.title}</span>
+                  <span style={{ fontSize: '1.08rem', fontWeight: 800, color: '#0F172A' }}>{block.title}</span>
                   <span
                     style={{
                       fontSize: '0.7rem',
@@ -149,7 +149,7 @@ export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
                 <div
                   style={{
                     fontSize: '0.72rem',
-                    fontWeight: 900,
+                    fontWeight: 800,
                     letterSpacing: '0.07em',
                     color: '#64748B',
                     marginBottom: '0.5rem',
@@ -177,7 +177,7 @@ export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
                 <div
                   style={{
                     fontSize: '0.72rem',
-                    fontWeight: 900,
+                    fontWeight: 800,
                     letterSpacing: '0.07em',
                     color: '#64748B',
                     marginBottom: '0.55rem',
@@ -212,7 +212,7 @@ export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
                           gap: '0.25rem',
                         }}
                       >
-                        <span style={{ fontSize: '1.15rem', fontWeight: 900, color: block.accent, lineHeight: 1 }}>{p.num}</span>
+                        <span style={{ fontSize: '1.15rem', fontWeight: 800, color: block.accent, lineHeight: 1 }}>{p.num}</span>
                         <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#0F172A', lineHeight: 1.35 }}>{p.name}</span>
                       </div>
                       <div style={{ padding: '0.85rem 1rem', fontSize: '0.84rem', lineHeight: 1.62 }}>
@@ -296,7 +296,7 @@ export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
                     fontWeight: 700,
                   }}
                 >
-                  <span style={{ color: block.accent, fontWeight: 900 }}>코칭 팁</span>
+                  <span style={{ color: block.accent, fontWeight: 800 }}>코칭 팁</span>
                   <span style={{ color: '#94A3B8' }}> · </span>
                   {block.tip}
                 </div>
@@ -317,7 +317,7 @@ export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
               boxShadow: '0 8px 20px rgba(251,146,60,0.1)',
             }}
           >
-            <div style={{ fontSize: '0.78rem', fontWeight: 900, letterSpacing: '0.08em', marginBottom: '0.45rem' }}>설정 옵션 요약</div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.08em', marginBottom: '0.45rem' }}>설정 옵션 요약</div>
             <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.88rem', lineHeight: 1.7, fontWeight: 700 }}>
               <li>
                 인터벌 모드(Tabata)는 <strong>4세트 고정</strong>(Work/Rest는 설정값).

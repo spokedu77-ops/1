@@ -48,7 +48,7 @@ export function LandingLoggedInBanner() {
     >
       <div className="mx-auto flex max-w-[1120px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-[12px] font-black" style={{ color: 'var(--spm-acc)' }}>
+          <p className="text-[12px] font-extrabold" style={{ color: 'var(--spm-acc)' }}>
             이미 로그인되어 있습니다
           </p>
           <p className="mt-1 truncate text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
@@ -57,7 +57,7 @@ export function LandingLoggedInBanner() {
         </div>
         <Link
           href={destination}
-          className="spm-btn-primary inline-flex min-h-11 shrink-0 items-center justify-center rounded-[10px] px-5 text-[12px] font-black focus-visible:outline-none"
+          className="spm-btn-primary inline-flex min-h-11 shrink-0 items-center justify-center rounded-[10px] px-5 text-[12px] font-extrabold focus-visible:outline-none"
         >
           앱으로 바로가기
         </Link>

@@ -74,15 +74,15 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const mobile = read('app/spokedu-master/components/layout/TabBar.tsx');
     const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
     const metrics = read('app/spokedu-master/components/layout/tabBarMetrics.ts');
-    expect(mobile).toContain('lg:hidden');
+    expect(mobile).toContain('min-[768px]:hidden');
     expect(mobile).toContain("aria-label=\"SPOKEDU MASTER 주요 메뉴\"");
     expect(mobile).toContain('data-spm-tabbar="true"');
     expect(mobile).toContain('fixed inset-x-0 bottom-0');
     expect(mobile).toContain('env(safe-area-inset-bottom, 0px)');
     expect(metrics).toContain('calc(70px + max(8px, env(safe-area-inset-bottom, 0px)))');
     expect(shell).toContain("hideChrome ? null : <TabBar");
-    expect(shell).toContain('pb-[var(--spm-tabbar-clearance)] lg:pb-0');
-    expect(shell).toContain('[SPM_TABBAR_CLEARANCE_VAR]: SPM_TABBAR_CLEARANCE');
+    expect(shell).toContain('pb-[var(--spm-tabbar-clearance)] min-[768px]:pb-0');
+    expect(read('app/globals.css')).toContain("[data-spm-app-shell='true']");
   });
 
   it('keeps authenticated MASTER paths out of robots allow rules', () => {

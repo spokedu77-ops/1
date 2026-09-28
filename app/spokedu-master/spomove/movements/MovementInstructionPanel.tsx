@@ -18,11 +18,11 @@ export function MovementInstructionPanel({
 
   return (
     <div className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/45">선택 동작 안내</p>
+      <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/45">선택 동작 안내</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <h3 className="text-[20px] font-black text-white">{presentation.label}</h3>
+        <h3 className="text-[20px] font-extrabold text-white">{presentation.label}</h3>
         {isOfficial ? (
-          <span className="rounded-full bg-[var(--spm-acc)] px-2 py-0.5 text-[10px] font-black text-white">
+          <span className="rounded-full bg-[var(--spm-acc)] px-2 py-0.5 text-[10px] font-extrabold text-white">
             공식 추천
           </span>
         ) : null}
@@ -44,18 +44,18 @@ export function MovementInstructionPanel({
         ))}
       </div>
       <div className="mt-4">
-        <p className="text-[12px] font-black tracking-[0.08em] text-white/45">수행 방법</p>
+        <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/45">수행 방법</p>
         <p className="mt-1.5 text-[14px] font-semibold leading-6 text-white/80">{presentation.instruction}</p>
       </div>
       {presentation.safetyNote ? (
         <div className="mt-3 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5">
-          <p className="text-[11px] font-black text-amber-200/90">안전</p>
+          <p className="text-[11px] font-extrabold text-amber-200/90">안전</p>
           <p className="mt-1 text-[13px] font-semibold leading-5 text-amber-50/90">{presentation.safetyNote}</p>
         </div>
       ) : null}
       {showLimbDiagram ? (
         <div className="mt-4">
-          <p className="mb-2 text-[12px] font-black tracking-[0.08em] text-white/45">손·발 배치</p>
+          <p className="mb-2 text-[12px] font-extrabold tracking-[0.08em] text-white/45">손·발 배치</p>
           <SpomatMovementDiagram limbRule={value.limbRule} caption="같은 색 쪽 손발 규칙" />
         </div>
       ) : null}

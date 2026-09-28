@@ -76,7 +76,7 @@ describe('MASTER product UI unity', () => {
     for (const text of [gate, preview, success, payment, cancel, subscription, landing, landingBanner, onboarding]) {
       expect(text).toContain('spm-btn-primary');
       expect(text).not.toMatch(/spm-btn-primary[\s\S]{0,80}bg-\[var\(--spm-acc\)\]/);
-      expect(text).not.toMatch(/className="[^"]*bg-\[var\(--spm-acc\)\][^"]*font-black/);
+      expect(text).not.toMatch(/className="[^"]*bg-\[var\(--spm-acc\)\][^"]*font-extrabold/);
     }
     for (const text of [gate, preview, success, cancel, landingBanner]) {
       expect(text).not.toMatch(/style=\{\{\s*background:\s*'var\(--spm-acc\)'/);

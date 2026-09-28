@@ -32,7 +32,7 @@ export function SaveErrorBanner({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black"
+              className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-extrabold"
               style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--spm-red, #dc2626)' }}
             >
               {retryLabel}
@@ -41,7 +41,7 @@ export function SaveErrorBanner({
           {upgradeHref ? (
             <Link
               href={upgradeHref}
-              className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black"
+              className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-extrabold"
               style={{ background: 'var(--spm-acc-a12)', color: 'var(--spm-acc)' }}
             >
               {upgradeLabel}

@@ -78,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           <span className="text-[28px]">!</span>
         </div>
-        <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>화면을 불러오지 못했습니다.</h2>
+        <h2 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>화면을 불러오지 못했습니다.</h2>
         <p className="mt-3 max-w-[360px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
           잠시 후 다시 시도해 주세요.
         </p>
@@ -91,12 +91,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             onClick={this.handleRetry}
-            className="h-11 rounded-[12px] px-5 text-[13px] font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+            className="h-11 rounded-[12px] px-5 text-[13px] font-extrabold focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
             style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
           >
             다시 시도
           </button>
-          <Link href={fallbackHref} className="spm-btn-primary flex h-11 items-center rounded-[12px] px-5 text-[13px] font-black focus-visible:outline-none">
+          <Link href={fallbackHref} className="spm-btn-primary flex h-11 items-center rounded-[12px] px-5 text-[13px] font-extrabold focus-visible:outline-none">
             {fallbackLabel}
           </Link>
         </div>

@@ -43,7 +43,7 @@ export function MovementConfigurator({
       <div className="space-y-4">
         {groups.map(({ group, groupLabel, items }) => (
           <div key={group}>
-            <p className="text-[11px] font-black text-white/45">{groupLabel}</p>
+            <p className="text-[11px] font-extrabold text-white/45">{groupLabel}</p>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {items.map((presentation) => {
                 const isSelected = movementPicksEqual(presentation.pick, value);
@@ -64,7 +64,7 @@ export function MovementConfigurator({
       </div>
       {compact && !hideChrome ? (
         <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
-          <p className="text-[11px] font-black text-white/45">선택 안내</p>
+          <p className="text-[11px] font-extrabold text-white/45">선택 안내</p>
           <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-white/80">
             {compactMovementInstruction(value)}
           </p>
@@ -85,7 +85,7 @@ export function MovementConfigurator({
         body
       ) : (
         <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-          <p className="text-[12px] font-black tracking-[0.08em] text-white/55">움직임</p>
+          <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/55">움직임</p>
           <div className="mt-3">{body}</div>
         </section>
       )}
@@ -107,8 +107,8 @@ export function FixedMovementSummary({
   const fixedTitle = value.baseMovement === 'footTap' ? '발 터치' : presentation.label;
   return (
     <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-      <p className="text-[12px] font-black tracking-[0.08em] text-white/55">움직임</p>
-      <h3 className="mt-2 text-[18px] font-black text-white">
+      <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/55">움직임</p>
+      <h3 className="mt-2 text-[18px] font-extrabold text-white">
         {fixedTitle}
         <span className="mt-1 block text-[13px] font-bold text-white/55">화면 지정 방식</span>
       </h3>
@@ -126,8 +126,8 @@ export function BuiltInMovementNotice({ profile }: { profile: MovementProfile })
 
   return (
     <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-      <p className="text-[12px] font-black tracking-[0.08em] text-white/55">신체 반응</p>
-      <h3 className="mt-2 text-[16px] font-black text-white">화면이 사용할 손과 발을 직접 안내합니다</h3>
+      <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/55">신체 반응</p>
+      <h3 className="mt-2 text-[16px] font-extrabold text-white">화면이 사용할 손과 발을 직접 안내합니다</h3>
       <p className="mt-2 line-clamp-2 text-[13px] font-semibold leading-5 text-white/70">
         화면 지시에 따라 수행하세요. 일반 스포매트 움직임 선택기는 사용하지 않습니다.
       </p>

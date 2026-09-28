@@ -45,7 +45,7 @@ export function ReactTrainStartCountdownOverlay({ countdown }: { countdown: numb
           style={{
             fontFamily: 'var(--spm-font-display)',
             fontSize: 'clamp(120px,30vw,260px)',
-            fontWeight: 400,
+            fontWeight: 800,
             fontSynthesis: 'none',
             color: '#F97316',
             lineHeight: 1,

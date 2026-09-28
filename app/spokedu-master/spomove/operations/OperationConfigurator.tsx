@@ -92,7 +92,7 @@ export function SessionTimingConfigurator({
 
   return (
     <div className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5" data-spm-session-timing="">
-      <p className="text-[12px] font-black tracking-[0.08em] text-white/55">진행 방식</p>
+      <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/55">진행 방식</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {timingOptions.map((pattern) => {
           const active = selected === pattern;
@@ -110,7 +110,7 @@ export function SessionTimingConfigurator({
                   onChange({ ...value, timing: { pattern: 'continuous' } });
                 }
               }}
-              className={`rounded-xl px-3.5 py-2.5 text-[13px] font-black transition ${
+              className={`rounded-xl px-3.5 py-2.5 text-[13px] font-extrabold transition ${
                 active
                   ? 'bg-[var(--spm-acc)] text-white'
                   : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'

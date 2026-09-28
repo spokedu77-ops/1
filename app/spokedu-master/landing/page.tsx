@@ -114,14 +114,14 @@ export default function LandingPage() {
       {/* Nav */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b px-[22px] py-4 sm:px-10" style={{ background: 'rgba(7,7,12,0.92)', backdropFilter: 'blur(20px)', borderColor: 'var(--spm-br2)' }}>
         <div className="flex items-baseline gap-2">
-          <span className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
-          <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
+          <span className="text-[17px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+          <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
             로그인
           </Link>
-          <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-black focus-visible:outline-none">
+          <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-extrabold focus-visible:outline-none">
             시작하기
           </Link>
         </div>
@@ -138,24 +138,24 @@ export default function LandingPage() {
       >
         <div className="mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.5fr)] lg:items-end">
           <div className="max-w-[720px]">
-            <span className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em]" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', color: '#dbeafe' }}>
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', color: '#dbeafe' }}>
               체육 수업 콘텐츠 · 수업 운영 시스템
             </span>
-            <h1 className="mt-5 text-[46px] font-black leading-[0.98] md:text-[76px]" style={{ fontFamily: 'var(--spm-font-display)', color: '#fff', letterSpacing: 0, wordBreak: 'keep-all' }}>
+            <h1 className="mt-5 text-[46px] font-extrabold leading-[0.98] md:text-[76px]" style={{ fontFamily: 'var(--spm-font-display)', color: '#fff', letterSpacing: 0, wordBreak: 'keep-all' }}>
               SPOKEDU<br />MASTER
             </h1>
-            <p className="mt-6 max-w-[640px] text-[19px] font-black leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
+            <p className="mt-6 max-w-[640px] text-[19px] font-extrabold leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
               오늘 수업을 준비하고, 현장에서 바로 쓰고, 기록을 다음 수업으로 연결합니다.
             </p>
             <p className="mt-4 max-w-[620px] text-[14px] font-semibold leading-7 md:text-[15px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
               콘텐츠는 시작을 빠르게 하고, 일정·출석·도구는 현장 운영을 매끄럽게 하며, 누적 기록은 다음 수업 준비를 더 쉽게 만듭니다.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black focus-visible:outline-none sm:w-auto sm:min-w-[200px]">
+            <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-extrabold focus-visible:outline-none sm:w-auto sm:min-w-[200px]">
               <Play size={16} fill="currentColor" />
               SPOKEDU MASTER 시작하기
             </Link>
-            <Link href="#pricing" className="flex h-14 w-full items-center justify-center gap-1.5 rounded-[14px] text-[15px] font-black sm:w-auto sm:min-w-[160px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+            <Link href="#pricing" className="flex h-14 w-full items-center justify-center gap-1.5 rounded-[14px] text-[15px] font-extrabold sm:w-auto sm:min-w-[160px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
               서비스 구성 보기 <ChevronRight size={16} />
             </Link>
             </div>
@@ -164,8 +164,8 @@ export default function LandingPage() {
           <div className="grid gap-3">
             {HERO_PROOF.map((item) => (
               <div key={item.label} className="rounded-[16px] p-4" style={{ background: 'rgba(7,7,12,0.58)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(16px)' }}>
-                <p className="text-[11px] font-black" style={{ color: 'rgba(255,255,255,0.62)' }}>{item.label}</p>
-                <p className="mt-1 text-[28px] font-black leading-none" style={{ color: '#fff', fontFamily: 'var(--spm-font-display)' }}>{item.value}</p>
+                <p className="text-[11px] font-extrabold" style={{ color: 'rgba(255,255,255,0.62)' }}>{item.label}</p>
+                <p className="mt-1 text-[28px] font-extrabold leading-none" style={{ color: '#fff', fontFamily: 'var(--spm-font-display)' }}>{item.value}</p>
                 <p className="mt-2 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.74)' }}>{item.caption}</p>
               </div>
             ))}
@@ -179,7 +179,7 @@ export default function LandingPage() {
           {STATS.map(({ label, value, caption, Icon }) => (
             <div key={label} className="text-center">
               <Icon size={20} color="var(--spm-acc)" className="mx-auto mb-2" />
-              <p className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
+              <p className="text-[24px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
               <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
               <p className="mt-1 text-[10px] font-medium" style={{ color: 'var(--spm-t3)' }}>{caption}</p>
             </div>
@@ -190,13 +190,13 @@ export default function LandingPage() {
       {/* 3-step flow */}
       <section className="px-[22px] py-[80px] sm:px-10">
         <div className="mx-auto max-w-[960px]">
-          <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>수업 루프</p>
-          <h2 className="mb-12 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>한 번의 수업이 다음 준비로 이어집니다</h2>
+          <p className="mb-2 text-center text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>수업 루프</p>
+          <h2 className="mb-12 text-center text-[32px] font-extrabold md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>한 번의 수업이 다음 준비로 이어집니다</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {FLOW.map(({ num, label, caption, color, accent }) => (
               <div key={num} className="rounded-[20px] p-6" style={{ background: color, border: `1px solid ${color}` }}>
-                <span className="mb-4 grid h-10 w-10 place-items-center rounded-full text-[16px] font-black text-white" style={{ background: accent }}>{num}</span>
-                <h3 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{label}</h3>
+                <span className="mb-4 grid h-10 w-10 place-items-center rounded-full text-[16px] font-extrabold text-white" style={{ background: accent }}>{num}</span>
+                <h3 className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{label}</h3>
                 <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{caption}</p>
               </div>
             ))}
@@ -207,15 +207,15 @@ export default function LandingPage() {
       {/* Features */}
       <section className="border-t px-[22px] py-[80px] sm:px-10" style={{ borderColor: 'var(--spm-br2)' }}>
         <div className="mx-auto max-w-[960px]">
-          <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>핵심 기능</p>
-          <h2 className="mb-14 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>콘텐츠와 운영이 한 서비스 안에서</h2>
+          <p className="mb-2 text-center text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>핵심 기능</p>
+          <h2 className="mb-14 text-center text-[32px] font-extrabold md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>콘텐츠와 운영이 한 서비스 안에서</h2>
           <div className="grid gap-6 md:grid-cols-3">
             {FEATURES.map(({ icon: Icon, color, ic, title, desc, items }) => (
               <div key={title} className="rounded-[22px] p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                 <span className="mb-5 grid h-12 w-12 place-items-center rounded-[15px]" style={{ background: color }}>
                   <Icon size={22} color={ic} />
                 </span>
-                <h3 className="text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{title}</h3>
+                <h3 className="text-[20px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{title}</h3>
                 <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{desc}</p>
                 <ul className="mt-5 space-y-2">
                   {items.map((item) => (
@@ -233,21 +233,21 @@ export default function LandingPage() {
       {/* Pricing */}
       <section id="pricing" className="border-t px-[22px] py-[80px] sm:px-10" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}>
         <div className="mx-auto max-w-[960px]">
-          <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>플랜과 가격</p>
-          <h2 className="mb-4 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 품질에 맞는 플랜</h2>
+          <p className="mb-2 text-center text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>플랜과 가격</p>
+          <h2 className="mb-4 text-center text-[32px] font-extrabold md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 품질에 맞는 플랜</h2>
           <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>라이트·프리미엄 월 자동결제 · 센터는 별도 문의</p>
           <div className="mx-auto grid max-w-[660px] gap-5 sm:grid-cols-2">
             {PRICING.map((p) => (
               <div key={p.id} className="rounded-[22px] p-6" style={{ background: p.accent, border: `1.5px solid ${p.border}` }}>
                 {p.recommended ? (
-                  <span className="mb-3 inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em]" style={{ background: 'var(--spm-acc-a22)', color: p.badgeColor }}>{p.badge}</span>
+                  <span className="mb-3 inline-block rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em]" style={{ background: 'var(--spm-acc-a22)', color: p.badgeColor }}>{p.badge}</span>
                 ) : (
-                  <span className="mb-3 inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em]" style={{ background: 'var(--spm-grn-a14)', color: p.badgeColor }}>{p.badge}</span>
+                  <span className="mb-3 inline-block rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em]" style={{ background: 'var(--spm-grn-a14)', color: p.badgeColor }}>{p.badge}</span>
                 )}
                 <div className="flex items-end justify-between">
-                  <h3 className="text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{p.title}</h3>
+                  <h3 className="text-[26px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{p.title}</h3>
                   <div className="text-right">
-                    <p className="whitespace-nowrap text-[24px] font-black" style={{ color: 'var(--spm-t)' }}>
+                    <p className="whitespace-nowrap text-[24px] font-extrabold" style={{ color: 'var(--spm-t)' }}>
                       {p.price}
                     </p>
                     <p className="mt-0.5 whitespace-nowrap text-[12px]" style={{ color: 'var(--spm-t3)' }}>{p.period}</p>
@@ -263,7 +263,7 @@ export default function LandingPage() {
                 </ul>
                 <Link
                   href={`/spokedu-master/payment${p.id === 'premium' ? '?plan=premium' : '?plan=lite'}`}
-                  className="spm-btn-primary mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black focus-visible:outline-none"
+                  className="spm-btn-primary mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-extrabold focus-visible:outline-none"
                 >
                   {p.title} 시작하기
                 </Link>
@@ -292,18 +292,18 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="border-t px-[22px] py-[80px] text-center sm:px-10" style={{ borderColor: 'var(--spm-br2)' }}>
         <div className="mx-auto max-w-[560px]">
-          <h2 className="text-[32px] font-black md:text-[40px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>
+          <h2 className="text-[32px] font-extrabold md:text-[40px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>
             오늘 첫 수업을 골라보세요
           </h2>
           <p className="mt-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>
             수업 도구는 로그인 후 바로 써 보고, 전체 수업 자료 이용은 Lite부터, 기록·안내문·SPOMOVE는 프리미엄에서 이용해 보세요.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black focus-visible:outline-none">
+          <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-extrabold focus-visible:outline-none">
             <Play size={16} fill="currentColor" />
             시작하기
           </Link>
-          <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="inline-flex h-14 items-center rounded-[14px] px-8 text-[15px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="inline-flex h-14 items-center rounded-[14px] px-8 text-[15px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             로그인
           </Link>
           </div>
@@ -315,11 +315,11 @@ export default function LandingPage() {
       <footer className="border-t px-[22px] py-10 sm:px-10" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}>
         <div className="mx-auto max-w-[960px]">
           <div className="mb-8 flex items-baseline gap-2">
-            <span className="text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
-            <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
+            <span className="text-[17px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
           </div>
           <div className="mb-8 grid gap-x-8 gap-y-2 sm:grid-cols-[auto_1fr]">
-            <p className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
               {[
                 ['상호', MASTER_BUSINESS_INFO.businessName],

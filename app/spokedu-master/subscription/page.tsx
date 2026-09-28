@@ -20,7 +20,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-2 border-t py-3 first:border-t-0" style={{ borderColor: 'var(--spm-br2)' }}>
       <dt className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{label}</dt>
-      <dd className="text-right text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{value}</dd>
+      <dd className="text-right text-[13px] font-extrabold" style={{ color: 'var(--spm-t)' }}>{value}</dd>
     </div>
   );
 }
@@ -36,12 +36,12 @@ function SubscriptionStatusCard({
     <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>현재 이용권</p>
-          <h2 className="mt-1 text-[28px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>현재 이용권</p>
+          <h2 className="mt-1 text-[28px] font-extrabold leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
             {display.planLabel}
           </h2>
         </div>
-        <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: display.state === 'active' ? 'var(--spm-grn-a14)' : 'var(--spm-amb-a14)', color: display.state === 'active' ? 'var(--spm-grn)' : 'var(--spm-yel)' }}>
+        <span className="rounded-full px-3 py-1 text-[11px] font-extrabold" style={{ background: display.state === 'active' ? 'var(--spm-grn-a14)' : 'var(--spm-amb-a14)', color: display.state === 'active' ? 'var(--spm-grn)' : 'var(--spm-yel)' }}>
           {display.statusLabel}
         </span>
       </div>
@@ -77,7 +77,7 @@ function SubscriptionStatusCard({
         <button
           type="button"
           onClick={onCancel}
-          className="mt-5 flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-black"
+          className="mt-5 flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-extrabold"
           style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.28)', color: 'var(--spm-red)' }}
         >
           구독 해지
@@ -87,7 +87,7 @@ function SubscriptionStatusCard({
       {display.canUpgradeToPremium && display.upgradeHref && display.upgradeLabel ? (
         <Link
           href={display.upgradeHref}
-          className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none"
+          className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none"
         >
           {display.upgradeLabel}
         </Link>
@@ -96,7 +96,7 @@ function SubscriptionStatusCard({
       {display.primaryHref === '/spokedu-master/payment' && display.primaryLabel ? (
         <Link
           href="/spokedu-master/payment"
-          className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none"
+          className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none"
         >
           {display.primaryLabel}
         </Link>
@@ -174,8 +174,8 @@ function SubscriptionPageContent() {
           <ArrowLeft size={18} color="var(--spm-t2)" />
         </Link>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
-          <h1 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>구독 관리</h1>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
+          <h1 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>구독 관리</h1>
         </div>
       </header>
 
@@ -190,7 +190,7 @@ function SubscriptionPageContent() {
             <button
               type="button"
               onClick={() => void loadSubscription()}
-              className="spm-btn-primary mt-4 flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-black focus-visible:outline-none"
+              className="spm-btn-primary mt-4 flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-extrabold focus-visible:outline-none"
             >
               다시 시도
             </button>
@@ -199,7 +199,7 @@ function SubscriptionPageContent() {
           <div className="space-y-4">
             {justUpgraded && display.planLabel === '프리미엄' ? (
               <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-br2)' }}>
-                <p className="text-[14px] font-black">프리미엄으로 전환되었습니다.</p>
+                <p className="text-[14px] font-extrabold">프리미엄으로 전환되었습니다.</p>
                 <p className="mt-1 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
                   라이트 잔여 기간을 반영한 차액만 결제되었고, 지금 바로 기록과 SPOMOVE를 사용할 수 있습니다. 다음 결제일은 기존 이용 종료일입니다.
                 </p>
@@ -221,7 +221,7 @@ function SubscriptionPageContent() {
         onClose={() => { if (!cancelling) setConfirmOpen(false); }}
       >
         <div className="space-y-4">
-          <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>
+          <p className="text-[15px] font-extrabold" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>
             구독을 해지하시겠어요?
           </p>
           <p className="text-[13px] font-semibold leading-6" style={{ color: '#475569' }}>
@@ -241,7 +241,7 @@ function SubscriptionPageContent() {
               type="button"
               onClick={() => setConfirmOpen(false)}
               disabled={cancelling}
-              className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black disabled:opacity-50"
+              className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-extrabold disabled:opacity-50"
               style={{ background: '#f1f5f9', color: '#0f172a' }}
             >
               계속 이용하기
@@ -250,7 +250,7 @@ function SubscriptionPageContent() {
               type="button"
               onClick={() => void handleCancelConfirm()}
               disabled={cancelling}
-              className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black disabled:opacity-50"
+              className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-extrabold disabled:opacity-50"
               style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.30)', color: '#dc2626' }}
             >
               {cancelling ? '처리 중...' : '구독 해지'}

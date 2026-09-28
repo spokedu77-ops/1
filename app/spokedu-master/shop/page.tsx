@@ -30,7 +30,7 @@ export default function SpokeduMasterShopPage() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>
           SPOMAT store
         </p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+        <h1 className="mt-1 text-[32px] font-extrabold md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
           SPOMAT
         </h1>
         <p className="mt-2 max-w-[760px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
@@ -45,7 +45,7 @@ export default function SpokeduMasterShopPage() {
               <Package size={26} color="var(--spm-acc)" />
             </span>
             <div>
-              <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>SPOMAT</h2>
+              <h2 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>SPOMAT</h2>
               <p className="mt-1 text-[13px] font-medium" style={{ color: 'var(--spm-t2)' }}>
                 시지각형 SPOMOVE 활동과 놀이체육에 활용하는 4색 패드
               </p>
@@ -64,8 +64,8 @@ export default function SpokeduMasterShopPage() {
           <div className="mt-6 rounded-[14px] p-4" style={{ background: 'var(--spm-s3)' }}>
             {isPremiumMember ? (
               <>
-                <p className="text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-acc)' }}>프리미엄 회원가</p>
-                <p className="mt-1 text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.1em]" style={{ color: 'var(--spm-acc)' }}>프리미엄 회원가</p>
+                <p className="mt-1 text-[28px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
                   {SPOMAT_PRODUCT_CONTRACT.premiumPrice.toLocaleString('ko-KR')}원
                 </p>
                 <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
@@ -74,7 +74,7 @@ export default function SpokeduMasterShopPage() {
                 </p>
               </>
             ) : (
-              <p className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
+              <p className="text-[28px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
                 {SPOMAT_PRODUCT_CONTRACT.regularPrice.toLocaleString('ko-KR')}원
               </p>
             )}
@@ -82,7 +82,7 @@ export default function SpokeduMasterShopPage() {
 
           <a
             href={ctaHref}
-            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-black text-white"
+            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[13px] text-[14px] font-extrabold text-white"
             style={{ background: 'var(--spm-acc)' }}
           >
             <ShoppingBag size={16} />

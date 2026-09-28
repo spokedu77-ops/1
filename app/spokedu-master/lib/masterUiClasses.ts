@@ -31,10 +31,14 @@ export function spmSegClass(active: boolean, extra = ''): string {
 }
 
 /** Foundation v3 compatibility tokens for call sites not yet componentized. */
-export const SPM_PAGE_TITLE = 'text-2xl font-semibold leading-tight text-slate-950';
-export const SPM_SECTION_HEADING = 'text-lg font-semibold text-slate-900';
-export const SPM_CONTENT_TITLE = 'text-base font-semibold text-slate-900';
-export const SPM_BODY_TEXT = 'text-sm font-normal text-slate-700';
+export const SPM_HERO_TITLE = 'break-keep text-[34px] font-extrabold leading-[1.10] tracking-[-0.035em] text-[color:var(--spm-t)] min-[768px]:text-[42px] min-[1200px]:text-[50px]';
+export const SPM_PAGE_TITLE = 'break-keep text-[28px] font-extrabold leading-[1.15] tracking-[-0.03em] text-slate-950 min-[768px]:text-[32px]';
+export const SPM_SECTION_HEADING = 'break-keep text-[22px] font-extrabold leading-[1.22] tracking-[-0.022em] text-slate-900 min-[768px]:text-[24px]';
+export const SPM_CONTENT_TITLE = 'break-keep text-base font-bold leading-[1.30] tracking-[-0.015em] text-slate-900';
+export const SPM_PRIMARY_CTA = 'font-bold tracking-[-0.01em]';
+export const SPM_LABEL_TEXT = 'font-semibold leading-[1.35] tracking-normal';
+export const SPM_NAV_TEXT = 'font-medium tracking-normal';
+export const SPM_BODY_TEXT = 'text-sm font-normal leading-[1.55] tracking-[-0.005em] text-slate-700';
 export const SPM_META_TEXT = 'text-xs font-normal text-slate-500';
 export const SPM_STANDARD_SURFACE = 'rounded-xl border border-slate-200 bg-white';
 export const SPM_QUIET_ROW = 'border-b border-slate-200 py-3 last:border-b-0';
@@ -59,11 +63,11 @@ export const MV_EDITORIAL_WIDTH = 'mx-auto w-full max-w-[1120px]';
 /** Home opening: editorial rail plus one 32px desktop gutter on each side. */
 export const MV_HOME_FEATURE_WIDTH = 'mx-auto w-full max-w-[1184px]';
 export const MV_HOME_DISPLAY =
-  'max-w-xl whitespace-pre-line text-[30px] font-semibold leading-[1.12] text-[color:var(--spm-t)] sm:text-[32px] lg:text-[36px]';
+  `max-w-3xl whitespace-pre-line ${SPM_HERO_TITLE}`;
 export const MV_SECTION_TITLE =
-  'break-keep text-[22px] font-semibold leading-tight text-[color:var(--spm-t)] sm:text-[24px]';
+  `${SPM_SECTION_HEADING} text-[color:var(--spm-t)]`;
 export const MV_SECTION_TITLE_INVERSE =
-  'break-keep text-[22px] font-semibold leading-tight text-[color:var(--spm-spomove-surface-fg)] sm:text-[24px]';
+  `${SPM_SECTION_HEADING} text-[color:var(--spm-spomove-surface-fg)]`;
 export const MV_SECTION_COPY = 'mt-1.5 max-w-xl text-[15px] font-normal leading-6 text-slate-600';
 export const MV_SECTION_COPY_INVERSE =
   'mt-2 max-w-xl text-[15px] font-normal leading-6 text-[color:var(--spm-spomove-surface-muted)]';
@@ -71,16 +75,16 @@ export const MV_QUIET_ACTION =
   'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
 export const MV_QUIET_ACTION_INVERSE =
   'inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white';
-export const MV_CONTENT_TITLE = 'text-[18px] font-semibold leading-snug text-[color:var(--spm-t)]';
+export const MV_CONTENT_TITLE = 'break-keep text-[18px] font-bold leading-[1.30] tracking-[-0.015em] text-[color:var(--spm-t)]';
 export const MV_META = 'text-[12px] font-medium leading-5 text-slate-500 sm:text-[13px]';
 export const MV_HEADING_TO_SHELF = 'mb-4 sm:mb-5';
-export const MV_HOME_SECTION_TITLE = 'break-keep text-[22px] font-bold leading-[30px] tracking-normal text-[color:var(--spm-t)]';
+export const MV_HOME_SECTION_TITLE = 'break-keep text-[22px] font-extrabold leading-[1.22] tracking-[-0.022em] text-[color:var(--spm-t)] min-[768px]:text-[24px]';
 export const MV_HOME_SECTION_COPY = 'mt-1 max-w-xl text-[14px] font-medium leading-5 tracking-normal text-slate-600';
 export const MV_HOME_SECTION_ACTION = 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-semibold leading-[18px] tracking-normal text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]';
 export const MV_HOME_CARD_KICKER = 'text-[13px] font-semibold leading-[18px] tracking-normal text-[var(--spm-cta)]';
-export const MV_HOME_CARD_TITLE = 'text-[16px] font-bold leading-[22px] tracking-normal text-[color:var(--spm-t)]';
+export const MV_HOME_CARD_TITLE = 'break-keep text-[16px] font-bold leading-[1.30] tracking-[-0.015em] text-[color:var(--spm-t)]';
 export const MV_HOME_CARD_META = 'text-[13px] font-medium leading-[18px] tracking-normal text-slate-500';
-export const MV_HOME_CARD_ACTION = 'text-[13px] font-semibold leading-[18px] tracking-normal text-slate-600';
+export const MV_HOME_CARD_ACTION = 'text-[13px] font-bold leading-[18px] tracking-normal text-slate-600';
 export const MV_REENTRY_OBJECT =
   'flex h-full min-h-[108px] w-[86vw] max-w-[360px] shrink-0 snap-start items-center gap-3 rounded-[14px] border border-slate-200/60 bg-white/70 px-3 py-3 lg:w-auto lg:max-w-none';
 export const MV_REENTRY_IDENTITY = 'min-w-0 flex-1';

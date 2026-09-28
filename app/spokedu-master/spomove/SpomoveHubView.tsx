@@ -365,7 +365,7 @@ function SpatialDirectionVisual({ colorMode = false }: { colorMode?: boolean }) 
         </svg>
       </div>
       <div className="absolute bottom-3 left-3">
-        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-white/60">
+        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-extrabold tracking-widest text-white/60">
           {colorMode ? '색상 화살표' : '화살표'}
         </span>
       </div>
@@ -415,7 +415,7 @@ function SimonVisual() {
         <div className="absolute left-[14px] top-[14px] h-[30px] w-[30px] rounded-xl border border-white/10 bg-slate-700" />
       </div>
       <div className="absolute bottom-3 left-3">
-        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-white/60">
+        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-extrabold tracking-widest text-white/60">
           SIMON
         </span>
       </div>
@@ -438,7 +438,7 @@ function FlankerVisual() {
           {row.map((arrow, ai) => (
             <span
               key={ai}
-              className={`text-xl font-black leading-none ${
+              className={`text-xl font-extrabold leading-none ${
                 ai === 2 ? 'text-[var(--spm-acc)]' : 'text-slate-300'
               }`}
             >
@@ -448,7 +448,7 @@ function FlankerVisual() {
         </div>
       ))}
       <div className="h-px w-14 bg-slate-200" />
-      <span className="text-[9px] font-black tracking-widest text-slate-300">FLANKER</span>
+      <span className="text-[9px] font-extrabold tracking-widest text-slate-300">FLANKER</span>
       <div className="absolute bottom-3 right-3">
         <PadSignature dim />
       </div>
@@ -459,11 +459,11 @@ function FlankerVisual() {
 function StroopVisual() {
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center gap-2.5 bg-gradient-to-br from-violet-50 to-slate-50">
-      <span className="text-[26px] font-black leading-none text-blue-600">빨강</span>
+      <span className="text-[26px] font-extrabold leading-none text-blue-600">빨강</span>
       <div className="h-px w-10 bg-slate-200" />
-      <span className="text-[26px] font-black leading-none text-red-500">초록</span>
+      <span className="text-[26px] font-extrabold leading-none text-red-500">초록</span>
       <div className="absolute bottom-3 left-3">
-        <span className="text-[9px] font-black tracking-widest text-slate-300">STROOP</span>
+        <span className="text-[9px] font-extrabold tracking-widest text-slate-300">STROOP</span>
       </div>
       <div className="absolute bottom-3 right-3">
         <PadSignature dim />

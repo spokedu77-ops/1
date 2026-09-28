@@ -1,12 +1,11 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
-import { SPM_TABBAR_CLEARANCE, SPM_TABBAR_CLEARANCE_VAR } from './tabBarMetrics';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { SubscriptionGateWall } from '../ui/SubscriptionGateWall';
 import { MasterAccessProvider } from '../../access/MasterAccessProvider';
@@ -18,7 +17,6 @@ import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterRouteCapab
 import { buildMasterLoginHref } from '../../lib/masterLoginReturn';
 import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
 
-const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 type MasterAccessGuardStatus = 'checking' | 'allowed' | 'redirecting' | 'denied' | 'error';
 type MasterAccessGuard = {
   pathname: string;
@@ -71,12 +69,11 @@ function FloatingTimerPill() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4 lg:bottom-4"
-      style={{ bottom: `var(${SPM_TABBAR_CLEARANCE_VAR}, ${SPM_TABBAR_CLEARANCE})` }}
+      className="pointer-events-none fixed inset-x-0 bottom-[var(--spm-tabbar-clearance)] z-40 flex justify-center px-4 min-[768px]:bottom-4"
     >
       <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-slate-700 bg-slate-950/95 px-4 py-2.5 shadow-xl">
         <span className={`h-2 w-2 rounded-full ${running ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-        <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="min-h-11 font-mono text-[15px] font-black tabular-nums text-white">
+        <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="min-h-11 font-mono text-[15px] font-extrabold tabular-nums text-white">
           {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
         </button>
         <span className="text-[11px] font-semibold text-slate-300">{running ? '실행 중' : '일시정지'}</span>
@@ -86,7 +83,7 @@ function FloatingTimerPill() {
             timerReset();
             setDisplayMs(0);
           }}
-          className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-[13px] font-black text-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+          className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-[13px] font-extrabold text-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
           aria-label="스탑워치 초기화"
         >
           ×
@@ -443,7 +440,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   if (isSession) {
     return (
-      <div className="min-h-dvh bg-black text-white" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
+      <div className="min-h-dvh bg-black text-white">
         {isAccessGuardPending ? (
           <MasterAccessCheckingState />
         ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && routeRequirement.capability !== 'libraryBrowse' && accessGuard.snapshot ? (
@@ -469,19 +466,16 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   return (
     <div className={`${isViewportWorkspace ? 'h-dvh overflow-hidden' : 'min-h-dvh'} bg-[var(--spm-bg)] text-slate-900`}>
       <div
+        data-spm-app-shell="true"
         className={`relative mx-auto flex w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[var(--spm-bg)] ${isViewportWorkspace ? 'h-dvh' : 'min-h-dvh'}`}
-        style={{
-          fontFamily: SPOKEDU_MASTER_FONT,
-          ...(hideChrome ? {} : { [SPM_TABBAR_CLEARANCE_VAR]: SPM_TABBAR_CLEARANCE }),
-        } as CSSProperties}
       >
         <div className={`flex min-w-0 flex-1 flex-col ${isViewportWorkspace ? 'min-h-0' : ''}`}>
           {hideChrome ? null : (
-            <div className={isLibraryDetail ? 'hidden lg:block' : undefined}>
+            <div className={isLibraryDetail ? 'hidden min-[768px]:block' : undefined}>
               <StatusBar snapshot={accessGuard.snapshot} />
             </div>
           )}
-          <main className={`min-h-0 flex-1 overflow-hidden bg-[var(--spm-bg)] ${hideChrome ? '' : 'pb-[var(--spm-tabbar-clearance)] lg:pb-0'}`}>
+          <main data-spm-shell-content="true" className={`min-h-0 flex-1 overflow-hidden bg-[var(--spm-bg)] ${hideChrome ? '' : 'pb-[var(--spm-tabbar-clearance)] min-[768px]:pb-0'}`}>
             {isAccessGuardPending ? (
               <MasterAccessCheckingState />
             ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && routeRequirement.capability !== 'libraryBrowse' && accessGuard.snapshot ? (

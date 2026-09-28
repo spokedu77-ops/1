@@ -38,10 +38,10 @@ export function SpomovePadLayoutView({
             className={`relative ${size}`}
             aria-label="다이아몬드 패드 배치: 빨강 위, 노랑 왼쪽, 초록 오른쪽, 파랑 아래"
           >
-            <div className={`absolute left-1/2 top-0 -translate-x-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: red }}>빨</div>
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: yellow }}>노</div>
-            <div className={`absolute right-0 top-1/2 -translate-y-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: green }}>초</div>
-            <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: blue }}>파</div>
+            <div className={`absolute left-1/2 top-0 -translate-x-1/2 rounded-xl font-extrabold text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: red }}>빨</div>
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 rounded-xl font-extrabold text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: yellow }}>노</div>
+            <div className={`absolute right-0 top-1/2 -translate-y-1/2 rounded-xl font-extrabold text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: green }}>초</div>
+            <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 rounded-xl font-extrabold text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: blue }}>파</div>
           </div>
         </div>
         <p className={`mt-2 text-center text-xs font-medium ${mutedClass}`}>빨강 앞 · 노랑 왼쪽 · 초록 오른쪽 · 파랑 뒤</p>

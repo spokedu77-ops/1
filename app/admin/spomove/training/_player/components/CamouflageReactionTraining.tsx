@@ -78,14 +78,14 @@ const css = `
 .camo-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .camo-hc.grow{flex:1;align-items:center;border-right:none}
 .camo-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
-.camo-hv{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
+.camo-hv{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
 .camo-hv.warn{animation:camow .5s ease-in-out infinite}
 @keyframes camow{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 .camo-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
 .camo-stop:hover{background:rgba(255,255,255,.07);color:#fff}
 .camo-play{position:relative;flex:1;min-height:0}
 .camo-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.camo-msg{position:absolute;left:50%;top:9%;transform:translateX(-50%);z-index:20;font-size:clamp(18px,3.4vw,32px);font-weight:900;color:#fff;text-shadow:0 0 20px rgba(0,0,0,.8);background:rgba(0,0,0,.5);padding:10px 28px;border-radius:999px;pointer-events:none;opacity:0;transition:opacity .3s ease;white-space:nowrap}
+.camo-msg{position:absolute;left:50%;top:9%;transform:translateX(-50%);z-index:20;font-size:clamp(18px,3.4vw,32px);font-weight: 800;color:#fff;text-shadow:0 0 20px rgba(0,0,0,.8);background:rgba(0,0,0,.5);padding:10px 28px;border-radius:999px;pointer-events:none;opacity:0;transition:opacity .3s ease;white-space:nowrap}
 .camo-msg.show{opacity:1}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;

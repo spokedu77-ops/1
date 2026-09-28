@@ -63,10 +63,10 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
         <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px] border border-slate-200 bg-slate-50">
           <Lock size={24} className="text-slate-700" />
         </div>
-        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
           {model?.eyebrow ?? (subscriptionBlockedFeature ? '프리미엄 필요' : '이용권 필요')}
         </p>
-        <h2 className="mt-2 text-[27px] font-black leading-tight text-slate-950">
+        <h2 className="mt-2 text-[27px] font-extrabold leading-tight text-slate-950">
           {model?.title ?? copy.title}
         </h2>
         <p className="mt-3 text-[14px] font-medium leading-6 text-slate-500">
@@ -78,7 +78,7 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
               <Icon size={16} className="text-[var(--spm-acc)]" />
             </span>
             <div className="min-w-0">
-              <p className="text-[13px] font-black text-slate-900">
+              <p className="text-[13px] font-extrabold text-slate-900">
                 {model ? '결제 후 이어지는 작업' : '필요한 접근 권한'}
               </p>
               {model ? (
@@ -97,13 +97,13 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
           </div>
         </div>
         <div className="mt-7 grid gap-2">
-          <Link href={primaryHref} className="spm-btn-primary inline-flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none">
+          <Link href={primaryHref} className="spm-btn-primary inline-flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none">
             {primaryLabel}
           </Link>
           {!subscriptionBlockedFeature ? (
             <Link
               href="/spokedu-master/dashboard"
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white text-[13px] font-black text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white text-[13px] font-extrabold text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
             >
               <ArrowLeft size={15} />
               홈으로

@@ -15,7 +15,9 @@ describe("MASTER representative visual finish (pre-reset snapshot; not Art Direc
       "WEEKLY_PROGRAM_IDS",
     );
     expect(home).toContain("featuredSpomove.slice(0, 4)");
-    expect(home).toContain("snap-mandatory");
+    expect(home).toContain('data-dashboard-grid="weekly"');
+    expect(home).toContain('data-dashboard-grid="spomove"');
+    expect(home).not.toContain("snap-mandatory");
     expect(home).not.toContain("SPOKEDU WEEKLY PICK");
     expect(home).not.toContain("shadow-[0_14px_30px");
   });

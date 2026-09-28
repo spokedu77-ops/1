@@ -65,7 +65,7 @@ export function MasterValueEvidencePanel({
       ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-4">
           <p className="text-sm font-bold text-slate-600">최근 운영 요약을 불러오지 못했습니다.</p>
-          <button type="button" onClick={() => void load()} className="mt-2 min-h-11 text-sm font-black text-emerald-700">다시 시도</button>
+          <button type="button" onClick={() => void load()} className="mt-2 min-h-11 text-sm font-extrabold text-emerald-700">다시 시도</button>
         </section>
       )
       : null;
@@ -76,10 +76,10 @@ export function MasterValueEvidencePanel({
     if (!hasMasterPreservedContext(evidence)) return null;
     return (
       <section data-value-evidence="preserved" className="rounded-2xl border border-slate-200 bg-white p-4">
-        <p className="text-xs font-black text-slate-400">이전 운영</p>
-        <h2 className="mt-1 text-base font-black text-slate-900">기존 운영 데이터가 그대로 있습니다</h2>
+        <p className="text-xs font-extrabold text-slate-400">이전 운영</p>
+        <h2 className="mt-1 text-base font-extrabold text-slate-900">기존 운영 데이터가 그대로 있습니다</h2>
         <p className="mt-2 text-sm font-bold text-slate-600">수업반 {evidence.preserved.totalClasses}개 · 수업 {evidence.preserved.totalSessions}개</p>
-        <Link href="/spokedu-master/payment" className="mt-3 inline-flex min-h-11 items-center text-sm font-black text-emerald-700">이전 운영 이어가기 →</Link>
+        <Link href="/spokedu-master/payment" className="mt-3 inline-flex min-h-11 items-center text-sm font-extrabold text-emerald-700">이전 운영 이어가기 →</Link>
       </section>
     );
   }
@@ -90,9 +90,9 @@ export function MasterValueEvidencePanel({
     const item = ACTIVATION[activation];
     return (
       <section data-value-evidence="activation" className="rounded-2xl border border-slate-200 bg-white p-4">
-        <p className="text-xs font-black text-slate-400">첫 운영</p>
+        <p className="text-xs font-extrabold text-slate-400">첫 운영</p>
         <p className="mt-1 text-sm font-bold text-slate-600">{item.description}</p>
-        <Link href={item.href} className="mt-3 inline-flex min-h-11 items-center text-sm font-black text-emerald-700">{item.label} →</Link>
+        <Link href={item.href} className="mt-3 inline-flex min-h-11 items-center text-sm font-extrabold text-emerald-700">{item.label} →</Link>
       </section>
     );
   }
@@ -105,7 +105,7 @@ export function MasterValueEvidencePanel({
     const secondary = view.lines.slice(1, 3).map((line) => `${line.label} ${line.value}`).join(' · ');
     return (
       <section data-value-evidence="home" aria-label="운영 이어짐 참고" className="rounded-xl border border-slate-200/70 bg-slate-50/70 px-3 py-2.5">
-        <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">이어짐</p>
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">이어짐</p>
         <p className="mt-1 text-[13px] font-bold text-slate-700">
           {primary.label} <span className="tabular-nums text-slate-900">{primary.value}</span>
           {secondary ? <span className="font-semibold text-slate-500"> · {secondary}</span> : null}
@@ -119,14 +119,14 @@ export function MasterValueEvidencePanel({
 
   return (
     <section data-value-evidence="subscription" aria-label="최근 운영이 이어진 사실" className="rounded-2xl border border-slate-200 bg-white p-4">
-      <p className="text-xs font-black text-slate-400">유지 중인 운영</p>
-      <h2 className="mt-1 text-base font-black text-slate-900">수업 운영이 이렇게 이어졌습니다</h2>
+      <p className="text-xs font-extrabold text-slate-400">유지 중인 운영</p>
+      <h2 className="mt-1 text-base font-extrabold text-slate-900">수업 운영이 이렇게 이어졌습니다</h2>
       <p className="mt-1 text-xs font-semibold text-slate-500">최근 30일 참고 · 사용량 평가가 아닙니다</p>
       <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {view.lines.map((line) => (
           <div key={line.label} className="rounded-xl bg-slate-50 px-3 py-2">
             <dt className="text-[11px] font-bold text-slate-500">{line.label}</dt>
-            <dd className={`mt-0.5 text-lg font-black ${line.kind === 'usage' ? 'text-slate-700' : 'text-slate-900'}`}>{line.value}</dd>
+            <dd className={`mt-0.5 text-lg font-extrabold ${line.kind === 'usage' ? 'text-slate-700' : 'text-slate-900'}`}>{line.value}</dd>
           </div>
         ))}
       </dl>

@@ -108,7 +108,7 @@ function StopwatchTab() {
           type="button"
           onClick={() => setLaps((items) => [displayMs, ...items].slice(0, 12))}
           disabled={displayMs <= 0}
-          className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black transition hover:-translate-y-px disabled:translate-y-0 disabled:opacity-40"
+          className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-extrabold transition hover:-translate-y-px disabled:translate-y-0 disabled:opacity-40"
           style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-grn-a28)', color: 'var(--spm-grn)' }}
         >
           <Timer size={16} />랩타임
@@ -120,7 +120,7 @@ function StopwatchTab() {
             setDisplayMs(0);
             setLaps([]);
           }}
-          className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black transition hover:-translate-y-px"
+          className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-extrabold transition hover:-translate-y-px"
           style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
         >
           <RotateCcw size={16} />초기화
@@ -129,16 +129,16 @@ function StopwatchTab() {
       {laps.length > 0 ? (
         <section className="w-full max-w-[520px] border-t border-slate-200 pt-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>랩타임</h2>
-            <button type="button" onClick={() => setLaps([])} className="text-[12px] font-black" style={{ color: 'var(--spm-t3)' }}>
+            <h2 className="text-[13px] font-extrabold" style={{ color: 'var(--spm-t)' }}>랩타임</h2>
+            <button type="button" onClick={() => setLaps([])} className="text-[12px] font-extrabold" style={{ color: 'var(--spm-t3)' }}>
               지우기
             </button>
           </div>
           <ol className="max-h-[220px] space-y-2 overflow-y-auto">
             {laps.map((lap, index) => (
               <li key={`${lap}-${index}`} className="flex items-center justify-between rounded-[12px] px-3 py-2" style={{ background: 'var(--spm-s3)' }}>
-                <span className="text-[12px] font-black" style={{ color: 'var(--spm-t3)' }}>#{laps.length - index}</span>
-                <span className="font-mono text-[18px] font-black tabular-nums" style={{ color: 'var(--spm-t)' }}>{formatMs(lap)}</span>
+                <span className="text-[12px] font-extrabold" style={{ color: 'var(--spm-t3)' }}>#{laps.length - index}</span>
+                <span className="font-mono text-[18px] font-extrabold tabular-nums" style={{ color: 'var(--spm-t)' }}>{formatMs(lap)}</span>
               </li>
             ))}
           </ol>
@@ -421,15 +421,15 @@ function ReturnTimerTab() {
       >
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <h2 className="shrink-0 text-[20px] font-black sm:text-[24px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>타이머</h2>
-            <span className="rounded-full px-3 py-1.5 text-[12px] font-black" style={{ background: tone.border, color: tone.accent }}>
+            <h2 className="shrink-0 text-[20px] font-extrabold sm:text-[24px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>타이머</h2>
+            <span className="rounded-full px-3 py-1.5 text-[12px] font-extrabold" style={{ background: tone.border, color: tone.accent }}>
               {statusLabel}
             </span>
           </div>
           <button
             type="button"
             onClick={toggleSound}
-            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3 text-[12px] font-black"
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3 text-[12px] font-extrabold"
             style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
           >
             {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
@@ -460,18 +460,18 @@ function ReturnTimerTab() {
 
         <div className="flex min-h-8 items-center justify-center">
           {status === 'expired' ? (
-            <p className="text-[14px] font-black sm:text-[16px]" style={{ color: tone.accent }}>
+            <p className="text-[14px] font-extrabold sm:text-[16px]" style={{ color: tone.accent }}>
               {modeConfig.expiredLabel}
             </p>
           ) : null}
           {status === 'completed' && completedMs !== null ? (
-            <div className="flex items-center justify-center gap-2 text-[14px] font-black sm:text-[16px]" style={{ color: tone.accent }}>
+            <div className="flex items-center justify-center gap-2 text-[14px] font-extrabold sm:text-[16px]" style={{ color: tone.accent }}>
               <CheckCircle2 size={21} />
               {formatElapsed(completedMs)} 진행{modeConfig.supportsCount ? ` · ${activityCount}회` : ''} 후 완료했습니다.
             </div>
           ) : null}
           {isFinalThirty ? (
-            <p className="text-[14px] font-black sm:text-[16px]" style={{ color: tone.accent }}>마지막 30초입니다.</p>
+            <p className="text-[14px] font-extrabold sm:text-[16px]" style={{ color: tone.accent }}>마지막 30초입니다.</p>
           ) : null}
         </div>
 
@@ -480,7 +480,7 @@ function ReturnTimerTab() {
             <details className="group relative">
               <summary
                 onClick={(event) => { if (durationSelectDisabled) event.preventDefault(); }}
-                className={`flex h-11 cursor-pointer list-none items-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3.5 text-[12px] font-black text-slate-700 shadow-sm transition hover:border-slate-300 [&::-webkit-details-marker]:hidden ${durationSelectDisabled ? 'cursor-not-allowed opacity-45' : ''}`}
+                className={`flex h-11 cursor-pointer list-none items-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3.5 text-[12px] font-extrabold text-slate-700 shadow-sm transition hover:border-slate-300 [&::-webkit-details-marker]:hidden ${durationSelectDisabled ? 'cursor-not-allowed opacity-45' : ''}`}
                 aria-label={`${modeConfig.label} 시간 선택`}
               >
                 {mode === 'rest' ? <Coffee size={16} color="var(--spm-acc)" /> : <Timer size={16} color="var(--spm-acc)" />}
@@ -496,7 +496,7 @@ function ReturnTimerTab() {
                       selectDuration(seconds * 1000);
                       event.currentTarget.closest('details')?.removeAttribute('open');
                     }}
-                    className="flex h-10 w-full items-center justify-between rounded-[8px] px-3 text-[12px] font-black transition hover:bg-slate-100"
+                    className="flex h-10 w-full items-center justify-between rounded-[8px] px-3 text-[12px] font-extrabold transition hover:bg-slate-100"
                     style={{ color: selectedDurationMs === seconds * 1000 ? 'var(--spm-acc)' : 'var(--spm-t2)' }}
                     role="menuitem"
                   >
@@ -515,10 +515,10 @@ function ReturnTimerTab() {
                 value={customMinutes}
                 onChange={(event) => updateCustomMinutes(event.target.value)}
                 disabled={durationSelectDisabled}
-                className="h-9 w-14 rounded-[10px] border-0 bg-transparent px-1 text-center text-[16px] font-black tabular-nums outline-none disabled:opacity-45"
+                className="h-9 w-14 rounded-[10px] border-0 bg-transparent px-1 text-center text-[16px] font-extrabold tabular-nums outline-none disabled:opacity-45"
                 style={{ color: 'var(--spm-t)' }}
               />
-              <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>분</span>
+              <span className="text-[11px] font-extrabold" style={{ color: 'var(--spm-t3)' }}>분</span>
             </label>
             <label className="flex items-center gap-1.5 rounded-[10px] bg-white px-2 py-1 ring-1 ring-slate-200">
               <input
@@ -529,16 +529,16 @@ function ReturnTimerTab() {
                 value={customSeconds}
                 onChange={(event) => updateCustomSeconds(event.target.value)}
                 disabled={durationSelectDisabled}
-                className="h-9 w-14 rounded-[10px] border-0 bg-transparent px-1 text-center text-[16px] font-black tabular-nums outline-none disabled:opacity-45"
+                className="h-9 w-14 rounded-[10px] border-0 bg-transparent px-1 text-center text-[16px] font-extrabold tabular-nums outline-none disabled:opacity-45"
                 style={{ color: 'var(--spm-t)' }}
               />
-              <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>초</span>
+              <span className="text-[11px] font-extrabold" style={{ color: 'var(--spm-t3)' }}>초</span>
             </label>
           </div>
 
           <div className="flex w-full flex-wrap justify-center gap-2">
             {modeConfig.supportsCount && (status === 'running' || status === 'paused') ? (
-              <button type="button" onClick={() => setActivityCount((count) => count + 1)} className="flex h-12 min-w-[124px] items-center justify-center rounded-xl bg-blue-50 px-5 text-[15px] font-black text-blue-700 ring-1 ring-blue-200">
+              <button type="button" onClick={() => setActivityCount((count) => count + 1)} className="flex h-12 min-w-[124px] items-center justify-center rounded-xl bg-blue-50 px-5 text-[15px] font-extrabold text-blue-700 ring-1 ring-blue-200">
                 수행 +1 <span className="ml-2 tabular-nums">{activityCount}회</span>
               </button>
             ) : null}
@@ -571,7 +571,7 @@ function ReturnTimerTab() {
               <button
                 type="button"
                 onClick={reset}
-                className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black shadow-sm transition hover:-translate-y-px"
+                className="flex h-11 min-w-[124px] items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-extrabold shadow-sm transition hover:-translate-y-px"
                 style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
               >
                 <RotateCcw size={16} />초기화
@@ -635,7 +635,7 @@ function ScoreboardTab() {
           </div>
           <div className="flex items-center gap-1 rounded-[11px] bg-slate-100 p-1" aria-label="팀 개수 설정">
             {[2, 3, 4, 5, 6].map((count) => (
-              <button key={count} type="button" onClick={() => setTeamCount(count)} className={`h-9 min-w-9 rounded-[8px] px-2 text-[12px] font-black transition ${teamCount === count ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} aria-pressed={teamCount === count}>
+              <button key={count} type="button" onClick={() => setTeamCount(count)} className={`h-9 min-w-9 rounded-[8px] px-2 text-[12px] font-extrabold transition ${teamCount === count ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} aria-pressed={teamCount === count}>
                 {count}팀
               </button>
             ))}
@@ -654,7 +654,7 @@ function ScoreboardTab() {
             />
           ))}
         </div>
-        <button type="button" onClick={() => setTeams((items) => items.map((team) => ({ ...team, score: 0 })))} className="mt-1 inline-flex h-10 items-center gap-2 rounded-[9px] border border-slate-200 bg-slate-50 px-4 text-[12px] font-black text-slate-600 transition hover:bg-white">
+        <button type="button" onClick={() => setTeams((items) => items.map((team) => ({ ...team, score: 0 })))} className="mt-1 inline-flex h-10 items-center gap-2 rounded-[9px] border border-slate-200 bg-slate-50 px-4 text-[12px] font-extrabold text-slate-600 transition hover:bg-white">
           <RotateCcw size={14} />전체 점수 초기화
         </button>
       </section>
@@ -667,7 +667,7 @@ function StudentModeNote({ usingSample }: { usingSample: boolean }) {
   return (
     <div className="mx-auto mb-4 flex max-w-[560px] flex-col items-center gap-3 rounded-[14px] px-4 py-3 text-center text-[12px] font-bold sm:flex-row sm:justify-between sm:text-left" style={{ background: 'var(--spm-amb-a12)', border: '1px solid var(--spm-amb-a24)', color: 'var(--spm-amb)' }}>
       <span>등록된 학생 명단이 없어 예시 명단으로 흐름을 보여줍니다.</span>
-      <Link href="/spokedu-master/students?add=1" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-amb-a16)', border: '1px solid var(--spm-amb-a26)', color: 'var(--spm-amb)' }}>
+      <Link href="/spokedu-master/students?add=1" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-extrabold" style={{ background: 'var(--spm-amb-a16)', border: '1px solid var(--spm-amb-a26)', color: 'var(--spm-amb)' }}>
         <UserPlus size={14} />
         학생 추가
       </Link>
@@ -884,7 +884,7 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
                 <input
                   value={teamNames[teamIndex]}
                   onChange={(event) => setTeamNames((names) => names.map((name, index) => index === teamIndex ? event.target.value : name))}
-                  className="mb-4 w-20 border-b bg-transparent text-[18px] font-black outline-none"
+                  className="mb-4 w-20 border-b bg-transparent text-[18px] font-extrabold outline-none"
                   style={{ borderColor: color, color }}
                   aria-label={`${teamIndex + 1}팀 이름`}
                 />
@@ -929,7 +929,7 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
       {!students.length ? <EmptyStudentsForTools /> : null}
       <div className="mb-5 flex items-center justify-between">
          <p className="text-[20px] font-semibold" style={{ color: 'var(--spm-t)' }}>진행 순서</p>
-        <button type="button" onClick={reshuffle} className="rounded-full px-4 py-2 text-[12px] font-black" style={{ background: 'var(--spm-amb-a14)', color: 'var(--spm-amb)', border: '1px solid var(--spm-amb-a28)' }}>
+        <button type="button" onClick={reshuffle} className="rounded-full px-4 py-2 text-[12px] font-extrabold" style={{ background: 'var(--spm-amb-a14)', color: 'var(--spm-amb)', border: '1px solid var(--spm-amb-a28)' }}>
           다시 섞기
         </button>
       </div>
@@ -1007,7 +1007,7 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
           <div className="grid min-w-max gap-4" style={{ gridTemplateColumns: `repeat(${bracket.rounds.length}, minmax(250px, 280px))` }}>
             {bracket.rounds.map((round, roundIndex) => (
               <section key={roundIndex} aria-label={getTournamentRoundLabel(roundIndex, bracket.rounds.length)}>
-                <h3 className="sticky top-0 z-10 mb-3 rounded-xl bg-violet-50 px-3 py-2 text-center text-[13px] font-black text-violet-800">{getTournamentRoundLabel(roundIndex, bracket.rounds.length)}</h3>
+                <h3 className="sticky top-0 z-10 mb-3 rounded-xl bg-violet-50 px-3 py-2 text-center text-[13px] font-extrabold text-violet-800">{getTournamentRoundLabel(roundIndex, bracket.rounds.length)}</h3>
                 <div className="flex h-[calc(100%-44px)] flex-col justify-around gap-4">
                   {round.filter((match) => match.active).map((match, matchIndex) => (
                     <article key={match.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -1098,12 +1098,12 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
       {!students.length ? <EmptyStudentsForTools /> : null}
       <div className="flex w-full max-w-[960px] flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>사다리 · {students.length}명</p>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>사다리 · {students.length}명</p>
           <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>아래 결과 이름을 먼저 바꾼 뒤 사다리를 만드세요.</p>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={() => { setRevealedStarts(new Set(students.map((_, index) => index))); setSelectedStart(null); }} disabled={!rungs.length} className="h-12 rounded-[13px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>전체 결과 공개</button>
-          <button type="button" onClick={() => setShowResultModal(true)} disabled={revealedStarts.size === 0} className="h-12 rounded-[13px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>결과 보기</button>
+          <button type="button" onClick={() => { setRevealedStarts(new Set(students.map((_, index) => index))); setSelectedStart(null); }} disabled={!rungs.length} className="h-12 rounded-[13px] px-5 text-[13px] font-extrabold disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>전체 결과 공개</button>
+          <button type="button" onClick={() => setShowResultModal(true)} disabled={revealedStarts.size === 0} className="h-12 rounded-[13px] px-5 text-[13px] font-extrabold disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>결과 보기</button>
           <ActionButton onClick={createLadder} disabled={students.length < 2} accent="#0891b2"><Route size={17} />{rungs.length ? '다시 만들기' : '사다리 만들기'}</ActionButton>
         </div>
       </div>
@@ -1113,7 +1113,7 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
           <div style={{ minWidth: ladderWidth }}>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
               {students.map((student, index) => (
-                <button key={student.id} type="button" onClick={() => revealStart(index)} disabled={!rungs.length} aria-pressed={selectedStart === index} className={`mx-1 min-h-11 truncate rounded-lg px-2 text-center text-[12px] font-black transition ${selectedStart === index ? 'bg-cyan-50 ring-2 ring-cyan-600' : revealedStarts.has(index) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50'}`} style={{ color: selectedStart === index ? '#0e7490' : undefined }}>
+                <button key={student.id} type="button" onClick={() => revealStart(index)} disabled={!rungs.length} aria-pressed={selectedStart === index} className={`mx-1 min-h-11 truncate rounded-lg px-2 text-center text-[12px] font-extrabold transition ${selectedStart === index ? 'bg-cyan-50 ring-2 ring-cyan-600' : revealedStarts.has(index) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50'}`} style={{ color: selectedStart === index ? '#0e7490' : undefined }}>
                   {student.name}{revealedStarts.has(index) ? ' ✓' : ''}
                 </button>
               ))}
@@ -1125,7 +1125,7 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
             </svg>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(72px, 1fr))` }}>
               {outcomes.map((outcome, index) => (
-                <input key={index} value={outcome} onChange={(event) => setOutcomes((items) => items.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="mx-1 h-9 min-w-0 rounded-[9px] px-2 text-center text-[11px] font-black outline-none" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }} aria-label={`${index + 1}번 결과`} />
+                <input key={index} value={outcome} onChange={(event) => setOutcomes((items) => items.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="mx-1 h-9 min-w-0 rounded-[9px] px-2 text-center text-[11px] font-extrabold outline-none" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }} aria-label={`${index + 1}번 결과`} />
               ))}
             </div>
           </div>
@@ -1136,15 +1136,15 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setShowResultModal(false)}>
           <div className="w-full max-w-sm rounded-2xl p-6 shadow-2xl" style={{ background: 'var(--spm-bg)', border: '1px solid var(--spm-br2)' }} onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>결과 요약</p>
+              <p className="text-[15px] font-extrabold" style={{ color: 'var(--spm-t)' }}>결과 요약</p>
               <button type="button" onClick={() => setShowResultModal(false)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[18px] font-bold" style={{ color: 'var(--spm-t3)' }}>✕</button>
             </div>
             <div className="flex flex-col gap-2">
               {students.map((student, index) =>
                 revealedStarts.has(index) ? (
                   <div key={student.id} className="flex items-center justify-between rounded-[12px] px-4 py-3" style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-grn-a28)' }}>
-                    <span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</span>
-                    <span className="text-[13px] font-black" style={{ color: 'var(--spm-grn)' }}>{outcomes[destinations[index]!] || `결과 ${destinations[index]! + 1}`}</span>
+                    <span className="text-[13px] font-extrabold" style={{ color: 'var(--spm-t)' }}>{student.name}</span>
+                    <span className="text-[13px] font-extrabold" style={{ color: 'var(--spm-grn)' }}>{outcomes[destinations[index]!] || `결과 ${destinations[index]! + 1}`}</span>
                   </div>
                 ) : null
               )}
@@ -1250,7 +1250,7 @@ export default function ClassToolsView() {
 
       <div data-class-tools-content className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/70">
         {invalidSessionContext ? (
-          <div className="m-5 rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-black text-rose-700">
+          <div className="m-5 rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-extrabold text-rose-700">
             수업을 찾을 수 없습니다.
           </div>
         ) : null}

@@ -28,14 +28,14 @@ export function PersonalizedNote({
           <History aria-hidden className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-black text-blue-800">{label}</p>
+          <p className="text-xs font-extrabold text-blue-800">{label}</p>
           <p className="mt-1 truncate text-[11px] font-semibold text-slate-500">{date} · {context}</p>
           <p className="mt-2 line-clamp-3 whitespace-pre-wrap break-words text-[13px] font-bold leading-6 text-slate-700">
             {preview}
           </p>
           <Link
             href={href}
-            className="mt-2 inline-flex min-h-11 items-center gap-1 text-xs font-black text-blue-700 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-900 focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+            className="mt-2 inline-flex min-h-11 items-center gap-1 text-xs font-extrabold text-blue-700 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-900 focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
           >
             {actionLabel}
             <ArrowRight aria-hidden className="h-3.5 w-3.5" />

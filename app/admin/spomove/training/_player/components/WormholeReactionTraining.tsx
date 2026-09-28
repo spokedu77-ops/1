@@ -197,7 +197,7 @@ const css = `
 .wh-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .wh-hc.grow{flex:1;align-items:center;border-right:none}
 .wh-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
-.wh-hv{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
+.wh-hv{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
 .wh-hv.warn{animation:whw .5s ease-in-out infinite}
 @keyframes whw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 .wh-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
@@ -205,7 +205,7 @@ const css = `
 .wh-play{position:relative;flex:1;min-height:0;transition:transform .04s linear}
 .wh-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .wh-ui{position:absolute;inset:0;z-index:20;pointer-events:none}
-.wh-corner{position:absolute;font-size:clamp(14px,2.2vw,26px);font-weight:900;letter-spacing:.2em;text-transform:uppercase;pointer-events:none}
+.wh-corner{position:absolute;font-size:clamp(14px,2.2vw,26px);font-weight: 800;letter-spacing:.2em;text-transform:uppercase;pointer-events:none}
 .wh-tl{top:24px;left:24px}
 .wh-tr{top:24px;right:24px}
 .wh-bl{bottom:24px;left:24px}

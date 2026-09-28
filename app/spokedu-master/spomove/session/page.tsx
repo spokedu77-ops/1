@@ -163,9 +163,9 @@ function UnsupportedPreset() {
     <main className="flex h-dvh items-center justify-center bg-slate-950 px-5 text-white">
       <section className="w-full max-w-lg rounded-[28px] border border-white/10 bg-white/[0.06] p-8 text-center">
         <X className="mx-auto h-8 w-8 text-rose-300" />
-        <h1 className="mt-5 text-2xl font-black">지원하지 않는 SPOMOVE 활동입니다.</h1>
+        <h1 className="mt-5 text-2xl font-extrabold">지원하지 않는 SPOMOVE 활동입니다.</h1>
         <p className="mt-3 text-sm font-semibold text-white/55">공식 SPOMOVE 목록에서 활동을 다시 선택해 주세요.</p>
-        <Link href="/spokedu-master/spomove" className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-black text-slate-950">
+        <Link href="/spokedu-master/spomove" className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-extrabold text-slate-950">
           프로그램 선택으로
         </Link>
       </section>
@@ -1066,8 +1066,8 @@ function SpomoveSessionContent() {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-slate-950 px-5 py-8 text-white">
         <section className="w-full max-w-md rounded-[24px] border border-white/15 bg-white/[0.06] p-6 shadow-2xl">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-amber-300">Interrupted run</p>
-          <h1 className="mt-2 text-2xl font-black">이전 훈련이 중단되었습니다.</h1>
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-amber-300">Interrupted run</p>
+          <h1 className="mt-2 text-2xl font-extrabold">이전 훈련이 중단되었습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-white/65">
             점수와 현재 자극을 정확히 복원할 수 없어 이어하기는 제공하지 않습니다. 마지막 설정으로 새 훈련을 시작할 수 있습니다.
           </p>
@@ -1077,7 +1077,7 @@ function SpomoveSessionContent() {
             <div className="flex justify-between gap-4"><dt className="text-white/55">복구 방식</dt><dd className="font-bold">안전하게 다시 시작</dd></div>
           </dl>
           <div className="mt-6 grid gap-2">
-            <button type="button" disabled={bgmLoading} onClick={restartInterruptedRun} className="min-h-12 rounded-xl bg-white px-4 text-sm font-black text-slate-950 disabled:opacity-50">{bgmLoading ? '설정 확인 중…' : '같은 설정으로 다시 시작'}</button>
+            <button type="button" disabled={bgmLoading} onClick={restartInterruptedRun} className="min-h-12 rounded-xl bg-white px-4 text-sm font-extrabold text-slate-950 disabled:opacity-50">{bgmLoading ? '설정 확인 중…' : '같은 설정으로 다시 시작'}</button>
             <button type="button" onClick={exitInterruptedRun} className="min-h-11 rounded-xl border border-white/20 px-4 text-sm font-bold text-white/75">종료하고 돌아가기</button>
           </div>
         </section>
@@ -1161,7 +1161,7 @@ function SpomoveSessionContent() {
             type="button"
             onClick={pauseSession}
             disabled={state === 'paused'}
-            className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-[401] min-h-11 rounded-xl border border-white/20 bg-black/70 px-4 text-sm font-black text-white backdrop-blur disabled:hidden"
+            className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-[401] min-h-11 rounded-xl border border-white/20 bg-black/70 px-4 text-sm font-extrabold text-white backdrop-blur disabled:hidden"
           >
             일시정지
           </button>
@@ -1172,7 +1172,7 @@ function SpomoveSessionContent() {
             <p className="min-w-0 flex-1 text-[13px] font-bold leading-5">
               {activationBlocked === 'audioBlocked' ? '소리를 사용할 수 없어 화면은 계속 실행됩니다.' : activationBlocked === 'fullscreenBlocked' ? '전체화면을 사용할 수 없어 일반 화면으로 실행합니다.' : '전체화면과 소리를 사용할 수 없어 일반 화면으로 계속 실행합니다.'}
             </p>
-            <button type="button" onClick={unlockActivation} className="min-h-11 shrink-0 rounded-xl bg-white px-3 text-xs font-black text-black">다시 시도</button>
+            <button type="button" onClick={unlockActivation} className="min-h-11 shrink-0 rounded-xl bg-white px-3 text-xs font-extrabold text-black">다시 시도</button>
             <button type="button" onClick={() => setActivationBlocked(null)} aria-label="안내 닫기" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white/70"><X className="h-4 w-4" /></button>
             </div>
           </div>,
@@ -1181,10 +1181,10 @@ function SpomoveSessionContent() {
         {exitConfirmationOpen ? createPortal(
           <div className="fixed inset-0 flex items-center justify-center bg-black/70 px-5" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }} role="dialog" aria-modal="true" aria-labelledby="spomove-exit-title">
             <section className="w-full max-w-sm rounded-[22px] border border-white/15 bg-slate-950 p-5 text-white shadow-2xl">
-              <h2 id="spomove-exit-title" className="text-xl font-black">수업을 종료할까요?</h2>
+              <h2 id="spomove-exit-title" className="text-xl font-extrabold">수업을 종료할까요?</h2>
               <p className="mt-2 text-sm font-semibold text-white/60">지금까지 진행한 시간은 중도 종료로 남길 수 있습니다.</p>
               <div className="mt-5 grid gap-2">
-                <button type="button" autoFocus onClick={continueSession} className="min-h-12 rounded-xl bg-white text-sm font-black text-slate-950">계속하기</button>
+                <button type="button" autoFocus onClick={continueSession} className="min-h-12 rounded-xl bg-white text-sm font-extrabold text-slate-950">계속하기</button>
                 <button type="button" onClick={() => finishSession('stopped_early')} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
               </div>
             </section>
@@ -1194,10 +1194,10 @@ function SpomoveSessionContent() {
         {state === 'paused' && !exitConfirmationOpen && !movementSheetOpen ? createPortal(
           <div data-spomove-pause-overlay className="fixed inset-0 flex items-center justify-center bg-black/75 px-5" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }} role="dialog" aria-modal="true" aria-labelledby="spomove-pause-title">
             <section className="w-full max-w-sm rounded-2xl border border-white/15 bg-slate-950 p-5 text-white shadow-2xl">
-              <h2 id="spomove-pause-title" className="text-xl font-black">일시정지됨</h2>
+              <h2 id="spomove-pause-title" className="text-xl font-extrabold">일시정지됨</h2>
               <p className="mt-2 text-sm font-semibold text-white/60">준비가 되면 같은 지점에서 계속하세요.</p>
               <div className="mt-5 grid gap-2">
-                <button type="button" autoFocus onClick={resumeSession} className="min-h-12 rounded-xl bg-white text-sm font-black text-slate-950">계속하기</button>
+                <button type="button" autoFocus onClick={resumeSession} className="min-h-12 rounded-xl bg-white text-sm font-extrabold text-slate-950">계속하기</button>
                 {movementSupport === 'supported' ? (
                   <button type="button" onClick={openMovementSheet} className="min-h-11 rounded-xl border border-white/20 text-sm font-bold text-white">동작 변경</button>
                 ) : null}

@@ -207,7 +207,7 @@ export function BottomSheet({
           ) : (
             <h2
               id={titleId}
-              className={`${isSession ? 'text-[19px] font-semibold leading-6' : `font-black ${isLaunch ? 'text-[16px] sm:text-[17px]' : 'text-[18px]'}`}`}
+              className={`${isSession ? 'text-[19px] font-semibold leading-6' : `font-extrabold ${isLaunch ? 'text-[16px] sm:text-[17px]' : 'text-[18px]'}`}`}
               style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0 }}
             >
               {title}

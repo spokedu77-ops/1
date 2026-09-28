@@ -47,7 +47,7 @@ const css = `
 .rmt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.06)}
 .rmt-hc.grow{flex:1;align-items:center;border-right:none}
 .rmt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.32);text-transform:uppercase}
-.rmt-hv{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
+.rmt-hv{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
 .rmt-hv.warn{animation:rmtw .5s ease-in-out infinite}
 @keyframes rmtw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 .rmt-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.45);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer}
@@ -83,7 +83,7 @@ const css = `
 .rmt-acc--bow::after{right:-28%;transform:rotate(18deg)}
 .rmt-combo{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.7);z-index:40;text-align:center;pointer-events:none;opacity:0;transition:opacity .08s,transform .15s cubic-bezier(.34,1.56,.64,1)}
 .rmt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.rmt-combo-n{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
+.rmt-combo-n{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 .rmt-combo-w{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.45)}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
@@ -459,7 +459,7 @@ export function RobloxMoleReactionTraining({
       <style
         dangerouslySetInnerHTML={{
           __html:
-            "@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap');",
+            "",
         }}
       />
       <style>{css}</style>

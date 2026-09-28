@@ -18,7 +18,7 @@ describe('SPOKEDU MASTER TabBar clearance architecture', () => {
     expect(shell).toContain('{hideChrome ? null : <TabBar');
     expect(tabBar).toContain('data-spm-tabbar="true"');
     expect(tabBar).toContain('fixed inset-x-0 bottom-0');
-    expect(tabBar).toContain('lg:hidden');
+    expect(tabBar).toContain('min-[768px]:hidden');
   });
 
   it('reserves shared TabBar + safe-area clearance on authenticated main content', () => {
@@ -27,7 +27,7 @@ describe('SPOKEDU MASTER TabBar clearance architecture', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
     const library = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
     expect(metrics).toContain('calc(70px + max(8px, env(safe-area-inset-bottom, 0px)))');
-    expect(shell).toContain('pb-[var(--spm-tabbar-clearance)] lg:pb-0');
+    expect(shell).toContain('pb-[var(--spm-tabbar-clearance)] min-[768px]:pb-0');
     expect(tools).not.toContain('pb-[86px]');
     expect(tools).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain');
     expect(library).toContain('max-lg:bottom-[var(--spm-tabbar-clearance,0px)]');

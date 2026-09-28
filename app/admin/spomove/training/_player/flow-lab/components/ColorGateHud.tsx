@@ -9,7 +9,7 @@ interface ColorGateHudProps {
   passCount?: number;
 }
 
-const HUD_SANS = "'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif";
+const HUD_SANS = 'var(--spm-font-body)';
 
 /** 브릿지 위 3D 문과 함께 쓰는 상단 안내 HUD (화면 전체 배경 없음) */
 export default function ColorGateHud({
@@ -51,7 +51,7 @@ export default function ColorGateHud({
 
       <p style={{
         fontSize: 'clamp(2.75rem, 9vw, 6.5rem)',
-        fontWeight: 900,
+        fontWeight: 800,
         fontFamily: HUD_SANS,
         fontStyle: 'normal',
         fontStretch: 'normal',
@@ -70,7 +70,7 @@ export default function ColorGateHud({
 
       <p style={{
         fontSize: 'clamp(1.5rem, 4.5vw, 3rem)',
-        fontWeight: 900,
+        fontWeight: 800,
         fontFamily: HUD_SANS,
         fontStyle: 'normal',
         letterSpacing: 0,

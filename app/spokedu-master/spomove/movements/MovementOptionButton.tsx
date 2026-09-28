@@ -24,13 +24,13 @@ export function MovementOptionButton({
           : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35 hover:text-white'
       }`}
     >
-      <span className="block text-[13px] font-black leading-snug">{presentation.shortLabel}</span>
+      <span className="block text-[13px] font-extrabold leading-snug">{presentation.shortLabel}</span>
       <span className={`mt-1 block text-[10px] font-bold ${selected ? 'text-white/80' : 'text-white/45'}`}>
         {presentation.impactLabel}
       </span>
       {isOfficialRecommended ? (
         <span
-          className={`absolute -top-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-black ${
+          className={`absolute -top-1.5 right-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
             selected ? 'bg-white/20 text-white' : 'bg-[var(--spm-acc)] text-white'
           }`}
         >

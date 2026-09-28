@@ -161,7 +161,7 @@ export function MasterSessionResult({
             </button>
           ) : null}
           {recordHref && !fromSession ? (
-            <Link href={recordHref} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 text-[15px] font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">
+            <Link href={recordHref} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 text-[15px] font-extrabold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">
               <ClipboardList className="mr-2 h-4 w-4" /> 수업 기록 남기기
             </Link>
           ) : null}

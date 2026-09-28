@@ -53,7 +53,7 @@ export function SkeletonPosterCard() {
 
 export function SkeletonHero() {
   return (
-    <div className="mx-[22px] mb-7 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
+    <div className="mb-6 overflow-hidden p-4 min-[768px]:mx-6 min-[768px]:mb-8 min-[768px]:rounded-[18px] min-[768px]:p-6 min-[1200px]:mx-auto min-[1200px]:max-w-[1184px]" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
       <Skeleton height={10} width="30%" className="mb-3" />
       <Skeleton height={34} width="70%" className="mb-3" />
       <Skeleton height={14} width="90%" className="mb-2" />
@@ -68,40 +68,35 @@ export function SkeletonHero() {
 }
 
 export function DashboardSkeleton() {
+  const cardMediaClass = 'w-full !rounded-none min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto';
+
   return (
-    <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <div className="flex items-center justify-between px-[22px] pb-[18px] pt-[22px] sm:px-8 lg:px-10">
-        <div className="space-y-2">
-          <Skeleton height={12} width={80} />
-          <Skeleton height={22} width={120} />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton height={32} width={70} rounded="full" />
-          <Skeleton height={38} width={38} rounded="10px" />
-        </div>
-      </div>
+    <div className="h-full overflow-y-auto" style={{ background: 'var(--spm-bg)' }}>
       <SkeletonHero />
-      <div className="mb-7 px-[22px] sm:px-8 lg:px-10">
-        <Skeleton height={18} width={120} className="mb-4" />
-        <div className="grid gap-2 sm:grid-cols-3">
-          <Skeleton height={86} rounded="14px" />
-          <Skeleton height={86} rounded="14px" />
-          <Skeleton height={86} rounded="14px" />
+      <div className="mx-auto w-full max-w-[1168px] px-4 pt-6 min-[768px]:px-6 min-[768px]:pt-8">
+        <Skeleton height={24} width={132} className="mb-4" />
+        <div data-dashboard-skeleton-grid="operational" className="grid grid-cols-1 gap-3 min-[768px]:grid-cols-3 min-[768px]:gap-4">
+          {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-[120px] min-[768px]:h-[132px]" rounded="16px" />)}
         </div>
       </div>
-      <div className="mb-7 px-[22px] sm:px-8 lg:px-10">
-        <Skeleton height={18} width={140} className="mb-4" />
-        <Skeleton height={132} rounded="14px" />
-      </div>
-      <div className="mb-7 px-[22px] sm:px-8 lg:px-10">
-        <Skeleton height={18} width={140} className="mb-4" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+      {(['weekly', 'spomove'] as const).map((section) => (
+        <div key={section} className={`mx-auto w-full max-w-[1168px] px-4 pt-10 min-[768px]:px-6 min-[768px]:pt-12 ${section === 'spomove' ? 'pb-6 min-[768px]:pb-12' : ''}`}>
+          <Skeleton height={24} width={210} className="mb-4 min-[768px]:mb-5" />
+          <div data-dashboard-skeleton-grid={section} className="grid grid-cols-2 gap-3 min-[768px]:gap-5 min-[1200px]:grid-cols-4">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="overflow-hidden rounded-[16px] border border-slate-200/80 bg-white">
+                <Skeleton
+                  className={`${cardMediaClass} ${section === 'weekly' ? 'aspect-[4/3]' : 'aspect-[3/2]'}`}
+                />
+                <div className="space-y-2 px-3.5 pb-3.5 pt-3">
+                  <Skeleton height={10} width="45%" />
+                  <Skeleton height={18} width="78%" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }

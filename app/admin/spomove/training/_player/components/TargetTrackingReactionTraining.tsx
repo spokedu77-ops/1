@@ -93,9 +93,9 @@ const css = `
 .ttrk-qlabel{position:absolute;inset:14px auto auto 16px;font-size:clamp(13px,2vw,19px);font-weight:800;color:rgba(255,255,255,.65)}
 .ttrk-node{position:absolute;left:25%;top:25%;width:clamp(58px,10vmin,112px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);background:#f4f4f5;border:4px solid rgba(255,255,255,.86);box-shadow:0 10px 28px rgba(0,0,0,.38);transition-property:left,top;transition-timing-function:cubic-bezier(.4,0,.2,1);z-index:4}
 .ttrk-node.target{background:#f97316;border-color:#fff;box-shadow:0 0 0 9px rgba(249,115,22,.4),0 0 52px 22px rgba(249,115,22,.9);animation:ttrk-target-pulse .7s ease-in-out infinite alternate}
-.ttrk-node.target::after{content:'목표';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:clamp(15px,2.5vmin,24px);font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.45)}
+.ttrk-node.target::after{content:'목표';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:clamp(15px,2.5vmin,24px);font-weight: 800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.45)}
 @keyframes ttrk-target-pulse{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.12)}}
-.ttrk-message{position:absolute;z-index:10;left:50%;top:clamp(18px,5vh,52px);transform:translateX(-50%);padding:10px 24px;border-radius:999px;background:rgba(5,8,14,.72);font-size:clamp(18px,3vw,30px);font-weight:900;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.ttrk-message{position:absolute;z-index:10;left:50%;top:clamp(18px,5vh,52px);transform:translateX(-50%);padding:10px 24px;border-radius:999px;background:rgba(5,8,14,.72);font-size:clamp(18px,3vw,30px);font-weight: 800;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.25)}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 

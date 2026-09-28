@@ -20,11 +20,11 @@ function LessonFactCell({
 }) {
   const boxClass = compact ? COMPACT_CELL_CLASS : CELL_CLASS;
   const labelClass = compact
-    ? 'text-[9px] font-black uppercase tracking-[0.08em] text-[var(--spm-acc)]'
-    : 'text-[11px] font-black uppercase tracking-[0.1em] text-[var(--spm-acc)]';
+    ? 'text-[9px] font-extrabold uppercase tracking-[0.08em] text-[var(--spm-acc)]'
+    : 'text-[11px] font-extrabold uppercase tracking-[0.1em] text-[var(--spm-acc)]';
   const valueClass = compact
-    ? 'mt-1 line-clamp-2 break-keep text-[11px] font-black leading-4 text-slate-950'
-    : 'mt-2 line-clamp-3 flex-1 break-keep text-[13px] font-black leading-5 text-slate-950';
+    ? 'mt-1 line-clamp-2 break-keep text-[11px] font-extrabold leading-4 text-slate-950'
+    : 'mt-2 line-clamp-3 flex-1 break-keep text-[13px] font-extrabold leading-5 text-slate-950';
 
   return (
     <div className={boxClass}>
@@ -38,7 +38,7 @@ export function LessonTitle({ title, badges }: { title: string; badges?: ReactNo
   return (
     <header>
       {badges ? <div className="mb-3 flex flex-wrap items-center gap-2">{badges}</div> : null}
-      <h2 className="text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{title}</h2>
+      <h2 className="text-2xl font-extrabold leading-tight text-slate-950 sm:text-3xl">{title}</h2>
     </header>
   );
 }
@@ -123,7 +123,7 @@ export function LessonVariationText({ text }: { text: string }) {
           return (
             <p key={`${index}-${trimmed}`} className="text-[13px] font-semibold leading-[1.95] text-slate-700">
               <span>{match[1]} </span>
-              <span className="text-[15.5px] font-black">{match[2]}</span>
+              <span className="text-[15.5px] font-extrabold">{match[2]}</span>
             </p>
           );
         }
@@ -155,12 +155,12 @@ export function LessonCoachScript({ text, prominent = false }: { text: string; p
             key={`${line}-${index}`}
             className="relative rounded-[10px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] px-3 py-2.5 pl-4"
           >
-            <span aria-hidden className={`absolute left-1.5 top-0.5 font-black leading-none text-[color-mix(in_srgb,var(--spm-acc)_55%,white)] ${openQuoteClass}`}>
+            <span aria-hidden className={`absolute left-1.5 top-0.5 font-extrabold leading-none text-[color-mix(in_srgb,var(--spm-acc)_55%,white)] ${openQuoteClass}`}>
               "
             </span>
             <p className={`pl-3 font-semibold italic leading-6 tracking-[0.01em] text-slate-700 ${prominent ? 'text-[14px]' : 'text-[13px]'}`}>
               {body}
-              <span className={`font-black text-[color-mix(in_srgb,var(--spm-acc)_55%,white)] ${closeQuoteClass}`}>"</span>
+              <span className={`font-extrabold text-[color-mix(in_srgb,var(--spm-acc)_55%,white)] ${closeQuoteClass}`}>"</span>
             </p>
           </blockquote>
         );
@@ -209,7 +209,7 @@ export function LessonChecklistCard({
 
   return (
     <div className="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
-      <p className={`text-[10px] font-black uppercase tracking-[0.1em] ${accentClass}`}>{label}</p>
+      <p className={`text-[10px] font-extrabold uppercase tracking-[0.1em] ${accentClass}`}>{label}</p>
       <div className="mt-1.5">{children}</div>
     </div>
   );
@@ -226,7 +226,7 @@ export function LessonFullSection({
 }) {
   return (
     <section className={`rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)] ${className}`}>
-      <h3 className="flex items-center gap-2 text-sm font-black text-slate-950">
+      <h3 className="flex items-center gap-2 text-sm font-extrabold text-slate-950">
         <BookOpen className="h-4 w-4 text-[var(--spm-acc)]" />
         {title}
       </h3>
@@ -243,7 +243,7 @@ export function LessonNumberedList({ items }: { items: string[] }) {
     <ol className="space-y-2">
       {items.map((step, index) => (
         <li key={`${step}-${index}`} className="grid grid-cols-[28px_1fr] gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-xs font-black text-[var(--spm-acc)] ring-1 ring-slate-200">
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-xs font-extrabold text-[var(--spm-acc)] ring-1 ring-slate-200">
             {index + 1}
           </span>
           <span className="min-w-0 font-semibold">{step}</span>

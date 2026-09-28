@@ -25,8 +25,8 @@ export function MovementHud({ movement, collapsed, onToggleCollapsed, compact }:
           aria-expanded={!collapsed}
         >
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/45">오늘의 동작</p>
-            <p className="mt-0.5 truncate text-[14px] font-black">{movement.displayLabel}</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/45">오늘의 동작</p>
+            <p className="mt-0.5 truncate text-[14px] font-extrabold">{movement.displayLabel}</p>
           </div>
           <span className="shrink-0 text-[11px] font-bold text-white/55">{collapsed ? '펼치기' : '접기'}</span>
         </button>

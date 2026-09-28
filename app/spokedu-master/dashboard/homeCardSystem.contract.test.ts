@@ -45,6 +45,10 @@ const commercialAccess = readFileSync(
   "app/spokedu-master/lib/commercialProgramAccess.ts",
   "utf8",
 );
+const skeleton = readFileSync(
+  "app/spokedu-master/components/ui/Skeleton.tsx",
+  "utf8",
+);
 
 describe("MASTER Home content card system", () => {
   it("keeps Home weekly as four editorial cards, not Library catalog grammar", () => {
@@ -90,9 +94,9 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).not.toContain("MV_HOME_SPOMOVE_COPY");
   });
 
-  it("keeps one mobile Weekly rail and presents four SPOMOVE discovery entries for every plan", () => {
-    expect(dashboard.match(/w-\[82vw\] max-w-\[340px\]/g)).toHaveLength(2);
-    expect(dashboard).toContain("snap-mandatory");
+  it("presents four Weekly and SPOMOVE discovery entries without Dashboard rails", () => {
+    expect(dashboard).not.toContain("snap-mandatory");
+    expect(dashboard).not.toContain("overflow-x-auto");
     expect(dashboard).toContain('data-dashboard-section="spomove-extension"');
     expect(dashboard).toContain("featuredSpomove.slice(0, 4)");
     expect(dashboard).toContain('data-spm-spomove-card-action="start"');
@@ -112,7 +116,7 @@ describe("MASTER Home content card system", () => {
     );
     expect(dashboard).not.toContain('mediaSize="compact"');
     expect(continueCard).toContain(
-      "mediaSize === 'compact' ? 'h-16 w-16' : 'h-20 w-20'",
+      "mediaSize === 'compact' ? 'h-16 w-16' : 'h-[72px] w-[72px] min-[768px]:h-20 min-[768px]:w-20'",
     );
     expect(dashboard).not.toContain("nextSessionProgram");
     expect(dashboard).toContain(
@@ -125,9 +129,8 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).not.toContain("bg-[var(--spm-spomove-surface)]");
     expect(dashboard).toContain("놀이체육을 디지털 자극 활동으로 확장합니다.");
     expect(dashboard).toContain('title="SPOMOVE 추천"');
-    expect(continueCard).toContain("w-[86vw]");
-    expect(continueCard).toContain("lg:w-auto");
-    expect(dashboard).toContain("lg:grid-cols-3");
+    expect(continueCard).toContain("w-full");
+    expect(dashboard).toContain("min-[768px]:grid-cols-3");
     expect(dashboard).toContain('title="다음 일정 없음"');
     expect(dashboard).toContain('title="최근 본 수업이 없습니다"');
     expect(dashboard).toContain("HomeEmptyScheduleThumb");
@@ -144,6 +147,69 @@ describe("MASTER Home content card system", () => {
       "MV_HOME_FEATURE_WIDTH = 'mx-auto w-full max-w-[1184px]'",
     );
     expect(dashboard).toContain("MV_HOME_FEATURE_WIDTH");
+  });
+
+  it("uses count-aware grids at every Dashboard breakpoint", () => {
+    expect(dashboard).not.toContain('data-dashboard-rail=');
+    expect(dashboard).toContain('data-dashboard-grid="operational"');
+    expect(dashboard).toContain('grid grid-cols-1 items-stretch gap-3 min-[768px]:grid-cols-3');
+    expect(dashboard.match(/grid grid-cols-2 items-stretch gap-3 min-\[768px\]:gap-5 min-\[1200px\]:grid-cols-4/g)).toHaveLength(2);
+    expect(dashboard).not.toContain('auto-fit');
+    expect(dashboard).not.toContain('auto-fill');
+    expect(continueCard).toContain('line-clamp-2');
+    expect(continueCard).toContain('data-dashboard-operational-meta="true"');
+    expect(continueCard).toContain('line-clamp-1');
+  });
+
+  it("keeps compact media dense without changing mobile or desktop composition", () => {
+    const compactMediaRule = "min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)]";
+    expect(dashboard).toContain("compactMedia");
+    expect(weeklyCard).toContain(compactMediaRule);
+    expect(dashboard).toContain(compactMediaRule);
+    expect(skeleton).toContain(compactMediaRule);
+    expect(skeleton).toContain("section === 'weekly' ? 'aspect-[4/3]' : 'aspect-[3/2]'");
+    expect(dashboard.match(/min-\[1200px\]:grid-cols-4/g)).toHaveLength(2);
+  });
+
+  it("uses a stable SPOMOVE heading row and delegates mobile tab clearance to AppShell", () => {
+    expect(dashboard).toContain("<h2 id={titleId} className={MV_HOME_SECTION_TITLE}>{title}</h2>");
+    expect(dashboard).toContain("description ? <p className={MV_HOME_SECTION_COPY}>{description}</p>");
+    expect(dashboard).not.toContain("!mt-0 hidden sm:block");
+    expect(dashboard).not.toContain("pb-28 min-[768px]:pb-12");
+    expect(dashboard).toContain("w-full px-4 pb-6 pt-12");
+    expect(skeleton).toContain('export function DashboardSkeleton()');
+    expect(skeleton).toContain('<div className="h-full overflow-y-auto"');
+  });
+
+  it("keeps mobile operational summaries to kicker, title, optional compact meta, and CTA", () => {
+    expect(continueCard).toContain("meta?: string");
+    expect(continueCard).toContain('data-dashboard-operational-meta="true"');
+    expect(continueCard).toContain('data-dashboard-operational-cta="true"');
+    expect(continueCard).toContain("meta ? <p");
+    expect(continueCard).toContain("line-clamp-1");
+    expect(continueCard).not.toContain("min-h-[132px]");
+    expect(continueCard).not.toContain("min-h-[156px]");
+    expect(dashboard).not.toContain("놀이체육이나 SPOMOVE를 열면 여기에 이어집니다");
+    expect(dashboard).not.toContain("수업 일정을 만들면 여기에 이어집니다");
+    expect(dashboard).not.toContain("meta={recentClassTool.description}");
+  });
+
+  it("uses one CTA system for all operational states", () => {
+    expect(dashboard.match(/actionLabel=/g)).toHaveLength(6);
+    expect(continueCard.match(/data-dashboard-operational-cta=/g)).toHaveLength(1);
+    expect(continueCard).toContain("MV_HOME_CARD_ACTION");
+    expect(continueCard).toContain("<ArrowRight size={15}");
+    expect(homeUiClasses).toContain("MV_HOME_CARD_ACTION = 'text-[13px] font-bold");
+  });
+
+  it("gives mobile Hero actions an explicit one-plus-two hierarchy", () => {
+    expect(dashboard).toContain('data-dashboard-hero-actions="true"');
+    expect(dashboard).toContain('data-dashboard-primary-cta="true"');
+    expect(dashboard).toContain('grid grid-cols-2');
+    expect(dashboard).toContain('spm-btn-primary col-span-2');
+    expect(dashboard).toContain("matchMedia('(max-width: 767px)')");
+    expect(dashboard).not.toContain('min-h-[288px]');
+    expect(dashboard).not.toContain('sm:min-h-[312px]');
   });
 
   it("overlays Weekly play affordance inside the media stage", () => {

@@ -47,10 +47,10 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
   return (
     <main className="mx-auto flex h-full w-full max-w-[920px] flex-col gap-6 overflow-y-auto px-4 pb-28 pt-6 sm:px-6 lg:pb-12">
       <header className="rounded-[22px] border p-6" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)' }}>
-        <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>
           SPOKEDU MASTER
         </p>
-        <h1 className="mt-2 text-[28px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
+        <h1 className="mt-2 text-[28px] font-extrabold leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
           {isLapsed ? '이용 기간이 종료되었습니다' : 'Lite로 수업 운영을 이어갈 수 있습니다'}
         </h1>
         <p className="mt-3 max-w-[560px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
@@ -61,14 +61,14 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
             href={paymentHref}
-            className="spm-btn-primary inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none"
+            className="spm-btn-primary inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-extrabold focus-visible:outline-none"
           >
             <ArrowRight size={16} />
             {primaryLabel}
           </Link>
           <Link
             href="/spokedu-master/landing#pricing"
-            className="inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black"
+            className="inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-extrabold"
             style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
           >
             플랜 비교 보기
@@ -79,7 +79,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
       {isLapsed ? <MasterValueEvidencePanel plan={snapshot.plan} preservedContext surface="preserved" /> : null}
 
       <section>
-        <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>
+        <h2 className="text-[18px] font-extrabold" style={{ color: 'var(--spm-t)' }}>
           이런 수업을 찾을 수 있어요
         </h2>
         <p className="mt-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
@@ -92,7 +92,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
               className="rounded-[14px] border p-3.5"
               style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}
             >
-              <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>
                 {label}
               </p>
               <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
@@ -105,8 +105,8 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
 
       <section className="grid gap-4 md:grid-cols-2">
         <article className="rounded-[18px] border p-5" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)' }}>
-          <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>Lite</p>
-          <p className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>Lite</p>
+          <p className="mt-1 text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
             {MASTER_PRODUCT_CATALOG.lite.priceLabel}
           </p>
           <ul className="mt-4 space-y-2">
@@ -122,8 +122,8 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
           className="rounded-[18px] border p-5"
           style={{ background: 'var(--spm-acc-a08)', borderColor: 'var(--spm-acc-a28)' }}
         >
-          <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>프리미엄</p>
-          <p className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>프리미엄</p>
+          <p className="mt-1 text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
             {MASTER_PRODUCT_CATALOG.premium.priceLabel}
           </p>
           <ul className="mt-4 space-y-2">
@@ -138,7 +138,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
       </section>
 
       <section className="rounded-[18px] border p-5" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)' }}>
-        <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>이용권으로 이어지는 수업 루프</h2>
+        <h2 className="text-[16px] font-extrabold" style={{ color: 'var(--spm-t)' }}>이용권으로 이어지는 수업 루프</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
             { icon: BookOpen, label: '수업 전', desc: '라이브러리에서 오늘 수업 고르기' },

@@ -89,13 +89,13 @@ export function LessonPreviewMedia({
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--spm-acc)] text-white ring-4 ring-white/70">
             <Play className="h-5 w-5 fill-current" />
           </span>
-          <p className="mt-4 text-base font-black">참고 영상 링크</p>
+          <p className="mt-4 text-base font-extrabold">참고 영상 링크</p>
           <a
             href={externalVideoUrl}
             target="_blank"
             rel="noreferrer"
             onClick={reportPlayback}
-            className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-slate-950"
+            className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-extrabold text-slate-950"
           >
             유튜브에서 열기
             <ExternalLink className="h-4 w-4" />

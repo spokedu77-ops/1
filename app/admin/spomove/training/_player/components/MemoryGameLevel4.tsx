@@ -198,7 +198,7 @@ export function MemoryGameLevel4({
             </div>
             <div key={`l4-${showIdx}`} className="mem-color-enter" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,300px)', fontWeight: 400, color: textColor, letterSpacing: '-0.04em', textShadow: `0 4px 60px rgba(0,0,0,0.2)`, userSelect: 'none', lineHeight: 1 }}>
+                <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,300px)', fontWeight: 800, color: textColor, letterSpacing: '-0.04em', textShadow: `0 4px 60px rgba(0,0,0,0.2)`, userSelect: 'none', lineHeight: 1 }}>
                   {currentItem.num}
                 </div>
                 <div style={{ fontSize: 'clamp(1rem,2.5vw,1.4rem)', fontWeight: 700, color: isYellow ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)', userSelect: 'none' }}>
@@ -221,7 +221,7 @@ export function MemoryGameLevel4({
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem' }}>
           <div style={{ fontSize: '4rem' }}>🎯</div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 900, color: '#fff', marginBottom: '0.6rem' }}>다 봤어요!</div>
+            <div style={{ fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 800, color: '#fff', marginBottom: '0.6rem' }}>다 봤어요!</div>
             <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', fontWeight: 500, lineHeight: 1.7 }}>이제 {QA_COUNT}가지 번호별 색깔을<br />맞혀볼 시간이에요</div>
           </div>
           <button onClick={handleAction} style={{ background: '#22C55E', color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1.1rem 2.8rem', fontSize: 'clamp(1rem,3vw,1.3rem)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 28px rgba(34,197,94,0.4)' }}>
@@ -243,7 +243,7 @@ export function MemoryGameLevel4({
             <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
               질문 {qaIdx + 1} / {QA_COUNT}
             </div>
-            <div style={{ fontSize: 'clamp(1.5rem,5vw,2.8rem)', fontWeight: 900, color: '#fff', lineHeight: 1.35 }}>
+            <div style={{ fontSize: 'clamp(1.5rem,5vw,2.8rem)', fontWeight: 800, color: '#fff', lineHeight: 1.35 }}>
               <span style={{ color: '#FCD34D', fontSize: 'clamp(2rem,6vw,3.5rem)' }}>숫자 {currentQA.num}</span>은<br />무슨 색깔이었을까요?
             </div>
             <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.3)', marginTop: '1rem', fontWeight: 500 }}>
@@ -275,9 +275,9 @@ export function MemoryGameLevel4({
             {currentQA.num}번 정답
           </div>
           <div className="answer-pop" style={{ width: 'clamp(110px,25vw,180px)', height: 'clamp(110px,25vw,180px)', borderRadius: '2rem', background: currentQA.color.bg, boxShadow: `0 12px 48px ${currentQA.color.bg}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid rgba(255,255,255,0.2)' }}>
-            <span style={{ fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 900, color: isYellow ? '#111' : '#fff' }}>{currentQA.num}</span>
+            <span style={{ fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 800, color: isYellow ? '#111' : '#fff' }}>{currentQA.num}</span>
           </div>
-          <div style={{ fontSize: 'clamp(1.6rem,5vw,2.8rem)', fontWeight: 900, color: '#fff', textAlign: 'center', lineHeight: 1.3 }}>
+          <div style={{ fontSize: 'clamp(1.6rem,5vw,2.8rem)', fontWeight: 800, color: '#fff', textAlign: 'center', lineHeight: 1.3 }}>
             {currentQA.num}번은{' '}
             <span style={{ color: isYellow ? '#FACC15' : currentQA.color.bg, filter: isYellow ? 'none' : `drop-shadow(0 0 12px ${currentQA.color.bg})` }}>
               {currentQA.color.name}
@@ -300,7 +300,7 @@ export function MemoryGameLevel4({
         <style>{CSS}</style>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem' }}>
           <div style={{ fontSize: '4rem' }}>🎉</div>
-          <div style={{ fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 900, color: '#fff', textAlign: 'center' }}>모두 마쳤어요!</div>
+          <div style={{ fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 800, color: '#fff', textAlign: 'center' }}>모두 마쳤어요!</div>
           <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: 1.7 }}>
             {QA_COUNT}개 질문에 모두 답했습니다.<br />색깔-번호 기억 훈련 완료!
           </div>

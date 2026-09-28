@@ -327,7 +327,7 @@ export function LessonCatalogCard({
         {(cornerText || locked || showUsed) && (
           <div className={`pointer-events-none absolute right-3 ${showFavorite ? 'top-14' : 'top-3'} flex max-w-[72%] flex-wrap justify-end gap-1`}>
             {cornerText ? (
-              <span className={`${variant === 'home' ? 'rounded-[6px] border-white/25 bg-black/36 px-2 py-1 font-mono text-white/92' : 'rounded-full border-white/80 bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] px-2.5 py-1 text-[color:var(--spm-t2)]'} border text-[11px] font-medium backdrop-blur`}>
+              <span className={`${variant === 'home' ? 'rounded-[6px] border-white/25 bg-black/36 px-2 py-1 text-white/92' : 'rounded-full border-white/80 bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] px-2.5 py-1 text-[color:var(--spm-t2)]'} border text-[11px] font-medium backdrop-blur`}>
                 {cornerText}
               </span>
             ) : null}

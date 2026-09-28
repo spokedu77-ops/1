@@ -314,7 +314,7 @@ const css = `
 .ctrk-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .ctrk-hc.grow{flex:1;align-items:center;border-right:none}
 .ctrk-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
-.ctrk-hv{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
+.ctrk-hv{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
 .ctrk-hv.warn{animation:ctrkw .5s ease-in-out infinite}
 @keyframes ctrkw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
 .ctrk-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.14em;color:#a78bfa;margin-top:2px}
@@ -327,9 +327,9 @@ const css = `
 .ctrk-divider{width:3px;flex-shrink:0;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.18),rgba(255,255,255,.04))}
 .ctrk-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .ctrk-overlay{position:absolute;inset:0;z-index:20;pointer-events:none;display:flex;flex-direction:column;align-items:center}
-.ctrk-msg{margin-top:8%;font-size:clamp(14px,2.6vw,24px);font-weight:900;color:#fff;text-shadow:0 0 16px rgba(0,0,0,.85);background:rgba(0,0,0,.55);padding:8px 22px;border-radius:999px;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.ctrk-msg{margin-top:8%;font-size:clamp(14px,2.6vw,24px);font-weight: 800;color:#fff;text-shadow:0 0 16px rgba(0,0,0,.85);background:rgba(0,0,0,.55);padding:8px 22px;border-radius:999px;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 .ctrk-cd{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);pointer-events:none}
-.ctrk-cd-n{font-size:clamp(100px,24vw,200px);font-weight:900;color:#f97316;line-height:1;animation:ctrkcd .45s ease-out}
+.ctrk-cd-n{font-size:clamp(100px,24vw,200px);font-weight: 800;color:#f97316;line-height:1;animation:ctrkcd .45s ease-out}
 @keyframes ctrkcd{from{transform:scale(1.35);opacity:.2}to{transform:scale(1);opacity:1}}
 .ctrk-reveal{position:absolute;left:50%;bottom:max(clamp(14px,3.5vh,32px),env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto}
 .ctrk-reveal-hint{font-size:11px;font-weight:700;color:rgba(255,255,255,.34);letter-spacing:.08em}
@@ -624,7 +624,7 @@ export function ColorTrackerReactionTraining({
       ctx.stroke();
 
       const pad = Math.max(10, panel.W * 0.028);
-      ctx.font = `400 ${Math.max(16, panel.W * 0.038)}px "Black Han Sans", SUIT, Pretendard, sans-serif`;
+      ctx.font = `400 ${Math.max(16, panel.W * 0.038)}px "Paperlogy", SUIT, Pretendard, sans-serif`;
       ctx.textBaseline = 'middle';
       const labels: [number, number, number][] = [
         [pad, pad, 0],

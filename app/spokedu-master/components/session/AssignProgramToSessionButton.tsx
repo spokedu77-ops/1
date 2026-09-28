@@ -66,18 +66,18 @@ export function AssignProgramToSessionButton({ program, className, targetSession
     {targetSessionId && message ? <p role="status" className={`mt-2 text-xs font-bold ${message.tone === 'success' ? 'text-emerald-700' : 'text-rose-700'}`}>{message.text}</p> : null}
     {open ? <BottomSheet open title="수업에 추가" onClose={() => setOpen(false)}>
       <div className="pb-4">
-        <p className="text-sm font-black text-slate-800">{program.title}</p>
+        <p className="text-sm font-extrabold text-slate-800">{program.title}</p>
         <div className="mt-4 flex items-center justify-between gap-3">
-          <div><p className="text-sm font-black text-slate-800">{showDateSearch ? '날짜의 예정 수업' : '다가오는 예정 수업'}</p><p className="mt-0.5 text-xs font-semibold text-slate-500">정확한 수업을 선택해 주세요.</p></div>
-          <button type="button" onClick={() => { setShowDateSearch((current) => !current); setMessage(null); }} className="min-h-11 shrink-0 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700">{showDateSearch ? '다가오는 수업 보기' : '다른 날짜 찾기'}</button>
+          <div><p className="text-sm font-extrabold text-slate-800">{showDateSearch ? '날짜의 예정 수업' : '다가오는 예정 수업'}</p><p className="mt-0.5 text-xs font-semibold text-slate-500">정확한 수업을 선택해 주세요.</p></div>
+          <button type="button" onClick={() => { setShowDateSearch((current) => !current); setMessage(null); }} className="min-h-11 shrink-0 rounded-xl border border-slate-200 px-3 text-xs font-extrabold text-slate-700">{showDateSearch ? '다가오는 수업 보기' : '다른 날짜 찾기'}</button>
         </div>
-        {showDateSearch ? <label className="mt-3 block text-xs font-black text-slate-600">날짜 선택
+        {showDateSearch ? <label className="mt-3 block text-xs font-extrabold text-slate-600">날짜 선택
           <input type="date" value={date} onChange={(event) => { setDate(event.target.value); setMessage(null); }} className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold" />
         </label> : null}
         <div className="mt-4 space-y-2">
           {sessions.map((session) => <button key={session.id} type="button" disabled={savingId !== null} onClick={() => void assign(session.id)} className="flex min-h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 text-left disabled:opacity-40">
             <span><strong className="block text-sm text-slate-800">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'numeric', day: 'numeric' })} {formatSeoulSessionTime(session.startAt)} · {session.className}</strong><small className="text-slate-500">활동 {session.programs.length}개 · 예정</small></span>
-            <span className="text-xs font-black text-slate-700">선택</span>
+            <span className="text-xs font-extrabold text-slate-700">선택</span>
           </button>)}
           {!sessions.length ? <p className="rounded-xl bg-slate-50 p-4 text-center text-xs font-semibold text-slate-500">{showDateSearch ? '이 날짜에 추가 가능한 예정 수업이 없습니다.' : '다가오는 예정 수업이 없습니다. 다른 날짜를 찾아보세요.'}</p> : null}
         </div>

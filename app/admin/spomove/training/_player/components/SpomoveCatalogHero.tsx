@@ -78,7 +78,7 @@ export function SpomoveCatalogHero() {
         position: 'relative',
         overflow: 'hidden',
         background: '#080C14',
-        fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif",
+        fontFamily: 'var(--spm-font-body)',
         color: '#fff',
         borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}

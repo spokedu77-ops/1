@@ -52,7 +52,7 @@ export function TabBar({
     <>
       <nav
         data-spm-tabbar="true"
-        className="fixed inset-x-0 bottom-0 z-50 border-t px-2 pt-2 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t px-2 pt-2 min-[768px]:hidden"
         style={{
           borderColor: 'var(--spm-br2)',
           background: 'color-mix(in srgb, var(--spm-bg) 92%, transparent)',
@@ -96,7 +96,7 @@ export function TabBar({
                   ) : null}
                 </span>
                 <span
-                  className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap"
+                  className="max-w-full px-0.5 text-center text-[10px] font-medium leading-none whitespace-nowrap"
                   style={{ color: active ? 'var(--spm-acc)' : '#64748b' }}
                 >
                   {shortLabel}

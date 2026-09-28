@@ -42,7 +42,7 @@ export default function SpokeduMasterError({ error, reset }: SpokeduMasterErrorP
     <main className="min-h-dvh px-4 py-10" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
       <section className="mx-auto max-w-lg rounded-[24px] border p-6 shadow-sm" style={{ background: 'var(--spm-s1)', borderColor: 'var(--spm-br2)' }}>
         <p className="text-sm font-bold text-[var(--spm-acc)]">SPOKEDU MASTER</p>
-        <h1 className="mt-3 text-2xl font-black" style={{ color: 'var(--spm-t)' }}>
+        <h1 className="mt-3 text-2xl font-extrabold" style={{ color: 'var(--spm-t)' }}>
           화면을 불러오지 못했습니다.
         </h1>
         <p className="mt-3 text-sm leading-6" style={{ color: 'var(--spm-t2)' }}>
@@ -52,14 +52,14 @@ export default function SpokeduMasterError({ error, reset }: SpokeduMasterErrorP
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="spm-btn-primary inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-black focus-visible:outline-none"
+            className="spm-btn-primary inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-extrabold focus-visible:outline-none"
           >
             새로고침
           </button>
           <button
             type="button"
             onClick={reset}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border px-4 text-sm font-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border px-4 text-sm font-extrabold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
             style={{ background: 'var(--spm-s1)', borderColor: 'var(--spm-br3)', color: 'var(--spm-t)' }}
           >
             다시 시도

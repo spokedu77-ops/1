@@ -121,8 +121,8 @@ export default function OnboardingPage() {
       <main className="mx-auto grid min-h-full w-full max-w-[1080px] gap-6 px-[22px] py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
         <div>
           <div className="mb-8">
-            <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
-            <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>Free로 수업을 먼저 경험하세요</h1>
+            <p className="text-[12px] font-extrabold uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
+            <h1 className="mt-3 text-[34px] font-extrabold leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>Free로 수업을 먼저 경험하세요</h1>
             <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>놀이체육과 수업 도구를 먼저 써 보고, 수업 운영이 필요하면 Lite로 확장할 수 있습니다.</p>
           </div>
 
@@ -130,7 +130,7 @@ export default function OnboardingPage() {
             {[0, 1, 2].map((item) => (
               <div key={item} className="flex items-center gap-2">
                 <StepDot active={step === item} done={step > item} />
-                <span className="text-[11px] font-black" style={{ color: step === item ? 'var(--spm-t)' : 'var(--spm-t3)' }}>{STEP_LABELS[item]}</span>
+                <span className="text-[11px] font-extrabold" style={{ color: step === item ? 'var(--spm-t)' : 'var(--spm-t3)' }}>{STEP_LABELS[item]}</span>
               </div>
             ))}
           </div>
@@ -138,7 +138,7 @@ export default function OnboardingPage() {
           <section className="rounded-[20px] p-5" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
             {step === 0 ? (
               <div className="space-y-3">
-                <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>사용 환경</h2>
+                <h2 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>사용 환경</h2>
                 <ChoiceCard title="개인 강사·교사" desc="내 계정으로 수업을 준비합니다. 이용권은 Free로 시작합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
                 <ChoiceCard title="센터·기관 운영" desc="여러 수업을 운영하는 환경입니다. 센터를 선택해도 별도 이용권으로 전환되지 않습니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
               </div>
@@ -146,7 +146,7 @@ export default function OnboardingPage() {
 
             {step === 1 ? (
               <div className="space-y-4">
-                <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 환경</h2>
+                <h2 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 환경</h2>
                 <label className="block">
                   <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름</span>
                   <input value={name} onChange={(event) => setName(event.target.value.slice(0, 20))} className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
@@ -171,8 +171,8 @@ export default function OnboardingPage() {
                 <div className="flex items-center gap-3">
                   <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'var(--spm-grn-a14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
                   <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-grn)' }}>준비 완료</p>
-                    <h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>MASTER 시작하기</h2>
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-grn)' }}>준비 완료</p>
+                    <h2 className="mt-1 text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>MASTER 시작하기</h2>
                   </div>
                 </div>
                 <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>무료 수업 1개를 체험하고 라이브러리와 수업 도구를 바로 사용할 수 있습니다.</p>
@@ -192,7 +192,7 @@ export default function OnboardingPage() {
                     {saveError}
                   </p>
                 ) : null}
-                <button type="button" onClick={finish} disabled={saving} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black focus-visible:outline-none disabled:opacity-50">
+                <button type="button" onClick={finish} disabled={saving} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none disabled:opacity-50">
                   {saving ? '저장 중...' : 'MASTER 시작하기'}
                 </button>
               </div>
@@ -200,8 +200,8 @@ export default function OnboardingPage() {
 
             {step < 2 ? (
               <div className="mt-6 grid grid-cols-[auto_1fr] gap-2">
-                <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="h-12 rounded-[12px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>이전</button>
-                <button type="button" onClick={() => setStep((value) => Math.min(2, value + 1))} disabled={!canNext} className="spm-btn-primary flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black focus-visible:outline-none disabled:opacity-50">
+                <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="h-12 rounded-[12px] px-5 text-[13px] font-extrabold disabled:opacity-40" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>이전</button>
+                <button type="button" onClick={() => setStep((value) => Math.min(2, value + 1))} disabled={!canNext} className="spm-btn-primary flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none disabled:opacity-50">
                   다음
                   <ArrowRight size={16} />
                 </button>
@@ -215,8 +215,8 @@ export default function OnboardingPage() {
         </div>
 
         <aside className="rounded-[22px] p-5" style={{ background: 'linear-gradient(180deg, var(--spm-acc-a16), var(--spm-grn-a08))', border: '1px solid var(--spm-br2)' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>시작하기</p>
-          <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>Free에서 바로 시작할 수 있습니다</h2>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>시작하기</p>
+          <h2 className="mt-2 text-[24px] font-extrabold leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>Free에서 바로 시작할 수 있습니다</h2>
           <div className="mt-5 space-y-3">
             {START_ITEMS.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="flex items-center gap-3 rounded-[15px] p-3" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>

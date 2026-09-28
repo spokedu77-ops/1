@@ -81,6 +81,7 @@ import {
   MV_CONTENT_TITLE,
   MV_EDITORIAL_WIDTH,
   MV_HEADING_TO_SHELF,
+  MV_HOME_DISPLAY,
   MV_HOME_SECTION_ACTION,
   MV_HOME_SECTION_COPY,
   MV_HOME_SECTION_TITLE,
@@ -146,7 +147,7 @@ function withDiscoveryReturn(href: string, returnTo: string, source: 'home') {
 function usePreferredLaunchMode(): 'projector' | 'mobile' {
   const [mode, setMode] = useState<'projector' | 'mobile'>('projector');
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 768px)');
+    const media = window.matchMedia('(max-width: 767px)');
     const apply = () => setMode(media.matches ? 'mobile' : 'projector');
     apply();
     media.addEventListener('change', apply);
@@ -171,10 +172,7 @@ function SectionHeader({
   return (
     <div className={MV_HEADING_TO_SHELF}>
       <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-4">
-        <div className="flex min-w-0 items-baseline gap-4">
-          <h2 id={titleId} className={MV_HOME_SECTION_TITLE}>{title}</h2>
-          {description ? <p className={`${MV_HOME_SECTION_COPY} !mt-0 hidden sm:block`}>{description}</p> : null}
-        </div>
+        <h2 id={titleId} className={MV_HOME_SECTION_TITLE}>{title}</h2>
         {href && action ? (
           <Link href={href} className={MV_HOME_SECTION_ACTION}>
             {action}
@@ -182,7 +180,7 @@ function SectionHeader({
           </Link>
         ) : null}
       </div>
-      {description ? <p className={`${MV_HOME_SECTION_COPY} sm:hidden`}>{description}</p> : null}
+      {description ? <p className={MV_HOME_SECTION_COPY}>{description}</p> : null}
     </div>
   );
 }
@@ -269,6 +267,7 @@ function WeeklyProgramCard({
       cleanSquareMedia
       isNew={program.isNew}
       presentation="home"
+      compactMedia
     />
   );
 }
@@ -353,7 +352,7 @@ function SpomoveCard({
           sizes="(min-width: 1280px) 224px, (min-width: 768px) 45vw, 82vw"
           priority={priority}
           presentation="home-cover-4-3"
-          className="!aspect-[3/2] rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95"
+          className="!aspect-[3/2] rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95 min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto"
           fallback={(
             <SpomoveThumbnailPlaceholder />
           )}
@@ -823,9 +822,9 @@ function EntitledDashboardView() {
   const showContinuityChapter = !isFirstUser;
 
   return (
-    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-12">
-      <section data-dashboard-chapter="opening" className="lg:px-4 lg:pt-4">
-        <div className={`${MV_HOME_FEATURE_WIDTH} relative isolate flex min-h-[288px] overflow-hidden bg-slate-950 sm:min-h-[312px] lg:min-h-[328px] lg:rounded-[20px]`}>
+    <main data-dashboard-root="true" className="h-full overflow-y-auto bg-[var(--spm-bg)]">
+      <section data-dashboard-chapter="opening" className="min-[1200px]:px-4 min-[1200px]:pt-4">
+        <div className={`${MV_HOME_FEATURE_WIDTH} relative isolate flex overflow-hidden bg-slate-950 min-[1200px]:min-h-[328px] min-[1200px]:rounded-[20px]`}>
         <Image
           src={homeHeroSrc}
           alt="SPOKEDU 체육 수업 현장"
@@ -835,29 +834,29 @@ function EntitledDashboardView() {
           className="-z-20 object-cover object-[58%_40%] sm:object-[center_40%]"
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" aria-hidden />
-        <div className={`${MV_EDITORIAL_WIDTH} flex w-full items-end px-5 pb-7 pt-14 sm:px-6 sm:pb-9 lg:px-6 min-[1216px]:px-0`}>
+        <div className={`${MV_EDITORIAL_WIDTH} flex w-full items-end px-4 pb-5 pt-7 min-[430px]:px-5 min-[768px]:px-6 min-[768px]:pb-8 min-[768px]:pt-10 min-[1200px]:px-6 min-[1200px]:pb-9 min-[1200px]:pt-14 min-[1216px]:px-0`}>
           <header className="max-w-[610px] text-white">
             <p className="text-[12px] font-semibold leading-5 text-white/70 sm:text-[13px]">
               SPOKEDU MASTER · MOVEMENT BECOMES LEARNING
             </p>
             <h1
-              className="mt-3 whitespace-pre-line text-[32px] font-semibold leading-[1.08] text-white sm:text-[38px] lg:text-[42px]"
-              style={{ fontFamily: 'var(--spm-font-display, inherit)' }}
+              className={`mt-3 ${MV_HOME_DISPLAY}`}
+              style={{ color: 'white' }}
             >
               {'움직임이 배움이 되는\n오늘의 수업을 준비하세요'}
             </h1>
             <p className="mt-3 max-w-[520px] text-[15px] font-normal leading-6 text-white/80 sm:text-[16px]">
               놀이체육과 디지털 활동을 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2.5">
-              <Link href={`/spokedu-master/library/${FREE_PREVIEW_PROGRAM_ID}`} className="spm-btn-primary inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-semibold focus-visible:outline-none">
+            <div data-dashboard-hero-actions="true" className="mt-5 grid grid-cols-2 gap-2.5 min-[768px]:flex min-[768px]:flex-wrap">
+              <Link data-dashboard-primary-cta="true" href={`/spokedu-master/library/${FREE_PREVIEW_PROGRAM_ID}`} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
                 무료 수업 보기 <ArrowRight size={15} aria-hidden />
               </Link>
-              <Link href="/spokedu-master/class-tools" className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+              <Link href="/spokedu-master/class-tools" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                 수업 도구 열기
               </Link>
               {accessSnapshot.canUseAttendance ? (
-                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   수업 일정 보기
                 </Link>
               ) : null}
@@ -868,7 +867,7 @@ function EntitledDashboardView() {
       </section>
 
       {isFirstUser ? (
-        <div data-dashboard-chapter="first-start" className="px-4 pb-0 pt-8 sm:px-6">
+        <div data-dashboard-chapter="first-start" className="px-4 pb-0 pt-6 min-[768px]:px-6 min-[768px]:pt-8">
           <div className={MV_EDITORIAL_WIDTH}>
             <FirstStartGuide canUseAttendance={accessSnapshot.canUseAttendance} />
           </div>
@@ -876,7 +875,7 @@ function EntitledDashboardView() {
       ) : null}
 
       {showContinuityChapter ? (
-        <section data-dashboard-chapter="continuity" aria-labelledby="continuity-heading" className="px-4 pb-0 pt-8 sm:px-6">
+        <section data-dashboard-chapter="continuity" aria-labelledby="continuity-heading" className="px-4 pb-0 pt-6 min-[768px]:px-6 min-[768px]:pt-8">
           <div className={MV_EDITORIAL_WIDTH}>
             <SectionHeader
               title="이어서 준비"
@@ -884,8 +883,7 @@ function EntitledDashboardView() {
               href="/spokedu-master/activity"
               action="전체 보기"
             />
-            <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
-              <div className="flex w-max snap-x snap-mandatory items-stretch gap-4 lg:grid lg:w-full lg:grid-cols-3 lg:snap-none">
+            <div data-dashboard-grid="operational" className="grid grid-cols-1 items-stretch gap-3 min-[768px]:grid-cols-3 min-[768px]:gap-4">
                 {latestRecentActivity?.action === 'spomove_started' && OFFICIAL_SPOMOVE_LIBRARY.some((item) => item.id === latestRecentActivity.programId) ? (
                   <RecentSpomoveReuseCard
                     activity={latestRecentActivity}
@@ -901,7 +899,6 @@ function EntitledDashboardView() {
                   <HomeContinueCard
                     kicker="최근 활동"
                     title="최근 본 수업이 없습니다"
-                    meta="놀이체육이나 SPOMOVE를 열면 여기에 이어집니다"
                     actionLabel="수업 찾아보기"
                     href="/spokedu-master/library"
                     media={<HomeEmptyRecentThumb />}
@@ -920,7 +917,6 @@ function EntitledDashboardView() {
                   <HomeContinueCard
                     kicker="내 다음 수업"
                     title="다음 일정 없음"
-                    meta="수업 일정을 만들면 여기에 이어집니다"
                     actionLabel="수업 일정 보기"
                     href="/spokedu-master/activity"
                     media={<HomeEmptyScheduleThumb />}
@@ -929,7 +925,6 @@ function EntitledDashboardView() {
                 <HomeContinueCard
                   kicker="최근 수업도구"
                   title={recentClassTool.label}
-                  meta={recentClassTool.description}
                   actionLabel="도구 열기"
                   href={buildClassToolHref(recentClassTool.id)}
                   media={(
@@ -938,7 +933,6 @@ function EntitledDashboardView() {
                     </span>
                   )}
                 />
-              </div>
             </div>
           </div>
         </section>
@@ -947,7 +941,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="featured-flow"
         aria-label="이번 주 수업 추천"
-        className="px-4 pb-0 pt-12 sm:px-6"
+        className="px-4 pb-0 pt-10 min-[768px]:px-6 min-[768px]:pt-12"
       >
         <div className={MV_EDITORIAL_WIDTH}>
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
@@ -960,10 +954,9 @@ function EntitledDashboardView() {
           {!programsLoaded ? (
             <p className="text-[15px] text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
           ) : weeklyPrograms.length > 0 ? (
-            <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
-              <div className="flex w-max snap-x snap-mandatory items-start gap-5 lg:grid lg:w-auto lg:grid-cols-4 lg:snap-none">
+            <div data-dashboard-grid="weekly" className="grid grid-cols-2 items-stretch gap-3 min-[768px]:gap-5 min-[1200px]:grid-cols-4">
                 {weeklyPrograms.slice(0, 4).map((program, index) => (
-                  <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-auto lg:max-w-none lg:shrink">
+                  <div key={program.id} data-dashboard-card="weekly" className="h-full min-w-0">
                     <WeeklyProgramCard
                       program={program}
                       onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
@@ -976,7 +969,6 @@ function EntitledDashboardView() {
                     />
                   </div>
                 ))}
-              </div>
             </div>
           ) : programsError ? (
             <div>
@@ -998,7 +990,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="spomove-extension"
         aria-labelledby="spomove-heading"
-        className="w-full px-4 pb-12 pt-14 sm:px-6"
+        className="w-full px-4 pb-6 pt-12 min-[768px]:px-6 min-[768px]:pb-12 min-[768px]:pt-14"
       >
         <div className={MV_EDITORIAL_WIDTH}>
         <SectionHeader
@@ -1008,11 +1000,11 @@ function EntitledDashboardView() {
           href="/spokedu-master/spomove"
           action="SPOMOVE 더 보기"
         />
-        <div className="-mx-4 flex snap-x snap-mandatory items-stretch gap-5 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+        <div data-dashboard-grid="spomove" className="grid grid-cols-2 items-stretch gap-3 min-[768px]:gap-5 min-[1200px]:grid-cols-4">
           {featuredSpomove.slice(0, 4).map((preset) => {
             const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
             return (
-                <div key={preset.id} className="flex h-auto w-[82vw] max-w-[340px] shrink-0 snap-start md:h-full md:w-auto md:max-w-none">
+                <div key={preset.id} data-dashboard-card="spomove" className="flex h-full min-w-0">
                 <SpomoveCard
                   preset={preset}
                   thumbnailUrl={thumbnail}

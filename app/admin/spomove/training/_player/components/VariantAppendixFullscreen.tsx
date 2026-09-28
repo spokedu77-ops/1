@@ -358,7 +358,7 @@ export function VariantAppendixFullscreen({ onClose }: { onClose: () => void }) 
           borderBottom: `1px solid ${BORDER}`,
         }}
       >
-        <div style={{ fontSize: '1.05rem', fontWeight: 900, color: TEXT, letterSpacing: '-0.01em' }}>
+        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: TEXT, letterSpacing: '-0.01em' }}>
           연상 색지각 이미지 소개
         </div>
         <button

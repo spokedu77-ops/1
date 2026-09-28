@@ -30,12 +30,12 @@ export function StudentManageScreen({
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#080C14', fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif", color: '#fff' }}>
+    <div style={{ minHeight: '100dvh', background: '#080C14', fontFamily: 'var(--spm-font-body)', color: '#fff' }}>
       <style>{CSS}</style>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '1.5rem 1.5rem 5rem' }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0, marginBottom: '1.2rem' }}>← 돌아가기</button>
         <div style={{ marginBottom: '1.8rem' }}>
-          <div style={{ fontSize: '1.6rem', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1 }}>학생 관리</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>학생 관리</div>
           <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.3rem' }}>Student Profiles</div>
         </div>
         <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.1rem', padding: '1rem 1.2rem', marginBottom: '1.5rem' }}>
@@ -72,7 +72,7 @@ export function StudentManageScreen({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {students.map((s, i) => (
               <div key={s.id} className="home-fadein" style={{ animationDelay: `${i * 0.03}s`, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '1rem', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1rem', color: '#fff', flexShrink: 0 }}>{s.name[0]}</div>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', color: '#fff', flexShrink: 0 }}>{s.name[0]}</div>
                 {editingId === s.id ? (
                   <input
                     autoFocus

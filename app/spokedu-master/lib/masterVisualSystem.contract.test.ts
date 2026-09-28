@@ -10,7 +10,7 @@ describe('MASTER action/token freeze (not Art Direction PASS)', () => {
     expect(actions).toContain('SPM_JOURNEY_SECONDARY');
     expect(actions).toContain('SPM_JOURNEY_QUIET');
     expect(actions).toContain('SPM_DESTRUCTIVE_BTN');
-    expect(actions.match(/font-black/g)).toBeNull();
+    expect(actions.match(/font-extrabold/g)).toBeNull();
     expect(actions).toContain('font-semibold');
     expect(actions).toContain('font-medium');
   });

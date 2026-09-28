@@ -30,15 +30,15 @@ export function SystemDecisionBanner({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className={`text-[9px] font-black uppercase tracking-[0.14em] ${attention ? 'text-amber-700' : 'text-emerald-700'}`}>{eyebrow}</p>
-            {meta ? <span className={`text-[11px] font-black ${attention ? 'text-amber-800' : 'text-emerald-800'}`}>{meta}</span> : null}
+            <p className={`text-[9px] font-extrabold uppercase tracking-[0.14em] ${attention ? 'text-amber-700' : 'text-emerald-700'}`}>{eyebrow}</p>
+            {meta ? <span className={`text-[11px] font-extrabold ${attention ? 'text-amber-800' : 'text-emerald-800'}`}>{meta}</span> : null}
           </div>
-          <h2 className={`mt-0.5 text-sm font-black ${attention ? 'text-amber-950' : 'text-emerald-950'}`}>{title}</h2>
+          <h2 className={`mt-0.5 text-sm font-extrabold ${attention ? 'text-amber-950' : 'text-emerald-950'}`}>{title}</h2>
           {description ? <p className={`mt-0.5 text-xs font-semibold leading-5 ${attention ? 'text-amber-900/70' : 'text-emerald-900/70'}`}>{description}</p> : null}
         </div>
         <Link
           href={href}
-          className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-white px-3 text-xs font-black ring-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${attention ? 'text-amber-950 ring-amber-200 focus-visible:outline-amber-700' : 'text-emerald-950 ring-emerald-200 focus-visible:outline-emerald-700'}`}
+          className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-lg bg-white px-3 text-xs font-extrabold ring-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${attention ? 'text-amber-950 ring-amber-200 focus-visible:outline-amber-700' : 'text-emerald-950 ring-emerald-200 focus-visible:outline-emerald-700'}`}
         >
           {actionLabel}<ArrowRight aria-hidden className="h-3.5 w-3.5" />
         </Link>

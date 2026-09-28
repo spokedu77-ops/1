@@ -5,14 +5,14 @@
 import type { CSSProperties } from 'react';
 
 export const S: Record<string, CSSProperties> = {
-  page: { height: '100%', minHeight: '100dvh', background: 'var(--bg)', fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif", color: 'var(--text)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  page: { height: '100%', minHeight: '100dvh', background: 'var(--bg)', fontFamily: 'var(--spm-font-body)', color: 'var(--text)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   homeWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', padding: '2rem 1.5rem', gap: '2rem' },
-  h1: { fontSize: 'clamp(2.8rem,11vw,5rem)', fontWeight: 900, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1, margin: 0, textAlign: 'center' },
+  h1: { fontSize: 'clamp(2.8rem,11vw,5rem)', fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1, margin: 0, textAlign: 'center' },
   tag: { fontSize: 'clamp(1.05rem,3.5vw,1.45rem)', fontWeight: 700, color: '#F97316', letterSpacing: '0.1em', marginTop: '0.5rem', textAlign: 'center' },
   desc: { fontSize: 'clamp(0.95rem,2.3vw,1.12rem)', color: 'var(--text-muted)', marginTop: '1rem', lineHeight: 1.8, fontWeight: 500, textAlign: 'center' },
   scroll: { display: 'flex', justifyContent: 'center', padding: 'clamp(1rem,4vw,2rem) clamp(0.75rem,3vw,1.5rem) 4rem', flex: 1, overflowY: 'auto', minHeight: 0 },
   card: { background: 'var(--card)', borderRadius: 'clamp(1.2rem,3vw,1.75rem)', padding: 'clamp(1.2rem,5vw,2.4rem)', maxWidth: 'clamp(20rem,90vw,34rem)', width: '100%', boxShadow: '0 4px 32px rgba(0,0,0,0.08)', border: '1px solid var(--border)', alignSelf: 'flex-start' },
-  ctitle: { fontSize: 'clamp(1.4rem,5vw,1.85rem)', fontWeight: 900, color: 'var(--text)', marginBottom: '0.45rem', marginTop: '1.1rem' },
+  ctitle: { fontSize: 'clamp(1.4rem,5vw,1.85rem)', fontWeight: 800, color: 'var(--text)', marginBottom: '0.45rem', marginTop: '1.1rem' },
   csub: { color: 'var(--text-muted)', fontWeight: 500, marginBottom: '1.6rem', fontSize: '1rem', lineHeight: 1.6 },
   back: { background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 600, padding: '0.2rem 0', fontFamily: 'inherit' },
   btn: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem 1.6rem', borderRadius: '1rem', border: 'none', cursor: 'pointer', fontSize: 'clamp(1rem,2.7vw,1.12rem)', fontWeight: 700, transition: 'opacity 0.12s, transform 0.12s', fontFamily: 'inherit' },

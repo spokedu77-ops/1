@@ -25,7 +25,7 @@ describe('UI Foundation v3.2 deep operational contract', () => {
     expect(studentDetail).toContain('title="수업 이력"');
     expect(studentDetail).toContain('MasterCollectionRow');
     expect(studentDetail).not.toContain('shadow-sm');
-    expect(studentDetail).not.toContain('font-black');
+    expect(studentDetail).not.toContain('font-extrabold');
   });
 
   it('uses the simple operational Session sequence without runtime workspaces', () => {

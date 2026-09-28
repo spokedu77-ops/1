@@ -18,7 +18,7 @@ const CELL_BG: Record<SpomatColor, string> = {
 
 function MarkerBadge({ marker }: { marker: LimbMarker }) {
   return (
-    <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-md bg-black/45 px-1 text-[10px] font-black text-white">
+    <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-md bg-black/45 px-1 text-[10px] font-extrabold text-white">
       {marker}
     </span>
   );
@@ -39,7 +39,7 @@ export function SpomatMovementDiagram({
       ? 'rounded-2xl border border-slate-200 bg-white p-4'
       : 'rounded-2xl border border-white/10 bg-black/25 p-4';
   const titleClass =
-    variant === 'light' ? 'text-[11px] font-black text-slate-500' : 'text-[11px] font-black text-white/45';
+    variant === 'light' ? 'text-[11px] font-extrabold text-slate-500' : 'text-[11px] font-extrabold text-white/45';
   const noteClass =
     variant === 'light'
       ? 'mt-3 text-[12px] font-semibold leading-5 text-slate-600'
@@ -54,7 +54,7 @@ export function SpomatMovementDiagram({
           return (
             <div
               key={color}
-              className={`relative flex aspect-square items-center justify-center rounded-lg text-[11px] font-black text-white ${CELL_BG[color]}`}
+              className={`relative flex aspect-square items-center justify-center rounded-lg text-[11px] font-extrabold text-white ${CELL_BG[color]}`}
             >
               {diagramCellLabel(color)}
               {marker ? <MarkerBadge marker={marker} /> : null}

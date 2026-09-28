@@ -35,7 +35,7 @@ export function MovementChangeSheet({
       <button type="button" className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
       <div role="dialog" aria-modal="true" aria-labelledby="movement-change-title" className="relative z-[1] max-h-[80vh] w-full max-w-md overflow-auto rounded-3xl bg-white p-4 shadow-2xl">
         <div className="flex items-center justify-between gap-3">
-          <h3 id="movement-change-title" className="text-[17px] font-black text-slate-950">동작 바꾸기</h3>
+          <h3 id="movement-change-title" className="text-[17px] font-extrabold text-slate-950">동작 바꾸기</h3>
           <button
             type="button"
             onClick={onClose}
@@ -63,7 +63,7 @@ export function MovementChangeSheet({
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
-                  <p className="text-[14px] font-black text-slate-950">{movementDisplayLabel(pick)}</p>
+                  <p className="text-[14px] font-extrabold text-slate-950">{movementDisplayLabel(pick)}</p>
                   <p className="mt-1 text-[11px] font-semibold text-slate-500">
                     {def.impactLevel === 'low' ? '낮은 강도' : def.impactLevel === 'medium' ? '중간 강도' : '높은 강도'}
                     {' · '}
@@ -80,7 +80,7 @@ export function MovementChangeSheet({
           <button
             type="button"
             onClick={() => onConfirmStart(selected)}
-            className="spm-btn-primary mt-4 flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none"
+            className="spm-btn-primary mt-4 flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none"
           >
             이 동작으로 시작
           </button>
@@ -88,7 +88,7 @@ export function MovementChangeSheet({
           <button
             type="button"
             onClick={onClose}
-            className="spm-btn-primary mt-4 flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none"
+            className="spm-btn-primary mt-4 flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none"
           >
             적용
           </button>

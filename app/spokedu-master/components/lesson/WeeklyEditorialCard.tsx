@@ -25,6 +25,7 @@ export function WeeklyEditorialCard({
   cleanSquareMedia = false,
   isNew = false,
   presentation = 'default',
+  compactMedia = false,
 }: {
   title: string;
   heroImageUrl?: string | null;
@@ -42,10 +43,14 @@ export function WeeklyEditorialCard({
   cleanSquareMedia?: boolean;
   isNew?: boolean;
   presentation?: 'default' | 'home' | 'library-featured';
+  compactMedia?: boolean;
 }) {
   const type = category.trim();
   const support = (supportMeta ?? '').trim();
   const isHomeFamily = presentation === 'home' || presentation === 'library-featured';
+  const compactMediaClass = compactMedia
+    ? 'min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto'
+    : '';
   const favoriteChrome = isHomeFamily
     ? favorite
       ? 'text-amber-500 hover:text-amber-600'
@@ -73,10 +78,10 @@ export function WeeklyEditorialCard({
               sizes={sizes}
               priority={priority}
               presentation={isHomeFamily ? 'home-cover-4-3' : cleanSquareMedia ? 'home-clean-square' : 'default'}
-              className={`${isHomeFamily ? 'rounded-none' : 'rounded-b-none'} transition-opacity duration-200 group-hover:opacity-95`}
+              className={`${isHomeFamily ? 'rounded-none' : 'rounded-b-none'} ${compactMediaClass} transition-opacity duration-200 group-hover:opacity-95`}
             />
           ) : (
-            <span className={`relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-slate-200 transition-opacity duration-200 group-hover:opacity-95 ${isHomeFamily ? '' : 'rounded-t-[15px]'}`}>
+            <span className={`relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-slate-200 transition-opacity duration-200 group-hover:opacity-95 ${compactMediaClass} ${isHomeFamily ? '' : 'rounded-t-[15px]'}`}>
               <CategoryIcon category={category} size={36} color="rgba(15,23,42,0.45)" />
             </span>
           )}

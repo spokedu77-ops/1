@@ -86,7 +86,7 @@ export function SettingsBriefing({
 
       {showCueSpeed ? (
         <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5 [@media(max-height:950px)]:p-3">
-          <p className="text-[12px] font-black tracking-[0.08em] text-white/55">자극 속도</p>
+          <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/55">자극 속도</p>
           {preset.engine.mode === 'spatial' && preset.engine.level === 7 ? (
             <p className="mt-1 text-[12px] font-semibold text-white/55">
               첫 그리드를 보여주는 시간입니다. 답 고르기는 3초 고정입니다.
@@ -102,7 +102,7 @@ export function SettingsBriefing({
                   type="button"
                   onClick={() => onCueSecondsChange(sec)}
                   title={`${sec}초 · ${getCueSpeedGuide(sec).tempoLabel}`}
-                  className={`relative inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-black transition [@media(max-height:950px)]:h-10 ${
+                  className={`relative inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-extrabold transition [@media(max-height:950px)]:h-10 ${
                     active
                       ? 'bg-[var(--spm-acc)] text-white'
                       : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'
@@ -110,7 +110,7 @@ export function SettingsBriefing({
                 >
                   {sec}
                   {recommended ? (
-                    <span className="absolute -top-2 right-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-black text-[var(--spm-acc)] shadow-sm">
+                    <span className="absolute -top-2 right-1 rounded-full bg-white px-1.5 py-0.5 text-[9px] font-extrabold text-[var(--spm-acc)] shadow-sm">
                       추천
                     </span>
                   ) : null}
@@ -193,7 +193,7 @@ export function SettingsBriefing({
         type="button"
         onClick={onStart}
         disabled={startDisabled}
-        className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-white text-[16px] font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 [@media(max-height:950px)]:h-12"
+        className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-white text-[16px] font-extrabold text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 [@media(max-height:950px)]:h-12"
       >
         <Play className="h-5 w-5 fill-black" />
         {startDisabled ? '불러오는 중…' : '수업 시작'}

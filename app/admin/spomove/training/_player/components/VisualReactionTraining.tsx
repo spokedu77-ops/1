@@ -492,7 +492,7 @@ const css = `
 #vrt .vrt-pad{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-right:1px solid rgba(255,255,255,.04);transition:background .06s}
 #vrt .vrt-pad:last-child{border-right:none}
 #vrt .vrt-pad-dot{width:clamp(7px,1.4vw,13px);height:clamp(7px,1.4vw,13px);border-radius:50%;opacity:.15;transition:all .08s}
-#vrt .vrt-pad-lbl{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(12px,2.1vw,19px);letter-spacing:.12em;opacity:.2;transition:opacity .08s}
+#vrt .vrt-pad-lbl{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(12px,2.1vw,19px);letter-spacing:.12em;opacity:.2;transition:opacity .08s}
 #vrt .vrt-pad[data-l="0"] .vrt-pad-dot,#vrt .vrt-pad[data-l="0"] .vrt-pad-lbl{color:var(--red);background:var(--red)}
 #vrt .vrt-pad[data-l="1"] .vrt-pad-dot,#vrt .vrt-pad[data-l="1"] .vrt-pad-lbl{color:var(--blue);background:var(--blue)}
 #vrt .vrt-pad[data-l="2"] .vrt-pad-dot,#vrt .vrt-pad[data-l="2"] .vrt-pad-lbl{color:var(--green);background:var(--green)}
@@ -511,18 +511,18 @@ const css = `
 #vrt .vrt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 #vrt .vrt-hc.vrt-cen{flex:1;align-items:center;border-right:none}
 #vrt .vrt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
-#vrt .vrt-hv{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
+#vrt .vrt-hv{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
 #vrt #vrt-mtime.warn{animation:vrtw .5s ease-in-out infinite}
 @keyframes vrtw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
-#vrt #vrt-badge{font-size:clamp(12px,2vw,16px);letter-spacing:.18em;color:rgba(255,255,255,.35);font-family:var(--spm-font-display);font-weight:400;font-synthesis:none}
+#vrt #vrt-badge{font-size:clamp(12px,2vw,16px);letter-spacing:.18em;color:rgba(255,255,255,.35);font-family:var(--spm-font-display);font-weight:800;font-synthesis:none}
 #vrt .vrt-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;display:flex;align-items:center;gap:6px}
 #vrt .vrt-stop:hover{background:rgba(255,255,255,.07);color:#fff}
 #vrt #vrt-combo{position:absolute;left:50%;top:43%;transform:translateX(-50%) translateY(-50%) scale(.7);z-index:60;text-align:center;pointer-events:none;opacity:0;transition:opacity .08s,transform .15s cubic-bezier(.34,1.56,.64,1)}
 #vrt #vrt-combo.show{opacity:1;transform:translateX(-50%) translateY(-50%) scale(1)}
-#vrt .vrt-cn{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(70px,14vw,128px);letter-spacing:.02em;color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
+#vrt .vrt-cn{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(70px,14vw,128px);letter-spacing:.02em;color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 #vrt .vrt-cw{font-size:clamp(10px,1.8vw,15px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.45)}
 @keyframes vrtms{0%{opacity:0;transform:translateX(-50%) scale(.5)}20%{opacity:1;transform:translateX(-50%) scale(1.12)}70%{opacity:1;transform:translateX(-50%) scale(1) translateY(-8px)}100%{opacity:0;transform:translateX(-50%) scale(.9) translateY(-48px)}}
-#vrt .vrt-ms{position:absolute;left:50%;z-index:65;pointer-events:none;font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;font-size:clamp(26px,5.5vw,52px);letter-spacing:.1em;white-space:nowrap;text-shadow:0 0 24px currentColor;animation:vrtms .85s ease-out forwards}
+#vrt .vrt-ms{position:absolute;left:50%;z-index:65;pointer-events:none;font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;font-size:clamp(26px,5.5vw,52px);letter-spacing:.1em;white-space:nowrap;text-shadow:0 0 24px currentColor;animation:vrtms .85s ease-out forwards}
 @media (max-height:600px){
   .vrt{--hud-h:56px;--pad-h:58px}
 }
@@ -1045,7 +1045,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
     <div className="vrt" id="vrt">
       <style
         dangerouslySetInnerHTML={{
-          __html: `@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap');`,
+          __html: ``,
         }}
       />
       <style>{css}</style>

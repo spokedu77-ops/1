@@ -44,24 +44,50 @@ export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot
 
   return (
     <header
-      className="sticky top-0 z-40 flex min-h-16 shrink-0 items-center border-b px-4 pt-[env(safe-area-inset-top)] sm:px-6 lg:px-8"
+      className="sticky top-0 z-40 flex min-h-16 shrink-0 items-center border-b px-4 pt-[env(safe-area-inset-top)] min-[768px]:px-6 min-[1200px]:px-8"
       style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(22px)', borderColor: '#e2e8f0' }}
     >
-      <div className={`${isHome ? MV_HOME_FEATURE_WIDTH : 'mx-auto w-full max-w-[1376px]'} flex items-center justify-between gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center`}>
+      <div className={`${isHome ? MV_HOME_FEATURE_WIDTH : 'mx-auto w-full max-w-[1376px]'} grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 min-[1200px]:grid-cols-[1fr_auto_1fr] min-[1200px]:gap-4`}>
         <Link
           href="/spokedu-master/dashboard"
-          className="flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] lg:justify-self-start"
+          className="flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] min-[1200px]:justify-self-start"
           aria-label="SPOKEDU MASTER 홈"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-slate-950 text-[11px] font-black text-white">SM</span>
-          <span className="hidden items-baseline gap-1.5 sm:flex">
+          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-slate-950 text-[11px] font-extrabold text-white">SM</span>
+          <span className="hidden items-baseline gap-1.5 min-[1200px]:flex">
             <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-500">SPOKEDU</span>
             <span className="text-[15px] font-semibold text-slate-900">MASTER</span>
           </span>
         </Link>
 
         <nav
-          className="hidden min-w-0 max-w-full items-center gap-1 overflow-x-auto lg:flex lg:justify-self-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          data-spm-tablet-nav="true"
+          className="hidden min-w-0 max-w-full items-center justify-center gap-0.5 overflow-x-auto min-[768px]:flex min-[1200px]:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="SPOKEDU MASTER 태블릿/컴팩트 메뉴"
+        >
+          {APP_LINKS.map(({ href, label, Icon, capability }) => {
+            const active = isActivePath(pathname, href);
+            const locked = snapshot != null && !hasMasterRouteCapability(snapshot, capability);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`relative flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] px-2.5 text-[12px] font-semibold transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] ${active ? 'text-slate-950' : 'text-slate-600'}`}
+                aria-current={active ? 'page' : undefined}
+                aria-label={locked ? `${label} (Lite 이상)` : label}
+              >
+                <Icon size={16} strokeWidth={1.9} className="shrink-0" />
+                <span className="whitespace-nowrap">{label}</span>
+                {locked ? <Lock size={11} className="shrink-0 text-slate-400" aria-hidden /> : null}
+                {active ? <span className="absolute bottom-1 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full bg-slate-950" aria-hidden /> : null}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <nav
+          data-spm-desktop-nav="true"
+          className="hidden min-w-0 max-w-full items-center gap-1 overflow-x-auto min-[1200px]:flex min-[1200px]:justify-self-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="SPOKEDU MASTER 데스크톱 메뉴"
         >
           {APP_LINKS.map(({ href, label, Icon, capability }) => {
@@ -84,9 +110,9 @@ export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2 lg:justify-self-end">
+        <div className="flex shrink-0 items-center gap-2 min-[1200px]:justify-self-end">
           {!operational.online ? <span
-            className="hidden min-h-9 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-black sm:inline-flex"
+            className="hidden min-h-9 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-semibold min-[1200px]:inline-flex"
             style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb-strong)' }}
             role="status"
           >

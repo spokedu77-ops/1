@@ -1364,7 +1364,7 @@ export default function MemoryGameApp({
       >
         <style>{CSS}</style>
         {countdown !== null ? (
-          <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 400, color: '#F97316', lineHeight: 1 }}>
+          <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>
             {countdown}
           </div>
         ) : null}
@@ -1375,7 +1375,7 @@ export default function MemoryGameApp({
   // ???? HOME ????
   if (screen === 'home') {
     return (
-      <div style={{ minHeight: '100dvh', background: '#080C14', fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif", color: '#fff', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ minHeight: '100dvh', background: '#080C14', fontFamily: 'var(--spm-font-body)', color: '#fff', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
         <style>{CSS}</style>
         <div style={{ position: 'absolute', top: '-20%', left: '-10%', width: '60vw', height: '60vw', maxWidth: 700, maxHeight: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: '-15%', right: '-15%', width: '55vw', height: '55vw', maxWidth: 600, maxHeight: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -1389,7 +1389,7 @@ export default function MemoryGameApp({
           <div className="home-fadein" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: 'clamp(0.6rem,1.5vw,0.72rem)', fontWeight: 700, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Cognitive ??Physical ??Education</div>
-              <div style={{ fontSize: 'clamp(1.5rem,4.5vw,2rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>SPOKEDU</div>
+              <div style={{ fontSize: 'clamp(1.5rem,4.5vw,2rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>SPOKEDU</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <button type="button" onClick={() => setShowStudentModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.65rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
@@ -1411,7 +1411,7 @@ export default function MemoryGameApp({
                 </React.Fragment>
               ))}
             </div>
-            <h1 style={{ fontSize: 'clamp(2.2rem,9vw,4rem)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.08, margin: 0 }}>
+            <h1 style={{ fontSize: 'clamp(2.2rem,9vw,4rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.08, margin: 0 }}>
               SPOMOVE Training<br />
               <span style={{ color: "#F97316" }}>Move and React</span>
             </h1>
@@ -1487,7 +1487,7 @@ export default function MemoryGameApp({
   if (screen === 'setup') {
     const stepNum = (n: number, label: string) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--subtle-bg)', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 900, flexShrink: 0, border: '2px solid #F97316' }}>{n}</div>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--subtle-bg)', color: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem', fontWeight: 800, flexShrink: 0, border: '2px solid #F97316' }}>{n}</div>
         <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)' }}>{label}</span>
       </div>
     );
@@ -1582,7 +1582,7 @@ export default function MemoryGameApp({
                     }}
                     style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${active ? M.accent : 'var(--border)'}`, background: active ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}
                   >
-                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "0.82rem", color: active ? "#fff" : "var(--text)", background: active ? M.accent : "var(--subtle-bg)", border: active ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>{lvIdx + 1}</div>
+                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.82rem", color: active ? "#fff" : "var(--text)", background: active ? M.accent : "var(--subtle-bg)", border: active ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>{lvIdx + 1}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>{lv.name}</span>
@@ -1599,7 +1599,7 @@ export default function MemoryGameApp({
                     onClick={() => setShowVariantAppendix((v) => !v)}
                     style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${showVariantAppendix ? M.accent : 'var(--border)'}`, background: showVariantAppendix ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}
                   >
-                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "0.75rem", color: showVariantAppendix ? "#fff" : "var(--text)", background: showVariantAppendix ? M.accent : "var(--subtle-bg)", border: showVariantAppendix ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>Info</div>
+                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.75rem", color: showVariantAppendix ? "#fff" : "var(--text)", background: showVariantAppendix ? M.accent : "var(--subtle-bg)", border: showVariantAppendix ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>Info</div>
                     <div>
                       <div style={{ fontWeight: 800, fontSize: "0.96rem", color: "var(--text)" }}>Variant image guide</div>
                       <div style={{ fontSize: "0.86rem", color: "var(--text-muted)", lineHeight: 1.55 }}>Check uploaded category images and names.</div>
@@ -1947,7 +1947,7 @@ export default function MemoryGameApp({
                           fontFamily: 'inherit',
                         }}
                       >
-                        <span style={{ display: 'block', fontWeight: 900 }}>
+                        <span style={{ display: 'block', fontWeight: 800 }}>
                           {settings.spatialArrowColorMode === value ? '✓ ' : ''}{label}
                         </span>
                         <span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: settings.spatialArrowColorMode === value ? M.accent : 'var(--text-muted)', fontWeight: 800 }}>
@@ -2253,7 +2253,7 @@ export default function MemoryGameApp({
 
                 {settings.mode === 'basic' && settings.level === 7 && settings.relativeCompassEnabled ? (
                   <>
-                    <div style={S.sec}>{stepNum(stepSpeed, '난이도')}<p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>쉬움은 흰 화살표, 보통은 색상 화살표, 어려움은 대각선이 포함됩니다. 화살표는 한 번에 하나만 나옵니다.</p><div style={{ display: 'flex', gap: '0.4rem' }}>{([['easy', '쉬움', '화살표'], ['normal', '보통', '색상 화살표'], ['hard', '어려움', '대각선']] as const).map(([value, label, sub]) => <button key={value} type="button" onClick={() => set('relativeCompassDifficulty', value)} style={{ flex: 1, padding: '0.55rem 0.75rem', borderRadius: '0.75rem', border: `2px solid ${settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--border)'}`, background: settings.relativeCompassDifficulty === value ? '#FFF7ED' : 'var(--card)', fontWeight: 800 }}><span style={{ display: 'block', fontWeight: 900 }}>{label}</span><span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--text-muted)', fontWeight: 800 }}>{sub}</span></button>)}</div></div>
+                    <div style={S.sec}>{stepNum(stepSpeed, '난이도')}<p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>쉬움은 흰 화살표, 보통은 색상 화살표, 어려움은 대각선이 포함됩니다. 화살표는 한 번에 하나만 나옵니다.</p><div style={{ display: 'flex', gap: '0.4rem' }}>{([['easy', '쉬움', '화살표'], ['normal', '보통', '색상 화살표'], ['hard', '어려움', '대각선']] as const).map(([value, label, sub]) => <button key={value} type="button" onClick={() => set('relativeCompassDifficulty', value)} style={{ flex: 1, padding: '0.55rem 0.75rem', borderRadius: '0.75rem', border: `2px solid ${settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--border)'}`, background: settings.relativeCompassDifficulty === value ? '#FFF7ED' : 'var(--card)', fontWeight: 800 }}><span style={{ display: 'block', fontWeight: 800 }}>{label}</span><span style={{ display: 'block', marginTop: 3, fontSize: '0.72rem', color: settings.relativeCompassDifficulty === value ? '#F97316' : 'var(--text-muted)', fontWeight: 800 }}>{sub}</span></button>)}</div></div>
                     <div style={S.sec}>{stepNum(stepSpeed + 1, '시작 위치 확인 · 반응 시간')}<SpeedSelector value={settings.relativeCompassStartSeconds} min={2} max={6} step={1} showPresets={false} onChange={(value) => setSettings((current) => ({ ...current, relativeCompassStartSeconds: value as RelativeCompassSeconds, relativeCompassResponseSeconds: value as RelativeCompassSeconds }))} /></div>
                   </>
                 ) : null}
@@ -2588,7 +2588,7 @@ export default function MemoryGameApp({
       return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400 }}>
           <style>{CSS}</style>
-          <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 400, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
+          <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
         </div>
       );
     }
@@ -2638,7 +2638,7 @@ export default function MemoryGameApp({
           />
         ) : countdown !== null ? (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 400, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
+            <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
         ) : isInstantMemory || reactEngineLevel === 12 ? (
           <ColorMemoryGridReactionTraining
@@ -2948,7 +2948,7 @@ export default function MemoryGameApp({
         {settings.intervalMode && intervalPhase === 'rest' && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 25, gap: '1rem' }}>
             <div style={{ fontSize: "3.5rem" }}>REST</div>
-            <div style={{ fontWeight: 900, fontSize: "2rem", color: "#86EFAC" }}>{intervalLeft}s</div>
+            <div style={{ fontWeight: 800, fontSize: "2rem", color: "#86EFAC" }}>{intervalLeft}s</div>
           </div>
         )}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 5, background: 'rgba(255,255,255,0.1)', zIndex: 20 }}>
@@ -2956,7 +2956,7 @@ export default function MemoryGameApp({
         </div>
         {countdown !== null && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30, backdropFilter: 'blur(8px)' }}>
-            <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 400, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
+            <div key={countdown} className="countdown-pop" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(120px,30vw,240px)', fontWeight: 800, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0 }}>

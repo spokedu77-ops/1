@@ -179,7 +179,7 @@ export function TrainingResultScreen({
   const sectionTitle: React.CSSProperties = {
     margin: 0,
     fontSize: 'var(--tr-label)',
-    fontWeight: 900,
+    fontWeight: 800,
     color: 'var(--text-muted)',
     letterSpacing: '0.02em',
   };
@@ -329,7 +329,7 @@ export function TrainingResultScreen({
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '0.68rem',
-                      fontWeight: 900,
+                      fontWeight: 800,
                       color: '#fff',
                     }}
                   >
@@ -338,7 +338,7 @@ export function TrainingResultScreen({
                   <span style={{ fontSize: 'var(--tr-label)', fontWeight: 700, color: student.color }}>{student.name}</span>
                 </div>
               ) : null}
-              <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 900, lineHeight: 1.15 }}>{dive ? dive.title : title}</div>
+              <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 800, lineHeight: 1.15 }}>{dive ? dive.title : title}</div>
               <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: 0, fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, lineHeight: 1.4 }}>
                 {dive ? dive.subtitle : rich.praiseSub}
               </p>
@@ -415,7 +415,7 @@ export function TrainingResultScreen({
                   }}
                 >
                   <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{stat.label}</span>
-                  <span className={stat.nowrap ? 'tr-dive-nowrap' : undefined} style={{ fontSize: 'var(--tr-stat)', fontWeight: 900, lineHeight: 1.15 }}>{stat.value}</span>
+                  <span className={stat.nowrap ? 'tr-dive-nowrap' : undefined} style={{ fontSize: 'var(--tr-stat)', fontWeight: 800, lineHeight: 1.15 }}>{stat.value}</span>
                 </div>
               ))}
               <div
@@ -433,7 +433,7 @@ export function TrainingResultScreen({
                 }}
               >
                 <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{dive ? '세션 상태' : '오늘 느낌'}</span>
-                <span className={dive ? 'tr-dive-nowrap' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 900, lineHeight: 1.2, textAlign: 'right', wordBreak: 'keep-all' }}>
+                <span className={dive ? 'tr-dive-nowrap' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 800, lineHeight: 1.2, textAlign: 'right', wordBreak: 'keep-all' }}>
                   {dive ? dive.sessionStatusValue : rich.activityFeel}
                 </span>
               </div>
@@ -532,14 +532,14 @@ export function TrainingResultScreen({
                         />
                         <div style={{ minWidth: 0, width: '100%' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                            <span style={{ fontSize: 'var(--tr-body)', fontWeight: 900 }}>{meta.name}</span>
+                            <span style={{ fontSize: 'var(--tr-body)', fontWeight: 800 }}>{meta.name}</span>
                             <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{percent}%</span>
                           </div>
                           <div style={{ marginTop: '0.32rem', height: 7, borderRadius: 999, background: 'var(--card)', overflow: 'hidden' }}>
                             <div style={{ width: `${percent}%`, height: '100%', background: meta.bg, borderRadius: 999 }} />
                           </div>
                         </div>
-                        <span style={{ fontSize: 'var(--tr-color)', fontWeight: 900, color: accent }}>{count}회</span>
+                        <span style={{ fontSize: 'var(--tr-color)', fontWeight: 800, color: accent }}>{count}회</span>
                       </div>
                     );
                   })}
@@ -595,7 +595,7 @@ export function TrainingResultScreen({
                       }}
                     >
                       <span className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800, flexShrink: dive ? 0 : undefined }}>{item.label}</span>
-                      <span className={item.nowrap ? 'tr-dive-nowrap' : dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 900, textAlign: 'right', wordBreak: 'keep-all', minWidth: 0 }}>{item.value}</span>
+                      <span className={item.nowrap ? 'tr-dive-nowrap' : dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 800, textAlign: 'right', wordBreak: 'keep-all', minWidth: 0 }}>{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -628,7 +628,7 @@ export function TrainingResultScreen({
           <section className="tr-result-card" style={{ ...card, gap: '0.7rem' }}>
             <div style={{ flexShrink: 0 }}>
               <h2 style={sectionTitle}>{dive ? '움직임 리포트' : '훈련 정리'}</h2>
-              <h3 className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.25rem 0 0', fontSize: 'var(--tr-title)', fontWeight: 900, lineHeight: 1.25 }}>
+              <h3 className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.25rem 0 0', fontSize: 'var(--tr-title)', fontWeight: 800, lineHeight: 1.25 }}>
                 {dive ? 'DIVE 액션무브' : rich.programTitle}
               </h3>
             </div>
@@ -642,7 +642,7 @@ export function TrainingResultScreen({
                 padding: '0.7rem',
               }}
             >
-              <div className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: accent }}>{dive ? '시각 신호 · 방향 전환 · 전신 반응' : (mo?.tag ?? 'SPOMOVE 훈련')}</div>
+              <div className={dive ? 'tr-dive-copy' : undefined} style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: accent }}>{dive ? '시각 신호 · 방향 전환 · 전신 반응' : (mo?.tag ?? 'SPOMOVE 훈련')}</div>
               <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.35rem 0 0', fontSize: 'var(--tr-body)', lineHeight: 1.5, color: 'var(--text)', fontWeight: 650, wordBreak: 'keep-all' }}>
                 {dive
                   ? '화면의 신호를 보며 좌우 이동과 점프, 숙이기 동작을 연속해서 수행하는 활동입니다.'
@@ -659,7 +659,7 @@ export function TrainingResultScreen({
                 padding: '0.65rem 0.7rem',
               }}
             >
-              <div style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+              <div style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
                 {dive ? '다음 활동 포인트' : '다음 시도 팁'}
               </div>
               <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: 0, fontSize: 'var(--tr-body)', lineHeight: 1.5, fontWeight: 700, color: 'var(--text)', wordBreak: 'keep-all' }}>
@@ -679,14 +679,14 @@ export function TrainingResultScreen({
                   padding: '0.7rem',
                 }}
               >
-                <div style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: accent }}>
+                <div style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: accent }}>
                   {sessionSettings?.title ?? '사용한 동작'}
                 </div>
                 <p
                   style={{
                     margin: '0.35rem 0 0',
                     fontSize: 'var(--tr-title)',
-                    fontWeight: 900,
+                    fontWeight: 800,
                     lineHeight: 1.3,
                     color: 'var(--text)',
                     wordBreak: 'keep-all',
@@ -735,7 +735,7 @@ export function TrainingResultScreen({
                         background: `${accent}18`,
                         color: accent,
                         fontSize: 'var(--tr-label)',
-                        fontWeight: 900,
+                        fontWeight: 800,
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',

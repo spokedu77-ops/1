@@ -253,7 +253,7 @@ export function MemoryGame({
             </div>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-                <div style={{ color: textOnColor, fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,320px)', fontWeight: 400, lineHeight: 1, textShadow: '0 4px 60px rgba(0,0,0,0.25)', userSelect: 'none' }}>
+                <div style={{ color: textOnColor, fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,320px)', fontWeight: 800, lineHeight: 1, textShadow: '0 4px 60px rgba(0,0,0,0.25)', userSelect: 'none' }}>
                   {showingColor.name}
                 </div>
                 <div style={{ color: textOnColor, fontSize: 'clamp(32px,7vw,64px)', opacity: 0.35, userSelect: 'none' }}>{showingColor.symbol}</div>
@@ -272,7 +272,7 @@ export function MemoryGame({
         {progress}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '6rem 2rem 4rem' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '0.5rem', color: '#fff', fontSize: 'clamp(1.35rem,4vw,2rem)', fontWeight: 900 }}>학생이 순서를 말한 뒤 정답을 공개하세요.</div>
+            <div style={{ marginBottom: '0.5rem', color: '#fff', fontSize: 'clamp(1.35rem,4vw,2rem)', fontWeight: 800 }}>학생이 순서를 말한 뒤 정답을 공개하세요.</div>
             <div style={{ color: 'rgba(255,255,255,0.46)', fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.6 }}>버튼을 길게 누르거나 Space/Enter로 정답을 확인합니다.</div>
           </div>
           <LongPressButton onTrigger={advance} label="정답 공개" />
@@ -327,7 +327,7 @@ export function MemoryGame({
                     background: color.bg,
                     color: color.text,
                     fontSize: 'clamp(0.95rem,2.2vw,1.35rem)',
-                    fontWeight: 900,
+                    fontWeight: 800,
                     boxShadow: `0 6px 24px ${color.bg}66`,
                   }}
                 >
@@ -338,7 +338,7 @@ export function MemoryGame({
               </div>
             ))}
           </div>
-          <button type="button" onClick={advance} style={{ marginTop: '0.5rem', border: 'none', borderRadius: '1.25rem', background: isLast ? '#22C55E' : '#F97316', padding: '1.1rem 2.8rem', color: '#fff', fontSize: 'clamp(1rem,3vw,1.3rem)', fontWeight: 900, cursor: 'pointer' }}>
+          <button type="button" onClick={advance} style={{ marginTop: '0.5rem', border: 'none', borderRadius: '1.25rem', background: isLast ? '#22C55E' : '#F97316', padding: '1.1rem 2.8rem', color: '#fff', fontSize: 'clamp(1rem,3vw,1.3rem)', fontWeight: 800, cursor: 'pointer' }}>
             {nextLabel}
           </button>
         </div>
@@ -350,9 +350,9 @@ export function MemoryGame({
     return (
       <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem', textAlign: 'center' }}>
-          <div style={{ color: '#fff', fontSize: 'clamp(1.6rem,5vw,2.4rem)', fontWeight: 900 }}>모든 라운드를 마쳤습니다.</div>
+          <div style={{ color: '#fff', fontSize: 'clamp(1.6rem,5vw,2.4rem)', fontWeight: 800 }}>모든 라운드를 마쳤습니다.</div>
           <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '1rem', fontWeight: 600, lineHeight: 1.7 }}>전체 정답 목록을 확인한 뒤 훈련을 완료하세요.</div>
-          <button type="button" onClick={advance} style={{ border: 'none', borderRadius: '1.25rem', background: '#A855F7', padding: '1.2rem 3rem', color: '#fff', fontSize: 'clamp(1.1rem,3vw,1.4rem)', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 32px rgba(168,85,247,0.45)' }}>
+          <button type="button" onClick={advance} style={{ border: 'none', borderRadius: '1.25rem', background: '#A855F7', padding: '1.2rem 3rem', color: '#fff', fontSize: 'clamp(1.1rem,3vw,1.4rem)', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 32px rgba(168,85,247,0.45)' }}>
             정답 목록 보기
           </button>
         </div>
@@ -367,7 +367,7 @@ export function MemoryGame({
           <div style={{ width: '100%', maxWidth: 620 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
-                <div style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 900 }}>전체 정답 목록</div>
+                <div style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 800 }}>전체 정답 목록</div>
                 <div style={{ marginTop: '0.25rem', color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', fontWeight: 700 }}>{level}번 · {total}라운드 · {patternLengthLabel(level)}</div>
               </div>
               <button type="button" onClick={onExit} style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.07)', padding: '0.5rem 0.9rem', color: '#fff', fontSize: '0.88rem', fontWeight: 800, cursor: 'pointer' }}>
@@ -381,7 +381,7 @@ export function MemoryGame({
               </div>
               {patterns.map((pattern, rowIndex) => (
                 <div key={rowIndex} style={{ display: 'grid', gridTemplateColumns: '2.5rem 1fr', alignItems: 'center', borderBottom: rowIndex < patterns.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', background: rowIndex % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)', padding: '0.55rem 0.9rem' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem', fontWeight: 900 }}>{rowIndex + 1}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem', fontWeight: 800 }}>{rowIndex + 1}</span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
                     {pattern.map((color, colorIndex) => (
                       <React.Fragment key={colorIndex}>
@@ -396,7 +396,7 @@ export function MemoryGame({
                 </div>
               ))}
             </div>
-            <button type="button" onClick={advance} style={{ width: '100%', border: 'none', borderRadius: '1.25rem', background: '#22C55E', padding: '1.1rem', color: '#fff', fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 24px rgba(34,197,94,0.35)' }}>
+            <button type="button" onClick={advance} style={{ width: '100%', border: 'none', borderRadius: '1.25rem', background: '#22C55E', padding: '1.1rem', color: '#fff', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 24px rgba(34,197,94,0.35)' }}>
               훈련 완료
             </button>
           </div>
@@ -409,9 +409,9 @@ export function MemoryGame({
     return (
       <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem', textAlign: 'center' }}>
-          <div style={{ color: '#fff', fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 900 }}>모두 마쳤습니다.</div>
+          <div style={{ color: '#fff', fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 800 }}>모두 마쳤습니다.</div>
           <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '1rem', lineHeight: 1.7 }}>색상 기억 훈련이 완료되었습니다.</div>
-          <button type="button" onClick={advance} style={{ border: 'none', borderRadius: '1.25rem', background: '#22C55E', padding: '1.2rem 3rem', color: '#fff', fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 32px rgba(34,197,94,0.4)' }}>
+          <button type="button" onClick={advance} style={{ border: 'none', borderRadius: '1.25rem', background: '#22C55E', padding: '1.2rem 3rem', color: '#fff', fontSize: '1.2rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 32px rgba(34,197,94,0.4)' }}>
             결과 보기
           </button>
         </div>

@@ -88,7 +88,7 @@ export function SpeedSelector({
       <div style={{ background: 'var(--subtle-bg)', borderRadius: '0.85rem', padding: compact ? '0.4rem 0.75rem' : '0.75rem 1rem', border: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: compact ? '0.25rem' : '0.5rem' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>직접 조절</span>
-          <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#F97316' }}>{value.toFixed(1)}초</span>
+          <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F97316' }}>{value.toFixed(1)}초</span>
         </div>
         <input
           type="range"

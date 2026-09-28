@@ -211,8 +211,8 @@ function SuccessContent() {
       <PaymentStatusShell>
         <Loader2 size={58} className="mx-auto animate-spin" color="var(--spm-acc)" strokeWidth={1.7} />
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>결제 확인</p>
-          <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>결제 확인</p>
+          <h1 className="mt-2 text-[30px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
             {status === 'checking-access' ? '구독 활성화를 확인하고 있습니다' : '첫 결제를 진행하고 있습니다'}
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
@@ -232,8 +232,8 @@ function SuccessContent() {
       <PaymentStatusShell>
         <CheckCircle2 size={66} color="var(--spm-grn)" strokeWidth={1.5} className="mx-auto" />
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-grn)' }}>구독 활성화</p>
-          <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-grn)' }}>구독 활성화</p>
+          <h1 className="mt-2 text-[30px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
             결제가 완료되었습니다
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
@@ -255,13 +255,13 @@ function SuccessContent() {
           </div>
         </dl>
         <div className="grid gap-3">
-          <Link href={safeNext} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none">
+          <Link href={safeNext} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none">
             첫 수업 고르기
           </Link>
-          <Link href="/spokedu-master/subscription" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <Link href="/spokedu-master/subscription" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             구독 관리
           </Link>
-          <Link href="/spokedu-master/dashboard" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <Link href="/spokedu-master/dashboard" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             홈으로
           </Link>
         </div>
@@ -274,15 +274,15 @@ function SuccessContent() {
       <PaymentStatusShell>
         <AlertCircle size={64} color="var(--spm-acc)" strokeWidth={1.5} className="mx-auto" />
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>구독 확인</p>
-          <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>구독 확인</p>
+          <h1 className="mt-2 text-[30px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
             이용권 반영을 다시 확인해 주세요
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             첫 결제는 처리되었지만 접근 권한 확인이 지연되고 있습니다. 결제를 반복하지 말고 이용권 상태만 다시 확인해 주세요.
           </p>
         </div>
-        <button type="button" onClick={() => void checkAccessActivation()} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black focus-visible:outline-none">
+        <button type="button" onClick={() => void checkAccessActivation()} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">
           이용권 다시 확인
         </button>
       </PaymentStatusShell>
@@ -293,10 +293,10 @@ function SuccessContent() {
     <PaymentStatusShell>
       <AlertCircle size={64} color="var(--spm-red)" strokeWidth={1.5} className="mx-auto" />
       <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-red)' }}>
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-red)' }}>
           결제 실패
         </p>
-        <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
+        <h1 className="mt-2 text-[30px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
           결제를 완료하지 못했습니다
         </h1>
         <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
@@ -304,10 +304,10 @@ function SuccessContent() {
         </p>
       </div>
       <div className="grid gap-3">
-        <Link href={retryHref} className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black focus-visible:outline-none">
+        <Link href={retryHref} className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">
           다시 시도
         </Link>
-        <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+        <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
           <Mail size={15} />
           고객센터
         </a>

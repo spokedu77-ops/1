@@ -374,8 +374,8 @@ export default function FlowGameClient({
               {currentStage.isBonus ? '🏆 BONUS' : currentStage.label}
             </p>
             <h2 style={{
-              fontSize: 'clamp(2.2rem, 7vw, 3.6rem)', fontWeight: 900, color: '#fff',
-              fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
+              fontSize: 'clamp(2.2rem, 7vw, 3.6rem)', fontWeight: 800, color: '#fff',
+              fontFamily: 'var(--spm-font-display)',
               letterSpacing: '0.04em', marginBottom: '0.6rem', textAlign: 'center',
               textShadow: `0 0 30px ${currentStage.color}, 3px 3px 0 #000`,
               wordBreak: 'keep-all', whiteSpace: 'nowrap',
@@ -442,8 +442,8 @@ export default function FlowGameClient({
               ⚡ SPEED UP
             </p>
             <h2 style={{
-              fontSize: 'clamp(1.9rem, 7vw, 3.2rem)', fontWeight: 900, color: '#fff',
-              fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
+              fontSize: 'clamp(1.9rem, 7vw, 3.2rem)', fontWeight: 800, color: '#fff',
+              fontFamily: 'var(--spm-font-display)',
               letterSpacing: '0.04em', marginBottom: '0.4rem', textAlign: 'center',
               textShadow: '0 0 30px #22d3ee, 3px 3px 0 #000',
               wordBreak: 'keep-all', whiteSpace: 'nowrap',
@@ -471,7 +471,7 @@ export default function FlowGameClient({
         <div style={{ ...S.overlay, background: 'rgba(0,0,0,0.72)' }}>
           <div style={{
             fontSize: countdown > 0 ? '9rem' : '4rem',
-            fontWeight: 900,
+            fontWeight: 800,
             color: countdown > 0 ? '#fff' : '#22d3ee',
             lineHeight: 1,
           }}>
@@ -495,8 +495,8 @@ export default function FlowGameClient({
             🏆 &nbsp;활동 완료
           </p>
           <h2 style={{
-            fontSize: 'clamp(3rem, 10vw, 5.5rem)', fontWeight: 900, color: '#fff',
-            fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
+            fontSize: 'clamp(3rem, 10vw, 5.5rem)', fontWeight: 800, color: '#fff',
+            fontFamily: 'var(--spm-font-display)',
             letterSpacing: '0.05em', marginBottom: '0.3rem',
             textShadow: '0 0 60px #fbbf24, 0 0 25px #f59e0b88, 3px 3px 0 #000',
             animation: 'flowInstPop 0.35s cubic-bezier(0.22,1.8,0.36,1)',
@@ -533,7 +533,7 @@ export default function FlowGameClient({
               padding: '0.75rem 2.8rem', borderRadius: '1.2rem',
               border: '2px solid #fbbf24',
               background: 'rgba(251,191,36,0.14)',
-              color: '#fbbf24', fontWeight: 900, cursor: 'pointer',
+              color: '#fbbf24', fontWeight: 800, cursor: 'pointer',
               fontSize: '1.05rem', fontFamily: 'inherit',
               letterSpacing: '0.05em',
               boxShadow: '0 0 24px rgba(251,191,36,0.25)',

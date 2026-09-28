@@ -181,7 +181,7 @@ export function MemoryGameLevel5({
             </div>
             <div key={`l5-${showIdx}`} className="mem-color-enter" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,300px)', fontWeight: 400, color: textColor, letterSpacing: '-0.04em', textShadow: `0 4px 60px rgba(0,0,0,0.2)`, userSelect: 'none', lineHeight: 1 }}>
+                <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,300px)', fontWeight: 800, color: textColor, letterSpacing: '-0.04em', textShadow: `0 4px 60px rgba(0,0,0,0.2)`, userSelect: 'none', lineHeight: 1 }}>
                   {currentItem.num}
                 </div>
                 <div style={{ fontSize: 'clamp(1rem,2.5vw,1.4rem)', fontWeight: 700, color: isYellow ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)', userSelect: 'none' }}>
@@ -232,7 +232,7 @@ export function MemoryGameLevel5({
           }}
         >
           <div style={{ fontSize: '2.5rem', opacity: 0.9 }}>👆</div>
-          <div style={{ fontSize: 'clamp(1.25rem,4vw,1.75rem)', fontWeight: 900, color: '#fff', textAlign: 'center', lineHeight: 1.45 }}>
+          <div style={{ fontSize: 'clamp(1.25rem,4vw,1.75rem)', fontWeight: 800, color: '#fff', textAlign: 'center', lineHeight: 1.45 }}>
             정답을 보려면
             <br />
             <span style={{ color: '#86EFAC' }}>스페이스바</span>를 누르거나
@@ -258,7 +258,7 @@ export function MemoryGameLevel5({
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '5rem 1.5rem 5rem' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>📋</div>
-            <div style={{ fontSize: 'clamp(1.3rem,4vw,1.8rem)', fontWeight: 900, color: '#fff', marginBottom: '0.3rem' }}>전체 정답</div>
+            <div style={{ fontSize: 'clamp(1.3rem,4vw,1.8rem)', fontWeight: 800, color: '#fff', marginBottom: '0.3rem' }}>전체 정답</div>
             <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>번호별 색깔을 확인하세요</div>
           </div>
           <div style={{
@@ -286,7 +286,7 @@ export function MemoryGameLevel5({
                     boxShadow: `0 4px 18px ${item.color.bg}66`,
                   }}
                 >
-                  <span style={{ fontSize: 'clamp(1.4rem,4vw,2rem)', fontWeight: 900, color: isYellow ? '#111' : '#fff', lineHeight: 1 }}>
+                  <span style={{ fontSize: 'clamp(1.4rem,4vw,2rem)', fontWeight: 800, color: isYellow ? '#111' : '#fff', lineHeight: 1 }}>
                     {item.num}
                   </span>
                   <span style={{ fontSize: 'clamp(0.55rem,1.4vw,0.7rem)', fontWeight: 700, color: isYellow ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)', letterSpacing: '0.02em' }}>
@@ -319,7 +319,7 @@ export function MemoryGameLevel5({
         <style>{CSS}</style>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem' }}>
           <div style={{ fontSize: '4rem' }}>🎉</div>
-          <div style={{ fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 900, color: '#fff', textAlign: 'center' }}>모두 마쳤어요!</div>
+          <div style={{ fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 800, color: '#fff', textAlign: 'center' }}>모두 마쳤어요!</div>
           <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: 1.7 }}>
             색깔-번호 기억 훈련 완료!
           </div>

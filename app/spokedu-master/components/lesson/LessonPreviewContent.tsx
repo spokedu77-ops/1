@@ -78,7 +78,7 @@ export function LessonPreviewContent({
             data-preview-column="content"
             className="min-w-0 rounded-[14px] border border-amber-200 bg-amber-50/80 p-4"
           >
-            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-amber-800">Lite에서 이용</p>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-amber-800">Lite에서 이용</p>
             <p className="mt-2 text-[13px] font-semibold leading-6 text-amber-950">
               Lite에서 전체 수업 자료를 이용할 수 있습니다. 준비물, 활동 방법, 참고 영상은 Lite에서 확인할 수 있습니다.
             </p>
@@ -96,7 +96,7 @@ export function LessonPreviewContent({
               {previewEquipment.length > 0 ? (
                 <section>
                   <p className="sr-only">핵심 준비물</p>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">대표 준비물</h3>
+                  <h3 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-emerald-700">대표 준비물</h3>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {previewEquipment.map((item) => (
                       <span
@@ -114,7 +114,7 @@ export function LessonPreviewContent({
               {previewScript ? (
                 <section className="rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-3">
                   <p className="sr-only">수업 목표</p>
-                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-[var(--spm-acc)]">
+                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--spm-acc)]">
                     <MessageSquareQuote className="h-3.5 w-3.5" />
                     수업 스크립트
                   </h3>
@@ -127,7 +127,7 @@ export function LessonPreviewContent({
               {previewRules.length > 0 ? (
                 <section className="border-t border-slate-100 pt-4">
                   <p className="sr-only">주요 활동 순서 요약</p>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">활동 방법</h3>
+                  <h3 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-600">활동 방법</h3>
                   <ol className="relative mt-3 space-y-0">
                     {previewRules.map((rule, index) => (
                       <li key={`${rule}-${index}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-3 last:pb-0">
@@ -145,7 +145,7 @@ export function LessonPreviewContent({
 
               {previewSafety ? (
                 <section className="border-t border-slate-100 pt-4">
-                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-amber-700">
+                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-amber-700">
                     <AlertTriangle className="h-3.5 w-3.5" />
                     핵심 안전사항
                   </h3>

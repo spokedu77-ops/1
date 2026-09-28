@@ -273,7 +273,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           }}>
             <span style={{
               fontSize: 'clamp(180px, 42vmin, 420px)',
-              fontWeight: 900,
+              fontWeight: 800,
               lineHeight: 1,
               color: content?.textColor as string ?? '#fff',
               textShadow: '0 4px 40px rgba(0,0,0,0.35)',
@@ -350,7 +350,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           style={{
             fontSize: 'clamp(100px, 28vw, 300px)',
             lineHeight: 1,
-            fontWeight: 900,
+            fontWeight: 800,
             color: '#F87171',
             textShadow: '0 6px 40px rgba(0,0,0,0.45)',
             userSelect: 'none',
@@ -491,7 +491,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'number')
     return (
       <div key={animKey} className="signal-blink" style={C}>
-        <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(180px,38vw,400px)', color: '#fff', lineHeight: 1, fontWeight: 400, textShadow: '0 4px 60px rgba(0,0,0,0.5)' }}>{content?.label as string}</div>
+        <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(180px,38vw,400px)', color: '#fff', lineHeight: 1, fontWeight: 800, textShadow: '0 4px 60px rgba(0,0,0,0.5)' }}>{content?.label as string}</div>
       </div>
     );
 
@@ -650,7 +650,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     const tc = col?.text ?? '#fff';
     return (
       <div key={animKey} className="signal-blink" style={C}>
-        <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(180px,38vw,400px)', color: tc, lineHeight: 1, fontWeight: 400, textShadow: '0 4px 60px rgba(0,0,0,0.35)' }}>{(content?.number as { label?: string })?.label}</div>
+        <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(180px,38vw,400px)', color: tc, lineHeight: 1, fontWeight: 800, textShadow: '0 4px 60px rgba(0,0,0,0.35)' }}>{(content?.number as { label?: string })?.label}</div>
       </div>
     );
   }
@@ -664,7 +664,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             fontSize: 'clamp(150px, 36vw, 380px)',
             color: '#0a0a0a',
             lineHeight: 1,
-            fontWeight: 900,
+            fontWeight: 800,
           }}
         >
           {arr?.icon}
@@ -693,7 +693,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ fontSize: 'clamp(120px, 30vw, 320px)', color: '#fff', lineHeight: 1, fontWeight: 900, textShadow: '0 4px 50px rgba(0,0,0,0.4)' }}>{content?.icon as string}</div>
+          <div style={{ fontSize: 'clamp(120px, 30vw, 320px)', color: '#fff', lineHeight: 1, fontWeight: 800, textShadow: '0 4px 50px rgba(0,0,0,0.4)' }}>{content?.icon as string}</div>
         </div>
       );
     return (
@@ -717,7 +717,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
               textAlign: 'center',
               padding: '0.6rem 0 1rem',
               fontSize: 'clamp(4.8rem, 19vw, 8.2rem)',
-              fontWeight: 900,
+              fontWeight: 800,
               color: 'rgba(255,255,255,0.98)',
               textShadow: '0 3px 18px rgba(0,0,0,0.45)',
               letterSpacing: '0.14em',
@@ -911,7 +911,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: cell.text ?? '#0F172A',
-                fontWeight: 900,
+                fontWeight: 800,
                 fontSize: hasVariedSizes ? 'clamp(1.3rem, 9vmin, 8rem)' : 'clamp(2rem, 11vmin, 9rem)',
                 lineHeight: 1,
                 overflow: 'hidden',

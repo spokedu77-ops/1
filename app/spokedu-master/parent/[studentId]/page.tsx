@@ -18,7 +18,7 @@ export default function ParentStudentViewPage() {
           color="var(--spm-acc)"
         />
         <h1
-          className="text-[22px] font-black"
+          className="text-[22px] font-extrabold"
           style={{ fontFamily: 'var(--spm-font-display)' }}
         >
           보호자 공개 링크는 현재 제공하지 않습니다.

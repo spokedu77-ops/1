@@ -93,7 +93,7 @@ const css = `
 .cmgrid-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .cmgrid-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:#fff;opacity:0;transition:opacity .15s ease-out}
 .cmgrid-flash.on{opacity:1;transition:none}
-.cmgrid-center{font-family:var(--spm-font-display);font-weight:400;font-synthesis:none;position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .18s ease,transform .22s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(44px,8vw,104px);line-height:.9;font-weight:400;color:#fff;text-shadow:0 0 34px rgba(0,0,0,.95),0 0 20px rgba(255,255,255,.72)}
+.cmgrid-center{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .18s ease,transform .22s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(44px,8vw,104px);line-height:.9;font-weight:400;color:#fff;text-shadow:0 0 34px rgba(0,0,0,.95),0 0 20px rgba(255,255,255,.72)}
 .cmgrid-center.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .cmgrid-center.num{font-weight:400;font-size:clamp(72px,20vw,180px);text-shadow:0 0 40px rgba(255,255,255,.8)}
 .cmgrid-center.pill{font-size:clamp(22px,5vw,48px);background:rgba(0,0,0,.5);padding:.35em .9em;border-radius:999px;backdrop-filter:blur(10px);text-shadow:0 0 20px rgba(0,0,0,1)}

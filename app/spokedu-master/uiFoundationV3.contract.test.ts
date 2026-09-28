@@ -26,7 +26,7 @@ describe('MASTER Visual SSOT (not rendered PASS)', () => {
 
   it('gives reports a document surface', () => {
     expect(read('report/page.tsx')).toContain('MasterDocumentSurface');
-    expect(read('report/page.tsx')).not.toMatch(/<label[^>]+font-black/);
+    expect(read('report/page.tsx')).not.toMatch(/<label[^>]+font-extrabold/);
   });
 
   it('makes Manage the canonical operational reference with one contextual primary action', () => {

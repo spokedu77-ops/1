@@ -109,10 +109,10 @@ function PlanCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[24px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
+          <h2 className="text-[24px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
             {productShortName(product)}
           </h2>
-          <p className="mt-2 text-[26px] font-black leading-tight" style={{ color: 'var(--spm-t)' }}>
+          <p className="mt-2 text-[26px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)' }}>
             {formatKrw(product.monthlyPriceKrw)}
           </p>
         </div>
@@ -136,7 +136,7 @@ function PlanCard({
         type="button"
         disabled={disabled || working || !planId}
         onClick={onSelect}
-        className="spm-btn-primary mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none disabled:opacity-50"
+        className="spm-btn-primary mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-3 text-[13px] font-extrabold focus-visible:outline-none disabled:opacity-50"
         data-plan-id={planId ?? undefined}
       >
         {working && selected ? <Loader2 size={15} className="animate-spin" /> : null}
@@ -296,8 +296,8 @@ function PaymentContent() {
           <ArrowLeft size={18} color="var(--spm-t2)" />
         </Link>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
-          <h1 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
+          <h1 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
             {paymentPageMode === 'liteUpgrade' ? '프리미엄으로 이어가기' : gateDisplay ? '하던 작업 이어가기' : '구독 선택'}
           </h1>
         </div>
@@ -306,20 +306,20 @@ function PaymentContent() {
       <main className="mx-auto w-full max-w-[1080px] space-y-5 px-5 pb-16 sm:px-8">
         {gateDisplay ? (
           <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{gateDisplay.eyebrow}</p>
-            <h2 className="mt-2 text-[22px] font-black leading-tight sm:text-[26px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{gateDisplay.eyebrow}</p>
+            <h2 className="mt-2 text-[22px] font-extrabold leading-tight sm:text-[26px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
               {gateDisplay.title}
             </h2>
             <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
               {gateDisplay.description}
             </p>
-            <Link href={gateContext.next} className="mt-3 inline-flex min-h-11 items-center text-[13px] font-black" style={{ color: 'var(--spm-acc)' }}>
+            <Link href={gateContext.next} className="mt-3 inline-flex min-h-11 items-center text-[13px] font-extrabold" style={{ color: 'var(--spm-acc)' }}>
               이전 작업으로 돌아가기
             </Link>
           </section>
         ) : (
           <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <h2 className="text-[28px] font-black leading-tight sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
+            <h2 className="text-[28px] font-extrabold leading-tight sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
               {paymentPageMode === 'liteUpgrade'
                 ? '새로운 콘텐츠와 지난 수업 맥락을 함께 이어가세요'
                 : '좋은 콘텐츠를 찾고, 실제 수업과 다음 수업까지 이어가세요'}
@@ -339,13 +339,13 @@ function PaymentContent() {
         ) : !showPlanSelection ? (
           <section className="rounded-[18px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <CheckCircle2 size={44} color="var(--spm-grn)" className="mx-auto" />
-            <h2 className="mt-3 text-[20px] font-black">{subscriptionDisplay.planLabel} 이용 중</h2>
+            <h2 className="mt-3 text-[20px] font-extrabold">{subscriptionDisplay.planLabel} 이용 중</h2>
             <p className="mt-2 text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
               {subscriptionDisplay.state === 'cancelScheduled'
                 ? subscriptionDisplay.description
                 : '현재 이용권이 활성화되어 있습니다.'}
             </p>
-            <Link href="/spokedu-master/subscription" className="spm-btn-primary mx-auto mt-4 inline-flex h-11 max-w-[260px] items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none">
+            <Link href="/spokedu-master/subscription" className="spm-btn-primary mx-auto mt-4 inline-flex h-11 max-w-[260px] items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none">
               구독 관리
             </Link>
           </section>
@@ -358,9 +358,9 @@ function PaymentContent() {
                 </p>
                 {upgradeQuote ? (
                   <dl className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>오늘 결제</dt><dd className="mt-1 text-[16px] font-black">{upgradeQuote.amountDueNow.toLocaleString('ko-KR')}원</dd></div>
-                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>다음 결제일</dt><dd className="mt-1 text-[16px] font-black">{formatBillingDate(upgradeQuote.nextBillingAt)}</dd></div>
-                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>다음 결제 금액</dt><dd className="mt-1 text-[16px] font-black">{upgradeQuote.nextBillingAmount.toLocaleString('ko-KR')}원</dd></div>
+                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>오늘 결제</dt><dd className="mt-1 text-[16px] font-extrabold">{upgradeQuote.amountDueNow.toLocaleString('ko-KR')}원</dd></div>
+                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>다음 결제일</dt><dd className="mt-1 text-[16px] font-extrabold">{formatBillingDate(upgradeQuote.nextBillingAt)}</dd></div>
+                    <div><dt className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>다음 결제 금액</dt><dd className="mt-1 text-[16px] font-extrabold">{upgradeQuote.nextBillingAmount.toLocaleString('ko-KR')}원</dd></div>
                   </dl>
                 ) : null}
               </section>
@@ -397,7 +397,7 @@ function PaymentContent() {
 
             <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
               <Shield size={18} color="var(--spm-grn)" />
-              <h3 className="mt-3 text-[15px] font-black">정기결제 안내</h3>
+              <h3 className="mt-3 text-[15px] font-extrabold">정기결제 안내</h3>
               <ul className="mt-3 space-y-2">
                 {(paymentPageMode === 'liteUpgrade' ? UPGRADE_BILLING_NOTICE : BILLING_NOTICE).map((item) => (
                   <li key={item} className="flex gap-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
@@ -416,13 +416,13 @@ function PaymentContent() {
 
             <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
               <Mail size={18} color="var(--spm-acc)" />
-              <h3 className="mt-3 text-[15px] font-black">센터·기관에서 사용하시나요?</h3>
+              <h3 className="mt-3 text-[15px] font-extrabold">센터·기관에서 사용하시나요?</h3>
               <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
                 이용 인원과 운영 방식에 맞춰 별도로 안내합니다.
               </p>
               <a
                 href={MASTER_CENTER_INQUIRY_HREF}
-                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black"
+                className="mt-4 inline-flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-extrabold"
                 style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
               >
                 센터·기관 도입 문의
@@ -430,7 +430,7 @@ function PaymentContent() {
             </section>
 
             <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-              <p className="text-[13px] font-black">결제 계정</p>
+              <p className="text-[13px] font-extrabold">결제 계정</p>
               <div className="mt-3 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
                 <p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{userEmail}</p>
                 <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>

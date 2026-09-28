@@ -3,10 +3,38 @@
 @import "tw-animate-css";
 
 @font-face {
-  font-family: "Black Han Sans";
-  src: url("/fonts/BlackHanSans-Regular.woff2") format("woff2");
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-4Regular.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-5Medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-6SemiBold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-7Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Paperlogy";
+  src: url("/fonts/paperlogy/Paperlogy-8ExtraBold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 800;
   font-display: swap;
 }
 @font-face {
@@ -190,8 +218,8 @@
   --spm-br: rgba(15, 23, 42, 0.07);
   --spm-br2: rgba(15, 23, 42, 0.11);
   --spm-br3: rgba(15, 23, 42, 0.18);
-  --spm-font-body: "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
-  --spm-font-display: "Black Han Sans", "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --spm-font-body: "Paperlogy", "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --spm-font-display: "Paperlogy", "SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
 }
 
 @keyframes spmSkeleton {
@@ -479,7 +507,8 @@ body {
   pointer-events: none;
 }
 .font-game {
-  font-family: 'Black Han Sans', sans-serif;
+  font-family: var(--spm-font-display);
+  font-synthesis: none;
 }
 .fade-out {
   opacity: 0;
@@ -610,4 +639,17 @@ body {
     4vw,
     var(--spokedu-marketing-gutter-wide, 3rem)
   );
+}
+
+/* SPOKEDU MASTER viewport-family contract: mobile < 768, tablet/compact 768-1199, desktop >= 1200. */
+[data-spm-app-shell='true'] {
+  --spm-tabbar-clearance: calc(70px + max(8px, env(safe-area-inset-bottom, 0px)));
+  font-family: var(--spm-font-body);
+  font-synthesis: none;
+}
+
+@media (min-width: 768px) {
+  [data-spm-app-shell='true'] {
+    --spm-tabbar-clearance: 0px;
+  }
 }

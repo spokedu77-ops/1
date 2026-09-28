@@ -34,8 +34,8 @@ function CancelContent() {
       <div className="w-full max-w-[430px] space-y-6 text-center">
         <XCircle size={64} color="var(--spm-t3)" strokeWidth={1.5} className="mx-auto" />
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>결제 취소</p>
-          <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>결제 취소</p>
+          <h1 className="mt-2 text-[30px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
             결제를 완료하지 못했습니다
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
@@ -43,11 +43,11 @@ function CancelContent() {
           </p>
         </div>
         <div className="space-y-3">
-          <Link href={retryHref} className="spm-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black focus-visible:outline-none">
+          <Link href={retryHref} className="spm-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">
             <CreditCard size={16} />
             다시 시도
           </Link>
-          <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             <Mail size={15} />
             고객센터
           </a>
