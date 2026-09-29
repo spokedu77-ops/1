@@ -62,9 +62,9 @@ export default function ManageView() {
   const openCreatedSession = (created: MasterSessionDto) => { const day = getSeoulSessionDay(created.startAt); setSelectedDay(day); setVisibleMonth(getMonthKey(day)); setLegacyCapture(false); setEditing(created); };
   const selectTab = (nextTab: ManageTab) => { setEditing(undefined); setTab(nextTab); };
 
-  return <main data-manage-workspace className={`h-full min-h-0 bg-[var(--spm-bg)] pb-28 ${tab === 'attendance' ? 'overflow-y-auto' : 'overflow-y-auto lg:overflow-hidden lg:pb-0'}`}>
-    <MasterPageShell variant="wide" className={editing !== undefined ? 'lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(400px,31%)] lg:items-stretch lg:gap-0 lg:!px-0 lg:!py-0' : tab === 'attendance' ? 'lg:px-8' : 'lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8'}>
-      <div className={editing !== undefined ? 'min-w-0 lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:px-8 lg:pb-4 lg:pt-4' : tab === 'attendance' ? 'min-w-0' : 'min-w-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden'}>
+  return <main data-manage-workspace className={`h-full min-h-0 bg-[var(--spm-bg)] pb-28 ${tab === 'attendance' ? 'overflow-y-auto' : 'overflow-y-auto min-[1200px]:overflow-hidden min-[1200px]:pb-0'}`}>
+    <MasterPageShell variant="wide" className={editing !== undefined ? 'min-[1200px]:grid min-[1200px]:h-full min-[1200px]:min-h-0 min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(400px,31%)] min-[1200px]:items-stretch min-[1200px]:gap-0 min-[1200px]:!px-0 min-[1200px]:!py-0' : tab === 'attendance' ? 'min-[1200px]:px-8' : 'min-[1200px]:flex min-[1200px]:h-full min-[1200px]:min-h-0 min-[1200px]:flex-col min-[1200px]:overflow-hidden min-[1200px]:px-8'}>
+      <div className={editing !== undefined ? 'min-w-0 min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-col min-[1200px]:overflow-hidden min-[1200px]:px-8 min-[1200px]:pb-4 min-[1200px]:pt-4' : tab === 'attendance' ? 'min-w-0' : 'min-w-0 min-[1200px]:flex min-[1200px]:min-h-0 min-[1200px]:flex-1 min-[1200px]:flex-col min-[1200px]:overflow-hidden'}>
       <div className="shrink-0">
       <MasterPageHeader title="수업 관리" />
       <div className="mt-4 flex items-center justify-between gap-4 border-b border-slate-200">
