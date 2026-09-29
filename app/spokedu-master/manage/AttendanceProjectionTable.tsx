@@ -144,13 +144,19 @@ function ManageAttendanceProjection({ sessions, rows, emptyAction, onSessionSele
         </div>
       </div>
 
-      <button type="button" onClick={() => onSessionSelect?.(selectedSession)} className="flex min-h-[76px] w-full items-center justify-between gap-4 border-b border-slate-200 py-3 text-left" title={`${formatSeoulSessionTime(selectedSession.startAt)} 수업 열기`}>
+      {onSessionSelect ? <button type="button" onClick={() => onSessionSelect(selectedSession)} className="flex min-h-[76px] w-full items-center justify-between gap-4 border-b border-slate-200 py-3 text-left" title={`${formatSeoulSessionTime(selectedSession.startAt)} 수업 열기`}>
         <span className="min-w-0">
           <span className="block text-[17px] font-semibold text-slate-950">{selectedDay.full}</span>
           <span className="mt-1 block text-sm font-medium text-slate-500">출석 {summary.present} · 결석 {summary.absent} · 미확인 {summary.pending}</span>
         </span>
         <span className="shrink-0 text-xs font-semibold text-slate-500">수업 상세 →</span>
-      </button>
+      </button> : <Link href={`/spokedu-master/activity?session=${encodeURIComponent(selectedSession.id)}`} className="flex min-h-[76px] w-full items-center justify-between gap-4 border-b border-slate-200 py-3 text-left" title={`${formatSeoulSessionTime(selectedSession.startAt)} 수업 열기`}>
+        <span className="min-w-0">
+          <span className="block text-[17px] font-semibold text-slate-950">{selectedDay.full}</span>
+          <span className="mt-1 block text-sm font-medium text-slate-500">출석 {summary.present} · 결석 {summary.absent} · 미확인 {summary.pending}</span>
+        </span>
+        <span className="shrink-0 text-xs font-semibold text-slate-500">수업 상세 →</span>
+      </Link>}
 
       <div aria-label={`${selectedDay.full} 출석 명단`}>
         {rows.map((row) => <div key={row.studentId} className="flex min-h-[52px] items-center justify-between gap-3 border-b border-slate-100 py-2">

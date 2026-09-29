@@ -42,7 +42,7 @@ export default function ClassDetailPage() {
   const createSessionHref = `/spokedu-master/activity?date=${getSeoulToday()}&create=1&class=${encodeURIComponent(classItem.id)}`;
   const monthLabel = `${Number(selectedAttendanceMonth.slice(5, 7))}월`;
 
-  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
+  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 md:pb-8">
     <MasterPageShell variant="operational">
       <Link href="/spokedu-master/classes" className="mb-5 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500"><ChevronLeft size={16} />수업반</Link>
       <header className="flex items-start justify-between gap-3">
@@ -73,6 +73,7 @@ export default function ClassDetailPage() {
           </div>
         </div>
         <AttendanceProjectionTable
+          presentation="manage-responsive"
           sessions={attendanceView.sessions}
           rows={attendanceView.rows}
           emptyMonthLabel={monthLabel}

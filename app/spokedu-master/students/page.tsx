@@ -26,7 +26,7 @@ const EMPTY_DRAFT: StudentDraft = { name: '', meta: '', guidanceNote: '', classI
 function MembershipPicker({ value, onChange }: { value: string[]; onChange: (next: string[]) => void }) {
   const data = useOperationalData();
   if (!data.classes.length) return <p className="rounded-xl bg-amber-50 p-3 text-xs font-bold text-amber-800">수업 관리에서 수업반을 먼저 만들어 주세요.</p>;
-  return <fieldset><legend className="mb-2 text-xs font-bold text-slate-500">수업반 <span className="font-semibold">(여러 개 선택 가능)</span></legend><div className="grid gap-2 sm:grid-cols-2">{data.classes.map((item) => <label key={item.id} className={`flex min-h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold ${value.includes(item.id) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'}`}><input type="checkbox" checked={value.includes(item.id)} onChange={() => onChange(value.includes(item.id) ? value.filter((id) => id !== item.id) : [...value, item.id])} />{item.name}</label>)}</div></fieldset>;
+  return <fieldset><legend className="mb-2 text-xs font-bold text-slate-500">수업반 <span className="font-semibold">(여러 개 선택 가능)</span></legend><div className="grid gap-2 md:grid-cols-2">{data.classes.map((item) => <label key={item.id} className={`flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold ${value.includes(item.id) ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-600'}`}><input type="checkbox" checked={value.includes(item.id)} onChange={() => onChange(value.includes(item.id) ? value.filter((id) => id !== item.id) : [...value, item.id])} /><span className="min-w-0 break-words">{item.name}</span></label>)}</div></fieldset>;
 }
 
 export default function StudentsPage() {
@@ -102,7 +102,7 @@ export default function StudentsPage() {
     <button type="button" onClick={() => void submit()} disabled={!draft.name.trim() || saving} className={SPM_PRIMARY_BTN_FULL}>{saving ? '저장 중…' : '저장'}</button>
   </div>;
 
-  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8"><MasterPageShell variant="operational">
+  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 md:pb-8"><MasterPageShell variant="operational">
     <MasterPageHeader title="학생" description="학생을 수업반에 등록하면 수업의 출석 명단으로 자동 연결됩니다." action={<button type="button" onClick={() => { setDraft(EMPTY_DRAFT); setDraftLegacyId(crypto.randomUUID()); setError(null); setAddOpen(true); }} className={SPM_PRIMARY_BTN}><Plus size={16} />{MASTER_ACTION_COPY.addStudent}</button>} />
     {data.status === 'loading' || data.status === 'idle' ? <MasterStatePanel kind="loading" title="학생 명단을 불러오는 중입니다." className="mt-5" /> : null}
     {data.status === 'error' ? <MasterStatePanel kind="error" title="학생 명단을 불러오지 못했습니다." description="현재 화면을 유지한 채 다시 불러올 수 있습니다." action={<button type="button" onClick={() => void data.reload()} className={SPM_SECONDARY_BTN}>다시 시도</button>} className="mt-5" /> : null}

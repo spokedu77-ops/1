@@ -42,7 +42,7 @@ export default function StudentDetailPage() {
   const profileMeta = [studentMetaToDisplay(student.meta), classes.map((item) => item.name).join(', ') || '수업반 미지정'].filter(Boolean).join(' · ');
 
   return (
-    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
+    <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 md:pb-8">
       <MasterPageShell variant="operational" className="max-w-4xl">
         <Link href="/spokedu-master/students" className="mb-5 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500"><ArrowLeft size={16} />학생 목록</Link>
         <MasterPageHeader title={student.name} description={profileMeta} />

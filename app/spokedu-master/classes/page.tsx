@@ -39,7 +39,7 @@ export default function ClassesPage() {
     if (sessionReturnDate) router.push(buildManageDateHref(sessionReturnDate));
   };
 
-  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
+  return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 md:pb-8">
     <MasterPageShell variant="operational">
       <Link href="/spokedu-master/manage" className="mb-4 inline-flex min-h-11 items-center px-4 text-[13px] font-medium text-slate-500 lg:px-5">← 수업 관리</Link>
       <MasterPageHeader className="px-4 lg:px-5" title="수업반" description="학생 명단과 수업 일정을 관리합니다." action={<button type="button" onClick={() => { setSessionReturnDate(null); setCreateOpen(true); }} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-800"><Plus size={16} />{MASTER_ACTION_COPY.createClass}</button>} />

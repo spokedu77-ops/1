@@ -115,7 +115,7 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
   };
 
   return <>
-    <BottomSheet open title={`학생 관리 · ${className}`} onClose={onClose}>
+    <BottomSheet open title={`학생 관리 · ${className}`} inert={Boolean(pendingRemove)} onClose={onClose}>
     <div className="space-y-4 pb-3">
       {mode === 'search' ? <>
         {roster.length ? <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">{roster.map((student) => <div key={student.id} className="flex min-h-12 items-center gap-3 px-3 py-2"><span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">{student.name}</span><button type="button" disabled={saving} onClick={() => setPendingRemove(student)} className="min-h-11 shrink-0 px-2 text-xs font-medium text-rose-600 disabled:opacity-40">{MASTER_ACTION_COPY.removeFromClass}</button></div>)}</div> : <p className="text-xs font-medium text-slate-500">아직 등록된 학생이 없습니다.</p>}
@@ -151,6 +151,6 @@ export function ClassRosterSheet({ classId, className, onClose }: { classId: str
       {error ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}
     </div>
   </BottomSheet>
-  {pendingRemove ? <BottomSheet open title={MASTER_ACTION_COPY.removeFromClass} onClose={() => setPendingRemove(null)}><div className="space-y-4 pb-3"><p className="text-sm font-semibold leading-6 text-slate-600"><strong className="text-slate-900">{pendingRemove.name}</strong> 학생을 <strong className="text-slate-900">{className}</strong> 명단에서 제외합니다. 학생과 과거 출석 및 수업 이력은 유지됩니다.</p>{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={saving} onClick={() => void removeFromClass(pendingRemove)} className={SPM_DESTRUCTIVE_BTN}>{saving ? '제외 중…' : MASTER_ACTION_COPY.removeFromClass}</button><button type="button" disabled={saving} onClick={() => setPendingRemove(null)} className="min-h-11 w-full text-sm font-medium text-slate-600">돌아가기</button></div></BottomSheet> : null}
+  {pendingRemove ? <BottomSheet open nested title={MASTER_ACTION_COPY.removeFromClass} onClose={() => setPendingRemove(null)}><div className="space-y-4 pb-3"><p className="text-sm font-semibold leading-6 text-slate-600"><strong className="text-slate-900">{pendingRemove.name}</strong> 학생을 <strong className="text-slate-900">{className}</strong> 명단에서 제외합니다. 학생과 과거 출석 및 수업 이력은 유지됩니다.</p>{error ? <p className="rounded-xl bg-rose-50 p-3 text-xs font-bold text-rose-700">{error}</p> : null}<button type="button" disabled={saving} onClick={() => void removeFromClass(pendingRemove)} className={SPM_DESTRUCTIVE_BTN}>{saving ? '제외 중…' : MASTER_ACTION_COPY.removeFromClass}</button><button type="button" disabled={saving} onClick={() => setPendingRemove(null)} className="min-h-11 w-full text-sm font-medium text-slate-600">돌아가기</button></div></BottomSheet> : null}
   </>;
 }
