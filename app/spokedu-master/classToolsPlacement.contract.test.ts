@@ -52,10 +52,10 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain('수업으로 돌아가기');
     expect(tools).toContain('aria-pressed={active}');
     expect(tools).toContain('grid-cols-4');
-    expect(tools).toContain('sm:flex');
-    expect(tools).toContain('sm:overflow-x-auto');
+    expect(tools).toContain('md:flex');
+    expect(tools).toContain('md:overflow-x-auto');
     expect(tools).toContain('flex-col');
-    expect(tools).toContain('sm:flex-row');
+    expect(tools).toContain('md:flex-row');
     expect(tools).toContain("parseClassToolId(searchParams.get('tool'))");
     expect(tools).toContain('recordLastClassTool(id)');
     expect(tools).toContain("if (requestedTool) recordLastClassTool(requestedTool)");
