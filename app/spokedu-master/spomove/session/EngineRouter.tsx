@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, useCallback, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { setSpomoveRuntimePaused } from '@/app/admin/spomove/training/_player/lib/runtimeClock';
 import type { ReactTrainCompleteStats } from '@/app/admin/spomove/training/_player/components/VisualReactionTraining';
 import {
@@ -16,6 +16,8 @@ import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import type { SpomoveCompletionReason } from './sessionResultModel';
+import { MovementHud } from '../movements/MovementHud';
+import type { ResolvedMovementConfiguration } from '../movements/movementTypes';
 import {
   resolveSimonL4CamouflageConcurrent,
   resolveSimonL4CamouflagePlacementMode,
@@ -113,6 +115,7 @@ export type EngineCompletePayload = {
 
 type Props = {
   runtimeState: 'running' | 'paused';
+  currentMovement: ResolvedMovementConfiguration | null;
   mode: OfficialSpomoveEngineMode;
   level: number;
   durationSec?: number;
@@ -168,7 +171,7 @@ type Props = {
     sets: number;
   } | null;
   onComplete: (payload: EngineCompletePayload) => void;
-  onExit: () => void;
+  onExit: (payload?: unknown) => void;
 };
 
 function LoadingOverlay() {
@@ -236,8 +239,8 @@ function EngineRuntime({
   spatialMemoryResponse,
   intervalLaunch = null,
   onComplete,
-  onExit,
-}: Props) {
+  onExit: onSessionExit,
+}: Omit<Props, 'currentMovement'>) {
   useEffect(() => {
     setSpomoveRuntimePaused(runtimeState === 'paused');
   }, [runtimeState]);
@@ -254,6 +257,27 @@ function EngineRuntime({
     },
     [level, mode, onComplete],
   );
+
+  const onExit = useCallback((payload?: unknown) => {
+    if (
+      payload && typeof payload === 'object' &&
+      'stims' in payload && typeof payload.stims === 'number' &&
+      'maxCombo' in payload && typeof payload.maxCombo === 'number' &&
+      'laneCount' in payload && Array.isArray(payload.laneCount) && payload.laneCount.length === 4
+    ) {
+      const laneCount = payload.laneCount.map(Number) as [number, number, number, number];
+      onSessionExit({
+        completionReason: 'stopped_early',
+        engineMode: mode,
+        engineLevel: level,
+        stims: payload.stims,
+        maxCombo: payload.maxCombo,
+        colorCounts: laneCountToColorStimulusCounts(laneCount),
+      } satisfies EngineCompletePayload);
+      return;
+    }
+    onSessionExit(payload);
+  }, [level, mode, onSessionExit]);
 
   const handleMemoryComplete = useCallback(
     (result: TrainingSessionResult) => {
@@ -643,6 +667,22 @@ function EngineRuntime({
   return null;
 }
 
-export function EngineRouter(runtimeProps: Props) {
-  return <EngineRuntime {...runtimeProps} />;
+export function EngineRouter({ currentMovement, ...runtimeProps }: Props) {
+  const [movementHudCollapsed, setMovementHudCollapsed] = useState(false);
+
+  return (
+    <>
+      <div aria-hidden={runtimeProps.runtimeState === 'paused'} className="contents">
+        <EngineRuntime {...runtimeProps} />
+      </div>
+      {currentMovement ? (
+        <MovementHud
+          movement={currentMovement}
+          collapsed={movementHudCollapsed}
+          onToggleCollapsed={() => setMovementHudCollapsed((collapsed) => !collapsed)}
+          compact
+        />
+      ) : null}
+    </>
+  );
 }

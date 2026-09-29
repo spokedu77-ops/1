@@ -115,7 +115,7 @@ type Props = {
   speedSec: number;
   /** L1=1~4 단일, L2=1~8 쌍, L3=사칙연산 */
   tier?: NumberCartTier;
-  onExit: () => void;
+  onExit: (stats?: ReactTrainCompleteStats) => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -355,7 +355,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.roundTimer) clearTimeout(g.roundTimer);
-    onCompleteRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onExitRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number] });
   }, []);
 
   const endGame = useCallback(() => {

@@ -283,7 +283,7 @@ type Props = {
   targetRounds: number;
   tier?: ColorTrackerTier;
   dualPanel?: boolean;
-  onExit: () => void;
+  onExit: (stats?: ReactTrainCompleteStats) => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -381,7 +381,7 @@ export function ColorTrackerReactionTraining({
     if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
     setRoundCountdown(null);
     setShowRevealBtn(false);
-    onCompleteRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onExitRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number] });
   }, []);
 
   const endGame = useCallback(() => {

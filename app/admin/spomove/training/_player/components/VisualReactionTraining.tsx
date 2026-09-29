@@ -567,7 +567,7 @@ type Props = {
   speedSec: number;
   /** flow/balloonSimon 전용: 동시 신호 수. 기본값 1 */
   concurrent?: 1 | 2 | 3;
-  onExit: () => void;
+  onExit: (stats?: ReactTrainCompleteStats) => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -630,11 +630,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
     if (g.raf != null) { cancelAnimationFrame(g.raf); g.raf = null; }
     laneExplRefs.current.forEach((el) => { if (el) el.style.opacity = '0'; });
     padRefs.current.forEach((p) => p?.classList.remove('lit'));
-    if (g.stims > 0) {
-      onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
-      return;
-    }
-    onExit();
+    onExit({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
   }, [onExit]);
 
   const triggerStim = useCallback(

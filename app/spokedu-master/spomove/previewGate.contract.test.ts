@@ -29,8 +29,8 @@ describe("SPOMOVE preview gate (Phase 0)", () => {
   );
 
   it("1) running 중 MovementHud 없음 — Engine만", () => {
-    expect(session).not.toContain("currentMovement={");
-    expect(read("app/spokedu-master/spomove/session/EngineRouter.tsx")).not.toContain("<MovementHud");
+    expect(session).toContain("currentMovement={");
+    expect(read("app/spokedu-master/spomove/session/EngineRouter.tsx")).toContain("<MovementHud");
     expect(session).not.toContain("hud_collapsed");
     expect(session).toContain("state === 'running'");
     expect(session).toContain("<EngineRouter");

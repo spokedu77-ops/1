@@ -31,7 +31,7 @@ type Props = {
   targetSeconds: ShellTrackingSeconds;
   shuffleCount: ShellTrackingShuffleCount;
   responseSeconds: ShellTrackingSeconds;
-  onExit: () => void;
+  onExit: (stats?: ReactTrainCompleteStats) => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -142,7 +142,7 @@ export function TargetTrackingReactionTraining({
     runTokenRef.current += 1;
     timersRef.current.forEach(clearTimeout);
     timersRef.current.clear();
-    onCompleteRef.current({ stims: completedRoundsRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
+    onExitRef.current({ stims: completedRoundsRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
   }, []);
 
   useEffect(() => {
