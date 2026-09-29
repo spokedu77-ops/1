@@ -16,10 +16,10 @@ describe('MASTER SPOMOVE movement runtime integration', () => {
     expect(page).toContain('setMovementSheetOpen(false)');
   });
 
-  it('updates the Router HUD without key-remounting the engine', () => {
-    expect(page).toContain('currentMovement={');
+  it('does not inject the removed movement HUD into the running engine', () => {
+    expect(page).not.toContain('currentMovement={');
     expect(router).toContain('<EngineRuntime {...runtimeProps} />');
-    expect(router).toContain('<MovementHud');
+    expect(router).not.toContain('<MovementHud');
     expect(router).not.toContain('key={currentMovement');
   });
 

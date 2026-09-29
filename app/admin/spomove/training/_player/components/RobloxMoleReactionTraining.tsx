@@ -200,7 +200,6 @@ export function RobloxMoleReactionTraining({
   speedSec,
   lookMode = 'classic',
   bonusTimeEnabled = false,
-  onExit,
   onComplete,
 }: Props) {
   const uid = useId();
@@ -250,8 +249,11 @@ export function RobloxMoleReactionTraining({
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    onExit();
-  }, [onExit]);
+    g.running = false;
+    if (g.timer) clearInterval(g.timer);
+    clearSpawnTimers();
+    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+  }, [clearSpawnTimers, onComplete]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;
@@ -411,7 +413,10 @@ export function RobloxMoleReactionTraining({
       g.endsAtMs = performance.now() + durationSec * 1000;
       setActiveMap(new Map());
       setHud();
-      scheduleNext(g.cadenceMs);
+      // The countdown already provides the ready interval. Show the first cue
+      // immediately instead of adding one more full cadence after "GO".
+      triggerMole();
+      scheduleNext(g.lastSpawnDualBoth ? Math.round(g.cadenceMs * 1.2) : g.cadenceMs);
       g.timer = setInterval(() => {
         const newLeft = Math.max(0, Math.ceil((g.endsAtMs - performance.now()) / 1000));
         if (g.timeLeft !== newLeft) {

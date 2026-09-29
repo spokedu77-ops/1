@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect } from 'react';
 import { setSpomoveRuntimePaused } from '@/app/admin/spomove/training/_player/lib/runtimeClock';
 import type { ReactTrainCompleteStats } from '@/app/admin/spomove/training/_player/components/VisualReactionTraining';
 import {
@@ -16,8 +16,6 @@ import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import type { SpomoveCompletionReason } from './sessionResultModel';
-import { MovementHud } from '../movements/MovementHud';
-import type { ResolvedMovementConfiguration } from '../movements/movementTypes';
 import {
   resolveSimonL4CamouflageConcurrent,
   resolveSimonL4CamouflagePlacementMode,
@@ -115,7 +113,6 @@ export type EngineCompletePayload = {
 
 type Props = {
   runtimeState: 'running' | 'paused';
-  currentMovement: ResolvedMovementConfiguration | null;
   mode: OfficialSpomoveEngineMode;
   level: number;
   durationSec?: number;
@@ -240,7 +237,7 @@ function EngineRuntime({
   intervalLaunch = null,
   onComplete,
   onExit,
-}: Omit<Props, 'currentMovement'>) {
+}: Props) {
   useEffect(() => {
     setSpomoveRuntimePaused(runtimeState === 'paused');
   }, [runtimeState]);
@@ -646,20 +643,6 @@ function EngineRuntime({
   return null;
 }
 
-export function EngineRouter({ currentMovement, ...runtimeProps }: Props) {
-  const [movementHudCollapsed, setMovementHudCollapsed] = useState(false);
-
-  return (
-    <>
-      <EngineRuntime {...runtimeProps} />
-      {currentMovement ? (
-        <MovementHud
-          movement={currentMovement}
-          collapsed={movementHudCollapsed}
-          onToggleCollapsed={() => setMovementHudCollapsed((collapsed) => !collapsed)}
-          compact
-        />
-      ) : null}
-    </>
-  );
+export function EngineRouter(runtimeProps: Props) {
+  return <EngineRuntime {...runtimeProps} />;
 }

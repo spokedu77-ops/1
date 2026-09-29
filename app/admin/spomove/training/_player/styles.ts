@@ -113,7 +113,8 @@ export const CSS = `
     .card-wide { max-width: 42rem !important; }
     .setup-grid { grid-template-columns: repeat(2, 1fr) !important; }
   }
-  @media (min-width: 1024px) {
+  /* Keep the desktop composition away from the 1024px scrollbar/fullscreen boundary. */
+  @media (min-width: 1100px) {
     .home-desktop { flex-direction: row !important; align-items: center !important; max-width: 1100px !important; gap: 5rem !important; }
     .home-left { flex: 1; }
     .home-right { width: 380px; flex-shrink: 0; }

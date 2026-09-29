@@ -55,7 +55,7 @@ describe("SPOMOVE session lifecycle UX", () => {
   });
 
   it("requires explicit confirmation before an engine exit becomes ended", () => {
-    expect(page).toContain("onExit={requestEarlyStop}");
+    expect(page).toContain("onExit={() => setExitConfirmationOpen(true)}");
     expect(page).toContain("수업을 종료할까요?");
     expect(page).toContain("SPOMOVE_SESSION_OVERLAY_LAYER");
     expect(page).toContain("createPortal");

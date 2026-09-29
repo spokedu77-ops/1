@@ -167,7 +167,6 @@ export function ColorMemoryGridReactionTraining({
   gridSize: gridSizeProp = 4,
   gameMode: gameModeProp = 'flicker',
   effectsEnabled = true,
-  onExit,
   onComplete,
 }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
@@ -520,7 +519,7 @@ export function ColorMemoryGridReactionTraining({
           <div className="cmgrid-hv" ref={timeRef}>0</div>
         </div>
         <div className="cmgrid-hc" style={{ borderRight: 'none' }}>
-          <button type="button" className="cmgrid-stop" onClick={onExit}>STOP</button>
+          <button type="button" className="cmgrid-stop" onClick={complete}>STOP</button>
         </div>
       </div>
       <div ref={playRef} className="cmgrid-play">

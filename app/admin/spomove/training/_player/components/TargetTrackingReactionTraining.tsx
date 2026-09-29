@@ -139,7 +139,10 @@ export function TargetTrackingReactionTraining({
   }, []);
 
   const stop = useCallback(() => {
-    onExitRef.current();
+    runTokenRef.current += 1;
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current.clear();
+    onCompleteRef.current({ stims: completedRoundsRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
   }, []);
 
   useEffect(() => {

@@ -329,7 +329,7 @@ class SimonBalloon {
     ctx.lineWidth = Math.max(4, this.r * 0.055);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `900 ${Math.max(34, this.r * 0.9)}px "Noto Sans KR", sans-serif`;
+    ctx.font = `800 ${Math.max(34, this.r * 0.9)}px "Paperlogy", "SUIT", "Pretendard", sans-serif`;
     ctx.strokeText(String(countdown), this.x, this.y);
     ctx.fillText(String(countdown), this.x, this.y);
     ctx.restore();
@@ -625,6 +625,15 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
+    g.running = false;
+    if (g.timer) { clearInterval(g.timer); g.timer = null; }
+    if (g.raf != null) { cancelAnimationFrame(g.raf); g.raf = null; }
+    laneExplRefs.current.forEach((el) => { if (el) el.style.opacity = '0'; });
+    padRefs.current.forEach((p) => p?.classList.remove('lit'));
+    if (g.stims > 0) {
+      onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+      return;
+    }
     onExit();
   }, [onExit]);
 

@@ -205,7 +205,6 @@ export function VirusOutbreakReactionTraining({
   durationSec,
   difficulty: difficultyProp = 'normal',
   effectsEnabled = true,
-  onExit,
   onComplete,
 }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
@@ -577,7 +576,7 @@ export function VirusOutbreakReactionTraining({
           <div className="vburst-hv" ref={timeRef}>0</div>
         </div>
         <div className="vburst-hc" style={{ borderRight: 'none' }}>
-          <button type="button" className="vburst-stop" onClick={onExit}>STOP</button>
+          <button type="button" className="vburst-stop" onClick={complete}>STOP</button>
         </div>
       </div>
       <div ref={playRef} className="vburst-play">

@@ -104,7 +104,7 @@ function project(g: RushState, z: number, laneOffset: number) {
   return { x, y };
 }
 
-export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete }: Props) {
+export function RushReactionTraining({ durationSec, speedSec, onComplete }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
@@ -119,8 +119,11 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g?.running) return;
-    onExit();
-  }, [onExit]);
+    g.running = false;
+    if (g.timer) clearInterval(g.timer);
+    if (g.raf != null) cancelAnimationFrame(g.raf);
+    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+  }, [onComplete]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

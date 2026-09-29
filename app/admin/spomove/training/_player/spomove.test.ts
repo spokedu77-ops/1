@@ -915,7 +915,7 @@ describe('training result summary', () => {
   });
 
   test('resolveReactTrainUiLevel: 화면 카탈로그 엔진 id + 구 id 폴백', async () => {
-    const { resolveReactTrainUiLevel, MODES } = await import('./constants');
+    const { catalogReactTrainUiLevel, resolveReactTrainUiLevel, MODES } = await import('./constants');
     const ids = MODES.reactTrain.levels.map((lv) => lv.id);
     expect(ids).toEqual([3, 1, 2, 6, 10, 201, 9, 8, 13, 14]);
     expect(MODES.reactTrain.levels.map((lv) => lv.enName)).toEqual([
@@ -958,6 +958,11 @@ describe('training result summary', () => {
     expect(resolveReactTrainUiLevel(91)).toEqual({ engineLevel: 8, numberCartTier: 1 });
     expect(resolveReactTrainUiLevel(103)).toEqual({ engineLevel: 9, colorTrackerTier: 3 });
     expect(resolveReactTrainUiLevel(201)).toEqual({ engineMode: 'basic', engineLevel: 7 });
+    // 8번(Number Train)에서 7번(Color Tracker)으로 바꿀 때 현재/레거시 설정 모두
+    // 7번 카탈로그 항목(id 9)이 선택 상태로 표시되어야 한다.
+    expect(catalogReactTrainUiLevel(8)).toBe(8);
+    expect(catalogReactTrainUiLevel(9)).toBe(9);
+    expect(catalogReactTrainUiLevel(103)).toBe(9);
   });
 
   test('stroop 1번은 랜덤 색상화살표, 2번은 단어다', async () => {

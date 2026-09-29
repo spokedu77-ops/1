@@ -10,7 +10,7 @@ import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { isDiveActionMoveUnityTheme, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
-import { getAudioCtx, resumeExistingAudioCtx, suspendExistingAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
+import { getAudioCtx, resumeExistingAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 import {
   resetSpomoveRuntimeClock,
   setSpomoveRuntimePaused,
@@ -51,7 +51,6 @@ import {
   type SpomoveCompletionReason,
 } from './sessionResultModel';
 import {
-  canPauseSpomoveRuntime,
   canResumeSpomoveRuntime,
   type SpomoveRuntimeState as SessionState,
 } from './sessionRuntimeLifecycle';
@@ -61,7 +60,6 @@ import { getMovementProfile } from '../movements/movementProfiles';
 import {
   isAllowedByFamily,
   resolveEffectiveMovement,
-  resolveMovementConfiguration,
   parseMovementQuery,
 } from '../movements/movementResolve';
 import type { MovementPick } from '../movements/movementTypes';
@@ -759,16 +757,6 @@ function SpomoveSessionContent() {
     stopBgm,
   ]);
 
-  const requestEarlyStop = useCallback(() => {
-    if (finishLockedRef.current || stopRequestLockedRef.current) return;
-    stopRequestLockedRef.current = true;
-    setSpomoveRuntimePaused(true);
-    bgmPlayerRef.current?.pause();
-    void suspendExistingAudioCtx();
-    setExitConfirmationOpen(true);
-    persistActiveRun('paused');
-  }, [persistActiveRun]);
-
   const continueSession = useCallback(() => {
     stopRequestLockedRef.current = false;
     setExitConfirmationOpen(false);
@@ -777,16 +765,6 @@ function SpomoveSessionContent() {
     void resumeExistingAudioCtx();
     void bgmPlayerRef.current?.play();
     persistActiveRun('running');
-  }, [persistActiveRun]);
-
-  const pauseSession = useCallback(() => {
-    if (finishLockedRef.current || stopRequestLockedRef.current || !canPauseSpomoveRuntime(runtimeStateRef.current)) return;
-    if (!setSpomoveRuntimePaused(true)) return;
-    runtimeStateRef.current = 'paused';
-    bgmPlayerRef.current?.pause();
-    void suspendExistingAudioCtx();
-    setState('paused');
-    persistActiveRun('paused');
   }, [persistActiveRun]);
 
   const resumeSession = useCallback(() => {
@@ -798,15 +776,6 @@ function SpomoveSessionContent() {
     setState('running');
     persistActiveRun('running');
   }, [persistActiveRun]);
-
-  const openMovementSheet = useCallback(() => {
-    if (
-      runtimeStateRef.current !== 'paused' ||
-      movementSupport !== 'supported' ||
-      !movementStateRef.current.currentMovement
-    ) return;
-    setMovementSheetOpen(true);
-  }, [movementSupport]);
 
   const selectMovement = useCallback((nextMovement: MovementPick) => {
     if (
@@ -828,25 +797,6 @@ function SpomoveSessionContent() {
       return next;
     });
   }, [activityFamily, movementProfile, movementSupport, persistActiveRun, persistRecentConfig]);
-
-  useEffect(() => {
-    const pauseForBackground = () => {
-      if (document.visibilityState === 'hidden') {
-        pauseSession();
-        queueMicrotask(() => persistActiveRun('paused'));
-      }
-    };
-    const persistForPageHide = () => {
-      pauseSession();
-      persistActiveRun('paused');
-    };
-    document.addEventListener('visibilitychange', pauseForBackground);
-    window.addEventListener('pagehide', persistForPageHide);
-    return () => {
-      document.removeEventListener('visibilitychange', pauseForBackground);
-      window.removeEventListener('pagehide', persistForPageHide);
-    };
-  }, [pauseSession, persistActiveRun]);
 
   useEffect(() => {
     if (state !== 'running' && state !== 'paused') return;
@@ -1090,11 +1040,6 @@ function SpomoveSessionContent() {
       <div className="relative h-dvh overflow-hidden bg-black">
         <EngineRouter
           runtimeState={state}
-          currentMovement={
-            movementSupport === 'supported' && movementState.currentMovement && movementProfile
-              ? resolveMovementConfiguration(movementState.currentMovement, movementProfile)
-              : null
-          }
           durationSec={
             officialPreset.engine.mode === 'reactTrain' ||
             (officialPreset.engine.mode === 'spatial' && officialPreset.engine.level === 7)
@@ -1151,21 +1096,11 @@ function SpomoveSessionContent() {
                 }
               : null
           }
-          onExit={requestEarlyStop}
+          onExit={() => setExitConfirmationOpen(true)}
           onComplete={(payload) => {
             finishSession(payload.completionReason, payload);
           }}
         />
-        {!exitConfirmationOpen ? (
-          <button
-            type="button"
-            onClick={pauseSession}
-            disabled={state === 'paused'}
-            className="fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-[401] min-h-11 rounded-xl border border-white/20 bg-black/70 px-4 text-sm font-extrabold text-white backdrop-blur disabled:hidden"
-          >
-            일시정지
-          </button>
-        ) : null}
         {activationBlocked ? createPortal(
           <div className="pointer-events-none fixed inset-x-0 top-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }}>
             <div className="pointer-events-auto mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-white/15 bg-black/80 p-3 text-white shadow-xl backdrop-blur">
@@ -1198,9 +1133,6 @@ function SpomoveSessionContent() {
               <p className="mt-2 text-sm font-semibold text-white/60">준비가 되면 같은 지점에서 계속하세요.</p>
               <div className="mt-5 grid gap-2">
                 <button type="button" autoFocus onClick={resumeSession} className="min-h-12 rounded-xl bg-white text-sm font-extrabold text-slate-950">계속하기</button>
-                {movementSupport === 'supported' ? (
-                  <button type="button" onClick={openMovementSheet} className="min-h-11 rounded-xl border border-white/20 text-sm font-bold text-white">동작 변경</button>
-                ) : null}
                 <button type="button" onClick={() => finishSession('stopped_early')} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
               </div>
             </section>

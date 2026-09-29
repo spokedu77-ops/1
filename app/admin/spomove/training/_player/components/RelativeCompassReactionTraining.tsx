@@ -86,7 +86,7 @@ export function RelativeCompassReactionTraining({
     cancel();
     completeRef.current({ stims: completedRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
   }, [cancel]);
-  const stop = useCallback(() => exitRef.current(), []);
+  const stop = useCallback(() => finish(), [finish]);
 
   useEffect(() => {
     let mounted = true;

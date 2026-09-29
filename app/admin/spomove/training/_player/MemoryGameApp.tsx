@@ -77,6 +77,7 @@ import {
   resolveTrainingEngine,
   resolveReactTrainUiLevel,
   reactTrainEngineLevelForUi,
+  catalogReactTrainUiLevel,
   catalogBasicUiLevel,
   isModifiedQuadrantLevel,
   isFront3PanelLevel,
@@ -494,6 +495,7 @@ export default function MemoryGameApp({
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [pendingAutoStart, setPendingAutoStart] = useState(false);
   const autoLaunchCfgRef = useRef<Settings | null>(null);
+  const initializationKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (typeof window === 'undefined') return;
     // autoLaunch에 테마가 있으면 그것만 쓰고, 없으면 항상 색상 기본값 유지(localStorage로 덮지 않음)
@@ -721,6 +723,9 @@ export default function MemoryGameApp({
 
   useEffect(() => {
     if (!initialMode) return;
+    const initializationKey = JSON.stringify({ initialMode, initialLevel, autoLaunch: autoLaunch ?? null });
+    if (initializationKeyRef.current === initializationKey) return;
+    initializationKeyRef.current = initializationKey;
     const normalized = normalizeLegacyTrainingMode(initialMode, typeof initialLevel === 'number' ? initialLevel : 1);
     if (!(normalized.mode in MODES)) return;
     const modeDef = MODES[normalized.mode];
@@ -1540,30 +1545,30 @@ export default function MemoryGameApp({
                 {M.levels.map((lv, lvIdx) => {
                   const active =
                     settings.mode === 'basic'
-                      ? (lv.id === 8 ? settings.level === 8 && settings.shapeCompletionEnabled : catalogBasicUiLevel(settings.level) === lv.id && !settings.shapeCompletionEnabled)
+                      ? lv.id === 8
+                        ? settings.level === 8 && settings.shapeCompletionEnabled && !settings.relativeCompassEnabled
+                        : lv.id === 7
+                          ? settings.level === 7 && settings.relativeCompassEnabled && !settings.shapeCompletionEnabled
+                          : catalogBasicUiLevel(settings.level) === lv.id && !settings.relativeCompassEnabled && !settings.shapeCompletionEnabled
                       : settings.mode === 'spatial'
                         ? catalogSpatialUiLevel(settings.level) === lv.id
-                        : settings.level === lv.id;
+                        : settings.mode === 'reactTrain'
+                          ? catalogReactTrainUiLevel(settings.level) === lv.id
+                          : settings.level === lv.id;
                   return (
                   <button
                     key={lv.id}
                     type="button"
+                    aria-pressed={active}
+                    data-level-active={active ? 'true' : 'false'}
                     onClick={() => {
-                      if (settings.mode === 'basic' && lv.id === 8) {
-                        setSettings((current) => ({ ...current, level: 8, shapeCompletionEnabled: true, relativeCompassEnabled: false }));
-                        return;
-                      }
-                      if (settings.mode === 'basic' && lv.id === 7) {
+                      if (settings.mode === 'basic') {
                         setSettings((current) => ({
                           ...current,
-                          level: 7,
-                          relativeCompassEnabled: true,
-                          shapeCompletionEnabled: false,
+                          level: lv.id === 5 && isFront3PanelLevel(current.level) ? current.level : lv.id,
+                          relativeCompassEnabled: lv.id === 7,
+                          shapeCompletionEnabled: lv.id === 8,
                         }));
-                        return;
-                      }
-                      if (settings.mode === 'basic' && lv.id === 5) {
-                        set('level', isFront3PanelLevel(settings.level) ? settings.level : 5);
                         return;
                       }
                       if (settings.mode === 'spatial' && lv.id === 1) {
