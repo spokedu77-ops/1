@@ -67,7 +67,7 @@ type Props = {
   speedSec: number;
   placementMode?: CamouflagePlacementMode;
   concurrent?: 1 | 2;
-  onExit: (stats?: ReactTrainCompleteStats) => void;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -135,7 +135,7 @@ export function CamouflageReactionTraining({
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.timer) clearInterval(g.timer);
-    onExitRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onCompleteRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number] });
   }, []);
 
   const endGame = useCallback(() => {

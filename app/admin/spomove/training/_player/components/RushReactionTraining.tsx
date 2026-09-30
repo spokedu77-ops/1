@@ -93,7 +93,7 @@ type Props = {
   durationSec: number;
   speedLevel: number;
   speedSec: number;
-  onExit: (stats?: ReactTrainCompleteStats) => void;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -104,7 +104,7 @@ function project(g: RushState, z: number, laneOffset: number) {
   return { x, y };
 }
 
-export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete }: Props) {
+export function RushReactionTraining({ durationSec, speedSec, onComplete }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
@@ -122,8 +122,8 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     if (g.raf != null) cancelAnimationFrame(g.raf);
-    onExit({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
-  }, [onExit]);
+    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+  }, [onComplete]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

@@ -319,7 +319,7 @@ type Props = {
   /** 1: 항상 1개 · 2: 1~2개(더블 블록 포함) */
   goalkeeperTier?: 1 | 2;
   bonusTimeEnabled?: boolean;
-  onExit: (stats?: ReactTrainCompleteStats) => void;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -359,7 +359,7 @@ export function GoalkeeperReactionTraining({
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.timer) clearInterval(g.timer);
-    onExitRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
   }, []);
 
   const endGame = useCallback(() => {

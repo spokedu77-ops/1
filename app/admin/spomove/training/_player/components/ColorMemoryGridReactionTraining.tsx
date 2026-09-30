@@ -76,7 +76,7 @@ type Props = {
   gridSize?: ColorMemoryGridSize;
   gameMode?: ColorMemoryGridMode;
   effectsEnabled?: boolean;
-  onExit: (stats?: ReactTrainCompleteStats) => void;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -167,7 +167,6 @@ export function ColorMemoryGridReactionTraining({
   gridSize: gridSizeProp = 4,
   gameMode: gameModeProp = 'flicker',
   effectsEnabled = true,
-  onExit,
   onComplete,
 }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
@@ -199,20 +198,6 @@ export function ColorMemoryGridReactionTraining({
       laneCount: [...g.laneCount],
     });
   }, []);
-
-  const stopGame = useCallback(() => {
-    const g = gRef.current;
-    if (!g?.running) return;
-    g.running = false;
-    if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
-    if (flashRef.current) flashRef.current.classList.remove('on');
-    onExit({
-      stims: Math.max(0, g.round - 1),
-      maxCombo: Math.max(0, g.round - 1),
-      laneCount: [...g.laneCount],
-    });
-  }, [onExit]);
 
   useEffect(() => {
     const cv = cvRef.current;
@@ -534,7 +519,7 @@ export function ColorMemoryGridReactionTraining({
           <div className="cmgrid-hv" ref={timeRef}>0</div>
         </div>
         <div className="cmgrid-hc" style={{ borderRight: 'none' }}>
-          <button type="button" className="cmgrid-stop" onClick={stopGame}>STOP</button>
+          <button type="button" className="cmgrid-stop" onClick={complete}>STOP</button>
         </div>
       </div>
       <div ref={playRef} className="cmgrid-play">

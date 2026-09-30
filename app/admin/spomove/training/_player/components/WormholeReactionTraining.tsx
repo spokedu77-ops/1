@@ -186,7 +186,7 @@ type Props = {
   durationSec: number;
   speedLevel: number;
   speedSec: number;
-  onExit: (stats?: ReactTrainCompleteStats) => void;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -249,7 +249,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
     if (g.waveTimer) clearTimeout(g.waveTimer);
     if (g.nextWaveTimer) clearTimeout(g.nextWaveTimer);
     const quadrantLaneCount = [...g.laneCount] as [number, number, number, number];
-    onExitRef.current({ stims: g.waves, maxCombo: g.waves, laneCount: quadrantLaneCountToResultLaneCount(quadrantLaneCount) });
+    onCompleteRef.current({ stims: g.waves, maxCombo: g.waves, laneCount: quadrantLaneCountToResultLaneCount(quadrantLaneCount) });
   }, []);
 
   const endGame = useCallback(() => {

@@ -34,7 +34,7 @@ type Props = {
   startSeconds: RelativeCompassSeconds;
   responseSeconds: RelativeCompassSeconds;
   effectsEnabled?: boolean;
-  onExit: (stats?: ReactTrainCompleteStats) => void;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -86,10 +86,7 @@ export function RelativeCompassReactionTraining({
     cancel();
     completeRef.current({ stims: completedRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
   }, [cancel]);
-  const stop = useCallback(() => {
-    cancel();
-    exitRef.current({ stims: completedRef.current, maxCombo: 0, laneCount: [0, 0, 0, 0] });
-  }, [cancel]);
+  const stop = useCallback(() => finish(), [finish]);
 
   useEffect(() => {
     let mounted = true;

@@ -26,7 +26,7 @@ type Props = {
   speedSec: number;
   lookMode?: MoleLookMode;
   bonusTimeEnabled?: boolean;
-  onExit: (stats?: ReactTrainCompleteStats) => void;
+  onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
@@ -200,7 +200,6 @@ export function RobloxMoleReactionTraining({
   speedSec,
   lookMode = 'classic',
   bonusTimeEnabled = false,
-  onExit,
   onComplete,
 }: Props) {
   const uid = useId();
@@ -253,8 +252,8 @@ export function RobloxMoleReactionTraining({
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     clearSpawnTimers();
-    onExit({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
-  }, [clearSpawnTimers, onExit]);
+    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+  }, [clearSpawnTimers, onComplete]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;

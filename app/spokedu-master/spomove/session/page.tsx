@@ -10,7 +10,7 @@ import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { isDiveActionMoveUnityTheme, normalizeDiveThemeId, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
-import { getAudioCtx, resumeExistingAudioCtx, suspendExistingAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
+import { getAudioCtx, resumeExistingAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 import {
   resetSpomoveRuntimeClock,
   setSpomoveRuntimePaused,
@@ -51,7 +51,6 @@ import {
   type SpomoveCompletionReason,
 } from './sessionResultModel';
 import {
-  canPauseSpomoveRuntime,
   canResumeSpomoveRuntime,
   type SpomoveRuntimeState as SessionState,
 } from './sessionRuntimeLifecycle';
@@ -60,7 +59,6 @@ import { MovementChangeSheet } from '../movements/MovementChangeSheet';
 import { getMovementProfile } from '../movements/movementProfiles';
 import {
   isAllowedByFamily,
-  resolveMovementConfiguration,
   resolveEffectiveMovement,
   parseMovementQuery,
 } from '../movements/movementResolve';
@@ -379,7 +377,6 @@ function SpomoveSessionContent() {
   const startLockedRef = useRef(false);
   const finishLockedRef = useRef(false);
   const stopRequestLockedRef = useRef(false);
-  const pendingStopPayloadRef = useRef<EngineCompletePayload | undefined>(undefined);
   const sessionStartedAtRef = useRef<number | null>(null);
   const runStartedAtIsoRef = useRef<string | null>(null);
   const [sessionResult, setSessionResult] = useState<(EngineCompletePayload & SpomoveMovementResult) | null>(null);
@@ -687,7 +684,6 @@ function SpomoveSessionContent() {
     startLockedRef.current = true;
     finishLockedRef.current = false;
     stopRequestLockedRef.current = false;
-    pendingStopPayloadRef.current = undefined;
     setExitConfirmationOpen(false);
     setMovementSheetOpen(false);
     setSessionResult(null);
@@ -739,7 +735,7 @@ function SpomoveSessionContent() {
       completionReason,
       engineMode: payload?.engineMode ?? officialPreset.engine.mode,
       engineLevel: payload?.engineLevel ?? officialPreset.engine.level,
-      elapsedMs: fallbackElapsedMs,
+      elapsedMs: payload?.elapsedMs ?? fallbackElapsedMs,
       colorCounts: payload?.colorCounts ?? null,
       stims: payload?.stims,
       maxCombo: payload?.maxCombo,
@@ -763,42 +759,12 @@ function SpomoveSessionContent() {
 
   const continueSession = useCallback(() => {
     stopRequestLockedRef.current = false;
-    pendingStopPayloadRef.current = undefined;
     setExitConfirmationOpen(false);
     setMovementSheetOpen(false);
     setSpomoveRuntimePaused(false);
     void resumeExistingAudioCtx();
     void bgmPlayerRef.current?.play();
     persistActiveRun('running');
-  }, [persistActiveRun]);
-
-  const requestEarlyStop = useCallback((payload?: unknown) => {
-    if (!officialPreset || finishLockedRef.current || stopRequestLockedRef.current) return;
-    const stats = payload && typeof payload === 'object' &&
-      'completionReason' in payload && payload.completionReason === 'stopped_early' &&
-      'engineMode' in payload && 'engineLevel' in payload
-      ? payload as EngineCompletePayload
-      : null;
-    stopRequestLockedRef.current = true;
-    pendingStopPayloadRef.current = stats ? {
-      ...stats,
-      completionReason: 'stopped_early',
-    } : undefined;
-    setSpomoveRuntimePaused(true);
-    bgmPlayerRef.current?.pause();
-    void suspendExistingAudioCtx();
-    setExitConfirmationOpen(true);
-    persistActiveRun('paused');
-  }, [officialPreset, persistActiveRun]);
-
-  const pauseSession = useCallback(() => {
-    if (finishLockedRef.current || stopRequestLockedRef.current || !canPauseSpomoveRuntime(runtimeStateRef.current)) return;
-    if (!setSpomoveRuntimePaused(true)) return;
-    runtimeStateRef.current = 'paused';
-    bgmPlayerRef.current?.pause();
-    void suspendExistingAudioCtx();
-    setState('paused');
-    persistActiveRun('paused');
   }, [persistActiveRun]);
 
   const resumeSession = useCallback(() => {
@@ -810,15 +776,6 @@ function SpomoveSessionContent() {
     setState('running');
     persistActiveRun('running');
   }, [persistActiveRun]);
-
-  const openMovementSheet = useCallback(() => {
-    if (
-      runtimeStateRef.current !== 'paused' ||
-      movementSupport !== 'supported' ||
-      !movementStateRef.current.currentMovement
-    ) return;
-    setMovementSheetOpen(true);
-  }, [movementSupport]);
 
   const selectMovement = useCallback((nextMovement: MovementPick) => {
     if (
@@ -840,25 +797,6 @@ function SpomoveSessionContent() {
       return next;
     });
   }, [activityFamily, movementProfile, movementSupport, persistActiveRun, persistRecentConfig]);
-
-  useEffect(() => {
-    const pauseForBackground = () => {
-      if (document.visibilityState === 'hidden') {
-        pauseSession();
-        queueMicrotask(() => persistActiveRun('paused'));
-      }
-    };
-    const persistForPageHide = () => {
-      pauseSession();
-      persistActiveRun('paused');
-    };
-    document.addEventListener('visibilitychange', pauseForBackground);
-    window.addEventListener('pagehide', persistForPageHide);
-    return () => {
-      document.removeEventListener('visibilitychange', pauseForBackground);
-      window.removeEventListener('pagehide', persistForPageHide);
-    };
-  }, [pauseSession, persistActiveRun]);
 
   useEffect(() => {
     if (state !== 'running' && state !== 'paused') return;
@@ -1102,11 +1040,6 @@ function SpomoveSessionContent() {
       <div className="relative h-dvh overflow-hidden bg-black">
         <EngineRouter
           runtimeState={state}
-          currentMovement={
-            movementSupport === 'supported' && movementState.currentMovement && movementProfile
-              ? resolveMovementConfiguration(movementState.currentMovement, movementProfile)
-              : null
-          }
           durationSec={
             officialPreset.engine.mode === 'reactTrain' ||
             (officialPreset.engine.mode === 'spatial' && officialPreset.engine.level === 7)
@@ -1163,20 +1096,11 @@ function SpomoveSessionContent() {
                 }
               : null
           }
-          onExit={requestEarlyStop}
+          onExit={() => setExitConfirmationOpen(true)}
           onComplete={(payload) => {
             finishSession(payload.completionReason, payload);
           }}
         />
-        {!exitConfirmationOpen && state === 'running' ? (
-          <button
-            type="button"
-            onClick={pauseSession}
-            className="fixed left-4 top-[max(1rem,env(safe-area-inset-top))] z-[401] min-h-11 rounded-xl border border-white/20 bg-black/70 px-4 text-sm font-extrabold text-white backdrop-blur"
-          >
-            일시정지
-          </button>
-        ) : null}
         {activationBlocked ? createPortal(
           <div className="pointer-events-none fixed inset-x-0 top-0 px-3 pt-[max(0.75rem,env(safe-area-inset-top))]" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }}>
             <div className="pointer-events-auto mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-white/15 bg-black/80 p-3 text-white shadow-xl backdrop-blur">
@@ -1196,7 +1120,7 @@ function SpomoveSessionContent() {
               <p className="mt-2 text-sm font-semibold text-white/60">지금까지 진행한 시간은 중도 종료로 남길 수 있습니다.</p>
               <div className="mt-5 grid gap-2">
                 <button type="button" autoFocus onClick={continueSession} className="min-h-12 rounded-xl bg-white text-sm font-extrabold text-slate-950">계속하기</button>
-                <button type="button" onClick={() => finishSession('stopped_early', pendingStopPayloadRef.current)} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
+                <button type="button" onClick={() => finishSession('stopped_early')} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
               </div>
             </section>
           </div>,
@@ -1209,10 +1133,7 @@ function SpomoveSessionContent() {
               <p className="mt-2 text-sm font-semibold text-white/60">준비가 되면 같은 지점에서 계속하세요.</p>
               <div className="mt-5 grid gap-2">
                 <button type="button" autoFocus onClick={resumeSession} className="min-h-12 rounded-xl bg-white text-sm font-extrabold text-slate-950">계속하기</button>
-                {movementSupport === 'supported' ? (
-                  <button type="button" onClick={openMovementSheet} className="min-h-11 rounded-xl border border-white/20 text-sm font-bold text-white">동작 변경</button>
-                ) : null}
-                <button type="button" onClick={() => finishSession('stopped_early', pendingStopPayloadRef.current)} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
+                <button type="button" onClick={() => finishSession('stopped_early')} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
               </div>
             </section>
           </div>,
