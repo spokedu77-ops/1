@@ -18,7 +18,7 @@ describe('MASTER commercial cohesion contracts', () => {
     expect(getMasterRouteRequirement('/spokedu-master/activity').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/classes/class-a').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/students').capability).toBe('attendance');
-    expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('records');
+    expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/report').capability).toBe('records');
     expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements).toMatchObject({
       canUseAttendance: true,

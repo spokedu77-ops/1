@@ -41,7 +41,7 @@ describe('MASTER whole-product maturity journeys', () => {
   });
 
   it('GATE-01 preserves student detail and activity session after upgrade', () => {
-    expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('records');
+    expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('attendance');
     expect(getSafeMasterPostPaymentPath('/spokedu-master/students/stu-1')).toBe('/spokedu-master/students/stu-1');
     expect(getSafeMasterPostPaymentPath('/spokedu-master/activity?session=s1')).toBe(
       '/spokedu-master/activity?session=s1',

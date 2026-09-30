@@ -18,12 +18,15 @@ import { SessionDetailSheet } from './SessionDetailSheet';
 import { NextSessionSheet } from './session-detail/NextSessionSheet';
 import { PreviousSessionPickerSheet } from './PreviousSessionPickerSheet';
 import { resolvePreviousSessionCandidates } from './previousSessionCandidates';
+import { resolveSpomoveRecordHandoff, type SpomoveRecordHandoff } from '../spomove/session/spomoveRecordDraft';
+import { useProfile } from '../store';
 
 type ManageTab = 'schedule' | 'attendance';
 
 /** Canonical owner for Schedule, Session detail, and attendance projection. */
 export default function ManageView() {
   const data = useOperationalData();
+  const profile = useProfile();
   const searchParams = useSearchParams();
   const handledQuery = useRef<string | null>(null);
   const [tab, setTab] = useState<ManageTab>('schedule');
@@ -35,6 +38,7 @@ export default function ManageView() {
   const [routeError, setRouteError] = useState<string | null>(null);
   const [previousPickerOpen, setPreviousPickerOpen] = useState(false);
   const [previousSource, setPreviousSource] = useState<MasterSessionDto | null>(null);
+  const [spomoveHandoff, setSpomoveHandoff] = useState<SpomoveRecordHandoff | null>(null);
   const previousCandidates = useMemo(() => resolvePreviousSessionCandidates(data.sessions, selectedDay), [data.sessions, selectedDay]);
 
   useEffect(() => {
@@ -42,6 +46,13 @@ export default function ManageView() {
     const queryKey = searchParams.toString();
     if (!queryKey || handledQuery.current === queryKey) return;
     handledQuery.current = queryKey;
+    const handoff = resolveSpomoveRecordHandoff(searchParams, profile?.id);
+    if (handoff) {
+      const day = getSeoulToday();
+      setRouteError(null); setTab('schedule'); setSelectedDay(day); setVisibleMonth(getMonthKey(day)); setCreateClassId(null); setSpomoveHandoff(handoff); setEditing(null);
+      return;
+    }
+    setSpomoveHandoff(null);
     setLegacyCapture(searchParams.get('capture') === '1');
     const resolution = resolveActivityQuery(searchParams, data.sessions, data.classes);
     if (resolution.kind === 'session') {
@@ -56,9 +67,9 @@ export default function ManageView() {
     } else if (resolution.kind === 'missing-class') {
       setEditing(undefined); setRouteError('유효하지 않은 수업반입니다.');
     }
-  }, [data.classes, data.sessions, data.status, searchParams]);
+  }, [data.classes, data.sessions, data.status, profile?.id, searchParams]);
 
-  const openCreate = () => { setCreateClassId(null); setLegacyCapture(false); setEditing(null); };
+  const openCreate = () => { setCreateClassId(null); setLegacyCapture(false); setSpomoveHandoff(null); setEditing(null); };
   const openCreatedSession = (created: MasterSessionDto) => { const day = getSeoulSessionDay(created.startAt); setSelectedDay(day); setVisibleMonth(getMonthKey(day)); setLegacyCapture(false); setEditing(created); };
   const selectTab = (nextTab: ManageTab) => { setEditing(undefined); setTab(nextTab); };
 
@@ -81,7 +92,7 @@ export default function ManageView() {
       {data.status === 'ready' && tab === 'schedule' ? <ScheduleTab month={visibleMonth} selectedDay={selectedDay} sessions={data.sessions} hasClasses={data.classes.length > 0} detailOpen={editing !== undefined} canClonePrevious={previousCandidates.length > 0} onMonthChange={setVisibleMonth} onDaySelect={(day) => { setSelectedDay(day); setVisibleMonth(getMonthKey(day)); }} onSessionSelect={(session) => { setLegacyCapture(false); setEditing(session); }} onClonePrevious={() => { setEditing(undefined); setPreviousPickerOpen(true); }} onCreate={openCreate} /> : null}
       {data.status === 'ready' && tab === 'attendance' ? <AttendanceTab onShowSchedule={() => selectTab('schedule')} onSessionSelect={(session) => { setLegacyCapture(false); setEditing(session); }} /> : null}
       </div>
-      {editing !== undefined ? <SessionDetailSheet key={editing?.id ?? `new-${selectedDay}-${createClassId ?? 'default'}`} session={editing === null ? null : data.sessions.find((item) => item.id === editing.id) ?? editing} initialDay={selectedDay} initialClassId={createClassId} legacyCapture={legacyCapture} onClose={() => setEditing(undefined)} onSessionCreated={openCreatedSession} /> : null}
+      {editing !== undefined ? <SessionDetailSheet key={editing?.id ?? `new-${selectedDay}-${createClassId ?? 'default'}-${spomoveHandoff?.runId ?? ''}`} session={editing === null ? null : data.sessions.find((item) => item.id === editing.id) ?? editing} initialDay={selectedDay} initialClassId={createClassId} legacyCapture={legacyCapture} spomoveHandoff={editing === null ? spomoveHandoff : null} onClose={() => setEditing(undefined)} onSessionCreated={openCreatedSession} /> : null}
     </MasterPageShell>
     {previousPickerOpen ? <PreviousSessionPickerSheet open candidates={previousCandidates} onClose={() => setPreviousPickerOpen(false)} onSelect={(source) => { setPreviousPickerOpen(false); setPreviousSource(source); }} /> : null}
     {previousSource ? <NextSessionSheet key={`${previousSource.id}-${selectedDay}`} source={previousSource} initialTargetDay={selectedDay} nested={false} open onClose={() => setPreviousSource(null)} onCreated={(created) => { setPreviousSource(null); openCreatedSession(created); }} /> : null}

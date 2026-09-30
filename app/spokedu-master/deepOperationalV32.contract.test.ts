@@ -42,8 +42,8 @@ describe('UI Foundation v3.2 deep operational contract', () => {
 
   it('preserves the existing persistence and completion calls', () => {
     expect(session).toContain('await data.updateSessionProgram');
-    expect(session).toContain("persist(activeSession ? 'completed' : 'scheduled')");
-    expect(session).toContain('await captureRef.current?.save()');
+    expect(session).toContain('primarySurfaceIntent={presentation?.primarySurfaceIntent ?? null}');
+    expect(session).toContain('saveCapture: captureRef.current');
     expect(session).toContain('전체 출석');
   });
 });

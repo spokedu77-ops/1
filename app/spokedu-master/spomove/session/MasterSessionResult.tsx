@@ -20,7 +20,6 @@ import type { MovementPick } from '../movements/movementTypes';
 
 export function MasterSessionResult({
   completionReason,
-  runId,
   initialMovement,
   finalMovement,
   movementChangeCount,
@@ -44,7 +43,6 @@ export function MasterSessionResult({
   onRetry,
 }: {
   completionReason: SpomoveCompletionReason;
-  runId: string;
   initialMovement: MovementPick | null;
   finalMovement: MovementPick | null;
   movementChangeCount: number;
@@ -125,7 +123,6 @@ export function MasterSessionResult({
               {movementTransition ? <span className="block text-xs font-semibold text-slate-500">{movementTransition}</span> : null}
             </p>
           ) : null}
-          <p className="text-[11px] font-semibold text-slate-400">실행 ID · {runId}</p>
           <p className="text-xs font-semibold leading-5 text-slate-500">
             {fromSession
               ? '실행 종료와 수업 활동 완료 기록은 별개입니다. 수업 화면에서 진행 체크하거나, 아래에서 완료로 표시할 수 있습니다.'

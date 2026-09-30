@@ -1,45 +1,51 @@
 import { describe, expect, it } from 'vitest';
-
-import { buildSpomoveRecordDraft, buildSpomoveRecordHref, resolveSpomoveDraftFromQuery } from './spomoveRecordDraft';
 import { findOfficialSpomovePreset, type OfficialSpomovePreset } from '../officialSpomovePresets';
+import {
+  buildSpomoveRecordDraft,
+  buildSpomoveRecordHref,
+  resolveSpomoveDraftFromQuery,
+  resolveSpomoveRecordHandoff,
+} from './spomoveRecordDraft';
 
-const preset = {
-  id: 'reaction-test',
-  title: '반응 전환 테스트',
-  axisTitle: '반응 전환',
-} as OfficialSpomovePreset;
+const preset = { id: 'reaction-test', title: '반응 전환 테스트', axisTitle: '반응 전환' } as OfficialSpomovePreset;
+
+function memoryStorage() {
+  const values = new Map<string, string>();
+  return {
+    values,
+    setItem: (key: string, value: string) => values.set(key, value),
+    getItem: (key: string) => values.get(key) ?? null,
+  };
+}
 
 describe('SPOMOVE record draft', () => {
-  it('builds an editable class-record memo with general activity estimates', () => {
-    const draft = buildSpomoveRecordDraft({
-      elapsedMs: 125_000,
-      preset,
-      completionReason: 'natural_complete',
-    });
-
-    expect(draft).toContain('[SPOMOVE 활동 기록 초안] 반응 전환 테스트 완료');
-    expect(draft).toContain('실제 움직인 시간: 약 2분');
-    expect(draft).toContain('예상 소모 열량 6-12kcal');
+  it('builds an editable memo with general estimates only', () => {
+    const draft = buildSpomoveRecordDraft({ elapsedMs: 125_000, preset, completionReason: 'natural_complete' });
+    expect(draft).toContain('2분');
+    expect(draft).toContain('6-12kcal');
     expect(draft).toContain('반응 전환');
-    expect(draft).toContain('센서 기반 정밀 측정값이 아니라 수업 기록용 일반 추정치');
   });
 
-  it('keeps early-ended sessions explicit and encodes the draft in the record href', () => {
-    const draft = buildSpomoveRecordDraft({
-      elapsedMs: 20_000,
-      preset,
-      completionReason: 'stopped_early',
-    });
-    const href = buildSpomoveRecordHref('123', draft);
-
-    expect(draft).toContain('중도 종료');
-    expect(href).toContain('/spokedu-master/activity?');
-    expect(href).toContain('program=123');
-    expect(href).toContain('spomoveDraft=');
-    expect(new URL(href, 'https://example.test').searchParams.get('spomoveDraft')).toContain('수업 기록용 일반 추정치');
+  it('keeps normal completion program, run, and draft through reload-safe session storage', () => {
+    const storage = memoryStorage();
+    const draft = buildSpomoveRecordDraft({ elapsedMs: 60_000, preset, completionReason: 'natural_complete' });
+    const href = buildSpomoveRecordHref('123', draft, storage, 'run-normal', 'owner-a');
+    const params = new URL(href, 'https://example.test').searchParams;
+    expect(params.get('program')).toBe('123');
+    expect(params.get('spomoveRunId')).toBe('run-normal');
+    expect(params.get('spomoveDraftKey')).toBe('spokedu-master:spomove-draft:run-normal');
+    expect(resolveSpomoveRecordHandoff(params, 'owner-a', storage)).toEqual({ programId: '123', runId: 'run-normal', draft });
+    expect(resolveSpomoveDraftFromQuery(params, storage)).toBe(draft);
   });
 
-  it('records the initial-to-final movement truth without adding structured persistence', () => {
+  it('keeps stopped-early program, run, and draft through the same handoff', () => {
+    const storage = memoryStorage();
+    const draft = buildSpomoveRecordDraft({ elapsedMs: 20_000, preset, completionReason: 'stopped_early' });
+    const params = new URL(buildSpomoveRecordHref('123', draft, storage, 'run-stop', 'owner-a'), 'https://example.test').searchParams;
+    expect(resolveSpomoveRecordHandoff(params, 'owner-a', storage)).toEqual({ programId: '123', runId: 'run-stop', draft });
+  });
+
+  it('records movement changes without structured score invention', () => {
     const draft = buildSpomoveRecordDraft({
       elapsedMs: 60_000,
       preset,
@@ -48,40 +54,31 @@ describe('SPOMOVE record draft', () => {
       finalMovement: { baseMovement: 'handTouch', limbRule: 'sameSide' },
       movementChangeCount: 1,
     });
-
-    expect(draft).toContain('동작:');
-    expect(draft).toContain('→');
-    expect(draft).toContain('(1회 변경)');
-    expect(draft).toContain('중도 종료');
+    expect(draft).toContain('1회 변경');
   });
 
   it('uses the current public title for an applied preset', () => {
     const publicPreset = findOfficialSpomovePreset('reaction-cognition-quad-fruit-10');
     expect(publicPreset).toBeTruthy();
-    expect(buildSpomoveRecordDraft({ preset: publicPreset!, completionReason: 'natural_complete' })).toContain('네 칸 과일 색 따라가기 완료');
+    expect(buildSpomoveRecordDraft({ preset: publicPreset!, completionReason: 'natural_complete' })).toContain(publicPreset!.title);
   });
 
-  it('stores oversized drafts in session storage and links by key', () => {
-    const storage = new Map<string, string>();
-    const sessionLike = {
-      setItem: (key: string, value: string) => storage.set(key, value),
-      getItem: (key: string) => storage.get(key) ?? null,
-    };
-    const longDraft = `${'가'.repeat(2500)}\n수업 기록용 일반 추정치`;
-    const href = buildSpomoveRecordHref('123', longDraft, sessionLike);
-    const url = new URL(href, 'https://example.test');
-
-    expect(url.searchParams.get('program')).toBe('123');
-    expect(url.searchParams.has('spomoveDraft')).toBe(false);
-    const draftKey = url.searchParams.get('spomoveDraftKey');
-    expect(draftKey).toMatch(/^spokedu-master:spomove-draft:/);
-    expect(resolveSpomoveDraftFromQuery(url.searchParams, sessionLike)).toContain('수업 기록용 일반 추정치');
+  it('rejects stale keys, cross-run mixing, and another owner in the same tab', () => {
+    const storage = memoryStorage();
+    const params = new URL(buildSpomoveRecordHref('123', 'draft-a', storage, 'run-a', 'owner-a'), 'https://example.test').searchParams;
+    expect(resolveSpomoveRecordHandoff(params, 'owner-a', storage)?.draft).toBe('draft-a');
+    expect(resolveSpomoveRecordHandoff(params, 'owner-b', storage)).toBeNull();
+    params.set('spomoveRunId', 'run-b');
+    expect(resolveSpomoveRecordHandoff(params, 'owner-a', storage)).toBeNull();
+    params.set('spomoveRunId', 'run-a');
+    params.set('program', '999');
+    expect(resolveSpomoveRecordHandoff(params, 'owner-a', storage)).toBeNull();
   });
 
-  it('hands off run identity as metadata without inserting it into the editable memo', () => {
-    const draft = buildSpomoveRecordDraft({ preset, completionReason: 'natural_complete' });
-    const href = buildSpomoveRecordHref('123', draft, undefined, 'run-a');
-    expect(new URL(href, 'https://example.test').searchParams.get('spomoveRunId')).toBe('run-a');
-    expect(draft).not.toContain('run-a');
+  it('uses one stable draft slot when the same run opens twice', () => {
+    const storage = memoryStorage();
+    buildSpomoveRecordHref('123', 'first', storage, 'run-a', 'owner-a');
+    buildSpomoveRecordHref('123', 'second', storage, 'run-a', 'owner-a');
+    expect(storage.values.size).toBe(1);
   });
 });

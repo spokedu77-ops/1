@@ -27,7 +27,7 @@ describe('SPOKEDU MASTER Session workflow', () => {
     expect(calendar).toContain("draft.input(activities.programs, 'completed')");
     expect(calendar).toContain('data.updateSessionProgram');
     expect(calendar).toContain('data.saveSessionAttendance');
-    expect(calendar).toContain("persist(activeSession ? 'completed' : 'scheduled')");
+    expect(calendar).toContain('primarySurfaceIntent={presentation?.primarySurfaceIntent ?? null}');
     expect(calendar).not.toContain('프로그램별 메모');
   });
 

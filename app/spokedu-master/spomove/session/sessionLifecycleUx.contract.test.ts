@@ -73,6 +73,9 @@ describe("SPOMOVE session lifecycle UX", () => {
     expect(result).not.toContain("scheduledCompletionStatus");
     expect(result).not.toContain("오늘 느낌");
     expect(result).not.toContain("스스로 점검");
+    expect(result).not.toContain("실행 ID");
+    expect(result).not.toContain("runId");
+    expect(page).not.toContain("runId={sessionResult.runId}");
   });
 
   it("does not auto-PATCH SessionProgram on engine done", () => {

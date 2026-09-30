@@ -56,7 +56,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('data.reorderSessionPrograms');
     expect(detail).toContain('data.addSessionProgram');
     expect(detail).toContain('data.addSessionSpomove');
-    expect(detail).toContain('data.completeSession(draft.activeSession.id');
+    expect(detail).toContain('data.completeSession(draft.activeSession!.id');
     expect(detail).toContain('data.saveSessionAttendance');
     expect(detail).toContain('useState(false)');
     expect(detail).toContain("'present' | 'absent'");

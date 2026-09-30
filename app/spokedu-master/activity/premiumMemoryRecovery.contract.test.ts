@@ -10,6 +10,7 @@ import { getSessionActionPolicy } from './sessionActionPolicy';
 import { shouldApplyServerSessionCapture } from './sessionCaptureDraft';
 
 const sheet = readFileSync(join(process.cwd(), 'app/spokedu-master/manage/session-detail/SessionDetailSheet.tsx'), 'utf8');
+const completion = readFileSync(join(process.cwd(), 'app/spokedu-master/manage/session-detail/sessionCompletionConsistency.ts'), 'utf8');
 const capture = readFileSync(join(process.cwd(), 'app/spokedu-master/activity/SessionCapturePanel.tsx'), 'utf8');
 
 const classItem: MasterClassDto = { id: 'c1', name: 'A반', studentIds: ['a', 'b'], createdAt: '', updatedAt: '' };
@@ -63,7 +64,9 @@ describe('premium memory on the normal next session', () => {
     expect(sheet).toContain("legacyCapture ? 'emphasized'");
     expect(sheet).toContain('presentation?.captureMode');
     expect(sheet).not.toContain('legacyCapture && draft.activeSession');
-    expect(sheet).toContain("nextStatus === 'completed' && captureRef.current");
+    expect(sheet).toContain('completeSessionWithCapture');
+    expect(sheet).toContain('saveCapture: captureRef.current');
+    expect(completion.indexOf('await saveCapture()')).toBeLessThan(completion.indexOf('await completeSession()'));
   });
 });
 

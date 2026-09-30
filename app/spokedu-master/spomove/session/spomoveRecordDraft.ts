@@ -14,7 +14,16 @@ type SpomoveRecordDraftInput = {
 };
 
 export const SPOMOVE_DRAFT_STORAGE_PREFIX = 'spokedu-master:spomove-draft:';
-const MAX_INLINE_DRAFT_HREF_LENGTH = 1800;
+
+type StoredSpomoveRecordDraft = {
+  version: 1;
+  programId: string;
+  runId: string | null;
+  ownerId: string | null;
+  draft: string;
+};
+
+export type SpomoveRecordHandoff = Pick<StoredSpomoveRecordDraft, 'programId' | 'runId' | 'draft'>;
 
 function minutesFromElapsed(elapsedMs?: number | null) {
   if (!elapsedMs || elapsedMs <= 0) return 1;
@@ -61,9 +70,12 @@ export function buildSpomoveRecordDraft({
     .join('\n');
 }
 
-export function storeSpomoveRecordDraft(draft: string, storage: Pick<Storage, 'setItem'> = sessionStorage): string {
-  const key = `${SPOMOVE_DRAFT_STORAGE_PREFIX}${Date.now()}`;
-  storage.setItem(key, draft);
+export function storeSpomoveRecordDraft(
+  value: StoredSpomoveRecordDraft,
+  storage: Pick<Storage, 'setItem'> = sessionStorage,
+): string {
+  const key = `${SPOMOVE_DRAFT_STORAGE_PREFIX}${value.runId ?? crypto.randomUUID()}`;
+  storage.setItem(key, JSON.stringify(value));
   return key;
 }
 
@@ -72,7 +84,14 @@ export function readSpomoveRecordDraft(
   storage: Pick<Storage, 'getItem'> = sessionStorage,
 ): string | null {
   if (!key?.startsWith(SPOMOVE_DRAFT_STORAGE_PREFIX)) return null;
-  return storage.getItem(key);
+  const raw = storage.getItem(key);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<StoredSpomoveRecordDraft>;
+    return parsed.version === 1 && typeof parsed.draft === 'string' ? parsed.draft : null;
+  } catch {
+    return raw;
+  }
 }
 
 export function resolveSpomoveDraftFromQuery(
@@ -84,15 +103,28 @@ export function resolveSpomoveDraftFromQuery(
   return readSpomoveRecordDraft(searchParams.get('spomoveDraftKey'), storage);
 }
 
-export function buildSpomoveRecordHref(programId: string, draft: string, storage?: Pick<Storage, 'setItem'>, runId?: string) {
-  const inlineParams = new URLSearchParams({ program: programId, spomoveDraft: draft });
-  if (runId) inlineParams.set('spomoveRunId', runId);
-  const inlineHref = `/spokedu-master/activity?${inlineParams.toString()}`;
-  if (inlineHref.length <= MAX_INLINE_DRAFT_HREF_LENGTH) {
-    return inlineHref;
+export function resolveSpomoveRecordHandoff(
+  searchParams: Pick<URLSearchParams, 'get'>,
+  ownerId: string | null | undefined,
+  storage: Pick<Storage, 'getItem'> = sessionStorage,
+): SpomoveRecordHandoff | null {
+  const programId = searchParams.get('program')?.trim();
+  const runId = searchParams.get('spomoveRunId')?.trim() || null;
+  const draftKey = searchParams.get('spomoveDraftKey');
+  if (!programId || !runId || !draftKey?.startsWith(SPOMOVE_DRAFT_STORAGE_PREFIX)) return null;
+  const raw = storage.getItem(draftKey);
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as Partial<StoredSpomoveRecordDraft>;
+    if (value.version !== 1 || value.programId !== programId || value.runId !== runId || value.ownerId !== (ownerId?.trim() || null) || typeof value.draft !== 'string') return null;
+    return { programId, runId, draft: value.draft };
+  } catch {
+    return null;
   }
+}
 
-  const draftKey = storeSpomoveRecordDraft(draft, storage ?? sessionStorage);
+export function buildSpomoveRecordHref(programId: string, draft: string, storage?: Pick<Storage, 'setItem'>, runId?: string, ownerId?: string | null) {
+  const draftKey = storeSpomoveRecordDraft({ version: 1, programId, runId: runId ?? null, ownerId: ownerId?.trim() || null, draft }, storage ?? sessionStorage);
   const compactParams = new URLSearchParams({ program: programId, spomoveDraftKey: draftKey });
   if (runId) compactParams.set('spomoveRunId', runId);
   return `/spokedu-master/activity?${compactParams.toString()}`;

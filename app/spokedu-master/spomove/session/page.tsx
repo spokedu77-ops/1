@@ -17,7 +17,7 @@ import {
   spomoveRuntimeNow,
 } from '@/app/admin/spomove/training/_player/lib/runtimeClock';
 
-import { useMasterStore } from '../../store';
+import { useMasterStore, useProfile } from '../../store';
 import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import { EngineRouter, type EngineCompletePayload } from './EngineRouter';
@@ -198,6 +198,7 @@ function SpomoveSessionContent() {
   const requestedSoundEnabled = searchParams.get('sound') !== 'off';
   const programId = searchParams.get('program') ?? '';
   const programs = useMasterStore((state) => state.programs);
+  const profile = useProfile();
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
   const { list: bgmList, loading: bgmLoading } = useSpomoveTrainingBGM();
@@ -611,6 +612,7 @@ function SpomoveSessionContent() {
         }),
         undefined,
         sessionResult.runId,
+        profile?.id,
       )
     : program
       ? '/spokedu-master/activity'
@@ -1230,7 +1232,6 @@ function SpomoveSessionContent() {
         <div className="absolute inset-0 min-h-0 overflow-hidden bg-[#F1F5F9]">
           <MasterSessionResult
             completionReason={sessionResult.completionReason}
-            runId={sessionResult.runId}
             initialMovement={sessionResult.initialMovement}
             finalMovement={sessionResult.finalMovement}
             movementChangeCount={sessionResult.movementChanges.length}

@@ -8,6 +8,7 @@ export function useSessionDraft({
   session,
   initialDay,
   initialClassId,
+  initialMemo,
   classes,
   canUseRecords,
   onClose,
@@ -15,6 +16,7 @@ export function useSessionDraft({
   session: MasterSessionDto | null;
   initialDay: string;
   initialClassId?: string | null;
+  initialMemo?: string | null;
   classes: MasterClassDto[];
   canUseRecords: boolean;
   onClose: () => void;
@@ -25,7 +27,7 @@ export function useSessionDraft({
   const [startAt, setStartAt] = useState(initialTimes.startAt);
   const [endAt, setEndAt] = useState(initialTimes.endAt);
   const [status, setStatus] = useState<MasterSessionStatus>(session?.status ?? 'scheduled');
-  const [memo, setMemo] = useState(session?.memo ?? '');
+  const [memo, setMemo] = useState(session?.memo ?? (canUseRecords ? initialMemo ?? '' : ''));
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
