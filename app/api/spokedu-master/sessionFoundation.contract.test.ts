@@ -63,17 +63,19 @@ describe('SPOKEDU MASTER Session foundation', () => {
     expect(hardening).toContain('set sort_order=sort_order-1');
   });
 
-  it('retains the first-start persistence API without exposing Manage runtime', () => {
+  it('connects the first-start persistence API to the PREP primary action', () => {
     const migration = read('supabase/migrations/20260828233000_spokedu_master_session_started_at.sql');
     const sessions = read('app/api/spokedu-master/sessions/route.ts');
     const provider = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
-    const activity = read('app/spokedu-master/manage/SessionDetailSheet.tsx');
+    const activity = read('app/spokedu-master/manage/session-detail/SessionDetailSheet.tsx');
+    const actions = read('app/spokedu-master/manage/session-detail/SessionActions.tsx');
     expect(migration).toContain('started_at timestamptz null');
     expect(migration).not.toMatch(/default|backfill|in_progress/i);
     expect(sessions).toContain('started_at');
     expect(sessions).toContain('startedAt: row.started_at');
     expect(provider).toContain('startSession: (sessionId: string)');
-    expect(activity).not.toContain('data.startSession');
-    expect(activity).not.toContain('수업 시작');
+    expect(activity).toContain('data.startSession(draft.activeSession.id)');
+    expect(activity).toContain("presentation?.primarySurfaceIntent === 'start-session'");
+    expect(actions).toContain('수업 시작');
   });
 });

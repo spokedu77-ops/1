@@ -151,7 +151,7 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, ef
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.timer) clearInterval(g.timer);
     if (audioCtxRef.current) void audioCtxRef.current.suspend();
-    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, []);
 
   const endGame = useCallback(() => {

@@ -63,7 +63,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('resolveSessionWorkspacePresentation');
     expect(detail).not.toContain('PreviousActivityCarryover');
     expect(detail).not.toContain('NextSessionPlanner');
-    expect(detail).not.toContain('수업 시작');
+    expect(detail).toContain('data.startSession(draft.activeSession.id)');
     expect(detail).toContain('MoreHorizontal');
     expect(detail).toContain('aria-label="수업 관리 메뉴"');
     expect(detail).not.toContain('수업 관리 <ChevronDown');

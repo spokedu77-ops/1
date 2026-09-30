@@ -40,6 +40,8 @@ type Props = {
   footer?: React.ReactNode;
   /** DIVE 액션무브 결과만. 없으면 기존 훈련 리포트를 유지한다. */
   diveActionMove?: DiveActionMoveSession | null;
+  /** MASTER execution-volume SSOT. Admin results keep describeSessionVolume. */
+  volumeLabel?: string;
   onBack: () => void;
   onRetry: () => void;
   retryLabel?: string;
@@ -146,6 +148,7 @@ export function TrainingResultScreen({
   sessionSettings = null,
   footer,
   diveActionMove = null,
+  volumeLabel,
   onBack,
   onRetry,
   retryLabel = '다시 실행',
@@ -153,8 +156,8 @@ export function TrainingResultScreen({
   const mo = MODES[cfg.mode];
   const accent = mo?.accent ?? '#F97316';
   const rich = useMemo(
-    () => resolveTrainingResultRichContent(cfg, elapsedMs, colorCounts, { programTitle }),
-    [cfg, elapsedMs, colorCounts, programTitle],
+    () => resolveTrainingResultRichContent(cfg, elapsedMs, colorCounts, { programTitle, volumeLabel }),
+    [cfg, elapsedMs, colorCounts, programTitle, volumeLabel],
   );
 
   const dive = useMemo(
@@ -361,7 +364,7 @@ export function TrainingResultScreen({
                 {dive ? (
                   <>
                     DIVE 액션무브
-                    {dive.stageLine ? <> · <span className="tr-dive-nowrap">{dive.stageLine}</span></> : null}
+                    {volumeLabel ? <> · <span className="tr-dive-nowrap">{volumeLabel}</span></> : dive.stageLine ? <> · <span className="tr-dive-nowrap">{dive.stageLine}</span></> : null}
                   </>
                 ) : rich.sessionHighlight}
               </p>
@@ -396,9 +399,9 @@ export function TrainingResultScreen({
                 dive
                   ? { label: '활동 시간', value: dive.activityTimeValue, nowrap: true }
                   : { label: '진행 시간', value: rich.elapsedLabel, nowrap: false },
-                dive
+                dive && !volumeLabel
                   ? { label: '스테이지 시간', value: dive.stageTimeValue, nowrap: true }
-                  : { label: '설정 분량', value: rich.volumeLabel, nowrap: false },
+                  : { label: '설정 분량', value: volumeLabel ?? rich.volumeLabel, nowrap: false },
               ].map((stat) => (
                 <div
                   key={stat.label}

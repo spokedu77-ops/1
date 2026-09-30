@@ -42,29 +42,18 @@ describe("SPOMOVE session lifecycle UX", () => {
     );
     const activation = page.slice(
       page.indexOf("activationBlocked ? createPortal"),
-      page.indexOf("exitConfirmationOpen ? createPortal"),
-    );
-    const exit = page.slice(
-      page.indexOf("exitConfirmationOpen ? createPortal"),
+      page.indexOf("state === 'paused' && !movementSheetOpen"),
     );
     expect(activation).toContain("zIndex: SPOMOVE_SESSION_OVERLAY_LAYER");
     expect(activation).toContain("createPortal");
-    expect(exit).toContain("zIndex: SPOMOVE_SESSION_OVERLAY_LAYER");
-    expect(exit).toContain("fixed inset-0");
-    expect(exit).toContain("createPortal");
   });
 
-  it("requires explicit confirmation before an engine exit becomes ended", () => {
-    expect(page).toContain("onExit={() => setExitConfirmationOpen(true)}");
-    expect(page).toContain("수업을 종료할까요?");
-    expect(page).toContain("SPOMOVE_SESSION_OVERLAY_LAYER");
-    expect(page).toContain("createPortal");
-    expect(page).toContain("fixed inset-0");
-    expect(page).toContain("계속하기");
-    expect(page).toContain("finishSession('stopped_early')");
+  it("moves an engine STOP directly to the stopped-early result", () => {
+    expect(page).toContain("onExit={() => finishSession('stopped_early')}");
     expect(page).toContain("finishSession(payload.completionReason, payload)");
-    expect(page).toContain("stopRequestLockedRef.current");
-    expect(page).toContain("onClick={continueSession}");
+    expect(page).not.toContain("수업을 종료할까요?");
+    expect(page).not.toContain("setExitConfirmationOpen");
+    expect(page).not.toContain("onClick={continueSession}");
   });
 
   it("keeps activation fallback non-blocking and touch targets usable", () => {
@@ -72,6 +61,7 @@ describe("SPOMOVE session lifecycle UX", () => {
     expect(page).toContain("일반 화면으로 실행합니다.");
     expect(page).toContain("다시 시도");
     expect(page).toContain("min-h-11");
+    expect(page).toContain("await document.documentElement.requestFullscreen?.()");
   });
 
   it("shows only measured operational facts and a context-aware action hierarchy", () => {

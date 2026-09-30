@@ -17,6 +17,7 @@ export function SessionActivityPicker({
   programs,
   spomove,
   favorites,
+  canUseSpomove,
   saving,
   onAdd,
   onClose,
@@ -25,6 +26,7 @@ export function SessionActivityPicker({
   programs: ActivityPickerItem[];
   spomove: ActivityPickerItem[];
   favorites: ActivityPickerItem[];
+  canUseSpomove: boolean;
   saving: boolean;
   onAdd: (keys: string[]) => Promise<void> | void;
   onClose: () => void;
@@ -57,7 +59,7 @@ export function SessionActivityPicker({
       </div>
     }>
       <div className="grid grid-cols-3 rounded-xl bg-slate-100 p-1" role="tablist" aria-label="활동 종류">
-        {(['program', 'spomove', 'favorite'] as const).map((value) => <button key={value} type="button" role="tab" aria-selected={source === value} onClick={() => setSource(value)} className={`min-h-11 rounded-lg text-sm font-semibold ${source === value ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500'}`}>{value === 'program' ? '놀이체육' : value === 'spomove' ? 'SPOMOVE' : '즐겨찾기'}</button>)}
+        {(['program', ...(canUseSpomove ? ['spomove'] as const : []), 'favorite'] as const).map((value) => <button key={value} type="button" role="tab" aria-selected={source === value} onClick={() => setSource(value)} className={`min-h-11 rounded-lg text-sm font-semibold ${source === value ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500'}`}>{value === 'program' ? '놀이체육' : value === 'spomove' ? 'SPOMOVE' : '즐겨찾기'}</button>)}
       </div>
       <label className="mt-4 flex h-11 items-center gap-2 rounded-xl border border-slate-200 px-3">
         <Search size={16} className="text-slate-400" />

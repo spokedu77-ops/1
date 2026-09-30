@@ -252,7 +252,7 @@ export function RobloxMoleReactionTraining({
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     clearSpawnTimers();
-    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, [clearSpawnTimers, onComplete]);
 
   const endGame = useCallback(() => {

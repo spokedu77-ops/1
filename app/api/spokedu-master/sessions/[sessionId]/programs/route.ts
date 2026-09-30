@@ -12,6 +12,10 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
     return privateNoStoreJson({ error: 'Invalid activity source' }, { status: 400 });
   }
   const sourceType = body.sourceType;
+  if (sourceType === 'spomove') {
+    const spomoveAccess = await requireSpokeduMasterCapability('spomove');
+    if (!spomoveAccess.ok) return withPrivateNoStore(spomoveAccess.response);
+  }
   const supabase = getServiceSupabase();
   if (sourceType === 'spomove') {
     const presetId = typeof body?.spomovePresetId === 'string' ? body.spomovePresetId : '';

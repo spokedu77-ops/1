@@ -359,7 +359,7 @@ export function GoalkeeperReactionTraining({
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.timer) clearInterval(g.timer);
-    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, []);
 
   const endGame = useCallback(() => {

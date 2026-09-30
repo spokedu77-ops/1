@@ -374,14 +374,14 @@ export function resolveTrainingResultRichContent(
   cfg: TrainingResultConfig,
   elapsedMs: number,
   colorCounts: ColorStimulusCounts | null,
-  options?: { programTitle?: string },
+  options?: { programTitle?: string; volumeLabel?: string },
 ): TrainingResultRichContent {
   const mo = MODES[cfg.mode];
   const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
   const { praise, praiseSub } = buildPraise(cfg.mode);
   const phaseName = buildPhaseName(cfg.mode, cfg.level);
   const elapsedLabel = formatElapsedSeconds(elapsedMs);
-  const volumeLabel = describeSessionVolume(cfg);
+  const volumeLabel = options?.volumeLabel ?? describeSessionVolume(cfg);
   const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal);
   const shapeCompletionTitle = '맞는 조각 찾아가기';
   if (cfg.mode === 'basic' && cfg.level === 8 && options?.programTitle === shapeCompletionTitle) {

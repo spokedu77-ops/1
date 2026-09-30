@@ -129,7 +129,7 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     expect(getMasterRouteRequirement('/spokedu-master/activity').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/classes').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/students').capability).toBe('attendance');
-    expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('records');
+    expect(getMasterRouteRequirement('/spokedu-master/students/student-a').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/report').capability).toBe('records');
     expect(getMasterRouteRequirement('/spokedu-master/spomove').capability).toBe('spomove');
     expect(getMasterRouteRequirement('/spokedu-master/spomove/session').capability).toBe('spomove');

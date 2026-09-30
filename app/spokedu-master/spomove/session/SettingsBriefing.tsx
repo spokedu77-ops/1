@@ -124,7 +124,7 @@ export function SettingsBriefing({
         </div>
       ) : null}
 
-      {preset.engine.mode === 'flow' && preset.engine.level === 1 ? (
+      {preset.engine.mode === 'flow' && preset.engine.level === 1 && preset.id !== 'dive-standard' ? (
         <section aria-label="DIVE 환경 테마">
           <p className="text-sm font-semibold text-white">환경 테마</p>
           <div className="mt-2 flex flex-wrap gap-2">

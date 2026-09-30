@@ -122,7 +122,7 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     if (g.raf != null) cancelAnimationFrame(g.raf);
-    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, [onComplete]);
 
   const endGame = useCallback(() => {

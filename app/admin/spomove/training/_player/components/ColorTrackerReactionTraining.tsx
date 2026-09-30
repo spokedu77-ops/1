@@ -381,7 +381,7 @@ export function ColorTrackerReactionTraining({
     if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
     setRoundCountdown(null);
     setShowRevealBtn(false);
-    onCompleteRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number] });
+    onCompleteRef.current({ stims: g.rounds, maxCombo: g.rounds, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
   }, []);
 
   const endGame = useCallback(() => {

@@ -33,6 +33,7 @@ export type ReactTrainCompleteStats = {
   stims: number;
   maxCombo: number;
   laneCount: [number, number, number, number];
+  stoppedEarly?: boolean;
 };
 
 type GameState = {
@@ -571,7 +572,7 @@ type Props = {
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function VisualReactionTraining({ variant, durationSec, speedSec, concurrent = 1, onExit, onComplete }: Props) {
+export function VisualReactionTraining({ variant, durationSec, speedSec, concurrent = 1, onComplete }: Props) {
   const playAreaRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLCanvasElement>(null);
   const gRef = useRef<GameState | null>(null);
@@ -630,12 +631,13 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
     if (g.raf != null) { cancelAnimationFrame(g.raf); g.raf = null; }
     laneExplRefs.current.forEach((el) => { if (el) el.style.opacity = '0'; });
     padRefs.current.forEach((p) => p?.classList.remove('lit'));
-    if (g.stims > 0) {
-      onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number] });
-      return;
-    }
-    onExit();
-  }, [onExit]);
+    onCompleteRef.current({
+      stims: g.stims,
+      maxCombo: g.maxCombo,
+      laneCount: [...g.laneCount] as [number, number, number, number],
+      stoppedEarly: true,
+    });
+  }, []);
 
   const triggerStim = useCallback(
     (lane: number, x: number, y: number) => {

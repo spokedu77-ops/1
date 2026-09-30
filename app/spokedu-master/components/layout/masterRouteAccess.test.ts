@@ -49,7 +49,7 @@ describe('SPOKEDU MASTER route access policy', () => {
     ['/spokedu-master/classes/class-a', 'attendance'],
     ['/spokedu-master/class-record', 'records'],
     ['/spokedu-master/students', 'attendance'],
-    ['/spokedu-master/students/student-a', 'records'],
+    ['/spokedu-master/students/student-a', 'attendance'],
     ['/spokedu-master/report', 'records'],
     ['/spokedu-master/spomove', 'spomove'],
     ['/spokedu-master/spomove/session', 'spomove'],

@@ -579,12 +579,14 @@ function CardVisual({
   thumbnailUrl,
   thumbnailPending,
   imageFailed,
+  priority,
   onImageError,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   thumbnailPending: boolean;
   imageFailed: boolean;
+  priority?: boolean;
   onImageError: () => void;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
@@ -601,6 +603,7 @@ function CardVisual({
         <SpomoveLayeredThumb
           src={thumbnailUrl}
           sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
+          priority={priority}
           presentation="home-clean-square"
           onError={onImageError}
         />
@@ -622,6 +625,7 @@ function PresetCard({
   preset,
   thumbnailUrl,
   thumbnailPending,
+  priority,
   favorite,
   favoriteEnabled,
   contentOverride,
@@ -636,6 +640,7 @@ function PresetCard({
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   thumbnailPending: boolean;
+  priority?: boolean;
   favorite: boolean;
   favoriteEnabled: boolean;
   contentOverride?: SpomovePresetContentOverride;
@@ -694,6 +699,7 @@ function PresetCard({
           thumbnailUrl={thumbnailUrl}
           thumbnailPending={thumbnailPending}
           imageFailed={imageFailed}
+          priority={priority}
           onImageError={() => setImageFailed(true)}
         />
         <div className="w-full px-3.5 pb-3.5 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={subtitleParts.join(' · ')}>
@@ -1021,12 +1027,13 @@ function SpomoveHubInner({
         ? 'flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-4 lg:gap-5'
         : 'grid grid-cols-1 items-start gap-4 min-[431px]:grid-cols-2 lg:grid-cols-4 lg:gap-5'}
     >
-      {presets.map((preset) => (
+      {presets.map((preset, index) => (
         <div key={preset.id} className={familyPreview ? 'w-[82vw] max-w-[320px] shrink-0 snap-start sm:w-auto sm:max-w-none' : ''}>
           <PresetCard
             preset={preset}
             thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
             thumbnailPending={!thumbnailPackLoaded}
+            priority={index < 2}
             favorite={isFavoriteContent(ownerId, { type: 'spomove', id: preset.id })}
             favoriteEnabled={ownerId != null && preset.isReady}
             contentOverride={contentOverrides[preset.id]}

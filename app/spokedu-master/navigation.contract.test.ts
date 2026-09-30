@@ -42,7 +42,7 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(schedule).toContain('manage-calendar-heading');
     expect(detail).toContain('수업 상세');
     expect(detail).toContain('수업 활동');
-    expect(detail).not.toContain('수업 시작');
+    expect(detail).toContain('수업 시작');
     expect(detail).toContain('resolveSessionWorkspacePresentation');
     expect(detail).toContain("legacyCapture ? 'emphasized'");
     expect(activity).not.toContain('/spokedu-master/class-record');

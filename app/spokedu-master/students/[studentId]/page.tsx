@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
+import { useMasterCanUseRecords } from '../../access/MasterAccessProvider';
 import { StudentSessionObservation } from '../../components/records/CaptureProjections';
 import { MasterCollectionRow, MasterPageHeader, MasterPageShell, MasterSection } from '../../components/ui/MasterPrimitives';
 import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
@@ -19,6 +20,7 @@ export default function StudentDetailPage() {
   const params = useParams<{ studentId: string }>();
   const studentId = typeof params.studentId === 'string' ? params.studentId : '';
   const data = useOperationalData();
+  const canUseRecords = useMasterCanUseRecords();
   const student = data.students.find((item) => item.id === studentId) ?? null;
   const classes = data.classes.filter((item) => item.studentIds.includes(studentId));
   const history = useMemo(() => data.sessions
@@ -66,7 +68,7 @@ export default function StudentDetailPage() {
                   </span>
                   <ChevronRight size={17} className="mt-1 shrink-0 text-slate-400" />
                 </Link>
-                <div className="w-full pl-0 pt-2 sm:pl-[76px]"><StudentSessionObservation studentId={studentId} sessionId={session.id} />{session.memo?.trim() ? <p className="mt-2 whitespace-pre-wrap text-sm font-normal leading-6 text-slate-600">{session.memo.trim()}</p> : null}</div>
+                {canUseRecords ? <div className="w-full pl-0 pt-2 sm:pl-[76px]"><StudentSessionObservation studentId={studentId} sessionId={session.id} />{session.memo?.trim() ? <p className="mt-2 whitespace-pre-wrap text-sm font-normal leading-6 text-slate-600">{session.memo.trim()}</p> : null}</div> : null}
               </MasterCollectionRow>
             ))}
           </div> : <p className="text-sm font-medium text-slate-500">아직 출석이 기록된 수업이 없습니다.</p>}

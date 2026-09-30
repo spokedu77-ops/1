@@ -12,6 +12,7 @@ export function StartBriefing({
   preset,
   cueSeconds,
   matCount,
+  volumeLabel,
   canChangeSettings,
   startDisabled,
   onSettings,
@@ -20,13 +21,13 @@ export function StartBriefing({
   preset: OfficialSpomovePreset;
   cueSeconds: SpomoveCueSpeedSec;
   matCount: number;
+  /** resolveSpomoveExecutionVolume label. Stimulus speed stays on its own line. */
+  volumeLabel: string;
   canChangeSettings: boolean;
   startDisabled: boolean;
   onSettings: () => void;
   onStart: () => void;
 }) {
-  const summary = `SPOMAT ${matCount}장 · 자극 ${cueSeconds}초`;
-
   return (
     <div className="space-y-5" data-spm-session-ready-screen="true">
       <section>
@@ -38,7 +39,11 @@ export function StartBriefing({
 
       <div className="text-center">
         <p className="text-[11px] font-semibold tracking-wide text-white/45">현재 실행값</p>
-        <p className="mt-1 text-[14px] font-medium leading-6 text-white/80">{summary}</p>
+        <div className="mt-1 space-y-0.5 text-[14px] font-medium leading-6 text-white/80">
+          <p>SPOMAT {matCount}장</p>
+          <p>자극 {cueSeconds}초</p>
+          <p data-spm-execution-volume={volumeLabel}>실행 분량 {volumeLabel}</p>
+        </div>
       </div>
 
       <button

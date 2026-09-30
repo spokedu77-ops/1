@@ -72,14 +72,14 @@ export function getMasterRouteRequirement(pathname: string, basePath = '/spokedu
     pathname.startsWith(`${basePath}/activity/`) ||
     pathname === `${basePath}/classes` ||
     pathname.startsWith(`${basePath}/classes/`) ||
-    pathname === `${basePath}/students`
+    pathname === `${basePath}/students` ||
+    pathname.startsWith(`${basePath}/students/`)
   ) {
     return { capability: 'attendance' };
   }
   if (
     pathname === `${basePath}/class-record` ||
     pathname.startsWith(`${basePath}/class-record/`) ||
-    pathname.startsWith(`${basePath}/students/`) ||
     pathname === `${basePath}/report` ||
     pathname.startsWith(`${basePath}/report/`)
   ) {

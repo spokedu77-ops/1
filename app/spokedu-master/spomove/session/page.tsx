@@ -50,6 +50,7 @@ import {
   completionReasonToSessionState,
   type SpomoveCompletionReason,
 } from './sessionResultModel';
+import { resolveSpomoveExecutionVolume } from './resolveSpomoveExecutionVolume';
 import {
   canResumeSpomoveRuntime,
   type SpomoveRuntimeState as SessionState,
@@ -337,7 +338,11 @@ function SpomoveSessionContent() {
     if (audioMode === 'full') setAudioMode('effects');
     else if (audioMode === 'music') setAudioMode('silent');
   }, [audioMode, bgmLoading, selectedBgmPath]);
-  const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>(() => normalizeDiveThemeId(searchParams.get('diveTheme')));
+  const [diveEnvironmentTheme, setDiveEnvironmentTheme] = useState<DiveThemeId>(() =>
+    officialPreset?.id === 'dive-standard'
+      ? 'space'
+      : normalizeDiveThemeId(searchParams.get('diveTheme')),
+  );
   const [sportsArenaFeatures, setSportsArenaFeatures] = useState<SportsArenaFeatureKey[]>(() => {
     const values = (searchParams.get('sports') ?? '').split(',');
     return values.filter((value): value is SportsArenaFeatureKey => value === 'side' || value === 'jump' || value === 'duck');
@@ -382,7 +387,6 @@ function SpomoveSessionContent() {
   const [sessionResult, setSessionResult] = useState<(EngineCompletePayload & SpomoveMovementResult) | null>(null);
   const runtimeStateRef = useRef<SessionState>('idle');
   const [markCompleteStatus, setMarkCompleteStatus] = useState<'idle' | 'saving' | 'error'>('idle');
-  const [exitConfirmationOpen, setExitConfirmationOpen] = useState(false);
   const [movementSheetOpen, setMovementSheetOpen] = useState(false);
   const [recoverySnapshot, setRecoverySnapshot] = useState<SpomoveActiveRunSnapshotV1 | null>(null);
   const [recoveryChecked, setRecoveryChecked] = useState(false);
@@ -452,6 +456,31 @@ function SpomoveSessionContent() {
       : cueSeconds;
     return next;
   }, [cueSeconds, officialPreset]);
+  const executionVolume = useMemo(() => {
+    if (!officialPreset) return null;
+    const timing = effectiveOperation?.timing;
+    return resolveSpomoveExecutionVolume({
+      preset: officialPreset,
+      cueSeconds: effectiveCueSeconds,
+      interval: timing?.pattern === 'interval' ? timing : null,
+      diveEnvironmentTheme,
+      flowDurationSec: isDiveActionMoveUnityTheme(diveEnvironmentTheme)
+        ? flowDuration
+        : officialPreset.engine.flowDuration,
+      flowIncludeBonus: isDiveActionMoveUnityTheme(diveEnvironmentTheme)
+        ? flowIncludeBonus
+        : officialPreset.engine.flowIncludeBonus,
+      sportsArenaFeatures,
+    });
+  }, [
+    diveEnvironmentTheme,
+    effectiveCueSeconds,
+    effectiveOperation,
+    flowDuration,
+    flowIncludeBonus,
+    officialPreset,
+    sportsArenaFeatures,
+  ]);
   const effectiveRecommendedCueSeconds = useMemo(
     () => officialPreset ? resolveSessionCueSeconds(officialPreset, recommendedCueSeconds) : 3,
     [officialPreset, recommendedCueSeconds],
@@ -550,7 +579,9 @@ function SpomoveSessionContent() {
     setSelectedBgmPath(config.bgmPath && bgmList.includes(config.bgmPath) ? config.bgmPath : '');
     setCueSeconds(resolveSessionCueSeconds(officialPreset, config.cueSeconds));
     if (config.operationLayerStatus !== 'legacyDisabled' && config.operation) setOperationCandidate(config.operation);
-    setDiveEnvironmentTheme(normalizeDiveThemeId(config.diveEnvironmentTheme));
+    setDiveEnvironmentTheme(officialPreset.id === 'dive-standard'
+      ? 'space'
+      : normalizeDiveThemeId(config.diveEnvironmentTheme));
     setSportsArenaFeatures(config.sportsArenaFeatures);
     setFlowDuration([15, 20, 25, 30, 35].includes(config.flowDuration)
       ? config.flowDuration
@@ -654,9 +685,9 @@ function SpomoveSessionContent() {
     persistRecentConfig,
   ]);
 
-  const unlockActivation = useCallback(() => {
+  const unlockActivation = useCallback(async () => {
     if (launchMode === 'projector' && !document.fullscreenElement) {
-      void document.documentElement.requestFullscreen?.().catch(() => undefined);
+      await document.documentElement.requestFullscreen?.().catch(() => undefined);
     }
     try {
       if (audioChannels.effectsEnabled) {
@@ -666,11 +697,16 @@ function SpomoveSessionContent() {
     } catch {
       // ignore
     }
-    void bgmPlayerRef.current?.play();
-    setActivationBlocked(null);
+    await bgmPlayerRef.current?.play();
+    const fullscreenBlocked = launchMode === 'projector' && !document.fullscreenElement;
+    const audioBlocked = bgmPlayerRef.current?.status === 'blocked';
+    if (fullscreenBlocked && audioBlocked) setActivationBlocked('bothBlocked');
+    else if (fullscreenBlocked) setActivationBlocked('fullscreenBlocked');
+    else if (audioBlocked) setActivationBlocked('audioBlocked');
+    else setActivationBlocked(null);
   }, [audioChannels.effectsEnabled, launchMode]);
 
-  const startOfficialSession = useCallback(() => {
+  const startOfficialSession = useCallback(async () => {
     if (
       !officialPreset ||
       bgmLoading ||
@@ -684,7 +720,6 @@ function SpomoveSessionContent() {
     startLockedRef.current = true;
     finishLockedRef.current = false;
     stopRequestLockedRef.current = false;
-    setExitConfirmationOpen(false);
     setMovementSheetOpen(false);
     setSessionResult(null);
     sessionStartedAtRef.current = null;
@@ -695,7 +730,7 @@ function SpomoveSessionContent() {
     runIdRef.current = nextRunId;
 
     if (launchMode === 'projector' && !document.fullscreenElement) {
-      void document.documentElement.requestFullscreen?.().catch(() => undefined);
+      await document.documentElement.requestFullscreen?.().catch(() => undefined);
     }
 
     enterRunning();
@@ -716,7 +751,6 @@ function SpomoveSessionContent() {
     if (!officialPreset || !activeRunId || finishLockedRef.current) return;
     finishLockedRef.current = true;
     stopRequestLockedRef.current = false;
-    setExitConfirmationOpen(false);
     stopBgm();
     exitFullscreenAfterSession();
     persistActiveRun(runtimeStateRef.current === 'paused' ? 'paused' : 'running', activeRunId);
@@ -756,16 +790,6 @@ function SpomoveSessionContent() {
     persistRecentConfig,
     stopBgm,
   ]);
-
-  const continueSession = useCallback(() => {
-    stopRequestLockedRef.current = false;
-    setExitConfirmationOpen(false);
-    setMovementSheetOpen(false);
-    setSpomoveRuntimePaused(false);
-    void resumeExistingAudioCtx();
-    void bgmPlayerRef.current?.play();
-    persistActiveRun('running');
-  }, [persistActiveRun]);
 
   const resumeSession = useCallback(() => {
     if (finishLockedRef.current || !canResumeSpomoveRuntime(runtimeStateRef.current)) return;
@@ -845,7 +869,7 @@ function SpomoveSessionContent() {
     ) {
       return;
     }
-    beginConfiguredSession();
+    void beginConfiguredSession();
   }, [legacyAutostart, recoveryChecked, recoverySnapshot, bgmLoading, canStartSession, officialPreset, beginConfiguredSession, state]);
 
   const showBriefing = state === 'idle' && !legacyAutostart;
@@ -876,7 +900,7 @@ function SpomoveSessionContent() {
   const restartInterruptedRun = useCallback(() => {
     if (!recoverySnapshot) return;
     finalizeInterruptedRun();
-    startOfficialSession();
+    void startOfficialSession();
   }, [finalizeInterruptedRun, recoverySnapshot, startOfficialSession]);
 
   const exitInterruptedRun = useCallback(() => {
@@ -914,7 +938,6 @@ function SpomoveSessionContent() {
     startLockedRef.current = false;
     finishLockedRef.current = false;
     stopRequestLockedRef.current = false;
-    setExitConfirmationOpen(false);
     setMovementSheetOpen(false);
     setSessionResult(null);
     resetSpomoveRuntimeClock();
@@ -993,7 +1016,7 @@ function SpomoveSessionContent() {
       if (event.code === 'Space' && state === 'idle' && showBriefing) {
         if (isInteractiveKeyTarget(event.target)) return;
         event.preventDefault();
-        beginConfiguredSession();
+        void beginConfiguredSession();
         return;
       }
       if (event.key.toLowerCase() === 'f') {
@@ -1096,7 +1119,7 @@ function SpomoveSessionContent() {
                 }
               : null
           }
-          onExit={() => setExitConfirmationOpen(true)}
+          onExit={() => finishSession('stopped_early')}
           onComplete={(payload) => {
             finishSession(payload.completionReason, payload);
           }}
@@ -1113,20 +1136,7 @@ function SpomoveSessionContent() {
           </div>,
           document.body,
         ) : null}
-        {exitConfirmationOpen ? createPortal(
-          <div className="fixed inset-0 flex items-center justify-center bg-black/70 px-5" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }} role="dialog" aria-modal="true" aria-labelledby="spomove-exit-title">
-            <section className="w-full max-w-sm rounded-[22px] border border-white/15 bg-slate-950 p-5 text-white shadow-2xl">
-              <h2 id="spomove-exit-title" className="text-xl font-extrabold">수업을 종료할까요?</h2>
-              <p className="mt-2 text-sm font-semibold text-white/60">지금까지 진행한 시간은 중도 종료로 남길 수 있습니다.</p>
-              <div className="mt-5 grid gap-2">
-                <button type="button" autoFocus onClick={continueSession} className="min-h-12 rounded-xl bg-white text-sm font-extrabold text-slate-950">계속하기</button>
-                <button type="button" onClick={() => finishSession('stopped_early')} className="min-h-11 rounded-xl border border-rose-300/30 text-sm font-bold text-rose-200">훈련 종료</button>
-              </div>
-            </section>
-          </div>,
-          document.body,
-        ) : null}
-        {state === 'paused' && !exitConfirmationOpen && !movementSheetOpen ? createPortal(
+        {state === 'paused' && !movementSheetOpen ? createPortal(
           <div data-spomove-pause-overlay className="fixed inset-0 flex items-center justify-center bg-black/75 px-5" style={{ zIndex: SPOMOVE_SESSION_OVERLAY_LAYER }} role="dialog" aria-modal="true" aria-labelledby="spomove-pause-title">
             <section className="w-full max-w-sm rounded-2xl border border-white/15 bg-slate-950 p-5 text-white shadow-2xl">
               <h2 id="spomove-pause-title" className="text-xl font-extrabold">일시정지됨</h2>
@@ -1205,6 +1215,7 @@ function SpomoveSessionContent() {
             <StartBriefing
               preset={officialPreset}
               cueSeconds={effectiveCueSeconds}
+              volumeLabel={executionVolume?.label ?? ''}
               matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}
               canChangeSettings={supportsCueSpeedOverride(officialPreset)}
               startDisabled={bgmLoading || !canStartSession}
@@ -1230,10 +1241,7 @@ function SpomoveSessionContent() {
             engineLevel={sessionResult.engineLevel}
             rounds={officialPreset.rounds}
             cueSeconds={effectiveCueSeconds}
-            intervalMode={effectiveOperation?.timing.pattern === 'interval'}
-            intervalWork={effectiveOperation?.timing.pattern === 'interval' ? effectiveOperation.timing.workSeconds : undefined}
-            intervalSets={effectiveOperation?.timing.pattern === 'interval' ? effectiveOperation.timing.sets : undefined}
-            flowDuration={isDiveActionMoveUnityTheme(diveEnvironmentTheme) ? flowDuration : officialPreset.engine.flowDuration}
+            executionVolume={executionVolume!}
             diveActionMove={
               sessionResult.engineMode === 'flow' && sessionResult.engineLevel === 1
                 ? {

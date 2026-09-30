@@ -14,6 +14,7 @@ import {
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
 import { isNaturalSpomoveCompletion, type SpomoveCompletionReason } from './sessionResultModel';
+import type { SpomoveExecutionVolume } from './resolveSpomoveExecutionVolume';
 import { movementDisplayLabel } from '../movements/movementLabels';
 import type { MovementPick } from '../movements/movementTypes';
 
@@ -31,10 +32,7 @@ export function MasterSessionResult({
   engineLevel,
   rounds,
   cueSeconds,
-  intervalMode = false,
-  intervalWork,
-  intervalSets,
-  flowDuration,
+  executionVolume,
   diveActionMove = null,
   recordHref,
   hubHref,
@@ -58,10 +56,7 @@ export function MasterSessionResult({
   engineLevel: number;
   rounds: number;
   cueSeconds: number;
-  intervalMode?: boolean;
-  intervalWork?: number;
-  intervalSets?: number;
-  flowDuration?: number;
+  executionVolume: SpomoveExecutionVolume;
   /** flow 1 액션무브만. 다른 엔진 결과는 null. */
   diveActionMove?: DiveActionMoveSession | null;
   recordHref: string | null;
@@ -83,13 +78,12 @@ export function MasterSessionResult({
   const cfg = settingsToTrainingResultConfig({
     mode: engineMode,
     level: engineLevel,
-    timeMode: intervalMode ? 'interval' : 'time',
-    duration: Math.max(1, rounds * cueSeconds),
-    targetReps: rounds,
-    intervalMode,
-    intervalWork,
-    intervalSets,
-    flowDuration,
+    timeMode: executionVolume.kind === 'reps' ? 'reps' : executionVolume.kind === 'interval' ? 'interval' : 'time',
+    duration: executionVolume.kind === 'time' ? executionVolume.durationSec : 0,
+    targetReps: executionVolume.kind === 'reps' || executionVolume.kind === 'rounds' ? executionVolume.count : rounds,
+    intervalMode: executionVolume.kind === 'interval',
+    intervalWork: executionVolume.interval?.workSeconds,
+    intervalSets: executionVolume.interval?.sets,
   });
   const usedSettings = settings.filter(Boolean).join(' · ');
   const movementSummary = finalMovement
@@ -109,14 +103,11 @@ export function MasterSessionResult({
       statusBadge={diveActionMove ? (done ? '활동 완료' : '중도 종료') : (done ? '정상 완료' : '중도 종료')}
       diveActionMove={diveActionMove ? { ...diveActionMove, completed: done } : null}
       programTitle={activityTitle}
+      volumeLabel={executionVolume.label}
       sessionSettings={{
         title: '사용한 설정',
         primary: usedSettings || `자극 ${cueSeconds}초`,
-        secondary: intervalMode && intervalWork && intervalSets
-          ? `Tabata ${intervalSets}세트 · ${intervalWork}초`
-          : flowDuration
-            ? `스테이지 ${flowDuration}초`
-            : undefined,
+        secondary: `실행 분량 ${executionVolume.label}`,
       }}
       retryLabel="같은 설정으로 다시 실행"
       onBack={() => router.push(leaveHref || sessionReturnHref || hubHref)}

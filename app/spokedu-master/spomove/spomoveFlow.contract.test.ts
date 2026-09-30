@@ -196,9 +196,9 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(settingsBriefing).toContain("SPOMOVE_CUE_SPEED_OPTIONS");
     expect(settingsBriefing).toContain("onCueSecondsChange");
     expect(startBriefing).toContain("실행 시작");
-    expect(startBriefing).toContain(
-      "`SPOMAT ${matCount}장 · 자극 ${cueSeconds}초`",
-    );
+    expect(startBriefing).toContain("SPOMAT {matCount}장");
+    expect(startBriefing).toContain("자극 {cueSeconds}초");
+    expect(startBriefing).toContain("실행 분량 {volumeLabel}");
     expect(startBriefing).not.toContain("movementSummary");
     expect(startBriefing).not.toContain("전체화면 준비");
     expect(startBriefing).not.toContain("소리 사용");
@@ -229,10 +229,16 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(padLayoutView).not.toContain("학생이 화면을 바라보는 기준입니다.");
     expect(padLayoutView).toContain("화면 ↑");
     expect(padLayoutView).not.toContain("학생 위치");
-    expect(padLayoutView).toContain("/images/spokedu/brand/spomat-layout.png");
+    expect(padLayoutView).toContain("/images/spokedu/brand/spomat-diamond-cutout.png");
     expect(padLayoutView).toContain("aspect-square");
     expect(settingsBriefing).not.toContain("meta=");
     expect(settingsBriefing).not.toContain("적용될 설정");
+  });
+
+  it("runs Action Move with the SPACE theme without a theme picker", () => {
+    expect(session).toContain("officialPreset?.id === 'dive-standard'");
+    expect(session).toContain("officialPreset.id === 'dive-standard'");
+    expect(settingsBriefing).toContain("preset.id !== 'dive-standard'");
   });
 
   it("reproduces recent same-settings or downgrades the label", () => {

@@ -133,6 +133,7 @@ function SetupImage({ title, src }: { title: string; src: string }) {
             width={1600}
             height={1200}
             sizes="(min-width: 1220px) 560px, (min-width: 900px) 46vw, 100vw"
+            loading="eager"
             className="h-auto w-full object-contain object-center transition-transform duration-200 group-hover:scale-[1.015]"
             unoptimized={unoptimized}
           />

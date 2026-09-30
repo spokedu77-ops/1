@@ -5,6 +5,7 @@ export type TrainingSessionResult = {
   cfg: TrainingResultConfig;
   elapsedMs: number;
   colorCounts: ColorStimulusCounts | null;
+  stoppedEarly?: boolean;
 };
 
 export type PadColorId = 'red' | 'blue' | 'green' | 'yellow';

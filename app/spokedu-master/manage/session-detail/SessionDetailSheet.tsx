@@ -81,7 +81,17 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
     void data.deleteCancelledSession(draft.activeSession.id).then(onClose).catch((caught) => draft.setError(getMasterRequestErrorMessage(caught, '수업을 삭제하지 못했습니다.'))).finally(() => draft.setSaving(false));
   }
 
-  const footer = draft.status === 'cancelled' ? undefined : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} persist={persist} />;
+  async function startSession() {
+    if (!draft.activeSession || draft.saving) return;
+    draft.setSaving(true); draft.setError(null);
+    try {
+      const started = await data.startSession(draft.activeSession.id);
+      draft.setActiveSession(started);
+    } catch (caught) { draft.setError(getMasterRequestErrorMessage(caught, '수업을 시작하지 못했습니다.')); }
+    finally { draft.setSaving(false); }
+  }
+
+  const footer = draft.status === 'cancelled' ? undefined : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} canStart={presentation?.primarySurfaceIntent === 'start-session'} startSession={startSession} persist={persist} />;
 
   return <>
     <BottomSheet open title={title} size="session" inert={classCreateOpen || nextSessionOpen} onClose={draft.requestClose} footer={footer}>
@@ -98,7 +108,7 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
         {draft.error ? <p role="alert" className="rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700">{draft.error}</p> : null}
       </div>
     </BottomSheet>
-    <SessionActivityPicker open={activities.pickerOpen} programs={activities.availablePrograms} spomove={activities.availableSpomove} favorites={activities.favoriteActivities} saving={draft.saving} onAdd={activities.addActivities} onClose={() => activities.setPickerOpen(false)} />
+    <SessionActivityPicker open={activities.pickerOpen} programs={activities.availablePrograms} spomove={activities.availableSpomove} favorites={activities.favoriteActivities} canUseSpomove={canUseSpomove} saving={draft.saving} onAdd={activities.addActivities} onClose={() => activities.setPickerOpen(false)} />
     {isCreate && classCreateOpen ? <ClassCreateSheet nested open onClose={() => setClassCreateOpen(false)} onCreated={(created) => { draft.setClassId(created.id); attendance.setAttendance({}); draft.setDirty(true); setClassCreateOpen(false); }} /> : null}
     {draft.activeSession && nextSessionOpen ? <NextSessionSheet source={draft.activeSession} open onClose={() => setNextSessionOpen(false)} onCreated={(created) => { setNextSessionOpen(false); onSessionCreated(created); }} /> : null}
   </>;

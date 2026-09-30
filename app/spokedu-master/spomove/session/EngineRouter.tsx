@@ -244,7 +244,7 @@ function EngineRuntime({
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       onComplete({
-        completionReason: 'natural_complete',
+        completionReason: stats.stoppedEarly ? 'stopped_early' : 'natural_complete',
         engineMode: mode,
         engineLevel: level,
         stims: stats.stims,
@@ -258,7 +258,7 @@ function EngineRuntime({
   const handleMemoryComplete = useCallback(
     (result: TrainingSessionResult) => {
       onComplete({
-        completionReason: 'natural_complete',
+        completionReason: result.stoppedEarly ? 'stopped_early' : 'natural_complete',
         engineMode: mode,
         engineLevel: level,
         elapsedMs: result.elapsedMs,

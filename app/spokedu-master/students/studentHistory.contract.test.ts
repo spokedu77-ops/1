@@ -24,6 +24,13 @@ describe('student history after Session refactor', () => {
     expect(detail).not.toContain('RecordProgramPicker');
   });
 
+  it('does not mount Premium record projections for Lite student detail', () => {
+    const detail = read('app/spokedu-master/students/[studentId]/page.tsx');
+    expect(detail).toContain('useMasterCanUseRecords');
+    expect(detail).toContain('canUseRecords ? <div');
+    expect(detail).toContain('<StudentSessionObservation');
+  });
+
   it('keeps guidance and reusable history ahead of profile editing', () => {
     const students = read('app/spokedu-master/students/page.tsx');
     const detail = read('app/spokedu-master/students/[studentId]/page.tsx');

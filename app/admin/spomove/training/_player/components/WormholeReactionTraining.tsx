@@ -249,7 +249,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
     if (g.waveTimer) clearTimeout(g.waveTimer);
     if (g.nextWaveTimer) clearTimeout(g.nextWaveTimer);
     const quadrantLaneCount = [...g.laneCount] as [number, number, number, number];
-    onCompleteRef.current({ stims: g.waves, maxCombo: g.waves, laneCount: quadrantLaneCountToResultLaneCount(quadrantLaneCount) });
+    onCompleteRef.current({ stims: g.waves, maxCombo: g.waves, laneCount: quadrantLaneCountToResultLaneCount(quadrantLaneCount), stoppedEarly: true });
   }, []);
 
   const endGame = useCallback(() => {

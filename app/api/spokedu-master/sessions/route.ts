@@ -176,6 +176,10 @@ async function save(request: Request, sessionId: string | null) {
   let input: SaveSessionInput;
   try { input = normalizeInput(await request.json()); }
   catch (error) { return privateNoStoreJson({ error: error instanceof Error ? error.message : 'Invalid session' }, { status: 400 }); }
+  if (!sessionId && input.programs?.some((item) => item.sourceType === 'spomove')) {
+    const spomoveAccess = await requireSpokeduMasterCapability('spomove');
+    if (!spomoveAccess.ok) return withPrivateNoStore(spomoveAccess.response);
+  }
   if (access.plan === 'lite' && input.memo) {
     return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Premium에서 사용할 수 있습니다.' }, { status: 403 });
   }

@@ -185,7 +185,7 @@ export function ColorMemoryGridReactionTraining({
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  const complete = useCallback(() => {
+  const complete = useCallback((stoppedEarly = false) => {
     const g = gRef.current;
     if (!g?.running) return;
     g.running = false;
@@ -196,6 +196,7 @@ export function ColorMemoryGridReactionTraining({
       stims: Math.max(0, g.round - 1),
       maxCombo: Math.max(0, g.round - 1),
       laneCount: [...g.laneCount],
+      stoppedEarly,
     });
   }, []);
 
@@ -483,7 +484,7 @@ export function ColorMemoryGridReactionTraining({
         if (!g.running) return;
         g.durationLeft -= 1;
         if (timeRef.current) timeRef.current.textContent = String(Math.max(0, g.durationLeft));
-        if (g.durationLeft <= 0) complete();
+        if (g.durationLeft <= 0) complete(false);
       }, 1000);
     };
 
@@ -519,7 +520,7 @@ export function ColorMemoryGridReactionTraining({
           <div className="cmgrid-hv" ref={timeRef}>0</div>
         </div>
         <div className="cmgrid-hc" style={{ borderRight: 'none' }}>
-          <button type="button" className="cmgrid-stop" onClick={complete}>STOP</button>
+          <button type="button" className="cmgrid-stop" onClick={() => complete(true)}>STOP</button>
         </div>
       </div>
       <div ref={playRef} className="cmgrid-play">
