@@ -9,9 +9,11 @@ const detail = readSessionDetailSource();
 const carryover = read('app/spokedu-master/activity/sessionCarryover.ts');
 
 describe('previous Session reuse contract', () => {
-  it('keeps backend compatibility while the UI selects explicit carryover paths', () => {
-    expect(route).toContain("rpc('spokedu_master_create_next_session_fresh'");
+  it('requires explicit carryover intent and keeps only canonical runtime paths', () => {
+    expect(route).not.toContain('spokedu_master_create_next_session_fresh');
     expect(route).toContain("rpc('spokedu_master_create_next_session_v2'");
+    expect(route).toContain("rpc('spokedu_master_create_next_session'");
+    expect(route).toContain('활동 가져오기 방식을 확인해 주세요.');
     expect(carryover).toContain('sourceSessionProgramIds');
     expect(carryover).toContain('copyPrograms: false');
     expect(detail).toContain("const [copyMode, setCopyMode] = useState<SessionCarryoverMode>('all')");

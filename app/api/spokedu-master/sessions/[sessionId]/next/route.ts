@@ -5,6 +5,7 @@ import { requireSpokeduMasterCapability } from '@/app/lib/server/spokeduMasterAc
 import { CLASS_TIME_COLLISION_MESSAGE } from '@/app/spokedu-master/lib/sessionIntegrity';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import type { MasterSessionDto, MasterSessionStatus } from '@/app/spokedu-master/types/operational';
+import { resolveNextSessionCopyIntent } from './nextSessionCopyIntent';
 
 const SESSION_SELECT_CORE = `id,class_id,class_name_snapshot,start_at,started_at,end_at,status,memo,completed_at,created_at,updated_at,
 spokedu_master_session_programs(id,source_type,program_id,spomove_preset_id,program_title_snapshot,sort_order,is_completed),
@@ -18,14 +19,13 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
   if (!access.ok) return withPrivateNoStore(access.response);
   const { sessionId } = await context.params;
   const body = await request.json().catch(() => null) as { startAt?: unknown; endAt?: unknown; copyPrograms?: unknown; sourceSessionProgramIds?: unknown } | null;
+  const copyIntent = resolveNextSessionCopyIntent(body);
+  if (!copyIntent) return privateNoStoreJson({ error: '활동 가져오기 방식을 확인해 주세요.' }, { status: 400 });
   const startAt = typeof body?.startAt === 'string' ? new Date(body.startAt) : new Date(NaN);
   const endAt = typeof body?.endAt === 'string' ? new Date(body.endAt) : new Date(NaN);
-  const ids = body?.sourceSessionProgramIds;
-  const selective = Array.isArray(ids);
-  const fresh = body != null && body.copyPrograms === undefined && body.sourceSessionProgramIds === undefined;
-  if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime()) || endAt <= startAt
-    || (!fresh && !selective && typeof body?.copyPrograms !== 'boolean')
-    || (selective && (ids.some((id) => typeof id !== 'string') || new Set(ids).size !== ids.length))) {
+  const selective = copyIntent.kind === 'selective';
+  const ids = selective ? copyIntent.sourceSessionProgramIds : [];
+  if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime()) || endAt <= startAt) {
     return privateNoStoreJson({ error: '날짜, 시간, 활동 선택을 확인해 주세요.' }, { status: 400 });
   }
 
@@ -59,11 +59,9 @@ export async function POST(request: Request, context: { params: Promise<{ sessio
     }
   }
 
-  const { data: nextId, error } = fresh
-    ? await supabase.rpc('spokedu_master_create_next_session_fresh', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString() })
-    : selective
-      ? await supabase.rpc('spokedu_master_create_next_session_v2', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString(), p_source_session_program_ids: ids })
-      : await supabase.rpc('spokedu_master_create_next_session', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString(), p_copy_programs: body?.copyPrograms });
+  const { data: nextId, error } = selective
+    ? await supabase.rpc('spokedu_master_create_next_session_v2', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString(), p_source_session_program_ids: ids })
+    : await supabase.rpc('spokedu_master_create_next_session', { p_owner_id: access.userId, p_source_session_id: sessionId, p_start_at: startAt.toISOString(), p_end_at: endAt.toISOString(), p_copy_programs: false });
   if (error || typeof nextId !== 'string') {
     if (error?.code === '22023' || error?.code === '23505') return privateNoStoreJson({ error: error.code === '23505' ? CLASS_TIME_COLLISION_MESSAGE : '완료된 수업과 선택한 활동을 확인해 주세요.' }, { status: 400 });
     await reportError(error ?? new Error('Next Session RPC returned no id'), { context: 'spokedu_master.sessions.next' });

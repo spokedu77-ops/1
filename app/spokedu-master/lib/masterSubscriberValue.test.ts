@@ -18,8 +18,6 @@ import {
   getSubscriptionDisplaySummary,
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
-import { buildNextSessionDraft } from '../activity/nextSession';
-import type { MasterSessionDto } from '../types/operational';
 import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 const read = (path: string) => readFileSync(path, 'utf8');
@@ -116,29 +114,9 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
     expect(display.valueWorkflow.join(' ')).toContain('출석');
   });
 
-  it('VALUE-RET-01: next Session draft reuses schedule rhythm (+7 day same clock) as reuse starting point', () => {
-    const session: MasterSessionDto = {
-      id: 'done-1',
-      classId: 'class-a',
-      className: 'A반',
-      startAt: '2026-08-19T01:00:00.000Z',
-      startedAt: null,
-      endAt: '2026-08-19T02:00:00.000Z',
-      status: 'completed',
-      memo: 'keep local',
-      completedAt: '2026-08-19T02:00:00.000Z',
-      programs: [
-        { id: 'p1', sourceType: 'program', programId: 1, spomovePresetId: null, programTitle: '활동1', sortOrder: 0, isCompleted: true },
-      ],
-      attendance: [{ id: 'a1', studentId: 's1', studentName: '민수', status: 'present' }],
-      createdAt: '',
-      updatedAt: '',
-    };
-    const draft = buildNextSessionDraft(session, new Date('2026-08-25T00:00:00.000Z'));
-    expect(draft.day).toBe('2026-08-26');
-    expect(draft.startTime).toBeTruthy();
-    expect(draft.endTime).toBeTruthy();
+  it('VALUE-RET-01: Manage keeps the current previous-Session reuse surface', () => {
     const activity = readSessionDetailSource();
+    expect(activity).toContain('initialTargetDay ?? addSeoulSessionDays');
     expect(activity).not.toContain('NextSessionPlanner');
   });
 

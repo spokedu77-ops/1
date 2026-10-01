@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import type { MasterClassDto, MasterSessionDto } from '../types/operational';
-import { getSessionActionPolicy } from './sessionActionPolicy';
 import { resolveSessionWorkspacePresentation } from './masterSessionWorkspaceModel';
 
 const classItem: MasterClassDto = { id: 'c1', name: 'A반', studentIds: ['s1'], createdAt: '', updatedAt: '' };
@@ -17,12 +16,12 @@ const session = (overrides: Partial<MasterSessionDto> = {}): MasterSessionDto =>
 
 function presentation(input: MasterSessionDto) {
   const workState = deriveMasterSessionWorkState(input, classItem, now);
-  return resolveSessionWorkspacePresentation({ workState, actions: getSessionActionPolicy(input.status), programs: input.programs, startedAt: input.startedAt });
+  return resolveSessionWorkspacePresentation({ workState, programs: input.programs, startedAt: input.startedAt });
 }
 
 function teachingPresentation(input: MasterSessionDto) {
   const workState = deriveMasterSessionWorkState(input, classItem, now);
-  return resolveSessionWorkspacePresentation({ workState, actions: getSessionActionPolicy(input.status), programs: input.programs, startedAt: '2026-08-26T07:05:00.000Z' });
+  return resolveSessionWorkspacePresentation({ workState, programs: input.programs, startedAt: '2026-08-26T07:05:00.000Z' });
 }
 
 describe('Session workspace presentation orchestration', () => {
@@ -35,21 +34,13 @@ describe('Session workspace presentation orchestration', () => {
     ['cancelled', session({ status: 'cancelled' }), 'RECOVERY', 'recover-session'],
     ['overdue started Session', session({ startAt: '2026-08-20T07:00:00.000Z', startedAt: '2026-08-20T07:05:00.000Z', endAt: '2026-08-20T08:00:00.000Z', programs: programs(1, 3) }), 'RUN', 'run-next-activity'],
   ] as const)('%s maps to %s', (_label, input, kind, intent) => {
-    expect(presentation(input)).toMatchObject({ presentationKind: kind, primarySurfaceIntent: intent, showScheduleEditor: false });
+    expect(presentation(input)).toMatchObject({ presentationKind: kind, primarySurfaceIntent: intent });
   });
 
   it('does not infer TEACH from schedule time alone', () => {
     expect(presentation(session({ startAt: '2026-08-20T07:00:00.000Z', endAt: '2026-08-20T08:00:00.000Z', programs: programs(0, 2) }))).toMatchObject({ presentationKind: 'PREP' });
   });
 
-  it('selects the first incomplete ordered activity deterministically', () => {
-    expect(presentation(session({ startedAt: '2026-08-26T07:05:00.000Z', programs: programs(1, 4) })).nextPendingProgramId).toBe('p2');
-    expect(presentation(session({ startedAt: '2026-08-26T07:05:00.000Z', programs: programs(4, 4) })).nextPendingProgramId).toBeNull();
-  });
-
-  it('never presents an incomplete historical item as the next activity', () => {
-    expect(presentation(session({ status: 'completed', programs: programs(1, 3) })).nextPendingProgramId).toBeNull();
-  });
 });
 
 describe('Operating rhythm composition contract', () => {
@@ -59,9 +50,6 @@ describe('Operating rhythm composition contract', () => {
       presentationKind: 'PREP',
       phaseLabel: '준비',
       captureMode: 'memory',
-      attendanceMode: 'collapsed',
-      attendanceDefaultOpen: false,
-      memoMode: 'hidden',
       showInlinePremiumUpsell: false,
       primarySurfaceIntent: 'add-activity',
     });
@@ -70,7 +58,7 @@ describe('Operating rhythm composition contract', () => {
     expect(view.sectionOrder.activities).toBeLessThan(view.sectionOrder.capture);
     expect(view.sectionOrder.primary).toBeLessThan(view.sectionOrder.attendance);
     expect(presentation(session({ programs: programs(0, 3) })).primarySurfaceIntent).toBe('start-session');
-    expect(teachingPresentation(session({ programs: programs(0, 3) }))).toMatchObject({ presentationKind: 'RUN', primarySurfaceIntent: 'run-next-activity', nextPendingProgramId: 'p1' });
+    expect(teachingPresentation(session({ programs: programs(0, 3) }))).toMatchObject({ presentationKind: 'RUN', primarySurfaceIntent: 'run-next-activity' });
   });
 
   it('RUN-01: activities lead while capture and memo wait for wrap', () => {
@@ -78,8 +66,6 @@ describe('Operating rhythm composition contract', () => {
     expect(view).toMatchObject({
       presentationKind: 'RUN',
       captureMode: 'hidden',
-      attendanceMode: 'summary',
-      memoMode: 'hidden',
       showInlinePremiumUpsell: false,
       primarySurfaceIntent: 'run-next-activity',
     });
@@ -92,9 +78,6 @@ describe('Operating rhythm composition contract', () => {
     expect(view).toMatchObject({
       presentationKind: 'WRAP',
       captureMode: 'emphasized',
-      attendanceMode: 'attention',
-      attendanceDefaultOpen: false,
-      memoMode: 'hidden',
       showInlinePremiumUpsell: true,
       primarySurfaceIntent: 'wrap-session',
     });
@@ -107,9 +90,7 @@ describe('Operating rhythm composition contract', () => {
     expect(view).toMatchObject({
       presentationKind: 'REVIEW',
       captureMode: 'review',
-      memoMode: 'review',
       showInlinePremiumUpsell: true,
-      scheduleEditingAvailable: false,
       primarySurfaceIntent: 'post-session',
     });
     expect(view.sectionOrder.primary).toBeLessThan(view.sectionOrder.capture);
@@ -119,7 +100,6 @@ describe('Operating rhythm composition contract', () => {
     expect(presentation(session({ status: 'cancelled' }))).toMatchObject({
       presentationKind: 'RECOVERY',
       captureMode: 'hidden',
-      memoMode: 'hidden',
       showInlinePremiumUpsell: false,
       primarySurfaceIntent: 'recover-session',
     });

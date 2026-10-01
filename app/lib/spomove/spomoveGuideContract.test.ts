@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import {
+  normalizeSpomoveGuideMatTerminology,
   normalizeSpomoveMovementGuideDraft,
   publishSpomoveMovementGuide,
   validateSpomoveMovementGuideDraft,
@@ -43,7 +44,7 @@ describe('spomoveGuideContract', () => {
   it('normalizes pad product terms in the four teacher-facing guide fields', () => {
     expect(
       normalizeSpomoveMovementGuideDraft({
-        objective: 'SPOMAT 위치를 구분합니다.',
+        objective: 'SPOMAT 패드 위치를 구분합니다.',
         instruction: '색 패드로 이동합니다.',
         teachingPoints: ['SPOMAT과 패드 사이 간격을 확인하세요.'],
         coachScript: '맞는 SPOMAT을 보고 패드로 가요.',
@@ -52,10 +53,14 @@ describe('spomoveGuideContract', () => {
     ).toEqual({
       objective: '매트 위치를 구분합니다.',
       instruction: '색 매트로 이동합니다.',
-      teachingPoints: ['매트과 매트 사이 간격을 확인하세요.'],
-      coachScript: '맞는 매트을 보고 매트로 가요.',
+      teachingPoints: ['매트와 매트 사이 간격을 확인하세요.'],
+      coachScript: '맞는 매트를 보고 매트로 가요.',
       easier: '패드 수를 줄입니다.',
     });
+  });
+
+  it('collapses repeated mat terminology and fixes natural Korean particles', () => {
+    expect(normalizeSpomoveGuideMatTerminology('SPOMAT 패드와 패드 매트, 매트으로 이동')).toBe('매트와 매트, 매트로 이동');
   });
 
   it('deduplicates focus tags, keeps order, and caps them at three', () => {

@@ -1,6 +1,5 @@
 import type { MasterSessionWorkState } from '../lib/masterSessionWorkState';
 import type { MasterSessionDto } from '../types/operational';
-import type { SessionActionPolicy } from './sessionActionPolicy';
 
 export type SessionWorkspacePresentationKind = 'PREP' | 'RUN' | 'WRAP' | 'ATTENTION' | 'REVIEW' | 'RECOVERY';
 export type SessionWorkspaceEmphasis = 'secondary' | 'summary' | 'attention' | 'review' | 'recovery';
@@ -15,8 +14,6 @@ export type SessionWorkspacePrimaryIntent =
 
 /** Progressive disclosure for Session sections — phase decides, not component declaration order. */
 export type SessionCaptureSurfaceMode = 'hidden' | 'memory' | 'collapsed' | 'emphasized' | 'review';
-export type SessionAttendanceSurfaceMode = 'collapsed' | 'summary' | 'attention' | 'review';
-export type SessionMemoSurfaceMode = 'hidden' | 'collapsed' | 'emphasized' | 'review';
 
 export type SessionWorkspaceSectionOrder = {
   context: number;
@@ -33,17 +30,11 @@ export type SessionWorkspacePresentation = {
   presentationKind: SessionWorkspacePresentationKind;
   /** Teacher-facing phase label (not internal enum). */
   phaseLabel: string;
-  nextPendingProgramId: string | null;
-  showScheduleEditor: boolean;
-  scheduleEditingAvailable: boolean;
   attendanceEmphasis: SessionWorkspaceEmphasis;
   memoEmphasis: SessionWorkspaceEmphasis;
   primarySurfaceIntent: SessionWorkspacePrimaryIntent;
   sectionOrder: SessionWorkspaceSectionOrder;
-  attendanceMode: SessionAttendanceSurfaceMode;
-  attendanceDefaultOpen: boolean;
   captureMode: SessionCaptureSurfaceMode;
-  memoMode: SessionMemoSurfaceMode;
   /** Lite paywall cards only when the teacher is actually wrapping/reviewing records. */
   showInlinePremiumUpsell: boolean;
 };
@@ -75,12 +66,10 @@ function sectionOrderFor(kind: SessionWorkspacePresentationKind): SessionWorkspa
 
 export function resolveSessionWorkspacePresentation({
   workState,
-  actions,
   programs,
   startedAt,
 }: {
   workState: MasterSessionWorkState;
-  actions: SessionActionPolicy;
   programs: MasterSessionDto['programs'];
   startedAt: string | null;
 }): SessionWorkspacePresentation {
@@ -94,18 +83,6 @@ export function resolveSessionWorkspacePresentation({
           ? 'RUN'
           : 'PREP';
   const presentationKind = resolveKind();
-  const nextPendingProgramId = presentationKind === 'RUN' || presentationKind === 'PREP'
-    ? programs.find((program) => !program.isCompleted)?.id ?? null
-    : null;
-
-  const attendanceMode: SessionAttendanceSurfaceMode = presentationKind === 'WRAP' || presentationKind === 'ATTENTION'
-    ? 'attention'
-    : presentationKind === 'REVIEW'
-      ? 'review'
-      : presentationKind === 'RUN'
-        ? 'summary'
-        : 'collapsed';
-
   const captureMode: SessionCaptureSurfaceMode = presentationKind === 'RECOVERY' || presentationKind === 'RUN'
     ? 'hidden'
     : presentationKind === 'PREP'
@@ -116,18 +93,9 @@ export function resolveSessionWorkspacePresentation({
           ? 'review'
           : 'collapsed';
 
-  const memoMode: SessionMemoSurfaceMode = presentationKind === 'RECOVERY' || presentationKind === 'PREP' || presentationKind === 'RUN' || presentationKind === 'WRAP' || presentationKind === 'ATTENTION'
-    ? 'hidden'
-    : presentationKind === 'REVIEW'
-        ? 'review'
-        : 'collapsed';
-
   return {
     presentationKind,
     phaseLabel: PHASE_LABEL[presentationKind],
-    nextPendingProgramId,
-    showScheduleEditor: false,
-    scheduleEditingAvailable: actions.editSchedule && presentationKind !== 'RECOVERY' && presentationKind !== 'REVIEW',
     attendanceEmphasis: presentationKind === 'WRAP' || presentationKind === 'ATTENTION'
       ? 'attention'
       : presentationKind === 'REVIEW'
@@ -158,10 +126,7 @@ export function resolveSessionWorkspacePresentation({
               ? 'post-session'
               : 'recover-session',
     sectionOrder: sectionOrderFor(presentationKind),
-    attendanceMode,
-    attendanceDefaultOpen: false,
     captureMode,
-    memoMode,
     showInlinePremiumUpsell: presentationKind === 'WRAP' || presentationKind === 'REVIEW',
   };
 }

@@ -44,7 +44,6 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
   const workState = draft.activeSession ? deriveMasterSessionWorkState(draft.activeSession, selectedClass) : null;
   const presentation = workState ? resolveSessionWorkspacePresentation({
     workState,
-    actions,
     programs: activities.programs,
     startedAt: draft.activeSession?.startedAt ?? null,
   }) : null;

@@ -63,7 +63,7 @@ describe('SPOMOVE Guideline Sheet 10-second briefing contract', () => {
     expect(sheet).toContain('cueSeconds');
     expect(sheet).toContain("label: '준비물'");
     expect(sheet).toContain("label: '자극'");
-    expect(sheet).toContain("label: '동작'");
+    expect(sheet).toContain("label: '추천 동작'");
   });
 
   it('keeps primary CTA and startHref contracts', () => {
@@ -139,7 +139,7 @@ describe('L3 full editorial refine seeds', () => {
       expect(seed.movementGuide.instruction).not.toContain('칸 위치를 찾는 활동이 아니라');
       expect(seed.movementGuide.instruction).toContain('기준 위치로 돌아와 다음 신호를 기다립니다');
       expect(seed.movementGuide.coachScript).toContain('같은 색 패드');
-      expect(seed.movementGuide.objective).toContain('같은 색 SPOMAT 패드');
+      expect(seed.movementGuide.objective).toContain('같은 색 매트');
     }
   });
 

@@ -186,3 +186,59 @@ Static verification is not a rendered visual PASS. Visual PASS requires populate
 ## 22. Core Principle
 
 > Think globally. Decide explicitly. Implement only approved scope.
+
+## 23. Class Management Protected Invariants
+
+The rules in this section are protected product contracts, not incidental descriptions of the current implementation. General refactoring, cleanup, or visual polish must not alter them.
+
+### 23.1 Session lifecycle
+
+- `scheduled` with `startedAt == null` is PREP and is displayed as **예정**.
+- `scheduled` with `startedAt != null` is RUN and is displayed as **진행 중**.
+- `completed` is displayed as **완료**. `cancelled` is displayed as **취소**.
+- `startedAt` is the authoritative RUN marker. Activity completion counts must not infer that a Session has started.
+- Starting a clean Session calls start directly. Starting a dirty Session must persist the Session, then attendance, then call start. A failed save must prevent start.
+- RUN must retain its footer/action area and must always offer **수업 완료**.
+- Incomplete activities do not block Session completion. They require user confirmation; completed activities require no such warning.
+- Activity completion and Session completion are independent states. Completing every activity does not automatically complete the Session.
+
+### 23.2 Canonical status display
+
+User-visible Session status is resolved canonically from `status + startedAt`. Session Detail, Agenda, and Month Calendar must use that same resolver. A surface must not map every `scheduled` Session to **예정** without considering `startedAt`.
+
+### 23.3 Previous Session import
+
+- **이전 수업 가져오기** candidates are every completed Session before `targetDay`, sorted newest first. Candidates must not be collapsed to the newest Session per Class.
+- The supported modes are **활동 없이 만들기**, **모든 활동 가져오기**, and **가져올 활동 선택**.
+- All-activity import sends every currently selectable source activity ID through the selective carryover semantics.
+- The next-Session API requires explicit copy intent: `copyPrograms: false` for no activities, or `sourceSessionProgramIds` for selective/all import. Missing intent must return HTTP 400 and must never fall back to a historical roster-copy path.
+
+### 23.4 Carryover data and roster
+
+Previous Session import may reuse only the Class identity, activity identity, activity order, and the source time of day as a default. It must not copy attendance results, present/absent state, memo, observation, capture, parent notice, `startedAt`, `completedAt`, historical records, or completed activity state. Every copied activity starts with `isCompleted = false`.
+
+The roster meaning of the new Session is current Class membership, not the source Session's historical roster. Stale roster cloning, source attendance cloning, conversion of previous attendance to pending attendance, and immediate roster locking are prohibited. A Session created through previous Session import has `rosterLockedAt = null`.
+
+### 23.5 Recurrence
+
+Weekly, biweekly, and `RegularSchedulePanel` recurrence controls are not current product surfaces. Historical backend artifacts do not make recurrence a user feature. Recurrence must not be exposed again without an explicit approved Product Decision.
+
+### 23.6 Protected existing capabilities
+
+The following Class Management capabilities are protected existing behavior: Calendar, date Agenda, new Session, new Class creation, Session schedule change, cancel, restore, cancelled Session deletion, Program activity addition, SPOMOVE activity addition, Favorites activity addition, activity reorder/removal/completion, attendance, mark-all-present, Session memo, per-student observation, next-Session note, previous Session memory, Session start/completion, previous Session import, Class roster management, and monthly attendance projection.
+
+UI polish or refactoring must not remove these capabilities or narrow their semantics without approval.
+
+### 23.7 Change authority and regression protection
+
+Changing a protected invariant requires this order:
+
+1. Write and approve a Product Decision.
+2. Update this Product Contract first, including the reason and migration/compatibility impact.
+3. Change implementation only after contract approval.
+4. Update the invariant regression tests.
+5. Perform browser/manual verification when the real user flow changes.
+
+The prohibited order is implementation change, test accommodation, then retrospective contract editing. The required order is **PRODUCT DECISION → CONTRACT → IMPLEMENTATION → TEST**.
+
+Regression coverage must reject at least these failures: `run-next-activity` resolving to no action; a started scheduled Session displaying **예정**; previous Sessions collapsing to one per Class; source roster or attendance cloning; copied activities retaining `isCompleted = true`; missing carryover intent falling back to the fresh RPC; and recurrence UI reappearing without a Product Decision.

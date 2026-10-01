@@ -44,8 +44,8 @@ export function SpomovePadLayoutView({
               ? '/images/spokedu/brand/spomat-diamond-cutout.png'
               : '/images/spokedu/brand/spomat-layout.png'}
             alt={isCompass
-              ? '다이아몬드 형태로 놓인 빨강, 초록, 노랑, 파랑 SPOMAT 네 장 매트'
-              : '정사각형 2×2 형태로 놓인 빨강, 노랑, 초록, 파랑 SPOMAT 네 장 매트'}
+              ? '다이아몬드 형태로 놓인 빨강, 초록, 노랑, 파랑 매트 네 장'
+              : '정사각형 2×2 형태로 놓인 빨강, 노랑, 초록, 파랑 매트 네 장'}
             fill
             sizes={compact ? '148px' : '200px'}
             loading="eager"

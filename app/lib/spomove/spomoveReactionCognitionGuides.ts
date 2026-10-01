@@ -102,7 +102,7 @@ function l2Quad(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
     theme,
     movementGuide: {
       movement: { baseMovement: 'footTap', limbRule: 'free' },
-      objective: `2×2 화면에서 ${cue}가 나타난 칸을 확인하고 연결된 SPOMAT 패드로 이동합니다.`,
+      objective: `2×2 화면에서 ${cue}가 나타난 칸을 확인하고 연결된 매트로 이동합니다.`,
       teachingPoints: [
         '화면의 어느 칸에 자극이 나타났는지 먼저 확인하세요.',
         imageDelta,
@@ -142,7 +142,7 @@ function l3Full(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
     overwriteGuideFields: true,
     movementGuide: {
       movement: l3Movement(theme),
-      objective: `전체 화면의 ${cue}를 확인하고 같은 색 SPOMAT 패드로 ${moveLabel}합니다.`,
+      objective: `전체 화면의 ${cue}를 확인하고 같은 색 매트로 ${moveLabel}합니다.`,
       teachingPoints: [
         theme === 'color'
           ? '화면을 네 칸처럼 찾지 말고 하나의 큰 색 신호로 보게 합니다.'
@@ -185,7 +185,7 @@ function l4Split(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
     theme,
     movementGuide: {
       movement: { baseMovement: 'footTap', limbRule: 'sameSide' },
-      objective: `좌우 두 패널에 나타난 ${cue}를 확인하고 연결된 SPOMAT 패드로 이동합니다.`,
+      objective: `좌우 두 패널에 나타난 ${cue}를 확인하고 연결된 매트로 이동합니다.`,
       teachingPoints: [
         '한쪽 패널만 보고 움직이지 말고 좌우 패널을 함께 확인하게 하세요.',
         imageDelta,

@@ -6,7 +6,6 @@ import { resolvePreviousSessionMemory } from '../lib/sessionMemory';
 import type { MasterClassRecordDto } from '../types/legacyOperational';
 import type { MasterClassDto, MasterSessionDto } from '../types/operational';
 import { resolveSessionWorkspacePresentation } from './masterSessionWorkspaceModel';
-import { getSessionActionPolicy } from './sessionActionPolicy';
 import { shouldApplyServerSessionCapture } from './sessionCaptureDraft';
 
 const sheet = readFileSync(join(process.cwd(), 'app/spokedu-master/manage/session-detail/SessionDetailSheet.tsx'), 'utf8');
@@ -40,7 +39,6 @@ describe('premium memory on the normal next session', () => {
     const workState = deriveMasterSessionWorkState(next, classItem);
     const presentation = resolveSessionWorkspacePresentation({
       workState,
-      actions: getSessionActionPolicy(next.status),
       programs: next.programs,
       startedAt: next.startedAt,
     });

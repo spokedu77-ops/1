@@ -100,7 +100,14 @@ function normalizeString(value: unknown): string | undefined {
 }
 
 export function normalizeSpomoveGuideMatTerminology(value: string): string {
-  return value.replace(/SPOMAT/gi, '매트').replace(/패드/g, '매트');
+  return value
+    .replace(/SPOMAT(?:\s*패드)?/gi, '매트')
+    .replace(/패드/g, '매트')
+    .replace(/매트(?:\s+매트)+/g, '매트')
+    .replace(/매트과/g, '매트와')
+    .replace(/매트을/g, '매트를')
+    .replace(/매트은/g, '매트는')
+    .replace(/매트으로/g, '매트로');
 }
 
 function normalizeGuideString(value: unknown): string | undefined {
