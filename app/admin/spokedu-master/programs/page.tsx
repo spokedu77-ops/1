@@ -87,6 +87,7 @@ import { getPresetMovementSummary } from '@/app/spokedu-master/spomove/movements
 import { isHubListedPreset } from '@/app/spokedu-master/spomove/movements/isHubVisiblePreset';
 import { movementDisplayLabel } from '@/app/spokedu-master/spomove/movements/movementLabels';
 import { MOVEMENT_REGISTRY } from '@/app/spokedu-master/spomove/movements/movementRegistry';
+import type { BaseMovementId, LimbRule } from '@/app/spokedu-master/spomove/movements/movementTypes';
 import {
   SPOMOVE_CORE_KEYWORD_AXIS,
   normalizeSpomoveCoreKeywordsList,
@@ -1106,6 +1107,53 @@ function SpomoveEditModal({
               </div>
             </div>
             <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block text-[10px] font-black text-slate-400">
+                  추천 동작
+                  <select
+                    value={draft.movementGuide?.movement?.baseMovement ?? ''}
+                    onChange={(event) => {
+                      const baseMovement = event.target.value as BaseMovementId | '';
+                      if (!baseMovement) {
+                        onUpdateMovementGuide({ movement: null });
+                        return;
+                      }
+                      const definition = MOVEMENT_REGISTRY[baseMovement];
+                      const currentRule = draft.movementGuide?.movement?.limbRule;
+                      const limbRule = currentRule && definition.supportedLimbRules.includes(currentRule)
+                        ? currentRule
+                        : definition.supportedLimbRules[0];
+                      onUpdateMovementGuide({ movement: { baseMovement, limbRule } });
+                    }}
+                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                  >
+                    <option value="">화면 지시</option>
+                    {(Object.keys(MOVEMENT_REGISTRY) as BaseMovementId[]).map((movementId) => (
+                      <option key={movementId} value={movementId}>{MOVEMENT_REGISTRY[movementId].label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-[10px] font-black text-slate-400">
+                  좌우 규칙
+                  <select
+                    value={draft.movementGuide?.movement?.limbRule ?? 'free'}
+                    disabled={!draft.movementGuide?.movement}
+                    onChange={(event) => {
+                      const movement = draft.movementGuide?.movement;
+                      if (!movement) return;
+                      onUpdateMovementGuide({ movement: { ...movement, limbRule: event.target.value as LimbRule } });
+                    }}
+                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    {(draft.movementGuide?.movement
+                      ? MOVEMENT_REGISTRY[draft.movementGuide.movement.baseMovement].supportedLimbRules
+                      : ['free'] as LimbRule[]
+                    ).map((rule) => (
+                      <option key={rule} value={rule}>{rule === 'free' ? '자유' : rule === 'sameSide' ? '같은 쪽' : '교차'}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <label className="block text-[10px] font-black text-slate-400">
                 활동 목표
                 <textarea value={draft.movementGuide?.objective ?? ''} onChange={(e) => onUpdateMovementGuide({ objective: e.target.value })}
@@ -1120,7 +1168,7 @@ function SpomoveEditModal({
               </label>
               <label className="block text-[10px] font-black text-slate-400">
                 지도 포인트 (최대 3개, 한 줄에 하나)
-                <textarea value={draft.movementGuide?.teachingPoints?.join('\n') ?? ''} onChange={(e) => onUpdateMovementGuide({ teachingPoints: e.target.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).slice(0, 3) })}
+                <textarea value={draft.movementGuide?.teachingPoints?.join('\n') ?? ''} onChange={(e) => onUpdateMovementGuide({ teachingPoints: e.target.value.split(/\r?\n/).slice(0, 3) })}
                   placeholder="속도보다 방향 선택의 정확성을 먼저 확인하세요."
                   className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
                 <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">{SPOMOVE_EDITORIAL_ADMIN_HELPER.teachingPoints}</span>

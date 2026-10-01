@@ -45,10 +45,8 @@ import {
 } from './officialSpomovePresetGuides';
 import {
   buildSpomovePresetSearchHaystack,
-  composeSpomovePublicCardMetaParts,
   getSpomoveCardDisplayModel,
   getSpomovePresetDisplayModel,
-  resolveSpomovePublicCardSupport,
   sortSpomovePresetsByCatalogOrder,
   buildSpomoveProgramGroupSections,
 } from './spomovePresetDisplayModel';
@@ -655,8 +653,6 @@ function PresetCard({
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset, contentOverride);
   const card = getSpomoveCardDisplayModel(preset, contentOverride);
-  const subtitleParts = composeSpomovePublicCardMetaParts(card.publicMeta);
-  const supportMeta = resolveSpomovePublicCardSupport(card.publicMeta, displayModel.supportMetaParts);
 
   const inner = (
     <>
@@ -702,10 +698,9 @@ function PresetCard({
           priority={priority}
           onImageError={() => setImageFailed(true)}
         />
-        <div className="w-full px-3.5 pb-3.5 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={subtitleParts.join(' · ')}>
+        <div className="w-full px-3.5 pb-3.5 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={[card.publicMeta.core, card.publicMeta.difficulty].filter(Boolean).join(' · ')}>
           <ContentCardMetaLine primary={card.publicMeta.core} secondary={card.publicMeta.difficulty} />
           <h3 className="mt-1 line-clamp-2 text-[17px] font-semibold leading-snug text-slate-950">{card.title}</h3>
-          <p className={`mt-2 truncate text-[13px] font-medium leading-5 text-slate-500 ${startHref ? 'pr-10' : ''}`}>{supportMeta || '\u00a0'}</p>
         </div>
       </button>
       {startHref && preset.isReady ? (
@@ -1129,7 +1124,7 @@ function SpomoveHubInner({
         </nav>
 
         {/* 최근 활동 */}
-        {!isFamilyLanding ? <section className="order-3 mt-10">
+        {isFamilyLanding ? <section className="order-2 mt-7">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[13px] font-medium text-slate-500">최근 SPOMOVE</p>
@@ -1180,7 +1175,7 @@ function SpomoveHubInner({
         </section> : null}
 
         {isFamilyLanding ? (
-          <section id="spomove-program-list" className="order-2 mt-7 flex flex-col gap-10">
+          <section id="spomove-program-list" className="order-3 mt-10 flex flex-col gap-10">
             {SPOMOVE_CATALOG_FAMILIES.map((family) => {
               const familyFiltered = filterPresetsByCatalogFamily(visiblePresets, family.id);
               const sections = buildSpomoveProgramGroupSections(familyFiltered);

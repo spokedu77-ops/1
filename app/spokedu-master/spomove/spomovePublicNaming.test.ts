@@ -346,7 +346,8 @@ describe('SPOMOVE public card meta contract', () => {
 
   it('does not leak previous subtitle composition into Hub cards', () => {
     const hub = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/SpomoveHubView.tsx'), 'utf8');
-    expect(hub).toContain('composeSpomovePublicCardMetaParts(card.publicMeta)');
+    expect(hub).not.toContain('composeSpomovePublicCardMetaParts(card.publicMeta)');
+    expect(hub).toContain('[card.publicMeta.core, card.publicMeta.difficulty]');
     expect(hub).not.toContain('decisionMeta');
     expect(hub).not.toContain('supportingMeta');
     expect(hub).not.toContain('composeSpomoveCardSubtitleParts');

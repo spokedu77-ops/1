@@ -362,8 +362,7 @@ function SpomoveCard({
           <h3 className={`${MV_HOME_CARD_TITLE} mt-1 line-clamp-2 transition-colors duration-200 group-hover/preview:text-slate-700`}>{displayModel.title}</h3>
         </div>
       </button>
-      <div className="mt-auto flex min-h-11 items-center gap-2 px-3.5">
-        <p className={`${MV_HOME_CARD_META} min-w-0 flex-1 truncate`}>{displayModel.supportMeta || displayModel.support}</p>
+      <div className="mt-auto flex min-h-11 items-center justify-end px-3.5">
         <Link href={startHref} data-spm-spomove-card-action="start" aria-label={`${displayModel.title} 바로 시작`} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
           <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100"><Play className="h-3.5 w-3.5 fill-current" aria-hidden /></span>
         </Link>
@@ -386,15 +385,9 @@ function RecentSpomoveReuseCard({
 }) {
   const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId) ?? null;
   const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
-  const snapshot = activity.spomoveSnapshot;
   const recentOptions = preset ? recentSpomoveSessionOptions(activity, preset) : null;
-  const cueSeconds = snapshot?.cueSeconds ?? activity.cueSeconds ?? preset?.cueSeconds;
   const shelf = preset ? getHomeSpomoveShelfCopy(preset) : null;
   const displayTitle = shelf?.title ?? resolveSpomovePublicDisplayTitle(activity.programId, activity.programTitle);
-  const contextLine = [
-    shelf?.typeLabel,
-    cueSeconds ? `자극 ${cueSeconds}초` : null,
-  ].filter(Boolean).join(' · ');
   const recentHref = preset
     ? withDiscoveryReturn(
         canReproduce
@@ -416,7 +409,6 @@ function RecentSpomoveReuseCard({
       <HomeContinueCard
         kicker="최근 활동"
         title={displayTitle}
-        meta={contextLine || 'SPOMOVE 활동'}
         actionLabel="다시 보기"
         href={recentHref}
         media={(

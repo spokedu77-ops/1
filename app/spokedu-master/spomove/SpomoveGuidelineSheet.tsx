@@ -123,7 +123,7 @@ function PrepMetaRow({
   const items = [
     { label: '준비물', value: `SPOMAT ${matCount}장` },
     { label: '자극', value: `${cueSeconds}초` },
-    movementLabel ? { label: '동작', value: movementLabel } : null,
+    movementLabel ? { label: '추천 동작', value: movementLabel } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 
   return (

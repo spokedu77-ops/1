@@ -35,7 +35,7 @@ describe("SPOMOVE-MASTER-CARD-UX-P1-01", () => {
   it("keeps discovery card body compact and independent from URL reads", () => {
     expect(hub).toContain("data-spm-spomove-card-body");
     expect(hub).toContain("card.publicMeta");
-    expect(hub).toContain("composeSpomovePublicCardMetaParts");
+    expect(hub).not.toContain("composeSpomovePublicCardMetaParts");
     expect(hub).not.toContain("decisionMeta");
     expect(hub).not.toContain("supportingMeta");
     expect(hub).toContain("data-spm-spomove-card-meta");
