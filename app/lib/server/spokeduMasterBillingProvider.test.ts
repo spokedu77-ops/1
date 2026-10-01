@@ -9,11 +9,14 @@ import {
 
 const originalSecret = process.env.TOSS_SECRET_KEY;
 const originalNodeEnv = process.env.NODE_ENV;
+const originalVercelEnv = process.env.VERCEL_ENV;
 
 afterEach(() => {
   if (originalSecret === undefined) delete process.env.TOSS_SECRET_KEY;
   else process.env.TOSS_SECRET_KEY = originalSecret;
   vi.stubEnv('NODE_ENV', originalNodeEnv ?? 'test');
+  if (originalVercelEnv === undefined) delete process.env.VERCEL_ENV;
+  else vi.stubEnv('VERCEL_ENV', originalVercelEnv);
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
@@ -30,9 +33,17 @@ describe('spokeduMasterBillingProvider', () => {
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(true);
 
     vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('VERCEL_ENV', 'production');
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(false);
 
     process.env.TOSS_SECRET_KEY = 'live_sk_demo';
+    expect(isSpokeduMasterBillingProviderConfigured()).toBe(true);
+  });
+
+  it('allows test keys in Vercel preview even though Next runs with NODE_ENV production', () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('VERCEL_ENV', 'preview');
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(true);
   });
 

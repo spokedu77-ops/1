@@ -1,4 +1,5 @@
 import { createSpokeduMasterOrderId, type SpokeduMasterPaidPlan } from './spokeduMasterPayment';
+import { isProductionDeployment } from '@/app/lib/deploymentEnvironment';
 
 const TOSS_API_BASE = 'https://api.tosspayments.com/v1';
 export const TOSS_FETCH_TIMEOUT_MS = 8_000;
@@ -18,7 +19,7 @@ export type TossBillingPaymentResult = {
 export function getTossSecretKey(): string | null {
   const secretKey = process.env.TOSS_SECRET_KEY?.trim();
   if (!secretKey) return null;
-  if (process.env.NODE_ENV === 'production') {
+  if (isProductionDeployment()) {
     if (!secretKey.startsWith('live_')) return null;
   } else if (!secretKey.startsWith('test_') && !secretKey.startsWith('live_')) {
     return null;

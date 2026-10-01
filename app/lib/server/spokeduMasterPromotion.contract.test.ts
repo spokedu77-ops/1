@@ -20,5 +20,6 @@ describe('promotional entitlement persistence contract', () => {
     expect(migration).toContain('make_interval(days => v_invite.duration_days)');
     expect(migration).toContain('redeemed_by = p_user_id');
     expect(migration).toContain('email_confirmed_at IS NOT NULL');
+    expect(migration).toContain('lower(pg_catalog.btrim(email))');
   });
 });

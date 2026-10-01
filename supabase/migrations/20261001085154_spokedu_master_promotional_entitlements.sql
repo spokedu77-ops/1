@@ -72,7 +72,7 @@ BEGIN
     RAISE EXCEPTION 'PROMOTION_INVITE_INVALID' USING ERRCODE = '22023';
   END IF;
 
-  SELECT pg_catalog.lower(email) INTO v_user_email
+  SELECT pg_catalog.lower(pg_catalog.btrim(email)) INTO v_user_email
   FROM auth.users
   WHERE id = p_user_id AND email_confirmed_at IS NOT NULL;
 
@@ -80,7 +80,8 @@ BEGIN
     RAISE EXCEPTION 'VERIFIED_USER_REQUIRED' USING ERRCODE = '42501';
   END IF;
 
-  IF v_invite.email IS NOT NULL AND pg_catalog.lower(v_invite.email) <> v_user_email THEN
+  IF v_invite.email IS NOT NULL
+    AND pg_catalog.lower(pg_catalog.btrim(v_invite.email)) <> v_user_email THEN
     RAISE EXCEPTION 'PROMOTION_INVITE_EMAIL_MISMATCH' USING ERRCODE = '42501';
   END IF;
 

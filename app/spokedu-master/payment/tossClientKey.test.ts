@@ -11,4 +11,10 @@ describe('isTossClientKeyAllowed', () => {
     expect(isTossClientKeyAllowed('test_ck_demo', 'staging')).toBe(true);
     expect(isTossClientKeyAllowed('live_ck_demo', 'production')).toBe(true);
   });
+
+  it('uses Vercel environment to distinguish preview from production builds', () => {
+    expect(isTossClientKeyAllowed('test_ck_demo', 'production', 'preview')).toBe(true);
+    expect(isTossClientKeyAllowed('test_ck_demo', 'production', 'production')).toBe(false);
+    expect(isTossClientKeyAllowed('live_ck_demo', 'production', 'production')).toBe(true);
+  });
 });
