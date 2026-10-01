@@ -32,6 +32,27 @@ function summary(overrides: Partial<SubscriptionSummaryData>): SubscriptionSumma
 }
 
 describe('subscriptionSummary', () => {
+  it('shows promotion access without billing controls', () => {
+    const display = getSubscriptionDisplaySummary(summary({
+      plan: 'premium',
+      status: 'active',
+      entitlementSource: 'promotion',
+      promotionalPlan: 'premium',
+      promotionalEndsAt: future,
+      nextBillingAt: future,
+      canCancelAutoBilling: false,
+    }));
+    expect(display).toMatchObject({
+      state: 'active',
+      planLabel: '이벤트 Premium 이용권',
+      statusLabel: '체험 이용 중',
+      dateLabel: '이용 종료일',
+      amountText: null,
+      canCancel: false,
+      isDirectBillingPlan: false,
+    });
+  });
+
   it('maps active Premium billing subscriptions for display', () => {
     const value = summary({
       plan: 'premium',
@@ -237,6 +258,9 @@ describe('subscriptionSummary', () => {
       isAdmin: false,
       canCancelAutoBilling: false,
       billingRenewalFailed: false,
+      entitlementSource: 'none',
+      promotionalPlan: null,
+      promotionalEndsAt: null,
     });
     expect(getSubscriptionStatusLabel(value)).toBe('이용권 없음');
   });

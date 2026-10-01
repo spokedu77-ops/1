@@ -25,6 +25,9 @@ export type MasterAccessSnapshot = {
   canUseAttendance: boolean;
   canUseRecords: boolean;
   canUseSpomove: boolean;
+  entitlementSource?: 'none' | 'billing' | 'promotion' | 'admin';
+  promotionalPlan?: 'lite' | 'premium' | null;
+  promotionalEndsAt?: string | null;
 };
 
 export type MasterAccessApiResponse = MasterAccessSnapshot & {
@@ -46,6 +49,7 @@ export function hasPremiumEntitlement(snapshot: MasterAccessSnapshot | null | un
 export function hasActivePaidSubscription(snapshot: MasterAccessSnapshot | null | undefined): boolean {
   if (!snapshot) return false;
   if (snapshot.isAdmin) return true;
+  if (snapshot.entitlementSource === 'promotion') return false;
   return snapshot.subscriptionStatus === 'active' && snapshot.plan !== 'free';
 }
 

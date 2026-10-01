@@ -46,6 +46,9 @@ export type SpokeduMasterAccessSnapshot = {
   canUseAttendance: boolean;
   canUseRecords: boolean;
   canUseSpomove: boolean;
+  entitlementSource: 'none' | 'billing' | 'promotion' | 'admin';
+  promotionalPlan: 'lite' | 'premium' | null;
+  promotionalEndsAt: string | null;
 };
 
 export type MasterAccessSnapshotResult =
@@ -74,6 +77,19 @@ export type SpokeduMasterSubscriptionRow = {
   next_billing_at?: string | null;
   current_period_end?: string | null;
   provider_billing_key_secret_id?: string | null;
+  renewal_retry_count?: number | null;
+  last_billing_error?: string | null;
+  next_retry_at?: string | null;
+};
+
+export type SpokeduMasterEntitlementGrantRow = {
+  id: string;
+  plan: 'lite' | 'premium';
+  source: 'promo' | 'partner' | 'event' | 'support' | 'admin';
+  campaign_id: string | null;
+  starts_at: string;
+  ends_at: string;
+  activated_at: string;
 };
 
 export function normalizeSpokeduMasterPlan(plan: string | null | undefined): 'free' | 'lite' | 'premium' | 'team' {
@@ -137,6 +153,32 @@ export function evaluateSpokeduMasterEntitlement(
   return { allowed: false, plan: 'free', status: 'expired' };
 }
 
+export function evaluateSpokeduMasterEffectiveEntitlement(
+  row: SpokeduMasterSubscriptionRow | null,
+  grant: SpokeduMasterEntitlementGrantRow | null,
+  now = Date.now(),
+): SpokeduMasterEntitlementDecision & { source: 'none' | 'billing' | 'promotion' } {
+  const billing = evaluateSpokeduMasterEntitlement(row, now);
+  const grantStart = grant ? Date.parse(grant.starts_at) : Number.NaN;
+  const grantEnd = grant ? Date.parse(grant.ends_at) : Number.NaN;
+  const grantActive = Boolean(
+    grant
+    && Number.isFinite(grantStart)
+    && Number.isFinite(grantEnd)
+    && grantStart <= now
+    && grantEnd > now,
+  );
+
+  if (!grantActive) return { ...billing, source: billing.allowed ? 'billing' : 'none' };
+  if (billing.allowed && (billing.plan === 'premium' || billing.plan === 'team')) {
+    return { ...billing, source: 'billing' };
+  }
+  if (billing.allowed && billing.plan === 'lite' && grant?.plan === 'lite') {
+    return { ...billing, source: 'billing' };
+  }
+  return { allowed: true, plan: grant!.plan, status: 'active', source: 'promotion' };
+}
+
 function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: SpokeduMasterAccessSnapshot['subscriptionStatus'], isAdmin: boolean) {
   const freeFallback = {
     canBrowseLibrary: true,
@@ -191,6 +233,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
 
 export function buildSpokeduMasterAccessSnapshot(input: {
   row: SpokeduMasterSubscriptionRow | null;
+  grant?: SpokeduMasterEntitlementGrantRow | null;
   isAdmin: boolean;
   onboardingDone?: boolean;
 }): SpokeduMasterAccessSnapshot {
@@ -204,18 +247,21 @@ export function buildSpokeduMasterAccessSnapshot(input: {
       cancelAtPeriodEnd: false,
       isAdmin: true,
       isCenterOrTeam: true,
+      entitlementSource: 'admin',
+      promotionalPlan: null,
+      promotionalEndsAt: null,
       ...buildCapabilities('team', 'active', true),
     };
   }
 
-  const entitlement = evaluateSpokeduMasterEntitlement(input.row);
+  const entitlement = evaluateSpokeduMasterEffectiveEntitlement(input.row, input.grant ?? null);
   const plan = entitlement.plan === 'lite' || entitlement.plan === 'premium' || entitlement.plan === 'team'
     ? entitlement.plan
     : 'free';
-  const subscriptionStatus = input.row
-    ? entitlement.status
-    : 'none';
-  const currentPeriodEnd = input.row?.current_period_end ?? input.row?.period_end ?? null;
+  const subscriptionStatus = entitlement.allowed ? 'active' : input.row ? entitlement.status : 'none';
+  const currentPeriodEnd = entitlement.source === 'promotion'
+    ? input.grant?.ends_at ?? null
+    : input.row?.current_period_end ?? input.row?.period_end ?? null;
 
   return {
     authenticated: true,
@@ -226,11 +272,33 @@ export function buildSpokeduMasterAccessSnapshot(input: {
     cancelAtPeriodEnd: input.row?.cancel_at_period_end ?? false,
     isAdmin: false,
     isCenterOrTeam: plan === 'team',
+    entitlementSource: entitlement.source,
+    promotionalPlan: input.grant?.plan ?? null,
+    promotionalEndsAt: input.grant?.ends_at ?? null,
     ...buildCapabilities(plan, subscriptionStatus, false),
   };
 }
 
 type ServiceSupabase = ReturnType<typeof getServiceSupabase>;
+
+export async function getActiveSpokeduMasterEntitlementGrant(
+  serviceSupabase: ServiceSupabase,
+  userId: string,
+  now = new Date(),
+): Promise<{ row: SpokeduMasterEntitlementGrantRow | null; error: unknown | null }> {
+  const { data, error } = await serviceSupabase
+    .from('spokedu_master_entitlement_grants')
+    .select('id,plan,source,campaign_id,starts_at,ends_at,activated_at')
+    .eq('user_id', userId)
+    .is('revoked_at', null)
+    .lte('starts_at', now.toISOString())
+    .gt('ends_at', now.toISOString())
+    .order('plan', { ascending: false })
+    .order('ends_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return { row: data as SpokeduMasterEntitlementGrantRow | null, error };
+}
 
 export async function ensureSpokeduMasterEntitlement(
   serviceSupabase: ServiceSupabase,
@@ -238,7 +306,7 @@ export async function ensureSpokeduMasterEntitlement(
 ): Promise<{ row: SpokeduMasterSubscriptionRow | null; error: unknown | null }> {
   const selectRow = async () => serviceSupabase
     .from('spokedu_master_subscriptions')
-    .select('plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end,provider_billing_key_secret_id')
+    .select('plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end,provider_billing_key_secret_id,renewal_retry_count,last_billing_error,next_retry_at')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -271,14 +339,14 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
     }
 
     const serviceSupabase = getServiceSupabase();
-    const { row: subscription, error } = await ensureSpokeduMasterEntitlement(
-      serviceSupabase,
-      user.id,
-    );
+    const [{ row: subscription, error }, { row: grant, error: grantError }] = await Promise.all([
+      ensureSpokeduMasterEntitlement(serviceSupabase, user.id),
+      getActiveSpokeduMasterEntitlementGrant(serviceSupabase, user.id),
+    ]);
 
-    if (error) {
-      devLogger.error('[requireSpokeduMasterAccess] subscription lookup failed', error);
-      await reportError(error, {
+    if (error || grantError) {
+      devLogger.error('[requireSpokeduMasterAccess] entitlement lookup failed', error ?? grantError);
+      await reportError(error ?? grantError, {
         context: 'spokedu_master.access',
         tags: {
           stage: 'subscription_lookup',
@@ -291,7 +359,7 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
       };
     }
 
-    const entitlement = evaluateSpokeduMasterEntitlement(subscription);
+    const entitlement = evaluateSpokeduMasterEffectiveEntitlement(subscription, grant);
 
     if (entitlement.allowed && entitlement.status === 'active') {
       return {
@@ -391,14 +459,15 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
     }
 
     const serviceSupabase = getServiceSupabase();
-    const [{ row: subscription, error }, { row: profile, error: profileError }] = await Promise.all([
+    const [{ row: subscription, error }, { row: grant, error: grantError }, { row: profile, error: profileError }] = await Promise.all([
       ensureSpokeduMasterEntitlement(serviceSupabase, user.id),
+      getActiveSpokeduMasterEntitlementGrant(serviceSupabase, user.id),
       getSpokeduMasterProfile(serviceSupabase, user.id),
     ]);
 
-    if (error || profileError) {
-      devLogger.error('[getSpokeduMasterAccessSnapshot] lookup failed', error ?? profileError);
-      await reportError(error ?? profileError, {
+    if (error || grantError || profileError) {
+      devLogger.error('[getSpokeduMasterAccessSnapshot] lookup failed', error ?? grantError ?? profileError);
+      await reportError(error ?? grantError ?? profileError, {
         context: 'spokedu_master.access_snapshot',
         tags: {
           stage: error ? 'subscription_lookup' : 'profile_lookup',
@@ -420,6 +489,7 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
       userId: user.id,
       snapshot: buildSpokeduMasterAccessSnapshot({
         row: subscription,
+        grant,
         isAdmin: false,
         onboardingDone,
       }),

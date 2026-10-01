@@ -8,8 +8,7 @@
  *   1. 운영진 auth 이메일 (choijihoon / kimkoomin / kimyoonki @spokedu.com, ADMIN_EMAILS env)
  *   2. users.role = 'admin' | 'master'
  *   3. users.is_admin = true
- *   4. users.name이 ADMIN_NAMES에 포함
- *   5. profiles.role = 'admin' | 'master'  (fallback)
+ *   4. profiles.role = 'admin' | 'master'  (fallback)
  */
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -92,7 +91,7 @@ export async function isPlatformAdminUser(
 
     const usersPromise = serverSupabase
       .from('users')
-      .select('role, is_admin, name')
+      .select('role, is_admin')
       .eq('id', uid)
       .maybeSingle();
     const profilesPromise = serverSupabase
@@ -102,7 +101,7 @@ export async function isPlatformAdminUser(
       .maybeSingle();
 
     const { data: userRow } = await usersPromise;
-    const u = userRow as { role?: string; is_admin?: boolean; name?: string } | null;
+    const u = userRow as { role?: string; is_admin?: boolean } | null;
 
     if (isPlatformAdminFromUserRow(u)) {
       adminDecisionCache.set(uid, { isAdmin: true, expiresAt: now + ADMIN_AUTH_CACHE_TTL_MS });

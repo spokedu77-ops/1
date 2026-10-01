@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Toaster } from 'sonner';
 import Sidebar from './components/Sidebar';
 import { installChunkLoadRecovery } from '@/app/lib/client/chunkLoadRecovery';
+import { subscribeToLogoutFromOtherTabs } from '@/app/lib/auth/logoutSession';
 import {
   enforceSessionOnlyPolicy,
   registerEphemeralBrowserSession,
@@ -52,7 +53,12 @@ function RootLayoutShell({ children }: { children: ReactNode }) {
     void enforceSessionOnlyPolicy(() => supabase.auth.signOut({ scope: 'local' })).then((signedOut) => {
       if (signedOut) reportLoginUxEvent('ephemeral_session_cleared');
     });
-    return registerEphemeralBrowserSession();
+    const releaseTab = registerEphemeralBrowserSession();
+    const unsubscribeLogout = subscribeToLogoutFromOtherTabs();
+    return () => {
+      releaseTab();
+      unsubscribeLogout();
+    };
   }, []);
 
   useEffect(() => {

@@ -10,7 +10,7 @@ export const SPOMOVE_EMAIL = 'spomove@spokedu.com';
 
 /**
  * 환경변수 ADMIN_EMAILS 기반 어드민 이메일 목록.
- * 쉼표로 구분한 이메일 문자열. 설정 없으면 빈 배열 (ADMIN_NAMES fallback 사용).
+ * 쉼표로 구분한 이메일 문자열. 설정 없으면 빈 배열.
  * 예: ADMIN_EMAILS="a@example.com,b@example.com"
  */
 export function getAdminEmails(): string[] {

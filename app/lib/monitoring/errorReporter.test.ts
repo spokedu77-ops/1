@@ -4,6 +4,7 @@ import { reportError } from './errorReporter';
 describe('reportError', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
     delete process.env.SPOKEDU_MONITORING_WEBHOOK_URL;
   });
 
@@ -11,6 +12,14 @@ describe('reportError', () => {
     await expect(reportError(new Error('private memo text'), {
       context: 'spokedu_master.client',
     })).resolves.toBeUndefined();
+  });
+
+  it('falls back to sanitized console error in production when webhook env is missing', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await reportError(new Error('private payment secret'), { context: 'spokedu_master.payment' });
+    expect(consoleError).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain('private payment secret');
   });
 
   it('sends sanitized tags without secrets or raw error messages', async () => {
@@ -32,6 +41,7 @@ describe('reportError', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
     const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
 
     expect(body).toMatchObject({

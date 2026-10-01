@@ -1,6 +1,7 @@
 import { createSpokeduMasterOrderId, type SpokeduMasterPaidPlan } from './spokeduMasterPayment';
 
 const TOSS_API_BASE = 'https://api.tosspayments.com/v1';
+export const TOSS_FETCH_TIMEOUT_MS = 8_000;
 
 export type TossBillingIssueResult = {
   billingKey: string;
@@ -14,10 +15,14 @@ export type TossBillingPaymentResult = {
   approvedAt: string | null;
 };
 
-function getTossSecretKey(): string | null {
+export function getTossSecretKey(): string | null {
   const secretKey = process.env.TOSS_SECRET_KEY?.trim();
   if (!secretKey) return null;
-  if (!secretKey.startsWith('test_') && !secretKey.startsWith('live_')) return null;
+  if (process.env.NODE_ENV === 'production') {
+    if (!secretKey.startsWith('live_')) return null;
+  } else if (!secretKey.startsWith('test_') && !secretKey.startsWith('live_')) {
+    return null;
+  }
   return secretKey;
 }
 
@@ -59,6 +64,7 @@ export async function issueSpokeduMasterBillingKey(input: {
       customerKey: input.customerKey,
     }),
     cache: 'no-store',
+    signal: AbortSignal.timeout(TOSS_FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) return null;
@@ -97,6 +103,7 @@ export async function paySpokeduMasterBillingKey(input: {
       taxFreeAmount: 0,
     }),
     cache: 'no-store',
+    signal: AbortSignal.timeout(TOSS_FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) return null;
@@ -130,6 +137,7 @@ export async function findSpokeduMasterPaymentByOrderId(input: {
         Authorization: tossAuthorization(secretKey),
       },
       cache: 'no-store',
+      signal: AbortSignal.timeout(TOSS_FETCH_TIMEOUT_MS),
     },
   );
 

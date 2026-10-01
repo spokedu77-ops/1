@@ -242,3 +242,13 @@ Changing a protected invariant requires this order:
 The prohibited order is implementation change, test accommodation, then retrospective contract editing. The required order is **PRODUCT DECISION → CONTRACT → IMPLEMENTATION → TEST**.
 
 Regression coverage must reject at least these failures: `run-next-activity` resolving to no action; a started scheduled Session displaying **예정**; previous Sessions collapsing to one per Class; source roster or attendance cloning; copied activities retaining `isCompleted = true`; missing carryover intent falling back to the fresh RPC; and recurrence UI reappearing without a Product Decision.
+
+## 24. Commercial Access Hardening Decision
+
+- Billing subscriptions describe only real paid Toss billing state. Promotional access must never create fake subscriptions, billing keys, payment orders, payment successes, renewal schedules, or automatic charges.
+- Promotional entitlement is stored as a separate, auditable grant owned by the verified `user_id`. Unregistered recipients receive a revocable invite whose one-time token is stored only as a hash; redemption occurs only after account and email verification.
+- A one-month event grant means 30 days from activation/redeem time. Timestamps are stored in UTC and rendered in the user's display timezone.
+- Effective access is the highest currently valid entitlement across paid billing and active promotional grants: Free < Lite < Premium. Expiry or revocation of a grant reveals the still-valid paid entitlement; it never modifies or deletes billing state or user data.
+- Promotion-only users must see promotion wording and an end date. Billing-only controls such as next payment, automatic billing cancellation, or billing failure must not be shown without a real billing subscription.
+- Server capability checks and owner scoping remain authoritative. Client plan values and hidden navigation are never authorization sources.
+- Production accepts only Toss `live_*` server and client keys. QA authentication bypasses and display-name-based administrator authorization are prohibited in product runtime.

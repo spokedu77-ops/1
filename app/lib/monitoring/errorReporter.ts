@@ -9,6 +9,8 @@ type ReportErrorInput = {
   tags?: ErrorReportTags;
 };
 
+const MONITORING_TIMEOUT_MS = 5_000;
+
 const SENSITIVE_KEY_PATTERN =
   /(password|passwd|token|secret|service.*role|cookie|authorization|auth|body|payload|memo|student|explanation|text|email|paymentkey|orderid|key)/i;
 
@@ -64,18 +66,28 @@ export async function reportError(error: unknown, input: ReportErrorInput): Prom
 
   const webhookUrl = process.env.SPOKEDU_MONITORING_WEBHOOK_URL?.trim();
   if (!webhookUrl) {
-    devLogger.error('[monitoring]', payload);
+    if (process.env.NODE_ENV === 'production') console.error('[monitoring]', payload);
+    else devLogger.error('[monitoring]', payload);
     return;
   }
 
   try {
-    await fetch(webhookUrl, {
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       cache: 'no-store',
+      signal: AbortSignal.timeout(MONITORING_TIMEOUT_MS),
     });
+    if (!response.ok) throw new Error(`Monitoring webhook HTTP ${response.status}`);
   } catch (reporterError) {
-    devLogger.error('[monitoring] reporter failed', reporterError);
+    const reporterPayload = {
+      service: payload.service,
+      context: payload.context,
+      errorName: errorName(reporterError),
+      errorHash: errorFingerprint(reporterError),
+    };
+    if (process.env.NODE_ENV === 'production') console.error('[monitoring] reporter failed', reporterPayload);
+    else devLogger.error('[monitoring] reporter failed', reporterPayload);
   }
 }

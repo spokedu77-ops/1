@@ -10,6 +10,10 @@ import {
   parseSpokeduMasterOrderId,
 } from '@/app/lib/server/spokeduMasterPayment';
 import { applySpokeduMasterPayment } from '@/app/lib/server/spokeduMasterPaymentApply';
+import {
+  getTossSecretKey,
+  TOSS_FETCH_TIMEOUT_MS,
+} from '@/app/lib/server/spokeduMasterBillingProvider';
 
 type TossWebhookPayload = {
   eventType?: unknown;
@@ -77,8 +81,8 @@ async function verifyTossPayment(
   expected: TossPaymentLike,
   options: { expectedStatus?: string | null } = {},
 ): Promise<VerifiedTossPayment | null> {
-  const tossSecretKey = process.env.TOSS_SECRET_KEY?.trim();
-  if (!tossSecretKey || (!tossSecretKey.startsWith('test_') && !tossSecretKey.startsWith('live_'))) {
+  const tossSecretKey = getTossSecretKey();
+  if (!tossSecretKey) {
     throw new Error('TOSS_SECRET_KEY_NOT_CONFIGURED');
   }
 
@@ -88,6 +92,7 @@ async function verifyTossPayment(
       headers: {
         Authorization: buildTossAuthorization(tossSecretKey),
       },
+      signal: AbortSignal.timeout(TOSS_FETCH_TIMEOUT_MS),
     },
   );
 

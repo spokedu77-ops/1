@@ -61,6 +61,8 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(issueRoute).toContain('planId?: string');
     expect(issueRoute).toContain('const requestedPlan = body.planId ?? body.plan');
     expect(issueRoute).toContain('body.amount !== undefined && body.amount !== amount');
+    expect(success).toContain('scrubPaymentSecretsFromBrowserUrl');
+    expect(success).toContain("['authKey', 'customerKey', 'paymentKey']");
   });
 
   it('cleans pending keys only before a failed charge and preserves them after charge success', () => {

@@ -1,12 +1,9 @@
 'use client';
 
-import { toast } from 'sonner';
-
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Home, BookOpen, Calendar, Package, MoreHorizontal, Receipt, X, LogOut, Zap } from 'lucide-react';
-import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { clearLoginSessionMarkers } from '@/app/lib/auth/sessionPersistence';
+import { logoutCurrentSession } from '@/app/lib/auth/logoutSession';
 import { isTeacherMaterialsGatedPath } from '@/app/lib/teacher/teacherMaterialsPaths';
 import { useTeacherMaterialsAccess } from '@/app/hooks/useTeacherMaterialsAccess';
 import TeacherMaterialsDenied from '@/app/components/teacher/TeacherMaterialsDenied';
@@ -34,14 +31,8 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   // 로그아웃 핸들러 (쿠키 기반 세션 사용 → PWA/웹 동일 동작)
   const handleLogout = async () => {
     if (!confirm('로그아웃 하시겠습니까?')) return;
-    const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
-    clearLoginSessionMarkers();
-    if (error) {
-      toast.error('로그아웃 중 오류가 발생했습니다.');
-    } else {
-      router.replace('/login');
-    }
+    await logoutCurrentSession();
+    window.location.replace('/login');
   };
 
   const moreMenus = [

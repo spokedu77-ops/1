@@ -26,11 +26,11 @@ describe('SPOKEDU MASTER proxy/access authority contract', () => {
     expect(proxySource).toContain('MASTER entitlement is intentionally not evaluated in proxy');
   });
 
-  it('keeps the QA auth bypass double-gated by env and cookie', () => {
-    expect(proxySource).toContain('canBypassSpokeduMasterAuthForQa');
-    expect(proxySource).toContain("process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH === '1'");
-    expect(proxySource).toContain("request.cookies.get('spm-qa-auth-bypass')?.value === '1'");
-    expect(proxySource).toContain('isSpokeduMasterProtectedPath(pathname) && !canBypassSpokeduMasterAuthForQa(request)');
+  it('has no runtime QA authentication bypass', () => {
+    expect(proxySource).not.toContain('canBypassSpokeduMasterAuthForQa');
+    expect(proxySource).not.toContain('SPOKEDU_MASTER_QA_BYPASS_AUTH');
+    expect(proxySource).not.toContain('spm-qa-auth-bypass');
+    expect(proxySource).toContain('if (isSpokeduMasterProtectedPath(pathname))');
   });
 
   it('publishes only static MASTER public assets, not authenticated app routes', () => {

@@ -23,6 +23,7 @@ import {
 } from '../profile/subscriptionSummary';
 import { buildMasterGateDisplayModel, readMasterGateContextFromSearchParams, type MasterGateContext } from '../lib/masterGateIntent';
 import { buildMasterLoginHref } from '../lib/masterLoginReturn';
+import { isTossClientKeyAllowed } from './tossClientKey';
 
 declare global {
   interface Window {
@@ -262,7 +263,7 @@ function PaymentContent() {
     }
 
     const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
-    if (!clientKey || !window.TossPayments) {
+    if (!isTossClientKeyAllowed(clientKey) || !window.TossPayments) {
       setError('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
       return;
     }

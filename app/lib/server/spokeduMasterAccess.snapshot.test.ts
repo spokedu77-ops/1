@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSpokeduMasterAccessSnapshot, type SpokeduMasterSubscriptionRow } from './spokeduMasterAccess';
+import { buildSpokeduMasterAccessSnapshot, type SpokeduMasterEntitlementGrantRow, type SpokeduMasterSubscriptionRow } from './spokeduMasterAccess';
 
 function row(overrides: Partial<SpokeduMasterSubscriptionRow>): SpokeduMasterSubscriptionRow {
   return {
@@ -11,6 +11,19 @@ function row(overrides: Partial<SpokeduMasterSubscriptionRow>): SpokeduMasterSub
     cancel_at_period_end: false,
     next_billing_at: null,
     current_period_end: null,
+    ...overrides,
+  };
+}
+
+function grant(overrides: Partial<SpokeduMasterEntitlementGrantRow> = {}): SpokeduMasterEntitlementGrantRow {
+  return {
+    id: 'grant-1',
+    plan: 'premium',
+    source: 'event',
+    campaign_id: 'launch-2026',
+    starts_at: '2020-01-01T00:00:00.000Z',
+    ends_at: '2099-01-01T00:00:00.000Z',
+    activated_at: '2020-01-01T00:00:00.000Z',
     ...overrides,
   };
 }
@@ -58,6 +71,32 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       }),
       isAdmin: false,
     }).canUseSpomove).toBe(true);
+  });
+
+  it('uses a premium promotion without a billing subscription', () => {
+    expect(buildSpokeduMasterAccessSnapshot({ row: null, grant: grant(), isAdmin: false })).toMatchObject({
+      plan: 'premium',
+      subscriptionStatus: 'active',
+      entitlementSource: 'promotion',
+      promotionalPlan: 'premium',
+      canUseAttendance: true,
+      canUseRecords: true,
+      canUseSpomove: true,
+    });
+  });
+
+  it('temporarily elevates paid lite to premium and returns to lite after grant expiry', () => {
+    const lite = row({ plan: 'lite', status: 'active', period_end: '2099-01-01T00:00:00.000Z' });
+    expect(buildSpokeduMasterAccessSnapshot({ row: lite, grant: grant(), isAdmin: false })).toMatchObject({
+      plan: 'premium', entitlementSource: 'promotion', canUseSpomove: true,
+    });
+    expect(buildSpokeduMasterAccessSnapshot({
+      row: lite,
+      grant: grant({ ends_at: '2020-01-02T00:00:00.000Z' }),
+      isAdmin: false,
+    })).toMatchObject({
+      plan: 'lite', entitlementSource: 'billing', canUseAttendance: true, canUseRecords: false, canUseSpomove: false,
+    });
   });
 
   it('keeps cancel-at-period-end access until the period ends', () => {

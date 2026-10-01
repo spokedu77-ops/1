@@ -2,41 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import {
+  clearAdminCheckCache,
+  readAdminCheckMemoryCache,
+  readAdminCheckStorageCache,
+  writeAdminCheckCache,
+} from '@/app/lib/auth/adminCheckCache';
 
-const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
-let cache: { admin: boolean; ts: number; scope: 'admin' | 'spomove' } | null = null;
-const STORAGE_KEY = 'admin_check_cache_v1';
 
 type AdminCheckResponse = {
   admin?: boolean;
   reason?: 'no-session' | 'forbidden' | 'server-error';
   scope?: 'admin' | 'spomove';
 };
-
-function readStorageCache(): { admin: boolean; ts: number; scope: 'admin' | 'spomove' } | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { admin?: unknown; ts?: unknown; scope?: unknown };
-    if (typeof parsed?.admin !== 'boolean') return null;
-    if (typeof parsed?.ts !== 'number') return null;
-    if (parsed.scope !== 'admin' && parsed.scope !== 'spomove') return null;
-    return { admin: parsed.admin, ts: parsed.ts, scope: parsed.scope };
-  } catch {
-    return null;
-  }
-}
-
-function writeStorageCache(next: { admin: boolean; ts: number; scope: 'admin' | 'spomove' }) {
-  if (typeof window === 'undefined') return;
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // sessionStorage can be blocked in private browsing or strict browser modes.
-  }
-}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -61,8 +40,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const check = async () => {
       const now = Date.now();
-      const mem = cache;
-      if (mem?.admin && now - mem.ts < CACHE_TTL) {
+      const mem = readAdminCheckMemoryCache(now);
+      if (mem) {
         if (mem.scope === 'spomove' && pathname !== '/admin/spomove/training') {
           router.replace('/admin/spomove/training');
           return;
@@ -71,13 +50,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setScopeChecked(true);
         return;
       }
-      const stored = readStorageCache();
-      if (stored?.admin && now - stored.ts < CACHE_TTL) {
+      const stored = readAdminCheckStorageCache(now);
+      if (stored) {
         if (stored.scope === 'spomove' && pathname !== '/admin/spomove/training') {
           router.replace('/admin/spomove/training');
           return;
         }
-        cache = stored;
         setIsAdmin(true);
         setScopeChecked(true);
         return;
@@ -103,19 +81,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           router.replace('/admin/spomove/training');
           return;
         }
-        cache = { admin: true, ts: Date.now(), scope: json.scope ?? 'admin' };
-        writeStorageCache(cache);
+        writeAdminCheckCache({ admin: true, ts: Date.now(), scope: json.scope ?? 'admin' });
         setIsAdmin(true);
         setScopeChecked(true);
         return;
       }
 
-      try {
-        sessionStorage.removeItem(STORAGE_KEY);
-      } catch {
-        /* ignore */
-      }
-      cache = null;
+      clearAdminCheckCache();
 
       if (json.reason === 'no-session') {
         router.replace('/login');

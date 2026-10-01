@@ -3,38 +3,13 @@ import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminA
 import { privateNoStoreJson } from '@/app/lib/server/privateNoStore';
 import {
   ensureSpokeduMasterEntitlement,
-  evaluateSpokeduMasterEntitlement,
+  evaluateSpokeduMasterEffectiveEntitlement,
+  getActiveSpokeduMasterEntitlementGrant,
 } from '@/app/lib/server/spokeduMasterAccess';
+import { hasSpokeduMasterBillingRenewalFailure } from '@/app/lib/server/spokeduMasterRenewalState';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-async function hasUnresolvedRenewalFailure(userId: string): Promise<boolean> {
-  const service = getServiceSupabase();
-  const { data: failed } = await service
-    .from('spokedu_master_payment_orders')
-    .select('updated_at')
-    .eq('user_id', userId)
-    .eq('status', 'failed')
-    .eq('last_error_code', 'renewal_payment_failed')
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!failed?.updated_at) return false;
-
-  const { data: succeeded } = await service
-    .from('spokedu_master_payment_orders')
-    .select('updated_at')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!succeeded?.updated_at) return true;
-  return new Date(failed.updated_at).getTime() > new Date(succeeded.updated_at).getTime();
-}
 
 export async function GET() {
   const supabase = await createServerSupabaseClient();
@@ -67,18 +42,19 @@ export async function GET() {
     });
   }
 
-  const { row, error } = await ensureSpokeduMasterEntitlement(
-    getServiceSupabase(),
-    user.id,
-  );
-  if (error) {
+  const service = getServiceSupabase();
+  const [{ row, error }, { row: grant, error: grantError }] = await Promise.all([
+    ensureSpokeduMasterEntitlement(service, user.id),
+    getActiveSpokeduMasterEntitlementGrant(service, user.id),
+  ]);
+  if (error || grantError) {
     return privateNoStoreJson(
       { error: 'Subscription lookup failed' },
       { status: 500 },
     );
   }
 
-  if (!row) {
+  if (!row && !grant) {
     return privateNoStoreJson({
       plan: 'free',
       status: 'none',
@@ -93,31 +69,38 @@ export async function GET() {
     });
   }
 
-  const canCancelAutoBilling =
-    row.status === 'active' &&
+  const entitlement = evaluateSpokeduMasterEffectiveEntitlement(row, grant);
+  const promotionActive = entitlement.source === 'promotion';
+  const canCancelAutoBilling = Boolean(
+    !promotionActive &&
+    row?.status === 'active' &&
     (row.plan === 'lite' || row.plan === 'premium' || row.plan === 'pro') &&
     row.cancel_at_period_end !== true &&
-    Boolean(row.provider_billing_key_secret_id);
+    row.provider_billing_key_secret_id,
+  );
 
-  const billingRenewalFailed = canCancelAutoBilling
-    ? await hasUnresolvedRenewalFailure(user.id)
-    : false;
+  const billingRenewalFailed = hasSpokeduMasterBillingRenewalFailure(row, promotionActive);
 
   const common = {
     isAdmin: false,
     userId: user.id,
     email: user.email ?? null,
-    trialStartedAt: row.trial_started_at,
-    trialEndsAt: row.trial_ends_at,
-    periodEnd: row.period_end,
-    cancelAtPeriodEnd: row.cancel_at_period_end ?? false,
-    nextBillingAt: row.next_billing_at ?? null,
-    currentPeriodEnd: row.current_period_end ?? null,
+    trialStartedAt: row?.trial_started_at ?? null,
+    trialEndsAt: row?.trial_ends_at ?? null,
+    periodEnd: row?.period_end ?? null,
+    cancelAtPeriodEnd: row?.cancel_at_period_end ?? false,
+    nextBillingAt: promotionActive ? null : row?.next_billing_at ?? null,
+    currentPeriodEnd: promotionActive ? grant?.ends_at ?? null : row?.current_period_end ?? null,
     canCancelAutoBilling,
     billingRenewalFailed,
+    renewalRetryCount: row?.renewal_retry_count ?? 0,
+    lastBillingError: row?.last_billing_error ?? null,
+    nextRetryAt: row?.next_retry_at ?? null,
+    entitlementSource: entitlement.source,
+    promotionalPlan: grant?.plan ?? null,
+    promotionalEndsAt: grant?.ends_at ?? null,
+    campaignId: grant?.campaign_id ?? null,
   };
-
-  const entitlement = evaluateSpokeduMasterEntitlement(row);
 
   if (entitlement.allowed && entitlement.status === 'active') {
     return privateNoStoreJson({

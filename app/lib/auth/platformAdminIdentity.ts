@@ -1,4 +1,4 @@
-import { ADMIN_NAMES, MASTER_EMAIL, SPOMOVE_EMAIL, ROLES, getAdminEmails } from '@/app/lib/constants/admin';
+import { MASTER_EMAIL, SPOMOVE_EMAIL, ROLES, getAdminEmails } from '@/app/lib/constants/admin';
 
 /** 로그인 alias와 동일 — 플랫폼 운영진 3인 auth 이메일 */
 export const PLATFORM_ADMIN_EMAILS = [
@@ -25,15 +25,12 @@ function isAdminRole(role: unknown): boolean {
 export type PlatformAdminUserRow = {
   role?: string | null;
   is_admin?: boolean | null;
-  name?: string | null;
 };
 
 export function isPlatformAdminFromUserRow(row: PlatformAdminUserRow | null | undefined): boolean {
   if (!row) return false;
   if (isAdminRole(row.role)) return true;
-  if (row.is_admin === true) return true;
-  const name = typeof row.name === 'string' ? row.name.trim() : '';
-  return name.length > 0 && (ADMIN_NAMES as readonly string[]).includes(name);
+  return row.is_admin === true;
 }
 
 export function isPlatformAdminFromProfileRole(role: unknown): boolean {

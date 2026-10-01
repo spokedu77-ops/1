@@ -52,6 +52,17 @@ function isPaidPlanId(value: string | null): value is PaidPlanId {
   return value === 'lite' || value === 'premium';
 }
 
+function scrubPaymentSecretsFromBrowserUrl(): void {
+  const url = new URL(window.location.href);
+  let changed = false;
+  for (const key of ['authKey', 'customerKey', 'paymentKey']) {
+    if (!url.searchParams.has(key)) continue;
+    url.searchParams.delete(key);
+    changed = true;
+  }
+  if (changed) window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
 function formatDate(value: string | null | undefined) {
   if (!value) return '확인 중';
   const date = new Date(value);
@@ -160,6 +171,7 @@ function SuccessContent() {
   useEffect(() => {
     if (!hasValidParams || confirmationStarted.current || !isPaidPlanId(plan)) return;
     confirmationStarted.current = true;
+    scrubPaymentSecretsFromBrowserUrl();
 
     const issueBilling = async () => {
       try {

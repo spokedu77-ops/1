@@ -21,6 +21,9 @@ export type SubscriptionSummaryData = {
   canCancelAutoBilling: boolean;
   /** 최근 자동결제 갱신이 실패했고, 이후 성공 결제가 없을 때 */
   billingRenewalFailed?: boolean;
+  entitlementSource?: 'none' | 'billing' | 'promotion' | 'admin';
+  promotionalPlan?: 'lite' | 'premium' | null;
+  promotionalEndsAt?: string | null;
 };
 
 export type SubscriptionDisplayState =
@@ -120,6 +123,12 @@ export function normalizeSubscriptionSummary(value: unknown): SubscriptionSummar
     isAdmin: input.isAdmin === true,
     canCancelAutoBilling: input.canCancelAutoBilling === true,
     billingRenewalFailed: input.billingRenewalFailed === true,
+    entitlementSource:
+      input.entitlementSource === 'billing' || input.entitlementSource === 'promotion' || input.entitlementSource === 'admin'
+        ? input.entitlementSource
+        : 'none',
+    promotionalPlan: input.promotionalPlan === 'lite' || input.promotionalPlan === 'premium' ? input.promotionalPlan : null,
+    promotionalEndsAt: typeof input.promotionalEndsAt === 'string' ? input.promotionalEndsAt : null,
   };
 }
 
@@ -215,6 +224,27 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       isDirectBillingPlan: false,
       canCancel: false,
       canUseSpomatMemberPrice: false,
+      ...inactiveUpgradeFields(),
+    };
+  }
+
+  if (summary.entitlementSource === 'promotion' && summary.status === 'active') {
+    const promotionPlan = summary.promotionalPlan ?? (summary.plan === 'lite' ? 'lite' : 'premium');
+    return {
+      state: 'active',
+      planLabel: `이벤트 ${promotionPlan === 'premium' ? 'Premium' : 'Lite'} 이용권`,
+      statusLabel: '체험 이용 중',
+      primaryLabel: '구독 관리',
+      primaryHref: '/spokedu-master/subscription',
+      dateLabel: '이용 종료일',
+      dateText: formatSubscriptionEndDate(summary.promotionalEndsAt ?? null),
+      amountText: null,
+      description: '결제 없이 제공된 프로모션 이용권입니다. 종료 후에는 기존 유료 이용권 또는 Free 권한으로 돌아갑니다.',
+      valueWorkflow: getMasterPlanValueWorkflowLines(promotionPlan),
+      warningText: null,
+      isDirectBillingPlan: false,
+      canCancel: false,
+      canUseSpomatMemberPrice: promotionPlan === 'premium',
       ...inactiveUpgradeFields(),
     };
   }

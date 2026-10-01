@@ -8,15 +8,18 @@ import {
 } from './spokeduMasterBillingProvider';
 
 const originalSecret = process.env.TOSS_SECRET_KEY;
+const originalNodeEnv = process.env.NODE_ENV;
 
 afterEach(() => {
   if (originalSecret === undefined) delete process.env.TOSS_SECRET_KEY;
   else process.env.TOSS_SECRET_KEY = originalSecret;
+  vi.stubEnv('NODE_ENV', originalNodeEnv ?? 'test');
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('spokeduMasterBillingProvider', () => {
-  it('fails closed unless Toss secret starts with test_ or live_', () => {
+  it('allows test keys outside production and fails closed on them in production', () => {
     delete process.env.TOSS_SECRET_KEY;
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(false);
 
@@ -25,6 +28,9 @@ describe('spokeduMasterBillingProvider', () => {
 
     process.env.TOSS_SECRET_KEY = 'test_sk_demo';
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(true);
+
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isSpokeduMasterBillingProviderConfigured()).toBe(false);
 
     process.env.TOSS_SECRET_KEY = 'live_sk_demo';
     expect(isSpokeduMasterBillingProviderConfigured()).toBe(true);
@@ -48,6 +54,15 @@ describe('spokeduMasterBillingProvider', () => {
     process.env.TOSS_SECRET_KEY = 'test_sk_demo';
     vi.stubGlobal('fetch', vi.fn(async () => new Response('no', { status: 500 })));
     expect(await issueSpokeduMasterBillingKey({ authKey: 'a', customerKey: 'c' })).toBeNull();
+  });
+
+  it('adds an explicit timeout signal to Toss requests', async () => {
+    process.env.TOSS_SECRET_KEY = 'test_sk_demo';
+    const fetchMock = vi.fn(async () => new Response('no', { status: 500 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await issueSpokeduMasterBillingKey({ authKey: 'a', customerKey: 'c' });
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 
   it('rejects pay responses with amount/order mismatch', async () => {

@@ -59,10 +59,6 @@ function validatePhaseToken(request: NextRequest): NextResponse {
   return NextResponse.next();
 }
 
-function canBypassSpokeduMasterAuthForQa(request: NextRequest): boolean {
-  return process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH === '1' && request.cookies.get('spm-qa-auth-bypass')?.value === '1';
-}
-
 function redirectWithNext(
   request: NextRequest,
   targetPath: string,
@@ -127,7 +123,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // 보호 MASTER 경로만 Supabase 인증 (getUser 1회)
-  if (isSpokeduMasterProtectedPath(pathname) && !canBypassSpokeduMasterAuthForQa(request)) {
+  if (isSpokeduMasterProtectedPath(pathname)) {
     const response = NextResponse.next();
     const supabase = createSupabaseProxyClient(request, response);
     if (!supabase) return redirectWithNext(request, '/spokedu-master/login');

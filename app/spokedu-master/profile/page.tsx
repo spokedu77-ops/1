@@ -3,9 +3,7 @@
 import Link from 'next/link';
 import { ChevronRight, LogOut, Pencil, ShieldAlert } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { clearLoginSessionMarkers } from '@/app/lib/auth/sessionPersistence';
-import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { logoutCurrentSession } from '@/app/lib/auth/logoutSession';
 import { useSpomatShopAvailable } from '../access/MasterAccessProvider';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
@@ -116,7 +114,6 @@ function SpokeduMasterProfileContent() {
   const setProfile = useMasterStore((state) => state.setProfile);
   const resetProfile = useMasterStore((state) => state.resetProfile);
   const clearCurrentOwnerLocalData = useMasterStore((state) => state.clearCurrentOwnerLocalData);
-  const router = useRouter();
   const operationalData = useOperationalData();
   const explanationData = useExplanationData();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -150,7 +147,7 @@ function SpokeduMasterProfileContent() {
       .catch(() => setProfileSaveError('계정 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'))
       .finally(() => setProfileSaving(false));
   };
-  const handleLogout = async () => { setLoggingOut(true); try { await getSupabaseBrowserClient().auth.signOut({ scope: 'local' }); } finally { clearLoginSessionMarkers(); resetProfile(); router.replace('/spokedu-master/landing'); } };
+  const handleLogout = async () => { setLoggingOut(true); try { await logoutCurrentSession(); } finally { resetProfile(); window.location.replace('/spokedu-master/landing'); } };
   const handleDeleteMasterData = async () => {
     if (!canSubmitMasterDataDeletion(deleteConfirmation, deleteStatus)) return;
     setDeleteStatus('submitting'); setDeleteError('');

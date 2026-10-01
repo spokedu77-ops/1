@@ -23,7 +23,7 @@ async function checkAdminFromClientTables(
 
   const [{ data: profile }, { data: userRow }] = await Promise.all([
     supabase.from('profiles').select('role').eq('id', userId).maybeSingle(),
-    supabase.from('users').select('role, is_admin, name').eq('id', userId).maybeSingle(),
+    supabase.from('users').select('role, is_admin').eq('id', userId).maybeSingle(),
   ]);
 
   return isPlatformAdminIdentity(email, userRow, profile?.role);
