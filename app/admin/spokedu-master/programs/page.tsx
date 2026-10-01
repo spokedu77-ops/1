@@ -87,7 +87,7 @@ import { getPresetMovementSummary } from '@/app/spokedu-master/spomove/movements
 import { isHubListedPreset } from '@/app/spokedu-master/spomove/movements/isHubVisiblePreset';
 import { movementDisplayLabel } from '@/app/spokedu-master/spomove/movements/movementLabels';
 import { MOVEMENT_REGISTRY } from '@/app/spokedu-master/spomove/movements/movementRegistry';
-import type { BaseMovementId, LimbRule } from '@/app/spokedu-master/spomove/movements/movementTypes';
+import type { BaseMovementId } from '@/app/spokedu-master/spomove/movements/movementTypes';
 import {
   SPOMOVE_CORE_KEYWORD_AXIS,
   normalizeSpomoveCoreKeywordsList,
@@ -126,6 +126,12 @@ type FilterKey = 'all' | 'home-ready' | 'image-needed';
 type AdminTabKey = 'programs' | 'content-audit' | 'spomove-catalog' | 'spomove-content' | 'spomove-thumbnails' | 'spomove-guide-videos';
 
 type SpomoveGuideVideoDraft = Record<string, string>;
+
+const SPOMOVE_RECOMMENDED_MOVEMENT_IDS: BaseMovementId[] = [
+  'twoLegJump', 'splitLegJump', 'singleLegHop', 'lungeReach', 'squatTouch', 'quickStep',
+  'plankTouch', 'cooperativeJump', 'jumpAndClap', 'boundingStep', 'splitLegJumpAndClap',
+  'strike', 'limbReach', 'footTap', 'handFootTouch', 'stepHold', 'combined',
+];
 
 type CurriculumRow = {
   id: number;
@@ -732,6 +738,7 @@ function isBuiltInGuidePreset(preset: OfficialSpomovePreset) {
 }
 
 function resolvePresetGuideMovement(preset: OfficialSpomovePreset): SpomoveMovementGuideDraft['movement'] {
+  if (preset.id === 'dive-standard') return { baseMovement: 'combined', limbRule: 'free' };
   if (isBuiltInGuidePreset(preset)) return null;
   return getPresetMovementSummary(preset)?.officialRecommended ?? preset.recommendedMovement;
 }
@@ -1107,49 +1114,24 @@ function SpomoveEditModal({
               </div>
             </div>
             <div className="grid gap-3">
-              <div className="grid grid-cols-2 gap-2">
+              <div>
                 <label className="block text-[10px] font-black text-slate-400">
                   추천 동작
                   <select
-                    value={draft.movementGuide?.movement?.baseMovement ?? ''}
+                    value={draft.movementGuide?.movement?.baseMovement ?? (preset.id === 'dive-standard' ? 'combined' : '')}
                     onChange={(event) => {
                       const baseMovement = event.target.value as BaseMovementId | '';
                       if (!baseMovement) {
                         onUpdateMovementGuide({ movement: null });
                         return;
                       }
-                      const definition = MOVEMENT_REGISTRY[baseMovement];
-                      const currentRule = draft.movementGuide?.movement?.limbRule;
-                      const limbRule = currentRule && definition.supportedLimbRules.includes(currentRule)
-                        ? currentRule
-                        : definition.supportedLimbRules[0];
-                      onUpdateMovementGuide({ movement: { baseMovement, limbRule } });
+                      onUpdateMovementGuide({ movement: { baseMovement, limbRule: 'free' } });
                     }}
                     className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400"
                   >
-                    <option value="">화면 지시</option>
-                    {(Object.keys(MOVEMENT_REGISTRY) as BaseMovementId[]).map((movementId) => (
+                    <option value="" disabled>추천 동작 선택</option>
+                    {SPOMOVE_RECOMMENDED_MOVEMENT_IDS.map((movementId) => (
                       <option key={movementId} value={movementId}>{MOVEMENT_REGISTRY[movementId].label}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block text-[10px] font-black text-slate-400">
-                  좌우 규칙
-                  <select
-                    value={draft.movementGuide?.movement?.limbRule ?? 'free'}
-                    disabled={!draft.movementGuide?.movement}
-                    onChange={(event) => {
-                      const movement = draft.movementGuide?.movement;
-                      if (!movement) return;
-                      onUpdateMovementGuide({ movement: { ...movement, limbRule: event.target.value as LimbRule } });
-                    }}
-                    className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400"
-                  >
-                    {(draft.movementGuide?.movement
-                      ? MOVEMENT_REGISTRY[draft.movementGuide.movement.baseMovement].supportedLimbRules
-                      : ['free'] as LimbRule[]
-                    ).map((rule) => (
-                      <option key={rule} value={rule}>{rule === 'free' ? '자유' : rule === 'sameSide' ? '같은 쪽' : '교차'}</option>
                     ))}
                   </select>
                 </label>

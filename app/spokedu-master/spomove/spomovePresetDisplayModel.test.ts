@@ -185,6 +185,15 @@ describe('spomove preset display model', () => {
     expect('fallbackReference' in model).toBe(false);
   });
 
+  it('labels the action move recommendation as combined', () => {
+    const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === 'dive-standard');
+    expect(preset).toBeTruthy();
+
+    const model = buildSpomoveGuideDisplayModel({ preset: preset!, audience: 'public' });
+
+    expect(model.recommendedMovementLabel).toBe('종합');
+  });
+
   it('shows only legacy manual content publicly when structured guide is draft', () => {
     const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === 'reaction-cognition-space-direction-01');
     expect(preset).toBeTruthy();

@@ -9,6 +9,7 @@ type SpomovePadLayoutViewProps = {
 };
 
 export function SpomovePadLayoutView({
+  variant,
   compact = false,
   dark = false,
   flush = false,
@@ -21,6 +22,7 @@ export function SpomovePadLayoutView({
   const boardClass = compact
     ? 'w-[148px] [@media(max-height:950px)]:w-[112px]'
     : 'w-[200px] [@media(max-height:950px)]:w-[144px]';
+  const isCompass = variant === 'compass';
 
   return (
     <div className={frameClass ? `${frameClass} ${compact ? 'p-3 [@media(max-height:950px)]:py-2.5' : ''}` : undefined}>
@@ -33,15 +35,21 @@ export function SpomovePadLayoutView({
       <div className="mt-3 flex justify-center [@media(max-height:950px)]:mt-2">
         <div
           className={`relative aspect-square ${boardClass}`}
-          aria-label="SPOMAT 실물 매트 배치: 빨강 위, 초록 왼쪽, 노랑 오른쪽, 파랑 아래"
+          aria-label={isCompass
+            ? 'SPOMAT 네 장 다이아몬드 배치: 빨강 위, 초록 왼쪽, 노랑 오른쪽, 파랑 아래'
+            : 'SPOMAT 네 장 정사각형 배치: 위 빨강과 노랑, 아래 초록과 파랑'}
         >
           <Image
-            src="/images/spokedu/brand/spomat-diamond-cutout.png"
-            alt="배경이 제거된 빨강, 초록, 노랑, 파랑 SPOMAT 실물 매트"
+            src={isCompass
+              ? '/images/spokedu/brand/spomat-diamond-cutout.png'
+              : '/images/spokedu/brand/spomat-layout.png'}
+            alt={isCompass
+              ? '다이아몬드 형태로 놓인 빨강, 초록, 노랑, 파랑 SPOMAT 네 장 매트'
+              : '정사각형 2×2 형태로 놓인 빨강, 노랑, 초록, 파랑 SPOMAT 네 장 매트'}
             fill
             sizes={compact ? '148px' : '200px'}
             loading="eager"
-            className="object-contain"
+            className={isCompass ? 'object-contain' : 'object-cover'}
           />
         </div>
       </div>

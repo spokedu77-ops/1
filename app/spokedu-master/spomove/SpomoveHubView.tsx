@@ -698,7 +698,7 @@ function PresetCard({
           priority={priority}
           onImageError={() => setImageFailed(true)}
         />
-        <div className="w-full px-3.5 pb-3.5 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={[card.publicMeta.core, card.publicMeta.difficulty].filter(Boolean).join(' · ')}>
+        <div className="w-full px-3.5 pb-3.5 pr-14 pt-3" data-spm-spomove-card-body="true" data-spm-spomove-card-meta={[card.publicMeta.core, card.publicMeta.difficulty].filter(Boolean).join(' · ')}>
           <ContentCardMetaLine primary={card.publicMeta.core} secondary={card.publicMeta.difficulty} />
           <h3 className="mt-1 line-clamp-2 text-[17px] font-semibold leading-snug text-slate-950">{card.title}</h3>
         </div>
@@ -708,7 +708,7 @@ function PresetCard({
           href={startHref}
           data-spm-spomove-card-action="start"
           aria-label={`${card.title} 바로 시작`}
-          className="absolute bottom-0.5 right-1 z-10 grid h-11 w-11 place-items-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+          className="absolute bottom-1 right-1 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
         >
           <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100">
             <Play className="h-3.5 w-3.5 fill-current" aria-hidden />

@@ -8,7 +8,15 @@ export type BaseMovementId =
   | 'singleLegHop'
   | 'boundingStep'
   | 'plankTouch'
-  | 'quickStep';
+  | 'quickStep'
+  | 'splitLegJump'
+  | 'cooperativeJump'
+  | 'jumpAndClap'
+  | 'splitLegJumpAndClap'
+  | 'strike'
+  | 'limbReach'
+  | 'handFootTouch'
+  | 'combined';
 
 export type LimbRule = 'free' | 'sameSide' | 'oppositeSide';
 

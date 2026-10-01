@@ -357,16 +357,14 @@ function SpomoveCard({
             <SpomoveThumbnailPlaceholder />
           )}
         />
-        <div className="px-3.5 pb-0 pt-2.5">
+        <div className="px-3.5 pb-3.5 pr-14 pt-2.5">
           <ContentCardMetaLine primary={displayModel.typeLabel} secondary={displayModel.difficulty} className={MV_HOME_CARD_META} />
           <h3 className={`${MV_HOME_CARD_TITLE} mt-1 line-clamp-2 transition-colors duration-200 group-hover/preview:text-slate-700`}>{displayModel.title}</h3>
         </div>
       </button>
-      <div className="mt-auto flex min-h-11 items-center justify-end px-3.5">
-        <Link href={startHref} data-spm-spomove-card-action="start" aria-label={`${displayModel.title} 바로 시작`} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100"><Play className="h-3.5 w-3.5 fill-current" aria-hidden /></span>
-        </Link>
-      </div>
+      <Link href={startHref} data-spm-spomove-card-action="start" aria-label={`${displayModel.title} 바로 시작`} className="absolute bottom-1 right-1 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100"><Play className="h-3.5 w-3.5 fill-current" aria-hidden /></span>
+      </Link>
       <button type="button" onClick={onFavorite} disabled={!favoriteEnabled} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} className={`absolute right-2 top-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 ${favorite ? 'text-amber-500' : 'text-slate-500 hover:text-slate-900'}`}>
         <span className="grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-white/80"><Heart className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} aria-hidden /></span>
       </button>
@@ -433,14 +431,12 @@ function RecentLessonReuseCard({
 }) {
   const model = buildLessonDisplayModel(program);
   const recentHref = buildProgramResumeHref(activity.programId, activity.action);
-  const contextLine = activity.action === 'video_started' ? '놀이체육 · 영상 이어보기' : '놀이체육 · 수업 준비';
 
   return (
     <div data-dashboard-section="recent-lesson">
       <HomeContinueCard
         kicker="최근 활동"
         title={model.title}
-        meta={contextLine}
         actionLabel={activity.action === 'video_started' ? '이어 보기' : '다시 보기'}
         href={recentHref}
         media={(

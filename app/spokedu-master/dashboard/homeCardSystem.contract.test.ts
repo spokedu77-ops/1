@@ -192,6 +192,8 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).not.toContain("놀이체육이나 SPOMOVE를 열면 여기에 이어집니다");
     expect(dashboard).not.toContain("수업 일정을 만들면 여기에 이어집니다");
     expect(dashboard).not.toContain("meta={recentClassTool.description}");
+    expect(dashboard).not.toContain("놀이체육 · 수업 준비");
+    expect(dashboard).not.toContain("놀이체육 · 영상 이어보기");
   });
 
   it("uses one CTA system for all operational states", () => {
@@ -215,6 +217,11 @@ describe("MASTER Home content card system", () => {
   it("overlays Weekly play affordance inside the media stage", () => {
     expect(weeklyCard).toContain("absolute left-3 top-3");
     expect(weeklyCard).toContain("relative block w-full");
+  });
+
+  it("aligns SPOMOVE card actions to one compact bottom row", () => {
+    expect(dashboard).toContain('className="px-3.5 pb-3.5 pr-14 pt-2.5"');
+    expect(dashboard).toContain('className="absolute bottom-1 right-1 z-10 inline-flex h-11 w-11');
   });
 
   it("keeps urgent follow-up compact with a touch-safe action instead of rendering a Home hero", () => {

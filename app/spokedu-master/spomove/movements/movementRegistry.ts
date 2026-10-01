@@ -41,7 +41,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   },
   stepHold: {
     id: 'stepHold',
-    label: '밟고 정지',
+    label: '균형잡기',
     shortLabel: '밟고 정지',
     bodyFocus: 'balance',
     impactLevel: 'low',
@@ -60,7 +60,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   },
   squatTouch: {
     id: 'squatTouch',
-    label: '스쿼트 터치',
+    label: '쪼그려뛰기',
     shortLabel: '스쿼트',
     bodyFocus: 'wholeBody',
     impactLevel: 'medium',
@@ -77,7 +77,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   },
   lungeReach: {
     id: 'lungeReach',
-    label: '런지 리치',
+    label: '런지',
     shortLabel: '런지',
     bodyFocus: 'wholeBody',
     impactLevel: 'medium',
@@ -94,7 +94,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   },
   twoLegJump: {
     id: 'twoLegJump',
-    label: '양발 홉',
+    label: '두 발 점프',
     shortLabel: '양발 홉',
     bodyFocus: 'feet',
     impactLevel: 'high',
@@ -113,7 +113,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   },
   singleLegHop: {
     id: 'singleLegHop',
-    label: '한발 홉',
+    label: '한 발 점프',
     shortLabel: '한발 홉',
     bodyFocus: 'feet',
     impactLevel: 'medium',
@@ -131,7 +131,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   },
   boundingStep: {
     id: 'boundingStep',
-    label: '바운드 스텝',
+    label: '이동 & 점프',
     shortLabel: '바운드',
     bodyFocus: 'wholeBody',
     impactLevel: 'medium',
@@ -168,7 +168,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   },
   quickStep: {
     id: 'quickStep',
-    label: '빠른 스텝',
+    label: '하이피칭',
     shortLabel: '퀵스텝',
     bodyFocus: 'feet',
     impactLevel: 'medium',
@@ -183,6 +183,46 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
     teacherCue: '빠르게 스텝, 색 한 번.',
     easyVariation: '제자리 스텝 후 천천히 터치합니다.',
     safetyNote: '미끄럼과 과호흡에 주의합니다. 인터벌은 수업 운영 설정입니다.',
+  },
+  splitLegJump: {
+    id: 'splitLegJump', label: '두 발 따로 점프', shortLabel: '두 발 따로 점프', bodyFocus: 'feet', impactLevel: 'high', jumpFree: false,
+    minimumCueSeconds: 3, recommendedCueSeconds: 4, defaultStartPosition: 'onMat', defaultReturnRule: 'returnOutside', completionBehavior: 'briefContact', supportedLimbRules: ['free'],
+    instruction: '두 발을 서로 다른 위치로 벌려 점프합니다.', teacherCue: '두 발 따로 점프.', safetyNote: '착지 공간과 발목 상태를 확인합니다.',
+  },
+  cooperativeJump: {
+    id: 'cooperativeJump', label: '협동 점프', shortLabel: '협동 점프', bodyFocus: 'wholeBody', impactLevel: 'high', jumpFree: false,
+    minimumCueSeconds: 4, recommendedCueSeconds: 4, defaultStartPosition: 'onMat', defaultReturnRule: 'returnOutside', completionBehavior: 'briefContact', supportedLimbRules: ['free'],
+    instruction: '짝 또는 모둠과 타이밍을 맞춰 함께 점프합니다.', teacherCue: '함께 맞춰 점프.', safetyNote: '참여자 사이 간격을 확보합니다.',
+  },
+  jumpAndClap: {
+    id: 'jumpAndClap', label: '점프 & 박수', shortLabel: '점프 & 박수', bodyFocus: 'wholeBody', impactLevel: 'high', jumpFree: false,
+    minimumCueSeconds: 3, recommendedCueSeconds: 4, defaultStartPosition: 'onMat', defaultReturnRule: 'returnOutside', completionBehavior: 'completePose', supportedLimbRules: ['free'],
+    instruction: '점프와 박수를 한 동작으로 연결합니다.', teacherCue: '점프하고 박수.', safetyNote: '안전하게 착지한 뒤 다음 동작을 이어갑니다.',
+  },
+  splitLegJumpAndClap: {
+    id: 'splitLegJumpAndClap', label: '두 발 따로 점프 & 박수', shortLabel: '두 발 따로 점프 & 박수', bodyFocus: 'wholeBody', impactLevel: 'high', jumpFree: false,
+    minimumCueSeconds: 4, recommendedCueSeconds: 4, defaultStartPosition: 'onMat', defaultReturnRule: 'returnOutside', completionBehavior: 'completePose', supportedLimbRules: ['free'],
+    instruction: '두 발을 서로 다른 위치로 벌려 점프하며 박수칩니다.', teacherCue: '두 발 따로 점프하고 박수.', safetyNote: '착지 공간과 발목 상태를 확인합니다.',
+  },
+  strike: {
+    id: 'strike', label: '치기', shortLabel: '치기', bodyFocus: 'hands', impactLevel: 'low', jumpFree: true,
+    minimumCueSeconds: 2, recommendedCueSeconds: 3, defaultStartPosition: 'behindMat', defaultReturnRule: 'returnOutside', completionBehavior: 'briefContact', supportedLimbRules: ['free'],
+    instruction: '화면 신호에 맞춰 지정된 위치를 칩니다.', teacherCue: '신호를 보고 치기.', safetyNote: '손목에 과도한 힘을 주지 않습니다.',
+  },
+  limbReach: {
+    id: 'limbReach', label: '팔다리 뻗기', shortLabel: '팔다리 뻗기', bodyFocus: 'wholeBody', impactLevel: 'low', jumpFree: true,
+    minimumCueSeconds: 3, recommendedCueSeconds: 4, defaultStartPosition: 'behindMat', defaultReturnRule: 'holdOnTarget', completionBehavior: 'completePose', supportedLimbRules: ['free'],
+    instruction: '화면 신호에 맞춰 팔과 다리를 길게 뻗습니다.', teacherCue: '팔다리 길게 뻗기.', safetyNote: '관절을 과도하게 꺾지 않습니다.',
+  },
+  handFootTouch: {
+    id: 'handFootTouch', label: '손발 터치', shortLabel: '손발 터치', bodyFocus: 'wholeBody', impactLevel: 'medium', jumpFree: true,
+    minimumCueSeconds: 3, recommendedCueSeconds: 4, defaultStartPosition: 'behindMat', defaultReturnRule: 'returnOutside', completionBehavior: 'briefContact', supportedLimbRules: ['free'],
+    instruction: '화면 신호에 맞춰 손과 발로 지정된 위치를 터치합니다.', teacherCue: '손발로 터치.', safetyNote: '허리와 무릎에 무리가 가지 않게 범위를 조절합니다.',
+  },
+  combined: {
+    id: 'combined', label: '종합', shortLabel: '종합', bodyFocus: 'wholeBody', impactLevel: 'medium', jumpFree: false,
+    minimumCueSeconds: 3, recommendedCueSeconds: 4, defaultStartPosition: 'behindMat', defaultReturnRule: 'stayAndTransition', completionBehavior: 'completePose', supportedLimbRules: ['free'],
+    instruction: '화면이 안내하는 여러 동작을 순서에 맞춰 수행합니다.', teacherCue: '화면을 보고 다음 동작으로.', safetyNote: '동작별 안전 간격을 유지합니다.',
   },
 };
 

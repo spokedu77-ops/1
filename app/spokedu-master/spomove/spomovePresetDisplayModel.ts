@@ -739,8 +739,9 @@ export function buildSpomoveGuideDisplayModel({
             ? 'legacy'
             : 'preparing';
   const officialGuide = state.structured === 'publishedValid';
-  const movementLabel =
-    !officialGuide || !state.publishedGuide
+  const movementLabel = preset.id === 'dive-standard'
+    ? MOVEMENT_REGISTRY.combined.label
+    : !officialGuide || !state.publishedGuide
       ? null
       : state.publishedGuide.movement === null
         ? null
