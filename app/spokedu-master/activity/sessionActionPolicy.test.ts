@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { getSessionActionPolicy } from './sessionActionPolicy';
 
 describe('Session action policy', () => {
+  it('locks structural schedule changes after start while preserving RUN actions', () => {
+    expect(getSessionActionPolicy('scheduled', '2026-08-26T07:05:00.000Z')).toMatchObject({
+      editSchedule: false,
+      addActivities: false,
+      removeActivities: false,
+      reorderActivities: false,
+      editAttendance: true,
+      toggleActivityCompletion: true,
+      complete: true,
+    });
+  });
   it('allows the three supported corrections after completion', () => {
     const policy = getSessionActionPolicy('completed');
     expect(policy).toMatchObject({

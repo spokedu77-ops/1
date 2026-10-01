@@ -48,7 +48,7 @@ describe('SPOKEDU MASTER class and Session operating UX', () => {
   });
 
   it('keeps status visible while using explicit completion and cancellation actions', () => {
-    expect(activity).toContain('resolveSessionDisplayStatus(status, presentationKind)');
+    expect(activity).toContain('resolveSessionDisplayStatus({ status, startedAt: activeSession?.startedAt ?? null })');
     expect(activity).not.toContain('<option value="completed">');
     expect(activity).toContain('primarySurfaceIntent={presentation?.primarySurfaceIntent ?? null}');
     expect(activity).toContain("void persist('cancelled')");

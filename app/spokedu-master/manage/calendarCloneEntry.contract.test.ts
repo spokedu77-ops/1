@@ -8,8 +8,8 @@ const picker = read('app/spokedu-master/manage/PreviousSessionPickerSheet.tsx');
 const nextSheet = read('app/spokedu-master/manage/session-detail/NextSessionSheet.tsx');
 
 describe('calendar previous Session entry contract', () => {
-  it('places secondary clone and primary new Session actions with the selected day', () => {
-    expect(schedule).toContain('직전 수업으로 만들기');
+  it('places previous Session reuse and new Session actions with the selected day', () => {
+    expect(schedule).toContain('이전 수업 가져오기');
     expect(schedule).toContain('SPM_SECONDARY_BTN');
     expect(schedule).toContain('SPM_PRIMARY_BTN');
     expect(schedule).toContain('formatSeoulSessionDay(selectedDay');
@@ -17,12 +17,16 @@ describe('calendar previous Session entry contract', () => {
     expect(schedule).not.toContain('action={hasClasses ?');
   });
 
-  it('uses clean one-column navigation rows without copy controls', () => {
+  it('summarizes source activities before opening explicit copy controls', () => {
+    expect(picker).toContain('이전 수업 선택');
     expect(picker).toContain('divide-y divide-slate-100');
     expect(picker).toContain('group-hover:translate-x-1');
     expect(picker).toContain('duration-200');
     expect(picker).not.toContain('shadow');
     expect(picker).not.toContain('copyPrograms');
+    expect(picker).toContain('놀이체육');
+    expect(picker).toContain('SPOMOVE');
+    expect(picker).toContain('등록된 활동 없음');
   });
 
   it('passes the selected calendar day into the existing create-next sheet', () => {
@@ -30,6 +34,9 @@ describe('calendar previous Session entry contract', () => {
     expect(manage).toContain('<NextSessionSheet');
     expect(nextSheet).toContain('initialTargetDay ?? addSeoulSessionDays');
     expect(nextSheet).toContain('data.createNextSession');
+    expect(nextSheet).toContain('활동 없이 만들기');
+    expect(nextSheet).toContain('모든 활동 가져오기');
+    expect(nextSheet).toContain('가져올 활동 선택');
     expect(manage).toContain('openCreatedSession(created)');
   });
 });

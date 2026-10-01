@@ -36,7 +36,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(calendar).toContain('완료</span>');
     expect(calendar).toContain('취소</span>');
     expect(schedule).toContain('canClonePrevious ?');
-    expect(schedule).toContain('직전 수업으로 만들기');
+    expect(schedule).toContain('이전 수업 가져오기');
     expect(schedule).toContain('onClonePrevious');
     expect(manage).toContain('<MasterPageHeader title="수업 관리" />');
     expect(manage).not.toContain('MasterPageHeader title="수업 관리" action=');
@@ -63,7 +63,8 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(detail).toContain('resolveSessionWorkspacePresentation');
     expect(detail).not.toContain('PreviousActivityCarryover');
     expect(detail).not.toContain('NextSessionPlanner');
-    expect(detail).toContain('data.startSession(draft.activeSession.id)');
+    expect(detail).toContain('executeSessionStartSequence');
+    expect(detail).toContain('data.startSession((saved ?? draft.activeSession!).id)');
     expect(detail).toContain('MoreHorizontal');
     expect(detail).toContain('aria-label="수업 관리 메뉴"');
     expect(detail).not.toContain('수업 관리 <ChevronDown');

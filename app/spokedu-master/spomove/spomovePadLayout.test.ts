@@ -6,20 +6,21 @@ import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
 import { getSpomovePadLayoutVariant } from './spomovePadLayout';
 
 describe('spomove pad layout variant', () => {
-  it('uses compass layout only for arrow programs and dive presets', () => {
+  it('uses compass layout only for arrow programs and action move', () => {
     const reactionOne = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'reaction-cognition-space-direction-01');
     const simonArrow = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'simon-pole-arrows-41');
-    const divePresets = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === 'dive');
+    const actionMove = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'dive-standard');
+    const motionGate = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'dive-color-gate-61');
 
     expect(reactionOne).toBeTruthy();
     expect(simonArrow).toBeTruthy();
-    expect(divePresets.length).toBeGreaterThan(0);
+    expect(actionMove).toBeTruthy();
+    expect(motionGate).toBeTruthy();
 
     expect(getSpomovePadLayoutVariant(reactionOne!)).toBe('compass');
     expect(getSpomovePadLayoutVariant(simonArrow!)).toBe('compass');
-    for (const preset of divePresets) {
-      expect(getSpomovePadLayoutVariant(preset)).toBe('compass');
-    }
+    expect(getSpomovePadLayoutVariant(actionMove!)).toBe('compass');
+    expect(getSpomovePadLayoutVariant(motionGate!)).toBe('grid2x2');
   });
 
   it('keeps grid2x2 as the default for other presets', () => {

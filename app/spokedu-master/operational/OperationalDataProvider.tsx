@@ -32,7 +32,7 @@ type OperationalDataContextValue = {
   completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<MasterSessionDto>;
   saveParentNotice: (sessionId: string, parentNotice: string) => Promise<void>;
   deleteCancelledSession: (sessionId: string) => Promise<void>;
-  createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string }) => Promise<MasterSessionDto>;
+  createNextSession: (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms?: boolean; sourceSessionProgramIds?: string[] }) => Promise<MasterSessionDto>;
   carryoverSessionPrograms: (targetSessionId: string, sourceSessionId: string, sourceSessionProgramIds: string[]) => Promise<MasterSessionDto['programs']>;
   addSessionProgram: (sessionId: string, programId: number) => Promise<MasterSessionDto['programs'][number]>;
   addSessionSpomove: (sessionId: string, spomovePresetId: string) => Promise<MasterSessionDto['programs'][number]>;
@@ -225,7 +225,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     setSessions((current) => current.filter((session) => session.id !== sessionId));
   }, []);
 
-  const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string }) => {
+  const createNextSession = useCallback(async (sourceSessionId: string, input: { startAt: string; endAt: string; copyPrograms?: boolean; sourceSessionProgramIds?: string[] }) => {
     const json = await masterFetchJson<{ data: MasterSessionDto }>(`/api/spokedu-master/sessions/${sourceSessionId}/next`, {
       body: JSON.stringify(input),
       method: 'POST',

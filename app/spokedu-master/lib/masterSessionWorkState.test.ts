@@ -19,19 +19,27 @@ describe('MASTER Session WorkState SSOT', () => {
     [1, 3, 'in-progress', 'continue-session'],
     [3, 3, 'ready-to-wrap', 'wrap-session'],
   ] as const)('derives %s/%s as %s', (done, total, stage, intent) => {
-    const state = deriveMasterSessionWorkState(makeSession({ id: stage, programs: programs(done, total) }), classItem, now);
+    const state = deriveMasterSessionWorkState(makeSession({ id: stage, startedAt: done > 0 ? '2026-08-26T07:05:00.000Z' : null, programs: programs(done, total) }), classItem, now);
     expect(state.stage).toBe(stage);
     expect(state.primaryIntent).toBe(intent);
   });
 
   it('keeps an overdue scheduled Session actionable without completing it', () => {
-    const session = makeSession({ id: 'overdue', startAt: '2026-08-24T07:00:00.000Z', endAt: '2026-08-24T08:00:00.000Z', programs: programs(1, 3) });
+    const session = makeSession({ id: 'overdue', startAt: '2026-08-24T07:00:00.000Z', startedAt: '2026-08-24T07:05:00.000Z', endAt: '2026-08-24T08:00:00.000Z', programs: programs(1, 3) });
     const state = deriveMasterSessionWorkState(session, classItem, now);
     expect(state.lifecycle).toBe('scheduled');
     expect(state.stage).toBe('in-progress');
     expect(state.timeRelation).toBe('overdue');
     expect(state.primaryLabel).toBe('수업 상태 확인');
     expect(buildMasterWorkQueue({ sessions: [session], classes: [classItem], now })).toHaveLength(1);
+  });
+
+  it('does not infer RUN from activity completion without startedAt', () => {
+    expect(deriveMasterSessionWorkState(makeSession({ id: 'legacy-check', programs: programs(1, 3) }), classItem, now).stage).toBe('ready');
+  });
+
+  it('keeps a started Session in RUN even before any activity is completed', () => {
+    expect(deriveMasterSessionWorkState(makeSession({ id: 'started', startedAt: '2026-08-26T07:05:00.000Z', programs: programs(0, 3) }), classItem, now).stage).toBe('in-progress');
   });
 
   it('uses only the established completed attendance-empty semantics', () => {

@@ -4,7 +4,7 @@ export type SpomovePadLayoutVariant = 'grid2x2' | 'compass';
 
 /** 화살표 자극 프로그램과 DIVE만 compass(다이아) 배치를 사용합니다. */
 export function getSpomovePadLayoutVariant(preset: OfficialSpomovePreset): SpomovePadLayoutVariant {
-  if (preset.programGroup === 'dive') return 'compass';
+  if (preset.id === 'dive-standard') return 'compass';
   if (preset.id.includes('arrow') || preset.title.includes('화살표')) return 'compass';
   return 'grid2x2';
 }

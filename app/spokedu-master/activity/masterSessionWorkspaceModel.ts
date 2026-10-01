@@ -84,14 +84,13 @@ export function resolveSessionWorkspacePresentation({
   programs: MasterSessionDto['programs'];
   startedAt: string | null;
 }): SessionWorkspacePresentation {
-  const hasCompletedActivity = programs.some((program) => program.isCompleted);
   const resolveKind = (): SessionWorkspacePresentationKind => workState.stage === 'cancelled'
     ? 'RECOVERY'
     : workState.stage === 'completed'
       ? 'REVIEW'
-      : programs.length > 0 && programs.every((program) => program.isCompleted)
+      : workState.stage === 'ready-to-wrap'
         ? 'WRAP'
-        : startedAt || hasCompletedActivity
+        : startedAt
           ? 'RUN'
           : 'PREP';
   const presentationKind = resolveKind();

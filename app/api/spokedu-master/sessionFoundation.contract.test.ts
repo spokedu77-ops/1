@@ -74,7 +74,9 @@ describe('SPOKEDU MASTER Session foundation', () => {
     expect(sessions).toContain('started_at');
     expect(sessions).toContain('startedAt: row.started_at');
     expect(provider).toContain('startSession: (sessionId: string)');
-    expect(activity).toContain('data.startSession(draft.activeSession.id)');
+    expect(activity).toContain('executeSessionStartSequence');
+    expect(activity).toContain("data.saveSession(draft.input(activities.programs, 'scheduled')");
+    expect(activity).toContain('data.startSession((saved ?? draft.activeSession!).id)');
     expect(activity).toContain('primarySurfaceIntent={presentation?.primarySurfaceIntent ?? null}');
     expect(actions).toContain('수업 시작');
   });

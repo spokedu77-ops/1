@@ -99,6 +99,15 @@ function normalizeString(value: unknown): string | undefined {
   return trimmed || undefined;
 }
 
+export function normalizeSpomoveGuideMatTerminology(value: string): string {
+  return value.replace(/SPOMAT/gi, '매트').replace(/패드/g, '매트');
+}
+
+function normalizeGuideString(value: unknown): string | undefined {
+  const normalized = normalizeString(value);
+  return normalized ? normalizeSpomoveGuideMatTerminology(normalized) : undefined;
+}
+
 function normalizeMovementPick(value: unknown): MovementPick | null | undefined {
   if (value === null) return null;
   if (!value || typeof value !== 'object') return undefined;
@@ -134,7 +143,7 @@ function normalizeTeachingPoints(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const next: string[] = [];
   for (const item of value) {
-    const point = normalizeString(item);
+    const point = normalizeGuideString(item);
     if (!point || next.includes(point)) continue;
     next.push(point);
     if (next.length >= 3) break;
@@ -161,16 +170,16 @@ export function normalizeSpomoveMovementGuideDraft(value: unknown): SpomoveMovem
   const movement = normalizeMovementPick(source.movement);
   if (movement !== undefined) draft.movement = movement;
 
-  const objective = normalizeString(source.objective);
+  const objective = normalizeGuideString(source.objective);
   if (objective) draft.objective = objective;
 
   const teachingPoints = normalizeTeachingPoints(source.teachingPoints);
   if (teachingPoints) draft.teachingPoints = teachingPoints;
 
-  const instruction = normalizeString(source.instruction);
+  const instruction = normalizeGuideString(source.instruction);
   if (instruction) draft.instruction = instruction;
 
-  const coachScript = normalizeString(source.coachScript) ?? normalizeString(source.teacherCue);
+  const coachScript = normalizeGuideString(source.coachScript) ?? normalizeGuideString(source.teacherCue);
   if (coachScript) draft.coachScript = coachScript;
 
   const focusTags = normalizeFocusTags(source.focusTags);

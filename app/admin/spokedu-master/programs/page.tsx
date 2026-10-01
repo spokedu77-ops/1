@@ -55,6 +55,8 @@ import {
   type SpomoveThumbnailAssetsJson,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import {
+  normalizeSpomoveGuideMatTerminology,
+  normalizeSpomoveMovementGuideDraft,
   SPOMOVE_FOCUS_TAGS,
   validateSpomoveMovementGuideDraft,
 } from '@/app/lib/spomove/spomoveGuideContract';
@@ -711,7 +713,7 @@ function normalizeContentDraft(value: SpomovePresetContentOverride | undefined):
     coreKeywords: normalizeSpomoveCoreKeywordsList(value?.coreKeywords ?? []),
     activityMethod: value?.activityMethod ?? '',
     activityConcept: value?.activityConcept ?? '',
-    movementGuide: value?.movementGuide,
+    movementGuide: normalizeSpomoveMovementGuideDraft(value?.movementGuide),
     movementGuideStatus: value?.movementGuideStatus,
     sourceFingerprint: value?.sourceFingerprint,
     sourceFingerprintVersion: value?.sourceFingerprintVersion,
@@ -1138,26 +1140,26 @@ function SpomoveEditModal({
               </div>
               <label className="block text-[10px] font-black text-slate-400">
                 활동 목표
-                <textarea value={draft.movementGuide?.objective ?? ''} onChange={(e) => onUpdateMovementGuide({ objective: e.target.value })}
+                <textarea value={draft.movementGuide?.objective ?? ''} onChange={(e) => onUpdateMovementGuide({ objective: normalizeSpomoveGuideMatTerminology(e.target.value) })}
                   placeholder="화면에 제시되는 방향을 빠르게 구분하고 해당 위치로 정확하게 이동합니다."
                   className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
                 <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">{SPOMOVE_EDITORIAL_ADMIN_HELPER.objective}</span>
               </label>
               <label className="block text-[10px] font-black text-slate-400">
                 진행 방법
-                <textarea value={draft.movementGuide?.instruction ?? ''} onChange={(e) => onUpdateMovementGuide({ instruction: e.target.value })}
+                <textarea value={draft.movementGuide?.instruction ?? ''} onChange={(e) => onUpdateMovementGuide({ instruction: normalizeSpomoveGuideMatTerminology(e.target.value) })}
                   className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
               </label>
               <label className="block text-[10px] font-black text-slate-400">
                 지도 포인트 (최대 3개, 한 줄에 하나)
-                <textarea value={draft.movementGuide?.teachingPoints?.join('\n') ?? ''} onChange={(e) => onUpdateMovementGuide({ teachingPoints: e.target.value.split(/\r?\n/).slice(0, 3) })}
+                <textarea value={draft.movementGuide?.teachingPoints?.join('\n') ?? ''} onChange={(e) => onUpdateMovementGuide({ teachingPoints: normalizeSpomoveGuideMatTerminology(e.target.value).split(/\r?\n/).slice(0, 3) })}
                   placeholder="속도보다 방향 선택의 정확성을 먼저 확인하세요."
                   className="mt-1 h-24 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
                 <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">{SPOMOVE_EDITORIAL_ADMIN_HELPER.teachingPoints}</span>
               </label>
               <label className="block text-[10px] font-black text-slate-400">
                 교사 멘트
-                <textarea value={draft.movementGuide?.coachScript ?? ''} onChange={(e) => onUpdateMovementGuide({ coachScript: e.target.value })}
+                <textarea value={draft.movementGuide?.coachScript ?? ''} onChange={(e) => onUpdateMovementGuide({ coachScript: normalizeSpomoveGuideMatTerminology(e.target.value) })}
                   className="mt-1 h-20 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold outline-none focus:border-indigo-400" />
               </label>
               <div>

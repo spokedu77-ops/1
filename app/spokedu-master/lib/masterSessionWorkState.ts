@@ -42,9 +42,8 @@ function deriveStage(session: MasterSessionDto, completed: number): MasterSessio
   if (session.status === 'completed') return 'completed';
   if (session.status === 'cancelled') return 'cancelled';
   if (session.programs.length === 0) return 'needs-preparation';
-  if (completed === 0) return 'ready';
-  if (completed === session.programs.length) return 'ready-to-wrap';
-  return 'in-progress';
+  if (!session.startedAt) return 'ready';
+  return completed === session.programs.length ? 'ready-to-wrap' : 'in-progress';
 }
 
 function deriveTimeRelation(session: MasterSessionDto, now: Date): SessionTimeRelation {

@@ -31,9 +31,9 @@ describe('calendar previous Session candidates', () => {
     session('future', 'class-f', '2026-09-25T01:00:00.000Z'),
   ];
 
-  it('returns only the latest completed Session per class before the target day', () => {
+  it('returns every completed Session before the target day, including older Sessions from the same class', () => {
     expect(resolvePreviousSessionCandidates(sessions, '2026-09-24').map((item) => item.id))
-      .toEqual(['a-latest', 'b-latest']);
+      .toEqual(['a-latest', 'b-latest', 'a-old']);
   });
 
   it('sorts candidates by source Session date descending', () => {

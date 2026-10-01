@@ -13,7 +13,7 @@ import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { MasterSessionDto } from '../../types/operational';
 import { ClassCreateSheet } from '../../classes/ClassCreateSheet';
 import { SessionActivityPicker } from '../SessionActivityPicker';
-import { SessionActions } from './SessionActions';
+import { executeSessionStartSequence, SessionActions } from './SessionActions';
 import { SessionActivities } from './SessionActivities';
 import { SessionAttendance } from './SessionAttendance';
 import { SessionInformation } from './SessionInformation';
@@ -34,7 +34,7 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
   const [classCreateOpen, setClassCreateOpen] = useState(false);
   const [nextSessionOpen, setNextSessionOpen] = useState(false);
   const draft = useSessionDraft({ session, initialDay, initialClassId, initialMemo: spomoveHandoff?.draft, classes: data.classes, canUseRecords, onClose });
-  const actions = getSessionActionPolicy(draft.status);
+  const actions = getSessionActionPolicy(draft.status, draft.activeSession?.startedAt ?? null);
   const selectedClass = data.classes.find((item) => item.id === draft.classId) ?? null;
   const attendance = useSessionAttendance({ session, activeSession: draft.activeSession, selectedClass, students: data.students, saving: draft.saving, dirty: draft.dirty, setDirty: draft.setDirty });
   const activities = useSessionActivities({ session, activeSession: draft.activeSession, initialProgramId: spomoveHandoff?.programId, data, canUseSpomove, saving: draft.saving, dirty: draft.dirty, canRemove: actions.removeActivities, canToggleCompletion: actions.toggleActivityCompletion, setSaving: draft.setSaving, setDirty: draft.setDirty, setError: draft.setError });
@@ -90,18 +90,32 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
     if (!draft.activeSession || draft.saving) return;
     draft.setSaving(true); draft.setError(null);
     try {
-      const started = await data.startSession(draft.activeSession.id);
-      draft.setActiveSession(started);
+      await executeSessionStartSequence({
+        dirty: draft.dirty,
+        save: async () => {
+          const saved = await data.saveSession(draft.input(activities.programs, 'scheduled'), draft.activeSession!.id);
+          await data.saveSessionAttendance(saved.id, attendance.attendancePersistenceInput());
+          draft.setActiveSession(saved);
+          draft.setStatus(saved.status);
+          draft.setDirty(false);
+          return saved;
+        },
+        start: async (saved) => {
+          const started = await data.startSession((saved ?? draft.activeSession!).id);
+          draft.setActiveSession(started);
+        },
+      });
     } catch (caught) { draft.setError(getMasterRequestErrorMessage(caught, '수업을 시작하지 못했습니다.')); }
     finally { draft.setSaving(false); }
   }
 
-  const footer = draft.status === 'cancelled' ? undefined : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} primarySurfaceIntent={presentation?.primarySurfaceIntent ?? null} startSession={startSession} persist={persist} />;
+  const incompleteActivityCount = activities.programs.filter((program) => !program.isCompleted).length;
+  const footer = draft.status === 'cancelled' ? undefined : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} primarySurfaceIntent={presentation?.primarySurfaceIntent ?? null} incompleteActivityCount={incompleteActivityCount} startSession={startSession} persist={persist} />;
 
   return <>
     <BottomSheet open title={title} size="session" inert={classCreateOpen || nextSessionOpen} onClose={draft.requestClose} footer={footer}>
       <div data-session-detail className="flex flex-col pb-1">
-        <SessionInformation isCreate={isCreate} activeSession={draft.activeSession} selectedClass={selectedClass} classes={data.classes} classId={draft.classId} startAt={draft.startAt} endAt={draft.endAt} status={draft.status} presentationKind={presentation?.presentationKind ?? null} actions={actions} scheduleOpen={schedule.scheduleOpen} saving={draft.saving} setClassId={draft.setClassId} setStartAt={draft.setStartAt} setEndAt={draft.setEndAt} setScheduleOpen={schedule.setScheduleOpen} resetAttendance={() => attendance.setAttendance({})} setDirty={draft.setDirty} persist={persist} deleteCancelledSession={deleteCancelledSession} onCreateClass={() => setClassCreateOpen(true)} />
+        <SessionInformation isCreate={isCreate} activeSession={draft.activeSession} selectedClass={selectedClass} classes={data.classes} classId={draft.classId} startAt={draft.startAt} endAt={draft.endAt} status={draft.status} actions={actions} scheduleOpen={schedule.scheduleOpen} saving={draft.saving} setClassId={draft.setClassId} setStartAt={draft.setStartAt} setEndAt={draft.setEndAt} setScheduleOpen={schedule.setScheduleOpen} resetAttendance={() => attendance.setAttendance({})} setDirty={draft.setDirty} persist={persist} deleteCancelledSession={deleteCancelledSession} onCreateClass={() => setClassCreateOpen(true)} />
         <SessionActivities isCreate={isCreate} activeSession={draft.activeSession} programs={activities.programs} libraryPrograms={activities.libraryPrograms} catalogIds={activities.catalogIds} programsLoaded={activities.programsLoaded} actions={actions} saving={draft.saving} openPicker={() => activities.setPickerOpen(true)} toggleProgram={activities.toggleProgram} moveProgram={activities.moveProgram} removeProgram={activities.removeProgram} />
         {draft.activeSession && actions.editAttendance ? <SessionAttendance attendance={attendance.attendance} attendanceOpen={attendance.attendanceOpen} roster={attendance.roster} allStudentsPresent={attendance.allStudentsPresent} setAttendanceOpen={attendance.setAttendanceOpen} toggleAllAttendance={attendance.toggleAllAttendance} updateAttendance={attendance.updateAttendance} /> : null}
         {canUseRecords && draft.status !== 'cancelled' ? <SessionMemo isCreate={isCreate} memo={draft.memo} onChange={(memo) => { draft.setMemo(memo); draft.setDirty(true); }} /> : null}

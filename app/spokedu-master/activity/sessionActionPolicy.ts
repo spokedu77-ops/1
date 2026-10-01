@@ -72,6 +72,14 @@ const POLICIES: Record<MasterSessionStatus, SessionActionPolicy> = {
   },
 };
 
-export function getSessionActionPolicy(status: MasterSessionStatus) {
-  return POLICIES[status];
+export function getSessionActionPolicy(status: MasterSessionStatus, startedAt: string | null = null) {
+  const policy = POLICIES[status];
+  if (status !== 'scheduled' || !startedAt) return policy;
+  return {
+    ...policy,
+    editSchedule: false,
+    addActivities: false,
+    removeActivities: false,
+    reorderActivities: false,
+  };
 }

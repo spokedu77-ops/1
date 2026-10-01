@@ -177,8 +177,8 @@ describe('MASTER Longitudinal Retention — WorkState fixture matrix', () => {
   it.each([
     ['future needs-prep', makeSession({ id: 'f0', startAt: '2026-08-28T07:00:00.000Z', endAt: '2026-08-28T08:00:00.000Z', programs: [] }), 'needs-preparation', 'NEXT'],
     ['future ready', makeSession({ id: 'f1', startAt: '2026-08-28T07:00:00.000Z', endAt: '2026-08-28T08:00:00.000Z', programs: programs(0, 2) }), 'ready', 'NEXT'],
-    ['today partial', makeSession({ id: 't1', programs: programs(1, 3) }), 'in-progress', 'NOW'],
-    ['today wrap', makeSession({ id: 't2', programs: programs(3, 3) }), 'ready-to-wrap', 'NOW'],
+    ['today partial', makeSession({ id: 't1', startedAt: '2026-08-26T07:05:00.000Z', programs: programs(1, 3) }), 'in-progress', 'NOW'],
+    ['today wrap', makeSession({ id: 't2', startedAt: '2026-08-26T07:05:00.000Z', programs: programs(3, 3) }), 'ready-to-wrap', 'NOW'],
     ['past scheduled', makeSession({ id: 'o1', startAt: '2026-08-20T07:00:00.000Z', endAt: '2026-08-20T08:00:00.000Z', programs: programs(0, 1) }), 'ready', 'DEBT'],
     ['completed attendance', makeSession({ id: 'c1', status: 'completed', startAt: '2026-08-10T07:00:00.000Z', endAt: '2026-08-10T08:00:00.000Z', programs: programs(2, 2), attendance: [{ id: 'a', studentId: 's1', studentName: '민수', status: 'present' }] }), 'completed', 'HISTORY'],
     ['completed no attendance', makeSession({ id: 'c2', status: 'completed', startAt: '2026-08-10T07:00:00.000Z', endAt: '2026-08-10T08:00:00.000Z', programs: programs(2, 2) }), 'completed', 'DEBT'],
