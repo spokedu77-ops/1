@@ -3,6 +3,7 @@ import { isProductionDeployment } from '@/app/lib/deploymentEnvironment';
 
 const TOSS_API_BASE = 'https://api.tosspayments.com/v1';
 export const TOSS_FETCH_TIMEOUT_MS = 8_000;
+export const TOSS_BILLING_APPROVAL_TIMEOUT_MS = 70_000;
 
 export type TossBillingIssueResult = {
   billingKey: string;
@@ -104,7 +105,7 @@ export async function paySpokeduMasterBillingKey(input: {
       taxFreeAmount: 0,
     }),
     cache: 'no-store',
-    signal: AbortSignal.timeout(TOSS_FETCH_TIMEOUT_MS),
+    signal: AbortSignal.timeout(TOSS_BILLING_APPROVAL_TIMEOUT_MS),
   });
 
   if (!response.ok) return null;
