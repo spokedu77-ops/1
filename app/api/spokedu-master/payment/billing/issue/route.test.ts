@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getServiceSupabase: vi.fn(),
@@ -216,6 +216,8 @@ describe('billing issue plan policy', () => {
   };
 
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-20T00:00:00.000Z'));
     vi.clearAllMocks();
     mocks.providerConfigured.mockReturnValue(true);
     mocks.createServerSupabaseClient.mockResolvedValue({
@@ -232,6 +234,10 @@ describe('billing issue plan policy', () => {
       periodEnd: '2026-10-01T00:00:00.000Z',
       nextBillingAt: '2026-10-01T00:00:00.000Z',
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('charges the server upgrade quote for active Lite → Premium and ignores a matching client amount', async () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getServiceSupabase: vi.fn(),
@@ -34,10 +34,16 @@ function installSubscription(row: Record<string, unknown> | null) {
 
 describe('billing upgrade-quote', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-20T00:00:00.000Z'));
     vi.clearAllMocks();
     mocks.createServerSupabaseClient.mockResolvedValue({
       auth: { getUser: async () => ({ data: { user: { id: USER_ID } } }) },
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('returns the server proration quote for active Lite', async () => {
