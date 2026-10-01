@@ -89,8 +89,27 @@ function mockSubscriptionRow(row: {
   paymentOrdersChain.order.mockReturnValue(paymentOrdersChain);
   paymentOrdersChain.limit.mockReturnValue(paymentOrdersChain);
 
+  const entitlementGrantsChain = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    is: vi.fn(),
+    lte: vi.fn(),
+    gt: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    maybeSingle: vi.fn(async () => ({ data: null, error: null })),
+  };
+  entitlementGrantsChain.select.mockReturnValue(entitlementGrantsChain);
+  entitlementGrantsChain.eq.mockReturnValue(entitlementGrantsChain);
+  entitlementGrantsChain.is.mockReturnValue(entitlementGrantsChain);
+  entitlementGrantsChain.lte.mockReturnValue(entitlementGrantsChain);
+  entitlementGrantsChain.gt.mockReturnValue(entitlementGrantsChain);
+  entitlementGrantsChain.order.mockReturnValue(entitlementGrantsChain);
+  entitlementGrantsChain.limit.mockReturnValue(entitlementGrantsChain);
+
   const from = vi.fn((table: string) => {
     if (table === 'spokedu_master_payment_orders') return paymentOrdersChain;
+    if (table === 'spokedu_master_entitlement_grants') return entitlementGrantsChain;
     return { select, insert };
   });
   getServiceSupabase.mockReturnValue({ from });
@@ -154,7 +173,7 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
 
     expect(query.from).toHaveBeenCalledWith('spokedu_master_subscriptions');
     expect(query.select).toHaveBeenCalledWith(
-      'plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end,provider_billing_key_secret_id',
+      'plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end,provider_billing_key_secret_id,renewal_retry_count,last_billing_error,next_retry_at',
     );
     expect(query.eq).toHaveBeenCalledWith('user_id', user.id);
     expect(response.status).toBe(200);
