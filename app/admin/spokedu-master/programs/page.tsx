@@ -701,6 +701,21 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
   }
 }
 
+function liveContentDraft(
+  current: Record<string, SpomovePresetContentOverride>,
+  presetId: string,
+): SpomovePresetContentOverride {
+  return current[presetId] ?? normalizeContentDraft(undefined);
+}
+
+function formatCatalogTagsForEditor(tags: readonly string[] | undefined) {
+  return (tags ?? []).join(', ');
+}
+
+function parseCatalogTagsForEditor(value: string) {
+  return value.split(',').slice(0, 5);
+}
+
 function normalizeContentDraft(value: SpomovePresetContentOverride | undefined): SpomovePresetContentOverride {
   return {
     recommendedCueSeconds: value?.recommendedCueSeconds,
@@ -1010,7 +1025,8 @@ function SpomoveEditModal({
   onDelete,
   onClose,
 }: SpomoveEditModalProps) {
-  const dirty = JSON.stringify(normalizeContentDraft(saved)) !== JSON.stringify(draft);
+  const dirty = JSON.stringify(normalizeContentDraft(saved)) !== JSON.stringify(normalizeContentDraft(draft));
+  const [catalogTagText, setCatalogTagText] = useState(() => formatCatalogTagsForEditor(draft.catalogTags));
   const guideCompletion = getMovementGuideCompletion(preset, draft.movementGuide);
   const presetIssues = saveIssues.filter((issue) => issue.presetId === preset.id);
   const displayTitle =
@@ -1229,7 +1245,11 @@ function SpomoveEditModal({
               </label>
               <label className="block text-[10px] font-black text-slate-500">
                 카드 태그 (쉼표로 구분, 최대 5개)
-                <input value={(draft.catalogTags ?? []).join(', ')} onChange={(e) => onUpdateDraft({ catalogTags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 5) })} placeholder="선택 반응, 양측 이동, 보통"
+                <input value={catalogTagText} onChange={(e) => {
+                  const next = e.target.value;
+                  setCatalogTagText(next);
+                  onUpdateDraft({ catalogTags: parseCatalogTagsForEditor(next) });
+                }} placeholder="선택 반응, 양측 이동, 보통"
                   className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400" />
               </label>
             </div>
@@ -1348,13 +1368,13 @@ function useSpomoveContentData() {
   const updateDraft = useCallback((presetId: string, patch: Partial<SpomovePresetContentOverride>) => {
     setDraftMap((current) => ({
       ...current,
-      [presetId]: { ...normalizeContentDraft(current[presetId]), ...patch },
+      [presetId]: { ...liveContentDraft(current, presetId), ...patch },
     }));
   }, []);
 
   const updateMovementGuide = useCallback((presetId: string, patch: Partial<SpomoveMovementGuideDraft>) => {
     setDraftMap((current) => {
-      const currentDraft = normalizeContentDraft(current[presetId]);
+      const currentDraft = liveContentDraft(current, presetId);
       return {
         ...current,
         [presetId]: {
@@ -1510,11 +1530,12 @@ function SpomoveCatalogManager() {
     {editingPresetId != null && (() => {
       const preset = ADMIN_SPOMOVE_LIBRARY.find((p) => p.id === editingPresetId);
       if (!preset) return null;
-      const draft = normalizeContentDraft(draftMap[editingPresetId]);
+      const draft = liveContentDraft(draftMap, editingPresetId);
       const saved = contentMap[editingPresetId];
       const sourceIntegrity = resolveSpomoveGuideSourceIntegrity({ preset, contentOverride: draft });
       return (
         <SpomoveEditModal
+          key={preset.id}
           preset={preset}
           draft={draft}
           saved={saved}
@@ -1607,7 +1628,7 @@ export function SpomoveContentManager() {
     setDraftMap((current) => ({
       ...current,
       [presetId]: {
-        ...normalizeContentDraft(current[presetId]),
+        ...liveContentDraft(current, presetId),
         ...patch,
       },
     }));
@@ -1618,7 +1639,7 @@ export function SpomoveContentManager() {
     patch: Partial<SpomoveMovementGuideDraft>,
   ) => {
     setDraftMap((current) => {
-      const currentDraft = normalizeContentDraft(current[presetId]);
+      const currentDraft = liveContentDraft(current, presetId);
       return {
         ...current,
         [presetId]: {
@@ -2149,11 +2170,12 @@ export function SpomoveContentManager() {
     {editingPresetId != null && (() => {
       const preset = ADMIN_SPOMOVE_LIBRARY.find((p) => p.id === editingPresetId);
       if (!preset) return null;
-      const draft = normalizeContentDraft(draftMap[editingPresetId]);
+      const draft = liveContentDraft(draftMap, editingPresetId);
       const saved = contentMap[editingPresetId];
       const sourceIntegrity = resolveSpomoveGuideSourceIntegrity({ preset, contentOverride: draft });
       return (
         <SpomoveEditModal
+          key={preset.id}
           preset={preset}
           draft={draft}
           saved={saved}
