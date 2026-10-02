@@ -195,6 +195,15 @@ function qaMetadata(fixture, current = {}) {
   };
 }
 
+function qaAppMetadata(current = {}) {
+  return {
+    ...current,
+    app: 'spokedu-master',
+    spokedu_master_account_type: 'qa',
+    spokedu_master_qa: true,
+  };
+}
+
 async function listUsersByEmail(supabase, emails) {
   const result = new Map();
   if (!supabase) return result;
@@ -207,6 +216,7 @@ async function listUsersByEmail(supabase, emails) {
         email: user.email,
         email_confirmed_at: user.email_confirmed_at,
         user_metadata: user.user_metadata ?? {},
+        app_metadata: user.app_metadata ?? {},
       });
     }
   }
@@ -232,12 +242,14 @@ async function ensureUser(supabase, fixture, existing) {
   const password = env.SPM_QA_PASSWORD;
   if (!password) throw new Error('SPM_QA_PASSWORD is required for --apply.');
   const user_metadata = qaMetadata(fixture, existing?.user_metadata);
+  const app_metadata = qaAppMetadata(existing?.app_metadata);
 
   if (existing?.id) {
     const { data, error } = await supabase.auth.admin.updateUserById(existing.id, {
       password,
       email_confirm: true,
       user_metadata,
+      app_metadata,
     });
     if (error || !data?.user) {
       throw new Error(`failed to update ${fixture.email}: ${error?.message ?? 'unknown error'}`);
@@ -256,6 +268,7 @@ async function ensureUser(supabase, fixture, existing) {
     password,
     email_confirm: true,
     user_metadata,
+    app_metadata,
   });
   if (error || !data?.user) {
     throw new Error(`failed to create ${fixture.email}: ${error?.message ?? 'unknown error'}`);

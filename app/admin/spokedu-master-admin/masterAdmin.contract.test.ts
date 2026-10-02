@@ -32,4 +32,11 @@ describe('MASTER ADMIN contract', () => {
     expect(dashboard).not.toContain('provider_billing_key_secret_id');
     expect(invites).not.toContain("select('token_hash");
   });
+  it('keeps Auth search separate from the production MASTER population', () => {
+    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
+    expect(dashboard).toContain("accountClass === 'production'");
+    expect(dashboard).toContain("accountClass !== 'spokedu_only'");
+    expect(dashboard).toContain("scope === 'all'");
+    expect(dashboard).not.toContain('const summary = { total: rows.length');
+  });
 });
