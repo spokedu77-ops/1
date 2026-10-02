@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 const migration = readFileSync('supabase/migrations/20260829120000_spokedu_master_recurring_schedule_rules.sql', 'utf8');
-const rlsMigration = readFileSync('supabase/migrations/20261002122223_harden_spokedu_master_schedule_rules_rls.sql', 'utf8');
+const rlsMigration = readFileSync('supabase/migrations/20261002122433_harden_spokedu_master_schedule_rules_rls.sql', 'utf8');
 const route = readFileSync('app/api/spokedu-master/classes/[classId]/schedule-rules/route.ts', 'utf8');
 describe('recurring operations persistence', () => {
   it('keeps rule identity additive and Session history canonical', () => {
