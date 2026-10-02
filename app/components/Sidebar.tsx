@@ -12,6 +12,7 @@ import {
   CheckCircle,
   ClipboardList,
   CreditCard,
+  Settings,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -163,6 +164,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
         { name: '마스터 라이브러리', href: '/admin/spokedu-master/programs', icon: BookOpen },
         { name: '마스터 스포무브', href: '/admin/spokedu-master/spomove', icon: Sparkles },
         { name: 'SPOKEDU MASTER', href: '/spokedu-master/dashboard', icon: LayoutDashboard },
+        { name: 'MASTER ADMIN', href: '/admin/spokedu-master-admin', icon: Settings },
       ],
     },
     {
@@ -213,6 +215,9 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     }
     if (href === '/spokedu-master/dashboard') {
       return pathname.startsWith('/spokedu-master');
+    }
+    if (href === '/admin/spokedu-master-admin') {
+      return pathname.startsWith('/admin/spokedu-master-admin');
     }
     if (href === '/admin/spomove/training') {
       return pathname.startsWith('/admin/spomove');
