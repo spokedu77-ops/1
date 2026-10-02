@@ -13,6 +13,17 @@ type SubmitResult =
   | { ok: true; kind: 'user'; user: MasterEmailOtpUser }
   | { ok: false; message: string };
 
+type SafeAuthErrorFields = { status?: number; code?: string };
+
+export function getMasterOtpSendErrorMessage(error: SafeAuthErrorFields) {
+  const rateLimited = error.status === 429
+    || error.code === 'over_email_send_rate_limit'
+    || error.code === 'over_request_rate_limit';
+  return rateLimited
+    ? '인증 요청이 많습니다. 잠시 후 다시 인증 코드를 요청해 주세요.'
+    : '로그인 코드를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.';
+}
+
 export function useMasterEmailOtp() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -38,7 +49,7 @@ export function useMasterEmailOtp() {
         options: { shouldCreateUser: true },
       });
       if (authError) {
-        const msg = '로그인 코드를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.';
+        const msg = getMasterOtpSendErrorMessage(authError);
         setError(msg);
         return { ok: false, message: msg };
       }

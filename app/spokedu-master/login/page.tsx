@@ -62,7 +62,7 @@ function MasterLoginContent() {
       });
       if (error) throw error;
     } catch {
-      setOauthError('카카오 로그인이 아직 설정되지 않았습니다. 이메일로 시작해 주세요.');
+      setOauthError('카카오 로그인을 시작하지 못했습니다. 잠시 후 다시 시도하거나 이메일로 시작해 주세요.');
       setOauthLoading(false);
     }
   };

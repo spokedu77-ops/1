@@ -56,4 +56,14 @@ describe("SPOKEDU login UX P0 contracts", () => {
     expect(masterLogin).toContain("MasterEmailOtpForm");
     expect(masterLogin).not.toContain("signInWithPassword");
   });
+
+  it('keeps MASTER auth errors safe and accurate', () => {
+    const login = read('app/spokedu-master/login/page.tsx');
+    const otp = read('app/components/auth/useMasterEmailOtp.ts');
+    expect(login).toContain('카카오 로그인을 시작하지 못했습니다.');
+    expect(login).not.toContain('카카오 로그인이 아직 설정되지 않았습니다.');
+    expect(otp).toContain("error.status === 429");
+    expect(otp).toContain("error.code === 'over_email_send_rate_limit'");
+    expect(otp).not.toContain('authError.message');
+  });
 });
