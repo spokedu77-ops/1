@@ -1,5 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-
 export const MASTER_FUNNEL_EVENT_NAMES = [
   'landing_visit',
   'onboarding_completed',
@@ -32,6 +30,12 @@ export type MasterFunnelMember = {
 export type MasterFunnelPayment = {
   user_id: string;
   applied_at: string | null;
+};
+
+type MasterFunnelEventStore = {
+  from: (table: string) => {
+    insert: (row: Record<string, unknown>) => PromiseLike<{ error: unknown }>;
+  };
 };
 
 export type MasterFunnelWindow = {
@@ -99,7 +103,7 @@ export function buildMasterFunnelEventKey(name: MasterFunnelEventName, userId: s
 }
 
 export async function recordMasterFunnelEvent(input: {
-  service: Pick<SupabaseClient, 'from'>;
+  service: MasterFunnelEventStore;
   name: MasterFunnelEventName;
   userId: string | null;
   context?: Record<string, string>;
@@ -114,8 +118,13 @@ export async function recordMasterFunnelEvent(input: {
     payload: input.context ?? {},
   };
   const query = input.service.from('commercial_funnel_events');
-  const { error } = eventKey
-    ? await query.upsert(row, { onConflict: 'event_key', ignoreDuplicates: true })
-    : await query.insert(row);
-  return { stored: !error, error };
+  const { error } = await query.insert(row);
+  const duplicate = Boolean(
+    eventKey
+    && error
+    && typeof error === 'object'
+    && 'code' in error
+    && error.code === '23505',
+  );
+  return { stored: !error || duplicate, error: duplicate ? null : error };
 }

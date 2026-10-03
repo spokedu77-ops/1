@@ -28,5 +28,6 @@ export async function POST(request: Request) {
     if (value) context[key] = value;
   }
   const result = await recordMasterFunnelEvent({ service: getServiceSupabase(), name, userId, context });
-  return NextResponse.json({ ok: true, stored: result.stored });
+  if (!result.stored) return NextResponse.json({ ok: false, stored: false }, { status: 503 });
+  return NextResponse.json({ ok: true, stored: true });
 }

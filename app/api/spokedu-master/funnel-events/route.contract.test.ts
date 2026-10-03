@@ -21,6 +21,7 @@ describe('MASTER funnel event route contract', () => {
   it('derives identity and idempotency on the server', () => {
     expect(helper).toContain("route: 'master'");
     expect(helper).toContain('buildMasterFunnelEventKey');
-    expect(helper).toContain("onConflict: 'event_key'");
+    expect(helper).toContain("error.code === '23505'");
+    expect(route).toContain("{ status: 503 }");
   });
 });
