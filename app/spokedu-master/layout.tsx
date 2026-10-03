@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { AppShell } from './components/layout/AppShell';
+import { MasterFunnelTracker } from './components/analytics/MasterFunnelTracker';
 import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
 
 export const metadata: Metadata = {
@@ -47,5 +48,5 @@ export const viewport: Viewport = {
 };
 
 export default function SpokeduMasterLayout({ children }: { children: ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+  return <><MasterFunnelTracker /><AppShell>{children}</AppShell></>;
 }

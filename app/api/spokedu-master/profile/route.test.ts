@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requireSpokeduMasterSession, getSpokeduMasterProfile, upsertSpokeduMasterProfile } = vi.hoisted(() => ({
+const { requireSpokeduMasterSession, getSpokeduMasterProfile, upsertSpokeduMasterProfile, recordMasterFunnelEvent } = vi.hoisted(() => ({
   requireSpokeduMasterSession: vi.fn(),
   getSpokeduMasterProfile: vi.fn(),
   upsertSpokeduMasterProfile: vi.fn(),
+  recordMasterFunnelEvent: vi.fn(),
 }));
 
 vi.mock('@/app/lib/server/spokeduMasterAccess', () => ({
@@ -21,6 +22,8 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
   getServiceSupabase: () => ({}),
 }));
 
+vi.mock('@/app/lib/server/spokeduMasterFunnel', () => ({ recordMasterFunnelEvent }));
+
 vi.mock('@/app/lib/monitoring/errorReporter', () => ({
   reportError: vi.fn(),
 }));
@@ -32,6 +35,7 @@ describe('SPOKEDU MASTER profile endpoint', () => {
     requireSpokeduMasterSession.mockReset();
     getSpokeduMasterProfile.mockReset();
     upsertSpokeduMasterProfile.mockReset();
+    recordMasterFunnelEvent.mockReset();
   });
 
   it('returns null profile data when no row exists', async () => {
@@ -71,5 +75,9 @@ describe('SPOKEDU MASTER profile endpoint', () => {
 
     expect(response.status).toBe(200);
     expect(upsertSpokeduMasterProfile).toHaveBeenCalled();
+    expect(recordMasterFunnelEvent).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'onboarding_completed',
+      userId: 'user-1',
+    }));
   });
 });

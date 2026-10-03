@@ -29,6 +29,7 @@ import { fetchSessionCaptures } from '../../lib/sessionCaptureClient';
 import type { MasterClassRecordDto } from '../../types/legacyOperational';
 import { PersonalizedNote } from '../../components/information/PersonalizedNote';
 import { selectLatestProgramMemory } from '../programMemory';
+import { trackMasterFunnelEvent } from '../../lib/funnelEvents';
 
 function BookOpenFallback() {
   return (
@@ -61,6 +62,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const copyFeedbackTimerRef = useRef<number | null>(null);
 
   const program = useMemo(() => programs.find((item) => String(item.id) === id), [id, programs]);
+  const programLocked = program ? isProgramLessonLocked({
+    programId: program.id,
+    canUseLibrary: accessSnapshot.canUseLibrary,
+  }) : true;
   const relatedVideos = useMemo(
     () => (program ? selectRelatedLessonVideos(program, programs) : []),
     [program, programs],
@@ -118,7 +123,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
       action: 'lesson_opened',
       occurredAt: new Date().toISOString(),
     });
-  }, [program, recordRecentProgramActivity, shouldAutoplayVideo]);
+    if (!programLocked) {
+      trackMasterFunnelEvent('first_value_program_detail', { surface: 'library_detail', program_id: String(program.id) });
+    }
+  }, [program, programLocked, recordRecentProgramActivity, shouldAutoplayVideo]);
 
   useEffect(() => {
     if (section !== 'video') return;
@@ -156,10 +164,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
     );
   }
 
-  const programLocked = isProgramLessonLocked({
-    programId: program.id,
-    canUseLibrary: accessSnapshot.canUseLibrary,
-  });
   const favoriteEnabled = ownerId != null && accessSnapshot.canUseLibrary;
   const programGateHref = buildProgramLessonGateHref(program.id);
 

@@ -50,4 +50,13 @@ describe('MASTER ADMIN contract', () => {
     expect(dashboard).toContain("scope === 'all'");
     expect(dashboard).not.toContain('const summary = { total: rows.length');
   });
+  it('shows a small read-only funnel summary from production MASTER members', () => {
+    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
+    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    expect(dashboard).toContain('funnelEvidence(production)');
+    expect(dashboard).toContain("eq('route', 'master')");
+    expect(client).toContain('FunnelSummary');
+    expect(client).toContain('QA/Test/Internal');
+    expect(client).toContain('과거 값을 추정하지 않습니다');
+  });
 });
