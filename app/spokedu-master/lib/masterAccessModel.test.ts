@@ -131,13 +131,17 @@ describe('commercial launch architecture contracts', () => {
     expect(profile).toContain('spomatShopAvailable ?');
   });
 
-  it('keeps landing claims honest and shows lite pricing', () => {
+  it('keeps landing claims honest and derives plan pricing from the public contract', () => {
     const landing = read('app/spokedu-master/landing/page.tsx');
-    expect(landing).toContain("id: 'lite'");
+    const model = read('app/spokedu-master/landing/models/landingProduct.ts');
+    const sections = read('app/spokedu-master/landing/components/LandingSections.tsx');
+    expect(landing).toContain('getLandingProductModel()');
+    expect(model).toContain('getPublicProductContract()');
+    expect(sections).toContain('product.plans.map');
     expect(landing).not.toContain('100여 개');
     expect(landing).not.toContain('30초 안에');
-    expect(landing).toContain("id: 'premium'");
-    expect(landing).toContain('getMasterProductPaymentFeatureLabels');
+    expect(model).not.toContain('9900');
+    expect(model).not.toContain('28900');
   });
 
   it('routes user-facing entitlement checks through access snapshot hooks', () => {

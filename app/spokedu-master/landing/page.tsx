@@ -1,352 +1,80 @@
-import Link from 'next/link';
-import { BookOpen, CheckCircle2, ChevronRight, Clock, MapPin, Play, Shield, Timer, Users, Zap } from 'lucide-react';
+import type { Metadata } from 'next';
 import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
-import { MASTER_PRODUCT_CATALOG, MASTER_BUSINESS_INFO, MASTER_CUSTOMER_SERVICE_HREF, MASTER_CENTER_INQUIRY_HREF, getMasterProductPaymentDescription, getMasterProductPaymentFeatureLabels } from '../lib/productCatalog';
-import { LandingLoggedInBanner } from './LandingLoggedInBanner';
-
-const FEATURES = [
-  {
-    icon: BookOpen,
-    color: 'var(--spm-acc-a18)',
-    ic: 'var(--spm-acc)',
-    title: '라이브러리',
-    desc: '유아부터 초등까지, 실내외 환경에 맞는 수업이 태그와 검색으로 정리되어 있습니다. 연령·환경·준비물 기준으로 오늘 쓸 수업을 빠르게 고를 수 있습니다.',
-    items: ['연령·환경·준비물 필터', '검색으로 오늘 수업 찾기', '수업 준비 키트 연결'],
-  },
-  {
-    icon: Zap,
-    color: 'var(--spm-grn-a15)',
-    ic: 'var(--spm-grn)',
-    title: 'SPOMOVE',
-    desc: '설치 없이 웹에서 화면으로 실행하는 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다. 프리미엄 이용권에서 SPOMOVE 공식 활동을 큰 화면으로 시작할 수 있습니다.',
-    items: ['빔·TV·태블릿 실행', '색상·방향·숫자 신호', '화면 신호 반응 활동 (프리미엄)'],
-  },
-  {
-    icon: Timer,
-    color: 'var(--spm-amb-a14)',
-    ic: 'var(--spm-amb)',
-    title: '수업 운영',
-    desc: '수업반, 학생 명단, 일정과 출석을 한 Session에 연결합니다. 프리미엄에서는 메모와 안내문이 다음 수업 준비에 다시 쓰이는 기록으로 쌓입니다.',
-    items: ['수업반 · 일정 · 출석', '타이머 · 팀 나누기 · 점수판', '기록 · 안내문 · 다음 수업 연결'],
-  },
-] as const;
-
-const PRICING = [
-  {
-    id: 'lite',
-    title: 'Lite',
-    badge: '수업 운영 기본',
-    price: MASTER_PRODUCT_CATALOG.lite.priceLabel,
-    period: MASTER_PRODUCT_CATALOG.lite.billingCycleLabel,
-    desc: getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite),
-    includes: getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite),
-    accent: 'var(--spm-s2)',
-    border: 'var(--spm-br2)',
-    badgeColor: 'var(--spm-t3)',
-    recommended: false,
-  },
-  {
-    id: 'premium',
-    title: '프리미엄',
-    badge: '가장 인기',
-    price: MASTER_PRODUCT_CATALOG.premium.priceLabel,
-    period: MASTER_PRODUCT_CATALOG.premium.billingCycleLabel,
-    desc: getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium),
-    includes: getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium),
-    accent: 'var(--spm-acc-a18)',
-    border: 'var(--spm-acc-a42)',
-    badgeColor: 'var(--spm-acc)',
-    recommended: true,
-  },
-] as const;
-
-const STATS = [
-  { label: '수업 프로그램', value: '라이브러리', caption: '연령·환경별 수업', Icon: BookOpen },
-  { label: 'SPOMOVE 공식 활동', value: '프리미엄', caption: '큰 화면 반응 활동', Icon: Zap },
-  { label: '연령 대상', value: '유아~중등', caption: '현장 수업 기준', Icon: Users },
-  { label: '수업 공간', value: '실내 · 실외', caption: '환경별 자료 구분', Icon: MapPin },
-];
-
-const FLOW = [
-  { num: '1', label: '오늘 수업 결정', caption: '오늘 일정과 수업반을 보고 라이브러리에서 활동을 고릅니다', color: 'var(--spm-acc-a14)', accent: 'var(--spm-acc)' },
-  { num: '2', label: '현장에서 바로 운영', caption: '출석·활동·수업 도구를 한 Session에서 사용하고, 프리미엄에서는 SPOMOVE까지 이어갑니다', color: 'var(--spm-grn-a12)', accent: 'var(--spm-grn)' },
-  { num: '3', label: '기록하고 다음 수업 연결', caption: '완료한 활동과 메모, 안내문을 남겨 다음 준비를 더 빠르게 시작합니다', color: 'var(--spm-amb-a12)', accent: 'var(--spm-amb)' },
-] as const;
-
-const HERO_PROOF = [
-  { label: '가입 이유', value: '콘텐츠', caption: '오늘 쓸 활동을 빠르게 결정' },
-  { label: '매일 쓰는 이유', value: '운영', caption: '일정, 출석, 도구를 한 흐름으로' },
-  { label: '계속 쓰는 이유', value: '누적 기록', caption: '다음 수업 준비에 다시 활용' },
-] as const;
+import {
+  MASTER_BUSINESS_INFO,
+  MASTER_CENTER_INQUIRY_HREF,
+  MASTER_CUSTOMER_SERVICE_HREF,
+  MASTER_CUSTOMER_SERVICE_TEL_HREF,
+} from '../lib/businessInfo';
+import { LandingFooter, LandingHeader } from './components/LandingChrome';
+import {
+  CoreProductStory,
+  FaqAndFinalCta,
+  InclusiveAndFieldProof,
+  LandingHero,
+  PlansSection,
+  ProductOverview,
+  SpomoveSection,
+} from './components/LandingSections';
+import { getLandingProductModel } from './models/landingProduct';
+import styles from './landing.module.css';
 
 const SITE_URL = getSpokeduSiteUrl();
-
+const CANONICAL_URL = `${SITE_URL}/spokedu-master/landing`;
+const LANDING_TITLE = '유아·초등 체육수업 준비와 운영 | SPOKEDU MASTER';
 const LANDING_DESCRIPTION =
-  '체육 수업 콘텐츠와 수업반·일정·출석·기록을 하나의 Session으로 연결하는 체육수업 운영 서비스입니다.';
+  '유아·초등 체육 교사와 강사가 수업을 찾고, 수업반·일정·출석과 현장 도구로 운영하며, 기록을 다음 수업까지 이어가는 서비스입니다.';
 
-export const metadata = {
-  title: {
-    absolute: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-  },
+export const metadata: Metadata = {
+  title: { absolute: LANDING_TITLE },
   description: LANDING_DESCRIPTION,
+  alternates: { canonical: CANONICAL_URL },
   robots: { index: true, follow: true },
   openGraph: {
-    type: 'website' as const,
-    url: `${SITE_URL}/spokedu-master/landing`,
+    type: 'website',
+    url: CANONICAL_URL,
     siteName: 'SPOKEDU MASTER',
-    title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
+    title: LANDING_TITLE,
     description: LANDING_DESCRIPTION,
     locale: 'ko_KR',
-    images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼' }],
+    images: [{
+      url: `${SITE_URL}/api/spokedu-master/og`,
+      width: 1200,
+      height: 630,
+      alt: '실제 수업 화면으로 체육수업 준비와 운영을 보여주는 SPOKEDU MASTER',
+    }],
   },
   twitter: {
-    card: 'summary_large_image' as const,
-    title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
+    card: 'summary_large_image',
+    title: LANDING_TITLE,
     description: LANDING_DESCRIPTION,
     images: [`${SITE_URL}/api/spokedu-master/og`],
   },
 };
 
 export default function LandingPage() {
+  const publicProduct = getLandingProductModel();
+  const product = {
+    ...publicProduct,
+    business: MASTER_BUSINESS_INFO,
+    customerServiceHref: MASTER_CUSTOMER_SERVICE_HREF,
+    customerServiceTelHref: MASTER_CUSTOMER_SERVICE_TEL_HREF,
+    centerInquiryHref: MASTER_CENTER_INQUIRY_HREF,
+  };
+
   return (
-    <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-      <LandingLoggedInBanner />
-      {/* Nav */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b px-[22px] py-4 sm:px-10" style={{ background: 'rgba(7,7,12,0.92)', backdropFilter: 'blur(20px)', borderColor: 'var(--spm-br2)' }}>
-        <div className="flex items-baseline gap-2">
-          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
-          <span className="text-[17px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
-            로그인
-          </Link>
-          <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex min-h-11 items-center rounded-[10px] px-4 text-[12px] font-extrabold focus-visible:outline-none">
-            시작하기
-          </Link>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section
-        className="relative overflow-hidden px-[22px] pb-8 pt-[74px] sm:px-10 sm:pb-10 sm:pt-[92px]"
-        style={{
-          backgroundImage: 'linear-gradient(90deg, rgba(7,7,12,0.94) 0%, rgba(7,7,12,0.72) 48%, rgba(7,7,12,0.42) 100%), linear-gradient(0deg, rgba(7,7,12,0.96) 0%, rgba(7,7,12,0.2) 44%), url("/images/spokedu/home/home-hero-movement.jpg")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.5fr)] lg:items-end">
-          <div className="max-w-[720px]">
-            <span className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', color: '#dbeafe' }}>
-              체육 수업 콘텐츠 · 수업 운영 시스템
-            </span>
-            <h1 className="mt-5 text-[46px] font-extrabold leading-[0.98] md:text-[76px]" style={{ fontFamily: 'var(--spm-font-display)', color: '#fff', letterSpacing: 0, wordBreak: 'keep-all' }}>
-              SPOKEDU<br />MASTER
-            </h1>
-            <p className="mt-6 max-w-[640px] text-[19px] font-extrabold leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
-              오늘 수업을 준비하고, 현장에서 바로 쓰고, 기록을 다음 수업으로 연결합니다.
-            </p>
-            <p className="mt-4 max-w-[620px] text-[14px] font-semibold leading-7 md:text-[15px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
-              콘텐츠는 시작을 빠르게 하고, 일정·출석·도구는 현장 운영을 매끄럽게 하며, 누적 기록은 다음 수업 준비를 더 쉽게 만듭니다.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-extrabold focus-visible:outline-none sm:w-auto sm:min-w-[200px]">
-              <Play size={16} fill="currentColor" />
-              SPOKEDU MASTER 시작하기
-            </Link>
-            <Link href="#pricing" className="flex h-14 w-full items-center justify-center gap-1.5 rounded-[14px] text-[15px] font-extrabold sm:w-auto sm:min-w-[160px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-              서비스 구성 보기 <ChevronRight size={16} />
-            </Link>
-            </div>
-            <p className="mt-4 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.62)' }}>월 자동결제 · 언제든 해지 예약 · 이용 기간 종료일까지 사용</p>
-          </div>
-          <div className="grid gap-3">
-            {HERO_PROOF.map((item) => (
-              <div key={item.label} className="rounded-[16px] p-4" style={{ background: 'rgba(7,7,12,0.58)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(16px)' }}>
-                <p className="text-[11px] font-extrabold" style={{ color: 'rgba(255,255,255,0.62)' }}>{item.label}</p>
-                <p className="mt-1 text-[28px] font-extrabold leading-none" style={{ color: '#fff', fontFamily: 'var(--spm-font-display)' }}>{item.value}</p>
-                <p className="mt-2 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.74)' }}>{item.caption}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats strip */}
-      <section className="border-y px-[22px] py-8 sm:px-10" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}>
-        <div className="mx-auto grid max-w-[960px] grid-cols-2 gap-6 sm:grid-cols-4">
-          {STATS.map(({ label, value, caption, Icon }) => (
-            <div key={label} className="text-center">
-              <Icon size={20} color="var(--spm-acc)" className="mx-auto mb-2" />
-              <p className="text-[24px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
-              <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-              <p className="mt-1 text-[10px] font-medium" style={{ color: 'var(--spm-t3)' }}>{caption}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 3-step flow */}
-      <section className="px-[22px] py-[80px] sm:px-10">
-        <div className="mx-auto max-w-[960px]">
-          <p className="mb-2 text-center text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>수업 루프</p>
-          <h2 className="mb-12 text-center text-[32px] font-extrabold md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>한 번의 수업이 다음 준비로 이어집니다</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {FLOW.map(({ num, label, caption, color, accent }) => (
-              <div key={num} className="rounded-[20px] p-6" style={{ background: color, border: `1px solid ${color}` }}>
-                <span className="mb-4 grid h-10 w-10 place-items-center rounded-full text-[16px] font-extrabold text-white" style={{ background: accent }}>{num}</span>
-                <h3 className="text-[18px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{label}</h3>
-                <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{caption}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="border-t px-[22px] py-[80px] sm:px-10" style={{ borderColor: 'var(--spm-br2)' }}>
-        <div className="mx-auto max-w-[960px]">
-          <p className="mb-2 text-center text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>핵심 기능</p>
-          <h2 className="mb-14 text-center text-[32px] font-extrabold md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>콘텐츠와 운영이 한 서비스 안에서</h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, color, ic, title, desc, items }) => (
-              <div key={title} className="rounded-[22px] p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <span className="mb-5 grid h-12 w-12 place-items-center rounded-[15px]" style={{ background: color }}>
-                  <Icon size={22} color={ic} />
-                </span>
-                <h3 className="text-[20px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{title}</h3>
-                <p className="mt-3 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>{desc}</p>
-                <ul className="mt-5 space-y-2">
-                  {items.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
-                      <CheckCircle2 size={13} color={ic} strokeWidth={2} />{item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="border-t px-[22px] py-[80px] sm:px-10" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}>
-        <div className="mx-auto max-w-[960px]">
-          <p className="mb-2 text-center text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>플랜과 가격</p>
-          <h2 className="mb-4 text-center text-[32px] font-extrabold md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 품질에 맞는 플랜</h2>
-          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>라이트·프리미엄 월 자동결제 · 센터는 별도 문의</p>
-          <div className="mx-auto grid max-w-[660px] gap-5 sm:grid-cols-2">
-            {PRICING.map((p) => (
-              <div key={p.id} className="rounded-[22px] p-6" style={{ background: p.accent, border: `1.5px solid ${p.border}` }}>
-                {p.recommended ? (
-                  <span className="mb-3 inline-block rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em]" style={{ background: 'var(--spm-acc-a22)', color: p.badgeColor }}>{p.badge}</span>
-                ) : (
-                  <span className="mb-3 inline-block rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em]" style={{ background: 'var(--spm-grn-a14)', color: p.badgeColor }}>{p.badge}</span>
-                )}
-                <div className="flex items-end justify-between">
-                  <h3 className="text-[26px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{p.title}</h3>
-                  <div className="text-right">
-                    <p className="whitespace-nowrap text-[24px] font-extrabold" style={{ color: 'var(--spm-t)' }}>
-                      {p.price}
-                    </p>
-                    <p className="mt-0.5 whitespace-nowrap text-[12px]" style={{ color: 'var(--spm-t3)' }}>{p.period}</p>
-                  </div>
-                </div>
-                <p className="mt-2 text-[13px] font-medium" style={{ color: 'var(--spm-t2)' }}>{p.desc}</p>
-                <ul className="mt-5 space-y-2.5">
-                  {p.includes.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
-                      <CheckCircle2 size={14} color="var(--spm-grn)" strokeWidth={2} />{item}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={`/spokedu-master/payment${p.id === 'premium' ? '?plan=premium' : '?plan=lite'}`}
-                  className="spm-btn-primary mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-extrabold focus-visible:outline-none"
-                >
-                  {p.title} 시작하기
-                </Link>
-              </div>
-            ))}
-          </div>
-          <div className="mx-auto mt-8 flex max-w-[660px] flex-col gap-4 border-t border-[color:var(--spm-br2)] pt-7 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-[18px] font-semibold" style={{ color: 'var(--spm-t)' }}>센터·기관 이용</h3>
-              <p className="mt-2 text-[13px] leading-6" style={{ color: 'var(--spm-t2)' }}>이용 인원과 운영 방식에 맞춰 별도로 안내합니다. 직접 결제 없이 상담을 통해 도입합니다.</p>
-            </div>
-            <a href={MASTER_CENTER_INQUIRY_HREF} className="inline-flex min-h-11 shrink-0 items-center gap-1 text-[14px] font-semibold text-[var(--spm-acc)]">센터·기관 이용 문의 <ChevronRight size={16} /></a>
-          </div>
-          <div className="mt-8 flex items-start gap-3 rounded-[14px] px-5 py-4" style={{ background: 'var(--spm-grn-a07)', border: '1px solid var(--spm-grn-a16)' }}>
-            <Shield size={16} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
-            <p className="text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              토스페이먼츠 보안 결제 · 월 자동결제 · 해지 후에도 이용 기간 종료일까지 사용 · 카드 정보는 SPOKEDU 서버에 저장되지 않습니다.
-            </p>
-          </div>
-          <p className="mt-5 text-center text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>
-            학교와 기관 도입은 <a href={MASTER_CUSTOMER_SERVICE_HREF} style={{ color: 'var(--spm-acc)' }}>{MASTER_BUSINESS_INFO.customerServiceEmail}</a>으로 문의해 주세요.
-          </p>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="border-t px-[22px] py-[80px] text-center sm:px-10" style={{ borderColor: 'var(--spm-br2)' }}>
-        <div className="mx-auto max-w-[560px]">
-          <h2 className="text-[32px] font-extrabold md:text-[40px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>
-            오늘 첫 수업을 골라보세요
-          </h2>
-          <p className="mt-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>
-            수업 도구는 로그인 후 바로 써 보고, 전체 수업 자료 이용은 Lite부터, 기록·안내문·SPOMOVE는 프리미엄에서 이용해 보세요.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/spokedu-master/login?next=/spokedu-master/onboarding" className="spm-btn-primary inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-extrabold focus-visible:outline-none">
-            <Play size={16} fill="currentColor" />
-            시작하기
-          </Link>
-          <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="inline-flex h-14 items-center rounded-[14px] px-8 text-[15px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-            로그인
-          </Link>
-          </div>
-          <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>라이트·프리미엄 월 자동결제</p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t px-[22px] py-10 sm:px-10" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}>
-        <div className="mx-auto max-w-[960px]">
-          <div className="mb-8 flex items-baseline gap-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU</span>
-            <span className="text-[17px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
-          </div>
-          <div className="mb-8 grid gap-x-8 gap-y-2 sm:grid-cols-[auto_1fr]">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-              {[
-                ['상호', MASTER_BUSINESS_INFO.businessName],
-                ['대표자', MASTER_BUSINESS_INFO.representativeName],
-                ['사업자등록번호', MASTER_BUSINESS_INFO.businessRegistrationNumber],
-                ['통신판매업', MASTER_BUSINESS_INFO.mailOrderStatus],
-                ['주소', MASTER_BUSINESS_INFO.businessAddress],
-                ['고객센터', MASTER_BUSINESS_INFO.customerServicePhone],
-                ['이메일', MASTER_BUSINESS_INFO.customerServiceEmail],
-              ].map(([label, value]) => (
-                <div key={label} className="contents">
-                  <dt className="text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</dt>
-                  <dd className="text-[10px] font-medium" style={{ color: 'var(--spm-t2)' }}>{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]" style={{ color: 'var(--spm-t3)' }}>
-            <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-t3)' }}>이용약관</Link>
-            <Link href="/spokedu-master/privacy" style={{ color: 'var(--spm-t3)' }}>개인정보처리방침</Link>
-            <a href={MASTER_CUSTOMER_SERVICE_HREF} style={{ color: 'var(--spm-t3)' }}>고객센터</a>
-          </div>
-          <p className="mt-4 text-[10px]" style={{ color: 'var(--spm-t3)' }}>
-            <Clock size={10} className="mr-1 inline" />가격과 기능은 공지 없이 변경될 수 있습니다. 결제 전 최신 플랜 내용을 확인해 주세요.
-          </p>
-        </div>
-      </footer>
+    <div className={styles.page}>
+      <LandingHeader product={product} />
+      <main>
+        <LandingHero product={product} />
+        <ProductOverview />
+        <CoreProductStory />
+        <SpomoveSection />
+        <InclusiveAndFieldProof />
+        <PlansSection product={product} />
+        <FaqAndFinalCta product={product} />
+      </main>
+      <LandingFooter product={product} />
     </div>
   );
 }
