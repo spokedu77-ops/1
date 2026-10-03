@@ -185,18 +185,6 @@ export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
   contact: ['스포키듀 문의', '개인 체육수업', '기관 체육수업', '체육 커리큘럼'],
 };
 
-/** @deprecated seo.ts의 seoMeta.about 사용 */
-export const seoMetaAboutPage = seoMeta.about;
-
-/** @deprecated seo.ts의 seoMeta.cases 사용 */
-export const seoMetaCases = seoMeta.cases;
-
-/** @deprecated seo.ts의 seoMeta.monthly 사용 */
-export const seoMetaMonthly = seoMeta.monthly;
-
-/** @deprecated seo.ts의 seoMeta.insights 사용 */
-export const seoMetaInsights = seoMeta.insights;
-
 const PROGRAM_OG: Partial<Record<string, SeoOgImage>> = {
   spomove: { url: SPOKEDU_IMAGES.programs.spomove.src, alt: SPOKEDU_IMAGES.programs.spomove.alt },
   paps: { url: SPOKEDU_IMAGES.programs.paps.src, alt: SPOKEDU_IMAGES.programs.paps.alt },

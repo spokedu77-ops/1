@@ -184,6 +184,3 @@ export function insightMatchesFilter(article: InsightArticle, filter: InsightFil
 export function getInsightBySlug(slug: string): InsightArticle | undefined {
   return insightArticles.find((a) => a.slug === slug);
 }
-
-/** @deprecated insightsCards — insightArticles 사용 */
-export const insightsCards = insightArticles;

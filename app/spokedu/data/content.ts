@@ -1,4 +1,4 @@
-import { footerLinks, siteNavItems, SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH } from './site';
 
 export { SPOKEDU_BASE_PATH };
 export { seoMeta, seoKeywords } from './seo';
@@ -8,11 +8,6 @@ export type NavItem = {
   path: string;
   href: string;
 };
-
-/** @deprecated `siteNavItems` 사용 권장 */
-export const navItems: NavItem[] = siteNavItems;
-
-export const footerSiteLinks: NavItem[] = footerLinks;
 
 export type TrustReasonCard = {
   title: string;
