@@ -4,6 +4,7 @@ import { withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { buildMasterAdminAccess, deriveMasterAdminBillingIncident, maskAdminEmail } from '@/app/lib/server/spokeduMasterAdmin';
 import { classifyMasterAccount, hasRenewalProblem, type MasterAccountClass } from '@/app/lib/server/spokeduMasterPopulation';
 import type { SpokeduMasterEntitlementGrantRow, SpokeduMasterSubscriptionRow } from '@/app/lib/server/spokeduMasterAccess';
+import { buildMasterFunnelWindow, type MasterFunnelEventRow, type MasterFunnelPayment } from '@/app/lib/server/spokeduMasterFunnel';
 
 export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 20;
@@ -94,6 +95,32 @@ async function accessMaps(userIds: string[]) {
   const paymentMap = new Map<string, any>();
   for (const row of payments ?? []) if (!paymentMap.has((row as any).user_id)) paymentMap.set((row as any).user_id, row);
   return { subscriptionMap, grantMap, paymentMap };
+}
+
+async function funnelEvidence(members: Array<{
+  id: string;
+  createdAt: string | null;
+  effectivePlan: string;
+  subscription: null | { cancelAtPeriodEnd: boolean; renewalRetryCount: number; lastBillingError: string | null; nextRetryAt: string | null };
+}>) {
+  const service = getServiceSupabase();
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const [{ data: events, error: eventError }, { data: payments, error: paymentError }] = await Promise.all([
+    service.from('commercial_funnel_events').select('name,user_id,created_at').eq('route', 'master').gte('created_at', cutoff),
+    service.from('spokedu_master_payment_orders').select('user_id,applied_at').not('applied_at', 'is', null).gte('applied_at', cutoff),
+  ]);
+  if (eventError || paymentError) return { available: false, measurementStartsAt: null, windows: [] };
+  const funnelEvents = (events ?? []) as MasterFunnelEventRow[];
+  const paymentRows = (payments ?? []) as MasterFunnelPayment[];
+  const now = Date.now();
+  const measurementStartsAt = funnelEvents.length
+    ? funnelEvents.reduce((earliest, event) => event.created_at < earliest ? event.created_at : earliest, funnelEvents[0].created_at)
+    : null;
+  return {
+    available: true,
+    measurementStartsAt,
+    windows: ([7, 30] as const).map((days) => buildMasterFunnelWindow({ days, now, members, events: funnelEvents, payments: paymentRows })),
+  };
 }
 
 function matchesScope(accountClass: MasterAccountClass, scope: string) {
@@ -205,7 +232,8 @@ export async function GET(request: Request) {
           next_retry_at: row.subscription.nextRetryAt,
         } : null)) summary.renewalFailed += 1;
       }
-      return withPrivateNoStore(NextResponse.json({ summary, recentMembers: production.slice(-5).reverse() }));
+      const funnel = await funnelEvidence(production);
+      return withPrivateNoStore(NextResponse.json({ summary: { ...summary, funnel }, recentMembers: production.slice(-5).reverse() }));
     }
 
     const filtered = rows.filter((user) => matchesScope(user.accountClass, scope))

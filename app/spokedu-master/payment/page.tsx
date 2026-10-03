@@ -24,6 +24,7 @@ import {
 import { buildMasterGateDisplayModel, readMasterGateContextFromSearchParams, type MasterGateContext } from '../lib/masterGateIntent';
 import { buildMasterLoginHref } from '../lib/masterLoginReturn';
 import { isTossClientKeyAllowed } from './tossClientKey';
+import { trackMasterFunnelEvent } from '../lib/funnelEvents';
 
 declare global {
   interface Window {
@@ -248,6 +249,7 @@ function PaymentContent() {
       }
       setWorkingPlan(plan);
       try {
+        trackMasterFunnelEvent('checkout_started', { surface: 'payment', plan });
         const response = await fetch('/api/spokedu-master/payment/billing/issue', {
           method: 'POST', headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ planId: 'premium', customerKey: buildCustomerKey(userId) }),
@@ -277,6 +279,7 @@ function PaymentContent() {
 
     setWorkingPlan(plan);
     try {
+      trackMasterFunnelEvent('checkout_started', { surface: 'payment', plan });
       window.TossPayments(clientKey).requestBillingAuth('카드', {
         customerKey,
         successUrl: successUrl.toString(),

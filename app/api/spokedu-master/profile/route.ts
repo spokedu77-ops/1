@@ -8,6 +8,7 @@ import {
   toSpokeduMasterProfileDto,
   upsertSpokeduMasterProfile,
 } from '@/app/lib/server/spokeduMasterProfile';
+import { recordMasterFunnelEvent } from '@/app/lib/server/spokeduMasterFunnel';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -55,6 +56,15 @@ export async function PATCH(request: Request) {
       tags: { method: 'PATCH', stage: 'upsert', status: 500 },
     });
     return privateNoStoreJson({ error: PROFILE_SERVER_ERROR }, { status: 500 });
+  }
+
+  if (input.onboardingDone) {
+    await recordMasterFunnelEvent({
+      service: supabase,
+      name: 'onboarding_completed',
+      userId: session.userId,
+      context: { surface: 'onboarding' },
+    });
   }
 
   return privateNoStoreJson({
