@@ -31,6 +31,17 @@ describe('MASTER ADMIN contract', () => {
     const invites = read('app/api/admin/spokedu-master/promotion-invites/route.ts');
     expect(dashboard).not.toContain('provider_billing_key_secret_id');
     expect(invites).not.toContain("select('token_hash");
+    expect(dashboard).not.toContain('paymentKey: payment.payment_key');
+  });
+  it('returns read-only payment incident evidence without hiding non-active orders', () => {
+    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
+    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    expect(dashboard).toContain('last_error_code');
+    expect(dashboard).toContain('paymentApproved: Boolean(payment.payment_key)');
+    expect(dashboard).not.toContain(".eq('status', 'active')");
+    expect(dashboard).toContain('deriveMasterAdminBillingIncident');
+    expect(client).toContain('결제 승인 / 이용권 반영 실패');
+    expect(client).toContain('조회 전용');
   });
   it('keeps Auth search separate from the production MASTER population', () => {
     const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');

@@ -11,7 +11,7 @@ import {
   type SubscriptionDisplaySummary,
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
-import { SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
+import { buildMasterSupportMailto, SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
 import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 
 const NON_BILLING_CANCEL_MESSAGE = '자동결제 해지 대상이 아닙니다. 고객센터로 문의해 주세요.';
@@ -32,6 +32,10 @@ function SubscriptionStatusCard({
   display: SubscriptionDisplaySummary;
   onCancel: () => void;
 }) {
+  const billingSupportHref = buildMasterSupportMailto(
+    'SPOKEDU MASTER 자동결제 확인 요청',
+    `로그인한 이메일:\n발생 시각:\n선택한 플랜: ${display.planLabel}\n화면의 오류 내용: ${display.warningText ?? '자동결제 상태 확인 필요'}\n\n※ 결제키, 카드번호, 비밀번호는 적지 마세요.`,
+  );
   return (
     <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -55,6 +59,14 @@ function SubscriptionStatusCard({
       <p className="mt-4 rounded-[14px] p-3 text-[13px] font-semibold leading-6" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
         {display.description}
       </p>
+
+      {display.warningText ? (
+        <div className="mt-3 rounded-[14px] p-3" style={{ background: 'var(--spm-amb-a14)', border: '1px solid var(--spm-br2)' }}>
+          <p className="text-[13px] font-bold leading-6" style={{ color: 'var(--spm-yel)' }}>{display.warningText}</p>
+          <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>자동 재시도가 예정될 수 있으므로 같은 결제를 다시 시작하지 마세요. 문의할 때는 로그인 이메일, 발생 시각, 플랜과 이 오류 내용만 보내주세요.</p>
+          <a href={billingSupportHref} className="mt-2 inline-flex min-h-11 items-center text-[13px] font-extrabold" style={{ color: 'var(--spm-acc)' }}>결제 상태 문의</a>
+        </div>
+      ) : null}
 
       {display.valueWorkflow.length ? (
         <ul className="mt-4 space-y-2" aria-label="이 이용권으로 이어가는 운영">

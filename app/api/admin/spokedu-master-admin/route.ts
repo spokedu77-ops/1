@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { buildMasterAdminAccess, maskAdminEmail } from '@/app/lib/server/spokeduMasterAdmin';
+import { buildMasterAdminAccess, deriveMasterAdminBillingIncident, maskAdminEmail } from '@/app/lib/server/spokeduMasterAdmin';
 import { classifyMasterAccount, hasRenewalProblem, type MasterAccountClass } from '@/app/lib/server/spokeduMasterPopulation';
 import type { SpokeduMasterEntitlementGrantRow, SpokeduMasterSubscriptionRow } from '@/app/lib/server/spokeduMasterAccess';
 
@@ -85,7 +85,7 @@ async function accessMaps(userIds: string[]) {
   const [{ data: subscriptions, error: subError }, { data: grants, error: grantError }, { data: payments, error: paymentError }] = await Promise.all([
     userIds.length ? service.from('spokedu_master_subscriptions').select('user_id,plan,status,pg_provider,toss_order_id,provider_customer_key,created_at,period_end,cancel_at_period_end,next_billing_at,current_period_end,renewal_retry_count,last_billing_error,next_retry_at,last_payment_at').in('user_id', userIds) : Promise.resolve({ data: [], error: null }),
     userIds.length ? service.from('spokedu_master_entitlement_grants').select('id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at').in('user_id', userIds).is('revoked_at', null).lte('starts_at', now).gt('ends_at', now).order('plan', { ascending: false }).order('ends_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
-    userIds.length ? service.from('spokedu_master_payment_orders').select('user_id,amount,status,updated_at,applied_at').in('user_id', userIds).eq('status', 'active').order('updated_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
+    userIds.length ? service.from('spokedu_master_payment_orders').select('user_id,plan,amount,status,payment_key,updated_at,applied_at,last_error_code').in('user_id', userIds).order('updated_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
   ]);
   if (subError || grantError || paymentError) throw subError ?? grantError ?? paymentError;
   const subscriptionMap = new Map((subscriptions ?? []).map((row: any) => [row.user_id, row]));
@@ -125,6 +125,15 @@ export async function GET(request: Request) {
       const subscription = (subscriptionMap.get(user.id) ?? null) as (SpokeduMasterSubscriptionRow & Record<string, any>) | null;
       const grant = (grantMap.get(user.id) ?? null) as SpokeduMasterEntitlementGrantRow | null;
       const payment = paymentMap.get(user.id) ?? null;
+      const latestOrder = payment ? {
+        plan: payment.plan ?? null,
+        amount: payment.amount ?? null,
+        status: payment.status ?? null,
+        updatedAt: payment.updated_at ?? null,
+        appliedAt: payment.applied_at ?? null,
+        lastErrorCode: payment.last_error_code ?? null,
+        paymentApproved: Boolean(payment.payment_key),
+      } : null;
       const accountClass = classifyMasterAccount({
         hasMasterEvidence,
         identity: { appMetadata: user.app_metadata, userMetadata: user.user_metadata, bannedUntil: user.banned_until, deletedAt: user.deleted_at },
@@ -141,6 +150,18 @@ export async function GET(request: Request) {
         accountClass,
         membershipEvidence,
         ...buildMasterAdminAccess({ subscription, grant }),
+        latestOrder,
+        billingIncident: deriveMasterAdminBillingIncident({
+          subscription: subscription ? {
+            status: subscription.status,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
+            nextBillingAt: subscription.next_billing_at ?? null,
+            renewalRetryCount: subscription.renewal_retry_count ?? 0,
+            lastBillingError: subscription.last_billing_error ?? null,
+            nextRetryAt: subscription.next_retry_at ?? null,
+          } : null,
+          order: latestOrder,
+        }),
         subscription: subscription ? {
           plan: subscription.plan,
           status: subscription.status,
