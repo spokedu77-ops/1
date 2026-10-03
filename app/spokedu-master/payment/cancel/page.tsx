@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CreditCard, Mail, XCircle } from 'lucide-react';
 import { Suspense, useMemo } from 'react';
-import { MASTER_CUSTOMER_SERVICE_HREF } from '../../lib/productCatalog';
+import { buildMasterSupportMailto } from '../../lib/productCatalog';
 import { readMasterGateContextFromSearchParams } from '../../lib/masterGateIntent';
 
 function normalizePlan(value: string | null) {
@@ -15,6 +15,10 @@ function CancelContent() {
   const params = useSearchParams();
   const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
   const retryPlan = normalizePlan(params.get('plan'));
+  const supportHref = useMemo(() => buildMasterSupportMailto(
+    'SPOKEDU MASTER 결제 실패 문의',
+    `로그인한 이메일:\n발생 시각:\n선택한 플랜: ${retryPlan === 'lite' ? 'Lite' : 'Premium'}\n화면의 오류 내용: 결제 인증 취소 또는 실패\n\n※ 결제키, 카드번호, 비밀번호는 적지 마세요.`,
+  ), [retryPlan]);
   const retryHref = useMemo(() => {
     const directRetryHref = `/spokedu-master/payment?plan=${retryPlan}`;
     const retryParams = new URLSearchParams({
@@ -41,13 +45,16 @@ function CancelContent() {
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             결제 인증이 취소되었거나 처리 중 오류가 발생했습니다. 구독은 활성화되지 않았습니다.
           </p>
+          <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
+            문의할 때는 로그인한 이메일, 발생 시각, 선택한 플랜과 화면의 오류 내용만 알려주세요. 결제키나 카드 정보는 보내지 마세요.
+          </p>
         </div>
         <div className="space-y-3">
           <Link href={retryHref} className="spm-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">
             <CreditCard size={16} />
             다시 시도
           </Link>
-          <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <a href={supportHref} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             <Mail size={15} />
             고객센터
           </a>

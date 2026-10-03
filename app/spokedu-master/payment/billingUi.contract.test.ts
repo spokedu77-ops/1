@@ -75,11 +75,19 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
   it('keeps failure and cancel paths non-entitling, readable, and retryable', () => {
     expect(cancel).toContain('구독은 활성화되지 않았습니다.');
     expect(cancel).toContain('/spokedu-master/payment?plan=${retryPlan}');
-    expect(cancel).toContain('MASTER_CUSTOMER_SERVICE_HREF');
+    expect(cancel).toContain('buildMasterSupportMailto');
     expect(success).toContain('완료 전에는 이용권이 활성화되지 않습니다.');
     expect(success).toContain('결제 인증이 취소되었거나 처리 중 오류가 발생했습니다.');
     expect(success).toContain('hasMasterEntitlement');
     expect(success).toContain('/api/spokedu-master/profile');
+    expect(success).toContain("setStatus('unknown')");
+    expect(success).toContain('response.status >= 500');
+    expect(success).toContain('결제를 다시 시도하지 마세요');
+    expect(success).toContain('결제키나 카드 정보는 보내지 마세요');
+    expect(success).toContain('PaymentSupportGuidance');
+    expect(cancel).toContain('결제키나 카드 정보는 보내지 마세요');
+    expect(subscription).toContain('자동 재시도가 예정될 수 있으므로 같은 결제를 다시 시작하지 마세요');
+    expect(subscription).toContain('buildMasterSupportMailto');
   });
 
   it('blocks duplicate purchase for premium active and allows lite to premium upgrade', () => {
