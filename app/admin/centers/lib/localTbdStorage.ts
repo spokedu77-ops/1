@@ -316,9 +316,6 @@ export function createDefaultCenterTbdClass(anchor?: Date, roundTotal = 4): Cent
   });
 }
 
-/** @deprecated createDefaultCenterTbdClass 사용 */
-export const createDefaultLocalTbdClass = createDefaultCenterTbdClass;
-
 export function flattenClassToCalendarItems(cls: CenterTbdClass): LocalTbdCalendarItem[] {
   const normalized = normalizeCenterTbdClass(cls);
   const title = normalized.title.trim() || '제목 없음';
