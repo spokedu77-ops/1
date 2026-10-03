@@ -66,7 +66,7 @@ const approvedSupabaseRef = valueOf('SPM_APPROVED_STAGING_SUPABASE_REF');
 const tossClientKey = valueOf('STAGING_NEXT_PUBLIC_TOSS_CLIENT_KEY', 'NEXT_PUBLIC_TOSS_CLIENT_KEY', 'TOSS_CLIENT_KEY');
 const tossSecretKey = valueOf('STAGING_TOSS_SECRET_KEY', 'TOSS_SECRET_KEY');
 const qaId = valueOf('SPOKEDU_MASTER_QA_ID', 'SPM_QA_ID');
-const qaPassword = valueOf('SPOKEDU_MASTER_QA_PASSWORD', 'SPM_QA_PASSWORD');
+const masterStorageStateJson = valueOf('SPOKEDU_MASTER_STORAGE_STATE_JSON');
 const writeGuard = valueOf('SPM_STAGING_WRITE_GUARD');
 const disposableAllowlist = parseAllowlist(valueOf('SPM_DISPOSABLE_QA_ALLOWLIST', 'SPOKEDU_MASTER_QA_ALLOWLIST'));
 
@@ -80,7 +80,7 @@ const supabaseMatched =
   supabaseRef === approvedSupabaseRef;
 const tossClientValid = tossClientKey.length > 0 && isTossTestKey(tossClientKey);
 const tossSecretValid = tossSecretKey.length > 0 && isTossTestKey(tossSecretKey);
-const qaLoaded = qaId.length > 0 && qaPassword.length > 0;
+const qaLoaded = qaId.length > 0 && masterStorageStateJson.length > 0;
 const qaDisposable =
   qaLoaded &&
   (disposableAllowlist.length === 0 ? /qa|test|staging|sandbox/i.test(qaId) : disposableAllowlist.includes(qaId.toLowerCase()));
@@ -91,7 +91,7 @@ console.log(`base URL loaded: ${baseLoaded ? 'yes' : 'no'}`);
 console.log(`Supabase ref matched: ${supabaseMatched ? 'yes' : 'no'}`);
 console.log(`Toss client mode: ${tossClientValid ? 'test' : 'invalid'}`);
 console.log(`Toss secret mode: ${tossSecretValid ? 'test' : 'invalid'}`);
-console.log(`QA credentials loaded: ${qaLoaded && qaDisposable ? 'yes' : 'no'}`);
+console.log(`MASTER QA identity and passwordless storage state loaded: ${qaLoaded && qaDisposable ? 'yes' : 'no'}`);
 console.log(`write guard: ${writeGuardEnabled ? 'enabled' : 'disabled'}`);
 
 const ok =

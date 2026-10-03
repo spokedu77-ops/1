@@ -1,4 +1,5 @@
 import nextEnv from '@next/env';
+import { applyMasterStorageState, assertMasterQaAccess, getMasterStorageStatePath, requireMasterStorageState } from './lib/spokedu-master-auth-state.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -22,12 +23,9 @@ const FLOW_FILTERS = process.argv
     if (!arg.startsWith('--flow=')) return [];
     return arg.slice('--flow='.length).split(',').map((value) => value.trim().toLowerCase()).filter(Boolean);
   });
-const qaIdSource = process.env.SPOKEDU_MASTER_QA_ID ? 'official' : process.env.SPM_QA_ID ? 'legacy' : 'missing';
-const qaPasswordSource = process.env.SPOKEDU_MASTER_QA_PASSWORD ? 'official' : process.env.SPM_QA_PASSWORD ? 'legacy' : 'missing';
 const qaBypassEnabled = process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH === '1';
 const useMockAuth = process.env.SPOKEDU_MASTER_QA_USE_MOCK_AUTH === '1';
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID ?? process.env.SPM_QA_ID ?? '';
-const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD ?? process.env.SPM_QA_PASSWORD ?? '';
 const MASTER_DELETE_CONFIRMATION = 'MASTER \uB370\uC774\uD130 \uC0AD\uC81C';
 const MASTER_DELETE_SUCCESS = 'MASTER \uC6B4\uC601 \uB370\uC774\uD130\uB97C \uC0AD\uC81C\uD588\uC2B5\uB2C8\uB2E4.';
 
@@ -318,15 +316,11 @@ async function loadPlaywright() {
 
 function assertRequiredEnv() {
   const idLoaded = QA_ID.trim().length > 0;
-  const passwordLoaded = QA_PASSWORD.trim().length > 0;
-  console.log(`QA ID loaded: ${idLoaded ? 'yes' : 'no'}`);
-  console.log(`QA password loaded: ${passwordLoaded ? 'yes' : 'no'}`);
   console.log(`QA auth bypass loaded: ${qaBypassEnabled ? 'yes' : 'no'}`);
   console.log(`QA auth mode: ${useMockAuth ? 'mock' : 'real'}`);
-  console.log(`Credential source: ${qaIdSource === 'official' && qaPasswordSource === 'official' ? 'official' : qaIdSource === 'legacy' || qaPasswordSource === 'legacy' ? 'legacy' : 'missing'}`);
+  if (!useMockAuth) console.log(`MASTER storage state: ${getMasterStorageStatePath()}`);
   const missing = [
-    ...(!idLoaded ? ['SPOKEDU_MASTER_QA_ID or SPM_QA_ID'] : []),
-    ...(!passwordLoaded ? ['SPOKEDU_MASTER_QA_PASSWORD or SPM_QA_PASSWORD'] : []),
+    ...(useMockAuth && !idLoaded ? ['SPOKEDU_MASTER_QA_ID or SPM_QA_ID'] : []),
     ...(useMockAuth && !qaBypassEnabled ? ['SPOKEDU_MASTER_QA_BYPASS_AUTH=1'] : []),
   ];
   if (useMockAuth && process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH !== '1') {
@@ -340,7 +334,7 @@ function assertRequiredEnv() {
 
 async function assertDevServerReachable() {
   return withTimeout('dev server check', DEV_SERVER_TIMEOUT_MS, async () => {
-    const response = await fetch(`${BASE}/login`, { redirect: 'manual' });
+    const response = await fetch(`${BASE}/spokedu-master/login`, { redirect: 'manual' });
     if (response.status >= 500) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -349,31 +343,9 @@ async function assertDevServerReachable() {
   });
 }
 
-async function loginWithRealCredentials(context) {
-  const page = await context.newPage();
-  try {
-    page.setDefaultTimeout(15_000);
-    page.setDefaultNavigationTimeout(30_000);
-    // Establish the fixture session through the operations password login.
-    // A MASTER `next` intentionally hands off to the customer OTP screen, so
-    // the harness must not depend on the retired tabbed login UI.
-    await gotoPage(page, '/login');
-    const usernameInput = page.locator('input[autocomplete="username"]');
-    const passwordInput = page.locator('input[autocomplete="current-password"]');
-    await usernameInput.waitFor({ state: 'visible', timeout: 10_000 });
-    await passwordInput.waitFor({ state: 'visible', timeout: 10_000 });
-    await usernameInput.fill(QA_ID);
-    await passwordInput.fill(QA_PASSWORD);
-    await page.getByRole('button', { name: /로그인/ }).click();
-    await page.waitForURL((url) => url.pathname !== '/login', { timeout: LOGIN_TIMEOUT_MS });
-
-    const access = await context.request.get(`${BASE}/api/spokedu-master/access`);
-    assert(access.status() === 200, `QA session access snapshot returned HTTP ${access.status()}`);
-    const snapshot = await access.json().catch(() => null);
-    assert(snapshot?.authenticated === true, 'QA session access snapshot is not authenticated');
-  } finally {
-    await page.close().catch(() => undefined);
-  }
+async function authenticateMasterQa(context) {
+  await applyMasterStorageState(context);
+  await assertMasterQaAccess(context, BASE);
 }
 
 async function loginWithMockCredentials(context) {
@@ -392,7 +364,7 @@ async function login(context) {
       await loginWithMockCredentials(context);
       return;
     }
-    await loginWithRealCredentials(context);
+    await authenticateMasterQa(context);
   });
   logStep('[auth] QA session ready');
 }
@@ -743,7 +715,7 @@ async function runUnauthRedirectSmoke(browser) {
   await page.waitForTimeout(500);
   assert(new URL(page.url()).pathname === '/spokedu-master/login', 'login page entered a redirect loop');
 
-  await loginWithRealCredentials(context);
+  await authenticateMasterQa(context);
   await gotoPage(page, url.pathname + url.search);
   await page.waitForURL((nextUrl) => nextUrl.pathname === '/spokedu-master/students', { timeout: LOGIN_TIMEOUT_MS });
   assert(new URL(page.url()).pathname === '/spokedu-master/students', 'authenticated deep-link did not return to students');
@@ -755,14 +727,14 @@ async function runUnauthRedirectSmoke(browser) {
   await desktopPage.waitForURL(/\/spokedu-master\/login\?next=/, { timeout: 20_000 });
   const desktopLoginUrl = new URL(desktopPage.url());
   assert(desktopLoginUrl.searchParams.get('next') === '/spokedu-master/dashboard', 'desktop login next did not preserve dashboard');
-  await loginWithRealCredentials(desktopContext);
+  await authenticateMasterQa(desktopContext);
   await gotoPage(desktopPage, desktopLoginUrl.pathname + desktopLoginUrl.search);
   await desktopPage.waitForURL((nextUrl) => nextUrl.pathname === '/spokedu-master/dashboard', { timeout: LOGIN_TIMEOUT_MS });
   assert(new URL(desktopPage.url()).pathname === '/spokedu-master/dashboard', 'desktop authenticated deep-link did not return to dashboard');
   await desktopContext.close();
 
   const routeContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await loginWithRealCredentials(routeContext);
+  await authenticateMasterQa(routeContext);
   const routePage = await routeContext.newPage();
   for (const route of [
     '/spokedu-master/dashboard',
@@ -1932,6 +1904,7 @@ async function main() {
   await withTimeout('commercial smoke suite', TOTAL_TIMEOUT_MS, async () => {
     logStep('[setup] checking required environment');
     assertRequiredEnv();
+    if (!useMockAuth) await requireMasterStorageState();
     if (ENV_PREFLIGHT_ONLY) {
       logStep('[setup] env preflight passed');
       return;

@@ -244,7 +244,7 @@ jobs:
       STAGING_NEXT_PUBLIC_TOSS_CLIENT_KEY: ${{ secrets.STAGING_NEXT_PUBLIC_TOSS_CLIENT_KEY }}
       STAGING_TOSS_SECRET_KEY: ${{ secrets.STAGING_TOSS_SECRET_KEY }}
       SPOKEDU_MASTER_QA_ID: ${{ secrets.SPOKEDU_MASTER_QA_ID }}
-      SPOKEDU_MASTER_QA_PASSWORD: ${{ secrets.SPOKEDU_MASTER_QA_PASSWORD }}
+      SPOKEDU_MASTER_STORAGE_STATE_JSON: ${{ secrets.SPOKEDU_MASTER_STORAGE_STATE_JSON }}
       SPOKEDU_MASTER_QA_SECONDARY_ID: ${{ secrets.SPOKEDU_MASTER_QA_SECONDARY_ID }}
       SPOKEDU_MASTER_QA_SECONDARY_PASSWORD: ${{ secrets.SPOKEDU_MASTER_QA_SECONDARY_PASSWORD }}
       SPM_DISPOSABLE_QA_ALLOWLIST: ${{ secrets.SPM_DISPOSABLE_QA_ALLOWLIST }}
@@ -285,6 +285,14 @@ jobs:
       - name: Install Playwright chromium
         if: steps.preflight.outputs.passed == 'true'
         run: npx playwright install chromium --with-deps
+
+      - name: Restore MASTER passwordless QA session
+        if: steps.preflight.outputs.passed == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/spm-master-auth
+          printf '%s' "$SPOKEDU_MASTER_STORAGE_STATE_JSON" > .tmp/spm-master-auth/storage-state.json
+          chmod 600 .tmp/spm-master-auth/storage-state.json
 
       - name: Remote staging commercial smoke
         if: steps.preflight.outputs.passed == 'true'

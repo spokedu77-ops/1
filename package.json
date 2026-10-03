@@ -52,7 +52,8 @@
     "qa:spokedu-master:data-integrity": "node scripts/spokedu-master-data-integrity.mjs",
     "qa:spokedu-master:craft-capture": "node scripts/spokedu-master-craft-capture-qa.mjs",
     "qa:spokedu-master:release-automated": "node scripts/spokedu-master-release-automated.mjs",
-    "qa:spokedu-master:logged": "node scripts/spokedu-master-home-logged-qa.mjs"
+    "qa:spokedu-master:logged": "node scripts/spokedu-master-home-logged-qa.mjs",
+    "qa:spokedu-master:auth-capture": "node scripts/spokedu-master-auth-state-capture.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

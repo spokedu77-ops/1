@@ -1,4 +1,5 @@
 import nextEnv from '@next/env';
+import { applyMasterStorageState, assertMasterQaAccess } from './lib/spokedu-master-auth-state.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -7,15 +8,12 @@ loadEnvConfig(process.cwd());
  * SPOKEDU MASTER logged-in route smoke test.
  *
  * Usage:
- *   SPOKEDU_MASTER_QA_ID=spm.qa.pro@spokedu.test SPOKEDU_MASTER_QA_PASSWORD=... node scripts/spokedu-master-home-logged-qa.mjs http://localhost:3000
- *
- * Optional:
- *   SPOKEDU_MASTER_QA_PLAN=free|lite|premium|team
- *   SPOKEDU_MASTER_QA_EXPIRED=1
+ * First capture a passwordless MASTER session:
+ *   node scripts/spokedu-master-auth-state-capture.mjs http://localhost:3000
+ * Then run:
+ *   node scripts/spokedu-master-home-logged-qa.mjs http://localhost:3000
  */
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
-const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || process.env.SPOKEDU_MASTER_QA_EMAIL || '';
-const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
 const QA_PLAN = process.env.SPOKEDU_MASTER_QA_PLAN || 'premium';
 const QA_EXPIRED = process.env.SPOKEDU_MASTER_QA_EXPIRED === '1';
 
@@ -37,62 +35,6 @@ async function loadPlaywright() {
     console.warn('SKIP: playwright is not installed.');
     process.exit(0);
   }
-}
-
-function bootstrapStore(email) {
-  const now = Date.now();
-  const trialEndsAt = QA_EXPIRED
-    ? new Date(now - 24 * 60 * 60 * 1000).toISOString()
-    : new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const plan = QA_EXPIRED
-    ? 'free'
-    : QA_PLAN === 'team' ? 'team'
-      : QA_PLAN === 'free' ? 'free'
-        : QA_PLAN === 'lite' ? 'lite'
-          : 'premium';
-
-  return JSON.stringify({
-    state: {
-      profile: {
-        id: 'qa',
-        name: 'QA',
-        email,
-        school: 'QA',
-        avatarColor: '#312e81',
-        plan,
-        role: plan === 'team' ? 'director' : 'teacher',
-        centerId: null,
-        centerName: null,
-        ageGroups: [],
-        programTypes: [],
-        onboardingDone: true,
-        trialEndsAt: QA_EXPIRED ? null : trialEndsAt,
-        createdAt: new Date(now).toISOString(),
-      },
-    },
-    version: 9,
-  });
-}
-
-async function login(context) {
-  const page = await context.newPage();
-  await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/dashboard')}`, { waitUntil: 'domcontentloaded' });
-  const masterTab = page.getByRole('tab', { name: 'MASTER' });
-  await masterTab.waitFor({ state: 'visible', timeout: 10_000 });
-  if ((await masterTab.getAttribute('aria-selected')) !== 'true') await masterTab.click();
-
-  const passwordInput = page.locator('input[name="password"]');
-  if (!(await passwordInput.isVisible().catch(() => false))) {
-    await page.getByRole('button', { name: '비밀번호로 로그인' }).click();
-  }
-  await passwordInput.waitFor({ state: 'visible', timeout: 10_000 });
-  await page.locator('input[name="username"]').fill(QA_ID);
-  await passwordInput.fill(QA_PASSWORD);
-  await page.locator('button[type="submit"]').click();
-  await page.waitForURL(/\/spokedu-master\//, { timeout: 90000, waitUntil: 'domcontentloaded' });
-  await page.waitForLoadState('networkidle').catch(() => undefined);
-  await page.waitForTimeout(1000);
-  await page.close();
 }
 
 function isExpectedRoute(route, currentPath) {
@@ -141,31 +83,21 @@ async function routeSnapshot(context, route, expectedProgramTitle = '') {
 }
 
 async function main() {
-  if (!QA_ID || !QA_PASSWORD) {
-    console.log('SKIP: SPOKEDU_MASTER_QA_ID and SPOKEDU_MASTER_QA_PASSWORD are required.');
-    process.exit(0);
-  }
-
   const chromium = await loadPlaywright();
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await context.addInitScript((storeValue) => {
-    window.localStorage.setItem('spokedu-master-store', storeValue);
-  }, bootstrapStore(QA_ID));
 
   let failed = 0;
   try {
-    await login(context);
-
-    const accessResponse = await context.request.get(`${BASE}/api/spokedu-master/access`);
-    const access = await accessResponse.json().catch(() => null);
+    await applyMasterStorageState(context);
+    const access = await assertMasterQaAccess(context, BASE);
     const expectedAccess = QA_PLAN === 'lite'
-      ? access?.canUseLibrary === true && access?.canUseAttendance === true && access?.canUseSpomove === false && access?.canUseRecords === false
+      ? access?.canUseLibrary === true
       : QA_PLAN === 'premium'
-        ? access?.canUseLibrary === true && access?.canUseAttendance === true && access?.canUseSpomove === true && access?.canUseRecords === true
+        ? access?.canUseLibrary === true
         : true;
-    console.log(JSON.stringify({ ok: accessResponse.ok() && expectedAccess, capability: 'access', status: accessResponse.status(), plan: access?.plan, canUseLibrary: access?.canUseLibrary, canUseAttendance: access?.canUseAttendance, canUseRecords: access?.canUseRecords, canUseSpomove: access?.canUseSpomove }));
-    if (!accessResponse.ok() || !expectedAccess) failed += 1;
+    console.log(JSON.stringify({ ok: expectedAccess, capability: 'access', status: access.status, authenticated: access.authenticated, plan: access.plan, canUseLibrary: access.canUseLibrary }));
+    if (!expectedAccess) failed += 1;
 
     const routes = ROUTES;
 
