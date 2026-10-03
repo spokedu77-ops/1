@@ -102,6 +102,7 @@ describe('Today Sessions operations model', () => {
   it('uses continue / wrap labels from activity progress', () => {
     const [continueCard] = buildTodaySessionCards([
       session('mid', '2026-08-23T01:00:00.000Z', {
+        startedAt: '2026-08-23T01:05:00.000Z',
         programs: [program('1', 'program', true), program('2')],
       }),
     ], [classItem], '2026-08-23', nowOnDay);
@@ -109,6 +110,7 @@ describe('Today Sessions operations model', () => {
 
     const [wrapCard] = buildTodaySessionCards([
       session('wrap', '2026-08-23T01:00:00.000Z', {
+        startedAt: '2026-08-23T01:05:00.000Z',
         programs: [program('1', 'program', true)],
       }),
     ], [classItem], '2026-08-23', nowOnDay);

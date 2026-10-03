@@ -70,7 +70,11 @@ describe('MASTER product UI unity', () => {
     const payment = readFileSync(join(ROOT, 'payment', 'page.tsx'), 'utf8');
     const cancel = readFileSync(join(ROOT, 'payment', 'cancel', 'page.tsx'), 'utf8');
     const subscription = readFileSync(join(ROOT, 'subscription', 'page.tsx'), 'utf8');
-    const landing = readFileSync(join(ROOT, 'landing', 'page.tsx'), 'utf8');
+    const landing = [
+      readFileSync(join(ROOT, 'landing', 'page.tsx'), 'utf8'),
+      readFileSync(join(ROOT, 'landing', 'components', 'LandingChrome.tsx'), 'utf8'),
+      readFileSync(join(ROOT, 'landing', 'components', 'LandingSections.tsx'), 'utf8'),
+    ].join('\n');
     const landingBanner = readFileSync(join(ROOT, 'landing', 'LandingLoggedInBanner.tsx'), 'utf8');
     const onboarding = readFileSync(join(ROOT, 'onboarding', 'page.tsx'), 'utf8');
     for (const text of [gate, preview, success, payment, cancel, subscription, landing, landingBanner, onboarding]) {

@@ -170,9 +170,12 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
   });
 
   it('keeps landing Lite includes honest to the matrix (no records on Lite)', () => {
-    const landing = read('app/spokedu-master/landing/page.tsx');
-    expect(landing).toContain('getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite)');
-    expect(landing).toContain('getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium)');
+    const publicContract = read('app/spokedu-master/lib/publicProductContract.ts');
+    const landingModel = read('app/spokedu-master/landing/models/landingProduct.ts');
+    expect(publicContract).toContain("catalogSubscriptionToPublic('lite')");
+    expect(publicContract).toContain("catalogSubscriptionToPublic('premium')");
+    expect(publicContract).toContain('getMasterProductPaymentFeatureLabels(item)');
+    expect(landingModel).toContain('getPublicProductContract()');
 
     const lite = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' ');
     const premium = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' ');

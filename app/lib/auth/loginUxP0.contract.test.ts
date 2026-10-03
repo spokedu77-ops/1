@@ -29,24 +29,25 @@ describe("SPOKEDU login UX P0 contracts", () => {
   });
 
   it("routes MASTER landing login CTAs through /login with next", () => {
-    const landing = read("app/spokedu-master/landing/page.tsx");
-    expect(landing).toContain(
-      'href="/spokedu-master/login?next=/spokedu-master/dashboard"',
+    const contract = read("app/spokedu-master/lib/publicProductContract.ts");
+    const chrome = read("app/spokedu-master/landing/components/LandingChrome.tsx");
+    expect(contract).toContain(
+      "dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard'",
     );
-    expect(landing).not.toContain('href="/spokedu-master/dashboard"');
-    expect(landing).toContain("LandingLoggedInBanner");
+    expect(chrome).toContain('href={product.handoff.loginHref}');
+    expect(chrome).toContain("LandingLoggedInBanner");
   });
 
   it("keeps MASTER login/start handoffs in the marketing route contract", () => {
     const site = read("app/spokedu/data/site.ts");
-    const landing = read("app/spokedu-master/landing/page.tsx");
+    const landingModel = read("app/spokedu-master/landing/models/landingProduct.ts");
     expect(site).toContain(
       "dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard'",
     );
     expect(site).toContain(
       "onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding'",
     );
-    expect(landing).toContain("SPOKEDU MASTER 시작하기");
+    expect(landingModel).toContain('getPublicProductContract()');
   });
 
   it("keeps MASTER OTP login separate from the operations account login", () => {

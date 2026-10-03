@@ -18,7 +18,7 @@ describe('weekly Schedule agenda', () => {
   it('maps persisted Session truth to direct next actions', () => {
     expect(getScheduleAction(session('prep', '2026-08-30T07:00:00.000Z')).label).toBe('수업 준비하기');
     expect(getScheduleAction(session('run', '2026-08-30T07:00:00.000Z', { startedAt: '2026-08-30T07:01:00.000Z' })).label).toBe('수업 계속하기');
-    expect(getScheduleAction(session('wrap', '2026-08-30T07:00:00.000Z', { programs: [{ id: 'p', programId: 1, programTitle: '활동', sourceType: 'program', spomovePresetId: null, sortOrder: 0, isCompleted: true }] })).label).toBe('수업 마무리하기');
+    expect(getScheduleAction(session('wrap', '2026-08-30T07:00:00.000Z', { startedAt: '2026-08-30T07:01:00.000Z', programs: [{ id: 'p', programId: 1, programTitle: '활동', sourceType: 'program', spomovePresetId: null, sortOrder: 0, isCompleted: true }] })).label).toBe('수업 마무리하기');
     expect(getScheduleAction(session('done', '2026-08-30T07:00:00.000Z', { status: 'completed' })).label).toBe('완료');
     expect(getScheduleAction(session('cancelled', '2026-08-30T07:00:00.000Z', { status: 'cancelled' })).label).toBe('취소');
   });

@@ -61,26 +61,31 @@ describe('SPOKEDU MASTER business info contract', () => {
   });
 
   it('shows correct values in landing footer', () => {
-    const landing = read('app/spokedu-master/landing/page.tsx');
+    const landing = [
+      read('app/spokedu-master/landing/page.tsx'),
+      read('app/spokedu-master/landing/components/LandingChrome.tsx'),
+    ].join('\n');
 
     expect(landing).not.toContain('신청 중');
     expect(landing).not.toContain('스포케듀');
     expect(landing).not.toContain('7층 2호');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.mailOrderStatus');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.representativeName');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.customerServicePhone');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.customerServiceEmail');
+    expect(landing).toContain('product.business.mailOrderStatus');
+    expect(landing).toContain('product.business.representativeName');
+    expect(landing).toContain('product.business.customerServicePhone');
+    expect(landing).toContain('product.business.customerServiceEmail');
   });
 
   it('uses single source for all business info in landing footer', () => {
-    const landing = read('app/spokedu-master/landing/page.tsx');
+    const page = read('app/spokedu-master/landing/page.tsx');
+    const footer = read('app/spokedu-master/landing/components/LandingChrome.tsx');
 
-    expect(landing).toContain('MASTER_BUSINESS_INFO.businessName');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.representativeName');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.businessRegistrationNumber');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.mailOrderStatus');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.businessAddress');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.customerServicePhone');
-    expect(landing).toContain('MASTER_BUSINESS_INFO.customerServiceEmail');
+    expect(page).toContain('business: MASTER_BUSINESS_INFO');
+    expect(footer).toContain('product.business.businessName');
+    expect(footer).toContain('product.business.representativeName');
+    expect(footer).toContain('product.business.businessRegistrationNumber');
+    expect(footer).toContain('product.business.mailOrderStatus');
+    expect(footer).toContain('product.business.businessAddress');
+    expect(footer).toContain('product.business.customerServicePhone');
+    expect(footer).toContain('product.business.customerServiceEmail');
   });
 });
