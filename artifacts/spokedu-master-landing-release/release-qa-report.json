@@ -1,0 +1,68 @@
+{
+  "ok": true,
+  "viewports": [
+    {
+      "viewport": "1440",
+      "ok": true,
+      "consoleErrors": [],
+      "bodyLength": 3205,
+      "horizontalOverflow": 0,
+      "brokenImages": [],
+      "errorOverlay": false,
+      "forbidden": [],
+      "duplicateAssets": [],
+      "undersizedTargets": []
+    },
+    {
+      "viewport": "1024",
+      "ok": true,
+      "consoleErrors": [],
+      "bodyLength": 3205,
+      "horizontalOverflow": 0,
+      "brokenImages": [],
+      "errorOverlay": false,
+      "forbidden": [],
+      "duplicateAssets": [],
+      "undersizedTargets": []
+    },
+    {
+      "viewport": "834",
+      "ok": true,
+      "consoleErrors": [],
+      "bodyLength": 3194,
+      "horizontalOverflow": 0,
+      "brokenImages": [],
+      "errorOverlay": false,
+      "forbidden": [],
+      "duplicateAssets": [],
+      "undersizedTargets": []
+    },
+    {
+      "viewport": "390",
+      "ok": true,
+      "consoleErrors": [],
+      "bodyLength": 3182,
+      "horizontalOverflow": 0,
+      "brokenImages": [],
+      "errorOverlay": false,
+      "forbidden": [],
+      "duplicateAssets": [],
+      "undersizedTargets": []
+    }
+  ],
+  "links": {
+    "canonical": "https://spokedu.kr/spokedu-master/landing",
+    "free": true,
+    "lite": true,
+    "premium": true,
+    "login": true,
+    "center": true,
+    "terms": true,
+    "privacy": true
+  },
+  "og": {
+    "naturalWidth": 1200,
+    "naturalHeight": 630,
+    "ok": true
+  }
+}

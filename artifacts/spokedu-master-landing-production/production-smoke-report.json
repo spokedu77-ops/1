@@ -1,0 +1,99 @@
+{
+  "ok": true,
+  "viewports": [
+    {
+      "viewport": "1440",
+      "status": 200,
+      "ok": true,
+      "consoleErrors": [],
+      "serverErrors": [],
+      "sections": {
+        "체육수업을 찾고": true,
+        "오늘의 수업이 다음 준비로 이어지는 방식": true,
+        "오늘 수업에 맞는 활동을 빠르게 찾습니다": true,
+        "찾은 활동을 실제 수업의 순서로 만듭니다": true,
+        "현장에서는 출석과 활동을 한 흐름에서 운영합니다": true,
+        "지난 수업이 다음 준비의 출발점이 됩니다": true,
+        "수업을 화면과 움직임으로 확장합니다": true,
+        "수업 상황에 맞게 움직임 조건을 조절할 수 있습니다": true,
+        "실제 수업 현장에서 필요한 흐름을 제품으로 만들었습니다": true,
+        "무료로 시작하고, 필요한 기능만 더하세요": true,
+        "자주 묻는 질문": true,
+        "Free로 직접 확인해 보세요": true
+      },
+      "canonical": "https://spokedu.kr/spokedu-master/landing",
+      "brokenImages": [],
+      "horizontalOverflow": 0,
+      "errorOverlay": false
+    },
+    {
+      "viewport": "390",
+      "status": 200,
+      "ok": true,
+      "consoleErrors": [],
+      "serverErrors": [],
+      "sections": {
+        "체육수업을 찾고": true,
+        "오늘의 수업이 다음 준비로 이어지는 방식": true,
+        "오늘 수업에 맞는 활동을 빠르게 찾습니다": true,
+        "찾은 활동을 실제 수업의 순서로 만듭니다": true,
+        "현장에서는 출석과 활동을 한 흐름에서 운영합니다": true,
+        "지난 수업이 다음 준비의 출발점이 됩니다": true,
+        "수업을 화면과 움직임으로 확장합니다": true,
+        "수업 상황에 맞게 움직임 조건을 조절할 수 있습니다": true,
+        "실제 수업 현장에서 필요한 흐름을 제품으로 만들었습니다": true,
+        "무료로 시작하고, 필요한 기능만 더하세요": true,
+        "자주 묻는 질문": true,
+        "Free로 직접 확인해 보세요": true
+      },
+      "canonical": "https://spokedu.kr/spokedu-master/landing",
+      "brokenImages": [],
+      "horizontalOverflow": 0,
+      "errorOverlay": false
+    }
+  ],
+  "links": {
+    "free": {
+      "ok": true,
+      "href": "/spokedu-master/login?next=/spokedu-master/onboarding",
+      "status": 200
+    },
+    "login": {
+      "ok": true,
+      "href": "/spokedu-master/login?next=/spokedu-master/dashboard",
+      "status": 200
+    },
+    "lite": {
+      "ok": true,
+      "href": "/spokedu-master/payment?plan=lite",
+      "status": 307
+    },
+    "premium": {
+      "ok": true,
+      "href": "/spokedu-master/payment?plan=premium",
+      "status": 307
+    },
+    "center": {
+      "ok": true,
+      "href": "mailto:spokedu77@gmail.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4",
+      "status": "mailto"
+    },
+    "terms": {
+      "ok": true,
+      "href": "/spokedu-master/terms",
+      "status": 200
+    },
+    "privacy": {
+      "ok": true,
+      "href": "/spokedu-master/privacy",
+      "status": 200
+    }
+  },
+  "og": {
+    "status": 200,
+    "contentType": "image/png",
+    "width": 1200,
+    "height": 630,
+    "ok": true
+  }
+}
