@@ -25,6 +25,9 @@ qa-screenshots/
 .qa-screenshots/
 .qa-spokedu/
 .qa-spokedu-v*/
+# Generated capture output. Not a runtime asset path.
+# Already-tracked final evidence under artifacts/ stays tracked until explicitly removed.
+/artifacts/
 
 # Temporary local artifacts
 .tmp/
