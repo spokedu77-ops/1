@@ -1,8 +1,8 @@
 # SPOKEDU MASTER LANDING — Phase 0 Product Audit and Refactor Blueprint
 
-**Status:** Phase 0 PASS  
-**Audit date:** 2026-10-03 (Asia/Seoul)  
-**Scope:** Read-only product, commercial, content, asset, Production, and reference audit. No Landing UI, entitlement, payment, auth, or persistence implementation is included.  
+**Status:** Phase 0 PASS
+**Audit date:** 2026-10-03 (Asia/Seoul)
+**Scope:** Read-only product, commercial, content, asset, Production, and reference audit. No Landing UI, entitlement, payment, auth, or persistence implementation is included.
 **Authority order used:** `docs/SPOKEDU_MASTER_PRODUCT_CONTRACT.md` → `app/spokedu-master/MASTER_VISUAL_SYSTEM.md` → `app/spokedu-master/MASTER_SURFACE_MATRIX.md` → domain/code SSOT.
 
 ## 1. Executive Summary
