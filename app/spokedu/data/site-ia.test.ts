@@ -20,7 +20,7 @@ import {
   isSpokeduImageProgramMatch,
   SPOKEDU_IMAGES,
 } from './images';
-import { HOME_PROGRAM_SYSTEM_HREF, MASTER_HANDOFF, REDIRECT_ONLY_PROGRAM_PATHS, footerNavGroups, footerNavLinks, footerServiceLinks, siteHeaderCta, siteNav } from './site';
+import { HOME_PROGRAM_SYSTEM_HREF, MASTER_HANDOFF, REDIRECT_ONLY_PROGRAM_PATHS, footerNavGroups, footerNavLinks, footerServiceLinks, publicGlobalCta, publicGlobalNav, siteHeaderCta, siteNav } from './site';
 import { SPOKEDU_BASE_PATH, SPOKEDU_LEGACY_PREFIX, SPOKEDU_PATHS } from './public-routes';
 import { educationHubPage } from './education-hub';
 import { spomoveProgramPage } from './spomove-program-page';
@@ -33,7 +33,7 @@ describe('spokedu site IA', () => {
   it('exposes primary siteNav entries in expected order', () => {
     expect(siteNav.map((entry) => entry.label)).toEqual([
       '체육수업',
-      '수업자료·구독',
+      'SPOKEDU MASTER',
       'SPOMOVE',
       '수업 사례',
     ]);
@@ -51,13 +51,37 @@ describe('spokedu site IA', () => {
       SPOKEDU_PATHS.education,
       SPOKEDU_PATHS.private,
     ]);
-    expect(byLabel['수업자료·구독']).toBe(SPOKEDU_PATHS.subscription);
+    expect(byLabel['SPOKEDU MASTER']).toBe(SPOKEDU_PATHS.subscription);
     expect(byLabel.SPOMOVE).toBe(SPOKEDU_PATHS.spomove);
     expect(byLabel['수업 사례']).toBe(SPOKEDU_PATHS.records);
     expect(byLabel['문의·협업']).toBeUndefined();
     expect(byLabel['스포키듀']).toBeUndefined();
     expect(siteHeaderCta.label).toBe('수업 상담');
     expect(siteHeaderCta.href).toBe(SPOKEDU_PATHS.contact);
+  });
+
+  it('keeps HOME and shared chrome on one canonical public navigation model', () => {
+    expect(publicGlobalNav.map(({ label }) => label)).toEqual([
+      '체육수업',
+      'SPOKEDU MASTER',
+      'SPOMOVE',
+      '수업 사례',
+    ]);
+    expect(publicGlobalNav.map(({ href }) => href)).toEqual([
+      SPOKEDU_PATHS.education,
+      SPOKEDU_PATHS.subscription,
+      SPOKEDU_PATHS.spomove,
+      SPOKEDU_PATHS.records,
+    ]);
+    expect(publicGlobalCta).toMatchObject({ label: '수업 상담', href: SPOKEDU_PATHS.contact });
+
+    const homeHeaderSource = readFileSync(
+      join(process.cwd(), 'app/spokedu/components/home-web/site-header.tsx'),
+      'utf8',
+    );
+    expect(homeHeaderSource).toMatch(/publicGlobalNav/);
+    expect(homeHeaderSource).toMatch(/publicGlobalCta/);
+    expect(homeHeaderSource).not.toMatch(/const NAV\s*=/);
   });
 
   it('hides redirect-only programs from global nav while keeping path data', () => {
@@ -87,7 +111,7 @@ describe('spokedu site IA', () => {
       '개인·소그룹',
       'SPOMOVE',
       'SPOMOVE 카탈로그',
-      '수업자료·구독',
+      'SPOKEDU MASTER',
       'SPOMAT',
       '수업 사례',
       '파트너·협업 안내',
@@ -105,11 +129,18 @@ describe('spokedu site IA', () => {
   });
 
   it('keeps MASTER handoff path constants stable', () => {
-    expect(MASTER_HANDOFF.landing).toBe('/spokedu-master/landing');
+    expect(MASTER_HANDOFF.landing).toBe('/subscription');
     expect(MASTER_HANDOFF.onboardingLogin).toContain('/spokedu-master/onboarding');
     expect(MASTER_HANDOFF.dashboardLogin).toContain('/spokedu-master/dashboard');
     expect(MASTER_HANDOFF.payment).toBe('/spokedu-master/payment');
     expect(MASTER_HANDOFF.shop).toBe('/spokedu-master/shop');
+  });
+
+  it('uses an opaque solid navy mobile panel without CSS-variable alpha concatenation', () => {
+    const chromeSource = readFileSync(join(process.cwd(), 'app/spokedu/components/site-chrome.tsx'), 'utf8');
+    expect(chromeSource).toMatch(/id="mobile-nav-panel"[\s\S]*style=\{\{ backgroundColor: NAVY \}\}/);
+    expect(chromeSource).not.toMatch(/\$\{NAVY\}(?:f2|cc|99)/);
+    expect(chromeSource).not.toMatch(/mobile-nav-panel[\s\S]{0,500}backdrop-blur/);
   });
 
   it('makes /education the institution PE sales page absorbed from dispatch content', () => {

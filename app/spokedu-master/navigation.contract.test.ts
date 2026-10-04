@@ -87,7 +87,8 @@ describe('SPOKEDU MASTER primary navigation', () => {
 
   it('keeps authenticated MASTER paths out of robots allow rules', () => {
     const robots = read('app/robots.ts');
-    expect(robots).toContain("'/spokedu-master/landing'");
+    expect(robots).not.toContain("'/spokedu-master/landing'");
+    expect(read('app/sitemap.ts')).toContain('SPOKEDU_PATHS.subscription');
     expect(robots).toContain("'/spokedu-master/terms'");
     expect(robots).toContain("'/spokedu-master/privacy'");
     expect(robots).toContain("'/spokedu-master'");

@@ -21,6 +21,7 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const isEducationPage = pathname === SPOKEDU_PATHS.education || pathname === '/spokedu/education';
   const isRecordsPage = pathname === SPOKEDU_PATHS.records;
   const isSpomoveCatalogPage = isSpomoveCatalogPath(pathname);
+  const ownsCommercialChrome = pathname === SPOKEDU_PATHS.subscription;
   /** Full-bleed pages own their header spacing and horizontal padding. */
   const isFullBleedPage = isSpokeduFullBleedPath(pathname);
 
@@ -36,6 +37,8 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
 
   return (
     <>
+      {ownsCommercialChrome ? children : (
+        <>
       {isHomePage || isEducationPage || isRecordsPage ? null : <SiteHeader />}
       <main
         className={
@@ -47,6 +50,8 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
         {children}
       </main>
       {isHomePage || isEducationPage || isRecordsPage || isContactPage || isSpomoveCatalogPage ? null : <SiteFooter />}
+        </>
+      )}
     </>
   );
 }
