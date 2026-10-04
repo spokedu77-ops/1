@@ -1508,7 +1508,7 @@ function tierAccessSnapshot(tier) {
       canUseLibrary: true,
       canUseClassTools: true,
       canUseAttendance: true,
-      canUseRecords: false,
+      canUseRecords: true,
       canUseSpomove: false,
     });
   }
@@ -1518,7 +1518,7 @@ function tierAccessSnapshot(tier) {
       subscriptionStatus: 'expired',
       currentPeriodEnd: iso(-10_000),
       canUseLibrary: false,
-      canUseClassTools: false,
+      canUseClassTools: true,
       canUseAttendance: false,
       canUseRecords: false,
       canUseSpomove: false,
@@ -1713,7 +1713,7 @@ async function runShopPurchaseSafetySmoke(browser) {
 
   await gotoPage(page, '/spokedu-master/shop');
   await waitForText(page, 'SPOMAT', 'shop product title');
-  await waitForText(page, '회원가로 구매하기', 'shop purchase CTA');
+  await waitForText(page, 'SPOMAT 구매하기', 'shop purchase CTA');
   await checkNoHorizontalOverflow(page, 'shop 390px');
 
   const purchaseHref = await page.locator('a[href="/api/spokedu-master/shop/spomat/purchase"]').first().getAttribute('href');

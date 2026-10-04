@@ -1,28 +1,21 @@
-import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
+import { TrackedLink } from '@/app/spokedu/components/home/tracked-link';
 import { LandingLoggedInBanner } from '../LandingLoggedInBanner';
 import type { ReturnTypeOfLandingModel } from './types';
 import styles from '../landing.module.css';
 
 export function LandingHeader({ product }: { product: ReturnTypeOfLandingModel }) {
   return (
-    <>
-      <LandingLoggedInBanner />
-      <header className={styles.header}>
-        <Link href="/spokedu-master/landing" className={styles.brand} aria-label="SPOKEDU MASTER 소개 페이지">
-          <span>SPOKEDU</span>
-          <strong>MASTER</strong>
-        </Link>
-        <nav className={styles.headerNav} aria-label="소개 페이지 주요 메뉴">
-          <a href="#workflow">기능</a>
-          <a href="#plans">이용권</a>
-          <Link href={product.handoff.loginHref}>로그인</Link>
-          <Link href={product.handoff.freeStartHref} className="spm-btn-primary">
-            Free로 시작
-          </Link>
-        </nav>
-      </header>
-    </>
+    <><LandingLoggedInBanner /><header className={styles.header}>
+      <TrackedLink href="/subscription" trackLabel="master-commercial-brand" className={styles.brand}>
+        <span>SPOKEDU</span><strong>MASTER</strong>
+      </TrackedLink>
+      <nav className={styles.headerNav} aria-label="SPOKEDU MASTER 주요 메뉴">
+        <a href="#workflow">서비스</a><a href="#library">사용 방법</a><a href="#spomove">SPOMOVE</a><a href="#plans">요금</a><a href="#faq">FAQ</a>
+        <TrackedLink href={product.handoff.loginHref} trackLabel="master-commercial-header-login" commercialRoute="curriculum" ctaIntentId="login">로그인</TrackedLink>
+        <TrackedLink href={product.handoff.freeStartHref} trackLabel="master-commercial-header-free" commercialRoute="curriculum" ctaIntentId="free_start" className="spm-btn-primary">Free로 시작하기</TrackedLink>
+      </nav>
+    </header></>
   );
 }
 
@@ -33,9 +26,7 @@ export function LandingFooter({ product }: { product: ReturnTypeOfLandingModel }
         <div className={styles.footerLead}>
           <div className={styles.brand}><span>SPOKEDU</span><strong>MASTER</strong></div>
           <p>유아·초등 체육수업을 준비하고 운영하는 교사와 강사를 위한 서비스입니다.</p>
-          <a href={product.centerInquiryHref} className={styles.textLink}>
-            센터·기관 이용 문의 <ArrowUpRight size={16} aria-hidden />
-          </a>
+          <a href={product.centerInquiryHref} className={styles.textLink}>센터·기관 이용 문의 <ArrowUpRight size={16} aria-hidden /></a>
         </div>
         <div className={styles.businessBlock}>
           <h2>사업자 정보</h2>
@@ -51,7 +42,7 @@ export function LandingFooter({ product }: { product: ReturnTypeOfLandingModel }
         </div>
       </div>
       <div className={styles.footerBottom}>
-        <div><Link href="/spokedu-master/terms">이용약관</Link><Link href="/spokedu-master/privacy">개인정보처리방침</Link></div>
+        <div><TrackedLink href="/spokedu-master/terms" trackLabel="master-commercial-terms">이용약관</TrackedLink><TrackedLink href="/spokedu-master/privacy" trackLabel="master-commercial-privacy">개인정보처리방침</TrackedLink></div>
         <p>Lite와 프리미엄은 월 자동결제입니다. 언제든 해지를 예약할 수 있고, 결제된 이용 기간 종료일까지 사용할 수 있습니다.</p>
       </div>
     </footer>

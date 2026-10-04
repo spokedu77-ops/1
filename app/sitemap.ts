@@ -27,11 +27,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ] as const;
 
   return [
-    {
-      url: `${base}/spokedu-master/landing`,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
     ...spokeduRoutes.map(
       (path): MetadataRoute.Sitemap[number] => ({
         url: path === '/' ? `${base}/` : `${base}${path}`,

@@ -41,6 +41,42 @@
 .workflowList h3 { margin: 24px 0 0; font-size: 17px; font-weight: 720; }
 .workflowList p { margin: 8px 0 0; color: var(--spm-t2); font-size: 13px; line-height: 1.55; }
 .workflowList svg { position: absolute; top: 20px; right: 20px; color: var(--spm-t3); }
+.page [id] { scroll-margin-top: 88px; }
+.toolsSection, .whySection, .detailSection, .audienceSection, .centerSection { max-width: 1120px; margin: 0 auto; padding: 110px 40px; }
+.toolsSection { display: grid; grid-template-columns: minmax(320px,.82fr) minmax(0,1.18fr); gap: 64px; align-items: center; border-top: 1px solid var(--spm-br2); }
+.toolStrip { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; margin: 34px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--spm-br2); }
+.toolStrip li { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--spm-br2); color: var(--spm-t2); font-size: 14px; font-weight: 700; }
+.toolStrip small { color: var(--spm-cta); font-size: 11px; }
+.whySection { max-width: 1040px; }
+.beforeAfter { margin-top: 48px; border-top: 1px solid var(--spm-br3); }
+.beforeAfter > div { display: grid; grid-template-columns: 1fr 32px 1fr; gap: 24px; align-items: center; padding: 24px 0; border-bottom: 1px solid var(--spm-br2); }
+.beforeAfter p { display: grid; grid-template-columns: 72px 1fr; gap: 16px; margin: 0; color: var(--spm-t2); font-size: 14px; line-height: 1.6; }
+.beforeAfter p span { color: var(--spm-t3); font-size: 11px; font-weight: 800; }
+.beforeAfter strong { color: var(--spm-t); }
+.beforeAfter svg { color: var(--spm-cta); }
+.detailSection { background: var(--spm-s1); }
+.detailLayout { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(320px,.85fr); gap: 48px; align-items: center; margin-top: 48px; }
+.detailLayout .productFrame { max-height: 650px; }
+.detailGroups { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 28px; }
+.detailGroups h3 { margin: 0; font-size: 17px; }
+.detailGroups ul { display: grid; gap: 9px; margin: 14px 0 0; padding: 0; list-style: none; }
+.detailGroups li { display: flex; gap: 8px; color: var(--spm-t2); font-size: 13px; line-height: 1.55; }
+.detailGroups svg { flex: 0 0 auto; margin-top: 2px; color: var(--spm-grn-strong); }
+.audienceGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 42px; margin-top: 44px; border-top: 1px solid var(--spm-br3); }
+.audienceGrid article { padding: 26px 0; border-bottom: 1px solid var(--spm-br2); }
+.audienceGrid h3 { margin: 0; font-size: 18px; }
+.audienceGrid p { margin: 10px 0 0; color: var(--spm-t2); font-size: 14px; line-height: 1.7; }
+.comparisonWrap { overflow-x: auto; margin-top: 38px; border: 1px solid var(--spm-br2); border-radius: 16px; background: var(--spm-s1); }
+.comparisonTable { width: 100%; min-width: 620px; border-collapse: collapse; }
+.comparisonTable caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.comparisonTable th, .comparisonTable td { padding: 15px 18px; border-bottom: 1px solid var(--spm-br2); text-align: center; font-size: 13px; }
+.comparisonTable th:first-child { text-align: left; }
+.comparisonTable thead th { color: var(--spm-t3); font-size: 11px; }
+.comparisonTable tbody th { color: var(--spm-t2); font-weight: 650; }
+.comparisonTable td svg { display: inline; color: var(--spm-grn-strong); }
+.centerSection { display: flex; align-items: center; justify-content: space-between; gap: 50px; max-width: 1060px; margin-top: 34px; margin-bottom: 100px; padding: 52px 56px; border-radius: 22px; background: var(--spm-s2); }
+.centerSection h2 { margin: 0; font-family: var(--spm-font-display); font-size: clamp(28px,3vw,40px); line-height: 1.2; }
+.centerSection > div > p:last-child { max-width: 650px; margin: 16px 0 0; color: var(--spm-t2); font-size: 14px; line-height: 1.7; }
 .storyFlow { background: var(--spm-s1); }
 .storySection, .inclusiveSection { display: grid; grid-template-columns: minmax(320px, .74fr) minmax(0, 1.26fr); gap: 72px; align-items: center; max-width: 1120px; margin: 0 auto; padding: 118px 40px; }
 .storySection.reverse { grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); }
@@ -160,7 +196,8 @@
 
 @media (max-width: 834px) {
   .header { padding: 0 24px; }
-  .headerNav > a:not(:last-child) { display: none; }
+  .headerNav > a:nth-child(-n+5) { display: none; }
+  .headerNav > a:nth-last-child(2) { display: inline-flex; min-height: 44px; align-items: center; padding: 0 12px; }
   .hero { grid-template-columns: 1fr; gap: 50px; padding: 68px 30px 92px; }
   .heroCopy { max-width: 670px; }
   .heroVisual { max-width: 720px; }
@@ -184,6 +221,9 @@
   .spomoveSection { grid-template-columns: 1fr; }
   .inclusiveMedia { max-width: 560px; }
   .planGrid { grid-template-columns: 1fr; }
+  .toolsSection, .detailLayout { grid-template-columns: 1fr; }
+  .toolsSection, .whySection, .detailSection, .audienceSection { padding: 90px 30px; }
+  .centerSection { margin-right: 30px; margin-left: 30px; }
   .planCard { min-height: 0; }
   .footerInner { grid-template-columns: 1fr; gap: 40px; padding-right: 30px; padding-left: 30px; }
   .footerBottom { padding-right: 30px; padding-left: 30px; }
@@ -193,6 +233,7 @@
   .header { min-height: 64px; padding: 0 18px; }
   .headerNav { gap: 0; }
   .headerNav > a:last-child { min-height: 44px; padding: 0 14px; font-size: 12px; }
+  .headerNav > a:nth-last-child(2) { padding: 0 10px; font-size: 12px; }
   .hero { min-height: 0; gap: 46px; padding: 52px 20px 80px; }
   .eyebrow { margin-bottom: 15px; font-size: 12px; }
   .hero h1 { font-size: 42px; line-height: 1.11; }
@@ -210,6 +251,12 @@
   .workflowList h3 { margin: 0; }
   .workflowList p { grid-column: 2; }
   .workflowList svg { display: none; }
+  .toolsSection, .whySection, .detailSection, .audienceSection { padding: 76px 20px; }
+  .toolStrip, .detailGroups, .audienceGrid { grid-template-columns: 1fr; }
+  .beforeAfter > div { grid-template-columns: 1fr; gap: 10px; }
+  .beforeAfter > div > svg { transform: rotate(90deg); }
+  .centerSection { align-items: stretch; flex-direction: column; margin: 20px 12px 76px; padding: 42px 20px; }
+  .centerSection > a { width: 100%; }
   .storySection, .storySection.reverse, .inclusiveSection { gap: 36px; padding: 76px 20px; }
   .storyFlow > .storySection:first-child { padding-bottom: 52px; }
   .storyFlow > .storySection.reverse { padding-top: 52px; }

@@ -1,5 +1,6 @@
 import {
   getPublicProductContract,
+  getPublicPlanComparison,
   type PublicProductPlan,
 } from '../../lib/publicProductContract';
 
@@ -12,18 +13,18 @@ export type LandingPlan = PublicProductPlan & {
 
 const PLAN_MESSAGES = {
   free: {
-    eyebrow: '먼저 확인해 보세요',
-    value: '라이브러리를 먼저 둘러보고 기본 수업 도구와 지정 무료 프로그램을 사용합니다.',
-    ctaLabel: 'Free로 시작하기',
+    eyebrow: '먼저 직접 확인해 보세요',
+    value: 'Library를 탐색하고 이번 주 추천 프로그램 1개 전체와 수업 도구 3종을 이용합니다.',
+    ctaLabel: '무료로 시작하기',
   },
   lite: {
-    eyebrow: '매주 수업을 운영한다면',
-    value: '전체 콘텐츠를 수업반·일정·출석·수업 구성과 실제 운영까지 연결합니다.',
+    eyebrow: '수업관리 전체',
+    value: 'Library와 반·학생·일정·출석, 기록과 안내문까지 일반 수업관리 흐름을 모두 제공합니다.',
     ctaLabel: 'Lite 시작하기',
   },
   premium: {
-    eyebrow: '기록과 다음 수업까지',
-    value: 'Lite의 운영 기능에 기록·안내문·SPOMOVE와 다음 수업의 맥락을 이어 씁니다.',
+    eyebrow: 'SPOMOVE 포함',
+    value: 'Lite의 모든 수업관리 기능에 화면과 움직임을 연결하는 SPOMOVE 공식 콘텐츠와 현장 실행 환경을 더합니다.',
     ctaLabel: '프리미엄 시작하기',
   },
 } as const;
@@ -38,8 +39,5 @@ export function getLandingProductModel() {
       : contract.handoff.paymentPlanHref(plan.code),
   }));
 
-  return {
-    ...contract,
-    plans,
-  };
+  return { ...contract, plans, comparison: getPublicPlanComparison() };
 }

@@ -14,7 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: [
           '/',
-          '/spokedu-master/landing',
           '/spokedu-master/terms',
           '/spokedu-master/privacy',
         ],
