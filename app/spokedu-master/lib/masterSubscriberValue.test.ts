@@ -38,13 +38,14 @@ function summary(overrides: Partial<SubscriptionSummaryData>): SubscriptionSumma
 }
 
 describe('MASTER Subscriber Value — VALUE PROMISE SSOT', () => {
-  it('keeps Lite outcome free of Premium exclusion dumps and Premium as connected memory', () => {
+  it('keeps Lite complete for teaching management and Premium focused on SPOMOVE', () => {
     const lite = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' · ');
     const premium = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' · ');
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('콘텐츠를 찾아 실제 수업으로 구성');
-    expect(lite).not.toMatch(/프리미엄|SPOMOVE|안내문/);
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('지난 기록과 학생 맥락');
-    expect(premium).toContain('다음 준비');
+    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('일반 수업관리 흐름을 모두 제공합니다');
+    expect(lite).not.toMatch(/프리미엄|SPOMOVE/);
+    expect(lite).toContain('수업 안내문');
+    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('SPOMOVE 디지털 움직임 콘텐츠');
+    expect(premium).toContain('Lite의 모든 기능');
     expect(premium).toContain('SPOMOVE');
     expect(getMasterPlanValueWorkflowLines('lite')).toEqual(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite));
   });
@@ -62,11 +63,11 @@ describe('MASTER Subscriber Value — VALUE-GATE-01 / VALUE-SUB-01 / VALUE-RESUB
     const context = readMasterGateContextFromSearchParams(params);
     expect(context.mode).toBe('gated');
     expect(context.intent).toBe('continue_record');
-    expect(context.allowedPlans).toEqual(['premium']);
+    expect(context.allowedPlans).toEqual(['lite', 'premium']);
     expect(context.next).toContain('session=s1');
     expect(context.next).toContain('capture=1');
     const model = buildMasterGateDisplayModel(context);
-    expect(model.description).toContain('기존 수업 기록은 유지');
+    expect(model.description).toContain('지난 수업의 맥락을 다음 준비에 이어');
     expect(getSafeMasterPostPaymentPath(context.next, '/spokedu-master/dashboard')).toContain('capture=1');
   });
 

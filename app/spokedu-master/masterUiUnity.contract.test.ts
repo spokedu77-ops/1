@@ -20,12 +20,14 @@ function walkTsx(dir: string, out: string[] = []): string[] {
 describe('MASTER product UI unity', () => {
   const files = walkTsx(ROOT);
 
-  it('bans 「바로 실행」 in product UI/copy (CTA contract)', () => {
+  it('bans 「바로 실행」 as a CTA label while allowing descriptive copy', () => {
     const hits: string[] = [];
     for (const file of files) {
       if (file.includes(`${join('spomove', 'SPOMOVE_PRODUCT_CONTRACT')}`)) continue;
       const text = readFileSync(file, 'utf8');
-      if (text.includes('바로 실행')) hits.push(file.replace(process.cwd() + '\\', '').replace(process.cwd() + '/', ''));
+      if (/ctaLabel\s*[:=]\s*['"]바로 실행['"]|>\s*바로 실행\s*</.test(text)) {
+        hits.push(file.replace(process.cwd() + '\\', '').replace(process.cwd() + '/', ''));
+      }
     }
     expect(hits).toEqual([]);
   });

@@ -14,7 +14,7 @@ import { readSessionDetailSource } from '../manage/session-detailTestSource';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('MASTER commercial cohesion contracts', () => {
-  it('keeps Lite attendance routes separate from Premium records routes', () => {
+  it('keeps general teaching management in Lite and SPOMOVE in Premium', () => {
     expect(getMasterRouteRequirement('/spokedu-master/activity').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/classes/class-a').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/students').capability).toBe('attendance');
@@ -22,14 +22,14 @@ describe('MASTER commercial cohesion contracts', () => {
     expect(getMasterRouteRequirement('/spokedu-master/report').capability).toBe('records');
     expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements).toMatchObject({
       canUseAttendance: true,
-      canUseRecords: false,
+      canUseRecords: true,
       canUseSpomove: false,
     });
   });
 
   it('sells outcomes instead of a stale feature count', () => {
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('콘텐츠를 찾아 실제 수업으로 구성');
-    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('지난 기록과 학생 맥락');
+    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.lite)).toContain('일반 수업관리 흐름을 모두 제공합니다');
+    expect(getMasterProductPaymentDescription(MASTER_PRODUCT_CATALOG.premium)).toContain('SPOMOVE 디지털 움직임 콘텐츠');
     expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' ')).toContain('출석');
     expect(getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' ')).toContain('SPOMOVE');
   });

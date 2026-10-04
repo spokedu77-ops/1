@@ -11,9 +11,9 @@ import { readSessionDetailSource } from '../manage/session-detailTestSource';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('MASTER whole-product maturity journeys', () => {
-  it('LITE-01 keeps Class → Session → Attendance operable without records', () => {
+  it('LITE-01 keeps the complete general teaching-management loop operable', () => {
     expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements.canUseAttendance).toBe(true);
-    expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements.canUseRecords).toBe(false);
+    expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements.canUseRecords).toBe(true);
     expect(getMasterRouteRequirement('/spokedu-master/classes').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/activity').capability).toBe('attendance');
     expect(getMasterRouteRequirement('/spokedu-master/students').capability).toBe('attendance');
