@@ -56,7 +56,7 @@ describe("MASTER Class and attendance management contracts", () => {
     expect(activity).toContain("inert={classCreateOpen || nextSessionOpen}");
     expect(activity).toContain("draft.setClassId(created.id)");
     expect(read("app/spokedu-master/components/ui/BottomSheet.tsx")).toContain(
-      "createPortal(overlay, document.body)",
+      "createPortal(overlay, portalHost)",
     );
     expect(read("app/spokedu-master/components/ui/BottomSheet.tsx")).toContain(
       "if (nested) event.stopImmediatePropagation()",
