@@ -83,7 +83,7 @@ npm run qa:spokedu-master:logged -- http://localhost:3000
 | A3-3 | 「이 기록 보강」 | 같은 recordId로 출석·관찰 보강, quick→detailed | | | |
 | A3-4 | 입력 후 닫기·다시 열기 | draft 복원(같은 program만) | | | sessionStorage |
 
-### A4. SPOMOVE → 기록 초안 (Premium)
+### A4. SPOMOVE → 기록 초안 (기록 Lite 이상 · SPOMOVE Premium)
 
 | # | 단계 | 기대 결과 | Pass | 기기 | 메모 |
 |---|------|-----------|------|------|------|
