@@ -15,6 +15,7 @@ export function WeeklyEditorialCard({
   supportMeta,
   hasVideo,
   onPreview,
+  locked = false,
   favorite = false,
   favoriteEnabled = false,
   favoriteHint = '로그인 후 즐겨찾기할 수 있습니다',
@@ -32,12 +33,13 @@ export function WeeklyEditorialCard({
   category: string;
   supportMeta?: string;
   hasVideo: boolean;
-  onPreview: () => void;
+  onPreview?: () => void;
+  locked?: boolean;
   favorite?: boolean;
   favoriteEnabled?: boolean;
   favoriteHint?: string;
   onFavorite?: () => void;
-  accessBadge?: '무료 체험' | 'Lite' | null;
+  accessBadge?: 'Free' | 'Lite' | null;
   priority?: boolean;
   sizes?: string;
   cleanSquareMedia?: boolean;
@@ -48,6 +50,7 @@ export function WeeklyEditorialCard({
   const type = category.trim();
   const support = (supportMeta ?? '').trim();
   const isHomeFamily = presentation === 'home' || presentation === 'library-featured';
+  const previewEnabled = !locked && Boolean(onPreview);
   const compactMediaClass = compactMedia
     ? 'min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto'
     : '';
@@ -59,57 +62,66 @@ export function WeeklyEditorialCard({
       ? 'bg-white text-amber-500 shadow-sm'
       : 'bg-white/90 text-slate-600 shadow-sm hover:bg-white hover:text-slate-900';
 
+  const cardContent = (
+    <>
+      <span className="relative block w-full">
+        {heroImageUrl ? (
+          <InstructionalThumb
+            src={heroImageUrl}
+            sizes={sizes}
+            priority={priority}
+            presentation={isHomeFamily ? 'home-cover-4-3' : cleanSquareMedia ? 'home-clean-square' : 'default'}
+            className={`${isHomeFamily ? 'rounded-none' : 'rounded-b-none'} ${compactMediaClass} transition-opacity duration-200 ${previewEnabled ? 'group-hover:opacity-95' : ''}`}
+          />
+        ) : (
+          <span className={`relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-slate-200 transition-opacity duration-200 ${previewEnabled ? 'group-hover:opacity-95' : ''} ${compactMediaClass} ${isHomeFamily ? '' : 'rounded-t-[15px]'}`}>
+            <CategoryIcon category={category} size={36} color="rgba(15,23,42,0.45)" />
+          </span>
+        )}
+        {isNew || (previewEnabled && hasVideo) || accessBadge ? (
+          <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
+            {accessBadge ? (
+              <span className={`rounded-[6px] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${accessBadge === 'Free' ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-amber-950'}`}>
+                {accessBadge}
+              </span>
+            ) : null}
+            {isNew ? <LessonNewMark /> : null}
+            {previewEnabled && hasVideo ? (
+              <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-white/75 text-slate-700">
+                <Play className="h-3 w-3 fill-current" aria-hidden />
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+      </span>
+      <div className={isHomeFamily ? 'px-3.5 pb-3.5 pt-3' : 'px-3 pb-3.5 pt-2.5'}>
+        <ContentCardMetaLine
+          primary={type}
+          secondary={support}
+          className={isHomeFamily ? MV_HOME_CARD_META : MV_META}
+        />
+        <span className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 ${previewEnabled ? 'group-hover:text-slate-700' : ''}`}>{title}</span>
+      </div>
+    </>
+  );
+
+  const cardClassName = `flex w-full flex-col items-stretch text-left ${previewEnabled ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]' : ''} ${
+          isHomeFamily
+            ? `overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 ${previewEnabled ? 'hover:border-slate-300' : ''}`
+            : `overflow-hidden rounded-[16px] border border-slate-100/80 bg-white transition-colors duration-200 ${previewEnabled ? 'hover:border-slate-200' : ''}`
+        }`;
+
   return (
     <article data-weekly-editorial="" data-presentation={presentation} className="group relative min-w-0 w-full">
-      <button
-        type="button"
-        onClick={onPreview}
-        className={`flex w-full cursor-pointer flex-col items-stretch text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] ${
-          isHomeFamily
-            ? 'overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 hover:border-slate-300'
-            : 'overflow-hidden rounded-[16px] border border-slate-100/80 bg-white transition-colors duration-200 hover:border-slate-200'
-        }`}
-        aria-label={`${title} 미리보기`}
-      >
-        <span className="relative block w-full">
-          {heroImageUrl ? (
-            <InstructionalThumb
-              src={heroImageUrl}
-              sizes={sizes}
-              priority={priority}
-              presentation={isHomeFamily ? 'home-cover-4-3' : cleanSquareMedia ? 'home-clean-square' : 'default'}
-              className={`${isHomeFamily ? 'rounded-none' : 'rounded-b-none'} ${compactMediaClass} transition-opacity duration-200 group-hover:opacity-95`}
-            />
-          ) : (
-            <span className={`relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-slate-200 transition-opacity duration-200 group-hover:opacity-95 ${compactMediaClass} ${isHomeFamily ? '' : 'rounded-t-[15px]'}`}>
-              <CategoryIcon category={category} size={36} color="rgba(15,23,42,0.45)" />
-            </span>
-          )}
-          {isNew || hasVideo || accessBadge ? (
-            <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
-              {accessBadge ? (
-                <span className={`rounded-[6px] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${accessBadge === '무료 체험' ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-amber-950'}`}>
-                  {accessBadge}
-                </span>
-              ) : null}
-              {isNew ? <LessonNewMark /> : null}
-              {hasVideo ? (
-                <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-white/75 text-slate-700">
-                  <Play className="h-3 w-3 fill-current" aria-hidden />
-                </span>
-              ) : null}
-            </span>
-          ) : null}
-        </span>
-        <div className={isHomeFamily ? 'px-3.5 pb-3.5 pt-3' : 'px-3 pb-3.5 pt-2.5'}>
-          <ContentCardMetaLine
-            primary={type}
-            secondary={support}
-            className={isHomeFamily ? MV_HOME_CARD_META : MV_META}
-          />
-          <span className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 group-hover:text-slate-700`}>{title}</span>
+      {previewEnabled ? (
+        <button type="button" onClick={onPreview} className={cardClassName} aria-label={`${title} 미리보기`}>
+          {cardContent}
+        </button>
+      ) : (
+        <div data-preview-disabled="" className={cardClassName}>
+          {cardContent}
         </div>
-      </button>
+      )}
 
       {onFavorite ? (
         <button

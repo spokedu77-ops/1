@@ -68,7 +68,7 @@ export function ProgramPreviewModal({
       }
       onClose={onClose}
       size="preview"
-      headerActions={onFavorite ? (
+      headerActions={!locked && onFavorite ? (
         <button
           type="button"
           onClick={onFavorite}
@@ -114,7 +114,7 @@ export function ProgramPreviewModal({
                 Lite
               </span>
             ) : null}
-            {hasSpomoveLink(program) ? (
+            {!locked && hasSpomoveLink(program) ? (
               <span className="rounded-full bg-[var(--spm-acc-glow)] px-3 py-1 text-xs font-extrabold text-[var(--spm-acc)]">
                 SPOMOVE 연결
               </span>

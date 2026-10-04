@@ -33,9 +33,9 @@ export function isProgramLessonLocked(args: {
 export function getProgramAccessBadge(args: {
   programId: string | number | null | undefined;
   canUseLibrary: boolean;
-}): '무료 체험' | 'Lite' | null {
+}): 'Free' | 'Lite' | null {
   if (args.canUseLibrary) return null;
-  return isFreePreviewProgramId(args.programId) ? '무료 체험' : 'Lite';
+  return isFreePreviewProgramId(args.programId) ? 'Free' : 'Lite';
 }
 
 export function selectWeeklyProgramsById<T extends { id: string }>(programs: T[]): T[] {

@@ -28,7 +28,7 @@ describe('MASTER commercial program access', () => {
       expect(isProgramLessonLocked({ programId: id, canUseLibrary: false })).toBe(true);
     }
     expect(isProgramLessonLocked({ programId: 'arbitrary-catalog-program', canUseLibrary: false })).toBe(true);
-    expect(getProgramAccessBadge({ programId: FREE_PREVIEW_PROGRAM_ID, canUseLibrary: false })).toBe('무료 체험');
+    expect(getProgramAccessBadge({ programId: FREE_PREVIEW_PROGRAM_ID, canUseLibrary: false })).toBe('Free');
     expect(getProgramAccessBadge({ programId: WEEKLY_PROGRAM_IDS[1], canUseLibrary: false })).toBe('Lite');
   });
 

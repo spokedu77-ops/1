@@ -134,7 +134,7 @@ export type LessonCatalogCardProps = {
   heroImageUrl?: string | null;
   categoryFallback?: string;
   hasVideo: boolean;
-  onPreview: () => void;
+  onPreview?: () => void;
   detailHref: string;
   /** 1줄: 테마 · 대상 등 결정 메타 → 액센트 라벨 */
   decisionMeta?: string;
@@ -197,59 +197,72 @@ export function LessonCatalogCard({
   const cornerText = variant === 'home' ? cornerLabel?.replace(/^추천\s*/u, '') : cornerLabel;
   const showUsed = variant === 'library' && used;
   const showFavorite = variant === 'library' && Boolean(onFavorite);
+  const previewEnabled = !locked && Boolean(onPreview);
   const cardGeometry = '';
   const mediaAspect = 'aspect-[4/3]';
   const cardSurface =
     variant === 'home'
       ? 'border border-slate-200 bg-white text-[color:var(--spm-t)] hover:-translate-y-0.5 hover:border-slate-300'
       : locked
-        ? 'border border-amber-300/90 bg-[var(--spm-s1)] text-[color:var(--spm-t)] hover:border-amber-400'
+        ? 'border border-amber-300/90 bg-[var(--spm-s1)] text-[color:var(--spm-t)]'
         : 'border border-slate-200 bg-white text-[color:var(--spm-t)] hover:-translate-y-0.5 hover:border-slate-300';
 
   if (editorial) {
+    const previewContent = (
+      <>
+        <span className="relative block w-full">
+          {heroImageUrl ? (
+            <InstructionalThumb
+              src={heroImageUrl}
+              sizes={sizes}
+              priority={priority}
+              presentation="home-cover-4-3"
+              className={`rounded-none transition-transform duration-200 ${previewEnabled ? 'group-hover:scale-[1.015]' : ''}`}
+            />
+          ) : (
+            <span className="relative flex aspect-[4/3] w-full items-center justify-center bg-slate-200">
+              <CategoryIcon category={categoryFallback} size={36} color="rgba(15,23,42,0.45)" />
+            </span>
+          )}
+          {isNew || (previewEnabled && hasVideo) ? (
+            <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
+              {isNew ? <LessonNewMark /> : null}
+              {previewEnabled && hasVideo ? (
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
+                  <Play className="h-3 w-3 fill-current" aria-hidden />
+                </span>
+              ) : null}
+            </span>
+          ) : null}
+        </span>
+        <span className="block px-3 pb-3.5 pt-2.5">
+          <ContentCardMetaLine primary={eyebrow} secondary={description} />
+          <span className={`${MV_CONTENT_TITLE} mt-1.5 block line-clamp-1 transition-colors duration-200 ${previewEnabled ? 'group-hover:text-slate-700' : ''}`}>
+            {title}
+          </span>
+        </span>
+      </>
+    );
+
     return (
       <article
         {...articleProps}
-        className="group relative min-w-0 overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 hover:border-slate-300"
+        className={`group relative min-w-0 overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 ${previewEnabled ? 'hover:border-slate-300' : ''}`}
       >
-        <button
-          type="button"
-          onClick={onPreview}
-          className="flex w-full flex-col items-stretch text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
-          aria-label={`${title} 수업 미리보기`}
-        >
-          <span className="relative block w-full">
-            {heroImageUrl ? (
-              <InstructionalThumb
-                src={heroImageUrl}
-                sizes={sizes}
-                priority={priority}
-                presentation="home-cover-4-3"
-                className="rounded-none transition-transform duration-200 group-hover:scale-[1.015]"
-              />
-            ) : (
-              <span className="relative flex aspect-[4/3] w-full items-center justify-center bg-slate-200">
-                <CategoryIcon category={categoryFallback} size={36} color="rgba(15,23,42,0.45)" />
-              </span>
-            )}
-            {isNew || hasVideo ? (
-              <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5">
-                {isNew ? <LessonNewMark /> : null}
-                {hasVideo ? (
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-white/75 text-slate-950/70">
-                    <Play className="h-3 w-3 fill-current" aria-hidden />
-                  </span>
-                ) : null}
-              </span>
-            ) : null}
-          </span>
-          <span className="block px-3 pb-3.5 pt-2.5">
-            <ContentCardMetaLine primary={eyebrow} secondary={description} />
-            <span className={`${MV_CONTENT_TITLE} mt-1.5 block line-clamp-1 transition-colors duration-200 group-hover:text-slate-700`}>
-              {title}
-            </span>
-          </span>
-        </button>
+        {previewEnabled ? (
+          <button
+            type="button"
+            onClick={onPreview}
+            className="flex w-full flex-col items-stretch text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
+            aria-label={`${title} 수업 미리보기`}
+          >
+            {previewContent}
+          </button>
+        ) : (
+          <div data-preview-disabled="" className="flex w-full flex-col items-stretch text-left">
+            {previewContent}
+          </div>
+        )}
 
         {showFavorite ? (
           <button
@@ -294,6 +307,24 @@ export function LessonCatalogCard({
     );
   }
 
+  const mediaContent = (
+    <>
+      {heroImageUrl ? (
+        <CoverImage src={heroImageUrl} alt="" sizes={sizes} priority={priority} />
+      ) : (
+        <div
+          className="absolute inset-0 grid place-items-center"
+          style={{ background: placeholderBackground(categoryFallback) }}
+        >
+          <CategoryIcon category={categoryFallback} size={34} color="rgba(51,65,85,0.55)" />
+        </div>
+      )}
+      {previewEnabled ? (
+        <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-150 group-hover:bg-black/[0.07]" />
+      ) : null}
+    </>
+  );
+
   return (
     <article
       {...articleProps}
@@ -305,24 +336,20 @@ export function LessonCatalogCard({
           variant === 'home' ? 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]' : 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]'
         }`}
       >
-        <button
-          type="button"
-          onClick={onPreview}
-          className="absolute inset-0 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
-          aria-label={`${title} 수업 미리보기`}
-        >
-          {heroImageUrl ? (
-            <CoverImage src={heroImageUrl} alt="" sizes={sizes} priority={priority} />
-          ) : (
-            <div
-              className="absolute inset-0 grid place-items-center"
-              style={{ background: placeholderBackground(categoryFallback) }}
-            >
-              <CategoryIcon category={categoryFallback} size={34} color="rgba(51,65,85,0.55)" />
-            </div>
-          )}
-          <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-150 group-hover:bg-black/[0.07]" />
-        </button>
+        {previewEnabled ? (
+          <button
+            type="button"
+            onClick={onPreview}
+            className="absolute inset-0 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
+            aria-label={`${title} 수업 미리보기`}
+          >
+            {mediaContent}
+          </button>
+        ) : (
+          <div data-preview-disabled="" className="absolute inset-0 text-left">
+            {mediaContent}
+          </div>
+        )}
 
         {(cornerText || locked || showUsed) && (
           <div className={`pointer-events-none absolute right-3 ${showFavorite ? 'top-14' : 'top-3'} flex max-w-[72%] flex-wrap justify-end gap-1`}>
@@ -370,7 +397,7 @@ export function LessonCatalogCard({
           </button>
         ) : null}
 
-        {hasVideo ? (
+        {previewEnabled && hasVideo ? (
           <span className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5">
             <span
               aria-hidden="true"
@@ -382,11 +409,11 @@ export function LessonCatalogCard({
               미리보기
             </span>
           </span>
-        ) : (
+        ) : previewEnabled ? (
           <span className="pointer-events-none absolute bottom-2.5 left-2.5 rounded-md bg-black/55 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
             미리보기
           </span>
-        )}
+        ) : null}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
             <p className="max-w-[76%] truncate text-[12px] font-medium text-white/82">

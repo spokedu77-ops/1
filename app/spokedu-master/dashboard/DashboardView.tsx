@@ -228,6 +228,7 @@ const HOME_CLASS_TOOL_ICONS: Record<ClassToolId, typeof Timer> = {
 
 function WeeklyProgramCard({
   program,
+  locked,
   onPreview,
   favorite,
   favoriteEnabled,
@@ -237,12 +238,13 @@ function WeeklyProgramCard({
   priority = false,
 }: {
   program: Program;
-  onPreview: (program: Program) => void;
+  locked: boolean;
+  onPreview?: (program: Program) => void;
   favorite: boolean;
   favoriteEnabled: boolean;
   favoriteHint?: string;
   onFavorite: () => void;
-  accessBadge?: '무료 체험' | 'Lite' | null;
+  accessBadge?: 'Free' | 'Lite' | null;
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
@@ -256,11 +258,12 @@ function WeeklyProgramCard({
       category={model.theme || '체육 수업'}
       supportMeta={weeklySupportMeta}
       hasVideo={programHasPlayableVideo(program)}
-      onPreview={() => onPreview(program)}
+      onPreview={onPreview ? () => onPreview(program) : undefined}
+      locked={locked}
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
       favoriteHint={favoriteHint}
-      onFavorite={onFavorite}
+      onFavorite={locked ? undefined : onFavorite}
       accessBadge={accessBadge}
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
@@ -771,6 +774,7 @@ function EntitledDashboardView() {
   const RecentClassToolIcon = HOME_CLASS_TOOL_ICONS[recentClassTool.id];
 
   const openPreview = (program: Program, autoplayVideo = false) => {
+    if (isProgramLocked(program)) return;
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
@@ -947,7 +951,8 @@ function EntitledDashboardView() {
                   <div key={program.id} data-dashboard-card="weekly" className="h-full min-w-0">
                     <WeeklyProgramCard
                       program={program}
-                      onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
+                      locked={isProgramLocked(program)}
+                      onPreview={isProgramLocked(program) ? undefined : (item) => openPreview(item, programHasPlayableVideo(item))}
                       favorite={isFavoriteProgram(favoritesOwnerId, program.id)}
                       favoriteEnabled={favoriteEnabled}
                       favoriteHint={favoriteHint}

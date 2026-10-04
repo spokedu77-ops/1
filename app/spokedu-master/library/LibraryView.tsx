@@ -168,7 +168,7 @@ function ProgramCard({
   locked: boolean;
   lockHref: string;
   favorite: boolean;
-  onPreview: () => void;
+  onPreview?: () => void;
   onFavorite: () => void;
   favoriteEnabled: boolean;
   favoriteHint: string;
@@ -198,7 +198,7 @@ function ProgramCard({
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
       favoriteHint={favoriteHint}
-      onFavorite={onFavorite}
+      onFavorite={locked ? undefined : onFavorite}
       priority={priority}
       sizes="(min-width: 1280px) 300px, (min-width: 768px) 50vw, 100vw"
       primaryActionLabel={primaryActionLabel}
@@ -261,6 +261,7 @@ function selectRecommendationPrograms(programs: Program[], group: FilterGroupKey
 
 function RecommendationProgramCard({
   program,
+  locked,
   onPreview,
   favorite,
   favoriteEnabled,
@@ -270,12 +271,13 @@ function RecommendationProgramCard({
   priority = false,
 }: {
   program: Program;
-  onPreview: () => void;
+  locked: boolean;
+  onPreview?: () => void;
   favorite: boolean;
   favoriteEnabled: boolean;
   favoriteHint: string;
   onFavorite: () => void;
-  accessBadge?: '무료 체험' | 'Lite' | null;
+  accessBadge?: 'Free' | 'Lite' | null;
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
@@ -290,10 +292,11 @@ function RecommendationProgramCard({
       supportMeta={weeklySupportMeta}
       hasVideo={programHasPlayableVideo(program)}
       onPreview={onPreview}
+      locked={locked}
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
       favoriteHint={favoriteHint}
-      onFavorite={onFavorite}
+      onFavorite={locked ? undefined : onFavorite}
       accessBadge={accessBadge}
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
@@ -338,20 +341,24 @@ function RecommendationShelf({
       </div>
       <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
         <div className="flex w-max snap-x snap-mandatory items-start gap-4 lg:grid lg:w-auto lg:grid-cols-4 lg:gap-5 lg:snap-none">
-          {programs.map((program, index) => (
-            <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-auto lg:max-w-none lg:shrink">
-              <RecommendationProgramCard
-                program={program}
-                onPreview={() => onPreview(program)}
-                favorite={isFavorite(program.id)}
-                favoriteEnabled={favoriteEnabled}
-                favoriteHint={favoriteHint}
-                onFavorite={() => onFavorite(program.id)}
-                accessBadge={getProgramAccessBadge({ programId: program.id, canUseLibrary })}
-                priority={priority && index < 2}
-              />
-            </div>
-          ))}
+          {programs.map((program, index) => {
+            const locked = isProgramLessonLocked({ programId: program.id, canUseLibrary });
+            return (
+              <div key={program.id} className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[300px] lg:w-auto lg:max-w-none lg:shrink">
+                <RecommendationProgramCard
+                  program={program}
+                  locked={locked}
+                  onPreview={locked ? undefined : () => onPreview(program)}
+                  favorite={isFavorite(program.id)}
+                  favoriteEnabled={favoriteEnabled}
+                  favoriteHint={favoriteHint}
+                  onFavorite={() => onFavorite(program.id)}
+                  accessBadge={getProgramAccessBadge({ programId: program.id, canUseLibrary })}
+                  priority={priority && index < 2}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -407,6 +414,11 @@ export default function LibraryView() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [addingProgramId, setAddingProgramId] = useState<string | null>(null);
   const [sessionAddError, setSessionAddError] = useState<string | null>(null);
+
+  const openPreview = (program: Program) => {
+    if (isProgramLocked(program)) return;
+    setSelected({ program, autoplayVideo: programHasPlayableVideo(program) });
+  };
 
   const addProgramToSession = async (program: Program) => {
     if (!sessionContext || addingProgramId) return;
@@ -585,7 +597,7 @@ export default function LibraryView() {
             title="교실에서 진행"
             programs={classroomPrograms}
             priority
-            onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
+            onPreview={openPreview}
             onViewAll={() => viewAllRecommendation({ group: 'space', value: '교실' })}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
             favoriteEnabled={favoriteEnabled}
@@ -596,7 +608,7 @@ export default function LibraryView() {
           <RecommendationShelf
             title="미취학 추천"
             programs={preschoolPrograms}
-            onPreview={(program) => setSelected({ program, autoplayVideo: programHasPlayableVideo(program) })}
+            onPreview={openPreview}
             onViewAll={() => viewAllRecommendation({ group: 'target', value: '미취학' })}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
             favoriteEnabled={favoriteEnabled}
@@ -656,7 +668,7 @@ export default function LibraryView() {
             sourceLibraryView="all"
             sourceLibrarySearch={sourceLibrarySearch}
           toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
-          setSelected={setSelected}
+          onPreview={openPreview}
           primaryActionLabel={primaryActionLabel}
           onAddToSession={sessionContext ? (program) => void addProgramToSession(program) : undefined}
           addingProgramId={addingProgramId}
@@ -728,7 +740,7 @@ function ProgramGrid({
   sourceLibraryView,
   sourceLibrarySearch,
   toggleFavorite,
-  setSelected,
+  onPreview,
   primaryActionLabel,
   onAddToSession,
   addingProgramId,
@@ -741,36 +753,34 @@ function ProgramGrid({
   sourceLibraryView: 'all';
   sourceLibrarySearch: string;
   toggleFavorite: (id: string) => void;
-  setSelected: (selection: { program: Program; autoplayVideo: boolean }) => void;
+  onPreview: (program: Program) => void;
   primaryActionLabel: string;
   onAddToSession?: (program: Program) => void;
   addingProgramId: string | null;
 }) {
   return (
     <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-      {programs.map((program, index) => (
-        <ProgramCard
-          key={program.id}
-          program={program}
-          locked={isProgramLocked(program)}
-          lockHref={buildProgramLessonGateHref(program.id)}
-          favorite={isFavorite(program.id)}
-          favoriteEnabled={favoriteEnabled}
-          favoriteHint={favoriteHint}
-          detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
-          priority={index < 4}
-          onFavorite={() => toggleFavorite(program.id)}
-          onPreview={() =>
-            setSelected({
-              program,
-              autoplayVideo: programHasPlayableVideo(program),
-            })
-          }
-          primaryActionLabel={primaryActionLabel}
-          onPrimaryAction={onAddToSession ? () => onAddToSession(program) : undefined}
-          primaryActionDisabled={addingProgramId !== null || isProgramLocked(program)}
-        />
-      ))}
+      {programs.map((program, index) => {
+        const locked = isProgramLocked(program);
+        return (
+          <ProgramCard
+            key={program.id}
+            program={program}
+            locked={locked}
+            lockHref={buildProgramLessonGateHref(program.id)}
+            favorite={isFavorite(program.id)}
+            favoriteEnabled={favoriteEnabled}
+            favoriteHint={favoriteHint}
+            detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
+            priority={index < 4}
+            onFavorite={() => toggleFavorite(program.id)}
+            onPreview={locked ? undefined : () => onPreview(program)}
+            primaryActionLabel={primaryActionLabel}
+            onPrimaryAction={onAddToSession ? () => onAddToSession(program) : undefined}
+            primaryActionDisabled={addingProgramId !== null || locked}
+          />
+        );
+      })}
     </div>
   );
 }
