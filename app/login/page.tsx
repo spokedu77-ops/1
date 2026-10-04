@@ -84,8 +84,8 @@ function LoginContent() {
       <section className="w-full max-w-[440px] rounded-[24px] border border-white/10 bg-slate-900 p-6 shadow-2xl sm:p-8">
         <Link href="/" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-400 hover:text-white"><ChevronLeft size={17} /> 메인으로</Link>
         <p className="mt-6 text-xs font-semibold text-sky-300">SPOKEDU 운영 계정</p>
-        <h1 className="mt-2 text-3xl font-bold">강사·관리자 로그인</h1>
-        <p className="mt-3 text-sm font-medium leading-6 text-slate-400">기존 강사 앱과 운영·관리자 콘솔 전용 로그인입니다.</p>
+        <h1 className="mt-2 break-keep text-2xl font-bold leading-snug sm:text-3xl">강사·관리자 로그인</h1>
+        <p className="mt-3 break-keep text-sm font-medium leading-6 text-slate-400">기존 강사 앱과 운영·관리자 콘솔 전용 로그인입니다.</p>
         <form onSubmit={submit} className="mt-7 space-y-4">
           <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-300">아이디</span><span className="relative block"><User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" /><input value={id} onChange={(event) => setId(event.target.value)} required autoComplete="username" className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 pl-12 pr-4 text-sm font-semibold outline-none focus:border-sky-500" /></span></label>
           <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-300">비밀번호</span><span className="relative block"><Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" /><input type="password" value={pw} onChange={(event) => setPw(event.target.value)} required autoComplete="current-password" className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 pl-12 pr-4 text-sm font-semibold outline-none focus:border-sky-500" /></span></label>
