@@ -518,15 +518,15 @@ function UserDashboardPageContent() {
           </div>
           {/* 2단: 활동중 / 종료 예정 / 종료 (정보 관리 탭일 때만) */}
           {mainTab === 'info' && (
-            <div className="flex gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-full sm:w-fit border border-slate-200 shadow-inner overflow-x-auto">
+            <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-slate-200 bg-slate-200/50 p-1.5 shadow-inner sm:flex sm:w-fit">
               {([
                 { id: 'live' as const, label: '활동중', icon: Activity },
                 { id: 'ending_soon' as const, label: '종료 예정', icon: Clock },
                 { id: 'done' as const, label: '종료', icon: CheckCircle2 },
               ]).map((tab) => (
-                <button key={tab.id} onClick={() => setCurrentTab(tab.id)} className={`flex-1 sm:flex-initial min-w-[7rem] sm:min-w-[8rem] min-h-[44px] flex items-center justify-center gap-2.5 px-6 sm:px-8 py-3 rounded-xl text-sm font-black transition-all cursor-pointer touch-manipulation ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
-                  <tab.icon className="w-4 h-4 shrink-0" /> {tab.label}
-                  <span className="ml-1 text-[10px] opacity-60">{tabCount(tab.id)}</span>
+                <button key={tab.id} onClick={() => setCurrentTab(tab.id)} className={`flex min-h-[44px] items-center justify-center gap-1 whitespace-nowrap rounded-xl px-1.5 py-2 text-[12px] font-black transition-all cursor-pointer touch-manipulation sm:min-w-[8rem] sm:gap-2.5 sm:px-8 sm:text-sm ${currentTab === tab.id ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <tab.icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" /> {tab.label}
+                  <span className="text-[10px] opacity-60">{tabCount(tab.id)}</span>
                 </button>
               ))}
             </div>
@@ -547,7 +547,7 @@ function UserDashboardPageContent() {
                 />
                 <div>
                   <h3 className="text-sm font-black text-slate-800 group-hover:text-slate-950">등급별 기본 수업료 표</h3>
-                  <p className="text-[11px] font-bold text-slate-500 mt-1">
+                  <p className="mt-1 break-keep text-[11px] font-bold leading-relaxed text-slate-500">
                     하드코딩이 아니라 DB 기준표입니다. 저장 후 등급표 적용/자동 기본값에 반영됩니다.
                   </p>
                 </div>

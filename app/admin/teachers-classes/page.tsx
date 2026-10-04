@@ -23,7 +23,6 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Calendar,
 } from 'lucide-react';
 import { SessionPhotosCleanupButton } from '@/app/components/admin/assets/SessionPhotosCleanupButton';
 import { SessionCenterFilesCleanupButton } from '@/app/components/admin/assets/SessionCenterFilesCleanupButton';
@@ -37,7 +36,6 @@ import {
   alignCenterDocumentNamesWithUrls,
 } from '@/app/lib/feedbackValidation';
 import {
-  CENTER_SESSION_TYPE_VALUES,
   isCenterSessionType,
 } from '@/app/admin/classes/lib/sessionTypeCategory';
 
@@ -158,15 +156,6 @@ export default function MasterQCPage() {
     </div>
   );
 }
-
-/** 피드백 검수: 과외(개인/원데이) vs 센터 구분 — 수업안 조회와 별도 */
-const FEEDBACK_SESSION_TYPES_PRIVATE = [
-  'one_day',
-  'one_day_private',
-  'regular_private',
-  'regular_group',
-] as const satisfies readonly Session['session_type'][];
-const FEEDBACK_SESSION_TYPES_CENTER = [...CENTER_SESSION_TYPE_VALUES] as const satisfies readonly Session['session_type'][];
 
 /** lesson-plans-sessions API와 동일한 KST 주간(월 00:00 ~ 일 23:59) UTC 구간 */
 function getKstWeekRangeFromYmd(dateYmd: string): { start: Date; end: Date } {
@@ -520,45 +509,20 @@ function FeedbackReviewTab({
   const feedbackDateInputRef = useRef<HTMLInputElement>(null);
 
   const fetchListData = useCallback(async () => {
-    if (!supabase) return;
     setLoading(true);
     setError(null);
     
     try {
-      const typeFilter =
-        feedbackScope === 'center' ? [...FEEDBACK_SESSION_TYPES_CENTER] : [...FEEDBACK_SESSION_TYPES_PRIVATE];
-
-      let rangeStart: Date;
-      let rangeEnd: Date;
-      if (feedbackScope === 'center') {
-        const w = getKstWeekRangeFromYmd(selectedDate);
-        rangeStart = w.start;
-        rangeEnd = w.end;
-      } else {
-        const startOfDay = new Date(selectedDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(selectedDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        rangeStart = startOfDay;
-        rangeEnd = endOfDay;
-      }
-
-      let query = supabase
-        .from('sessions')
-        .select('id, title, start_at, end_at, status, students_text, photo_url, file_url, session_type, created_by, memo, feedback_fields, short_code, users:created_by(id, name)')
-        .in('session_type', typeFilter)
-        .gte('start_at', rangeStart.toISOString())
-        .lte('start_at', rangeEnd.toISOString())
-        .order('start_at', { ascending: true });
-      
-      if (selectedCoachId !== 'all') {
-        query = query.eq('created_by', selectedCoachId);
-      }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      if (data) {
-        let rows = data as unknown as Session[];
+      const params = new URLSearchParams({ date: selectedDate, scope: feedbackScope });
+      if (selectedCoachId !== 'all') params.set('coachId', selectedCoachId);
+      const res = await fetch(`/api/admin/teachers-classes/list?${params.toString()}`, {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const payload = (await res.json().catch(() => ({}))) as { sessions?: Session[]; error?: string };
+      if (!res.ok) throw new Error(payload.error || '데이터를 불러오지 못했습니다.');
+      if (payload.sessions) {
+        let rows = payload.sessions;
         if (feedbackScope === 'center' && excludedAdminCoachIds.length > 0) {
           rows = rows.filter((s) => !excludedAdminCoachIds.includes(s.created_by) || hasExtraTeacher(s));
         }
@@ -621,7 +585,7 @@ function FeedbackReviewTab({
     } finally {
       setLoading(false);
     }
-  }, [supabase, selectedDate, selectedCoachId, feedbackScope, excludedAdminCoachIds]);
+  }, [selectedDate, selectedCoachId, feedbackScope, excludedAdminCoachIds]);
 
   useEffect(() => {
     fetchListData();
@@ -882,8 +846,8 @@ function FeedbackReviewTab({
         </div>
       )}
 
-      <div className="mb-8 space-y-2">
-        <div className="flex flex-wrap gap-2 bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
+      <div className="mb-6 space-y-3">
+        <div className="flex gap-2 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
           <button
             type="button"
             onClick={() => setFeedbackScope('private')}
@@ -903,9 +867,9 @@ function FeedbackReviewTab({
             센터 피드백
           </button>
         </div>
-        <div className="flex flex-wrap gap-2 sm:gap-3 bg-white p-3 rounded-3xl shadow-sm border border-slate-200 items-start sm:items-center">
-          <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <div className="flex items-stretch gap-1.5 sm:gap-2">
+        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 aria-label={feedbackScope === 'center' ? '이전 주' : '이전 날'}
@@ -917,32 +881,18 @@ function FeedbackReviewTab({
               >
                 <ChevronLeft size={20} strokeWidth={2.5} />
               </button>
-              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-2 sm:px-3 py-1.5">
-                <button
-                  type="button"
-                  aria-label="날짜 선택(캘린더)"
-                  title="날짜 선택"
-                  onClick={() => {
-                    const el = feedbackDateInputRef.current;
-                    if (!el) return;
-                    if (typeof el.showPicker === 'function') {
-                      el.showPicker();
-                    } else {
-                      el.focus();
-                      el.click();
-                    }
-                  }}
-                  className="shrink-0 flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/80 hover:text-slate-800 cursor-pointer transition-colors"
-                >
-                  <Calendar size={18} />
-                </button>
+              <div className="relative min-h-11 min-w-0 flex-1">
+                <div className="flex min-h-11 items-center justify-center rounded-xl bg-slate-50 px-3 text-sm font-bold text-slate-800">
+                  {new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(`${selectedDate}T12:00:00+09:00`))}
+                </div>
                 <input
                   ref={feedbackDateInputRef}
                   id="feedback-review-date"
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="min-w-0 flex-1 bg-transparent py-1 text-sm font-bold text-slate-800 outline-none cursor-pointer"
+                  aria-label="날짜 선택"
+                  className="absolute inset-0 cursor-pointer opacity-0"
                 />
               </div>
               <button
@@ -965,7 +915,7 @@ function FeedbackReviewTab({
               <p className="text-[11px] text-slate-500 font-bold px-1">일간 조회: 선택한 날짜의 수업만</p>
             )}
           </div>
-          <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="min-h-[44px] flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
+          <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="min-h-11 w-full cursor-pointer rounded-xl bg-slate-50 px-4 py-2 text-sm font-bold outline-none">
             <option value="all">전체 강사</option>
             {coachFilterOptions.map((c) => (
               <option key={c.id} value={c.id}>
@@ -973,13 +923,6 @@ function FeedbackReviewTab({
               </option>
             ))}
           </select>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-[11px] text-slate-600 leading-relaxed space-y-2">
-          <p>
-            검수 완료된 리포트는 `링크 복사`로 학부모에게 전달하세요.
-            목록을 불러올 때 단축 코드를 미리 준비해 두어, iPad·iPhone에서도 복사가 잘 되도록 했습니다.
-            운영 도메인 고정은 <code className="text-[10px] bg-white px-1 rounded">NEXT_PUBLIC_APP_URL</code>을 권장합니다.
-          </p>
         </div>
       </div>
 
@@ -993,13 +936,13 @@ function FeedbackReviewTab({
       {!loading && !error && (
         <>
           <div className="mb-8 space-y-4">
-            <div className="flex gap-2 bg-white p-1 rounded-2xl shadow-sm border overflow-x-auto no-scrollbar">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:rounded-2xl sm:border sm:bg-white sm:p-1 sm:shadow-sm">
               {['all', 'empty', 'done', 'verified'].map(filter => (
                 <button 
                   key={filter}
                   onClick={() => setStatusFilter(filter as 'all' | 'empty' | 'done' | 'verified')}
-                  className={`min-h-[44px] shrink-0 px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    statusFilter === filter ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'
+                  className={`min-h-11 rounded-xl px-3 py-2 text-sm font-bold transition-all cursor-pointer sm:flex-1 ${
+                    statusFilter === filter ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 hover:text-slate-700 sm:bg-transparent sm:shadow-none sm:ring-0'
                   }`}
                 >
                   {filter === 'all' && `전체 (${statistics.total})`}
@@ -1037,13 +980,13 @@ function FeedbackReviewTab({
           <p className="text-slate-400 font-bold">
             {searchTerm || statusFilter !== 'all'
               ? '검색 결과가 없습니다.'
-              : '해당 일자에 등록된 과외 수업이 없습니다.'}
+              : `${new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(`${selectedDate}T12:00:00+09:00`))} 과외 수업이 없습니다.`}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
           {feedbackScope === 'center' && (
-            <div className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm md:grid md:grid-cols-8 md:overflow-visible">
+            <div className="grid grid-cols-4 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm md:grid-cols-8">
               {[{ dayIndex: 'all' as const, label: '전체', sessions: filteredAndSearchedSessions }, ...centerWeekdayGroups].map((item) => {
                 const selected = selectedCenterWeekday === item.dayIndex;
                 return (
@@ -1051,10 +994,10 @@ function FeedbackReviewTab({
                     key={String(item.dayIndex)}
                     type="button"
                     onClick={() => setSelectedCenterWeekday(item.dayIndex)}
-                    className={`min-h-[44px] min-w-[64px] shrink-0 rounded-xl px-2 py-2.5 text-xs font-black transition-colors md:min-w-0 ${selected ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                    className={`min-h-11 min-w-0 rounded-xl px-1 py-2 text-xs font-bold transition-colors ${selected ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
                   >
                     <span className="block truncate">{item.label}</span>
-                    <span className={`mt-0.5 block text-[9px] ${selected ? 'text-slate-300' : 'text-slate-400'}`}>{item.sessions.length}</span>
+                    <span className={`mt-0.5 block text-[11px] ${selected ? 'text-slate-300' : 'text-slate-400'}`}>{item.sessions.length}</span>
                   </button>
                 );
               })}
@@ -1471,7 +1414,7 @@ function LessonPlanTab({
       </div>
 
       {lessonPlanScope === 'private' && !loading && (
-        <div className="mb-6 grid grid-cols-8 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+        <div className="mb-6 grid grid-cols-4 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm md:grid-cols-8">
           {[
             { dayIndex: 'all' as const, label: '전체', sessions },
             ...privateWeekdayGroups,
@@ -1487,7 +1430,7 @@ function LessonPlanTab({
                 }`}
               >
                 <span className="block truncate">{item.label}</span>
-                <span className={`mt-0.5 block text-[9px] ${selected ? 'text-slate-300' : 'text-slate-400'}`}>
+                <span className={`mt-0.5 block text-[11px] ${selected ? 'text-slate-300' : 'text-slate-400'}`}>
                   {item.sessions.length}
                 </span>
               </button>

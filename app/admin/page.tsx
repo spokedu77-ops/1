@@ -268,36 +268,21 @@ export default function SpokeduHQDashboard() {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!supabaseUrl || !supabase) return;
+    if (!supabaseUrl) return;
     setLoading(true);
     setUpcomingPostponedLoading(true);
     setFetchError(null);
     try {
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+      const res = await fetch('/api/admin/dashboard/sessions', { credentials: 'include', cache: 'no-store' });
+      const payload = (await res.json().catch(() => ({}))) as {
+        today?: SessionRow[];
+        upcomingPostponed?: SessionRow[];
+        error?: string;
+      };
+      if (!res.ok) throw new Error(payload.error || '데이터를 불러올 수 없습니다.');
 
-      const classesRes = await supabase
-        .from('sessions')
-        .select('*, users:created_by(id, name)')
-        .gte('start_at', startOfDay)
-        .lte('start_at', endOfDay)
-        .order('start_at', { ascending: true });
-
-      if (classesRes.error) throw classesRes.error;
-
-      const upcomingPostponedRes = await supabase
-        .from('sessions')
-        .select('*, users:created_by(id, name)')
-        .eq('status', 'postponed')
-        .gte('start_at', startOfDay)
-        .order('start_at', { ascending: true })
-        .limit(8);
-
-      if (upcomingPostponedRes.error) throw upcomingPostponedRes.error;
-
-      const rawClasses = (classesRes.data || []) as SessionRow[];
-      const rawUpcomingPostponedClasses = (upcomingPostponedRes.data || []) as SessionRow[];
+      const rawClasses = payload.today ?? [];
+      const rawUpcomingPostponedClasses = payload.upcomingPostponed ?? [];
 
       const groupPlannedTotals = buildGroupPlannedTotals(
         rawClasses
@@ -347,7 +332,7 @@ export default function SpokeduHQDashboard() {
       setLoading(false);
       setUpcomingPostponedLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   const fetchMoveReportMetric = useCallback(async () => {
     setMoveReportLoading(true);
@@ -600,11 +585,11 @@ export default function SpokeduHQDashboard() {
         {/* Header */}
         <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-3 border-b-2 pb-3 sm:pb-8 border-slate-900">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter text-slate-900 uppercase leading-none mb-1">
+            <h1 className="mb-1 text-xl font-black leading-none tracking-tight text-slate-900 sm:text-4xl sm:italic sm:uppercase sm:tracking-tighter">
               Spokedu HQ
             </h1>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-              <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+              <p className="text-xs font-semibold text-slate-500">
                 Operational Control Center
               </p>
               <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
@@ -627,61 +612,66 @@ export default function SpokeduHQDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full min-w-0">
 
           {/* 패널 1 */}
-          <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 space-y-6">
+          <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:space-y-6 sm:p-6">
             <div>
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-4">
-                <div className="flex items-center gap-2">
-                  <Calendar size={14} className="text-slate-400 shrink-0" />
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today Session Summary</h2>
+              <div className="mb-2 sm:mb-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Calendar size={16} className="shrink-0 text-slate-400" />
+                    <h2 className="text-sm font-bold text-slate-700">Today Session Summary</h2>
+                  </div>
                   <Link
                     href="/admin/classes/calendar"
-                    className="inline-flex min-h-[44px] items-center text-[9px] font-bold text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline"
+                    className="inline-flex min-h-11 items-center text-sm font-semibold text-blue-600 hover:text-blue-800"
                   >
                     캘린더
                   </Link>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">
-                    완료 {todayClasses.filter((c) => getClassTimeBucket(c) === 'done').length} /
-                    진행중 {todayClasses.filter((c) => getClassTimeBucket(c) === 'ongoing').length} /
-                    예정 {todayClasses.filter((c) => getClassTimeBucket(c) === 'upcoming').length} /
-                    연기 {todayClasses.filter((c) => c.isPostponed).length}
-                  </span>
-                </div>
+                <p className="mt-1 text-xs font-medium leading-5 text-slate-500">
+                  완료 {todayClasses.filter((c) => getClassTimeBucket(c) === 'done').length}
+                  {' · '}
+                  진행 {todayClasses.filter((c) => getClassTimeBucket(c) === 'ongoing').length}
+                  {' · '}
+                  예정 {todayClasses.filter((c) => getClassTimeBucket(c) === 'upcoming').length}
+                  {' · '}
+                  연기 {todayClasses.filter((c) => c.isPostponed).length}
+                </p>
               </div>
               <div className="border-t border-slate-100 divide-y divide-slate-50 overflow-x-auto rounded-lg border border-slate-100">
                 {todayClasses.length > 0 ? todayClasses.map((cls) => {
                   const bucket = getClassTimeBucket(cls);
                   return (
-                  <div key={cls.id} className={`py-3 flex flex-wrap items-center justify-between gap-2 min-w-0 px-1 ${
+                  <div key={cls.id} className={`flex min-w-0 flex-col gap-1 px-1 py-3 sm:flex-row sm:items-center sm:justify-between ${
                     bucket === 'done' ? 'opacity-20 grayscale' :
                     bucket === 'postponed' ? 'bg-purple-50 border-l-4 border-purple-400 pl-3' :
                     bucket === 'cancelled' ? 'bg-red-50 border-l-4 border-red-400 pl-3 line-through' :
                     bucket === 'ongoing' ? 'bg-emerald-50/70 border-l-4 border-emerald-400 pl-3' : ''
                   }`}>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                      <span className="text-[11px] font-bold tabular-nums text-slate-400 w-20 sm:w-24 shrink-0">{cls.time} - {cls.endTime}</span>
+                    <div className="flex min-w-0 items-baseline gap-2">
+                      <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-500">{cls.time}–{cls.endTime}</span>
+                      <span className="min-w-0 truncate text-sm font-bold text-slate-800">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                       {cls.roundDisplay && (
-                        <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-0.5 rounded uppercase shrink-0">{cls.roundDisplay}</span>
+                        <span className="shrink-0 rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-bold text-slate-600">{cls.roundDisplay}</span>
                       )}
-                      <span className="text-[12px] font-bold text-slate-800 truncate min-w-0">{(cls.title || '').replace(/^\d+\/\d+\s*/, '').trim() || cls.title}</span>
                       {bucket === 'ongoing' && (
-                        <span className="text-[8px] font-black text-emerald-700 bg-emerald-100 px-2 py-1 rounded uppercase">진행중</span>
+                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[11px] font-bold text-emerald-700">진행중</span>
                       )}
                       {bucket === 'upcoming' && (
-                        <span className="text-[8px] font-black text-sky-700 bg-sky-100 px-2 py-1 rounded uppercase">예정</span>
+                        <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[11px] font-bold text-sky-700">예정</span>
                       )}
                       {bucket === 'done' && (
-                        <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-2 py-1 rounded uppercase">완료</span>
+                        <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-bold text-slate-500">완료</span>
                       )}
                       {bucket === 'postponed' && (
-                        <span className="text-[8px] font-black text-purple-600 bg-purple-100 px-2 py-1 rounded uppercase">연기됨</span>
+                        <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-bold text-purple-600">연기됨</span>
                       )}
                       {bucket === 'cancelled' && (
-                        <span className="text-[8px] font-black text-red-600 bg-red-100 px-2 py-1 rounded uppercase">취소됨</span>
+                        <span className="rounded bg-red-100 px-1.5 py-0.5 text-[11px] font-bold text-red-600">취소됨</span>
                       )}
+                      <span className="text-xs font-medium text-slate-500">{cls.teacher}</span>
                     </div>
-                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-tighter shrink-0">{cls.teacher}</span>
                   </div>
                   );
                 }) : <p className="py-4 text-[11px] text-slate-300 italic px-2">No classes scheduled.</p>}
@@ -690,7 +680,7 @@ export default function SpokeduHQDashboard() {
 
             <div>
               <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">수업 연기 알림</h2>
+                <h2 className="text-sm font-bold text-slate-700">수업 연기 알림</h2>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-slate-400">{postponeTotal}건</span>
                   <button
@@ -716,28 +706,30 @@ export default function SpokeduHQDashboard() {
                       const dateDisplay = getNoticeDateDisplay(n.start_date || n.notice_date, n.end_date);
                       const urgent = isNoticeUrgent(n.notice_date);
                       return (
-                        <div key={n.id} className="px-3 py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-bold text-slate-800 truncate min-w-0">{n.teacher_name}</span>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                                  urgent ? 'bg-rose-200 text-rose-800' : 'bg-rose-50 text-rose-600'
-                                }`}
-                              >
-                                {dateDisplay}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteNotice(n.id)}
-                                disabled={deletingNoticeId === n.id}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
-                              >
-                                {deletingNoticeId === n.id
-                                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  : <X className="h-3.5 w-3.5" />}
-                              </button>
+                        <div key={n.id} className="rounded-xl border border-rose-100 bg-rose-50/50 px-3 py-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-slate-900">{n.teacher_name}</p>
+                              <p className={`mt-1 text-xs font-semibold leading-5 ${urgent ? 'text-rose-800' : 'text-rose-600'}`}>
+                                {dateDisplay.includes(' ~ ') ? (
+                                  <>
+                                    {dateDisplay.split(' ~ ')[0]} ~
+                                    <br />
+                                    {dateDisplay.split(' ~ ')[1]}
+                                  </>
+                                ) : dateDisplay}
+                              </p>
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNotice(n.id)}
+                              disabled={deletingNoticeId === n.id}
+                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded text-slate-300 hover:bg-red-50 hover:text-red-500 disabled:opacity-50 cursor-pointer"
+                            >
+                              {deletingNoticeId === n.id
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                : <X className="h-3.5 w-3.5" />}
+                            </button>
                           </div>
                           {n.memo && (
                             <p className="text-[11px] text-slate-500 mt-0.5 truncate">{n.memo}</p>
@@ -752,7 +744,7 @@ export default function SpokeduHQDashboard() {
 
             <div className="rounded-xl border border-purple-100 bg-purple-50/50 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <h3 className="text-[10px] font-black text-purple-500 uppercase tracking-widest">휴강 알림</h3>
+                <h3 className="text-sm font-bold text-purple-700">휴강 알림</h3>
                 <span className="text-[10px] text-purple-400">{upcomingPostponedClasses.length}건</span>
               </div>
               {upcomingPostponedLoading ? (
@@ -794,7 +786,7 @@ export default function SpokeduHQDashboard() {
               <div className="mb-2 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Pin className="h-3.5 w-3.5 text-rose-400" />
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">공지</h2>
+                  <h2 className="text-sm font-bold text-slate-700">공지</h2>
                 </div>
                 <Link href="/admin/notice" className="text-[10px] font-semibold text-slate-400 hover:text-slate-700">
                   전체 보기
@@ -810,7 +802,7 @@ export default function SpokeduHQDashboard() {
                 <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                   {pinnedNoticePreviews.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">고정 · 필독</p>
+                      <p className="text-xs font-bold text-rose-600">고정 · 필독</p>
                       {pinnedNoticePreviews.map((notice) => (
                         <Link
                           key={notice.id}
@@ -826,7 +818,7 @@ export default function SpokeduHQDashboard() {
 
                   {recentDashboardFeed.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">최근 공지</p>
+                      <p className="text-xs font-bold text-slate-500">최근 공지</p>
                       {recentDashboardFeed.map((row) => (
                         <Link
                           key={row.key}
@@ -855,7 +847,7 @@ export default function SpokeduHQDashboard() {
             <div className="flex items-center justify-between mb-2 sm:mb-4">
               <div className="flex items-center gap-2">
                 <MessageSquare size={14} className="text-emerald-500 shrink-0" />
-                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">상담 신청</h2>
+                <h2 className="text-sm font-bold text-slate-700">상담 신청</h2>
                 {typeof consultSummary?.pendingCount === 'number' && consultSummary.pendingCount > 0 && (
                   <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">
                     +{consultSummary.pendingCount}
@@ -877,7 +869,7 @@ export default function SpokeduHQDashboard() {
                   <MessageSquare className="h-4 w-4" />
                 </div>
               </div>
-              <div className="mt-6">
+              <div className="mt-3 sm:mt-6">
                 {consultSummaryLoading ? (
                   <div className="flex items-center gap-2 text-sm text-slate-400">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -885,7 +877,7 @@ export default function SpokeduHQDashboard() {
                   </div>
                 ) : (
                   <>
-                    <p className="text-3xl font-black tracking-tight text-slate-900">
+                    <p className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
                       {consultSummary?.pendingCount?.toLocaleString() ?? '-'}
                     </p>
                     <p className="mt-1 text-[11px] font-medium text-slate-400">미처리 상담 수</p>
@@ -906,7 +898,7 @@ export default function SpokeduHQDashboard() {
             <div className="flex items-center justify-between mb-2 sm:mb-4">
               <div className="flex items-center gap-2">
                 <BarChart3 size={14} className="text-blue-400 shrink-0" />
-                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MOVE 리포트</h2>
+                <h2 className="text-sm font-bold text-slate-700">MOVE 리포트</h2>
               </div>
               <span className="text-[10px] text-slate-400">최근 제출</span>
             </div>
@@ -923,7 +915,7 @@ export default function SpokeduHQDashboard() {
                   <BarChart3 className="h-4 w-4" />
                 </div>
               </div>
-              <div className="mt-6">
+              <div className="mt-3 sm:mt-6">
                 {moveReportLoading ? (
                   <div className="flex items-center gap-2 text-sm text-slate-400">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -931,7 +923,7 @@ export default function SpokeduHQDashboard() {
                   </div>
                 ) : (
                   <>
-                    <p className="text-3xl font-black tracking-tight text-slate-900">
+                    <p className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
                       {moveReportCount === null ? '-' : moveReportCount.toLocaleString()}
                     </p>
                     <p className="mt-1 text-[11px] font-medium text-slate-400">최근 제출 수</p>
@@ -944,7 +936,7 @@ export default function SpokeduHQDashboard() {
             </Link>
 
             <div>
-              <h2 className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">안내 페이지</h2>
+              <h2 className="mb-2 text-sm font-bold text-slate-700">안내 페이지</h2>
               <div className="grid gap-2">
                 {[
                   { n: '0', label: 'SPOKEDU 홈페이지', href: '/spokedu' },

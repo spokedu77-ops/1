@@ -58,7 +58,7 @@ export async function POST(request: Request, context: { params: Promise<{ classI
     return privateNoStoreJson({ error: '정기 일정과 생성 범위를 확인해 주세요.' }, { status: 400 });
   }
   if (access.plan === 'lite' && memo) {
-    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Premium에서 사용할 수 있습니다.' }, { status: 403 });
+    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Lite에서 사용할 수 있습니다.' }, { status: 403 });
   }
   const supabase = getServiceSupabase();
   const { data: classRow } = await supabase.from('spokedu_master_classes').select('id').eq('id', classId).eq('owner_id', access.userId).is('deleted_at', null).maybeSingle();

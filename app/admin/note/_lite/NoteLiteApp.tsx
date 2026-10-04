@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Check,
   ChevronLeft,
@@ -302,35 +303,41 @@ export function NoteLiteApp() {
             : '';
 
   return (
-    <div className="flex h-[var(--viewport-height-px,100dvh)] bg-[#f7f7f5] text-neutral-900">
-      <aside className={`${mobileEditorOpen ? 'hidden' : 'flex'} w-full shrink-0 flex-col border-r border-neutral-200 bg-white md:flex md:w-64`}>
-        <div className="flex items-center justify-between px-3 py-3">
-          <p className="text-sm font-semibold">메모</p>
+    <div className="flex h-[calc(var(--viewport-height-px,100dvh)-3rem-env(safe-area-inset-top,0px))] min-h-0 bg-[#F8FAFC] text-slate-900 min-[1200px]:h-[var(--viewport-height-px,100dvh)]">
+      <aside className={`${mobileEditorOpen ? 'hidden' : 'flex'} w-full shrink-0 flex-col border-r border-slate-200 bg-white md:flex md:w-64`}>
+        <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-3 py-3">
+          <div className="min-w-0">
+            <Link href="/admin" className="inline-flex items-center gap-0.5 text-[11px] font-bold text-slate-500 hover:text-blue-600">
+              <ChevronLeft size={14} />
+              관리 홈
+            </Link>
+            <p className="text-sm font-black text-slate-900">노트</p>
+          </div>
           <button
             type="button"
             onClick={() => void createDoc()}
-            className="grid h-11 w-11 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-900 text-white hover:bg-blue-600"
             aria-label="새 메모"
           >
             <Plus size={16} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {docsLoading ? (
-            <div className="flex justify-center py-8 text-neutral-400">
+            <div className="flex justify-center py-8 text-slate-400">
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
           ) : docs.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 px-2 py-16 text-xs text-neutral-400">
+            <div className="flex flex-col items-center gap-3 px-2 py-16 text-xs text-slate-400">
               <p>메모가 없습니다.</p>
-              <button type="button" onClick={() => void createDoc()} className="min-h-11 rounded-lg bg-neutral-900 px-4 font-semibold text-white">새 메모</button>
+              <button type="button" onClick={() => void createDoc()} className="min-h-11 rounded-xl bg-slate-900 px-4 font-black text-white hover:bg-blue-600">새 메모</button>
             </div>
           ) : (
             docs.map((d) => (
               <div
                 key={d.id}
-                className={`group mb-0.5 flex items-center rounded-md ${
-                  d.id === openId ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+                className={`group mb-0.5 flex items-center rounded-xl ${
+                  d.id === openId ? 'bg-blue-50 text-blue-800' : 'hover:bg-slate-50'
                 }`}
               >
                 <button
@@ -357,25 +364,25 @@ export function NoteLiteApp() {
         </div>
       </aside>
 
-      <main className={`${mobileEditorOpen ? 'flex' : 'hidden'} min-w-0 flex-1 flex-col md:flex`}>
-        <header className="flex items-center justify-between gap-3 border-b border-neutral-200 px-3 py-2 md:px-6 md:py-3">
-          <button type="button" onClick={() => setMobileEditorOpen(false)} className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-neutral-600 hover:bg-neutral-100 md:hidden" aria-label="메모 목록으로 돌아가기">
+      <main className={`${mobileEditorOpen ? 'flex' : 'hidden'} min-w-0 flex-1 flex-col bg-white md:flex`}>
+        <header className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-2 md:px-6 md:py-3">
+          <button type="button" onClick={() => setMobileEditorOpen(false)} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 md:hidden" aria-label="메모 목록으로 돌아가기">
             <ChevronLeft size={20} />
           </button>
           <input
-            className="min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none"
+            className="min-w-0 flex-1 bg-transparent text-lg font-black text-slate-900 outline-none"
             value={title}
             placeholder="제목"
             disabled={!openId}
             onChange={(e) => void renameDoc(e.target.value)}
           />
-          <span className={`text-xs ${saveState === 'error' ? 'text-rose-600' : 'text-neutral-400'}`}>
+          <span className={`text-xs font-bold ${saveState === 'error' ? 'text-rose-600' : 'text-slate-400'}`}>
             {saveLabel}
           </span>
         </header>
         {error ? <p className="px-6 pt-2 text-xs text-rose-600">{error}</p> : null}
         {!openId ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-neutral-400">
+          <div className="flex flex-1 items-center justify-center text-sm font-bold text-slate-400">
             왼쪽에서 메모를 만들거나 고르세요.
           </div>
         ) : (

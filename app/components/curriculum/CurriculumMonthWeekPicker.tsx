@@ -31,6 +31,26 @@ export default function CurriculumMonthWeekPicker({
   teacherMode = false,
   className = '',
 }: CurriculumMonthWeekPickerProps) {
+  if (teacherMode && !isSubSelected) {
+    return (
+      <div className={`flex w-full items-center gap-1.5 ${className}`}>
+        <span className="shrink-0 rounded-lg bg-slate-900 px-2.5 py-1.5 text-[13px] font-black text-white">{selectedMonth}월</span>
+        <div className="flex min-w-0 flex-1 rounded-xl border border-slate-100 bg-white p-1">
+          {WEEKS.map((week) => (
+            <button
+              key={week}
+              type="button"
+              onClick={() => onWeekChange(week)}
+              className={`h-8 flex-1 rounded-lg text-[13px] font-bold touch-manipulation ${selectedWeek === week ? 'bg-slate-900 text-white' : 'text-slate-500'}`}
+            >
+              {week}주
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`space-y-4 w-full ${className}`}>
       {/* 월 + SUB */}

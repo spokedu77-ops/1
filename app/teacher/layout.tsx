@@ -44,19 +44,16 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     <div className="teacher-shell relative block min-h-screen w-full bg-[#F9FBFF]">
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200/50 pt-[env(safe-area-inset-top)] flex justify-center">
         <div className="max-w-2xl w-full h-16 px-6 flex items-center justify-between font-sans">
-          <button onClick={() => router.push(isInactiveTeacher ? '/teacher/report' : '/teacher')} className="group flex min-h-[44px] items-center gap-3 text-left outline-none">
+          <button onClick={() => router.push(isInactiveTeacher ? '/teacher/report' : '/teacher')} className="group flex min-h-[44px] items-center gap-2.5 text-left outline-none">
             <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-indigo-100 group-hover:scale-105 transition-transform">S</div>
-            <div className="flex flex-col">
-              <h1 className="text-[15px] font-black text-slate-900 uppercase leading-none tracking-tight text-indigo-600">SPOKEDU</h1>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-1">강사 대시보드</span>
-            </div>
+            <h1 className="text-sm font-black uppercase leading-none tracking-tight text-indigo-600">SPOKEDU</h1>
           </button>
           <div className="w-8 h-8 bg-slate-100 rounded-full border border-slate-200/50 flex items-center justify-center text-[10px] font-black text-slate-400 italic uppercase">Teacher</div>
         </div>
       </header>
 
       <div className="w-full flex justify-center">
-        <main className="w-full min-w-0 max-w-2xl px-4 pt-8 sm:px-6 min-h-[calc(100vh-64px)] pb-[calc(var(--teacher-bottom-nav-height)+2rem)]">
+        <main className="w-full min-w-0 max-w-2xl px-4 pt-4 sm:px-6 sm:pt-8 min-h-[calc(100vh-4rem-1px-env(safe-area-inset-top,0px))] pb-[calc(var(--teacher-bottom-nav-height)+1rem)]">
           {blockMaterialsRoute ? (
             <TeacherMaterialsDenied />
           ) : isMaterialsGatedRoute && materialsAccess === 'loading' ? (
@@ -127,7 +124,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
               <div className={`p-2 rounded-xl transition-colors ${isActive(item.id) ? 'bg-indigo-50' : ''}`}>
                 <item.icon size={22} strokeWidth={isActive(item.id) ? 2.5 : 2} />
               </div>
-              <span className="text-[9px] font-black tracking-tighter uppercase leading-none">{item.label}</span>
+              <span className="text-[11px] font-bold leading-none tracking-tight">{item.label}</span>
             </button>
           ))}
           
@@ -138,7 +135,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
             <div className={`p-2 rounded-xl ${isMoreOpen ? 'bg-indigo-50' : ''}`}>
               <MoreHorizontal size={22} strokeWidth={isMoreOpen ? 2.5 : 2} />
             </div>
-            <span className="text-[9px] font-black tracking-tighter uppercase leading-none">더보기</span>
+            <span className="text-[11px] font-bold leading-none tracking-tight">더보기</span>
           </button>
         </div>
       </nav>

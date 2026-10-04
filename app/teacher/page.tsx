@@ -297,32 +297,32 @@ export default function TeacherMainPage() {
   }, [fetchTodaySessions]);
 
   return (
-    <div className="px-6 pt-8 pb-32">
+    <div className="pt-4 pb-8">
       {/* 웰컴 배너 및 퀵 버튼 */}
       <section className="mb-10">
-        <div className="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl shadow-slate-200 relative overflow-hidden">
+        <div className="bg-slate-900 rounded-[28px] p-5 text-white shadow-2xl shadow-slate-200 relative overflow-hidden sm:rounded-[32px] sm:p-8">
           <div className="relative z-10">
-            <h2 className="text-2xl font-black mb-6 leading-tight">
+            <h2 className="mb-5 break-keep text-xl font-black leading-snug sm:mb-6 sm:text-2xl">
               선생님, 오늘도<br />아이들과 즐겁게 몰입하세요!
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
               <button 
                 onClick={() => router.push('/teacher/my-classes')}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
               >
-                <Calendar size={16} /> 주간 일정 <ChevronRight size={16} />
+                <Calendar size={16} className="shrink-0" /> 주간 일정 <ChevronRight size={16} className="shrink-0" />
               </button>
               <button 
                 onClick={() => router.push('/teacher/inventory')}
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-4 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
               >
-                <Package size={16} /> 교구 목록
+                <Package size={16} className="shrink-0" /> 교구 목록
               </button>
               <button 
                 onClick={() => router.push('/teacher/report')}
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-4 py-3 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
               >
-                <Receipt size={16} /> 정산 확인
+                <Receipt size={16} className="shrink-0" /> 정산 확인
               </button>
             </div>
           </div>

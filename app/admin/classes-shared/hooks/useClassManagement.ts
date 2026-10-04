@@ -32,36 +32,37 @@ export function useClassManagement() {
   >(null);
 
   const fetchSessions = useCallback(async () => {
-    if (!supabase) return;
-    // V2 ë²ë¤ ë§¤ì¹­Â·ê³¼ê±° ì ì¡°í: Â±6ê°ìì ëë½ì´ ì¦ì ê´ë¦¬ ìºë¦°ëë ëê² ì¡ì
     const rangeStart = new Date();
     rangeStart.setMonth(rangeStart.getMonth() - 24);
     const rangeEnd = new Date();
     rangeEnd.setMonth(rangeEnd.getMonth() + 24);
     const rangeStartIso = rangeStart.toISOString();
     const rangeEndIso = rangeEnd.toISOString();
-    /** PostgREST ê¸°ë³¸ max_rows(ë³´íµ 1000) ì´ê³¼ ì ë·êµ¬ê° ì¼ì ì´ ìë¦¬ì§ ìëë¡ íì´ì§ë¤ì´ì */
     const PAGE = 1000;
 
-    const sessionsInRange = () =>
-      supabase
-        .from('sessions')
-        .select('*, users:created_by(id, name)')
-        .gte('start_at', rangeStartIso)
-        .lte('start_at', rangeEndIso)
-        .order('start_at', { ascending: true });
+    const fetchSessionPage = async (offset: number) => {
+      const params = new URLSearchParams({
+        start: rangeStartIso,
+        end: rangeEndIso,
+        offset: String(offset),
+        limit: String(PAGE),
+      });
+      const res = await fetch(`/api/admin/classes/sessions?${params.toString()}`, {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const payload = (await res.json().catch(() => ({}))) as { sessions?: SessionRow[]; error?: string };
+      if (!res.ok) throw new Error(payload.error || 'sessions_fetch_failed');
+      return payload.sessions ?? [];
+    };
 
     let usersRes: { data: { id: string; name: string }[] | null; error: unknown };
-    let firstSessions: { data: SessionRow[] | null; error: unknown };
+    let data: SessionRow[];
     try {
-      [usersRes, firstSessions] = await Promise.all([
-        supabase
-          .from('users')
-          .select('id, name')
-          .eq('is_active', true)
-          .order('name', { ascending: true }),
-        sessionsInRange().range(0, PAGE - 1),
-      ]);
+      const usersPromise = supabase
+        ? supabase.from('users').select('id, name').eq('is_active', true).order('name', { ascending: true })
+        : Promise.resolve({ data: [] as { id: string; name: string }[], error: null });
+      [usersRes, data] = await Promise.all([usersPromise, fetchSessionPage(0)]);
     } catch (caught) {
       devLogger.error('fetchSessions network error:', caught);
       setSessionsFetchNotice({ type: 'error' });
@@ -75,32 +76,15 @@ export function useClassManagement() {
     const tList = usersRes.data || [];
     setTeacherList(tList);
 
-    let data = firstSessions.data;
-    const error = firstSessions.error;
     let truncated = false;
-
-    if (error) {
-      devLogger.error('fetchSessions sessions error:', error);
-      setSessionsFetchNotice({ type: 'error' });
-      return;
-    }
-    if (!data) {
-      setSessionsFetchNotice({ type: 'error' });
-      return;
-    }
 
     if (data.length === PAGE) {
       let offset = PAGE;
       const accumulated = [...data];
       for (;;) {
         try {
-          const { data: nextPage, error: pageErr } = await sessionsInRange().range(offset, offset + PAGE - 1);
-          if (pageErr) {
-            devLogger.error('fetchSessions sessions pagination error:', pageErr);
-            truncated = true;
-            break;
-          }
-          if (!nextPage || nextPage.length === 0) break;
+          const nextPage = await fetchSessionPage(offset);
+          if (nextPage.length === 0) break;
           accumulated.push(...nextPage);
           if (nextPage.length < PAGE) break;
           offset += PAGE;

@@ -952,8 +952,15 @@ button {
 
 /* ── 인트로 ─────────────────────────────────────────────── */
 
+.spm-wrap:has(.spm-intro) {
+  overflow: hidden;
+}
+
 .spm-intro {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
@@ -1598,6 +1605,8 @@ button {
   position: fixed;
   inset: 0;
   z-index: 9999;
+  height: 100dvh;
+  max-height: 100dvh;
   overflow-y: auto;
   background:
     radial-gradient(circle at top, rgba(200,255,0,0.08), transparent 24%),
@@ -2205,6 +2214,7 @@ function Block({ label, children }: { label: string; children: React.ReactNode }
 
 function ScreenShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  useViewportScrollLock(true);
 
   return (
     <>

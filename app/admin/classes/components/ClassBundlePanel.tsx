@@ -45,9 +45,9 @@ type RoundView = "active" | "all" | "completed";
 
 const RESTART_CYCLE_ROUNDS = 8;
 
-/** 회차 행: 강사/수업료는 고정폭, 남는 폭은 맨 오른쪽 1fr */
+/** 데스크톱 회차 행. 모바일은 한 줄로 자르지 않고 아래로 쌓는다. */
 const SESSION_ROW_GRID =
-  "grid w-full min-w-0 grid-cols-[2.6rem_12.75rem_8.25rem_6.5rem_2.5rem_3rem_max-content_minmax(0,1fr)] items-start gap-x-2";
+  "md:grid md:w-full md:min-w-0 md:grid-cols-[2.6rem_12.75rem_8.25rem_6.5rem_2.5rem_3rem_max-content_minmax(0,1fr)] md:items-start md:gap-x-2";
 
 const SESSION_CONTROL =
   "box-border h-8 w-full min-w-0 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-800";
@@ -87,6 +87,13 @@ function toDateInputValueLocal(d: Date) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+/** 브라우저 언어와 상관없이 회차 날짜를 한국식으로 보여 준다. 값은 YYYY-MM-DD. */
+function formatSessionDateLabel(ymd: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
+  if (!match) return ymd || "날짜";
+  return `${Number(match[2])}월 ${Number(match[3])}일`;
 }
 
 type SessionRow = {
@@ -376,6 +383,20 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     setScheduleDraftBySessionId({});
   }, [bundleKey, visible]);
 
+  useEffect(() => {
+    if (!visible) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = previousHtmlOverflow;
+      body.style.overflow = previousBodyOverflow;
+    };
+  }, [visible]);
+
   const loadAll = useCallback(async () => {
     if (!supabase) return;
     if (!visible) return;
@@ -385,14 +406,17 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     }
     setLoading(true);
     try {
-      const [sessionsRes, usersRes, tierRes] = await Promise.all([
-        supabase
-          .from("sessions")
-          .select(
-            "id, group_id, title, start_at, end_at, status, created_by, price, round_index, round_total, sequence_number, session_type, memo, mileage_option"
-          )
-          .in("group_id", effectiveGroupIds)
-          .order("start_at", { ascending: true }),
+      const groupParams = new URLSearchParams({ groupIds: effectiveGroupIds.join(',') });
+      const sessionsPromise = fetch(`/api/admin/classes/sessions?${groupParams.toString()}`, {
+        credentials: 'include',
+        cache: 'no-store',
+      }).then(async (res) => {
+        const payload = (await res.json().catch(() => ({}))) as { sessions?: SessionRow[]; error?: string };
+        if (!res.ok) throw new Error(payload.error || 'sessions_fetch_failed');
+        return payload.sessions ?? [];
+      });
+      const [sessionRows, usersRes, tierRes] = await Promise.all([
+        sessionsPromise,
         supabase
           .from("users")
           .select(
@@ -403,7 +427,6 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
         fetchTeacherTierFeeMap(supabase),
       ]);
 
-      const { data, error } = sessionsRes;
       if (usersRes.error) devLogger.error(usersRes.error);
       const baseTeachers = (usersRes.data || []) as TeacherFeeRow[];
       const logCountByTeacher = await fetchTeacherLogCounts(
@@ -417,8 +440,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
       setTeachers(teacherRows);
       setTierFeeMap(tierRes.map);
 
-      if (error) throw error;
-      const rows = (data || []) as SessionRow[];
+      const rows = sessionRows;
       const map: Record<string, SessionRow[]> = {};
       for (const r of rows) {
         const gid = r.group_id;
@@ -1592,7 +1614,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                               : "overflow-hidden rounded-lg border border-slate-200"
                           }
                         >
-                          <div className={`${SESSION_ROW_GRID} border-b border-slate-100 bg-slate-50 px-2 py-2 text-[11px] font-medium text-slate-500`}>
+                          <div className={`${SESSION_ROW_GRID} hidden border-b border-slate-100 bg-slate-50 px-2 py-2 text-[11px] font-medium text-slate-500 md:grid`}>
                             <div>회차</div>
                             <div>일정</div>
                             <div>강사</div>
@@ -1634,48 +1656,60 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                   const s = getTimeStatusLabel(r);
                                   const assistList = extraTeachersFromMemo(r.memo);
                                   return (
-                                    <div key={r.id} className={`${SESSION_ROW_GRID} border-t border-slate-100 px-2 py-2`}>
-                                      <div className="pt-1.5 text-xs font-semibold text-slate-700 whitespace-nowrap">{n}/{total}</div>
-                                      <div className="flex w-full min-w-0 flex-col gap-1">
-                                          <input
-                                          type="date"
-                                          className={SESSION_CONTROL}
-                                          value={dateStr}
-                                          onChange={(e) => {
-                                            setScheduleDraftBySessionId((prev) => ({
-                                              ...prev,
-                                              [r.id]: mergeSessionScheduleDraft(
-                                                prev[r.id],
-                                                savedDateStr,
-                                                savedTimeStr,
-                                                { dateStr: e.target.value }
-                                              ),
-                                            }));
-                                          }}
-                                        />
-                                          <input
-                                            type="time"
-                                            lang="en-GB"
-                                            className={SESSION_CONTROL}
-                                            value={timeStr}
-                                            onChange={(e) => {
-                                              setScheduleDraftBySessionId((prev) => ({
-                                                ...prev,
-                                                [r.id]: mergeSessionScheduleDraft(
-                                                  prev[r.id],
-                                                  savedDateStr,
-                                                  savedTimeStr,
-                                                  { timeStr: e.target.value }
-                                                ),
-                                              }));
-                                            }}
-                                          />
+                                    <div key={r.id} className={`${SESSION_ROW_GRID} border-t border-slate-100 px-3 py-2 md:px-2 md:py-1.5`}>
+                                      <div className="flex items-center gap-1.5 md:contents">
+                                        <div className="w-9 shrink-0 text-sm font-bold tabular-nums text-slate-900 md:order-1 md:w-auto md:pt-1.5">{n}/{total}</div>
+                                        <div className="flex min-w-0 flex-1 items-center gap-1.5 md:order-2">
+                                          <label className="relative h-7 w-[5.5rem] shrink-0 md:w-auto md:flex-1">
+                                            <span className="pointer-events-none flex h-7 items-center justify-center rounded-md bg-slate-50 text-[13px] font-medium text-slate-800 md:justify-start md:px-2">
+                                              {formatSessionDateLabel(dateStr)}
+                                            </span>
+                                            <input
+                                              type="date"
+                                              aria-label={`${n}회차 날짜`}
+                                              className="absolute inset-0 cursor-pointer opacity-0"
+                                              value={dateStr}
+                                              onChange={(e) => {
+                                                setScheduleDraftBySessionId((prev) => ({
+                                                  ...prev,
+                                                  [r.id]: mergeSessionScheduleDraft(
+                                                    prev[r.id],
+                                                    savedDateStr,
+                                                    savedTimeStr,
+                                                    { dateStr: e.target.value }
+                                                  ),
+                                                }));
+                                              }}
+                                            />
+                                          </label>
+                                          <label className="relative h-7 w-12 shrink-0 md:w-[4.75rem]">
+                                            <span className="pointer-events-none flex h-7 items-center justify-center rounded-md bg-slate-50 text-[13px] font-medium tabular-nums text-slate-800">
+                                              {timeStr || "시간"}
+                                            </span>
+                                            <input
+                                              type="time"
+                                              aria-label={`${n}회차 시간`}
+                                              className="absolute inset-0 cursor-pointer opacity-0"
+                                              value={timeStr}
+                                              onChange={(e) => {
+                                                setScheduleDraftBySessionId((prev) => ({
+                                                  ...prev,
+                                                  [r.id]: mergeSessionScheduleDraft(
+                                                    prev[r.id],
+                                                    savedDateStr,
+                                                    savedTimeStr,
+                                                    { timeStr: e.target.value }
+                                                  ),
+                                                }));
+                                              }}
+                                            />
+                                          </label>
                                           {scheduleDirty ? (
                                           <button
                                             type="button"
                                             disabled={savingSessionScheduleId === r.id}
                                             onClick={() => void saveSessionSchedule(gid, r)}
-                                            className="h-8 rounded-md bg-blue-600 px-2 text-[11px] font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+                                            className="h-7 rounded-md bg-blue-600 px-2 text-[11px] font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
                                           >
                                             {savingSessionScheduleId === r.id
                                               ? "저장 중…"
@@ -1683,7 +1717,14 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                           </button>
                                           ) : null}
                                         </div>
-                                      <div className="flex min-w-0 flex-col gap-1">
+                                        <span
+                                          className={`ml-auto inline-flex shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold md:order-6 md:ml-0 md:justify-self-center ${statusBadgeClass(s.label)}`}
+                                        >
+                                          {s.label}
+                                        </span>
+                                      </div>
+                                      <div className="mt-1.5 flex items-start gap-2 md:contents">
+                                      <div className="flex min-w-0 flex-1 flex-col gap-1 md:order-3">
                                             <select
                                               className={SESSION_CONTROL}
                                               value={r.created_by ?? ""}
@@ -1719,7 +1760,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                           {assistList.length < 2 && (
                                             <button
                                               type="button"
-                                              className="flex h-8 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-500 hover:text-slate-800"
+                                              className="flex h-6 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-400 hover:text-slate-800"
                                               onClick={() => void addAssistRow(gid, r)}
                                             >
                                               <Plus size={11} strokeWidth={2.5} />
@@ -1727,10 +1768,11 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             </button>
                                           )}
                                         </div>
-                                      <div className="flex flex-col gap-1">
+                                      <div className="flex w-[5.75rem] shrink-0 flex-col gap-1 md:order-4 md:w-auto">
                                             <input
                                               key={`price-${r.id}-${r.price ?? 0}`}
                                               type="number"
+                                              aria-label={`${n}회차 수업료`}
                                               className={SESSION_PRICE_CONTROL}
                                               placeholder="수업료"
                                               defaultValue={Number(r.price) || 0}
@@ -1747,31 +1789,27 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               />
                                           ))}
                                         </div>
-                                      <div className="pt-1 text-center">
+                                      </div>
+                                      <div className="mt-1 grid grid-cols-4 items-center md:contents">
+                                      <div className="md:order-5 md:pt-1 md:text-center">
                                         <button
                                           type="button"
-                                          className="whitespace-nowrap rounded-md px-1.5 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-50"
+                                          className="w-full whitespace-nowrap text-center text-[11px] font-semibold leading-none text-amber-800 hover:underline md:w-auto md:rounded-md md:px-1.5 md:py-1 md:hover:bg-amber-50 md:hover:no-underline"
                                           onClick={() => setMileageModal({ gid, row: r })}
                                         >
-                                          설정
+                                          <span className="md:hidden">마일리지</span>
+                                          <span className="hidden md:inline">설정</span>
                                         </button>
                                       </div>
-                                      <div className="pt-1.5 text-center">
-                                        <span
-                                          className={`inline-flex whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold ${statusBadgeClass(s.label)}`}
-                                        >
-                                          {s.label}
-                                        </span>
-                                      </div>
-                                      <div className="pt-0.5">
+                                      <div className="col-span-3 md:order-7 md:col-auto md:pt-0.5">
                                         {isPastCycle ||
                                         r.status === "cancelled" ||
                                         r.status === "deleted" ? null : (
-                                          <div className="flex flex-wrap items-center gap-1">
+                                          <div className="grid grid-cols-3 items-center md:flex md:flex-wrap md:gap-1">
                                             {r.status === "postponed" ? (
                                               <button
                                                 type="button"
-                                                className="whitespace-nowrap rounded-md bg-violet-600 px-2 py-1.5 text-[11px] font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+                                                className="w-full whitespace-nowrap text-center text-[11px] font-semibold text-violet-800 hover:underline disabled:opacity-50 md:w-auto md:rounded-md md:bg-violet-600 md:px-2 md:py-1.5 md:text-white md:hover:bg-violet-700 md:hover:no-underline"
                                                 disabled={undoingPostponeSessionId === r.id}
                                                 onClick={() => void handleUndoPostpone(r.id)}
                                               >
@@ -1781,7 +1819,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               <>
                                                 <button
                                                   type="button"
-                                                  className="whitespace-nowrap rounded-md border border-violet-200 bg-violet-50 px-2 py-1.5 text-[11px] font-semibold text-violet-800 hover:bg-violet-100 disabled:opacity-50"
+                                                  className="w-full whitespace-nowrap text-center text-[11px] font-semibold text-violet-800 hover:underline disabled:opacity-50 md:w-auto md:rounded-md md:border md:border-violet-200 md:bg-violet-50 md:px-2 md:py-1.5 md:hover:bg-violet-100 md:hover:no-underline"
                                                   disabled={postponingSessionId === r.id}
                                                   onClick={() => void handlePostpone(gid, r.id, "postpone")}
                                                 >
@@ -1789,7 +1827,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                                 </button>
                                                 <button
                                                   type="button"
-                                                  className="whitespace-nowrap rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1.5 text-[11px] font-semibold text-indigo-800 hover:bg-indigo-100 disabled:opacity-50"
+                                                  className="w-full whitespace-nowrap text-center text-[11px] font-semibold text-indigo-800 hover:underline disabled:opacity-50 md:w-auto md:rounded-md md:border md:border-indigo-200 md:bg-indigo-50 md:px-2 md:py-1.5 md:hover:bg-indigo-100 md:hover:no-underline"
                                                   disabled={postponingSessionId === r.id}
                                                   onClick={() => void handlePostpone(gid, r.id, "postpone_request")}
                                                 >
@@ -1799,7 +1837,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                             )}
                                             <button
                                               type="button"
-                                              className="whitespace-nowrap rounded-md border border-rose-200 bg-rose-50 px-2 py-1.5 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
+                                              className="w-full whitespace-nowrap text-center text-[11px] font-semibold text-rose-700 hover:underline disabled:opacity-50 md:w-auto md:rounded-md md:border md:border-rose-200 md:bg-rose-50 md:px-2 md:py-1.5 md:hover:bg-rose-100 md:hover:no-underline"
                                               disabled={deletingSessionId === r.id}
                                               onClick={() => void handleDeleteSession(gid, r.id)}
                                             >
@@ -1808,7 +1846,8 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                           </div>
                                         )}
                                       </div>
-                                      <div />
+                                      </div>
+                                      <div className="hidden md:order-8 md:block" />
                                     </div>
                                   );
                                 })}
@@ -1852,11 +1891,12 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                               </div>
 <div className="space-y-2">
                             <p className="text-[11px] font-semibold text-slate-500">확장</p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-nowrap items-center gap-2">
                                 <input
                                   type="number"
                                   min={1}
-                                  className="w-16 rounded-md border border-slate-200 px-2 py-1 text-sm"
+                                  aria-label="확장 회차"
+                                  className="h-8 w-16 shrink-0 rounded-md border border-slate-200 px-2 text-sm"
                                   value={extendCountByGroup[gid] ?? 1}
                                   onChange={(e) =>
                                     setExtendCountByGroup((prev) => ({
@@ -1868,7 +1908,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                 <span className="text-xs text-slate-600">회</span>
                                 <button
                                   type="button"
-                                  className="ml-auto rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                                  className="ml-auto h-8 shrink-0 rounded-md bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-700"
                                   onClick={() => {
                                     const n = Math.max(1, Math.floor(extendCountByGroup[gid] ?? 1));
                                     if (!confirm(`${n}회차를 추가하시겠습니까?`)) return;
@@ -1885,11 +1925,12 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                               <p className="text-[11px] text-slate-500">
                                 마지막 N회를 삭제 처리하고 회차를 다시 매깁니다. 기본 목록에서는 숨겨집니다.
                               </p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-nowrap items-center gap-2">
                                 <input
                                   type="number"
                                   min={1}
-                                  className="w-16 rounded-md border border-slate-200 px-2 py-1 text-sm"
+                                  aria-label="축소 회차"
+                                  className="h-8 w-16 shrink-0 rounded-md border border-slate-200 px-2 text-sm"
                                   value={shrinkCountByGroup[gid] ?? 1}
                                   onChange={(e) =>
                                     setShrinkCountByGroup((prev) => ({
@@ -1901,7 +1942,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                 <span className="text-xs text-slate-600">회</span>
                                 <button
                                   type="button"
-                                  className="ml-auto rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+                                  className="ml-auto h-8 shrink-0 rounded-md bg-rose-600 px-3 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
                                   disabled={!!shrinkingByGroup[gid]}
                                   onClick={() => void handleShrinkTail(gid)}
                                 >
@@ -1915,12 +1956,13 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                           <p className="text-[11px] text-slate-500">
                             기존 사이클은 두고 새 그룹으로 예정 회차를 만듭니다.
                           </p>
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-2">
                             <label className="text-[11px] text-slate-600">회차</label>
                             <input
                               type="number"
                               min={1}
-                              className="w-16 rounded-md border border-slate-200 px-2 py-1 text-sm"
+                              aria-label="재시작 회차"
+                              className="h-8 w-20 rounded-md border border-slate-200 px-2 text-sm"
                               value={restartCountByGroup[gid] ?? RESTART_CYCLE_ROUNDS}
                               onChange={(e) =>
                                 setRestartCountByGroup((prev) => ({
@@ -1931,7 +1973,8 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                             />
                             <label className="text-[11px] text-slate-600">패턴</label>
                             <select
-                              className="rounded-md border border-slate-200 px-2 py-1 text-sm"
+                              aria-label="재시작 패턴"
+                              className="h-8 w-full max-w-[8rem] rounded-md border border-slate-200 px-2 text-sm"
                               value={restartWeeklyFrequencyByGroup[gid] ?? 1}
                               onChange={(e) =>
                                 setRestartWeeklyFrequencyByGroup((prev) => ({
@@ -1943,13 +1986,14 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                               <option value={1}>주 1회</option>
                               <option value={2}>주 2회</option>
                             </select>
-                            {(restartWeeklyFrequencyByGroup[gid] ?? 1) === 1 && (
+                            {(restartWeeklyFrequencyByGroup[gid] ?? 1) === 1 ? (
                               <>
                                 <label className="text-[11px] text-slate-600">간격(일)</label>
                                 <input
                                   type="number"
                                   min={1}
-                                  className="w-16 rounded-md border border-slate-200 px-2 py-1 text-sm"
+                                  aria-label="재시작 간격"
+                                  className="h-8 w-20 rounded-md border border-slate-200 px-2 text-sm"
                                   value={restartIntervalDaysByGroup[gid] ?? 7}
                                   onChange={(e) =>
                                     setRestartIntervalDaysByGroup((prev) => ({
@@ -1959,28 +2003,37 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                   }
                                 />
                               </>
-                            )}
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2">
+                            ) : null}
                             <label className="text-[11px] text-slate-600">시작일</label>
-                            <input
-                              type="date"
-                              className="rounded-md border border-slate-200 px-2 py-1 text-sm"
-                              value={restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}
-                              onChange={(e) =>
-                                setRestartStartDateByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
-                              }
-                            />
+                            <label className="relative h-8 w-full max-w-[7.5rem]">
+                              <span className="pointer-events-none flex h-8 items-center rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-800">
+                                {formatSessionDateLabel(restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date()))}
+                              </span>
+                              <input
+                                type="date"
+                                aria-label="재시작 시작일"
+                                className="absolute inset-0 cursor-pointer opacity-0"
+                                value={restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}
+                                onChange={(e) =>
+                                  setRestartStartDateByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
+                                }
+                              />
+                            </label>
                             <label className="text-[11px] text-slate-600">시간</label>
-                            <input
-                              type="time"
-                              className="rounded-md border border-slate-200 px-2 py-1 text-sm"
-                              value={restartStartTimeByGroup[gid] ?? "10:00"}
-                              onChange={(e) =>
-                                setRestartStartTimeByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
-                              }
-                            />
+                            <label className="relative h-8 w-[4.75rem]">
+                              <span className="pointer-events-none flex h-8 items-center justify-center rounded-md border border-slate-200 bg-white px-2 text-sm tabular-nums text-slate-800">
+                                {restartStartTimeByGroup[gid] ?? "10:00"}
+                              </span>
+                              <input
+                                type="time"
+                                aria-label="재시작 시간"
+                                className="absolute inset-0 cursor-pointer opacity-0"
+                                value={restartStartTimeByGroup[gid] ?? "10:00"}
+                                onChange={(e) =>
+                                  setRestartStartTimeByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
+                                }
+                              />
+                            </label>
                           </div>
 
                           {(restartWeeklyFrequencyByGroup[gid] ?? 1) === 2 && (
@@ -2024,16 +2077,14 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              className="ml-auto rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-                              disabled={!!restartingByGroup[gid]}
-                              onClick={() => void handleRestartCycle(gid)}
-                            >
-                              {restartingByGroup[gid] ? "생성 중..." : "재시작"}
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            className="h-8 w-full rounded-md bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 sm:ml-auto sm:w-auto sm:px-3"
+                            disabled={!!restartingByGroup[gid]}
+                            onClick={() => void handleRestartCycle(gid)}
+                          >
+                            {restartingByGroup[gid] ? "생성 중..." : "재시작"}
+                          </button>
                         </div>
                             </div>
                           ) : null}

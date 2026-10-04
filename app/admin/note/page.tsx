@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 const noteLoading = (
-  <div className="flex h-[var(--viewport-height-px,100dvh)] items-center justify-center bg-[#f7f7f5] text-sm text-neutral-500">
+  <div className="flex h-[calc(var(--viewport-height-px,100dvh)-3rem-env(safe-area-inset-top,0px))] items-center justify-center bg-[#F8FAFC] text-sm font-bold text-slate-400 min-[1200px]:h-[var(--viewport-height-px,100dvh)]">
     노트 불러오는 중...
   </div>
 );
