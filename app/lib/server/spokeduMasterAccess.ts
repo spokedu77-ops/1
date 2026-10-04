@@ -211,7 +211,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
       freePreviewProgramIds: FREE_PREVIEW_PROGRAM_IDS,
       canUseClassTools: true,
       canUseAttendance: true,
-      canUseRecords: false,
+      canUseRecords: true,
       canUseSpomove: false,
     };
   }
@@ -516,9 +516,9 @@ export async function requireSpokeduMasterCapability(
   const access = await getSpokeduMasterAccessSnapshot();
   if (!access.ok) return access;
   if (!access.snapshot[CAPABILITY_FIELD[capability]]) {
-    const error = capability === 'records' || capability === 'spomove'
+    const error = capability === 'spomove'
       ? 'Premium 이용권이 필요한 기능입니다.'
-      : capability === 'library' || capability === 'attendance'
+      : capability === 'library' || capability === 'attendance' || capability === 'records'
         ? 'Lite 이용권이 필요한 기능입니다.'
         : EXPIRED_ACCESS_MESSAGE;
     return {

@@ -55,7 +55,7 @@ export type MasterGateDisplayModel = {
 };
 
 export function resolveMasterIntentAccessPlan(intent: MasterGateIntentKind): MasterIntentAccessPlan {
-  if (intent === 'open_library' || intent === 'use_attendance') {
+  if (intent === 'open_library' || intent === 'use_attendance' || intent === 'continue_record') {
     return { minimumPlan: 'lite', allowedPlans: ['lite', 'premium'] };
   }
   return { minimumPlan: 'premium', allowedPlans: ['premium'] };
@@ -69,7 +69,7 @@ function createJourneyId() {
 }
 
 export function normalizeMasterGateIntent(value: string | null | undefined): MasterGateIntentKind | null {
-  // session_capture is the Session Capture panel alias for continue_record (same Premium memory value).
+  // session_capture is the Session Capture panel alias for continue_record.
   if (value === 'session_capture') return 'continue_record';
   if (value === 'open_library' || value === 'use_attendance' || value === 'start_spomove' || value === 'continue_record') return value;
   return null;
@@ -229,14 +229,14 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
       minimumPlan: context.minimumPlan,
       eyebrow: '방금 하려던 작업',
       title: resourceTitle ? `${resourceTitle} 기록을 이어가려고 했습니다.` : '수업 기록을 이어가려고 했습니다.',
-      description: '기존 수업 기록은 유지됩니다. 프리미엄에서 지난 메모와 학생 맥락을 다음 수업 준비에 다시 활용하고, 하던 기록으로 돌아갑니다.',
+      description: 'Lite에서 수업 메모와 학생 기록을 남기고, 지난 수업의 맥락을 다음 준비에 이어 사용할 수 있습니다.',
       resourceTitle,
       evidence: [
         { label: '복귀 위치', value: '기록 작성 화면' },
         { label: '활용', value: '수업 근거와 보호자 안내' },
-        { label: '권한', value: '프리미엄' },
+        { label: '권한', value: 'Lite' },
       ],
-      ctaLabel: '프리미엄으로 기록 계속하기',
+      ctaLabel: 'Lite로 기록 계속하기',
       paymentHref,
     };
   }

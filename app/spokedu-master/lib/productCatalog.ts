@@ -8,9 +8,6 @@ export const MASTER_PREMIUM_PRICE_KRW = 28900;
 
 export const SPOMAT_PRODUCT_CONTRACT = {
   regularPrice: 20900,
-  premiumPrice: 15900,
-  discountAmount: 5000,
-  premiumRequired: true,
 } as const;
 
 export type MasterProductKey = 'lite' | 'premium' | 'center';
@@ -38,7 +35,6 @@ export type MasterProductCatalogItem = {
   contactRequired: boolean;
   comingSoon: boolean;
   featureEntitlements: MasterFeatureEntitlements;
-  canBuySpomatAtMemberPrice: boolean;
   serverPlanKey: 'lite' | 'premium' | null;
   serverAmount: number | null;
 };
@@ -47,7 +43,7 @@ export const MASTER_BASE_FEATURE_ENTITLEMENTS: MasterFeatureEntitlements = {
   canUseLibrary: true,
   canUseClassTools: true,
   canUseAttendance: true,
-  canUseRecords: false,
+  canUseRecords: true,
   canUseSpomove: false,
 };
 
@@ -71,7 +67,6 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
     featureEntitlements: {
       ...MASTER_BASE_FEATURE_ENTITLEMENTS,
     },
-    canBuySpomatAtMemberPrice: false,
     serverPlanKey: 'lite',
     serverAmount: MASTER_LITE_PRICE_KRW,
   },
@@ -92,9 +87,7 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
     featureEntitlements: {
       ...MASTER_BASE_FEATURE_ENTITLEMENTS,
       canUseSpomove: true,
-      canUseRecords: true,
     },
-    canBuySpomatAtMemberPrice: true,
     serverPlanKey: 'premium',
     serverAmount: MASTER_PREMIUM_PRICE_KRW,
   },
@@ -115,9 +108,7 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
     featureEntitlements: {
       ...MASTER_BASE_FEATURE_ENTITLEMENTS,
       canUseSpomove: true,
-      canUseRecords: true,
     },
-    canBuySpomatAtMemberPrice: false,
     serverPlanKey: null,
     serverAmount: null,
   },
@@ -149,25 +140,25 @@ export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
 
 /**
  * VALUE PROMISE SSOT — outcome first, features as evidence.
- * Lite = weekly operate. Premium = operate + connected memory (+ SPOMOVE).
+ * Lite = complete general teaching management. Premium = Lite + SPOMOVE.
  * Do not rephrase differently on Landing / Payment / Gate / Subscription.
  */
 export function getMasterProductPaymentFeatureLabels(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return ['놀이체육 Library에서 활동 찾기', '수업반 · 일정 · 출석 이어 쓰기', '찾은 활동을 실제 수업에 구성하기'];
+    return ['놀이체육 Library 전체 이용', '수업반 · 학생 · 일정 · 출석 관리', '찾은 활동을 실제 수업에 구성', '수업 메모 · 학생 관찰 · 다음 수업 기록', '지난 기록 활용 · 수업 안내문 작성·복사'];
   }
   if (product.id === 'premium') {
-    return ['놀이체육 Library + SPOMOVE 디지털 움직임 콘텐츠', '다음 수업 메모 · 학생 기록 · 안내문 작성·복사', '지난 수업의 맥락을 다음 준비로 이어가기', 'SPOMAT 회원가'];
+    return ['Lite의 모든 기능', 'SPOMOVE 공식 디지털 움직임 콘텐츠', '수업 현장에서 바로 실행하는 전체 화면 활동'];
   }
   return ['별도 문의', '직접 결제 없음'];
 }
 
 export function getMasterProductPaymentDescription(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return '좋은 놀이체육 콘텐츠를 찾아 실제 수업으로 구성하고, 반·일정·출석을 다음 수업에도 이어 쓰는 완전한 기본 흐름입니다.';
+    return 'Library, 반·학생·일정·출석, 기록과 안내문까지 일반 수업관리 흐름을 모두 제공합니다.';
   }
   if (product.id === 'premium') {
-    return '놀이체육과 SPOMOVE로 수업을 더 다양하게 구성하고, 지난 기록과 학생 맥락을 다음 준비에 다시 활용합니다.';
+    return 'Lite의 모든 수업관리 기능에 SPOMOVE 디지털 움직임 콘텐츠와 전체 화면 실행을 더합니다.';
   }
   return '이용 인원과 운영 방식에 맞춰 별도로 안내합니다.';
 }

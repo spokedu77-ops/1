@@ -35,7 +35,8 @@ describe('SPOKEDU MASTER service truthfulness contracts', () => {
 
     expect(shop).toContain('SPOMAT');
     expect(shop).toContain('SPOMAT_PRODUCT_CONTRACT');
-    expect(shop).toContain('useMasterCanBuySpomat');
+    expect(shop).not.toContain('useMasterCanBuySpomat');
+    expect(shop).not.toContain('회원가');
     expect(shop).toContain('/api/spokedu-master/shop/spomat/purchase');
     expect(shop).toContain('SPOMAT_BULK_INQUIRY_HREF');
     expect(shop).not.toContain('createOrderRequest');

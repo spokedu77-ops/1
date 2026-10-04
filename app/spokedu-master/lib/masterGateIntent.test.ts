@@ -16,6 +16,10 @@ describe('master gate intent model', () => {
       minimumPlan: 'premium',
       allowedPlans: ['premium'],
     });
+    expect(resolveMasterIntentAccessPlan('continue_record')).toEqual({
+      minimumPlan: 'lite',
+      allowedPlans: ['lite', 'premium'],
+    });
   });
 
   it('builds a library gate context from the current route', () => {

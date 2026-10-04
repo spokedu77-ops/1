@@ -225,14 +225,13 @@ export const SessionCapturePanel = forwardRef<
           오늘 관찰을 남기면 다음 준비에 이어집니다
         </p>
         <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">
-          출석은 Lite에서도 저장됩니다. 학생별 관찰·다음 수업 메모는
-          프리미엄에서 이어집니다.
+          수업 기록은 Lite부터 사용할 수 있습니다.
         </p>
         <Link
-          href={`/spokedu-master/payment?plan=premium&intent=continue_record&next=${encodeURIComponent(`/spokedu-master/activity?session=${session.id}&capture=1`)}&journeyId=${encodeURIComponent(`capture_${session.id}`)}`}
+          href={`/spokedu-master/payment?plan=lite&intent=continue_record&next=${encodeURIComponent(`/spokedu-master/activity?session=${session.id}&capture=1`)}&journeyId=${encodeURIComponent(`capture_${session.id}`)}`}
           className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-blue-700"
         >
-          프리미엄으로 기록 이어가기
+          Lite로 기록 이어가기
         </Link>
       </section>
     );

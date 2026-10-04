@@ -26,12 +26,12 @@ describe('SPOKEDU MASTER product catalog', () => {
       canUseLibrary: true,
       canUseClassTools: true,
       canUseAttendance: true,
-      canUseRecords: false,
+      canUseRecords: true,
       canUseSpomove: false,
     });
   });
 
-  it('defines Premium as a monthly direct-purchase plan with SPOMOVE and SPOMAT member price', () => {
+  it('defines Premium as a monthly direct-purchase plan with Lite capabilities plus SPOMOVE', () => {
     const premium = MASTER_PRODUCT_CATALOG.premium;
     expect(premium.monthlyPriceKrw).toBe(28900);
     expect(MASTER_PREMIUM_PRICE_KRW).toBe(28900);
@@ -39,7 +39,7 @@ describe('SPOKEDU MASTER product catalog', () => {
     expect(premium.autoRenewal).toBe(true);
     expect(canPurchaseDirectly(premium)).toBe(true);
     expect(premium.featureEntitlements.canUseSpomove).toBe(true);
-    expect(premium.canBuySpomatAtMemberPrice).toBe(true);
+    expect(premium.featureEntitlements.canUseRecords).toBe(true);
   });
 
   it('keeps Center as sales-inquiry only without direct checkout', () => {
@@ -53,12 +53,7 @@ describe('SPOKEDU MASTER product catalog', () => {
 
   it('has no trial product and keeps SPOMAT contract prices in one place', () => {
     expect(Object.keys(MASTER_PRODUCT_CATALOG)).not.toContain('trial');
-    expect(SPOMAT_PRODUCT_CONTRACT).toEqual({
-      regularPrice: 20900,
-      premiumPrice: 15900,
-      discountAmount: 5000,
-      premiumRequired: true,
-    });
+    expect(SPOMAT_PRODUCT_CONTRACT).toEqual({ regularPrice: 20900 });
   });
 
   it('returns only directly purchasable public products', () => {

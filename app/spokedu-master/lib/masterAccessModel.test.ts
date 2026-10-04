@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  canBuySpomatFromSnapshot,
   canCreateClassRecordFromSnapshot,
   getEntitlementPaymentHref,
   getEntitlementPrimaryCtaLabel,
@@ -41,7 +40,7 @@ const liteSnapshot: MasterAccessSnapshot = {
   canUseLibrary: true,
   canUseClassTools: true,
   canUseAttendance: true,
-  canUseRecords: false,
+  canUseRecords: true,
 };
 
 const premiumSnapshot: MasterAccessSnapshot = {
@@ -75,8 +74,8 @@ describe('masterAccessModel', () => {
     ).toBe('/spokedu-master/payment');
   });
 
-  it('derives record, upgrade, and SPOMAT purchase rules from snapshot only', () => {
-    expect(canCreateClassRecordFromSnapshot(liteSnapshot).allowed).toBe(false);
+  it('derives record and upgrade rules from snapshot only', () => {
+    expect(canCreateClassRecordFromSnapshot(liteSnapshot).allowed).toBe(true);
     expect(canCreateClassRecordFromSnapshot(premiumSnapshot).allowed).toBe(true);
     expect(canCreateClassRecordFromSnapshot({
       ...liteSnapshot,
@@ -87,8 +86,6 @@ describe('masterAccessModel', () => {
     }).allowed).toBe(false);
     expect(getUpgradeHrefFromSnapshot(liteSnapshot)).toBe('/spokedu-master/subscription');
     expect(getUpgradeHrefFromSnapshot(freeSnapshot)).toBe('/spokedu-master/payment');
-    expect(canBuySpomatFromSnapshot(premiumSnapshot)).toBe(true);
-    expect(canBuySpomatFromSnapshot(liteSnapshot)).toBe(false);
   });
 });
 
@@ -102,7 +99,7 @@ describe('commercial launch architecture contracts', () => {
     expect(provider).toContain('MasterAccessProvider');
     expect(dashboard).toContain('selectWeeklyProgramsById(programs)');
     expect(dashboard).toContain('EntitledDashboardView');
-    expect(preview).toContain('놀이체육 둘러보기, 무료 수업 1개, 수업 도구는 계속 사용할 수 있습니다');
+    expect(preview).toContain('이번 주 첫 무료 수업 1개, 스탑워치·타이머·점수판은 계속 사용할 수 있습니다');
     expect(appShell).toContain('MasterAccessProvider');
     expect(appShell).toContain('canBrowseLibrary');
   });
@@ -132,7 +129,7 @@ describe('commercial launch architecture contracts', () => {
   });
 
   it('keeps landing claims honest and derives plan pricing from the public contract', () => {
-    const landing = read('app/spokedu-master/landing/page.tsx');
+    const landing = read('app/spokedu-master/landing/CommercialLanding.tsx');
     const model = read('app/spokedu-master/landing/models/landingProduct.ts');
     const sections = read('app/spokedu-master/landing/components/LandingSections.tsx');
     expect(landing).toContain('getLandingProductModel()');
@@ -154,10 +151,10 @@ describe('commercial launch architecture contracts', () => {
     expect(dashboard).toContain('isProgramLessonLocked');
     expect(dashboard).not.toContain('canUseSpomove(');
     expect(classRecord).toContain("redirect('/spokedu-master/activity')");
-    expect(shop).toContain('useMasterCanBuySpomat');
-    expect(shop).not.toContain('canBuySpomatAtMemberPrice');
+    expect(shop).not.toContain('useMasterCanBuySpomat');
+    expect(shop).not.toContain('회원가');
     expect(provider).toContain('useMasterCanUseSpomove');
-    expect(provider).toContain('useMasterCanBuySpomat');
+    expect(provider).not.toContain('useMasterCanBuySpomat');
   });
 
   it('wraps SPOMOVE session with an error boundary and keeps Session operations first', () => {

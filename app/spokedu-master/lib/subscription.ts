@@ -82,11 +82,6 @@ export function canUseSpomove(profile: UserProfile | null): boolean {
   return productKey ? MASTER_PRODUCT_CATALOG[productKey].featureEntitlements.canUseSpomove : false;
 }
 
-export function canBuySpomatAtMemberPrice(profile: UserProfile | null): boolean {
-  const productKey = resolveMasterProductKey(profile);
-  return productKey ? MASTER_PRODUCT_CATALOG[productKey].canBuySpomatAtMemberPrice : false;
-}
-
 export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
   if (profile?.isAdmin) return { allowed: true, label: '관리자' };
   if (isPaidAccessExpired(profile)) {
@@ -99,8 +94,8 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
   if (!canUseRecords(profile)) {
     return {
       allowed: false,
-      label: '프리미엄 필요',
-      reason: '수업 기록 저장과 누적 관리는 프리미엄에서 사용할 수 있습니다.',
+      label: 'Lite 필요',
+      reason: '수업 기록 저장과 누적 관리는 Lite에서 사용할 수 있습니다.',
     };
   }
   return { allowed: true, label: '사용 가능' };

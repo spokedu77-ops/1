@@ -70,7 +70,6 @@ describe('subscriptionSummary', () => {
       amountText: '월 28,900원',
       isDirectBillingPlan: true,
       canCancel: true,
-      canUseSpomatMemberPrice: true,
       warningText: null,
     });
   });
@@ -108,7 +107,6 @@ describe('subscriptionSummary', () => {
       amountText: '월 9,900원',
       isDirectBillingPlan: true,
       canCancel: true,
-      canUseSpomatMemberPrice: false,
       canUpgradeToPremium: true,
       upgradeHref: '/spokedu-master/payment?plan=premium',
       upgradeLabel: '프리미엄으로 업그레이드',

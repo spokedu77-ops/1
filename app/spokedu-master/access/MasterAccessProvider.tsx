@@ -3,7 +3,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { MasterAccessSnapshot } from '../lib/masterAccessModel';
 import {
-  canBuySpomatFromSnapshot,
   hasMasterEntitlement,
   hasPremiumEntitlement,
 } from '../lib/masterAccessModel';
@@ -75,11 +74,6 @@ export function useMasterCanUseLibrary(): boolean {
 export function useMasterCanUseAttendance(): boolean {
   const context = useOptionalMasterAccessContext();
   return context?.snapshot.canUseAttendance ?? false;
-}
-
-export function useMasterCanBuySpomat(): boolean {
-  const context = useOptionalMasterAccessContext();
-  return canBuySpomatFromSnapshot(context?.snapshot);
 }
 
 export function useSpomatShopAvailable(): boolean {

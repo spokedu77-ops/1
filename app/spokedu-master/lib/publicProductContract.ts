@@ -3,7 +3,7 @@
  * entitlement key · 내부 결제 코드 · 실험 플래그는 노출하지 않는다.
  * 가격·purchasable은 productCatalog에서만 파생한다 (숫자 재선언 금지).
  *
- * Free SSOT (entitlement): 수업 도구 + 라이브러리 탐색 + 지정 무료 프로그램 체험.
+ * Free SSOT (entitlement): 수업 도구 3종 + Library 탐색 + weekly 첫 슬롯 프로그램 전체 이용.
  * 대시보드의 「추천 미리보기 1장」은 entitlement가 아니며 공개 기능 범위에 넣지 않는다.
  * Center: Lite/Premium peer 플랜이 아니라 sales_inquiry 전용.
  */
@@ -32,7 +32,6 @@ export type PublicProductPlan = {
   contactRequired: boolean;
   featureSummary: readonly string[];
   includesSpomove: boolean;
-  spomatMemberEligible: boolean;
 };
 
 /** 기관·센터 별도 문의 — 구독 플랜 카드와 동급으로 취급하지 않음 */
@@ -60,7 +59,6 @@ export type PublicProductHandoff = {
 
 export type PublicSpomatPublicSlice = {
   pricesPublished: false;
-  memberPriceRequiresPremium: true;
   shopHref: string;
   confirmLabel: string;
   /** 마케팅에서 공식 구매 CTA로 쓸 수 있는 안내 라벨 (가격 비포함) */
@@ -82,8 +80,34 @@ export type PublicProductContract = {
   handoff: PublicProductHandoff;
 };
 
+export type PublicPlanComparisonRow = {
+  label: string;
+  free: boolean;
+  lite: boolean;
+  premium: boolean;
+};
+
+const PUBLIC_PLAN_COMPARISON: readonly PublicPlanComparisonRow[] = [
+  { label: 'Library 탐색', free: true, lite: true, premium: true },
+  { label: '이번 주 추천 프로그램 1개', free: true, lite: true, premium: true },
+  { label: '전체 Library', free: false, lite: true, premium: true },
+  { label: '즐겨찾기', free: false, lite: true, premium: true },
+  { label: '수업 도구 3종', free: true, lite: true, premium: true },
+  { label: '수업 도구 전체 8종', free: false, lite: true, premium: true },
+  { label: '반·학생·일정·출석', free: false, lite: true, premium: true },
+  { label: '수업 구성 및 운영', free: false, lite: true, premium: true },
+  { label: '수업 메모·학생 관찰', free: false, lite: true, premium: true },
+  { label: '다음 수업 메모·이전 기록', free: false, lite: true, premium: true },
+  { label: '안내문 작성·저장·복사', free: false, lite: true, premium: true },
+  { label: 'SPOMOVE', free: false, lite: false, premium: true },
+] as const;
+
+export function getPublicPlanComparison(): readonly PublicPlanComparisonRow[] {
+  return PUBLIC_PLAN_COMPARISON;
+}
+
 const HANDOFF_PATHS = {
-  landing: '/spokedu-master/landing',
+  landing: '/subscription',
   onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding',
   dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard',
   payment: '/spokedu-master/payment',
@@ -104,7 +128,6 @@ function catalogSubscriptionToPublic(key: 'lite' | 'premium'): PublicProductPlan
     contactRequired: item.contactRequired,
     featureSummary: getMasterProductPaymentFeatureLabels(item),
     includesSpomove: item.featureEntitlements.canUseSpomove,
-    spomatMemberEligible: item.canBuySpomatAtMemberPrice,
   };
 }
 
@@ -117,9 +140,8 @@ const FREE_PLAN: PublicProductPlan = {
   billingCycleLabel: '로그인 후 이용',
   purchasable: false,
   contactRequired: false,
-  featureSummary: ['수업 도구', '라이브러리 탐색', '무료 프로그램 체험'],
+  featureSummary: ['Library 탐색', '이번 주 추천 프로그램 1개 전체 이용', '수업 도구 3종'],
   includesSpomove: false,
-  spomatMemberEligible: false,
 };
 
 const CENTER_INQUIRY: PublicCenterInquiry = {
@@ -156,12 +178,11 @@ export function getPublicProductContract(): PublicProductContract {
     annualSold: false,
     freeStartSupported: true,
     freeScopeNote:
-      '무료 범위는 로그인 후 수업 도구, 라이브러리 탐색, 지정 무료 프로그램 체험입니다. 대시보드의 추천 미리보기는 이용 entitlement가 아닙니다.',
+      '무료 범위는 로그인 후 Library 탐색, 이번 주 추천 프로그램 1개 전체 이용, 스탑워치·타이머·점수판입니다.',
     plans: [FREE_PLAN, catalogSubscriptionToPublic('lite'), catalogSubscriptionToPublic('premium')],
     centerInquiry: CENTER_INQUIRY,
     spomat: {
       pricesPublished: false,
-      memberPriceRequiresPremium: true,
       shopHref: HANDOFF_PATHS.shop,
       confirmLabel: 'SPOKEDU MASTER에서 확인',
       purchaseGuideLabel: '구매 안내 확인',

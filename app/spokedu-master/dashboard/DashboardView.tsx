@@ -285,7 +285,7 @@ function FirstStartGuide({ canUseAttendance }: { canUseAttendance: boolean }) {
       <p className="mt-2 max-w-xl text-[15px] font-normal leading-6 text-slate-600">
         {canUseAttendance
           ? '콘텐츠부터 찾아도, 수업반부터 준비해도 같은 준비 흐름으로 이어집니다.'
-          : '무료 수업 1개를 체험하고, 라이브러리를 둘러보고, 수업 도구를 바로 사용할 수 있습니다.'}
+          : '이번 주 첫 무료 수업 1개를 체험하고, Library를 둘러보고, 스탑워치·타이머·점수판을 사용할 수 있습니다.'}
       </p>
       <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
         {firstStartPaths.map(({ title, description, href }) => (

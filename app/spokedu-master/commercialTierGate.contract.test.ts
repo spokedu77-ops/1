@@ -25,11 +25,11 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
   });
 
   it('locks program lesson content by Free preview ID and Lite library access', () => {
-    expect(WEEKLY_PROGRAM_IDS).toEqual(['68', '201', '204', '61']);
-    expect(FREE_PREVIEW_PROGRAM_ID).toBe('68');
-    expect(canAccessProgramLessonContent({ programId: '68', canUseLibrary: false })).toBe(true);
-    expect(canAccessProgramLessonContent({ programId: '201', canUseLibrary: false })).toBe(false);
-    expect(canAccessProgramLessonContent({ programId: '201', canUseLibrary: true })).toBe(true);
+    expect(WEEKLY_PROGRAM_IDS).toHaveLength(4);
+    expect(FREE_PREVIEW_PROGRAM_ID).toBe(WEEKLY_PROGRAM_IDS[0]);
+    expect(canAccessProgramLessonContent({ programId: FREE_PREVIEW_PROGRAM_ID, canUseLibrary: false })).toBe(true);
+    expect(canAccessProgramLessonContent({ programId: WEEKLY_PROGRAM_IDS[1], canUseLibrary: false })).toBe(false);
+    expect(canAccessProgramLessonContent({ programId: WEEKLY_PROGRAM_IDS[1], canUseLibrary: true })).toBe(true);
   });
 
   it('does not treat isPro as a Premium content lock in the library UI', () => {

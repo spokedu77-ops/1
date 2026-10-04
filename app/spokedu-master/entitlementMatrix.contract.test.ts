@@ -37,7 +37,7 @@ const CAPABILITY_MATRIX = {
     canUseLibrary: true,
     canUseClassTools: true,
     canUseAttendance: true,
-    canUseRecords: false,
+    canUseRecords: true,
     canUseSpomove: false,
   },
   premium: {
@@ -160,16 +160,16 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     expect(routeAccess).toContain('snapshot.canUseSpomove');
   });
 
-  it('keeps GateWall copy honest for Lite→Premium records/SPOMOVE and expired renewals', () => {
+  it('keeps GateWall copy honest for Lite records and Premium SPOMOVE', () => {
     const gate = read('app/spokedu-master/components/ui/SubscriptionGateWall.tsx');
-    expect(gate).toContain('기록 누적은 프리미엄에서 이용할 수 있습니다');
-    expect(gate).toContain('이미 쌓인 기록은 유지됩니다');
+    expect(gate).toContain('수업 기록은 Lite에서 이용할 수 있습니다');
+    expect(gate).toContain('이용권이 만료되어도 기존 데이터는 유지됩니다');
     expect(gate).toContain('SPOMOVE는 프리미엄에서 이용할 수 있습니다');
-    expect(gate).toContain('수업 도구는 Free에서도 사용할 수 있습니다');
+    expect(gate).toContain('기본 수업 도구는 Free에서도 사용할 수 있습니다');
     expect(gate).toContain('spm-btn-primary');
   });
 
-  it('keeps landing Lite includes honest to the matrix (no records on Lite)', () => {
+  it('keeps landing Lite records and Premium SPOMOVE honest to the matrix', () => {
     const publicContract = read('app/spokedu-master/lib/publicProductContract.ts');
     const landingModel = read('app/spokedu-master/landing/models/landingProduct.ts');
     expect(publicContract).toContain("catalogSubscriptionToPublic('lite')");
@@ -180,9 +180,9 @@ describe('SPOKEDU MASTER entitlement matrix (P1)', () => {
     const lite = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.lite).join(' ');
     const premium = getMasterProductPaymentFeatureLabels(MASTER_PRODUCT_CATALOG.premium).join(' ');
     expect(lite).toContain('출석');
-    expect(lite).not.toContain('안내문 작성·복사');
+    expect(lite).toContain('안내문 작성·복사');
     expect(lite).not.toContain('SPOMOVE');
-    expect(premium).toContain('안내문 작성·복사');
+    expect(premium).toContain('Lite의 모든 기능');
     expect(premium).toContain('SPOMOVE');
   });
 });

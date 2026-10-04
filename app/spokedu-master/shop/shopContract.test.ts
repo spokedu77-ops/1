@@ -11,27 +11,25 @@ const read = (path: string) => readFileSync(join(ROOT, path), 'utf8');
 describe('SPOMAT shop UI contract', () => {
   it('prices come from SPOMAT_PRODUCT_CONTRACT', () => {
     expect(SPOMAT_PRODUCT_CONTRACT.regularPrice).toBe(20900);
-    expect(SPOMAT_PRODUCT_CONTRACT.premiumPrice).toBe(15900);
-    expect(SPOMAT_PRODUCT_CONTRACT.discountAmount).toBe(5000);
-    expect(SPOMAT_PRODUCT_CONTRACT.premiumRequired).toBe(true);
+    expect(SPOMAT_PRODUCT_CONTRACT).toEqual({ regularPrice: 20900 });
   });
 
   it('shop page uses SPOMAT_PRODUCT_CONTRACT and not hardcoded prices', () => {
     const shop = read('app/spokedu-master/shop/page.tsx');
 
     expect(shop).toContain('SPOMAT_PRODUCT_CONTRACT.regularPrice');
-    expect(shop).toContain('SPOMAT_PRODUCT_CONTRACT.premiumPrice');
-    expect(shop).toContain('SPOMAT_PRODUCT_CONTRACT.discountAmount');
+    expect(shop).not.toContain('premiumPrice');
+    expect(shop).not.toContain('discountAmount');
     expect(shop).not.toContain('20900');
     expect(shop).not.toContain('15900');
     expect(shop).not.toContain('5000');
   });
 
-  it('shop page uses useMasterCanBuySpomat for premium check', () => {
+  it('shop page has one public price without a plan check', () => {
     const shop = read('app/spokedu-master/shop/page.tsx');
 
-    expect(shop).toContain('useMasterCanBuySpomat');
-    expect(shop).not.toContain('canBuySpomatAtMemberPrice');
+    expect(shop).not.toContain('useMasterCanBuySpomat');
+    expect(shop).not.toContain('회원가');
     expect(shop).not.toContain("plan === 'premium'");
   });
 
@@ -90,12 +88,13 @@ describe('SPOMAT purchase redirect route contract', () => {
     expect(route).toContain("'/spokedu-master/shop'");
   });
 
-  it('route checks server-side plan, not client params', () => {
+  it('route does not check authentication or subscription plan', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
-    expect(route).toContain('isSpokeduMasterPaidPlanActive');
-    expect(route).toContain("normalizeSpokeduMasterPlan(row.plan) === 'premium'");
-    expect(route).toContain('isPlatformAdminUser');
+    expect(route).not.toContain('isSpokeduMasterPaidPlanActive');
+    expect(route).not.toContain('normalizeSpokeduMasterPlan');
+    expect(route).not.toContain('isPlatformAdminUser');
+    expect(route).not.toContain('createServerSupabaseClient');
     expect(route).not.toContain('searchParams');
     expect(route).not.toContain('request.nextUrl');
   });
@@ -104,10 +103,9 @@ describe('SPOMAT purchase redirect route contract', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
     expect(route).toContain('SPOMAT_PUBLIC_PURCHASE_URL');
-    expect(route).toContain('SPOMAT_PREMIUM_PURCHASE_URL');
+    expect(route).not.toContain('SPOMAT_PREMIUM_PURCHASE_URL');
     expect(route).toContain('isSafePurchaseUrl');
     expect(route).toContain('process.env.SPOMAT_PUBLIC_PURCHASE_URL;');
-    expect(route).toContain('process.env.SPOMAT_PREMIUM_PURCHASE_URL;');
     expect(route).not.toContain('?? SPOMAT_DEFAULT');
     expect(route).not.toMatch(/redirect\(['"]https?:/);
   });
@@ -121,17 +119,10 @@ describe('SPOMAT purchase redirect route contract', () => {
     expect(route).not.toMatch(/status: 503/);
   });
 
-  it('route does not silently fallback premium users to public URL', () => {
+  it('route sends every purchaser to the same public URL', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
-    expect(route).toContain("'/spokedu-master/shop'");
-    expect(route).toContain('isSafePurchaseUrl(premiumUrl)');
-  });
-
-  it('admin is not treated as premium-eligible', () => {
-    const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
-
-    expect(route).toContain('isAdmin');
-    expect(route).toContain('if (!isAdmin)');
+    expect(route).toContain('return NextResponse.redirect(publicUrl, 302)');
+    expect(route).not.toContain('premiumUrl');
   });
 });

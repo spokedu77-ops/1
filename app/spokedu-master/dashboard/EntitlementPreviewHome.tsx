@@ -11,6 +11,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { MASTER_PRODUCT_CATALOG } from '../lib/productCatalog';
+import { SPOKEDU_PATHS } from '@/app/spokedu/data/public-routes';
 import {
   getEntitlementPaymentHref,
   getEntitlementPrimaryCtaLabel,
@@ -19,16 +20,15 @@ import {
 import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 
 const LITE_FEATURES = [
-  '오늘 수업을 찾고 현장에서 운영',
-  '라이브러리 · 수업반 · 일정',
-  '출석 기록과 다음 수업 이어가기',
+  'Library · 수업반 · 학생 · 일정 · 출석',
+  '수업 메모 · 학생 관찰 · 다음 수업 기록',
+  '지난 기록 활용 · 안내문 작성·복사',
 ] as const;
 
 const PREMIUM_FEATURES = [
-  '지난 수업이 다음 준비로 이어짐',
-  '메모 · 학생 이력 · 안내문 작성·복사',
+  'Lite의 모든 기능',
+  'SPOMOVE 디지털 움직임 콘텐츠',
   'SPOMOVE 큰 화면 실행',
-  'SPOMAT 회원가 (연결 시)',
 ] as const;
 
 const LIBRARY_PREVIEW_CATEGORIES = [
@@ -55,8 +55,8 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         </h1>
         <p className="mt-3 max-w-[560px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           {isLapsed
-            ? '놀이체육 둘러보기, 무료 수업 1개, 수업 도구는 계속 사용할 수 있습니다. 수업반·출석·기록은 유지되며, 다시 열려면 필요한 이용권을 선택해 주세요.'
-            : '수업 도구와 놀이체육 둘러보기는 Free에서도 바로 사용할 수 있습니다. 수업반·즐겨찾기·출석은 Lite, 기록과 SPOMOVE는 Premium에서 이어집니다.'}
+            ? '놀이체육 둘러보기, 이번 주 첫 무료 수업 1개, 스탑워치·타이머·점수판은 계속 사용할 수 있습니다. 수업반·출석·기록 데이터는 유지되며, 다시 열려면 Lite를 선택해 주세요.'
+            : '스탑워치·타이머·점수판과 놀이체육 둘러보기는 Free에서도 사용할 수 있습니다. 일반 수업관리와 기록은 Lite, SPOMOVE는 Premium에서 이용합니다.'}
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
@@ -67,7 +67,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
             {primaryLabel}
           </Link>
           <Link
-            href="/spokedu-master/landing#pricing"
+            href={`${SPOKEDU_PATHS.subscription}#plans`}
             className="inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-extrabold"
             style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
           >
@@ -142,7 +142,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
             { icon: BookOpen, label: '수업 전', desc: '라이브러리에서 오늘 수업 고르기' },
-            { icon: Timer, label: '수업 중', desc: '수업 도구는 무료로, SPOMOVE는 프리미엄에서' },
+            { icon: Timer, label: '수업 중', desc: '기본 도구 3종은 Free, 명단 도구는 Lite, SPOMOVE는 Premium' },
             { icon: ClipboardList, label: '수업 후', desc: '관찰 남기고 같은 기록 보강하기' },
             { icon: FileText, label: '안내문', desc: '학부모·기관용 안내문 작성·복사' },
           ].map(({ icon: Icon, label, desc }) => (
