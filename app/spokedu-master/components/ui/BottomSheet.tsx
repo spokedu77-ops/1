@@ -37,6 +37,11 @@ export function BottomSheet({
   const inertRef = useRef(inert);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const [desktopSession, setDesktopSession] = useState(false);
+  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalHost(document.body);
+  }, []);
 
   useEffect(() => {
     if (size !== 'session') return;
@@ -153,7 +158,7 @@ export function BottomSheet({
 
   const panelClassName =
     size === 'preview'
-      ? `relative max-h-[88dvh] w-full max-w-[1160px] rounded-t-[16px] p-4 shadow-2xl outline-none sm:rounded-[16px] sm:p-5 ${hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`
+      ? 'relative flex max-h-[88dvh] w-full max-w-[1160px] flex-col overflow-hidden rounded-t-[16px] p-4 shadow-2xl outline-none sm:rounded-[16px] sm:p-5'
       : isSession
         ? [
             'relative z-[1] flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[16px] border border-slate-200 bg-white px-4 pt-3 shadow-xl outline-none',
@@ -167,8 +172,8 @@ export function BottomSheet({
             'sm:max-w-[720px] sm:rounded-[16px] sm:px-5 sm:pt-4',
           ].join(' ')
       : size === 'document'
-      ? 'relative max-h-[92dvh] w-full max-w-[1360px] overflow-y-auto rounded-t-[14px] p-4 shadow-2xl outline-none sm:rounded-[14px] sm:p-6'
-      : `relative max-h-[88dvh] w-full max-w-[720px] rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6 ${hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`;
+      ? 'relative flex max-h-[92dvh] w-full max-w-[1360px] flex-col overflow-hidden rounded-t-[14px] p-4 shadow-2xl outline-none sm:rounded-[14px] sm:p-6'
+      : 'relative flex max-h-[88dvh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6';
 
   const overlayZ = nested ? 'z-[100]' : 'z-[90]';
   const overlayClassName = isSession
@@ -178,10 +183,12 @@ export function BottomSheet({
     : `fixed inset-0 ${overlayZ} flex items-end justify-center bg-slate-950/45 px-3 backdrop-blur-sm sm:items-center sm:px-6`;
 
   const overlay = (
-    <div className={overlayClassName} role="presentation" {...(inert ? { inert: true } : {})}>
+    <div data-bottom-sheet-overlay className={overlayClassName} role="presentation" {...(inert ? { inert: true } : {})}>
       <button type="button" aria-label={`${title} 닫기`} className={`absolute inset-0 cursor-default ${isSession ? 'lg:hidden' : ''}`} onClick={onClose} />
       <div
         ref={dialogRef}
+        data-bottom-sheet-panel
+        data-bottom-sheet-size={size}
         className={`${panelClassName} ${isSession ? 'lg:pointer-events-auto' : ''}`}
         style={{
           ...(isSession ? {} : { background: '#ffffff', border: '1px solid #e2e8f0' }),
@@ -229,15 +236,13 @@ export function BottomSheet({
             </button>
           </div>
         </div>
-        {isLaunch || isSession || hasDetachedFooter ? (
-          <>
-            <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'overflow-y-auto pr-0 lg:overflow-y-auto' : 'overflow-y-auto pr-3'}`} style={isSession ? { scrollbarGutter: 'stable' } : undefined}>{children}</div>
-            {footer ? <div className="shrink-0 [&>div.grid]:grid-flow-col [&>div.grid]:auto-cols-fr [&>div.grid]:grid-cols-none">{footer}</div> : null}
-          </>
-        ) : children}
+        <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'pr-0' : 'pr-3'}`} style={isSession ? { scrollbarGutter: 'stable' } : undefined}>{children}</div>
+        {footer ? <div data-sheet-footer className="shrink-0 [&>div.grid]:grid-flow-col [&>div.grid]:auto-cols-fr [&>div.grid]:grid-cols-none">{footer}</div> : null}
       </div>
     </div>
   );
 
-  return nested ? createPortal(overlay, document.body) : overlay;
+  const usesDesktopSessionWorkspace = isSession && desktopSession && !nested;
+  if (usesDesktopSessionWorkspace) return overlay;
+  return portalHost ? createPortal(overlay, portalHost) : null;
 }
