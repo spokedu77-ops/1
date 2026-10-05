@@ -90,6 +90,10 @@ export function useIntervalTimer({
   const lastSignalRef = useRef(-1);
   /** setIntervalLeft를 초 단위로만 갱신 (매 프레임 React 재렌더 방지) */
   const lastLeftRef = useRef(-1);
+  const onSignalRef = useRef(onSignal);
+  const onFinishRef = useRef(onFinish);
+  onSignalRef.current = onSignal;
+  onFinishRef.current = onFinish;
   const [intervalPhase, setIntervalPhase] = useState<'work' | 'rest'>('work');
   const [intervalSet, setIntervalSet] = useState(1);
   const [intervalLeft, setIntervalLeft] = useState(workSec);
@@ -158,7 +162,7 @@ export function useIntervalTimer({
       if (currentSet > sets || isLastRestPhase) {
         ttsClear();
         const dup = engineMode === 'basic' ? genRef.current?.getStats() ?? null : null;
-        onFinish(dup);
+        onFinishRef.current(dup);
         return;
       }
 
@@ -187,7 +191,7 @@ export function useIntervalTimer({
               ? genRef.current?.next() ?? null
               : generateSignal(engineMode, engineLevel, colors, fruitSlides ? { fruitSlides } : undefined);
           if (sig) {
-            onSignal(sig);
+            onSignalRef.current(sig);
             if (audioMode === 'beep') {
               playBeep(getBeepForSignal(sig) ?? 'mid');
             } else {
@@ -212,7 +216,8 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount, onSignal, onFinish]);
+  // onSignal/onFinish는 ref로만 읽는다. 콜백 식별자가 바뀌면 세트 진행이 처음부터 다시 시작된다.
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

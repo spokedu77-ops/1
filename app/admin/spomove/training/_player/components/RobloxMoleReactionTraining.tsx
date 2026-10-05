@@ -232,6 +232,8 @@ export function RobloxMoleReactionTraining({
   const [warn, setWarn] = useState(false);
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const [activeMap, setActiveMap] = useState<Map<number, ActiveMole>>(() => new Map());
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   const clearSpawnTimers = useCallback(() => {
     const g = gRef.current;
@@ -252,8 +254,8 @@ export function RobloxMoleReactionTraining({
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     clearSpawnTimers();
-    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
-  }, [clearSpawnTimers, onComplete]);
+    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
+  }, [clearSpawnTimers]);
 
   const endGame = useCallback(() => {
     const g = gRef.current;
@@ -261,12 +263,12 @@ export function RobloxMoleReactionTraining({
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     clearSpawnTimers();
-    onComplete({
+    onCompleteRef.current({
       stims: g.stims,
       maxCombo: g.maxCombo,
       laneCount: [...g.laneCount] as [number, number, number, number],
     });
-  }, [clearSpawnTimers, onComplete]);
+  }, [clearSpawnTimers]);
 
   const showCombo = useCallback((combo: number) => {
     if (combo < 5 || combo % 5 !== 0 || !comboRef.current || !comboNRef.current) return;

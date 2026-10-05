@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { getSessionActionPolicy } from '../../activity/sessionActionPolicy';
 import { buildSessionProgramDetailHref, resolveSessionProgramAvailability } from '../../activity/sessionProgramAvailability';
 import { splitLessonTitle } from '../../lib/lessonDisplay';
-import { buildActivitySessionHref } from '../../lib/masterNavigationContext';
+import { buildManageSessionHref } from '../../lib/masterNavigationContext';
 import { findOfficialSpomovePreset, officialPresetSessionHref } from '../../spomove/officialSpomovePresets';
 import { resolveSpomovePublicDisplayTitle } from '../../spomove/spomovePublicNaming';
 import type { Program } from '../../types';
@@ -14,9 +14,9 @@ export function SessionActivities({ isCreate, activeSession, programs, libraryPr
 }) {
   return <section aria-labelledby="session-activities-heading" className={isCreate ? `mt-5 ${!programs.length ? 'min-h-0' : ''}` : 'mt-5 border-t border-slate-100 pt-4'}>{isCreate && !programs.length ? <><div className="flex items-center justify-between gap-3"><h3 id="session-activities-heading" className="text-[18px] font-semibold text-slate-950">수업 활동</h3>{actions.addActivities ? <button type="button" onClick={openPicker} className="inline-flex min-h-11 items-center gap-1 rounded-[10px] px-2 text-[14px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950"><Plus size={16} />활동 추가</button> : null}</div><p className="mt-1.5 text-sm text-slate-500">아직 담은 활동이 없습니다.</p></> : <><div className="flex items-center justify-between gap-3"><h3 id="session-activities-heading" className="text-[18px] font-semibold text-slate-950">수업 활동</h3>{actions.addActivities ? <button type="button" onClick={openPicker} className="inline-flex min-h-11 items-center gap-1 rounded-[10px] px-2 text-[14px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-950"><Plus size={16} />활동 추가</button> : null}</div><div className="mt-1 divide-y divide-slate-100">{programs.map((program, index) => {
     const availability = resolveSessionProgramAvailability(program, catalogIds, programsLoaded);
-    const programHref = activeSession && availability.kind === 'available' ? buildSessionProgramDetailHref({ programId: availability.programId, sessionId: activeSession.id, sessionProgramId: program.id, returnTo: buildActivitySessionHref(activeSession.id) }) : null;
+    const programHref = activeSession && availability.kind === 'available' ? buildSessionProgramDetailHref({ programId: availability.programId, sessionId: activeSession.id, sessionProgramId: program.id, returnTo: buildManageSessionHref(activeSession.id) }) : null;
     const preset = program.spomovePresetId ? findOfficialSpomovePreset(program.spomovePresetId) : null;
-    const spomoveHref = activeSession && preset ? officialPresetSessionHref(preset, { entry: 'start', session: activeSession.id, sessionProgram: program.id, returnTo: buildActivitySessionHref(activeSession.id) }) : null;
+    const spomoveHref = activeSession && preset ? officialPresetSessionHref(preset, { entry: 'start', session: activeSession.id, sessionProgram: program.id, returnTo: buildManageSessionHref(activeSession.id) }) : null;
     const detailHref = programHref ?? spomoveHref;
     const officialProgram = program.programId == null ? null : libraryPrograms.find((item) => Number(item.id) === program.programId);
     const displayTitle = program.sourceType === 'spomove' ? resolveSpomovePublicDisplayTitle(program.spomovePresetId, preset?.title ?? program.programTitle) : officialProgram ? splitLessonTitle(officialProgram.title).koreanTitle : program.programTitle ?? '이름 없는 활동';

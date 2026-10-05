@@ -36,7 +36,7 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
   const draft = useSessionDraft({ session, initialDay, initialClassId, initialMemo: spomoveHandoff?.draft, classes: data.classes, canUseRecords, onClose });
   const actions = getSessionActionPolicy(draft.status, draft.activeSession?.startedAt ?? null);
   const selectedClass = data.classes.find((item) => item.id === draft.classId) ?? null;
-  const attendance = useSessionAttendance({ session, activeSession: draft.activeSession, selectedClass, students: data.students, saving: draft.saving, dirty: draft.dirty, setDirty: draft.setDirty });
+  const attendance = useSessionAttendance({ session, activeSession: draft.activeSession, selectedClass, students: data.students, saving: draft.saving, dirty: draft.dirty, setDirty: draft.setDirty, saveAttendance: data.saveSessionAttendance, onSaveError: draft.setError });
   const activities = useSessionActivities({ session, activeSession: draft.activeSession, initialProgramId: spomoveHandoff?.programId, data, canUseSpomove, saving: draft.saving, dirty: draft.dirty, canRemove: actions.removeActivities, canToggleCompletion: actions.toggleActivityCompletion, setSaving: draft.setSaving, setDirty: draft.setDirty, setError: draft.setError });
   const schedule = useSessionSchedule({ initialSession: session });
   const isCreate = !draft.activeSession;

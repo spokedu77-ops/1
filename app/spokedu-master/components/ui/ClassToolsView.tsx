@@ -13,7 +13,7 @@ import { canUseClassTool, CLASS_TOOLS, isRosterClassToolId, parseClassToolId, ty
 import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
-import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
+import { absentStudentIdsForClassTools, COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, readClassToolsAttendanceSessionId, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
 import { createTournamentBracket, getTournamentRoundLabel, selectTournamentWinner, type TournamentParticipant } from './tournamentModel';
 
 const TAB_ICONS: Record<ClassToolId, typeof Timer> = {
@@ -1202,6 +1202,14 @@ export default function ClassToolsView() {
     [effectiveClassKey, operationalData.classes, students],
   );
   const [excludedStandaloneStudentIds, setExcludedStandaloneStudentIds] = useState<Set<string>>(() => new Set());
+  const savedAbsentKey = useMemo(() => {
+    if (sessionContext || !effectiveClassKey) return '';
+    return absentStudentIdsForClassTools(
+      operationalData.sessions,
+      effectiveClassKey,
+      readClassToolsAttendanceSessionId(),
+    ).slice().sort().join('\n');
+  }, [effectiveClassKey, operationalData.sessions, sessionContext]);
   useEffect(() => {
     setTab(requestedTool ?? 'stopwatch');
     if (requestedTool) recordLastClassTool(requestedTool);
@@ -1209,7 +1217,10 @@ export default function ClassToolsView() {
   useEffect(() => {
     tabsRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [tab]);
-  useEffect(() => { setExcludedStandaloneStudentIds(new Set()); }, [effectiveClassKey]);
+  useEffect(() => {
+    if (sessionContext) return;
+    setExcludedStandaloneStudentIds(new Set(savedAbsentKey ? savedAbsentKey.split('\n') : []));
+  }, [savedAbsentKey, sessionContext]);
   const selectedStudents = useMemo(
     () => sessionContext
       ? resolveClassToolParticipants(classRosterStudents, sessionContext.attendance)

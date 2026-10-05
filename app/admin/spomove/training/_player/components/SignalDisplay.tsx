@@ -7,7 +7,8 @@ import { resolveStroopArrowMovementCue } from '../lib/resolveStroopArrowMoveTarg
 import { resolveStroopWordMovementCue } from '../lib/resolveStroopWordMoveTarget';
 import { BodyActionIcon, BODY_ACTION_LABELS, type BodyActionId } from './BodyActionIcons';
 
-const STROOP_WORD_FONT_FAMILY = '"Bagel Fat One", "Jua", "Nunito", "Noto Sans KR", sans-serif';
+/** 설치 글꼴만 사용한다. 웹폰트를 나중에 바꾸면 시작 순간 다른 글꼴이 보였다 교체된다. */
+const STROOP_WORD_FONT_FAMILY = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
 
 function variantCells(panel: VariantPanelContent | null | undefined): FruitSlide[] {
   if (!panel) return [];
@@ -621,14 +622,11 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             </div>
           );
         })()}
-        <style>
-          {"@import url('https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Jua&family=Nunito:wght@900&display=swap');"}
-        </style>
         <div
           style={{
             fontFamily: STROOP_WORD_FONT_FAMILY,
-            fontSize: 'clamp(82px,19vw,250px)',
-            fontWeight: 400,
+            fontSize: 'clamp(123px, 28.5vw, 375px)',
+            fontWeight: 700,
             color: content?.textHex as string,
             lineHeight: 0.95,
             letterSpacing: '0.02em',
