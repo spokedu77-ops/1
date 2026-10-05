@@ -361,7 +361,7 @@ function SpomoveCard({
           )}
         />
         <div className="px-3.5 pb-3.5 pr-14 pt-2.5">
-          <ContentCardMetaLine primary={displayModel.typeLabel} secondary={displayModel.difficulty} className={MV_HOME_CARD_META} />
+          <ContentCardMetaLine primary={displayModel.difficulty} secondary={displayModel.typeLabel} className={MV_HOME_CARD_META} />
           <h3 className={`${MV_HOME_CARD_TITLE} mt-1 line-clamp-2 transition-colors duration-200 group-hover/preview:text-slate-700`}>{displayModel.title}</h3>
         </div>
       </button>

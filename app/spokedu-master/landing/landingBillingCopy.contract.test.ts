@@ -10,13 +10,15 @@ const legacyPage = read('app/spokedu-master/landing/page.tsx');
 const sections = read('app/spokedu-master/landing/components/LandingSections.tsx');
 const model = read('app/spokedu-master/landing/models/landingProduct.ts');
 const chrome = read('app/spokedu-master/landing/components/LandingChrome.tsx');
+const globalFooter = read('app/spokedu/components/site-chrome.tsx');
 
 describe('SPOKEDU MASTER canonical commercial landing', () => {
   it('owns /subscription and permanently redirects the legacy landing', () => {
     expect(canonicalPage).toContain('CommercialLanding');
     expect(canonicalPage).toContain("`${SITE_URL}/subscription`");
     expect(legacyPage).toContain("permanentRedirect('/subscription')");
-    expect(commercialPage).toContain('<LandingHeader');
+    expect(commercialPage).toContain('<MasterLocalNav');
+    expect(commercialPage).not.toContain('<LandingFooter');
   });
 
   it('derives plans, comparison and handoffs from the public contract', () => {
@@ -59,7 +61,7 @@ describe('SPOKEDU MASTER canonical commercial landing', () => {
     for (const anchor of ['#workflow', '#library', '#spomove', '#plans', '#faq']) expect(chrome).toContain(anchor);
     expect(chrome).toContain('product.handoff.loginHref');
     expect(chrome).toContain('product.handoff.freeStartHref');
-    expect(chrome).toContain('/spokedu-master/terms');
-    expect(chrome).toContain('/spokedu-master/privacy');
+    expect(globalFooter).toContain('/spokedu-master/terms');
+    expect(globalFooter).toContain('/spokedu-master/privacy');
   });
 });

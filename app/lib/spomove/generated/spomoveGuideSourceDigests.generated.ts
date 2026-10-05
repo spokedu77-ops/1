@@ -4,9 +4,9 @@ export type SpomoveGuideSourceDigestMap = Record<string, string>;
 
 export const SPOMOVE_GUIDE_SOURCE_DIGESTS: SpomoveGuideSourceDigestMap = {
   reactionCognitionBasic: 'eb21f59df7945a1f',
-  visualRush: 'a14b143159277133',
+  visualRush: 'd0a9d37c85e9ba33',
   visualFlowFlash: '3e419d1b1c2ddd66',
-  visualMole: '6ec83c3642a722df',
+  visualMole: '88228575f5b768ca',
   visualGoalkeeper: '4ce5cd756240f23d',
   handFootBasicL7: 'ecd0ad7ceacca525',
   simonPoles: '6641444f56477f69',

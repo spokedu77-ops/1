@@ -6,7 +6,6 @@
   --records-muted: #66635d;
   --records-line: rgba(17, 17, 17, 0.16);
   --records-orange: #fc5606;
-  min-width: 1200px;
   overflow-x: clip;
   color: var(--records-ink);
   background: var(--records-white);

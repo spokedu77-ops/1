@@ -233,7 +233,9 @@ export function RobloxMoleReactionTraining({
   const [countdown, setCountdown] = useState(REACT_TRAIN_START_COUNTDOWN_SEC);
   const [activeMap, setActiveMap] = useState<Map<number, ActiveMole>>(() => new Map());
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const clearSpawnTimers = useCallback(() => {
     const g = gRef.current;

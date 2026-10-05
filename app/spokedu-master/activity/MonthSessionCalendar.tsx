@@ -49,7 +49,7 @@ export function MonthSessionCalendar({ month, selectedDay, sessions, action, onM
       </h2>
       <div data-calendar-day-navigation className="col-span-2 row-start-2 flex items-center justify-center md:col-span-1 md:col-start-2 md:row-start-1"><div className="flex items-center">
         <button type="button" onClick={() => selectDay(addSeoulSessionDays(selectedDay, -1))} className="grid h-11 w-11 place-items-center rounded-[12px] text-slate-500 hover:bg-slate-100 hover:text-slate-800" aria-label="이전 날"><ChevronLeft size={18} /></button>
-        <button type="button" onClick={() => selectDay(today)} className={`h-11 rounded-[12px] px-2.5 text-[13px] font-medium hover:bg-slate-100 ${selectedDay === today ? 'text-blue-700' : 'text-slate-600'}`}>오늘</button>
+        <button type="button" onClick={() => selectDay(today)} className={`h-11 min-w-11 rounded-[12px] px-2.5 text-[13px] font-medium hover:bg-slate-100 ${selectedDay === today ? 'text-blue-700' : 'text-slate-600'}`}>오늘</button>
         <button type="button" onClick={() => selectDay(addSeoulSessionDays(selectedDay, 1))} className="grid h-11 w-11 place-items-center rounded-[12px] text-slate-500 hover:bg-slate-100 hover:text-slate-800" aria-label="다음 날"><ChevronRight size={18} /></button>
       </div></div>{action ? <div className="col-start-2 row-start-1 shrink-0 md:col-start-3">{action}</div> : null}
     </div>

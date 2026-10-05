@@ -136,10 +136,11 @@ export function useSessionActivities({
     finally { setSaving(false); }
   }
 
-  async function moveProgram(index: number, offset: number) {
-    const target = index + offset;
-    if (target < 0 || target >= programs.length || saving) return;
-    const next = [...programs]; [next[index], next[target]] = [next[target]!, next[index]!];
+  async function moveProgram(index: number, target: number) {
+    if (index < 0 || target < 0 || index >= programs.length || target >= programs.length || index === target || saving) return;
+    const next = [...programs];
+    const [moved] = next.splice(index, 1);
+    next.splice(target, 0, moved!);
     const ordered = next.map((item, sortOrder) => ({ ...item, sortOrder }));
     if (!activeSession) { setPrograms(ordered); setDirty(true); return; }
     const previous = programs;

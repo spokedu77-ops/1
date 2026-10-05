@@ -3,30 +3,25 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import {
-  SPOKEDU_PATHS,
-  isSpokeduContactPath,
-  isSpokeduFullBleedPath,
-  isSpokeduHomePath,
-  isSpomoveCatalogPath,
-} from '../data/public-routes';
 import { captureAcquisitionFromLocation } from '../lib/acquisition';
 import { scrollSpokeduToTopOrHash } from '../lib/scroll';
 import { SiteFooter, SiteHeader } from './site-chrome';
 
+function SkipToContent() {
+  return (
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#0B1F46] focus:shadow-md focus:outline focus:outline-2 focus:outline-[#245DFF]"
+    >
+      본문 바로가기
+    </a>
+  );
+}
+
 export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isContactPage = isSpokeduContactPath(pathname);
-  const isHomePage = isSpokeduHomePath(pathname);
-  const isEducationPage = pathname === SPOKEDU_PATHS.education || pathname === '/spokedu/education';
-  const isRecordsPage = pathname === SPOKEDU_PATHS.records;
-  const isSpomoveCatalogPage = isSpomoveCatalogPath(pathname);
-  const ownsCommercialChrome = pathname === SPOKEDU_PATHS.subscription;
-  /** Full-bleed pages own their header spacing and horizontal padding. */
-  const isFullBleedPage = isSpokeduFullBleedPath(pathname);
 
   useEffect(() => {
-    // first-touch attribution — 랜딩 폼 마운트보다 먼저 고정
     captureAcquisitionFromLocation();
   }, []);
 
@@ -37,21 +32,12 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {ownsCommercialChrome ? children : (
-        <>
-      {isHomePage || isEducationPage || isRecordsPage ? null : <SiteHeader />}
-      <main
-        className={
-          isFullBleedPage || isEducationPage || isRecordsPage
-            ? 'w-full max-w-none px-0 py-0'
-            : 'mx-auto w-full max-w-6xl px-5 pb-5 pt-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:px-8 sm:pb-10 sm:pt-[calc(4.25rem+env(safe-area-inset-top,0px))]'
-        }
-      >
+      <SkipToContent />
+      <SiteHeader />
+      <main id="main-content" className="w-full min-w-0">
         {children}
       </main>
-      {isHomePage || isEducationPage || isRecordsPage || isContactPage || isSpomoveCatalogPage ? null : <SiteFooter />}
-        </>
-      )}
+      <SiteFooter />
     </>
   );
 }

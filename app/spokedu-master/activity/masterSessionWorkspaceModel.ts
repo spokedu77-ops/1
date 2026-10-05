@@ -13,7 +13,7 @@ export type SessionWorkspacePrimaryIntent =
   | 'recover-session';
 
 /** Progressive disclosure for Session sections — phase decides, not component declaration order. */
-export type SessionCaptureSurfaceMode = 'hidden' | 'memory' | 'collapsed' | 'emphasized' | 'review';
+export type SessionCaptureSurfaceMode = 'hidden' | 'collapsed' | 'emphasized' | 'review';
 
 export type SessionWorkspaceSectionOrder = {
   context: number;
@@ -86,7 +86,7 @@ export function resolveSessionWorkspacePresentation({
   const captureMode: SessionCaptureSurfaceMode = presentationKind === 'RECOVERY' || presentationKind === 'RUN'
     ? 'hidden'
     : presentationKind === 'PREP'
-      ? 'memory'
+      ? 'hidden'
         : presentationKind === 'WRAP' || presentationKind === 'ATTENTION'
         ? 'emphasized'
         : presentationKind === 'REVIEW'

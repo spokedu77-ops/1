@@ -236,7 +236,7 @@ export function BottomSheet({
             </button>
           </div>
         </div>
-        <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'pr-0' : 'pr-3'}`} style={isSession ? { scrollbarGutter: 'stable' } : undefined}>{children}</div>
+        <div data-sheet-scroll-owner className={`min-h-0 flex-1 touch-pan-y overflow-y-auto overflow-x-hidden overscroll-contain pb-4 sm:pb-5 ${isSession ? 'mr-2 pr-2' : 'pr-3'}`} style={isSession ? { scrollbarGutter: 'stable' } : undefined}>{children}</div>
         {footer ? <div data-sheet-footer className="shrink-0 [&>div.grid]:grid-flow-col [&>div.grid]:auto-cols-fr [&>div.grid]:grid-cols-none">{footer}</div> : null}
       </div>
     </div>

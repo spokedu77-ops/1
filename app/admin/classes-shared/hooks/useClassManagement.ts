@@ -20,6 +20,82 @@ type SessionRow = {
   round_index?: number; round_total?: number;
 };
 
+type TeacherRow = { id: string; name: string };
+
+function buildSessionEvents(data: SessionRow[], teachers: TeacherRow[]): SessionEvent[] {
+  const groupTotals = buildGroupPlannedTotals(data as {
+    group_id?: string | null;
+    status?: string | null;
+    round_total?: number | null;
+    round_index?: number | null;
+  }[]);
+  const groupCurrentRounds: Record<string, number> = {};
+
+  return data.map((session) => {
+    const title = session.title ?? '';
+    const groupId = session.group_id;
+    const total = groupId ? groupTotals[groupId] : undefined;
+    const roundIndex = typeof session.round_index === 'number' ? session.round_index : undefined;
+    let roundDisplay =
+      typeof roundIndex === 'number' && typeof total === 'number' && Number.isFinite(roundIndex) && Number.isFinite(total) && total > 0
+        ? `${clampRoundIndex(roundIndex, total)}/${total}`
+        : undefined;
+
+    if (!roundDisplay) {
+      const roundMatch = title.match(/(\d+)\/(\d+)/);
+      if (roundMatch) roundDisplay = `${Number(roundMatch[1])}/${Number(roundMatch[2])}`;
+      else if (groupId) {
+        const status = String(session.status ?? '');
+        if (status !== 'postponed' && status !== 'cancelled' && status !== 'deleted') {
+          groupCurrentRounds[groupId] = (groupCurrentRounds[groupId] || 0) + 1;
+          const plannedTotal = groupTotals[groupId] ?? 0;
+          if (plannedTotal > 0) roundDisplay = `${groupCurrentRounds[groupId]}/${plannedTotal}`;
+        }
+      }
+    }
+
+    let displayTeacher = session.users?.name || '담당자 없음';
+    const { extraTeachers } = parseExtraTeachers(session.memo || '');
+    const extraTeacherIds = extraTeachers
+      .map((teacher: { id?: string }) => (teacher.id ? String(teacher.id).trim() : ''))
+      .filter(Boolean);
+    const extraNames = extraTeacherIds
+      .map((id) => teachers.find((teacher) => teacher.id === id)?.name)
+      .filter(Boolean) as string[];
+    if (extraNames.length > 0) displayTeacher += `, ${extraNames.join(', ')}`;
+
+    const custom = {
+      teacher: displayTeacher,
+      teacherId: session.users?.id || '',
+      extraTeacherIds,
+      type: session.session_type,
+      status: session.status,
+      groupId: session.group_id ?? undefined,
+      price: session.price ?? 0,
+      studentsText: session.students_text || '',
+      memo: session.memo || '',
+      isAdmin: ADMIN_NAMES.some((admin) => displayTeacher.includes(admin)),
+      roundInfo: roundDisplay,
+      themeColor: themeColorHexForSessionType(session.session_type),
+      mileageAction: session.mileage_option || '',
+      roundIndex: session.round_index ?? undefined,
+      roundTotal: session.round_total ?? undefined,
+      roundDisplay,
+      session_type: session.session_type,
+      mileage_option: session.mileage_option || '',
+    };
+
+    return {
+      id: session.id,
+      title: title.replace(/(\d+(?:\.\d+)?\/\d+(?:\.\d+)?)\s?/, '').trim(),
+      start: session.start_at,
+      end: session.end_at,
+      ...custom,
+      extendedProps: custom,
+    } as SessionEvent;
+  });
+}
+
 export function useClassManagement() {
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [allEvents, setAllEvents] = useState<SessionEvent[]>([]);
@@ -40,10 +116,10 @@ export function useClassManagement() {
     const rangeEndIso = rangeEnd.toISOString();
     const PAGE = 1000;
 
-    const fetchSessionPage = async (offset: number) => {
+    const fetchSessionPage = async (offset: number, start = rangeStartIso, end = rangeEndIso) => {
       const params = new URLSearchParams({
-        start: rangeStartIso,
-        end: rangeEndIso,
+        start,
+        end,
         offset: String(offset),
         limit: String(PAGE),
       });
@@ -56,13 +132,31 @@ export function useClassManagement() {
       return payload.sessions ?? [];
     };
 
-    let usersRes: { data: { id: string; name: string }[] | null; error: unknown };
+    const quickStart = new Date();
+    quickStart.setDate(1);
+    quickStart.setMonth(quickStart.getMonth() - 1);
+    quickStart.setHours(0, 0, 0, 0);
+    const quickEnd = new Date(quickStart);
+    quickEnd.setMonth(quickEnd.getMonth() + 3);
+
+    let usersRes: { data: TeacherRow[] | null; error: unknown };
     let data: SessionRow[];
     try {
       const usersPromise = supabase
         ? supabase.from('users').select('id, name').eq('is_active', true).order('name', { ascending: true })
-        : Promise.resolve({ data: [] as { id: string; name: string }[], error: null });
-      [usersRes, data] = await Promise.all([usersPromise, fetchSessionPage(0)]);
+        : Promise.resolve({ data: [] as TeacherRow[], error: null });
+      const [resolvedUsers, quickData] = await Promise.all([
+        usersPromise,
+        fetchSessionPage(0, quickStart.toISOString(), quickEnd.toISOString()),
+      ]);
+      usersRes = resolvedUsers;
+      const quickTeachers = usersRes.data || [];
+      setTeacherList(quickTeachers);
+      const quickEvents = buildSessionEvents(quickData, quickTeachers);
+      setAllEvents(quickEvents);
+      setFilteredEvents(quickEvents);
+
+      data = await fetchSessionPage(0);
     } catch (caught) {
       devLogger.error('fetchSessions network error:', caught);
       setSessionsFetchNotice({ type: 'error' });

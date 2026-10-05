@@ -109,7 +109,7 @@ export default function SpomoveProgramLanding() {
   const activityFit = 'fit' in activity && activity.fit === 'contain' ? 'contain' : 'cover';
 
   return (
-    <main className={styles.page} data-spokedu-spomove-sections="response-in-motion">
+    <div className={styles.page} data-spokedu-spomove-sections="response-in-motion">
       <section id={page.hero.id} className={styles.hero} aria-labelledby="spomove-hero-heading">
         <figure className={styles.heroMedia}>
           {heroMedia.src ? (
@@ -409,6 +409,6 @@ export default function SpomoveProgramLanding() {
           </nav>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

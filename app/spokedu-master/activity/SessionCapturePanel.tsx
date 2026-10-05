@@ -12,10 +12,6 @@ import {
 } from 'react';
 import type { MasterClassRecordDto } from '../types/legacyOperational';
 import type { MasterSessionDto, MasterStudentDto } from '../types/operational';
-import {
-  resolvePreviousSessionMemory,
-  selectCurrentRosterObservations,
-} from '../lib/sessionMemory';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
 import { SPM_JOURNEY_FIELD, SPM_JOURNEY_META } from '../lib/masterUiClasses';
 import {
@@ -23,7 +19,6 @@ import {
   saveSessionCapture,
 } from '../lib/sessionCaptureClient';
 import { shouldApplyServerSessionCapture } from './sessionCaptureDraft';
-import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
 import type { SessionCaptureSurfaceMode } from './masterSessionWorkspaceModel';
 import { sessionSectionOrderClass } from './masterSessionWorkspaceModel';
 
@@ -33,7 +28,6 @@ export const SessionCapturePanel = forwardRef<
   SessionCaptureHandle,
   {
     session: MasterSessionDto;
-    sessions: MasterSessionDto[];
     students: MasterStudentDto[];
     sessionRoster: Array<{ id: string; name: string }>;
     canUseRecords: boolean;
@@ -46,7 +40,6 @@ export const SessionCapturePanel = forwardRef<
 >(function SessionCapturePanel(
   {
     session,
-    sessions,
     students,
     sessionRoster,
     canUseRecords,
@@ -96,29 +89,6 @@ export const SessionCapturePanel = forwardRef<
   );
   const capture =
     captures.find((item) => item.sessionId === session.id) ?? null;
-  const previous = resolvePreviousSessionMemory({
-    currentSession: session,
-    classSessions: sessions,
-    captures,
-  });
-  const currentRosterIds = useMemo(
-    () => new Set(sessionRoster.map((item) => item.id)),
-    [sessionRoster],
-  );
-  const previousObservations = selectCurrentRosterObservations(
-    previous?.capture ?? null,
-    currentRosterIds,
-  );
-  const guidanceStudents = roster.filter((student) =>
-    Boolean(student.guidanceNote?.trim()),
-  );
-  const previousActivities = previous?.session.programs ?? [];
-  const hasPreviousMemory = Boolean(
-    previous?.capture?.applicationIdea?.trim() ||
-    previousObservations.length ||
-    guidanceStudents.length ||
-    previousActivities.length,
-  );
   const recordedCount =
     capture?.students.filter((student) => student.memo).length ?? 0;
   const orderClass = sessionSectionOrderClass(order);
@@ -128,9 +98,8 @@ export const SessionCapturePanel = forwardRef<
     if (!needsCaptureData) return;
     const requestedSessionId = session.id;
     let cancelled = false;
-    const limit = captureMode === 'memory' ? 8 : 40;
     void fetchSessionCaptures(
-      `class=${encodeURIComponent(session.classId)}&limit=${limit}`,
+      `class=${encodeURIComponent(session.classId)}&limit=40`,
     ).then((result) => {
       if (cancelled) return;
       if (result.status === 'error') {
@@ -168,7 +137,7 @@ export const SessionCapturePanel = forwardRef<
     if (captureMode === 'emphasized') {
       setOpen(searchParams.get('capture') === '1');
     }
-    if (captureMode === 'memory' || captureMode === 'collapsed') {
+    if (captureMode === 'collapsed') {
       if (searchParams.get('capture') !== '1') setOpen(false);
     }
   }, [captureMode, searchParams]);
@@ -233,100 +202,6 @@ export const SessionCapturePanel = forwardRef<
         >
           Lite로 기록 이어가기
         </Link>
-      </section>
-    );
-  }
-
-  if (captureMode === 'memory') {
-    if (!hasPreviousMemory && !loadError) return null;
-    const nextSessionNote = previous?.capture?.applicationIdea?.trim() ?? '';
-    return (
-      <section
-        data-session-capture
-        data-capture-mode="memory"
-        className={`${orderClass} rounded-xl bg-slate-50 px-4 py-3`}
-      >
-        {loadError ? (
-          <p role="status" className="text-xs font-bold text-amber-700">
-            지난 수업 기록을 불러오지 못했습니다. 수업 준비는 계속할 수
-            있습니다.
-          </p>
-        ) : null}
-        {hasPreviousMemory ? (
-          <>
-            <h3 className="text-base font-semibold text-slate-900">
-              지난 수업에서 이어갈 점
-            </h3>
-            {nextSessionNote ? (
-              <p className="mt-2 whitespace-pre-wrap text-base font-semibold leading-6 text-slate-900">
-                {nextSessionNote}
-              </p>
-            ) : null}
-            <p className={`mt-3 ${SPM_JOURNEY_META}`}>
-              학생 기록 {previousObservations.length}명 · 지난 활동{' '}
-              {previousActivities.length}개
-              {guidanceStudents.length
-                ? ` · 지도 참고 ${guidanceStudents.length}명`
-                : ''}
-            </p>
-            <details className="mt-2 border-t border-slate-100 pt-1">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center text-xs font-medium text-slate-600">
-                지난 수업 자세히 보기
-              </summary>
-              <div className="space-y-4 pb-2 text-sm text-slate-700">
-                {previousObservations.length ? (
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">
-                      학생 기록
-                    </p>
-                    <div className="mt-2 space-y-2">
-                      {previousObservations.map((observation) => (
-                        <p key={observation.id}>
-                          <strong>{observation.studentName}</strong> ·{' '}
-                          {observation.memo}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                {previousActivities.length ? (
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">
-                      지난 활동
-                    </p>
-                    <p className="mt-2 font-medium">
-                      {previousActivities
-                        .map((activity) =>
-                          activity.sourceType === 'spomove'
-                            ? resolveSpomovePublicDisplayTitle(
-                                activity.spomovePresetId,
-                                activity.programTitle,
-                              )
-                            : (activity.programTitle ?? '이름 없는 활동'),
-                        )
-                        .join(', ')}
-                    </p>
-                  </div>
-                ) : null}
-                {guidanceStudents.length ? (
-                  <div>
-                    <p className="text-xs font-bold text-slate-500">
-                      지도 참고
-                    </p>
-                    <div className="mt-2 space-y-2">
-                      {guidanceStudents.map((student) => (
-                        <p key={student.id}>
-                          <strong>{student.name}</strong> ·{' '}
-                          {student.guidanceNote}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </details>
-          </>
-        ) : null}
       </section>
     );
   }
@@ -436,6 +311,7 @@ export const SessionCapturePanel = forwardRef<
   }
 
   const tone = 'border-slate-200 bg-white';
+  if (captureMode === 'review' && !capture && !loadError) return null;
   const title = captureMode === 'review' ? '오늘 남긴 기록' : '오늘 관찰';
   const openLabel = open
     ? '닫기'

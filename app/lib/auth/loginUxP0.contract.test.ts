@@ -31,11 +31,12 @@ describe("SPOKEDU login UX P0 contracts", () => {
   it("routes MASTER landing login CTAs through /login with next", () => {
     const contract = read("app/spokedu-master/lib/publicProductContract.ts");
     const chrome = read("app/spokedu-master/landing/components/LandingChrome.tsx");
+    const landing = read("app/spokedu-master/landing/CommercialLanding.tsx");
     expect(contract).toContain(
       "dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard'",
     );
     expect(chrome).toContain('href={product.handoff.loginHref}');
-    expect(chrome).toContain("LandingLoggedInBanner");
+    expect(landing).toContain("LandingLoggedInBanner");
   });
 
   it("keeps MASTER login/start handoffs in the marketing route contract", () => {

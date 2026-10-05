@@ -606,7 +606,7 @@ body {
   --spokedu-marketing-color-dark-eyebrow: #9fc0ff;
   --spokedu-marketing-color-soft: var(--spokedu-marketing-color-blue-soft);
   --spokedu-public-header-height: 3.5rem;
-  --spokedu-marketing-content-max: 77.5rem;
+  --spokedu-marketing-content-max: 85.5rem;
   --spokedu-marketing-gutter-mobile: 1.25rem;
   --spokedu-marketing-gutter-wide: 3rem;
   --spokedu-marketing-radius-small: 0.875rem;
@@ -628,17 +628,25 @@ body {
   }
 }
 
-/** SPOKEDU 마케팅 — 섹션 콘텐츠 정렬 (clamp padding은 Tailwind arbitrary px 미지원 대비) */
+/** SPOKEDU public marketing — locked shell geometry (no clamp gutters) */
 .site-container {
   box-sizing: border-box;
   width: 100%;
-  max-width: var(--spokedu-marketing-content-max, 1240px);
+  max-width: 1368px;
   margin-inline: auto;
-  padding-inline: clamp(
-    var(--spokedu-marketing-gutter-mobile, 1.25rem),
-    4vw,
-    var(--spokedu-marketing-gutter-wide, 3rem)
-  );
+  padding-inline: 20px;
+}
+
+@media (min-width: 768px) {
+  .site-container {
+    padding-inline: 32px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .site-container {
+    padding-inline: 48px;
+  }
 }
 
 /* SPOKEDU MASTER viewport-family contract: mobile < 768, tablet/compact 768-1199, desktop >= 1200. */

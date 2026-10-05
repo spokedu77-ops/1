@@ -22,7 +22,7 @@ export function PartnersLanding() {
   const { intro, categories, notes, cta } = partnersPage;
 
   return (
-    <main className="w-full overflow-x-clip" data-spokedu-partners-sections={partnersPage.sectionOrder.length}>
+    <div className="w-full overflow-x-clip" data-spokedu-partners-sections={partnersPage.sectionOrder.length}>
       <section id={intro.id} className={`${marketingSectionPadCompact} bg-white`}>
         <div className={marketingSectionInner}>
           <p className={homeSectionEyebrow}>{intro.eyebrow}</p>
@@ -99,6 +99,6 @@ export function PartnersLanding() {
           </p>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

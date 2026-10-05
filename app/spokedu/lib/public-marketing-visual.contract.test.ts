@@ -44,7 +44,8 @@ describe('public marketing visual foundation contract', () => {
   });
 
   it('keeps color and content width in the CSS foundation rather than layout styles', () => {
-    expect(globals).toMatch(/--spokedu-marketing-content-max:\s*77\.5rem/);
+    expect(globals).toMatch(/\.site-container[\s\S]*max-width:\s*1368px/);
+    expect(globals).not.toMatch(/\.site-container[\s\S]*padding-inline:\s*clamp\(/);
     expect(layout).not.toMatch(/spokeduMarketingTokens|style=\{spokeduMarketingTokens\}/);
   });
 

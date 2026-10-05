@@ -42,7 +42,7 @@ describe('premium memory on the normal next session', () => {
       programs: next.programs,
       startedAt: next.startedAt,
     });
-    expect(presentation.captureMode).toBe('memory');
+    expect(presentation.captureMode).toBe('hidden');
     const captures = [{
       id: 'cap-1',
       sessionId: 'round-1',

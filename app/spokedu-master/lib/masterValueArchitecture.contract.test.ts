@@ -13,13 +13,14 @@ describe('VALUE / Connected Memory continuity', () => {
   const panel = read('app/spokedu-master/components/value/MasterValueEvidencePanel.tsx');
   const evidenceLib = read('app/spokedu-master/lib/masterSubscriberValueEvidence.ts');
 
-  it('PREM-01: next sessions show memory without the capture deep link, and the deep link still opens the editor', () => {
+  it('PREM-01: next sessions do not inject previous-session memory into the preparation sheet', () => {
     expect(activity).toContain('resolveSessionWorkspacePresentation');
     expect(activity).toContain("legacyCapture ? 'emphasized'");
     expect(activity).toContain('presentation?.captureMode');
     expect(activity).toContain('<SessionCapturePanel');
-    expect(capture).toContain("captureMode === 'memory'");
-    expect(capture).toContain('지난 수업에서 이어갈 점');
+    expect(capture).not.toContain("captureMode === 'memory'");
+    expect(capture).not.toContain('지난 수업에서 이어갈 점');
+    expect(capture).toContain("captureMode === 'review' && !capture && !loadError");
     expect(activity).not.toContain('legacyCapture && draft.activeSession');
     expect(activity).not.toMatch(/setMemo\(previous/);
   });

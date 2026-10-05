@@ -42,7 +42,7 @@ function getCatalogUrl(): string | null {
 
 function CatalogFallback() {
   return (
-    <section className="overflow-x-clip px-5 pb-16 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:px-8 sm:pt-[calc(5rem+env(safe-area-inset-top,0px))]">
+    <section className="site-container overflow-x-clip pb-16 pt-8 sm:pt-10">
       <div className={`${marketingCardStatic} mx-auto w-full max-w-xl px-5 py-8 text-center sm:px-7 sm:py-10`}>
         <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
         <h1 className={`${marketingHeroDisplay} mt-3 !text-2xl !leading-tight text-[#0B1F46] sm:!text-3xl`}>
@@ -84,7 +84,7 @@ export default function SpomoveCatalogPage() {
   }
 
   return (
-    <section className="relative h-[100dvh] overflow-hidden pt-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:pt-[calc(3.75rem+env(safe-area-inset-top,0px))]">
+    <section className="relative flex w-full flex-col pb-8">
       <div className="flex min-h-16 items-center justify-between gap-4 border-b border-[#DCE3EE] bg-white px-5 py-3 sm:px-8">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOMOVE CATALOG</p>
@@ -100,7 +100,8 @@ export default function SpomoveCatalogPage() {
       <iframe
         src={catalogUrl}
         title="SPOMOVE 전체 프로그램 카탈로그"
-        className="block h-[calc(100dvh-8.5rem)] w-full border-0 sm:h-[calc(100dvh-8.75rem)]"
+        className="block min-h-[32rem] w-full border-0 sm:min-h-[36rem]"
+        style={{ height: 'min(75vh, 900px)' }}
       />
       <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 sm:bottom-4 sm:left-4 sm:right-4">
         <Link

@@ -90,8 +90,10 @@ export function useTrainingTimer({
   const startRef = useRef<number>(0);
   const onSignalRef = useRef(onSignal);
   const onFinishRef = useRef(onFinish);
-  onSignalRef.current = onSignal;
-  onFinishRef.current = onFinish;
+  useEffect(() => {
+    onSignalRef.current = onSignal;
+    onFinishRef.current = onFinish;
+  }, [onFinish, onSignal]);
   const idxRef = useRef(-1);
   /** reps 모드: registerPresentedSignal 상태 (count-based 종료 판단에 사용) */
   const repsStateRef = useRef<RepsState>({ presented: 0 });

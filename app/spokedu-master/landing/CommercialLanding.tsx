@@ -4,7 +4,8 @@ import {
   MASTER_CUSTOMER_SERVICE_HREF,
   MASTER_CUSTOMER_SERVICE_TEL_HREF,
 } from '../lib/businessInfo';
-import { LandingFooter, LandingHeader } from './components/LandingChrome';
+import { LandingLoggedInBanner } from './LandingLoggedInBanner';
+import { MasterLocalNav } from './components/LandingChrome';
 import {
   AudienceSection,
   CenterSection,
@@ -32,9 +33,10 @@ export function CommercialLanding() {
   };
 
   return (
-    <div className={styles.page}>
-      <LandingHeader product={product} />
-      <main>
+    <div className={styles.landingRoot}>
+      <LandingLoggedInBanner />
+      <MasterLocalNav product={product} />
+      <div className={styles.landingContent}>
         <LandingHero product={product} />
         <ProductOverview />
         <CoreProductStory />
@@ -46,8 +48,7 @@ export function CommercialLanding() {
         <PlansSection product={product} />
         <CenterSection product={product} />
         <FaqAndFinalCta product={product} />
-      </main>
-      <LandingFooter product={product} />
+      </div>
     </div>
   );
 }

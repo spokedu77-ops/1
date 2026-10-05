@@ -28,7 +28,7 @@ export function SpomatLanding() {
   const spomatImage = SPOKEDU_IMAGES.brand.spomat;
 
   return (
-    <main className="w-full overflow-x-clip" data-spokedu-spomat-sections={spomatPage.sectionOrder.length}>
+    <div className="w-full overflow-x-clip" data-spokedu-spomat-sections={spomatPage.sectionOrder.length}>
       <section id={definition.id} className={`${marketingSectionPadCompact} bg-white`}>
         <div className={`${marketingSectionInner} grid gap-8 lg:grid-cols-2 lg:items-center`}>
           <div>
@@ -162,6 +162,6 @@ export function SpomatLanding() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

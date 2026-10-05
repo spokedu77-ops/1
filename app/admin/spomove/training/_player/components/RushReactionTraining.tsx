@@ -109,7 +109,9 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
   const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudStimsRef = useRef<HTMLDivElement>(null);
   const hudMaxRef = useRef<HTMLDivElement>(null);

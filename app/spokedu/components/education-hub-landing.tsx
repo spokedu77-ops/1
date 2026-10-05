@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { SiteFooter, SiteHeader } from "./site-chrome";
 import styles from "./education-hub.module.css";
 
 const CONDITIONS = [
@@ -182,8 +181,7 @@ export function EducationHubLanding() {
 
   return (
     <div className={styles.page} data-education-p0="desktop-static">
-      <SiteHeader />
-      <main>
+      <div>
         <section className={styles.hero} aria-labelledby="edu-hero">
           <div className={styles.heroInner}>
             <div className={styles.heroCopy}>
@@ -455,8 +453,7 @@ export function EducationHubLanding() {
             </div>
           </div>
         </section>
-      </main>
-      <SiteFooter />
+      </div>
     </div>
   );
 }

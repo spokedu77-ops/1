@@ -15,6 +15,7 @@ describe('MASTER BottomSheet viewport ownership', () => {
   it('keeps one content scroll owner between detached header and optional footer', () => {
     expect(source.match(/data-sheet-scroll-owner/g)).toHaveLength(1);
     expect(source).toContain('min-h-0 flex-1 touch-pan-y overflow-y-auto');
+    expect(source).toContain("isSession ? 'mr-2 pr-2' : 'pr-3'");
     expect(source).toContain('data-sheet-footer');
     expect(source).toContain('shrink-0');
     expect(source).not.toContain("hasDetachedFooter ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'");

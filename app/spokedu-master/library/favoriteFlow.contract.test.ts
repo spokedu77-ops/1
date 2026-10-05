@@ -32,7 +32,7 @@ describe("library card and preview favorite synchronization", () => {
   });
 
   it("places preview favorite in the modal header instead of the lesson badges", () => {
-    expect(previewSource).toContain("headerActions={onFavorite ?");
+    expect(previewSource).toContain("headerActions={!locked && onFavorite ?");
     expect(previewSource).toContain(
       "title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}",
     );

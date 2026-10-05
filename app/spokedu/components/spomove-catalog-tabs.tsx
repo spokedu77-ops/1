@@ -527,11 +527,11 @@ export default function SpomoveCatalogTabs() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-7 px-5 pb-10 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:gap-9 sm:px-8 sm:pb-14 sm:pt-[calc(5rem+env(safe-area-inset-top,0px))] lg:gap-12">
+    <div className="site-container flex w-full flex-col gap-7 pb-10 pt-8 sm:gap-9 sm:pb-14 sm:pt-10 lg:gap-12">
       <Hero />
 
       <nav
-        className="sticky top-[calc(4rem+env(safe-area-inset-top,0px))] z-30 rounded-[1.25rem] border border-[#DCE3EE] bg-white/92 p-2 shadow-[0_14px_40px_rgba(15,33,70,0.08)] backdrop-blur-md sm:top-[calc(4.5rem+env(safe-area-inset-top,0px))]"
+        className="sticky top-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px))] z-30 rounded-[1.25rem] border border-[#DCE3EE] bg-white/92 p-2 shadow-[0_14px_40px_rgba(15,33,70,0.08)] backdrop-blur-md"
         aria-label="SPOMOVE 자료 탭"
       >
         <div className="grid grid-cols-3 gap-1.5" role="tablist">

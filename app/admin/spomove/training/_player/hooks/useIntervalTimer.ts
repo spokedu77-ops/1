@@ -92,8 +92,10 @@ export function useIntervalTimer({
   const lastLeftRef = useRef(-1);
   const onSignalRef = useRef(onSignal);
   const onFinishRef = useRef(onFinish);
-  onSignalRef.current = onSignal;
-  onFinishRef.current = onFinish;
+  useEffect(() => {
+    onSignalRef.current = onSignal;
+    onFinishRef.current = onFinish;
+  }, [onFinish, onSignal]);
   const [intervalPhase, setIntervalPhase] = useState<'work' | 'rest'>('work');
   const [intervalSet, setIntervalSet] = useState(1);
   const [intervalLeft, setIntervalLeft] = useState(workSec);

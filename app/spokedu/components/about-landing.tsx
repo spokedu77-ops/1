@@ -28,7 +28,7 @@ export function AboutLanding() {
   const { intro, origin, whatWeDo, principles, history, team, nextPaths } = aboutPage;
 
   return (
-    <main className="w-full overflow-x-clip" data-spokedu-about-sections={aboutPage.sectionOrder.length}>
+    <div className="w-full overflow-x-clip" data-spokedu-about-sections={aboutPage.sectionOrder.length}>
       <section id={intro.id} className={`${marketingSectionPadCompact} bg-white`}>
         <div className={marketingSectionInner}>
           <motion.div
@@ -190,6 +190,6 @@ export function AboutLanding() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

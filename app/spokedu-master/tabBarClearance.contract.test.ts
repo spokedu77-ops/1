@@ -29,7 +29,7 @@ describe('SPOKEDU MASTER TabBar clearance architecture', () => {
     expect(metrics).toContain('calc(70px + max(8px, env(safe-area-inset-bottom, 0px)))');
     expect(shell).toContain('pb-[var(--spm-tabbar-clearance)] min-[768px]:pb-0');
     expect(tools).not.toContain('pb-[86px]');
-    expect(tools).toContain('min-h-0 flex-1 overflow-y-auto overscroll-contain');
+    expect(tools).toContain('min-h-0 flex-1 overflow-hidden');
     expect(library).toContain('max-lg:bottom-[var(--spm-tabbar-clearance,0px)]');
   });
 });

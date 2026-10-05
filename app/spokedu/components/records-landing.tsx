@@ -4,8 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { FieldRecordWithThumbnail } from "../lib/resolve-field-records";
-import { SiteFooter } from "./home-web/site-footer";
-import { SiteHeader } from "./home-web/site-header";
 import styles from "./records-landing.module.css";
 
 type RecordEntry = {
@@ -227,8 +225,7 @@ export function RecordsLanding({
 
   return (
     <div className={styles.page}>
-      <SiteHeader />
-      <main>
+      <div>
         <section className={styles.hero} aria-labelledby="records-title">
           <div className={styles.rail}>
             <div className={styles.heroCopy}>
@@ -402,8 +399,7 @@ export function RecordsLanding({
             </div>
           </div>
         </section>
-      </main>
-      <SiteFooter />
+      </div>
     </div>
   );
 }

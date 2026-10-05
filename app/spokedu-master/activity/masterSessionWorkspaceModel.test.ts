@@ -44,12 +44,12 @@ describe('Session workspace presentation orchestration', () => {
 });
 
 describe('Operating rhythm composition contract', () => {
-  it('PREP-01: activities lead, memory is brief, and attendance stays below the start action', () => {
+  it('PREP-01: activities lead, prior-session memory stays hidden, and attendance stays below the start action', () => {
     const view = presentation(session());
     expect(view).toMatchObject({
       presentationKind: 'PREP',
       phaseLabel: '준비',
-      captureMode: 'memory',
+      captureMode: 'hidden',
       showInlinePremiumUpsell: false,
       primarySurfaceIntent: 'add-activity',
     });
