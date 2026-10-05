@@ -623,6 +623,18 @@ export default function AdminCurriculumPage() {
     const migrate8huiToRoutine16 = async () => {
       if (!supabase) return;
       try {
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user) return;
+        const { data: me, error: meError } = await supabase
+          .from('users')
+          .select('role, is_admin')
+          .eq('id', authData.user.id)
+          .maybeSingle();
+        if (meError || !me) return;
+        const role = String((me as { role?: unknown }).role ?? '');
+        const dbAdmin = (me as { is_admin?: unknown }).is_admin === true || role === 'admin' || role === 'master';
+        if (!dbAdmin) return;
+
         const { data: existing16, error: e16 } = await supabase
           .from('personal_curriculum')
           .select('id, sub_tab')
@@ -709,7 +721,11 @@ export default function AdminCurriculumPage() {
 
         await fetchPersonalItems();
       } catch (err) {
-        devLogger.error('8hui migrate failed:', err);
+        const row = err && typeof err === 'object' ? (err as { message?: unknown; code?: unknown; details?: unknown }) : null;
+        const code = String(row?.code ?? '');
+        const message = String(row?.message ?? '');
+        if (code === '42501' || /row-level security/i.test(message)) return;
+        devLogger.error('8hui migrate failed:', [code, message, row?.details].filter(Boolean).join(' ') || err);
       }
     };
     void migrate8huiToRoutine16();

@@ -181,9 +181,6 @@ export const homeBandWhite = 'border-y border-[var(--spokedu-marketing-color-bor
 
 export const homeBandNavy = 'bg-[var(--spokedu-marketing-color-navy)] text-white';
 
-/** @deprecated 분할 Hero용 — 풀블리드는 `homeHeroFullBleed*` 사용 */
-export const homeHeroSection = 'relative bg-[var(--spokedu-marketing-color-paper)] pt-24 sm:pt-28 lg:pt-32';
-
 export const homeHeroLead = `mt-5 max-w-[36rem] text-base leading-[1.72] text-slate-600 sm:text-[17px] lg:text-lg ${koreanText}`;
 
 export const homeHeroImage = 'overflow-hidden rounded-xl border border-slate-200/80 bg-slate-200 shadow-sm shadow-slate-900/[0.04]';

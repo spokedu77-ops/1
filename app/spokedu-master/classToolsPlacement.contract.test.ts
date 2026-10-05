@@ -83,7 +83,7 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).not.toContain('setCompletedMs(RETURN_TIMER_DURATION_MS - nextRemainingMs)');
   });
 
-  it('filters the three roster tools by the selected class', () => {
+  it('filters all roster tools by the selected class', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
 
     expect(tools).toContain('function ClassSelector');
@@ -92,7 +92,8 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain("item.id === effectiveClassKey)?.studentIds.includes(student.id)");
     expect(tools).not.toContain('student.group');
     expect(tools).toContain('students={selectedStudents}');
-    expect(tools).toContain("tab === 'picker' || tab === 'teams' || tab === 'order'");
+    expect(tools).toContain('isRosterClassToolId(tab)');
+    expect(tools).toContain('canUseClassTool(tab, access.canUseAttendance)');
   });
 
   it('inherits the AppShell viewport and keeps short laptop content scrollable', () => {
@@ -125,6 +126,6 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain('function LadderTab');
     expect(tools).toContain("tab === 'tournament' && <TournamentTab");
     expect(tools).toContain("tab === 'ladder' && <LadderTab");
-    expect(tools).toContain("tab === 'tournament' || tab === 'ladder'");
+    expect(catalog).toContain("ROSTER_CLASS_TOOL_IDS = ['picker', 'teams', 'order', 'tournament', 'ladder']");
   });
 });

@@ -1,3 +1,60 @@
+import { getSeoulSessionDay } from '../../lib/sessionDateTime';
+
+const CLASS_TOOLS_ATTENDANCE_SESSION_KEY = 'spokedu-master:class-tools-attendance-session';
+
+export function rememberClassToolsAttendanceSession(sessionId: string) {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(CLASS_TOOLS_ATTENDANCE_SESSION_KEY, sessionId);
+}
+
+export function readClassToolsAttendanceSessionId() {
+  if (typeof window === 'undefined') return null;
+  return window.sessionStorage.getItem(CLASS_TOOLS_ATTENDANCE_SESSION_KEY);
+}
+
+type ClassToolSessionAttendance = {
+  id: string;
+  classId: string;
+  status: string;
+  startAt: string;
+  endAt: string;
+  attendance: readonly { studentId: string; status: 'present' | 'absent' }[];
+};
+
+function chooseTodaySession<T extends ClassToolSessionAttendance>(sessions: readonly T[], now: Date) {
+  const today = getSeoulSessionDay(now);
+  const candidates = sessions.filter((session) => session.status !== 'cancelled' && getSeoulSessionDay(session.startAt) === today);
+  if (!candidates.length) return null;
+  const nowMs = now.getTime();
+  const active = candidates.find((session) => {
+    const start = new Date(session.startAt).getTime();
+    const end = new Date(session.endAt).getTime();
+    return start <= nowMs && nowMs < end;
+  });
+  if (active) return active;
+  const upcoming = candidates
+    .filter((session) => new Date(session.startAt).getTime() >= nowMs)
+    .sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime())[0];
+  if (upcoming) return upcoming;
+  return [...candidates].sort((left, right) => new Date(right.startAt).getTime() - new Date(left.startAt).getTime())[0] ?? null;
+}
+
+/** Absences the standalone class tools should drop from the class roster. */
+export function absentStudentIdsForClassTools(
+  sessions: readonly ClassToolSessionAttendance[],
+  classId: string,
+  preferredSessionId: string | null,
+  now: Date = new Date(),
+) {
+  const classSessions = sessions.filter((session) => session.classId === classId);
+  const preferred = preferredSessionId
+    ? classSessions.find((session) => session.id === preferredSessionId && session.status !== 'cancelled')
+    : null;
+  const chosen = preferred ?? chooseTodaySession(classSessions, now);
+  if (!chosen) return [];
+  return chosen.attendance.filter((entry) => entry.status === 'absent').map((entry) => entry.studentId);
+}
+
 export function distributeEvenly<T>(items: readonly T[], teamCount: number, random: () => number = Math.random): T[][] {
   const normalizedTeamCount = Math.max(2, Math.min(4, Math.trunc(teamCount)));
   const shuffled = [...items];

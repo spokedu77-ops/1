@@ -116,11 +116,6 @@ export class ColorGateManager {
     }
   }
 
-  /** @deprecated setPoseImagesByPose 사용 */
-  setPoseImagesByAction(imagesByAction: Map<ColorGatePoseKey, HTMLImageElement>): void {
-    this.setPoseImagesByPose(imagesByAction);
-  }
-
   resetRun(): void {
     this.clearAll();
     this.spawnTimer = FIRST_SPAWN_DELAY_SEC;

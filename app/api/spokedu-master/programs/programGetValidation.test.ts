@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const reportError = vi.fn();
 const getServiceSupabase = vi.fn();
+const requireSpokeduMasterCapability = vi.fn();
 
 vi.mock("@/app/lib/monitoring/errorReporter", () => ({
   reportError,
@@ -18,11 +19,7 @@ vi.mock("@/app/lib/server/spokeduMasterAccess", () => ({
     userId: "user-1",
     canUseLibrary: true,
   })),
-  requireSpokeduMasterCapability: vi.fn(async () => ({
-    ok: true,
-    userId: "user-1",
-    canUseLibrary: true,
-  })),
+  requireSpokeduMasterCapability,
 }));
 
 type QueryResult = {
@@ -104,6 +101,12 @@ describe("SPOKEDU MASTER program GET validation", () => {
     vi.resetModules();
     reportError.mockReset();
     getServiceSupabase.mockReset();
+    requireSpokeduMasterCapability.mockReset();
+    requireSpokeduMasterCapability.mockResolvedValue({
+      ok: true,
+      userId: "user-1",
+      canUseLibrary: true,
+    });
   });
 
   it.each([
@@ -278,6 +281,37 @@ describe("SPOKEDU MASTER program GET validation", () => {
     expect(result.body.data[0].thumbnailUrl).toBe(
       "https://example.com/hero.jpg",
     );
+  });
+
+  it("redacts lesson content but keeps the catalog thumbnail for a locked Free program", async () => {
+    requireSpokeduMasterCapability.mockResolvedValue({
+      ok: true,
+      userId: "user-free",
+      canUseLibrary: false,
+    });
+    mockProgramQueries({
+      curriculum: { data: [{ id: 101, display_order: 1 }], error: null },
+      spokedu_master_program_meta: {
+        data: [validMeta({ sm_thumbnail_url: "https://example.com/card.jpg" })],
+        error: null,
+      },
+      spokedu_pro_programs: {
+        data: [validOverlay({
+          equipment: "cones",
+          video_url: "https://youtu.be/dQw4w9WgXcQ",
+        })],
+        error: null,
+      },
+    });
+
+    const result = await getPrograms();
+    const program = result.body.data[0];
+
+    expect(result.status).toBe(200);
+    expect(program.steps).toEqual([]);
+    expect(program.equipment).toEqual([]);
+    expect(program.lessonDetail).toBeUndefined();
+    expect(program.thumbnailUrl).toBeTruthy();
   });
 
   it("preserves explicit safety, field, setup, and variation sections from Master meta", async () => {

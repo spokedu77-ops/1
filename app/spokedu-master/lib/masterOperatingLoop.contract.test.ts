@@ -63,6 +63,6 @@ describe('MASTER whole-product operating loop', () => {
     expect(activity).toContain('buildSessionProgramDetailHref({');
     expect(programNavigation).toContain("source: 'session'");
     expect(programNavigation).toContain('sessionProgram: input.sessionProgramId');
-    expect(activity).toContain('returnTo: buildActivitySessionHref(activeSession.id)');
+    expect(activity).toContain('returnTo: buildManageSessionHref(activeSession.id)');
   });
 });

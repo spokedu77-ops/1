@@ -30,16 +30,16 @@ describe('MASTER public product contract', () => {
     expect(premium?.priceLabel).toBe(MASTER_PRODUCT_CATALOG.premium.priceLabel);
   });
 
-  it('keeps Free as browse + one preview + class tools, not weekly recommendation access', () => {
+  it('keeps Free as browse + one weekly recommendation + three class tools', () => {
     const free = getPublicPlan('free');
     const contract = getPublicProductContract();
     expect(free?.purchasable).toBe(false);
     expect(free?.priceLabel).toBeNull();
-    expect(free?.featureSummary).toEqual(['수업 도구', '라이브러리 탐색', '무료 프로그램 체험']);
-    expect(contract.freeScopeNote).toMatch(/수업 도구/);
-    expect(contract.freeScopeNote).toMatch(/라이브러리 탐색/);
-    expect(contract.freeScopeNote).toMatch(/무료 프로그램 체험/);
-    expect(contract.freeScopeNote).toMatch(/entitlement가 아닙니다|이용 entitlement/);
+    expect(free?.featureSummary).toEqual(['Library 탐색', '이번 주 추천 프로그램 1개 전체 이용', '수업 도구 3종']);
+    expect(contract.freeScopeNote).toContain('Library 탐색');
+    expect(contract.freeScopeNote).toContain('이번 주 추천 프로그램 1개 전체 이용');
+    expect(contract.freeScopeNote).toContain('스탑워치·타이머·점수판');
+    expect(contract.freeScopeNote).not.toContain('체험');
     expect(contract.plans.map((p) => p.code)).toEqual(['free', 'lite', 'premium']);
     expect(contract.plans.some((p) => p.code === ('center' as never))).toBe(false);
   });
@@ -57,7 +57,7 @@ describe('MASTER public product contract', () => {
   it('does not publish SPOMAT prices on the public slice', () => {
     const { spomat } = getPublicProductContract();
     expect(spomat.pricesPublished).toBe(false);
-    expect(spomat.memberPriceRequiresPremium).toBe(true);
+    expect(spomat).not.toHaveProperty('memberPriceRequiresPremium');
     expect(JSON.stringify(spomat)).not.toMatch(/20900|15900|20,?900|15,?900/);
   });
 
@@ -74,9 +74,11 @@ describe('MASTER public product contract', () => {
 
   it('wires real MASTER handoff paths', () => {
     const { handoff } = getPublicProductContract();
-    expect(handoff.freeStartHref).toContain('/spokedu-master/onboarding');
-    expect(handoff.landingHref).toBe('/spokedu-master/landing');
+    expect(handoff.freeStartHref).toBe('/spokedu-master/login?next=/spokedu-master/onboarding');
+    expect(handoff.loginHref).toBe('/spokedu-master/login?next=/spokedu-master/dashboard');
+    expect(handoff.landingHref).toBe('/subscription');
     expect(handoff.paymentPlanHref('lite')).toBe('/spokedu-master/payment?plan=lite');
+    expect(handoff.paymentPlanHref('premium')).toBe('/spokedu-master/payment?plan=premium');
     expect(handoff.shopHref).toBe('/spokedu-master/shop');
   });
 });

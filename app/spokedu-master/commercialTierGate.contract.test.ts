@@ -25,11 +25,11 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
   });
 
   it('locks program lesson content by Free preview ID and Lite library access', () => {
-    expect(WEEKLY_PROGRAM_IDS).toEqual(['68', '201', '204', '61']);
-    expect(FREE_PREVIEW_PROGRAM_ID).toBe('68');
-    expect(canAccessProgramLessonContent({ programId: '68', canUseLibrary: false })).toBe(true);
-    expect(canAccessProgramLessonContent({ programId: '201', canUseLibrary: false })).toBe(false);
-    expect(canAccessProgramLessonContent({ programId: '201', canUseLibrary: true })).toBe(true);
+    expect(WEEKLY_PROGRAM_IDS).toHaveLength(4);
+    expect(FREE_PREVIEW_PROGRAM_ID).toBe(WEEKLY_PROGRAM_IDS[0]);
+    expect(canAccessProgramLessonContent({ programId: FREE_PREVIEW_PROGRAM_ID, canUseLibrary: false })).toBe(true);
+    expect(canAccessProgramLessonContent({ programId: WEEKLY_PROGRAM_IDS[1], canUseLibrary: false })).toBe(false);
+    expect(canAccessProgramLessonContent({ programId: WEEKLY_PROGRAM_IDS[1], canUseLibrary: true })).toBe(true);
   });
 
   it('does not treat isPro as a Premium content lock in the library UI', () => {
@@ -52,13 +52,22 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     const previewModal = read('app/spokedu-master/components/lesson/ProgramPreviewModal.tsx');
     const previewContent = read('app/spokedu-master/components/lesson/LessonPreviewContent.tsx');
     const catalogCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
+    const weeklyCard = read('app/spokedu-master/components/lesson/WeeklyEditorialCard.tsx');
+    const library = read('app/spokedu-master/library/LibraryView.tsx');
     expect(previewModal).toContain('lockHref');
     expect(previewModal).toContain('Lite로 열기');
     expect(previewModal).not.toContain('/spokedu-master/payment?plan=premium');
     expect(previewContent).toContain('locked?: boolean');
+    expect(previewContent.indexOf('if (locked)')).toBeLessThan(previewContent.indexOf('<LessonPreviewMedia'));
+    expect(previewContent).toContain('data-preview-locked=""');
     expect(previewContent).toContain('Lite에서 전체 수업 자료를 이용할 수 있습니다');
     expect(previewContent).not.toContain('프리미엄 전용');
     expect(catalogCard).toContain("lockLabel = 'Lite로 열기'");
+    expect(catalogCard).toContain('const previewEnabled = !locked && Boolean(onPreview)');
+    expect(catalogCard).toContain('data-preview-disabled=""');
+    expect(weeklyCard).toContain('const previewEnabled = !locked && Boolean(onPreview)');
+    expect(weeklyCard).toContain('data-preview-disabled=""');
+    expect(library).toContain('onPreview={locked ? undefined');
     expect(catalogCard).not.toContain('프리미엄 자료');
   });
 

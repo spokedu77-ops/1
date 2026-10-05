@@ -71,6 +71,19 @@ export function buildActivitySessionHref(sessionId: string) {
   return `/spokedu-master/activity?session=${encodeURIComponent(sessionId)}`;
 }
 
+export function buildManageSessionHref(sessionId: string) {
+  return `/spokedu-master/manage?session=${encodeURIComponent(sessionId)}`;
+}
+
+export function isMasterSessionSurfaceReturn(href: string | null | undefined): href is string {
+  return Boolean(
+    href === '/spokedu-master/activity'
+    || href?.startsWith('/spokedu-master/activity?')
+    || href === '/spokedu-master/manage'
+    || href?.startsWith('/spokedu-master/manage?'),
+  );
+}
+
 export function buildClassCreateFromSessionHref(date: string) {
   const day = date.slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return '/spokedu-master/classes?create=1';
@@ -139,6 +152,6 @@ export function readSpomoveSessionOrigin(params: Pick<URLSearchParams, 'get'>): 
   const sessionId = params.get('session')?.trim() || null;
   const sessionProgramId = params.get('sessionProgram')?.trim() || null;
   const returnTo = params.get('returnTo')?.trim() || null;
-  const isSessionOrigin = Boolean(sessionId) || Boolean(returnTo?.startsWith('/spokedu-master/activity'));
+  const isSessionOrigin = Boolean(sessionId) || isMasterSessionSurfaceReturn(returnTo);
   return { sessionId, sessionProgramId, returnTo, isSessionOrigin };
 }

@@ -2,6 +2,7 @@ import { clearAdminCheckCache } from '@/app/lib/auth/adminCheckCache';
 import { clearLoginSessionMarkers } from '@/app/lib/auth/sessionPersistence';
 import { clearBrowserSupabaseAuthCookies } from '@/app/lib/auth/supabaseAuthCookie';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { SPOKEDU_PATHS } from '@/app/spokedu/data/public-routes';
 
 const LOGOUT_CHANNEL = 'spokedu:auth-logout';
 
@@ -25,7 +26,7 @@ function redirectAfterForeignLogout(): void {
     return;
   }
   if (path.startsWith('/spokedu-master')) {
-    window.location.replace('/spokedu-master/landing');
+    window.location.replace(SPOKEDU_PATHS.subscription);
   }
 }
 

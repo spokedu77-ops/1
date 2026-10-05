@@ -1,5 +1,18 @@
 # SPOKEDU MASTER 상용화 QA 체크리스트
 
+## MASTER QA 로그인
+
+MASTER 고객 인증은 `/spokedu-master/login`의 Kakao 또는 이메일 OTP만 사용한다. `/login` ID/PW는 강사·관리자 운영계정용이며 MASTER QA 인증 수단이 아니다.
+
+로컬 rendered QA는 QA 전용 계정으로 한 번 passwordless 로그인한 뒤 ignored storage state를 재사용한다.
+
+```bash
+npm run qa:spokedu-master:auth-capture -- http://localhost:3000
+npm run qa:spokedu-master:logged -- http://localhost:3000
+```
+
+기본 저장 위치는 `.tmp/spm-master-auth/storage-state.json`이다. 이 파일은 commit하거나 내용을 로그에 출력하지 않는다. 인증 성공은 `/api/spokedu-master/access`의 HTTP 200과 `authenticated: true`로 확인하며 Library QA는 `canUseLibrary: true`도 요구한다.
+
 실행일: ___________  
 담당: ___________  
 환경: production / staging / local
@@ -70,7 +83,7 @@
 | A3-3 | 「이 기록 보강」 | 같은 recordId로 출석·관찰 보강, quick→detailed | | | |
 | A3-4 | 입력 후 닫기·다시 열기 | draft 복원(같은 program만) | | | sessionStorage |
 
-### A4. SPOMOVE → 기록 초안 (Premium)
+### A4. SPOMOVE → 기록 초안 (기록 Lite 이상 · SPOMOVE Premium)
 
 | # | 단계 | 기대 결과 | Pass | 기기 | 메모 |
 |---|------|-----------|------|------|------|

@@ -51,7 +51,7 @@ const SUBSCRIPTION_FAQ = [
   },
   {
     q: '무료·Lite·Premium의 차이는 무엇인가요?',
-    a: '무료 범위는 로그인 후 수업 도구입니다. Lite와 Premium의 현재 기능 범위와 가격은 아래 플랜 카드에 제품 계약 기준으로 표시됩니다.',
+    a: '무료 범위는 로그인 후 수업 도구 3종, Library 탐색, 이번 주 첫 무료 프로그램 1개입니다. Lite와 Premium의 현재 기능 범위와 가격은 아래 플랜 카드에 제품 계약 기준으로 표시됩니다.',
   },
 ] as const;
 
@@ -69,7 +69,7 @@ const CONTENT_SCOPE_ITEMS = [
   },
   {
     title: '수업 도구',
-    description: '로그인 후 무료로 써 볼 수 있는 현장 진행 도구입니다. (무료·Lite·Premium)',
+    description: 'Free는 스탑워치·타이머·점수판을, Lite와 Premium은 명단 기반 도구까지 8종 전체를 사용합니다.',
     mediaKey: 'curriculumManual' as HomeMediaKey,
     mediaRequirement: {
       page: 'curriculum',
@@ -90,7 +90,7 @@ const CONTENT_SCOPE_ITEMS = [
   },
   {
     title: '수업 기록',
-    description: '반응·기록·안내문 흐름을 누적합니다. (Premium)',
+    description: '반응·기록·안내문 흐름을 누적합니다. (Lite·Premium)',
     mediaKey: 'curriculumPackage' as HomeMediaKey,
     mediaRequirement: {
       page: 'curriculum',
@@ -317,7 +317,7 @@ export const curriculumPage = {
       {
         phase: '수업 후',
         title: '반응 기록',
-        body: '수업 반응과 기록을 남깁니다. (Premium)',
+        body: '수업 반응과 기록을 남깁니다. (Lite·Premium)',
       },
       {
         phase: '연결',
@@ -349,7 +349,7 @@ export const curriculumPage = {
     title: 'Free · Lite · Premium',
     lead: '현재 이용 범위와 판매 상태는 공개 제품 계약에서 불러옵니다.',
     centerNote: '센터·기관은 Free/Lite/Premium과 동급 플랜이 아닙니다. 별도 이용 문의로 안내합니다.',
-    spomatNote: `SPOMAT는 ${publicProduct.spomat.confirmLabel}. Premium에서 회원가 자격이 열립니다.`,
+    spomatNote: `SPOMAT는 ${publicProduct.spomat.confirmLabel}. MASTER 구독 여부와 관계없이 일반 가격으로 안내합니다.`,
   },
 
   spomoveRelation: {
@@ -531,7 +531,7 @@ export const curriculumPage = {
 
   finalCta: {
     title: '오늘 수업 준비부터 구독시스템에서 시작하세요',
-    description: '무료로 수업 도구를 써 보거나, 제품 화면에서 Lite·Premium 범위를 확인할 수 있습니다.',
+    description: '무료로 수업 도구 3종과 Library 체험을 사용하거나, 제품 화면에서 Lite·Premium 범위를 확인할 수 있습니다.',
     mediaKey: 'curriculumMaster' as HomeMediaKey,
     primary: {
       label: '무료로 시작하기',

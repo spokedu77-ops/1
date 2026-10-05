@@ -68,6 +68,21 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).not.toContain('h-[450px]');
   });
 
+  it('keeps the execution row focused and moves subordinate guidance into a support chapter', () => {
+    const methodPanel = guide.slice(guide.indexOf('function MethodPanel'), guide.indexOf('function ExecutionSupport'));
+    const supportChapter = guide.slice(guide.indexOf('function ExecutionSupport'), guide.indexOf('function columnClass'));
+    expect(methodPanel).toContain('model.activityMethod.map');
+    expect(methodPanel).not.toContain('getMethodSupport(model)');
+    expect(methodPanel).not.toContain('model.variationMethod');
+    expect(supportChapter).toContain('data-detail-chapter="execution-support"');
+    expect(supportChapter).toContain('data-detail-support="method"');
+    expect(supportChapter).toContain('data-detail-support="variation"');
+    expect(supportChapter).toContain('getMethodSupport(model)');
+    expect(supportChapter).toContain('model.variationMethod.slice(0, 2)');
+    expect(guide.indexOf('<ExecutionSupport model={model} />')).toBeGreaterThan(guide.indexOf('data-detail-row="execution"'));
+    expect(guide.indexOf('<ExecutionSupport model={model} />')).toBeLessThan(guide.indexOf('data-detail-row="preparation"'));
+  });
+
   it('keeps shared heading baseline without stretching panels to equal height', () => {
     expect(guide).toContain('const DETAIL_PANEL_CLASS');
     expect(guide).toContain("const DETAIL_PANEL_CLASS = 'contents'");

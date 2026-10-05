@@ -15,6 +15,7 @@ import type {
   ActivityOperationConfig,
   ActivityOperationPatch,
 } from './operations/operationTypes';
+import { isMasterSessionSurfaceReturn } from '../lib/masterNavigationContext';
 import { withPublicCatalogOrder } from './spomovePublicCatalogOrder';
 
 export type OfficialSpomoveAxis = SpomoveAxis;
@@ -1790,7 +1791,7 @@ export function officialPresetSessionHref(
     operation?: ActivityOperationConfig | ActivityOperationPatch | null;
     /** 세션 종료 시 SPOMOVE 허브 복귀 맥락 */
     hubReturn?: string;
-    /** Session operating surface return (activity?session=...) */
+    /** Session operating surface return (manage?session=... or activity?session=...) */
     returnTo?: string;
     /** Origin Session / SessionProgram for MASTER operating continuity */
     session?: string;
@@ -1811,7 +1812,8 @@ export function officialPresetSessionHref(
   });
   if (options?.entry) params.set('entry', options.entry);
   if (options?.hubReturn?.startsWith('/spokedu-master/spomove')) params.set('hubReturn', options.hubReturn);
-  if (options?.returnTo?.startsWith('/spokedu-master/activity')) params.set('returnTo', options.returnTo);
+  const returnTo = options?.returnTo;
+  if (isMasterSessionSurfaceReturn(returnTo)) params.set('returnTo', returnTo);
   if (options?.session?.trim()) params.set('session', options.session.trim());
   if (options?.sessionProgram?.trim()) params.set('sessionProgram', options.sessionProgram.trim());
   if (options?.cueSeconds != null) params.set('cueSeconds', String(options.cueSeconds));

@@ -16,6 +16,7 @@ import { useMasterStore, useProfile } from '../../store';
 import { getMasterRouteRequirement, getSafeMasterReturnPath, hasMasterRouteCapability, isProtectedMasterRoute } from './masterRouteAccess';
 import { buildMasterLoginHref } from '../../lib/masterLoginReturn';
 import { buildCurrentMasterPath, buildMasterGateContext, buildMasterGateDisplayModel } from '../../lib/masterGateIntent';
+import { SPOKEDU_PATHS } from '@/app/spokedu/data/public-routes';
 
 type MasterAccessGuardStatus = 'checking' | 'allowed' | 'redirecting' | 'denied' | 'error';
 type MasterAccessGuard = {
@@ -150,7 +151,7 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
               권한 다시 확인
             </button>
             <Link
-              href="/spokedu-master/landing"
+              href={SPOKEDU_PATHS.subscription}
               className="inline-flex h-11 items-center justify-center rounded-xl px-3 text-[13px] font-medium text-slate-500"
             >
               소개 페이지로 이동

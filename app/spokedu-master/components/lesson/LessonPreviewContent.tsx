@@ -50,6 +50,31 @@ export function LessonPreviewContent({
       Boolean(previewSafety));
   const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
 
+  if (locked) {
+    return (
+      <div data-preview-locked="" className="flex flex-col gap-3">
+        {showHeading ? (
+          <div>
+            <LessonTitle title={model.title} badges={badges} />
+            {meta.length > 0 ? (
+              <p className="mt-1 truncate text-[12px] font-bold text-slate-500">{meta.join(' · ')}</p>
+            ) : null}
+          </div>
+        ) : badges ? (
+          <div className="flex flex-wrap items-center gap-2">{badges}</div>
+        ) : null}
+
+        <aside className="min-w-0 rounded-[14px] border border-amber-200 bg-amber-50/80 p-4">
+          <p className="text-[13px] font-semibold leading-6 text-amber-950">
+            Lite에서 전체 수업 자료를 이용할 수 있습니다.
+          </p>
+        </aside>
+
+        {footer ? <div className="shrink-0">{footer}</div> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {showHeading ? (
@@ -68,24 +93,12 @@ export function LessonPreviewContent({
           <LessonPreviewMedia
             program={program}
             layout="preview"
-            autoplay={locked ? false : autoplayVideo}
+            autoplay={autoplayVideo}
             onPlaybackStarted={onPlaybackStarted}
           />
         </div>
 
-        {locked ? (
-          <aside
-            data-preview-column="content"
-            className="min-w-0 rounded-[14px] border border-amber-200 bg-amber-50/80 p-4"
-          >
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-amber-800">Lite에서 이용</p>
-            <p className="mt-2 text-[13px] font-semibold leading-6 text-amber-950">
-              Lite에서 전체 수업 자료를 이용할 수 있습니다. 준비물, 활동 방법, 참고 영상은 Lite에서 확인할 수 있습니다.
-            </p>
-          </aside>
-        ) : null}
-
-        {!locked && hasSummaryContent ? (
+        {hasSummaryContent ? (
           <aside
             data-preview-column="content"
             data-preview-summary

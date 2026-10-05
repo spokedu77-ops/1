@@ -97,7 +97,7 @@ export const spomatPage = {
     title: '구매·이용 안내',
     lead: publicProduct.spomat.pricesPublished
       ? '공개 가격으로 안내합니다.'
-      : '가격은 이번 페이지에서 공개하지 않습니다. 구매·회원가 안내는 제품 경로에서 확인하세요.',
+      : '가격은 이번 페이지에서 공개하지 않습니다. 구매 안내는 제품 경로에서 확인하세요.',
     primary: {
       label: publicProduct.spomat.purchaseGuideLabel,
       href: publicProduct.spomat.shopHref,

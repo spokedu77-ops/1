@@ -23,9 +23,9 @@ const FEATURE_COPY = {
   },
   classTools: {
     icon: Timer,
-    title: '수업 도구는 Free에서도 사용할 수 있습니다.',
-    desc: '로그인 후 바로 수업 도구를 쓸 수 있습니다. 이용권이 만료되어도 수업 도구는 계속 열려 있습니다.',
-    access: '수업 도구',
+    title: '기본 수업 도구는 Free에서도 사용할 수 있습니다.',
+    desc: 'Free에서는 스탑워치·타이머·점수판을 사용할 수 있고, 명단을 연결하는 나머지 도구는 Lite부터 이용할 수 있습니다.',
+    access: 'Free 도구 3종 · Lite 명단 도구 5종',
   },
   attendance: {
     icon: ClipboardList,
@@ -35,9 +35,9 @@ const FEATURE_COPY = {
   },
   records: {
     icon: FileText,
-    title: '기록 누적은 프리미엄에서 이용할 수 있습니다.',
-    desc: '이미 쌓인 기록은 유지됩니다. 라이트에서는 출석부까지 운영하고, 메모·안내문·상세 이력은 프리미엄에서 다시 확인할 수 있습니다.',
-    access: '수업 기록 및 안내문',
+    title: '수업 기록은 Lite에서 이용할 수 있습니다.',
+    desc: 'Lite부터 수업 메모, 학생별 관찰, 다음 수업 메모와 안내문을 이어 사용할 수 있습니다. 이용권이 만료되어도 기존 데이터는 유지됩니다.',
+    access: '수업 기록 · 학생 관찰 · 다음 수업 메모 · 안내문',
   },
   spomove: {
     icon: MonitorPlay,
@@ -64,7 +64,7 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
           <Lock size={24} className="text-slate-700" />
         </div>
         <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
-          {model?.eyebrow ?? (subscriptionBlockedFeature ? '프리미엄 필요' : '이용권 필요')}
+          {model?.eyebrow ?? (requirement === 'spomove' && subscriptionBlockedFeature ? '프리미엄 필요' : '이용권 필요')}
         </p>
         <h2 className="mt-2 text-[27px] font-extrabold leading-tight text-slate-950">
           {model?.title ?? copy.title}

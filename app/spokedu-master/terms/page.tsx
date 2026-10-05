@@ -44,9 +44,9 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         </Section>
 
         <Section title="3. 이용권과 결제">
-          <p>로그인 후 무료(Free) 이용자는 놀이체육 라이브러리를 탐색하고, 지정된 무료 프로그램을 전체 체험하며, 수업 도구를 사용할 수 있습니다. 기간제 유료 무료체험 상품은 제공하지 않습니다.</p>
-          <p>{lite.displayName}는 {lite.priceLabel} {lite.billingCycleLabel} 상품이며 전체 놀이체육 라이브러리와 수업 운영 기능(수업반·일정·출석)을 제공합니다.</p>
-          <p>{premium.displayName}은 {premium.priceLabel} {premium.billingCycleLabel} 상품이며 라이트 기능에 수업 기록과 SPOMOVE를 추가로 제공하고 SPOMAT 회원가 자격을 제공합니다.</p>
+          <p>로그인 후 무료(Free) 이용자는 놀이체육 Library를 탐색하고, 이번 주 추천 첫 번째 프로그램을 전체 체험하며, 스탑워치·타이머·점수판을 사용할 수 있습니다. 기간제 유료 무료체험 상품은 제공하지 않습니다.</p>
+          <p>{lite.displayName}는 {lite.priceLabel} {lite.billingCycleLabel} 상품이며 전체 놀이체육 Library와 일반 수업 운영, 기록 및 안내문 기능을 제공합니다.</p>
+          <p>{premium.displayName}은 {premium.priceLabel} {premium.billingCycleLabel} 상품이며 라이트 전체 기능에 SPOMOVE를 추가로 제공합니다.</p>
           <p>{center.displayName}은 {center.priceLabel} 상품이며 직접 결제를 제공하지 않습니다. 기관 도입은 별도 문의로 안내합니다.</p>
           <p>유료 기능 권한은 결제 성공 또는 별도 계약이 확인된 경우에만 부여됩니다. 결제 금액은 브라우저가 전달한 값이 아니라 서버가 계산한 견적을 기준으로 합니다.</p>
         </Section>
@@ -62,7 +62,6 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
 
         <Section title="5. SPOMAT">
           <p>SPOMAT 일반가는 {SPOMAT_PRODUCT_CONTRACT.regularPrice.toLocaleString('ko-KR')}원입니다.</p>
-          <p>프리미엄 구독자는 {SPOMAT_PRODUCT_CONTRACT.premiumPrice.toLocaleString('ko-KR')}원의 회원가 자격을 가질 수 있습니다.</p>
           <p>SPOMAT 구매, 배송, 대량 구매 문의는 별도 구매 경로와 안내 기준을 따릅니다.</p>
         </Section>
 

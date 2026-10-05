@@ -8,6 +8,7 @@ import { MasterEmailOtpForm } from '@/app/components/auth/MasterEmailOtpForm';
 import { useMasterEmailOtp } from '@/app/components/auth/useMasterEmailOtp';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { applyLoginSessionPreference, clearLoginSessionMarkers } from '@/app/lib/auth/sessionPersistence';
+import { SPOKEDU_PATHS } from '@/app/spokedu/data/public-routes';
 import {
   getSafeMasterLoginReturnPath,
   resolveMasterEntryAccess,
@@ -80,7 +81,7 @@ function MasterLoginContent() {
   return (
     <main className="min-h-dvh px-5 py-8 sm:grid sm:place-items-center" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
       <section className="mx-auto w-full max-w-[460px] rounded-[20px] p-6 sm:p-8" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
-        <Link href="/spokedu-master/landing" className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
+        <Link href={SPOKEDU_PATHS.subscription} className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
           <ChevronLeft size={17} /> 소개로 돌아가기
         </Link>
         <p className="mt-5 text-[11px] font-semibold" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>

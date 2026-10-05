@@ -75,11 +75,6 @@ export function getEntitlementPrimaryCtaLabel(snapshot: MasterAccessSnapshot | n
   return '구독 선택';
 }
 
-export function canBuySpomatFromSnapshot(snapshot: MasterAccessSnapshot | null | undefined): boolean {
-  if (!snapshot) return false;
-  return snapshot.subscriptionStatus === 'active' && snapshot.plan === 'premium';
-}
-
 export function canCreateClassRecordFromSnapshot(snapshot: MasterAccessSnapshot | null | undefined): LimitStatus {
   if (!snapshot) {
     return {
@@ -99,8 +94,8 @@ export function canCreateClassRecordFromSnapshot(snapshot: MasterAccessSnapshot 
   if (!snapshot.canUseRecords) {
     return {
       allowed: false,
-      label: '프리미엄 필요',
-      reason: '수업 기록 저장과 누적 관리는 프리미엄에서 사용할 수 있습니다.',
+      label: 'Lite 필요',
+      reason: '수업 기록 저장과 누적 관리는 Lite에서 사용할 수 있습니다.',
     };
   }
   return { allowed: true, label: '사용 가능' };

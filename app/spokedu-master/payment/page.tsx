@@ -325,13 +325,13 @@ function PaymentContent() {
           <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <h2 className="text-[28px] font-extrabold leading-tight sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
               {paymentPageMode === 'liteUpgrade'
-                ? '새로운 콘텐츠와 지난 수업 맥락을 함께 이어가세요'
+                ? 'SPOMOVE로 수업 콘텐츠를 확장하세요'
                 : '좋은 콘텐츠를 찾고, 실제 수업과 다음 수업까지 이어가세요'}
             </h2>
             <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
               {paymentPageMode === 'liteUpgrade'
-                ? 'Lite의 완전한 수업 운영은 그대로 유지됩니다. 프리미엄에서는 SPOMOVE로 활동 선택을 넓히고, 지난 기록과 학생 맥락을 다음 준비에 다시 활용합니다.'
-                : 'Lite는 콘텐츠 발견부터 수업 구성·운영까지 완결됩니다. 프리미엄은 SPOMOVE와 더 깊은 기록 재사용으로 다음 수업에서 다시 찾고 판단하는 일을 줄입니다.'}
+                ? 'Lite의 수업관리 기능은 그대로 유지됩니다. Premium에서는 SPOMOVE 공식 활동과 전체 화면 실행을 추가로 이용할 수 있습니다.'
+                : 'Lite는 Library, 반·학생·일정·출석, 기록과 안내문까지 수업관리 흐름을 모두 제공합니다. Premium은 Lite 전체 기능에 SPOMOVE 디지털 움직임 콘텐츠를 더합니다.'}
             </p>
           </section>
         )}
@@ -358,7 +358,7 @@ function PaymentContent() {
             {paymentPageMode === 'liteUpgrade' ? (
               <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
                 <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 콘텐츠 발견부터 수업 운영까지 완결되어 있습니다. 프리미엄으로 올리면 SPOMOVE로 활동을 넓히고 지난 기록을 다음 준비에 다시 활용할 수 있습니다. 오늘 결제액은 라이트 잔여 기간을 반영한 차액이며, 프리미엄 정가를 새로 1개월 결제하지 않습니다.
+                  현재 <strong>{subscriptionDisplay.planLabel}</strong>으로 Library, 수업 운영, 기록과 안내문을 모두 이용할 수 있습니다. Premium으로 올리면 SPOMOVE 공식 활동과 전체 화면 실행이 추가됩니다. 오늘 결제액은 라이트 잔여 기간을 반영한 차액이며, 프리미엄 정가를 새로 1개월 결제하지 않습니다.
                 </p>
                 {upgradeQuote ? (
                   <dl className="mt-4 grid gap-3 sm:grid-cols-3">

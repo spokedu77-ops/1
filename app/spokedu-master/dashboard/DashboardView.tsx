@@ -228,6 +228,7 @@ const HOME_CLASS_TOOL_ICONS: Record<ClassToolId, typeof Timer> = {
 
 function WeeklyProgramCard({
   program,
+  locked,
   onPreview,
   favorite,
   favoriteEnabled,
@@ -237,12 +238,13 @@ function WeeklyProgramCard({
   priority = false,
 }: {
   program: Program;
-  onPreview: (program: Program) => void;
+  locked: boolean;
+  onPreview?: (program: Program) => void;
   favorite: boolean;
   favoriteEnabled: boolean;
   favoriteHint?: string;
   onFavorite: () => void;
-  accessBadge?: '무료 체험' | 'Lite' | null;
+  accessBadge?: 'Free' | 'Lite' | null;
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
@@ -256,11 +258,12 @@ function WeeklyProgramCard({
       category={model.theme || '체육 수업'}
       supportMeta={weeklySupportMeta}
       hasVideo={programHasPlayableVideo(program)}
-      onPreview={() => onPreview(program)}
+      onPreview={onPreview ? () => onPreview(program) : undefined}
+      locked={locked}
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
       favoriteHint={favoriteHint}
-      onFavorite={onFavorite}
+      onFavorite={locked ? undefined : onFavorite}
       accessBadge={accessBadge}
       priority={priority}
       sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
@@ -285,7 +288,7 @@ function FirstStartGuide({ canUseAttendance }: { canUseAttendance: boolean }) {
       <p className="mt-2 max-w-xl text-[15px] font-normal leading-6 text-slate-600">
         {canUseAttendance
           ? '콘텐츠부터 찾아도, 수업반부터 준비해도 같은 준비 흐름으로 이어집니다.'
-          : '무료 수업 1개를 체험하고, 라이브러리를 둘러보고, 수업 도구를 바로 사용할 수 있습니다.'}
+          : '이번 주 첫 무료 수업 1개를 체험하고, Library를 둘러보고, 스탑워치·타이머·점수판을 사용할 수 있습니다.'}
       </p>
       <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
         {firstStartPaths.map(({ title, description, href }) => (
@@ -771,6 +774,7 @@ function EntitledDashboardView() {
   const RecentClassToolIcon = HOME_CLASS_TOOL_ICONS[recentClassTool.id];
 
   const openPreview = (program: Program, autoplayVideo = false) => {
+    if (isProgramLocked(program)) return;
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
@@ -947,7 +951,8 @@ function EntitledDashboardView() {
                   <div key={program.id} data-dashboard-card="weekly" className="h-full min-w-0">
                     <WeeklyProgramCard
                       program={program}
-                      onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
+                      locked={isProgramLocked(program)}
+                      onPreview={isProgramLocked(program) ? undefined : (item) => openPreview(item, programHasPlayableVideo(item))}
                       favorite={isFavoriteProgram(favoritesOwnerId, program.id)}
                       favoriteEnabled={favoriteEnabled}
                       favoriteHint={favoriteHint}

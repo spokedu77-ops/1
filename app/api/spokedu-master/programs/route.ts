@@ -14,6 +14,7 @@ import { extractExactSectionLines, parseTextareaLines, parseVariationMethod } fr
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import { canAccessProgramLessonContent, selectWeeklyProgramsById } from '@/app/spokedu-master/lib/commercialProgramAccess';
 import { isLessonCatalogNew } from '@/app/spokedu-master/lib/lessonCatalogNew';
+import { selectCanonicalPublishedProgramOverlays } from './selectCanonicalOverlay';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#312e81', '#3730a3', '#4338ca', '#4f46e5'],
@@ -196,6 +197,7 @@ type MetaRow = {
 };
 
 type OverlayRow = {
+  id: number;
   title: string | null;
   source_center_curriculum_id: number | null;
   video_url: string | null;
@@ -409,7 +411,7 @@ export async function GET(request?: Request) {
   const curriculumIdSet = new Set(curriculumIds);
 
   const metaByCurriculumId = new Map<number, MetaRow>();
-  const overlayByCurriculumId = new Map<number, OverlayRow>();
+  let overlayByCurriculumId = new Map<number, OverlayRow>();
 
   if (curriculumIds.length > 0) {
     const [metaResult, overlayResult] = await Promise.all([
@@ -419,7 +421,7 @@ export async function GET(request?: Request) {
         .in('curriculum_id', curriculumIds),
       supabase
         .from('spokedu_pro_programs')
-        .select('title,source_center_curriculum_id,video_url,activity_method,equipment,updated_at,is_published')
+        .select('id,title,source_center_curriculum_id,video_url,activity_method,equipment,updated_at,is_published')
         .in('source_center_curriculum_id', curriculumIds),
     ]);
 
@@ -435,20 +437,10 @@ export async function GET(request?: Request) {
       await reportProgramSourceFailure(overlayResult.error, 'spokedu_pro_programs');
       return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
     }
-    for (const overlay of overlayResult.data as OverlayRow[]) {
-      const curriculumId = overlay.source_center_curriculum_id;
-      if (curriculumId == null) continue;
-      if (!curriculumIdSet.has(curriculumId)) continue;
-      if (overlay.is_published !== true) continue;
-      const prev = overlayByCurriculumId.get(curriculumId);
-      if (!prev) {
-        overlayByCurriculumId.set(curriculumId, overlay);
-        continue;
-      }
-      const prevTime = prev.updated_at ? Date.parse(prev.updated_at) : 0;
-      const nextTime = overlay.updated_at ? Date.parse(overlay.updated_at) : 0;
-      if (nextTime >= prevTime) overlayByCurriculumId.set(curriculumId, overlay);
-    }
+    overlayByCurriculumId = selectCanonicalPublishedProgramOverlays(
+      overlayResult.data as OverlayRow[],
+      curriculumIdSet,
+    );
   }
 
   const programs: Program[] = [];

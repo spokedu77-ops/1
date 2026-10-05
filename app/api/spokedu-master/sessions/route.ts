@@ -181,7 +181,7 @@ async function save(request: Request, sessionId: string | null) {
     if (!spomoveAccess.ok) return withPrivateNoStore(spomoveAccess.response);
   }
   if (access.plan === 'lite' && input.memo) {
-    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Premium에서 사용할 수 있습니다.' }, { status: 403 });
+    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Lite에서 사용할 수 있습니다.' }, { status: 403 });
   }
   if (sessionId && input.status === 'completed') {
     return privateNoStoreJson({ error: '수업 완료는 출석 검증을 포함한 완료 요청으로 처리해 주세요.' }, { status: 400 });
@@ -276,7 +276,7 @@ export async function PUT(request: Request) {
     return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
   }
   if (access.plan === 'lite' && input.memo) {
-    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Premium에서 사용할 수 있습니다.' }, { status: 403 });
+    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Lite에서 사용할 수 있습니다.' }, { status: 403 });
   }
   if (input.status !== 'completed') {
     return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });

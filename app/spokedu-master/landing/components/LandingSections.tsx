@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import {
   ArrowDown,
   ArrowRight,
@@ -13,6 +12,8 @@ import {
   Sparkles,
   UsersRound,
 } from 'lucide-react';
+import { TrackedLink } from '@/app/spokedu/components/home/tracked-link';
+import { CLASS_TOOLS, FREE_CLASS_TOOL_IDS } from '../../lib/classTools';
 import type { LandingPlan } from '../models/landingProduct';
 import type { ReturnTypeOfLandingModel } from './types';
 import styles from '../landing.module.css';
@@ -78,18 +79,18 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
         <p className={styles.eyebrow}>유아·초등 체육 교사와 강사를 위한 수업 운영</p>
         <h1>체육수업을 찾고,<br />운영하고,<br />다음 수업까지 이어갑니다.</h1>
         <p className={styles.heroBody}>
-          매번 &apos;오늘 뭐 하지?&apos;부터 다시 시작하지 않아도 되도록. 활동을 찾고,
-          내 수업에 담고, 현장에서 운영한 기록까지 다음 수업으로 이어갑니다.
+          놀이체육 활동을 찾고, 수업반과 일정에 담고, 현장에서 운영한 출석과 기록까지 다음 수업으로 이어갑니다.
+          매번 &apos;오늘 뭐 하지?&apos;부터 다시 시작하지 않아도 됩니다.
         </p>
         <div className={styles.heroActions}>
-          <Link href={product.handoff.freeStartHref} className="spm-btn-primary">
+          <TrackedLink href={product.handoff.freeStartHref} trackLabel="master-commercial-hero-free" commercialRoute="curriculum" ctaIntentId="free_start" className="spm-btn-primary">
             Free로 시작하기 <ArrowRight size={17} aria-hidden />
-          </Link>
-          <a href="#workflow" className={styles.secondaryButton}>
-            서비스 살펴보기 <ArrowDown size={17} aria-hidden />
+          </TrackedLink>
+          <a href="#plans" className={styles.secondaryButton}>
+            요금 보기 <ArrowDown size={17} aria-hidden />
           </a>
         </div>
-        <p className={styles.freeNote}>수업 도구 · 라이브러리 탐색 · 지정 무료 프로그램 체험</p>
+        <p className={styles.freeNote}>수업 도구 3종 · Library 탐색 · 이번 주 추천 프로그램 1개 전체 이용</p>
       </div>
       <div className={styles.heroVisual} aria-label="SPOKEDU MASTER 실제 홈 화면">
         <div className={styles.heroHalo} />
@@ -127,7 +128,7 @@ export function ProductOverview() {
 export function CoreProductStory() {
   return (
     <div className={styles.storyFlow}>
-      <section className={styles.storySection}>
+      <section id="library" className={styles.storySection}>
         <div className={styles.storyCopy}>
           <p className={styles.stepLabel}>찾기 · 준비하기</p>
           <h2>오늘 수업에 맞는 활동을 빠르게 찾습니다.</h2>
@@ -140,7 +141,7 @@ export function CoreProductStory() {
         </div>
       </section>
 
-      <section className={`${styles.storySection} ${styles.reverse}`}>
+      <section id="management" className={`${styles.storySection} ${styles.reverse}`}>
         <div className={styles.storyCopy}>
           <p className={styles.stepLabel}>수업으로 연결하기</p>
           <h2>찾은 활동을 실제 수업의 순서로 만듭니다.</h2>
@@ -160,7 +161,7 @@ export function CoreProductStory() {
         </div>
       </section>
 
-      <section className={styles.runSection}>
+      <section id="run" className={styles.runSection}>
         <div className={styles.runHeader}>
           <SectionHeading
             eyebrow="현장에서 운영하기"
@@ -191,12 +192,14 @@ export function CoreProductStory() {
         </div>
       </section>
 
-      <section className={`${styles.storySection} ${styles.memorySection}`}>
+      <ClassToolsSection />
+
+      <section id="records" className={`${styles.storySection} ${styles.memorySection}`}>
         <div className={styles.storyCopy}>
-          <p className={styles.stepLabel}>기억하고 이어가기 · Premium</p>
+          <p className={styles.stepLabel}>기억하고 이어가기 · Lite</p>
           <h2>지난 수업이 다음 준비의 출발점이 됩니다.</h2>
-          <p>수업 메모와 학생 관찰, 다음 수업 노트, 보호자 안내문을 남겨 필요한 순간 다시 확인합니다. 기록은 자동으로 수업을 만들지 않습니다. 교사가 남긴 실제 맥락을 다음 준비에 활용합니다.</p>
-          <ul><li>수업 메모와 학생별 관찰</li><li>이전 수업의 활동과 다음 수업 노트</li><li>보호자 안내문 저장·복사</li></ul>
+          <p>수업 메모와 학생 관찰, 다음 수업 노트, 수업 안내문을 남겨 필요한 순간 다시 확인합니다. 기록은 자동으로 수업을 만들지 않습니다. 교사가 남긴 실제 맥락을 다음 준비에 활용합니다.</p>
+          <ul><li>수업 메모와 학생별 관찰</li><li>이전 수업의 활동과 다음 수업 노트</li><li>수업 안내문 저장·복사</li></ul>
         </div>
         <div className={styles.memoryVisual}>
           <ProductFrame src={ASSETS.record} alt="완료한 수업의 활동과 메모를 다음 수업 안내로 이어 쓰는 실제 MASTER 안내문 화면" ratio="portrait" position="50% 12%" />
@@ -210,13 +213,71 @@ export function CoreProductStory() {
   );
 }
 
+export function ClassToolsSection() {
+  return (
+    <section id="tools" className={styles.toolsSection}>
+      <div className={styles.toolsCopy}>
+        <SectionHeading
+          eyebrow="수업 도구 8종"
+          title="수업 중 필요한 도구도 같은 화면에서 바로 씁니다."
+          body="Free에서는 스탑워치·타이머·점수판을, Lite와 Premium에서는 명단을 활용하는 다섯 도구까지 모두 사용합니다."
+        />
+        <ul className={styles.toolStrip}>
+          {CLASS_TOOLS.map((tool) => (
+            <li key={tool.id}><span>{tool.label}</span><small>{FREE_CLASS_TOOL_IDS.includes(tool.id as (typeof FREE_CLASS_TOOL_IDS)[number]) ? 'Free' : 'Lite'}</small></li>
+          ))}
+        </ul>
+      </div>
+      <ProductFrame src={ASSETS.tools} alt="스탑워치, 타이머, 점수판과 명단형 도구가 보이는 실제 MASTER 수업 도구 화면" />
+    </section>
+  );
+}
+
+const BEFORE_AFTER = [
+  ['여러 채널에서 활동 검색', 'Library에서 탐색'],
+  ['준비물·규칙·세팅을 별도로 정리', '상세에서 한 번에 확인'],
+  ['타이머·점수·팀 편성을 다른 도구로 실행', 'Class Tools에서 바로 실행'],
+  ['수업 후 기억에 의존', 'Session 기록으로 남김'],
+  ['다음 수업을 다시 처음부터 준비', '이전 기록을 다음 준비에서 확인'],
+] as const;
+
+export function WhyMasterSection() {
+  return (
+    <section id="why-master" className={styles.whySection}>
+      <SectionHeading eyebrow="반복 업무를 줄이는 방식" title="자료를 더 많이 보는 것이 아니라, 준비의 반복을 줄입니다." body="찾고 정리하고 다시 떠올리던 일을 하나의 수업 흐름으로 연결합니다." />
+      <div className={styles.beforeAfter}>
+        {BEFORE_AFTER.map(([before, after]) => <div key={before}><p><span>기존</span>{before}</p><ArrowRight size={18} aria-hidden /><p><span>MASTER</span><strong>{after}</strong></p></div>)}
+      </div>
+    </section>
+  );
+}
+
+export function ProductDetailSection() {
+  const groups = [
+    ['프로그램 기본정보', ['테마·대상·주요 기능', '움직임 특성·공간', '참여 형태']],
+    ['수업 준비', ['준비물과 수량', '초기 교구 세팅', '실제 수업 영상']],
+    ['수업 진행', ['단계별 활동 방법', '지도 포인트와 안전', '난이도 조절·변형']],
+    ['현장 활용', ['수업에 추가', '지도안 복사', '현장 준비']],
+  ] as const;
+  return (
+    <section id="product-detail" className={styles.detailSection}>
+      <SectionHeading eyebrow="프로그램 상세" title="프로그램 하나에 실제 수업에 필요한 정보가 들어 있습니다." body="활동명만 모은 아이디어 목록이 아니라, 무엇을 준비하고 어떻게 세팅하고 설명하며 진행하는지까지 확인합니다." />
+      <div className={styles.detailLayout}>
+        <ProductFrame src={ASSETS.lesson} alt="준비물, 교구 세팅, 실제 영상과 진행 방법을 보여주는 MASTER 프로그램 상세" ratio="portrait" position="50% 18%" />
+        <div className={styles.detailGroups}>{groups.map(([title, items]) => <div key={title}><h3>{title}</h3><ul>{items.map((item) => <li key={item}><Check size={15} aria-hidden />{item}</li>)}</ul></div>)}</div>
+      </div>
+    </section>
+  );
+}
+
 export function SpomoveSection() {
   return (
-    <section className={styles.spomoveSection}>
+    <section id="spomove" className={styles.spomoveSection}>
       <div className={styles.spomoveCopy}>
         <p className={styles.spomoveEyebrow}>SPOMOVE · Premium</p>
         <h2>수업을 화면과 움직임으로 확장합니다.</h2>
         <p>색상·방향·숫자 같은 시각 신호를 보고 몸으로 반응하는 디지털 움직임 활동입니다. 활동을 고른 뒤 시작 화면에서 설정을 확인하고 교사가 직접 실행합니다.</p>
+        <p><strong>Premium은 Lite의 모든 기능에 SPOMOVE를 더한 플랜입니다.</strong></p>
         <div className={styles.spomoveSteps}><span>활동 찾기</span><ArrowRight size={16} /><span>시작 확인</span><ArrowRight size={16} /><span>현장 실행</span></div>
       </div>
       <div className={styles.spomoveVisual}>
@@ -259,6 +320,40 @@ export function InclusiveAndFieldProof() {
   );
 }
 
+export function FieldProofSection() {
+  return (
+    <section id="field-proof" className={styles.fieldProof}>
+      <SectionHeading
+        eyebrow="SPOKEDU의 현장에서 시작했습니다"
+        title="실제 수업 현장에서 필요한 흐름을 제품으로 만들었습니다."
+        body="SPOKEDU는 유아·초등·특수체육과 기관 수업을 직접 운영하며, 준비부터 현장 진행과 기록까지 반복해서 필요한 과정을 MASTER 안에 연결했습니다."
+      />
+      <div className={styles.fieldGrid}>
+        <figure className={styles.fieldPhoto}>
+          <Image src={ASSETS.field} alt="교사가 학생의 움직임을 가까이에서 지원하는 실제 체육수업 현장" fill sizes="(max-width: 720px) 92vw, 1120px" />
+          <figcaption>실제 SPOKEDU 수업 현장</figcaption>
+        </figure>
+      </div>
+    </section>
+  );
+}
+
+export function AudienceSection() {
+  const audiences = [
+    ['유아·초등 체육 지도자', '활동 탐색부터 수업 기록까지 매주 반복되는 준비를 연결합니다.'],
+    ['방과후·스포츠클럽 강사', '여러 반의 일정과 출석, 활동 순서를 한 흐름으로 운영합니다.'],
+    ['특수체육·발달지원 현장', '수행 수준을 고려해 난이도와 움직임 조건을 조절합니다.'],
+    ['학교·센터·기관', '이용 인원과 운영 방식에 맞춘 별도 도입 안내를 제공합니다.'],
+  ] as const;
+  return (
+    <section id="audience" className={styles.audienceSection}>
+      <SectionHeading eyebrow="현장에 맞는 활용" title="수업 방식은 달라도, 준비와 운영의 흐름은 이어집니다." body="개인 지도자부터 학교와 기관까지 실제 수업 환경에 맞춰 활용할 수 있습니다." />
+      <div className={styles.audienceGrid}>{audiences.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
+      <p className={styles.disclaimer}>MASTER는 치료·진단 제품이 아니며 의학적 효과를 제공하지 않습니다.</p>
+    </section>
+  );
+}
+
 function PlanCard({ plan }: { plan: LandingPlan }) {
   const isPremium = plan.code === 'premium';
   return (
@@ -272,7 +367,7 @@ function PlanCard({ plan }: { plan: LandingPlan }) {
         <p className={styles.planValue}>{plan.value}</p>
       </div>
       <ul>{plan.featureSummary.map((feature) => <li key={feature}><Check size={16} aria-hidden />{feature}</li>)}</ul>
-      <Link href={plan.ctaHref} className={`${styles.planButton} ${isPremium ? 'spm-btn-primary' : ''}`}>{plan.ctaLabel}</Link>
+      <TrackedLink href={plan.ctaHref} trackLabel={`master-commercial-plan-${plan.code}`} commercialRoute="curriculum" ctaIntentId={plan.code === 'free' ? 'free_start' : `${plan.code}_start`} className={`${styles.planButton} ${isPremium ? 'spm-btn-primary' : ''}`}>{plan.ctaLabel}</TrackedLink>
     </article>
   );
 }
@@ -283,26 +378,42 @@ export function PlansSection({ product }: { product: ReturnTypeOfLandingModel })
       <SectionHeading
         eyebrow="Free에서 확인하고, 필요한 만큼 이어가세요"
         title="무료로 시작하고, 필요한 기능만 더하세요."
-        body="Free로 먼저 둘러보고 기본 수업 도구를 사용하세요. 전체 콘텐츠와 수업 운영은 Lite, 기록과 SPOMOVE까지 이어 쓰려면 Premium을 선택할 수 있습니다."
+        body="Free로 Library와 기본 수업 도구를 확인하세요. 일반 수업관리와 기록·안내문은 Lite, SPOMOVE까지 이용하려면 Premium을 선택할 수 있습니다."
       />
       <div className={styles.planGrid}>{product.plans.map((plan) => <PlanCard key={plan.code} plan={plan} />)}</div>
+      <div className={styles.comparisonWrap}>
+        <table className={styles.comparisonTable}>
+          <caption>Free, Lite, Premium 기능 비교</caption>
+          <thead><tr><th scope="col">기능</th><th scope="col">Free</th><th scope="col">Lite</th><th scope="col">Premium</th></tr></thead>
+          <tbody>{product.comparison.map((row) => <tr key={row.label}><th scope="row">{row.label}</th>{(['free', 'lite', 'premium'] as const).map((plan) => <td key={plan} aria-label={row[plan] ? '포함' : '미포함'}>{row[plan] ? <Check size={17} aria-hidden /> : <span aria-hidden>—</span>}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
       <div className={styles.billingNotice}>
         <Sparkles size={18} aria-hidden />
         <p><strong>결제 안내</strong> Lite와 프리미엄은 선택 즉시 최초 결제되며 이후 매월 최초 결제일에 자동결제됩니다. 언제든 해지 예약이 가능하고, 해지 후에도 결제된 이용 기간 종료일까지 사용할 수 있습니다.</p>
-      </div>
-      <div className={styles.centerRow}>
-        <div><p>{product.centerInquiry.displayName}</p><span>{product.centerInquiry.summary.join(' · ')}</span></div>
-        <a href={product.centerInquiryHref} className={styles.secondaryButton}>{product.centerInquiry.ctaLabel}<ArrowRight size={16} aria-hidden /></a>
       </div>
     </section>
   );
 }
 
+export function CenterSection({ product }: { product: ReturnTypeOfLandingModel }) {
+  return (
+    <section id="center" className={styles.centerSection}>
+      <div><p className={styles.eyebrow}>CENTER · INSTITUTION</p><h2>학교·센터·기관에서 함께 사용하시나요?</h2><p>이용 인원, 운영 방식, 교육과 도입 범위에 맞춰 별도로 안내합니다. Center는 개인 구독 플랜과 같은 직접 결제 상품이 아닙니다.</p></div>
+      <TrackedLink href={product.centerInquiryHref} trackLabel="master-commercial-center" commercialRoute="curriculum" ctaIntentId="center_inquiry" className={styles.secondaryButton}>{product.centerInquiry.ctaLabel}<ArrowRight size={16} aria-hidden /></TrackedLink>
+    </section>
+  );
+}
+
 const FAQS = [
-  ['Free로 어디까지 사용할 수 있나요?', '로그인 후 수업 도구를 사용하고 Library 전체를 탐색할 수 있습니다. 지정된 무료 프로그램 하나는 상세 자료와 영상까지 끝까지 확인할 수 있습니다. Free는 기간이 정해진 무료체험이 아닙니다.'],
-  ['Lite와 Premium의 차이는 무엇인가요?', 'Lite는 전체 수업 자료와 수업반·일정·출석·현장 도구를 연결하는 기본 운영 이용권입니다. Premium은 여기에 수업 기록, 학생 관찰, 안내문, 다음 수업 맥락과 SPOMOVE를 더합니다.'],
+  ['SPOKEDU MASTER는 영상 플랫폼인가요?', '아닙니다. 영상은 수업을 이해하기 위한 자료 중 하나입니다. MASTER는 Library에서 활동을 찾고 수업을 구성해 운영하고 기록까지 이어가는 수업 운영 서비스입니다.'],
+  ['Free로 어디까지 사용할 수 있나요?', '로그인 후 Library를 탐색하고, 이번 주 추천 프로그램 1개 전체와 스탑워치·타이머·점수판을 계속 사용할 수 있습니다. Free는 기간이 정해진 무료체험이 아닙니다.'],
+  ['Lite에는 무엇이 포함되나요?', '전체 Library와 즐겨찾기, 수업 도구 8종, 반·학생·일정·출석, 수업 구성과 운영, 수업 메모·학생 관찰·다음 수업 메모·이전 기록·안내문까지 일반 MASTER 수업관리 전체가 포함됩니다.'],
+  ['Lite와 Premium의 차이는 무엇인가요?', 'Lite는 전체 수업 자료와 반·학생·일정·출석·현장 도구뿐 아니라 수업 기록, 학생 관찰, 다음 수업 메모와 안내문까지 포함합니다. Premium은 Lite의 모든 기능에 SPOMOVE를 더합니다.'],
+  ['SPOMOVE는 무엇인가요?', '화면의 색상·방향·숫자 같은 시각 정보를 보고 몸으로 반응하는 디지털 움직임 콘텐츠입니다.'],
+  ['SPOMOVE를 사용하려면 SPOMAT이 반드시 필요한가요?', 'SPOMAT과 함께 활용할 수 있지만 필수는 아닙니다. 활동 구성에 따라 공간 표시나 다른 교구 방식으로 응용할 수 있습니다.'],
   ['어떤 기기에서 사용할 수 있나요?', 'MASTER는 웹에서 사용합니다. PC와 태블릿에서 준비하고, 화면 공유가 가능한 프로젝터·TV·전자칠판에서 수업 자료와 SPOMOVE를 활용할 수 있습니다.'],
-  ['SPOMOVE는 별도 장비가 필요한가요?', '별도 앱 설치 없이 웹에서 실행합니다. 활동 화면을 보여줄 디스플레이가 필요하며, 활동에 따라 SPOMAT 같은 현장 교구를 함께 사용할 수 있습니다.'],
+  ['Lite 또는 Premium을 해지하면 기록이 사라지나요?', '아닙니다. Free로 돌아가도 기존 데이터는 보존됩니다. Lite 또는 Premium 권한을 다시 얻으면 기존 기록을 이어서 사용할 수 있습니다.'],
   ['특수학급이나 특수체육 수업에서도 활용할 수 있나요?', '교사가 자극 시간과 움직임 조건을 정하고 활동 난이도와 반복 활용 여부를 현장에 맞게 선택할 수 있습니다. 별도의 치료·진단 서비스는 아닙니다.'],
   ['월 결제와 해지는 어떻게 되나요?', 'Lite와 Premium은 카드 등록 후 첫 결제가 진행되고 이후 매월 자동결제됩니다. 언제든 해지를 예약할 수 있으며 현재 결제기간 종료일까지 사용한 뒤 Free로 돌아갑니다.'],
   ['학교·센터·기관도 사용할 수 있나요?', '가능합니다. 이용 인원과 운영 방식에 맞춘 안내가 필요하므로 센터·기관 문의를 이용해 주세요. 기관 이용은 개별 이용권처럼 직접 결제하지 않습니다.'],
@@ -311,7 +422,7 @@ const FAQS = [
 export function FaqAndFinalCta({ product }: { product: ReturnTypeOfLandingModel }) {
   return (
     <>
-      <section className={styles.faqSection}>
+      <section id="faq" className={styles.faqSection}>
         <SectionHeading eyebrow="시작하기 전에" title="자주 묻는 질문" body="무료 이용부터 자동결제와 현장 사용까지, 실제 제품 기준으로 답했습니다." />
         <div className={styles.faqList}>
           {FAQS.map(([question, answer]) => (
@@ -322,14 +433,14 @@ export function FaqAndFinalCta({ product }: { product: ReturnTypeOfLandingModel 
           ))}
         </div>
       </section>
-      <section className={styles.finalCta}>
+      <section id="final-cta" className={styles.finalCta}>
         <p className={styles.eyebrow}>다음 수업 하나부터</p>
         <h2>Free로 직접 확인해 보세요.</h2>
-        <p>수업 도구를 열고, Library를 둘러보고, 지정된 수업 하나를 끝까지 경험할 수 있습니다.</p>
+        <p>수업 도구를 열고, Library를 둘러보고, 이번 주 추천 프로그램 1개를 끝까지 이용할 수 있습니다.</p>
         <div className={styles.finalActions}>
-          <Link href={product.handoff.freeStartHref} className="spm-btn-primary">Free로 시작하기 <ArrowRight size={17} aria-hidden /></Link>
-          <Link href={product.handoff.loginHref} className={styles.secondaryButton}>로그인</Link>
-          <a href={product.centerInquiryHref} className={styles.textLink}>센터·기관 문의</a>
+          <TrackedLink href={product.handoff.freeStartHref} trackLabel="master-commercial-final-free" commercialRoute="curriculum" ctaIntentId="free_start" className="spm-btn-primary">Free로 시작하기 <ArrowRight size={17} aria-hidden /></TrackedLink>
+          <TrackedLink href={product.handoff.loginHref} trackLabel="master-commercial-final-login" commercialRoute="curriculum" ctaIntentId="login" className={styles.secondaryButton}>로그인</TrackedLink>
+          <TrackedLink href={product.centerInquiryHref} trackLabel="master-commercial-final-center" commercialRoute="curriculum" ctaIntentId="center_inquiry" className={styles.textLink}>센터·기관 문의</TrackedLink>
         </div>
       </section>
     </>

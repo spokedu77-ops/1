@@ -108,6 +108,8 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
   const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudStimsRef = useRef<HTMLDivElement>(null);
   const hudMaxRef = useRef<HTMLDivElement>(null);
@@ -122,8 +124,8 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     if (g.raf != null) cancelAnimationFrame(g.raf);
-    onComplete({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
-  }, [onComplete]);
+    onCompleteRef.current({ stims: g.stims, maxCombo: g.maxCombo, laneCount: [...g.laneCount] as [number, number, number, number], stoppedEarly: true });
+  }, []);
 
   const endGame = useCallback(() => {
     const g = gRef.current;
@@ -131,12 +133,12 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
     g.running = false;
     if (g.timer) clearInterval(g.timer);
     if (g.raf != null) cancelAnimationFrame(g.raf);
-    onComplete({
+    onCompleteRef.current({
       stims: g.stims,
       maxCombo: g.maxCombo,
       laneCount: [...g.laneCount] as [number, number, number, number],
     });
-  }, [onComplete]);
+  }, []);
 
   useEffect(() => {
     const cv = cvRef.current;

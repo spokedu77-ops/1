@@ -11,7 +11,7 @@ import {
   type SubscriptionDisplaySummary,
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
-import { buildMasterSupportMailto, SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
+import { buildMasterSupportMailto } from '../lib/productCatalog';
 import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 
 const NON_BILLING_CANCEL_MESSAGE = '자동결제 해지 대상이 아닙니다. 고객센터로 문의해 주세요.';
@@ -77,12 +77,6 @@ function SubscriptionStatusCard({
             </li>
           ))}
         </ul>
-      ) : null}
-
-      {display.canUseSpomatMemberPrice ? (
-        <p className="mt-3 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
-          SPOMAT 회원가 {SPOMAT_PRODUCT_CONTRACT.premiumPrice.toLocaleString('ko-KR')}원 (정가 대비 {SPOMAT_PRODUCT_CONTRACT.discountAmount.toLocaleString('ko-KR')}원)
-        </p>
       ) : null}
 
       {display.canCancel ? (
@@ -240,7 +234,7 @@ function SubscriptionPageContent() {
             해지 후에도 <strong>{cancelEndDate ?? '현재 이용 기간 종료일'}</strong>까지 이용할 수 있으며
             다음 결제일부터는 자동결제되지 않습니다.
             {data?.plan === 'premium' || data?.plan === 'pro'
-              ? ' 종료 후에도 수업·출석 데이터는 유지되며, 프리미엄 기록·SPOMOVE 접근만 종료일 이후 제한됩니다.'
+              ? ' 종료 후에도 수업·출석·기록 데이터는 유지되며, SPOMOVE 접근은 종료일 이후 제한됩니다.'
               : ' 종료 후에도 수업·출석 데이터는 유지됩니다.'}
           </p>
           {cancelError ? (

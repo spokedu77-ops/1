@@ -207,7 +207,7 @@ export function TrainingResultScreen({
         `,
         fontFamily: S.page.fontFamily,
         color: 'var(--text)',
-        zIndex: 1,
+        zIndex: 80,
       }}
     >
       <style>{CSS}</style>
@@ -278,11 +278,12 @@ export function TrainingResultScreen({
         style={{
           flex: 1,
           minHeight: 0,
-          overflow: 'auto',
+          minWidth: 0,
+          overflowX: 'hidden',
+          overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          flexDirection: 'column',
           padding: 'clamp(0.75rem, 2.2vmin, 1.4rem) clamp(0.7rem, 2vmin, 1.2rem) clamp(1rem, 2.8vmin, 1.6rem)',
         }}
       >
@@ -291,6 +292,9 @@ export function TrainingResultScreen({
           style={{
             width: '100%',
             maxWidth: '68rem',
+            alignSelf: 'center',
+            marginTop: 'auto',
+            marginBottom: 'auto',
             display: 'grid',
             gap: 'var(--tr-gap)',
           }}

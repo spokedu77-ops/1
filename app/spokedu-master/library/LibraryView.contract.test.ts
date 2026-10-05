@@ -64,6 +64,22 @@ describe('LibraryView favorites contract', () => {
     expect(catalogCard).toContain('InstructionalThumb');
   });
 
+  it('keeps locked Free cards catalog-only while preserving the Lite gate CTA', () => {
+    const weeklyCard = readFileSync(
+      join(process.cwd(), 'app/spokedu-master/components/lesson/WeeklyEditorialCard.tsx'),
+      'utf8',
+    );
+    expect(source).toContain('const locked = isProgramLocked(program)');
+    expect(source).toContain('if (isProgramLocked(program)) return;');
+    expect(source).toContain('onPreview={locked ? undefined');
+    expect(source).toContain('isProgramLessonLocked({ programId: program.id, canUseLibrary })');
+    expect(catalogCard).toContain('const previewEnabled = !locked && Boolean(onPreview)');
+    expect(catalogCard).toContain('data-preview-disabled=""');
+    expect(catalogCard).toContain('href={lockHref}');
+    expect(weeklyCard).toContain('locked?: boolean');
+    expect(weeklyCard).toContain('data-preview-disabled=""');
+  });
+
   it('keeps the library search controls compact and purpose-led', () => {
     expect(source).toContain('수업에 바로 활용할 수 있는 SPOKEDU 활동을 찾아보세요.');
     expect(source).toContain('전체 놀이체육');

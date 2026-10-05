@@ -18,7 +18,7 @@ import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCen
 import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
 import {
   Instagram,
-  Sparkles, X, Calendar, MoreHorizontal,
+  Sparkles, X,
   CheckSquare, Box, ListOrdered, Play, ArrowLeft, ChevronRight
 } from 'lucide-react';
 import { useOverlayHistoryDismiss } from '@/app/hooks/useOverlayHistoryDismiss';
@@ -86,6 +86,154 @@ interface CenterEquipmentGuideItem {
   activity_image_url?: string | null;
   activity_video_url?: string | null;
   activity_text?: string | null;
+}
+
+function displayCurriculumTitle(raw: string | null | undefined, fallback = '') {
+  const text = (raw ?? '').trim();
+  if (!text) return fallback;
+  const matched = text.match(/^(.+?)\s*[（(]([^）)]*[A-Za-z][^）)]*)[）)]\s*$/u);
+  return (matched?.[1] ?? text).trim() || fallback;
+}
+
+function yuaDetailDepth(line: string) {
+  const indent = line.match(/^[\t ]*/)?.[0] ?? '';
+  const width = indent.replace(/\t/g, '    ').length;
+  return Math.floor(width / 2);
+}
+
+function YuaThemeOutline({
+  parts,
+  lessonTitle,
+}: {
+  parts: Array<{ title: string; details: string[] }>;
+  lessonTitle: string;
+}) {
+  const sections = parts.filter((part) => part.title.trim() || part.details.length > 0);
+  return (
+    <ol className="space-y-3 text-left">
+      {sections.map((part, index) => {
+        const showTitle = part.title.trim() && part.title.trim() !== lessonTitle.trim();
+        return (
+          <li key={`${part.title}-${index}`} className="rounded-2xl bg-white/[0.04] px-3 py-3">
+            {showTitle ? (
+              <div className="flex items-start gap-2.5">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-indigo-500 text-[12px] font-black tabular-nums text-white">
+                  {index + 1}
+                </span>
+                <h4 className="pt-0.5 text-[15px] font-black leading-snug text-white">{part.title.trim()}</h4>
+              </div>
+            ) : null}
+            {part.details.length > 0 ? (
+              <ul className={`space-y-1.5 ${showTitle ? 'mt-2.5 pl-8' : ''}`}>
+                {part.details.map((detail, detailIndex) => {
+                  const depth = yuaDetailDepth(detail);
+                  const text = detail.trim();
+                  if (!text) return null;
+                  return (
+                    <li
+                      key={`${index}-${detailIndex}`}
+                      className={depth === 0
+                        ? 'text-[14px] font-bold leading-relaxed text-slate-100'
+                        : 'text-[13px] font-medium leading-relaxed text-slate-300'}
+                      style={{ paddingLeft: depth === 0 ? undefined : `${(depth - 1) * 12 + 12}px` }}
+                    >
+                      {text}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function VideoLinkPager({
+  count,
+  index,
+  onChange,
+}: {
+  count: number;
+  index: number;
+  onChange: (next: number) => void;
+}) {
+  if (count <= 1) return null;
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        className="h-8 shrink-0 rounded-lg px-2 text-[12px] font-bold text-slate-400 disabled:opacity-30"
+        onClick={() => onChange(Math.max(0, index - 1))}
+        disabled={index === 0}
+      >
+        이전
+      </button>
+      <div className="flex min-w-0 flex-1 flex-wrap justify-center gap-1">
+        {Array.from({ length: count }, (_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            className={`h-7 min-w-7 rounded-md px-1.5 text-[12px] font-bold ${idx === index ? 'bg-indigo-500 text-white' : 'bg-[#383838] text-slate-400'}`}
+            onClick={() => onChange(idx)}
+          >
+            {idx + 1}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="h-8 shrink-0 rounded-lg px-2 text-[12px] font-bold text-slate-400 disabled:opacity-30"
+        onClick={() => onChange(Math.min(count - 1, index + 1))}
+        disabled={index >= count - 1}
+      >
+        다음
+      </button>
+    </div>
+  );
+}
+
+function PersonalSessionCard({
+  label,
+  title,
+  thumb,
+  onOpen,
+}: {
+  label: string;
+  title: string;
+  thumb: string;
+  onOpen: (() => void) | null;
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={onOpen ? 0 : -1}
+      className={`flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-sm ${onOpen ? 'cursor-pointer active:scale-[0.99]' : 'cursor-default opacity-60'}`}
+      onClick={() => onOpen?.()}
+      onKeyDown={(event) => {
+        if (!onOpen) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+    >
+      <div className="relative h-16 w-[6.75rem] shrink-0 overflow-hidden rounded-xl bg-slate-100">
+        {thumb ? (
+          <img src={thumb} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-slate-200">
+            <Play size={18} className="text-slate-400" />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1 py-0.5 pr-1">
+        <span className="text-[11px] font-black tracking-tight text-indigo-600">{label}</span>
+        <h3 className="mt-0.5 line-clamp-2 break-keep text-[15px] font-black leading-snug text-slate-950">{title}</h3>
+      </div>
+    </div>
+  );
 }
 
 export default function TeacherCurriculumPage() {
@@ -353,7 +501,7 @@ useEffect(() => {
  };
 
  return (
-   <div className="min-h-screen bg-[#F8FAFC] pb-24 text-slate-900 w-full">
+   <div className="w-full bg-[#F8FAFC] text-slate-900">
      <style>{`
        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
        * { font-family: "Pretendard Variable", sans-serif !important; letter-spacing: -0.025em; box-sizing: border-box; }
@@ -361,26 +509,8 @@ useEffect(() => {
        button, select, [onClick] { cursor: pointer !important; }
      `}</style>
 
-     {/* 헤더: Admin -> Teacher 로 텍스트 변경 */}
-     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 h-16 flex items-center justify-center">
-        <div className="max-w-4xl w-full flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs">S</div>
-                <div>
-                    <p className="text-[10px] font-bold text-indigo-600 leading-tight">SPOKEDU ARCHIVE</p>
-                    <h1 className="text-sm font-black text-slate-900 leading-tight">연간 커리큘럼</h1>
-                </div>
-            </div>
-            <div className="flex items-center gap-4">
-                {/* 뱃지: Teacher */}
-                <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded uppercase">Teacher</span>
-                <MoreHorizontal size={20} className="text-slate-400" />
-            </div>
-        </div>
-     </header>
-
-     <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="space-y-6 w-full text-left">
+     <main className="mx-auto w-full max-w-4xl px-0 py-3 sm:px-2 sm:py-8">
+        <div className="space-y-3 w-full text-left">
             {/* 1단 탭: 개인 수업 / 센터 수업 */}
             <div className="w-full flex bg-white border border-slate-100 p-1.5 rounded-2xl shadow-sm">
                 <button
@@ -419,94 +549,43 @@ useEffect(() => {
                     <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
                   </div>
                 ) : categoryTab === '신체 기능향상 8회기' ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="flex flex-col gap-2">
                     {eighthSessionSlots.map(({ label, item }) => {
                       const thumb = item?.url && getYouTubeId(item.url) ? `https://img.youtube.com/vi/${getYouTubeId(item.url)}/hqdefault.jpg` : '';
                       return (
-                        <div
+                        <PersonalSessionCard
                           key={label}
-                          role="button"
-                          tabIndex={0}
-                          className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${item ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer' : 'opacity-60 cursor-default'}`}
-                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } }}
-                          onKeyDown={(e) => { if (item && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelectedItem(item); setIsDetailModalOpen(true); } }}
-                        >
-                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
-                            {thumb ? (
-                              <img src={thumb} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                                <Play size={28} className="text-slate-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-4">
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
-                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
-                          </div>
-                        </div>
+                          label={label}
+                          title={displayCurriculumTitle(item?.title, label)}
+                          thumb={thumb}
+                          onOpen={item ? () => { setSelectedItem(item); setIsDetailModalOpen(true); } : null}
+                        />
                       );
                     })}
                   </div>
                 ) : categoryTab === '유아체육' ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {yuaSessionSlots.map(({ label, item }) => {
-                      const thumb = item ? getSafeThumbnailUrl(item) : '';
-                      return (
-                        <div
-                          key={label}
-                          role="button"
-                          tabIndex={0}
-                          className={`group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm transition-all duration-200 ${item ? 'hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 cursor-pointer' : 'opacity-60 cursor-default'}`}
-                          onClick={() => { if (item) { setSelectedItem(item); setIsDetailModalOpen(true); } }}
-                          onKeyDown={(e) => { if (item && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelectedItem(item); setIsDetailModalOpen(true); } }}
-                        >
-                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
-                            {thumb ? (
-                              <img src={thumb} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                                <Play size={28} className="text-slate-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-4">
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{label}</span>
-                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item?.title ?? label}</h3>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="flex flex-col gap-2">
+                    {yuaSessionSlots.map(({ label, item }) => (
+                      <PersonalSessionCard
+                        key={label}
+                        label={label}
+                        title={displayCurriculumTitle(item?.title, label)}
+                        thumb={item ? getSafeThumbnailUrl(item) : ''}
+                        onOpen={item ? () => { setSelectedItem(item); setIsDetailModalOpen(true); } : null}
+                      />
+                    ))}
                   </div>
                 ) : filteredPersonalItems.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {filteredPersonalItems.map((item) => {
-                      const thumb = getSafeThumbnailUrl(item);
-                      return (
-                        <div
-                          key={item.id}
-                          role="button"
-                          tabIndex={0}
-                          className="group relative rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-indigo-200/60 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                          onClick={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedItem(item); setIsDetailModalOpen(true); } }}
-                        >
-                          <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
-                            {thumb ? (
-                              <img src={thumb} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-200 flex items-center justify-center">
-                                <Play size={28} className="text-slate-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-4">
-                            <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-wide mb-2">{subTab}</span>
-                            <h3 className="text-base font-black text-slate-900 line-clamp-1">{item.title ?? subTab}</h3>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="flex flex-col gap-2">
+                    {filteredPersonalItems.map((item) => (
+                      <PersonalSessionCard
+                        key={item.id}
+                        label={subTab}
+                        title={displayCurriculumTitle(item.title, subTab)}
+                        thumb={getSafeThumbnailUrl(item)}
+                        onOpen={() => { setSelectedItem(item); setIsDetailModalOpen(true); }}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
@@ -521,16 +600,17 @@ useEffect(() => {
                     <button type="button" onClick={() => setCenterViewMode('center')} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold text-sm mb-2">
                       <ArrowLeft size={18} /> 커리큘럼으로
                     </button>
-                    <div className="w-full grid grid-cols-6 sm:grid-cols-12 gap-1.5 sm:gap-2">
+                    <div className="flex w-full gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
                       {EQUIPMENT_GUIDE_NUMBERS.map((num) => {
                         const chipLabel = equipmentGuideChipLabelByNumber.get(num) ?? `${num}번 교구`;
+                        const selected = selectedEquipmentNumber === num;
                         return (
                         <button key={num} type="button" onClick={() => setSelectedEquipmentNumber(num)}
                           title={`${num}번 · ${chipLabel}`}
-                          className={`min-h-[44px] sm:min-h-[48px] rounded-lg sm:rounded-xl flex items-center justify-center transition-all border font-bold text-[10px] sm:text-xs leading-tight px-1 py-2 touch-manipulation
-                            ${selectedEquipmentNumber === num ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-700 border-slate-100 hover:border-indigo-200'}`}
+                          className={`h-9 shrink-0 whitespace-nowrap rounded-full border px-3 text-[13px] font-bold touch-manipulation
+                            ${selected ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'}`}
                         >
-                          <span className="line-clamp-2 text-center break-keep">{chipLabel}</span>
+                          {chipLabel}
                         </button>
                         );
                       })}
@@ -561,27 +641,27 @@ useEffect(() => {
                       {equipmentGuideLoading ? (
                         <div className="flex justify-center py-12"><div className="w-8 h-8 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" /></div>
                       ) : filteredEquipmentItems.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-                          {filteredEquipmentItems.map((act) => (
-                            <div key={act.id} role="button" tabIndex={0} className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all cursor-pointer" onClick={() => { setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); } }}>
-                              <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden">
-                                {act.activity_video_url && getYouTubeId(act.activity_video_url) ? (
-                                  <img src={`https://img.youtube.com/vi/${getYouTubeId(act.activity_video_url)}/hqdefault.jpg`} alt="" className="w-full h-full object-cover" />
-                                ) : act.activity_image_url ? (
-                                  <img src={act.activity_image_url} alt="" className="w-full h-full object-cover" />
-                                ) : act.activity_video_url ? (
-                                  <Play size={28} className="text-slate-400" aria-hidden="true" />
-                                ) : (
-                                  <div className="p-4 text-center">
-                                    <p className="text-sm font-bold text-slate-500 line-clamp-3">{act.activity_text || '활동 내용 없음'}</p>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="p-4">
-                                <p className="text-sm font-bold text-slate-700 line-clamp-2">{act.activity_text || '활동 내용'}</p>
-                              </div>
+                        <div className="flex flex-col gap-2">
+                          {filteredEquipmentItems.map((act) => {
+                            const videoId = act.activity_video_url ? getYouTubeId(act.activity_video_url) : '';
+                            const thumb = videoId
+                              ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                              : (act.activity_image_url || '');
+                            return (
+                            <div key={act.id} role="button" tabIndex={0} className="cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-3.5 text-left shadow-sm" onClick={() => { setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); } }}>
+                              {thumb ? (
+                                <div className="mb-3 overflow-hidden rounded-xl bg-slate-100">
+                                  <img src={thumb} alt="" className="aspect-video w-full object-cover" />
+                                </div>
+                              ) : act.activity_video_url ? (
+                                <div className="mb-3 flex h-10 items-center gap-2 rounded-xl bg-slate-100 px-3 text-[13px] font-bold text-slate-500">
+                                  <Play size={16} aria-hidden="true" /> 영상
+                                </div>
+                              ) : null}
+                              <p className="whitespace-pre-line break-keep text-[14px] font-semibold leading-relaxed text-slate-800">{act.activity_text || '활동 내용 없음'}</p>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
@@ -596,16 +676,11 @@ useEffect(() => {
                 <button
                   type="button"
                   onClick={() => setCenterViewMode('equipment-guide')}
-                  className="w-full flex items-center gap-4 p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-slate-50 border border-indigo-100/80 shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.99] transition-all text-left touch-manipulation"
+                  className="flex h-11 w-full items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 text-left"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/25">
-                    <Box size={28} strokeWidth={2} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="block font-black text-slate-900 text-base sm:text-lg">{CENTER_SECTIONS[0].label}</span>
-                    <span className="block text-xs sm:text-sm text-slate-500 font-medium mt-0.5">12종 교구명 · 단계별 활동 보기</span>
-                  </div>
-                  <ChevronRight size={22} className="text-slate-300 shrink-0" />
+                  <Box size={16} className="shrink-0 text-indigo-600" />
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-black text-slate-900">{CENTER_SECTIONS[0].label}</span>
+                  <ChevronRight size={16} className="shrink-0 text-slate-400" />
                 </button>
                 <CurriculumMonthWeekPicker
                   selectedMonth={selectedMonth}
@@ -615,72 +690,54 @@ useEffect(() => {
                   teacherMode
                   currentMonth={currentMonth}
                 />
-
-                {/* 월별 커리큘럼 안내 배너 */}
-                <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
-                    <Sparkles size={120} className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4" />
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-2 mb-2 opacity-90 text-[10px] font-bold uppercase">
-                        <Calendar size={14} /> {selectedMonth}월 집중 교육 목표
-                      </div>
-                      <h2 className="text-2xl md:text-3xl font-black mb-2">{currentTheme.title}</h2>
-                      <p className="text-indigo-100 font-medium text-sm md:text-base">{currentTheme.desc}</p>
-                    </div>
+                <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-500 px-3.5 py-2.5 text-white">
+                  <Sparkles size={16} className="shrink-0 text-white/80" />
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-black tracking-tight text-white/75">{selectedMonth}월 집중 교육 목표</p>
+                    {currentTheme.title !== `${selectedMonth}월 집중 교육 목표` ? (
+                      <>
+                        <p className="mt-0.5 break-keep text-[14px] font-black leading-snug">{currentTheme.title}</p>
+                        <p className="mt-0.5 break-keep text-[12px] font-semibold leading-snug text-white/80">{currentTheme.desc}</p>
+                      </>
+                    ) : (
+                      <p className="mt-0.5 break-keep text-[14px] font-black leading-snug">{currentTheme.desc}</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* 리스트 (조회 전용) */}
                 <div className="w-full">
                   {filteredItems.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {filteredItems.map((item) => (
-                        <div
-                          key={item.id}
-                          role="button"
-                          tabIndex={0}
-                          className="group bg-white rounded-[28px] border border-slate-100 overflow-hidden hover:shadow-xl transition-all relative cursor-pointer"
-                          onClick={() => openDetailModal(item)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetailModal(item); } }}
-                        >
-                          <div className="relative aspect-video bg-slate-100">
-                            {!hasUrl(item) ? (
-                              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 font-bold text-sm">
-                                아무것도 없음
-                              </div>
-                            ) : item.type === 'instagram' ? (
-                              <div className="w-full h-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex flex-col items-center justify-center text-white p-6">
-                                <Instagram size={48} className="mb-2 opacity-80" />
-                                <span className="text-[10px] font-black tracking-widest uppercase opacity-80">Instagram Reels</span>
-                              </div>
-                            ) : (
-                              <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
-                            )}
-                            <div className="absolute top-4 left-4">
-                              <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>
-                            </div>
-                            {hasUrl(item) && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all">
-                                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                  <Play size={20} className="fill-slate-900 text-slate-900 ml-1"/>
+                    <div className="flex flex-col gap-2">
+                      {filteredItems.map((item) => {
+                        const thumb = item.type === 'instagram' ? '' : getSafeThumbnailUrl(item);
+                        return (
+                          <div
+                            key={item.id}
+                            role="button"
+                            tabIndex={0}
+                            className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-2 text-left shadow-sm"
+                            onClick={() => openDetailModal(item)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetailModal(item); } }}
+                          >
+                            <div className="relative h-16 w-[6.75rem] shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                              {thumb ? (
+                                <img src={thumb} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-slate-200">
+                                  {item.type === 'instagram' ? <Instagram size={18} className="text-slate-400" /> : <Play size={18} className="text-slate-400" />}
                                 </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1 py-0.5 pr-1">
+                              <h4 className="line-clamp-2 break-keep text-[15px] font-black leading-snug text-slate-950">{displayCurriculumTitle(item.title)}</h4>
+                              <p className="mt-0.5 truncate text-[12px] font-semibold text-slate-500">
+                                {item.equipment && item.equipment.length > 0 ? item.equipment.join(' · ') : '등록된 교구 없음'}
+                              </p>
+                            </div>
                           </div>
-                          <div className="p-6 space-y-3">
-                            <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
-                            {item.equipment && item.equipment.length > 0 ? (
-                              <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
-                                <Box size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                                <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-3">{item.equipment.join(' · ')}</p>
-                              </div>
-                            ) : (
-                              <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
-                                <Box size={14} className="text-slate-300 mt-0.5 flex-shrink-0" />
-                                <p className="text-xs text-slate-300 font-bold">등록된 교구 없음</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-black">
@@ -699,16 +756,16 @@ useEffect(() => {
 
      {/* 상세 모달 (읽기 전용, 8회기는 세부내용+링크2개) */}
      {isDetailModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-[320] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[320] flex sm:items-center sm:justify-center sm:p-3">
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => dismissTeacherOverlay()} />
-            <div className="relative bg-[#1A1A1A] w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#1A1A1A] pt-[env(safe-area-inset-top)] sm:h-[calc(100dvh-1.5rem)] sm:max-w-3xl sm:rounded-[28px] sm:pt-0">
                 {isPersonalItem(selectedItem) && selectedItem.category === '신체 기능향상 8회기' ? (
                   <>
-                    <div className="p-6 border-b border-slate-700 flex justify-between items-start">
-                      <h2 className="text-xl font-black text-white">{selectedItem.title ?? selectedItem.sub_tab}</h2>
-                      <button type="button" onClick={() => dismissTeacherOverlay()} className="p-2 rounded-full hover:bg-white/10 text-slate-400"><X size={20}/></button>
+                    <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-700 px-4 py-4 sm:px-6">
+                      <h2 className="text-xl font-black text-white">{displayCurriculumTitle(selectedItem.title, selectedItem.sub_tab ?? '')}</h2>
+                      <button type="button" onClick={() => dismissTeacherOverlay()} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-slate-400 hover:bg-white/10"><X size={20}/></button>
                     </div>
-                    <div className="p-6 space-y-4 overflow-y-auto no-scrollbar bg-[#2C2C2C] text-white">
+                    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-[#2C2C2C] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-white no-scrollbar sm:p-6">
                       {(() => {
                         const links = getVideoLinks(selectedItem);
                         if (links.length === 0) return null;
@@ -743,46 +800,7 @@ useEffect(() => {
                               )}
                             </div>
                             {links.length > 1 ? (
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  {links.map((_, idx) => (
-                                    <span
-                                      key={`video-dot-${idx}`}
-                                      className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
-                                    />
-                                  ))}
-                                </div>
-                                <div className="grid grid-cols-4 gap-2">
-                                  {links.map((_, idx) => (
-                                    <button
-                                      key={`video-jump-${idx}`}
-                                      type="button"
-                                      className={`min-h-[44px] rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70 ${idx === safeIndex ? 'bg-indigo-500 text-white border-indigo-300 shadow-md shadow-indigo-500/25' : 'bg-[#383838] text-slate-200 border-slate-600 hover:border-slate-400'}`}
-                                      onClick={() => setActiveVideoIndex(idx)}
-                                    >
-                                      {idx + 1}
-                                    </button>
-                                  ))}
-                                </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    type="button"
-                                    className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40"
-                                    onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))}
-                                    disabled={safeIndex === 0}
-                                  >
-                                    이전 영상
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40"
-                                    onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))}
-                                    disabled={safeIndex >= links.length - 1}
-                                  >
-                                    다음 영상
-                                  </button>
-                                </div>
-                              </div>
+                              <VideoLinkPager count={links.length} index={safeIndex} onChange={setActiveVideoIndex} />
                             ) : null}
                           </div>
                         );
@@ -810,7 +828,7 @@ useEffect(() => {
                     const safeIndex = Math.min(activeVideoIndex, links.length - 1);
                     const currentUrl = links[safeIndex];
                     return (
-                      <div className="p-6 pb-0 bg-[#2C2C2C] space-y-3">
+                      <div className="shrink-0 space-y-3 bg-[#2C2C2C] p-4 pb-0 sm:p-6">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black text-slate-400 uppercase">영상 {safeIndex + 1}</span>
                           <span className="text-xs font-bold text-slate-500">{safeIndex + 1} / {links.length}</span>
@@ -831,32 +849,7 @@ useEffect(() => {
                           )}
                         </div>
                         {links.length > 1 ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-center gap-1.5">
-                              {links.map((_, idx) => (
-                                <span
-                                  key={`video-dot-${idx}`}
-                                  className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-5 bg-white' : 'w-1.5 bg-slate-500'}`}
-                                />
-                              ))}
-                            </div>
-                            <div className="grid grid-cols-4 gap-2">
-                              {links.map((_, idx) => (
-                                <button
-                                  key={`video-jump-${idx}`}
-                                  type="button"
-                                  className={`min-h-[44px] rounded-xl border text-sm font-black transition-all focus:outline-none focus:ring-2 focus:ring-indigo-400/70 ${idx === safeIndex ? 'bg-indigo-500 text-white border-indigo-300 shadow-md shadow-indigo-500/25' : 'bg-[#383838] text-slate-200 border-slate-600 hover:border-slate-400'}`}
-                                  onClick={() => setActiveVideoIndex(idx)}
-                                >
-                                  {idx + 1}
-                                </button>
-                              ))}
-                            </div>
-                            <div className="flex gap-2">
-                              <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.max(0, i - 1))} disabled={safeIndex === 0}>이전 영상</button>
-                              <button type="button" className="flex-1 min-h-[44px] rounded-xl bg-[#383838] border border-slate-600 px-3 py-2 text-sm font-bold text-slate-200 disabled:opacity-40" onClick={() => setActiveVideoIndex((i) => Math.min(links.length - 1, i + 1))} disabled={safeIndex >= links.length - 1}>다음 영상</button>
-                            </div>
-                          </div>
+                          <VideoLinkPager count={links.length} index={safeIndex} onChange={setActiveVideoIndex} />
                         ) : null}
                       </div>
                     );
@@ -881,44 +874,18 @@ useEffect(() => {
                 <button type="button" onClick={() => dismissTeacherOverlay()} className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/80 transition-all">
                   <X size={20} />
                 </button>
-                <div className="p-8 space-y-8 overflow-y-auto bg-[#2C2C2C] text-white">
+                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto bg-[#2C2C2C] p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-white sm:p-6">
                     <div>
-                        <h2 className="text-2xl font-black mb-2">{selectedItem.title}</h2>
-                        <p className="text-slate-400 text-sm font-bold">
-                          {isPersonalItem(selectedItem) ? `${selectedItem.category} · ${selectedItem.sub_tab}` : `${selectedItem.month}월 ${selectedItem.week}주차`} 커리큘럼
+                        <h2 className="text-lg font-black leading-snug">{displayCurriculumTitle(selectedItem.title)}</h2>
+                        <p className="mt-1 text-[12px] font-bold text-slate-400">
+                          {isPersonalItem(selectedItem) ? `${selectedItem.category} · ${selectedItem.sub_tab}` : `${selectedItem.month}월 ${selectedItem.week}주차`}
                         </p>
                     </div>
-                    {isPersonalItem(selectedItem) && selectedItem.category === '유아체육' ? (
-                      <>
-                        <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left space-y-2">
-                          <div className="text-xs font-black text-slate-400 uppercase">테마 제목</div>
-                          <p className="text-white font-bold">{selectedItem.title || selectedItem.sub_tab || '—'}</p>
-                        </div>
-                        {parseYuaThemeParts(selectedItem.steps).length > 0 ? (
-                          <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-                            <div className="text-xs font-black text-slate-400 uppercase mb-3">테마 내용</div>
-                            <div className="space-y-3">
-                              {parseYuaThemeParts(selectedItem.steps).map((part, i) => (
-                                <section key={`${part.title}-${i}`} className="space-y-2 rounded-2xl border border-slate-600/80 bg-[#323232] p-4">
-                                  <h4 className="text-sm font-black text-white whitespace-pre-wrap [tab-size:4]">{part.title}</h4>
-                                  {part.details.length > 0 ? (
-                                    <ul className="space-y-2 list-none pl-0">
-                                      {part.details.map((detail, j) => (
-                                        <li key={`yua-d-${i}-${j}`} className="flex gap-2 items-start text-sm font-bold text-slate-200 leading-relaxed">
-                                          <span className="text-slate-400 flex-shrink-0 select-none pt-0.5" aria-hidden>
-                                            -
-                                          </span>
-                                          <span className="min-w-0 flex-1 whitespace-pre-wrap [tab-size:4]">{detail}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  ) : null}
-                                </section>
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
-                      </>
+                    {isPersonalItem(selectedItem) && selectedItem.category === '유아체육' && parseYuaThemeParts(selectedItem.steps).length > 0 ? (
+                      <YuaThemeOutline
+                        parts={parseYuaThemeParts(selectedItem.steps)}
+                        lessonTitle={displayCurriculumTitle(selectedItem.title)}
+                      />
                     ) : null}
                     {!isPersonalItem(selectedItem) && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

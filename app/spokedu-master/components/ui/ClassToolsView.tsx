@@ -9,10 +9,11 @@ import { studentMetaToDisplay } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { findExactSession } from '../../lib/sessionContext';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../../lib/masterNavigationContext';
-import { CLASS_TOOLS, parseClassToolId, type ClassToolId } from '../../lib/classTools';
+import { canUseClassTool, CLASS_TOOLS, isRosterClassToolId, parseClassToolId, type ClassToolId } from '../../lib/classTools';
+import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
-import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
+import { absentStudentIdsForClassTools, COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, readClassToolsAttendanceSessionId, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
 import { createTournamentBracket, getTournamentRoundLabel, selectTournamentWinner, type TournamentParticipant } from './tournamentModel';
 
 const TAB_ICONS: Record<ClassToolId, typeof Timer> = {
@@ -1169,6 +1170,7 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
 
 export default function ClassToolsView() {
   const operationalData = useOperationalData();
+  const access = useMasterAccessSnapshot();
   const searchParams = useSearchParams();
   const requestedTool = parseClassToolId(searchParams.get('tool'));
   const [tab, setTab] = useState<ClassToolId>(() => requestedTool ?? 'stopwatch');
@@ -1200,6 +1202,14 @@ export default function ClassToolsView() {
     [effectiveClassKey, operationalData.classes, students],
   );
   const [excludedStandaloneStudentIds, setExcludedStandaloneStudentIds] = useState<Set<string>>(() => new Set());
+  const savedAbsentKey = useMemo(() => {
+    if (sessionContext || !effectiveClassKey) return '';
+    return absentStudentIdsForClassTools(
+      operationalData.sessions,
+      effectiveClassKey,
+      readClassToolsAttendanceSessionId(),
+    ).slice().sort().join('\n');
+  }, [effectiveClassKey, operationalData.sessions, sessionContext]);
   useEffect(() => {
     setTab(requestedTool ?? 'stopwatch');
     if (requestedTool) recordLastClassTool(requestedTool);
@@ -1207,7 +1217,10 @@ export default function ClassToolsView() {
   useEffect(() => {
     tabsRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [tab]);
-  useEffect(() => { setExcludedStandaloneStudentIds(new Set()); }, [effectiveClassKey]);
+  useEffect(() => {
+    if (sessionContext) return;
+    setExcludedStandaloneStudentIds(new Set(savedAbsentKey ? savedAbsentKey.split('\n') : []));
+  }, [savedAbsentKey, sessionContext]);
   const selectedStudents = useMemo(
     () => sessionContext
       ? resolveClassToolParticipants(classRosterStudents, sessionContext.attendance)
@@ -1222,7 +1235,8 @@ export default function ClassToolsView() {
       return next;
     });
   }, []);
-  const usesClassRoster = tab === 'picker' || tab === 'teams' || tab === 'order' || tab === 'tournament' || tab === 'ladder';
+  const usesClassRoster = isRosterClassToolId(tab);
+  const rosterToolLocked = !canUseClassTool(tab, access.canUseAttendance);
   const usingSample = false;
   return (
     <div className="flex h-full min-h-0 flex-col" style={{ background: 'var(--spm-bg)' }}>
@@ -1243,6 +1257,8 @@ export default function ClassToolsView() {
       <div ref={tabsRef} data-class-tools-tabs data-class-tools-dock className="grid shrink-0 grid-cols-4 gap-1 overflow-hidden border-b border-slate-200 bg-white px-2 py-2 md:flex md:justify-start md:overflow-x-auto md:px-4 min-[1200px]:justify-center">
         {TABS.map(({ id, label, shortLabel, group, icon: Icon }) => {
           const active = tab === id;
+          const locked = !canUseClassTool(id, access.canUseAttendance);
+          const accessLabel = locked ? ' · Lite' : '';
           return (
             <button
               key={id}
@@ -1252,12 +1268,12 @@ export default function ClassToolsView() {
                 recordLastClassTool(id);
               }}
               aria-pressed={active}
-              aria-label={`${group} · ${label}`}
+              aria-label={`${group} · ${label}${accessLabel}`}
               className={`flex h-11 min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-[10px] px-1 text-[12px] font-medium transition md:shrink-0 md:flex-row md:gap-1.5 md:overflow-visible md:rounded-xl md:px-3.5 ${active ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
             >
               <Icon size={16} aria-hidden="true" />
-              <span className="leading-none md:hidden">{shortLabel}</span>
-              <span className="hidden md:inline">{label}</span>
+              <span className="leading-none md:hidden">{shortLabel}{accessLabel}</span>
+              <span className="hidden md:inline">{label}{accessLabel}</span>
             </button>
           );
         })}
@@ -1269,20 +1285,27 @@ export default function ClassToolsView() {
             수업을 찾을 수 없습니다.
           </div>
         ) : null}
-        {hasSessionContext && sessionContext && usesClassRoster ? (
+        {rosterToolLocked ? (
+          <section className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-10 text-center" aria-labelledby="class-tool-lite-gate-title">
+            <h2 id="class-tool-lite-gate-title" className="text-[22px] font-semibold text-slate-950">이 수업 도구는 Lite에서 사용할 수 있습니다.</h2>
+            <p className="mt-3 max-w-md text-[14px] font-medium leading-6 text-slate-600">반과 학생 명단을 연결해 실제 수업에서 사용할 수 있습니다.</p>
+            <Link href="/spokedu-master/payment?plan=lite" className="spm-btn-primary mt-6 inline-flex min-h-11 items-center justify-center rounded-[11px] px-5 text-[14px] font-semibold">Lite 시작하기</Link>
+          </section>
+        ) : null}
+        {!rosterToolLocked && hasSessionContext && sessionContext && usesClassRoster ? (
           <div className="shrink-0 px-4 pt-3 sm:px-6">
             <ClassSelector classKeys={classKeys} classLabels={classLabels} selectedClassKey={effectiveClassKey} onChange={setSelectedClassKey} studentCount={selectedStudents.length} locked />
             <SessionParticipantNote participantCount={selectedStudents.length} rosterCount={classRosterStudents.length} returnHref={sessionReturnHref} />
           </div>
         ) : null}
-        {!usesClassRoster ? (
+        {!rosterToolLocked && !usesClassRoster ? (
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {tab === 'stopwatch' && <StopwatchTab />}
             {tab === 'timer' && <ReturnTimerTab />}
             {tab === 'scoreboard' && <ScoreboardTab />}
           </div>
         ) : null}
-        {usesClassRoster && !hasSessionContext ? (
+        {!rosterToolLocked && usesClassRoster && !hasSessionContext ? (
           <div className="shrink-0 px-6 pt-5">
             <ClassSelector
               classKeys={classKeys}
@@ -1294,7 +1317,7 @@ export default function ClassToolsView() {
             <StandaloneParticipantPicker roster={classRosterStudents} excludedStudentIds={excludedStandaloneStudentIds} onToggle={toggleStandaloneParticipant} />
           </div>
         ) : null}
-        {usesClassRoster ? (
+        {!rosterToolLocked && usesClassRoster ? (
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {hasSessionContext && sessionContext && !selectedStudents.length ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
@@ -1315,7 +1338,7 @@ export default function ClassToolsView() {
         ) : null}
       </div>
 
-      {usesClassRoster && selectedStudents.length > 0 ? (
+      {!rosterToolLocked && usesClassRoster && selectedStudents.length > 0 ? (
         <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-2.5 sm:px-5">
           <Link
             href="/spokedu-master/students"

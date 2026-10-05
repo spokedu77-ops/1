@@ -150,9 +150,9 @@ export const curriculumCommercialModes: Record<CurriculumCommercialMode, Curricu
     promise: '수업을 찾고 준비하고 진행하고 기록하는 흐름을 하나로 연결합니다.',
     audienceHint: '지금 도구가 필요한 지도자',
     deliverables: [
-      '수업 도구 (무료)',
+      '수업 도구 3종 (무료)',
       '수업 라이브러리 · 출석부 (Lite)',
-      '수업 기록 · SPOMOVE (Premium)',
+      '수업 기록 (Lite·Premium) · SPOMOVE (Premium)',
     ],
     evidence: [
       {

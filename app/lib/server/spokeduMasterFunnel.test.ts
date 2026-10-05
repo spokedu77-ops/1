@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { buildMasterFunnelEventKey, buildMasterFunnelWindow } from './spokeduMasterFunnel';
+import { describe, expect, it, vi } from 'vitest';
+import { buildMasterFunnelEventKey, buildMasterFunnelWindow, recordMasterFunnelEvent } from './spokeduMasterFunnel';
 
 const now = Date.parse('2026-10-03T12:00:00.000Z');
 const at = (daysAgo: number) => new Date(now - daysAgo * 86_400_000).toISOString();
@@ -61,5 +61,24 @@ describe('SPOKEDU MASTER commercial funnel', () => {
     expect(buildMasterFunnelEventKey('first_value_program_detail', 'user-1')).toBe('master:first_value_program_detail:user-1');
     expect(buildMasterFunnelEventKey('core_use_daily', 'user-1', new Date('2026-10-03T23:59:00Z'))).toBe('master:core_use_daily:user-1:2026-10-03');
     expect(buildMasterFunnelEventKey('checkout_started', 'user-1')).toBeNull();
+  });
+
+  it('stores keyed events with a plain insert and treats a unique collision as idempotent success', async () => {
+    const insert = vi.fn()
+      .mockResolvedValueOnce({ error: null })
+      .mockResolvedValueOnce({ error: { code: '23505' } });
+    const service = { from: vi.fn(() => ({ insert })) };
+    const input = { service, name: 'core_use_daily' as const, userId: 'user-1', occurredAt: new Date('2026-10-03T12:00:00Z') };
+
+    await expect(recordMasterFunnelEvent(input)).resolves.toEqual({ stored: true, error: null });
+    await expect(recordMasterFunnelEvent(input)).resolves.toEqual({ stored: true, error: null });
+    expect(insert).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not hide non-duplicate storage failures', async () => {
+    const error = { code: '42501' };
+    const service = { from: vi.fn(() => ({ insert: vi.fn().mockResolvedValue({ error }) })) };
+    await expect(recordMasterFunnelEvent({ service, name: 'core_use_daily', userId: 'user-1' }))
+      .resolves.toEqual({ stored: false, error });
   });
 });

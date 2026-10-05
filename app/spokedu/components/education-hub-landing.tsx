@@ -3,8 +3,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { SiteFooter } from "./home-web/site-footer";
-import { SiteHeader } from "./home-web/site-header";
+import { SiteFooter, SiteHeader } from "./site-chrome";
 import styles from "./education-hub.module.css";
 
 const CONDITIONS = [

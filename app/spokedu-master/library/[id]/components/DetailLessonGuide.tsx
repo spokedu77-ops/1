@@ -274,14 +274,6 @@ function VideoPanel({ model, video }: { model: LessonDisplayModel; video: VideoP
 }
 
 function MethodPanel({ model }: { model: LessonDisplayModel }) {
-  const variationListId = 'lesson-variation-list';
-  const [variationsExpanded, setVariationsExpanded] = useState(false);
-  const visibleVariations = variationsExpanded
-    ? model.variationMethod
-    : model.variationMethod.slice(0, 2);
-  const hiddenVariationCount = Math.max(0, model.variationMethod.length - 2);
-  const methodSupport = getMethodSupport(model);
-
   return (
     <div data-detail-panel="method" className={DETAIL_PANEL_CLASS}>
       <h2
@@ -304,10 +296,32 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
             </li>
           ))}
         </ol>
+      </div>
+    </div>
+  );
+}
 
+function ExecutionSupport({ model }: { model: LessonDisplayModel }) {
+  const variationListId = 'lesson-variation-list';
+  const [variationsExpanded, setVariationsExpanded] = useState(false);
+  const visibleVariations = variationsExpanded
+    ? model.variationMethod
+    : model.variationMethod.slice(0, 2);
+  const hiddenVariationCount = Math.max(0, model.variationMethod.length - 2);
+  const methodSupport = getMethodSupport(model);
+  const hasVariation = model.variationMethod.length > 0;
+
+  if (methodSupport.length === 0 && !hasVariation) return null;
+
+  return (
+    <section
+      data-detail-chapter="execution-support"
+      className="mt-8 border-t border-[color:var(--spm-br2)] pt-6 sm:mt-10"
+    >
+      <div className={`grid gap-8 min-[900px]:gap-10 ${methodSupport.length > 0 && hasVariation ? 'min-[900px]:grid-cols-2' : 'grid-cols-1'}`}>
         {methodSupport.length > 0 ? (
-          <section className="mt-7 pt-5">
-            <h3 className="m-0 text-[17px] font-semibold tracking-[-0.018em] text-[color:var(--spm-t)]">지도 포인트</h3>
+          <section data-detail-support="method">
+            <h2 className="m-0 text-[17px] font-semibold tracking-[-0.018em] text-[color:var(--spm-t)]">지도 포인트</h2>
             <div className="mt-3.5 space-y-2.5">
               {methodSupport.map((item, index) => (
                 <p key={`${index}-${item}`} className="m-0 break-keep text-[15px] leading-[1.7] text-[color:var(--spm-t2)]">{item}</p>
@@ -316,11 +330,11 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
           </section>
         ) : null}
 
-        {model.variationMethod.length > 0 ? (
-          <section className="mt-8 border-t border-slate-200 pt-6">
-            <h3 className="m-0 text-[15px] font-semibold tracking-[-0.012em] text-[color:var(--spm-t2)]">
+        {hasVariation ? (
+          <section data-detail-support="variation">
+            <h2 className="m-0 text-[17px] font-semibold tracking-[-0.018em] text-[color:var(--spm-t)]">
               난이도 조절 · 변형 활동
-            </h3>
+            </h2>
             <ul id={variationListId} className="m-0 mt-4 space-y-3">
               {visibleVariations.map((item, index) => (
                 <li data-detail-variation-item key={`${index}-${item}`} className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-2.5">
@@ -346,7 +360,7 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
           </section>
         ) : null}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -559,6 +573,8 @@ export function DetailLessonGuide({
         <VideoPanel model={model} video={video} />
         {hasMethod ? <MethodPanel model={model} /> : null}
       </section>
+
+      <ExecutionSupport model={model} />
 
       {showPrepare ? (
         <section

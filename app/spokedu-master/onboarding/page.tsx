@@ -175,7 +175,7 @@ export default function OnboardingPage() {
                     <h2 className="mt-1 text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>MASTER 시작하기</h2>
                   </div>
                 </div>
-                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>무료 수업 1개를 체험하고 라이브러리와 수업 도구를 바로 사용할 수 있습니다.</p>
+                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이번 주 첫 무료 수업 1개를 체험하고 Library와 스탑워치·타이머·점수판을 사용할 수 있습니다.</p>
                 <div className="grid gap-2">
                   {START_ITEMS.map(({ icon: Icon, title, desc }) => (
                     <div key={title} className="flex items-start gap-3 rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>

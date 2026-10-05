@@ -561,23 +561,6 @@ export const SPOKEDU_IMAGES = {
   },
 } as const;
 
-/** @deprecated postimg 제거 — 로컬 레지스트리 경로만 사용 */
-export const SPOKEDU_LIVE_PHOTOS = {
-  homeHero: SPOKEDU_IMAGES.home.hero.src,
-  homeHeroAlt: SPOKEDU_IMAGES.home.hero.src,
-  lab: SPOKEDU_IMAGES.home.labScene.src,
-  spomove: SPOKEDU_IMAGES.programs.spomove.src,
-  onedayField: SPOKEDU_IMAGES.dispatch.oneDayEvent.src,
-  playzLounge: SPOKEDU_IMAGES.records.playz.src,
-  paps: SPOKEDU_IMAGES.programs.paps.src,
-  onedayProgram: SPOKEDU_IMAGES.programs.oneDay.src,
-  camp: SPOKEDU_IMAGES.programs.camp.src,
-  curriculumPackage: SPOKEDU_IMAGES.curriculum.lessonPlan.src,
-  gatePrivate: SPOKEDU_IMAGES.private.oneToOne.src,
-  gateDispatch: SPOKEDU_IMAGES.dispatch.groupClass.src,
-  gateCurriculum: SPOKEDU_IMAGES.curriculum.lessonPlan.src,
-} as const;
-
 /** 레거시 문자열 경로 호환 (기존 import 유지) */
 export const spokeduImageManifest = {
   home: {

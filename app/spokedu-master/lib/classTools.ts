@@ -11,6 +11,21 @@ export const CLASS_TOOL_IDS = [
 
 export type ClassToolId = (typeof CLASS_TOOL_IDS)[number];
 
+export const FREE_CLASS_TOOL_IDS = ['stopwatch', 'timer', 'scoreboard'] as const satisfies readonly ClassToolId[];
+export const ROSTER_CLASS_TOOL_IDS = ['picker', 'teams', 'order', 'tournament', 'ladder'] as const satisfies readonly ClassToolId[];
+
+export function isFreeClassToolId(id: ClassToolId): boolean {
+  return FREE_CLASS_TOOL_IDS.includes(id as (typeof FREE_CLASS_TOOL_IDS)[number]);
+}
+
+export function isRosterClassToolId(id: ClassToolId): boolean {
+  return ROSTER_CLASS_TOOL_IDS.includes(id as (typeof ROSTER_CLASS_TOOL_IDS)[number]);
+}
+
+export function canUseClassTool(id: ClassToolId, canUseRosterTools: boolean): boolean {
+  return isFreeClassToolId(id) || canUseRosterTools;
+}
+
 export type ClassToolDefinition = {
   id: ClassToolId;
   label: string;

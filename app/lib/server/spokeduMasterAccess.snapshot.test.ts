@@ -42,7 +42,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
     });
   });
 
-  it('allows lite materials, tools, and attendance but not record accumulation or SPOMOVE', () => {
+  it('allows lite materials, tools, attendance, and records but not SPOMOVE', () => {
     expect(buildSpokeduMasterAccessSnapshot({
       row: row({
         plan: 'lite',
@@ -57,7 +57,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       canUseLibrary: true,
       canUseClassTools: true,
       canUseAttendance: true,
-      canUseRecords: false,
+      canUseRecords: true,
       canUseSpomove: false,
     });
   });
@@ -85,6 +85,30 @@ describe('SPOKEDU MASTER server access snapshot', () => {
     });
   });
 
+  it('grants 30-day Lite records without SPOMOVE and falls back to Free after expiry', () => {
+    const activeLiteGrant = grant({ plan: 'lite', ends_at: '2099-01-31T00:00:00.000Z' });
+    expect(buildSpokeduMasterAccessSnapshot({ row: null, grant: activeLiteGrant, isAdmin: false })).toMatchObject({
+      plan: 'lite',
+      entitlementSource: 'promotion',
+      canUseLibrary: true,
+      canUseAttendance: true,
+      canUseRecords: true,
+      canUseSpomove: false,
+    });
+
+    expect(buildSpokeduMasterAccessSnapshot({
+      row: null,
+      grant: { ...activeLiteGrant, ends_at: '2020-01-31T00:00:00.000Z' },
+      isAdmin: false,
+    })).toMatchObject({
+      plan: 'free',
+      canUseLibrary: false,
+      canUseAttendance: false,
+      canUseRecords: false,
+      canUseSpomove: false,
+    });
+  });
+
   it('temporarily elevates paid lite to premium and returns to lite after grant expiry', () => {
     const lite = row({ plan: 'lite', status: 'active', period_end: '2099-01-01T00:00:00.000Z' });
     expect(buildSpokeduMasterAccessSnapshot({ row: lite, grant: grant(), isAdmin: false })).toMatchObject({
@@ -95,7 +119,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       grant: grant({ ends_at: '2020-01-02T00:00:00.000Z' }),
       isAdmin: false,
     })).toMatchObject({
-      plan: 'lite', entitlementSource: 'billing', canUseAttendance: true, canUseRecords: false, canUseSpomove: false,
+      plan: 'lite', entitlementSource: 'billing', canUseAttendance: true, canUseRecords: true, canUseSpomove: false,
     });
   });
 
@@ -112,7 +136,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       cancelAtPeriodEnd: true,
       canUseLibrary: true,
       canUseAttendance: true,
-      canUseRecords: false,
+      canUseRecords: true,
     });
   });
 

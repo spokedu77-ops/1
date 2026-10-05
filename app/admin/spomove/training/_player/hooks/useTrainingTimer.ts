@@ -88,6 +88,10 @@ export function useTrainingTimer({
 
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
+  const onSignalRef = useRef(onSignal);
+  const onFinishRef = useRef(onFinish);
+  onSignalRef.current = onSignal;
+  onFinishRef.current = onFinish;
   const idxRef = useRef(-1);
   /** reps 모드: registerPresentedSignal 상태 (count-based 종료 판단에 사용) */
   const repsStateRef = useRef<RepsState>({ presented: 0 });
@@ -153,7 +157,7 @@ export function useTrainingTimer({
     const finish = () => {
       ttsClear();
       const dup = engineMode === 'basic' ? genRef.current?.getStats() ?? null : null;
-      onFinish(dup);
+      onFinishRef.current(dup);
     };
 
     const emitSignal = (elapsed: number) => {
@@ -162,7 +166,7 @@ export function useTrainingTimer({
           ? genRef.current?.next() ?? null
           : generateSignal(engineMode, engineLevel, colors, fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined);
       if (sig) {
-        onSignal(sig);
+        onSignalRef.current(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
         else {
           const movementCue =
@@ -231,7 +235,8 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount, onSignal, onFinish]);
+  // onSignal/onFinish는 ref로만 읽는다. 콜백 식별자가 바뀌면 진행 중인 신호가 0부터 다시 시작된다.
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, handFootDifficulty, flankerStimulusType, flankerNestedCircleCount, flankerExtremeMode, flankerArrowMode, stroopWordMode, stroopArrowMode, stroopWordDifficulty, stroopArrowResponse, stroopWordResponse, stroopWordRuleMode, simonPoleCount]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

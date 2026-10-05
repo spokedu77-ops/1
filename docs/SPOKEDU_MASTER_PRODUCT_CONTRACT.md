@@ -25,7 +25,7 @@ These labels are an internal model and need not appear verbatim in UI. Do not re
 
 - Content provides discovery and acquisition value.
 - Workflow continuity and history provide retention value.
-- Premium must strengthen PREPARE, RUN, REMEMBER, and FOLLOW-UP continuity rather than merely expose more catalog items.
+- Lite owns the complete general teaching-management loop across PREPARE, RUN, REMEMBER, and FOLLOW-UP. Premium inherits that complete loop and adds SPOMOVE digital movement content and execution capability.
 - Pricing and purchasability are owned by `app/spokedu-master/lib/productCatalog.ts`; do not duplicate price numbers here.
 
 ## 5. Returning User Principle
@@ -138,6 +138,7 @@ Do not implement a candidate while its decision is PENDING.
 | PD-008 | Closed legacy governance ID; superseded and not reusable. It is not a behavior decision. |
 | PD-009 | Library NEW is only for newly listed 놀이체육 activities, for 14 days from catalog listed time. The unfiltered catalog end copy is 「업데이트 예정」 only. |
 | PD-010 | Session-linked roster tools use only students explicitly recorded as `present` for that Session. `absent` and unrecorded students are excluded; missing attendance must never be inferred as absence. Standalone Class Tools default to the selected Class roster and allow a non-persistent `today participant` inclusion set; this must not be represented as saved attendance. The resolved participant scope applies uniformly to random picker, team assignment, order, tournament, and ladder tools. |
+| PD-011 | The commercial plan contract is: Free may browse Library, open exactly the first `WEEKLY_PROGRAM_IDS` slot as its single full-detail weekly preview, and run stopwatch, timer, and scoreboard; the five roster-based Class Tools require Lite. Lite is the complete general teaching-management plan, including full Library, Favorites, all eight Class Tools, Classes, Students, schedules, Session composition and operation, attendance, Session memo, student observations, next-Session notes, previous-record continuity, and parent notices. Premium is Lite plus all SPOMOVE capabilities; records and continuity are not Premium differentiators. SPOMAT member pricing is not a MASTER subscription benefit. Existing prices, Toss billing, promotion grants, persistence, Session semantics, and SPOMOVE runtime semantics remain unchanged. |
 
 ## 18. Pending Decision Candidates
 
@@ -148,7 +149,6 @@ All remain **PENDING** and must not be implemented without Product Owner approva
 | DC-001 | Connect `selectMasterLoopAction` to a visible CTA or remove dead logic. |
 | DC-002 | Decide treatment of legacy `?autostart=1` without `entry`. |
 | DC-003 | Define Center / Team self-serve versus sales-led UX. |
-| DC-004 | Clarify the Free user journey. |
 | DC-005 | Consolidate continuity-signal priority. |
 | DC-006 | Resolve stale subscription helpers versus the access snapshot SSOT. |
 

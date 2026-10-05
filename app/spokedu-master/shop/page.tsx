@@ -1,7 +1,7 @@
 'use client';
 
 import { Package, ShoppingBag } from 'lucide-react';
-import { useMasterCanBuySpomat, useSpomatShopAvailable } from '../access/MasterAccessProvider';
+import { useSpomatShopAvailable } from '../access/MasterAccessProvider';
 import { SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
 import { SPOMAT_BULK_INQUIRY_HREF, SPOMAT_PURCHASE_INQUIRY_HREF } from '../lib/businessInfo';
 
@@ -17,12 +17,9 @@ const SPOMAT_SPECS = [
 const PURCHASE_HREF = '/api/spokedu-master/shop/spomat/purchase';
 
 export default function SpokeduMasterShopPage() {
-  const isPremiumMember = useMasterCanBuySpomat();
   const shopPurchaseOnline = useSpomatShopAvailable();
   const ctaHref = shopPurchaseOnline ? PURCHASE_HREF : SPOMAT_PURCHASE_INQUIRY_HREF;
-  const ctaLabel = shopPurchaseOnline
-    ? (isPremiumMember ? '회원가로 구매하기' : 'SPOMAT 구매하기')
-    : '구매 문의';
+  const ctaLabel = shopPurchaseOnline ? 'SPOMAT 구매하기' : '구매 문의';
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -62,22 +59,9 @@ export default function SpokeduMasterShopPage() {
           </dl>
 
           <div className="mt-6 rounded-[14px] p-4" style={{ background: 'var(--spm-s3)' }}>
-            {isPremiumMember ? (
-              <>
-                <p className="text-[11px] font-extrabold uppercase tracking-[0.1em]" style={{ color: 'var(--spm-acc)' }}>프리미엄 회원가</p>
-                <p className="mt-1 text-[28px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
-                  {SPOMAT_PRODUCT_CONTRACT.premiumPrice.toLocaleString('ko-KR')}원
-                </p>
-                <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-                  <span style={{ textDecoration: 'line-through', marginRight: 6 }}>일반가 {SPOMAT_PRODUCT_CONTRACT.regularPrice.toLocaleString('ko-KR')}원</span>
-                  {SPOMAT_PRODUCT_CONTRACT.discountAmount.toLocaleString('ko-KR')}원 할인 적용
-                </p>
-              </>
-            ) : (
-              <p className="text-[28px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
-                {SPOMAT_PRODUCT_CONTRACT.regularPrice.toLocaleString('ko-KR')}원
-              </p>
-            )}
+            <p className="text-[28px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
+              {SPOMAT_PRODUCT_CONTRACT.regularPrice.toLocaleString('ko-KR')}원
+            </p>
           </div>
 
           <a
@@ -88,12 +72,6 @@ export default function SpokeduMasterShopPage() {
             <ShoppingBag size={16} />
             {ctaLabel}
           </a>
-
-          {!isPremiumMember && (
-            <p className="mt-3 text-[11px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>
-              프리미엄 구독 시 {SPOMAT_PRODUCT_CONTRACT.premiumPrice.toLocaleString('ko-KR')}원에 구매할 수 있습니다.
-            </p>
-          )}
 
           <div className="mt-4 border-t pt-4" style={{ borderColor: 'var(--spm-br2)' }}>
             <a href={SPOMAT_BULK_INQUIRY_HREF} className="text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { SPOKEDU_PATHS } from '@/app/spokedu/data/public-routes';
 
 export function PolicyHeader({ title, fromProfile }: { title: string; fromProfile: boolean }) {
-  const href = fromProfile ? '/spokedu-master/profile' : '/spokedu-master/landing';
+  const href = fromProfile ? '/spokedu-master/profile' : SPOKEDU_PATHS.subscription;
   const returnLabel = fromProfile ? '???? ????' : '??? ??? ????';
 
   return (

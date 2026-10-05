@@ -16,11 +16,6 @@ export function getTodayLessonOwnerId(profile: UserProfile | null): string | nul
   return getRecentActivityOwnerId(profile);
 }
 
-/** @deprecated Use getSeoulDayKey. */
-export function getLocalDayKey(date = new Date()): string {
-  return getSeoulDayKey(date);
-}
-
 export function getSeoulDayKey(date = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: TODAY_LESSON_TIME_ZONE,

@@ -33,7 +33,7 @@ export type { BrandChannel };
 
 /** MASTER handoff — 마케팅 사이트 경로 상수 (가격·권한 SSOT 아님) */
 export const MASTER_HANDOFF = {
-  landing: '/spokedu-master/landing',
+  landing: SPOKEDU_PATHS.subscription,
   onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding',
   dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard',
   payment: '/spokedu-master/payment',
@@ -62,12 +62,28 @@ export type SiteNavEntry =
       children: SiteNavLink[];
     };
 
+export const publicGlobalNav = [
+  { key: 'education', label: '체육수업', href: SPOKEDU_PATHS.education, trackLabel: 'nav-education' },
+  { key: 'master', label: 'SPOKEDU MASTER', href: SPOKEDU_PATHS.subscription, trackLabel: 'nav-subscription' },
+  { key: 'spomove', label: 'SPOMOVE', href: SPOKEDU_PATHS.spomove, trackLabel: 'nav-spomove' },
+  { key: 'records', label: '수업 사례', href: SPOKEDU_PATHS.records, trackLabel: 'nav-records' },
+] as const;
+
+export const publicGlobalCta = {
+  key: 'contact',
+  label: '수업 상담',
+  href: SPOKEDU_PATHS.contact,
+  trackLabel: 'header-contact',
+} as const;
+
+const [educationNav, masterNav, spomoveNav, recordsNav] = publicGlobalNav;
+
 /** 글로벌 헤더·모바일 메뉴 SSOT — 상업 2축 + signature + evidence */
 export const siteNav: SiteNavEntry[] = [
   {
     type: 'group',
-    label: '체육수업',
-    trackLabel: 'nav-education',
+    label: educationNav.label,
+    trackLabel: educationNav.trackLabel,
     children: [
       { label: '기관·학교 수업', href: SPOKEDU_PATHS.education, trackLabel: 'nav-education-institution' },
       { label: '개인·소그룹 수업', href: SPOKEDU_PATHS.private, trackLabel: 'nav-education-private' },
@@ -75,32 +91,28 @@ export const siteNav: SiteNavEntry[] = [
   },
   {
     type: 'link',
-    label: '수업자료·구독',
-    href: SPOKEDU_PATHS.subscription,
-    trackLabel: 'nav-subscription',
+    label: masterNav.label,
+    href: masterNav.href,
+    trackLabel: masterNav.trackLabel,
     matchPrefix: '/subscription',
   },
   {
     type: 'link',
-    label: 'SPOMOVE',
-    href: SPOKEDU_PATHS.spomove,
-    trackLabel: 'nav-spomove',
+    label: spomoveNav.label,
+    href: spomoveNav.href,
+    trackLabel: spomoveNav.trackLabel,
     matchPrefix: '/spomove',
   },
   {
     type: 'link',
-    label: '수업 사례',
-    href: SPOKEDU_PATHS.records,
-    trackLabel: 'nav-records',
+    label: recordsNav.label,
+    href: recordsNav.href,
+    trackLabel: recordsNav.trackLabel,
     matchPrefix: '/records',
   },
 ];
 
-export const siteHeaderCta = {
-  label: '수업 상담',
-  href: SPOKEDU_PATHS.contact,
-  trackLabel: 'header-contact',
-} as const;
+export const siteHeaderCta = publicGlobalCta;
 
 export type FooterNavGroup = {
   heading: string;
@@ -148,8 +160,8 @@ export const footerNavGroups: FooterNavGroup[] = [
         trackLabel: 'footer-service-spomove-catalog',
       },
       {
-        label: '수업자료·구독',
-        href: SPOKEDU_PATHS.subscription,
+        label: masterNav.label,
+        href: masterNav.href,
         trackLabel: 'footer-subscription',
       },
       {

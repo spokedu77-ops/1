@@ -361,14 +361,14 @@ export function SiteHeader() {
         className={`fixed inset-x-0 bottom-0 top-[calc(var(--spokedu-public-header-height)+env(safe-area-inset-top,0px))] z-50 lg:hidden ${
           menuOpen ? '' : 'pointer-events-none invisible'
         }`}
-        style={{ backgroundColor: menuOpen ? `${NAVY}f2` : undefined }}
+        style={{ backgroundColor: NAVY }}
         role="dialog"
         aria-modal={menuOpen}
         aria-label="모바일 메뉴"
         aria-hidden={!menuOpen}
         hidden={!menuOpen}
       >
-        <nav className="flex h-full flex-col overflow-y-auto px-5 py-4 backdrop-blur-md sm:pt-1">
+        <nav className="flex h-full flex-col overflow-y-auto px-5 py-4 sm:pt-1">
           {siteNav.map(renderMobileEntry)}
           <div className="mt-4 grid gap-2">
             <NavAnchor

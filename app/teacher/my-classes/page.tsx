@@ -652,12 +652,11 @@ function MyClassesContent() {
 
   return (
     <div className="flex-1 min-h-screen bg-[#F8FAFC] pb-20">
-      <div className="max-w-5xl mx-auto p-6 md:p-10 space-y-8 text-left">
-        <header className="space-y-6 pb-6 border-b-2 border-slate-200">
-          <div className="flex justify-between items-center">
+      <div className="max-w-5xl mx-auto space-y-4 p-4 text-left sm:p-6 sm:space-y-8 md:p-10">
+        <header className="space-y-3 border-b-2 border-slate-200 pb-4 sm:space-y-6 sm:pb-6">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">SPOKEDU</p>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">MY SCHEDULE</h1>
+              <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-3xl">MY SCHEDULE</h1>
             </div>
             <button onClick={() => setCurrentDate(new Date())} className="min-h-11 px-4 py-2 bg-white border rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 cursor-pointer transition-all active:scale-95">오늘</button>
           </div>
@@ -699,7 +698,7 @@ function MyClassesContent() {
           ) : loading ? (
             <div className="py-20 text-center text-slate-400 font-bold animate-pulse">Syncing...</div>
           ) : sessions.length === 0 ? (
-            <div className="py-20 text-center bg-white rounded-[32px] border-2 border-dashed border-slate-100 text-slate-300 font-bold text-sm tracking-widest uppercase">No Data</div>
+            <div className="rounded-2xl border-2 border-dashed border-slate-100 bg-white py-10 text-center text-sm font-bold text-slate-400 sm:rounded-[32px] sm:py-20">이번 주 일정이 없습니다</div>
           ) : (
             sessions.map((session) => {
               const startDate = new Date(session.start_at);
@@ -747,29 +746,29 @@ function MyClassesContent() {
                   key={session.id}
                   role="button"
                   tabIndex={0}
-                  className={`p-4 md:p-6 rounded-[28px] shadow-sm border-2 transition-all cursor-pointer flex items-center justify-between ${isToday(session.start_at) ? 'border-blue-400 bg-blue-50/30' : 'bg-white border-transparent hover:border-slate-200'}`}
+                  className={`flex flex-col gap-3 rounded-2xl border-2 p-4 shadow-sm transition-all cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:rounded-[28px] sm:p-6 ${isToday(session.start_at) ? 'border-blue-400 bg-blue-50/30' : 'bg-white border-transparent hover:border-slate-200'}`}
                   onClick={() => handleItemClick(session)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleItemClick(session); } }}
                 >
-                  <div className="flex items-center gap-4 md:gap-6">
-                    <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center shrink-0 ${isToday(session.start_at) ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-900'}`}>
-                      <span className={`text-[10px] font-black uppercase mb-0.5 ${isToday(session.start_at) ? 'text-blue-100' : 'text-slate-400'}`}>{dayName} {dateDisplay}</span>
-                      <span className="text-lg font-black leading-none">{timeDisplay}</span>
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-6">
+                    <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl sm:h-20 sm:w-20 sm:rounded-2xl ${isToday(session.start_at) ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-900'}`}>
+                      <span className={`mb-0.5 text-[11px] font-bold ${isToday(session.start_at) ? 'text-blue-100' : 'text-slate-400'}`}>{dayName} {dateDisplay}</span>
+                      <span className="text-base font-black leading-none sm:text-lg">{timeDisplay}</span>
                     </div>
-                    <div className="text-left">
-                      <div className="flex gap-2 mb-1 flex-wrap">
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${isCenterType ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>{isCenterType ? 'Center' : 'Visit'}</span>
+                    <div className="min-w-0 text-left">
+                      <div className="mb-1 flex flex-wrap gap-1.5">
+                        <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${isCenterType ? 'bg-indigo-100 text-indigo-600' : 'bg-sky-100 text-sky-600'}`}>{isCenterType ? '센터' : '방문'}</span>
                         {isAssistantSession ? (
-                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-amber-100 text-amber-800">보조</span>
+                          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-800">보조</span>
                         ) : null}
                         {isPostponed ? (
-                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded uppercase bg-purple-100 text-purple-700">연기됨</span>
+                          <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[11px] font-bold text-purple-700">연기됨</span>
                         ) : null}
                       </div>
                       <h3 className="text-base md:text-lg font-black text-slate-800 tracking-tight line-clamp-1">{session.title || 'Untitled'}</h3>
                     </div>
                   </div>
-                  <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 ${statusPill.className}`}>
+                  <div className={`self-start rounded-full px-3 py-1.5 text-xs font-bold sm:shrink-0 ${statusPill.className}`}>
                     {statusPill.label}
                   </div>
                 </div>

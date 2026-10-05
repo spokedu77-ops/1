@@ -32,7 +32,7 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/spomove/session/page.tsx',
   'app/spokedu-master/components/layout/StatusBar.tsx',
   'app/spokedu-master/components/layout/TabBar.tsx',
-  'app/spokedu-master/landing/page.tsx',
+  'app/spokedu-master/landing/CommercialLanding.tsx',
   'app/spokedu-master/onboarding/page.tsx',
   'app/spokedu-master/payment/page.tsx',
   'app/spokedu-master/profile/page.tsx',
@@ -178,7 +178,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
 
   it('does not present unavailable parent sharing or automated delivery as provided features', () => {
     const source = [
-      read('app/spokedu-master/landing/page.tsx'),
+      read('app/spokedu-master/landing/CommercialLanding.tsx'),
       read('app/spokedu-master/payment/page.tsx'),
       read('app/spokedu-master/profile/page.tsx'),
       read('app/spokedu-master/terms/page.tsx'),

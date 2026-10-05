@@ -36,7 +36,7 @@ describe('SPOKEDU MASTER business info contract', () => {
 
   it('removes old business name and address from user-facing source', () => {
     const files = [
-      'app/spokedu-master/landing/page.tsx',
+      'app/spokedu-master/landing/CommercialLanding.tsx',
       'app/spokedu-master/profile/page.tsx',
       'app/spokedu-master/payment/success/page.tsx',
       'app/spokedu-master/components/layout/AppShell.tsx',
@@ -62,7 +62,7 @@ describe('SPOKEDU MASTER business info contract', () => {
 
   it('shows correct values in landing footer', () => {
     const landing = [
-      read('app/spokedu-master/landing/page.tsx'),
+      read('app/spokedu-master/landing/CommercialLanding.tsx'),
       read('app/spokedu-master/landing/components/LandingChrome.tsx'),
     ].join('\n');
 
@@ -76,7 +76,7 @@ describe('SPOKEDU MASTER business info contract', () => {
   });
 
   it('uses single source for all business info in landing footer', () => {
-    const page = read('app/spokedu-master/landing/page.tsx');
+    const page = read('app/spokedu-master/landing/CommercialLanding.tsx');
     const footer = read('app/spokedu-master/landing/components/LandingChrome.tsx');
 
     expect(page).toContain('business: MASTER_BUSINESS_INFO');
