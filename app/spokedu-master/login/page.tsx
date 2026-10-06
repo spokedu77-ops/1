@@ -14,6 +14,11 @@ import {
   resolveMasterEntryAccess,
   type MasterEntryAccess,
 } from '../lib/masterLoginReturn';
+import { isTossReviewLoginEnabled } from './reviewLogin';
+
+const TOSS_REVIEW_LOGIN_ENABLED = isTossReviewLoginEnabled(
+  process.env.NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED,
+);
 
 async function resolveMasterDestination(next: string) {
   const response = await fetch('/api/spokedu-master/access', {
@@ -38,6 +43,10 @@ function MasterLoginContent() {
   const [checking, setChecking] = useState(true);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [reviewEmail, setReviewEmail] = useState('');
+  const [reviewPassword, setReviewPassword] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const next = getSafeMasterLoginReturnPath(params.get('next'));
 
   useEffect(() => {
@@ -76,6 +85,32 @@ function MasterLoginContent() {
     const destination = await resolveMasterDestination(next);
     if (destination) router.replace(destination);
     router.refresh();
+  };
+
+  const submitReviewLogin = async () => {
+    if (!TOSS_REVIEW_LOGIN_ENABLED || reviewLoading) return;
+    setReviewError(null);
+    setReviewLoading(true);
+    try {
+      const { error } = await getSupabaseBrowserClient().auth.signInWithPassword({
+        email: reviewEmail.trim(),
+        password: reviewPassword,
+      });
+      if (error) {
+        setReviewPassword('');
+        setReviewError('이메일 또는 비밀번호를 확인해 주세요.');
+        return;
+      }
+      applyLoginSessionPreference(true);
+      const destination = await resolveMasterDestination(next);
+      if (destination) router.replace(destination);
+      router.refresh();
+    } catch {
+      setReviewPassword('');
+      setReviewError('로그인할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setReviewLoading(false);
+    }
   };
 
   return (
@@ -118,6 +153,61 @@ function MasterLoginContent() {
           onOtpChange={otp.setOtp}
           onSubmit={() => void submitEmail()}
         />
+        {TOSS_REVIEW_LOGIN_ENABLED ? (
+          <div className="mt-6 border-t pt-6" style={{ borderColor: 'var(--spm-br2)' }}>
+            <h2 className="text-[16px] font-semibold">심사용 ID/PW 로그인</h2>
+            <p className="mt-1 text-[12px] leading-5" style={{ color: 'var(--spm-t3)' }}>
+              토스페이먼츠 심사용으로 제공받은 계정 정보를 입력해 주세요.
+            </p>
+            <form
+              className="mt-4 space-y-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitReviewLogin();
+              }}
+            >
+              <label className="block text-[13px] font-semibold">
+                이메일
+                <input
+                  type="email"
+                  autoComplete="username"
+                  required
+                  value={reviewEmail}
+                  onChange={(event) => setReviewEmail(event.target.value)}
+                  disabled={reviewLoading || checking}
+                  className="mt-1.5 h-12 w-full rounded-[10px] border px-3 text-[14px] font-normal outline-none focus:ring-2 focus:ring-[var(--spm-acc)] disabled:opacity-60"
+                  style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)', color: 'var(--spm-t)' }}
+                />
+              </label>
+              <label className="block text-[13px] font-semibold">
+                비밀번호
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={reviewPassword}
+                  onChange={(event) => setReviewPassword(event.target.value)}
+                  disabled={reviewLoading || checking}
+                  className="mt-1.5 h-12 w-full rounded-[10px] border px-3 text-[14px] font-normal outline-none focus:ring-2 focus:ring-[var(--spm-acc)] disabled:opacity-60"
+                  style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)', color: 'var(--spm-t)' }}
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={reviewLoading || checking || !reviewEmail.trim() || !reviewPassword}
+                className="spm-btn-primary inline-flex min-h-12 w-full items-center justify-center rounded-[12px] px-4 text-[14px] font-semibold disabled:opacity-60"
+              >
+                {reviewLoading ? <Loader2 size={17} className="mr-2 animate-spin" aria-hidden /> : null}
+                심사용 계정으로 로그인
+              </button>
+            </form>
+            {reviewError ? (
+              <p role="alert" className="mt-3 rounded-[10px] px-3 py-2 text-[13px] font-semibold" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--spm-red)' }}>
+                {reviewError}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {oauthError || otp.error ? (
           <p className="mt-4 rounded-[10px] px-3 py-2 text-[13px] font-semibold" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--spm-red)' }}>
             {oauthError ?? otp.error}
