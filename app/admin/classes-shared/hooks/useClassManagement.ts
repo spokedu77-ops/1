@@ -7,6 +7,7 @@ import { ADMIN_NAMES } from '../constants/admins';
 import { buildGroupPlannedTotals } from '../lib/plannedRoundTotal';
 import { clampRoundIndex } from '../lib/roundFields';
 import { themeColorHexForSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
+import { fetchAdminSessions } from '../lib/adminSessionsRequest';
 
 function assertUpdatedRow(data: { id?: string } | null, error: unknown, fallback: string) {
   if (error) throw error;
@@ -123,13 +124,7 @@ export function useClassManagement() {
         offset: String(offset),
         limit: String(PAGE),
       });
-      const res = await fetch(`/api/admin/classes/sessions?${params.toString()}`, {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      const payload = (await res.json().catch(() => ({}))) as { sessions?: SessionRow[]; error?: string };
-      if (!res.ok) throw new Error(payload.error || 'sessions_fetch_failed');
-      return payload.sessions ?? [];
+      return fetchAdminSessions<SessionRow>(params);
     };
 
     const quickStart = new Date();

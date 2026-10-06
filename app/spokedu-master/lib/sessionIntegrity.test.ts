@@ -135,8 +135,36 @@ describe('session roster lock', () => {
       attendance: [{ studentId: 'c', studentName: 'C-then' }],
     }, { studentIds: ['a', 'd'] }, students)).toEqual([
       { id: 'a', name: 'A' },
-      { id: 'd', name: 'D' },
       { id: 'c', name: 'C-then' },
+      { id: 'd', name: 'D' },
+    ]);
+  });
+
+  it('keeps every attendance roster in Korean alphabetical order regardless of source order', () => {
+    const unorderedStudents = [
+      { id: 'minjun', name: '민준' },
+      { id: 'gayeong', name: '가영' },
+      { id: 'nayeon', name: '나연' },
+    ];
+    expect(resolveSessionAttendanceRoster({ status: 'scheduled', rosterLockedAt: null, attendance: [] }, {
+      studentIds: ['minjun', 'gayeong', 'nayeon'],
+    }, unorderedStudents)).toEqual([
+      { id: 'gayeong', name: '가영' },
+      { id: 'nayeon', name: '나연' },
+      { id: 'minjun', name: '민준' },
+    ]);
+    expect(resolveSessionAttendanceRoster({
+      status: 'completed',
+      rosterLockedAt: '2026-09-14T00:00:00.000Z',
+      roster: [
+        { studentId: 'minjun', studentName: '민준' },
+        { studentId: 'gayeong', studentName: '가영' },
+        { studentId: 'nayeon', studentName: '나연' },
+      ],
+    }, null, unorderedStudents)).toEqual([
+      { id: 'gayeong', name: '가영' },
+      { id: 'nayeon', name: '나연' },
+      { id: 'minjun', name: '민준' },
     ]);
   });
 });

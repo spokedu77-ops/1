@@ -55,3 +55,25 @@ export async function POST(_request: Request, context: { params: Promise<{ sessi
   }
   return privateNoStoreJson({ error: 'Session could not be started' }, { status: 409 });
 }
+
+export async function DELETE(_request: Request, context: { params: Promise<{ sessionId: string }> }) {
+  const access = await requireSpokeduMasterCapability('attendance');
+  if (!access.ok) return withPrivateNoStore(access.response);
+
+  const { sessionId } = await context.params;
+  const supabase = getServiceSupabase();
+  const { error } = await supabase.rpc('spokedu_master_undo_session_start', {
+    p_owner_id: access.userId,
+    p_session_id: sessionId,
+  });
+  if (error) {
+    if (error.code === 'P0002') return privateNoStoreJson({ error: 'Session not found' }, { status: 404 });
+    if (error.code === '55000') {
+      return privateNoStoreJson({ error: error.message === 'session has run evidence'
+        ? '진행한 활동이나 수업 기록이 있어 시작을 취소할 수 없습니다.'
+        : '진행 중인 수업만 시작을 취소할 수 있습니다.' }, { status: 409 });
+    }
+    return privateNoStoreJson({ error: 'Session start could not be undone' }, { status: 500 });
+  }
+  return privateNoStoreJson({ data: { sessionId, startedAt: null, rosterLockedAt: null } });
+}

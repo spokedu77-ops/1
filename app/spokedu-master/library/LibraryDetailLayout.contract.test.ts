@@ -68,19 +68,15 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).not.toContain('h-[450px]');
   });
 
-  it('keeps the execution row focused and moves subordinate guidance into a support chapter', () => {
-    const methodPanel = guide.slice(guide.indexOf('function MethodPanel'), guide.indexOf('function ExecutionSupport'));
-    const supportChapter = guide.slice(guide.indexOf('function ExecutionSupport'), guide.indexOf('function columnClass'));
+  it('keeps variations directly under the method without synthesized guidance', () => {
+    const methodPanel = guide.slice(guide.indexOf('function MethodPanel'), guide.indexOf('function columnClass'));
     expect(methodPanel).toContain('model.activityMethod.map');
-    expect(methodPanel).not.toContain('getMethodSupport(model)');
-    expect(methodPanel).not.toContain('model.variationMethod');
-    expect(supportChapter).toContain('data-detail-chapter="execution-support"');
-    expect(supportChapter).toContain('data-detail-support="method"');
-    expect(supportChapter).toContain('data-detail-support="variation"');
-    expect(supportChapter).toContain('getMethodSupport(model)');
-    expect(supportChapter).toContain('model.variationMethod.slice(0, 2)');
-    expect(guide.indexOf('<ExecutionSupport model={model} />')).toBeGreaterThan(guide.indexOf('data-detail-row="execution"'));
-    expect(guide.indexOf('<ExecutionSupport model={model} />')).toBeLessThan(guide.indexOf('data-detail-row="preparation"'));
+    expect(methodPanel).toContain('data-detail-support="variation"');
+    expect(methodPanel).toContain('model.variationMethod');
+    expect(guide).not.toContain('getMethodSupport');
+    expect(guide).not.toContain('data-detail-chapter="execution-support"');
+    expect(guide).not.toContain('data-detail-support="method"');
+    expect(guide).not.toContain('지도 포인트');
   });
 
   it('keeps shared heading baseline without stretching panels to equal height', () => {
@@ -144,12 +140,17 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(setupImage).toContain('(min-width: 1220px) 560px');
   });
 
-  it('shows two variations before accessible progressive disclosure', () => {
-    expect(guide).toContain('model.variationMethod.slice(0, 2)');
-    expect(guide).toContain('aria-expanded={variationsExpanded}');
-    expect(guide).toContain('aria-controls={variationListId}');
-    expect(guide).toContain("variationsExpanded ? '접기'");
-    expect(guide).toContain('`+ ${hiddenVariationCount}개 더보기`');
+  it('places variations under the method and separates the final explanatory line', () => {
+    const method = guide.slice(guide.indexOf('function MethodPanel'), guide.indexOf('function columnClass'));
+    expect(method).toContain('data-detail-support="variation"');
+    expect(method).toContain('변형 방법');
+    expect(method).not.toContain('난이도 조절 · 변형 활동');
+    expect(method).toContain('model.variationMethod.slice(0, -1)');
+    expect(method).toContain('model.variationMethod.at(-1)');
+    expect(method).toContain('data-detail-variation-summary');
+    expect(method).toContain('variationSteps.map');
+    expect(guide).not.toContain('data-detail-variation-toggle');
+    expect(guide).not.toContain('variationsExpanded');
   });
 
   it('keeps the precision pass free of nested decorative media cards', () => {
@@ -214,19 +215,14 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain("'관련 활동': '함께 보기 좋은 활동'");
   });
 
-  it('uses the modal step-marker grammar and content-based method support', () => {
+  it('uses numbered method steps and a bullet for a single variation step', () => {
     expect(guide).toContain('function StepMarker');
+    expect(guide).toContain('function VariationMarker');
     expect(guide).toContain('inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full');
-    expect(guide.match(/<StepMarker index=\{index\}/g)).toHaveLength(3);
+    expect(guide).toContain('numbered={variationSteps.length > 1}');
+    expect(guide).toContain('h-2 w-2 rounded-full bg-[var(--spm-acc)]');
     expect(guide).not.toContain("padStart(2, '0')");
-    expect(guide).toContain('function getMethodSupport');
-    expect(guide).toContain('if (model.variationMethod.length > 0 || model.activityMethod.length > 4) return []');
-    expect(guide).toContain('model.developmentFocus');
-    expect(guide).toContain('model.objective');
-    expect(guide).toContain('model.safetyNotes');
-    expect(guide).toContain('model.activityMethod.length <= 2 ? 2 : 1');
-    expect(guide).not.toContain('model.activityMethod.length >= 4');
-    expect(guide).toContain('...(model.developmentFocus ? [model.developmentFocus] : [])');
+    expect(guide).not.toContain('function getMethodSupport');
   });
 
   it('keeps mobile actions sticky while moving desktop actions and favorite into the hero', () => {

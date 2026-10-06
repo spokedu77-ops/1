@@ -78,6 +78,17 @@ describe('selectRelatedLessonVideos', () => {
     ]);
   });
 
+  it('removes English text from related-video card titles', () => {
+    const candidate = program({
+      id: 'korean-title',
+      title: '콘 스태킹 킥 (Cone Stacking Kick)',
+      tags: ['패스'],
+      lessonDetail: { videoUrl: 'https://youtu.be/koreanttl1' } as Program['lessonDetail'],
+    });
+
+    expect(selectRelatedLessonVideos(current, [candidate])[0]?.title).toBe('콘 스태킹 킥');
+  });
+
   it('does not use a setup image when no dedicated related thumbnail exists', () => {
     const candidate = program({
       id: 'setup-only',

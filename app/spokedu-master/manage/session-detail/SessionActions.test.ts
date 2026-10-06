@@ -3,16 +3,20 @@ import { executeScheduledSessionPrimaryAction, executeSessionStartSequence, reso
 
 describe('SessionActions primary intent', () => {
   it.each([
-    ['add-activity', null],
-    ['start-session', 'start'],
-    ['run-next-activity', 'complete'],
-    ['wrap-session', 'complete'],
-  ] as const)('%s resolves to %s', (intent, action) => {
-    expect(resolveScheduledSessionPrimaryAction(false, intent)).toBe(action);
+    ['add-activity', null, 'start'],
+    ['start-session', null, 'start'],
+    ['run-next-activity', '2026-09-01T01:00:00Z', 'complete'],
+    ['wrap-session', '2026-09-01T01:00:00Z', 'complete'],
+  ] as const)('%s resolves to %s after lifecycle resolution', (intent, startedAt, action) => {
+    expect(resolveScheduledSessionPrimaryAction(false, intent, startedAt)).toBe(action);
   });
 
   it('keeps new Session creation', () => {
-    expect(resolveScheduledSessionPrimaryAction(true, null)).toBe('create');
+    expect(resolveScheduledSessionPrimaryAction(true, null, null)).toBe('create');
+  });
+
+  it('always keeps start available for an existing PREP Session, even without activities', () => {
+    expect(resolveScheduledSessionPrimaryAction(false, 'add-activity', null)).toBe('start');
   });
 
   it('calls only startSession for start-session', async () => {

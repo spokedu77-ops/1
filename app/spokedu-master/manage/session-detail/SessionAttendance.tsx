@@ -26,10 +26,10 @@ export function SessionAttendance({ attendance, attendanceOpen, roster, allStude
       <div className="divide-y divide-slate-100">
         {roster.map((student) => <div key={student.id} data-attendance-row className="flex min-h-11 items-center gap-2">
           <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-slate-800">{student.name}</span>
-          <span className="inline-flex shrink-0 rounded-[9px] bg-slate-100 p-0.5">{(['present', 'absent'] as const).map((value) => {
+          <span className="inline-flex shrink-0 divide-x divide-slate-200 overflow-hidden rounded-[9px] border border-slate-200 bg-white">{(['present', 'absent'] as const).map((value) => {
             const selected = attendance[student.id] === value;
             const label = value === 'present' ? '출석' : '결석';
-            return <button key={value} type="button" onClick={() => updateAttendance(student.id, value)} aria-pressed={selected} className={`inline-flex min-h-11 min-w-[54px] items-center justify-center rounded-[7px] px-2 text-xs font-semibold transition-colors ${selected ? value === 'present' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white' : 'text-slate-500 hover:text-slate-800'}`}>
+            return <button key={value} type="button" onClick={() => updateAttendance(student.id, value)} aria-pressed={selected} className={`inline-flex min-h-11 min-w-[54px] items-center justify-center px-2 text-xs font-semibold transition-colors ${selected ? value === 'present' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
               {label}
             </button>;
           })}</span>

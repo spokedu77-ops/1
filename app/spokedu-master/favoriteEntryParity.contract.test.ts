@@ -28,4 +28,11 @@ describe('MASTER favorite entry parity', () => {
     expect(favorites.match(/presentation="favorites-cover-4-3"/g)).toHaveLength(2);
     expect(favorites).not.toContain('presentation="full-visible-4-3"');
   });
+
+  it('keeps retrieval cards compact at four columns on desktop', () => {
+    const favorites = read('app/spokedu-master/favorites/FavoritesView.tsx');
+    expect(favorites).toContain('sm:grid-cols-2 xl:grid-cols-4');
+    expect(favorites).not.toContain('xl:grid-cols-3');
+    expect(favorites.match(/\(min-width: 1280px\) 280px/g)).toHaveLength(2);
+  });
 });

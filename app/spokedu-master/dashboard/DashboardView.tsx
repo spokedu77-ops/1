@@ -389,6 +389,11 @@ function RecentSpomoveReuseCard({
   const recentOptions = preset ? recentSpomoveSessionOptions(activity, preset) : null;
   const shelf = preset ? getHomeSpomoveShelfCopy(preset) : null;
   const displayTitle = shelf?.title ?? resolveSpomovePublicDisplayTitle(activity.programId, activity.programTitle);
+  const cueSeconds = recentOptions?.cueSeconds ?? preset?.cueSeconds;
+  const compactMeta = [
+    shelf?.typeLabel,
+    cueSeconds ? `${cueSeconds}초` : null,
+  ].filter(Boolean).join(' · ');
   const recentHref = preset
     ? withDiscoveryReturn(
         canReproduce
@@ -410,6 +415,7 @@ function RecentSpomoveReuseCard({
       <HomeContinueCard
         kicker="최근 활동"
         title={displayTitle}
+        meta={compactMeta}
         actionLabel="다시 보기"
         href={recentHref}
         media={(
@@ -440,6 +446,7 @@ function RecentLessonReuseCard({
       <HomeContinueCard
         kicker="최근 활동"
         title={model.title}
+        meta={activity.action === 'video_started' ? '놀이체육 · 영상' : '놀이체육 · 준비'}
         actionLabel={activity.action === 'video_started' ? '이어 보기' : '다시 보기'}
         href={recentHref}
         media={(
@@ -844,14 +851,14 @@ function EntitledDashboardView() {
               <Link data-dashboard-primary-cta="true" href={`/spokedu-master/library/${FREE_PREVIEW_PROGRAM_ID}`} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
                 무료 수업 보기 <ArrowRight size={15} aria-hidden />
               </Link>
-              <Link href="/spokedu-master/class-tools" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-                수업 도구 열기
-              </Link>
               {accessSnapshot.canUseAttendance ? (
                 <Link href="/spokedu-master/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   수업 일정 보기
                 </Link>
               ) : null}
+              <Link href="/spokedu-master/class-tools" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                수업 도구 열기
+              </Link>
             </div>
           </header>
         </div>
@@ -917,6 +924,7 @@ function EntitledDashboardView() {
                 <HomeContinueCard
                   kicker="최근 수업도구"
                   title={recentClassTool.label}
+                  meta={recentClassTool.compactDescription}
                   actionLabel="도구 열기"
                   href={buildClassToolHref(recentClassTool.id)}
                   media={(

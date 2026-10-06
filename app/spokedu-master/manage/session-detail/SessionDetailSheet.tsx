@@ -108,8 +108,23 @@ export function SessionDetailSheet({ session, initialDay, initialClassId, legacy
     finally { draft.setSaving(false); }
   }
 
+  async function undoSessionStart() {
+    if (!draft.activeSession || draft.saving) return;
+    draft.setSaving(true); draft.setError(null);
+    try {
+      const scheduled = await data.undoSessionStart(draft.activeSession.id);
+      draft.setActiveSession(scheduled);
+      draft.setStatus(scheduled.status);
+      draft.setDirty(false);
+    } catch (caught) {
+      draft.setError(getMasterRequestErrorMessage(caught, '수업 시작을 취소하지 못했습니다.'));
+    } finally {
+      draft.setSaving(false);
+    }
+  }
+
   const incompleteActivityCount = activities.programs.filter((program) => !program.isCompleted).length;
-  const footer = draft.status === 'cancelled' ? undefined : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} primarySurfaceIntent={presentation?.primarySurfaceIntent ?? null} incompleteActivityCount={incompleteActivityCount} startSession={startSession} persist={persist} />;
+  const footer = draft.status === 'cancelled' ? undefined : <SessionActions status={draft.status} isCreate={isCreate} activeSession={draft.activeSession} dirty={draft.dirty} saving={draft.saving} classId={draft.classId} primarySurfaceIntent={presentation?.primarySurfaceIntent ?? null} incompleteActivityCount={incompleteActivityCount} startSession={startSession} undoSessionStart={undoSessionStart} persist={persist} />;
 
   return <>
     <BottomSheet open title={title} size="session" inert={classCreateOpen || nextSessionOpen} onClose={draft.requestClose} footer={footer}>

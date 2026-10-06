@@ -124,11 +124,20 @@ function getDedicatedRelatedThumbnail(program: Program): string | undefined {
     ));
 }
 
+function relatedVideoKoreanTitle(title: string) {
+  return title
+    .replace(/\s*\([^()]*[A-Za-z][^()]*\)\s*/g, ' ')
+    .replace(/[A-Za-z][A-Za-z0-9 '&+./-]*/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([·:,-])/g, '$1')
+    .trim();
+}
+
 function toRelatedVideo(candidate: Program, reason: RelatedLessonVideoReason): RelatedLessonVideo {
   const videoUrl = getTrustedProgramVideoUrl(candidate);
   return {
     id: candidate.id,
-    title: candidate.title,
+    title: relatedVideoKoreanTitle(candidate.title) || candidate.title,
     thumbnailUrl: getVideoThumbnail(videoUrl) ?? getDedicatedRelatedThumbnail(candidate) ?? null,
     href: `/spokedu-master/library/${candidate.id}`,
     reason,

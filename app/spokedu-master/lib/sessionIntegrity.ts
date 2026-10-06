@@ -26,13 +26,20 @@ export function lockedRosterStudentIdsEqual(lockedStudentIds: readonly string[],
   return locked.size === submitted.size && [...locked].every((id) => submitted.has(id));
 }
 
+function sortAttendanceRoster<T extends { id: string; name: string }>(roster: readonly T[]) {
+  return [...roster].sort((left, right) => (
+    left.name.localeCompare(right.name, 'ko', { numeric: true, sensitivity: 'base' })
+    || left.id.localeCompare(right.id)
+  ));
+}
+
 export function resolveSessionAttendanceRoster(
   session: { rosterLockedAt?: string | null; roster?: ReadonlyArray<{ studentId: string; studentName: string }>; attendance?: ReadonlyArray<{ studentId: string; studentName: string }>; status?: string } | null,
   selectedClass: { studentIds: readonly string[] } | null,
   students: ReadonlyArray<{ id: string; name: string }>,
 ) {
   if (isSessionRosterLocked(session)) {
-    return (session?.roster ?? session?.attendance ?? []).map((item) => ({ id: item.studentId, name: item.studentName }));
+    return sortAttendanceRoster((session?.roster ?? session?.attendance ?? []).map((item) => ({ id: item.studentId, name: item.studentName })));
   }
   const currentRoster = students.filter((student) => selectedClass?.studentIds.includes(student.id));
   const historicalRoster = session?.status === 'completed'
@@ -40,7 +47,7 @@ export function resolveSessionAttendanceRoster(
       .filter((entry) => !currentRoster.some((student) => student.id === entry.studentId))
       .map((entry) => ({ id: entry.studentId, name: entry.studentName }))
     : [];
-  return [...currentRoster, ...historicalRoster];
+  return sortAttendanceRoster([...currentRoster, ...historicalRoster]);
 }
 
 export function buildSessionCompletionRosterStudentIds(

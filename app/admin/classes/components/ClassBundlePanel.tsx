@@ -21,6 +21,7 @@ import { resolvePlannedTotal, resolvePlannedTotalAfterDeleting } from "@/app/adm
 import { formatRoundDisplay } from "@/app/admin/classes-shared/lib/roundFields";
 import { reindexGroupRounds } from "@/app/admin/classes-shared/lib/reindexGroupRounds";
 import { findCrossGroupSlotConflicts } from "@/app/admin/classes-shared/lib/sessionRoundGuards";
+import { fetchAdminSessions } from "@/app/admin/classes-shared/lib/adminSessionsRequest";
 import {
   isSessionScheduleDraftDirty,
   isoRangeFromDateTimeInputs,
@@ -45,15 +46,25 @@ type RoundView = "active" | "all" | "completed";
 
 const RESTART_CYCLE_ROUNDS = 8;
 
-/** 데스크톱 회차 행. 모바일은 한 줄로 자르지 않고 아래로 쌓는다. */
-const SESSION_ROW_GRID =
-  "md:grid md:w-full md:min-w-0 md:grid-cols-[2.6rem_12.75rem_8.25rem_6.5rem_2.5rem_3rem_max-content_minmax(0,1fr)] md:items-start md:gap-x-2";
+/** 데스크톱 회차 행: DOM 순서 = 열 순서(회차·일정·강사·수업료·상태·관리·마일). */
+const SESSION_DESKTOP_ROW_GRID =
+  "grid w-full min-w-0 grid-cols-[2.5rem_8.25rem_7.5rem_3.75rem_4.25rem_minmax(10.5rem,max-content)_2.75rem] items-start gap-x-2";
 
 const SESSION_CONTROL =
   "box-border h-8 w-full min-w-0 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-800";
 
+/** 일정 열: 날짜·시간 세로 배치(가로 2분할 시 date input 이 0px 로 붕괴됨). */
+const SESSION_SCHEDULE_DATE_CONTROL = `${SESSION_CONTROL} min-w-[7.75rem]`;
+const SESSION_SCHEDULE_TIME_CONTROL = `${SESSION_CONTROL} min-w-[7.75rem] tabular-nums`;
+
 const SESSION_PRICE_CONTROL =
   `${SESSION_CONTROL} [appearance:textfield] text-right tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`;
+
+const SESSION_ROW_MINI_BTN =
+  "inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-md border px-2 text-[11px] font-semibold leading-none disabled:opacity-50";
+
+const SESSION_STATUS_BADGE =
+  "inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center whitespace-nowrap rounded-md border px-2 text-[11px] font-semibold leading-none";
 
 type Props = {
   visible: boolean;
@@ -407,14 +418,7 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
     setLoading(true);
     try {
       const groupParams = new URLSearchParams({ groupIds: effectiveGroupIds.join(',') });
-      const sessionsPromise = fetch(`/api/admin/classes/sessions?${groupParams.toString()}`, {
-        credentials: 'include',
-        cache: 'no-store',
-      }).then(async (res) => {
-        const payload = (await res.json().catch(() => ({}))) as { sessions?: SessionRow[]; error?: string };
-        if (!res.ok) throw new Error(payload.error || 'sessions_fetch_failed');
-        return payload.sessions ?? [];
-      });
+      const sessionsPromise = fetchAdminSessions<SessionRow>(groupParams);
       const [sessionRows, usersRes, tierRes] = await Promise.all([
         sessionsPromise,
         supabase
@@ -1614,15 +1618,16 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                               : "overflow-hidden rounded-lg border border-slate-200"
                           }
                         >
-                          <div className={`${SESSION_ROW_GRID} hidden border-b border-slate-100 bg-slate-50 px-2 py-2 text-[11px] font-medium text-slate-500 md:grid`}>
+                          <div
+                            className={`${SESSION_DESKTOP_ROW_GRID} hidden border-b border-slate-100 bg-slate-50 px-2 py-2 text-[11px] font-medium text-slate-500 md:grid`}
+                          >
                             <div>회차</div>
                             <div>일정</div>
                             <div>강사</div>
                             <div className="text-right">수업료</div>
-                            <div className="text-center">마일</div>
                             <div className="text-center">상태</div>
                             <div>관리</div>
-                            <div />
+                            <div className="text-center">마일</div>
                           </div>
                               {rows
                                 .filter((r) => {
@@ -1655,86 +1660,119 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                   const n = Math.min(r.round_index ?? i + 1, total);
                                   const s = getTimeStatusLabel(r);
                                   const assistList = extraTeachersFromMemo(r.memo);
-                                  return (
-                                    <div key={r.id} className={`${SESSION_ROW_GRID} border-t border-slate-100 px-3 py-2 md:px-2 md:py-1.5`}>
-                                      <div className="flex items-center gap-1.5 md:contents">
-                                        <div className="w-9 shrink-0 text-sm font-bold tabular-nums text-slate-900 md:order-1 md:w-auto md:pt-1.5">{n}/{total}</div>
-                                        <div className="flex min-w-0 flex-1 items-center gap-1.5 md:order-2">
-                                          <label className="relative h-7 w-[5.5rem] shrink-0 md:w-auto md:flex-1">
-                                            <span className="pointer-events-none flex h-7 items-center justify-center rounded-md bg-slate-50 text-[13px] font-medium text-slate-800 md:justify-start md:px-2">
-                                              {formatSessionDateLabel(dateStr)}
-                                            </span>
-                                            <input
-                                              type="date"
-                                              aria-label={`${n}회차 날짜`}
-                                              className="absolute inset-0 cursor-pointer opacity-0"
-                                              value={dateStr}
-                                              onChange={(e) => {
-                                                setScheduleDraftBySessionId((prev) => ({
-                                                  ...prev,
-                                                  [r.id]: mergeSessionScheduleDraft(
-                                                    prev[r.id],
-                                                    savedDateStr,
-                                                    savedTimeStr,
-                                                    { dateStr: e.target.value }
-                                                  ),
-                                                }));
-                                              }}
-                                            />
-                                          </label>
-                                          <label className="relative h-7 w-12 shrink-0 md:w-[4.75rem]">
-                                            <span className="pointer-events-none flex h-7 items-center justify-center rounded-md bg-slate-50 text-[13px] font-medium tabular-nums text-slate-800">
-                                              {timeStr || "시간"}
-                                            </span>
-                                            <input
-                                              type="time"
-                                              aria-label={`${n}회차 시간`}
-                                              className="absolute inset-0 cursor-pointer opacity-0"
-                                              value={timeStr}
-                                              onChange={(e) => {
-                                                setScheduleDraftBySessionId((prev) => ({
-                                                  ...prev,
-                                                  [r.id]: mergeSessionScheduleDraft(
-                                                    prev[r.id],
-                                                    savedDateStr,
-                                                    savedTimeStr,
-                                                    { timeStr: e.target.value }
-                                                  ),
-                                                }));
-                                              }}
-                                            />
-                                          </label>
-                                          {scheduleDirty ? (
+                                  const onScheduleDateChange = (dateStrNext: string) => {
+                                    setScheduleDraftBySessionId((prev) => ({
+                                      ...prev,
+                                      [r.id]: mergeSessionScheduleDraft(
+                                        prev[r.id],
+                                        savedDateStr,
+                                        savedTimeStr,
+                                        { dateStr: dateStrNext }
+                                      ),
+                                    }));
+                                  };
+                                  const onScheduleTimeChange = (timeStrNext: string) => {
+                                    setScheduleDraftBySessionId((prev) => ({
+                                      ...prev,
+                                      [r.id]: mergeSessionScheduleDraft(
+                                        prev[r.id],
+                                        savedDateStr,
+                                        savedTimeStr,
+                                        { timeStr: timeStrNext }
+                                      ),
+                                    }));
+                                  };
+                                  const scheduleSaveBtn = scheduleDirty ? (
+                                    <button
+                                      type="button"
+                                      disabled={savingSessionScheduleId === r.id}
+                                      onClick={() => void saveSessionSchedule(gid, r)}
+                                      className={`${SESSION_ROW_MINI_BTN} w-full border-blue-600 bg-blue-600 text-white hover:bg-blue-700`}
+                                    >
+                                      {savingSessionScheduleId === r.id ? "저장 중…" : "저장"}
+                                    </button>
+                                  ) : null;
+                                  const managementBtns =
+                                    isPastCycle || r.status === "cancelled" || r.status === "deleted" ? null : (
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        {r.status === "postponed" ? (
                                           <button
                                             type="button"
-                                            disabled={savingSessionScheduleId === r.id}
-                                            onClick={() => void saveSessionSchedule(gid, r)}
-                                            className="h-7 rounded-md bg-blue-600 px-2 text-[11px] font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+                                            className={`${SESSION_ROW_MINI_BTN} border-violet-600 bg-violet-600 text-white hover:bg-violet-700`}
+                                            disabled={undoingPostponeSessionId === r.id}
+                                            onClick={() => void handleUndoPostpone(r.id)}
                                           >
-                                            {savingSessionScheduleId === r.id
-                                              ? "저장 중…"
-                                              : "저장"}
+                                            {undoingPostponeSessionId === r.id ? "복구 중..." : "연기 취소"}
                                           </button>
-                                          ) : null}
-                                        </div>
-                                        <span
-                                          className={`ml-auto inline-flex shrink-0 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold md:order-6 md:ml-0 md:justify-self-center ${statusBadgeClass(s.label)}`}
-                                        >
-                                          {s.label}
-                                        </span>
-                                      </div>
-                                      <div className="mt-1.5 flex items-start gap-2 md:contents">
-                                      <div className="flex min-w-0 flex-1 flex-col gap-1 md:order-3">
-                                            <select
-                                              className={SESSION_CONTROL}
-                                              value={r.created_by ?? ""}
-                                              onChange={(e) => void applyMainTeacher(gid, r, e.target.value)}
+                                        ) : (
+                                          <>
+                                            <button
+                                              type="button"
+                                              className={`${SESSION_ROW_MINI_BTN} border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100`}
+                                              disabled={postponingSessionId === r.id}
+                                              onClick={() => void handlePostpone(gid, r.id, "postpone")}
                                             >
-                                              <option value="" disabled>강사 선택</option>
-                                              {teachers.map((t) => (
-                                                <option key={t.id} value={t.id}>{t.name}</option>
-                                              ))}
-                                            </select>
+                                              {postponingSessionId === r.id ? "처리 중..." : "연기"}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className={`${SESSION_ROW_MINI_BTN} border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100`}
+                                              disabled={postponingSessionId === r.id}
+                                              onClick={() => void handlePostpone(gid, r.id, "postpone_request")}
+                                            >
+                                              {postponingSessionId === r.id ? "처리 중..." : "연기요청"}
+                                            </button>
+                                          </>
+                                        )}
+                                        <button
+                                          type="button"
+                                          className={`${SESSION_ROW_MINI_BTN} border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100`}
+                                          disabled={deletingSessionId === r.id}
+                                          onClick={() => void handleDeleteSession(gid, r.id)}
+                                        >
+                                          {deletingSessionId === r.id ? "차감 중..." : "회차 취소"}
+                                        </button>
+                                      </div>
+                                    );
+                                  return (
+                                    <div key={r.id} className="border-t border-slate-100">
+                                      <div className={`${SESSION_DESKTOP_ROW_GRID} hidden px-2 py-2 md:grid`}>
+                                        <div className="pt-1.5 text-xs font-semibold tabular-nums text-slate-700 whitespace-nowrap">
+                                          {n}/{total}
+                                        </div>
+                                        <div className="flex w-full min-w-0 flex-col gap-1">
+                                          <input
+                                            type="date"
+                                            aria-label={`${n}회차 날짜`}
+                                            className={SESSION_SCHEDULE_DATE_CONTROL}
+                                            value={dateStr}
+                                            onChange={(e) => onScheduleDateChange(e.target.value)}
+                                          />
+                                          <input
+                                            type="time"
+                                            lang="en-GB"
+                                            aria-label={`${n}회차 시간`}
+                                            className={SESSION_SCHEDULE_TIME_CONTROL}
+                                            value={timeStr}
+                                            onChange={(e) => onScheduleTimeChange(e.target.value)}
+                                          />
+                                          {scheduleSaveBtn}
+                                        </div>
+                                        <div className="flex min-w-0 flex-col gap-1">
+                                          <select
+                                            className={SESSION_CONTROL}
+                                            value={r.created_by ?? ""}
+                                            onChange={(e) => void applyMainTeacher(gid, r, e.target.value)}
+                                          >
+                                            <option value="" disabled>
+                                              강사 선택
+                                            </option>
+                                            {teachers.map((t) => (
+                                              <option key={t.id} value={t.id}>
+                                                {t.name}
+                                              </option>
+                                            ))}
+                                          </select>
                                           {assistList.map((ex, aidx) => (
                                             <div key={aidx} className="flex min-w-0 items-center gap-1">
                                               <select
@@ -1744,7 +1782,9 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               >
                                                 <option value="">보조 강사</option>
                                                 {teachers.map((t) => (
-                                                  <option key={t.id} value={t.id}>{t.name}</option>
+                                                  <option key={t.id} value={t.id}>
+                                                    {t.name}
+                                                  </option>
                                                 ))}
                                               </select>
                                               <button
@@ -1757,97 +1797,164 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                                               </button>
                                             </div>
                                           ))}
-                                          {assistList.length < 2 && (
+                                          {assistList.length < 2 ? (
                                             <button
                                               type="button"
-                                              className="flex h-6 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-400 hover:text-slate-800"
+                                              className="flex h-8 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-500 hover:text-slate-800"
                                               onClick={() => void addAssistRow(gid, r)}
                                             >
                                               <Plus size={11} strokeWidth={2.5} />
                                               보조
                                             </button>
-                                          )}
+                                          ) : null}
                                         </div>
-                                      <div className="flex w-[5.75rem] shrink-0 flex-col gap-1 md:order-4 md:w-auto">
-                                            <input
-                                              key={`price-${r.id}-${r.price ?? 0}`}
-                                              type="number"
-                                              aria-label={`${n}회차 수업료`}
-                                              className={SESSION_PRICE_CONTROL}
-                                              placeholder="수업료"
-                                              defaultValue={Number(r.price) || 0}
-                                              onBlur={(e) => void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })}
-                                            />
+                                        <div className="flex flex-col gap-1">
+                                          <input
+                                            key={`price-${r.id}-${r.price ?? 0}`}
+                                            type="number"
+                                            aria-label={`${n}회차 수업료`}
+                                            className={SESSION_PRICE_CONTROL}
+                                            placeholder="수업료"
+                                            defaultValue={Number(r.price) || 0}
+                                            onBlur={(e) =>
+                                              void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })
+                                            }
+                                          />
                                           {assistList.map((ex, aidx) => (
-                                              <input
-                                                key={`assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
-                                                type="number"
-                                                className={`${SESSION_PRICE_CONTROL} text-slate-600`}
-                                                placeholder="수업료"
-                                                defaultValue={Number(ex.price) || 0}
-                                                onBlur={(e) => void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)}
-                                              />
+                                            <input
+                                              key={`assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
+                                              type="number"
+                                              className={`${SESSION_PRICE_CONTROL} text-slate-600`}
+                                              placeholder="수업료"
+                                              defaultValue={Number(ex.price) || 0}
+                                              onBlur={(e) =>
+                                                void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)
+                                              }
+                                            />
                                           ))}
                                         </div>
+                                        <div className="flex justify-center pt-1">
+                                          <span className={`${SESSION_STATUS_BADGE} ${statusBadgeClass(s.label)}`}>
+                                            {s.label}
+                                          </span>
+                                        </div>
+                                        <div className="min-w-0 pt-0.5">{managementBtns}</div>
+                                        <div className="flex justify-center pt-1">
+                                          <button
+                                            type="button"
+                                            className={`${SESSION_ROW_MINI_BTN} min-w-[2.75rem] border-amber-200/80 bg-amber-50 text-amber-900 hover:bg-amber-100`}
+                                            onClick={() => setMileageModal({ gid, row: r })}
+                                          >
+                                            설정
+                                          </button>
+                                        </div>
                                       </div>
-                                      <div className="mt-1 grid grid-cols-4 items-center md:contents">
-                                      <div className="md:order-5 md:pt-1 md:text-center">
-                                        <button
-                                          type="button"
-                                          className="w-full whitespace-nowrap text-center text-[11px] font-semibold leading-none text-amber-800 hover:underline md:w-auto md:rounded-md md:px-1.5 md:py-1 md:hover:bg-amber-50 md:hover:no-underline"
-                                          onClick={() => setMileageModal({ gid, row: r })}
+
+                                      <div className="space-y-2 px-3 py-2 md:hidden">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <span className="text-sm font-bold tabular-nums text-slate-900">
+                                            {n}/{total}
+                                          </span>
+                                          <span className={`${SESSION_STATUS_BADGE} ${statusBadgeClass(s.label)}`}>
+                                            {s.label}
+                                          </span>
+                                        </div>
+                                        <input
+                                          type="date"
+                                          aria-label={`${n}회차 날짜`}
+                                          className={SESSION_SCHEDULE_DATE_CONTROL}
+                                          value={dateStr}
+                                          onChange={(e) => onScheduleDateChange(e.target.value)}
+                                        />
+                                        <input
+                                          type="time"
+                                          lang="en-GB"
+                                          aria-label={`${n}회차 시간`}
+                                          className={SESSION_SCHEDULE_TIME_CONTROL}
+                                          value={timeStr}
+                                          onChange={(e) => onScheduleTimeChange(e.target.value)}
+                                        />
+                                        {scheduleSaveBtn}
+                                        <select
+                                          className={SESSION_CONTROL}
+                                          value={r.created_by ?? ""}
+                                          onChange={(e) => void applyMainTeacher(gid, r, e.target.value)}
                                         >
-                                          <span className="md:hidden">마일리지</span>
-                                          <span className="hidden md:inline">설정</span>
-                                        </button>
-                                      </div>
-                                      <div className="col-span-3 md:order-7 md:col-auto md:pt-0.5">
-                                        {isPastCycle ||
-                                        r.status === "cancelled" ||
-                                        r.status === "deleted" ? null : (
-                                          <div className="grid grid-cols-3 items-center md:flex md:flex-wrap md:gap-1">
-                                            {r.status === "postponed" ? (
-                                              <button
-                                                type="button"
-                                                className="w-full whitespace-nowrap text-center text-[11px] font-semibold text-violet-800 hover:underline disabled:opacity-50 md:w-auto md:rounded-md md:bg-violet-600 md:px-2 md:py-1.5 md:text-white md:hover:bg-violet-700 md:hover:no-underline"
-                                                disabled={undoingPostponeSessionId === r.id}
-                                                onClick={() => void handleUndoPostpone(r.id)}
-                                              >
-                                                {undoingPostponeSessionId === r.id ? "복구 중..." : "연기 취소"}
-                                              </button>
-                                            ) : (
-                                              <>
-                                                <button
-                                                  type="button"
-                                                  className="w-full whitespace-nowrap text-center text-[11px] font-semibold text-violet-800 hover:underline disabled:opacity-50 md:w-auto md:rounded-md md:border md:border-violet-200 md:bg-violet-50 md:px-2 md:py-1.5 md:hover:bg-violet-100 md:hover:no-underline"
-                                                  disabled={postponingSessionId === r.id}
-                                                  onClick={() => void handlePostpone(gid, r.id, "postpone")}
-                                                >
-                                                  {postponingSessionId === r.id ? "처리 중..." : "연기"}
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  className="w-full whitespace-nowrap text-center text-[11px] font-semibold text-indigo-800 hover:underline disabled:opacity-50 md:w-auto md:rounded-md md:border md:border-indigo-200 md:bg-indigo-50 md:px-2 md:py-1.5 md:hover:bg-indigo-100 md:hover:no-underline"
-                                                  disabled={postponingSessionId === r.id}
-                                                  onClick={() => void handlePostpone(gid, r.id, "postpone_request")}
-                                                >
-                                                  {postponingSessionId === r.id ? "처리 중..." : "연기요청"}
-                                                </button>
-                                              </>
-                                            )}
+                                          <option value="" disabled>
+                                            강사 선택
+                                          </option>
+                                          {teachers.map((t) => (
+                                            <option key={t.id} value={t.id}>
+                                              {t.name}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        {assistList.map((ex, aidx) => (
+                                          <div key={aidx} className="flex min-w-0 items-center gap-1">
+                                            <select
+                                              className={`${SESSION_CONTROL} text-slate-600`}
+                                              value={ex.id}
+                                              onChange={(e) => void setAssistIdAt(gid, r, aidx, e.target.value)}
+                                            >
+                                              <option value="">보조 강사</option>
+                                              {teachers.map((t) => (
+                                                <option key={t.id} value={t.id}>
+                                                  {t.name}
+                                                </option>
+                                              ))}
+                                            </select>
                                             <button
                                               type="button"
-                                              className="w-full whitespace-nowrap text-center text-[11px] font-semibold text-rose-700 hover:underline disabled:opacity-50 md:w-auto md:rounded-md md:border md:border-rose-200 md:bg-rose-50 md:px-2 md:py-1.5 md:hover:bg-rose-100 md:hover:no-underline"
-                                              disabled={deletingSessionId === r.id}
-                                              onClick={() => void handleDeleteSession(gid, r.id)}
+                                              title="보조 제거"
+                                              className="shrink-0 rounded p-1 text-slate-300 hover:bg-rose-50 hover:text-rose-500"
+                                              onClick={() => void removeAssistRow(gid, r, aidx)}
                                             >
-                                              {deletingSessionId === r.id ? "차감 중..." : "회차 취소"}
+                                              <Minus size={12} strokeWidth={2.5} />
                                             </button>
                                           </div>
-                                        )}
+                                        ))}
+                                        {assistList.length < 2 ? (
+                                          <button
+                                            type="button"
+                                            className="flex h-8 w-fit items-center gap-0.5 text-[11px] font-medium text-slate-500 hover:text-slate-800"
+                                            onClick={() => void addAssistRow(gid, r)}
+                                          >
+                                            <Plus size={11} strokeWidth={2.5} />
+                                            보조
+                                          </button>
+                                        ) : null}
+                                        <input
+                                          key={`m-price-${r.id}-${r.price ?? 0}`}
+                                          type="number"
+                                          aria-label={`${n}회차 수업료`}
+                                          className={SESSION_PRICE_CONTROL}
+                                          placeholder="수업료"
+                                          defaultValue={Number(r.price) || 0}
+                                          onBlur={(e) =>
+                                            void applyInlineUpdate(gid, r.id, { price: Number(e.target.value) || 0 })
+                                          }
+                                        />
+                                        {assistList.map((ex, aidx) => (
+                                          <input
+                                            key={`m-assist-price-${r.id}-${aidx}-${ex.price ?? 0}`}
+                                            type="number"
+                                            className={`${SESSION_PRICE_CONTROL} text-slate-600`}
+                                            placeholder="보조 수업료"
+                                            defaultValue={Number(ex.price) || 0}
+                                            onBlur={(e) =>
+                                              void setAssistPriceAt(gid, r, aidx, Number(e.target.value) || 0)
+                                            }
+                                          />
+                                        ))}
+                                        {managementBtns}
+                                        <button
+                                          type="button"
+                                          className={`${SESSION_ROW_MINI_BTN} w-full border-amber-200/80 bg-amber-50 text-amber-900 hover:bg-amber-100`}
+                                          onClick={() => setMileageModal({ gid, row: r })}
+                                        >
+                                          마일리지 설정
+                                        </button>
                                       </div>
-                                      </div>
-                                      <div className="hidden md:order-8 md:block" />
                                     </div>
                                   );
                                 })}
@@ -2005,35 +2112,26 @@ export default function ClassBundlePanel({ visible, bundleTitle, groupIds, onClo
                               </>
                             ) : null}
                             <label className="text-[11px] text-slate-600">시작일</label>
-                            <label className="relative h-8 w-full max-w-[7.5rem]">
-                              <span className="pointer-events-none flex h-8 items-center rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-800">
-                                {formatSessionDateLabel(restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date()))}
-                              </span>
-                              <input
-                                type="date"
-                                aria-label="재시작 시작일"
-                                className="absolute inset-0 cursor-pointer opacity-0"
-                                value={restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}
-                                onChange={(e) =>
-                                  setRestartStartDateByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
-                                }
-                              />
-                            </label>
+                            <input
+                              type="date"
+                              aria-label="재시작 시작일"
+                              className={`${SESSION_CONTROL} max-w-[9rem] text-sm`}
+                              value={restartStartDateByGroup[gid] ?? toDateInputValueLocal(new Date())}
+                              onChange={(e) =>
+                                setRestartStartDateByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
+                              }
+                            />
                             <label className="text-[11px] text-slate-600">시간</label>
-                            <label className="relative h-8 w-[4.75rem]">
-                              <span className="pointer-events-none flex h-8 items-center justify-center rounded-md border border-slate-200 bg-white px-2 text-sm tabular-nums text-slate-800">
-                                {restartStartTimeByGroup[gid] ?? "10:00"}
-                              </span>
-                              <input
-                                type="time"
-                                aria-label="재시작 시간"
-                                className="absolute inset-0 cursor-pointer opacity-0"
-                                value={restartStartTimeByGroup[gid] ?? "10:00"}
-                                onChange={(e) =>
-                                  setRestartStartTimeByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
-                                }
-                              />
-                            </label>
+                            <input
+                              type="time"
+                              lang="en-GB"
+                              aria-label="재시작 시간"
+                              className={`${SESSION_CONTROL} w-[5rem] text-sm tabular-nums`}
+                              value={restartStartTimeByGroup[gid] ?? "10:00"}
+                              onChange={(e) =>
+                                setRestartStartTimeByGroup((prev) => ({ ...prev, [gid]: e.target.value }))
+                              }
+                            />
                           </div>
 
                           {(restartWeeklyFrequencyByGroup[gid] ?? 1) === 2 && (

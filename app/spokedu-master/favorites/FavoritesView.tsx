@@ -220,7 +220,7 @@ export default function FavoritesView() {
         </div>
 
         {visibleItems.length ? (
-          <section className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6" aria-label="저장한 콘텐츠">
+          <section className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-4" aria-label="저장한 콘텐츠">
             {visibleItems.map((item, index) => {
               if (item.type === 'program') {
                 return (
@@ -239,7 +239,7 @@ export default function FavoritesView() {
                       <InstructionalThumb
                         src={item.heroImageUrl}
                         alt=""
-                        sizes="(min-width: 1280px) 360px, (min-width: 640px) 50vw, 92vw"
+                        sizes="(min-width: 1280px) 280px, (min-width: 640px) 50vw, 92vw"
                         priority={index < 2}
                         presentation="favorites-cover-4-3"
                         className="rounded-none"
@@ -272,7 +272,7 @@ export default function FavoritesView() {
                     <SpomoveLayeredThumb
                       src={thumbnailUrl}
                       alt=""
-                      sizes="(min-width: 1280px) 360px, (min-width: 640px) 50vw, 92vw"
+                      sizes="(min-width: 1280px) 280px, (min-width: 640px) 50vw, 92vw"
                       priority={index < 2}
                       presentation="favorites-cover-4-3"
                       className="rounded-none"

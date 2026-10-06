@@ -5,8 +5,9 @@ import type { MasterSessionDto, MasterSessionStatus } from '../../types/operatio
 
 export type ScheduledSessionPrimaryAction = 'create' | 'start' | 'complete' | null;
 
-export function resolveScheduledSessionPrimaryAction(isCreate: boolean, primarySurfaceIntent: SessionWorkspacePrimaryIntent | null): ScheduledSessionPrimaryAction {
+export function resolveScheduledSessionPrimaryAction(isCreate: boolean, primarySurfaceIntent: SessionWorkspacePrimaryIntent | null, startedAt: string | null): ScheduledSessionPrimaryAction {
   if (isCreate) return 'create';
+  if (!startedAt) return 'start';
   if (primarySurfaceIntent === 'start-session') return 'start';
   if (primarySurfaceIntent === 'run-next-activity') return 'complete';
   if (primarySurfaceIntent === 'wrap-session') return 'complete';
@@ -23,12 +24,16 @@ export async function executeSessionStartSequence<T>({ dirty, save, start }: { d
   await start(saved);
 }
 
-export function SessionActions({ status, isCreate, activeSession, dirty, saving, classId, primarySurfaceIntent, incompleteActivityCount, startSession, persist }: { status: MasterSessionStatus; isCreate: boolean; activeSession: MasterSessionDto | null; dirty: boolean; saving: boolean; classId: string; primarySurfaceIntent: SessionWorkspacePrimaryIntent | null; incompleteActivityCount: number; startSession: () => Promise<void>; persist: (status: MasterSessionStatus) => Promise<void> }) {
+export function SessionActions({ status, isCreate, activeSession, dirty, saving, classId, primarySurfaceIntent, incompleteActivityCount, startSession, undoSessionStart, persist }: { status: MasterSessionStatus; isCreate: boolean; activeSession: MasterSessionDto | null; dirty: boolean; saving: boolean; classId: string; primarySurfaceIntent: SessionWorkspacePrimaryIntent | null; incompleteActivityCount: number; startSession: () => Promise<void>; undoSessionStart: () => Promise<void>; persist: (status: MasterSessionStatus) => Promise<void> }) {
   if (status === 'scheduled') {
-    const primaryAction = resolveScheduledSessionPrimaryAction(isCreate, primarySurfaceIntent);
+    const primaryAction = resolveScheduledSessionPrimaryAction(isCreate, primarySurfaceIntent, activeSession?.startedAt ?? null);
+    const canOfferUndoStart = primaryAction === 'complete' && Boolean(activeSession?.startedAt) && !activeSession?.programs.some((program) => program.isCompleted);
     if (!primaryAction && !dirty) return null;
-    return <div className={`grid gap-2 border-t border-slate-200 bg-white ${primaryAction && activeSession && dirty ? 'grid-cols-[auto_minmax(0,1fr)]' : 'grid-cols-1'} ${isCreate ? 'py-3' : 'px-1 pb-[max(16px,env(safe-area-inset-bottom))] pt-3'}`}>
+    return <div className={`grid gap-2 border-t border-slate-200 bg-white ${(primaryAction && activeSession && dirty) || canOfferUndoStart ? 'grid-cols-[auto_minmax(0,1fr)]' : 'grid-cols-1'} ${isCreate ? 'py-3' : 'px-1 pb-[max(16px,env(safe-area-inset-bottom))] pt-3'}`}>
       {activeSession && dirty ? <button type="button" disabled={saving} onClick={() => void persist('scheduled')} className={`${SPM_SECONDARY_BTN} px-4`}>변경 저장</button> : null}
+      {!dirty && canOfferUndoStart ? <button type="button" disabled={saving} onClick={() => {
+        if (window.confirm('수업 시작을 취소하고 다시 예정 상태로 돌릴까요?')) void undoSessionStart();
+      }} className={`${SPM_SECONDARY_BTN} px-3 text-xs`}>수업 시작 취소</button> : null}
       {primaryAction ? <button type="button" disabled={saving || !classId} onClick={() => {
         if (primaryAction === 'complete' && incompleteActivityCount > 0 && !window.confirm(`미진행 활동이 ${incompleteActivityCount}개 있습니다. 수업을 완료할까요?`)) return;
         void executeScheduledSessionPrimaryAction(primaryAction, startSession, persist);

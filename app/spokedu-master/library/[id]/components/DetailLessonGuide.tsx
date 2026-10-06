@@ -52,32 +52,6 @@ export function splitCoachScriptParagraphs(script: string): string[] {
     .filter(Boolean);
 }
 
-function normalizeComparableText(value: string) {
-  return value.replace(/\s+/g, ' ').trim().toLocaleLowerCase('ko');
-}
-
-function getMethodSupport(model: LessonDisplayModel): string[] {
-  if (model.variationMethod.length > 0 || model.activityMethod.length > 4) return [];
-  const methodText = normalizeComparableText(model.activityMethod.join(' '));
-  const maxItems = model.activityMethod.length <= 2 ? 2 : 1;
-  const candidates = [
-    ...model.fieldTips,
-    ...(model.developmentFocus ? [model.developmentFocus] : []),
-    ...(model.description ? [model.description] : []),
-    ...(model.objective ? [model.objective] : []),
-    ...model.safetyNotes,
-  ];
-  const selected: string[] = [];
-  for (const candidate of candidates) {
-    const normalized = normalizeComparableText(candidate);
-    if (!normalized || (methodText && (methodText.includes(normalized) || normalized.includes(methodText))) ||
-        selected.some((item) => normalizeComparableText(item) === normalized)) continue;
-    selected.push(candidate);
-    if (selected.length >= maxItems) break;
-  }
-  return selected;
-}
-
 export function splitLessonTitle(title: string): {
   koreanTitle: string;
   englishTitle: string | null;
@@ -274,6 +248,13 @@ function VideoPanel({ model, video }: { model: LessonDisplayModel; video: VideoP
 }
 
 function MethodPanel({ model }: { model: LessonDisplayModel }) {
+  const variationSteps = model.variationMethod.length > 1
+    ? model.variationMethod.slice(0, -1)
+    : model.variationMethod;
+  const variationSummary = model.variationMethod.length > 1
+    ? model.variationMethod.at(-1) ?? null
+    : null;
+
   return (
     <div data-detail-panel="method" className={DETAIL_PANEL_CLASS}>
       <h2
@@ -296,71 +277,39 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
             </li>
           ))}
         </ol>
-      </div>
-    </div>
-  );
-}
-
-function ExecutionSupport({ model }: { model: LessonDisplayModel }) {
-  const variationListId = 'lesson-variation-list';
-  const [variationsExpanded, setVariationsExpanded] = useState(false);
-  const visibleVariations = variationsExpanded
-    ? model.variationMethod
-    : model.variationMethod.slice(0, 2);
-  const hiddenVariationCount = Math.max(0, model.variationMethod.length - 2);
-  const methodSupport = getMethodSupport(model);
-  const hasVariation = model.variationMethod.length > 0;
-
-  if (methodSupport.length === 0 && !hasVariation) return null;
-
-  return (
-    <section
-      data-detail-chapter="execution-support"
-      className="mt-8 border-t border-[color:var(--spm-br2)] pt-6 sm:mt-10"
-    >
-      <div className={`grid gap-8 min-[900px]:gap-10 ${methodSupport.length > 0 && hasVariation ? 'min-[900px]:grid-cols-2' : 'grid-cols-1'}`}>
-        {methodSupport.length > 0 ? (
-          <section data-detail-support="method">
-            <h2 className="m-0 text-[17px] font-semibold tracking-[-0.018em] text-[color:var(--spm-t)]">지도 포인트</h2>
-            <div className="mt-3.5 space-y-2.5">
-              {methodSupport.map((item, index) => (
-                <p key={`${index}-${item}`} className="m-0 break-keep text-[15px] leading-[1.7] text-[color:var(--spm-t2)]">{item}</p>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {hasVariation ? (
-          <section data-detail-support="variation">
+        {variationSteps.length > 0 ? (
+          <section data-detail-support="variation" className="mt-7 border-t border-[color:var(--spm-br2)] pt-6">
             <h2 className="m-0 text-[17px] font-semibold tracking-[-0.018em] text-[color:var(--spm-t)]">
-              난이도 조절 · 변형 활동
+              변형 방법
             </h2>
-            <ul id={variationListId} className="m-0 mt-4 space-y-3">
-              {visibleVariations.map((item, index) => (
+            <ol className="m-0 mt-4 space-y-3">
+              {variationSteps.map((item, index) => (
                 <li data-detail-variation-item key={`${index}-${item}`} className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-2.5">
-                  <StepMarker index={index} />
+                  <VariationMarker index={index} numbered={variationSteps.length > 1} />
                   <p className="m-0 break-keep pt-0.5 text-[14px] font-medium leading-[1.65] text-[color:var(--spm-t2)] sm:text-[15px]">
                     {item}
                   </p>
                 </li>
               ))}
-            </ul>
-            {hiddenVariationCount > 0 ? (
-              <button
-                data-detail-variation-toggle
-                type="button"
-                className="mt-2 inline-flex min-h-11 items-center px-0 text-[14px] font-semibold text-[var(--spm-acc)] transition-colors hover:text-[color:var(--spm-t)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
-                aria-expanded={variationsExpanded}
-                aria-controls={variationListId}
-                onClick={() => setVariationsExpanded((expanded) => !expanded)}
-              >
-                {variationsExpanded ? '접기' : `+ ${hiddenVariationCount}개 더보기`}
-              </button>
+            </ol>
+            {variationSummary ? (
+              <p data-detail-variation-summary className="m-0 mt-4 break-keep border-l-2 border-[color:var(--spm-br2)] pl-3 text-[14px] leading-[1.7] text-[color:var(--spm-t2)] sm:text-[15px]">
+                {variationSummary}
+              </p>
             ) : null}
           </section>
         ) : null}
       </div>
-    </section>
+    </div>
+  );
+}
+
+function VariationMarker({ index, numbered }: { index: number; numbered: boolean }) {
+  if (numbered) return <StepMarker index={index} />;
+  return (
+    <span className="flex h-7 w-7 items-center justify-center" aria-hidden>
+      <span className="h-2 w-2 rounded-full bg-[var(--spm-acc)]" />
+    </span>
   );
 }
 
@@ -573,8 +522,6 @@ export function DetailLessonGuide({
         <VideoPanel model={model} video={video} />
         {hasMethod ? <MethodPanel model={model} /> : null}
       </section>
-
-      <ExecutionSupport model={model} />
 
       {showPrepare ? (
         <section

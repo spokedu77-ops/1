@@ -31,10 +31,11 @@ describe('Class Management protected invariants', () => {
   });
 
   it('keeps start in PREP and complete in both RUN and WRAP', () => {
-    expect(resolveScheduledSessionPrimaryAction(false, 'start-session')).toBe('start');
-    expect(resolveScheduledSessionPrimaryAction(false, 'run-next-activity')).toBe('complete');
-    expect(resolveScheduledSessionPrimaryAction(false, 'wrap-session')).toBe('complete');
-    expect(resolveScheduledSessionPrimaryAction(false, 'run-next-activity')).not.toBeNull();
+    expect(resolveScheduledSessionPrimaryAction(false, 'add-activity', null)).toBe('start');
+    expect(resolveScheduledSessionPrimaryAction(false, 'start-session', null)).toBe('start');
+    expect(resolveScheduledSessionPrimaryAction(false, 'run-next-activity', '2026-09-01T01:05:00Z')).toBe('complete');
+    expect(resolveScheduledSessionPrimaryAction(false, 'wrap-session', '2026-09-01T01:05:00Z')).toBe('complete');
+    expect(resolveScheduledSessionPrimaryAction(false, 'run-next-activity', '2026-09-01T01:05:00Z')).not.toBeNull();
   });
 
   it('keeps every earlier completed Session, including three from one Class', () => {

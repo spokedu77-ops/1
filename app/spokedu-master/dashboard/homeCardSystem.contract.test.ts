@@ -158,7 +158,7 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).not.toContain('auto-fill');
     expect(continueCard).toContain('line-clamp-2');
     expect(continueCard).toContain('data-dashboard-operational-meta="true"');
-    expect(continueCard).toContain('line-clamp-1');
+    expect(continueCard).toContain('whitespace-nowrap');
   });
 
   it("keeps compact media dense without changing mobile or desktop composition", () => {
@@ -186,14 +186,15 @@ describe("MASTER Home content card system", () => {
     expect(continueCard).toContain('data-dashboard-operational-meta="true"');
     expect(continueCard).toContain('data-dashboard-operational-cta="true"');
     expect(continueCard).toContain("meta ? <p");
-    expect(continueCard).toContain("line-clamp-1");
+    expect(continueCard).toContain("whitespace-nowrap");
     expect(continueCard).not.toContain("min-h-[132px]");
     expect(continueCard).not.toContain("min-h-[156px]");
     expect(dashboard).not.toContain("놀이체육이나 SPOMOVE를 열면 여기에 이어집니다");
     expect(dashboard).not.toContain("수업 일정을 만들면 여기에 이어집니다");
-    expect(dashboard).not.toContain("meta={recentClassTool.description}");
-    expect(dashboard).not.toContain("놀이체육 · 수업 준비");
-    expect(dashboard).not.toContain("놀이체육 · 영상 이어보기");
+    expect(dashboard).toContain("meta={compactMeta}");
+    expect(dashboard).toContain("meta={recentClassTool.compactDescription}");
+    expect(dashboard).toContain("놀이체육 · 준비");
+    expect(dashboard).toContain("놀이체육 · 영상");
   });
 
   it("uses one CTA system for all operational states", () => {
@@ -205,8 +206,13 @@ describe("MASTER Home content card system", () => {
   });
 
   it("gives mobile Hero actions an explicit one-plus-two hierarchy", () => {
+    const heroActionsIndex = dashboard.indexOf('data-dashboard-hero-actions="true"');
+    const scheduleActionIndex = dashboard.indexOf('수업 일정 보기', heroActionsIndex);
+    const classToolsActionIndex = dashboard.indexOf('수업 도구 열기', heroActionsIndex);
+
     expect(dashboard).toContain('data-dashboard-hero-actions="true"');
     expect(dashboard).toContain('data-dashboard-primary-cta="true"');
+    expect(scheduleActionIndex).toBeLessThan(classToolsActionIndex);
     expect(dashboard).toContain('grid grid-cols-2');
     expect(dashboard).toContain('spm-btn-primary col-span-2');
     expect(dashboard).toContain("matchMedia('(max-width: 767px)')");

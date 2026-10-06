@@ -109,12 +109,12 @@ export function LessonPreviewContent({
               {previewEquipment.length > 0 ? (
                 <section>
                   <p className="sr-only">핵심 준비물</p>
-                  <h3 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-emerald-700">대표 준비물</h3>
+                  <h3 className="text-[13px] font-bold leading-[18px] tracking-[-0.01em] text-emerald-700">대표 준비물</h3>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {previewEquipment.map((item) => (
                       <span
                         key={item}
-                        className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-[9px] border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[12px] font-bold leading-4 text-emerald-900"
+                        className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-[9px] border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[13px] font-semibold leading-[18px] tracking-normal text-emerald-900"
                       >
                         <Package className="h-3.5 w-3.5 shrink-0 text-[var(--spm-grn)]" />
                         <span className="min-w-0 break-words">{item}</span>
@@ -127,11 +127,11 @@ export function LessonPreviewContent({
               {previewScript ? (
                 <section className="rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-3">
                   <p className="sr-only">수업 목표</p>
-                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-[var(--spm-acc)]">
+                  <h3 className="inline-flex items-center gap-1.5 text-[13px] font-bold leading-[18px] tracking-[-0.01em] text-[var(--spm-acc)]">
                     <MessageSquareQuote className="h-3.5 w-3.5" />
                     수업 스크립트
                   </h3>
-                  <p className="mt-2 whitespace-pre-line text-[13.5px] font-semibold leading-[1.6] text-slate-700">
+                  <p className="mt-2 whitespace-pre-line text-[14px] font-semibold leading-[1.6] tracking-[-0.005em] text-slate-700">
                     {quoteScript(previewScript)}
                   </p>
                 </section>
@@ -140,14 +140,14 @@ export function LessonPreviewContent({
               {previewRules.length > 0 ? (
                 <section className="border-t border-slate-100 pt-4">
                   <p className="sr-only">주요 활동 순서 요약</p>
-                  <h3 className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-slate-600">활동 방법</h3>
+                  <h3 className="text-[13px] font-bold leading-[18px] tracking-[-0.01em] text-slate-700">활동 방법</h3>
                   <ol className="relative mt-3 space-y-0">
                     {previewRules.map((rule, index) => (
                       <li key={`${rule}-${index}`} className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-2.5 pb-3 last:pb-0">
                         <span className="relative z-10 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_14%,white)] text-[11px] font-bold tabular-nums text-[var(--spm-acc)] ring-1 ring-[color-mix(in_srgb,var(--spm-acc)_28%,transparent)]">
                           {index + 1}
                         </span>
-                        <span className="min-w-0 pt-1 text-[14px] font-medium leading-[1.55] text-slate-700">
+                        <span className="min-w-0 pt-1 text-[14px] font-semibold leading-[1.55] tracking-[-0.005em] text-slate-700">
                           {rule}
                         </span>
                       </li>
@@ -158,11 +158,11 @@ export function LessonPreviewContent({
 
               {previewSafety ? (
                 <section className="border-t border-slate-100 pt-4">
-                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-amber-700">
+                  <h3 className="inline-flex items-center gap-1.5 text-[13px] font-bold leading-[18px] tracking-[-0.01em] text-amber-700">
                     <AlertTriangle className="h-3.5 w-3.5" />
                     핵심 안전사항
                   </h3>
-                  <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-700">{previewSafety}</p>
+                  <p className="mt-2 text-[14px] font-semibold leading-[1.6] tracking-[-0.005em] text-slate-700">{previewSafety}</p>
                 </section>
               ) : null}
             </div>

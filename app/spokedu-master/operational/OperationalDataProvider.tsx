@@ -30,6 +30,7 @@ type OperationalDataContextValue = {
   reload: (mode?: 'hard' | 'soft') => Promise<void>;
   saveSession: (input: SaveSessionInput, sessionId?: string) => Promise<MasterSessionDto>;
   startSession: (sessionId: string) => Promise<MasterSessionDto>;
+  undoSessionStart: (sessionId: string) => Promise<MasterSessionDto>;
   completeSession: (sessionId: string, input: SaveSessionInput, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus }>) => Promise<MasterSessionDto>;
   saveParentNotice: (sessionId: string, parentNotice: string) => Promise<void>;
   deleteCancelledSession: (sessionId: string) => Promise<void>;
@@ -221,6 +222,17 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return started;
   }, [sessions]);
 
+  const undoSessionStart = useCallback(async (sessionId: string) => {
+    const json = await masterFetchJson<{ data: { sessionId: string; startedAt: null; rosterLockedAt: null } }>(`/api/spokedu-master/sessions/${sessionId}/start`, {
+      method: 'DELETE',
+    });
+    const current = sessions.find((session) => session.id === json.data.sessionId);
+    if (!current) throw new Error('Session is not loaded');
+    const scheduled: MasterSessionDto = { ...current, startedAt: null, rosterLockedAt: null };
+    setSessions((items) => items.map((session) => session.id === scheduled.id ? scheduled : session));
+    return scheduled;
+  }, [sessions]);
+
   const deleteCancelledSession = useCallback(async (sessionId: string) => {
     await masterFetchJson(`/api/spokedu-master/sessions?id=${encodeURIComponent(sessionId)}`, { method: 'DELETE' });
     setSessions((current) => current.filter((session) => session.id !== sessionId));
@@ -335,6 +347,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       saveSession,
       saveParentNotice,
       startSession,
+      undoSessionStart,
       saveSessionAttendance,
       removeSessionProgram,
       removeClassStudent,
@@ -345,7 +358,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       updateSessionProgram,
       updateClass,
     }),
-    [addClassStudent, addSessionProgram, addSessionSpomove, carryoverSessionPrograms, classes, completeSession, createClass, createNextSession, createStudent, deleteCancelledSession, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveParentNotice, saveSession, saveSessionAttendance, sessions, startSession, status, students, updateClass, updateSessionProgram, updateStudent],
+    [addClassStudent, addSessionProgram, addSessionSpomove, carryoverSessionPrograms, classes, completeSession, createClass, createNextSession, createStudent, deleteCancelledSession, deleteStudent, error, ownerId, reload, removeClassStudent, removeSessionProgram, reorderSessionPrograms, saveParentNotice, saveSession, saveSessionAttendance, sessions, startSession, status, students, undoSessionStart, updateClass, updateSessionProgram, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

@@ -58,11 +58,11 @@ export function ProgramPreviewModal({
       title={model.title}
       headerTitle={
         <div>
-          <h2 className="truncate text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-950">
+          <h2 className="truncate text-[22px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[color:var(--spm-t)]">
             {model.title}
           </h2>
           {meta.length > 0 ? (
-            <p className="mt-1 truncate text-[12px] font-medium text-slate-500">{meta.join(' · ')}</p>
+            <p className="mt-1 truncate text-[13px] font-semibold leading-[18px] tracking-normal text-slate-500">{meta.join(' · ')}</p>
           ) : null}
         </div>
       }
@@ -97,7 +97,7 @@ export function ProgramPreviewModal({
               <button
                 type="button"
                 onClick={onToggleTodayLesson}
-                className={`inline-flex h-10 w-auto shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-3.5 text-[13px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 ${
+                className={`inline-flex h-10 w-auto shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-3.5 text-[13px] font-bold tracking-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 ${
                   isTodayLesson
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                     : 'border-slate-200 bg-white text-slate-700'
@@ -109,13 +109,13 @@ export function ProgramPreviewModal({
               </button>
             ) : null}
             {locked ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-800">
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-[13px] font-semibold leading-[18px] tracking-normal text-amber-800">
                 <Lock className="h-3 w-3" />
                 Lite
               </span>
             ) : null}
             {!locked && hasSpomoveLink(program) ? (
-              <span className="rounded-full bg-[var(--spm-acc-glow)] px-3 py-1 text-xs font-extrabold text-[var(--spm-acc)]">
+              <span className="rounded-full bg-[var(--spm-acc-glow)] px-3 py-1 text-[13px] font-semibold leading-[18px] tracking-normal text-[var(--spm-acc)]">
                 SPOMOVE 연결
               </span>
             ) : null}
@@ -126,14 +126,14 @@ export function ProgramPreviewModal({
             <button
               type="button"
               onClick={onClose}
-              className="hidden h-10 w-[96px] items-center justify-center rounded-[10px] border border-slate-200 px-4 text-[13px] font-extrabold text-slate-700 sm:inline-flex"
+              className="hidden h-10 w-[96px] items-center justify-center rounded-[10px] border border-slate-200 px-4 text-[13px] font-bold tracking-normal text-slate-700 sm:inline-flex"
             >
               닫기
             </button>
             {locked ? (
               <Link
                 href={lockHref}
-                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-extrabold focus-visible:outline-none sm:h-10 sm:w-[168px]"
+                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
               >
                 <Lock className="h-4 w-4" />
                 {lockLabel}
@@ -141,7 +141,7 @@ export function ProgramPreviewModal({
             ) : (
               <Link
                 href={getLibraryProgramDetailHref(program.id, sourceLibraryView, sourceLibrarySearch)}
-                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-extrabold focus-visible:outline-none sm:h-10 sm:w-[168px]"
+                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
               >
                 <BookOpen className="h-4 w-4" />
                 상세 준비 열기
