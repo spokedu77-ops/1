@@ -265,7 +265,8 @@ function PaymentContent() {
     }
 
     const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
-    if (!isTossClientKeyAllowed(clientKey) || !window.TossPayments) {
+    const reviewDeployment = process.env.NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED === 'true' ? 'preview' : undefined;
+    if (!isTossClientKeyAllowed(clientKey, process.env.NODE_ENV, reviewDeployment) || !window.TossPayments) {
       setError('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
       return;
     }

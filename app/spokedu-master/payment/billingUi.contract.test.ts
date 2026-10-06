@@ -28,6 +28,8 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
 
   it('starts Toss billing auth instead of one-time checkout and sends no client amount', () => {
     expect(payment).toContain('requestBillingAuth');
+    expect(payment).toContain("process.env.NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED === 'true' ? 'preview' : undefined");
+    expect(payment).toContain('isTossClientKeyAllowed(clientKey, process.env.NODE_ENV, reviewDeployment)');
     expect(payment).toContain("successUrl.searchParams.set('plan', plan)");
     expect(payment).toContain("failUrl.searchParams.set('plan', plan)");
     expect(payment).not.toContain('/api/spokedu-master/payment/create-checkout');
