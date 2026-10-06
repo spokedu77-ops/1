@@ -61,7 +61,8 @@ export function dispatchInquiryHref(args: {
   if (args.program) params.set('program', args.program);
   if (args.conversionEvidence) params.set('conversionEvidence', args.conversionEvidence);
   const qs = params.toString();
-  return `${SPOKEDU_PATHS.education}${qs ? `?${qs}` : ''}`;
+  // path → query → hash. `#contact`는 EducationHubLanding 안의 DispatchProposalForm이 소유한다.
+  return `${SPOKEDU_PATHS.education}${qs ? `?${qs}` : ''}#contact`;
 }
 
 export function privateInquiryHref(args: {

@@ -594,12 +594,11 @@ function EngineRuntime({
       onComplete({ completionReason: 'natural_complete', engineMode: mode, engineLevel: level, colorCounts: null });
     };
     if (level === 7) {
-      const dur = durationSec ?? (rounds ?? 10) * (speedSec ?? 3);
       const sp = speedSec ?? 3;
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <ColorMemoryGridReactionTraining
-            durationSec={Math.max(dur, 30)}
+            roundCount={rounds ?? 10}
             speedLevel={mapReactSpeedLevel(sp)}
             speedSec={sp}
             gridSize={colorMemoryGridSize === 3 || colorMemoryGridSize === 5 ? colorMemoryGridSize : 4}

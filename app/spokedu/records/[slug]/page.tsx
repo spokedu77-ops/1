@@ -56,5 +56,9 @@ export default async function SpokeduRecordDetailPage({ params }: PageProps) {
   const item = findOnsiteRecord(slug);
   if (!item) notFound();
 
-  return <RecordsCaseDetail item={item} />;
+  return (
+    <div className="site-container py-8 sm:py-10 lg:py-12">
+      <RecordsCaseDetail item={item} />
+    </div>
+  );
 }

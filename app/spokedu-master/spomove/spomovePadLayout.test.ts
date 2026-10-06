@@ -38,7 +38,7 @@ describe('spomove pad layout variant', () => {
   it('renders separate square and diamond assets from the resolved variant', () => {
     const view = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/SpomovePadLayoutView.tsx'), 'utf8');
     expect(view).toContain("variant === 'compass'");
-    expect(view).toContain('/images/spokedu/brand/spomat-layout.png');
+    expect(view).toContain('/images/spokedu/brand/spomat-square-cutout.png');
     expect(view).toContain('/images/spokedu/brand/spomat-diamond-cutout.png');
   });
 });

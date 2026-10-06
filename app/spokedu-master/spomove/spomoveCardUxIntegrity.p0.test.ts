@@ -155,9 +155,10 @@ describe("SPOMOVE-CARD-UX-INTEGRITY-P0-01", () => {
     expect(hub).not.toContain("catalogTags");
     expect(hub).not.toContain("startHref={");
     expect(hub).toContain(
-      "import { ChevronDown, Heart, Play, Search, X } from 'lucide-react'",
+      "import { Heart, Play, Search, X } from 'lucide-react'",
     );
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(hub).toContain("data-spm-spomove-session-action");
     expect(hub).toContain("이 수업에 추가");
     expect(hub).toContain("h-11 w-11");

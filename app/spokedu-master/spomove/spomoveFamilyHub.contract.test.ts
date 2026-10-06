@@ -23,8 +23,8 @@ describe("SPOMOVE Family-first Hub", () => {
     );
   });
 
-  it("keeps detailed filters behind disclosure and Browse cards preview-led", () => {
-    expect(hub).toContain("aria-expanded={filtersOpen}");
+  it("keeps family navigation visible and Browse cards preview-led", () => {
+    expect(hub).toContain('data-spm-spomove-family-nav="true"');
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(hub).not.toContain("활동 준비");
     expect(hub).not.toContain("시작 설정");

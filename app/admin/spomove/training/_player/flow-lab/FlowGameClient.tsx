@@ -15,6 +15,7 @@ import type { FlowStageConfig } from './engine/modules/stageBuilder';
 import ColorGateHud from './components/ColorGateHud';
 import {
   buildColorGateCue,
+  COLOR_GATE_TARGET_COUNT,
   COLOR_GATE_POSE_LABELS,
   preloadColorGatePoseImages,
   type ColorGatePoseKey,
@@ -335,11 +336,11 @@ export default function FlowGameClient({
               MOTION GATE
             </span>
             <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.72)', fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>
-              {Math.ceil(timerSec)}초
+              {Math.min(gatePassCount, COLOR_GATE_TARGET_COUNT)} / {COLOR_GATE_TARGET_COUNT}회
             </span>
           </div>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30, height: 3, background: 'rgba(255,255,255,0.1)' }}>
-            <div style={{ height: '100%', width: `${totalProgress * 100}%`, background: '#38BDF8', transition: 'width 0.12s linear' }} />
+            <div style={{ height: '100%', width: `${Math.min(1, gatePassCount / COLOR_GATE_TARGET_COUNT) * 100}%`, background: '#38BDF8', transition: 'width 0.2s ease-out' }} />
           </div>
         </>
       )}

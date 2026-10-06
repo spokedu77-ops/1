@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomoveClearInterval as clearInterval, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame, spomoveSetInterval as setInterval } from '../lib/runtimeClock';
+import { spomoveCancelAnimationFrame as cancelAnimationFrame, spomovePerformance as performance, spomoveRequestAnimationFrame as requestAnimationFrame } from '../lib/runtimeClock';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { setupCanvas } from '../lib/canvasUtils';
 import { getAudioCtx } from '../lib/audio';
@@ -57,7 +57,7 @@ type Game = {
   phase: Phase;
   phaseStartMs: number;
   round: number;
-  durationLeft: number;
+  totalRounds: number;
   gridSize: ColorMemoryGridSize;
   gameMode: ColorMemoryGridMode;
   memorizeMs: number;
@@ -66,11 +66,10 @@ type Game = {
   laneCount: [number, number, number, number];
   lastTickSec: number;
   raf: number | null;
-  timer: ReturnType<typeof setInterval> | null;
 };
 
 type Props = {
-  durationSec: number;
+  roundCount: number;
   speedLevel: number;
   speedSec: number;
   gridSize?: ColorMemoryGridSize;
@@ -87,17 +86,17 @@ const css = `
 .cmgrid-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.1)}
 .cmgrid-hc.grow{flex:1;align-items:center;border-right:none}
 .cmgrid-hk{font-size:9px;font-weight:800;letter-spacing:.18em;color:rgba(255,255,255,.45);text-transform:uppercase}
-.cmgrid-hv{font-size:clamp(22px,3.5vw,34px);font-weight:1000;letter-spacing:.04em;color:#fff;line-height:1.1;text-shadow:0 0 18px rgba(255,255,255,.22)}
+.cmgrid-hv{font-family:var(--spm-font-display);font-synthesis:none;font-size:clamp(22px,3.5vw,34px);font-weight:800;letter-spacing:.02em;color:#fff;line-height:1.1;text-shadow:0 0 18px rgba(255,255,255,.22)}
 .cmgrid-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(248,113,113,.45);background:rgba(220,38,38,.16);color:rgba(255,255,255,.82);font-size:13px;font-weight:800;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
 .cmgrid-play{position:relative;flex:1;min-height:0}
 .cmgrid-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .cmgrid-flash{position:absolute;inset:0;z-index:22;pointer-events:none;background:#fff;opacity:0;transition:opacity .15s ease-out}
 .cmgrid-flash.on{opacity:1;transition:none}
-.cmgrid-center{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .18s ease,transform .22s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(44px,8vw,104px);line-height:.9;font-weight:400;color:#fff;text-shadow:0 0 34px rgba(0,0,0,.95),0 0 20px rgba(255,255,255,.72)}
+.cmgrid-center{font-family:var(--spm-font-display);font-weight:800;font-synthesis:none;position:absolute;left:50%;top:50%;z-index:24;pointer-events:none;transform:translate(-50%,-50%) scale(.5);opacity:0;transition:opacity .18s ease,transform .22s cubic-bezier(.175,.885,.32,1.275);text-align:center;white-space:nowrap;font-size:clamp(44px,8vw,104px);line-height:.9;color:#fff;text-shadow:0 0 34px rgba(0,0,0,.95),0 0 20px rgba(255,255,255,.72)}
 .cmgrid-center.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.cmgrid-center.num{font-weight:400;font-size:clamp(72px,20vw,180px);text-shadow:0 0 40px rgba(255,255,255,.8)}
+.cmgrid-center.num{font-weight:800;font-size:clamp(72px,20vw,180px);text-shadow:0 0 40px rgba(255,255,255,.8)}
 .cmgrid-center.pill{font-size:clamp(22px,5vw,48px);background:rgba(0,0,0,.5);padding:.35em .9em;border-radius:999px;backdrop-filter:blur(10px);text-shadow:0 0 20px rgba(0,0,0,1)}
-.cmgrid-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:6px 16px;border-radius:999px;background:rgba(10,10,15,.68);border:1px solid rgba(255,255,255,.16);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#f9a8d4;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.24);backdrop-filter:blur(10px)}
+.cmgrid-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:6px 16px;border-radius:999px;background:rgba(10,10,15,.68);border:1px solid rgba(255,255,255,.16);font-family:var(--spm-font-body);font-size:clamp(10px,1.35vw,13px);font-weight:700;letter-spacing:.02em;color:#f9a8d4;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.24);backdrop-filter:blur(10px)}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
@@ -162,7 +161,7 @@ function playSfx(type: 'tick' | 'flash' | 'reveal', effectsEnabled: boolean) {
 }
 
 export function ColorMemoryGridReactionTraining({
-  durationSec,
+  roundCount,
   speedSec,
   gridSize: gridSizeProp = 4,
   gameMode: gameModeProp = 'flicker',
@@ -172,7 +171,6 @@ export function ColorMemoryGridReactionTraining({
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const roundRef = useRef<HTMLDivElement>(null);
-  const timeRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const centerRef = useRef<HTMLDivElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
@@ -190,11 +188,11 @@ export function ColorMemoryGridReactionTraining({
     if (!g?.running) return;
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
     if (flashRef.current) flashRef.current.classList.remove('on');
+    const completedRounds = stoppedEarly ? Math.max(0, g.round - 1) : g.totalRounds;
     onCompleteRef.current({
-      stims: Math.max(0, g.round - 1),
-      maxCombo: Math.max(0, g.round - 1),
+      stims: completedRounds,
+      maxCombo: completedRounds,
       laneCount: [...g.laneCount],
       stoppedEarly,
     });
@@ -212,7 +210,7 @@ export function ColorMemoryGridReactionTraining({
       phase: 'MEMORIZE',
       phaseStartMs: performance.now(),
       round: 1,
-      durationLeft: Math.max(5, Math.round(durationSec)),
+      totalRounds: Math.max(1, Math.round(roundCount)),
       gridSize: normalizeGridSize(gridSizeProp),
       gameMode: normalizeGameMode(gameModeProp),
       memorizeMs: normalizeMemorizeMs(speedSec),
@@ -221,7 +219,6 @@ export function ColorMemoryGridReactionTraining({
       laneCount: [0, 0, 0, 0],
       lastTickSec: -1,
       raf: null,
-      timer: null,
     };
     gRef.current = g;
 
@@ -310,7 +307,7 @@ export function ColorMemoryGridReactionTraining({
       g.lastTickSec = -1;
       hideMessage();
       setFlash(false);
-      if (roundRef.current) roundRef.current.textContent = String(g.round);
+      if (roundRef.current) roundRef.current.textContent = `${g.round} / ${g.totalRounds}`;
       setStatus(
         `기억 · ${g.gridSize}×${g.gridSize} · ${g.gameMode === 'flicker' ? '깜빡이' : '원샷'} · ${(g.memorizeMs / 1000).toFixed(g.memorizeMs % 1000 === 0 ? 0 : 1)}초`,
         '#f9a8d4',
@@ -462,8 +459,11 @@ export function ColorMemoryGridReactionTraining({
         }
       } else if (g.phase === 'REVEAL') {
         if (elapsed >= REVEAL_MS) {
-          g.round += 1;
-          startRound();
+          if (g.round >= g.totalRounds) complete(false);
+          else {
+            g.round += 1;
+            startRound();
+          }
         }
       }
     };
@@ -474,18 +474,10 @@ export function ColorMemoryGridReactionTraining({
     };
     const unbind = bindViewportResize(play, resize);
     if (effectsEnabled) getAudioCtx();
-    if (timeRef.current) timeRef.current.textContent = String(g.durationLeft);
-
     const beginGame = () => {
       if (!gRef.current?.running) return;
       startRound();
       g.raf = requestAnimationFrame(draw);
-      g.timer = setInterval(() => {
-        if (!g.running) return;
-        g.durationLeft -= 1;
-        if (timeRef.current) timeRef.current.textContent = String(Math.max(0, g.durationLeft));
-        if (g.durationLeft <= 0) complete(false);
-      }, 1000);
     };
 
     const stopCountdown = runReactTrainStartCountdown({
@@ -498,10 +490,9 @@ export function ColorMemoryGridReactionTraining({
       unbind();
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
-      if (g.timer) clearInterval(g.timer);
       setFlash(false);
     };
-  }, [complete, durationSec, effectsEnabled, gameModeProp, gridSizeProp, speedSec]);
+  }, [complete, effectsEnabled, gameModeProp, gridSizeProp, roundCount, speedSec]);
 
   return (
     <div className="cmgrid">
@@ -509,15 +500,11 @@ export function ColorMemoryGridReactionTraining({
       <div className="cmgrid-hud">
         <div className="cmgrid-hc">
           <div className="cmgrid-hk">ROUND</div>
-          <div className="cmgrid-hv" ref={roundRef}>1</div>
+          <div className="cmgrid-hv" ref={roundRef}>1 / {Math.max(1, Math.round(roundCount))}</div>
         </div>
         <div className="cmgrid-hc grow">
           <div className="cmgrid-hv" style={{ fontSize: 'clamp(13px,2vw,20px)' }}>순간 기억</div>
           <div className="cmgrid-hk">Sequential Memory 3</div>
-        </div>
-        <div className="cmgrid-hc">
-          <div className="cmgrid-hk">TIME</div>
-          <div className="cmgrid-hv" ref={timeRef}>0</div>
         </div>
         <div className="cmgrid-hc" style={{ borderRight: 'none' }}>
           <button type="button" className="cmgrid-stop" onClick={() => complete(true)}>STOP</button>

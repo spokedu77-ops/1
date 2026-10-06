@@ -471,6 +471,11 @@
 .faq details p {
   color: var(--muted);
 }
+/* 기관 문의 섹션 래퍼 — `.page` 밖에 두어 `.page h2/p` 리셋이 폼 타이포에 간섭하지 않게 한다 */
+.inquiry {
+  padding: 80px 0 96px;
+  background: #fff;
+}
 
 /* Render the progression glyph, not the CSS escape source text. */
 .flowGrid article:not(:last-child)::after {

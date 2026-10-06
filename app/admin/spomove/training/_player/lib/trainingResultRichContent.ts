@@ -156,59 +156,169 @@ function isMovementMode(mode: string, level: number): boolean {
   return ['basic', 'reactTrain', 'simon', 'flanker', 'flow'].includes(mode);
 }
 
-function buildSelfCheckItems(mode: string, level: number): SelfCheckItem[] {
-  const items: SelfCheckItem[] = [
-    { id: 'finish', label: '끝까지 해냈나요?' },
-  ];
+function selectSelfChecks(items: SelfCheckItem[], seed: string, count = 5): SelfCheckItem[] {
+  let state = 0;
+  for (let i = 0; i < seed.length; i++) state = (state * 31 + seed.charCodeAt(i)) >>> 0;
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    const j = state % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+  }
+  return shuffled.slice(0, count);
+}
 
-  if (isMovementMode(mode, level)) {
-    items.push(
-      { id: 'move', label: '점프·이동을 활짝 했나요?' },
-      { id: 'target', label: '목표 자리에 잘 갔나요?' },
-      { id: 'pace', label: '속도에 맞춰 잘 따라갔나요?' },
-    );
-  } else if (mode === 'stroop' && isVoiceHeavyStroop(level)) {
-    items.push(
-      { id: 'voice', label: '목소리를 크게 냈나요?' },
-      { id: 'rule', label: '규칙을 잘 맞췄나요?' },
-      { id: 'pace', label: '속도에 맞춰 잘 따라갔나요?' },
-    );
+function buildSelfCheckItems(mode: string, level: number, programTitle: string | undefined, elapsedMs: number): SelfCheckItem[] {
+  const title = programTitle ?? mode;
+  const common: SelfCheckItem[] = [
+    { id: 'finish', label: '끝까지 참여했나요?' },
+    { id: 'focus', label: '화면의 신호에 집중했나요?' },
+    { id: 'retry', label: '놓친 뒤에도 다시 집중했나요?' },
+    { id: 'enjoy', label: '다음에도 다시 해보고 싶나요?' },
+  ];
+  let specific: SelfCheckItem[];
+
+  if (mode === 'flanker') {
+    const directionOnly = level === 5 || title.includes('화살표');
+    specific = directionOnly
+      ? [
+          { id: 'target', label: '가운데 목표 화살표를 먼저 확인했나요?' },
+          { id: 'inhibit', label: '주변 방해 화살표에 흔들리지 않았나요?' },
+          { id: 'move', label: '목표 방향에 맞춰 이동했나요?' },
+          { id: 'reset', label: '다음 화살표가 나오기 전에 시선을 가운데로 돌렸나요?' },
+        ]
+      : [
+          { id: 'target', label: '가운데 목표 색을 먼저 확인했나요?' },
+          { id: 'inhibit', label: '주변 색과 크기에 흔들리지 않았나요?' },
+          { id: 'move', label: '가운데 색에 맞는 위치로 이동했나요?' },
+          { id: 'reset', label: '다음 자극이 나오기 전에 시선을 가운데로 돌렸나요?' },
+        ];
   } else if (mode === 'spatial') {
-    items.push(
-      { id: 'memory', label: '순서를 잘 기억했나요?' },
-      { id: 'focus', label: '차분히 집중했나요?' },
-      { id: 'retry', label: '틀려도 다시 도전했나요?' },
-    );
+    specific = [
+      { id: 'memory', label: '나온 순서와 위치를 기억했나요?' },
+      { id: 'chunk', label: '신호를 짧게 나누어 기억했나요?' },
+      { id: 'replay', label: '기억한 순서대로 차분히 움직였나요?' },
+      { id: 'steady', label: '서두르지 않고 한 단계씩 확인했나요?' },
+    ];
+  } else if (mode === 'stroop' && isVoiceHeavyStroop(level)) {
+    specific = [
+      { id: 'voice', label: '목소리를 크고 또렷하게 냈나요?' },
+      { id: 'rule', label: '이번 활동의 규칙대로 답했나요?' },
+      { id: 'pace', label: '신호가 바뀔 때 바로 답했나요?' },
+      { id: 'switch', label: '헷갈리는 자극에서도 규칙을 다시 떠올렸나요?' },
+    ];
+  } else if (title.includes('풍선')) {
+    specific = [
+      { id: 'color', label: '풍선의 색을 먼저 확인했나요?' },
+      { id: 'track', label: '떨어지는 풍선을 끝까지 눈으로 따라갔나요?' },
+      { id: 'move', label: '풍선 색에 맞는 위치로 이동했나요?' },
+      { id: 'next', label: '풍선이 터진 뒤 다음 자극을 바로 찾았나요?' },
+    ];
+  } else if (title.includes('골키퍼')) {
+    specific = [
+      { id: 'ball', label: '날아오는 공의 방향을 끝까지 봤나요?' },
+      { id: 'corner', label: '공이 향하는 구역으로 이동했나요?' },
+      { id: 'ready', label: '다음 슛 전에 준비 자세로 돌아왔나요?' },
+      { id: 'wide', label: '팔과 다리를 크게 벌려 막아봤나요?' },
+    ];
+  } else if (title.includes('두더지')) {
+    specific = [
+      { id: 'scan', label: '여러 구멍을 고르게 살펴봤나요?' },
+      { id: 'color', label: '나타난 두더지의 색을 확인했나요?' },
+      { id: 'move', label: '맞는 색 위치로 빠르게 이동했나요?' },
+      { id: 'reset', label: '잡은 뒤 가운데로 시선을 돌렸나요?' },
+    ];
+  } else if (isMovementMode(mode, level)) {
+    specific = [
+      { id: 'move', label: '점프와 이동 동작을 크게 했나요?' },
+      { id: 'target', label: '신호에 맞는 위치로 이동했나요?' },
+      { id: 'pace', label: '신호가 바뀔 때 바로 움직였나요?' },
+      { id: 'balance', label: '이동한 뒤 몸의 균형을 잡았나요?' },
+    ];
   } else {
-    items.push(
-      { id: 'focus', label: '집중해서 잘 따라갔나요?' },
-      { id: 'pace', label: '속도에 맞춰 잘 따라갔나요?' },
-      { id: 'enjoy', label: '다음에도 또 하고 싶나요?' },
-    );
+    specific = [
+      { id: 'pace', label: '신호가 바뀔 때 바로 반응했나요?' },
+      { id: 'rule', label: '정해진 방법대로 활동했나요?' },
+      { id: 'steady', label: '서두르지 않고 정확히 움직였나요?' },
+      { id: 'next', label: '다음 신호를 준비하며 참여했나요?' },
+    ];
   }
 
-  return items.slice(0, 4);
+  return selectSelfChecks([...specific, ...common], `${title}:${level}:${Math.round(elapsedMs / 100)}`, 5);
 }
 
-function buildActivityFeel(mode: string, level: number, colorTotal: number): string {
-  if (isMovementMode(mode, level) && colorTotal > 0) return '몸을 활발히 썼어요';
-  if (mode === 'stroop' && isVoiceHeavyStroop(level)) return '입과 머리를 썼어요';
-  if (mode === 'spatial') return '집중했어요';
-  if (mode === 'flanker' || mode === 'simon') return '눈과 발을 연결했어요';
-  return '잘 해냈어요';
+function pickResultCopy(copies: readonly string[], seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  return copies[hash % copies.length] ?? copies[0] ?? '';
 }
 
-function buildPraise(mode: string): { praise: string; praiseSub: string } {
+function buildActivityFeel(
+  mode: string,
+  level: number,
+  colorTotal: number,
+  elapsedMs: number,
+  programTitle?: string,
+): string {
+  const seed = `${programTitle ?? mode}:${level}:${colorTotal}:${Math.round(elapsedMs / 1000)}`;
+  if (mode === 'stroop' && isVoiceHeavyStroop(level)) {
+    return pickResultCopy([
+      '목소리와 생각을 함께 썼어요',
+      '규칙을 떠올리며 힘차게 답했어요',
+      '보고 생각한 뒤 또렷하게 말했어요',
+      '머리를 빠르게 바꿔 가며 답했어요',
+    ], seed);
+  }
+  if (mode === 'spatial') {
+    return pickResultCopy([
+      '차분히 보고 기억했어요',
+      '순서와 위치에 집중했어요',
+      '눈으로 살피고 머릿속에 담았어요',
+      '끝까지 집중하며 기억했어요',
+    ], seed);
+  }
+  if (mode === 'flanker' || mode === 'simon') {
+    return pickResultCopy([
+      '눈으로 보고 발로 바로 반응했어요',
+      '신호에 맞춰 빠르게 움직였어요',
+      '방향을 살피며 몸을 움직였어요',
+      '보고 판단한 뒤 힘차게 이동했어요',
+    ], seed);
+  }
+  if (isMovementMode(mode, level) && colorTotal > 0) {
+    return pickResultCopy([
+      '온몸으로 신호에 반응했어요',
+      '몸을 크게 움직였어요',
+      '색을 보고 활발히 이동했어요',
+      '끝까지 힘차게 움직였어요',
+      '빠르게 방향을 바꿔 움직였어요',
+    ], seed);
+  }
+  return pickResultCopy([
+    '끝까지 집중해서 참여했어요',
+    '신호를 살피며 잘 마쳤어요',
+    '차분하게 끝까지 해냈어요',
+    '오늘 활동에 힘껏 참여했어요',
+  ], seed);
+}
+
+function buildPraise(mode: string, programTitle?: string): { praise: string; praiseSub: string } {
   const mo = MODES[mode];
-  const title = mo?.title ?? 'SPOMOVE';
+  const title = programTitle ?? mo?.title ?? 'SPOMOVE';
   return {
     praise: '오늘도 멋지게 해냈어요!',
     praiseSub: `${withObjectParticle(title)} 끝까지 완주했어요.`,
   };
 }
 
-function buildPhaseName(mode: string, level: number): string {
+function buildPhaseName(mode: string, level: number, programTitle?: string): string {
   const phase = findGuidePhase(mode, level);
+  if (mode === 'flanker') {
+    if (level === 5 || (programTitle?.includes('화살표') ?? false)) return '가운데 화살표 · 방향 선택';
+    if (level === 3) return '크기 방해 · 가운데 색 선택';
+    if (level === 4) return '겹친 원 · 안쪽 색 선택';
+    return '주변 방해 · 가운데 색 선택';
+  }
   if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
     return `변형 사분할 자극 · ${modifiedQuadrantStage(level)}단계`;
   }
@@ -221,8 +331,20 @@ function buildPhaseName(mode: string, level: number): string {
   return levelMeta?.name ?? '';
 }
 
-function buildProgramSummary(mode: string, level: number): string {
+function buildProgramSummary(mode: string, level: number, programTitle?: string): string {
   const mo = MODES[mode];
+  if (mode === 'flanker') {
+    if (level === 5 || (programTitle?.includes('화살표') ?? false)) {
+      return '주변 화살표에 흔들리지 않고 가운데 화살표의 방향을 보고 이동하는 활동입니다.';
+    }
+    if (level === 3) {
+      return '서로 다른 크기의 색 원 중 가운데 목표 원의 색을 보고 같은 색 위치로 이동하는 활동입니다.';
+    }
+    if (level === 4) {
+      return '겹쳐진 원을 살펴보고 가장 안쪽 목표 원의 색에 맞춰 이동하는 활동입니다.';
+    }
+    return '주변 방해 자극 사이에서 가운데 목표의 색을 골라 같은 색 위치로 이동하는 활동입니다.';
+  }
   if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
     const stage = modifiedQuadrantStage(level);
     if (stage === 1) return '2×2 사분할에 색과 발 부위가 함께 나와요.';
@@ -257,13 +379,14 @@ function buildBenefitLine(mode: string, level: number): string {
   }
   if (mode === 'basic' && level === 5) return '서로 다른 세 패널에서 목표 색만 골라 이동해요';
   if (mode === 'basic' && level === 6) return '화면 형태가 바뀌어도 색을 보고 바로 이동해요';
+  if (mode === 'flanker') return '주변 방해 자극은 흘려보고 가운데 목표 신호에 집중했어요';
 
   const phase = findGuidePhase(mode, level);
   const fallbacks: Record<string, string> = {
     basic: '화면을 보면 몸이 바로 움직이는 힘을 키웠어요',
     reactTrain: '눈으로 본 색에 발이 빠르게 닿도록 연습했어요',
     simon: '자극 위치에 흔들리지 않고 색만 보는 힘을 키웠어요',
-    flanker: '옆은 무시하고 가운데만 보는 연습을 했어요',
+    flanker: '주변 방해 자극과 가운데 목표 신호를 구분하는 연습을 했어요',
     stroop: '규칙에 맞게 빠르게 답하는 힘을 키웠어요',
     spatial: '순서를 기억하고 차분히 되짚는 연습을 했어요',
     flow: '리듬에 맞춰 몸을 움직이는 연습을 했어요',
@@ -314,7 +437,8 @@ function spatialPatternLabel(level: number): string {
   return '10색';
 }
 
-function buildSessionHighlight(cfg: TrainingResultConfig, phaseName: string, volumeLabel: string): string {
+function buildSessionHighlight(cfg: TrainingResultConfig, phaseName: string, volumeLabel: string, programTitle?: string): string {
+  if (programTitle) return `${programTitle} · ${volumeLabel}`;
   const mo = MODES[cfg.mode];
   const title = mo?.title ?? 'SPOMOVE';
   const step = phaseName || `${cfg.level}번`;
@@ -327,10 +451,11 @@ function buildSessionSnapshot(
   volumeLabel: string,
   activityFeel: string,
   phaseName: string,
+  programTitle?: string,
 ): SessionSnapshotItem[] {
   const mo = MODES[cfg.mode];
   const items: SessionSnapshotItem[] = [
-    { id: 'mode', label: '프로그램', value: mo?.title ?? 'SPOMOVE' },
+    { id: 'mode', label: '프로그램', value: programTitle ?? mo?.title ?? 'SPOMOVE' },
     { id: 'phase', label: '단계', value: phaseName || `${cfg.level}번` },
     { id: 'volume', label: '설정 분량', value: volumeLabel },
     { id: 'elapsed', label: '진행 시간', value: elapsedLabel },
@@ -343,7 +468,7 @@ function buildSessionSnapshot(
   } else if (cfg.mode === 'stroop' && isVoiceHeavyStroop(cfg.level)) {
     items.push({ id: 'focus', label: '활동 포인트', value: '규칙에 맞춰 말하기' });
   } else if (cfg.mode === 'flanker') {
-    items.push({ id: 'focus', label: '활동 포인트', value: '가운데만 보기' });
+    items.push({ id: 'focus', label: '활동 포인트', value: '가운데 목표 신호에 집중하기' });
   } else {
     items.push({ id: 'feel', label: '오늘 느낌', value: activityFeel });
   }
@@ -351,7 +476,7 @@ function buildSessionSnapshot(
   return items.slice(0, 5);
 }
 
-function buildColorDominantLine(colorCounts: ColorStimulusCounts, colorTotal: number): string | null {
+function buildColorDominantLine(colorCounts: ColorStimulusCounts, colorTotal: number, mode: string): string | null {
   if (colorTotal <= 0) return null;
 
   let topId: PadColorId = 'red';
@@ -367,7 +492,9 @@ function buildColorDominantLine(colorCounts: ColorStimulusCounts, colorTotal: nu
 
   const meta = colorMeta(topId);
   const percent = Math.round((topCount / colorTotal) * 100);
-  return `${meta.name}이 가장 많이 나왔어요 · ${topCount}회(${percent}%)`;
+  return mode === 'flanker'
+    ? `${meta.name}이 가운데 목표로 가장 많이 나왔어요 · ${topCount}회(${percent}%)`
+    : `${meta.name}이 가장 많이 나왔어요 · ${topCount}회(${percent}%)`;
 }
 
 export function resolveTrainingResultRichContent(
@@ -378,15 +505,61 @@ export function resolveTrainingResultRichContent(
 ): TrainingResultRichContent {
   const mo = MODES[cfg.mode];
   const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
-  const { praise, praiseSub } = buildPraise(cfg.mode);
-  const phaseName = buildPhaseName(cfg.mode, cfg.level);
+  const { praise, praiseSub } = buildPraise(cfg.mode, options?.programTitle);
+  const phaseName = buildPhaseName(cfg.mode, cfg.level, options?.programTitle);
   const elapsedLabel = formatElapsedSeconds(elapsedMs);
   const volumeLabel = options?.volumeLabel ?? describeSessionVolume(cfg);
-  const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal);
+  const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal, elapsedMs, options?.programTitle);
+  if (cfg.mode === 'spatial' && cfg.level === 7) {
+    const instantTitle = options?.programTitle ?? '한눈에 색 배치 기억하기';
+    const gridLabel = instantTitle.includes('4X4') || instantTitle.includes('4×4') ? '4×4' : '3×3';
+    const instantFeel = pickResultCopy([
+      '배치 변화를 끝까지 살펴봤어요',
+      '색과 위치를 차분히 기억했어요',
+      '바뀐 칸을 집중해서 찾아봤어요',
+      '눈으로 살피고 머릿속에 담았어요',
+    ], `${instantTitle}:${Math.round(elapsedMs / 1000)}`);
+    return {
+      praise: '색 배치 기억 활동을 마쳤어요!',
+      praiseSub: `${instantTitle} 활동을 끝까지 진행했어요.`,
+      activityFeel: instantFeel,
+      elapsedLabel,
+      volumeLabel,
+      sessionHighlight: `${instantTitle} · ${volumeLabel}`,
+      sessionSnapshot: [
+        { id: 'program', label: '프로그램', value: instantTitle },
+        { id: 'grid', label: '격자', value: gridLabel },
+        { id: 'volume', label: '진행 분량', value: volumeLabel },
+        { id: 'elapsed', label: '진행 시간', value: elapsedLabel },
+        { id: 'scoring', label: '결과 방식', value: '자동 채점 없음' },
+      ],
+      colorDominantLine: null,
+      programTitle: instantTitle,
+      phaseName: `${gridLabel} 색 배치 기억`,
+      programSummary: `${gridLabel} 색 배치를 기억한 뒤 바뀐 위치를 찾아 움직이는 활동입니다.`,
+      benefitTags: ['시각 기억', '공간 탐색', '집중'],
+      benefitLine: '색상 빈도가 아니라 배치와 위치의 변화를 기억하는 활동이에요.',
+      coachTip: '한 번에 모든 색을 외우기보다 줄이나 모서리처럼 위치 기준을 정해 기억해 보세요.',
+      selfCheckItems: selectSelfChecks([
+        { id: 'finish', label: '끝까지 참여했나요?' },
+        { id: 'layout', label: '색보다 위치와 배치를 먼저 살폈나요?' },
+        { id: 'change', label: '바뀐 칸을 차분히 찾았나요?' },
+        { id: 'retry', label: '틀려도 다음 배치를 다시 기억했나요?' },
+        { id: 'scan', label: '격자의 모서리와 줄을 기준으로 살펴봤나요?' },
+        { id: 'focus', label: '배치가 바뀌는 순간에 집중했나요?' },
+        { id: 'move', label: '기억한 위치에 맞춰 움직였나요?' },
+      ], `${instantTitle}:${Math.round(elapsedMs / 100)}`, 5),
+    };
+  }
   const shapeCompletionTitle = '맞는 조각 찾아가기';
   if (cfg.mode === 'basic' && cfg.level === 8 && options?.programTitle === shapeCompletionTitle) {
     const shapePhaseName = '필요한 조각 추론과 공간 선택';
-    const shapeFeel = '형태를 끝까지 완성했어요';
+    const shapeFeel = pickResultCopy([
+      '형태를 끝까지 완성했어요',
+      '필요한 조각을 차분히 찾아냈어요',
+      '부분을 보고 전체 모습을 떠올렸어요',
+      '모양을 비교하며 집중했어요',
+    ], `${shapeCompletionTitle}:${Math.round(elapsedMs / 1000)}`);
     return {
       praise: '오늘도 멋지게 해냈어요!',
       praiseSub: `${withObjectParticle(shapeCompletionTitle)} 끝까지 완주했어요.`,
@@ -408,12 +581,15 @@ export function resolveTrainingResultRichContent(
       benefitTags: ['형태 지각', '부분·전체 관계', '공간 선택'],
       benefitLine: '보이지 않는 조각을 머릿속으로 완성하고 움직임으로 연결해요',
       coachTip: '현재 조각에 없는 부분을 먼저 찾은 뒤, 완성 형태와 정확히 맞는 후보를 골라보세요.',
-      selfCheckItems: [
-        { id: 'finish', label: '끝까지 해냈나요?' },
+      selfCheckItems: selectSelfChecks([
+        { id: 'finish', label: '끝까지 참여했나요?' },
         { id: 'compare', label: '현재 조각과 완성 형태를 비교했나요?' },
         { id: 'piece', label: '필요한 조각을 정확히 찾았나요?' },
         { id: 'move', label: '선택한 후보의 자리로 이동했나요?' },
-      ],
+        { id: 'whole', label: '부분을 보고 전체 모양을 떠올렸나요?' },
+        { id: 'retry', label: '틀린 뒤에도 다음 문제에 다시 집중했나요?' },
+        { id: 'steady', label: '서두르지 않고 후보를 차례로 살펴봤나요?' },
+      ], `${shapeCompletionTitle}:${Math.round(elapsedMs / 100)}`, 5),
     };
   }
   const relativeCompassTitle = '내 자리에서 방향 따라가기';
@@ -424,7 +600,12 @@ export function resolveTrainingResultRichContent(
 
   if (isRelativeCompass) {
     const relativePhaseName = '내 자리에서 방향 따라가기';
-    const relativeFeel = '화살표 방향으로 한 칸 이동했어요';
+    const relativeFeel = pickResultCopy([
+      '화살표 방향으로 정확히 이동했어요',
+      '내 위치를 기억하며 움직였어요',
+      '방향을 살피고 한 칸씩 이동했어요',
+      '다음 방향에 집중하며 움직였어요',
+    ], `${relativeCompassTitle}:${Math.round(elapsedMs / 1000)}`);
     return {
       praise: '오늘도 멋지게 해냈어요!',
       praiseSub: `${withObjectParticle(relativeCompassTitle)} 끝까지 완주했어요.`,
@@ -446,12 +627,15 @@ export function resolveTrainingResultRichContent(
       benefitTags: ['공간 방향', '위치 기억', '방향 전환'],
       benefitLine: '가운데로 돌아가지 않고, 선 칸에서 다음 방향으로 이어 가요',
       coachTip: '시작 색을 먼저 확인하고, 화살표가 뜨면 지금 자리에서 한 칸만 이동하게 하세요. 돌아오지 않습니다.',
-      selfCheckItems: [
-        { id: 'finish', label: '끝까지 해냈나요?' },
+      selfCheckItems: selectSelfChecks([
+        { id: 'finish', label: '끝까지 참여했나요?' },
         { id: 'start', label: '시작 색 패드에 섰나요?' },
         { id: 'direction', label: '화살표 방향으로 한 칸 이동했나요?' },
         { id: 'stay', label: '제자리로 돌아오지 않고 그 자리에 남았나요?' },
-      ],
+        { id: 'position', label: '움직인 뒤 현재 위치를 기억했나요?' },
+        { id: 'next', label: '다음 화살표가 나올 때까지 준비했나요?' },
+        { id: 'balance', label: '한 칸 이동한 뒤 균형을 잡았나요?' },
+      ], `${relativeCompassTitle}:${Math.round(elapsedMs / 100)}`, 5),
     };
   }
 
@@ -461,15 +645,15 @@ export function resolveTrainingResultRichContent(
     activityFeel,
     elapsedLabel,
     volumeLabel,
-    sessionHighlight: buildSessionHighlight(cfg, phaseName, volumeLabel),
-    sessionSnapshot: buildSessionSnapshot(cfg, elapsedLabel, volumeLabel, activityFeel, phaseName),
-    colorDominantLine: colorCounts && colorTotal > 0 ? buildColorDominantLine(colorCounts, colorTotal) : null,
+    sessionHighlight: buildSessionHighlight(cfg, phaseName, volumeLabel, options?.programTitle),
+    sessionSnapshot: buildSessionSnapshot(cfg, elapsedLabel, volumeLabel, activityFeel, phaseName, options?.programTitle),
+    colorDominantLine: colorCounts && colorTotal > 0 ? buildColorDominantLine(colorCounts, colorTotal, cfg.mode) : null,
     programTitle: options?.programTitle ?? (phaseName ? `${mo?.title ?? 'SPOMOVE'} · ${phaseName}` : mo?.title ?? 'SPOMOVE'),
     phaseName,
-    programSummary: buildProgramSummary(cfg.mode, cfg.level),
+    programSummary: buildProgramSummary(cfg.mode, cfg.level, options?.programTitle),
     benefitTags: defaultBenefitTags(cfg.mode),
     benefitLine: buildBenefitLine(cfg.mode, cfg.level),
     coachTip: buildCoachTip(cfg.mode, cfg.level),
-    selfCheckItems: buildSelfCheckItems(cfg.mode, cfg.level),
+    selfCheckItems: buildSelfCheckItems(cfg.mode, cfg.level, options?.programTitle, elapsedMs),
   };
 }

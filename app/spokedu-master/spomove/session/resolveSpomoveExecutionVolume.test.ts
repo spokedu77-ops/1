@@ -77,8 +77,7 @@ function expectedVolume(
     return { kind: 'time', label: `${durationSec}초`, count: 0, durationSec, interval: null };
   }
   if (mode === 'spatial' && level === 7) {
-    const durationSec = Math.max(standardSpomoveDurationSec(cue, rounds), 30);
-    return { kind: 'time', label: `${durationSec}초`, count: 0, durationSec, interval: null };
+    return { kind: 'rounds', label: `${rounds}라운드`, count: rounds, durationSec: 0, interval: null };
   }
   if (mode === 'spatial' && level === 4) {
     return {
@@ -98,14 +97,14 @@ function expectedVolume(
   if (preset.id === 'dive-standard') {
     return {
       kind: 'stage',
-      label: '5스테이지 · 스테이지당 20초 · 총 100초',
-      count: 5,
-      durationSec: 100,
+      label: '5스테이지 · 스테이지당 20초 · 보너스 60초 · 운동 160초',
+      count: 6,
+      durationSec: 160,
       interval: null,
     };
   }
   if (preset.id === 'dive-color-gate-61') {
-    return { kind: 'stage', label: '1스테이지 60초', count: 1, durationSec: 60, interval: null };
+    return { kind: 'reps', label: '20회', count: 20, durationSec: 0, interval: null };
   }
   throw new Error(`no expected volume for ${preset.id}`);
 }
@@ -134,8 +133,8 @@ describe('resolveSpomoveExecutionVolume', () => {
       expect(actual.label).toBe(expected.label);
       counts[actual.kind] += 1;
     }
-    expect(counts).toEqual({ reps: 52, time: 13, rounds: 3, stage: 2, builtIn: 1, interval: 1 });
-    expect(counts.stage + counts.builtIn).toBe(3);
+    expect(counts).toEqual({ reps: 53, time: 11, rounds: 5, stage: 1, builtIn: 1, interval: 1 });
+    expect(counts.stage + counts.builtIn).toBe(2);
   });
 
   it('locks the six representative volumes', () => {
@@ -158,8 +157,9 @@ describe('resolveSpomoveExecutionVolume', () => {
     expect(volume('visual-reaction-goalkeeper-easy-skeleton')).toBe('60초 + 보너스 15초');
     expect(volume('simon-balloon-hard-skeleton')).toBe('60초');
     expect(volume('sequential-memory-10color-52')).toBe('5라운드');
-    expect(volume('sequential-memory-full-reveal-54')).toBe('30초');
-    expect(volume('dive-standard')).toBe('5스테이지 · 스테이지당 20초 · 총 100초');
+    expect(volume('sequential-memory-full-reveal-54')).toBe('10라운드');
+    expect(volume('dive-standard')).toBe('5스테이지 · 스테이지당 20초 · 보너스 60초 · 운동 160초');
+    expect(volume('dive-color-gate-61')).toBe('20회');
   });
 
   it('wires Start and Result to the same resolver label', () => {
@@ -167,9 +167,8 @@ describe('resolveSpomoveExecutionVolume', () => {
     const start = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/session/StartBriefing.tsx'), 'utf8');
     const result = readFileSync(join(process.cwd(), 'app/spokedu-master/spomove/session/MasterSessionResult.tsx'), 'utf8');
     expect(page).toContain('resolveSpomoveExecutionVolume');
-    expect(page).toContain('volumeLabel={executionVolume?.label ?? \'\'}');
     expect(page).toContain('executionVolume={executionVolume!}');
-    expect(start).toContain('실행 분량 {volumeLabel}');
+    expect(start).toContain('data-spm-execution-volume={executionVolume.label}');
     expect(start).not.toContain('SPOMAT ${matCount}장 · 자극 ${cueSeconds}초');
     expect(result).not.toContain('rounds * cueSeconds');
     expect(result).not.toContain("timeMode: intervalMode ? 'interval' : 'time'");

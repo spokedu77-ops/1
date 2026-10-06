@@ -1,6 +1,6 @@
 'use client';
 
-import { GATE_COLORS, type GateColorId } from '../engine/modules/colorGateGuides';
+import { COLOR_GATE_TARGET_COUNT, GATE_COLORS, type GateColorId } from '../engine/modules/colorGateGuides';
 
 interface ColorGateHudProps {
   gateColorId: GateColorId;
@@ -86,7 +86,7 @@ export default function ColorGateHud({
         {`「${poseLabel}」`}
       </p>
 
-      {passCount !== undefined && passCount > 0 ? (
+      {passCount !== undefined ? (
         <span style={{
           fontSize: 'clamp(0.85rem, 1.8vw, 1.1rem)',
           fontWeight: 800,
@@ -96,7 +96,7 @@ export default function ColorGateHud({
           background: 'rgba(0,0,0,0.45)',
           color: 'rgba(255,255,255,0.75)',
         }}>
-          {passCount}회
+          {Math.min(passCount, COLOR_GATE_TARGET_COUNT)} / {COLOR_GATE_TARGET_COUNT}회
         </span>
       ) : null}
 

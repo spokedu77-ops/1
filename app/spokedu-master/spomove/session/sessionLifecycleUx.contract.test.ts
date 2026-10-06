@@ -69,7 +69,7 @@ describe("SPOMOVE session lifecycle UX", () => {
     expect(result).toContain("수업으로 돌아가기");
     expect(result).toContain("같은 설정으로 다시 준비");
     expect(result).toContain("완료로 표시하고 수업으로");
-    expect(result).toContain("실행 종료와 수업 활동 완료 기록은 별개입니다");
+    expect(result).not.toContain("실행 종료와 수업 활동 완료 기록은 별개입니다");
     expect(result).not.toContain("scheduledCompletionStatus");
     expect(result).not.toContain("오늘 느낌");
     expect(result).not.toContain("스스로 점검");

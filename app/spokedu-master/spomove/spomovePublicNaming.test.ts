@@ -262,7 +262,7 @@ describe('SPOMOVE public naming apply', () => {
     expect(source).toContain('accessTitle: model.displayTitle');
     expect(source).toContain('primaryMeta: card.publicMeta.core');
     expect(source).toContain('secondaryMeta: card.publicMeta.difficulty');
-    expect(source).toContain('resolveSpomovePublicCardSupport');
+    expect(source).not.toContain('resolveSpomovePublicCardSupport');
   });
 
   it('does not put SPOMAT movement copy on color-number public naming', () => {

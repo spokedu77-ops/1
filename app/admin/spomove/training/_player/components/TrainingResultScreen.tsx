@@ -70,10 +70,24 @@ const RESULT_CSS = `
   .tr-result-card {
     height: 100%;
     min-height: 100%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     gap: 0.55rem;
+    overflow-wrap: anywhere;
+  }
+  .tr-result-card > *,
+  .tr-result-card p,
+  .tr-result-card span {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .tr-result-header-center {
+    min-width: 0;
+    max-width: 100%;
+    text-align: center;
+    overflow-wrap: anywhere;
   }
   /* 남는 높이는 블록이 나눠 먹되, 내용 최소 높이 아래로는 안 줄어듦 */
   .tr-fill-stack {
@@ -92,6 +106,7 @@ const RESULT_CSS = `
   .tr-panel-block {
     flex: 1 1 0;
     min-height: min-content;
+    min-width: 0;
     display: flex;
     flex-direction: column;
   }
@@ -106,16 +121,19 @@ const RESULT_CSS = `
   }
   .tr-dive-report {
     word-break: keep-all;
-    overflow-wrap: normal;
+    overflow-wrap: anywhere;
     --tr-pad: clamp(0.65rem, 1.55vmin, 0.95rem);
     --tr-gap: clamp(0.45rem, 1.2vmin, 0.75rem);
   }
   .tr-dive-report .tr-dive-nowrap {
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .tr-dive-report .tr-dive-copy {
     word-break: keep-all;
-    overflow-wrap: normal;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    max-width: 100%;
   }
   @media (max-width: 420px) {
     .tr-result-header {
@@ -155,17 +173,22 @@ export function TrainingResultScreen({
 }: Props) {
   const mo = MODES[cfg.mode];
   const accent = mo?.accent ?? '#F97316';
+  // 플랭커는 가운데 목표가 색인 활동만 색 통계를 보여준다. 화살표 활동의
+  // 방향 균형용 내부 색 매핑은 결과로 노출하지 않는다.
+  const flankerDirectionOnly = cfg.mode === 'flanker'
+    && (cfg.level === 5 || (programTitle?.includes('화살표') ?? false));
+  const resultColorCounts = cfg.mode === 'simon' || cfg.mode === 'spatial' || flankerDirectionOnly ? null : colorCounts;
   const rich = useMemo(
-    () => resolveTrainingResultRichContent(cfg, elapsedMs, colorCounts, { programTitle, volumeLabel }),
-    [cfg, elapsedMs, colorCounts, programTitle, volumeLabel],
+    () => resolveTrainingResultRichContent(cfg, elapsedMs, resultColorCounts, { programTitle, volumeLabel }),
+    [cfg, elapsedMs, resultColorCounts, programTitle, volumeLabel],
   );
 
   const dive = useMemo(
     () => (diveActionMove ? buildDiveActionMoveReport(diveActionMove, elapsedMs) : null),
     [diveActionMove, elapsedMs],
   );
-  const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
-  const showColorBreakdown = !dive && colorCounts != null && colorTotal > 0;
+  const colorTotal = resultColorCounts ? totalColorStimulusCount(resultColorCounts) : 0;
+  const showColorBreakdown = !dive && resultColorCounts != null && colorTotal > 0;
 
   useViewportScrollLock(true);
 
@@ -255,7 +278,7 @@ export function TrainingResultScreen({
           }}
         >
           <span>{mo?.icon}</span>
-          <span>{mo?.title} · {levelLabel}</span>
+          <span>{programTitle || `${mo?.title} · ${levelLabel}`}</span>
         </div>
         <button
           type="button"
@@ -368,7 +391,7 @@ export function TrainingResultScreen({
                 {dive ? (
                   <>
                     DIVE 액션무브
-                    {volumeLabel ? <> · <span className="tr-dive-nowrap">{volumeLabel}</span></> : dive.stageLine ? <> · <span className="tr-dive-nowrap">{dive.stageLine}</span></> : null}
+                    {dive.stageLine ? <> · <span className="tr-dive-nowrap">{dive.stageLine}</span></> : null}
                   </>
                 ) : rich.sessionHighlight}
               </p>
@@ -403,35 +426,45 @@ export function TrainingResultScreen({
                 dive
                   ? { label: '활동 시간', value: dive.activityTimeValue, nowrap: true }
                   : { label: '진행 시간', value: rich.elapsedLabel, nowrap: false },
-                dive && !volumeLabel
+                dive
                   ? { label: '스테이지 시간', value: dive.stageTimeValue, nowrap: true }
                   : { label: '설정 분량', value: volumeLabel ?? rich.volumeLabel, nowrap: false },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    gap: '0.2rem',
-                    borderRadius: '0.7rem',
-                    background: 'var(--subtle-bg)',
-                    border: '1px solid var(--border)',
-                    padding: '0.55rem 0.65rem',
-                    minHeight: 0,
-                  }}
-                >
-                  <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{stat.label}</span>
-                  <span className={stat.nowrap ? 'tr-dive-nowrap' : undefined} style={{ fontSize: 'var(--tr-stat)', fontWeight: 800, lineHeight: 1.15 }}>{stat.value}</span>
-                </div>
-              ))}
+              ].map((stat) => {
+                const bonusVolume = stat.value.match(/^(.*?)\s*\+\s*(보너스\s+\d+초)$/);
+                return (
+                  <div
+                    key={stat.label}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      gap: '0.2rem',
+                      borderRadius: '0.7rem',
+                      background: 'var(--subtle-bg)',
+                      border: '1px solid var(--border)',
+                      padding: '0.55rem 0.65rem',
+                      minHeight: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{stat.label}</span>
+                    <span className={stat.nowrap ? 'tr-dive-nowrap' : undefined} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: '0.28em', fontSize: 'var(--tr-stat)', fontWeight: 800, lineHeight: 1.15 }}>
+                      {bonusVolume ? (
+                        <>
+                          <span style={{ whiteSpace: 'nowrap' }}>{bonusVolume[1]}</span>
+                          <span style={{ whiteSpace: 'nowrap', fontSize: 'var(--tr-body)', color: 'var(--text-muted)' }}>+ {bonusVolume[2]}</span>
+                        </>
+                      ) : stat.value}
+                    </span>
+                  </div>
+                );
+              })}
               <div
                 style={{
                   gridColumn: '1 / -1',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '0.6rem',
+                  justifyContent: 'flex-start',
+                  gap: '0.75rem',
                   borderRadius: '0.7rem',
                   background: 'var(--subtle-bg)',
                   border: '1px solid var(--border)',
@@ -439,8 +472,31 @@ export function TrainingResultScreen({
                   minHeight: 0,
                 }}
               >
-                <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{dive ? '세션 상태' : '오늘 느낌'}</span>
-                <span className={dive ? 'tr-dive-nowrap' : undefined} style={{ fontSize: 'var(--tr-body)', fontWeight: 800, lineHeight: 1.2, textAlign: 'right', wordBreak: 'keep-all' }}>
+                <span
+                  style={{
+                    flex: '0 0 auto',
+                    whiteSpace: 'nowrap',
+                    wordBreak: 'keep-all',
+                    fontSize: 'var(--tr-label)',
+                    color: 'var(--text-muted)',
+                    fontWeight: 800,
+                  }}
+                >
+                  {dive ? '세션 상태' : '오늘 느낌'}
+                </span>
+                <span
+                  className={dive ? 'tr-dive-nowrap' : undefined}
+                  style={{
+                    minWidth: 0,
+                    paddingLeft: '0.75rem',
+                    borderLeft: '1px solid var(--border)',
+                    fontSize: 'var(--tr-body)',
+                    fontWeight: 800,
+                    lineHeight: 1.2,
+                    textAlign: 'left',
+                    wordBreak: 'keep-all',
+                  }}
+                >
                   {dive ? dive.sessionStatusValue : rich.activityFeel}
                 </span>
               </div>
@@ -502,16 +558,18 @@ export function TrainingResultScreen({
             {showColorBreakdown ? (
               <>
                 <div style={{ flexShrink: 0 }}>
-                  <h2 style={sectionTitle}>색상 제시 횟수</h2>
+                  <h2 style={sectionTitle}>{cfg.mode === 'flanker' ? '가운데 목표 색' : '색상 제시 횟수'}</h2>
                   <p style={{ margin: '0.2rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650 }}>
-                    총 {colorTotal}회 관문 색상이 제시되었습니다.
+                    {cfg.mode === 'flanker'
+                      ? `총 ${colorTotal}회 가운데 목표 색이 제시되었습니다.`
+                      : `총 ${colorTotal}회 관문 색상이 제시되었습니다.`}
                   </p>
                 </div>
 
                 <div className="tr-fill-stack" style={{ gap: '0.45rem' }}>
                   {RESULT_COLOR_ORDER.map((id) => {
                     const meta = colorMeta(id);
-                    const count = colorCounts![id];
+                    const count = resultColorCounts![id];
                     const percent = colorTotal > 0 ? Math.round((count / colorTotal) * 100) : 0;
                     return (
                       <div
@@ -575,11 +633,11 @@ export function TrainingResultScreen({
             ) : (
               <>
                 <div style={{ flexShrink: 0 }}>
-                  <h2 style={sectionTitle}>{dive ? '오늘의 DIVE' : '세션 스냅샷'}</h2>
+                  <h2 style={sectionTitle}>{dive ? '오늘의 DIVE' : '활동 요약'}</h2>
                   <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.2rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, wordBreak: 'keep-all' }}>
                     {dive
                       ? '이번 세션에서 진행한 액션과 활동 구성을 정리합니다.'
-                      : '이번 과제는 색상 빈도 대신 활동 요약으로 정리합니다.'}
+                      : '이번 활동에서 진행한 과제와 시간을 정리합니다.'}
                   </p>
                 </div>
 
@@ -625,7 +683,7 @@ export function TrainingResultScreen({
                 >
                   {dive
                     ? '화면의 신호에 맞춰 방향을 바꾸고 점프하고 숙이며 연속적인 움직임을 경험하는 활동입니다.'
-                    : '방향·기억·말하기처럼 색 빈도를 따로 기록하지 않는 활동입니다.'}
+                    : '표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.'}
                 </p>
               </>
             )}

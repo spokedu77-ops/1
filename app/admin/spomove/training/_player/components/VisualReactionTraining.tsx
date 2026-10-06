@@ -17,6 +17,15 @@ function playBottomHitY(cvHeight: number): number {
   return cvHeight - Math.max(cvHeight * 0.035, 16);
 }
 
+type FlashSpike = {
+  id: number;
+  leftPct: number;
+  heightPx: number;
+  widthPx: number;
+  rotateDeg: number;
+  opacity: number;
+};
+
 /** 인덱스 순서: 빨 → 파 → 초 → 노 (좌→우 하단 패드·레인과 동일) */
 const RT_COLORS = [
   { main: '#FF1744', rgb: '255,23,68', name: 'RED' },
@@ -65,7 +74,20 @@ type GameState = {
   raf: number | null;
   timer: ReturnType<typeof setInterval> | null;
   isLow: boolean;
+  flashSpikes: FlashSpike[];
 };
+
+/** 풍선 폭 안에 들어오는 실제 가시 끝 중 가장 먼저 닿는 지점을 구한다. */
+function flashSpikeContactY(g: GameState, x: number, radius: number): number {
+  if (g.flashSpikes.length === 0 || g.W <= 0 || g.H <= 0) return g.hitY;
+  const contacts = g.flashSpikes.flatMap((spike) => {
+    const angle = (spike.rotateDeg * Math.PI) / 180;
+    const tipX = (spike.leftPct / 100) * g.W + Math.sin(angle) * spike.heightPx;
+    if (Math.abs(tipX - x) > radius * 0.82 + spike.widthPx * 0.35) return [];
+    return [g.H - Math.cos(angle) * spike.heightPx];
+  });
+  return contacts.length > 0 ? Math.min(...contacts) : g.hitY;
+}
 
 function fillRoundPath(
   ctx: CanvasRenderingContext2D,
@@ -189,8 +211,9 @@ class FlashBubble {
   constructor(g: GameState) {
     this.lane = Math.floor(Math.random() * 4);
     this.color = RT_COLORS[this.lane];
-    const r0 = Math.max(g.W * 0.07, 30);
-    this.r = r0 + Math.random() * r0 * 0.5;
+    const r0 = Math.max(34, Math.min(72, Math.min(g.W, g.H) * 0.065));
+    // 크기 차이는 분명하게 두되 화면을 덮는 초대형 풍선은 피한다.
+    this.r = r0 * (0.72 + Math.random() * 0.66);
     this.x = this.r + Math.random() * Math.max(1, g.W - this.r * 2);
     this.y = -this.r * 2;
     this.speed = g.baseSpd * (0.75 + Math.random() * 0.5);
@@ -211,14 +234,19 @@ class FlashBubble {
     if (!this.fired) {
       this.y += this.speed * deltaSec;
       this.x += Math.sin(this.t * 0.04 + this.wobble) * 0.8;
-      if (this.y + this.r >= g.hitY) {
-        this.y = g.hitY - this.r;
+      const contactY = flashSpikeContactY(g, this.x, this.r);
+      if (this.y + this.r >= contactY) {
+        this.y = contactY - this.r;
         const ready = nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
         if (ready) {
           this.fired = true;
           this.dead = true;
           g.lastStimWallMs = nowMs;
           g.stimConsumedThisFrame = true;
+          const contactSparkCount = g.isLow ? 4 : 7;
+          for (let i = 0; i < contactSparkCount; i++) {
+            g.particles.push(new Particle(this.x, contactY, '#ffffff', 0.72, false));
+          }
           onBubbleStim(this.lane, this.x, this.y);
         }
       }
@@ -351,7 +379,7 @@ function drawBubbleBody(
   ctx.strokeStyle = colorMain;
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.ellipse(x, y, r * 0.92, r, 0, 0, Math.PI * 2);
   ctx.stroke();
   ctx.shadowBlur = g.isLow ? 0 : 20;
   const grd = ctx.createRadialGradient(x - r * 0.25, y - r * 0.25, r * 0.05, x, y, r);
@@ -361,7 +389,15 @@ function drawBubbleBody(
   ctx.fillStyle = grd;
   ctx.globalAlpha = 0.85;
   ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.ellipse(x, y, r * 0.92, r, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = colorMain;
+  ctx.beginPath();
+  ctx.moveTo(x, y + r * 0.88);
+  ctx.lineTo(x - r * 0.13, y + r * 1.1);
+  ctx.lineTo(x + r * 0.13, y + r * 1.1);
+  ctx.closePath();
   ctx.fill();
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#ffffff';
@@ -534,14 +570,7 @@ const css = `
 }
 `;
 
-function buildFlashSpikeLayout(count = 26): {
-  id: number;
-  leftPct: number;
-  heightPx: number;
-  widthPx: number;
-  rotateDeg: number;
-  opacity: number;
-}[] {
+function buildFlashSpikeLayout(count = 26): FlashSpike[] {
   const n = Math.max(16, count);
   const slots = Array.from({ length: n }, (_, i) => (i + 0.2 + Math.random() * 0.55) / n);
   for (let i = slots.length - 1; i > 0; i--) {
@@ -668,13 +697,11 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       }
       const c = RT_COLORS[lane].main;
       if (g.mode === 'flash') {
-        // 풍선 터뜨리기: 무조건 크게 터지는 박수형 팝. 화면을 덮을 정도로 과장한다.
-        const claps = g.isLow ? 64 : 120;
-        const pops = g.isLow ? 120 : 220;
-        const whites = g.isLow ? 42 : 76;
-        for (let i = 0; i < claps; i++) g.particles.push(new Particle(x, y, c, 3.8, false, 'clap'));
-        for (let i = 0; i < pops; i++) g.particles.push(new Particle(x, y, c, 3.2, true));
-        for (let i = 0; i < whites; i++) g.particles.push(new Particle(x, y, '#ffffff', 2.8, true));
+        // 풍선 막이 가시 끝에서 찢어지는 정도의 짧고 선명한 팝.
+        const fragments = g.isLow ? 24 : 38;
+        const highlights = g.isLow ? 7 : 12;
+        for (let i = 0; i < fragments; i++) g.particles.push(new Particle(x, y, c, 1.45, false));
+        for (let i = 0; i < highlights; i++) g.particles.push(new Particle(x, y, '#ffffff', 1.05, false));
       } else {
         // 파도 피하기·풍선 사이먼: 파편처럼 부서짐 (사이먼은 더 크게)
         const scale = g.mode === 'balloonSimon' ? 2.6 : 1;
@@ -770,6 +797,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       raf: null,
       timer: null,
       isLow: staticPerfTier === 'low',
+      flashSpikes,
     };
     gRef.current = g;
 
@@ -1048,7 +1076,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [concurrent, durationSec, endGame, fallTimeSec, lv, onStim, onStimBubble, variant]);
+  }, [concurrent, durationSec, endGame, fallTimeSec, flashSpikes, lv, onStim, onStimBubble, variant]);
 
   const uid = useId();
   const spikeUid = uid.replace(/:/g, '');

@@ -30,6 +30,7 @@ import {
   normalizeSpomoveThumbnailMap,
   SPOMOVE_HOME_FEATURED_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
+  type SpomovePresetContentOverride,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { resolveHomeFeaturedSpomove } from '../lib/spomoveHomeFeatured';
 import { WeeklyEditorialCard } from '../components/lesson/WeeklyEditorialCard';
@@ -104,6 +105,43 @@ type HomeMediaPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
   error: { code?: string } | null;
 };
+
+/**
+ * 홈 진입 시 한 번에 그리기 위해 기다리는 원격 에셋 팩 묶음.
+ * 각 팩은 독립적으로 적용되며(한 팩 실패가 다른 팩을 막지 않음),
+ * 네 팩이 모두 settle된 시점만 별도로 추적한다.
+ */
+type HomeAssetPackState = {
+  spomoveThumbnailPaths: Record<string, string>;
+  spomoveThumbnailCacheBust: number | undefined;
+  spomoveContentMap: Record<string, SpomovePresetContentOverride>;
+  spomoveContentLoadState: SpomoveContentLoadState;
+  featuredSpomoveSlotIds: Array<string | null>;
+  homeHeroPath: string | null;
+  homeHeroCacheBust: number | undefined;
+};
+
+const EMPTY_HOME_ASSET_PACKS: HomeAssetPackState = {
+  spomoveThumbnailPaths: {},
+  spomoveThumbnailCacheBust: undefined,
+  spomoveContentMap: {},
+  spomoveContentLoadState: 'loading',
+  featuredSpomoveSlotIds: [null, null, null, null],
+  homeHeroPath: null,
+  homeHeroCacheBust: undefined,
+};
+
+/**
+ * 같은 SPA 세션 안에서 홈에 다시 들어올 때 스켈레톤 없이 즉시 그리기 위한 캐시.
+ * 재진입 시에도 백그라운드로 다시 받아 최신 값으로 갱신한다(stale-while-revalidate).
+ */
+let homeAssetPackCache: HomeAssetPackState | null = null;
+
+/**
+ * 진입 데이터가 이 시간 안에 안정되지 않으면 현재 상태 그대로 그린다.
+ * 네트워크 장애 시 스켈레톤에 영원히 갇히지 않도록 하는 안전장치.
+ */
+const HOME_ENTRY_SETTLE_DEADLINE_MS = 4000;
 
 function getFirstStartPaths(canUseAttendance: boolean) {
   if (!canUseAttendance) {
@@ -323,7 +361,7 @@ function SpomoveCard({
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
-  contentOverride?: import('@/app/lib/spomove/spomoveOfficialAssets').SpomovePresetContentOverride;
+  contentOverride?: SpomovePresetContentOverride;
   onOpenGuide: (preset: OfficialSpomovePreset) => void;
   launchMode: 'projector' | 'mobile';
   favorite: boolean;
@@ -632,129 +670,147 @@ function EntitledDashboardView() {
       recentLessonActivities: validLessonActivities,
       recentSpomoveActivities: validSpomoveActivities,
     });
-  const [mounted, setMounted] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [previewAutoplay, setPreviewAutoplay] = useState(false);
-  const [spomoveThumbnailPaths, setSpomoveThumbnailPaths] = useState<Record<string, string>>({});
-  const [spomoveThumbnailCacheBust, setSpomoveThumbnailCacheBust] = useState<number | undefined>();
-  const [spomoveContentMap, setSpomoveContentMap] = useState<Record<string, import('@/app/lib/spomove/spomoveOfficialAssets').SpomovePresetContentOverride>>({});
-  const [spomoveContentLoadState, setSpomoveContentLoadState] = useState<SpomoveContentLoadState>('loading');
-  const [featuredSpomoveSlotIds, setFeaturedSpomoveSlotIds] = useState<Array<string | null>>([
-    null,
-    null,
-    null,
-    null,
-  ]);
-  const [homeHeroPath, setHomeHeroPath] = useState<string | null>(null);
-  const [homeHeroCacheBust, setHomeHeroCacheBust] = useState<number | undefined>();
+  const [assetPacks, setAssetPacks] = useState<HomeAssetPackState>(
+    () => homeAssetPackCache ?? EMPTY_HOME_ASSET_PACKS,
+  );
+  const [assetPacksSettled, setAssetPacksSettled] = useState(() => homeAssetPackCache != null);
+  const [entrySettleDeadlinePassed, setEntrySettleDeadlinePassed] = useState(false);
+  const {
+    spomoveThumbnailPaths,
+    spomoveThumbnailCacheBust,
+    spomoveContentMap,
+    spomoveContentLoadState,
+    featuredSpomoveSlotIds,
+    homeHeroPath,
+    homeHeroCacheBust,
+  } = assetPacks;
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
   const guideVideo = useSpomoveGuideVideo(previewSpomove?.id ?? null, isPremium);
   const launchMode = usePreferredLaunchMode();
 
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setEntrySettleDeadlinePassed(true), HOME_ENTRY_SETTLE_DEADLINE_MS);
+    return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (assetPacksSettled) homeAssetPackCache = assetPacks;
+  }, [assetPacks, assetPacksSettled]);
 
   useEffect(() => {
     let alive = true;
     const supabase = getSupabaseBrowserClient();
-    void supabase
+    const patchAssetPacks = (patch: Partial<HomeAssetPackState>) => {
+      if (!alive) return;
+      setAssetPacks((current) => ({ ...current, ...patch }));
+    };
+
+    const thumbnailRequest = supabase
       .from('think_asset_packs')
       .select('assets_json, updated_at')
       .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
       .maybeSingle()
       .then((thumbnailResult: SpomoveThumbnailPackQueryResult) => {
-        if (!alive) return;
         const { data, error } = thumbnailResult as SpomoveThumbnailPackQueryResult;
         if (error && error.code !== 'PGRST116') {
-          setSpomoveThumbnailPaths({});
-          setSpomoveThumbnailCacheBust(undefined);
-        } else {
-          const next = normalizeSpomoveThumbnailMap(data?.assets_json);
-          setSpomoveThumbnailPaths(next);
-          setSpomoveThumbnailCacheBust(
-            resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)),
-          );
+          patchAssetPacks({ spomoveThumbnailPaths: {}, spomoveThumbnailCacheBust: undefined });
+          return;
         }
+        const next = normalizeSpomoveThumbnailMap(data?.assets_json);
+        patchAssetPacks({
+          spomoveThumbnailPaths: next,
+          spomoveThumbnailCacheBust: resolveSpomovePackCacheBust(
+            data?.updated_at as string | undefined,
+            Object.values(next),
+          ),
+        });
       })
       .catch(() => {
-        if (!alive) return;
-        setSpomoveThumbnailPaths({});
-        setSpomoveThumbnailCacheBust(undefined);
+        patchAssetPacks({ spomoveThumbnailPaths: {}, spomoveThumbnailCacheBust: undefined });
       });
 
-    void supabase
+    const contentRequest = supabase
       .from('think_asset_packs')
       .select('assets_json')
       .eq('id', SPOMOVE_CONTENT_PACK_ID)
       .maybeSingle()
       .then((contentResult: SpomoveContentPackQueryResult) => {
-        if (!alive) return;
         const { data: contentData, error: contentError } = contentResult as SpomoveContentPackQueryResult;
         if (contentError && contentError.code !== 'PGRST116') {
-          setSpomoveContentMap({});
-          setSpomoveContentLoadState('error');
-        } else {
-          setSpomoveContentMap(normalizeSpomoveContentMap(contentData?.assets_json));
-          setSpomoveContentLoadState('ready');
+          patchAssetPacks({ spomoveContentMap: {}, spomoveContentLoadState: 'error' });
+          return;
         }
+        patchAssetPacks({
+          spomoveContentMap: normalizeSpomoveContentMap(contentData?.assets_json),
+          spomoveContentLoadState: 'ready',
+        });
       })
       .catch(() => {
-        if (!alive) return;
-        setSpomoveContentMap({});
-        setSpomoveContentLoadState('error');
+        patchAssetPacks({ spomoveContentMap: {}, spomoveContentLoadState: 'error' });
       });
 
-    void supabase
+    const featuredRequest = supabase
       .from('think_asset_packs')
       .select('assets_json')
       .eq('id', SPOMOVE_HOME_FEATURED_PACK_ID)
       .maybeSingle()
       .then((featuredResult: SpomoveFeaturedPackQueryResult) => {
-        if (!alive) return;
         const { data: featuredData, error: featuredError } = featuredResult;
         if (featuredError && featuredError.code !== 'PGRST116') {
-          setFeaturedSpomoveSlotIds([null, null, null, null]);
-        } else {
-          setFeaturedSpomoveSlotIds(normalizeSpomoveHomeFeaturedSlots(featuredData?.assets_json));
+          patchAssetPacks({ featuredSpomoveSlotIds: [null, null, null, null] });
+          return;
         }
+        patchAssetPacks({ featuredSpomoveSlotIds: normalizeSpomoveHomeFeaturedSlots(featuredData?.assets_json) });
       })
       .catch(() => {
-        if (!alive) return;
-        setFeaturedSpomoveSlotIds([null, null, null, null]);
+        patchAssetPacks({ featuredSpomoveSlotIds: [null, null, null, null] });
       });
 
-    void supabase
+    const homeMediaRequest = supabase
       .from('think_asset_packs')
       .select('assets_json, updated_at')
       .eq('id', HOME_MEDIA_PACK_ID)
       .maybeSingle()
       .then((homeMediaResult: HomeMediaPackQueryResult) => {
-        if (!alive) return;
         const { data, error } = homeMediaResult;
         if (error && error.code !== 'PGRST116') {
-          setHomeHeroPath(null);
-          setHomeHeroCacheBust(undefined);
+          patchAssetPacks({ homeHeroPath: null, homeHeroCacheBust: undefined });
           return;
         }
         const next = normalizeMasterHomeMedia(data?.assets_json);
-        setHomeHeroPath(next.heroImage);
-        setHomeHeroCacheBust(
-          resolveSpomovePackCacheBust(
+        patchAssetPacks({
+          homeHeroPath: next.heroImage,
+          homeHeroCacheBust: resolveSpomovePackCacheBust(
             data?.updated_at as string | undefined,
             next.heroImage ? [next.heroImage] : [],
           ),
-        );
+        });
       })
       .catch(() => {
-        if (!alive) return;
-        setHomeHeroPath(null);
-        setHomeHeroCacheBust(undefined);
+        patchAssetPacks({ homeHeroPath: null, homeHeroCacheBust: undefined });
       });
+
+    // 각 팩은 위에서 독립적으로 적용된다. 여기서는 "모두 끝났다"는 사실만 기록한다.
+    void Promise.allSettled([thumbnailRequest, contentRequest, featuredRequest, homeMediaRequest]).then(() => {
+      if (alive) setAssetPacksSettled(true);
+    });
+
     return () => {
       alive = false;
     };
   }, []);
+
+  // 홈 진입 게이트: 아래 데이터가 모두 결정될 때까지 한 가지 스켈레톤만 유지한다.
+  // 빈 상태·폴백을 먼저 그렸다가 실제 데이터로 바꾸면서 생기는 화면 교체를 없애기 위함이다.
+  // 출석 권한이 없는 플랜은 운영 데이터를 받지 않으므로(idle) 바로 결정된 것으로 본다.
+  const operationalSettled = accessSnapshot.canUseAttendance
+    ? operationalStatus === 'ready' || operationalStatus === 'error'
+    : true;
+  const homeEntryReady =
+    entrySettleDeadlinePassed
+    || (programsLoaded && operationalSettled && recentActivityOwnerResolved && assetPacksSettled);
 
   const programPool = programs;
   const weeklyPrograms = useMemo(() => selectWeeklyProgramsById(programs), [programs]);
@@ -786,7 +842,7 @@ function EntitledDashboardView() {
     setSelectedProgram(program);
   };
 
-  if (!mounted) return <DashboardSkeleton />;
+  if (!homeEntryReady) return <DashboardSkeleton />;
 
   if (programsLoaded && programPool.length === 0 && operationalStatus === 'error') {
     const isUnauthorized = programsError === 'unauthorized';

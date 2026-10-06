@@ -12,6 +12,7 @@ import {
   SPOMOVE_CUE_SPEED_OPTIONS,
   MOTION_GATE_CUE_SPEED_OPTIONS,
   getCueSpeedGuide,
+  usesRandomSequenceCue,
   supportsCueSpeedOverride,
   type SpomoveCueSpeedSec,
 } from '../spomoveCueSpeed';
@@ -25,6 +26,7 @@ type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 /** Session Settings adjusts only values that can change this run. */
 export function SettingsBriefing({
   preset,
+  matCount,
   audioMode,
   onAudioModeChange,
   bgmAvailable,
@@ -44,6 +46,7 @@ export function SettingsBriefing({
   cueFloorNotice,
 }: {
   preset: OfficialSpomovePreset;
+  matCount: number;
   audioMode: SpomoveUserAudioMode;
   onAudioModeChange: (mode: SpomoveUserAudioMode) => void;
   bgmAvailable: boolean;
@@ -63,6 +66,7 @@ export function SettingsBriefing({
   cueFloorNotice?: string | null;
 }) {
   const showCueSpeed = supportsCueSpeedOverride(preset);
+  const showRandomSequenceCue = usesRandomSequenceCue(preset);
   const actionMoveSelection = {
     side: sportsArenaFeatures.includes('side'),
     jump: sportsArenaFeatures.includes('jump'),
@@ -79,12 +83,21 @@ export function SettingsBriefing({
     <div className="space-y-4 [@media(max-height:950px)]:space-y-3" data-spm-session-settings-screen="true">
       <section>
         <p className="text-sm font-semibold text-white">매트 배치</p>
-        <div className="mt-2">
-          <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} compact dark flush />
+        <div className="mt-5">
+          <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} prominent directionLabel="화면 방향 ↑" dark flush />
         </div>
+        <p className="mt-3 text-center text-[13px] font-medium text-white/65">SPOMAT {matCount}장</p>
       </section>
 
-      {showCueSpeed ? (
+      {showRandomSequenceCue ? (
+        <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5 [@media(max-height:950px)]:p-3">
+          <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/55">자극 시간</p>
+          <button type="button" aria-pressed="true" className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[var(--spm-acc)] px-4 text-[15px] font-extrabold text-white">
+            1~3초 (랜덤)
+          </button>
+          <p className="mt-2 text-[12px] font-semibold leading-5 text-white/55">각 색상 자극이 1초에서 3초 사이의 서로 다른 시간으로 제시됩니다.</p>
+        </div>
+      ) : showCueSpeed ? (
         <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5 [@media(max-height:950px)]:p-3">
           <p className="text-[12px] font-extrabold tracking-[0.08em] text-white/55">자극 속도</p>
           {preset.engine.mode === 'spatial' && preset.engine.level === 7 ? (
@@ -193,9 +206,9 @@ export function SettingsBriefing({
         type="button"
         onClick={onStart}
         disabled={startDisabled}
-        className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-white text-[16px] font-extrabold text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 [@media(max-height:950px)]:h-12"
+        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-white text-[15px] font-semibold text-slate-950 transition hover:bg-white/92 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Play className="h-5 w-5 fill-black" />
+        <Play className="h-4 w-4 fill-current" />
         {startDisabled ? '불러오는 중…' : '수업 시작'}
       </button>
     </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { absentStudentIdsForClassTools, COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination } from './classToolsModel';
+import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination } from './classToolsModel';
 
 describe('class tools foundation contracts', () => {
   it('creates two to four randomly ordered teams with at most one member difference', () => {
@@ -23,30 +23,6 @@ describe('class tools foundation contracts', () => {
 
     expect(resolveClassToolParticipants(roster, attendance)).toEqual([{ id: 'present' }]);
     expect(resolveClassToolParticipants(roster)).toEqual(roster);
-  });
-
-  it('drops the absence just saved in class management, then today if that session is for another class', () => {
-    const sessions = [
-      {
-        id: 'oct-1',
-        classId: 'class-a',
-        status: 'scheduled',
-        startAt: '2026-10-01T00:55:00.000Z',
-        endAt: '2026-10-01T02:25:00.000Z',
-        attendance: [{ studentId: 'mina', status: 'absent' as const }],
-      },
-      {
-        id: 'today',
-        classId: 'class-b',
-        status: 'scheduled',
-        startAt: '2026-10-05T01:00:00.000Z',
-        endAt: '2026-10-05T02:00:00.000Z',
-        attendance: [{ studentId: 'jun', status: 'absent' as const }],
-      },
-    ];
-    const now = new Date('2026-10-05T01:30:00.000Z');
-    expect(absentStudentIdsForClassTools(sessions, 'class-a', 'oct-1', now)).toEqual(['mina']);
-    expect(absentStudentIdsForClassTools(sessions, 'class-b', 'oct-1', now)).toEqual(['jun']);
   });
 
   it('separates activity counting from rest countdown copy', () => {

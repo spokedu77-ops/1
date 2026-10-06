@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { OFFICIAL_SPOMOVE_LIBRARY, findOfficialSpomovePreset } from './officialSpomovePresets';
 import {
+  formatSpomoveCueLabel,
   clampCueSpeedSec,
   formatCueSpeedTargetLabel,
   getCueSpeedGuide,
@@ -46,6 +47,13 @@ describe('spomoveCueSpeed', () => {
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-number-cart-l2')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-blackout-37')!)).toBe(true);
+  });
+
+  it('labels sequence-memory stimulus timing as a 1~3 second random range', () => {
+    const sequence = findOfficialSpomovePreset('sequential-memory-3color-09')!;
+    const fixed = findOfficialSpomovePreset('reaction-cognition-space-direction-01')!;
+    expect(formatSpomoveCueLabel(sequence, 3)).toBe('1~3초 (랜덤)');
+    expect(formatSpomoveCueLabel(fixed, 3)).toBe('3초');
   });
 
   it('includes reaction cognition / flanker / typical visual reaction / goalkeeper flight time', () => {

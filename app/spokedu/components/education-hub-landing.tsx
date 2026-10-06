@@ -2,7 +2,8 @@
 /* eslint-disable @next/next/no-img-element -- Editorial field photos intentionally retain native intrinsic sizing and crop behavior. */
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { DispatchProposalForm } from "./dispatch-proposal-form";
 import styles from "./education-hub.module.css";
 
 const CONDITIONS = [
@@ -180,6 +181,7 @@ export function EducationHubLanding() {
   };
 
   return (
+    <>
     <div className={styles.page} data-education-p0="desktop-static">
       <div>
         <section className={styles.hero} aria-labelledby="edu-hero">
@@ -196,7 +198,7 @@ export function EducationHubLanding() {
                 SPOKEDU가 직접 수업을 설계하고 운영합니다.
               </p>
               <div className={styles.actions}>
-                <Link className={styles.primary} href="/contact">
+                <Link className={styles.primary} href="#contact">
                   수업 문의하기
                 </Link>
                 <Link className={styles.secondary} href="/records">
@@ -414,7 +416,7 @@ export function EducationHubLanding() {
                 ))}
               </div>
               <aside>
-                <Link href="/contact">기관 체육수업 문의하기 →</Link>
+                <Link href="#contact">기관 체육수업 문의하기 →</Link>
                 <a href="https://pf.kakao.com/_VGWxeb/chat">
                   카카오채널 문의 가능
                 </a>
@@ -455,5 +457,15 @@ export function EducationHubLanding() {
         </section>
       </div>
     </div>
+
+      {/* 기관 문의 — DispatchProposalForm이 <section id="contact">를 소유한다. 중복 id 금지. */}
+      <div className={styles.inquiry}>
+        <div className={styles.rail}>
+          <Suspense fallback={<div className="min-h-[40vh]" aria-hidden />}>
+            <DispatchProposalForm />
+          </Suspense>
+        </div>
+      </div>
+    </>
   );
 }

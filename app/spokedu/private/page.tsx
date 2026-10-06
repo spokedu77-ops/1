@@ -9,9 +9,11 @@ export const metadata = buildSpokeduMetadata('private');
 export default function SpokeduPrivatePage() {
   return (
     <LandingPageRoot heroMediaKey={privatePage.hero.mediaKey}>
-      <Suspense fallback={<div className="min-h-[40vh]" aria-hidden />}>
-        <PrivateLanding />
-      </Suspense>
+      <div className="site-container py-8 sm:py-10 lg:py-12">
+        <Suspense fallback={<div className="min-h-[40vh]" aria-hidden />}>
+          <PrivateLanding />
+        </Suspense>
+      </div>
     </LandingPageRoot>
   );
 }

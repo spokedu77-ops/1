@@ -151,7 +151,7 @@ function flowStageVolume(
   const sameRegular = regular.length > 0 && regular.every((stage) => stage.durationSec === per);
   const label = sameRegular
     ? bonus
-      ? `${regular.length}스테이지 · 스테이지당 ${per}초 · 보너스 ${bonus.durationSec}초 · 총 ${total}초`
+      ? `${regular.length}스테이지 · 스테이지당 ${per}초 · 보너스 ${bonus.durationSec}초 · 운동 ${total}초`
       : `${regular.length}스테이지 · 스테이지당 ${per}초 · 총 ${total}초`
     : `${stages.length}스테이지 · 총 ${total}초`;
   return {
@@ -202,7 +202,7 @@ export function resolveSpomoveExecutionVolume(
 
   if (mode === 'spatial') {
     if (level === 7) {
-      return timeVolume(Math.max(standardSpomoveDurationSec(cueSeconds, rounds), 30));
+      return roundsVolume(rounds);
     }
     if (level === 4) {
       return {
@@ -216,6 +216,8 @@ export function resolveSpomoveExecutionVolume(
     if (level === 3) return roundsVolume(COLOR_SEQUENCE_RAMP_ROUNDS);
     return roundsVolume(MEMORY_ROUNDS);
   }
+
+  if (preset.id === 'dive-color-gate-61') return repsVolume(20);
 
   if (mode === 'flow') return flowStageVolume(preset, input);
 

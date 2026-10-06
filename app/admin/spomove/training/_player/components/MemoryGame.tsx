@@ -13,16 +13,14 @@ type ColorItem = { id: string; name: string; bg: string; text: string; symbol: s
 type Phase = 'idle' | 'showing' | 'waiting' | 'reveal' | 'summaryIntro' | 'summary' | 'done';
 
 const BASIC_RANDOM_MIN_MS = 1000;
-const BASIC_RANDOM_MAX_MS_L1 = 2500;
-const BASIC_RANDOM_MAX_MS_L2 = 3000;
+const SEQUENCE_RANDOM_MAX_MS = 3000;
 
-function randomBasicShowMs(level: number) {
-  const maxMs = level === 2 ? BASIC_RANDOM_MAX_MS_L2 : BASIC_RANDOM_MAX_MS_L1;
-  return Math.round(BASIC_RANDOM_MIN_MS + Math.random() * (maxMs - BASIC_RANDOM_MIN_MS));
+function randomSequenceShowMs() {
+  return Math.round(BASIC_RANDOM_MIN_MS + Math.random() * (SEQUENCE_RANDOM_MAX_MS - BASIC_RANDOM_MIN_MS));
 }
 
 function buildBasicShowSchedule(level: number, patternLength: number): number[] {
-  const schedule = Array.from({ length: patternLength }, () => randomBasicShowMs(level));
+  const schedule = Array.from({ length: patternLength }, () => randomSequenceShowMs());
   if (level === 1 && patternLength >= 2) {
     schedule[1] = BASIC_RANDOM_MIN_MS;
   } else if (level === 2 && patternLength >= 4) {
@@ -33,7 +31,7 @@ function buildBasicShowSchedule(level: number, patternLength: number): number[] 
 }
 
 function colorShowMs(level: number, speedSec: number, schedule: number[], index: number) {
-  if (level === 1 || level === 2) return schedule[index] ?? randomBasicShowMs(level);
+  if (level >= 1 && level <= 3) return schedule[index] ?? randomSequenceShowMs();
   return Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
 }
 
@@ -147,7 +145,7 @@ export function MemoryGame({
       setFlashWhite(false);
       setPhase('idle');
       previousBgRef.current = null;
-      scheduleRef.current = level === 1 || level === 2 ? buildBasicShowSchedule(level, pattern.length) : [];
+      scheduleRef.current = level >= 1 && level <= 3 ? buildBasicShowSchedule(level, pattern.length) : [];
       timerRef.current = setTimeout(() => runSequence(pattern, 0), Math.max(0, startDelayMs));
     },
     [clearTimer, level, patterns, runSequence, startDelayMs],
@@ -200,8 +198,6 @@ export function MemoryGame({
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', background: 'rgba(0,0,0,0.55)', padding: '0.6rem 1.2rem', color: '#fff', fontSize: '1rem', fontWeight: 800, backdropFilter: 'blur(14px)' }}>
         <span style={{ color: '#86EFAC' }}>기억</span>
         <span>{round + 1} / {total}</span>
-        <span style={{ opacity: 0.35 }}>|</span>
-        <span style={{ color: '#FCD34D' }}>{level}번</span>
         <span style={{ opacity: 0.35 }}>|</span>
         <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{patternLengthLabel(level, currentPattern.length)}</span>
       </div>
@@ -368,7 +364,7 @@ export function MemoryGame({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <div style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 800 }}>전체 정답 목록</div>
-                <div style={{ marginTop: '0.25rem', color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', fontWeight: 700 }}>{level}번 · {total}라운드 · {patternLengthLabel(level)}</div>
+                <div style={{ marginTop: '0.25rem', color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', fontWeight: 700 }}>{total}라운드 · {patternLengthLabel(level)}</div>
               </div>
               <button type="button" onClick={onExit} style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.07)', padding: '0.5rem 0.9rem', color: '#fff', fontSize: '0.88rem', fontWeight: 800, cursor: 'pointer' }}>
                 처음으로

@@ -96,6 +96,7 @@ describe('submitInquiry', () => {
       nameOrOrg: '테스트센터',
       inquiryPurpose: '구독시스템',
       utilizationTarget: '기관 도입',
+      targetAge: '초등',
     });
 
     expect(fetch).toHaveBeenCalledWith(

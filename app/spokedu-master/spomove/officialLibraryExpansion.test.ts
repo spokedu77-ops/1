@@ -180,7 +180,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(standard?.engine.flowLayout).toBe('sequential');
 
-    expect(standard?.engine.flowIncludeBonus).toBe(false);
+    expect(standard?.engine.flowIncludeBonus).toBe(true);
 
 
 
@@ -188,7 +188,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(random?.engine.flowLayout).toBe('random');
 
-    expect(random?.engine.flowDuration).toBe(60);
+    expect(random?.engine.flowDuration).toBe(20);
 
 
 
@@ -199,6 +199,8 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(colorGate?.engine.flowFeatures).toEqual(['colorGate']);
 
     expect(colorGate?.engine.flowDuration).toBe(60);
+
+    expect(colorGate?.rounds).toBe(1);
 
     expect(colorGate?.engine.colorGateVariant).toBe('solo-easy');
 
@@ -374,9 +376,9 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
       '순서 기억 · 쉬움 (3개)',
       '순서 기억 · 보통 (5개)',
       '순서 기억 · 쉬움 → 보통 → 어려움 (3~7개)',
+      '순간 기억 3X3 그리드 (원샷)',
       '순간 기억 · 4×4 그리드 (원샷)',
       '랜덤 기억 · 어려움 (퀴즈)',
-      '순간 기억 3X3 그리드 (원샷)',
     ]);
     const instant = findOfficialSpomovePreset('sequential-memory-custom-10color-exp');
     expect(instant?.engine).toMatchObject({

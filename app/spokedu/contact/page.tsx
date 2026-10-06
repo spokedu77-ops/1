@@ -17,6 +17,7 @@ export default function SpokeduContactPage() {
   const { hero, expectGuide } = contactPageContent;
 
   return (
+    <div className="site-container py-8 sm:py-10 lg:py-12">
     <div className={`${landingPageStack} gap-8 sm:gap-10`}>
       <section className={landingHeroShell}>
         <div className="max-w-2xl">
@@ -60,6 +61,7 @@ export default function SpokeduContactPage() {
       </section>
 
       <ContactFormShell />
+    </div>
     </div>
   );
 }

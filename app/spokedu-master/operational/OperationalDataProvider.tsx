@@ -4,7 +4,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useMasterCanUseAttendance } from '../access/MasterAccessProvider';
 import { getMasterRequestErrorMessage, masterFetchJson } from '../lib/masterRequestError';
 import { useProfile } from '../store';
-import { rememberClassToolsAttendanceSession } from '../components/ui/classToolsModel';
 import { invalidateMasterValueSummary } from '../lib/masterValueSummaryEvents';
 import type {
   CreateStudentInput,
@@ -306,7 +305,6 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveSessionAttendance = useCallback(async (sessionId: string, attendance: Array<{ studentId: string; status: MasterSessionAttendanceStatus | 'pending' }>) => {
-    rememberClassToolsAttendanceSession(sessionId);
     await masterFetchJson(`/api/spokedu-master/sessions/${sessionId}/attendance`, { method: 'PUT', body: JSON.stringify({ attendance }) });
     setSessions((current) => current.map((item) => item.id === sessionId ? { ...item, attendance: attendance.filter((entry): entry is typeof entry & { status: MasterSessionAttendanceStatus } => entry.status !== 'pending').map((entry) => ({
       id: item.attendance.find((old) => old.studentId === entry.studentId)?.id ?? entry.studentId,

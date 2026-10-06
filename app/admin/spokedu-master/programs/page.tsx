@@ -719,6 +719,7 @@ function parseCatalogTagsForEditor(value: string) {
 function normalizeContentDraft(value: SpomovePresetContentOverride | undefined): SpomovePresetContentOverride {
   return {
     recommendedCueSeconds: value?.recommendedCueSeconds,
+    recommendedCueTiming: value?.recommendedCueTiming,
     displayTitle: value?.displayTitle ?? '',
     shortDescription: value?.shortDescription ?? '',
     variantLabel: value?.variantLabel ?? '',
@@ -739,6 +740,7 @@ function normalizeContentDraft(value: SpomovePresetContentOverride | undefined):
 function contentDraftIsEmpty(value: SpomovePresetContentOverride | undefined) {
   return (
     value?.recommendedCueSeconds == null &&
+    value?.recommendedCueTiming == null &&
     !value?.displayTitle?.trim() &&
     !value?.shortDescription?.trim() &&
     !value?.variantLabel?.trim() &&
@@ -1088,11 +1090,19 @@ function SpomoveEditModal({
             <label className="mb-4 block text-[10px] font-black text-slate-500">
               추천 자극 시간
               <select
-                value={draft.recommendedCueSeconds ?? ''}
-                onChange={(event) => onUpdateDraft({ recommendedCueSeconds: event.target.value ? Number(event.target.value) : undefined })}
+                value={draft.recommendedCueTiming ?? draft.recommendedCueSeconds ?? ''}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  onUpdateDraft(value === 'random-1-3'
+                    ? { recommendedCueTiming: 'random-1-3', recommendedCueSeconds: undefined }
+                    : { recommendedCueTiming: undefined, recommendedCueSeconds: value ? Number(value) : undefined });
+                }}
                 className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-[12px] font-semibold outline-none focus:border-indigo-400"
               >
                 <option value="">기존 기본값 ({preset.cueSeconds}초)</option>
+                {preset.engine.mode === 'spatial' && preset.engine.level >= 1 && preset.engine.level <= 3
+                  ? <option value="random-1-3">1~3초 (랜덤)</option>
+                  : null}
                 {[1, 2, 3, 4, 5, 6].map((seconds) => <option key={seconds} value={seconds}>{seconds}초</option>)}
               </select>
               <span className="mt-1 block text-[10px] font-semibold leading-4 text-slate-400">사용자가 이 프로그램에 저장한 시간이 없을 때 기본 추천값으로 사용합니다.</span>
@@ -1391,6 +1401,7 @@ function useSpomoveContentData() {
     const preset = findOfficialSpomovePreset(presetId);
     let nextEntry: SpomovePresetContentOverride = {
       recommendedCueSeconds: draft.recommendedCueSeconds,
+      recommendedCueTiming: draft.recommendedCueTiming,
       displayTitle: draft.displayTitle?.trim() ?? '',
       shortDescription: draft.shortDescription?.trim() ?? '',
       variantLabel: draft.variantLabel?.trim() ?? '',
@@ -1659,6 +1670,7 @@ export function SpomoveContentManager() {
     const preset = findOfficialSpomovePreset(presetId);
     let nextEntry: SpomovePresetContentOverride = {
       recommendedCueSeconds: draft.recommendedCueSeconds,
+      recommendedCueTiming: draft.recommendedCueTiming,
       displayTitle: draft.displayTitle?.trim() ?? '',
       shortDescription: draft.shortDescription?.trim() ?? '',
       variantLabel: draft.variantLabel?.trim() ?? '',

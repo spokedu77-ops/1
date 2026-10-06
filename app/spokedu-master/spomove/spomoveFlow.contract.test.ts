@@ -64,7 +64,6 @@ describe("SPOMOVE pilot flow contract", () => {
   it("shows recent SPOMOVE re-entry without exposing other owners", () => {
     expect(hub).toContain("최근 SPOMOVE");
     expect(hub).toContain("최근 사용한 활동");
-    expect(hub).toContain("활동 선택");
     expect(hub).toContain("아직 실행한 SPOMOVE 활동이 없습니다.");
     expect(hub).toContain("activity.ownerId === ownerId");
     expect(hub).toContain("activity.action === 'spomove_started'");
@@ -78,8 +77,8 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(hub).toContain("useState<SpomoveContentLoadState>('loading')");
     expect(hub).toContain("setContentLoadState('error')");
     expect(hub).toContain("contentLoadState={contentLoadState}");
-    expect(dashboard).toContain("useState<SpomoveContentLoadState>('loading')");
-    expect(dashboard).toContain("setSpomoveContentLoadState('error')");
+    expect(dashboard).toContain("spomoveContentLoadState: 'loading'");
+    expect(dashboard).toContain("spomoveContentLoadState: 'error'");
     expect(dashboard).toContain("contentLoadState={spomoveContentLoadState}");
     expect(hub).toContain("SharedSpomoveGuidelineSheet");
     expect(hub).toContain("parseSpomoveHubUrlState");
@@ -192,13 +191,17 @@ describe("SPOMOVE pilot flow contract", () => {
     );
     expect(startBriefing).not.toContain("SPOMOVE_CUE_SPEED_OPTIONS");
     expect(startBriefing).not.toContain("onCueSecondsChange");
-    expect(startBriefing).toContain("현재 실행값");
+    expect(startBriefing).toContain("isActionMove");
     expect(settingsBriefing).toContain("SPOMOVE_CUE_SPEED_OPTIONS");
     expect(settingsBriefing).toContain("onCueSecondsChange");
     expect(startBriefing).toContain("실행 시작");
+    expect(startBriefing).toContain("액션 무브 시작");
     expect(startBriefing).toContain("SPOMAT {matCount}장");
-    expect(startBriefing).toContain("자극 {cueSeconds}초");
-    expect(startBriefing).toContain("실행 분량 {volumeLabel}");
+    expect(startBriefing).toContain("자극 {formatSpomoveCueLabel(preset, cueSeconds)}");
+    expect(startBriefing).not.toContain("현재 실행값");
+    expect(startBriefing).not.toContain("실행 분량 {executionVolume.label}");
+    expect(startBriefing).toContain("화면 방향 ↑");
+    expect(startBriefing).toContain("전환 안내 시간은 총 운동시간에 포함되지 않습니다.");
     expect(startBriefing).not.toContain("movementSummary");
     expect(startBriefing).not.toContain("전체화면 준비");
     expect(startBriefing).not.toContain("소리 사용");
@@ -210,8 +213,10 @@ describe("SPOMOVE pilot flow contract", () => {
   it("uses mat layout briefing and 1-6 second recommended speed instead of current-setting movement copy", () => {
     expect(startBriefing).toContain("SpomovePadLayoutView");
     expect(settingsBriefing).toContain("SpomovePadLayoutView");
-    expect(startBriefing).toContain("현재 실행값");
+    expect(startBriefing).not.toContain("현재 실행값");
     expect(settingsBriefing).not.toContain("현재 설정");
+    expect(settingsBriefing).toContain("화면 방향 ↑");
+    expect(settingsBriefing).toContain("SPOMAT {matCount}장");
     expect(setupShell).not.toContain("launchModeLabel");
     expect(setupShell).not.toContain("큰 화면");
     expect(cueSpeed).toContain(
@@ -227,7 +232,7 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(startBriefing).not.toContain("추천");
     expect(settingsBriefing).toContain("추천");
     expect(padLayoutView).not.toContain("학생이 화면을 바라보는 기준입니다.");
-    expect(padLayoutView).toContain("화면 ↑");
+    expect(padLayoutView).toContain("directionLabel");
     expect(padLayoutView).not.toContain("학생 위치");
     expect(padLayoutView).toContain("/images/spokedu/brand/spomat-diamond-cutout.png");
     expect(padLayoutView).toContain("aspect-square");
@@ -284,7 +289,7 @@ describe("SPOMOVE pilot flow contract", () => {
       "/spokedu-master/class-record?program=${officialPreset.id}",
     );
     expect(session).toContain("/spokedu-master/activity");
-    expect(masterResult).toContain("같은 설정으로 다시 실행");
+    expect(masterResult).toContain("같은 설정으로 다시 준비");
     expect(session).toContain("reopenStartConfirmation");
     expect(masterResult).toContain("활동 목록으로");
   });

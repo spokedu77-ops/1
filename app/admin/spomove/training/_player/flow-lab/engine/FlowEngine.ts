@@ -41,6 +41,7 @@ import { ArenaRenderer } from './renderers/ArenaRenderer';
 import { PostProcessingRenderer } from './renderers/PostProcessingRenderer';
 import { staticPerfTier } from '../../lib/reactTrainPerf';
 import {
+  COLOR_GATE_TARGET_COUNT,
   preloadColorGatePoseImages,
   type ColorGatePoseKey,
   type GateColorId,
@@ -565,6 +566,9 @@ export class FlowEngine {
       this.ensureColorGateManager();
     }
     this.setPhase('countdown');
+    // 시작 카운트도 활동 리듬에 포함한다. 다른 SPOMOVE 실행 화면과
+    // 동일하게 카운트다운이 보이는 순간부터 BGM을 재생한다.
+    void this.audio.resume().then(() => this.audio.startMusic());
     const seconds = 3;
     const startedAt = performance.now();
     let n = seconds;
@@ -572,7 +576,6 @@ export class FlowEngine {
       this.cb.onCountdown?.(n);
       if (n <= 0) {
         this.setPhase('playing');
-        this.audio.resume().then(() => this.audio.startMusic());
         this.startStage(0);
         return;
       }
@@ -793,17 +796,22 @@ export class FlowEngine {
 
     this.stageTimer += dt;
     if (this.jumpInstrCooldown > 0) this.jumpInstrCooldown = Math.max(0, this.jumpInstrCooldown - dt);
-    const remaining     = Math.max(0, stage.durationSec - this.stageTimer);
+    const colorGatePassCount = this.stats.colorGatePassCount ?? 0;
+    const remaining = stage.isColorGate
+      ? Math.max(0, COLOR_GATE_TARGET_COUNT - colorGatePassCount)
+      : Math.max(0, stage.durationSec - this.stageTimer);
     const elapsedBeforeStage = this.stageList
       .slice(0, this.stageIdx)
       .reduce((sum, s) => sum + s.durationSec, 0);
     const totalDuration = this.stageList.reduce((sum, s) => sum + s.durationSec, 0);
-    const totalProgress = totalDuration > 0
-      ? (elapsedBeforeStage + this.stageTimer) / totalDuration
-      : 0;
+    const totalProgress = stage.isColorGate
+      ? colorGatePassCount / COLOR_GATE_TARGET_COUNT
+      : totalDuration > 0
+        ? (elapsedBeforeStage + this.stageTimer) / totalDuration
+        : 0;
     this.cb.onTimerUpdate?.(remaining, Math.min(1, totalProgress));
 
-    if (this.stageTimer >= stage.durationSec) { this.endStage(); return; }
+    if (!stage.isColorGate && this.stageTimer >= stage.durationSec) { this.endStage(); return; }
 
     // ── 후반 속도 안내 — 1단계(stageIdx 0)에서만, 색 관문 제외 ─────────────
     const hasNonGateTrainingAfterStage1 = this.stageList.some((s, idx) => idx > 0 && !s.isColorGate);
@@ -906,6 +914,10 @@ export class FlowEngine {
           this.cb.onColorGatePassCount?.(this.stats.colorGatePassCount);
         },
       );
+      if ((this.stats.colorGatePassCount ?? 0) >= COLOR_GATE_TARGET_COUNT) {
+        this.endStage();
+        return;
+      }
     }
 
     // ── 장애물 업데이트 ────────────────────────────────────────────────────
@@ -1034,7 +1046,7 @@ export class FlowEngine {
   /** BGM 리스트가 늦게 로딩됐을 때 — init 이후 외부에서 호출 */
   async loadBgmLate(storagePath: string): Promise<void> {
     await this.audio.loadBgm(storagePath);
-    if (this.phase === 'playing') this.audio.startMusic();
+    if (this.phase === 'countdown' || this.phase === 'playing') this.audio.startMusic();
   }
 
   stop(): void {

@@ -67,7 +67,11 @@ const CURRICULUM_DEFAULT: CurriculumInquiryFields = {
   nameOrOrg: '',
   inquiryPurpose: '',
   utilizationTarget: '',
+  targetAge: '',
 };
+
+/** CurriculumInquiryForm(/subscription#inquiry) AGE_OPTIONS와 동일 — 별도 분류 금지 */
+const CURRICULUM_TARGET_AGE_OPTIONS = ['유아', '초등', '중등', '혼합 연령', '지도자(성인)'] as const;
 
 const OTHER_DEFAULT: OtherInquiryFields = {
   ...COMMON_DEFAULT,
@@ -391,6 +395,8 @@ function applyPayloadToForms(payload: InquiryPayload, handlers: {
       nameOrOrg: payload.nameOrOrg,
       inquiryPurpose: payload.inquiryPurpose,
       utilizationTarget: payload.utilizationTarget,
+      // targetAge 도입 전 저장된 임시 초안 호환
+      targetAge: payload.targetAge ?? '',
     });
     return;
   }
@@ -799,6 +805,24 @@ export default function SpokeduContactForm() {
                       <option value="외부 강사 교육">외부 강사 교육</option>
                       <option value="기관 도입">기관 도입</option>
                       <option value="협업 검토">협업 검토</option>
+                    </select>
+                  </Field>
+                  <Field label="대상 연령" required>
+                    <select
+                      required
+                      value={curriculumForm.targetAge}
+                      onChange={(e) => {
+                        markFormStartedRef.current();
+                        setCurriculumForm((p) => ({ ...p, targetAge: e.target.value }));
+                      }}
+                      className={`${inputClass} bg-white`}
+                    >
+                      <option value="">선택해 주세요</option>
+                      {CURRICULUM_TARGET_AGE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
                     </select>
                   </Field>
                 </div>

@@ -1515,7 +1515,7 @@ export default function MemoryGameApp({
     const stepSpeed = 3;
     const stepReps = 4;
     const spatialBasicRandomSpeed =
-      settings.mode === 'spatial' && (settings.level === 1 || settings.level === 2);
+      settings.mode === 'spatial' && settings.level >= 1 && settings.level <= 3;
     return (
       <div style={S.page}>
         <style>{CSS}</style>
@@ -2247,9 +2247,7 @@ export default function MemoryGameApp({
                   <div style={S.sec}>
                     {stepNum(stepSpeed, "Signal speed")}
                     <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600 }}>
-                      {settings.level === 2
-                        ? 'Speed is randomized between 1.0 and 3.0 seconds.'
-                        : 'Speed is randomized between 1.0 and 2.5 seconds.'}
+                      Stimulus duration is randomized between 1 and 3 seconds.
                     </p>
                   </div>
                 ) : settings.mode === 'spatial' && isInstantMemoryLevel(settings.level) ? (
@@ -2663,7 +2661,7 @@ export default function MemoryGameApp({
           </div>
         ) : isInstantMemory || reactEngineLevel === 12 ? (
           <ColorMemoryGridReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
+            roundCount={Math.max(1, settings.targetReps ?? 10)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
             gridSize={settings.colorMemoryGridSize === 3 || settings.colorMemoryGridSize === 5 ? settings.colorMemoryGridSize : 4}

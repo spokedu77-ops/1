@@ -124,6 +124,24 @@ export function buildDiveActionMoveReport(
   const tags = (['SIDE', 'JUMP', 'DUCK'] as const)
     .filter((id) => actions.includes(id))
     .map((id) => MOVEMENT_LABEL[id]);
+  const selfCheckPool = [
+    { id: 'follow', label: '화면의 신호를 끝까지 따라갔나요?' },
+    { id: 'direction', label: '방향이 바뀔 때 빠르게 이동했나요?' },
+    { id: 'move', label: '점프와 숙이기 동작을 크게 해봤나요?' },
+    { id: 'preview', label: '다음 신호를 미리 보며 움직였나요?' },
+    { id: 'balance', label: '동작을 바꾼 뒤 균형을 잡았나요?' },
+    { id: 'rhythm', label: '음악과 신호의 리듬에 맞춰 움직였나요?' },
+    { id: 'finish', label: '마지막 동작까지 힘차게 참여했나요?' },
+  ];
+  let selfCheckSeed = `${actionLine ?? 'DIVE'}:${Math.round(elapsedMs / 100)}`
+    .split('')
+    .reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0);
+  const selfChecks = [...selfCheckPool];
+  for (let i = selfChecks.length - 1; i > 0; i--) {
+    selfCheckSeed = (selfCheckSeed * 1664525 + 1013904223) >>> 0;
+    const j = selfCheckSeed % (i + 1);
+    [selfChecks[i], selfChecks[j]] = [selfChecks[j]!, selfChecks[i]!];
+  }
 
   return {
     title: completed ? 'DIVE 활동 완료' : '수업을 종료했습니다',
@@ -145,11 +163,6 @@ export function buildDiveActionMoveReport(
       { id: 'elapsed', label: '전체 활동 시간', value: elapsedLabel, nowrap: true },
       { id: 'point', label: '활동 포인트', value: '시각 신호에 맞춰 전신 움직임을 전환하기', nowrap: false },
     ],
-    selfChecks: [
-      { id: 'follow', label: '화면의 신호를 끝까지 따라갔나요?' },
-      { id: 'direction', label: '방향이 바뀔 때 빠르게 이동했나요?' },
-      { id: 'move', label: '점프와 숙이기 동작을 크게 해봤나요?' },
-      { id: 'preview', label: '다음 신호를 미리 보며 움직였나요?' },
-    ],
+    selfChecks: selfChecks.slice(0, 5),
   };
 }

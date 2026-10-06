@@ -32,6 +32,8 @@ export type CurriculumInquiryFields = InquiryCommonFields & {
   nameOrOrg: string;
   inquiryPurpose: string;
   utilizationTarget: string;
+  /** 대상 연령 — CurriculumInquiryForm AGE_OPTIONS와 동일 분류. preferredRegion과 별개 필드 */
+  targetAge: string;
 };
 
 export type OtherInquiryFields = InquiryCommonFields & {

@@ -215,12 +215,12 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(guide).toContain("'관련 활동': '함께 보기 좋은 활동'");
   });
 
-  it('uses numbered method steps and a bullet for a single variation step', () => {
+  it('uses numbered method steps and numbers only when there are multiple variations', () => {
     expect(guide).toContain('function StepMarker');
-    expect(guide).toContain('function VariationMarker');
     expect(guide).toContain('inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full');
-    expect(guide).toContain('numbered={variationSteps.length > 1}');
-    expect(guide).toContain('h-2 w-2 rounded-full bg-[var(--spm-acc)]');
+    expect(guide).toContain('const numberedVariations = variationSteps.length > 1');
+    expect(guide).toContain('{numberedVariations ? (');
+    expect(guide).not.toContain('function VariationMarker');
     expect(guide).not.toContain("padStart(2, '0')");
     expect(guide).not.toContain('function getMethodSupport');
   });

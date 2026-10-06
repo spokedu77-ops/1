@@ -17,7 +17,9 @@ import {
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// 한 배치에서 최대 25개를 순차적으로 다운로드·재압축·업로드하므로
+// Vercel의 기본 Fluid Compute 실행 한도까지 허용한다.
+export const maxDuration = 300;
 
 const SETUP_MAX = 1600;
 const SETUP_QUALITY = 85;

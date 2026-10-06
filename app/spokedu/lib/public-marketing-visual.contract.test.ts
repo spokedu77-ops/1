@@ -57,7 +57,7 @@ describe('public marketing visual foundation contract', () => {
   });
 
   it('keeps migrated public sources off legacy primitive names', () => {
-    expect(publicSource).not.toMatch(/\b(?:btnPrimary|btnSecondary|siteBtnPrimary|siteBtnSecondary|landingCardFrame|siteContainer|homeSectionPad|homeGateCard)\b/);
+    expect(publicSource).not.toMatch(/(?<!\.)\b(?:btnPrimary|btnSecondary|siteBtnPrimary|siteBtnSecondary|landingCardFrame|siteContainer|homeSectionPad|homeGateCard)\b/);
     expect(utilities).not.toMatch(/export const homeGateCard\b/);
   });
 

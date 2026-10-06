@@ -13,8 +13,10 @@ import { canUseClassTool, CLASS_TOOLS, isRosterClassToolId, parseClassToolId, ty
 import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
-import { absentStudentIdsForClassTools, COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, readClassToolsAttendanceSessionId, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
+import { COUNTDOWN_TIMER_MODE_CONFIG, distributeEvenly, formatCountdownOption, resolveClassToolParticipants, traceLadderDestination, type CountdownTimerMode } from './classToolsModel';
 import { createTournamentBracket, getTournamentRoundLabel, selectTournamentWinner, type TournamentParticipant } from './tournamentModel';
+import { useSessionAttendance } from '../../manage/session-detail/useSessionAttendance';
+import type { MasterSessionDto } from '../../types/operational';
 
 const TAB_ICONS: Record<ClassToolId, typeof Timer> = {
   stopwatch: Timer,
@@ -778,6 +780,9 @@ function ClassSelector({
   selectedClassKey,
   onChange,
   studentCount,
+  sessions,
+  selectedSessionId,
+  onSessionChange,
   locked = false,
 }: {
   classKeys: string[];
@@ -785,12 +790,15 @@ function ClassSelector({
   selectedClassKey: string;
   onChange: (classKey: string) => void;
   studentCount: number;
+  sessions: MasterSessionDto[];
+  selectedSessionId: string;
+  onSessionChange: (sessionId: string) => void;
   locked?: boolean;
 }) {
   if (!classKeys.length) return null;
 
   return (
-    <div className="mx-auto mb-1 flex w-full max-w-[560px] items-center justify-center gap-2 px-2 py-2">
+    <div className="mx-auto mb-1 flex w-full max-w-[760px] flex-wrap items-center justify-center gap-2 px-2 py-2 sm:flex-nowrap">
       <label htmlFor="class-tools-class" className="shrink-0 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>
         진행할 반
       </label>
@@ -813,22 +821,29 @@ function ClassSelector({
           ))}
         </select>
       )}
+      <label htmlFor="class-tools-session" className="sr-only">연결할 수업</label>
+      <select
+        id="class-tools-session"
+        value={selectedSessionId}
+        disabled={locked}
+        onChange={(event) => onSessionChange(event.target.value)}
+        className="h-11 min-w-0 flex-1 rounded-xl px-3 text-[13px] font-medium outline-none disabled:cursor-not-allowed disabled:bg-slate-50"
+        style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
+      >
+        <option value="">수업 연결 안 함</option>
+        {sessions.map((session) => <option key={session.id} value={session.id}>{formatClassToolSessionOption(session)}</option>)}
+      </select>
       <span className="shrink-0 text-[12px] font-normal text-slate-500">· {studentCount}명</span>
     </div>
   );
 }
 
-function SessionParticipantNote({ participantCount, rosterCount, returnHref }: { participantCount: number; rosterCount: number; returnHref: string }) {
-  const excludedCount = Math.max(0, rosterCount - participantCount);
-  return (
-    <div className="mx-auto mb-2 flex w-full max-w-[560px] flex-wrap items-center justify-center gap-x-3 gap-y-1 px-2 text-center text-[12px] font-medium text-slate-600">
-      <span>
-        출석 체크된 <strong className="font-semibold text-slate-900">{participantCount}명</strong>만 참여
-        {excludedCount > 0 ? ` · 결석·미기록 ${excludedCount}명 제외` : ''}
-      </span>
-      <Link href={returnHref} className="inline-flex min-h-11 items-center font-semibold text-blue-700">출석 확인</Link>
-    </div>
-  );
+function formatClassToolSessionOption(session: MasterSessionDto) {
+  const value = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(new Date(session.startAt));
+  const status = session.status === 'completed' ? '완료' : session.startedAt ? '수업 중' : '예정';
+  return `${value} · ${status}`;
 }
 
 function StandaloneParticipantPicker({ roster, excludedStudentIds, onToggle }: { roster: StudentProfile[]; excludedStudentIds: Set<string>; onToggle: (studentId: string) => void }) {
@@ -837,7 +852,7 @@ function StandaloneParticipantPicker({ roster, excludedStudentIds, onToggle }: {
   return (
     <details className="group mx-auto flex w-full max-w-[720px] shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white [&[open]]:min-h-0 [&[open]]:flex-1">
       <summary className="flex min-h-11 shrink-0 cursor-pointer list-none items-center justify-between gap-3 px-3 text-[12px] font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
-        <span>오늘 참여 명단 · {participantCount}/{roster.length}명</span>
+        <span>이번 도구 참여자 · {participantCount}/{roster.length}명</span>
         <ChevronDown size={16} className="shrink-0 transition-transform group-open:rotate-180" />
       </summary>
       <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-1 overflow-hidden border-t border-slate-100 p-2 min-[768px]:grid-cols-4" style={{ gridAutoRows: 'minmax(0, 2.75rem)' }}>
@@ -852,10 +867,43 @@ function StandaloneParticipantPicker({ roster, excludedStudentIds, onToggle }: {
               className={`flex min-h-0 items-center justify-between overflow-hidden rounded-lg px-3 text-left text-[13px] font-medium ${participating ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-50 text-slate-400'}`}
             >
               <span className="truncate">{student.name}</span>
-              <span className="ml-2 shrink-0 text-[11px] font-semibold">{participating ? '참여' : '제외'}</span>
+              <span className="ml-2 shrink-0 text-[11px] font-semibold">{participating ? '포함' : '제외'}</span>
             </button>
           );
         })}
+      </div>
+    </details>
+  );
+}
+
+function SessionAttendancePicker({ session, roster, attendance, onChange, error }: {
+  session: MasterSessionDto;
+  roster: StudentProfile[];
+  attendance: Record<string, 'present' | 'absent'>;
+  onChange: (studentId: string, status: 'present' | 'absent') => void;
+  error: string | null;
+}) {
+  const presentCount = roster.filter((student) => attendance[student.id] === 'present').length;
+  return (
+    <details className="group mx-auto flex w-full max-w-[720px] shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white [&[open]]:min-h-0 [&[open]]:flex-1">
+      <summary className="flex min-h-11 shrink-0 cursor-pointer list-none items-center justify-between gap-3 px-3 text-[12px] font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
+        <span>{formatClassToolSessionOption(session)} 출석 · {presentCount}/{roster.length}명</span>
+        <ChevronDown size={16} className="shrink-0 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="min-h-0 flex-1 overflow-y-auto border-t border-slate-100 p-2">
+        <p className="px-1 pb-2 text-[12px] font-medium text-slate-500">변경 내용은 수업 관리 출석부에도 바로 저장됩니다.</p>
+        {error ? <p className="px-1 pb-2 text-[12px] font-semibold text-rose-600">{error}</p> : null}
+        <div className="grid gap-1 min-[768px]:grid-cols-2">
+          {roster.map((student) => (
+            <div key={student.id} className="flex min-h-11 items-center gap-2 rounded-lg bg-slate-50 px-3">
+              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-800">{student.name}</span>
+              {(['present', 'absent'] as const).map((status) => {
+                const selected = attendance[student.id] === status;
+                return <button key={status} type="button" onClick={() => onChange(student.id, status)} aria-pressed={selected} className={`min-h-9 rounded-lg px-2.5 text-[12px] font-semibold ${selected ? status === 'present' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white' : 'bg-white text-slate-500'}`}>{status === 'present' ? '출석' : '결석'}</button>;
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </details>
   );
@@ -1266,15 +1314,18 @@ export default function ClassToolsView() {
   const [tab, setTab] = useState<ClassToolId>(() => requestedTool ?? 'stopwatch');
   const recordLastClassTool = useMasterStore((state) => state.recordLastClassTool);
   const requestedSessionId = searchParams.get('session');
-  const sessionContext = findExactSession(operationalData.sessions, requestedSessionId);
+  const [selectedSessionId, setSelectedSessionId] = useState('');
+  const effectiveSessionId = requestedSessionId ?? selectedSessionId;
+  const sessionContext = findExactSession(operationalData.sessions, effectiveSessionId);
   const sessionReturnHref = parseMasterWorkReturnHref(
     searchParams.get('returnTo'),
     null,
     null,
     requestedSessionId ? buildActivitySessionHref(requestedSessionId) : '/spokedu-master/activity',
   );
-  const hasSessionContext = Boolean(requestedSessionId);
-  const invalidSessionContext = hasSessionContext && operationalData.status === 'ready' && !sessionContext;
+  const hasSessionContext = Boolean(effectiveSessionId);
+  const requestedSessionContext = Boolean(requestedSessionId);
+  const invalidSessionContext = requestedSessionContext && operationalData.status === 'ready' && !sessionContext;
   const students = useMemo<StudentProfile[]>(() => operationalData.students.map((student) => ({
     id: student.id, name: student.name, group: '', meta: studentMetaToDisplay(student.meta),
     guidanceNote: student.guidanceNote ?? '', level: '', attendance: 0, classes: 0, streak: 0,
@@ -1291,27 +1342,35 @@ export default function ClassToolsView() {
     [effectiveClassKey, operationalData.classes, students],
   );
   const [excludedStandaloneStudentIds, setExcludedStandaloneStudentIds] = useState<Set<string>>(() => new Set());
-  const savedAbsentKey = useMemo(() => {
-    if (sessionContext || !effectiveClassKey) return '';
-    return absentStudentIdsForClassTools(
-      operationalData.sessions,
-      effectiveClassKey,
-      readClassToolsAttendanceSessionId(),
-    ).slice().sort().join('\n');
-  }, [effectiveClassKey, operationalData.sessions, sessionContext]);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const selectedClass = operationalData.classes.find((item) => item.id === effectiveClassKey) ?? null;
+  const classSessions = useMemo(() => operationalData.sessions
+    .filter((session) => session.classId === effectiveClassKey && session.status !== 'cancelled')
+    .sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime()), [effectiveClassKey, operationalData.sessions]);
+  const attendanceState = useSessionAttendance({
+    session: sessionContext,
+    activeSession: sessionContext,
+    selectedClass,
+    students: operationalData.students,
+    saving: false,
+    dirty: false,
+    setDirty: () => undefined,
+    saveAttendance: operationalData.saveSessionAttendance,
+    onSaveError: setAttendanceError,
+  });
+  const sessionRosterStudents = useMemo<StudentProfile[]>(() => attendanceState.roster.map((student) => ({
+    id: student.id, name: student.name, group: '', meta: '', guidanceNote: '', level: '', attendance: 0, classes: 0, streak: 0,
+    risk: null, skills: [], badges: [], history: [],
+  })), [attendanceState.roster]);
   useEffect(() => {
     setTab(requestedTool ?? 'stopwatch');
     if (requestedTool) recordLastClassTool(requestedTool);
   }, [recordLastClassTool, requestedTool]);
-  useEffect(() => {
-    if (sessionContext) return;
-    setExcludedStandaloneStudentIds(new Set(savedAbsentKey ? savedAbsentKey.split('\n') : []));
-  }, [savedAbsentKey, sessionContext]);
   const selectedStudents = useMemo(
     () => sessionContext
-      ? resolveClassToolParticipants(classRosterStudents, sessionContext.attendance)
+      ? resolveClassToolParticipants(sessionRosterStudents, Object.entries(attendanceState.attendance).map(([studentId, status]) => ({ studentId, status })))
       : classRosterStudents.filter((student) => !excludedStandaloneStudentIds.has(student.id)),
-    [classRosterStudents, excludedStandaloneStudentIds, sessionContext],
+    [attendanceState.attendance, classRosterStudents, excludedStandaloneStudentIds, sessionContext, sessionRosterStudents],
   );
   const toggleStandaloneParticipant = useCallback((studentId: string) => {
     setExcludedStandaloneStudentIds((current) => {
@@ -1321,16 +1380,27 @@ export default function ClassToolsView() {
       return next;
     });
   }, []);
+  const changeClass = (classId: string) => {
+    setSelectedClassKey(classId);
+    setSelectedSessionId('');
+    setExcludedStandaloneStudentIds(new Set());
+    setAttendanceError(null);
+  };
+  const changeSession = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    setExcludedStandaloneStudentIds(new Set());
+    setAttendanceError(null);
+  };
   const usesClassRoster = isRosterClassToolId(tab);
   const rosterToolLocked = !canUseClassTool(tab, access.canUseAttendance);
   const usingSample = false;
   const rosterTools = (
     <>
-      {tab === 'picker' && <PickerTab key={`picker-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-      {tab === 'teams' && <TeamsTab key={`teams-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-      {tab === 'order' && <OrderTab key={`order-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-      {tab === 'tournament' && <TournamentTab key={`tournament-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
-      {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}`} students={selectedStudents} usingSample={usingSample} />}
+      {tab === 'picker' && <PickerTab key={`picker-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
+      {tab === 'teams' && <TeamsTab key={`teams-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
+      {tab === 'order' && <OrderTab key={`order-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
+      {tab === 'tournament' && <TournamentTab key={`tournament-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
+      {tab === 'ladder' && <LadderTab key={`ladder-${effectiveClassKey}-${effectiveSessionId}`} students={selectedStudents} usingSample={usingSample} />}
     </>
   );
   return (
@@ -1394,27 +1464,37 @@ export default function ClassToolsView() {
             {tab === 'scoreboard' && <ScoreboardTab />}
           </ToolViewport>
         ) : null}
-        {!rosterToolLocked && usesClassRoster && !hasSessionContext ? (
+        {!rosterToolLocked && usesClassRoster && !requestedSessionContext ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-3 sm:px-6 [@media(max-height:500px)]:min-h-[520px] [@media(max-height:500px)]:shrink-0">
             <div className="shrink-0">
               <ClassSelector
                 classKeys={classKeys}
                 classLabels={classLabels}
                 selectedClassKey={effectiveClassKey}
-                onChange={setSelectedClassKey}
+                onChange={changeClass}
                 studentCount={selectedStudents.length}
+                sessions={classSessions}
+                selectedSessionId={selectedSessionId}
+                onSessionChange={changeSession}
               />
             </div>
-            <StandaloneParticipantPicker roster={classRosterStudents} excludedStudentIds={excludedStandaloneStudentIds} onToggle={toggleStandaloneParticipant} />
-            <ToolViewport>{rosterTools}</ToolViewport>
+            {sessionContext
+              ? <SessionAttendancePicker session={sessionContext} roster={sessionRosterStudents} attendance={attendanceState.attendance} onChange={attendanceState.updateAttendance} error={attendanceError} />
+              : <StandaloneParticipantPicker roster={classRosterStudents} excludedStudentIds={excludedStandaloneStudentIds} onToggle={toggleStandaloneParticipant} />}
+            <ToolViewport>{sessionContext && !selectedStudents.length ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                <p className="text-[16px] font-semibold text-slate-900">출석한 학생이 없습니다.</p>
+                <p className="text-[13px] font-medium text-slate-500">위 명단에서 출석을 선택하면 모든 명단 도구에 바로 반영됩니다.</p>
+              </div>
+            ) : rosterTools}</ToolViewport>
           </div>
         ) : null}
-        {!rosterToolLocked && usesClassRoster && hasSessionContext ? (
+        {!rosterToolLocked && usesClassRoster && requestedSessionContext ? (
           <>
             {sessionContext ? (
               <div className="shrink-0 px-4 pt-3 sm:px-6">
-                <ClassSelector classKeys={classKeys} classLabels={classLabels} selectedClassKey={effectiveClassKey} onChange={setSelectedClassKey} studentCount={selectedStudents.length} locked />
-                <SessionParticipantNote participantCount={selectedStudents.length} rosterCount={classRosterStudents.length} returnHref={sessionReturnHref} />
+                <ClassSelector classKeys={classKeys} classLabels={classLabels} selectedClassKey={effectiveClassKey} onChange={changeClass} studentCount={selectedStudents.length} sessions={classSessions} selectedSessionId={effectiveSessionId} onSessionChange={changeSession} locked />
+                <SessionAttendancePicker session={sessionContext} roster={sessionRosterStudents} attendance={attendanceState.attendance} onChange={attendanceState.updateAttendance} error={attendanceError} />
               </div>
             ) : null}
             <ToolViewport>

@@ -42,6 +42,8 @@ export type ColorGateDifficulty = 'easy' | 'hard';
  */
 export type ColorGateVariant = 'solo-easy' | 'solo-normal' | 'together-easy' | 'together-normal';
 
+export const COLOR_GATE_TARGET_COUNT = 20;
+
 export const COLOR_GATE_POSE_DEFINITIONS = [
   // 근력 · 근지구력 — easy 5
   { key: 'squat', label: '스쿼트', category: 'strength', difficulty: 'easy', image: '/spomove/dive/color-gate/strength/squat.png' },

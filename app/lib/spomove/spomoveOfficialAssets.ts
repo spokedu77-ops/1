@@ -41,6 +41,7 @@ export type SpomoveHubFamilyFeaturedAssetsJson = {
 
 export type SpomovePresetContentOverride = {
   recommendedCueSeconds?: number;
+  recommendedCueTiming?: 'random-1-3';
   displayTitle?: string;
   shortDescription?: string;
   variantLabel?: string;
@@ -147,6 +148,10 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
     const recommendedCueSeconds = Number(entry.recommendedCueSeconds);
     if (Number.isInteger(recommendedCueSeconds) && recommendedCueSeconds >= 1 && recommendedCueSeconds <= 6) {
       normalized.recommendedCueSeconds = recommendedCueSeconds;
+    }
+    if (entry.recommendedCueTiming === 'random-1-3') {
+      normalized.recommendedCueTiming = 'random-1-3';
+      delete normalized.recommendedCueSeconds;
     }
     const displayTitle = typeof entry.displayTitle === 'string' ? entry.displayTitle.trim() : '';
     const shortDescription = typeof entry.shortDescription === 'string' ? entry.shortDescription.trim() : '';

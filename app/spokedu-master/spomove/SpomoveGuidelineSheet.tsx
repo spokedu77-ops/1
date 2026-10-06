@@ -18,7 +18,7 @@ import { publicOfficialPresetSessionHref } from './officialSpomovePresets';
 import type { SpomoveHubViewMode } from './spomoveHubNavigation';
 import { getActivityFamily } from './movements/activityFamilies';
 import { buildDeclaredOperation, resolveRequiredMatGuidance } from './operations';
-import { resolveSessionCueSeconds } from './spomoveCueSpeed';
+import { formatSpomoveCueLabel, resolveSessionCueSeconds } from './spomoveCueSpeed';
 import { resolveSpomoveBriefingReadiness } from '@/app/lib/spomove/spomoveBriefingReadiness';
 import { buildSpomoveGuideDisplayModel, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 import {
@@ -111,18 +111,18 @@ function BriefingSection({
 
 function PrepMetaRow({
   matCount,
-  cueSeconds,
+  cueLabel,
   movementLabel,
   intervalLine,
 }: {
   matCount: number;
-  cueSeconds: number;
+  cueLabel: string;
   movementLabel: string | null;
   intervalLine: string | null;
 }) {
   const items = [
     { label: '준비물', value: `SPOMAT ${matCount}장` },
-    { label: '자극', value: `${cueSeconds}초` },
+    { label: '자극', value: cueLabel },
     movementLabel ? { label: '추천 동작', value: movementLabel } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 
@@ -475,7 +475,7 @@ export function SpomoveGuidelineSheet({
                 <BriefingSection title="준비">
                   <PrepMetaRow
                     matCount={matCount}
-                    cueSeconds={cueSeconds}
+                    cueLabel={formatSpomoveCueLabel(preset, cueSeconds)}
                     movementLabel={movementLabel}
                     intervalLine={intervalLine}
                   />

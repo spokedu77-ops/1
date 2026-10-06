@@ -42,6 +42,7 @@ import {
   parseCueSecondsQuery,
   resolveSessionCueSeconds,
   supportsCueSpeedOverride,
+  usesRandomSequenceCue,
   writeLastCueSeconds,
   type SpomoveCueSpeedSec,
 } from '../spomoveCueSpeed';
@@ -102,7 +103,6 @@ import {
 } from './sessionEntryMode';
 import {
   operationConfigToPatch,
-  operationSummaryLine,
   parseOperationQuery,
   readPresetConfigPreference,
   resolveOperationEngineCapabilities,
@@ -1000,10 +1000,6 @@ function SpomoveSessionContent() {
     stopBgm,
   ]);
 
-  const operationSummary =
-    operationLayerStatus !== 'legacyDisabled' && effectiveOperation
-      ? operationSummaryLine(effectiveOperation)
-      : null;
   const sessionOrigin = readSpomoveSessionOrigin(searchParams);
   const hubReturnHref = parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'));
   const workReturnHref = parseMasterWorkReturnHref(
@@ -1208,6 +1204,7 @@ function SpomoveSessionContent() {
         >
           {entryMode === 'settings' ? (
             <SettingsBriefing
+              matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}
               diveEnvironmentTheme={diveEnvironmentTheme}
               onDiveEnvironmentThemeChange={handleDiveEnvironmentThemeChange}
               sportsArenaFeatures={sportsArenaFeatures}
@@ -1231,7 +1228,9 @@ function SpomoveSessionContent() {
             <StartBriefing
               preset={officialPreset}
               cueSeconds={effectiveCueSeconds}
-              volumeLabel={executionVolume?.label ?? ''}
+              executionVolume={executionVolume!}
+              flowDuration={flowDuration}
+              flowIncludeBonus={flowIncludeBonus}
               matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}
               canChangeSettings={supportsCueSpeedOverride(officialPreset)}
               startDisabled={bgmLoading || !canStartSession}
@@ -1276,8 +1275,9 @@ function SpomoveSessionContent() {
             }
             settings={[
               `SPOMAT ${matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}장`,
-              `자극 ${effectiveCueSeconds}초`,
-              operationSummary,
+              officialPreset.id !== 'dive-standard'
+                ? `자극 ${usesRandomSequenceCue(officialPreset) ? '1~3초 (랜덤)' : `${effectiveCueSeconds}초`}`
+                : null,
             ].filter(Boolean) as string[]}
             recordHref={recordProgramHref}
             hubHref={hubReturnHref}

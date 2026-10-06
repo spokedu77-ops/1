@@ -84,6 +84,7 @@
 .comparisonTable tbody th { color: var(--spm-t2); font-weight: 650; }
 .comparisonTable td svg { display: inline; color: var(--spm-grn-strong); }
 .centerSection { display: flex; align-items: center; justify-content: space-between; gap: 50px; max-width: 1060px; margin-top: 34px; margin-bottom: 100px; padding: 52px 56px; border-radius: 22px; background: var(--spm-s2); }
+.inquirySection { max-width: 1060px; margin: 0 auto; padding: 0 40px 100px; }
 .centerSection h2 { margin: 0; font-family: var(--spm-font-display); font-size: clamp(28px,3vw,40px); line-height: 1.2; }
 .centerSection > div > p:last-child { max-width: 650px; margin: 16px 0 0; color: var(--spm-t2); font-size: 14px; line-height: 1.7; }
 .storyFlow { background: var(--spm-s1); }

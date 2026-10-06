@@ -79,7 +79,17 @@ export async function POST(req: NextRequest) {
       parseConversionEvidenceSlug(normalize(body.conversion_evidence_slug)) ?? undefined;
     const ctaIntentId = normalize(body.cta_intent_id) || defaultCtaForMode(leadMode);
 
-    if (!nameOrOrg || !phone || !contentType || !targetAge || !purpose || !teacherTraining || !partnershipType) {
+    // license(라이선스·협업) 문의에는 대상 연령이 없을 수 있다. package/training/master는 필수 유지.
+    const targetAgeRequired = leadMode !== 'license';
+    if (
+      !nameOrOrg ||
+      !phone ||
+      !contentType ||
+      (targetAgeRequired && !targetAge) ||
+      !purpose ||
+      !teacherTraining ||
+      !partnershipType
+    ) {
       return NextResponse.json({ ok: false, message: '필수 항목이 비어 있습니다.' }, { status: 400 });
     }
 
@@ -96,7 +106,7 @@ export async function POST(req: NextRequest) {
           purpose,
           teacherTraining,
           partnershipType,
-          targetAge,
+          targetAge: targetAge || undefined,
         },
         conversionEvidenceSlug,
         ctaIntentId,
@@ -114,7 +124,7 @@ export async function POST(req: NextRequest) {
       `이름/기관명: ${nameOrOrg}`,
       `연락처: ${phone}`,
       `필요한 콘텐츠 유형: ${contentType}`,
-      `대상 연령: ${targetAge}`,
+      `대상 연령: ${targetAge || '-'}`,
       `활용 목적: ${purpose}`,
       `강사 교육 필요 여부: ${teacherTraining}`,
       `제휴/구매 형태: ${partnershipType}`,
@@ -130,7 +140,7 @@ export async function POST(req: NextRequest) {
       envelope,
       parentName: nameOrOrg,
       phone,
-      childAge: targetAge,
+      childAge: targetAge || null,
       content,
       consultType: 'center',
     });

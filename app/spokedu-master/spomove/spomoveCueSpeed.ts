@@ -67,6 +67,20 @@ export const SPOMOVE_CUE_SPEED_GUIDES: Partial<Record<SpomoveCueSpeedSec, Spomov
 
 const STORAGE_KEY = 'spokedu-master.spomove.lastCueSeconds';
 
+const RANDOM_SEQUENCE_PRESET_IDS = new Set([
+  'sequential-memory-3color-09',
+  'sequential-memory-5color-51',
+  'sequential-memory-10color-52',
+]);
+
+export function usesRandomSequenceCue(preset: OfficialSpomovePreset): boolean {
+  return RANDOM_SEQUENCE_PRESET_IDS.has(preset.id);
+}
+
+export function formatSpomoveCueLabel(preset: OfficialSpomovePreset, cueSeconds: number): string {
+  return usesRandomSequenceCue(preset) ? '1~3초 (랜덤)' : `${cueSeconds}초`;
+}
+
 /**
  * 브리핑에서 자극 속도(1~6초)를 고를 수 있는 프리셋.
  * 제외: DIVE, 숫자 연산 기차, 흰 공, 레거시 reactTrain 매직 아이, 순차 기억(순간 기억 제외)

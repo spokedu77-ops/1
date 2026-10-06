@@ -156,7 +156,6 @@ export function MemoryGameLevel4({
             <span style={{ opacity: 0.35, margin: '0 0.1rem' }}>|</span>
           </>
         )}
-        <span style={{ color: '#FCD34D' }}>4번</span>
       </div>
       <button onClick={onExit} style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
     </div>
@@ -196,7 +195,7 @@ export function MemoryGameLevel4({
             <div style={{ position: 'absolute', top: '5.5rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', borderRadius: '2rem', padding: '0.35rem 1rem', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.85rem', zIndex: 15 }}>
               {showIdx + 1} / {TOTAL}번째
             </div>
-            <div key={`l4-${showIdx}`} className="mem-color-enter" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div key={`l4-${showIdx}`} className={showIdx === 0 ? undefined : 'mem-color-enter'} style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
                 <div style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none', fontSize: 'clamp(130px,30vw,300px)', fontWeight: 800, color: textColor, letterSpacing: '-0.04em', textShadow: `0 4px 60px rgba(0,0,0,0.2)`, userSelect: 'none', lineHeight: 1 }}>
                   {currentItem.num}

@@ -31,8 +31,8 @@ describe('Foundation Reset user-facing contracts', () => {
     expect(favorites).toContain("['spomove', 'SPOMOVE']");
     expect(favorites).toContain('setPreviewPreset(preset)');
     expect(favorites).toContain('SpomoveGuidelineSheet');
-    expect(favorites).toContain('publicOfficialPresetSessionHref');
-    expect(favorites).toContain('playHref=');
+    expect(favorites).not.toContain('publicOfficialPresetSessionHref');
+    expect(favorites).not.toContain('playHref=');
   });
   it('removes discovery favorites modes and preserves contextual payment', () => {
     expect(library).not.toContain("view === 'favorites'");

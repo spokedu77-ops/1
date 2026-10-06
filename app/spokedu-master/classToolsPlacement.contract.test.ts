@@ -108,13 +108,15 @@ describe('SPOKEDU MASTER class tools placement', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
     const model = read('app/spokedu-master/components/ui/classToolsModel.ts');
 
-    expect(tools).toContain('resolveClassToolParticipants(classRosterStudents, sessionContext.attendance)');
-    expect(tools).toContain('출석 체크된');
-    expect(tools).toContain('결석·미기록');
+    expect(tools).toContain('resolveClassToolParticipants(sessionRosterStudents');
+    expect(tools).toContain('변경 내용은 수업 관리 출석부에도 바로 저장됩니다.');
+    expect(tools).toContain('saveAttendance: operationalData.saveSessionAttendance');
     expect(model).toContain("entry.status === 'present'");
     expect(tools).toContain('students={selectedStudents}');
-    expect(tools).toContain('오늘 참여 명단');
+    expect(tools).toContain('이번 도구 참여자');
+    expect(tools).toContain('수업 연결 안 함');
     expect(tools).toContain('excludedStandaloneStudentIds');
+    expect(tools).not.toContain('readClassToolsAttendanceSessionId');
   });
 
   it('provides class-scoped tournament and ladder tools', () => {

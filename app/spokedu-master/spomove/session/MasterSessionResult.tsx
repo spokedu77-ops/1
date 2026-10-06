@@ -15,22 +15,16 @@ import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../../lib/masterActionGrammar';
 import { isNaturalSpomoveCompletion, type SpomoveCompletionReason } from './sessionResultModel';
 import type { SpomoveExecutionVolume } from './resolveSpomoveExecutionVolume';
-import { movementDisplayLabel } from '../movements/movementLabels';
 import type { MovementPick } from '../movements/movementTypes';
 
 export function MasterSessionResult({
   completionReason,
-  initialMovement,
-  finalMovement,
-  movementChangeCount,
   activityTitle,
   elapsedMs,
-  settings,
   colorCounts = null,
   engineMode,
   engineLevel,
   rounds,
-  cueSeconds,
   executionVolume,
   diveActionMove = null,
   recordHref,
@@ -77,20 +71,12 @@ export function MasterSessionResult({
     mode: engineMode,
     level: engineLevel,
     timeMode: executionVolume.kind === 'reps' ? 'reps' : executionVolume.kind === 'interval' ? 'interval' : 'time',
-    duration: executionVolume.kind === 'time' ? executionVolume.durationSec : 0,
-    targetReps: executionVolume.kind === 'reps' || executionVolume.kind === 'rounds' ? executionVolume.count : rounds,
+    duration: executionVolume.kind === 'time' || executionVolume.kind === 'stage' ? executionVolume.durationSec : 0,
+    targetReps: executionVolume.kind === 'reps' || executionVolume.kind === 'rounds' || executionVolume.kind === 'stage' ? executionVolume.count : rounds,
     intervalMode: executionVolume.kind === 'interval',
     intervalWork: executionVolume.interval?.workSeconds,
     intervalSets: executionVolume.interval?.sets,
   });
-  const usedSettings = settings.filter(Boolean).join(' · ');
-  const movementSummary = finalMovement
-    ? `${movementDisplayLabel(finalMovement)}${movementChangeCount > 0 ? ` · 동작 변경 ${movementChangeCount}회` : ''}`
-    : null;
-  const movementTransition = initialMovement && finalMovement && movementChangeCount > 0
-    ? `${movementDisplayLabel(initialMovement)} → ${movementDisplayLabel(finalMovement)}`
-    : null;
-
   return (
     <TrainingResultScreen
       cfg={cfg}
@@ -102,32 +88,11 @@ export function MasterSessionResult({
       diveActionMove={diveActionMove ? { ...diveActionMove, completed: done } : null}
       programTitle={activityTitle}
       volumeLabel={executionVolume.label}
-      sessionSettings={{
-        title: '사용한 설정',
-        primary: usedSettings || `자극 ${cueSeconds}초`,
-        secondary: `실행 분량 ${executionVolume.label}`,
-      }}
       retryLabel="같은 설정으로 다시 준비"
       onBack={() => router.push(leaveHref || sessionReturnHref || hubHref)}
       onRetry={onRetry}
       footer={(
         <div className="grid gap-2">
-          {usedSettings ? (
-            <p className="break-words text-[13px] font-bold leading-5 text-slate-800">
-              사용한 설정 · {usedSettings}
-            </p>
-          ) : null}
-          {movementSummary ? (
-            <p className="break-words text-[13px] font-bold leading-5 text-slate-800">
-              동작 · {movementSummary}
-              {movementTransition ? <span className="block text-xs font-semibold text-slate-500">{movementTransition}</span> : null}
-            </p>
-          ) : null}
-          <p className="text-xs font-semibold leading-5 text-slate-500">
-            {fromSession
-              ? '실행 종료와 수업 활동 완료 기록은 별개입니다. 수업 화면에서 진행 체크하거나, 아래에서 완료로 표시할 수 있습니다.'
-              : '표시된 정보는 실행 시간과 사용 설정이며, 수행 능력을 자동 채점한 결과가 아닙니다.'}
-          </p>
           {fromSession && markCompleteStatus === 'error' ? (
             <p role="status" className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
               완료 기록을 저장하지 못했습니다. 수업 화면에서 직접 완료해 주세요.

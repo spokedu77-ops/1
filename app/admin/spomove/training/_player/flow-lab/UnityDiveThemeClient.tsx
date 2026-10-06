@@ -176,8 +176,6 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
   const startUnitySession = useCallback(() => {
     setPhase(usesSinglePlayerContract ? 'waiting' : 'running');
     postToUnity('SPOMOVE_SESSION_START');
-    sessionAudioStartedRef.current = true;
-    callbacksRef.current.onSessionStart();
     if (!usesSinglePlayerContract) {
       productionCompletionTimerRef.current = setTimeout(() => finish('complete'), Math.max(1, productionDurationSec) * 1000);
     }
@@ -187,6 +185,12 @@ export default function UnityDiveThemeClient({ config, durationSec, onComplete, 
     const countdownStartedAt = performance.now();
     setPhase('countdown');
     setCountdownLabel('3');
+    // Unity 실행 신호는 카운트다운 뒤에 보내되, BGM은 다른 SPOMOVE
+    // 프로그램처럼 첫 카운트가 나타나는 순간부터 시작한다.
+    if (!sessionAudioStartedRef.current) {
+      sessionAudioStartedRef.current = true;
+      callbacksRef.current.onSessionStart();
+    }
 
     const tick = (now: number) => {
       if (finishedRef.current) return;

@@ -159,6 +159,7 @@ function SetupImage({ title, src }: { title: string; src: string }) {
 
 function LessonVideo({ model, video }: { model: LessonDisplayModel; video: VideoProps }) {
   const [liteMedia, setLiteMedia] = useState(false);
+  const balancedGuideRatio = model.variationMethod.length > 0 ? 'min-[900px]:aspect-[4/3]' : '';
 
   useEffect(() => {
     setLiteMedia(preferLiteMedia());
@@ -174,14 +175,14 @@ function LessonVideo({ model, video }: { model: LessonDisplayModel; video: Video
       : undefined;
   if (!video.embedUrl && !video.directUrl && !video.externalUrl) {
     return (
-      <div className="grid aspect-video w-full place-items-center rounded-[16px] bg-slate-100 text-[15px] font-medium text-slate-500">
+      <div className={`grid aspect-video w-full place-items-center rounded-[16px] bg-slate-100 text-[15px] font-medium text-slate-500 ${balancedGuideRatio}`}>
         등록된 수업 영상이 없습니다.
       </div>
     );
   }
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-[16px] bg-slate-950">
+    <div className={`relative aspect-video w-full overflow-hidden rounded-[16px] bg-slate-950 ${balancedGuideRatio}`}>
       <div aria-hidden className="absolute inset-0 bg-slate-950" />
       {video.embedUrl ? (
         <TrackedVideoIframe
@@ -254,6 +255,7 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
   const variationSummary = model.variationMethod.length > 1
     ? model.variationMethod.at(-1) ?? null
     : null;
+  const numberedVariations = variationSteps.length > 1;
 
   return (
     <div data-detail-panel="method" className={DETAIL_PANEL_CLASS}>
@@ -278,38 +280,38 @@ function MethodPanel({ model }: { model: LessonDisplayModel }) {
           ))}
         </ol>
         {variationSteps.length > 0 ? (
-          <section data-detail-support="variation" className="mt-7 border-t border-[color:var(--spm-br2)] pt-6">
-            <h2 className="m-0 text-[17px] font-semibold tracking-[-0.018em] text-[color:var(--spm-t)]">
-              변형 방법
-            </h2>
-            <ol className="m-0 mt-4 space-y-3">
+          <section data-detail-support="variation" className="mt-5 border-t border-[color:var(--spm-br2)] pt-4">
+            <h2 className={DETAIL_PANEL_HEADING_CLASS}>변형 방법</h2>
+            <div className="mt-3 space-y-2.5">
               {variationSteps.map((item, index) => (
-                <li data-detail-variation-item key={`${index}-${item}`} className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-2.5">
-                  <VariationMarker index={index} numbered={variationSteps.length > 1} />
-                  <p className="m-0 break-keep pt-0.5 text-[14px] font-medium leading-[1.65] text-[color:var(--spm-t2)] sm:text-[15px]">
+                <div
+                  data-detail-variation-item
+                  key={`${index}-${item}`}
+                  className={numberedVariations ? 'grid grid-cols-[1.6rem_minmax(0,1fr)] items-start gap-2' : ''}
+                >
+                  {numberedVariations ? (
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_9%,white)] text-[9px] font-bold tabular-nums text-[var(--spm-acc)]">
+                      {index + 1}
+                    </span>
+                  ) : null}
+                  <p className="m-0 break-keep text-[14px] font-medium leading-[1.65] text-[color:var(--spm-t2)] sm:text-[15px]">
                     {item}
                   </p>
-                </li>
+                </div>
               ))}
-            </ol>
+            </div>
             {variationSummary ? (
-              <p data-detail-variation-summary className="m-0 mt-4 break-keep border-l-2 border-[color:var(--spm-br2)] pl-3 text-[14px] leading-[1.7] text-[color:var(--spm-t2)] sm:text-[15px]">
-                {variationSummary}
-              </p>
+              <div data-detail-variation-summary className="mt-3 border-t border-[color:var(--spm-br2)] pt-2.5">
+                <p className="m-0 text-[11px] font-semibold text-[color:var(--spm-t3)]">운영 팁</p>
+                <p className="m-0 mt-1 break-keep text-[14px] font-medium leading-[1.65] text-[color:var(--spm-t2)] sm:text-[15px]">
+                  {variationSummary}
+                </p>
+              </div>
             ) : null}
           </section>
         ) : null}
       </div>
     </div>
-  );
-}
-
-function VariationMarker({ index, numbered }: { index: number; numbered: boolean }) {
-  if (numbered) return <StepMarker index={index} />;
-  return (
-    <span className="flex h-7 w-7 items-center justify-center" aria-hidden>
-      <span className="h-2 w-2 rounded-full bg-[var(--spm-acc)]" />
-    </span>
   );
 }
 
