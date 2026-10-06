@@ -200,6 +200,10 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(colorGate?.engine.flowDuration).toBe(60);
 
+    expect(colorGate?.engine.colorGateVariant).toBe('solo-easy');
+
+    expect(colorGate?.engine.colorGateCategory).toBe('all');
+
   });
 
 

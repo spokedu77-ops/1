@@ -22,6 +22,15 @@ describe('admin class Session request sharing', () => {
     expect(bundle).toContain('fetchAdminSessions<SessionRow>(groupParams)');
   });
 
+  it('anchors broad and quick calendar ranges to one deterministic month boundary', () => {
+    expect(management).toContain('const rangeAnchor = new Date()');
+    expect(management).toContain('rangeAnchor.setDate(1)');
+    expect(management).toContain('rangeAnchor.setHours(0, 0, 0, 0)');
+    expect(management).toContain('const rangeStart = new Date(rangeAnchor)');
+    expect(management).toContain('const quickStart = new Date(rangeAnchor)');
+    expect(management).not.toContain('const quickStart = new Date();');
+  });
+
   it('coalesces duplicate MASTER program and favorite refreshes fired together', () => {
     expect(masterStore).toContain('programsLoadInFlight');
     expect(masterStore).toContain('homeProgramsLoadInFlight');

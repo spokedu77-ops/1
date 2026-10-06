@@ -109,10 +109,15 @@ export function useClassManagement() {
   >(null);
 
   const fetchSessions = useCallback(async () => {
-    const rangeStart = new Date();
+    // All calendar instances use the same month-boundary anchor so concurrent
+    // loads produce identical request keys instead of differing by milliseconds.
+    const rangeAnchor = new Date();
+    rangeAnchor.setDate(1);
+    rangeAnchor.setHours(0, 0, 0, 0);
+    const rangeStart = new Date(rangeAnchor);
     rangeStart.setMonth(rangeStart.getMonth() - 24);
-    const rangeEnd = new Date();
-    rangeEnd.setMonth(rangeEnd.getMonth() + 24);
+    const rangeEnd = new Date(rangeAnchor);
+    rangeEnd.setMonth(rangeEnd.getMonth() + 25);
     const rangeStartIso = rangeStart.toISOString();
     const rangeEndIso = rangeEnd.toISOString();
     const PAGE = 1000;
@@ -127,10 +132,8 @@ export function useClassManagement() {
       return fetchAdminSessions<SessionRow>(params);
     };
 
-    const quickStart = new Date();
-    quickStart.setDate(1);
+    const quickStart = new Date(rangeAnchor);
     quickStart.setMonth(quickStart.getMonth() - 1);
-    quickStart.setHours(0, 0, 0, 0);
     const quickEnd = new Date(quickStart);
     quickEnd.setMonth(quickEnd.getMonth() + 3);
 

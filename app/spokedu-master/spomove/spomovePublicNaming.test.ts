@@ -107,16 +107,16 @@ const EXPECTED_CARD_TITLES_BY_ID: Record<string, string> = {
   'flanker-random-number-exp': '크기 다른 탈것 색 따라가기',
   'flanker-5circle-number-exp': '크기 다른 믹스 색 따라가기',
   'flanker-extreme-arrow-hard-skeleton': '크기 다른 화살표 따라가기',
-  'stroop-arrow-reverse-08': '화살표 방향·색 따라가기',
-  'stroop-arrow-bg-47': '색 이름·글자색 따라가기',
-  'stroop-word-reverse-48': '반대로 색 이름·글자색 따라가기',
-  'stroop-word-bg-49': '글자색 찾아가기',
+  'stroop-arrow-reverse-08': '화살표 방향 말고 색으로 점프',
+  'stroop-arrow-bg-47': '화살표 속 색깔로 점프',
+  'stroop-word-reverse-48': '글자 뜻 색깔로 점프',
+  'stroop-word-bg-49': '글씨 색깔로 점프',
   'sequential-memory-3color-09': '세 가지 색 순서 기억하기',
   'sequential-memory-5color-51': '다섯 가지 색 순서 기억하기',
   'sequential-memory-10color-52': '늘어나는 색 순서 기억하기',
-  'sequential-memory-custom-10color-exp': '한눈에 색 배치 기억하기',
+  'sequential-memory-custom-10color-exp': '한눈에 색 배치 기억하기 (4X4)',
   'sequential-memory-color-number-exp': '색깔과 번호 기억하기',
-  'sequential-memory-full-reveal-54': '순간 기억 3X3 그리드 (원샷)',
+  'sequential-memory-full-reveal-54': '한눈에 색 배치 기억하기 (3X3)',
   'dive-standard': '액션 무브',
   'dive-color-gate-61': '모션 게이트',
 };
@@ -138,10 +138,10 @@ describe('SPOMOVE public naming apply', () => {
 
   it('keeps applied / runtime-deferred / name-hold counts', () => {
     const statuses = publicLibrary.map((preset) => getSpomovePublicNaming(preset.id)?.status);
-    expect(statuses.filter((status) => status === 'applied')).toHaveLength(67);
-    expect(statuses.filter((status) => status === 'runtime-deferred')).toHaveLength(4);
-    expect(statuses.filter((status) => status === 'name-hold')).toHaveLength(1);
-    expect(67 + 4 + 1).toBe(72);
+    expect(statuses.filter((status) => status === 'applied')).toHaveLength(71);
+    expect(statuses.filter((status) => status === 'runtime-deferred')).toHaveLength(1);
+    expect(statuses.filter((status) => status === 'name-hold')).toHaveLength(0);
+    expect(71 + 1).toBe(72);
   });
 
   it('stores the exact v2 cardTitle for every public id', () => {
@@ -182,13 +182,8 @@ describe('SPOMOVE public naming apply', () => {
     }
   });
 
-  it('stores deferred titles but keeps all four off current UI display models', () => {
-    const deferredIds = [
-      'simon-camouflage-center-skeleton',
-      'stroop-arrow-reverse-08',
-      'stroop-arrow-bg-47',
-      'stroop-word-reverse-48',
-    ];
+  it('keeps the remaining deferred title off current UI display models', () => {
+    const deferredIds = ['simon-camouflage-center-skeleton'];
     for (const id of deferredIds) {
       const naming = getSpomovePublicNaming(id)!;
       const model = getSpomovePresetDisplayModel(findPublic(id));
@@ -199,23 +194,32 @@ describe('SPOMOVE public naming apply', () => {
     }
   });
 
-  it('resolves applied session snapshots to v2 while preserving deferred and hold fallbacks', () => {
+  it('resolves applied session snapshots to their public titles', () => {
     expect(resolveSpomovePublicDisplayTitle('reaction-cognition-quad-fruit-10', '4분할 자극 · 과일')).toBe('네 칸 과일 색 따라가기');
-    expect(resolveSpomovePublicDisplayTitle('stroop-arrow-reverse-08', '스트룹 이펙트 1번 · 화살표 반대')).toBe('스트룹 이펙트 1번 · 화살표 반대');
-    expect(resolveSpomovePublicDisplayTitle('sequential-memory-full-reveal-54', '순간 기억 3X3 그리드 (원샷)')).toBe('순간 기억 3X3 그리드 (원샷)');
+    expect(resolveSpomovePublicDisplayTitle('stroop-arrow-reverse-08', '스트룹 이펙트 1번 · 화살표 반대')).toBe('화살표 방향 말고 색으로 점프');
+    expect(resolveSpomovePublicDisplayTitle('sequential-memory-full-reveal-54', '순간 기억 3X3 그리드 (원샷)')).toBe('한눈에 색 배치 기억하기 (3X3)');
   });
 
-  it('applies stroop-word-bg-49 immediately', () => {
-    const model = getSpomovePresetDisplayModel(findPublic('stroop-word-bg-49'));
-    expect(model.rootTitle).toBe('글자색 찾아가기');
-    expect(model.displayTitle).toBe('글자색 찾아가기');
+  it('applies all four Stroop public titles immediately', () => {
+    const expected = {
+      'stroop-arrow-reverse-08': '화살표 방향 말고 색으로 점프',
+      'stroop-arrow-bg-47': '화살표 속 색깔로 점프',
+      'stroop-word-reverse-48': '글자 뜻 색깔로 점프',
+      'stroop-word-bg-49': '글씨 색깔로 점프',
+    } as const;
+
+    for (const [id, title] of Object.entries(expected)) {
+      const model = getSpomovePresetDisplayModel(findPublic(id));
+      expect(model.rootTitle).toBe(title);
+      expect(model.displayTitle).toBe(title);
+    }
   });
 
-  it('keeps full reveal on NAME HOLD fallback while exposing cardCore', () => {
+  it('applies the 3X3 instant-memory public title while exposing cardCore', () => {
     const model = getSpomovePresetDisplayModel(findPublic('sequential-memory-full-reveal-54'));
-    expect(model.displayTitle).toBe(model.rootTitle);
-    expect(model.displayTitle.length).toBeGreaterThan(0);
-    expect(getSpomovePublicNaming('sequential-memory-full-reveal-54')?.status).toBe('name-hold');
+    expect(model.displayTitle).toBe('한눈에 색 배치 기억하기 (3X3)');
+    expect(model.rootTitle).toBe('한눈에 색 배치 기억하기 (3X3)');
+    expect(getSpomovePublicNaming('sequential-memory-full-reveal-54')?.status).toBe('applied');
     const card = getSpomoveCardDisplayModel(findPublic('sequential-memory-full-reveal-54'));
     expect(card.publicMeta.core).toBe('기억 과제');
     expect(card.publicMeta.difficulty).toMatch(DIFFICULTY_SLOT);
@@ -236,18 +240,17 @@ describe('SPOMOVE public naming apply', () => {
     ).toBe('과일');
   });
 
-  it('keeps CMS displayTitle for deferred and hold ids only when legacy path already honors it', () => {
-    const deferred = getSpomovePresetDisplayModel(findPublic('stroop-arrow-reverse-08'), {
+  it('keeps CMS displayTitle for the remaining deferred id only when the legacy path honors it', () => {
+    const deferred = getSpomovePresetDisplayModel(findPublic('simon-camouflage-center-skeleton'), {
       displayTitle: 'CMS deferred title',
     });
-    expect(deferred.displayTitle).not.toBe('화살표 방향·색 따라가기');
-    expect(deferred.rootTitle).not.toBe('화살표 방향·색 따라가기');
+    expect(deferred.displayTitle).not.toBe('가운데 숨은 색 찾아가기');
+    expect(deferred.rootTitle).not.toBe('가운데 숨은 색 찾아가기');
 
-    const hold = getSpomovePresetDisplayModel(findPublic('sequential-memory-full-reveal-54'), {
-      displayTitle: 'CMS hold title',
+    const applied = getSpomovePresetDisplayModel(findPublic('sequential-memory-full-reveal-54'), {
+      displayTitle: 'CMS override title',
     });
-    expect(hold.displayTitle).not.toBe('');
-    expect(getSpomovePublicNaming('sequential-memory-full-reveal-54')?.status).toBe('name-hold');
+    expect(applied.displayTitle).toBe('한눈에 색 배치 기억하기 (3X3)');
   });
 
   it('searches v2 card titles and legacy preset titles, including deferred titles', () => {
@@ -255,7 +258,7 @@ describe('SPOMOVE public naming apply', () => {
     expect(matchesQuery('reaction-cognition-quad-fruit-10', '4분할')).toBe(true);
     expect(matchesQuery('simon-camouflage-center-skeleton', '카모플라쥬')).toBe(true);
     expect(matchesQuery('simon-camouflage-center-skeleton', '가운데 숨은 색 찾아가기')).toBe(true);
-    expect(matchesQuery('stroop-arrow-reverse-08', '화살표 방향·색 따라가기')).toBe(true);
+    expect(matchesQuery('stroop-arrow-reverse-08', '화살표 방향 말고 색으로 점프')).toBe(true);
   });
 
   it('keeps favorites card title difficulty-free and aria on displayTitle', () => {

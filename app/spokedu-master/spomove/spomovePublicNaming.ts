@@ -116,30 +116,20 @@ export const SPOMOVE_PUBLIC_NAMING_BY_ID: Record<string, SpomovePublicNaming> = 
   'flanker-5circle-number-exp': entry('크기 다른 믹스 색 따라가기', CORE.flanker, 'applied', { variant: '믹스' }),
   'flanker-extreme-arrow-hard-skeleton': entry('크기 다른 화살표 따라가기', CORE.flanker, 'applied', { variant: '화살표' }),
 
-  'stroop-arrow-reverse-08': entry('화살표 방향·색 따라가기', CORE.stroop, 'runtime-deferred', {
-    note: '현재 UI에 신규 제목 노출 금지.',
-  }),
-  'stroop-arrow-bg-47': entry('색 이름·글자색 따라가기', CORE.stroop, 'runtime-deferred', {
-    variant: '그대로',
-    note: '현재 UI에 신규 제목/Variant 노출 금지.',
-  }),
-  'stroop-word-reverse-48': entry('반대로 색 이름·글자색 따라가기', CORE.stroop, 'runtime-deferred', {
-    variant: '반대로',
-    note: '현재 UI에 신규 제목/Variant 노출 금지.',
-  }),
-  'stroop-word-bg-49': entry('글자색 찾아가기', CORE.stroop, 'applied'),
+  'stroop-arrow-reverse-08': entry('화살표 방향 말고 색으로 점프', CORE.stroop, 'applied'),
+  'stroop-arrow-bg-47': entry('화살표 속 색깔로 점프', CORE.stroop, 'applied'),
+  'stroop-word-reverse-48': entry('글자 뜻 색깔로 점프', CORE.stroop, 'applied'),
+  'stroop-word-bg-49': entry('글씨 색깔로 점프', CORE.stroop, 'applied'),
 
   'sequential-memory-3color-09': entry('세 가지 색 순서 기억하기', CORE.sequence, 'applied', { variant: '3개' }),
   'sequential-memory-5color-51': entry('다섯 가지 색 순서 기억하기', CORE.sequence, 'applied', { variant: '5개' }),
   'sequential-memory-10color-52': entry('늘어나는 색 순서 기억하기', CORE.sequence, 'applied', { variant: '점점 늘리기' }),
-  'sequential-memory-custom-10color-exp': entry('한눈에 색 배치 기억하기', CORE.instant, 'applied', { variant: '4×4' }),
+  'sequential-memory-custom-10color-exp': entry('한눈에 색 배치 기억하기 (4X4)', CORE.instant, 'applied', { variant: '4×4' }),
   'sequential-memory-color-number-exp': entry('색깔과 번호 기억하기', CORE.associate, 'applied', {
     variant: '퀴즈',
     note: 'Public Runtime은 기존 verbal Q&A. Variant에 SPOMAT 이동 문구 금지.',
   }),
-  'sequential-memory-full-reveal-54': entry('순간 기억 3X3 그리드 (원샷)', CORE.memoryTask, 'name-hold', {
-    note: 'Runtime/CMS 정합성 수정 전까지 기존 노출명 유지. cardCore·difficulty는 표시.',
-  }),
+  'sequential-memory-full-reveal-54': entry('한눈에 색 배치 기억하기 (3X3)', CORE.memoryTask, 'applied'),
 
   'dive-standard': entry('액션 무브', CORE.dive, 'applied'),
   'dive-color-gate-61': entry('모션 게이트', CORE.dive, 'applied'),

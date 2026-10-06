@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Program } from '../types';
-import { buildLessonCardSupportMeta } from './lessonDisplay';
+import { buildHomeWeeklySupportMeta, buildLessonCardSupportMeta } from './lessonDisplay';
 import {
   buildLessonDisplayModel,
   getPreviewCoachScript,
@@ -126,6 +126,16 @@ describe('lessonDisplayModel', () => {
     });
 
     expect(model).toBe('미취학·초등학생 · 라바콘');
+  });
+
+  it('keeps multiple spaces in the canonical gym then classroom order', () => {
+    const base = program();
+
+    expect(buildHomeWeeklySupportMeta({
+      ...base,
+      space: '교실, 체육관',
+      tags: ['인원:개인전'],
+    })).toBe('체육관·교실 · 개인전');
   });
 
   it('uses equipment as the card operation hint when participant format is not set', () => {

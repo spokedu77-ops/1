@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Heart, Play, Search, X } from 'lucide-react';
+import { Heart, Play, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -25,12 +25,8 @@ import { useOperationalData } from '../operational/OperationalDataProvider';
 import { buildActivitySessionHref, parseMasterWorkReturnHref } from '../lib/masterNavigationContext';
 import { deriveMasterSessionWorkState } from '../lib/masterSessionWorkState';
 import { getMasterContentPrimaryAction, resolveMasterContentMode } from '../lib/masterProductTruth';
-import { spmChipClass } from '../lib/masterUiClasses';
-import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { isHubListedPreset } from './movements/isHubVisiblePreset';
 import { canReproduceSpomoveSameSettings, recentSpomoveSessionOptions } from './movements/canReproduceSpomoveSameSettings';
-import { getPresetMovementSummary } from './movements/presetMovementSummary';
-import type { MovementQuickFilter } from './movements/movementTypes';
 
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
@@ -38,11 +34,6 @@ import {
   type OfficialSpomovePreset,
   type OfficialSpomoveProgramGroup,
 } from './officialSpomovePresets';
-import {
-  SPOMOVE_THINKING_LEVEL_LABELS,
-  getOfficialSpomovePresetGuide,
-  type SpomoveThinkingLevel,
-} from './officialSpomovePresetGuides';
 import {
   buildSpomovePresetSearchHaystack,
   getSpomoveCardDisplayModel,
@@ -76,7 +67,7 @@ import {
   type SpomoveHubFamilyFeaturedSlots,
 } from '../lib/spomoveHubFamilyFeatured';
 
-type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
+type ThinkingLevelTab = 'all' | 'easy' | 'normal' | 'hard';
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
@@ -90,13 +81,6 @@ const MOVEMENT_FILTERS = [
   ['all', '전체'], ['singleMat', '매트 1장'], ['feet', '발 중심'], ['hands', '손 중심'],
   ['balance', '균형'], ['lowImpact', '낮은 강도'],
 ] as const;
-
-const THINKING_LEVEL_FILTER_LABELS: Record<ThinkingLevelTab, string> = {
-  all: '전체',
-  easy: SPOMOVE_THINKING_LEVEL_LABELS.easy,
-  normal: SPOMOVE_THINKING_LEVEL_LABELS.normal,
-  hard: SPOMOVE_THINKING_LEVEL_LABELS.hard,
-};
 
 const PROGRAM_GROUP_TABS: ProgramGroupTab[] = [
   'all',
@@ -558,11 +542,6 @@ function matchesProgramGroup(preset: OfficialSpomovePreset, tab: ProgramGroupTab
   return preset.programGroup === tab;
 }
 
-function matchesThinkingLevel(preset: OfficialSpomovePreset, tab: ThinkingLevelTab) {
-  if (tab === 'all') return true;
-  return getOfficialSpomovePresetGuide(preset).thinkingLevel === tab;
-}
-
 function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
   if (!path) return '';
   try {
@@ -769,8 +748,6 @@ function SpomoveHubInner({
     movements: MOVEMENT_FILTERS.map(([id]) => id),
   });
   const activeProgramGroup = urlState.group as ProgramGroupTab;
-  const activeThinkingLevel = urlState.difficulty as ThinkingLevelTab;
-  const movementFilter = urlState.movement as MovementQuickFilter | 'all';
   const searchQuery = draftQuery;
   const selectedFamilyId = searchQuery.trim()
     ? null
@@ -797,7 +774,6 @@ function SpomoveHubInner({
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
   const isPremium = useIsPremium();
   const guideVideo = useSpomoveGuideVideo(previewPreset?.id ?? null, isPremium);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const profile = useProfile();
   const ownerId = getRecentActivityOwnerId(profile);
   const recentProgramActivities = useMasterStore((state) => state.recentProgramActivities);
@@ -886,16 +862,6 @@ function SpomoveHubInner({
     };
   }, []);
 
-  const movementLayerEnabled = useMemo(
-    () =>
-      isSpomoveMovementLayerEnabled({
-        isAdmin: profile?.isAdmin,
-        userId: profile?.id,
-        userRole: profile?.isAdmin ? 'admin' : undefined,
-      }),
-    [profile?.id, profile?.isAdmin],
-  );
-
   const updateHubState = (patch: Partial<typeof urlState>, replace = false) => {
     const href = appendSessionContext(serializeSpomoveHubUrlState({ ...urlState, ...patch }));
     if (replace) router.replace(href, { scroll: false });
@@ -927,19 +893,16 @@ function SpomoveHubInner({
   };
 
   const clearHubFilters = () => {
-    setFiltersOpen(false);
     setDraftQuery('');
     router.push(getSpomoveHubHref('all'), { scroll: false });
   };
 
   const selectCatalogFamily = (familyId: SpomoveCatalogFamilyId) => {
-    setFiltersOpen(false);
     setDraftQuery('');
     updateHubState({ family: familyId, group: 'all', difficulty: 'all', movement: 'all', q: '', view: 'all' });
   };
 
   const selectAllFamilies = () => {
-    setFiltersOpen(false);
     setDraftQuery('');
     updateHubState({ family: 'all', group: 'all', difficulty: 'all', movement: 'all', q: '', view: 'all' });
   };
@@ -955,52 +918,26 @@ function SpomoveHubInner({
       .toLocaleLowerCase('ko-KR')
       .includes(normalizedQuery);
   };
-  const matchesMovement = (preset: OfficialSpomovePreset, value: MovementQuickFilter | 'all') => {
-    if (!movementLayerEnabled || value === 'all') return true;
-    const summary = getPresetMovementSummary(preset);
-    if (!summary) return false;
-    if (value === 'singleMat') return summary.minMats === 1;
-    if (value === 'feet') return summary.feet;
-    if (value === 'hands') return summary.hands;
-    if (value === 'balance') return summary.balance;
-    if (value === 'lowImpact') return summary.lowImpact;
-    return false;
-  };
   const matchesGroup = (preset: OfficialSpomovePreset, value: ProgramGroupTab) =>
     matchesProgramGroup(preset, value);
-  const matchesDifficulty = (preset: OfficialSpomovePreset, value: ThinkingLevelTab) =>
-    matchesThinkingLevel(preset, value);
   const filteredPresets = useMemo(() => {
     const familyPresets = filterPresetsByCatalogFamily(visiblePresets, selectedFamilyId);
     const presets = familyPresets.filter((preset) =>
-      matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, activeThinkingLevel) &&
-      matchesMovement(preset, movementFilter) && matchesSearch(preset));
+      matchesGroup(preset, activeProgramGroup) && matchesSearch(preset));
     return sortSpomovePresetsByCatalogOrder(presets);
   // Filter helpers close over search/favorite state already listed below.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- matches* recreate each render; inputs above are the true deps
   }, [
     activeProgramGroup,
-    activeThinkingLevel,
     visiblePresets,
     favoriteSpomoveIds,
-    movementFilter,
-    movementLayerEnabled,
     searchQuery,
     selectedFamilyId,
   ]);
-  const facetPresets = filterPresetsByCatalogFamily(visiblePresets, selectedFamilyId);
-  const difficultyFacetCount = (tab: ThinkingLevelTab) => facetPresets.filter((preset) =>
-    matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, tab) &&
-    matchesMovement(preset, movementFilter) && matchesSearch(preset)).length;
-  const movementFacetCount = (tab: MovementQuickFilter | 'all') => facetPresets.filter((preset) =>
-    matchesGroup(preset, activeProgramGroup) && matchesDifficulty(preset, activeThinkingLevel) &&
-    matchesMovement(preset, tab) && matchesSearch(preset)).length;
   const showProgramLabel = selectedFamilyId === null;
   const activeFilterLabel =
     [
       activeProgramGroup === 'all' ? null : PROGRAM_GROUP_LABELS[activeProgramGroup],
-      activeThinkingLevel === 'all' ? null : THINKING_LEVEL_FILTER_LABELS[activeThinkingLevel],
-      movementFilter === 'all' ? null : MOVEMENT_FILTERS.find(([id]) => id === movementFilter)?.[1],
       searchQuery ? `“${searchQuery}”` : null,
       selectedFamilyId ? getSpomoveCatalogFamily(selectedFamilyId).name : null,
     ]
@@ -1066,9 +1003,6 @@ function SpomoveHubInner({
               <p className="mt-2 text-[14px] font-medium leading-5 text-[color:var(--spm-spomove-surface-muted)] sm:text-[15px] lg:whitespace-nowrap">
                 화면의 신호를 움직임으로 연결하는 체육활동
               </p>
-              <p className="mt-1.5 text-[12px] font-medium leading-4 text-white/55 sm:text-[13px]">
-                26개 프로그램 · 72개 활동
-              </p>
             </div>
             <div className="relative w-full sm:max-w-[440px]">
               <label htmlFor="spomove-search" className="sr-only">SPOMOVE 검색</label>
@@ -1125,12 +1059,11 @@ function SpomoveHubInner({
 
         {/* 최근 활동 */}
         {isFamilyLanding ? <section className="order-2 mt-7">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
             <div>
               <p className="text-[13px] font-medium text-slate-500">최근 SPOMOVE</p>
               <h2 className="mt-0.5 text-[20px] font-semibold leading-tight text-slate-950">최근 사용한 활동</h2>
             </div>
-            <a href="#spomove-program-list" className="inline-flex min-h-11 items-center text-sm font-semibold text-slate-950 sm:min-h-9">활동 선택</a>
           </div>
           {recentSpomoveActivities.length ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -1167,9 +1100,8 @@ function SpomoveHubInner({
               })}
             </div>
           ) : (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5">
+            <div className="mt-3 rounded-[12px] border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5">
               <p className="text-sm font-bold text-slate-600">아직 실행한 SPOMOVE 활동이 없습니다.</p>
-              <a href="#spomove-program-list" className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[9px] px-3 text-[12px] font-semibold focus-visible:outline-none">활동 선택</a>
             </div>
           )}
         </section> : null}
@@ -1190,9 +1122,9 @@ function SpomoveHubInner({
                     <button
                       type="button"
                       onClick={() => selectCatalogFamily(family.id)}
-                      className="shrink-0 min-h-9 text-xs font-semibold text-[var(--spm-acc)] hover:underline focus-visible:outline-none"
+                      className="shrink-0 min-h-11 px-2 text-sm font-bold text-[var(--spm-acc)] hover:underline focus-visible:outline-none"
                     >
-                      전체 {familyFiltered.length}개 →
+                      전체 보기
                     </button>
                   </div>
                   {renderPresetGrid(
@@ -1225,30 +1157,7 @@ function SpomoveHubInner({
                 ) : null}
                 {selectedFamilyId ? <p className="mt-2 text-[12px] font-semibold text-slate-400">{filteredPresets.length}개 활동</p> : null}
               </div>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600">
-                  필터 <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
             </header>
-            {filtersOpen ? (
-              <div className="mt-3 rounded-[14px] bg-slate-100/70 p-3">
-                <div className="flex flex-wrap gap-2">
-                  {THINKING_LEVEL_TABS.map((tab) => (
-                    <button key={tab} type="button" onClick={() => updateHubState({ difficulty: tab })} aria-pressed={activeThinkingLevel === tab} className={spmChipClass(activeThinkingLevel === tab)}>
-                      {THINKING_LEVEL_FILTER_LABELS[tab]} <span className="opacity-60">{difficultyFacetCount(tab)}</span>
-                    </button>
-                  ))}
-                </div>
-                {movementLayerEnabled ? <div className="mt-2 flex flex-wrap gap-2">
-                  {MOVEMENT_FILTERS.map(([id, label]) => (
-                    <button key={id} type="button" onClick={() => updateHubState({ movement: id })} aria-pressed={movementFilter === id} className={spmChipClass(movementFilter === id)}>
-                      {label} <span className="opacity-60">{movementFacetCount(id)}</span>
-                    </button>
-                  ))}
-                </div> : null}
-              </div>
-            ) : null}
             {filteredPresets.length > 0 ? (
               <div className="mt-4">{renderPresetGrid(filteredPresets)}</div>
             ) : (

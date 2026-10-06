@@ -464,14 +464,17 @@ export function resolveSpomoveCardBadges(meta: SpomoveCardMeta): SpomoveCardBadg
 export { composeSpomovePublicCardMetaParts };
 export { resolveSpomovePublicCardDifficulty } from './spomovePublicCardDifficulty';
 
-export function resolveSpomovePublicCardMeta(preset: OfficialSpomovePreset): SpomovePublicCardMeta {
+export function resolveSpomovePublicCardMeta(
+  preset: OfficialSpomovePreset,
+  contentOverride?: SpomovePresetContentOverride,
+): SpomovePublicCardMeta {
   const naming = getSpomovePublicNaming(preset.id);
   const core = naming?.cardCore?.trim() ?? '';
   const variant = getPublicCardVariant(naming);
   return {
     core,
     ...(variant ? { variant } : {}),
-    difficulty: resolveSpomovePublicCardDifficulty(preset),
+    difficulty: resolveSpomovePublicCardDifficulty(preset, contentOverride?.coreKeywords),
   };
 }
 
@@ -503,14 +506,17 @@ export function buildSpomovePresetSearchHaystack(
 function buildCardMeta(
   preset: OfficialSpomovePreset,
   title: string,
-  options?: { includeAudienceAdaptation?: boolean },
+  options?: {
+    contentOverride?: SpomovePresetContentOverride;
+    includeAudienceAdaptation?: boolean;
+  },
 ): SpomoveCardMeta {
   const { audience, adaptation } = resolveAudienceAdaptation(getOfficialSpomovePresetGuide(preset).targetGroups);
   const meta: SpomoveCardMeta = {
     responseType: resolveCardResponseType(preset),
     trainingFocus: resolveCardTrainingFocus(preset, title),
     adjustable: resolveCardAdjustable(preset),
-    difficulty: resolveSpomovePublicCardDifficulty(preset),
+    difficulty: resolveSpomovePublicCardDifficulty(preset, options?.contentOverride?.coreKeywords),
   };
 
   if (options?.includeAudienceAdaptation) {
@@ -549,8 +555,11 @@ export function getSpomoveCardDisplayModel(
   _contentOverride?: SpomovePresetContentOverride,
 ): SpomoveCardDisplayModel {
   const base = getSpomovePresetDisplayModel(preset, _contentOverride);
-  const publicMeta = resolveSpomovePublicCardMeta(preset);
-  const meta = buildCardMeta(preset, base.displayTitle, { includeAudienceAdaptation: false });
+  const publicMeta = resolveSpomovePublicCardMeta(preset, _contentOverride);
+  const meta = buildCardMeta(preset, base.displayTitle, {
+    contentOverride: _contentOverride,
+    includeAudienceAdaptation: false,
+  });
   return {
     programLabel: base.programLabel,
     title: resolveSpomoveCardPairKey(base.rootTitle),

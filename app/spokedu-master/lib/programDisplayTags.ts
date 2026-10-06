@@ -27,7 +27,8 @@ export function parseMasterSpaces(value: string | null | undefined): string[] {
     if (/교실|작은|좁|복도|실내|소규모/.test(part)) values.push('교실');
     return values;
   });
-  return unique(spaces);
+  const detected = new Set(spaces);
+  return MASTER_SPACE_TAGS.filter((space) => detected.has(space));
 }
 
 export function normalizeMasterSpace(value: string | null | undefined): string {

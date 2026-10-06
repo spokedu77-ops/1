@@ -1,4 +1,5 @@
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
+import { parseSpomoveCoreKeywordsOverride } from './spomoveCoreKeywords';
 import { getSpomoveDifficultyKind } from './spomoveDifficulty';
 
 export type SpomovePublicCardDifficulty = '난이도 쉬움' | '난이도 보통' | '난이도 어려움';
@@ -81,14 +82,23 @@ function fromProgramContract(preset: OfficialSpomovePreset): PublicDifficultyGra
   if (engine.mode === 'flanker') return 'normal';
   if (engine.mode === 'reactTrain') return 'easy';
   if (engine.mode === 'flow') {
-    return engine.flowFeatures?.includes('colorGate') ? 'hard' : 'easy';
+    if (!engine.flowFeatures?.includes('colorGate')) return 'easy';
+    return engine.colorGateVariant === 'solo-easy' || engine.colorGateVariant === 'together-easy'
+      ? 'easy'
+      : 'hard';
   }
   if (engine.mode === 'spatial') return 'normal';
   if (engine.mode === 'stroop') return 'hard';
   return null;
 }
 
-export function resolveSpomovePublicCardDifficulty(preset: OfficialSpomovePreset): SpomovePublicCardDifficulty {
+export function resolveSpomovePublicCardDifficulty(
+  preset: OfficialSpomovePreset,
+  coreKeywords?: string[] | null,
+): SpomovePublicCardDifficulty {
+  const adminDifficulty = parseSpomoveCoreKeywordsOverride(coreKeywords).difficulty;
+  if (adminDifficulty) return `난이도 ${adminDifficulty}`;
+
   const grade =
     fromExplicitEngine(preset) ??
     fromDifficultyKind(preset) ??

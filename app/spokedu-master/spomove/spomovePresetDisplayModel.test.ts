@@ -12,6 +12,16 @@ import {
 } from './spomovePresetDisplayModel';
 
 describe('spomove preset display model', () => {
+  it('uses the Admin core keyword difficulty on public card metadata', () => {
+    const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === 'dive-color-gate-61')!;
+    const card = getSpomoveCardDisplayModel(preset, {
+      coreKeywords: ['매트 위', '개인', '어려움'],
+    });
+
+    expect(card.publicMeta.difficulty).toBe('난이도 어려움');
+    expect(card.meta.difficulty).toBe('난이도 어려움');
+  });
+
   it('uses master card titles with compact support meta and runtime-aware duration labels without BGM copy', () => {
     const visual = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
     expect(visual).toBeTruthy();
