@@ -7,7 +7,6 @@
  * POST : { dryRun?: boolean, limit?: number, deleteOrphans?: boolean }
  */
 import { NextRequest, NextResponse } from 'next/server';
-import sharp from 'sharp';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -110,23 +109,6 @@ async function listAllFiles(
   return out;
 }
 
-async function objectBytes(
-  supabase: ReturnType<typeof getServiceSupabase>,
-  path: string
-): Promise<number | null> {
-  const parent = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
-  const name = path.includes('/') ? path.slice(path.lastIndexOf('/') + 1) : path;
-  const { data, error } = await supabase.storage.from(BUCKET_NAME).list(parent, {
-    search: name,
-    limit: 100,
-  });
-  if (error) return null;
-  const hit = data?.find((row) => row.name === name);
-  if (!hit) return null;
-  const bytes = Number(hit.metadata?.size ?? 0);
-  return Number.isFinite(bytes) ? bytes : 0;
-}
-
 function shouldSkipRecompress(path: string, bytes: number, kind: 'setup' | 'thumbnail') {
   const isWebp = /\.webp$/i.test(path);
   const limit = kind === 'setup' ? SETUP_SKIP_BYTES : THUMB_SKIP_BYTES;
@@ -137,19 +119,43 @@ async function buildCandidates(supabase: ReturnType<typeof getServiceSupabase>) 
   const candidates: Candidate[] = [];
   const referenced = new Set<string>();
 
-  const { data: metaRows, error: metaError } = await supabase
-    .from('spokedu_master_program_meta')
-    .select('curriculum_id, sm_setup_image_url')
-    .not('sm_setup_image_url', 'is', null);
+  // Storage 목록을 먼저 한 번만 읽고 경로별 크기 인덱스를 만든다. 이전 구현은
+  // 참조 이미지마다 list()를 순차 호출한 뒤 같은 폴더를 다시 전체 스캔해,
+  // 파일 수가 늘면 서버 함수의 60초 제한을 쉽게 넘겼다.
+  const [metaResult, packResult, programFiles, thumbFiles] = await Promise.all([
+    supabase
+      .from('spokedu_master_program_meta')
+      .select('curriculum_id, sm_setup_image_url')
+      .not('sm_setup_image_url', 'is', null),
+    supabase
+      .from('think_asset_packs')
+      .select('assets_json')
+      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
+      .maybeSingle(),
+    listAllFiles(supabase, 'spokedu-master/programs'),
+    listAllFiles(supabase, 'spokedu-master/spomove-thumbnails'),
+  ]);
+
+  const { data: metaRows, error: metaError } = metaResult;
 
   if (metaError) throw new Error(`meta 조회 실패: ${metaError.message}`);
+
+  const { data: pack, error: packError } = packResult;
+  if (packError && packError.code !== 'PGRST116') {
+    throw new Error(`썸네일 팩 조회 실패: ${packError.message}`);
+  }
+
+  const fileBytes = new Map<string, number>();
+  for (const file of [...programFiles, ...thumbFiles]) {
+    fileBytes.set(file.path, file.bytes);
+  }
 
   for (const row of metaRows ?? []) {
     const curriculumId = Number(row.curriculum_id);
     const path = storagePathFromPublicUrl(String(row.sm_setup_image_url ?? ''));
     if (!path || !Number.isFinite(curriculumId)) continue;
     referenced.add(path);
-    const bytes = (await objectBytes(supabase, path)) ?? 0;
+    const bytes = fileBytes.get(path) ?? 0;
     if (shouldSkipRecompress(path, bytes, 'setup')) {
       candidates.push({
         kind: 'setup',
@@ -170,22 +176,12 @@ async function buildCandidates(supabase: ReturnType<typeof getServiceSupabase>) 
     });
   }
 
-  const { data: pack, error: packError } = await supabase
-    .from('think_asset_packs')
-    .select('assets_json')
-    .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
-    .maybeSingle();
-
-  if (packError && packError.code !== 'PGRST116') {
-    throw new Error(`썸네일 팩 조회 실패: ${packError.message}`);
-  }
-
   const thumbs = normalizeSpomoveThumbnailMap(pack?.assets_json);
   for (const [presetId, rawPath] of Object.entries(thumbs)) {
     const path = storagePathFromPublicUrl(rawPath) || rawPath.split('?')[0];
     if (!path) continue;
     referenced.add(path);
-    const bytes = (await objectBytes(supabase, path)) ?? 0;
+    const bytes = fileBytes.get(path) ?? 0;
     if (shouldSkipRecompress(path, bytes, 'thumbnail')) {
       candidates.push({
         kind: 'thumbnail',
@@ -206,7 +202,6 @@ async function buildCandidates(supabase: ReturnType<typeof getServiceSupabase>) 
     });
   }
 
-  const programFiles = await listAllFiles(supabase, 'spokedu-master/programs');
   for (const file of programFiles) {
     if (referenced.has(file.path)) continue;
     candidates.push({
@@ -218,7 +213,6 @@ async function buildCandidates(supabase: ReturnType<typeof getServiceSupabase>) 
     });
   }
 
-  const thumbFiles = await listAllFiles(supabase, 'spokedu-master/spomove-thumbnails');
   for (const file of thumbFiles) {
     if (referenced.has(file.path)) continue;
     candidates.push({
@@ -238,6 +232,9 @@ async function buildCandidates(supabase: ReturnType<typeof getServiceSupabase>) 
 }
 
 async function recompressBuffer(input: Buffer, kind: 'setup' | 'thumbnail') {
+  // 미리보기(GET)는 sharp가 필요 없다. 네이티브 모듈은 실제 재압축 시점에만
+  // 로드해 배포 환경의 로딩 문제가 용량 측정까지 막지 않게 한다.
+  const { default: sharp } = await import('sharp');
   const max = kind === 'setup' ? SETUP_MAX : THUMB_MAX;
   const quality = kind === 'setup' ? SETUP_QUALITY : THUMB_QUALITY;
   return sharp(input)
