@@ -67,7 +67,7 @@ describe("SPOMOVE session lifecycle UX", () => {
   it("shows only measured operational facts and a context-aware action hierarchy", () => {
     expect(result).toContain("sessionReturnHref");
     expect(result).toContain("수업으로 돌아가기");
-    expect(result).toContain("같은 설정으로 다시 실행");
+    expect(result).toContain("같은 설정으로 다시 준비");
     expect(result).toContain("완료로 표시하고 수업으로");
     expect(result).toContain("실행 종료와 수업 활동 완료 기록은 별개입니다");
     expect(result).not.toContain("scheduledCompletionStatus");

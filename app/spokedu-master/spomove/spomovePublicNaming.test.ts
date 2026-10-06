@@ -73,10 +73,10 @@ const EXPECTED_CARD_TITLES_BY_ID: Record<string, string> = {
   'visual-reaction-flash-33': '풍선 터뜨리기',
   'visual-reaction-rush-39': '파도 피하기',
   'visual-reaction-flow-2x-31': '벽돌 따라 밟기',
-  'visual-reaction-mole-l1': '두더지 잡기',
-  'visual-reaction-mole-normal-skeleton': '두더지 잡기',
-  'visual-reaction-goalkeeper-easy-skeleton': '골키퍼 막기',
-  'visual-reaction-goalkeeper-42': '골키퍼 막기',
+  'visual-reaction-mole-l1': '두더지 잡기 (쉬움)',
+  'visual-reaction-mole-normal-skeleton': '두더지 잡기 (보통)',
+  'visual-reaction-goalkeeper-easy-skeleton': '골키퍼 막기 (쉬움)',
+  'visual-reaction-goalkeeper-42': '골키퍼 막기 (보통)',
   'visual-reaction-hand-foot-easy-skeleton': '발 맞춰 움직이기',
   'visual-reaction-hand-foot-normal-skeleton': '손발 나눠 움직이기',
   'visual-reaction-hand-foot-hard-skeleton': '손발 동시 움직이기',
@@ -88,8 +88,8 @@ const EXPECTED_CARD_TITLES_BY_ID: Record<string, string> = {
   'simon-balloon-hard-skeleton': '두 풍선 색 따라가기',
   'simon-mixed-gallery-exp': '그림 색 따라가기',
   'simon-random-hard-skeleton': '두 그림 색 따라가기',
-  'simon-camouflage-center-skeleton': '가운데 숨은 색 찾아가기',
-  'visual-reaction-blackout-37': '가장자리 숨은 색 찾아가기',
+  'simon-camouflage-center-skeleton': '숨은 색 찾아가기 (1개)',
+  'visual-reaction-blackout-37': '숨은 색 찾아가기 (2개)',
   'flanker-uniform-07': '가운데 좌우 화살표 따라가기',
   'flanker-arrow-udlr-exp': '가운데 사방 화살표 따라가기',
   'flanker-theme-color-skeleton': '가운데 색 따라가기',
@@ -136,12 +136,12 @@ describe('SPOMOVE public naming apply', () => {
     expect(extra).toEqual([]);
   });
 
-  it('keeps applied / runtime-deferred / name-hold counts', () => {
+  it('keeps every public title applied', () => {
     const statuses = publicLibrary.map((preset) => getSpomovePublicNaming(preset.id)?.status);
-    expect(statuses.filter((status) => status === 'applied')).toHaveLength(71);
-    expect(statuses.filter((status) => status === 'runtime-deferred')).toHaveLength(1);
+    expect(statuses.filter((status) => status === 'applied')).toHaveLength(72);
+    expect(statuses.filter((status) => status === 'runtime-deferred')).toHaveLength(0);
     expect(statuses.filter((status) => status === 'name-hold')).toHaveLength(0);
-    expect(71 + 1).toBe(72);
+    expect(statuses).toHaveLength(72);
   });
 
   it('stores the exact v2 cardTitle for every public id', () => {
@@ -182,16 +182,11 @@ describe('SPOMOVE public naming apply', () => {
     }
   });
 
-  it('keeps the remaining deferred title off current UI display models', () => {
-    const deferredIds = ['simon-camouflage-center-skeleton'];
-    for (const id of deferredIds) {
-      const naming = getSpomovePublicNaming(id)!;
-      const model = getSpomovePresetDisplayModel(findPublic(id));
-      expect(naming.status).toBe('runtime-deferred');
-      expect(model.displayTitle).not.toBe(naming.cardTitle);
-      expect(model.rootTitle).not.toBe(naming.cardTitle);
-      expect(getSpomoveCardDisplayModel(findPublic(id)).publicMeta.variant).toBeUndefined();
-    }
+  it('applies both hidden-color titles immediately', () => {
+    expect(getSpomovePresetDisplayModel(findPublic('simon-camouflage-center-skeleton')).displayTitle)
+      .toBe('숨은 색 찾아가기 (1개)');
+    expect(getSpomovePresetDisplayModel(findPublic('visual-reaction-blackout-37')).displayTitle)
+      .toBe('숨은 색 찾아가기 (2개)');
   });
 
   it('resolves applied session snapshots to their public titles', () => {
@@ -240,12 +235,12 @@ describe('SPOMOVE public naming apply', () => {
     ).toBe('과일');
   });
 
-  it('keeps CMS displayTitle for the remaining deferred id only when the legacy path honors it', () => {
-    const deferred = getSpomovePresetDisplayModel(findPublic('simon-camouflage-center-skeleton'), {
-      displayTitle: 'CMS deferred title',
+  it('lets applied public titles beat CMS displayTitle overrides', () => {
+    const camouflage = getSpomovePresetDisplayModel(findPublic('simon-camouflage-center-skeleton'), {
+      displayTitle: 'CMS camouflage title',
     });
-    expect(deferred.displayTitle).not.toBe('가운데 숨은 색 찾아가기');
-    expect(deferred.rootTitle).not.toBe('가운데 숨은 색 찾아가기');
+    expect(camouflage.displayTitle).toBe('숨은 색 찾아가기 (1개)');
+    expect(camouflage.rootTitle).toBe('숨은 색 찾아가기 (1개)');
 
     const applied = getSpomovePresetDisplayModel(findPublic('sequential-memory-full-reveal-54'), {
       displayTitle: 'CMS override title',
@@ -253,11 +248,11 @@ describe('SPOMOVE public naming apply', () => {
     expect(applied.displayTitle).toBe('한눈에 색 배치 기억하기 (3X3)');
   });
 
-  it('searches v2 card titles and legacy preset titles, including deferred titles', () => {
+  it('searches v2 card titles and legacy preset titles', () => {
     expect(matchesQuery('reaction-cognition-quad-fruit-10', '네 칸 과일 색 따라가기')).toBe(true);
     expect(matchesQuery('reaction-cognition-quad-fruit-10', '4분할')).toBe(true);
     expect(matchesQuery('simon-camouflage-center-skeleton', '카모플라쥬')).toBe(true);
-    expect(matchesQuery('simon-camouflage-center-skeleton', '가운데 숨은 색 찾아가기')).toBe(true);
+    expect(matchesQuery('simon-camouflage-center-skeleton', '숨은 색 찾아가기 (1개)')).toBe(true);
     expect(matchesQuery('stroop-arrow-reverse-08', '화살표 방향 말고 색으로 점프')).toBe(true);
   });
 
@@ -407,7 +402,7 @@ describe('SPOMOVE public card meta contract', () => {
     }
   });
 
-  it('keeps duplicate mole and goalkeeper titles differentiated by difficulty metadata', () => {
+  it('shows mole and goalkeeper difficulty in both title and metadata', () => {
     const pairs = [
       ['visual-reaction-mole-l1', 'visual-reaction-mole-normal-skeleton'],
       ['visual-reaction-goalkeeper-easy-skeleton', 'visual-reaction-goalkeeper-42'],
@@ -415,7 +410,9 @@ describe('SPOMOVE public card meta contract', () => {
     for (const [easyId, normalId] of pairs) {
       const easy = getSpomoveCardDisplayModel(findPublic(easyId));
       const normal = getSpomoveCardDisplayModel(findPublic(normalId));
-      expect(easy.title).toBe(normal.title);
+      expect(easy.title).not.toBe(normal.title);
+      expect(easy.title).toContain('(쉬움)');
+      expect(normal.title).toContain('(보통)');
       expect(easy.publicMeta.difficulty).toBe('난이도 쉬움');
       expect(normal.publicMeta.difficulty).toBe('난이도 보통');
     }

@@ -107,7 +107,7 @@ export function MasterSessionResult({
         primary: usedSettings || `자극 ${cueSeconds}초`,
         secondary: `실행 분량 ${executionVolume.label}`,
       }}
-      retryLabel="같은 설정으로 다시 실행"
+      retryLabel="같은 설정으로 다시 준비"
       onBack={() => router.push(leaveHref || sessionReturnHref || hubHref)}
       onRetry={onRetry}
       footer={(
@@ -154,7 +154,7 @@ export function MasterSessionResult({
             </Link>
           ) : null}
           <button type="button" onClick={onRetry} className={`${fromSession || recordHref ? SPM_SECONDARY_BTN : SPM_PRIMARY_BTN} min-h-12 w-full`}>
-            <RefreshCw className="mr-2 h-4 w-4" /> 같은 설정으로 다시 실행
+            <RefreshCw className="mr-2 h-4 w-4" /> 같은 설정으로 다시 준비
           </button>
           <Link href={hubHref} className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-[14px] font-bold text-slate-600 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">
             {fromSession ? 'SPOMOVE 활동 목록' : '활동 목록으로'}

@@ -30,11 +30,6 @@ function defaultInterval(preset: (typeof OFFICIAL_SPOMOVE_LIBRARY)[number]): Spo
     : null;
 }
 
-function goalkeeperSeconds(cueSeconds: number, rounds: number): number {
-  const floored = Math.max(standardSpomoveDurationSec(cueSeconds, rounds), 120);
-  return Math.max(12, Math.min(180, floored || 60));
-}
-
 /** Independent of the resolver. Locks the pre-launch audit. */
 function expectedVolume(
   preset: (typeof OFFICIAL_SPOMOVE_LIBRARY)[number],
@@ -68,8 +63,14 @@ function expectedVolume(
     return { kind: 'reps', label: `${rounds}회`, count: rounds, durationSec: 0, interval: null };
   }
   if (mode === 'reactTrain' && level === 10) {
-    const durationSec = goalkeeperSeconds(cue, rounds);
-    return { kind: 'time', label: `${durationSec}초`, count: 0, durationSec, interval: null };
+    const includeBonus = preset.engine.goalkeeperBonusTimeEnabled ?? false;
+    return {
+      kind: 'time',
+      label: includeBonus ? '60초 + 보너스 15초' : '60초',
+      count: 0,
+      durationSec: includeBonus ? 75 : 60,
+      interval: null,
+    };
   }
   if (mode === 'reactTrain') {
     const durationSec = standardSpomoveDurationSec(cue, rounds);
@@ -153,8 +154,8 @@ describe('resolveSpomoveExecutionVolume', () => {
       }).label;
     };
     expect(volume('reaction-cognition-space-direction-01')).toBe('20회');
-    expect(volume('visual-reaction-goalkeeper-42')).toBe('120초');
-    expect(volume('visual-reaction-goalkeeper-easy-skeleton')).toBe('120초');
+    expect(volume('visual-reaction-goalkeeper-42')).toBe('60초 + 보너스 15초');
+    expect(volume('visual-reaction-goalkeeper-easy-skeleton')).toBe('60초 + 보너스 15초');
     expect(volume('simon-balloon-hard-skeleton')).toBe('60초');
     expect(volume('sequential-memory-10color-52')).toBe('5라운드');
     expect(volume('sequential-memory-full-reveal-54')).toBe('30초');

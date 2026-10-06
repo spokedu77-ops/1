@@ -26,10 +26,13 @@ describe('spomove pad layout variant', () => {
   it('keeps grid2x2 as the default for other presets', () => {
     const gridPreset = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'simon-pole-shape-06');
     const fullColorPreset = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'reaction-cognition-full-color-03');
+    const foodSizePreset = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'flanker-arrow-05');
     expect(gridPreset).toBeTruthy();
     expect(fullColorPreset).toBeTruthy();
+    expect(foodSizePreset).toBeTruthy();
     expect(getSpomovePadLayoutVariant(gridPreset!)).toBe('grid2x2');
     expect(getSpomovePadLayoutVariant(fullColorPreset!)).toBe('grid2x2');
+    expect(getSpomovePadLayoutVariant(foodSizePreset!)).toBe('grid2x2');
   });
 
   it('renders separate square and diamond assets from the resolved variant', () => {

@@ -8,8 +8,10 @@ import {
   type ColorStimulusCounts,
   type TrainingSessionResult,
 } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
-import { normalizeColorTrackerRounds } from '@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining';
-import { normalizeNumberCartRounds } from '@/app/admin/spomove/training/_player/components/NumberCartReactionTraining';
+import {
+  normalizeColorTrackerRounds,
+  normalizeNumberCartRounds,
+} from '@/app/admin/spomove/training/_player/lib/roundNormalization';
 import { resolveReactTrainUiLevel } from '@/app/admin/spomove/training/_player/constants';
 import { StartCountdownGate } from '@/app/admin/spomove/training/_player/lib/reactTrainStartCountdown';
 import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
@@ -101,6 +103,57 @@ const MemoryGameLevel5 = lazy(() =>
 
 const MemoryGameApp = lazy(() => import('@/app/admin/spomove/training/_player/MemoryGameApp'));
 
+/**
+ * Fetch and parse only the engine selected on the setup screen. This moves the
+ * one-time module cost ahead of the Start click without eagerly loading every
+ * SPOMOVE runtime into the session route.
+ */
+export function preloadSpomoveEngine(
+  mode: OfficialSpomoveEngineMode,
+  level: number,
+  usesUnityDiveTheme = false,
+): Promise<unknown> {
+  if (mode === 'simon' && level === 4) {
+    return import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining');
+  }
+  if (mode === 'simon' && level === 5) {
+    return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
+  }
+  if (mode === 'flow') {
+    return Promise.all([
+      import('@/app/admin/spomove/training/_player/MemoryGameApp'),
+      usesUnityDiveTheme
+        ? import('@/app/admin/spomove/training/_player/flow-lab/UnityDiveThemeClient')
+        : import('@/app/admin/spomove/training/_player/flow-lab/FlowGameClient'),
+    ]);
+  }
+  if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
+    return import('@/app/admin/spomove/training/_player/MemoryGameApp');
+  }
+  if (mode === 'reactTrain') {
+    const engineLevel = resolveReactTrainUiLevel(level).engineLevel;
+    if (engineLevel === 1) return import('@/app/admin/spomove/training/_player/components/RushReactionTraining');
+    if (engineLevel === 2 || engineLevel === 3) {
+      return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
+    }
+    if (engineLevel === 4) return import('@/app/admin/spomove/training/_player/components/BeatWaveReactionTraining');
+    if (engineLevel === 5) return import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining');
+    if (engineLevel === 6) return import('@/app/admin/spomove/training/_player/components/RobloxMoleReactionTraining');
+    if (engineLevel === 7) return import('@/app/admin/spomove/training/_player/components/WormholeReactionTraining');
+    if (engineLevel === 8) return import('@/app/admin/spomove/training/_player/components/NumberCartReactionTraining');
+    if (engineLevel === 9) return import('@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining');
+    if (engineLevel === 10) return import('@/app/admin/spomove/training/_player/components/GoalkeeperReactionTraining');
+    return import('@/app/admin/spomove/training/_player/components/VisualReactionTraining');
+  }
+  if (mode === 'spatial') {
+    if (level === 7) return import('@/app/admin/spomove/training/_player/components/ColorMemoryGridReactionTraining');
+    if (level === 5) return import('@/app/admin/spomove/training/_player/components/MemoryGameLevel5');
+    if (level === 4) return import('@/app/admin/spomove/training/_player/components/MemoryGameLevel4');
+    return import('@/app/admin/spomove/training/_player/components/MemoryGame');
+  }
+  return Promise.resolve();
+}
+
 export type EngineCompletePayload = {
   completionReason: SpomoveCompletionReason;
   engineMode: OfficialSpomoveEngineMode;
@@ -131,11 +184,12 @@ type Props = {
   numberCartTier?: 1 | 2 | 3;
   colorTrackerTier?: 1 | 2 | 3;
   goalkeeperTier?: 1 | 2;
+  goalkeeperBonusTimeEnabled?: boolean;
   /** 사이먼: 1=보통 1개 · 2=어려움 2개 */
   simonPoleCount?: 1 | 2;
   colorTrackerDualPanel?: boolean;
   camouflagePlacement?: 'center' | 'variant';
-  /** Simon L4 내부 후보: preset 배치 존중. 없으면 legacy variant */
+  /** Simon L4: 명시된 preset 배치를 존중하고, 미지정 시 legacy variant를 사용한다. */
   camouflagePlacementResponse?: 'legacy' | 'preset';
   flowFeatures?: string[];
   sportsArenaFeatures?: Array<'side' | 'jump' | 'duck'>;
@@ -210,6 +264,7 @@ function EngineRuntime({
   numberCartTier,
   colorTrackerTier,
   goalkeeperTier,
+  goalkeeperBonusTimeEnabled,
   simonPoleCount,
   colorTrackerDualPanel,
   camouflagePlacement,
@@ -509,9 +564,10 @@ function EngineRuntime({
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <GoalkeeperReactionTraining
-            durationSec={Math.max(dur, 120)}
+            durationSec={60}
             speedSec={sp}
             goalkeeperTier={effectiveGoalkeeperTier}
+            bonusTimeEnabled={goalkeeperBonusTimeEnabled ?? false}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />

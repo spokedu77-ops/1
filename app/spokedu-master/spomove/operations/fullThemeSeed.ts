@@ -86,7 +86,7 @@ export const FULL_THEME_SEEDS: Record<
     cueSeconds: 5,
   },
   mix: {
-    recommendedMovement: { baseMovement: 'quickStep', limbRule: 'free' },
+    recommendedMovement: { baseMovement: 'cooperativeJump', limbRule: 'free' },
     recommendedOperation: {
       startZone: 'onMat',
       participantScale: 'individual',

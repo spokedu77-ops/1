@@ -198,8 +198,8 @@ export function CamouflageReactionTraining({
       g.W = r.cssW;
       g.H = r.cssH;
       g.dpr = r.dpr;
-      // 도형 실루엣이 격자에 묻히지 않도록 항상 고운 블록을 쓴다.
-      // navigator.hardwareConcurrency 기반 저사양 판정은 브라우저별 편차가 커서 신뢰하지 않는다.
+      // 도형 실루엣이 격자에 묻히지 않도록 블록 크기는 유지한다.
+      // 저사양 픽셀 처리량은 공통 setupCanvas의 backing-store DPR에서 제한한다.
       g.blockSize = g.W < 600 ? 9 : g.W > 1200 ? 15 : 12;
       if (g.targets.length > 0 && (prevW !== g.W || prevH !== g.H)) {
         rebuildTargetPaths();

@@ -20,7 +20,7 @@ import {
 import { useMasterStore, useProfile } from '../../store';
 import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
 import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
-import { EngineRouter, type EngineCompletePayload } from './EngineRouter';
+import { EngineRouter, preloadSpomoveEngine, type EngineCompletePayload } from './EngineRouter';
 import { SPOMOVE_SESSION_OVERLAY_LAYER } from './sessionOverlayLayer';
 import { lockViewportScroll } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
 import {
@@ -359,6 +359,19 @@ function SpomoveSessionContent() {
     setDiveEnvironmentTheme(theme);
     if (isDiveActionMoveUnityTheme(theme)) setFlowDuration((seconds) => [15, 20, 25, 30, 35].includes(seconds) ? seconds : 20);
   }, []);
+
+  useEffect(() => {
+    if (!officialPreset || !canLaunchPreset) return;
+    const timer = window.setTimeout(() => {
+      void preloadSpomoveEngine(
+        officialPreset.engine.mode,
+        officialPreset.engine.level,
+        isDiveActionMoveUnityTheme(diveEnvironmentTheme),
+      );
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [canLaunchPreset, diveEnvironmentTheme, officialPreset]);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activationBlocked, setActivationBlocked] = useState<
     null | 'fullscreenBlocked' | 'audioBlocked' | 'bothBlocked'
@@ -1088,6 +1101,7 @@ function SpomoveSessionContent() {
           numberCartTier={officialPreset.engine.numberCartTier}
           colorTrackerTier={officialPreset.engine.colorTrackerTier}
           goalkeeperTier={officialPreset.engine.goalkeeperTier}
+          goalkeeperBonusTimeEnabled={officialPreset.engine.goalkeeperBonusTimeEnabled}
           simonPoleCount={officialPreset.engine.simonPoleCount}
           colorTrackerDualPanel={officialPreset.engine.colorTrackerDualPanel}
           camouflagePlacement={officialPreset.engine.camouflagePlacement}

@@ -80,10 +80,15 @@ function snapRoundOption(value: number, options: readonly number[], fallback: nu
   return options.reduce((best, option) => (Math.abs(option - n) < Math.abs(best - n) ? option : best));
 }
 
-function goalkeeperDurationSec(cueSeconds: number, rounds: number): number {
-  const requested = standardSpomoveDurationSec(cueSeconds, rounds);
-  const floored = Math.max(requested, 120);
-  return Math.max(12, Math.min(180, floored || 60));
+function goalkeeperVolume(includeBonus: boolean): SpomoveExecutionVolume {
+  const bonusSeconds = includeBonus ? 15 : 0;
+  return {
+    kind: 'time',
+    label: includeBonus ? '60초 + 보너스 15초' : '60초',
+    count: 0,
+    durationSec: 60 + bonusSeconds,
+    interval: null,
+  };
 }
 
 function memoryGameIntervalApplies(
@@ -191,7 +196,7 @@ export function resolveSpomoveExecutionVolume(
   if (mode === 'reactTrain') {
     if (level === 8) return roundsVolume(snapRoundOption(rounds, NUMBER_CART_ROUND_OPTIONS, 5));
     if (level === 9) return roundsVolume(snapRoundOption(rounds, COLOR_TRACKER_ROUND_OPTIONS, 5));
-    if (level === 10) return timeVolume(goalkeeperDurationSec(cueSeconds, rounds));
+    if (level === 10) return goalkeeperVolume(preset.engine.goalkeeperBonusTimeEnabled ?? false);
     return timeVolume(standardSpomoveDurationSec(cueSeconds, rounds));
   }
 

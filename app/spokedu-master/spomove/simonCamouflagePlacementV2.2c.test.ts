@@ -91,22 +91,25 @@ describe('SPOMOVE 2C simon camouflage placement candidates', () => {
     ).toBe('variant');
   });
 
-  it('6 — 기존 Public center-skeleton engine 불변', () => {
+  it('6 — Public 1개 활동은 중앙 자극 1개로 고정', () => {
     expect(findOfficialSpomovePreset(PUBLIC_CENTER)?.engine).toEqual({
       mode: 'simon',
       level: 4,
       camouflagePlacement: 'center',
+      camouflagePlacementResponse: 'preset',
+      simonPoleCount: 1,
     });
   });
 
-  it('7 — 기존 Public Runtime은 여전히 legacy variant', () => {
+  it('7 — Public 1개 활동 Runtime은 center를 사용', () => {
     const publicPreset = findOfficialSpomovePreset(PUBLIC_CENTER);
     expect(
       resolveSimonL4CamouflagePlacementMode({
         camouflagePlacement: publicPreset?.engine.camouflagePlacement,
         camouflagePlacementResponse: publicPreset?.engine.camouflagePlacementResponse,
       }),
-    ).toBe('variant');
+    ).toBe('center');
+    expect(resolveSimonL4CamouflageConcurrent(publicPreset?.engine.simonPoleCount)).toBe(1);
     const router = fs.readFileSync(
       path.join(process.cwd(), 'app/spokedu-master/spomove/session/EngineRouter.tsx'),
       'utf8',
@@ -116,17 +119,21 @@ describe('SPOMOVE 2C simon camouflage placement candidates', () => {
     expect(router).not.toMatch(/if \(mode === 'simon' && level === 4\)[\s\S]{0,400}placementMode="variant"/);
   });
 
-  it('8 — blackout 불변', () => {
+  it('8 — Public 2개 활동은 가장자리 자극 2개로 고정', () => {
     expect(findOfficialSpomovePreset(BLACKOUT)?.engine).toEqual({
       mode: 'simon',
       level: 4,
       camouflagePlacement: 'variant',
+      camouflagePlacementResponse: 'preset',
+      simonPoleCount: 2,
     });
     expect(
       resolveSimonL4CamouflagePlacementMode({
         camouflagePlacement: 'variant',
+        camouflagePlacementResponse: 'preset',
       }),
     ).toBe('variant');
+    expect(resolveSimonL4CamouflageConcurrent(findOfficialSpomovePreset(BLACKOUT)?.engine.simonPoleCount)).toBe(2);
   });
 
   it('9 — 다른 Simon preset에 신규 option 없음', () => {

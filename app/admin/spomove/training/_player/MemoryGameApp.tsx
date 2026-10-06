@@ -16,17 +16,8 @@ import { StudentModal } from './components/StudentModal';
 import { StudentManageScreen } from './components/StudentManageScreen';
 import { SpeedSelector } from './components/SpeedSelector';
 import { SignalDisplay } from './components/SignalDisplay';
-import { MemoryGame } from './components/MemoryGame';
-import { MemoryGameLevel4 } from './components/MemoryGameLevel4';
-import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
-import { VisualReactionTraining, type ReactTrainCompleteStats } from './components/VisualReactionTraining';
-import { BeatWaveReactionTraining } from './components/BeatWaveReactionTraining';
-import { CamouflageReactionTraining } from './components/CamouflageReactionTraining';
-import { RushReactionTraining } from './components/RushReactionTraining';
-import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
-import { WormholeReactionTraining } from './components/WormholeReactionTraining';
-import { NumberCartReactionTraining, normalizeNumberCartRounds } from './components/NumberCartReactionTraining';
-import { ColorTrackerReactionTraining, normalizeColorTrackerRounds } from './components/ColorTrackerReactionTraining';
+import type { ReactTrainCompleteStats } from './components/VisualReactionTraining';
+import { normalizeColorTrackerRounds, normalizeNumberCartRounds } from './lib/roundNormalization';
 import {
   TargetTrackingReactionTraining,
   type ShellTrackingDifficulty,
@@ -36,16 +27,11 @@ import {
 import { RelativeCompassReactionTraining, type RelativeCompassDifficulty, type RelativeCompassSeconds } from './components/RelativeCompassReactionTraining';
 import { ShapeCompletionReactionTraining } from './components/ShapeCompletionReactionTraining';
 import { normalizeShapeCompletionDifficulty, normalizeShapeCompletionSeconds, type ShapeCompletionDifficulty, type ShapeCompletionSeconds } from './lib/shapeCompletionPuzzle';
-import { GoalkeeperReactionTraining } from './components/GoalkeeperReactionTraining';
-import { ColorMemoryGridReactionTraining } from './components/ColorMemoryGridReactionTraining';
-import { VirusOutbreakReactionTraining } from './components/VirusOutbreakReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
 import { ColorGatePoseAppendix } from './components/ColorGatePoseAppendix';
 import { CSS, S } from './styles';
-import FlowGameClient from './flow-lab/FlowGameClient';
-import UnityDiveThemeClient from './flow-lab/UnityDiveThemeClient';
 import type { ColorGateCategoryFilter } from './flow-lab/engine/modules/colorGateGuides';
 import { buildStages } from './flow-lab/engine/modules/stageBuilder';
 import {
@@ -68,6 +54,7 @@ import {
   resolveDivePanoramaUrls,
   type DiveThemeId,
 } from '@/app/lib/spomove/diveThemes';
+
 import {
   COLORS,
   MODES,
@@ -118,6 +105,38 @@ import {
   type SpomoveColorThemeId,
 } from './lib/spomoveVariantThemeConfig';
 import { loadFlowPresets, saveFlowPresets, type FlowPreset } from './lib/flowPresets';
+
+const MemoryGame = React.lazy(() => import('./components/MemoryGame').then((m) => ({ default: m.MemoryGame })));
+const MemoryGameLevel4 = React.lazy(() => import('./components/MemoryGameLevel4').then((m) => ({ default: m.MemoryGameLevel4 })));
+const MemoryGameLevel5 = React.lazy(() => import('./components/MemoryGameLevel5').then((m) => ({ default: m.MemoryGameLevel5 })));
+const VisualReactionTraining = React.lazy(() => import('./components/VisualReactionTraining').then((m) => ({ default: m.VisualReactionTraining })));
+const BeatWaveReactionTraining = React.lazy(() => import('./components/BeatWaveReactionTraining').then((m) => ({ default: m.BeatWaveReactionTraining })));
+const CamouflageReactionTraining = React.lazy(() => import('./components/CamouflageReactionTraining').then((m) => ({ default: m.CamouflageReactionTraining })));
+const RushReactionTraining = React.lazy(() => import('./components/RushReactionTraining').then((m) => ({ default: m.RushReactionTraining })));
+const RobloxMoleReactionTraining = React.lazy(() => import('./components/RobloxMoleReactionTraining').then((m) => ({ default: m.RobloxMoleReactionTraining })));
+const WormholeReactionTraining = React.lazy(() => import('./components/WormholeReactionTraining').then((m) => ({ default: m.WormholeReactionTraining })));
+const NumberCartReactionTraining = React.lazy(() => import('./components/NumberCartReactionTraining').then((m) => ({ default: m.NumberCartReactionTraining })));
+const ColorTrackerReactionTraining = React.lazy(() => import('./components/ColorTrackerReactionTraining').then((m) => ({ default: m.ColorTrackerReactionTraining })));
+const GoalkeeperReactionTraining = React.lazy(() => import('./components/GoalkeeperReactionTraining').then((m) => ({ default: m.GoalkeeperReactionTraining })));
+const ColorMemoryGridReactionTraining = React.lazy(() => import('./components/ColorMemoryGridReactionTraining').then((m) => ({ default: m.ColorMemoryGridReactionTraining })));
+const VirusOutbreakReactionTraining = React.lazy(() => import('./components/VirusOutbreakReactionTraining').then((m) => ({ default: m.VirusOutbreakReactionTraining })));
+const FlowGameClient = React.lazy(() => import('./flow-lab/FlowGameClient'));
+const UnityDiveThemeClient = React.lazy(() => import('./flow-lab/UnityDiveThemeClient'));
+
+function runtimeSuspense(content: React.ReactNode) {
+  return (
+    <React.Suspense
+      fallback={(
+        <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: '#000', color: '#fff', fontWeight: 800 }}>
+          실행 화면을 준비하고 있습니다.
+        </div>
+      )}
+    >
+      {content}
+    </React.Suspense>
+  );
+}
+
 function modeLevelRangeLabel(modeId: string, levelCount: number): string {
   if (modeId === 'flow') return '1';
   return levelCount <= 1 ? '1' : `1~${levelCount}`;
@@ -2595,10 +2614,10 @@ export default function MemoryGameApp({
       );
     }
     if (settings.level === 4)
-      return <MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />;
+      return runtimeSuspense(<MemoryGameLevel4 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
     if (settings.level === 5)
-      return <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />;
-    return (
+      return runtimeSuspense(<MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />);
+    return runtimeSuspense(
       <MemoryGame
         level={settings.level}
         onExit={stop}
@@ -2608,7 +2627,7 @@ export default function MemoryGameApp({
         startDelayMs={0}
         roundCount={settings.targetReps}
         slotColorIds={settings.level === 6 ? settings.memoryColorSlots : undefined}
-      />
+      />,
     );
   }
 
@@ -2623,7 +2642,7 @@ export default function MemoryGameApp({
     const reactEngineLevel = reactTrainEngineLevelForUi(settings.level);
     const isInstantMemory =
       settings.mode === 'spatial' && isInstantMemoryLevel(settings.level);
-    return (
+    return runtimeSuspense(
       <div ref={visualReactionContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
         <style>{CSS}</style>
         {settings.mode === 'basic' && settings.level === 8 && settings.shapeCompletionEnabled ? (
@@ -2757,14 +2776,14 @@ export default function MemoryGameApp({
             onComplete={handleReactTrainComplete}
           />
         )}
-      </div>
+      </div>,
     );
   }
 
   if (screen === 'flow') {
     const unityThemeId = resolveDiveUnityThemeId(settings.diveEnvironmentTheme);
     if (settings.mode === 'flow' && settings.level === 1 && unityThemeId) {
-      return <UnityDiveThemeClient config={{ themeId: unityThemeId, stageDuration: settings.flowDuration, side: settings.sportsArenaFeatures.has('side'), jump: settings.sportsArenaFeatures.has('jump'), duck: settings.sportsArenaFeatures.has('duck'), bonus: settings.flowIncludeBonus }} durationSec={diveActionMoveDurationSec({ side: settings.sportsArenaFeatures.has('side'), jump: settings.sportsArenaFeatures.has('jump'), duck: settings.sportsArenaFeatures.has('duck'), bonus: settings.flowIncludeBonus }, settings.flowDuration)} onComplete={handleFlowComplete} onExit={stop} onSessionStart={startSportsArenaBgm} onSessionStop={stopSportsArenaBgm} />;
+      return runtimeSuspense(<UnityDiveThemeClient config={{ themeId: unityThemeId, stageDuration: settings.flowDuration, side: settings.sportsArenaFeatures.has('side'), jump: settings.sportsArenaFeatures.has('jump'), duck: settings.sportsArenaFeatures.has('duck'), bonus: settings.flowIncludeBonus }} durationSec={diveActionMoveDurationSec({ side: settings.sportsArenaFeatures.has('side'), jump: settings.sportsArenaFeatures.has('jump'), duck: settings.sportsArenaFeatures.has('duck'), bonus: settings.flowIncludeBonus }, settings.flowDuration)} onComplete={handleFlowComplete} onExit={stop} onSessionStart={startSportsArenaBgm} onSessionStop={stopSportsArenaBgm} />);
     }
     // SELECTABLE_MODULE_KEYS ?????????????????????????????????????????????????????????????????????????????????????????????????????? ??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????ㅻ깹??????????????????????????釉먮폁?????????????????
     const selectedModules = [
@@ -2786,7 +2805,7 @@ export default function MemoryGameApp({
       deliverSessionResult(cfg, elapsedMs, flowColorCounts && totalColorStimulusCount(flowColorCounts) > 0 ? flowColorCounts : null);
     };
 
-    return (
+    return runtimeSuspense(
       <FlowGameClient
         stages={stages}
         bgmPath={flowBgmPathRef.current}
@@ -2801,7 +2820,7 @@ export default function MemoryGameApp({
         onComplete={handleFlowDone}
         onExit={stop}
         onEngineReady={(api) => { flowEngineApiRef.current = api; }}
-      />
+      />,
     );
   }
 
@@ -2815,7 +2834,7 @@ export default function MemoryGameApp({
         ? Math.min(6, settings.speed * 1.25)
         : settings.speed;
       // 워밍업은 CamouflageReactionTraining 내부 카운트다운만 사용 (이중 3·2·1 방지)
-      return (
+      return runtimeSuspense(
         <div ref={trainingContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
           <style>{CSS}</style>
           <CamouflageReactionTraining
@@ -2827,7 +2846,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        </div>
+        </div>,
       );
     }
     if (settings.mode === 'simon' && settings.level === 5) {
@@ -2835,7 +2854,7 @@ export default function MemoryGameApp({
         ? Math.min(6, settings.speed * 1.25)
         : settings.speed;
       // 워밍업은 VisualReactionTraining 내부 카운트다운만 사용 (이중 3·2·1 방지)
-      return (
+      return runtimeSuspense(
         <div ref={trainingContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
           <style>{CSS}</style>
           <VisualReactionTraining
@@ -2846,7 +2865,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        </div>
+        </div>,
       );
     }
     const bg = (signal?.bg as string) ?? '#0F172A';

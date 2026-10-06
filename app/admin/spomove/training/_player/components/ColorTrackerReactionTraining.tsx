@@ -12,14 +12,9 @@ import {
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { LongPressButton } from './LongPressButton';
 import { setupCanvas } from '../lib/canvasUtils';
+import { normalizeColorTrackerRounds } from '../lib/roundNormalization';
 
-export const COLOR_TRACKER_ROUND_OPTIONS = [2, 3, 5, 10] as const;
-
-export function normalizeColorTrackerRounds(value: number): number {
-  const n = Math.round(Number.isFinite(value) ? value : 5);
-  if ((COLOR_TRACKER_ROUND_OPTIONS as readonly number[]).includes(n)) return n;
-  return COLOR_TRACKER_ROUND_OPTIONS.reduce((best, v) => (Math.abs(v - n) < Math.abs(best - n) ? v : best));
-}
+export { COLOR_TRACKER_ROUND_OPTIONS, normalizeColorTrackerRounds } from '../lib/roundNormalization';
 
 /** 4분할: 좌상 빨 · 우상 노 · 좌하 초 · 우하 파 */
 const QUADRANTS = [

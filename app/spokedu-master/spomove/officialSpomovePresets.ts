@@ -73,6 +73,8 @@ export type OfficialSpomovePreset = {
     handFootDifficulty?: 'easy' | 'normal' | 'hard';
     /** 골키퍼(10): 1=항상 1개 · 2=1~2개(더블) */
     goalkeeperTier?: 1 | 2;
+    /** 골키퍼(10): 본 활동 종료 후 15초 보너스 라운드 */
+    goalkeeperBonusTimeEnabled?: boolean;
     /** 사이먼 폴 도형(1)·폴 화살표(2): 1=기본 1개 · 2=응용 2개 */
     simonPoleCount?: 1 | 2;
     colorTrackerDualPanel?: boolean;
@@ -685,7 +687,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 10, goalkeeperTier: 2 },
+    engine: { mode: 'reactTrain', level: 10, goalkeeperTier: 2, goalkeeperBonusTimeEnabled: true },
     description: '4코너로 날아오는 슛·커브볼을 끝까지 추적해 도착 코너 색 패드로 반응하는 시지각 반응 활동. 보통 난이도는 공 1~2개가 동시에 올 수 있습니다.',
     cueSeconds: 3,
     rounds: 20,
@@ -693,14 +695,14 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     bgmCategory: 'spomove-training',
     recommendedUse: '궤적 추적, 도착 코너 색 반응, 동시 자극 처리',
     isReady: true,
-    settingSummary: '골키퍼 방어 · 비행 3초 · 1~2개 · 약 120초 · BGM 자동',
-    settingChips: ['골키퍼 모드', '비행 3초', '1~2개', '120초', 'BGM 자동'],
+    settingSummary: '골키퍼 방어 · 비행 3초 · 1~2개 · 60초 + 보너스 15초 · BGM 자동',
+    settingChips: ['골키퍼 모드', '비행 3초', '1~2개', '60초 + 보너스 15초', 'BGM 자동'],
     executionFacts: [
       { label: '자극 방식', value: '골키퍼 모드' },
       { label: '진행 방식', value: '궤적 추적 · 도착 코너 색 반응' },
       { label: '비행 시간', value: '약 3초(설정 가능)' },
       { label: '동시 공', value: '1~2개' },
-      { label: '실행 시간', value: '약 120초' },
+      { label: '실행 시간', value: '60초 + 보너스 15초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
@@ -771,20 +773,26 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'simon',
     programTitle: '사이먼 이펙트',
     salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
-    engine: { mode: 'simon', level: 4, camouflagePlacement: 'variant' },
-    description: '노이즈 속에 위장된 색 사물이 화면 극단에 드러날 때 해당 색을 찾는 선택 반응 활동',
+    engine: {
+      mode: 'simon',
+      level: 4,
+      camouflagePlacement: 'variant',
+      camouflagePlacementResponse: 'preset',
+      simonPoleCount: 2,
+    },
+    description: '노이즈 속 화면 가장자리에 동시에 숨겨진 색 2개를 찾아 반응하는 카모플라쥬 활동',
     cueSeconds: 5,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '고난도 집중, 색 변별, 극단 위치 탐지',
     isReady: true,
-    settingSummary: '5초 · 20회 · 극단 · BGM 자동',
-    settingChips: ['매직 아이', '극단', '5초 고정', '20회', 'BGM 자동'],
+    settingSummary: '5초 · 2개 · 20회 · 가장자리 · BGM 자동',
+    settingChips: ['숨은 색', '2개', '가장자리', '5초 고정', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: '매직 아이' },
-      { label: '배치', value: '극단' },
-      { label: '진행 방식', value: '위장 탐지' },
+      { label: '자극 방식', value: '숨은 색' },
+      { label: '자극 수', value: '2개' },
+      { label: '배치', value: '가장자리' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },

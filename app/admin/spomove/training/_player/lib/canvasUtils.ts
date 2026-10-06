@@ -1,3 +1,5 @@
+import { staticPerfTier } from './reactTrainPerf';
+
 /** devicePixelRatio 대응 canvas 리사이즈 유틸.
  *
  * 반환값 cssW/cssH는 게임 좌표계(CSS 픽셀)로, 게임 내 모든 위치 계산에 사용한다.
@@ -13,7 +15,9 @@ export function setupCanvas(
   const cssW = containerWidth;
   const cssH = containerHeight;
   if (cssW <= 0 || cssH <= 0) return { cssW: 0, cssH: 0, dpr: 1 };
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  // Full-screen canvases grow quadratically with DPR. Keep authored CSS
+  // coordinates, but cap the backing store on constrained devices.
+  const dpr = Math.min(window.devicePixelRatio || 1, staticPerfTier === 'low' ? 1 : 2);
   cv.width = Math.round(cssW * dpr);
   cv.height = Math.round(cssH * dpr);
   cv.style.width = cssW + 'px';

@@ -294,7 +294,13 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     const magic = findOfficialSpomovePreset('visual-reaction-blackout-37');
     expect(magic?.programGroup).toBe('simon');
-    expect(magic?.engine).toEqual({ mode: 'simon', level: 4, camouflagePlacement: 'variant' });
+    expect(magic?.engine).toEqual({
+      mode: 'simon',
+      level: 4,
+      camouflagePlacement: 'variant',
+      camouflagePlacementResponse: 'preset',
+      simonPoleCount: 2,
+    });
 
     expect(findOfficialSpomovePreset('visual-reaction-mole-l2')).toBeNull();
     expect(findOfficialSpomovePreset('visual-reaction-camouflage-l2')).toBeNull();

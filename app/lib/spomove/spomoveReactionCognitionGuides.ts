@@ -25,7 +25,7 @@ const L3_MOVEMENT_LABEL: Record<ThemeId, string> = {
   food: '퀵스텝',
   nature: '런지 리치',
   vehicle: '플랭크 터치',
-  mix: '퀵스텝',
+  mix: '협동 점프',
 };
 
 function tags(...focusTags: SpomoveFocusTag[]): SpomoveFocusTag[] {

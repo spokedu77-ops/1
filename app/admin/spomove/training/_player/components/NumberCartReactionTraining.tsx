@@ -11,14 +11,9 @@ import {
   runReactTrainStartCountdown,
 } from '../lib/reactTrainStartCountdown';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { normalizeNumberCartRounds } from '../lib/roundNormalization';
 
-export const NUMBER_CART_ROUND_OPTIONS = [7, 10, 15, 25] as const;
-
-export function normalizeNumberCartRounds(value: number): number {
-  const n = Math.round(Number.isFinite(value) ? value : 5);
-  if ((NUMBER_CART_ROUND_OPTIONS as readonly number[]).includes(n)) return n;
-  return NUMBER_CART_ROUND_OPTIONS.reduce((best, v) => (Math.abs(v - n) < Math.abs(best - n) ? v : best));
-}
+export { NUMBER_CART_ROUND_OPTIONS, normalizeNumberCartRounds } from '../lib/roundNormalization';
 
 /** 원본 HTML 순서: 빨(좌끝)·노·초·파(우끝) — 화면 좌우를 넓게 쓰도록 X·크기 확대 */
 const DOOR_COLORS = [
