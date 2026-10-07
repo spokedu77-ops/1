@@ -9,8 +9,8 @@ const DISPLAY_LABELS: Record<string, string> = {
   'handTouch:sameSide': '같은 쪽 손 터치',
   'handTouch:oppositeSide': '교차손 터치',
   'stepHold:free': '밟고 정지',
-  'squatTouch:free': '스쿼트 터치',
-  'lungeReach:free': '런지 리치',
+  'squatTouch:free': '쪼그려 뛰기',
+  'lungeReach:free': '런지',
 };
 
 const HUD_LABELS: Record<string, string> = {

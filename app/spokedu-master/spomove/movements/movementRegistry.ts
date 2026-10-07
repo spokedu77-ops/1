@@ -60,8 +60,8 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   },
   squatTouch: {
     id: 'squatTouch',
-    label: '쪼그려뛰기',
-    shortLabel: '스쿼트',
+    label: '쪼그려 뛰기',
+    shortLabel: '쪼그려 뛰기',
     bodyFocus: 'wholeBody',
     impactLevel: 'medium',
     jumpFree: true,
@@ -114,7 +114,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   singleLegHop: {
     id: 'singleLegHop',
     label: '한 발 점프',
-    shortLabel: '한발 홉',
+    shortLabel: '한 발 점프',
     bodyFocus: 'feet',
     impactLevel: 'medium',
     jumpFree: false,
@@ -169,7 +169,7 @@ export const MOVEMENT_REGISTRY: Record<BaseMovementId, MovementDefinition> = {
   quickStep: {
     id: 'quickStep',
     label: '하이피칭',
-    shortLabel: '퀵스텝',
+    shortLabel: '하이피칭',
     bodyFocus: 'feet',
     impactLevel: 'medium',
     jumpFree: true,

@@ -71,6 +71,19 @@ describe('spomoveReactionCognitionGuides', () => {
     }
   });
 
+  it('uses the approved Korean movement names in L3 modal copy', () => {
+    const guides = listReactionCognitionSeedsByCluster('L3-full');
+    const byTheme = new Map(guides.map((seed) => [seed.theme, JSON.stringify(seed.movementGuide)]));
+    expect(byTheme.get('fruit')).toContain('한 발 점프');
+    expect(byTheme.get('animal')).toContain('쪼그려 뛰기');
+    expect(byTheme.get('food')).toContain('하이피칭');
+    expect(byTheme.get('nature')).toContain('런지');
+    expect(byTheme.get('mix')).toContain('협동 점프');
+    for (const guide of byTheme.values()) {
+      expect(guide).not.toMatch(/한 ?발 Hop|바운딩 스텝|퀵스텝|런지 리치/);
+    }
+  });
+
   it('merge preserves existing non-blank guide fields', () => {
     const seed = SPOMOVE_REACTION_COGNITION_GUIDE_SEEDS[0]!;
     const merged = mergeSpomoveGuideSeedOverride(

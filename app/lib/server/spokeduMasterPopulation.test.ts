@@ -4,11 +4,21 @@ import { classifyMasterAccount, hasRenewalProblem, isMasterQaAccount } from './s
 describe('SPOKEDU MASTER population', () => {
   it('does not turn an Auth-only account into a MASTER member', () => {
     expect(classifyMasterAccount({
-      hasMasterEvidence: false,
+      hasMasterProfile: false,
       identity: {},
       profile: null,
       appUser: null,
       subscription: null,
+    })).toBe('spokedu_only');
+  });
+
+  it('does not count an administratively granted identity without a MASTER profile', () => {
+    expect(classifyMasterAccount({
+      hasMasterProfile: false,
+      identity: {},
+      profile: null,
+      appUser: { role: 'teacher' },
+      subscription: { status: 'active' },
     })).toBe('spokedu_only');
   });
 
@@ -34,8 +44,8 @@ describe('SPOKEDU MASTER population', () => {
   });
 
   it('keeps internal and inactive accounts outside production', () => {
-    expect(classifyMasterAccount({ hasMasterEvidence: true, identity: {}, profile: null, appUser: { is_admin: true }, subscription: null })).toBe('internal');
-    expect(classifyMasterAccount({ hasMasterEvidence: true, identity: {}, profile: null, appUser: { is_active: false }, subscription: null })).toBe('inactive');
+    expect(classifyMasterAccount({ hasMasterProfile: true, identity: {}, profile: null, appUser: { is_admin: true }, subscription: null })).toBe('internal');
+    expect(classifyMasterAccount({ hasMasterProfile: true, identity: {}, profile: null, appUser: { is_active: false }, subscription: null })).toBe('inactive');
   });
 
   it('requires an actual renewal-problem signal', () => {

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { ChevronRight, LogOut, Pencil, ShieldAlert } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { logoutCurrentSession } from '@/app/lib/auth/logoutSession';
-import { SPOKEDU_PATHS } from '@/app/spokedu/data/public-routes';
 import { useSpomatShopAvailable } from '../access/MasterAccessProvider';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
@@ -51,12 +50,16 @@ function SettingsSection({ title, children }: { title: string; children: ReactNo
 }
 
 function ProfileFaqSection() {
+  const initialVisibleCount = 4;
+  const [showAll, setShowAll] = useState(false);
+  const hiddenCount = Math.max(0, MASTER_FAQS.length - initialVisibleCount);
+
   return (
     <section aria-labelledby="profile-faq-title">
       <h2 id="profile-faq-title" className="mb-2 text-[18px] font-semibold text-slate-900">자주 묻는 질문</h2>
-      <div className="divide-y divide-slate-200 border-y border-slate-200">
-        {MASTER_FAQS.map(([question, answer]) => (
-          <details key={question} className="group">
+      <div id="profile-faq-list" className="divide-y divide-slate-200 border-y border-slate-200">
+        {MASTER_FAQS.map(([question, answer], index) => index >= initialVisibleCount && !showAll ? null : (
+          <details key={question} className="group [word-break:keep-all]">
             <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 py-3 text-[14px] font-semibold leading-6 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] [&::-webkit-details-marker]:hidden">
               <span className="min-w-0 flex-1">{question}</span>
               <ChevronRight size={17} className="shrink-0 text-slate-400 transition-transform group-open:rotate-90" aria-hidden />
@@ -65,6 +68,18 @@ function ProfileFaqSection() {
           </details>
         ))}
       </div>
+      {hiddenCount > 0 ? (
+        <button
+          type="button"
+          aria-controls="profile-faq-list"
+          aria-expanded={showAll}
+          onClick={() => setShowAll((current) => !current)}
+          className="mt-3 flex min-h-11 items-center gap-1 text-[14px] font-semibold text-slate-600"
+        >
+          {showAll ? 'FAQ 접기' : `FAQ ${hiddenCount}개 더 보기`}
+          <ChevronRight size={16} className={`transition-transform ${showAll ? '-rotate-90' : 'rotate-90'}`} aria-hidden />
+        </button>
+      ) : null}
       <a href={MASTER_CUSTOMER_SERVICE_HREF} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 items-center text-[14px] font-semibold text-[var(--spm-acc)]">해결되지 않았나요? 카카오톡으로 문의하기 <ChevronRight size={16} aria-hidden /></a>
     </section>
   );
@@ -169,7 +184,7 @@ function SpokeduMasterProfileContent() {
       .catch(() => setProfileSaveError('계정 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.'))
       .finally(() => setProfileSaving(false));
   };
-  const handleLogout = async () => { setLoggingOut(true); try { await logoutCurrentSession(); } finally { resetProfile(); window.location.replace(SPOKEDU_PATHS.subscription); } };
+  const handleLogout = async () => { setLoggingOut(true); try { await logoutCurrentSession(); } finally { resetProfile(); window.location.replace('/spokedu-master/login'); } };
   const handleDeleteMasterData = async () => {
     if (!canSubmitMasterDataDeletion(deleteConfirmation, deleteStatus)) return;
     setDeleteStatus('submitting'); setDeleteError('');
@@ -189,10 +204,10 @@ function SpokeduMasterProfileContent() {
             <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:gap-4">
               <div className="flex min-w-0 flex-1 items-center gap-4">
                 <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-slate-200 text-[17px] font-semibold text-slate-700">{initial}</div>
-                <dl className="min-w-0 flex-1 space-y-1 text-[14px]">
-                  <div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">이름</dt><dd className="min-w-0 truncate font-medium text-slate-800" title={profile?.name ?? '선생님'}>{profile?.name ?? '선생님'}</dd></div>
-                  <div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">이메일</dt><dd className="min-w-0 truncate text-slate-700" title={profile?.email || '이메일 정보 없음'}>{profile?.email || '이메일 정보 없음'}</dd></div>
-                  <div className="flex gap-3"><dt className="w-12 shrink-0 text-slate-500">소속</dt><dd className="min-w-0 truncate text-slate-700" title={profile?.school || '미입력'}>{profile?.school || '미입력'}</dd></div>
+                <dl className="min-w-0 flex-1 space-y-1 text-[14px] [word-break:keep-all]">
+                  <div className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3"><dt className="whitespace-nowrap text-slate-500">이름</dt><dd className="min-w-0 truncate font-medium text-slate-800" title={profile?.name ?? '선생님'}>{profile?.name ?? '선생님'}</dd></div>
+                  <div className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3"><dt className="whitespace-nowrap text-slate-500">이메일</dt><dd className="min-w-0 truncate text-slate-700" title={profile?.email || '이메일 정보 없음'}>{profile?.email || '이메일 정보 없음'}</dd></div>
+                  <div className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3"><dt className="whitespace-nowrap text-slate-500">소속</dt><dd className="min-w-0 truncate text-slate-700" title={profile?.school || '미입력'}>{profile?.school || '미입력'}</dd></div>
                 </dl>
               </div>
               <button type="button" onClick={() => setProfileOpen(true)} className="flex min-h-11 w-fit shrink-0 items-center gap-1.5 rounded-[10px] border border-slate-300 px-3 text-[14px] font-semibold text-slate-700"><Pencil size={15} />편집</button>

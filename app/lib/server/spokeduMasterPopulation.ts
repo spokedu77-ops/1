@@ -81,13 +81,16 @@ export function isMasterQaAccount(input: {
 }
 
 export function classifyMasterAccount(input: {
-  hasMasterEvidence: boolean;
+  hasMasterProfile: boolean;
   identity: MasterPopulationIdentity;
   profile: MasterPopulationProfile;
   appUser: MasterPopulationAppUser;
   subscription: MasterPopulationSubscription;
 }): MasterAccountClass {
-  if (!input.hasMasterEvidence) return 'spokedu_only';
+  // A subscription/grant/operation can be created administratively for an
+  // existing SPOKEDU identity. Only a MASTER profile proves that the person
+  // actually entered the MASTER signup/onboarding flow.
+  if (!input.hasMasterProfile) return 'spokedu_only';
   if (isMasterQaAccount(input)) return 'qa_test';
 
   const role = text(input.appUser?.role) || text(input.identity.appMetadata?.role);

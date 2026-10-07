@@ -64,7 +64,7 @@ export const FULL_THEME_SEEDS: Record<
     cueSeconds: 3,
   },
   animal: {
-    recommendedMovement: { baseMovement: 'boundingStep', limbRule: 'free' },
+    recommendedMovement: { baseMovement: 'squatTouch', limbRule: 'free' },
     recommendedOperation: {
       startZone: 'adjacentToMat',
       participantScale: 'individual',

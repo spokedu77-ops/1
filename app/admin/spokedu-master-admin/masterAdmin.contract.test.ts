@@ -45,9 +45,17 @@ describe('MASTER ADMIN contract', () => {
   });
   it('keeps Auth search separate from the production MASTER population', () => {
     const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
+    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
     expect(dashboard).toContain("accountClass === 'production'");
     expect(dashboard).toContain("accountClass !== 'spokedu_only'");
-    expect(dashboard).toContain("scope === 'all'");
+    expect(dashboard).not.toContain("scope === 'all'");
+    expect(dashboard).toContain('hasMasterProfile: membershipEvidence.profile');
+    expect(dashboard).toContain("scope') ?? 'production'");
+    expect(client).toContain("useState<MemberScope>('production')");
+    expect(client).toContain("['qa_test','테스트 계정']");
+    expect(client).not.toContain("['all','전체 계정']");
+    expect(client).not.toContain('전체 SPOKEDU 계정');
+    expect(client).toContain('강사 관리에서 생성한 계정은 포함되지 않습니다.');
     expect(dashboard).not.toContain('const summary = { total: rows.length');
   });
   it('shows a small read-only funnel summary from production MASTER members', () => {

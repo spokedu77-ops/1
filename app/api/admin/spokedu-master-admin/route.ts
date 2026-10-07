@@ -124,7 +124,6 @@ async function funnelEvidence(members: Array<{
 }
 
 function matchesScope(accountClass: MasterAccountClass, scope: string) {
-  if (scope === 'all') return true;
   if (scope === 'production') return accountClass === 'production';
   if (scope === 'qa_test') return accountClass === 'qa_test';
   if (scope === 'internal') return accountClass === 'internal';
@@ -140,7 +139,7 @@ export async function GET(request: Request) {
     const view = url.searchParams.get('view') ?? 'overview';
     const page = Math.max(1, Number(url.searchParams.get('page') ?? 1) || 1);
     const query = (url.searchParams.get('q') ?? '').trim().toLowerCase().slice(0, 120);
-    const scope = url.searchParams.get('scope') ?? 'master';
+    const scope = url.searchParams.get('scope') ?? 'production';
     const [{ evidence, profiles }, { users, appUsers }] = await Promise.all([populationEvidence(), identities()]);
     const { subscriptionMap, grantMap, paymentMap } = await accessMaps([...evidence.keys()]);
 
@@ -148,7 +147,6 @@ export async function GET(request: Request) {
       const profile = profiles.get(user.id) ?? null;
       const appUser = appUsers.get(user.id) ?? null;
       const membershipEvidence = evidence.get(user.id) ?? emptyEvidence();
-      const hasMasterEvidence = Object.values(membershipEvidence).some(Boolean);
       const subscription = (subscriptionMap.get(user.id) ?? null) as (SpokeduMasterSubscriptionRow & Record<string, any>) | null;
       const grant = (grantMap.get(user.id) ?? null) as SpokeduMasterEntitlementGrantRow | null;
       const payment = paymentMap.get(user.id) ?? null;
@@ -162,7 +160,7 @@ export async function GET(request: Request) {
         paymentApproved: Boolean(payment.payment_key),
       } : null;
       const accountClass = classifyMasterAccount({
-        hasMasterEvidence,
+        hasMasterProfile: membershipEvidence.profile,
         identity: { appMetadata: user.app_metadata, userMetadata: user.user_metadata, bannedUntil: user.banned_until, deletedAt: user.deleted_at },
         profile,
         appUser,
@@ -214,8 +212,6 @@ export async function GET(request: Request) {
         premium: 0,
         promotions: 0,
         renewalFailed: 0,
-        authTotal: rows.length,
-        masterEvidence: rows.filter((row) => row.accountClass !== 'spokedu_only').length,
         qaTest: rows.filter((row) => row.accountClass === 'qa_test').length,
         internal: rows.filter((row) => row.accountClass === 'internal').length,
         inactive: rows.filter((row) => row.accountClass === 'inactive').length,

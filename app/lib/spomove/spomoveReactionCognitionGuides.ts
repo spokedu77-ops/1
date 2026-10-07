@@ -18,14 +18,14 @@ export { mergeSpomoveGuideSeedOverride };
 
 type ThemeId = 'color' | 'fruit' | 'animal' | 'food' | 'nature' | 'vehicle' | 'mix';
 
-const L3_MOVEMENT_LABEL: Record<ThemeId, string> = {
-  color: '양발 점프',
-  fruit: '한발 Hop',
-  animal: '바운딩 스텝',
-  food: '퀵스텝',
-  nature: '런지 리치',
-  vehicle: '플랭크 터치',
-  mix: '협동 점프',
+const L3_MOVEMENT_COPY: Record<ThemeId, { label: string; instrumental: string }> = {
+  color: { label: '양발 점프', instrumental: '양발 점프로' },
+  fruit: { label: '한 발 점프', instrumental: '한 발 점프로' },
+  animal: { label: '쪼그려 뛰기', instrumental: '쪼그려 뛰기로' },
+  food: { label: '하이피칭', instrumental: '하이피칭으로' },
+  nature: { label: '런지', instrumental: '런지로' },
+  vehicle: { label: '플랭크 터치', instrumental: '플랭크 터치로' },
+  mix: { label: '협동 점프', instrumental: '협동 점프로' },
 };
 
 function tags(...focusTags: SpomoveFocusTag[]): SpomoveFocusTag[] {
@@ -122,7 +122,8 @@ function l2Quad(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
 
 function l3Full(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
   const cue = cueNoun(theme);
-  const moveLabel = L3_MOVEMENT_LABEL[theme];
+  const moveCopy = L3_MOVEMENT_COPY[theme];
+  const moveLabel = moveCopy.label;
   const signalNoun = theme === 'color' ? '색' : cue.replace(/ 신호$/, '');
   const imageDelta =
     theme === 'mix'
@@ -133,7 +134,7 @@ function l3Full(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
   const landingPoint =
     theme === 'color' || theme === 'animal' || theme === 'fruit'
       ? '두 발이 함께 패드에 착지하는지 확인합니다.'
-      : `신호 확인 후 ${moveLabel}로 패드를 연결하는지 관찰합니다.`;
+      : `신호 확인 후 ${moveCopy.instrumental} 패드를 연결하는지 관찰합니다.`;
 
   return {
     presetId,
@@ -142,7 +143,7 @@ function l3Full(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
     overwriteGuideFields: true,
     movementGuide: {
       movement: l3Movement(theme),
-      objective: `전체 화면의 ${cue}를 확인하고 같은 색 매트로 ${moveLabel}합니다.`,
+      objective: `전체 화면의 ${cue}를 확인하고 같은 색 매트로 ${moveLabel} 동작을 합니다.`,
       teachingPoints: [
         theme === 'color'
           ? '화면을 네 칸처럼 찾지 말고 하나의 큰 색 신호로 보게 합니다.'
@@ -152,8 +153,8 @@ function l3Full(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
       ].slice(0, 3),
       instruction:
         theme === 'color'
-          ? `전체 화면의 색을 확인합니다.\n같은 색 패드로 ${moveLabel}합니다.\n기준 위치로 돌아와 다음 신호를 기다립니다.`
-          : `전체 화면의 ${cue}를 확인합니다.\n같은 색 패드로 ${moveLabel}합니다.\n기준 위치로 돌아와 다음 신호를 기다립니다.`,
+          ? `전체 화면의 색을 확인합니다.\n같은 색 패드로 ${moveLabel} 동작을 합니다.\n기준 위치로 돌아와 다음 신호를 기다립니다.`
+          : `전체 화면의 ${cue}를 확인합니다.\n같은 색 패드로 ${moveLabel} 동작을 합니다.\n기준 위치로 돌아와 다음 신호를 기다립니다.`,
       coachScript:
         theme === 'color'
           ? '색 보고, 같은 색 패드로 양발 점프!'
@@ -161,7 +162,7 @@ function l3Full(presetId: string, theme: ThemeId): SpomoveGuideSeedEntry {
       focusTags: l3FocusTags(theme),
       easier: `동작을 ${moveLabel} 대신 가볍게 밟기로 바꾸고, 자극 시간을 늘립니다.`,
       harder: '자극 시간을 줄이고, 말 없이 신호→이동만 이어지게 합니다.',
-      successCriteria: `다른 색 패드를 밟지 않고 신호와 연결된 패드로 ${moveLabel}합니다.`,
+      successCriteria: `다른 색 패드를 밟지 않고 신호와 연결된 패드로 ${moveLabel} 동작을 합니다.`,
       commonMistake: '4분할처럼 화면을 칸으로 나누어 찾으려 합니다.',
       variations: {
         movement: `공식 권장 동작은 ${moveLabel}입니다. 수준에 맞게 발 탭으로 바꿀 수 있습니다.`,

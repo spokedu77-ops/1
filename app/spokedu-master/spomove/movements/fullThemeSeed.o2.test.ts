@@ -44,7 +44,7 @@ describe('O2 full theme seed', () => {
     const expected: Record<string, string> = {
       'reaction-cognition-full-color-03': 'twoLegJump',
       'reaction-cognition-l3-fruit-exp': 'singleLegHop',
-      'reaction-cognition-full-animal-18': 'boundingStep',
+      'reaction-cognition-full-animal-18': 'squatTouch',
       'reaction-cognition-full-nature-19': 'lungeReach',
       'reaction-cognition-l3-food-exp': 'quickStep',
       'reaction-cognition-l3-vehicle-exp': 'plankTouch',

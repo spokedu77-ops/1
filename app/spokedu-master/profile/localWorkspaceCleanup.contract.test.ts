@@ -27,7 +27,7 @@ describe("profile local workspace cleanup contract", () => {
       logout.indexOf("finally"),
     );
     expect(
-      logout.indexOf("window.location.replace(SPOKEDU_PATHS.subscription)"),
+      logout.indexOf("window.location.replace('/spokedu-master/login')"),
     ).toBeGreaterThan(logout.indexOf("resetProfile()"));
   });
 

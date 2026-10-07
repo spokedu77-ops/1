@@ -64,8 +64,8 @@ const USER_LABELS: Record<string, { label: string; shortLabel: string }> = {
   'handTouch:sameSide': { label: '같은 쪽 손 터치', shortLabel: '같은 쪽 손' },
   'handTouch:oppositeSide': { label: '교차손 터치', shortLabel: '교차손' },
   'stepHold:free': { label: '밟고 정지', shortLabel: '밟고 정지' },
-  'squatTouch:free': { label: '스쿼트 터치', shortLabel: '스쿼트' },
-  'lungeReach:free': { label: '런지 리치', shortLabel: '런지' },
+  'squatTouch:free': { label: '쪼그려 뛰기', shortLabel: '쪼그려 뛰기' },
+  'lungeReach:free': { label: '런지', shortLabel: '런지' },
 };
 
 const GROUP_ORDER: MovementPresentationGroup[] = ['feet', 'hands', 'postureBalance'];
