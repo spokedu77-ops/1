@@ -70,7 +70,7 @@ const CURRICULUM_DEFAULT: CurriculumInquiryFields = {
   targetAge: '',
 };
 
-/** CurriculumInquiryForm(/subscription#inquiry) AGE_OPTIONS와 동일 — 별도 분류 금지 */
+/** CurriculumInquiryForm(/spokedu-lab#inquiry) AGE_OPTIONS와 동일 — 별도 분류 금지 */
 const CURRICULUM_TARGET_AGE_OPTIONS = ['유아', '초등', '중등', '혼합 연령', '지도자(성인)'] as const;
 
 const OTHER_DEFAULT: OtherInquiryFields = {

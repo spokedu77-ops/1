@@ -83,7 +83,7 @@ describe('SPOKEDU MASTER route access policy', () => {
     '/spokedu-master/class-mode/session',
     '/unknown',
   ])('rejects unsafe return path %s', (input) => {
-    expect(getSafeMasterReturnPath(input)).toBe('/spokedu-master/dashboard');
+    expect(getSafeMasterReturnPath(input)).toBe('/spokedu-lab/dashboard');
   });
 
   it('preserves SPOMOVE context while removing only commercial and auth secrets', () => {
@@ -93,7 +93,7 @@ describe('SPOKEDU MASTER route access policy', () => {
   });
 
   it('does not treat an unknown MASTER child as an allowed return target', () => {
-    expect(getSafeMasterReturnPath('/spokedu-master/unknown-future-screen')).toBe('/spokedu-master/dashboard');
+    expect(getSafeMasterReturnPath('/spokedu-master/unknown-future-screen')).toBe('/spokedu-lab/dashboard');
   });
 
   it('evaluates route capabilities from the access snapshot flags', () => {

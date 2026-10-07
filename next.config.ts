@@ -57,6 +57,7 @@ const nextConfig: NextConfig = {
 
       // --- Other legacy aliases → clean ---
       { source: "/curriculum", destination: "/spokedu-lab", permanent: true },
+      { source: "/subscription", destination: "/spokedu-lab", permanent: true },
       { source: "/programs/spomove/catalog", destination: "/spomove/catalog", permanent: true },
       { source: "/programs/spomove", destination: "/spomove", permanent: true },
       { source: "/programs", destination: "/spomove", permanent: true },

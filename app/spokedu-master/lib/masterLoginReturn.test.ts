@@ -28,7 +28,7 @@ describe('SPOKEDU MASTER safe login return', () => {
     '/spokedu-master/unknown-route', '/spokedu-master/login',
     '/spokedu-master/auth/callback',
   ])('falls back for a malicious or unknown return: %s', (path) => {
-    expect(getSafeMasterLoginReturnPath(path)).toBe('/spokedu-master/dashboard');
+    expect(getSafeMasterLoginReturnPath(path)).toBe('/spokedu-lab/dashboard');
   });
 
   it('strips sensitive auth and payment query keys while preserving safe context', () => {
@@ -90,7 +90,7 @@ describe('SPOKEDU MASTER server-validated entry destination', () => {
     expect(resolveMasterEntryDestination(
       { authenticated: true, onboardingDone: true, isAdmin: false },
       'https://evil.example/steal',
-    )).toBe('/spokedu-master/dashboard');
+    )).toBe('/spokedu-lab/dashboard');
   });
 
   it('does not redirect on a transient server access failure', () => {

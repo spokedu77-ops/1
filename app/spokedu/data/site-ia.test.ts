@@ -121,10 +121,10 @@ describe('spokedu site IA', () => {
 
   it('keeps MASTER handoff path constants stable', () => {
     expect(MASTER_HANDOFF.landing).toBe('/spokedu-lab');
-    expect(MASTER_HANDOFF.onboardingLogin).toContain('/spokedu-master/onboarding');
-    expect(MASTER_HANDOFF.dashboardLogin).toContain('/spokedu-master/dashboard');
-    expect(MASTER_HANDOFF.payment).toBe('/spokedu-master/payment');
-    expect(MASTER_HANDOFF.shop).toBe('/spokedu-master/shop');
+    expect(MASTER_HANDOFF.onboardingLogin).toContain('/spokedu-lab/onboarding');
+    expect(MASTER_HANDOFF.dashboardLogin).toContain('/spokedu-lab/dashboard');
+    expect(MASTER_HANDOFF.payment).toBe('/spokedu-lab/payment');
+    expect(MASTER_HANDOFF.shop).toBe('/spokedu-lab/shop');
   });
 
   it('uses an opaque solid navy mobile panel without CSS-variable alpha concatenation', () => {

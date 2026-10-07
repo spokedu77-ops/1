@@ -12,12 +12,14 @@ const faq = read('app/spokedu-master/lib/masterFaq.ts');
 const model = read('app/spokedu-master/landing/models/landingProduct.ts');
 const chrome = read('app/spokedu-master/landing/components/LandingChrome.tsx');
 const globalFooter = read('app/spokedu/components/site-chrome.tsx');
+const nextConfig = read('next.config.ts');
 
 describe('SPOKEDU LAB canonical commercial landing', () => {
   it('owns /spokedu-lab and permanently redirects the legacy landing', () => {
     expect(canonicalPage).toContain('CommercialLanding');
     expect(canonicalPage).toContain("`${SITE_URL}/spokedu-lab`");
     expect(legacyPage).toContain("permanentRedirect('/spokedu-lab')");
+    expect(nextConfig).toContain('{ source: "/subscription", destination: "/spokedu-lab", permanent: true }');
     expect(commercialPage).toContain('<MasterLocalNav');
     expect(commercialPage).not.toContain('<LandingFooter');
   });
@@ -30,10 +32,10 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
     expect(sections).toContain('product.plans.map');
     expect(sections).toContain('product.comparison.map');
     expect(getPublicProductContract().plans.map((plan) => plan.code)).toEqual(['free', 'lite', 'premium']);
-    expect(getPublicProductContract().handoff.freeStartHref).toBe('/spokedu-master/login?next=/spokedu-master/onboarding');
-    expect(getPublicProductContract().handoff.loginHref).toBe('/spokedu-master/login?next=/spokedu-master/dashboard');
-    expect(getPublicProductContract().handoff.paymentPlanHref('lite')).toBe('/spokedu-master/payment?plan=lite');
-    expect(getPublicProductContract().handoff.paymentPlanHref('premium')).toBe('/spokedu-master/payment?plan=premium');
+    expect(getPublicProductContract().handoff.freeStartHref).toBe('/spokedu-lab/login?next=/spokedu-lab/onboarding');
+    expect(getPublicProductContract().handoff.loginHref).toBe('/spokedu-lab/login?next=/spokedu-lab/dashboard');
+    expect(getPublicProductContract().handoff.paymentPlanHref('lite')).toBe('/spokedu-lab/payment?plan=lite');
+    expect(getPublicProductContract().handoff.paymentPlanHref('premium')).toBe('/spokedu-lab/payment?plan=premium');
   });
 
   it('states the current recurring billing and cancellation contract', () => {
@@ -62,7 +64,7 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
     for (const anchor of ['#workflow', '#library', '#spomove', '#plans', '#faq']) expect(chrome).toContain(anchor);
     expect(chrome).toContain('product.handoff.loginHref');
     expect(chrome).toContain('product.handoff.freeStartHref');
-    expect(globalFooter).toContain('/spokedu-master/terms');
-    expect(globalFooter).toContain('/spokedu-master/privacy');
+    expect(globalFooter).toContain('/spokedu-lab/terms');
+    expect(globalFooter).toContain('/spokedu-lab/privacy');
   });
 });

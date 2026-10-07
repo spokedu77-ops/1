@@ -12,7 +12,7 @@ import {
 import styles from '../landing.module.css';
 
 /**
- * `/subscription?mode={mode}#inquiry` destination.
+ * `/spokedu-lab?mode={mode}#inquiry` destination.
  * `#inquiry` id는 CurriculumInquiryForm이 소유한다 — 래퍼에 중복 id를 두지 않는다.
  * mode가 없거나 유효하지 않으면 `resolveCurriculumMode` 기본값(master).
  */

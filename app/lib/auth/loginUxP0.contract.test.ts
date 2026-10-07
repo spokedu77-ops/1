@@ -33,7 +33,7 @@ describe("SPOKEDU login UX P0 contracts", () => {
     const chrome = read("app/spokedu-master/landing/components/LandingChrome.tsx");
     const landing = read("app/spokedu-master/landing/CommercialLanding.tsx");
     expect(contract).toContain(
-      "dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard'",
+      "dashboardLogin: '/spokedu-lab/login?next=/spokedu-lab/dashboard'",
     );
     expect(chrome).toContain('href={product.handoff.loginHref}');
     expect(landing).toContain("LandingLoggedInBanner");
@@ -43,10 +43,10 @@ describe("SPOKEDU login UX P0 contracts", () => {
     const site = read("app/spokedu/data/site.ts");
     const landingModel = read("app/spokedu-master/landing/models/landingProduct.ts");
     expect(site).toContain(
-      "dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard'",
+      "dashboardLogin: '/spokedu-lab/login?next=/spokedu-lab/dashboard'",
     );
     expect(site).toContain(
-      "onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding'",
+      "onboardingLogin: '/spokedu-lab/login?next=/spokedu-lab/onboarding'",
     );
     expect(landingModel).toContain('getPublicProductContract()');
   });

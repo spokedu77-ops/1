@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 
 const baseUrl = process.argv[2] ?? 'http://localhost:3000';
 const outputDirectory = path.join(process.cwd(), '.qa-spokedu', 'typography');
-const routes = ['/', '/subscription', '/education', '/spomove', '/private', '/about'];
+const routes = ['/', '/spokedu-lab', '/education', '/spomove', '/private', '/about'];
 const widths = [390, 768, 1024, 1440];
 
 await mkdir(outputDirectory, { recursive: true });
@@ -61,13 +61,13 @@ try {
         value && value.family.includes('Cafe24SsurroundAir') && value.weight === '400' && value.synthesis === 'none';
       const subscriptionV17DisplayOk = (value) =>
         value && value.family.includes('Pretendard') && value.weight === '700';
-      const routeDisplayOk = route === '/subscription' ? subscriptionV17DisplayOk : displayOk;
+      const routeDisplayOk = route === '/spokedu-lab' ? subscriptionV17DisplayOk : displayOk;
       const bodyOk = (value) => !value || /Pretendard/.test(value.family);
       const controlOk = (value) => !value || (bodyOk(value) && value.radius === '14px');
       const pass = Boolean(
         response?.ok() &&
           !audit.overflowX &&
-          (route === '/subscription' || audit.fontLoaded) &&
+          (route === '/spokedu-lab' || audit.fontLoaded) &&
           audit.fontAssetStatus === 200 &&
           routeDisplayOk(audit.h1) &&
           (!audit.h2 || routeDisplayOk(audit.h2)) &&

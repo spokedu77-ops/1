@@ -21,7 +21,7 @@ try {
       }
     });
 
-    const response = await page.goto(`${baseUrl}/subscription`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
+    const response = await page.goto(`${baseUrl}/spokedu-lab`, { waitUntil: 'domcontentloaded', timeout: 90_000 });
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: path.join(outputDirectory, `current-subscription-${width}.png`) });
 

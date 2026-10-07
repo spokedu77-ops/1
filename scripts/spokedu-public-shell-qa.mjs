@@ -23,7 +23,7 @@ const ROUTES = [
   '/private',
   '/spomove',
   '/spomove/catalog',
-  '/subscription',
+  '/spokedu-lab',
   '/records',
   '/records/dongjak-spomove',
   '/contact',
@@ -45,13 +45,13 @@ const ACTIVE_GROUP = {
   '/spomove': '솔루션',
   '/spomove/catalog': '솔루션',
   '/spomat': '솔루션',
-  '/subscription': '솔루션',
+  '/spokedu-lab': '솔루션',
   '/records': '현장 사례',
   '/records/dongjak-spomove': '현장 사례',
   '/about': '소개',
 };
 
-const SCREENSHOT_ROUTES = ['/', '/education', '/spomove', '/subscription', '/records', '/records/dongjak-spomove', '/contact'];
+const SCREENSHOT_ROUTES = ['/', '/education', '/spomove', '/spokedu-lab', '/records', '/records/dongjak-spomove', '/contact'];
 
 function fail(msg) {
   throw new Error(msg);
@@ -214,14 +214,14 @@ async function testMaster(page) {
       root.scrollHeight > root.clientHeight + 8;
     return { ok: !bad, overflowY: style.overflowY, h, vh };
   });
-  if (!nested.ok) fail(`/subscription nested scroll: ${JSON.stringify(nested)}`);
+  if (!nested.ok) fail(`/spokedu-lab nested scroll: ${JSON.stringify(nested)}`);
   const globalHeaderUsesSpm = await page.evaluate(() => {
     const h = document.querySelector('[data-spokedu-global-header="true"]');
     if (!h) return true;
     const bg = getComputedStyle(h).backgroundColor;
     return bg === 'rgb(255, 255, 255)' || bg.includes('255, 255, 255');
   });
-  if (!globalHeaderUsesSpm) fail('/subscription: global header appears non-white');
+  if (!globalHeaderUsesSpm) fail('/spokedu-lab: global header appears non-white');
   for (const [name, id] of [
     ['서비스', '#workflow'],
     ['사용 방법', '#library'],
@@ -240,7 +240,7 @@ async function testMaster(page) {
       const top = (local?.bottom ?? header?.bottom ?? 0) + 4;
       return r.top >= top && r.top < window.innerHeight * 0.55;
     }, id);
-    if (!visible) fail(`/subscription anchor ${name} (${id}) clipped under sticky chrome`);
+    if (!visible) fail(`/spokedu-lab anchor ${name} (${id}) clipped under sticky chrome`);
   }
 }
 
@@ -282,7 +282,7 @@ async function main() {
           main: lm.main,
           footer: lm.footer,
           mainId: lm.mainId,
-          masterLocal: route === '/subscription' ? lm.masterLocal : undefined,
+          masterLocal: route === '/spokedu-lab' ? lm.masterLocal : undefined,
           overflow: ov.sw <= ov.iw + 1 ? 'PASS' : `FAIL ${ov.sw}>${ov.iw}`,
         };
         if (ov.sw > ov.iw + 1) {
@@ -303,7 +303,7 @@ async function main() {
         if (lm.header !== 1 || lm.footer !== 1 || lm.main !== 1 || lm.mainId !== 1) {
           fail(`${key} landmarks ${JSON.stringify(lm)}`);
         }
-        if (route === '/subscription' && lm.masterLocal !== 1) fail(`${key} master local nav`);
+        if (route === '/spokedu-lab' && lm.masterLocal !== 1) fail(`${key} master local nav`);
 
         if (vp.name === '1440') {
           await assertActive(page, route);
@@ -333,7 +333,7 @@ async function main() {
         await gotoPublicRoute(page, '/');
         await testDropdown(page, '체육수업');
         await testDropdown(page, '솔루션');
-        await gotoPublicRoute(page, '/subscription');
+        await gotoPublicRoute(page, '/spokedu-lab');
         await testMaster(page);
         await gotoPublicRoute(page, '/records');
         const b = await measureHeader(page);

@@ -96,7 +96,7 @@ export const siteNav: SiteNavEntry[] = [
     type: 'group',
     label: '솔루션',
     trackLabel: 'nav-solution-group',
-    activePathPrefixes: ['/spomove', '/spokedu-lab', '/subscription', '/spomat'],
+    activePathPrefixes: ['/spomove', '/spokedu-lab', '/spomat'],
     children: [
       {
         label: 'SPOMOVE',

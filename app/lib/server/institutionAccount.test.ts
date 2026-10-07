@@ -12,6 +12,6 @@ describe('normalizeInstitutionLoginId', () => {
   });
 
   it('reuses the existing production LAB route', () => {
-    expect(INSTITUTION_LAB_DESTINATION).toBe('/spokedu-master/dashboard');
+    expect(INSTITUTION_LAB_DESTINATION).toBe('/spokedu-lab');
   });
 });

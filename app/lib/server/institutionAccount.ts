@@ -1,6 +1,6 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
-export const INSTITUTION_LAB_DESTINATION = '/spokedu-master/dashboard';
+export const INSTITUTION_LAB_DESTINATION = '/spokedu-lab';
 
 export type MasterAccountType = 'individual' | 'institution';
 
