@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, Lock, User } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { parseSafeNextRedirect } from '@/app/lib/auth/safeNextRedirect';
-import { resolvePostLoginRedirect } from '@/app/lib/auth/postLoginRedirect';
+import { fetchPlatformAdminStatus, resolvePostLoginRedirect } from '@/app/lib/auth/postLoginRedirect';
+import { logoutCurrentSession } from '@/app/lib/auth/logoutSession';
 import { resolveLoginEmail } from '@/app/lib/auth/loginEmail';
 import { applyLoginSessionPreference, enforceSessionOnlyPolicy, readKeepLoggedInPreference } from '@/app/lib/auth/sessionPersistence';
 import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
@@ -22,6 +23,7 @@ function LoginContent() {
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [foreignSession, setForeignSession] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const type = params.get('type') || 'teacher';
   const nextSafe = parseSafeNextRedirect(params.get('next'));
@@ -40,6 +42,13 @@ function LoginContent() {
         await enforceSessionOnlyPolicy(() => supabase.auth.signOut({ scope: 'local' }));
         const session = await getSessionWithRefreshRecovery(supabase);
         if (session?.user) {
+          if (type === 'admin' && !(await fetchPlatformAdminStatus(supabase, session.user))) {
+            if (!cancelled) {
+              setForeignSession(true);
+              setSessionChecked(true);
+            }
+            return;
+          }
           const redirectPath = await resolvePostLoginRedirect(nextSafe, supabase, session.user);
           reportLoginUxEvent('auto_redirect_from_login', { redirectPath, activeTab: 'ops' });
           if (!cancelled) router.replace(redirectPath);
@@ -49,7 +58,7 @@ function LoginContent() {
       if (!cancelled) setSessionChecked(true);
     })();
     return () => { cancelled = true; };
-  }, [nextSafe, router]);
+  }, [nextSafe, router, type]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -62,6 +71,11 @@ function LoginContent() {
       if (result.error) result = await supabase.auth.signInWithPassword({ email: loginEmail, password: pw.replace(/-/g, '') });
       if (result.error || !result.data.user) { setError('로그인 정보를 다시 확인해 주세요.'); return; }
       applyLoginSessionPreference(keepLoggedIn);
+      if (type === 'admin' && !(await fetchPlatformAdminStatus(supabase, result.data.user))) {
+        await supabase.auth.signOut({ scope: 'local' });
+        setError('관리자 권한이 없는 계정입니다.');
+        return;
+      }
       const destination = await resolvePostLoginRedirect(nextSafe, supabase, result.data.user);
       if (type === 'admin' && !nextSafe && destination !== '/admin') {
         await supabase.auth.signOut({ scope: 'local' });
@@ -76,6 +90,24 @@ function LoginContent() {
   };
 
   if (!sessionChecked) return <main className="min-h-dvh bg-slate-950" aria-label="로그인 상태 확인 중" />;
+
+  if (foreignSession) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-slate-950 px-5 py-10 text-slate-100">
+        <section className="w-full max-w-[440px] rounded-[24px] border border-white/10 bg-slate-900 p-6 text-center shadow-2xl sm:p-8">
+          <h1 className="text-xl font-bold">현재 다른 계정으로 로그인되어 있습니다.</h1>
+          <p className="mt-3 text-sm font-medium leading-6 text-slate-400">관리자 계정으로 전환하려면 현재 세션에서 먼저 로그아웃해 주세요.</p>
+          <button
+            type="button"
+            className="mt-6 min-h-12 w-full rounded-xl bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-500"
+            onClick={() => void logoutCurrentSession().then(() => window.location.replace('/login?type=admin&next=%2Fadmin'))}
+          >
+            다른 계정으로 로그인
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="grid min-h-dvh place-items-center bg-slate-950 px-5 py-10 text-slate-100">

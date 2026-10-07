@@ -14,9 +14,9 @@ describe('normalizeInstitutionLoginId', () => {
   });
 
   it('reuses the existing production LAB route', () => {
-    expect(INSTITUTION_LAB_DESTINATION).toBe('/spokedu-lab');
+    expect(INSTITUTION_LAB_DESTINATION).toBe('/spokedu-lab/dashboard');
     const teacherLayout = readFileSync(join(process.cwd(), 'app/teacher/layout.tsx'), 'utf8');
-    expect(teacherLayout).toContain("router.replace('/spokedu-lab')");
+    expect(teacherLayout).toContain("router.replace('/spokedu-lab/dashboard')");
     expect(teacherLayout).not.toContain("router.replace('/spokedu-master/dashboard')");
   });
 });

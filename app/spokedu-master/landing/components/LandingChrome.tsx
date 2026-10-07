@@ -1,5 +1,5 @@
-import { TrackedLink } from '@/app/spokedu/components/home/tracked-link';
 import type { ReturnTypeOfLandingModel } from './types';
+import { LandingAuthControls } from './LandingAuthControls';
 import styles from '../landing.module.css';
 
 export function MasterLocalNav({ product }: { product: ReturnTypeOfLandingModel }) {
@@ -11,7 +11,7 @@ export function MasterLocalNav({ product }: { product: ReturnTypeOfLandingModel 
     >
       <div className={styles.masterLocalBrand}>
         <span>SPOKEDU</span>
-        <strong>MASTER</strong>
+        <strong>LAB</strong>
       </div>
       <div className={styles.masterLocalLinks}>
         <a href="#workflow">서비스</a>
@@ -19,18 +19,10 @@ export function MasterLocalNav({ product }: { product: ReturnTypeOfLandingModel 
         <a href="#spomove">SPOMOVE</a>
         <a href="#plans">요금</a>
         <a href="#faq">FAQ</a>
-        <TrackedLink href={product.handoff.loginHref} trackLabel="master-commercial-header-login" commercialRoute="curriculum" ctaIntentId="login">
-          로그인
-        </TrackedLink>
-        <TrackedLink
-          href={product.handoff.freeStartHref}
-          trackLabel="master-commercial-header-free"
-          commercialRoute="curriculum"
-          ctaIntentId="free_start"
-          className="spm-btn-primary"
-        >
-          Free로 시작하기
-        </TrackedLink>
+        <LandingAuthControls
+          loginHref={product.handoff.loginHref}
+          freeStartHref={product.handoff.freeStartHref}
+        />
       </div>
     </nav>
   );

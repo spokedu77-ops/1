@@ -1,44 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { useProfile } from '../store';
-
-type BannerState = 'checking' | 'guest' | 'member';
+import { useLandingSession } from './useLandingSession';
 
 export function LandingLoggedInBanner() {
   const profile = useProfile();
-  const [state, setState] = useState<BannerState>('checking');
-  const [email, setEmail] = useState('');
+  const session = useLandingSession();
 
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const supabase = getSupabaseBrowserClient();
-        const session = await getSessionWithRefreshRecovery(supabase);
-        if (cancelled) return;
-        if (session?.user) {
-          setEmail(session.user.email ?? '');
-          setState('member');
-          return;
-        }
-        setState('guest');
-      } catch {
-        if (!cancelled) setState('guest');
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  if (session.status !== 'member') return null;
 
-  if (state !== 'member') return null;
-
-  const destination = profile?.onboardingDone
+  const destination = session.institution || profile?.onboardingDone
     ? '/spokedu-lab/dashboard'
     : '/spokedu-lab/onboarding';
 
@@ -53,7 +25,7 @@ export function LandingLoggedInBanner() {
             이미 로그인되어 있습니다
           </p>
           <p className="mt-1 truncate text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
-            {email || 'LAB 계정'}으로 SPOKEDU LAB을 계속할 수 있습니다.
+            {session.displayName} 계정으로 로그인되어 있습니다.
           </p>
         </div>
         <Link

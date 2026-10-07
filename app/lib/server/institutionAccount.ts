@@ -1,6 +1,6 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
-export const INSTITUTION_LAB_DESTINATION = '/spokedu-lab';
+export const INSTITUTION_LAB_DESTINATION = '/spokedu-lab/dashboard';
 
 export type MasterAccountType = 'individual' | 'institution';
 
@@ -29,6 +29,23 @@ export async function getInstitutionAccountByLoginId(
     .select('user_id,account_type,login_id,organization_name')
     .eq('account_type', 'institution')
     .eq('login_id_normalized', normalized)
+    .maybeSingle();
+
+  return {
+    row: error ? null : data as InstitutionAccountRow | null,
+    error,
+  };
+}
+
+export async function getInstitutionAccountByUserId(
+  service: ServiceSupabase,
+  userId: string,
+): Promise<{ row: InstitutionAccountRow | null; error: unknown | null }> {
+  const { data, error } = await service
+    .from('spokedu_master_profiles')
+    .select('user_id,account_type,login_id,organization_name')
+    .eq('user_id', userId)
+    .eq('account_type', 'institution')
     .maybeSingle();
 
   return {
