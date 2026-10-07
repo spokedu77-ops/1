@@ -4,6 +4,7 @@ import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminA
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getSpokeduMasterProfile } from '@/app/lib/server/spokeduMasterProfile';
+import { isMasterLiteCappedEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { FREE_PREVIEW_PROGRAM_IDS } from '@/app/spokedu-master/lib/commercialProgramAccess';
 
 const EXPIRED_ACCESS_MESSAGE =
@@ -279,6 +280,26 @@ export function buildSpokeduMasterAccessSnapshot(input: {
   };
 }
 
+/** 지정 계정의 MASTER 유효 이용권을 라이트로 맞춘다. 결제 행은 바꾸지 않는다. */
+export function applyMasterLiteEntitlementCap(
+  snapshot: SpokeduMasterAccessSnapshot,
+): SpokeduMasterAccessSnapshot {
+  return {
+    authenticated: true,
+    onboardingDone: true,
+    plan: 'lite',
+    subscriptionStatus: 'active',
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+    isAdmin: false,
+    isCenterOrTeam: false,
+    entitlementSource: 'none',
+    promotionalPlan: null,
+    promotionalEndsAt: null,
+    ...buildCapabilities('lite', 'active', false),
+  };
+}
+
 type ServiceSupabase = ReturnType<typeof getServiceSupabase>;
 
 export async function getActiveSpokeduMasterEntitlementGrant(
@@ -331,6 +352,10 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
         ok: false,
         response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
       };
+    }
+
+    if (isMasterLiteCappedEmail(user.email)) {
+      return { ok: true, userId: user.id, isAdmin: false, plan: 'lite', canUseLibrary: true };
     }
 
     const isAdmin = await isPlatformAdminUser(user, serverSupabase);
@@ -412,7 +437,8 @@ export async function requireSpokeduMasterSession(): Promise<MasterSessionResult
       };
     }
 
-    const isAdmin = await isPlatformAdminUser(user, serverSupabase);
+    const isAdmin = !isMasterLiteCappedEmail(user.email)
+      && await isPlatformAdminUser(user, serverSupabase);
 
     return {
       ok: true,
@@ -446,6 +472,16 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
       return {
         ok: false,
         response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+      };
+    }
+
+    if (isMasterLiteCappedEmail(user.email)) {
+      return {
+        ok: true,
+        userId: user.id,
+        snapshot: applyMasterLiteEntitlementCap(
+          buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: false, onboardingDone: true }),
+        ),
       };
     }
 

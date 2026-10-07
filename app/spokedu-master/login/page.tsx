@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { MasterEmailOtpForm } from '@/app/components/auth/MasterEmailOtpForm';
+import { ManualCredentialInput, SavedCredentialDecoy } from '@/app/components/auth/ManualCredentialInput';
 import { useMasterEmailOtp } from '@/app/components/auth/useMasterEmailOtp';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { applyLoginSessionPreference, clearLoginSessionMarkers } from '@/app/lib/auth/sessionPersistence';
@@ -115,7 +116,8 @@ function MasterLoginContent() {
 
   return (
     <main className="min-h-dvh px-5 py-8 sm:grid sm:place-items-center" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
-      <section className="mx-auto w-full max-w-[460px] rounded-[20px] p-6 sm:p-8" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
+      <section className="relative mx-auto w-full max-w-[460px] rounded-[20px] p-6 sm:p-8" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)' }}>
+        <SavedCredentialDecoy />
         <Link href={SPOKEDU_PATHS.subscription} className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
           <ChevronLeft size={17} /> 소개로 돌아가기
         </Link>
@@ -160,20 +162,23 @@ function MasterLoginContent() {
               토스페이먼츠 심사용으로 제공받은 계정 정보를 입력해 주세요.
             </p>
             <form
-              className="mt-4 space-y-3"
+              className="relative mt-4 space-y-3"
+              autoComplete="off"
               onSubmit={(event) => {
                 event.preventDefault();
                 void submitReviewLogin();
               }}
             >
+              <SavedCredentialDecoy />
               <label className="block text-[13px] font-semibold">
                 이메일
-                <input
-                  type="email"
-                  autoComplete="username"
+                <ManualCredentialInput
+                  type="text"
+                  inputMode="email"
+                  name="spk-review-account"
                   required
                   value={reviewEmail}
-                  onChange={(event) => setReviewEmail(event.target.value)}
+                  onValueChange={setReviewEmail}
                   disabled={reviewLoading || checking}
                   className="mt-1.5 h-12 w-full rounded-[10px] border px-3 text-[14px] font-normal outline-none focus:ring-2 focus:ring-[var(--spm-acc)] disabled:opacity-60"
                   style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)', color: 'var(--spm-t)' }}
@@ -181,12 +186,12 @@ function MasterLoginContent() {
               </label>
               <label className="block text-[13px] font-semibold">
                 비밀번호
-                <input
+                <ManualCredentialInput
                   type="password"
-                  autoComplete="current-password"
+                  name="spk-review-secret"
                   required
                   value={reviewPassword}
-                  onChange={(event) => setReviewPassword(event.target.value)}
+                  onValueChange={setReviewPassword}
                   disabled={reviewLoading || checking}
                   className="mt-1.5 h-12 w-full rounded-[10px] border px-3 text-[14px] font-normal outline-none focus:ring-2 focus:ring-[var(--spm-acc)] disabled:opacity-60"
                   style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)', color: 'var(--spm-t)' }}

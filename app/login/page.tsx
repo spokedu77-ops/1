@@ -11,6 +11,7 @@ import { applyLoginSessionPreference, enforceSessionOnlyPolicy, readKeepLoggedIn
 import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
 import { reportLoginUxEvent } from '@/app/lib/auth/loginUxTelemetry';
 import { isRefreshTokenError } from '@/app/lib/supabase/auth';
+import { ManualCredentialInput, SavedCredentialDecoy } from '@/app/components/auth/ManualCredentialInput';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
 function LoginContent() {
@@ -86,9 +87,10 @@ function LoginContent() {
         <p className="mt-6 text-xs font-semibold text-sky-300">SPOKEDU 운영 계정</p>
         <h1 className="mt-2 break-keep text-2xl font-bold leading-snug sm:text-3xl">강사·관리자 로그인</h1>
         <p className="mt-3 break-keep text-sm font-medium leading-6 text-slate-400">기존 강사 앱과 운영·관리자 콘솔 전용 로그인입니다.</p>
-        <form onSubmit={submit} className="mt-7 space-y-4">
-          <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-300">아이디</span><span className="relative block"><User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" /><input value={id} onChange={(event) => setId(event.target.value)} required autoComplete="username" className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 pl-12 pr-4 text-sm font-semibold outline-none focus:border-sky-500" /></span></label>
-          <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-300">비밀번호</span><span className="relative block"><Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" /><input type="password" value={pw} onChange={(event) => setPw(event.target.value)} required autoComplete="current-password" className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 pl-12 pr-4 text-sm font-semibold outline-none focus:border-sky-500" /></span></label>
+        <form onSubmit={submit} autoComplete="off" className="relative mt-7 space-y-4">
+          <SavedCredentialDecoy />
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-300">아이디</span><span className="relative block"><User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" /><ManualCredentialInput value={id} onValueChange={setId} required name="spk-account" className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 pl-12 pr-4 text-sm font-semibold outline-none focus:border-sky-500" /></span></label>
+          <label className="block"><span className="mb-2 block text-xs font-semibold text-slate-300">비밀번호</span><span className="relative block"><Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" /><ManualCredentialInput type="password" value={pw} onValueChange={setPw} required name="spk-secret" className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 pl-12 pr-4 text-sm font-semibold outline-none focus:border-sky-500" /></span></label>
           <label className="flex min-h-11 items-center gap-3 text-sm font-medium text-slate-300"><input type="checkbox" checked={keepLoggedIn} onChange={(event) => setKeepLoggedIn(event.target.checked)} />이 기기에서 로그인 유지</label>
           <button type="submit" disabled={loading} className="min-h-12 w-full rounded-xl bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-500 disabled:opacity-60">{loading ? '로그인 중...' : '로그인'}</button>
           {error ? <p className="rounded-xl bg-red-950/50 px-3 py-2 text-center text-sm font-semibold text-red-200">{error}</p> : null}

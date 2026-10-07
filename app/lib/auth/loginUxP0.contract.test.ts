@@ -55,7 +55,14 @@ describe("SPOKEDU login UX P0 contracts", () => {
     const operationsLogin = read("app/login/page.tsx");
     const masterLogin = read("app/spokedu-master/login/page.tsx");
     expect(operationsLogin).not.toContain("MasterEmailOtpForm");
+    expect(operationsLogin).toContain("ManualCredentialInput");
+    expect(operationsLogin).toContain("SavedCredentialDecoy");
+    expect(operationsLogin).not.toContain('autoComplete="username"');
+    expect(operationsLogin).not.toContain('autoComplete="current-password"');
     expect(masterLogin).toContain("MasterEmailOtpForm");
+    expect(masterLogin).toContain("ManualCredentialInput");
+    expect(masterLogin).not.toContain('autoComplete="username"');
+    expect(masterLogin).not.toContain('autoComplete="current-password"');
     expect(operationsLogin).not.toContain("NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED");
     expect(masterLogin).toContain("NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED");
     expect(masterLogin).toContain("signInWithPassword");

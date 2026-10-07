@@ -1,3 +1,4 @@
+import { isMasterLiteCappedEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson } from '@/app/lib/server/privateNoStore';
@@ -24,6 +25,27 @@ export async function GET() {
       isAdmin: false,
       canCancelAutoBilling: false,
       billingRenewalFailed: false,
+    });
+  }
+
+  if (isMasterLiteCappedEmail(user.email)) {
+    return privateNoStoreJson({
+      plan: 'lite',
+      status: 'active',
+      isAdmin: false,
+      userId: user.id,
+      email: user.email ?? null,
+      trialStartedAt: null,
+      trialEndsAt: null,
+      periodEnd: null,
+      cancelAtPeriodEnd: false,
+      nextBillingAt: null,
+      currentPeriodEnd: null,
+      canCancelAutoBilling: false,
+      billingRenewalFailed: false,
+      entitlementSource: 'none',
+      promotionalPlan: null,
+      promotionalEndsAt: null,
     });
   }
 

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Mail } from 'lucide-react';
+import { ManualCredentialInput } from '@/app/components/auth/ManualCredentialInput';
 
 export type MasterEmailOtpFormProps = {
   email: string;
@@ -44,10 +45,12 @@ export function MasterEmailOtpForm({
       <div className="mt-4 space-y-3">
         {!otpSent ? (
           <>
-            <input
+            <ManualCredentialInput
               value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-              type="email"
+              onValueChange={onEmailChange}
+              type="text"
+              inputMode="email"
+              name="spk-mail-address"
               placeholder="이메일 주소"
               className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-semibold outline-none"
               style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
@@ -106,11 +109,13 @@ export function MasterEmailOtpForm({
       </div>
       <div className="relative">
         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-        <input
-          type="email"
+        <ManualCredentialInput
+          type="text"
+          inputMode="email"
+          name="spk-mail-address"
           placeholder="이메일 주소를 입력해 주세요"
           value={email}
-          onChange={(event) => onEmailChange(event.target.value)}
+          onValueChange={onEmailChange}
           className="w-full min-h-12 rounded-2xl border border-slate-200 bg-white p-4 pl-12 text-base font-bold text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10"
         />
       </div>

@@ -8,12 +8,23 @@ export const PLATFORM_ADMIN_EMAILS = [
   'kimyoonki@spokedu.com',
 ] as const;
 
+/**
+ * MASTER 이용권만 라이트로 고정하는 계정.
+ * 운영 콘솔 requireAdmin 판별은 PLATFORM_ADMIN_EMAILS 를 그대로 쓴다.
+ */
+export const MASTER_LITE_CAPPED_EMAILS = ['kimyoonki@spokedu.com'] as const;
+
 export function isKnownPlatformAdminEmail(email: string | null | undefined): boolean {
   const normalized = email?.trim().toLowerCase() ?? '';
   if (!normalized) return false;
   if (normalized === MASTER_EMAIL.toLowerCase()) return true;
   if ((PLATFORM_ADMIN_EMAILS as readonly string[]).includes(normalized)) return true;
   return getAdminEmails().includes(normalized);
+}
+
+export function isMasterLiteCappedEmail(email: string | null | undefined): boolean {
+  const normalized = email?.trim().toLowerCase() ?? '';
+  return (MASTER_LITE_CAPPED_EMAILS as readonly string[]).includes(normalized);
 }
 
 function isAdminRole(role: unknown): boolean {
