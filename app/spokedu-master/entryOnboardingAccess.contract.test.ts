@@ -35,6 +35,10 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
     expect(source).not.toContain('create-checkout');
     expect(source).not.toContain('plan:');
     expect(source).not.toContain('SPOMAT');
+    expect(source).toContain("'성인', '시니어', '특수체육', '기타'");
+    expect(source).toContain('주요 지도 대상');
+    expect(source).toContain('여러 항목을 선택할 수 있어요');
+    expect(source).toContain('스탑워치, 타이머, 점수판을 로그인 직후부터 사용할 수 있습니다.');
   });
 
   it('keeps SubscriptionGateWall as a presentation-only gate', () => {

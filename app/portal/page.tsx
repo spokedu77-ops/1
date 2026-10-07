@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, ShieldCheck, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { isRefreshTokenError } from '@/app/lib/supabase/auth';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { resolvePostLoginRedirect } from '@/app/lib/auth/postLoginRedirect';
 
 const services = [
@@ -57,15 +57,9 @@ export default function SpokeduGatePage() {
     const run = async () => {
       try {
         const supabase = getSupabaseBrowserClient();
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const session = await getSessionWithRefreshRecovery(supabase);
 
-        if (error && isRefreshTokenError(error)) {
-          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-          if (!cancelled) setCheckDone(true);
-          return;
-        }
-
-        if (error || !session?.user) {
+        if (!session?.user) {
           if (!cancelled) setCheckDone(true);
           return;
         }

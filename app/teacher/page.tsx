@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, Receipt, Calendar } from 'lucide-react';
 import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useTeacherMaterialsAccess } from '@/app/hooks/useTeacherMaterialsAccess';
 import TeacherMaterialsDenied from '@/app/components/teacher/TeacherMaterialsDenied';
@@ -247,7 +248,7 @@ export default function TeacherMainPage() {
     try {
       setTodayLoading(true);
       setTodayFetchError(null);
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionWithRefreshRecovery(supabase);
       if (!session?.user) return;
       setTodayUserId(session.user.id);
       const now = new Date();

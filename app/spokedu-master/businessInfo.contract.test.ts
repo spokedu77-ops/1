@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MASTER_BUSINESS_INFO,
   MASTER_CUSTOMER_SERVICE_HREF,
+  MASTER_KAKAO_CHANNEL_HREF,
   MASTER_CUSTOMER_SERVICE_TEL_HREF,
   MASTER_CENTER_INQUIRY_HREF,
 } from './lib/businessInfo';
@@ -29,7 +30,8 @@ describe('SPOKEDU MASTER business info contract', () => {
 
   it('generates correct contact hrefs', () => {
     expect(MASTER_CUSTOMER_SERVICE_TEL_HREF).toBe('tel:01044379294');
-    expect(MASTER_CUSTOMER_SERVICE_HREF).toBe('mailto:spokedu77@gmail.com');
+    expect(MASTER_KAKAO_CHANNEL_HREF).toBe('https://pf.kakao.com/_VGWxeb/chat');
+    expect(MASTER_CUSTOMER_SERVICE_HREF).toBe(MASTER_KAKAO_CHANNEL_HREF);
     expect(MASTER_CENTER_INQUIRY_HREF).toContain('mailto:spokedu77@gmail.com');
     expect(MASTER_CENTER_INQUIRY_HREF).toContain('subject=');
   });

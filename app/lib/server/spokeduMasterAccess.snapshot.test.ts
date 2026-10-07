@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyMasterLiteEntitlementCap, buildSpokeduMasterAccessSnapshot, type SpokeduMasterEntitlementGrantRow, type SpokeduMasterSubscriptionRow } from './spokeduMasterAccess';
+import { applyMasterPremiumEntitlement, buildSpokeduMasterAccessSnapshot, type SpokeduMasterEntitlementGrantRow, type SpokeduMasterSubscriptionRow } from './spokeduMasterAccess';
 
 function row(overrides: Partial<SpokeduMasterSubscriptionRow>): SpokeduMasterSubscriptionRow {
   return {
@@ -178,11 +178,11 @@ describe('SPOKEDU MASTER server access snapshot', () => {
     });
   });
 
-  it('forces a capped account snapshot down to active lite', () => {
+  it('assigns the named account an active premium snapshot', () => {
     const admin = buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: true, onboardingDone: false });
-    expect(applyMasterLiteEntitlementCap(admin)).toMatchObject({
+    expect(applyMasterPremiumEntitlement(admin)).toMatchObject({
       onboardingDone: true,
-      plan: 'lite',
+      plan: 'premium',
       subscriptionStatus: 'active',
       isAdmin: false,
       isCenterOrTeam: false,
@@ -190,7 +190,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       canUseClassTools: true,
       canUseAttendance: true,
       canUseRecords: true,
-      canUseSpomove: false,
+      canUseSpomove: true,
     });
   });
 

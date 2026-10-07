@@ -77,7 +77,8 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
   it('keeps failure and cancel paths non-entitling, readable, and retryable', () => {
     expect(cancel).toContain('구독은 활성화되지 않았습니다.');
     expect(cancel).toContain('/spokedu-master/payment?plan=${retryPlan}');
-    expect(cancel).toContain('buildMasterSupportMailto');
+    expect(cancel).toContain('MASTER_CUSTOMER_SERVICE_HREF');
+    expect(cancel).toContain('카카오톡 고객센터');
     expect(success).toContain('완료 전에는 이용권이 활성화되지 않습니다.');
     expect(success).toContain('결제 인증이 취소되었거나 처리 중 오류가 발생했습니다.');
     expect(success).toContain('hasMasterEntitlement');

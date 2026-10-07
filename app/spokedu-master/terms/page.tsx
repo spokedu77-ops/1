@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { PolicyHeader } from '../components/policy/PolicyHeader';
 import {
+  MASTER_CUSTOMER_SERVICE_HREF,
   MASTER_PRODUCT_CATALOG,
   MASTER_SUPPORT_EMAIL,
   SPOMAT_PRODUCT_CONTRACT,
@@ -71,7 +72,18 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         </Section>
 
         <Section title="6. 금지 행위">
-          <p>서비스 콘텐츠를 무단 복제, 배포, 판매하거나 다른 사용자의 계정 및 데이터에 접근하는 행위, 서비스 운영을 방해하는 행위를 금지합니다.</p>
+          <p>이용자는 다음 행위를 해서는 안 됩니다.</p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>계정을 타인에게 양도·대여·공유하거나 다른 사람의 계정을 사용하는 행위</li>
+            <li>수업 자료, 영상, 이미지, SPOMOVE 콘텐츠를 허가 없이 복제·배포·공개·판매하거나 다른 서비스의 상품으로 제공하는 행위</li>
+            <li>화면 녹화, 크롤링, 자동 수집 도구 등을 이용해 콘텐츠나 데이터를 대량으로 저장·추출하는 행위</li>
+            <li>이용권, 결제, 접근권한 또는 기능 제한을 우회하거나 서비스 코드를 역공학·변조하는 행위</li>
+            <li>다른 이용자의 수업반, 학생 정보, 출석, 메모와 기록에 접근하거나 이를 외부에 유출하는 행위</li>
+            <li>비정상적인 요청, 자동화 도구, 악성 코드 등으로 서비스의 안정적인 운영을 방해하는 행위</li>
+            <li>불법·유해한 정보를 저장하거나 타인의 저작권, 개인정보 및 그 밖의 권리를 침해하는 행위</li>
+          </ul>
+          <p>정상적인 수업 준비와 현장 지도 목적의 이용은 허용되지만, 콘텐츠의 외부 재배포나 상업적 재판매는 허용되지 않습니다.</p>
+          <p>위반 행위가 확인되면 사전 안내 후 이용 제한, 콘텐츠 접근 차단 또는 계약 해지가 이루어질 수 있습니다. 보안 침해나 중대한 피해가 우려되는 긴급한 경우에는 우선 조치한 뒤 안내할 수 있으며, 관계 법령에 따른 조치가 병행될 수 있습니다.</p>
         </Section>
 
         <Section title="7. 서비스 변경과 중단">
@@ -85,7 +97,7 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         </Section>
 
         <Section title="9. 문의">
-          <p>결제 오류, 환불·취소, 회원 탈퇴, 개인정보 요청, 센터·기관 도입, 기능 오류 문의는 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 연락해 주세요.</p>
+          <p>결제 오류, 환불·취소, 회원 탈퇴, 개인정보 요청, 센터·기관 도입, 기능 오류 문의는 <a href={MASTER_CUSTOMER_SERVICE_HREF} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--spm-acc)' }}>스포키듀 카카오 채널</a> 또는 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 연락해 주세요.</p>
         </Section>
       </main>
     </div>

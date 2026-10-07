@@ -289,9 +289,16 @@ export default function FavoritesView() {
             {resolvedFavoriteItems.length === 0 ? (
               <>
                 <p className="mt-2 text-[14px] text-slate-500">활동에서 하트를 눌러 자주 쓰는 콘텐츠를 모아보세요.</p>
-                <Link href="/spokedu-master/library" className="mt-4 inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
-                  놀이체육 둘러보기
-                </Link>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <Link href="/spokedu-master/library" className="inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
+                    놀이체육 둘러보기
+                  </Link>
+                  {isPremium ? (
+                    <Link href="/spokedu-master/spomove" className="inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
+                      스포무브 둘러보기
+                    </Link>
+                  ) : null}
+                </div>
               </>
             ) : null}
           </section>

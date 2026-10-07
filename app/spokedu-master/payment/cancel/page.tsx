@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CreditCard, Mail, XCircle } from 'lucide-react';
+import { CreditCard, MessageCircle, XCircle } from 'lucide-react';
 import { Suspense, useMemo } from 'react';
-import { buildMasterSupportMailto } from '../../lib/productCatalog';
+import { MASTER_CUSTOMER_SERVICE_HREF } from '../../lib/productCatalog';
 import { readMasterGateContextFromSearchParams } from '../../lib/masterGateIntent';
 
 function normalizePlan(value: string | null) {
@@ -15,10 +15,7 @@ function CancelContent() {
   const params = useSearchParams();
   const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
   const retryPlan = normalizePlan(params.get('plan'));
-  const supportHref = useMemo(() => buildMasterSupportMailto(
-    'SPOKEDU MASTER 결제 실패 문의',
-    `로그인한 이메일:\n발생 시각:\n선택한 플랜: ${retryPlan === 'lite' ? 'Lite' : 'Premium'}\n화면의 오류 내용: 결제 인증 취소 또는 실패\n\n※ 결제키, 카드번호, 비밀번호는 적지 마세요.`,
-  ), [retryPlan]);
+  const supportHref = MASTER_CUSTOMER_SERVICE_HREF;
   const retryHref = useMemo(() => {
     const directRetryHref = `/spokedu-master/payment?plan=${retryPlan}`;
     const retryParams = new URLSearchParams({
@@ -54,9 +51,9 @@ function CancelContent() {
             <CreditCard size={16} />
             다시 시도
           </Link>
-          <a href={supportHref} className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-            <Mail size={15} />
-            고객센터
+          <a href={supportHref} target="_blank" rel="noopener noreferrer" className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+            <MessageCircle size={15} />
+            카카오톡 고객센터
           </a>
         </div>
       </div>

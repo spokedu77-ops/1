@@ -59,17 +59,17 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
 
   return (
     <div data-subscription-gate={requirement} className="grid h-full place-items-center overflow-y-auto p-6" style={{ background: 'var(--spm-bg)' }}>
-      <section className="w-full max-w-[440px] rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="w-full max-w-[480px] rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
         <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px] border border-slate-200 bg-slate-50">
           <Lock size={24} className="text-slate-700" />
         </div>
         <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
           {model?.eyebrow ?? (requirement === 'spomove' && subscriptionBlockedFeature ? '프리미엄 필요' : '이용권 필요')}
         </p>
-        <h2 className="mt-2 text-[27px] font-extrabold leading-tight text-slate-950">
+        <h2 className="mt-2 max-w-[420px] break-keep text-[26px] font-extrabold leading-[1.3] tracking-[-0.025em] text-slate-950 sm:text-[28px]">
           {model?.title ?? copy.title}
         </h2>
-        <p className="mt-3 text-[14px] font-medium leading-6 text-slate-500">
+        <p className="mt-3 max-w-[420px] break-keep text-[14px] font-medium leading-6 text-slate-500">
           {model?.description ?? copy.desc}
         </p>
         <div className="mt-5 rounded-[13px] border border-slate-200 bg-slate-50 p-4">
@@ -79,12 +79,12 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
             </span>
             <div className="min-w-0">
               <p className="text-[13px] font-extrabold text-slate-900">
-                {model ? '결제 후 이어지는 작업' : '필요한 접근 권한'}
+                {model ? '업그레이드 후 이어서' : '필요한 접근 권한'}
               </p>
               {model ? (
                 <div className="mt-2 grid gap-1.5">
                   {model.evidence.map((item) => (
-                    <p key={`${item.label}:${item.value}`} className="flex gap-2 text-[12px] font-semibold leading-5 text-slate-500">
+                    <p key={`${item.label}:${item.value}`} className="flex gap-2 break-keep text-[12px] font-semibold leading-5 text-slate-500">
                       <span className="shrink-0 text-slate-400">{item.label}</span>
                       <span className="min-w-0 text-slate-700">{item.value}</span>
                     </p>

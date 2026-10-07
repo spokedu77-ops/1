@@ -64,7 +64,7 @@ import { SpomoveLayeredThumb } from '../spomove/SpomoveLayeredThumb';
 import { resolveSpomovePublicDisplayTitle } from '../spomove/spomovePublicNaming';
 import { canReproduceSpomoveSameSettings, recentSpomoveSessionOptions } from '../spomove/movements/canReproduceSpomoveSameSettings';
 import { MASTER_CONTEXT_ORIGIN } from '../lib/masterNavigationContext';
-import { buildProgramLessonGateHref } from '../lib/masterGateIntent';
+import { buildProgramLessonGateHref, buildSpomoveActivityGateHref } from '../lib/masterGateIntent';
 import { FREE_PREVIEW_PROGRAM_ID, getProgramAccessBadge, isProgramLessonLocked, selectWeeklyProgramsById } from '../lib/commercialProgramAccess';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
@@ -147,7 +147,7 @@ function getFirstStartPaths(canUseAttendance: boolean) {
   if (!canUseAttendance) {
     return [
       { title: '무료 수업 보기', description: '지정된 놀이체육 1개를 상세부터 영상까지 체험하세요.', href: `/spokedu-master/library/${FREE_PREVIEW_PROGRAM_ID}` },
-      { title: '수업 도구 열기', description: '타이머, 팀 나누기, 랜덤 뽑기를 바로 사용할 수 있습니다.', href: '/spokedu-master/class-tools' },
+      { title: '수업 도구 열기', description: '스탑워치, 타이머, 점수판을 바로 사용할 수 있습니다.', href: '/spokedu-master/class-tools' },
     ] as const;
   }
   return [
@@ -268,6 +268,7 @@ function WeeklyProgramCard({
   program,
   locked,
   onPreview,
+  lockedHref,
   favorite,
   favoriteEnabled,
   favoriteHint,
@@ -278,6 +279,7 @@ function WeeklyProgramCard({
   program: Program;
   locked: boolean;
   onPreview?: (program: Program) => void;
+  lockedHref?: string;
   favorite: boolean;
   favoriteEnabled: boolean;
   favoriteHint?: string;
@@ -297,6 +299,7 @@ function WeeklyProgramCard({
       supportMeta={weeklySupportMeta}
       hasVideo={programHasPlayableVideo(program)}
       onPreview={onPreview ? () => onPreview(program) : undefined}
+      lockedHref={lockedHref}
       locked={locked}
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
@@ -357,6 +360,7 @@ function SpomoveCard({
   favorite,
   favoriteEnabled,
   onFavorite,
+  locked,
   priority = false,
 }: {
   preset: OfficialSpomovePreset;
@@ -367,6 +371,7 @@ function SpomoveCard({
   favorite: boolean;
   favoriteEnabled: boolean;
   onFavorite: () => void;
+  locked: boolean;
   priority?: boolean;
 }) {
   const displayModel = getHomeSpomoveShelfCopy(preset, contentOverride);
@@ -379,31 +384,39 @@ function SpomoveCard({
     '/spokedu-master/dashboard',
     'home',
   );
+  const cardHref = locked ? buildSpomoveActivityGateHref(startHref, `home_spomove_${preset.id}`) : startHref;
+  const previewContent = (
+    <>
+      <SpomoveLayeredThumb
+        src={thumbnailUrl}
+        sizes="(min-width: 1280px) 224px, (min-width: 768px) 45vw, 82vw"
+        priority={priority}
+        presentation="home-cover-4-3"
+        className="!aspect-[3/2] rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95 min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto"
+        fallback={<SpomoveThumbnailPlaceholder />}
+      />
+      <div className="px-3.5 pb-3.5 pr-14 pt-2.5">
+        <ContentCardMetaLine primary={displayModel.difficulty} secondary={displayModel.typeLabel} className={MV_HOME_CARD_META} />
+        <h3 className={`${MV_HOME_CARD_TITLE} mt-1 line-clamp-2 transition-colors duration-200 group-hover/preview:text-slate-700`}>{displayModel.title}</h3>
+      </div>
+    </>
+  );
 
   return (
     <article data-spomove-preset={preset.id} className="relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 hover:border-slate-300">
-      <button
-        type="button"
-        onClick={() => onOpenGuide(preset)}
-        className="group/preview w-full cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--spm-acc)]"
-        aria-label={`${displayModel.title} 활동 준비 열기`}
-      >
-        <SpomoveLayeredThumb
-          src={thumbnailUrl}
-          sizes="(min-width: 1280px) 224px, (min-width: 768px) 45vw, 82vw"
-          priority={priority}
-          presentation="home-cover-4-3"
-          className="!aspect-[3/2] rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95 min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto"
-          fallback={(
-            <SpomoveThumbnailPlaceholder />
-          )}
-        />
-        <div className="px-3.5 pb-3.5 pr-14 pt-2.5">
-          <ContentCardMetaLine primary={displayModel.difficulty} secondary={displayModel.typeLabel} className={MV_HOME_CARD_META} />
-          <h3 className={`${MV_HOME_CARD_TITLE} mt-1 line-clamp-2 transition-colors duration-200 group-hover/preview:text-slate-700`}>{displayModel.title}</h3>
-        </div>
-      </button>
-      <Link href={startHref} data-spm-spomove-card-action="start" aria-label={`${displayModel.title} 바로 시작`} className="absolute bottom-1 right-1 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
+      {locked ? (
+        <Link href={cardHref} className="group/preview w-full cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--spm-acc)]" aria-label={`${displayModel.title} Premium 이용 안내`}>
+          {previewContent}
+        </Link>
+      ) : (
+        <button type="button" onClick={() => onOpenGuide(preset)} className="group/preview w-full cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--spm-acc)]" aria-label={`${displayModel.title} 활동 준비 열기`}>
+          {previewContent}
+        </button>
+      )}
+      {locked ? (
+        <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-[6px] bg-violet-600 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">Premium</span>
+      ) : null}
+      <Link href={cardHref} data-spm-spomove-card-action="start" aria-label={`${displayModel.title} ${locked ? 'Premium 이용 안내' : '바로 시작'}`} className="absolute bottom-1 right-1 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-slate-600 transition-colors hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
         <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-100"><Play className="h-3.5 w-3.5 fill-current" aria-hidden /></span>
       </Link>
       <button type="button" onClick={onFavorite} disabled={!favoriteEnabled} aria-pressed={favorite} aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'} className={`absolute right-2 top-2 z-10 inline-flex h-11 w-11 items-center justify-center rounded-[10px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)] disabled:cursor-not-allowed disabled:opacity-50 ${favorite ? 'text-amber-500' : 'text-slate-500 hover:text-slate-900'}`}>
@@ -1016,6 +1029,7 @@ function EntitledDashboardView() {
                     <WeeklyProgramCard
                       program={program}
                       locked={isProgramLocked(program)}
+                      lockedHref={isProgramLocked(program) ? buildProgramLessonGateHref(program.id, undefined, `home_weekly_${program.id}`) : undefined}
                       onPreview={isProgramLocked(program) ? undefined : (item) => openPreview(item, programHasPlayableVideo(item))}
                       favorite={isFavoriteProgram(favoritesOwnerId, program.id)}
                       favoriteEnabled={favoriteEnabled}
@@ -1071,6 +1085,7 @@ function EntitledDashboardView() {
                   favorite={isFavoriteContent(favoritesOwnerId, { type: 'spomove', id: preset.id })}
                   favoriteEnabled={favoriteEnabled}
                   onFavorite={() => toggleFavoriteContent(favoritesOwnerId, { type: 'spomove', id: preset.id })}
+                  locked={!accessSnapshot.canUseSpomove}
                 />
               </div>
             );

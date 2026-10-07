@@ -10,7 +10,7 @@ import { resolveLoginEmail } from '@/app/lib/auth/loginEmail';
 import { applyLoginSessionPreference, enforceSessionOnlyPolicy, readKeepLoggedInPreference } from '@/app/lib/auth/sessionPersistence';
 import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
 import { reportLoginUxEvent } from '@/app/lib/auth/loginUxTelemetry';
-import { isRefreshTokenError } from '@/app/lib/supabase/auth';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { ManualCredentialInput, SavedCredentialDecoy } from '@/app/components/auth/ManualCredentialInput';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
@@ -38,12 +38,9 @@ function LoginContent() {
       try {
         const supabase = getSupabaseBrowserClient();
         await enforceSessionOnlyPolicy(() => supabase.auth.signOut({ scope: 'local' }));
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError && isRefreshTokenError(sessionError)) {
-          await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-        }
-        else if (data.session?.user) {
-          const redirectPath = await resolvePostLoginRedirect(nextSafe, supabase, data.session.user);
+        const session = await getSessionWithRefreshRecovery(supabase);
+        if (session?.user) {
+          const redirectPath = await resolvePostLoginRedirect(nextSafe, supabase, session.user);
           reportLoginUxEvent('auto_redirect_from_login', { redirectPath, activeTab: 'ops' });
           if (!cancelled) router.replace(redirectPath);
           return;

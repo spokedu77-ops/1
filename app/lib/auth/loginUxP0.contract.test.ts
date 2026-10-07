@@ -9,8 +9,8 @@ describe("SPOKEDU login UX P0 contracts", () => {
     const login = read("app/login/page.tsx");
     expect(login).toContain("router.replace(redirectPath)");
     expect(login).toContain("sessionChecked");
-    expect(login).toContain("await supabase.auth.getSession()");
-    expect(login).toContain("await supabase.auth.signOut({ scope: 'local' })");
+    expect(login).toContain("getSessionWithRefreshRecovery(supabase)");
+    expect(read("app/lib/supabase/auth.ts")).toContain("supabase.auth.signOut({ scope: 'local' })");
     expect(login).toContain("enforceSessionOnlyPolicy");
   });
 

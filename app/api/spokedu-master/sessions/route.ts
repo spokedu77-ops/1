@@ -161,7 +161,7 @@ export async function GET() {
   return privateNoStoreJson({
     data: {
       classes: classDtos,
-      sessions: sessionsResult.map((session) => access.plan === 'lite' ? { ...session, memo: null } : session),
+      sessions: sessionsResult,
     },
   });
   } catch (error) {
@@ -179,9 +179,6 @@ async function save(request: Request, sessionId: string | null) {
   if (!sessionId && input.programs?.some((item) => item.sourceType === 'spomove')) {
     const spomoveAccess = await requireSpokeduMasterCapability('spomove');
     if (!spomoveAccess.ok) return withPrivateNoStore(spomoveAccess.response);
-  }
-  if (access.plan === 'lite' && input.memo) {
-    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Lite에서 사용할 수 있습니다.' }, { status: 403 });
   }
   if (sessionId && input.status === 'completed') {
     return privateNoStoreJson({ error: '수업 완료는 출석 검증을 포함한 완료 요청으로 처리해 주세요.' }, { status: 400 });
@@ -248,7 +245,7 @@ async function save(request: Request, sessionId: string | null) {
     return privateNoStoreJson({ error: 'Session could not be saved' }, { status: 500 });
   }
   const [aggregate] = await loadAggregate(access.userId, savedId);
-  return privateNoStoreJson({ data: access.plan === 'lite' ? { ...aggregate, memo: null } : aggregate }, { status: sessionId ? 200 : 201 });
+  return privateNoStoreJson({ data: aggregate }, { status: sessionId ? 200 : 201 });
 }
 
 export async function POST(request: Request) { return save(request, null); }
@@ -274,9 +271,6 @@ export async function PUT(request: Request) {
     input = normalizeInput(body.session);
   } catch {
     return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
-  }
-  if (access.plan === 'lite' && input.memo) {
-    return privateNoStoreJson({ error: '수업 메모와 누적 기록은 Lite에서 사용할 수 있습니다.' }, { status: 403 });
   }
   if (input.status !== 'completed') {
     return privateNoStoreJson({ error: 'Invalid completion data' }, { status: 400 });
@@ -348,7 +342,7 @@ export async function PUT(request: Request) {
   }
   const result = await loadAggregate(access.userId, savedId);
   if (!result[0]) return privateNoStoreJson({ error: '완료된 수업을 불러오지 못했습니다.' }, { status: 500 });
-  return privateNoStoreJson({ data: access.plan === 'lite' ? { ...result[0], memo: null } : result[0] });
+  return privateNoStoreJson({ data: result[0] });
 }
 
 export async function DELETE(request: Request) {

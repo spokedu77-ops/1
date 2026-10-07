@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { MILEAGE_ACTIONS } from '@/app/admin/classes-shared/constants/mileage';
 import {
@@ -71,7 +72,7 @@ export default function TeacherReportPage() {
     setLoading(true);
     setFetchError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionWithRefreshRecovery(supabase);
       const authUser = session?.user;
       if (!authUser) return;
 

@@ -37,10 +37,10 @@ page.on('console', (message) => { if (message.type() === 'error' && !/favicon/i.
 page.on('pageerror', (error) => errors.push(error.message));
 
 await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-await page.locator('input[autocomplete="username"]').waitFor({ state: 'visible', timeout: 30_000 });
-await page.locator('input[autocomplete="username"]').fill(EMAIL);
-await page.locator('input[autocomplete="current-password"]').fill(PASSWORD);
-await page.locator('button[type="submit"]').click();
+await page.locator('input[name="spk-account"]').waitFor({ state: 'visible', timeout: 30_000 });
+await page.locator('input[name="spk-account"]').fill(EMAIL);
+await page.locator('input[name="spk-secret"]').fill(PASSWORD);
+await page.locator('form:has(input[name="spk-account"]) button[type="submit"]').click();
 await page.waitForURL((url) => url.pathname !== '/login', { timeout: 90_000 });
 await context.route('**/api/spokedu-master/students', (route) => route.request().method() === 'GET'
   ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: fixtureMode === 'zero' ? [] : students }) })

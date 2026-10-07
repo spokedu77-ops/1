@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { isMasterLiteCappedEmail } from '@/app/lib/auth/platformAdminIdentity';
+import { isMasterPremiumAssignedEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { hashForMonitoring, reportError } from '@/app/lib/monitoring/errorReporter';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import {
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 
   const plan = requestedPlan;
 
-  const isAdmin = !isMasterLiteCappedEmail(user.email) && await isPlatformAdminUser(user, supabase);
+  const isAdmin = !isMasterPremiumAssignedEmail(user.email) && await isPlatformAdminUser(user, supabase);
   if (isAdmin) return fail(409, '관리자 권한에는 결제가 필요하지 않습니다.');
 
   const service = getServiceSupabase();

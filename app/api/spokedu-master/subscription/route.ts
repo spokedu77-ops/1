@@ -1,4 +1,4 @@
-import { isMasterLiteCappedEmail } from '@/app/lib/auth/platformAdminIdentity';
+import { isMasterPremiumAssignedEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson } from '@/app/lib/server/privateNoStore';
@@ -28,9 +28,9 @@ export async function GET() {
     });
   }
 
-  if (isMasterLiteCappedEmail(user.email)) {
+  if (isMasterPremiumAssignedEmail(user.email)) {
     return privateNoStoreJson({
-      plan: 'lite',
+      plan: 'premium',
       status: 'active',
       isAdmin: false,
       userId: user.id,

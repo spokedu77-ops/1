@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { useProfile } from '../store';
 
 type BannerState = 'checking' | 'guest' | 'member';
@@ -17,7 +18,7 @@ export function LandingLoggedInBanner() {
     const run = async () => {
       try {
         const supabase = getSupabaseBrowserClient();
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getSessionWithRefreshRecovery(supabase);
         if (cancelled) return;
         if (session?.user) {
           setEmail(session.user.email ?? '');

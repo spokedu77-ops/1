@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import {
   isKnownPlatformAdminEmail,
   isPlatformAdminIdentity,
@@ -34,7 +35,7 @@ export async function fetchPlatformAdminStatus(
   user?: { id: string; email?: string | null },
 ): Promise<boolean> {
   if (supabase) {
-    await supabase.auth.getSession();
+    await getSessionWithRefreshRecovery(supabase);
   }
 
   try {

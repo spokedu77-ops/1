@@ -17,6 +17,7 @@ import {
 } from '@/app/lib/feedbackValidation';
 import { isCenterSessionType } from '@/app/admin/classes/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { compressImageForUpload } from '@/app/lib/admin/assets/imageOptimizer';
 import { compressDocumentEmbeddedImages } from '@/app/lib/client/compressDocumentEmbeddedImages';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -542,7 +543,7 @@ function MyClassesContent() {
     setPreviousPlans([]);
     setPreviousPlansExpandedId(null);
     setIsLessonPlanModalOpen(true);
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getSessionWithRefreshRecovery(supabase);
     if (!session?.user) return;
     const userId = session.user.id;
     const baseTitle = getBaseTitle(selectedEvent.title);

@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Loader2, Mail, Shield } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, Lock, Mail, Shield } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { toMasterClientError } from '../lib/clientErrors';
 import {
   MASTER_CENTER_INQUIRY_HREF,
@@ -194,7 +195,7 @@ function PaymentContent() {
     const load = async () => {
       try {
         const supabase = getSupabaseBrowserClient();
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getSessionWithRefreshRecovery(supabase);
         if (session?.user) {
           setUserId(session.user.id);
           setUserEmail(session.user.email ?? '');
@@ -303,23 +304,29 @@ function PaymentContent() {
         <div>
           <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
           <h1 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            {paymentPageMode === 'liteUpgrade' ? '프리미엄으로 이어가기' : gateDisplay ? '하던 작업 이어가기' : '구독 선택'}
+            {paymentPageMode === 'liteUpgrade'
+              ? 'Premium으로 이어가기'
+              : gateDisplay?.intent === 'start_spomove'
+                ? 'SPOMOVE 이용 안내'
+                : gateDisplay
+                  ? '하던 작업 이어가기'
+                  : '구독 선택'}
           </h1>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-[1080px] space-y-5 px-5 pb-16 sm:px-8">
         {gateDisplay ? (
-          <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-acc-a10)', border: '1px solid var(--spm-acc-a28)' }}>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{gateDisplay.eyebrow}</p>
-            <h2 className="mt-2 text-[22px] font-extrabold leading-tight sm:text-[26px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
+          <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc)' }}>{gateDisplay.eyebrow}</p>
+            <h2 className="mt-2 max-w-[760px] break-keep text-[22px] font-extrabold leading-[1.35] tracking-[-0.02em] sm:text-[26px]" style={{ fontFamily: 'var(--spm-font-display)' }}>
               {gateDisplay.title}
             </h2>
-            <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+            <p className="mt-3 max-w-[680px] break-keep text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
               {gateDisplay.description}
             </p>
             <Link href={gateContext.next} className="mt-3 inline-flex min-h-11 items-center text-[13px] font-extrabold" style={{ color: 'var(--spm-acc)' }}>
-              이전 작업으로 돌아가기
+              이전 화면으로 돌아가기
             </Link>
           </section>
         ) : (
@@ -343,15 +350,23 @@ function PaymentContent() {
           </section>
         ) : !showPlanSelection ? (
           <section className="rounded-[18px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <CheckCircle2 size={44} color="var(--spm-grn)" className="mx-auto" />
-            <h2 className="mt-3 text-[20px] font-extrabold">{subscriptionDisplay.planLabel} 이용 중</h2>
-            <p className="mt-2 text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-              {subscriptionDisplay.state === 'cancelScheduled'
-                ? subscriptionDisplay.description
-                : '현재 이용권이 활성화되어 있습니다.'}
+            {gateDisplay?.intent === 'start_spomove'
+              ? <Lock size={36} className="mx-auto text-[var(--spm-acc)]" />
+              : <CheckCircle2 size={44} color="var(--spm-grn)" className="mx-auto" />}
+            <h2 className="mt-3 break-keep text-[20px] font-extrabold">
+              {gateDisplay?.intent === 'start_spomove'
+                ? '현재 이용권에서는 SPOMOVE를 실행할 수 없습니다.'
+                : `${subscriptionDisplay.planLabel} 이용 중`}
+            </h2>
+            <p className="mx-auto mt-2 max-w-[520px] break-keep text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+              {gateDisplay?.intent === 'start_spomove'
+                ? `현재 ${subscriptionDisplay.planLabel} 이용권이 적용되어 있습니다. 이용 가능한 플랜을 확인해 주세요.`
+                : subscriptionDisplay.state === 'cancelScheduled'
+                  ? subscriptionDisplay.description
+                  : '현재 이용권이 활성화되어 있습니다.'}
             </p>
             <Link href="/spokedu-master/subscription" className="spm-btn-primary mx-auto mt-4 inline-flex h-11 max-w-[260px] items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none">
-              구독 관리
+              {gateDisplay?.intent === 'start_spomove' ? '이용권 확인하기' : '구독 관리'}
             </Link>
           </section>
         ) : (

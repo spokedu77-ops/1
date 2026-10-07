@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { isMasterLiteCappedEmail } from '@/app/lib/auth/platformAdminIdentity';
+import { isMasterPremiumAssignedEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import { deleteSpokeduMasterBillingKey } from '@/app/lib/server/spokeduMasterBillingKeyVault';
@@ -15,7 +15,7 @@ export async function POST() {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
   }
 
-  if (!isMasterLiteCappedEmail(user.email) && await isPlatformAdminUser(user, supabase)) {
+  if (!isMasterPremiumAssignedEmail(user.email) && await isPlatformAdminUser(user, supabase)) {
     return NextResponse.json({ error: NON_BILLING_CANCEL_MESSAGE }, { status: 422 });
   }
 

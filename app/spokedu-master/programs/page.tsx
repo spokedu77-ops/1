@@ -82,6 +82,7 @@ export default function ProgramsPage() {
           <div className="grid w-full gap-5 md:grid-cols-2 lg:gap-6">
             <ProgramGatewayCard
               title="놀이체육"
+              tier="Lite"
               description="다양한 교구와 움직임으로 구성하는 현장 체육활동"
               action="놀이체육 둘러보기"
               href="/spokedu-master/library"
@@ -89,6 +90,7 @@ export default function ProgramsPage() {
             />
             <ProgramGatewayCard
               title="SPOMOVE"
+              tier="Premium"
               description="화면 자극과 움직임을 연결하는 시지각 움직임 프로그램"
               action="SPOMOVE 둘러보기"
               href="/spokedu-master/spomove"
@@ -103,6 +105,7 @@ export default function ProgramsPage() {
 
 function ProgramGatewayCard({
   title,
+  tier,
   description,
   action,
   href,
@@ -110,6 +113,7 @@ function ProgramGatewayCard({
   imagePosition = 'center 25%',
 }: {
   title: string;
+  tier: 'Lite' | 'Premium';
   description: string;
   action: string;
   href: string;
@@ -119,9 +123,11 @@ function ProgramGatewayCard({
   return (
     <Link
       href={href}
+      aria-label={`${title} · ${tier} 프로그램 둘러보기`}
       className="group flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-slate-200/80 bg-white transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-slate-200">
+        <span className={`absolute left-3 top-3 z-10 rounded-md px-2 py-1 text-[11px] font-semibold text-white shadow-sm ${tier === 'Premium' ? 'bg-violet-600' : 'bg-blue-600'}`}>{tier}</span>
         {image ? (
           <Image
             src={image}

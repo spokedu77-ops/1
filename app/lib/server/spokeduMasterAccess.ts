@@ -4,7 +4,7 @@ import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminA
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getSpokeduMasterProfile } from '@/app/lib/server/spokeduMasterProfile';
-import { isMasterLiteCappedEmail } from '@/app/lib/auth/platformAdminIdentity';
+import { isMasterPremiumAssignedEmail } from '@/app/lib/auth/platformAdminIdentity';
 import { FREE_PREVIEW_PROGRAM_IDS } from '@/app/spokedu-master/lib/commercialProgramAccess';
 
 const EXPIRED_ACCESS_MESSAGE =
@@ -280,14 +280,14 @@ export function buildSpokeduMasterAccessSnapshot(input: {
   };
 }
 
-/** 지정 계정의 MASTER 유효 이용권을 라이트로 맞춘다. 결제 행은 바꾸지 않는다. */
-export function applyMasterLiteEntitlementCap(
+/** 지정 계정의 MASTER 유효 이용권을 프리미엄으로 맞춘다. 결제 행은 바꾸지 않는다. */
+export function applyMasterPremiumEntitlement(
   snapshot: SpokeduMasterAccessSnapshot,
 ): SpokeduMasterAccessSnapshot {
   return {
-    authenticated: true,
+    authenticated: snapshot.authenticated,
     onboardingDone: true,
-    plan: 'lite',
+    plan: 'premium',
     subscriptionStatus: 'active',
     currentPeriodEnd: null,
     cancelAtPeriodEnd: false,
@@ -296,7 +296,7 @@ export function applyMasterLiteEntitlementCap(
     entitlementSource: 'none',
     promotionalPlan: null,
     promotionalEndsAt: null,
-    ...buildCapabilities('lite', 'active', false),
+    ...buildCapabilities('premium', 'active', false),
   };
 }
 
@@ -354,8 +354,8 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
       };
     }
 
-    if (isMasterLiteCappedEmail(user.email)) {
-      return { ok: true, userId: user.id, isAdmin: false, plan: 'lite', canUseLibrary: true };
+    if (isMasterPremiumAssignedEmail(user.email)) {
+      return { ok: true, userId: user.id, isAdmin: false, plan: 'premium', canUseLibrary: true };
     }
 
     const isAdmin = await isPlatformAdminUser(user, serverSupabase);
@@ -437,7 +437,7 @@ export async function requireSpokeduMasterSession(): Promise<MasterSessionResult
       };
     }
 
-    const isAdmin = !isMasterLiteCappedEmail(user.email)
+    const isAdmin = !isMasterPremiumAssignedEmail(user.email)
       && await isPlatformAdminUser(user, serverSupabase);
 
     return {
@@ -475,11 +475,11 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
       };
     }
 
-    if (isMasterLiteCappedEmail(user.email)) {
+    if (isMasterPremiumAssignedEmail(user.email)) {
       return {
         ok: true,
         userId: user.id,
-        snapshot: applyMasterLiteEntitlementCap(
+        snapshot: applyMasterPremiumEntitlement(
           buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: false, onboardingDone: true }),
         ),
       };

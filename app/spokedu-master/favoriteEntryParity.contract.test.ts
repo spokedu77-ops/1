@@ -16,6 +16,15 @@ describe('MASTER favorite entry parity', () => {
     expect(favorites).toContain('favoriteContentRefsByOwner');
   });
 
+  it('offers both content hubs from the empty state for Premium users', () => {
+    const favorites = read('app/spokedu-master/favorites/FavoritesView.tsx');
+    expect(favorites).toContain('href="/spokedu-master/library"');
+    expect(favorites).toContain('놀이체육 둘러보기');
+    expect(favorites).toContain('{isPremium ? (');
+    expect(favorites).toContain('href="/spokedu-master/spomove"');
+    expect(favorites).toContain('스포무브 둘러보기');
+  });
+
   it('keeps card favorite targets at least 44px on mobile', () => {
     const lessonCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
     const spomove = read('app/spokedu-master/spomove/SpomoveHubView.tsx');

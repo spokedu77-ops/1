@@ -74,7 +74,13 @@ const POLICIES: Record<MasterSessionStatus, SessionActionPolicy> = {
 
 export function getSessionActionPolicy(status: MasterSessionStatus, startedAt: string | null = null) {
   const policy = POLICIES[status];
-  if (status !== 'scheduled' || !startedAt) return policy;
+  if (status !== 'scheduled') return policy;
+  if (!startedAt) {
+    return {
+      ...policy,
+      toggleActivityCompletion: false,
+    };
+  }
   return {
     ...policy,
     editSchedule: false,

@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AlertCircle, CheckCircle2, Loader2, Mail } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, MessageCircle } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { buildMasterSupportMailto, MASTER_PRODUCT_CATALOG } from '../../lib/productCatalog';
+import { MASTER_CUSTOMER_SERVICE_HREF, MASTER_PRODUCT_CATALOG } from '../../lib/productCatalog';
 import { hasMasterEntitlement, type MasterAccessSnapshot } from '../../lib/masterAccessModel';
 import { useMasterStore } from '../../store';
 import { getFallbackForMasterIntent, getSafeMasterPostPaymentPath } from '../../lib/masterPaymentReturn';
@@ -90,8 +90,8 @@ function PaymentSupportGuidance({ href }: { href: string }) {
       <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
         로그인한 이메일, 발생 시각, 선택한 플랜, 화면의 오류 내용만 보내주세요. 결제키나 카드 정보는 보내지 마세요.
       </p>
-      <a href={href} className="mt-3 flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-        <Mail size={15} /> 결제 문의
+      <a href={href} target="_blank" rel="noopener noreferrer" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+        <MessageCircle size={15} /> 카카오톡으로 결제 문의
       </a>
     </div>
   );
@@ -129,11 +129,7 @@ function SuccessContent() {
   const [status, setStatus] = useState<ConfirmationStatus>(hasValidParams ? 'checking' : 'invalid');
   const [accessAttempt, setAccessAttempt] = useState(0);
   const [result, setResult] = useState<BillingIssueResponse | null>(null);
-  const [issueError, setIssueError] = useState('');
-  const supportHref = useMemo(() => buildMasterSupportMailto(
-    'SPOKEDU MASTER 결제 확인 요청',
-    `로그인한 이메일:\n발생 시각:\n선택한 플랜: ${plan === 'lite' ? 'Lite' : 'Premium'}\n화면의 오류 내용: ${issueError || '이용권 반영 또는 결제 결과 확인 필요'}\n\n※ 결제키, 카드번호, 비밀번호는 적지 마세요.`,
-  ), [issueError, plan]);
+  const supportHref = MASTER_CUSTOMER_SERVICE_HREF;
 
   const persistPaidOnboarding = useCallback(async () => {
     if (!profile) return;
@@ -208,7 +204,6 @@ function SuccessContent() {
         const json = await response.json().catch(() => null) as BillingIssueResponse | null;
 
         if (!response.ok || json?.ok !== true || json.plan !== plan) {
-          setIssueError(json?.error ?? '결제 처리 결과를 확인하지 못했습니다.');
           // 청구는 됐는데 이용권 apply만 실패한 경우 — 재결제 CTA가 아니라 권한 재확인
           const chargedButPending =
             json?.charged === true ||
@@ -229,7 +224,6 @@ function SuccessContent() {
         setResult(json);
         await checkAccessActivation();
       } catch {
-        setIssueError('네트워크 오류로 결제 처리 결과를 확인하지 못했습니다.');
         setStatus('unknown');
       }
     };
@@ -363,9 +357,9 @@ function SuccessContent() {
         <Link href={retryHref} className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">
           다시 시도
         </Link>
-        <a href={supportHref} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-          <Mail size={15} />
-          고객센터
+        <a href={supportHref} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <MessageCircle size={15} />
+          카카오톡 고객센터
         </a>
       </div>
     </PaymentStatusShell>

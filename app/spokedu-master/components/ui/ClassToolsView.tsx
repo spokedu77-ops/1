@@ -68,7 +68,7 @@ function ToolViewport({ children }: { children: React.ReactNode }) {
   const [ref, size] = useElementSize();
   return (
     <ToolViewportContext.Provider value={size}>
-      <div ref={ref} className="min-h-0 flex-1 overflow-hidden [@media(max-height:500px)]:min-h-[360px] [@media(max-height:500px)]:shrink-0">
+      <div ref={ref} className="min-h-0 flex-1 overflow-hidden">
         {children}
       </div>
     </ToolViewportContext.Provider>
@@ -713,16 +713,16 @@ function ScoreboardTab() {
   const columns = fittedColumnCount(teamCount, width, height, { minCellWidth: 116, minCellHeight: 156, chrome: 92, maxColumns: 6 });
 
   return (
-    <div className="flex h-full min-h-0 items-center justify-center overflow-hidden p-3 sm:p-4">
-      <section className="flex h-full min-h-0 w-full max-w-[1120px] flex-col gap-3 overflow-hidden">
-        <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+    <div className="flex h-full min-h-0 items-center justify-center overflow-hidden p-2 sm:p-4">
+      <section className="flex h-full min-h-0 w-full max-w-[1120px] flex-col gap-2 overflow-hidden sm:gap-3">
+        <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2 sm:gap-3 sm:pb-3">
           <div className="text-left">
-            <h2 className="text-[20px] font-semibold text-slate-900">점수판</h2>
-            <p className="mt-1 text-[12px] font-normal text-slate-500">팀 이름을 눌러 수정할 수 있습니다.</p>
+            <h2 className="text-[18px] font-semibold text-slate-900 sm:text-[20px]">점수판</h2>
+            <p className="mt-0.5 text-[11px] font-normal text-slate-500 sm:mt-1 sm:text-[12px]">팀 이름을 눌러 수정할 수 있습니다.</p>
           </div>
           <div className="flex items-center gap-1 rounded-[11px] bg-slate-100 p-1" aria-label="팀 개수 설정">
             {[2, 3, 4, 5, 6].map((count) => (
-              <button key={count} type="button" onClick={() => setTeamCount(count)} className={`min-h-11 min-w-11 rounded-[8px] px-2 text-[12px] font-extrabold transition ${teamCount === count ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} aria-pressed={teamCount === count}>
+              <button key={count} type="button" onClick={() => setTeamCount(count)} className={`min-h-10 min-w-10 rounded-[8px] px-1.5 text-[11px] font-extrabold transition sm:min-h-11 sm:min-w-11 sm:px-2 sm:text-[12px] ${teamCount === count ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`} aria-pressed={teamCount === count}>
                 {count}팀
               </button>
             ))}
@@ -741,7 +741,7 @@ function ScoreboardTab() {
             />
           ))}
         </div>
-        <button type="button" onClick={() => setTeams((items) => items.map((team) => ({ ...team, score: 0 })))} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 self-center rounded-[9px] border border-slate-200 bg-slate-50 px-4 text-[12px] font-extrabold text-slate-600 transition hover:bg-white">
+        <button type="button" onClick={() => setTeams((items) => items.map((team) => ({ ...team, score: 0 })))} className="inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-2 self-center rounded-[9px] border border-slate-200 bg-slate-50 px-4 text-[12px] font-extrabold text-slate-600 transition hover:bg-white sm:h-11">
           <RotateCcw size={14} />전체 점수 초기화
         </button>
       </section>
@@ -1405,7 +1405,7 @@ export default function ClassToolsView() {
   );
   return (
     <div className="flex h-full min-h-0 flex-col" style={{ background: 'var(--spm-bg)' }}>
-      <header className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 md:px-6 [@media(max-height:500px)]:hidden">
+      <header className="hidden shrink-0 border-b border-slate-200 bg-white px-4 py-3 min-[768px]:block md:px-6 [@media(max-height:620px)]:hidden">
         <div className="mx-auto flex max-w-[1180px] items-start justify-between gap-3 md:items-center">
           <div className="min-w-0">
             <h1 className="text-base font-semibold text-slate-950 sm:text-lg">수업 도구</h1>
@@ -1419,7 +1419,7 @@ export default function ClassToolsView() {
           ) : null}
         </div>
       </header>
-      <div data-class-tools-tabs data-class-tools-dock className="grid shrink-0 grid-cols-4 gap-1 overflow-hidden border-b border-slate-200 bg-white px-2 py-2 min-[768px]:grid-cols-8 min-[768px]:px-4 min-[1200px]:flex min-[1200px]:flex-wrap min-[1200px]:justify-center">
+      <div data-class-tools-tabs data-class-tools-dock className="grid shrink-0 grid-cols-4 gap-1 overflow-hidden border-b border-slate-200 bg-white px-2 py-1.5 min-[768px]:grid-cols-8 min-[768px]:px-4 min-[1200px]:flex min-[1200px]:flex-wrap min-[1200px]:justify-center">
         {TABS.map(({ id, label, shortLabel, group, icon: Icon }) => {
           const active = tab === id;
           const locked = !canUseClassTool(id, access.canUseAttendance);
@@ -1434,7 +1434,7 @@ export default function ClassToolsView() {
               }}
               aria-pressed={active}
               aria-label={`${group} · ${label}${accessLabel}`}
-              className={`flex h-11 min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-[10px] px-1 text-[12px] font-medium transition min-[1200px]:w-auto min-[1200px]:shrink-0 min-[1200px]:flex-row min-[1200px]:gap-1.5 min-[1200px]:rounded-xl min-[1200px]:px-3.5 ${active ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
+              className={`flex h-10 min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden whitespace-nowrap rounded-[10px] px-1 text-[11px] font-medium transition sm:h-11 sm:text-[12px] min-[1200px]:w-auto min-[1200px]:shrink-0 min-[1200px]:flex-row min-[1200px]:gap-1.5 min-[1200px]:rounded-xl min-[1200px]:px-3.5 ${active ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'}`}
             >
               <Icon size={16} aria-hidden="true" />
               <span className="leading-none min-[1200px]:hidden">{shortLabel}{accessLabel}</span>
@@ -1444,7 +1444,7 @@ export default function ClassToolsView() {
         })}
       </div>
 
-      <div data-class-tools-content className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-slate-50/70">
+      <div data-class-tools-content className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/70">
         {invalidSessionContext ? (
           <div className="m-5 rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-extrabold text-rose-700">
             수업을 찾을 수 없습니다.
@@ -1465,7 +1465,7 @@ export default function ClassToolsView() {
           </ToolViewport>
         ) : null}
         {!rosterToolLocked && usesClassRoster && !requestedSessionContext ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-3 sm:px-6 [@media(max-height:500px)]:min-h-[520px] [@media(max-height:500px)]:shrink-0">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pt-2 sm:px-6 sm:pt-3">
             <div className="shrink-0">
               <ClassSelector
                 classKeys={classKeys}

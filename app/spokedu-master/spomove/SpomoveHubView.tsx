@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, Play, Search, X } from 'lucide-react';
+import { ExternalLink, Heart, Play, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1003,6 +1003,9 @@ function SpomoveHubInner({
               <p className="mt-2 text-[14px] font-medium leading-5 text-[color:var(--spm-spomove-surface-muted)] sm:text-[15px] lg:whitespace-nowrap">
                 화면의 신호를 움직임으로 연결하는 체육활동
               </p>
+              <Link href="/spomat" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-[13px] font-semibold text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+                SPOMAT 알아보기 <ExternalLink size={14} aria-hidden />
+              </Link>
             </div>
             <div className="relative w-full sm:max-w-[440px]">
               <label htmlFor="spomove-search" className="sr-only">SPOMOVE 검색</label>

@@ -66,9 +66,22 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     expect(catalogCard).toContain('const previewEnabled = !locked && Boolean(onPreview)');
     expect(catalogCard).toContain('data-preview-disabled=""');
     expect(weeklyCard).toContain('const previewEnabled = !locked && Boolean(onPreview)');
+    expect(weeklyCard).toContain('lockedLinkEnabled');
+    expect(weeklyCard).toContain('Lite 이용 안내');
     expect(weeklyCard).toContain('data-preview-disabled=""');
     expect(library).toContain('onPreview={locked ? undefined');
     expect(catalogCard).not.toContain('프리미엄 자료');
+  });
+
+  it('routes locked Home cards to consistent Lite and Premium gates', () => {
+    const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
+    const gate = read('app/spokedu-master/lib/masterGateIntent.ts');
+    expect(dashboard).toContain('`home_weekly_${program.id}`');
+    expect(dashboard).toContain('locked={!accessSnapshot.canUseSpomove}');
+    expect(dashboard).toContain('`home_spomove_${preset.id}`');
+    expect(dashboard).toContain('>Premium</span>');
+    expect(gate).toContain("ctaLabel: 'Lite로 계속하기'");
+    expect(gate).toContain("ctaLabel: 'Premium으로 계속하기'");
   });
 
   it('does not fake success for active subscriptions during Lite to Premium billing', () => {

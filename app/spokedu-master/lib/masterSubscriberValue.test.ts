@@ -136,4 +136,19 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
     expect(home).not.toContain('Premium 업그레이드');
     expect(home).not.toContain('프리미엄 배너');
   });
+
+  it('uses concise Korean Premium copy without duplicating the activity noun', () => {
+    const context = readMasterGateContextFromSearchParams(new URLSearchParams({
+      intent: 'start_spomove',
+      plan: 'premium',
+      next: '/spokedu-master/spomove/session?preset=simon-basic',
+      preset: 'simon-basic',
+      journeyId: 'spomove_copy',
+    }));
+    const model = buildMasterGateDisplayModel(context);
+    expect(model.title).not.toContain('활동 활동');
+    expect(model.title).toBe('Premium에서 시작할 수 있는 SPOMOVE 활동입니다.');
+    expect(model.description).toContain('수업 준비를 바로 이어갈 수 있습니다.');
+    expect(model.ctaLabel).toBe('Premium으로 계속하기');
+  });
 });

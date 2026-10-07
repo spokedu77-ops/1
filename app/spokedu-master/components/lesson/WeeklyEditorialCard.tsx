@@ -1,6 +1,7 @@
 'use client';
 
 import { Bookmark, Heart, Play } from 'lucide-react';
+import Link from 'next/link';
 
 import { InstructionalThumb } from '../media/InstructionalThumb';
 import { MV_CONTENT_TITLE, MV_HOME_CARD_META, MV_HOME_CARD_TITLE, MV_META } from '../../lib/masterUiClasses';
@@ -15,6 +16,7 @@ export function WeeklyEditorialCard({
   supportMeta,
   hasVideo,
   onPreview,
+  lockedHref,
   locked = false,
   favorite = false,
   favoriteEnabled = false,
@@ -34,6 +36,7 @@ export function WeeklyEditorialCard({
   supportMeta?: string;
   hasVideo: boolean;
   onPreview?: () => void;
+  lockedHref?: string;
   locked?: boolean;
   favorite?: boolean;
   favoriteEnabled?: boolean;
@@ -51,6 +54,8 @@ export function WeeklyEditorialCard({
   const support = (supportMeta ?? '').trim();
   const isHomeFamily = presentation === 'home' || presentation === 'library-featured';
   const previewEnabled = !locked && Boolean(onPreview);
+  const lockedLinkEnabled = locked && Boolean(lockedHref);
+  const cardInteractive = previewEnabled || lockedLinkEnabled;
   const compactMediaClass = compactMedia
     ? 'min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto'
     : '';
@@ -71,10 +76,10 @@ export function WeeklyEditorialCard({
             sizes={sizes}
             priority={priority}
             presentation={isHomeFamily ? 'home-cover-4-3' : cleanSquareMedia ? 'home-clean-square' : 'default'}
-            className={`${isHomeFamily ? 'rounded-none' : 'rounded-b-none'} ${compactMediaClass} transition-opacity duration-200 ${previewEnabled ? 'group-hover:opacity-95' : ''}`}
+            className={`${isHomeFamily ? 'rounded-none' : 'rounded-b-none'} ${compactMediaClass} transition-opacity duration-200 ${cardInteractive ? 'group-hover:opacity-95' : ''}`}
           />
         ) : (
-          <span className={`relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-slate-200 transition-opacity duration-200 ${previewEnabled ? 'group-hover:opacity-95' : ''} ${compactMediaClass} ${isHomeFamily ? '' : 'rounded-t-[15px]'}`}>
+          <span className={`relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden bg-slate-200 transition-opacity duration-200 ${cardInteractive ? 'group-hover:opacity-95' : ''} ${compactMediaClass} ${isHomeFamily ? '' : 'rounded-t-[15px]'}`}>
             <CategoryIcon category={category} size={36} color="rgba(15,23,42,0.45)" />
           </span>
         )}
@@ -100,15 +105,15 @@ export function WeeklyEditorialCard({
           secondary={support}
           className={isHomeFamily ? MV_HOME_CARD_META : MV_META}
         />
-        <span className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 ${previewEnabled ? 'group-hover:text-slate-700' : ''}`}>{title}</span>
+        <span className={`${isHomeFamily ? MV_HOME_CARD_TITLE : MV_CONTENT_TITLE} mt-1 block line-clamp-2 transition-colors duration-200 ${cardInteractive ? 'group-hover:text-slate-700' : ''}`}>{title}</span>
       </div>
     </>
   );
 
-  const cardClassName = `flex w-full flex-col items-stretch text-left ${previewEnabled ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]' : ''} ${
+  const cardClassName = `flex w-full flex-col items-stretch text-left ${cardInteractive ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]' : ''} ${
           isHomeFamily
-            ? `overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 ${previewEnabled ? 'hover:border-slate-300' : ''}`
-            : `overflow-hidden rounded-[16px] border border-slate-100/80 bg-white transition-colors duration-200 ${previewEnabled ? 'hover:border-slate-200' : ''}`
+            ? `overflow-hidden rounded-[16px] border border-slate-200/80 bg-white transition-colors duration-200 ${cardInteractive ? 'hover:border-slate-300' : ''}`
+            : `overflow-hidden rounded-[16px] border border-slate-100/80 bg-white transition-colors duration-200 ${cardInteractive ? 'hover:border-slate-200' : ''}`
         }`;
 
   return (
@@ -117,6 +122,10 @@ export function WeeklyEditorialCard({
         <button type="button" onClick={onPreview} className={cardClassName} aria-label={`${title} 미리보기`}>
           {cardContent}
         </button>
+      ) : lockedLinkEnabled ? (
+        <Link href={lockedHref!} className={cardClassName} aria-label={`${title} Lite 이용 안내`}>
+          {cardContent}
+        </Link>
       ) : (
         <div data-preview-disabled="" className={cardClassName}>
           {cardContent}

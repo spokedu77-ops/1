@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { 
   Package, Search, Loader2, 
@@ -58,7 +59,7 @@ export default function TeacherInventoryPage() {
     setLoading(true);
     setFetchError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionWithRefreshRecovery(supabase);
       const user = session?.user;
 
       if (!user) {

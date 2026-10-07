@@ -8,13 +8,13 @@ import { useMasterStore, useProfile } from '../store';
 import type { UserRole } from '../types';
 import { getSafeMasterLoginReturnPath } from '../lib/masterLoginReturn';
 
-const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등'];
+const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등', '고등', '성인', '시니어', '특수체육', '기타'];
 const PROGRAM_TYPES = ['놀이체육', '뉴스포츠', '협동·팀빌딩', '기초체력', 'SPOMOVE', '특수체육'];
 const STEP_LABELS = ['환경', '수업 환경', '시작'];
 const START_ITEMS = [
   { icon: BookOpen, title: '무료 수업 1개 전체 체험', desc: '지정된 놀이체육을 상세 자료와 영상까지 바로 열어볼 수 있습니다.' },
   { icon: UsersRound, title: 'Library 전체 둘러보기', desc: '검색·필터·추천으로 전체 놀이체육 목록을 탐색할 수 있습니다.' },
-  { icon: Wrench, title: '수업 도구 바로 사용', desc: '타이머, 팀 나누기, 랜덤 뽑기를 로그인 직후부터 사용할 수 있습니다.' },
+  { icon: Wrench, title: '수업 도구 바로 사용', desc: '스탑워치, 타이머, 점수판을 로그인 직후부터 사용할 수 있습니다.' },
 ] as const;
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
@@ -156,7 +156,10 @@ export default function OnboardingPage() {
                   <input value={school} onChange={(event) => setSchool(event.target.value)} placeholder="예: 서울초등학교, 무브키즈 센터" className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
                 </label>
                 <div>
-                  <p className="mb-2 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>주 지도 연령</p>
+                  <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>주요 지도 대상</p>
+                    <p className="text-[11px] font-medium" style={{ color: 'var(--spm-t3)' }}>여러 항목을 선택할 수 있어요</p>
+                  </div>
                   <div className="flex flex-wrap gap-2">{AGE_GROUPS.map((item) => <ToggleChip key={item} label={item} active={ageGroups.includes(item)} onClick={() => toggle(item, ageGroups, setAgeGroups)} />)}</div>
                 </div>
                 <div>

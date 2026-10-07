@@ -167,15 +167,25 @@ export function buildMasterGateContext(args: {
   };
 }
 
-export function buildProgramLessonGateHref(programId: string, currentPath?: string) {
+export function buildProgramLessonGateHref(programId: string, currentPath?: string, journeyId = createJourneyId()) {
   const fallback = `/spokedu-master/library/${encodeURIComponent(programId)}`;
   const next = currentPath ? getSafeMasterPostPaymentPath(currentPath, fallback) : fallback;
   return buildMasterPaymentHref({
     intent: 'open_library',
     minimumPlan: 'lite',
     next,
-    journeyId: createJourneyId(),
+    journeyId,
     gateSurface: 'library_detail',
+  });
+}
+
+export function buildSpomoveActivityGateHref(next: string, journeyId = createJourneyId()) {
+  return buildMasterPaymentHref({
+    intent: 'start_spomove',
+    minimumPlan: 'premium',
+    next: getSafeMasterPostPaymentPath(next, '/spokedu-master/spomove'),
+    journeyId,
+    gateSurface: 'spomove_session',
   });
 }
 
@@ -209,16 +219,16 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
     return {
       intent: context.intent,
       minimumPlan: context.minimumPlan,
-      eyebrow: '방금 하려던 작업',
-      title: resourceTitle ? `${resourceTitle} 활동을 준비하려고 했습니다.` : 'SPOMOVE 활동을 준비하려고 했습니다.',
-      description: 'SPOMOVE는 수업을 다양하게 만드는 디지털 움직임 콘텐츠입니다. 프리미엄 결제 후 선택한 활동과 수업 맥락을 잃지 않고 그대로 이어갑니다.',
+      eyebrow: 'SPOMOVE PREMIUM',
+      title: 'Premium에서 시작할 수 있는 SPOMOVE 활동입니다.',
+      description: 'Premium으로 업그레이드하면 선택한 활동으로 돌아와 수업 준비를 바로 이어갈 수 있습니다.',
       resourceTitle,
       evidence: [
-        { label: '복귀 위치', value: 'SPOMOVE 실행 화면' },
-        { label: '수업 흐름', value: '도입, 집중 전환, 반응 활동' },
-        { label: '권한', value: '프리미엄' },
+        { label: '돌아갈 화면', value: resourceTitle || '선택한 SPOMOVE 활동' },
+        { label: '이어서 할 일', value: '활동 설정 후 수업 시작' },
+        { label: '필요 이용권', value: 'Premium' },
       ],
-      ctaLabel: '프리미엄으로 활동 준비',
+      ctaLabel: 'Premium으로 계속하기',
       paymentHref,
     };
   }
@@ -262,16 +272,16 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
   return {
     intent: context.intent,
     minimumPlan: context.minimumPlan,
-    eyebrow: '방금 하려던 작업',
-    title: resourceTitle ? `${resourceTitle}을 열려고 했습니다.` : '수업 라이브러리를 열려고 했습니다.',
-    description: 'Lite에서 전체 수업 자료를 이용할 수 있습니다. 결제 후 방금 보려던 활동으로 바로 돌아갑니다.',
+    eyebrow: 'SPOKEDU MASTER LITE',
+    title: '이 수업 자료는 Lite에서 확인할 수 있습니다.',
+    description: 'Lite로 업그레이드하면 전체 수업 자료와 즐겨찾기를 이용할 수 있습니다. 선택한 수업으로 돌아와 바로 이어서 확인할 수 있습니다.',
     resourceTitle,
     evidence: [
-      { label: '복귀 위치', value: '수업 라이브러리' },
-      { label: '포함', value: '준비물, 진행 순서, 지도 포인트' },
-      { label: '최소 권한', value: 'Lite' },
+      { label: '선택한 수업', value: resourceTitle || '수업 라이브러리 콘텐츠' },
+      { label: '확인할 내용', value: '준비물, 진행 순서, 지도 포인트' },
+      { label: '필요 이용권', value: 'Lite' },
     ],
-    ctaLabel: 'Lite로 열기',
+    ctaLabel: 'Lite로 계속하기',
     paymentHref,
   };
 }

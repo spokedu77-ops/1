@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp, FileText, X } from 'lucide-react';
 import { ADMIN_NAMES } from '@/app/lib/constants/admin';
@@ -166,7 +167,7 @@ export default function UltimateSettlementPage() {
   useEffect(() => {
     const checkMaster = async () => {
       if (!supabase) return;
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionWithRefreshRecovery(supabase);
       if (!session?.user || session.user.email !== 'choijihoon@spokedu.com') {
         router.replace('/admin'); 
         return;

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { 
   Search, Smartphone, Loader2, Edit3, X, FileText, Download,
   Activity, CheckCircle2, Power, GraduationCap, UserPlus, Clock, FileCheck, MapPin, KeyRound, ChevronDown
@@ -131,7 +132,7 @@ function UserDashboardPageContent() {
           '등급 수업료 표를 DB에서 불러오지 못해 기본값을 사용합니다. sql/65_teacher_tier_fees_table.sql 적용 여부를 확인하세요.'
         );
       }
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getSessionWithRefreshRecovery(supabase);
       if (session?.user) {
         const { data: me } = await supabase.from('users').select('id, name, role').eq('id', session.user.id).single();
         if (me) setCurrentUser(me as UserData);

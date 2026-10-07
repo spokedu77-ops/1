@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSessionWithRefreshRecovery } from '@/app/lib/supabase/auth';
 import { logoutCurrentSession } from '@/app/lib/auth/logoutSession';
 import {
   ADMIN_CONSULT_PENDING_REFRESH,
@@ -81,9 +82,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
   useEffect(() => {
     const loadUser = async () => {
       const supabase = getSupabaseBrowserClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const session = await getSessionWithRefreshRecovery(supabase);
       if (session?.user?.email) setUserEmail(session.user.email);
     };
     loadUser();

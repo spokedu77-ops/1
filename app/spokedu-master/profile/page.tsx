@@ -9,6 +9,7 @@ import { useSpomatShopAvailable } from '../access/MasterAccessProvider';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { MASTER_CUSTOMER_SERVICE_HREF } from '../lib/productCatalog';
+import { MASTER_FAQS } from '../lib/masterFaq';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../store';
 import { MASTER_DATA_DELETE_CONFIRMATION, canSubmitMasterDataDeletion, type MasterDataDeletionStatus } from './masterDataDeletion';
@@ -35,7 +36,7 @@ function SettingsRow({ label, caption, href, onClick, trailing, danger = false }
     </>
   );
 
-  if (href?.startsWith('mailto:')) return <a href={href} className={className}>{content}</a>;
+  if (href?.startsWith('mailto:') || href?.startsWith('http')) return <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener noreferrer' : undefined} className={className}>{content}</a>;
   if (href) return <Link href={href} className={className}>{content}</Link>;
   return <button type="button" onClick={onClick} className={className}>{content}</button>;
 }
@@ -45,6 +46,26 @@ function SettingsSection({ title, children }: { title: string; children: ReactNo
     <section>
       <h2 className="mb-2 text-[18px] font-semibold text-slate-900">{title}</h2>
       <div className="divide-y divide-slate-200 border-y border-slate-200">{children}</div>
+    </section>
+  );
+}
+
+function ProfileFaqSection() {
+  return (
+    <section aria-labelledby="profile-faq-title">
+      <h2 id="profile-faq-title" className="mb-2 text-[18px] font-semibold text-slate-900">자주 묻는 질문</h2>
+      <div className="divide-y divide-slate-200 border-y border-slate-200">
+        {MASTER_FAQS.map(([question, answer]) => (
+          <details key={question} className="group">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 py-3 text-[14px] font-semibold leading-6 text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] [&::-webkit-details-marker]:hidden">
+              <span className="min-w-0 flex-1">{question}</span>
+              <ChevronRight size={17} className="shrink-0 text-slate-400 transition-transform group-open:rotate-90" aria-hidden />
+            </summary>
+            <p className="pb-4 pr-8 text-[13px] font-normal leading-6 text-slate-600">{answer}</p>
+          </details>
+        ))}
+      </div>
+      <a href={MASTER_CUSTOMER_SERVICE_HREF} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 items-center text-[14px] font-semibold text-[var(--spm-acc)]">해결되지 않았나요? 카카오톡으로 문의하기 <ChevronRight size={16} aria-hidden /></a>
     </section>
   );
 }
@@ -178,7 +199,8 @@ function SpokeduMasterProfileContent() {
             </div>
           </SettingsSection>
           <section><h2 className="mb-2 text-[18px] font-semibold text-slate-900">이용권</h2><SubscriptionSummaryCard display={display} loadStatus={subscriptionSummaryStatus} onRetry={() => void loadSubscriptionSummary()} /></section>
-          <SettingsSection title="서비스">{spomatShopAvailable ? <SettingsRow label="SPOMAT 스토어" caption="구매 상품 확인" href="/spokedu-master/shop" /> : null}<SettingsRow label="고객센터" caption="문의 및 이용 도움" href={MASTER_CUSTOMER_SERVICE_HREF} /></SettingsSection>
+          <SettingsSection title="서비스">{spomatShopAvailable ? <SettingsRow label="SPOMAT 스토어" caption="구매 상품 확인" href="/spokedu-master/shop" /> : null}<SettingsRow label="고객센터" caption="스포키듀 카카오 채널에서 문의하기" href={MASTER_CUSTOMER_SERVICE_HREF} /></SettingsSection>
+          <ProfileFaqSection />
           <SettingsSection title="정보 및 정책"><SettingsRow label="이용약관" href="/spokedu-master/terms?from=profile" /><SettingsRow label="개인정보처리방침" href="/spokedu-master/privacy?from=profile" /></SettingsSection>
           <SettingsSection title="계정"><SettingsRow label={loggingOut ? '로그아웃 중...' : '로그아웃'} onClick={() => void handleLogout()} trailing={<LogOut size={17} className="text-slate-400" />} /></SettingsSection>
           <SettingsSection title="데이터 관리"><SettingsRow label="MASTER 데이터 삭제" caption="수업 운영 데이터를 영구 삭제합니다" onClick={() => setDeleteOpen(true)} danger /></SettingsSection>
