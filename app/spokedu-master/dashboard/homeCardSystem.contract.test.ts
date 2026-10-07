@@ -279,7 +279,7 @@ describe("MASTER Home content card system", () => {
     expect(homeMediaAdmin).toContain("optimizeToWebP(file, OPTIMIZE)");
     expect(homeMediaAdmin).toContain("홈 대표 이미지");
     expect(homeMediaAdmin).toContain("기본값으로 복원");
-    expect(homeMediaAdmin).toContain('href="/spokedu-master/dashboard"');
+    expect(homeMediaAdmin).toContain('href="/spokedu-lab/dashboard"');
     expect(homeMediaAdmin).not.toContain("SPOMOVE_THUMBNAIL_PACK_ID");
     expect(dashboard).toContain("object-[58%_40%] sm:object-[center_40%]");
     expect(dashboard).toContain("HomeScheduleThumb");

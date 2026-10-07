@@ -24,23 +24,27 @@ function normalizeSpokeduLabPath(pathname: string): string {
   return pathname;
 }
 
-function createSupabaseProxyClient(request: NextRequest, response: NextResponse) {
+function createSupabaseProxyClient(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
 
-  return createServerClient(url, key, {
+  let response = NextResponse.next({ request });
+  const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {
         return request.cookies.getAll().map((cookie) => ({ name: cookie.name, value: cookie.value }));
       },
       setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
       },
     },
   });
+  return { supabase, getResponse: () => response };
 }
 
 function isSpokeduMasterPublicPath(pathname: string): boolean {
@@ -137,15 +141,15 @@ export async function proxy(request: NextRequest) {
 
   // 보호 MASTER 경로만 Supabase 인증 (getUser 1회)
   if (isSpokeduMasterProtectedPath(pathname)) {
-    const response = NextResponse.next();
-    const supabase = createSupabaseProxyClient(request, response);
+    const proxyClient = createSupabaseProxyClient(request);
     const loginPath = pathname.startsWith('/spokedu-lab/') ? '/spokedu-lab/login' : '/spokedu-master/login';
-    if (!supabase) return redirectWithNext(request, loginPath);
+    if (!proxyClient) return redirectWithNext(request, loginPath);
 
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser();
+    } = await proxyClient.supabase.auth.getUser();
+    const response = proxyClient.getResponse();
 
     if (!user) {
       if (userError) clearStaleSupabaseAuthCookies(request, response);

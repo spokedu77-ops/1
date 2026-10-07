@@ -19,13 +19,13 @@ describe('SPOKEDU MASTER Session day loop', () => {
     const todaySessions = read('app/spokedu-master/dashboard/todaySessionsModel.ts');
     const workState = read('app/spokedu-master/lib/masterSessionWorkState.ts');
     expect(dashboard).toContain('HomeContinueCard');
-    expect(dashboard).toContain('href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`}');
+    expect(dashboard).toContain('href={`/spokedu-lab/activity?session=${encodeURIComponent(nextSession.id)}`}');
     expect(todaySessions).toContain('href: workState.href');
     expect(workState).toContain('buildActivitySessionHref(session.id)');
   });
 
   it('keeps SPOMOVE linked to Session operation', () => {
     const draft = read('app/spokedu-master/spomove/session/spomoveRecordDraft.ts');
-    expect(draft).toContain('/spokedu-master/activity?');
+    expect(draft).toContain('/spokedu-lab/activity?');
   });
 });

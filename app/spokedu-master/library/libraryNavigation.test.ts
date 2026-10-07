@@ -3,8 +3,8 @@ import { getLibraryProgramDetailHref, getLibraryReturnHref } from './libraryNavi
 
 describe('library navigation', () => {
   it('normalizes legacy favorites mode to Library discovery', () => {
-    expect(getLibraryReturnHref('favorites')).toBe('/spokedu-master/library');
-    expect(getLibraryProgramDetailHref('p1', 'favorites')).toBe('/spokedu-master/library/p1');
+    expect(getLibraryReturnHref('favorites')).toBe('/spokedu-lab/library');
+    expect(getLibraryProgramDetailHref('p1', 'favorites')).toBe('/spokedu-lab/library/p1');
   });
   it('preserves safe session context without view mode', () => {
     const href = getLibraryProgramDetailHref('p1', 'all', 'session=s1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Ds1&source=session');

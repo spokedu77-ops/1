@@ -37,7 +37,7 @@ describe('SPOKEDU MASTER ErrorBoundary contract', () => {
   it('uses reload or an explicit reset callback for retry and keeps home fallback', () => {
     expect(source).toContain('this.props.onReset()');
     expect(source).toContain('window.location.reload()');
-    expect(source).toContain("fallbackHref = '/spokedu-master/dashboard'");
+    expect(source).toContain("fallbackHref = '/spokedu-lab/dashboard'");
     expect(source).toContain('다시 시도');
   });
 

@@ -96,7 +96,7 @@ describe('official SPOMOVE runtime contract', () => {
     expect(source).toContain('recordProgramHref');
 
     const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
-    expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
+    expect(shell).toContain('pathname.startsWith(`${activeBasePath}/spomove/session`)');
   });
 
   it('does not keep the removed class plan route around as dead runtime code', () => {

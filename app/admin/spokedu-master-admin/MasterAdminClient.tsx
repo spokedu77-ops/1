@@ -6,11 +6,12 @@ import { toast } from 'sonner';
 
 type Tab = 'overview' | 'members' | 'entitlements' | 'billing';
 type EntitlementTab = 'grant' | 'invite' | 'history';
-type MemberScope = 'production' | 'qa_test' | 'internal' | 'inactive';
+type MemberScope = 'production' | 'qa_test' | 'internal';
 type Member = {
-  id: string; name: string; email: string | null; maskedEmail: string; createdAt: string | null;
+  id: string; name: string; email: string | null; createdAt: string | null;
   accountClass: 'production' | 'qa_test' | 'internal' | 'inactive' | 'spokedu_only';
-  effectivePlan: string; paidPlan: string; paidStatus: string; effectiveSource: string;
+  accountRole: 'admin' | 'teacher' | 'institution' | 'user';
+  effectivePlan: string; paidPlan: string; paidStatus: string;
   promoPlan: string | null; promoStartsAt: string | null; promoEndsAt: string | null; fallbackPlan: string;
   latestOrder: null | { plan: string | null; amount: number | null; status: string | null; updatedAt: string | null; appliedAt: string | null; lastErrorCode: string | null; paymentApproved: boolean };
   billingIncident: { code: string; label: '정상' | '해지 예약' | '갱신 대기' | '갱신 실패' | '재시도 예정' | '결제 승인 / 이용권 반영 실패' | '결제 설정 누락' | '확인 필요'; tone: 'ok' | 'warning' | 'danger' };
@@ -21,6 +22,7 @@ type FunnelWindow = { days: 7 | 30 } & Record<(typeof FUNNEL_METRICS)[number][0]
 type FunnelEvidence = { available: boolean; measurementStartsAt: string | null; windows: FunnelWindow[] };
 
 const planName = (plan: string | null | undefined) => plan === 'premium' || plan === 'team' ? 'Premium' : plan === 'lite' ? 'Lite' : 'Free';
+const accountRoleName = (role: Member['accountRole']) => ({ admin: '관리자', teacher: '강사', institution: '기관', user: '일반 회원' })[role];
 const date = (value: string | null | undefined, time = false) => value ? new Intl.DateTimeFormat('ko-KR', time ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' }).format(new Date(value)) : '-';
 const badge = (plan: string) => plan === 'premium' || plan === 'team' ? 'bg-violet-100 text-violet-700' : plan === 'lite' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600';
 
@@ -32,6 +34,11 @@ async function readJson(url: string, init?: RequestInit) {
 }
 
 function PlanBadge({ plan }: { plan: string }) { return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${badge(plan)}`}>{planName(plan)}</span>; }
+function MemberAccessBadge({ member }: { member: Member }) {
+  return member.accountRole === 'admin'
+    ? <span className="inline-flex whitespace-nowrap rounded-full bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">관리자</span>
+    : <PlanBadge plan={member.effectivePlan}/>;
+}
 function IncidentBadge({ incident }: { incident: Member['billingIncident'] }) {
   const tone = incident.tone === 'danger' ? 'bg-rose-100 text-rose-700' : incident.tone === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700';
   return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${tone}`}>{incident.label}</span>;
@@ -40,16 +47,16 @@ function Empty({ children }: { children: string }) { return <div className="roun
 function Spinner() { return <div className="flex min-h-48 items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>; }
 
 const FUNNEL_METRICS = [
-  ['landingVisits', 'Landing 방문'], ['signups', 'MASTER 가입'], ['onboardingCompleted', '온보딩 완료'],
-  ['firstValue', '첫 가치'], ['returningUse', '다른 날짜 재사용'], ['upgradeIntent', '구매 의도'],
-  ['checkoutStarted', '결제창 시작'], ['paymentSuccess', '결제 성공'], ['activePaid', '현재 유료'],
-  ['cancelScheduled', '해지 예약'], ['renewalFailures', '갱신 실패'],
+  ['landingVisits', 'LAB 페이지 방문'], ['signups', '회원가입'], ['onboardingCompleted', '초기 설정 완료'],
+  ['firstValue', '첫 콘텐츠 이용'], ['returningUse', '재방문 사용자'], ['upgradeIntent', '결제 관심 사용자'],
+  ['checkoutStarted', '결제 시작'], ['paymentSuccess', '결제 완료'], ['activePaid', '현재 유료 회원'],
+  ['cancelScheduled', '해지 예정'], ['renewalFailures', '결제 갱신 실패'],
 ] as const;
 
 function FunnelSummary({ funnel }: { funnel: FunnelEvidence | null | undefined }) {
   const [days, setDays] = useState<7 | 30>(7);
   const window = funnel?.windows?.find((item) => item.days === days);
-  return <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-black text-slate-900">MASTER Funnel</h2><p className="mt-1 text-xs leading-5 text-slate-500">Landing은 익명 집계, 이후 단계는 MASTER 회원만 집계합니다. QA/Test/Internal은 제외됩니다.</p></div><div className="flex rounded-lg bg-slate-100 p-1">{([7,30] as const).map(value=><button key={value} type="button" onClick={()=>setDays(value)} className={`min-h-11 rounded-md px-3 text-xs font-bold ${days===value?'bg-white text-blue-700 shadow-sm':'text-slate-500'}`}>최근 {value}일</button>)}</div></div>{!funnel?.available||!window?<p className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Funnel 계측 스키마 적용 후 표시됩니다.</p>:<><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">{FUNNEL_METRICS.map(([key,label])=><div key={key} className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-1 text-xl font-black text-slate-950">{window[key]??0}</p></div>)}</div><p className="mt-3 text-xs text-slate-400">새 이벤트 기반 지표는 배포일부터 측정되며 과거 값을 추정하지 않습니다.{funnel.measurementStartsAt?` 현재 조회 구간 첫 기록 ${date(funnel.measurementStartsAt,true)}`:''}</p></>}</section>;
+  return <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-black text-slate-900">SPOKEDU LAB 이용 현황</h2><p className="mt-1 text-xs leading-5 text-slate-500">방문부터 가입, 콘텐츠 이용, 결제까지의 흐름을 확인합니다. 테스트 계정과 내부 계정은 제외됩니다.</p></div><div className="flex rounded-lg bg-slate-100 p-1">{([7,30] as const).map(value=><button key={value} type="button" onClick={()=>setDays(value)} className={`min-h-11 rounded-md px-3 text-xs font-bold ${days===value?'bg-white text-blue-700 shadow-sm':'text-slate-500'}`}>최근 {value}일</button>)}</div></div>{!funnel?.available||!window?<p className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">이용 현황 계측 스키마 적용 후 표시됩니다.</p>:<><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">{FUNNEL_METRICS.map(([key,label])=><div key={key} className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-1 text-xl font-black text-slate-950">{window[key]??0}</p></div>)}</div><p className="mt-3 text-xs text-slate-400">새 이벤트 기반 지표는 배포일부터 측정되며 과거 값을 추정하지 않습니다.{funnel.measurementStartsAt?` 현재 조회 구간 첫 기록 ${date(funnel.measurementStartsAt,true)}`:''}</p></>}</section>;
 }
 
 export default function MasterAdminClient() {
@@ -59,6 +66,7 @@ export default function MasterAdminClient() {
   const [error, setError] = useState('');
   const [summary, setSummary] = useState<any>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [billingMembers, setBillingMembers] = useState<Member[]>([]);
   const [query, setQuery] = useState('');
   const [memberScope, setMemberScope] = useState<MemberScope>('production');
   const [selected, setSelected] = useState<Member | null>(null);
@@ -71,20 +79,25 @@ export default function MasterAdminClient() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState<Preview | null>(null);
+  const [extensionTarget, setExtensionTarget] = useState<any | null>(null);
+  const [extensionDays, setExtensionDays] = useState(7);
+  const [extensionReason, setExtensionReason] = useState('');
   const [inviteForm, setInviteForm] = useState({ email: '', plan: 'premium', durationDays: 30, expiresInDays: 30, campaignId: '' });
   const [createdInvite, setCreatedInvite] = useState<any>(null);
 
   const loadOverview = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master-admin?view=overview'); setSummary(data.summary); }, []);
   const loadMembers = useCallback(async (q = '', scope: MemberScope = 'production') => { const data = await readJson(`/api/admin/spokedu-master-admin?view=members&scope=${encodeURIComponent(scope)}&q=${encodeURIComponent(q)}`); setMembers(data.members); setSelected((current) => current ? data.members.find((m: Member) => m.id === current.id) ?? null : null); }, []);
+  const loadBillingMembers = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master-admin?view=billing'); setBillingMembers(data.members); }, []);
   const loadGrants = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master/entitlement-grants'); setGrants(data.grants); }, []);
   const loadInvites = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master/promotion-invites'); setInvites(data.invites); }, []);
-  const refresh = useCallback(async () => { await Promise.all([loadOverview(), loadMembers(query, memberScope), loadGrants(), loadInvites()]); }, [loadGrants, loadInvites, loadMembers, loadOverview, memberScope, query]);
+  const refresh = useCallback(async () => { await Promise.all([loadOverview(), loadMembers(query, memberScope), loadBillingMembers(), loadGrants(), loadInvites()]); }, [loadBillingMembers, loadGrants, loadInvites, loadMembers, loadOverview, memberScope, query]);
 
-  useEffect(() => { setLoading(true); setError(''); Promise.all([loadOverview(), loadMembers(), loadGrants(), loadInvites()]).catch((e) => setError(e.message)).finally(() => setLoading(false)); }, [loadGrants, loadInvites, loadMembers, loadOverview]);
+  useEffect(() => { setLoading(true); setError(''); Promise.all([loadOverview(), loadMembers(), loadBillingMembers(), loadGrants(), loadInvites()]).catch((e) => setError(e.message)).finally(() => setLoading(false)); }, [loadBillingMembers, loadGrants, loadInvites, loadMembers, loadOverview]);
   useEffect(() => { const timer = window.setTimeout(() => void loadMembers(query, memberScope).catch((e) => setError(e.message)), 300); return () => window.clearTimeout(timer); }, [query, memberScope, loadMembers]);
 
   const selectedAccess = useMemo(() => selected ? [
-    ['현재 이용권', planName(selected.effectivePlan)], ['유료 구독', selected.paidPlan === 'free' ? '없음' : planName(selected.paidPlan)],
+    ['계정 역할', accountRoleName(selected.accountRole)],
+    ['현재 이용권', selected.accountRole === 'admin' ? '적용 대상 아님' : planName(selected.effectivePlan)], ['유료 구독', selected.accountRole === 'admin' || selected.paidPlan === 'free' ? '없음' : planName(selected.paidPlan)],
     ['구독 상태', selected.paidStatus], ['자동결제', selected.subscription ? selected.subscription.cancelAtPeriodEnd ? '해지 예정' : '활성' : '없음'],
     ['운영 판단', selected.billingIncident.label], ['현재 이용 종료일', date(selected.subscription?.currentPeriodEnd)],
     ['다음 결제일', date(selected.subscription?.nextBillingAt)], ['최근 주문 상태', selected.latestOrder?.status ?? '없음'],
@@ -95,6 +108,7 @@ export default function MasterAdminClient() {
     ['최근 갱신 오류', selected.subscription?.lastBillingError ?? '-'], ['프로모션', selected.promoPlan ? planName(selected.promoPlan) : '없음'],
     ['프로모션 시작', date(selected.promoStartsAt)], ['프로모션 종료', date(selected.promoEndsAt)], ['종료 후 예상', planName(selected.fallbackPlan)],
   ] : [], [selected]);
+  const grantableMembers = useMemo(() => members.filter((member) => member.accountRole !== 'admin'), [members]);
 
   const requestPreview = async () => {
     if (!selected || !reason.trim()) return toast.error('회원과 지급 사유를 확인해 주세요.');
@@ -113,6 +127,18 @@ export default function MasterAdminClient() {
     if (!window.confirm(`${grant.memberName} 회원의 ${planName(grant.plan)} 이용권을 회수합니다.\n현재 이용권: ${planName(first.preview.before.effectivePlan)}\n회수 후 이용권: ${planName(first.preview.afterPlan)}`)) return;
     setPending(true); try { await readJson(`/api/admin/spokedu-master/entitlement-grants/${grant.id}`, { method: 'PATCH', body: '{}' }); await refresh(); toast.success('이용권을 회수했습니다.'); } catch (e) { toast.error(e instanceof Error ? e.message : '회수에 실패했습니다.'); } finally { setPending(false); }
   };
+  const openExtension = (grant: any) => { setExtensionTarget(grant); setExtensionDays(7); setExtensionReason(''); };
+  const extendGrant = async () => {
+    if (!extensionTarget || !Number.isInteger(extensionDays) || extensionDays < 1 || extensionDays > 366 || !extensionReason.trim()) return;
+    setPending(true);
+    try {
+      await readJson(`/api/admin/spokedu-master/entitlement-grants/${extensionTarget.id}`, { method: 'PATCH', body: JSON.stringify({ action: 'extend', days: extensionDays, reason: extensionReason }) });
+      await loadGrants();
+      toast.success(`${planName(extensionTarget.plan)} 이용권이 ${extensionDays}일 연장되었습니다.`);
+      setExtensionTarget(null);
+    } catch (e) { toast.error(e instanceof Error ? e.message : '이용권 연장에 실패했습니다.'); }
+    finally { setPending(false); }
+  };
   const createInvite = async () => {
     if (!inviteForm.email.includes('@')) return toast.error('이메일을 확인해 주세요.');
     setPending(true); try { const data = await readJson('/api/admin/spokedu-master/promotion-invites', { method: 'POST', body: JSON.stringify(inviteForm) }); setCreatedInvite({ ...data.invite, token: data.token }); await loadInvites(); toast.success('초대 이용권이 발급되었습니다.'); } catch (e) { toast.error(e instanceof Error ? e.message : '발급에 실패했습니다.'); } finally { setPending(false); }
@@ -124,15 +150,32 @@ export default function MasterAdminClient() {
       <nav className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1" aria-label="LAB ADMIN 탭">{([['overview','운영 현황'],['members','회원 관리'],['entitlements','이용권 관리'],['billing','결제·구독']] as const).map(([id,label]) => <button key={id} onClick={() => setTab(id)} className={`min-h-11 shrink-0 rounded-lg px-4 text-sm font-bold transition ${tab === id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}>{label}</button>)}</nav>
       {error && <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}
       {loading ? <Spinner/> : <>
-        {tab === 'overview' && <section className="space-y-6"><div className="grid grid-cols-2 gap-3 lg:grid-cols-6">{[['MASTER 가입 회원',summary?.total],['현재 Free',summary?.free],['현재 Lite',summary?.lite],['현재 Premium',summary?.premium],['프로모션 활성',summary?.promotions],['갱신 실패',summary?.renewalFailed]].map(([label,value]) => <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{value ?? 0}</p></div>)}</div><FunnelSummary funnel={summary?.funnel}/><div className="grid gap-4 lg:grid-cols-3">{['최근 결제','최근 프로모션 지급','자동결제 오류/갱신 실패'].map((label) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5"><h2 className="font-black text-slate-900">{label}</h2><p className="mt-6 text-sm text-slate-400">{label === '자동결제 오류/갱신 실패' && summary?.renewalFailed ? `${summary.renewalFailed}건을 결제·구독 탭에서 확인하세요.` : '표시할 최근 항목이 없습니다.'}</p></div>)}</div></section>}
-        {tab === 'members' && <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]"><div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap gap-2" role="tablist" aria-label="회원 구분">{([['production','가입 회원'],['qa_test','테스트 계정'],['internal','운영진'],['inactive','비활성']] as const).map(([scope,label])=><button key={scope} type="button" role="tab" aria-selected={memberScope===scope} onClick={()=>setMemberScope(scope)} className={`min-h-11 rounded-lg border px-4 text-sm font-bold transition ${memberScope===scope?'border-blue-600 bg-blue-50 text-blue-700':'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>{label}</button>)}</div><label className="relative mt-3 block"><Search className="absolute left-3 top-3 text-slate-400" size={18}/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="현재 탭에서 이름 또는 이메일 검색" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm outline-none focus:border-blue-500"/></label><p className="mt-2 text-xs text-slate-400">SPOKEDU LAB 가입 과정에서 프로필이 생성된 회원만 표시합니다. 강사 관리에서 생성한 계정은 포함되지 않습니다.</p><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="text-xs text-slate-500"><tr>{['이름','이메일','현재 이용권','유료 구독','프로모션'].map((h)=><th key={h} className="border-b p-3">{h}</th>)}</tr></thead><tbody>{members.map((m)=><tr key={m.id} onClick={()=>setSelected(m)} className={`cursor-pointer border-b border-slate-100 hover:bg-blue-50 ${selected?.id===m.id?'bg-blue-50':''}`}><td className="p-3 font-bold">{m.name}</td><td className="p-3 text-slate-500">{m.maskedEmail}</td><td className="p-3"><PlanBadge plan={m.effectivePlan}/></td><td className="p-3">{m.paidPlan==='free'?'없음':planName(m.paidPlan)}</td><td className="p-3">{m.promoPlan?planName(m.promoPlan):'없음'}</td></tr>)}</tbody></table>{members.length===0&&<Empty>검색 결과가 없습니다.</Empty>}</div></div><MemberDetail member={selected} rows={selectedAccess}/></section>}
+        {tab === 'overview' && <section className="space-y-6"><div className="grid grid-cols-2 gap-3 lg:grid-cols-6">{[['SPOKEDU LAB 가입 회원',summary?.total],['현재 Free',summary?.free],['현재 Lite',summary?.lite],['현재 Premium',summary?.premium],['프로모션 활성',summary?.promotions],['갱신 실패',summary?.renewalFailed]].map(([label,value]) => <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{value ?? 0}</p></div>)}</div><FunnelSummary funnel={summary?.funnel}/><div className="grid gap-4 lg:grid-cols-3">{['최근 결제','최근 프로모션 지급','자동결제 오류/갱신 실패'].map((label) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5"><h2 className="font-black text-slate-900">{label}</h2><p className="mt-6 text-sm text-slate-400">{label === '자동결제 오류/갱신 실패' && summary?.renewalFailed ? `${summary.renewalFailed}건을 결제·구독 탭에서 확인하세요.` : '표시할 최근 항목이 없습니다.'}</p></div>)}</div></section>}
+        {tab === 'members' && <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]"><div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap gap-2" role="tablist" aria-label="회원 구분">{([['production','가입 회원'],['qa_test','테스트 계정'],['internal','운영진']] as const).map(([scope,label])=><button key={scope} type="button" role="tab" aria-selected={memberScope===scope} onClick={()=>setMemberScope(scope)} className={`min-h-11 rounded-lg border px-4 text-sm font-bold transition ${memberScope===scope?'border-blue-600 bg-blue-50 text-blue-700':'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>{label}</button>)}</div><label className="relative mt-3 block"><Search className="absolute left-3 top-3 text-slate-400" size={18}/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="현재 탭에서 이름 또는 이메일 검색" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm outline-none focus:border-blue-500"/></label><p className="mt-2 text-xs text-slate-400">SPOKEDU LAB 가입 과정에서 프로필이 생성된 회원만 표시합니다. 강사 관리에서 생성한 계정은 포함되지 않습니다.</p><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="text-xs text-slate-500"><tr>{['이름','이메일','현재 이용권','유료 구독','프로모션'].map((h)=><th key={h} className="border-b p-3">{h}</th>)}</tr></thead><tbody>{members.map((m)=><tr key={m.id} onClick={()=>setSelected(m)} className={`cursor-pointer border-b border-slate-100 hover:bg-blue-50 ${selected?.id===m.id?'bg-blue-50':''}`}><td className="p-3 font-bold">{m.name}</td><td className="p-3 text-slate-500">{m.email ?? '-'}</td><td className="p-3"><MemberAccessBadge member={m}/></td><td className="p-3">{m.accountRole==='admin'||m.paidPlan==='free'?'없음':planName(m.paidPlan)}</td><td className="p-3">{m.accountRole==='admin'?'없음':m.promoPlan?planName(m.promoPlan):'없음'}</td></tr>)}</tbody></table>{members.length===0&&<Empty>검색 결과가 없습니다.</Empty>}</div></div><MemberDetail member={selected} rows={selectedAccess}/></section>}
         {tab === 'entitlements' && <section className="space-y-5"><div className="flex flex-wrap gap-2">{([['grant','회원 이용권 지급'],['invite','초대 이용권'],['history','지급 내역']] as const).map(([id,label])=><button key={id} onClick={()=>setEntTab(id)} className={`rounded-lg border px-4 py-2 text-sm font-bold ${entTab===id?'border-blue-600 bg-blue-50 text-blue-700':'border-slate-200 bg-white text-slate-500'}`}>{label}</button>)}</div>
-          {entTab==='grant'&&<div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]"><div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5"><h2 className="text-lg font-black">회원 이용권 지급</h2><label className="relative block"><Search className="absolute left-3 top-3 text-slate-400" size={18}/><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="이름 또는 이메일로 회원 검색" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3"/></label><div className="grid max-h-44 gap-2 overflow-y-auto sm:grid-cols-2">{members.map((m)=><button key={m.id} onClick={()=>setSelected(m)} className={`rounded-xl border p-3 text-left ${selected?.id===m.id?'border-blue-500 bg-blue-50':'border-slate-200'}`}><b>{m.name}</b><p className="text-xs text-slate-500">{m.maskedEmail}</p></button>)}</div>{selected&&<><div className="grid gap-4 sm:grid-cols-2"><Field label="플랜"><select value={plan} onChange={(e)=>setPlan(e.target.value as any)} className="input"><option value="premium">Premium</option><option value="lite">Lite</option></select></Field><Field label="기간 (1~366일, 30/60/90 권장)"><input type="number" min={1} max={366} value={duration} onChange={(e)=>setDuration(Number(e.target.value))} className="input"/></Field><Field label="지급 사유 (필수)"><input value={reason} onChange={(e)=>setReason(e.target.value)} className="input" placeholder="예: 2026 교사 세미나"/></Field><Field label="캠페인 / Source"><input value={campaign} onChange={(e)=>setCampaign(e.target.value)} className="input" placeholder="선택 입력"/></Field></div><button disabled={pending||!reason.trim()} onClick={requestPreview} className="min-h-11 w-full rounded-xl bg-blue-600 font-bold text-white disabled:opacity-50">{pending?'확인 중...':'이용권 지급'}</button></>}</div><MemberDetail member={selected} rows={selectedAccess}/></div>}
-          {entTab==='invite'&&<div className="space-y-5"><InvitePanel form={inviteForm} setForm={setInviteForm} create={createInvite} pending={pending} result={createdInvite}/><InviteTable invites={invites}/></div>} {entTab==='history'&&<GrantTable grants={grants} revoke={revoke} pending={pending}/>}</section>}
-        {tab === 'billing' && <section className="rounded-2xl border border-slate-200 bg-white p-4"><div className="mb-4 flex items-center gap-2"><CreditCard className="text-blue-600" size={20}/><h2 className="font-black">결제·구독 상태</h2><span className="ml-auto rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">조회 전용</span></div><p className="mb-4 text-sm text-slate-500">상태 배지는 구독·최근 주문·갱신 오류에서 파생한 운영 판단입니다. 결제나 이용권을 변경하지 않습니다.</p><div className="overflow-x-auto"><table className="w-full min-w-[1580px] text-left text-sm"><thead className="text-xs text-slate-500"><tr>{['회원','운영 판단','현재/유료','프로모션','구독 상태','자동결제','이용 종료일','다음 갱신일','최근 주문','주문 상태','승인/반영','주문 오류','재시도','최근 갱신 오류','다음 재시도'].map(h=><th className="border-b p-3" key={h}>{h}</th>)}</tr></thead><tbody>{members.filter(m=>m.subscription||m.latestOrder).map(m=><tr key={m.id} className="border-b border-slate-100 align-top"><td className="p-3"><b>{m.name}</b><small className="block text-slate-400">{m.maskedEmail}</small></td><td className="p-3"><IncidentBadge incident={m.billingIncident}/></td><td className="p-3"><b>{planName(m.effectivePlan)}</b><small className="block text-slate-400">Paid {m.paidPlan==='free'?'없음':planName(m.paidPlan)}</small></td><td className="p-3">{m.promoPlan?planName(m.promoPlan):'-'}</td><td className="p-3">{m.subscription?.status??'-'}</td><td className="p-3">{m.subscription?m.subscription.cancelAtPeriodEnd?'해지 예정':'활성':'-'}</td><td className="p-3">{date(m.subscription?.currentPeriodEnd)}</td><td className="p-3">{date(m.subscription?.nextBillingAt)}</td><td className="p-3">{m.latestOrder?<><b>{planName(m.latestOrder.plan)} · {m.latestOrder.amount?.toLocaleString()??'-'}원</b><small className="block text-slate-400">{date(m.latestOrder.updatedAt,true)}</small></>:'-'}</td><td className="p-3">{m.latestOrder?.status??'-'}</td><td className="p-3">{m.latestOrder?.paymentApproved?'승인 근거 있음':'승인 근거 없음'}<small className="block text-slate-400">반영 {date(m.latestOrder?.appliedAt,true)}</small></td><td className="p-3 text-rose-600">{m.latestOrder?.lastErrorCode??'-'}</td><td className="p-3">{m.subscription?.renewalRetryCount??0}</td><td className="p-3 text-rose-600">{m.subscription?.lastBillingError||'-'}</td><td className="p-3">{date(m.subscription?.nextRetryAt,true)}</td></tr>)}</tbody></table>{members.every(m=>!m.subscription&&!m.latestOrder)&&<Empty>결제·구독 내역이 없습니다.</Empty>}</div></section>}
+          {entTab==='grant'&&<div className="grid items-start gap-5 lg:grid-cols-[minmax(280px,2fr)_minmax(0,3fr)]">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5" aria-label="이용권 지급 회원 선택">
+              <label className="relative block"><Search className="absolute left-3 top-3 text-slate-400" size={18}/><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="이름 또는 이메일로 회원 검색" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm outline-none focus:border-blue-500"/></label>
+              <div className="mt-4 max-h-[32rem] overflow-y-auto rounded-xl border border-slate-200">
+                {grantableMembers.map((m)=><button key={m.id} type="button" onClick={()=>setSelected(m)} aria-pressed={selected?.id===m.id} className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 ${selected?.id===m.id?'bg-blue-50 ring-1 ring-inset ring-blue-500':'bg-white hover:bg-slate-50'}`}><b className="block text-sm text-slate-900">{m.name}</b><span className="mt-0.5 block break-all text-xs text-slate-500">{m.email ?? '-'}</span></button>)}
+                {grantableMembers.length===0&&<Empty>검색 결과가 없습니다.</Empty>}
+              </div>
+            </section>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5" aria-label="이용권 지급 설정">
+              {!selected||selected.accountRole==='admin'?<p className="rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500">왼쪽에서 이용권을 지급할 회원을 선택해 주세요.</p>:<div className="space-y-5">
+                <div className="flex items-start gap-3 border-b border-slate-100 pb-5"><span className="rounded-xl bg-blue-50 p-2 text-blue-600"><Users size={20}/></span><div className="min-w-0"><h2 className="font-bold text-slate-900">{selected.name}</h2><p className="break-all text-sm text-slate-500">{selected.email ?? '-'}</p></div></div>
+                <dl className="grid gap-2 rounded-xl bg-slate-50 p-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-slate-500">계정 역할</dt><dd className="text-right font-bold text-slate-900">{accountRoleName(selected.accountRole)}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">현재 이용권</dt><dd className="text-right font-bold text-slate-900">{planName(selected.effectivePlan)}</dd></div></dl>
+                <div className="grid gap-4 sm:grid-cols-2"><Field label="플랜"><select value={plan} onChange={(e)=>setPlan(e.target.value as any)} className="input"><option value="premium">Premium</option><option value="lite">Lite</option></select></Field><Field label="기간 (1~366일, 30/60/90 권장)"><input type="number" min={1} max={366} value={duration} onChange={(e)=>setDuration(Number(e.target.value))} className="input"/></Field><Field label="지급 사유 (필수)"><input value={reason} onChange={(e)=>setReason(e.target.value)} className="input" placeholder="예: 2026 교사 세미나"/></Field><Field label="캠페인 / Source"><input value={campaign} onChange={(e)=>setCampaign(e.target.value)} className="input" placeholder="선택 입력"/></Field></div>
+                <button disabled={pending||!reason.trim()} onClick={requestPreview} className="min-h-11 w-full rounded-xl bg-blue-600 font-bold text-white disabled:opacity-50">{pending?'확인 중...':'이용권 지급'}</button>
+              </div>}
+            </section>
+          </div>}
+          {entTab==='invite'&&<div className="space-y-5"><InvitePanel form={inviteForm} setForm={setInviteForm} create={createInvite} pending={pending} result={createdInvite}/><InviteTable invites={invites}/></div>} {entTab==='history'&&<GrantTable grants={grants} revoke={revoke} extend={openExtension} pending={pending}/>}</section>}
+        {tab === 'billing' && <section className="rounded-2xl border border-slate-200 bg-white p-4"><div className="mb-4 flex items-center gap-2"><CreditCard className="text-blue-600" size={20}/><h2 className="font-black">결제·구독 상태</h2><span className="ml-auto rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">조회 전용</span></div><p className="mb-4 text-sm text-slate-500">상태 배지는 구독·최근 주문·갱신 오류에서 파생한 운영 판단입니다. 결제나 이용권을 변경하지 않습니다.</p><div className="overflow-x-auto"><table className="w-full min-w-[1580px] text-left text-sm"><thead className="text-xs text-slate-500"><tr>{['회원','운영 판단','현재/유료','프로모션','구독 상태','자동결제','이용 종료일','다음 갱신일','최근 주문','주문 상태','승인/반영','주문 오류','재시도','최근 갱신 오류','다음 재시도'].map(h=><th className="border-b p-3" key={h}>{h}</th>)}</tr></thead><tbody>{billingMembers.map(m=><tr key={m.id} className="border-b border-slate-100 align-top"><td className="p-3"><b>{m.name}</b><small className="block text-slate-400">{m.email ?? '-'}</small></td><td className="p-3"><IncidentBadge incident={m.billingIncident}/></td><td className="p-3"><b>{planName(m.effectivePlan)}</b><small className="block text-slate-400">Paid {m.paidPlan==='free'?'없음':planName(m.paidPlan)}</small></td><td className="p-3">{m.promoPlan?planName(m.promoPlan):'-'}</td><td className="p-3">{m.subscription?.status??'-'}</td><td className="p-3">{m.subscription?m.subscription.cancelAtPeriodEnd?'해지 예정':'활성':'-'}</td><td className="p-3">{date(m.subscription?.currentPeriodEnd)}</td><td className="p-3">{date(m.subscription?.nextBillingAt)}</td><td className="p-3">{m.latestOrder?<><b>{planName(m.latestOrder.plan)} · {m.latestOrder.amount?.toLocaleString()??'-'}원</b><small className="block text-slate-400">{date(m.latestOrder.updatedAt,true)}</small></>:'-'}</td><td className="p-3">{m.latestOrder?.status??'-'}</td><td className="p-3">{m.latestOrder?.paymentApproved?'승인 근거 있음':'승인 근거 없음'}<small className="block text-slate-400">반영 {date(m.latestOrder?.appliedAt,true)}</small></td><td className="p-3 text-rose-600">{m.latestOrder?.lastErrorCode??'-'}</td><td className="p-3">{m.subscription?.renewalRetryCount??0}</td><td className="p-3 text-rose-600">{m.subscription?.lastBillingError||'-'}</td><td className="p-3">{date(m.subscription?.nextRetryAt,true)}</td></tr>)}</tbody></table>{billingMembers.length===0&&<Empty>결제·구독 내역이 없습니다.</Empty>}</div></section>}
       </>}
     </div>
     {preview&&<ConfirmDialog member={selected!} preview={preview} plan={plan} duration={duration} reason={reason} pending={pending} cancel={()=>setPreview(null)} confirm={createGrant}/>} {success&&<SuccessDialog preview={success} plan={plan} close={()=>setSuccess(null)}/>} 
+    {extensionTarget&&<ExtensionDialog grant={extensionTarget} days={extensionDays} reason={extensionReason} pending={pending} setDays={setExtensionDays} setReason={setExtensionReason} cancel={()=>setExtensionTarget(null)} confirm={extendGrant}/>}
     <style jsx global>{`.input{height:44px;width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:0 12px;font-size:14px;background:#fff}.input:focus{outline:2px solid #bfdbfe;border-color:#3b82f6}`}</style>
   </div>;
 }
@@ -141,6 +184,89 @@ function Field({label,children}:{label:string;children:React.ReactNode}) { retur
 function MemberDetail({member,rows}:{member:Member|null;rows:string[][]}) { return <aside className="rounded-2xl border border-slate-200 bg-white p-5">{!member?<Empty>회원을 선택해 주세요.</Empty>:<><div className="mb-5 flex items-center gap-3"><span className="rounded-xl bg-blue-50 p-2 text-blue-600"><Users size={20}/></span><div><h2 className="font-black">{member.name}</h2><p className="text-xs text-slate-500">{member.email}</p></div></div><dl className="space-y-3 text-sm">{rows.map(([k,v])=><div key={k} className="flex justify-between gap-4 border-b border-slate-100 pb-2"><dt className="text-slate-500">{k}</dt><dd className="text-right font-bold">{v}</dd></div>)}</dl><p className="mt-4 break-all rounded-lg bg-slate-50 p-3 text-xs text-slate-500">ID: {member.id}</p><p className="mt-2 text-xs text-slate-400">가입일 {date(member.createdAt)}</p></>}</aside>; }
 function ConfirmDialog({member,preview,plan,duration,reason,pending,cancel,confirm}:{member:Member;preview:Preview;plan:string;duration:number;reason:string;pending:boolean;cancel:()=>void;confirm:()=>void}) { return <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true"><div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><h2 className="text-xl font-black">이용권 지급 확인</h2><p className="mt-3 text-sm"><b>{member.name}</b> 회원에게 <b>{planName(plan)} 이용권 {duration}일</b>을 지급합니다.</p><div className="my-5 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-sm"><span>현재 유료 구독</span><b>{planName(preview.before.paidPlan)}</b><span>현재 이용권</span><b>{planName(preview.before.effectivePlan)}</b><span>지급 후 이용권</span><b>{planName(preview.afterPlan)}</b><span>이용권 종료 후</span><b>{planName(preview.fallbackPlan)}</b><span>기간</span><b>{date(preview.startsAt)} ~ {date(preview.endsAt)}</b></div>{preview.warnings.map(w=><p key={w} className="mb-3 flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-800"><AlertTriangle className="shrink-0" size={18}/>{w}</p>)}<p className="text-sm"><span className="text-slate-500">지급 사유:</span><br/><b>{reason}</b></p><div className="mt-6 flex justify-end gap-2"><button onClick={cancel} className="min-h-11 rounded-xl border px-4 font-bold">취소</button><button disabled={pending} onClick={confirm} className="min-h-11 rounded-xl bg-blue-600 px-4 font-bold text-white disabled:opacity-50">지급하기</button></div></div></div>; }
 function SuccessDialog({preview,plan,close}:{preview:Preview;plan:string;close:()=>void}) { return <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950/60 p-4" role="dialog"><div className="w-full max-w-md rounded-2xl bg-white p-6 text-center"><CheckCircle2 className="mx-auto text-emerald-500" size={42}/><h2 className="mt-3 text-xl font-black">{planName(plan)} 이용권이 지급되었습니다.</h2><p className="mt-4 text-sm text-slate-500">기간: {date(preview.startsAt)} ~ {date(preview.endsAt)}</p><p className="mt-1 text-sm">현재 이용권: <b>{planName(preview.afterPlan)}</b></p><button onClick={close} className="mt-6 min-h-11 w-full rounded-xl bg-blue-600 font-bold text-white">확인</button></div></div>; }
+function ExtensionDialog({grant,days,reason,pending,setDays,setReason,cancel,confirm}:{grant:any;days:number;reason:string;pending:boolean;setDays:(value:number)=>void;setReason:(value:string)=>void;cancel:()=>void;confirm:()=>void}) {
+  const validDays = Number.isInteger(days) && days >= 1 && days <= 366;
+  const nextEnd = validDays ? new Date(Date.parse(grant.ends_at) + days * 86_400_000).toISOString() : null;
+  return <div className="fixed inset-0 z-[500] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="extension-dialog-title">
+    <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+      <h2 id="extension-dialog-title" className="text-xl font-black">이용권 기간 연장</h2>
+      <p className="mt-2 text-sm text-slate-500"><b className="text-slate-900">{grant.memberName}</b> · {planName(grant.plan)}</p>
+      <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-sm">
+        <span className="text-slate-500">현재 종료일</span><b className="text-right">{date(grant.ends_at)}</b>
+        <span className="text-slate-500">변경 후 종료일</span><b className="text-right text-blue-700">{nextEnd ? date(nextEnd) : '-'}</b>
+      </div>
+      <fieldset className="mt-5"><legend className="text-xs font-bold text-slate-600">빠른 선택</legend><div className="mt-2 grid grid-cols-4 gap-2">{[1,2,7,30].map(value=><button key={value} type="button" onClick={()=>setDays(value)} className={`min-h-10 rounded-lg border text-sm font-bold ${days===value?'border-blue-600 bg-blue-50 text-blue-700':'border-slate-200 text-slate-600'}`}>+{value}일</button>)}</div></fieldset>
+      <div className="mt-4 grid gap-4">
+        <Field label="직접 입력 (1~366일)"><input className="input" type="number" min={1} max={366} step={1} value={days} onChange={(event)=>setDays(Number(event.target.value))}/></Field>
+        <Field label="연장 사유"><textarea value={reason} onChange={(event)=>setReason(event.target.value)} maxLength={500} rows={3} className="w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-500" placeholder="연장 사유를 입력해 주세요."/></Field>
+      </div>
+      <div className="mt-6 flex justify-end gap-2"><button type="button" disabled={pending} onClick={cancel} className="min-h-11 rounded-xl border px-4 font-bold">취소</button><button type="button" disabled={pending||!validDays||!reason.trim()} onClick={confirm} className="min-h-11 rounded-xl bg-blue-600 px-4 font-bold text-white disabled:opacity-50">{pending?'연장 중...':'연장 실행'}</button></div>
+    </div>
+  </div>;
+}
 function InvitePanel({form,setForm,create,pending,result}:{form:any;setForm:any;create:()=>void;pending:boolean;result:any}) { const link = result && typeof window !== 'undefined' ? `${window.location.origin}/spokedu-lab/promotions/redeem?token=${result.token}` : ''; return <div className="grid gap-5 lg:grid-cols-2"><div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-center gap-2"><Gift className="text-blue-600"/><h2 className="text-lg font-black">초대 이용권 발급</h2></div><Field label="이메일"><input className="input" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="플랜"><select className="input" value={form.plan} onChange={e=>setForm({...form,plan:e.target.value})}><option value="premium">Premium</option><option value="lite">Lite</option></select></Field><Field label="이용기간"><select className="input" value={form.durationDays} onChange={e=>setForm({...form,durationDays:Number(e.target.value)})}><option value={30}>30일</option><option value={60}>60일</option><option value={90}>90일</option></select></Field><Field label="캠페인/사유"><input className="input" value={form.campaignId} onChange={e=>setForm({...form,campaignId:e.target.value})}/></Field><Field label="초대 사용기한"><select className="input" value={form.expiresInDays} onChange={e=>setForm({...form,expiresInDays:Number(e.target.value)})}><option value={7}>7일 후</option><option value={30}>30일 후</option><option value={60}>60일 후</option></select></Field></div><p className="text-xs text-slate-500">이용기간은 초대 발급일이 아닌 사용자가 redeem한 시점부터 계산됩니다.</p><button disabled={pending} onClick={create} className="min-h-11 w-full rounded-xl bg-blue-600 font-bold text-white disabled:opacity-50">초대 이용권 발급</button></div><div className="rounded-2xl border border-slate-200 bg-white p-5">{!result?<Empty>발급 결과와 일회성 초대 링크가 여기에 표시됩니다.</Empty>:<><h3 className="font-black text-emerald-700">초대 이용권이 발급되었습니다.</h3><dl className="mt-4 space-y-2 text-sm"><p>대상: <b>{result.email}</b></p><p>{planName(result.plan)} / {result.duration_days}일</p><p>초대 사용기한: {date(result.expires_at)}</p></dl><button onClick={()=>navigator.clipboard.writeText(link)} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border font-bold"><ClipboardCopy size={17}/>초대 링크 복사</button><p className="mt-2 text-xs text-slate-400">보안을 위해 이 링크는 지금 한 번만 확인할 수 있습니다.</p></>}</div></div>; }
-function InviteTable({invites}:{invites:any[]}) { return <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left text-sm"><thead className="text-xs text-slate-500"><tr>{['이메일','플랜','이용기간','초대 생성일','초대 만료','상태','사용일','사용자','캠페인'].map(h=><th key={h} className="border-b p-3">{h}</th>)}</tr></thead><tbody>{invites.map(i=><tr key={i.id} className="border-b border-slate-100"><td className="p-3">{i.email||'이메일 제한 없음'}</td><td className="p-3"><PlanBadge plan={i.plan}/></td><td className="p-3">{i.duration_days}일</td><td className="p-3">{date(i.created_at)}</td><td className="p-3">{date(i.expires_at)}</td><td className="p-3">{{issued:'발급됨',redeemed:'사용 완료',expired:'만료',revoked:'취소'}[i.status as string]}</td><td className="p-3">{date(i.redeemed_at)}</td><td className="p-3 font-mono text-xs">{i.redeemed_by?.slice(0,8)||'-'}</td><td className="p-3">{i.campaign_id||'-'}</td></tr>)}</tbody></table>{invites.length===0&&<Empty>발급된 초대 이용권이 없습니다.</Empty>}</div></div>; }
-function GrantTable({grants,revoke,pending}:{grants:any[];revoke:(g:any)=>void;pending:boolean}) { return <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="overflow-x-auto"><table className="w-full min-w-[1050px] text-left text-sm"><thead className="text-xs text-slate-500"><tr>{['회원','이용권','시작일','종료일','상태','지급 사유','캠페인/source','지급자','지급일','관리'].map(h=><th className="border-b p-3" key={h}>{h}</th>)}</tr></thead><tbody>{grants.map(g=><tr key={g.id} className="border-b border-slate-100"><td className="p-3"><b>{g.memberName}</b><small className="block text-slate-400">{g.email}</small></td><td className="p-3"><PlanBadge plan={g.plan}/></td><td className="p-3">{date(g.starts_at)}</td><td className="p-3">{date(g.ends_at)}</td><td className="p-3">{{active:'이용 중',expired:'만료',revoked:'회수',scheduled:'예정'}[g.status as string]||g.status}</td><td className="p-3">{g.metadata?.reason||'-'}</td><td className="p-3">{g.campaign_id||g.source}</td><td className="p-3 font-mono text-xs">{g.granted_by?.slice(0,8)||'-'}</td><td className="p-3">{date(g.created_at)}</td><td className="p-3">{g.status==='active'&&<button disabled={pending} onClick={()=>void revoke(g)} className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-bold text-rose-600">회수</button>}</td></tr>)}</tbody></table>{grants.length===0&&<Empty>지급된 이용권이 없습니다.</Empty>}</div></div>; }
+function InviteTable({invites}:{invites:any[]}) {
+  const statusLabel: Record<string, string> = { issued: '발급됨', redeemed: '사용 완료', expired: '만료', revoked: '취소' };
+  return <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    {invites.length === 0 ? <Empty>발급된 초대 이용권이 없습니다.</Empty> : <div className="divide-y divide-slate-100">
+      {invites.map(i => <article key={i.id} className="py-4 first:pt-0 last:pb-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="min-w-0 flex-1 break-all text-sm font-bold text-slate-900">{i.email || '이메일 제한 없음'}</p>
+          <PlanBadge plan={i.plan}/>
+          <span className="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{statusLabel[i.status] || i.status}</span>
+        </div>
+        <dl className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 text-sm sm:grid-cols-3 xl:grid-cols-6">
+          {[
+            ['이용기간', `${i.duration_days}일`],
+            ['초대 생성일', date(i.created_at)],
+            ['초대 만료', date(i.expires_at)],
+            ['사용일', date(i.redeemed_at)],
+            ['사용자', i.redeemed_by?.slice(0, 8) || '-'],
+            ['캠페인', i.campaign_id || '-'],
+          ].map(([label, value]) => <div key={label} className="min-w-0">
+            <dt className="text-xs font-bold text-slate-400">{label}</dt>
+            <dd className={`mt-1 break-words text-slate-700 ${label === '사용자' ? 'font-mono text-xs' : ''}`}>{value}</dd>
+          </div>)}
+        </dl>
+      </article>)}
+    </div>}
+  </div>;
+}
+function GrantTable({grants,revoke,extend,pending}:{grants:any[];revoke:(g:any)=>void;extend:(g:any)=>void;pending:boolean}) {
+  const statusLabel: Record<string, string> = { active: '이용 중', expired: '만료', revoked: '회수', scheduled: '예정' };
+  const statusTone: Record<string, string> = {
+    active: 'bg-emerald-100 text-emerald-700',
+    scheduled: 'bg-blue-100 text-blue-700',
+    expired: 'bg-slate-100 text-slate-600',
+    revoked: 'bg-rose-100 text-rose-700',
+  };
+  return <div className="rounded-2xl border border-slate-200 bg-white p-4">
+    {grants.length === 0 ? <Empty>지급된 이용권이 없습니다.</Empty> : <div className="divide-y divide-slate-100">
+      {grants.map(g => <article key={g.id} className="py-4 first:pt-0 last:pb-0">
+        <div className="flex flex-wrap items-start gap-2">
+          <div className="min-w-[180px] flex-1">
+            <p className="font-bold text-slate-900">{g.memberName}</p>
+            <p className="mt-0.5 break-all text-xs text-slate-400">{g.email || '-'}</p>
+          </div>
+          <PlanBadge plan={g.plan}/>
+          <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${statusTone[g.status] || 'bg-slate-100 text-slate-600'}`}>{statusLabel[g.status] || g.status}</span>
+          {g.status === 'active' ? <button disabled={pending} onClick={()=>extend(g)} className="min-h-8 whitespace-nowrap rounded-lg border border-blue-200 px-3 text-xs font-bold text-blue-700 disabled:opacity-50">기간 연장</button> : null}
+          {g.status === 'active' ? <button disabled={pending} onClick={()=>void revoke(g)} className="min-h-8 whitespace-nowrap rounded-lg border border-rose-200 px-3 text-xs font-bold text-rose-600 disabled:opacity-50">회수</button> : null}
+        </div>
+        <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 text-sm sm:grid-cols-3 xl:grid-cols-6">
+          {[
+            ['이용 시작', date(g.starts_at)],
+            ['이용 종료', date(g.ends_at)],
+            ['지급일', date(g.created_at)],
+            ['지급 사유', g.metadata?.reason || '-'],
+            ['캠페인 / source', g.campaign_id || g.source || '-'],
+            ['지급자', g.granted_by?.slice(0, 8) || '-'],
+          ].map(([label, value]) => <div key={label} className="min-w-0">
+            <dt className="text-xs font-bold text-slate-400">{label}</dt>
+            <dd className={`mt-1 break-words text-slate-700 ${label === '지급자' ? 'font-mono text-xs' : ''}`}>{value}</dd>
+          </div>)}
+        </dl>
+      </article>)}
+    </div>}
+  </div>;
+}

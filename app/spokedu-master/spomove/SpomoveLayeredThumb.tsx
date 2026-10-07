@@ -109,7 +109,7 @@ export function SpomoveLayeredThumb({
               alt=""
               fill
               sizes={sizes}
-              quality={40}
+              quality={75}
               priority={priority}
               unoptimized={unoptimized}
               aria-hidden

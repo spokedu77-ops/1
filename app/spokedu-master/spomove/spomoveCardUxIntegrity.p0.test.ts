@@ -154,9 +154,9 @@ describe("SPOMOVE-CARD-UX-INTEGRITY-P0-01", () => {
     expect(hub).not.toContain("displayModel.variantLabel");
     expect(hub).not.toContain("catalogTags");
     expect(hub).not.toContain("startHref={");
-    expect(hub).toContain(
-      "import { Heart, Play, Search, X } from 'lucide-react'",
-    );
+    for (const icon of ['Heart', 'Play', 'Search', 'X']) {
+      expect(hub).toMatch(new RegExp(`import \\{[^}]*\\b${icon}\\b[^}]*\\} from 'lucide-react'`));
+    }
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(hub).toContain("data-spm-spomove-session-action");

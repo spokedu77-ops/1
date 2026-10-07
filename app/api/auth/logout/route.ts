@@ -13,7 +13,7 @@ export async function POST() {
   const response = NextResponse.json({ ok: true });
   try {
     const supabase = await createServerSupabaseClient();
-    await supabase.auth.signOut({ scope: 'global' });
+    await supabase.auth.signOut({ scope: 'local' });
   } catch {
     // 갱신 토큰이 이미 없어도 쿠키는 만료시킨다.
   }

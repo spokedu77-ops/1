@@ -18,7 +18,7 @@ describe('MASTER whole-product operating loop', () => {
   });
 
   it('identifies the exact scheduled SPOMOVE origin', () => {
-    const params = new URLSearchParams('session=s-1&sessionProgram=sp-2&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Ds-1');
+    const params = new URLSearchParams('session=s-1&sessionProgram=sp-2&returnTo=%2Fspokedu-lab%2Factivity%3Fsession%3Ds-1');
     expect(readSpomoveSessionOrigin(params)).toEqual({
       sessionId: 's-1',
       sessionProgramId: 'sp-2',

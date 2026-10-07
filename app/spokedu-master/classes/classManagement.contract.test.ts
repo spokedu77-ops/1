@@ -25,11 +25,11 @@ describe("MASTER Class and attendance management contracts", () => {
 
   it("keeps Schedule and Classes as clear operating destinations with local cross-navigation", () => {
     expect(navLabels).toContain(
-      "href: '/spokedu-master/manage', label: '수업 관리'",
+      "href: '/spokedu-lab/manage', label: '수업 관리'",
     );
     expect(list).not.toContain("LessonManagementTabs");
     expect(detail).not.toContain("LessonManagementTabs");
-    expect(list).toContain('href="/spokedu-master/manage"');
+    expect(list).toContain('href="/spokedu-lab/manage"');
     expect(desktopNav).toContain("MASTER_NAV_ITEMS");
     expect(mobileNav).toContain("MASTER_NAV_ITEMS");
   });
@@ -49,7 +49,7 @@ describe("MASTER Class and attendance management contracts", () => {
     expect(list).toContain(
       "buildManageSessionCreateHref(created.id, sessionReturnDate)",
     );
-    expect(list).toContain("`/spokedu-master/classes/${created.id}`");
+    expect(list).toContain("`/spokedu-lab/classes/${created.id}`");
     expect(list).toContain("buildManageDateHref(sessionReturnDate)");
     expect(list).toContain("parseSessionClassCreateReturnDate");
     expect(activity).toContain("<ClassCreateSheet nested");
@@ -122,7 +122,7 @@ describe("MASTER Class and attendance management contracts", () => {
     expect(detail).toContain("attendanceView.sessions");
     expect(detail).toContain("shiftAttendanceMonth");
     expect(projection).toContain(
-      "/spokedu-master/activity?session=${encodeURIComponent(session.id)}",
+      "/spokedu-lab/activity?session=${encodeURIComponent(session.id)}",
     );
     expect(detail).not.toContain("AttendanceBook");
     expect(detail).not.toContain("출석부 만들기");

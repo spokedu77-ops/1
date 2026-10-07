@@ -57,7 +57,7 @@ describe('MASTER Subscriber Value — VALUE-GATE-01 / VALUE-SUB-01 / VALUE-RESUB
     const params = new URLSearchParams({
       intent: 'session_capture',
       plan: 'premium',
-      next: '/spokedu-master/activity?session=s1&capture=1',
+      next: '/spokedu-lab/activity?session=s1&capture=1',
       journeyId: 'capture_s1',
     });
     const context = readMasterGateContextFromSearchParams(params);
@@ -68,7 +68,7 @@ describe('MASTER Subscriber Value — VALUE-GATE-01 / VALUE-SUB-01 / VALUE-RESUB
     expect(context.next).toContain('capture=1');
     const model = buildMasterGateDisplayModel(context);
     expect(model.description).toContain('지난 수업의 맥락을 다음 준비에 이어');
-    expect(getSafeMasterPostPaymentPath(context.next, '/spokedu-master/dashboard')).toContain('capture=1');
+    expect(getSafeMasterPostPaymentPath(context.next, '/spokedu-lab/dashboard')).toContain('capture=1');
   });
 
   it('VALUE-SUB-01: cancel scheduled keeps period access language and value workflow', () => {
@@ -98,7 +98,7 @@ describe('MASTER Subscriber Value — VALUE-GATE-01 / VALUE-SUB-01 / VALUE-RESUB
       currentPeriodEnd: '2020-01-01T00:00:00.000Z',
     }));
     expect(display.state).toBe('ended');
-    expect(display.primaryHref).toBe('/spokedu-master/payment');
+    expect(display.primaryHref).toBe('/spokedu-lab/payment');
     expect(display.description).toContain('데이터는 유지');
     expect(display.description).toContain('다시 구독');
   });
@@ -141,7 +141,7 @@ describe('MASTER Subscriber Value — VALUE-LITE-01 / VALUE-PREM-01 / VALUE-RET-
     const context = readMasterGateContextFromSearchParams(new URLSearchParams({
       intent: 'start_spomove',
       plan: 'premium',
-      next: '/spokedu-master/spomove/session?preset=simon-basic',
+      next: '/spokedu-lab/spomove/session?preset=simon-basic',
       preset: 'simon-basic',
       journeyId: 'spomove_copy',
     }));

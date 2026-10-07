@@ -67,13 +67,6 @@ export function deriveMasterAdminBillingIncident(input: {
   return { code: 'normal', label: '정상', tone: 'ok' };
 }
 
-export function maskAdminEmail(email: string | null | undefined) {
-  if (!email) return '-';
-  const [local, domain] = email.split('@');
-  if (!domain) return '***';
-  return `${local.slice(0, Math.min(3, local.length))}***@${domain}`;
-}
-
 export function buildMasterAdminAccess(input: {
   subscription: SpokeduMasterSubscriptionRow | null;
   grant: SpokeduMasterEntitlementGrantRow | null;
@@ -99,4 +92,10 @@ export function grantStatus(grant: { starts_at: string; ends_at: string; revoked
   if (Date.parse(grant.starts_at) > now) return 'scheduled' as const;
   if (Date.parse(grant.ends_at) <= now) return 'expired' as const;
   return 'active' as const;
+}
+
+export function calculateGrantExtensionEnd(endsAt: string, days: number): string | null {
+  const currentEnd = Date.parse(endsAt);
+  if (!Number.isFinite(currentEnd) || !Number.isInteger(days) || days < 1 || days > 366) return null;
+  return new Date(currentEnd + days * 86_400_000).toISOString();
 }

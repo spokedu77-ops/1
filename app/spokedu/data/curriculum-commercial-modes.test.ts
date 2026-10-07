@@ -86,7 +86,7 @@ describe("curriculum commercial modes", () => {
       contract.handoff.landingHref,
     );
     expect(curriculumPage.hero.secondaryCta.href).toBe(MASTER_HANDOFF.landing);
-    expect(curriculumPage.hero.eyebrow).toBe("SPOKEDU MASTER");
+    expect(curriculumPage.hero.eyebrow).toBe("SPOKEDU LAB");
     expect(curriculumPage.sectionOrder.length).toBeLessThanOrEqual(7);
   });
 });

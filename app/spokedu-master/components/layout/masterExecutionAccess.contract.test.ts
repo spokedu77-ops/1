@@ -25,8 +25,8 @@ describe('MASTER execution screen access boundary', () => {
   });
 
   it('uses the common shell guard for SPOMOVE session', () => {
-    expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
-    expect(shell).not.toContain('pathname.startsWith(`${basePath}/class-mode`)');
+    expect(shell).toContain('pathname.startsWith(`${activeBasePath}/spomove/session`)');
+    expect(shell).not.toContain('pathname.startsWith(`${activeBasePath}/class-mode`)');
     expect(spomove).not.toContain("fetch('/api/spokedu-master/access'");
     expect(spomove).not.toContain('OfficialAccessState');
   });

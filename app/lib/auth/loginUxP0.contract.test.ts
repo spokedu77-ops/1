@@ -14,6 +14,13 @@ describe("SPOKEDU login UX P0 contracts", () => {
     expect(login).toContain("enforceSessionOnlyPolicy");
   });
 
+  it('keeps logout scoped to the current browser session', () => {
+    expect(read('app/lib/auth/logoutSession.ts')).not.toContain("scope: 'global'");
+    expect(read('app/api/auth/logout/route.ts')).not.toContain("scope: 'global'");
+    expect(read('app/lib/auth/logoutSession.ts')).toContain("scope: 'local'");
+    expect(read('app/api/auth/logout/route.ts')).toContain("scope: 'local'");
+  });
+
   it("routes the public root through the SPOKEDU marketing home", () => {
     const root = read("app/(spokedu-public)/page.tsx");
     expect(root).toContain("from '../spokedu/page'");

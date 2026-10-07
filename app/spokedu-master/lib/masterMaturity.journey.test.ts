@@ -14,9 +14,9 @@ describe('MASTER whole-product maturity journeys', () => {
   it('LITE-01 keeps the complete general teaching-management loop operable', () => {
     expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements.canUseAttendance).toBe(true);
     expect(MASTER_PRODUCT_CATALOG.lite.featureEntitlements.canUseRecords).toBe(true);
-    expect(getMasterRouteRequirement('/spokedu-lab/classes').capability).toBe('attendance');
-    expect(getMasterRouteRequirement('/spokedu-lab/activity').capability).toBe('attendance');
-    expect(getMasterRouteRequirement('/spokedu-lab/students').capability).toBe('attendance');
+    expect(getMasterRouteRequirement('/spokedu-lab/classes', '/spokedu-lab').capability).toBe('attendance');
+    expect(getMasterRouteRequirement('/spokedu-lab/activity', '/spokedu-lab').capability).toBe('attendance');
+    expect(getMasterRouteRequirement('/spokedu-lab/students', '/spokedu-lab').capability).toBe('attendance');
     expect(read('app/api/spokedu-master/sessions/[sessionId]/attendance/route.ts')).toContain(
       "requireSpokeduMasterCapability('attendance')",
     );
@@ -41,7 +41,7 @@ describe('MASTER whole-product maturity journeys', () => {
   });
 
   it('GATE-01 preserves student detail and activity session after upgrade', () => {
-    expect(getMasterRouteRequirement('/spokedu-lab/students/student-a').capability).toBe('attendance');
+    expect(getMasterRouteRequirement('/spokedu-lab/students/student-a', '/spokedu-lab').capability).toBe('attendance');
     expect(getSafeMasterPostPaymentPath('/spokedu-lab/students/stu-1')).toBe('/spokedu-lab/students/stu-1');
     expect(getSafeMasterPostPaymentPath('/spokedu-lab/activity?session=s1')).toBe(
       '/spokedu-lab/activity?session=s1',

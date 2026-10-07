@@ -26,7 +26,7 @@ describe('SPOMOVE access separation contract', () => {
     const session = read('app/spokedu-master/spomove/session/page.tsx');
     const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
 
-    expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
+    expect(shell).toContain('pathname.startsWith(`${activeBasePath}/spomove/session`)');
     expect(shell).toContain('isAccessGuardPending');
     expect(shell).toContain('routeGateDenied');
     expect(shell).toContain('isAccessGuardError');

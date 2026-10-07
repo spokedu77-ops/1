@@ -13,17 +13,17 @@ const sidebar = read('app/components/Sidebar.tsx');
 describe('admin SPOKEDU MASTER split contract', () => {
   it('splits library and SPOMOVE admin entry points', () => {
     expect(sidebar).not.toContain('스포키듀 구독 NEW');
-    expect(sidebar).toContain('마스터 라이브러리');
-    expect(sidebar).toContain('/admin/spokedu-master/programs');
-    expect(sidebar).toContain('마스터 스포무브');
-    expect(sidebar).toContain('/admin/spokedu-master/spomove');
+    expect(sidebar).toContain('LAB 라이브러리');
+    expect(sidebar).toContain('/admin/spokedu-lab/programs');
+    expect(sidebar).toContain('LAB 스포무브');
+    expect(sidebar).toContain('/admin/spokedu-lab/spomove');
     expect(spomovePage).toContain("from '../programs/page'");
   });
 
   it('keeps SPOMOVE editing in its own admin mode', () => {
     expect(programsPage).toContain('LIBRARY_ADMIN_TAB_OPTIONS');
     expect(programsPage).toContain('SPOMOVE_ADMIN_TAB_OPTIONS');
-    expect(programsPage).toContain("pathname.startsWith('/admin/spokedu-master/spomove')");
+    expect(programsPage).toContain("pathname.startsWith('/admin/spokedu-lab/spomove')");
     expect(programsPage).toContain('SpomoveContentManager');
     expect(programsPage).toContain('SpomoveHomeFeaturedManager');
     expect(programsPage).toContain('SpomoveHubFamilyFeaturedManager');

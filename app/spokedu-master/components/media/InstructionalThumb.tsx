@@ -114,7 +114,7 @@ export function InstructionalThumb({
               alt=""
               fill
               sizes={sizes}
-              quality={40}
+              quality={75}
               priority={priority}
               unoptimized={unoptimized}
               aria-hidden

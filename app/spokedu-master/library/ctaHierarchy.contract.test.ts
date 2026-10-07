@@ -12,7 +12,7 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   it('keeps cards focused on preview and detail', () => {
     expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(2);
     expect(library).toContain('LessonCatalogCard');
-    expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
+    expect(library).not.toContain('/spokedu-lab/class-record?program=${program.id}');
     expect(catalogCard).toContain('primaryActionLabel');
     expect(catalogCard).toContain('onPrimaryAction');
   });
@@ -20,10 +20,10 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   it('assigns a program to an exact Session from detail', () => {
     expect(detail).toContain('AssignProgramToSessionButton');
     expect(detail).toContain('returnHref={fromSession ? workReturnHref : null}');
-    expect(detail).toContain('/spokedu-master/activity');
+    expect(detail).toContain('/spokedu-lab/activity');
     expect(detail).not.toContain('수업 일정 관리');
     expect(detail).toContain('지도안 복사');
-    expect(detail).not.toContain('/spokedu-master/class-record?program=${program.id}');
+    expect(detail).not.toContain('/spokedu-lab/class-record?program=${program.id}');
     expect(detail).not.toContain('오늘 수업으로 지정');
   });
 
@@ -32,6 +32,6 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(detail).toContain('transition-none lg:hidden');
     expect(detail).toContain('aria-hidden className="hidden h-11 w-11 lg:block"');
     expect(detail).toContain('lg:inline-flex');
-    expect(detail).not.toContain('/spokedu-master/class-tools');
+    expect(detail).not.toContain('/spokedu-lab/class-tools');
   });
 });

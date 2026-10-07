@@ -3,6 +3,7 @@ import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { buildMasterAdminAccess, grantStatus } from '@/app/lib/server/spokeduMasterAdmin';
 import { ensureSpokeduMasterEntitlement, evaluateSpokeduMasterEffectiveEntitlement, getActiveSpokeduMasterEntitlementGrant } from '@/app/lib/server/spokeduMasterAccess';
+import { isPlatformAdminIdentity } from '@/app/lib/auth/platformAdminIdentity';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SOURCES = new Set(['promo', 'partner', 'event', 'support', 'admin']);
@@ -62,6 +63,17 @@ export async function POST(request: Request) {
   const activatedAt = Number.isFinite(startsAtInput) ? new Date(startsAtInput) : new Date();
   const endsAt = new Date(activatedAt.getTime() + durationDays * 86_400_000);
   const service = getServiceSupabase();
+  const [{ data: authUserData, error: authUserError }, { data: appUser, error: appUserError }, { data: authProfile, error: authProfileError }] = await Promise.all([
+    service.auth.admin.getUserById(userId),
+    service.from('users').select('email,role,is_admin').eq('id', userId).maybeSingle(),
+    service.from('profiles').select('role').eq('id', userId).maybeSingle(),
+  ]);
+  if (authUserError || appUserError || authProfileError) {
+    return NextResponse.json({ error: '회원 역할 확인에 실패했습니다.' }, { status: 500 });
+  }
+  if (isPlatformAdminIdentity(authUserData.user?.email ?? appUser?.email, appUser, authProfile?.role)) {
+    return NextResponse.json({ error: '관리자 계정은 일반 이용권 지급 대상이 아닙니다.' }, { status: 400 });
+  }
   const [{ row: subscription, error: subError }, { row: currentGrant, error: grantError }] = await Promise.all([
     ensureSpokeduMasterEntitlement(service, userId),
     getActiveSpokeduMasterEntitlementGrant(service, userId),

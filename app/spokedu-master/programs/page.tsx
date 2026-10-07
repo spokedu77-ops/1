@@ -111,7 +111,6 @@ function ProgramGatewayCard({
   action,
   href,
   image,
-  imagePosition = 'center 25%',
 }: {
   title: string;
   tier: 'Lite' | 'Premium';
@@ -119,7 +118,6 @@ function ProgramGatewayCard({
   action: string;
   href: string;
   image: string | null;
-  imagePosition?: string;
 }) {
   return (
     <Link
@@ -128,7 +126,6 @@ function ProgramGatewayCard({
       className="group flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-slate-200/80 bg-white transition-colors hover:border-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-slate-200">
-        <span className={`absolute left-3 top-3 z-10 rounded-md px-2 py-1 text-[11px] font-semibold text-white shadow-sm ${tier === 'Premium' ? 'bg-violet-600' : 'bg-blue-600'}`}>{tier}</span>
         {image ? (
           <Image
             src={image}
@@ -137,17 +134,19 @@ function ProgramGatewayCard({
             sizes="(min-width: 1024px) 40vw, 100vw"
             loading="eager"
             unoptimized={nextImageUnoptimized(image)}
-            className="object-cover"
-            style={{ objectPosition: imagePosition }}
+            className="object-contain"
           />
         ) : (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100" aria-hidden="true" />
         )}
       </div>
-      <div className="flex flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
-        <h2 className="text-[24px] font-semibold leading-tight tracking-[-0.02em] text-slate-950">{title}</h2>
+      <div className="flex min-h-[166px] flex-1 flex-col px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[24px] font-semibold leading-tight tracking-[-0.02em] text-slate-950">{title}</h2>
+          <span className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold text-white ${tier === 'Premium' ? 'bg-violet-600' : 'bg-blue-600'}`}>{tier}</span>
+        </div>
         <p className="mt-2 text-[15px] font-normal leading-6 text-slate-600">{description}</p>
-        <span className="mt-3 inline-flex min-h-11 items-center gap-1.5 self-start text-[14px] font-semibold text-slate-600 transition-colors group-hover:text-slate-950 sm:mt-4">
+        <span className="mt-auto inline-flex min-h-11 items-center gap-1.5 self-start pt-3 text-[14px] font-semibold text-slate-600 transition-colors group-hover:text-slate-950 sm:pt-4">
           {action}
           <span aria-hidden="true">→</span>
         </span>

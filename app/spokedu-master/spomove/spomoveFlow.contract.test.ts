@@ -286,9 +286,9 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(session).toContain("buildSpomoveRecordDraft");
     expect(session).toContain("buildSpomoveRecordHref");
     expect(session).not.toContain(
-      "/spokedu-master/class-record?program=${officialPreset.id}",
+      "/spokedu-lab/class-record?program=${officialPreset.id}",
     );
-    expect(session).toContain("/spokedu-master/activity");
+    expect(session).toContain("/spokedu-lab/activity");
     expect(masterResult).toContain("같은 설정으로 다시 준비");
     expect(session).toContain("reopenStartConfirmation");
     expect(masterResult).toContain("활동 목록으로");

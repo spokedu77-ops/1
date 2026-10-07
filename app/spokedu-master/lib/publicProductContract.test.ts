@@ -74,11 +74,11 @@ describe('MASTER public product contract', () => {
 
   it('wires real MASTER handoff paths', () => {
     const { handoff } = getPublicProductContract();
-    expect(handoff.freeStartHref).toBe('/spokedu-master/login?next=/spokedu-master/onboarding');
-    expect(handoff.loginHref).toBe('/spokedu-master/login?next=/spokedu-master/dashboard');
+    expect(handoff.freeStartHref).toBe('/spokedu-lab/login?next=/spokedu-lab/onboarding');
+    expect(handoff.loginHref).toBe('/spokedu-lab/login?next=/spokedu-lab/dashboard');
     expect(handoff.landingHref).toBe('/spokedu-lab');
-    expect(handoff.paymentPlanHref('lite')).toBe('/spokedu-master/payment?plan=lite');
-    expect(handoff.paymentPlanHref('premium')).toBe('/spokedu-master/payment?plan=premium');
-    expect(handoff.shopHref).toBe('/spokedu-master/shop');
+    expect(handoff.paymentPlanHref('lite')).toBe('/spokedu-lab/payment?plan=lite');
+    expect(handoff.paymentPlanHref('premium')).toBe('/spokedu-lab/payment?plan=premium');
+    expect(handoff.shopHref).toBe('/spokedu-lab/shop');
   });
 });

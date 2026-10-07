@@ -18,10 +18,10 @@ describe('MASTER favorite entry parity', () => {
 
   it('offers both content hubs from the empty state for Premium users', () => {
     const favorites = read('app/spokedu-master/favorites/FavoritesView.tsx');
-    expect(favorites).toContain('href="/spokedu-master/library"');
+    expect(favorites).toContain('href="/spokedu-lab/library"');
     expect(favorites).toContain('놀이체육 둘러보기');
     expect(favorites).toContain('{isPremium ? (');
-    expect(favorites).toContain('href="/spokedu-master/spomove"');
+    expect(favorites).toContain('href="/spokedu-lab/spomove"');
     expect(favorites).toContain('스포무브 둘러보기');
   });
 

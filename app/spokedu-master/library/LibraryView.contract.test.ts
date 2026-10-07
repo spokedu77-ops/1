@@ -93,7 +93,7 @@ describe('LibraryView favorites contract', () => {
     expect(source).not.toContain('MATERIAL_VIDEO_VALUE');
     expect(source).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(source).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
-    expect(source).not.toContain('href="/spokedu-master/spomove" className="inline-flex h-14');
+    expect(source).not.toContain('href="/spokedu-lab/spomove" className="inline-flex h-14');
   });
 
   it('leads with two Home-parity recommendation shelves and then the full catalog', () => {
@@ -141,9 +141,9 @@ describe('LibraryView favorites contract', () => {
 
   it('uses recovery actions that match each catalog load failure', () => {
     expect(source).toContain("programsError === 'unauthorized'");
-    expect(source).toContain("buildMasterLoginHref('/spokedu-master/library')");
+    expect(source).toContain("buildMasterLoginHref('/spokedu-lab/library')");
     expect(source).toContain("programsError === 'forbidden'");
-    expect(source).toContain('href=\"/spokedu-master/payment\"');
+    expect(source).toContain('href=\"/spokedu-lab/payment\"');
     expect(source).toContain('onClick={() => void reloadPrograms()}');
   });
 });

@@ -25,15 +25,15 @@ describe('master gate intent model', () => {
   it('builds a library gate context from the current route', () => {
     const context = buildMasterGateContext({
       capability: 'library',
-      pathname: '/spokedu-master/library/funstick-fencing',
-      currentPath: '/spokedu-master/library/funstick-fencing?from=dashboard&plan=premium',
+      pathname: '/spokedu-lab/library/funstick-fencing',
+      currentPath: '/spokedu-lab/library/funstick-fencing?from=dashboard&plan=premium',
       journeyId: 'j1',
     });
 
     expect(context).toMatchObject({
       intent: 'open_library',
       minimumPlan: 'lite',
-      next: '/spokedu-master/library/funstick-fencing?from=dashboard',
+      next: '/spokedu-lab/library/funstick-fencing?from=dashboard',
       journeyId: 'j1',
       gateSurface: 'library_detail',
       resource: { kind: 'program', id: 'funstick-fencing' },
@@ -43,15 +43,15 @@ describe('master gate intent model', () => {
   it('builds SPOMOVE payment href with a canonical next and direct resource context', () => {
     const context = buildMasterGateContext({
       capability: 'spomove',
-      pathname: '/spokedu-master/spomove/session',
-      currentPath: '/spokedu-master/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start',
+      pathname: '/spokedu-lab/spomove/session',
+      currentPath: '/spokedu-lab/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start',
       journeyId: 'j2',
     });
 
     expect(context?.resource.kind).toBe('preset');
     const payment = new URL(buildMasterPaymentHref(context!), 'https://spokedu.local');
     expect(payment.searchParams.get('next')).toBe(
-      '/spokedu-master/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start',
+      '/spokedu-lab/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start',
     );
     expect(payment.searchParams.get('preset')).toBe('simon-basic');
     expect(payment.searchParams.get('journeyId')).toBe('j2');
@@ -60,13 +60,13 @@ describe('master gate intent model', () => {
   it('reads payment context while sanitizing unsafe next values', () => {
     const params = new URLSearchParams({
       intent: 'continue_record',
-      next: '/spokedu-master/payment/success?next=/spokedu-master/report',
+      next: '/spokedu-lab/payment/success?next=/spokedu-lab/report',
       journeyId: 'j3',
     });
     expect(readMasterGateContextFromSearchParams(params)).toMatchObject({
       mode: 'gated',
       intent: 'continue_record',
-      next: '/spokedu-master/class-record',
+      next: '/spokedu-lab/class-record',
       journeyId: 'j3',
     });
   });
@@ -77,7 +77,7 @@ describe('master gate intent model', () => {
       intent: null,
       minimumPlan: 'lite',
       allowedPlans: ['lite', 'premium'],
-      next: '/spokedu-master/dashboard',
+      next: '/spokedu-lab/dashboard',
     });
 
     expect(readMasterGateContextFromSearchParams(new URLSearchParams('plan=lite'))).toMatchObject({

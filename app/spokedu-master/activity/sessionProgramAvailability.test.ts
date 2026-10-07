@@ -15,7 +15,7 @@ describe('session program availability contract', () => {
   });
 
   it('builds one encoded same-window detail route with session context', () => {
-    expect(buildSessionProgramDetailHref({ programId: 7, sessionId: 's 1', sessionProgramId: 'row/1', returnTo: '/spokedu-master/activity?session=s 1' }))
-      .toBe('/spokedu-master/library/7?session=s+1&sessionProgram=row%2F1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Ds+1&source=session');
+    expect(buildSessionProgramDetailHref({ programId: 7, sessionId: 's 1', sessionProgramId: 'row/1', returnTo: '/spokedu-lab/activity?session=s 1' }))
+      .toBe('/spokedu-lab/library/7?session=s+1&sessionProgram=row%2F1&returnTo=%2Fspokedu-lab%2Factivity%3Fsession%3Ds+1&source=session');
   });
 });

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { buildMasterAdminAccess, deriveMasterAdminBillingIncident, maskAdminEmail } from '@/app/lib/server/spokeduMasterAdmin';
+import { buildMasterAdminAccess, deriveMasterAdminBillingIncident } from '@/app/lib/server/spokeduMasterAdmin';
 import { classifyMasterAccount, hasRenewalProblem, type MasterAccountClass } from '@/app/lib/server/spokeduMasterPopulation';
+import { isPlatformAdminIdentity } from '@/app/lib/auth/platformAdminIdentity';
 import type { SpokeduMasterEntitlementGrantRow, SpokeduMasterSubscriptionRow } from '@/app/lib/server/spokeduMasterAccess';
 import { buildMasterFunnelWindow, type MasterFunnelEventRow, type MasterFunnelPayment } from '@/app/lib/server/spokeduMasterFunnel';
 
@@ -48,7 +49,7 @@ function markEvidence(map: Map<string, Evidence>, id: unknown, key: keyof Eviden
 async function populationEvidence() {
   const service = getServiceSupabase();
   const [profilesResult, subscriptionsResult, grantsResult, ...operationResults] = await Promise.all([
-    service.from('spokedu_master_profiles').select('user_id,name,school,onboarding_done,created_at'),
+    service.from('spokedu_master_profiles').select('user_id,name,school,onboarding_done,created_at,account_type'),
     service.from('spokedu_master_subscriptions').select('user_id'),
     service.from('spokedu_master_entitlement_grants').select('user_id'),
     ...OPERATION_TABLES.map((table) => service.from(table).select('owner_id')),
@@ -73,11 +74,18 @@ async function identities() {
   if (error) throw error;
   const users = data.users as UserIdentity[];
   const ids = users.map((user) => user.id);
-  const { data: appUsers, error: appUsersError } = ids.length
-    ? await service.from('users').select('id,name,email,role,is_admin,is_active,status').in('id', ids)
-    : { data: [], error: null };
-  if (appUsersError) throw appUsersError;
-  return { users, appUsers: new Map((appUsers ?? []).map((row: any) => [row.id, row])) };
+  const [{ data: appUsers, error: appUsersError }, { data: authProfiles, error: authProfilesError }] = ids.length
+    ? await Promise.all([
+        service.from('users').select('id,name,email,role,is_admin,is_active,status').in('id', ids),
+        service.from('profiles').select('id,role').in('id', ids),
+      ])
+    : [{ data: [], error: null }, { data: [], error: null }];
+  if (appUsersError || authProfilesError) throw appUsersError ?? authProfilesError;
+  return {
+    users,
+    appUsers: new Map((appUsers ?? []).map((row: any) => [row.id, row])),
+    authProfiles: new Map((authProfiles ?? []).map((row: any) => [row.id, row])),
+  };
 }
 
 async function accessMaps(userIds: string[]) {
@@ -127,8 +135,11 @@ function matchesScope(accountClass: MasterAccountClass, scope: string) {
   if (scope === 'production') return accountClass === 'production';
   if (scope === 'qa_test') return accountClass === 'qa_test';
   if (scope === 'internal') return accountClass === 'internal';
-  if (scope === 'inactive') return accountClass === 'inactive';
   return accountClass !== 'spokedu_only';
+}
+
+function isSpokeduStaffEmail(email: string | null) {
+  return email?.trim().toLowerCase().endsWith('@spokedu.com') ?? false;
 }
 
 export async function GET(request: Request) {
@@ -140,12 +151,13 @@ export async function GET(request: Request) {
     const page = Math.max(1, Number(url.searchParams.get('page') ?? 1) || 1);
     const query = (url.searchParams.get('q') ?? '').trim().toLowerCase().slice(0, 120);
     const scope = url.searchParams.get('scope') ?? 'production';
-    const [{ evidence, profiles }, { users, appUsers }] = await Promise.all([populationEvidence(), identities()]);
+    const [{ evidence, profiles }, { users, appUsers, authProfiles }] = await Promise.all([populationEvidence(), identities()]);
     const { subscriptionMap, grantMap, paymentMap } = await accessMaps([...evidence.keys()]);
 
     const rows = users.map((user) => {
       const profile = profiles.get(user.id) ?? null;
       const appUser = appUsers.get(user.id) ?? null;
+      const authProfile = authProfiles.get(user.id) ?? null;
       const membershipEvidence = evidence.get(user.id) ?? emptyEvidence();
       const subscription = (subscriptionMap.get(user.id) ?? null) as (SpokeduMasterSubscriptionRow & Record<string, any>) | null;
       const grant = (grantMap.get(user.id) ?? null) as SpokeduMasterEntitlementGrantRow | null;
@@ -166,14 +178,22 @@ export async function GET(request: Request) {
         appUser,
         subscription,
       });
+      const isAdminAccount = isPlatformAdminIdentity(user.email ?? appUser?.email, appUser, authProfile?.role);
+      const appRole = String(appUser?.role ?? authProfile?.role ?? '').trim().toLowerCase();
+      const accountRole = isAdminAccount
+        ? 'admin'
+        : profile?.account_type === 'institution'
+          ? 'institution'
+          : appRole === 'teacher'
+            ? 'teacher'
+            : 'user';
       return {
         id: user.id,
         email: user.email ?? appUser?.email ?? null,
         name: profile?.name || appUser?.name || user.user_metadata?.name || user.user_metadata?.full_name || '이름 없음',
         createdAt: profile?.created_at ?? user.created_at ?? null,
-        maskedEmail: maskAdminEmail(user.email ?? appUser?.email),
         accountClass,
-        membershipEvidence,
+        accountRole,
         ...buildMasterAdminAccess({ subscription, grant }),
         latestOrder,
         billingIncident: deriveMasterAdminBillingIncident({
@@ -204,7 +224,7 @@ export async function GET(request: Request) {
     });
 
     if (view === 'overview') {
-      const production = rows.filter((row) => row.accountClass === 'production');
+      const production = rows.filter((row) => row.accountClass === 'production' && !isSpokeduStaffEmail(row.email));
       const summary = {
         total: production.length,
         free: 0,
@@ -212,9 +232,6 @@ export async function GET(request: Request) {
         premium: 0,
         promotions: 0,
         renewalFailed: 0,
-        qaTest: rows.filter((row) => row.accountClass === 'qa_test').length,
-        internal: rows.filter((row) => row.accountClass === 'internal').length,
-        inactive: rows.filter((row) => row.accountClass === 'inactive').length,
       };
       for (const row of production) {
         if (row.effectivePlan === 'premium' || row.effectivePlan === 'team') summary.premium += 1;
@@ -229,10 +246,26 @@ export async function GET(request: Request) {
         } : null)) summary.renewalFailed += 1;
       }
       const funnel = await funnelEvidence(production);
-      return withPrivateNoStore(NextResponse.json({ summary: { ...summary, funnel }, recentMembers: production.slice(-5).reverse() }));
+      return withPrivateNoStore(NextResponse.json({ summary: { ...summary, funnel } }));
+    }
+
+    if (view === 'billing') {
+      const billingRows = rows.filter((row) =>
+        row.accountClass === 'production'
+        && !isSpokeduStaffEmail(row.email)
+        && Boolean(row.subscription || row.latestOrder),
+      );
+      const start = (page - 1) * PAGE_SIZE;
+      return withPrivateNoStore(NextResponse.json({
+        members: billingRows.slice(start, start + PAGE_SIZE),
+        total: billingRows.length,
+        page,
+        pageSize: PAGE_SIZE,
+      }));
     }
 
     const filtered = rows.filter((user) => matchesScope(user.accountClass, scope))
+      .filter((user) => scope !== 'production' || !isSpokeduStaffEmail(user.email))
       .filter((user) => !query || user.name.toLowerCase().includes(query) || (user.email ?? '').toLowerCase().includes(query));
     const start = (page - 1) * PAGE_SIZE;
     return withPrivateNoStore(NextResponse.json({ members: filtered.slice(start, start + PAGE_SIZE), total: filtered.length, page, pageSize: PAGE_SIZE, scope }));

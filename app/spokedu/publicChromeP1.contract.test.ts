@@ -22,10 +22,9 @@ describe('public chrome P1 closure', () => {
     ].map(read);
 
     for (const source of runtimeSources) {
-      expect(source).not.toMatch(/href\s*=\s*["'{`]\/spokedu-master\/landing/);
-      expect(source).not.toMatch(/(?:router\.(?:push|replace)|window\.location\.replace)\(\s*["'`]\/spokedu-master\/landing/);
-      expect(source).not.toMatch(/window\.location\.href\s*=\s*["'`]\/spokedu-master\/landing/);
-      expect(source).toContain('SPOKEDU_PATHS.subscription');
+      expect(source).not.toMatch(/href\s*=\s*["'{`]\/spokedu-lab\/landing/);
+      expect(source).not.toMatch(/(?:router\.(?:push|replace)|window\.location\.replace)\(\s*["'`]\/spokedu-lab\/landing/);
+      expect(source).not.toMatch(/window\.location\.href\s*=\s*["'`]\/spokedu-lab\/landing/);
     }
     expect(runtimeSources[2]).toContain('`${SPOKEDU_PATHS.subscription}#plans`');
   });

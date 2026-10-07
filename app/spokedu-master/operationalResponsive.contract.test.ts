@@ -22,7 +22,7 @@ describe('operational responsive contract', () => {
     const attendance = read('app/spokedu-master/manage/AttendanceProjectionTable.tsx');
     expect(detail).toContain('presentation="manage-responsive"');
     expect(attendance).toContain('onSessionSelect ? <button');
-    expect(attendance).toContain('href={`/spokedu-master/activity?session=${encodeURIComponent(selectedSession.id)}`}');
+    expect(attendance).toContain('href={`/spokedu-lab/activity?session=${encodeURIComponent(selectedSession.id)}`}');
   });
 
   it('keeps membership controls touchable and mobile-first', () => {

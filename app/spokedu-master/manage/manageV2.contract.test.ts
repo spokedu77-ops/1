@@ -23,7 +23,7 @@ describe('SPOKEDU MASTER Manage V2 contract', () => {
     expect(activityRoute).toContain("import ManageView from '../manage/ManageView'");
     expect(manage).toContain('resolveActivityQuery(searchParams');
     expect(manage).toContain("searchParams.get('capture') === '1'");
-    expect(navigation).toContain("'/spokedu-master/manage': ['session', 'date', 'create', 'class', 'program', 'record', 'capture']");
+    expect(navigation).toContain("'/spokedu-lab/manage': ['session', 'date', 'create', 'class', 'program', 'record', 'capture']");
   });
 
   it('uses a direct calendar and a one-column time-sorted Agenda', () => {

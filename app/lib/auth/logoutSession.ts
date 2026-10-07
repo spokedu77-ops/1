@@ -65,7 +65,7 @@ export async function logoutCurrentSession(): Promise<void> {
   clearAdminCheckCache();
   clearLoginSessionMarkers();
   try {
-    await getSupabaseBrowserClient().auth.signOut({ scope: 'global' });
+    await getSupabaseBrowserClient().auth.signOut({ scope: 'local' });
   } catch {
     try {
       await getSupabaseBrowserClient().auth.signOut({ scope: 'local' });

@@ -2,8 +2,8 @@ export const PROGRAM_GATEWAY_PACK_ID = 'spokedu_master_program_gateway_media';
 export const PROGRAM_GATEWAY_PACK_NAME = 'SPOKEDU LAB Programs Gateway 대표 이미지';
 
 export const PROGRAM_GATEWAY_FALLBACK = {
-  lessonHero: '/spokedu/spokedu-promo-banner.png',
-  spomoveHero: '/images/spokedu/programs/program-spomove.jpg',
+  lessonHero: '/images/spokedu/programs/program-gate-play.png',
+  spomoveHero: '/images/spokedu/programs/program-gate-spomove.png',
 } as const;
 
 export type ProgramGatewayHeroKey = 'lessonHero' | 'spomoveHero';

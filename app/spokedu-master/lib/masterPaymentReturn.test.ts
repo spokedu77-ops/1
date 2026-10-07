@@ -7,21 +7,21 @@ describe('master post-payment return path', () => {
       getSafeMasterPostPaymentPath(
         '/spokedu-master/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start&program=funstick-fencing&paymentKey=x',
       ),
-    ).toBe('/spokedu-master/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start&program=funstick-fencing');
+    ).toBe('/spokedu-lab/spomove/session?preset=simon-basic&mode=projector&sound=on&entry=start&program=funstick-fencing');
   });
 
   it('returns from payment with legitimate SPOMOVE context and strips only sensitive keys', () => {
     expect(getSafeMasterPostPaymentPath(
       '/spokedu-master/spomove/session?preset=A&entry=start&mode=mobile&session=B&returnTo=C&source=home&authKey=x&customerKey=y&paymentKey=z&orderId=o',
-    )).toBe('/spokedu-master/spomove/session?preset=A&mode=mobile&entry=start&returnTo=C&source=home&session=B');
+    )).toBe('/spokedu-lab/spomove/session?preset=A&mode=mobile&entry=start&returnTo=C&source=home&session=B');
   });
 
   it('keeps route-specific lesson and record query keys only', () => {
     expect(getSafeMasterPostPaymentPath('/spokedu-master/class-record?program=p1&record=r1&plan=premium')).toBe(
-      '/spokedu-master/class-record?program=p1&record=r1',
+      '/spokedu-lab/class-record?program=p1&record=r1',
     );
     expect(getSafeMasterPostPaymentPath('/spokedu-master/library/p1?from=dashboard&intent=open_library')).toBe(
-      '/spokedu-master/library/p1?from=dashboard',
+      '/spokedu-lab/library/p1?from=dashboard',
     );
   });
 
@@ -35,14 +35,14 @@ describe('master post-payment return path', () => {
       '/spokedu-master/payment?plan=premium',
       '/spokedu-master/payment/success?next=/spokedu-master/spomove',
     ]) {
-      expect(getSafeMasterPostPaymentPath(input, '/spokedu-master/spomove')).toBe('/spokedu-master/spomove');
+      expect(getSafeMasterPostPaymentPath(input, '/spokedu-master/spomove')).toBe('/spokedu-lab/spomove');
     }
   });
 
   it('provides intent-specific fallbacks', () => {
-    expect(getFallbackForMasterIntent('open_library')).toBe('/spokedu-master/library');
-    expect(getFallbackForMasterIntent('start_spomove')).toBe('/spokedu-master/spomove');
-    expect(getFallbackForMasterIntent('continue_record')).toBe('/spokedu-master/class-record');
+    expect(getFallbackForMasterIntent('open_library')).toBe('/spokedu-lab/library');
+    expect(getFallbackForMasterIntent('start_spomove')).toBe('/spokedu-lab/spomove');
+    expect(getFallbackForMasterIntent('continue_record')).toBe('/spokedu-lab/class-record');
   });
 
   it('preserves exact Session and schedule context after payment', () => {
@@ -50,12 +50,12 @@ describe('master post-payment return path', () => {
       getSafeMasterPostPaymentPath(
         '/spokedu-master/activity?session=sess-1&date=2026-08-26&create=1&class=class-a&plan=premium',
       ),
-    ).toBe('/spokedu-master/activity?session=sess-1&date=2026-08-26&create=1&class=class-a');
+    ).toBe('/spokedu-lab/activity?session=sess-1&date=2026-08-26&create=1&class=class-a');
     expect(getSafeMasterPostPaymentPath('/spokedu-master/report?session=sess-1&plan=premium')).toBe(
-      '/spokedu-master/report?session=sess-1',
+      '/spokedu-lab/report?session=sess-1',
     );
     expect(getSafeMasterPostPaymentPath('/spokedu-master/students/student-a?plan=premium')).toBe(
-      '/spokedu-master/students/student-a',
+      '/spokedu-lab/students/student-a',
     );
   });
 
@@ -64,7 +64,7 @@ describe('master post-payment return path', () => {
       getSafeMasterPostPaymentPath(
         '/spokedu-master/spomove?view=favorites&group=stroop&difficulty=normal&movement=visualSearch&q=%ED%99%94%EC%82%B4%ED%91%9C',
       ),
-    ).toBe('/spokedu-master/spomove?view=favorites&group=stroop&difficulty=normal&movement=visualSearch&q=%ED%99%94%EC%82%B4%ED%91%9C');
+    ).toBe('/spokedu-lab/spomove?view=favorites&group=stroop&difficulty=normal&movement=visualSearch&q=%ED%99%94%EC%82%B4%ED%91%9C');
     expect(
       getSafeMasterPostPaymentPath(
         '/spokedu-master/spomove/session?preset=simon-basic&session=sess-1&sessionProgram=prog-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&hubReturn=%2Fspokedu-master%2Fspomove%3Fgroup%3Dstroop',

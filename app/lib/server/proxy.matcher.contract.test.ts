@@ -41,6 +41,12 @@ describe('proxy matcher / CPU contract', () => {
     expect(proxySource).not.toContain('SESSION_CACHE_TTL_MS');
   });
 
+  it('shares refreshed auth cookies with the current request and browser response', () => {
+    expect(proxySource).toContain('request.cookies.set(name, value)');
+    expect(proxySource).toContain('response = NextResponse.next({ request })');
+    expect(proxySource).toContain('response.cookies.set(name, value, options)');
+  });
+
   it('validates phase tokens before Supabase in handler', () => {
     expect(proxyHandler).toContain('isPhaseTokenPath(pathname)');
     expect(proxyHandler).toContain('validatePhaseToken(request)');

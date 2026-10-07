@@ -11,8 +11,8 @@ describe('SPOKEDU MASTER class tools placement', () => {
     const preview = read('app/spokedu-master/components/lesson/ProgramPreviewModal.tsx');
 
     expect(dashboard).toContain('buildClassToolHref(recentClassTool.id)');
-    expect(library).not.toContain('/spokedu-master/class-tools');
-    expect(preview).not.toContain('/spokedu-master/class-tools');
+    expect(library).not.toContain('/spokedu-lab/class-tools');
+    expect(preview).not.toContain('/spokedu-lab/class-tools');
   });
 
   it('keeps TEACH tools directly accessible while preserving contextual Session access', () => {
@@ -22,11 +22,11 @@ describe('SPOKEDU MASTER class tools placement', () => {
     const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 
     expect(statusBar).toContain('MASTER_NAV_ITEMS');
-    expect(navLabels).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
-    expect(navLabels).toContain("href: '/spokedu-master/manage', label: '수업 관리'");
+    expect(navLabels).toContain("href: '/spokedu-lab/class-tools', label: '수업 도구'");
+    expect(navLabels).toContain("href: '/spokedu-lab/manage', label: '수업 관리'");
     expect(tabBar).toContain("'class-tools': Wrench");
     expect(tabBar).toContain('hasMasterRouteCapability(snapshot, capability)');
-    expect(detail).not.toContain('/spokedu-master/class-tools');
+    expect(detail).not.toContain('/spokedu-lab/class-tools');
   });
 
   it('ClassToolsView supports standalone use and validated Session return context', () => {
@@ -34,7 +34,7 @@ describe('SPOKEDU MASTER class tools placement', () => {
 
     expect(tools).toContain('parseMasterWorkReturnHref');
     expect(tools).toContain("searchParams.get('returnTo')");
-    expect(tools).toContain("requestedSessionId ? buildActivitySessionHref(requestedSessionId) : '/spokedu-master/activity'");
+    expect(tools).toContain("requestedSessionId ? buildActivitySessionHref(requestedSessionId) : '/spokedu-lab/activity'");
     expect(tools).toContain('invalidSessionContext');
     expect(tools).not.toContain('window.location.href');
     expect(tools).not.toContain('TOOL_STATUS');
