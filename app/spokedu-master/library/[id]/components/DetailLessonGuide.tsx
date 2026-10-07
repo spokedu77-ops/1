@@ -413,7 +413,7 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
   return (
     <section data-detail-related-videos className="mt-16 sm:mt-[72px]" aria-labelledby="related-video-heading">
       <h2 id="related-video-heading" className="m-0 text-[21px] font-semibold tracking-[-0.025em] text-[color:var(--spm-t)]">
-        관련 수업 영상
+        다른 수업 영상
       </h2>
       <div className={`mt-5 grid items-start gap-4 sm:gap-5 ${gridClass}`}>
         {videos.map((video) => (

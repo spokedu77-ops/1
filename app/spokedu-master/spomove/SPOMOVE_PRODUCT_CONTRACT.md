@@ -17,8 +17,7 @@
 | 표면 | 역할 |
 | --- | --- |
 | Hub | Catalog Family와 활동을 현재 상품 구조로 제시 |
-| Start | 현재 실행 조건 **확인** 후 명시 시작 |
-| Settings | 실행 조건 **변경** 후 명시 시작 |
+| Setup | 현재 실행 조건 **확인·변경** 후 명시 시작 |
 | Guide | 지도법 — **카드 CTA가 아님**. Start 확인 Sheet 내부에 유지 (카드 밖 별도 「가이드 보기」 금지) |
 | Running | 화면 자극에 집중 (Engine only) |
 | Result · Recent | 실행 조합 기록·재사용 (확인 후 시작) |
@@ -27,16 +26,16 @@
 
 ### Entry · Autostart
 
-- `entry=start` | `entry=settings` (없으면 start)
+- Public UI는 `entry=settings` 단일 Setup으로 진입. 기존 `entry=start` 링크도 같은 Setup 화면으로 호환
 - **Legacy autostart**는 `entry` 쿼리가 **없을 때만** (`?autostart=1`). `entry=start&autostart=1` / `entry=settings&autostart=1` 은 Setup 화면
 - **Public UI 신규 링크는 autostart를 생성하지 않음** (Hub·Recent·즐겨찾기·검색·결과 재실행·저장 설정)
-- Result 재실행은 `entry=start` 확인 화면으로 (즉시 Engine 금지)
+- Result 재실행은 `entry=settings` Setup 화면으로 (즉시 Engine 금지)
 - Legacy autostart는 명시된 제한 범위에서만 호환하며 신규 링크에는 사용하지 않음
 
 ### Hub
 
-- `[활동 준비]` · 썸네일 → 확인 Sheet(진행 방법·준비 포함). Sheet Primary만 `entry=start` (`이 설정으로 시작`)
-- `[시작 설정]` → `entry=settings` (Secondary, 활동 준비보다 작은 무게)
+- `[활동 준비]` · 썸네일 → 확인 Sheet(진행 방법·준비 포함). Sheet 하단의 단일 `[수업 시작 설정]` → `entry=settings`
+- Setup의 X는 해당 활동의 확인 Sheet로 복귀
 - 카드 레벨 「가이드 보기」·「바로 실행」·「바로 시작」 금지. 썸네일 aria는 `{활동명} 활동 준비 열기`
 - Hub 클릭으로 **Family 저장값 변경 금지** (`writeFamilyMovement` 없음)
 - `preset.description` 임시 미노출 · 임시 자동 카피 금지
@@ -51,18 +50,18 @@
 - 자극 시간 우선순위는 `명시적 cueSeconds URL → Admin 추천값 → 프로그램별 저장값 → Preset 기본값`이다. Admin 추천값이 전달된 공식 모달 진입에서는 이전 브라우저 저장값이 추천값을 가리지 않는다.
 - 추천값은 기존 SPOMOVE content pack에 저장하며 허용 범위는 정수 `1~6초`이다.
 - SSOT는 `session/page.tsx` (`movementPick` · `cueSeconds` 등)
-- Start/Settings는 Controlled만 · **동일** `beginConfiguredSession` 호출
-- 저장: Settings에서 움직임 변경 시 · 실제 수업 시작 시
+- 통합 Setup은 Controlled만 · `beginConfiguredSession`으로 명시 시작
+- 저장: Setup에서 움직임 변경 시 · 실제 수업 시작 시
 
-### Start 요약
+### Setup 요약
 
-- 현재 실행값은 `SPOMAT N장 · 자극 N초`만 표시
+- 매트 배치와 현재 실행 분량(단계·시간·반복 등)을 설정과 함께 표시
 - difficulty · movement summary · 전체화면 · 소리 상태는 표시하지 않음
-- 속도 지원: Settings에서 자극 속도 선택 · 비지원: 비활성 1~6초 나열 금지
+- 속도 지원: Setup에서 자극 속도 선택 · 비지원: 비활성 1~6초 나열 금지
 - Session Settings는 난이도 override를 읽거나 저장하지 않으며 Preset의 작성된 Engine 기본값을 그대로 실행
-- Start selector 없음 · 명시 시작
+- 별도 Start 화면과 selector 없음 · Setup에서 명시 시작
 
-### Settings
+### Setup 설정
 
 - `MovementConfigurator variant="compact"` · fixed / bodyCue / DIVE 분기 유지
 - Compact 안내는 `compactMovementInstruction` (sameSide/oppositeSide 손발 규칙 포함)

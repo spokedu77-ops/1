@@ -69,7 +69,7 @@ describe("MASTER Home content card system", () => {
     expect(weeklyCard).toContain("MV_HOME_CARD_TITLE");
     expect(weeklyCard).toContain("<Heart className={`h-4 w-4");
     expect(thumb).toContain("object-contain object-center");
-    expect(thumb).toContain("aspect-[4/3] w-full");
+    expect(thumb).toContain("'aspect-[4/3] w-full'");
     expect(thumb).toContain("object-cover object-center blur-xl");
   });
 
@@ -153,7 +153,7 @@ describe("MASTER Home content card system", () => {
     expect(dashboard).not.toContain('data-dashboard-rail=');
     expect(dashboard).toContain('data-dashboard-grid="operational"');
     expect(dashboard).toContain('grid grid-cols-1 items-stretch gap-3 min-[768px]:grid-cols-3');
-    expect(dashboard.match(/grid grid-cols-2 items-stretch gap-3 min-\[768px\]:gap-5 min-\[1200px\]:grid-cols-4/g)).toHaveLength(2);
+    expect(dashboard.match(/grid grid-cols-2 items-stretch gap-3 min-\[768px\]:gap-5 min-\[1024px\]:grid-cols-4/g)).toHaveLength(2);
     expect(dashboard).not.toContain('auto-fit');
     expect(dashboard).not.toContain('auto-fill');
     expect(continueCard).toContain('line-clamp-2');
@@ -161,14 +161,15 @@ describe("MASTER Home content card system", () => {
     expect(continueCard).toContain('whitespace-nowrap');
   });
 
-  it("keeps compact media dense without changing mobile or desktop composition", () => {
-    const compactMediaRule = "min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)]";
-    expect(dashboard).toContain("compactMedia");
-    expect(weeklyCard).toContain(compactMediaRule);
-    expect(dashboard).toContain(compactMediaRule);
-    expect(skeleton).toContain(compactMediaRule);
+  it("keeps Home media proportional and brings all four recommendations into regular desktop view", () => {
+    expect(weeklyCard).not.toContain("compactMedia");
+    expect(weeklyCard).toContain("'home-cover-4-3'");
+    expect(thumb).toContain("homeCoverFourThree || favoritesCoverFourThree");
+    expect(thumb).toContain("h-full w-full object-cover object-center");
+    expect(dashboard).not.toContain("max-[1199.98px]:!h-");
+    expect(skeleton).not.toContain("max-[1199.98px]:!h-");
     expect(skeleton).toContain("section === 'weekly' ? 'aspect-[4/3]' : 'aspect-[3/2]'");
-    expect(dashboard.match(/min-\[1200px\]:grid-cols-4/g)).toHaveLength(2);
+    expect(dashboard.match(/min-\[1024px\]:grid-cols-4/g)).toHaveLength(2);
   });
 
   it("uses a stable SPOMOVE heading row and delegates mobile tab clearance to AppShell", () => {

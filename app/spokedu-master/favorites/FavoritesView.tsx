@@ -295,7 +295,7 @@ export default function FavoritesView() {
                   </Link>
                   {isPremium ? (
                     <Link href="/spokedu-lab/spomove" className="inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
-                      스포무브 둘러보기
+                      Spomove 둘러보기
                     </Link>
                   ) : null}
                 </div>

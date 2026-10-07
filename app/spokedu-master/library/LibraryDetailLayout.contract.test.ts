@@ -208,7 +208,7 @@ describe('SPOKEDU MASTER library detail final IA', () => {
   it('uses preparation context and user-facing related-video wording without changing selection reasons', () => {
     expect(guide).toContain('data-detail-context');
     expect(guide).toContain('상세 수업 준비');
-    expect(guide).toContain('관련 수업 영상');
+    expect(guide).toContain('다른 수업 영상');
     expect(guide).toContain("'신체 기능 유사': '비슷한 신체 기능'");
     expect(guide).toContain("'같은 교구': '같은 교구 활용'");
     expect(guide).toContain("'동작 패턴 유사': '비슷한 움직임'");

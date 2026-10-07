@@ -96,12 +96,10 @@ describe("SPOMOVE-MASTER-CARD-UX-P1-01", () => {
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(hub).not.toContain("startHref={");
     expect(preview).toContain("spm-btn-primary");
-    expect(preview).toContain("sessionHref('start')");
     expect(preview).toContain("sessionHref('settings')");
   });
 
-  it("keeps both prepare and settings routes available from Preview", () => {
-    expect(preview).toContain("sessionHref('start')");
+  it("keeps the consolidated settings route available from Preview", () => {
     expect(preview).toContain("sessionHref('settings')");
   });
 

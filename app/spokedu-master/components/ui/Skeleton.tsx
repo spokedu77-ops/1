@@ -68,8 +68,6 @@ export function SkeletonHero() {
 }
 
 export function DashboardSkeleton() {
-  const cardMediaClass = 'w-full !rounded-none min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto';
-
   return (
     <div className="h-full overflow-y-auto" style={{ background: 'var(--spm-bg)' }}>
       <SkeletonHero />
@@ -82,11 +80,11 @@ export function DashboardSkeleton() {
       {(['weekly', 'spomove'] as const).map((section) => (
         <div key={section} className={`mx-auto w-full max-w-[1168px] px-4 pt-10 min-[768px]:px-6 min-[768px]:pt-12 ${section === 'spomove' ? 'pb-6 min-[768px]:pb-12' : ''}`}>
           <Skeleton height={24} width={210} className="mb-4 min-[768px]:mb-5" />
-          <div data-dashboard-skeleton-grid={section} className="grid grid-cols-2 gap-3 min-[768px]:gap-5 min-[1200px]:grid-cols-4">
+          <div data-dashboard-skeleton-grid={section} className="grid grid-cols-2 gap-3 min-[768px]:gap-5 min-[1024px]:grid-cols-4">
             {Array.from({ length: 4 }, (_, index) => (
               <div key={index} className="overflow-hidden rounded-[16px] border border-slate-200/80 bg-white">
                 <Skeleton
-                  className={`${cardMediaClass} ${section === 'weekly' ? 'aspect-[4/3]' : 'aspect-[3/2]'}`}
+                  className={`w-full !rounded-none ${section === 'weekly' ? 'aspect-[4/3]' : 'aspect-[3/2]'}`}
                 />
                 <div className="space-y-2 px-3.5 pb-3.5 pt-3">
                   <Skeleton height={10} width="45%" />

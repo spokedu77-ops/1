@@ -185,18 +185,15 @@ export function resolveSpomoveExecutionVolume(
     return timeVolume(standardSpomoveDurationSec(cueSeconds, rounds));
   }
 
-  if (mode === 'simon' && level === 5) {
-    return timeVolume(Math.max(1, rounds) * 3);
-  }
-
   if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
     return repsVolume(rounds);
   }
 
   if (mode === 'reactTrain') {
+    if (level === 1 || level === 2) return repsVolume(rounds);
+    if (level === 6 || level === 10) return { ...repsVolume(rounds), label: `${rounds}회 + 보너스 15초`, durationSec: 15 };
     if (level === 8) return roundsVolume(snapRoundOption(rounds, NUMBER_CART_ROUND_OPTIONS, 5));
     if (level === 9) return roundsVolume(snapRoundOption(rounds, COLOR_TRACKER_ROUND_OPTIONS, 5));
-    if (level === 10) return goalkeeperVolume(preset.engine.goalkeeperBonusTimeEnabled ?? false);
     return timeVolume(standardSpomoveDurationSec(cueSeconds, rounds));
   }
 

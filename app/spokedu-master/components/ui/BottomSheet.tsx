@@ -5,6 +5,33 @@ import type { ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+let activeBodyScrollLocks = 0;
+let bodyOverflowBeforeFirstLock: string | null = null;
+const BODY_SCROLL_LOCK_ATTRIBUTE = 'data-spm-bottom-sheet-scroll-lock';
+
+function acquireBodyScrollLock() {
+  if (activeBodyScrollLocks === 0) {
+    const staleBottomSheetLock = document.body.hasAttribute(BODY_SCROLL_LOCK_ATTRIBUTE);
+    bodyOverflowBeforeFirstLock = staleBottomSheetLock || document.body.style.overflow === 'hidden'
+      ? ''
+      : document.body.style.overflow;
+  }
+  activeBodyScrollLocks += 1;
+  document.body.setAttribute(BODY_SCROLL_LOCK_ATTRIBUTE, 'true');
+  document.body.style.overflow = 'hidden';
+
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    activeBodyScrollLocks = Math.max(0, activeBodyScrollLocks - 1);
+    if (activeBodyScrollLocks !== 0) return;
+    document.body.style.overflow = bodyOverflowBeforeFirstLock ?? '';
+    document.body.removeAttribute(BODY_SCROLL_LOCK_ATTRIBUTE);
+    bodyOverflowBeforeFirstLock = null;
+  };
+}
+
 export function BottomSheet({
   open,
   title,
@@ -92,8 +119,7 @@ export function BottomSheet({
     const windowX = window.scrollX;
     const windowY = window.scrollY;
 
-    const previousOverflow = document.body.style.overflow;
-    if (nested || !desktopSession) document.body.style.overflow = 'hidden';
+    const releaseBodyScrollLock = nested || !desktopSession ? acquireBodyScrollLock() : null;
     requestAnimationFrame(() => {
       const initialFocusTarget = initialFocusSelector && dialogRef.current
         ? dialogRef.current.querySelector<HTMLElement>(initialFocusSelector)
@@ -135,7 +161,7 @@ export function BottomSheet({
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown, nested);
-      document.body.style.overflow = previousOverflow;
+      releaseBodyScrollLock?.();
       if (previousFocusRef.current?.isConnected) previousFocusRef.current.focus({ preventScroll: true });
       if (nested) return;
       const restore = () => {

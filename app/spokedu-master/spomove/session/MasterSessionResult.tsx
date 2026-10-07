@@ -29,7 +29,6 @@ export function MasterSessionResult({
   diveActionMove = null,
   recordHref,
   hubHref,
-  leaveHref,
   sessionReturnHref,
   canMarkComplete = false,
   markCompleteStatus = 'idle',
@@ -53,8 +52,6 @@ export function MasterSessionResult({
   diveActionMove?: DiveActionMoveSession | null;
   recordHref: string | null;
   hubHref: string;
-  /** TopBar/목록 — Dashboard/Favorites/Hub/Session 원점 */
-  leaveHref?: string;
   /** Session operating origin — Primary return when present. */
   sessionReturnHref?: string | null;
   /** Explicit teacher action only — never auto from engine done. */
@@ -89,7 +86,7 @@ export function MasterSessionResult({
       programTitle={activityTitle}
       volumeLabel={executionVolume.label}
       retryLabel="같은 설정으로 다시 준비"
-      onBack={() => router.push(leaveHref || sessionReturnHref || hubHref)}
+      onBack={() => router.push(hubHref)}
       onRetry={onRetry}
       footer={(
         <div className="grid gap-2">

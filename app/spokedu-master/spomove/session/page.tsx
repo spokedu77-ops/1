@@ -22,7 +22,10 @@ import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvide
 import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import { EngineRouter, preloadSpomoveEngine, type EngineCompletePayload } from './EngineRouter';
 import { SPOMOVE_SESSION_OVERLAY_LAYER } from './sessionOverlayLayer';
-import { lockViewportScroll } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
+import {
+  lockViewportScroll,
+  unlockViewportScroll,
+} from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
 import {
   findOfficialSpomovePreset,
   publicOfficialPresetSessionHref,
@@ -66,7 +69,6 @@ import {
 } from '../movements/movementResolve';
 import type { MovementPick } from '../movements/movementTypes';
 import { SessionSetupShell } from './SessionSetupShell';
-import { StartBriefing } from './StartBriefing';
 import { SettingsBriefing } from './SettingsBriefing';
 import {
   legacyPairToSpomoveAudioMode,
@@ -98,7 +100,6 @@ import {
 } from './runtimeContinuity';
 import {
   isInteractiveKeyTarget,
-  parseSessionEntryMode,
   resolveLegacyAutostart,
 } from './sessionEntryMode';
 import {
@@ -188,7 +189,6 @@ function SpomoveSessionContent() {
     [officialPreset],
   );
   const requestedLaunchMode = normalizeMode(searchParams.get('mode'));
-  const entryMode = parseSessionEntryMode(searchParams.get('entry'));
   const legacyAutostart = resolveLegacyAutostart({
     entryParam: searchParams.get('entry'),
     autostartParam: searchParams.get('autostart'),
@@ -777,6 +777,9 @@ function SpomoveSessionContent() {
       completionReason,
       endedAt: Date.now(),
     })) return;
+    // The running engine owns one viewport lock. Hand that lock off before the
+    // result screen mounts and acquires its own, so leaving Result restores the Hub scroll.
+    unlockViewportScroll();
     const startedAt = sessionStartedAtRef.current;
     const fallbackElapsedMs = startedAt ? Math.max(1, spomoveRuntimeNow() - startedAt) : 0;
     setSessionResult({
@@ -961,7 +964,7 @@ function SpomoveSessionContent() {
     setState('idle');
     const origin = readSpomoveSessionOrigin(searchParams);
     const href = publicOfficialPresetSessionHref(officialPreset, {
-      entry: 'start',
+      entry: 'settings',
       mode: launchMode,
       cueSeconds: effectiveCueSeconds,
       movement: movementStateRef.current.currentMovement,
@@ -1015,13 +1018,6 @@ function SpomoveSessionContent() {
       sessionOrigin.sessionId ? buildActivitySessionHref(sessionOrigin.sessionId) : '/spokedu-lab/activity',
     )
     : null;
-  const openSettings = useCallback(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('entry', 'settings');
-    params.delete('difficulty');
-    router.replace(`/spokedu-lab/spomove/session?${params.toString()}`);
-  }, [router, searchParams]);
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === 'Space' && state === 'idle' && showBriefing) {
@@ -1200,44 +1196,29 @@ function SpomoveSessionContent() {
         <SessionSetupShell
           programLabel={displayModel?.programLabel ?? officialPreset.programTitle}
           displayTitle={sessionDisplayTitle}
-          compact={entryMode === 'start'}
         >
-          {entryMode === 'settings' ? (
-            <SettingsBriefing
-              matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}
-              diveEnvironmentTheme={diveEnvironmentTheme}
-              onDiveEnvironmentThemeChange={handleDiveEnvironmentThemeChange}
-              sportsArenaFeatures={sportsArenaFeatures}
-              onSportsArenaFeaturesChange={setSportsArenaFeatures}
-              flowDuration={flowDuration}
-              onFlowDurationChange={setFlowDuration}
-              flowIncludeBonus={flowIncludeBonus}
-              onFlowIncludeBonusChange={setFlowIncludeBonus}
-              preset={officialPreset}
-              audioMode={(audioMode === 'music' ? 'full' : audioMode) as SpomoveUserAudioMode}
-              onAudioModeChange={(mode) => setAudioMode(userAudioModeWithBgmAvailability(mode, bgmList.length > 0))}
-              bgmAvailable={bgmList.length > 0}
-              startDisabled={bgmLoading || !canStartSession}
-              cueSeconds={effectiveCueSeconds}
-              recommendedCueSeconds={effectiveRecommendedCueSeconds}
-              onCueSecondsChange={handleCueSecondsChange}
-              onStart={beginConfiguredSession}
-              cueFloorNotice={cueFloorNotice}
-            />
-          ) : (
-            <StartBriefing
-              preset={officialPreset}
-              cueSeconds={effectiveCueSeconds}
-              executionVolume={executionVolume!}
-              flowDuration={flowDuration}
-              flowIncludeBonus={flowIncludeBonus}
-              matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}
-              canChangeSettings={supportsCueSpeedOverride(officialPreset)}
-              startDisabled={bgmLoading || !canStartSession}
-              onSettings={openSettings}
-              onStart={beginConfiguredSession}
-            />
-          )}
+          <SettingsBriefing
+            matCount={matGuidance?.recommended ?? activityFamily?.matRequirement.minMats ?? 1}
+            executionVolume={executionVolume!}
+            diveEnvironmentTheme={diveEnvironmentTheme}
+            onDiveEnvironmentThemeChange={handleDiveEnvironmentThemeChange}
+            sportsArenaFeatures={sportsArenaFeatures}
+            onSportsArenaFeaturesChange={setSportsArenaFeatures}
+            flowDuration={flowDuration}
+            onFlowDurationChange={setFlowDuration}
+            flowIncludeBonus={flowIncludeBonus}
+            onFlowIncludeBonusChange={setFlowIncludeBonus}
+            preset={officialPreset}
+            audioMode={(audioMode === 'music' ? 'full' : audioMode) as SpomoveUserAudioMode}
+            onAudioModeChange={(mode) => setAudioMode(userAudioModeWithBgmAvailability(mode, bgmList.length > 0))}
+            bgmAvailable={bgmList.length > 0}
+            startDisabled={bgmLoading || !canStartSession}
+            cueSeconds={effectiveCueSeconds}
+            recommendedCueSeconds={effectiveRecommendedCueSeconds}
+            onCueSecondsChange={handleCueSecondsChange}
+            onStart={beginConfiguredSession}
+            cueFloorNotice={cueFloorNotice}
+          />
         </SessionSetupShell>
       ) : null}
 
@@ -1281,7 +1262,6 @@ function SpomoveSessionContent() {
             ].filter(Boolean) as string[]}
             recordHref={recordProgramHref}
             hubHref={hubReturnHref}
-            leaveHref={workReturnHref}
             sessionReturnHref={sessionReturnHref}
             canMarkComplete={Boolean(sessionOrigin.sessionId && sessionOrigin.sessionProgramId && state === 'done')}
             markCompleteStatus={markCompleteStatus}

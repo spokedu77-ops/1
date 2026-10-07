@@ -820,7 +820,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     executionFacts: [
       { label: '자극 방식', value: '풍선 사이먼' },
       { label: '진행 방식', value: '순간 등장 · 터짐' },
-      { label: '실행 시간', value: '약 60초' },
+      { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },

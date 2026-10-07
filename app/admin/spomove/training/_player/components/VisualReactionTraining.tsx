@@ -275,46 +275,47 @@ class SimonBalloon {
   wobble: number;
   t: number;
   triggerMs: number;
+  maxScale: number;
 
-  constructor(g: GameState, index = 0, total = 1) {
+  constructor(g: GameState, _index = 0, total = 1) {
     this.lane = Math.floor(Math.random() * 4);
     this.color = RT_COLORS[this.lane];
-    const r0 = Math.max(Math.min(g.W, g.H) * 0.055, 34);
-    this.baseR = r0 * (total > 1 ? 1.05 : 1.25);
+    const r0 = Math.max(Math.min(g.W, g.H) * 0.07, 44);
+    this.baseR = r0 * (total > 1 ? 1 : 1.2);
     this.r = this.baseR;
-    const maxR = this.baseR * 1.5;
-    const edge = total > 1
-      ? (index === 0 ? Math.floor(Math.random() * 4) : -1)
-      : Math.floor(Math.random() * 4);
-    const primaryEdge = edge >= 0 ? edge : 0;
-    const opposite = [1, 0, 3, 2] as const;
-    const resolvedEdge = total > 1 && index === 1 ? opposite[(g.objs.find((o) => o instanceof SimonBalloon && !o.dead) as SimonBalloon | undefined)?.edge ?? 0] : primaryEdge;
+    this.triggerMs = Math.min(g.cueMs, 3000);
+    this.maxScale = 1.5 + (this.triggerMs / 3000) * 0.8;
+    const maxR = this.baseR * this.maxScale;
+    const firstBalloon = total > 1
+      ? g.objs.find((object) => object instanceof SimonBalloon && !object.dead) as SimonBalloon | undefined
+      : undefined;
+    const availableEdges = [0, 1, 2, 3].filter((candidate) => candidate !== firstBalloon?.edge);
+    const resolvedEdge = availableEdges[Math.floor(Math.random() * availableEdges.length)] ?? 0;
     this.edge = resolvedEdge;
-    const midX = g.W / 2;
-    const midY = Math.max(maxR, Math.min(g.hitY - maxR, g.hitY * 0.48));
     const leftX = maxR + g.W * 0.05;
     const rightX = g.W - maxR - g.W * 0.05;
     const topY = maxR + g.H * 0.08;
-    const bottomY = Math.max(maxR, Math.min(g.hitY - maxR - 12, g.hitY - maxR - g.H * 0.05));
+    const bottomY = Math.max(topY, Math.min(g.hitY - maxR - 12, g.hitY - maxR - g.H * 0.05));
+    const randomX = leftX + Math.random() * Math.max(1, rightX - leftX);
+    const randomY = topY + Math.random() * Math.max(1, bottomY - topY);
     if (resolvedEdge === 0) {
       this.x = leftX;
-      this.y = midY;
+      this.y = randomY;
     } else if (resolvedEdge === 1) {
       this.x = rightX;
-      this.y = midY;
+      this.y = randomY;
     } else if (resolvedEdge === 2) {
-      this.x = midX;
+      this.x = randomX;
       this.y = topY;
     } else {
-      this.x = midX;
+      this.x = randomX;
       this.y = bottomY;
     }
     this.fired = false;
     this.dead = false;
     this.wobble = (Math.random() - 0.5) * 0.4;
     this.t = 0;
-    // 풍선 안에서 3·2·1을 각각 정확히 1초씩 보여준 뒤 터진다.
-    this.triggerMs = 3000;
+    // 1~2초 cue는 그대로, 3초 이상은 3초 동안 크게 성장한 뒤 터진다.
   }
 
   update(
@@ -328,7 +329,7 @@ class SimonBalloon {
     if (!this.fired) {
       const growT = Math.min(1, this.t / Math.max(1, this.triggerMs));
       const eased = 1 - (1 - growT) * (1 - growT);
-      this.r = this.baseR * (1 + 0.5 * eased);
+      this.r = this.baseR * (1 + (this.maxScale - 1) * eased);
       this.x += Math.sin(this.t * 0.01 + this.wobble) * 0.5;
       if (this.t >= this.triggerMs) {
         const ready = g.mode === 'balloonSimon'
@@ -593,6 +594,7 @@ function buildFlashSpikeLayout(count = 26): FlashSpike[] {
 type Props = {
   variant: ReactTrainVariant;
   durationSec: number;
+  targetReps?: number;
   /** 시지각 전용: 블록/버블이 히트 라인까지 도달하는 목표 시간(초) */
   speedSec: number;
   /** flow/balloonSimon 전용: 동시 신호 수. 기본값 1 */
@@ -601,7 +603,7 @@ type Props = {
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function VisualReactionTraining({ variant, durationSec, speedSec, concurrent = 1, onComplete }: Props) {
+export function VisualReactionTraining({ variant, durationSec, targetReps, speedSec, concurrent = 1, onComplete }: Props) {
   const playAreaRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLCanvasElement>(null);
   const gRef = useRef<GameState | null>(null);
@@ -674,6 +676,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       const cv = cvRef.current;
       if (!g || !cv) return;
       g.stims++;
+      if (targetReps && g.stims === targetReps) setTimeout(endGame, 0);
       g.combo++;
       if (g.combo > g.maxCombo) g.maxCombo = g.combo;
       g.laneCount[lane]++;
@@ -935,6 +938,9 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         }
       } else if (g.mode === 'balloonSimon') {
         const active = g.objs.filter((o) => o instanceof SimonBalloon && !o.dead).length;
+        // Do not consume the spawn deadline while the previous cue is still alive.
+        // As soon as it fires, the next animation frame fills the empty slot.
+        if (active >= concurrent) return;
         for (let i = active; i < concurrent; i++) {
           g.objs.push(new SimonBalloon(g, i, concurrent));
         }
@@ -997,7 +1003,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
 
     const computeSpawnInt = () => {
       /* 풍선 사이먼: 신호 속도(초) = A→B 스폰 간격 */
-      if (variant === 'balloonSimon') return 3000;
+      if (variant === 'balloonSimon') return Math.round(fallTimeSec * 1000);
       /* 초등 친화: 최소 간격 상향 + 단계별 간격 완화(동시 스폰 체감 완화) */
       const base = Math.max(560, 1780 - (lv - 1) * 130);
       /* FLOW: concurrent 수에 따라 스폰 간격 조정 */
@@ -1015,7 +1021,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
 
     /** 실제 히트 간격: 스폰보다 우선 체감되는 연속 자극 간 최소 시간 */
     const computeMinStimGapMs = () => {
-      if (variant === 'balloonSimon') return 3000;
+      if (variant === 'balloonSimon') return Math.round(fallTimeSec * 1000);
       if (variant === 'flow') return Math.max(560, 1020 - (lv - 1) * 64);
       if (variant === 'flash') return Math.max(460, 860 - (lv - 1) * 56);
       return Math.max(520, 980 - (lv - 1) * 62);
@@ -1053,7 +1059,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       g.timer = setInterval(() => {
         const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
         if (g.timeLeft !== newLeft) { g.timeLeft = newLeft; updateHud(); }
-        if (g.timeLeft <= 0) {
+        if (targetReps == null && g.timeLeft <= 0) {
           if (g.timer) clearInterval(g.timer);
           g.timer = null;
           endGame();
@@ -1076,7 +1082,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [concurrent, durationSec, endGame, fallTimeSec, flashSpikes, lv, onStim, onStimBubble, variant]);
+  }, [concurrent, durationSec, endGame, fallTimeSec, flashSpikes, lv, onStim, onStimBubble, targetReps, variant]);
 
   const uid = useId();
   const spikeUid = uid.replace(/:/g, '');

@@ -43,24 +43,22 @@ describe("SPOMOVE preview gate (Phase 0)", () => {
     expect(hub).not.toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain("빠른 시작");
-    expect(preview).toContain("시작 설정");
+    expect(preview).toContain("수업 시작 설정");
     expect(preview).toContain("활동 준비");
     expect(preview).toContain("sessionHref('settings')");
-    expect(preview).toContain("sessionHref('start')");
     expect(hub).not.toContain("writeFamilyMovement");
     expect(hub).not.toContain("{preset.description}");
     expect(hub).toContain("같은 설정으로 시작");
     expect(hub).not.toContain("같은 설정 실행");
   });
 
-  it("2b) Session entry·legacyAutostart·Briefing 분리", () => {
+  it("2b) Session legacyAutostart·통합 Briefing", () => {
     const settingsBriefing = read(
       "app/spokedu-master/spomove/session/SettingsBriefing.tsx",
     );
-    expect(session).toContain("parseSessionEntryMode");
     expect(session).toContain("resolveLegacyAutostart");
     expect(session).toContain("entryParam:");
-    expect(session).toContain("StartBriefing");
+    expect(session).not.toContain("StartBriefing");
     expect(session).toContain("SettingsBriefing");
     expect(session).toContain("beginConfiguredSession");
     expect(session).toContain("reopenStartConfirmation");

@@ -14,9 +14,6 @@ const guidelineSheet = read(
 const recordDraft = read(
   "app/spokedu-master/spomove/session/spomoveRecordDraft.ts",
 );
-const startBriefing = read(
-  "app/spokedu-master/spomove/session/StartBriefing.tsx",
-);
 const settingsBriefing = read(
   "app/spokedu-master/spomove/session/SettingsBriefing.tsx",
 );
@@ -130,7 +127,10 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(guidelineSheet).not.toContain("소집단");
     expect(guidelineSheet).not.toContain("{activityMethod.title}");
     expect(guidelineSheet).toContain("활동 준비");
-    expect(guidelineSheet).toContain("시작 설정");
+    expect(guidelineSheet).toContain("수업 시작 설정");
+    expect(guidelineSheet).toContain("url.searchParams.set('preview', preset.id)");
+    expect(guidelineSheet).toContain("hubReturn: hubReturnHref");
+    expect(guidelineSheet).toContain("url.searchParams.set('returnTo', modalReturnHref)");
     expect(guidelineSheet).not.toContain("바로 시작");
     expect(guidelineSheet).not.toContain("바로 실행");
     expect(guidelineSheet).not.toContain("안내 더보기");
@@ -151,14 +151,13 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(dashboard).not.toContain("가이드 현황");
   });
 
-  it("separates start (entry=start) from settings and keeps Public without autostart", () => {
+  it("uses one public setup entry and keeps Public without autostart", () => {
     expect(hub).not.toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('data-spm-spomove-start-mode="dive"');
     expect(hub).not.toContain("빠른 시작");
-    expect(guidelineSheet).toContain("시작 설정");
+    expect(guidelineSheet).toContain("수업 시작 설정");
     expect(guidelineSheet).toContain("sessionHref('settings')");
-    expect(guidelineSheet).toContain("sessionHref('start')");
     expect(hub).not.toContain("writeFamilyMovement");
     expect(hub).toContain("publicOfficialPresetSessionHref");
     expect(session).toContain("activationBlocked");
@@ -171,7 +170,7 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(guidelineSheet).not.toContain("바로 시작");
     expect(guidelineSheet).not.toContain("바로 실행");
     expect(guidelineSheet).toContain(
-      'data-spm-spomove-guide-action="start-official"',
+      'data-spm-spomove-guide-action="settings"',
     );
     expect(guidelineSheet).toContain("data-spm-spomove-launch-confirm");
     expect(guidelineSheet).not.toContain("공식 추천으로 시작");
@@ -183,37 +182,30 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(session).toContain("hubReturn");
   });
 
-  it("keeps StartBriefing confirmation-only and cue editing in SettingsBriefing", () => {
+  it("combines execution confirmation and editable settings in SettingsBriefing", () => {
     expect(hub).toContain("publicOfficialPresetSessionHref");
     expect(hub).not.toContain("startHref={");
     expect(guidelineSheet).toContain(
-      'data-spm-spomove-guide-action="start-official"',
+      'data-spm-spomove-guide-action="settings"',
     );
-    expect(startBriefing).not.toContain("SPOMOVE_CUE_SPEED_OPTIONS");
-    expect(startBriefing).not.toContain("onCueSecondsChange");
-    expect(startBriefing).toContain("isActionMove");
+    expect(guidelineSheet).toContain("수업 시작 설정");
+    expect(session).not.toContain("StartBriefing");
+    expect(hub).toContain("searchParams.get('preview')");
+    expect(hub).toContain("router.replace(hubReturnHref, { scroll: false })");
     expect(settingsBriefing).toContain("SPOMOVE_CUE_SPEED_OPTIONS");
     expect(settingsBriefing).toContain("onCueSecondsChange");
-    expect(startBriefing).toContain("실행 시작");
-    expect(startBriefing).toContain("액션 무브 시작");
-    expect(startBriefing).toContain("SPOMAT {matCount}장");
-    expect(startBriefing).toContain("자극 {formatSpomoveCueLabel(preset, cueSeconds)}");
-    expect(startBriefing).not.toContain("현재 실행값");
-    expect(startBriefing).not.toContain("실행 분량 {executionVolume.label}");
-    expect(startBriefing).toContain("화면 방향 ↑");
-    expect(startBriefing).toContain("전환 안내 시간은 총 운동시간에 포함되지 않습니다.");
-    expect(startBriefing).not.toContain("movementSummary");
-    expect(startBriefing).not.toContain("전체화면 준비");
-    expect(startBriefing).not.toContain("소리 사용");
-    expect(startBriefing).toContain("border border-white/20");
-    expect(startBriefing).not.toContain("바로 시작");
-    expect(startBriefing).not.toContain("바로 실행");
+    expect(settingsBriefing).toContain("data-spm-execution-volume={executionVolume.label}");
+    expect(settingsBriefing).toContain("SPOMAT {matCount}장");
+    expect(settingsBriefing).toContain("자극 {formatSpomoveCueLabel(preset, cueSeconds)}");
+    expect(settingsBriefing).toContain("화면 방향 ↑");
+    expect(settingsBriefing).toContain("전환 안내 시간은 총 운동시간에 포함되지 않습니다.");
+    expect(settingsBriefing).toContain("수업 시작");
+    expect(settingsBriefing).not.toContain("바로 시작");
+    expect(settingsBriefing).not.toContain("바로 실행");
   });
 
   it("uses mat layout briefing and 1-6 second recommended speed instead of current-setting movement copy", () => {
-    expect(startBriefing).toContain("SpomovePadLayoutView");
     expect(settingsBriefing).toContain("SpomovePadLayoutView");
-    expect(startBriefing).not.toContain("현재 실행값");
     expect(settingsBriefing).not.toContain("현재 설정");
     expect(settingsBriefing).toContain("화면 방향 ↑");
     expect(settingsBriefing).toContain("SPOMAT {matCount}장");
@@ -225,11 +217,8 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(cueSpeed).toContain("if (value >= 5) return '쉬움'");
     expect(cueSpeed).toContain("if (value >= 3) return '보통'");
     expect(cueSpeed).toContain("return '어려움'");
-    expect(startBriefing).not.toContain("난이도 {cueDifficulty}");
     expect(settingsBriefing).not.toContain("난이도 {cueDifficulty}");
-    expect(startBriefing).not.toContain("sec === 3");
     expect(settingsBriefing).toContain("sec === recommendedCueSeconds");
-    expect(startBriefing).not.toContain("추천");
     expect(settingsBriefing).toContain("추천");
     expect(padLayoutView).not.toContain("학생이 화면을 바라보는 기준입니다.");
     expect(padLayoutView).toContain("directionLabel");
@@ -254,8 +243,8 @@ describe("SPOMOVE pilot flow contract", () => {
     expect(session).not.toContain("difficultyValue");
   });
 
-  it("keeps Start/Settings briefings without nested details modal", () => {
-    expect(session).toContain("StartBriefing");
+  it("keeps the unified Settings briefing without a nested details modal", () => {
+    expect(session).not.toContain("StartBriefing");
     expect(session).toContain("SettingsBriefing");
     expect(session).not.toContain("자세히 보기");
     expect(session).not.toContain("OfficialEngineBriefing");

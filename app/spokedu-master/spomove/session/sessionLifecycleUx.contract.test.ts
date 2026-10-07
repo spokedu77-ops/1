@@ -12,24 +12,18 @@ const read = (name: string) =>
     "utf8",
   );
 const page = read("page.tsx");
-const start = read("StartBriefing.tsx");
 const settings = read("SettingsBriefing.tsx");
 const result = read("MasterSessionResult.tsx");
 
 describe("SPOMOVE session lifecycle UX", () => {
-  it("separates ready confirmation from editable settings", () => {
-    expect(start).toContain("data-spm-session-ready-screen");
-    expect(start).not.toContain("SPOMOVE_CUE_SPEED_OPTIONS");
-    expect(start).not.toContain("onCueSecondsChange");
-    expect(start).toContain("실행 시작");
-    expect(start).toContain("설정 변경");
-    expect(start).toContain("border border-white/20");
-    expect(start).not.toContain("movementSummary");
-    expect(start).not.toContain("전체화면 준비");
-    expect(start).not.toContain("소리 사용");
+  it("uses one editable setup confirmation before starting", () => {
+    expect(page).not.toContain("StartBriefing");
     expect(settings).toContain("data-spm-session-settings-screen");
+    expect(settings).toContain("data-spm-execution-volume={executionVolume.label}");
     expect(settings).toContain("SPOMOVE_CUE_SPEED_OPTIONS");
     expect(settings).toContain("sec === recommendedCueSeconds");
+    expect(settings).toContain("전환 안내 시간은 총 운동시간에 포함되지 않습니다.");
+    expect(settings).toContain("수업 시작");
     expect(page).toContain(
       "recommendedCueSeconds={effectiveRecommendedCueSeconds}",
     );
@@ -56,6 +50,14 @@ describe("SPOMOVE session lifecycle UX", () => {
     expect(page).not.toContain("onClick={continueSession}");
   });
 
+  it("hands the runtime scroll lock to Result so returning to the Hub restores scrolling", () => {
+    const finishStart = page.indexOf("const finishSession = useCallback");
+    const finishEnd = page.indexOf("const beginConfiguredSession");
+    const finishBody = page.slice(finishStart, finishEnd);
+    expect(page).toContain("unlockViewportScroll");
+    expect(finishBody).toContain("unlockViewportScroll();");
+  });
+
   it("keeps activation fallback non-blocking and touch targets usable", () => {
     expect(page).toContain("화면은 계속 실행됩니다.");
     expect(page).toContain("일반 화면으로 실행합니다.");
@@ -66,6 +68,8 @@ describe("SPOMOVE session lifecycle UX", () => {
 
   it("shows only measured operational facts and a context-aware action hierarchy", () => {
     expect(result).toContain("sessionReturnHref");
+    expect(result).toContain("onBack={() => router.push(hubHref)}");
+    expect(result).not.toContain("leaveHref");
     expect(result).toContain("수업으로 돌아가기");
     expect(result).toContain("같은 설정으로 다시 준비");
     expect(result).toContain("완료로 표시하고 수업으로");

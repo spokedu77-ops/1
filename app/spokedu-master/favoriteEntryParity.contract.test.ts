@@ -22,7 +22,7 @@ describe('MASTER favorite entry parity', () => {
     expect(favorites).toContain('놀이체육 둘러보기');
     expect(favorites).toContain('{isPremium ? (');
     expect(favorites).toContain('href="/spokedu-lab/spomove"');
-    expect(favorites).toContain('스포무브 둘러보기');
+    expect(favorites).toContain('Spomove 둘러보기');
   });
 
   it('keeps card favorite targets at least 44px on mobile', () => {

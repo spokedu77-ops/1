@@ -25,6 +25,11 @@ describe('MASTER BottomSheet viewport ownership', () => {
     expect(source).toContain("event.key === 'Escape'");
     expect(source).toContain('previousFocusRef.current?.isConnected');
     expect(source).toContain("document.body.style.overflow = 'hidden'");
+    expect(source).toContain("data-spm-bottom-sheet-scroll-lock");
+    expect(source).toContain("document.body.removeAttribute(BODY_SCROLL_LOCK_ATTRIBUTE)");
+    expect(source).toContain("document.body.style.overflow === 'hidden'");
+    expect(source).toContain('activeBodyScrollLocks += 1');
+    expect(source).toContain('releaseBodyScrollLock?.()');
     expect(source).toContain("env(safe-area-inset-bottom)");
   });
 });

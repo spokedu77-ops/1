@@ -308,11 +308,10 @@ function WeeklyProgramCard({
       onFavorite={locked ? undefined : onFavorite}
       accessBadge={accessBadge}
       priority={priority}
-      sizes="(min-width: 1280px) 262px, (min-width: 640px) 300px, 82vw"
+      sizes="(min-width: 1024px) 262px, (min-width: 768px) 45vw, 46vw"
       cleanSquareMedia
       isNew={program.isNew}
       presentation="home"
-      compactMedia
     />
   );
 }
@@ -390,10 +389,10 @@ function SpomoveCard({
     <>
       <SpomoveLayeredThumb
         src={thumbnailUrl}
-        sizes="(min-width: 1280px) 224px, (min-width: 768px) 45vw, 82vw"
+        sizes="(min-width: 1024px) 262px, (min-width: 768px) 45vw, 46vw"
         priority={priority}
         presentation="home-cover-4-3"
-        className="!aspect-[3/2] rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95 min-[768px]:max-[1199.98px]:!h-[clamp(176px,23vw,220px)] min-[768px]:max-[1199.98px]:!aspect-auto"
+        className="!aspect-[3/2] rounded-none bg-slate-100 transition-opacity duration-200 group-hover/preview:opacity-95"
         fallback={<SpomoveThumbnailPlaceholder />}
       />
       <div className="px-3.5 pb-3.5 pr-14 pt-2.5">
@@ -1025,7 +1024,7 @@ function EntitledDashboardView() {
           {!programsLoaded ? (
             <p className="text-[15px] text-slate-500">수업 콘텐츠를 불러오는 중입니다.</p>
           ) : weeklyPrograms.length > 0 ? (
-            <div data-dashboard-grid="weekly" className="grid grid-cols-2 items-stretch gap-3 min-[768px]:gap-5 min-[1200px]:grid-cols-4">
+            <div data-dashboard-grid="weekly" className="grid grid-cols-2 items-stretch gap-3 min-[768px]:gap-5 min-[1024px]:grid-cols-4">
                 {weeklyPrograms.slice(0, 4).map((program, index) => (
                   <div key={program.id} data-dashboard-card="weekly" className="h-full min-w-0">
                     <WeeklyProgramCard
@@ -1073,7 +1072,7 @@ function EntitledDashboardView() {
           href="/spokedu-lab/spomove"
           action="SPOMOVE 더 보기"
         />
-        <div data-dashboard-grid="spomove" className="grid grid-cols-2 items-stretch gap-3 min-[768px]:gap-5 min-[1200px]:grid-cols-4">
+        <div data-dashboard-grid="spomove" className="grid grid-cols-2 items-stretch gap-3 min-[768px]:gap-5 min-[1024px]:grid-cols-4">
           {featuredSpomove.slice(0, 4).map((preset) => {
             const thumbnail = resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust);
             return (

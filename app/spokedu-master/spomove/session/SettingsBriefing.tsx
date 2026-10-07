@@ -12,6 +12,7 @@ import {
   SPOMOVE_CUE_SPEED_OPTIONS,
   MOTION_GATE_CUE_SPEED_OPTIONS,
   getCueSpeedGuide,
+  formatSpomoveCueLabel,
   usesRandomSequenceCue,
   supportsCueSpeedOverride,
   type SpomoveCueSpeedSec,
@@ -20,6 +21,31 @@ import type { OfficialSpomovePreset } from '../officialSpomovePresets';
 import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 import type { SpomoveUserAudioMode } from './spomoveAudioMode';
+import type { SpomoveExecutionVolume } from './resolveSpomoveExecutionVolume';
+
+function formatExerciseDuration(seconds: number): string {
+  const totalSeconds = Math.max(0, Math.round(seconds));
+  const minutes = Math.floor(totalSeconds / 60);
+  const remainingSeconds = totalSeconds % 60;
+  if (minutes === 0) return `${remainingSeconds}초`;
+  if (remainingSeconds === 0) return `${minutes}분`;
+  return `${minutes}분 ${remainingSeconds}초`;
+}
+
+function executionVolumeLabel(volume: SpomoveExecutionVolume): string {
+  if ((volume.kind === 'time' || volume.kind === 'stage') && volume.durationSec > 0) {
+    return formatExerciseDuration(volume.durationSec);
+  }
+  return volume.label;
+}
+
+function executionVolumeCaption(volume: SpomoveExecutionVolume): string {
+  if (volume.kind === 'reps') return '총 반복';
+  if (volume.kind === 'rounds') return '총 라운드';
+  if (volume.kind === 'interval') return '진행 구성';
+  if (volume.kind === 'builtIn') return '실행 구성';
+  return '총 운동';
+}
 
 type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 
@@ -27,6 +53,7 @@ type SportsArenaFeatureKey = 'side' | 'jump' | 'duck';
 export function SettingsBriefing({
   preset,
   matCount,
+  executionVolume,
   audioMode,
   onAudioModeChange,
   bgmAvailable,
@@ -47,6 +74,7 @@ export function SettingsBriefing({
 }: {
   preset: OfficialSpomovePreset;
   matCount: number;
+  executionVolume: SpomoveExecutionVolume;
   audioMode: SpomoveUserAudioMode;
   onAudioModeChange: (mode: SpomoveUserAudioMode) => void;
   bgmAvailable: boolean;
@@ -66,6 +94,9 @@ export function SettingsBriefing({
   cueFloorNotice?: string | null;
 }) {
   const showCueSpeed = supportsCueSpeedOverride(preset);
+  const isActionMove = preset.id === 'dive-standard';
+  const regularStageCount = Math.max(0, executionVolume.count - (flowIncludeBonus ? 1 : 0));
+  const bonusDuration = Math.max(0, executionVolume.durationSec - regularStageCount * flowDuration);
   const showRandomSequenceCue = usesRandomSequenceCue(preset);
   const actionMoveSelection = {
     side: sportsArenaFeatures.includes('side'),
@@ -87,6 +118,30 @@ export function SettingsBriefing({
           <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} prominent directionLabel="화면 방향 ↑" dark flush />
         </div>
         <p className="mt-3 text-center text-[13px] font-medium text-white/65">SPOMAT {matCount}장</p>
+      </section>
+
+      <section className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4 text-center sm:p-5" data-spm-execution-volume={executionVolume.label}>
+        {isActionMove ? (
+          <>
+            <p className="text-[15px] font-semibold leading-6 text-white/85">
+              {regularStageCount}단계 <span className="text-white/45">×</span> {flowDuration}초
+              {flowIncludeBonus && bonusDuration > 0 ? <span className="whitespace-nowrap"> <span className="mx-1 text-white/35">+</span> <span className="text-amber-300">BONUS {bonusDuration}초</span></span> : null}
+            </p>
+            <p className="mt-3 text-[12px] font-semibold text-white/45">총 운동</p>
+            <p className="mt-1 text-[28px] font-extrabold leading-none text-white" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none' }}>
+              {formatExerciseDuration(executionVolume.durationSec)}
+            </p>
+            <p className="mt-3 text-[12px] font-medium leading-5 text-white/55">전환 안내 시간은 총 운동시간에 포함되지 않습니다.</p>
+          </>
+        ) : (
+          <>
+            <p className="text-[13px] font-semibold text-white/60">자극 {formatSpomoveCueLabel(preset, cueSeconds)}</p>
+            <p className="mt-3 text-[12px] font-semibold text-white/45">{executionVolumeCaption(executionVolume)}</p>
+            <p className="mt-1 text-[28px] font-extrabold leading-tight text-white" style={{ fontFamily: 'var(--spm-font-display)', fontSynthesis: 'none' }}>
+              {executionVolumeLabel(executionVolume)}
+            </p>
+          </>
+        )}
       </section>
 
       {showRandomSequenceCue ? (

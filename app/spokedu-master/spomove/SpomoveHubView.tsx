@@ -771,7 +771,19 @@ function SpomoveHubInner({
   );
   const [contentLoadState, setContentLoadState] = useState<SpomoveContentLoadState>('loading');
   const [assetPackError, setAssetPackError] = useState(false);
-  const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
+  const requestedPreviewPresetId = searchParams.get('preview')?.trim() || null;
+  const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(() =>
+    requestedPreviewPresetId
+      ? OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === requestedPreviewPresetId && isHubListedPreset(preset)) ?? null
+      : null,
+  );
+  useEffect(() => {
+    if (!requestedPreviewPresetId) return;
+    const requestedPreset = OFFICIAL_SPOMOVE_LIBRARY.find(
+      (preset) => preset.id === requestedPreviewPresetId && isHubListedPreset(preset),
+    );
+    if (requestedPreset) setPreviewPreset(requestedPreset);
+  }, [requestedPreviewPresetId]);
   const isPremium = useIsPremium();
   const guideVideo = useSpomoveGuideVideo(previewPreset?.id ?? null, isPremium);
   const profile = useProfile();
@@ -1179,7 +1191,10 @@ function SpomoveHubInner({
           contentLoadState={contentLoadState}
           hubView={hubView}
           hubReturnHref={hubReturnHref}
-          onClose={() => setPreviewPreset(null)}
+          onClose={() => {
+            setPreviewPreset(null);
+            if (requestedPreviewPresetId) router.replace(hubReturnHref, { scroll: false });
+          }}
         />
       </div>
     </main>

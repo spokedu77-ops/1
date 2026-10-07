@@ -347,8 +347,8 @@ function EngineRuntime({
   }
 
   if (mode === 'simon' && level === 5) {
-    const sp = 3;
-    const dur = (rounds ?? Math.max(1, Math.round((durationSec ?? 60) / 3))) * sp;
+    const sp = Math.min(6, Math.max(1, speedSec ?? 3));
+    const dur = (rounds ?? Math.max(1, Math.round((durationSec ?? 60) / sp))) * sp;
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <VisualReactionTraining
@@ -442,6 +442,7 @@ function EngineRuntime({
         <Suspense fallback={<LoadingOverlay />}>
           <RushReactionTraining
             durationSec={dur}
+            targetReps={rounds ?? 20}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
             onExit={onExit}
@@ -457,6 +458,7 @@ function EngineRuntime({
             variant="flow"
             concurrent={effectiveConcurrent}
             durationSec={dur}
+            targetReps={(rounds ?? 20) * effectiveConcurrent}
             speedSec={sp}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
@@ -511,6 +513,8 @@ function EngineRuntime({
         <Suspense fallback={<LoadingOverlay />}>
           <RobloxMoleReactionTraining
             durationSec={dur}
+            targetReps={rounds ?? 20}
+            bonusTimeEnabled
             speedLevel={reactSpeedLevel}
             speedSec={sp}
             lookMode={effectiveMoleLook}
@@ -565,9 +569,10 @@ function EngineRuntime({
         <Suspense fallback={<LoadingOverlay />}>
           <GoalkeeperReactionTraining
             durationSec={60}
+            targetReps={rounds ?? 20}
             speedSec={sp}
             goalkeeperTier={effectiveGoalkeeperTier}
-            bonusTimeEnabled={goalkeeperBonusTimeEnabled ?? false}
+            bonusTimeEnabled
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />

@@ -91,6 +91,7 @@ ${REACT_TRAIN_VIEWPORT_CSS}
 
 type Props = {
   durationSec: number;
+  targetReps?: number;
   speedLevel: number;
   speedSec: number;
   onExit: () => void;
@@ -104,7 +105,7 @@ function project(g: RushState, z: number, laneOffset: number) {
   return { x, y };
 }
 
-export function RushReactionTraining({ durationSec, speedSec, onComplete }: Props) {
+export function RushReactionTraining({ durationSec, targetReps, speedSec, onComplete }: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
@@ -209,6 +210,7 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
 
     const onStim = (lane: number) => {
       g.stims += 1;
+      if (targetReps && g.stims === targetReps) setTimeout(endGame, 0);
       g.combo += 1;
       g.laneCount[lane] += 1;
       if (g.combo > g.maxCombo) g.maxCombo = g.combo;
@@ -496,7 +498,7 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
           g.timeLeft = newLeft;
           updateHudTime();
         }
-        if (g.timeLeft <= 0) {
+        if (targetReps == null && g.timeLeft <= 0) {
           if (g.timer) clearInterval(g.timer);
           g.timer = null;
           endGame();
@@ -518,7 +520,7 @@ export function RushReactionTraining({ durationSec, speedSec, onComplete }: Prop
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, speedSec]);
+  }, [durationSec, endGame, speedSec, targetReps]);
 
   return (
     <div className="rrt">

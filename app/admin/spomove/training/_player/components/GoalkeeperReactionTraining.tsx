@@ -171,6 +171,7 @@ type GoalkeeperGame = {
   bossSpawned: boolean;
   bonusActive: boolean;
   bonusStarted: boolean;
+  waveCount: number;
   projectiles: THREE.Group[];
   trails: Trail[];
   effects: FxMesh[];
@@ -314,6 +315,7 @@ ${REACT_TRAIN_VIEWPORT_CSS}
 
 type Props = {
   durationSec: number;
+  targetReps?: number;
   /** 스폰→히트 기준 비행 시간(초). 기존 신호 속도와 동일 의미. */
   speedSec: number;
   /** 1: 항상 1개 · 2: 1~2개(더블 블록 포함) */
@@ -325,6 +327,7 @@ type Props = {
 
 export function GoalkeeperReactionTraining({
   durationSec,
+  targetReps,
   speedSec,
   goalkeeperTier = 2,
   bonusTimeEnabled = false,
@@ -406,6 +409,7 @@ export function GoalkeeperReactionTraining({
       bossSpawned: true,
       bonusActive: false,
       bonusStarted: false,
+      waveCount: 0,
       projectiles: [],
       trails: [],
       effects: [],
@@ -586,6 +590,7 @@ export function GoalkeeperReactionTraining({
     };
 
     const spawnRandomWave = (phase: SpawnPhase) => {
+      if (!g.bonusActive) g.waveCount += 1;
       g.currentSpeed = flightSpeedFromSec(travelSec, phase.speedMult);
       const isDouble = g.bonusActive
         ? phase.doubleChance > 0 && Math.random() < phase.doubleChance
@@ -738,7 +743,7 @@ export function GoalkeeperReactionTraining({
           updateTime();
           setWarn(next <= 10);
         }
-        if (next <= 0) {
+        if (((targetReps == null || g.bonusActive) && next <= 0) || (!g.bonusActive && targetReps != null && g.waveCount >= targetReps)) {
           if (bonusTimeEnabled && !g.bonusStarted) {
             g.bonusStarted = true;
             g.bonusActive = true;
@@ -806,7 +811,7 @@ export function GoalkeeperReactionTraining({
       netMaterial.dispose();
       renderer.dispose();
     };
-  }, [bonusTimeEnabled, durationSec, endGame, goalkeeperTier, speedSec]);
+  }, [bonusTimeEnabled, durationSec, endGame, goalkeeperTier, speedSec, targetReps]);
 
   return (
     <div className="gk">

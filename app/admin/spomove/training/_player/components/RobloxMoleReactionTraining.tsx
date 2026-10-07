@@ -22,6 +22,7 @@ import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
 
 type Props = {
   durationSec: number;
+  targetReps?: number;
   speedLevel: number;
   speedSec: number;
   lookMode?: MoleLookMode;
@@ -36,7 +37,7 @@ const MOLE_COLORS = [
   { hex: '#27b758', lane: 2 as const },
   { hex: '#f5cd30', lane: 3 as const },
 ] as const;
-const BONUS_TIME_SEC = 12;
+const BONUS_TIME_SEC = 15;
 
 type ActiveMole = { holeId: number; hex: string; lane: number; look: MoleLook };
 
@@ -196,6 +197,7 @@ function addActiveMole(
 
 export function RobloxMoleReactionTraining({
   durationSec,
+  targetReps,
   speedLevel,
   speedSec,
   lookMode = 'classic',
@@ -427,7 +429,7 @@ export function RobloxMoleReactionTraining({
           g.timeLeft = newLeft;
           setHud();
         }
-        if (g.timeLeft <= 0) {
+        if (((targetReps == null || g.bonusActive) && g.timeLeft <= 0) || (!g.bonusActive && targetReps != null && g.spawnCount >= targetReps)) {
           if (bonusTimeEnabled && !g.bonusStarted) {
             g.bonusStarted = true;
             g.bonusActive = true;
@@ -461,7 +463,7 @@ export function RobloxMoleReactionTraining({
       if (g.timer) clearInterval(g.timer);
       clearSpawnTimers();
     };
-  }, [bonusTimeEnabled, clearSpawnTimers, durationSec, endGame, lookMode, showCombo, speedLevel, speedSec]);
+  }, [bonusTimeEnabled, clearSpawnTimers, durationSec, endGame, lookMode, showCombo, speedLevel, speedSec, targetReps]);
 
   return (
     <div className="rmt">
