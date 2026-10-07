@@ -1005,11 +1005,6 @@ function SpomoveSessionContent() {
 
   const sessionOrigin = readSpomoveSessionOrigin(searchParams);
   const hubReturnHref = parseSpomoveHubReturnHref(searchParams.get('hubReturn'), searchParams.get('hubView'));
-  const workReturnHref = parseMasterWorkReturnHref(
-    searchParams.get('returnTo'),
-    searchParams.get('hubReturn'),
-    searchParams.get('hubView'),
-  );
   const sessionReturnHref = sessionOrigin.isSessionOrigin
     ? parseMasterWorkReturnHref(
       sessionOrigin.returnTo,

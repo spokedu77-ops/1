@@ -80,16 +80,6 @@ function snapRoundOption(value: number, options: readonly number[], fallback: nu
   return options.reduce((best, option) => (Math.abs(option - n) < Math.abs(best - n) ? option : best));
 }
 
-function goalkeeperVolume(includeBonus: boolean): SpomoveExecutionVolume {
-  const bonusSeconds = includeBonus ? 15 : 0;
-  return {
-    kind: 'time',
-    label: includeBonus ? '60초 + 보너스 15초' : '60초',
-    count: 0,
-    durationSec: 60 + bonusSeconds,
-    interval: null,
-  };
-}
 
 function memoryGameIntervalApplies(
   mode: OfficialSpomovePreset['engine']['mode'],

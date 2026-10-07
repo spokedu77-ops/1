@@ -264,7 +264,6 @@ function EngineRuntime({
   numberCartTier,
   colorTrackerTier,
   goalkeeperTier,
-  goalkeeperBonusTimeEnabled,
   simonPoleCount,
   colorTrackerDualPanel,
   camouflagePlacement,
