@@ -16,7 +16,7 @@ export default function InstitutionLoginPage() {
   const router = useRouter();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
-  const [checking, setChecking] = useState(true);
+  const [checking, setChecking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
