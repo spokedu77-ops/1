@@ -41,6 +41,7 @@ export type SpomoveExecutionVolume = {
 export type ResolveSpomoveExecutionVolumeInput = {
   preset: OfficialSpomovePreset;
   cueSeconds: number;
+  rounds?: number;
   /**
    * Effective operation interval. Applied only on the MemoryGameApp path
    * (basic, flanker, stroop, simon except L4/L5), matching EngineRouter.
@@ -158,7 +159,11 @@ export function resolveSpomoveExecutionVolume(
 ): SpomoveExecutionVolume {
   const { preset, cueSeconds } = input;
   const { mode, level } = preset.engine;
-  const rounds = preset.rounds;
+  const rounds = input.rounds ?? preset.rounds;
+
+  if (preset.programGroup !== 'sequential-memory' && preset.id !== 'dive-standard') {
+    return repsVolume(rounds);
+  }
 
   if (memoryGameIntervalApplies(mode, level, input.interval)) {
     const interval = input.interval;

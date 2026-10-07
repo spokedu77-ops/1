@@ -7,6 +7,7 @@ interface ColorGateHudProps {
   cueWord: string;
   poseLabel: string;
   passCount?: number;
+  targetCount?: number;
 }
 
 const HUD_SANS = 'var(--spm-font-body)';
@@ -17,6 +18,7 @@ export default function ColorGateHud({
   cueWord,
   poseLabel,
   passCount,
+  targetCount = COLOR_GATE_TARGET_COUNT,
 }: ColorGateHudProps) {
   const color = GATE_COLORS[gateColorId];
 
@@ -96,7 +98,7 @@ export default function ColorGateHud({
           background: 'rgba(0,0,0,0.45)',
           color: 'rgba(255,255,255,0.75)',
         }}>
-          {Math.min(passCount, COLOR_GATE_TARGET_COUNT)} / {COLOR_GATE_TARGET_COUNT}회
+          {Math.min(passCount, targetCount)} / {targetCount}회
         </span>
       ) : null}
 

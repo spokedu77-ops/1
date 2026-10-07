@@ -3,14 +3,14 @@ import Link from 'next/link';
 
 type ShellVariant = 'editorial' | 'operational' | 'document' | 'wide';
 const WIDTH: Record<ShellVariant, string> = {
-  editorial: 'max-w-7xl',
-  operational: 'max-w-5xl',
-  document: 'max-w-3xl',
+  editorial: 'max-w-[1120px]',
+  operational: 'max-w-[1040px]',
+  document: 'max-w-[1080px]',
   wide: 'max-w-[1376px]',
 };
 
 export function MasterPageShell({ children, variant = 'operational', className = '' }: { children: ReactNode; variant?: ShellVariant; className?: string }) {
-  return <div className={`mx-auto w-full ${WIDTH[variant]} px-4 py-6 sm:px-6 lg:py-8 ${className}`}>{children}</div>;
+  return <div className={`mx-auto w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] ${WIDTH[variant]} py-6 lg:py-8 ${className}`}>{children}</div>;
 }
 
 export function MasterPageHeader({ title, description, action, className = '' }: { title: string; description?: string; action?: ReactNode; className?: string }) {

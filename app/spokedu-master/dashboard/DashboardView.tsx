@@ -903,7 +903,7 @@ function EntitledDashboardView() {
           className="-z-20 object-cover object-[58%_40%] sm:object-[center_40%]"
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" aria-hidden />
-        <div className={`${MV_EDITORIAL_WIDTH} flex w-full items-end px-4 pb-5 pt-7 min-[430px]:px-5 min-[768px]:px-6 min-[768px]:pb-8 min-[768px]:pt-10 min-[1200px]:px-6 min-[1200px]:pb-9 min-[1200px]:pt-14 min-[1216px]:px-0`}>
+        <div className={`${MV_EDITORIAL_WIDTH} flex items-end pb-5 pt-7 min-[768px]:pb-8 min-[768px]:pt-10 min-[1200px]:pb-9 min-[1200px]:pt-14`}>
           <header className="max-w-[610px] text-white">
             <p className="text-[12px] font-semibold leading-5 text-white/70 sm:text-[13px]">
               SPOKEDU LAB · MOVEMENT BECOMES LEARNING
@@ -915,7 +915,7 @@ function EntitledDashboardView() {
               {'움직임이 배움이 되는\n오늘의 수업을 준비하세요'}
             </h1>
             <p className="mt-3 max-w-[520px] text-[15px] font-normal leading-6 text-white/80 sm:text-[16px]">
-              놀이체육과 디지털 활동을 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
+              놀이체육과 SPOMOVE를 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
             </p>
             <div data-dashboard-hero-actions="true" className="mt-5 grid grid-cols-2 gap-2.5 min-[768px]:flex min-[768px]:flex-wrap">
               <Link data-dashboard-primary-cta="true" href={`/spokedu-lab/library/${FREE_PREVIEW_PROGRAM_ID}`} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">

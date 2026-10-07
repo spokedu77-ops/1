@@ -1,6 +1,8 @@
 import nextEnv from '@next/env';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -60,12 +62,20 @@ page.on('console', (message) => { if (message.type() === 'error' && !/favicon/i.
 page.on('pageerror', (error) => errors.push(error.message));
 
 async function login() {
-  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-  await page.locator('input[autocomplete="username"]').waitFor({ state: 'visible', timeout: 30_000 });
-  await page.locator('input[autocomplete="username"]').fill(EMAIL);
-  await page.locator('input[autocomplete="current-password"]').fill(PASSWORD);
-  await page.locator('button[type="submit"]').click();
-  await page.waitForURL((url) => url.pathname !== '/login', { timeout: 90_000 });
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const service = createClient(url, serviceKey, { auth: { persistSession: false } });
+  const { data, error } = await service.auth.admin.generateLink({ type: 'magiclink', email: EMAIL, options: { redirectTo: `${BASE}/` } });
+  if (error || !data?.properties?.action_link) throw error ?? new Error('QA login link unavailable');
+  const actionUrl = new URL(data.properties.action_link);
+  const tokenHash = actionUrl.searchParams.get('token');
+  const verificationType = actionUrl.searchParams.get('type') ?? 'magiclink';
+  const cookies = [];
+  const ssr = createServerClient(url, anonKey, { cookies: { getAll: () => cookies, setAll: (next) => cookies.splice(0, cookies.length, ...next) } });
+  const { error: verifyError } = await ssr.auth.verifyOtp({ token_hash: tokenHash, type: verificationType });
+  if (verifyError) throw verifyError;
+  await context.addCookies(cookies.map((cookie) => ({ name: cookie.name, value: cookie.value, url: BASE, httpOnly: cookie.options?.httpOnly, secure: cookie.options?.secure, sameSite: cookie.options?.sameSite === 'strict' ? 'Strict' : cookie.options?.sameSite === 'none' ? 'None' : 'Lax' })));
 }
 
 await login();

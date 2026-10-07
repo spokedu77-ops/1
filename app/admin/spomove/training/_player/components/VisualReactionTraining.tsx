@@ -676,7 +676,7 @@ export function VisualReactionTraining({ variant, durationSec, targetReps, speed
       const cv = cvRef.current;
       if (!g || !cv) return;
       g.stims++;
-      if (targetReps && g.stims === targetReps) setTimeout(endGame, 0);
+      if (targetReps && g.stims >= targetReps) setTimeout(endGame, 0);
       g.combo++;
       if (g.combo > g.maxCombo) g.maxCombo = g.combo;
       g.laneCount[lane]++;

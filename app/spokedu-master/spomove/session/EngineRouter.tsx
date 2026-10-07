@@ -334,6 +334,7 @@ function EngineRuntime({
       <Suspense fallback={<LoadingOverlay />}>
         <CamouflageReactionTraining
           durationSec={dur}
+          targetReps={rounds ?? 20}
           speedLevel={reactSpeedLevel}
           speedSec={sp}
           placementMode={placementMode}
@@ -353,6 +354,7 @@ function EngineRuntime({
         <VisualReactionTraining
           variant="balloonSimon"
           durationSec={dur}
+          targetReps={rounds ?? 20}
           speedSec={sp}
           concurrent={simonPoleCount === 2 ? 2 : 1}
           onExit={onExit}
@@ -441,7 +443,7 @@ function EngineRuntime({
         <Suspense fallback={<LoadingOverlay />}>
           <RushReactionTraining
             durationSec={dur}
-            targetReps={rounds ?? 20}
+              targetReps={rounds ?? 20}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
             onExit={onExit}
@@ -471,6 +473,7 @@ function EngineRuntime({
           <VisualReactionTraining
             variant="flash"
             durationSec={dur}
+            targetReps={rounds ?? 20}
             speedSec={sp}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
@@ -498,6 +501,7 @@ function EngineRuntime({
         <Suspense fallback={<LoadingOverlay />}>
           <CamouflageReactionTraining
             durationSec={dur}
+            targetReps={rounds ?? 20}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
             placementMode={effectiveCamouflage}
@@ -675,8 +679,9 @@ function EngineRuntime({
           initialLevel={level}
           autoLaunch={{
             speed: speedSec ?? 3,
-            timeMode: 'time',
+            timeMode: 'reps',
             duration: 60,
+            targetReps: rounds ?? 20,
             warmup: 3,
             audioMode: effectsEnabled ? 'beep' : 'off',
             flowFeatures: resolvedFlowFeatures,

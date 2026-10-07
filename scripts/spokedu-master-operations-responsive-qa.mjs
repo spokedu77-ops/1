@@ -1,6 +1,8 @@
 import nextEnv from '@next/env';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 
 nextEnv.loadEnvConfig(process.cwd());
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
@@ -13,19 +15,19 @@ const students = Array.from({ length: 50 }, (_, index) => ({
   id: `f5-student-${index + 1}`, legacyId: null,
   name: index ? `테스트 학생 ${String(index + 1).padStart(2, '0')}` : '김대한민국초등학교긴이름학생',
   meta: '초등 5학년', guidanceNote: index ? null : '수업 전 시각 자료를 먼저 보여 주세요.\n동작은 짧게 나누어 안내합니다.',
-  createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z',
+  createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z',
 }));
 const classes = Array.from({ length: 20 }, (_, index) => ({
   id: `f5-class-${index + 1}`, name: index ? `운영 수업반 ${index + 1}` : longClass,
   studentIds: index === 0 ? students.slice(0, 24).map((student) => student.id) : students.slice(0, index % 5).map((student) => student.id),
-  createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z',
+  createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z',
 }));
 const sessions = Array.from({ length: 12 }, (_, index) => ({
   id: `f5-session-${index + 1}`, classId: classes[0].id, className: longClass,
-  startAt: `2026-09-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`, endAt: `2026-09-${String(index + 1).padStart(2, '0')}T01:00:00.000Z`,
-  startedAt: null, status: index < 8 ? 'completed' : 'scheduled', memo: index === 0 ? '긴 관찰 메모가 여러 줄이어도 화면 밖으로 밀리지 않아야 합니다.' : null, completedAt: index < 8 ? '2026-09-30T00:00:00.000Z' : null,
+  startAt: `2026-10-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`, endAt: `2026-10-${String(index + 1).padStart(2, '0')}T01:00:00.000Z`,
+  startedAt: null, status: index < 8 ? 'completed' : 'scheduled', memo: index === 0 ? '긴 관찰 메모가 여러 줄이어도 화면 밖으로 밀리지 않아야 합니다.' : null, completedAt: index < 8 ? '2026-10-30T00:00:00.000Z' : null,
   programs: [], attendance: students.slice(0, 24).map((student, studentIndex) => ({ id: `a-${index}-${studentIndex}`, studentId: student.id, studentName: student.name, status: studentIndex % 3 === 0 ? 'absent' : 'present' })),
-  createdAt: '2026-09-01T00:00:00.000Z', updatedAt: '2026-09-01T00:00:00.000Z',
+  createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z',
 }));
 
 const browser = await chromium.launch({ headless: true });
@@ -34,11 +36,20 @@ const page = await context.newPage();
 const errors = [];
 page.on('console', (message) => { if (message.type() === 'error' && !/favicon/i.test(message.text())) errors.push(message.text()); });
 page.on('pageerror', (error) => errors.push(error.message));
-await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded' });
-await page.locator('input[autocomplete="username"]').fill(email);
-await page.locator('input[autocomplete="current-password"]').fill(password);
-await page.locator('button[type="submit"]').click();
-await page.waitForURL((url) => url.pathname !== '/login', { timeout: 60_000 });
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const service = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+const { data: authData, error: authError } = await service.auth.admin.generateLink({ type: 'magiclink', email, options: { redirectTo: `${BASE}/` } });
+if (authError || !authData?.properties?.action_link) throw authError ?? new Error('QA login link unavailable');
+const actionUrl = new URL(authData.properties.action_link);
+const tokenHash = actionUrl.searchParams.get('token');
+const verificationType = actionUrl.searchParams.get('type') ?? 'magiclink';
+const authCookies = [];
+const ssr = createServerClient(supabaseUrl, anonKey, { cookies: { getAll: () => authCookies, setAll: (next) => authCookies.splice(0, authCookies.length, ...next) } });
+const { error: verifyError } = await ssr.auth.verifyOtp({ token_hash: tokenHash, type: verificationType });
+if (verifyError) throw verifyError;
+await context.addCookies(authCookies.map((cookie) => ({ name: cookie.name, value: cookie.value, url: BASE, httpOnly: cookie.options?.httpOnly, secure: cookie.options?.secure, sameSite: cookie.options?.sameSite === 'strict' ? 'Strict' : cookie.options?.sameSite === 'none' ? 'None' : 'Lax' })));
 await context.route('**/api/spokedu-master/students', (route) => route.request().method() === 'GET' ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: students }) }) : route.continue());
 await context.route('**/api/spokedu-master/sessions', (route) => route.request().method() === 'GET' ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { classes, sessions } }) }) : route.continue());
 await mkdir('.tmp/f5-operations', { recursive: true });

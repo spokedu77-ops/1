@@ -103,5 +103,6 @@ export function recentSpomoveSessionOptions(
     sportsArenaFeatures: current.sportsArenaFeatures,
     flowDuration: current.flowDuration,
     flowIncludeBonus: current.flowIncludeBonus,
+    rounds: current.rounds,
   };
 }

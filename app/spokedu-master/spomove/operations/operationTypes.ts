@@ -153,6 +153,7 @@ export type SpomoveRecentConfigSnapshotV3 = {
   schemaVersion: 3;
   presetId: string;
   cueSeconds: number;
+  rounds?: number;
   movement: MovementPick | null;
   operationLayerStatus: 'legacyDisabled' | 'ready' | 'sanitized' | 'fallback';
   operation?: ActivityOperationConfig;

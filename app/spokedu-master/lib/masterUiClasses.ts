@@ -59,9 +59,9 @@ export const SPM_JOURNEY_FIELD =
  * Home is the first consumer. Do not invent page-local type/width instead of these.
  * Do not remap MasterPageShell here — that would restyle Programs/Library before canonical approval.
  */
-export const MV_EDITORIAL_WIDTH = 'mx-auto w-full max-w-[1120px]';
+export const MV_EDITORIAL_WIDTH = 'mx-auto w-[calc(100%-2rem)] max-w-[1120px] sm:w-[calc(100%-3rem)]';
 /** Home opening: editorial rail plus one 32px desktop gutter on each side. */
-export const MV_HOME_FEATURE_WIDTH = 'mx-auto w-full max-w-[1184px]';
+export const MV_HOME_FEATURE_WIDTH = 'mx-auto w-[calc(100%-2rem)] max-w-[1184px] sm:w-[calc(100%-3rem)]';
 export const MV_HOME_DISPLAY =
   `max-w-3xl whitespace-pre-line ${SPM_HERO_TITLE}`;
 export const MV_SECTION_TITLE =

@@ -322,6 +322,17 @@ function SpomoveSessionContent() {
     [searchParams],
   );
 
+  const repetitionSelectable = Boolean(
+    officialPreset && officialPreset.programGroup !== 'sequential-memory' && officialPreset.id !== 'dive-standard',
+  );
+  const requestedRepetitions = useMemo(() => {
+    const parsed = Number(searchParams.get('rounds'));
+    return [10, 15, 20, 30].includes(parsed) ? parsed : 20;
+  }, [searchParams]);
+  const [sessionRounds, setSessionRounds] = useState(() =>
+    repetitionSelectable ? requestedRepetitions : (officialPreset?.rounds ?? 20),
+  );
+
   const [state, setState] = useState<SessionState>('idle');
   const [launchMode, setLaunchMode] = useState<LaunchMode>(requestedLaunchMode);
   const [audioMode, setAudioMode] = useState(() =>
@@ -470,13 +481,18 @@ function SpomoveSessionContent() {
       : cueSeconds;
     return next;
   }, [cueSeconds, officialPreset]);
+  useEffect(() => {
+    setSessionRounds(repetitionSelectable ? requestedRepetitions : (officialPreset?.rounds ?? 20));
+  }, [officialPreset, repetitionSelectable, requestedRepetitions]);
+
   const executionVolume = useMemo(() => {
     if (!officialPreset) return null;
     const timing = effectiveOperation?.timing;
     return resolveSpomoveExecutionVolume({
       preset: officialPreset,
       cueSeconds: effectiveCueSeconds,
-      interval: timing?.pattern === 'interval' ? timing : null,
+      rounds: sessionRounds,
+      interval: !repetitionSelectable && timing?.pattern === 'interval' ? timing : null,
       diveEnvironmentTheme,
       flowDurationSec: isDiveActionMoveUnityTheme(diveEnvironmentTheme)
         ? flowDuration
@@ -493,6 +509,8 @@ function SpomoveSessionContent() {
     flowDuration,
     flowIncludeBonus,
     officialPreset,
+    repetitionSelectable,
+    sessionRounds,
     sportsArenaFeatures,
   ]);
   const effectiveRecommendedCueSeconds = useMemo(
@@ -512,6 +530,7 @@ function SpomoveSessionContent() {
       soundEnabled: runtimeAudioPair.soundEnabled,
       bgmPath: runtimeAudioPair.bgmPath,
       cueSeconds: effectiveCueSeconds,
+      rounds: sessionRounds,
       movement,
       operationLayerStatus: resolvedOperationLayer?.status ?? (operationLayerStatus === 'pending' ? 'ready' : operationLayerStatus),
       ...(resolvedOperationLayer?.effective ? { operation: resolvedOperationLayer.effective } : {}),
@@ -523,6 +542,7 @@ function SpomoveSessionContent() {
   }, [
     diveEnvironmentTheme,
     effectiveCueSeconds,
+    sessionRounds,
     flowDuration,
     flowIncludeBonus,
     launchMode,
@@ -592,6 +612,12 @@ function SpomoveSessionContent() {
     setAudioMode(legacyPairToSpomoveAudioMode(config.soundEnabled, config.bgmPath));
     setSelectedBgmPath(config.bgmPath && bgmList.includes(config.bgmPath) ? config.bgmPath : '');
     setCueSeconds(resolveSessionCueSeconds(officialPreset, config.cueSeconds));
+    if (
+      officialPreset.programGroup !== 'sequential-memory' &&
+      officialPreset.id !== 'dive-standard' &&
+      config.rounds &&
+      [10, 15, 20, 30].includes(config.rounds)
+    ) setSessionRounds(config.rounds);
     if (config.operationLayerStatus !== 'legacyDisabled' && config.operation) setOperationCandidate(config.operation);
     setDiveEnvironmentTheme(officialPreset.id === 'dive-standard'
       ? 'space'
@@ -967,6 +993,7 @@ function SpomoveSessionContent() {
       entry: 'settings',
       mode: launchMode,
       cueSeconds: effectiveCueSeconds,
+      rounds: sessionRounds,
       movement: movementStateRef.current.currentMovement,
       operation:
         operationLayerStatus !== 'legacyDisabled' && effectiveOperation
@@ -993,6 +1020,7 @@ function SpomoveSessionContent() {
     effectiveOperation,
     operationLayerStatus,
     audioMode,
+    sessionRounds,
     runtimeAudioPair,
     diveEnvironmentTheme,
     sportsArenaFeatures,
@@ -1068,13 +1096,13 @@ function SpomoveSessionContent() {
           durationSec={
             officialPreset.engine.mode === 'reactTrain' ||
             (officialPreset.engine.mode === 'spatial' && officialPreset.engine.level === 7)
-              ? standardSpomoveDurationSec(effectiveCueSeconds, officialPreset.rounds)
+              ? standardSpomoveDurationSec(effectiveCueSeconds, sessionRounds)
               : undefined
           }
           mode={officialPreset.engine.mode}
           level={officialPreset.engine.level}
           speedSec={effectiveCueSeconds}
-          rounds={officialPreset.rounds}
+          rounds={sessionRounds}
           effectsEnabled={audioChannels.effectsEnabled}
           bgmEnabled={audioChannels.bgmEnabled}
           selectedBgmPath={selectedBgmPath}
@@ -1114,7 +1142,7 @@ function SpomoveSessionContent() {
           colorMemoryGridMode={officialPreset.engine.colorMemoryGridMode}
           spatialMemoryResponse={officialPreset.engine.spatialMemoryResponse}
           intervalLaunch={
-            effectiveOperation?.timing.pattern === 'interval'
+            !repetitionSelectable && effectiveOperation?.timing.pattern === 'interval'
               ? {
                   workSeconds: effectiveOperation.timing.workSeconds,
                   restSeconds: effectiveOperation.timing.restSeconds,
@@ -1211,6 +1239,8 @@ function SpomoveSessionContent() {
             cueSeconds={effectiveCueSeconds}
             recommendedCueSeconds={effectiveRecommendedCueSeconds}
             onCueSecondsChange={handleCueSecondsChange}
+            repetitionCount={repetitionSelectable ? sessionRounds : null}
+            onRepetitionCountChange={setSessionRounds}
             onStart={beginConfiguredSession}
             cueFloorNotice={cueFloorNotice}
           />
@@ -1229,7 +1259,7 @@ function SpomoveSessionContent() {
             colorCounts={sessionResult.colorCounts ?? null}
             engineMode={sessionResult.engineMode}
             engineLevel={sessionResult.engineLevel}
-            rounds={officialPreset.rounds}
+            rounds={sessionRounds}
             cueSeconds={effectiveCueSeconds}
             executionVolume={executionVolume!}
             diveActionMove={

@@ -63,6 +63,7 @@ type CamoGame = {
 
 type Props = {
   durationSec: number;
+  targetReps?: number;
   speedLevel: number;
   speedSec: number;
   placementMode?: CamouflagePlacementMode;
@@ -92,6 +93,7 @@ ${REACT_TRAIN_VIEWPORT_CSS}
 
 export function CamouflageReactionTraining({
   durationSec,
+  targetReps,
   speedLevel: _speedLevel,
   speedSec,
   placementMode = 'center',
@@ -209,7 +211,7 @@ export function CamouflageReactionTraining({
     const updateHudTime = () => {
       const m = String(Math.floor(g.timeLeft / 60)).padStart(2, '0');
       const s = String(g.timeLeft % 60).padStart(2, '0');
-      if (hudTimeRef.current) hudTimeRef.current.textContent = `${m}:${s}`;
+      if (hudTimeRef.current) hudTimeRef.current.textContent = targetReps ? `${g.rounds} / ${targetReps}` : `${m}:${s}`;
       setWarn(g.timeLeft <= 10);
     };
     updateHudTime();
@@ -287,6 +289,11 @@ export function CamouflageReactionTraining({
           g.laneCount[target.colorIdx]++;
         }
         if (hudRoundsRef.current) hudRoundsRef.current.textContent = String(g.rounds);
+        updateHudTime();
+        if (targetReps && g.rounds >= targetReps) {
+          endGame();
+          return;
+        }
         if (msgRef.current) msgRef.current.textContent = '정답 확인!';
       } else if (g.phase === 'HOLD' && elapsed >= HOLD_MS) {
         startRound();
@@ -341,7 +348,7 @@ export function CamouflageReactionTraining({
           g.timeLeft = newLeft;
           updateHudTime();
         }
-        if (g.timeLeft <= 0) {
+        if (targetReps == null && g.timeLeft <= 0) {
           if (g.timer) clearInterval(g.timer);
           g.timer = null;
           endGame();
@@ -368,14 +375,14 @@ export function CamouflageReactionTraining({
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [concurrent, durationSec, endGame, noiseMs, revealMs]);
+  }, [concurrent, durationSec, endGame, noiseMs, revealMs, targetReps]);
 
   return (
     <div className="camo">
       <style>{css}</style>
       <div className="camo-hud">
         <div className="camo-hc">
-          <div className="camo-hk">Time</div>
+          <div className="camo-hk">{targetReps ? 'Reps' : 'Time'}</div>
           <div className={`camo-hv${warn ? ' warn' : ''}`} ref={hudTimeRef} />
         </div>
         <div className="camo-hc">

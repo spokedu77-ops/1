@@ -137,6 +137,7 @@ export interface FlowEngineOptions {
   panoramaLowUrl?:   string;
   panoramaYawDeg?:   number;
   colorGateCueSeconds?: number;
+  colorGateTargetCount?: number;
   colorGateVariant?: ColorGateVariant;
   colorGateCategory?: ColorGateCategoryFilter;
 }
@@ -797,15 +798,16 @@ export class FlowEngine {
     this.stageTimer += dt;
     if (this.jumpInstrCooldown > 0) this.jumpInstrCooldown = Math.max(0, this.jumpInstrCooldown - dt);
     const colorGatePassCount = this.stats.colorGatePassCount ?? 0;
+    const colorGateTargetCount = Math.max(1, Math.round(this.opts.colorGateTargetCount ?? COLOR_GATE_TARGET_COUNT));
     const remaining = stage.isColorGate
-      ? Math.max(0, COLOR_GATE_TARGET_COUNT - colorGatePassCount)
+      ? Math.max(0, colorGateTargetCount - colorGatePassCount)
       : Math.max(0, stage.durationSec - this.stageTimer);
     const elapsedBeforeStage = this.stageList
       .slice(0, this.stageIdx)
       .reduce((sum, s) => sum + s.durationSec, 0);
     const totalDuration = this.stageList.reduce((sum, s) => sum + s.durationSec, 0);
     const totalProgress = stage.isColorGate
-      ? colorGatePassCount / COLOR_GATE_TARGET_COUNT
+      ? colorGatePassCount / colorGateTargetCount
       : totalDuration > 0
         ? (elapsedBeforeStage + this.stageTimer) / totalDuration
         : 0;
@@ -914,7 +916,7 @@ export class FlowEngine {
           this.cb.onColorGatePassCount?.(this.stats.colorGatePassCount);
         },
       );
-      if ((this.stats.colorGatePassCount ?? 0) >= COLOR_GATE_TARGET_COUNT) {
+      if ((this.stats.colorGatePassCount ?? 0) >= colorGateTargetCount) {
         this.endStage();
         return;
       }

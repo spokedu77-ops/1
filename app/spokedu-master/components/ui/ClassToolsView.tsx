@@ -491,16 +491,16 @@ function ReturnTimerTab() {
   const sideBySide = height > 0 && height < 620 && width >= 760;
 
   return (
-    <div className="flex h-full min-h-0 items-center justify-center overflow-hidden px-3 py-3 sm:px-5">
+    <div className="flex h-full min-h-0 items-center justify-center overflow-hidden px-3 py-3 sm:px-5 [@media(max-height:700px)]:py-1">
       <div
-        className="mx-auto grid h-full min-h-0 w-full max-w-[1040px] gap-3 px-2 py-3 text-center sm:px-6"
+        className="mx-auto grid h-full min-h-0 w-full max-w-[1040px] gap-3 px-2 py-3 text-center sm:px-6 [@media(max-height:700px)]:gap-1 [@media(max-height:700px)]:py-1"
         style={sideBySide
           ? { gridTemplateColumns: 'minmax(0,1.2fr) minmax(260px,0.8fr)', gridTemplateAreas: '"clock stack"' }
           : { gridTemplateRows: 'minmax(0,1fr) auto' }}
       >
         <div className={`grid min-h-0 place-items-center [container-type:size] ${sideBySide ? 'h-full' : 'w-full'}`} style={sideBySide ? { gridArea: 'clock' } : undefined}>
         <div
-          className="max-w-full font-mono text-[clamp(2.75rem,24cqw,12rem)] font-semibold tabular-nums leading-none"
+          className="max-w-full font-mono text-[clamp(2.25rem,min(24cqw,45cqh),12rem)] font-semibold tabular-nums leading-none"
           style={{ fontFamily: 'var(--spm-font-display)', color: tone.accent, letterSpacing: 0 }}
           aria-live="polite"
           aria-label={`${Math.floor(remainingSeconds / 60)}분 ${remainingSeconds % 60}초 남음`}
@@ -508,11 +508,11 @@ function ReturnTimerTab() {
           {formatCountdown(remainingMs)}
         </div>
         </div>
-        <div className="flex min-h-0 flex-col items-center justify-center gap-3" style={sideBySide ? { gridArea: 'stack' } : undefined}>
-        <div className="flex w-full shrink-0 items-center justify-between gap-2">
+        <div className="flex min-h-0 flex-col items-center justify-center gap-3 [@media(max-height:700px)]:gap-1" style={sideBySide ? { gridArea: 'stack' } : undefined}>
+        <div className="flex w-full shrink-0 items-center justify-between gap-2 [@media(max-height:700px)]:justify-end">
           <div className="flex min-w-0 items-center gap-2">
-            <h2 className="shrink-0 text-[20px] font-extrabold sm:text-[24px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>타이머</h2>
-            <span className="rounded-full px-3 py-1.5 text-[12px] font-extrabold" style={{ background: tone.border, color: tone.accent }}>
+            <h2 className="shrink-0 text-[20px] font-extrabold sm:text-[24px] [@media(max-height:700px)]:hidden" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>타이머</h2>
+            <span className="rounded-full px-3 py-1.5 text-[12px] font-extrabold [@media(max-height:700px)]:hidden" style={{ background: tone.border, color: tone.accent }}>
               {statusLabel}
             </span>
           </div>
@@ -539,7 +539,7 @@ function ReturnTimerTab() {
           <div className="h-full rounded-full transition-[width] duration-100" style={{ width: `${progress}%`, background: tone.accent }} />
         </div>
 
-        <div className="flex min-h-8 w-full shrink-0 items-center justify-center">
+        <div className="flex min-h-8 w-full shrink-0 items-center justify-center [@media(max-height:700px)]:hidden">
           {status === 'expired' ? (
             <p className="text-[14px] font-extrabold sm:text-[16px]" style={{ color: tone.accent }}>
               {modeConfig.expiredLabel}
@@ -677,25 +677,25 @@ const SCORE_TEAM_COLORS = [
   { bg: 'rgba(236,72,153,0.10)', border: 'rgba(236,72,153,0.25)', text: '#db2777' },
 ];
 
-function ScorePanel({ name, score, colorIndex, onNameChange, onPlus, onMinus, className = '' }: { name: string; score: number; colorIndex: number; onNameChange: (name: string) => void; onPlus: () => void; onMinus: () => void; className?: string }) {
+function ScorePanel({ name, score, colorIndex, onNameChange, onPlus, onMinus, compact = false, className = '' }: { name: string; score: number; colorIndex: number; onNameChange: (name: string) => void; onPlus: () => void; onMinus: () => void; compact?: boolean; className?: string }) {
   const colors = SCORE_TEAM_COLORS[colorIndex % SCORE_TEAM_COLORS.length]!;
 
   return (
-    <div className={`flex h-full min-h-0 min-w-0 flex-col items-center gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 md:gap-3 md:p-4 ${className}`} style={{ borderTopColor: colors.text, borderTopWidth: 4 }}>
+    <div className={`flex h-full min-h-0 min-w-0 flex-col items-center overflow-hidden rounded-xl border border-slate-200 bg-white ${compact ? 'gap-0.5 p-1' : 'gap-2 p-2 md:gap-3 md:p-4'} ${className}`} style={{ borderTopColor: colors.text, borderTopWidth: 4 }}>
       <input
         value={name}
         onChange={(event) => onNameChange(event.target.value)}
         maxLength={18}
-        className="h-11 w-full shrink-0 rounded-xl border border-transparent bg-transparent px-3 text-center text-[18px] font-semibold outline-none transition focus:border-slate-200 focus:bg-slate-50"
+        className={`${compact ? 'h-7 px-1 text-[12px]' : 'h-11 px-3 text-[18px]'} w-full shrink-0 rounded-xl border border-transparent bg-transparent text-center font-semibold outline-none transition focus:border-slate-200 focus:bg-slate-50`}
         style={{ borderColor: colors.border, color: colors.text }}
         aria-label={`${colorIndex + 1}번 팀 이름`}
       />
       <div className="grid min-h-0 w-full flex-1 place-items-center [container-type:size]">
-        <div className="text-[clamp(1.75rem,70cqh,9rem)] font-semibold tabular-nums leading-none" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{score}</div>
+        <div className={`${compact ? 'text-[clamp(1rem,46cqh,2.5rem)]' : 'text-[clamp(1.75rem,70cqh,9rem)]'} font-semibold tabular-nums leading-none`} style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{score}</div>
       </div>
-      <div className="flex shrink-0 gap-2">
-        <button type="button" onClick={onMinus} aria-label={`${name || `${colorIndex + 1}번 팀`} 1점 빼기`} className="grid h-11 w-11 place-items-center rounded-full bg-white text-[24px] font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50">−</button>
-        <button type="button" onClick={onPlus} aria-label={`${name || `${colorIndex + 1}번 팀`} 1점 더하기`} className="grid h-11 w-11 place-items-center rounded-full text-[24px] font-semibold text-white transition hover:brightness-95" style={{ background: colors.text }}>+</button>
+      <div className={`flex shrink-0 ${compact ? 'gap-1' : 'gap-2'}`}>
+        <button type="button" onClick={onMinus} aria-label={`${name || `${colorIndex + 1}번 팀`} 1점 빼기`} className={`${compact ? 'h-8 w-8 text-[18px]' : 'h-11 w-11 text-[24px]'} grid place-items-center rounded-full bg-white font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50`}>−</button>
+        <button type="button" onClick={onPlus} aria-label={`${name || `${colorIndex + 1}번 팀`} 1점 더하기`} className={`${compact ? 'h-8 w-8 text-[18px]' : 'h-11 w-11 text-[24px]'} grid place-items-center rounded-full font-semibold text-white transition hover:brightness-95`} style={{ background: colors.text }}>+</button>
       </div>
     </div>
   );
@@ -710,7 +710,10 @@ function ScoreboardTab() {
   };
 
   const { width, height } = useToolViewport();
-  const columns = fittedColumnCount(teamCount, width, height, { minCellWidth: 116, minCellHeight: 156, chrome: 92, maxColumns: 6 });
+  const compactScoreboard = height < 430;
+  const columns = fittedColumnCount(teamCount, width, height, compactScoreboard
+    ? { minCellWidth: 86, minCellHeight: 88, chrome: 78, maxColumns: 6 }
+    : { minCellWidth: 116, minCellHeight: 156, chrome: 92, maxColumns: 6 });
 
   return (
     <div className="flex h-full min-h-0 items-center justify-center overflow-hidden p-2 sm:p-4">
@@ -735,6 +738,7 @@ function ScoreboardTab() {
               name={team.name}
               score={team.score}
               colorIndex={index}
+              compact={compactScoreboard}
               onNameChange={(name) => updateTeam(index, (item) => ({ ...item, name }))}
               onPlus={() => updateTeam(index, (item) => ({ ...item, score: item.score + 1 }))}
               onMinus={() => updateTeam(index, (item) => ({ ...item, score: Math.max(0, item.score - 1) }))}
@@ -798,8 +802,8 @@ function ClassSelector({
   if (!classKeys.length) return null;
 
   return (
-    <div className="mx-auto mb-1 flex w-full max-w-[760px] flex-wrap items-center justify-center gap-2 px-2 py-2 sm:flex-nowrap">
-      <label htmlFor="class-tools-class" className="shrink-0 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>
+    <div className="mx-auto mb-1 flex w-full max-w-[760px] flex-wrap items-center justify-center gap-2 px-2 py-2 sm:flex-nowrap [@media(max-height:700px)]:mb-0 [@media(max-height:700px)]:flex-nowrap [@media(max-height:700px)]:gap-1 [@media(max-height:700px)]:px-0 [@media(max-height:700px)]:py-1">
+      <label htmlFor="class-tools-class" className="shrink-0 text-[12px] font-medium [@media(max-height:700px)]:sr-only" style={{ color: 'var(--spm-t2)' }}>
         진행할 반
       </label>
       {locked ? (
@@ -811,7 +815,7 @@ function ClassSelector({
           id="class-tools-class"
           value={selectedClassKey}
           onChange={(event) => onChange(event.target.value)}
-          className="h-11 min-w-0 flex-1 rounded-xl px-3 text-[13px] font-medium outline-none"
+          className="h-11 min-w-0 flex-1 rounded-xl px-3 text-[13px] font-medium outline-none [@media(max-height:700px)]:h-9 [@media(max-height:700px)]:px-2 [@media(max-height:700px)]:text-[12px]"
           style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
         >
           {classKeys.map((classKey) => (
@@ -827,13 +831,13 @@ function ClassSelector({
         value={selectedSessionId}
         disabled={locked}
         onChange={(event) => onSessionChange(event.target.value)}
-        className="h-11 min-w-0 flex-1 rounded-xl px-3 text-[13px] font-medium outline-none disabled:cursor-not-allowed disabled:bg-slate-50"
+        className="h-11 min-w-0 flex-1 rounded-xl px-3 text-[13px] font-medium outline-none disabled:cursor-not-allowed disabled:bg-slate-50 [@media(max-height:700px)]:h-9 [@media(max-height:700px)]:px-2 [@media(max-height:700px)]:text-[12px]"
         style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
       >
         <option value="">수업 연결 안 함</option>
         {sessions.map((session) => <option key={session.id} value={session.id}>{formatClassToolSessionOption(session)}</option>)}
       </select>
-      <span className="shrink-0 text-[12px] font-normal text-slate-500">· {studentCount}명</span>
+      <span className="shrink-0 text-[12px] font-normal text-slate-500 [@media(max-height:700px)]:hidden">· {studentCount}명</span>
     </div>
   );
 }
@@ -850,8 +854,8 @@ function StandaloneParticipantPicker({ roster, excludedStudentIds, onToggle }: {
   const participantCount = roster.filter((student) => !excludedStudentIds.has(student.id)).length;
   if (!roster.length) return null;
   return (
-    <details className="group mx-auto flex w-full max-w-[720px] shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white [&[open]]:min-h-0 [&[open]]:flex-1">
-      <summary className="flex min-h-11 shrink-0 cursor-pointer list-none items-center justify-between gap-3 px-3 text-[12px] font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
+    <details className="group mx-auto flex w-full max-w-[720px] shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white [&[open]]:min-h-0 [&[open]]:flex-1 [@media(max-height:700px)]:rounded-lg">
+      <summary className="flex min-h-11 shrink-0 cursor-pointer list-none items-center justify-between gap-3 px-3 text-[12px] font-semibold text-slate-700 [&::-webkit-details-marker]:hidden [@media(max-height:700px)]:min-h-9 [@media(max-height:700px)]:px-2">
         <span>이번 도구 참여자 · {participantCount}/{roster.length}명</span>
         <ChevronDown size={16} className="shrink-0 transition-transform group-open:rotate-180" />
       </summary>
@@ -885,8 +889,8 @@ function SessionAttendancePicker({ session, roster, attendance, onChange, error 
 }) {
   const presentCount = roster.filter((student) => attendance[student.id] === 'present').length;
   return (
-    <details className="group mx-auto flex w-full max-w-[720px] shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white [&[open]]:min-h-0 [&[open]]:flex-1">
-      <summary className="flex min-h-11 shrink-0 cursor-pointer list-none items-center justify-between gap-3 px-3 text-[12px] font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
+    <details className="group mx-auto flex w-full max-w-[720px] shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white [&[open]]:min-h-0 [&[open]]:flex-1 [@media(max-height:700px)]:rounded-lg">
+      <summary className="flex min-h-11 shrink-0 cursor-pointer list-none items-center justify-between gap-3 px-3 text-[12px] font-semibold text-slate-700 [&::-webkit-details-marker]:hidden [@media(max-height:700px)]:min-h-9 [@media(max-height:700px)]:px-2">
         <span>{formatClassToolSessionOption(session)} 출석 · {presentCount}/{roster.length}명</span>
         <ChevronDown size={16} className="shrink-0 transition-transform group-open:rotate-180" />
       </summary>
@@ -961,7 +965,7 @@ function PickerTab({ students, usingSample }: { students: StudentProfile[]; usin
       >
         {spinning || picked ? (
           <div className="space-y-2 text-center">
-            <div className={`text-[clamp(2rem,70cqh,9rem)] font-semibold leading-none transition-opacity ${spinning ? 'opacity-50' : ''}`} style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{display}</div>
+            <div className={`max-w-full overflow-hidden text-[clamp(1.75rem,min(16cqw,60cqh),9rem)] font-semibold leading-none transition-opacity ${spinning ? 'opacity-50' : ''}`} style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{display}</div>
             {!spinning && picked ? <p className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>{picked.group}</p> : null}
           </div>
         ) : (
@@ -989,15 +993,18 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
   }, [students, teamCount]);
 
   const { width, height } = useToolViewport();
-  const columns = fittedColumnCount(teams?.length ?? teamCount, width, height, { minCellWidth: 200, minCellHeight: 180, chrome: 150, maxColumns: 4 });
+  const compactTeams = height < 300;
+  const columns = fittedColumnCount(teams?.length ?? teamCount, width, height, compactTeams
+    ? { minCellWidth: 130, minCellHeight: 96, chrome: 104, maxColumns: 4 }
+    : { minCellWidth: 200, minCellHeight: 180, chrome: 150, maxColumns: 4 });
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center gap-3 overflow-hidden px-4 py-4 sm:px-6">
+    <div className="flex h-full min-h-0 flex-col items-center gap-3 overflow-hidden px-4 py-4 sm:px-6 [@media(max-height:700px)]:gap-1 [@media(max-height:700px)]:px-2 [@media(max-height:700px)]:py-1">
       <StudentModeNote usingSample={usingSample} />
       {!students.length ? <EmptyStudentsForTools /> : null}
       <p className="shrink-0 text-[20px] font-semibold" style={{ color: 'var(--spm-t)' }}>팀 나누기</p>
-      <p className="max-w-[560px] shrink-0 text-center text-[12px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>명단을 무작위로 섞고 팀별 인원 차이가 1명 이하가 되도록 배정합니다.</p>
-      <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
+      <p className="max-w-[560px] shrink-0 text-center text-[12px] font-medium leading-5 [@media(max-height:700px)]:hidden" style={{ color: 'var(--spm-t3)' }}>명단을 무작위로 섞고 팀별 인원 차이가 1명 이하가 되도록 배정합니다.</p>
+      <div className="flex shrink-0 flex-wrap items-center justify-center gap-3 [@media(max-height:700px)]:gap-1">
         <div className="flex rounded-xl bg-slate-100 p-1" aria-label="팀 수 선택">
           {[2, 3, 4].map((count) => (
             <button key={count} type="button" onClick={() => { setTeamCount(count); setTeams(null); }} aria-pressed={teamCount === count} className={`min-h-11 rounded-lg px-4 text-[12px] font-bold ${teamCount === count ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>
@@ -1015,18 +1022,18 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
           {teams.map((team, teamIndex) => {
             const color = ['var(--spm-red)', '#2563eb', '#059669', '#d97706'][teamIndex]!;
             return (
-              <div key={teamIndex} className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-3" style={{ borderTopColor: color, borderTopWidth: 4 }}>
+              <div key={teamIndex} className={`flex min-h-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white ${compactTeams ? 'p-1' : 'p-3'}`} style={{ borderTopColor: color, borderTopWidth: 4 }}>
                 <input
                   value={teamNames[teamIndex]}
                   onChange={(event) => setTeamNames((names) => names.map((name, index) => index === teamIndex ? event.target.value : name))}
-                  className="mb-2 w-20 shrink-0 border-b bg-transparent text-[18px] font-extrabold outline-none"
+                  className={`${compactTeams ? 'mb-1 h-7 text-[14px]' : 'mb-2 text-[18px]'} w-20 shrink-0 border-b bg-transparent font-extrabold outline-none`}
                   style={{ borderColor: color, color }}
                   aria-label={`${teamIndex + 1}팀 이름`}
                 />
-                <div className="grid min-h-0 flex-1 content-start gap-1 overflow-hidden" style={{ gridAutoRows: 'minmax(0, 2rem)' }}>
+                <div className="grid min-h-0 flex-1 content-start gap-1 overflow-hidden" style={{ gridAutoRows: compactTeams ? 'minmax(0, 1.25rem)' : 'minmax(0, 2rem)' }}>
                   {team.map((student) => (
                     <div key={student.id} className="flex min-h-0 items-center overflow-hidden border-b border-slate-100 px-2">
-                      <span className="truncate text-[16px] font-medium" style={{ color: 'var(--spm-t)' }}>{student.name}</span>
+                      <span className={`${compactTeams ? 'text-[12px]' : 'text-[16px]'} truncate font-medium`} style={{ color: 'var(--spm-t)' }}>{student.name}</span>
                     </div>
                   ))}
                 </div>
@@ -1034,13 +1041,13 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
             );
           })}
         </div>
-        <div className="flex w-full max-w-[1080px] shrink-0 items-center gap-3 rounded-[14px] px-4 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <div className="flex w-full max-w-[1080px] shrink-0 items-center gap-3 rounded-[14px] px-4 py-3 [@media(max-height:700px)]:px-2 [@media(max-height:700px)]:py-1" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <span className="shrink-0 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>인원 균등 배정</span>
           <span className="flex-1 text-right text-[11px] font-bold" style={{ color: 'var(--spm-t2)' }}>{teams.map((team) => `${team.length}명`).join(' · ')}</span>
         </div>
         </>
       ) : (
-        <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <div className="flex flex-col items-center gap-3 py-8 text-center [@media(max-height:700px)]:gap-1 [@media(max-height:700px)]:py-1">
           <Users size={40} color="var(--spm-t3)" />
           <p className="text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>팀 수를 고른 뒤 인원 균등 배정을 시작하세요.</p>
         </div>
@@ -1109,19 +1116,19 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
   const roundColumns = fittedColumnCount(Math.max(1, bracket.rounds.length), width, height, { minCellWidth: 180, minCellHeight: 160, chrome: championId ? 168 : 112, maxColumns: Math.max(1, bracket.rounds.length) });
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center gap-3 overflow-hidden px-4 py-4 sm:px-6">
+    <div className="flex h-full min-h-0 flex-col items-center gap-3 overflow-hidden px-4 py-4 sm:px-6 [@media(max-height:700px)]:gap-1 [@media(max-height:700px)]:px-2 [@media(max-height:700px)]:py-1">
       <StudentModeNote usingSample={usingSample} />
       {!students.length ? <EmptyStudentsForTools /> : null}
       <div className="flex w-full max-w-[1120px] shrink-0 flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[20px] font-semibold" style={{ color: 'var(--spm-t)' }}>토너먼트</p>
-          <p className="mt-1 text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>{started ? '경기 승자를 선택하면 다음 라운드로 자동 진출합니다.' : '참가자 이름과 순서를 정한 뒤 대진을 시작하세요.'}</p>
+          <p className="mt-1 text-[12px] font-medium [@media(max-height:700px)]:hidden" style={{ color: 'var(--spm-t3)' }}>{started ? '경기 승자를 선택하면 다음 라운드로 자동 진출합니다.' : '참가자 이름과 순서를 정한 뒤 대진을 시작하세요.'}</p>
         </div>
         {started ? <button type="button" onClick={resetTournament} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-[12px] font-bold text-slate-600"><RotateCcw size={14} className="mr-1 inline" />참가자 설정으로</button> : null}
       </div>
 
       {!started ? (
-        <section className="flex min-h-0 w-full max-w-[860px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+        <section className="flex min-h-0 w-full max-w-[860px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 [@media(max-height:700px)]:p-2">
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
             <p className="text-[13px] font-bold text-slate-700">참가자 {participants.length}명</p>
             <div className="flex gap-2">
@@ -1138,7 +1145,7 @@ function TournamentTab({ students, usingSample }: { students: StudentProfile[]; 
               </li>
             ))}
           </ol>
-          <div className="mt-4 flex shrink-0 justify-center">
+          <div className="mt-4 flex shrink-0 justify-center [@media(max-height:700px)]:mt-1">
             <ActionButton onClick={startTournament} disabled={participants.filter((participant) => participant.name.trim()).length < 2} accent="#7c3aed">
               <Trophy size={17} />대진 시작
             </ActionButton>
@@ -1241,15 +1248,15 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center gap-3 overflow-y-auto overscroll-contain px-4 py-4 md:px-6">
+    <div className="flex h-full min-h-0 flex-col items-center gap-3 overflow-hidden px-4 py-4 md:px-6 [@media(max-height:700px)]:gap-1 [@media(max-height:700px)]:px-2 [@media(max-height:700px)]:py-1">
       <StudentModeNote usingSample={usingSample} />
       {!students.length ? <EmptyStudentsForTools /> : null}
-      <div className="flex w-full max-w-[960px] shrink-0 flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="flex w-full max-w-[960px] shrink-0 flex-col items-stretch gap-3 md:flex-row [@media(max-height:700px)]:gap-1 md:items-center md:justify-between">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>사다리 · {students.length}명</p>
-          <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>아래 결과 이름을 먼저 바꾼 뒤 사다리를 만드세요.</p>
+          <p className="mt-1 text-[11px] font-semibold [@media(max-height:700px)]:hidden" style={{ color: 'var(--spm-t3)' }}>아래 결과 이름을 먼저 바꾼 뒤 사다리를 만드세요.</p>
         </div>
-        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 md:w-auto">
+        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3 md:w-auto [@media(max-height:700px)]:grid-cols-3 [@media(max-height:700px)]:gap-1 [@media(max-height:700px)]:[&>button]:min-w-0 [@media(max-height:700px)]:[&>button]:px-1">
           <button type="button" onClick={() => { setRevealedStarts(new Set(students.map((_, index) => index))); setSelectedStart(null); }} disabled={!rungs.length} className="h-12 rounded-[13px] px-4 text-[13px] font-extrabold disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>전체 결과 공개</button>
           <button type="button" onClick={() => setShowResultModal(true)} disabled={revealedStarts.size === 0} className="h-12 rounded-[13px] px-4 text-[13px] font-extrabold disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>결과 보기</button>
           <ActionButton onClick={createLadder} disabled={students.length < 2} accent="#0891b2"><Route size={17} />{rungs.length ? '다시 만들기' : '사다리 만들기'}</ActionButton>
@@ -1257,11 +1264,11 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
       </div>
       {students.length === 1 ? <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t3)' }}>사다리를 만들려면 학생이 2명 이상 필요합니다.</p> : null}
       {students.length >= 2 ? (
-         <div data-ladder-scroll className="h-[360px] min-h-[360px] w-full max-w-[960px] shrink-0 overflow-x-auto overflow-y-hidden rounded-xl border border-slate-200 bg-white p-3 md:p-4">
+         <div data-ladder-scroll className="min-h-0 w-full max-w-[960px] flex-1 overflow-x-auto overflow-y-hidden rounded-xl border border-slate-200 bg-white p-3 md:p-4 [@media(max-height:800px)]:p-1">
           <div className="flex h-full min-h-0 flex-col" style={{ minWidth: Math.max(320, students.length * 56) }}>
             <div className="grid shrink-0" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(56px, 1fr))` }}>
               {students.map((student, index) => (
-                <button key={student.id} type="button" onClick={() => revealStart(index)} disabled={!rungs.length} aria-pressed={selectedStart === index} className={`mx-0.5 min-h-11 truncate rounded-lg px-1 text-center text-[12px] font-extrabold transition ${selectedStart === index ? 'bg-cyan-50 ring-2 ring-cyan-600' : revealedStarts.has(index) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50'}`} style={{ color: selectedStart === index ? '#0e7490' : undefined }}>
+                <button key={student.id} type="button" onClick={() => revealStart(index)} disabled={!rungs.length} aria-pressed={selectedStart === index} className={`mx-0.5 min-h-11 truncate rounded-lg px-1 text-center text-[12px] font-extrabold transition [@media(max-height:800px)]:min-h-8 [@media(max-height:800px)]:text-[11px] ${selectedStart === index ? 'bg-cyan-50 ring-2 ring-cyan-600' : revealedStarts.has(index) ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-slate-50'}`} style={{ color: selectedStart === index ? '#0e7490' : undefined }}>
                   {student.name}{revealedStarts.has(index) ? ' ✓' : ''}
                 </button>
               ))}
@@ -1275,7 +1282,7 @@ function LadderTab({ students, usingSample }: { students: StudentProfile[]; usin
             </div>
             <div className="grid shrink-0" style={{ gridTemplateColumns: `repeat(${students.length}, minmax(56px, 1fr))` }}>
               {outcomes.map((outcome, index) => (
-                <input key={index} value={outcome} onChange={(event) => setOutcomes((items) => items.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="mx-1 h-11 min-w-0 rounded-[9px] px-1 text-center text-[11px] font-extrabold outline-none" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }} aria-label={`${index + 1}번 결과`} />
+                <input key={index} value={outcome} onChange={(event) => setOutcomes((items) => items.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} className="mx-1 h-11 min-w-0 rounded-[9px] px-1 text-center text-[11px] [@media(max-height:800px)]:h-8 [@media(max-height:800px)]:text-[10px] font-extrabold outline-none" style={{ background: 'var(--spm-s1)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }} aria-label={`${index + 1}번 결과`} />
               ))}
             </div>
           </div>
@@ -1465,7 +1472,7 @@ export default function ClassToolsView() {
           </ToolViewport>
         ) : null}
         {!rosterToolLocked && usesClassRoster && !requestedSessionContext ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pt-2 sm:px-6 sm:pt-3">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pt-2 sm:px-6 sm:pt-3 [@media(max-height:700px)]:pt-1">
             <div className="shrink-0">
               <ClassSelector
                 classKeys={classKeys}
@@ -1511,7 +1518,7 @@ export default function ClassToolsView() {
       </div>
 
       {!rosterToolLocked && usesClassRoster && selectedStudents.length > 0 ? (
-        <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-2.5 sm:px-5 [@media(max-height:500px)]:hidden">
+        <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-2.5 sm:px-5 [@media(max-height:700px)]:hidden">
           <Link
             href="/spokedu-lab/students"
             className="flex h-11 items-center justify-center gap-2 text-[12px] font-medium text-slate-500 transition hover:text-slate-800"

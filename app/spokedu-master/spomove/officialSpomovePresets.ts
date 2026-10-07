@@ -1796,6 +1796,7 @@ export function officialPresetSessionHref(
     entry?: 'start' | 'settings';
     /** 미지정 시 프리셋 기본값. Session이 URL cue를 읽음 */
     cueSeconds?: number;
+    rounds?: number;
     /** 난이도 오버라이드 (numberCart/colorTracker/mole/goalkeeper 값) */
     difficulty?: string;
     movement?: import('./movements/movementTypes').MovementPick | null;
@@ -1818,7 +1819,7 @@ export function officialPresetSessionHref(
 ) {
   const params = new URLSearchParams({
     preset: preset.id,
-    rounds: String(preset.rounds),
+    rounds: String(options?.rounds ?? preset.rounds),
     sound: options?.soundEnabled === false ? 'off' : 'on',
     mode: options?.mode ?? 'projector',
   });
@@ -1871,6 +1872,7 @@ export function publicOfficialPresetSessionHref(
     entry: options?.entry,
     mode: options?.mode,
     cueSeconds: options?.cueSeconds,
+    rounds: options?.rounds,
     difficulty: options?.difficulty,
     movement: options?.movement,
     operation: options?.operation,

@@ -24,21 +24,21 @@ export function SpomovePadLayoutView({
   const frameClass = flush ? '' : `rounded-2xl border p-4 ${borderClass}`;
 
   const boardClass = prominent
-    ? 'w-[236px] max-w-[68vw] [@media(max-height:950px)]:w-[180px]'
+    ? 'w-[156px] max-w-[68vw] [@media(max-height:760px)]:w-[120px]'
     : compact
-    ? 'w-[148px] [@media(max-height:950px)]:w-[112px]'
-    : 'w-[200px] [@media(max-height:950px)]:w-[144px]';
+    ? 'w-[112px]'
+    : 'w-[144px]';
   const isCompass = variant === 'compass';
 
   return (
-    <div className={frameClass ? `${frameClass} ${compact ? 'p-3 [@media(max-height:950px)]:py-2.5' : ''}` : undefined}>
+    <div className={frameClass ? `${frameClass} ${compact ? 'p-3 py-2.5' : ''}` : undefined}>
       {flush ? null : (
         <>
           <p className={`text-sm font-semibold ${titleClass}`}>매트 배치</p>
         </>
       )}
-      <p className={`text-center text-[11px] font-medium ${mutedClass} ${flush ? '' : 'mt-3 [@media(max-height:950px)]:mt-2'}`}>{directionLabel}</p>
-      <div className="mt-3 flex justify-center [@media(max-height:950px)]:mt-2">
+      <p className={`text-center text-[11px] font-medium ${mutedClass} ${flush ? '' : 'mt-2'}`}>{directionLabel}</p>
+      <div className="mt-2 flex justify-center">
         <div
           className={`relative aspect-square ${boardClass}`}
           aria-label={isCompass

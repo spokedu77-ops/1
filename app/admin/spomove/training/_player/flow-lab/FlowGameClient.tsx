@@ -32,6 +32,7 @@ interface FlowGameClientProps {
   panoramaLowUrl?:   string;
   panoramaYawDeg?:   number;
   colorGateCueSeconds?: number;
+  colorGateTargetCount?: number;
   colorGateVariant?: import('./engine/modules/colorGateGuides').ColorGateVariant;
   colorGateCategory?: import('./engine/modules/colorGateGuides').ColorGateCategoryFilter;
   onComplete:        (stats: FlowStats) => void;
@@ -71,6 +72,7 @@ export default function FlowGameClient({
   panoramaLowUrl,
   panoramaYawDeg,
   colorGateCueSeconds,
+  colorGateTargetCount = COLOR_GATE_TARGET_COUNT,
   colorGateVariant,
   colorGateCategory,
   onComplete,
@@ -175,7 +177,7 @@ export default function FlowGameClient({
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, motionScale, bgmPath, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateVariant, colorGateCategory },
+        { stages, motionScale, bgmPath, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -215,7 +217,7 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, motionScale, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateVariant, colorGateCategory, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
+  }, [stages.length, motionScale, bgmEnabled, sfxEnabled, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, colorGateCueSeconds, colorGateTargetCount, colorGateVariant, colorGateCategory, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 
@@ -244,6 +246,7 @@ export default function FlowGameClient({
         cueWord={buildColorGateCue(gateColorId)}
         poseLabel={COLOR_GATE_POSE_LABELS[gatePose]}
         passCount={gatePassCount}
+        targetCount={colorGateTargetCount}
       />
     )
     : null;
@@ -336,11 +339,11 @@ export default function FlowGameClient({
               MOTION GATE
             </span>
             <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.72)', fontVariantNumeric: 'tabular-nums', fontWeight: 700 }}>
-              {Math.min(gatePassCount, COLOR_GATE_TARGET_COUNT)} / {COLOR_GATE_TARGET_COUNT}회
+              {Math.min(gatePassCount, colorGateTargetCount)} / {colorGateTargetCount}회
             </span>
           </div>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30, height: 3, background: 'rgba(255,255,255,0.1)' }}>
-            <div style={{ height: '100%', width: `${Math.min(1, gatePassCount / COLOR_GATE_TARGET_COUNT) * 100}%`, background: '#38BDF8', transition: 'width 0.2s ease-out' }} />
+            <div style={{ height: '100%', width: `${Math.min(1, gatePassCount / colorGateTargetCount) * 100}%`, background: '#38BDF8', transition: 'width 0.2s ease-out' }} />
           </div>
         </>
       )}

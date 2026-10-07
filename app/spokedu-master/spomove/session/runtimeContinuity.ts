@@ -15,6 +15,7 @@ export type SpomoveRuntimeConfig = {
   soundEnabled: boolean;
   bgmPath: string;
   cueSeconds: number;
+  rounds?: number;
   movement: MovementPick | null;
   operationLayerStatus: 'legacyDisabled' | 'ready' | 'sanitized' | 'fallback';
   operation?: ActivityOperationConfig;
@@ -69,6 +70,7 @@ function isRuntimeConfig(value: unknown, presetId: string): value is SpomoveRunt
   if (value.launchMode !== 'projector' && value.launchMode !== 'mobile') return false;
   if (typeof value.soundEnabled !== 'boolean' || typeof value.bgmPath !== 'string') return false;
   if (typeof value.cueSeconds !== 'number' || !Number.isFinite(value.cueSeconds)) return false;
+  if (value.rounds != null && (typeof value.rounds !== 'number' || !Number.isFinite(value.rounds))) return false;
   if (value.movement !== null && !isMovement(value.movement)) return false;
   if (!['legacyDisabled', 'ready', 'sanitized', 'fallback'].includes(String(value.operationLayerStatus))) return false;
   if (value.operationLayerStatus !== 'legacyDisabled' && !isRecord(value.operation)) return false;

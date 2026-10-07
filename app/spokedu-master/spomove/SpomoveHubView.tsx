@@ -995,7 +995,7 @@ function SpomoveHubInner({
 
   return (
     <main className="h-full overflow-y-auto" style={{ background: 'var(--spm-bg)' }}>
-      <div className="mx-auto flex w-full max-w-[1120px] flex-col px-4 pb-24 pt-4 sm:px-6 lg:px-0 lg:pb-16">
+      <div className="mx-auto flex w-[calc(100%-2rem)] max-w-[1120px] flex-col pb-24 pt-4 sm:w-[calc(100%-3rem)] lg:pb-16">
         {sessionContext ? (
           <div className="mb-4 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-blue-100 bg-blue-50 px-3 sm:px-4">
             <p className="min-w-0 truncate text-xs font-semibold text-blue-900">{sessionContext.className} · {sessionWorkState?.operationalLabel}{sessionWorkState?.progress.total ? ` · 진행 ${sessionWorkState.progress.completed}/${sessionWorkState.progress.total}` : ''}</p>

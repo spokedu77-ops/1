@@ -2813,6 +2813,7 @@ export default function MemoryGameApp({
         panoramaLowUrl={divePanorama.lowUrl}
         panoramaYawDeg={divePanorama.yawDeg}
         colorGateCueSeconds={settings.speed}
+        colorGateTargetCount={settings.targetReps}
         colorGateVariant={settings.colorGateVariant}
         colorGateCategory={settings.colorGateCategory}
         onComplete={handleFlowDone}
