@@ -164,7 +164,7 @@ function UnsupportedPreset() {
         <X className="mx-auto h-8 w-8 text-rose-300" />
         <h1 className="mt-5 text-2xl font-extrabold">지원하지 않는 SPOMOVE 활동입니다.</h1>
         <p className="mt-3 text-sm font-semibold text-white/55">공식 SPOMOVE 목록에서 활동을 다시 선택해 주세요.</p>
-        <Link href="/spokedu-master/spomove" className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-extrabold text-slate-950">
+        <Link href="/spokedu-lab/spomove" className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-extrabold text-slate-950">
           프로그램 선택으로
         </Link>
       </section>
@@ -628,7 +628,7 @@ function SpomoveSessionContent() {
         profile?.id,
       )
     : program
-      ? '/spokedu-master/activity'
+      ? '/spokedu-lab/activity'
       : null;
 
   const stopBgm = useCallback(() => {
@@ -1012,14 +1012,14 @@ function SpomoveSessionContent() {
       sessionOrigin.returnTo,
       null,
       null,
-      sessionOrigin.sessionId ? buildActivitySessionHref(sessionOrigin.sessionId) : '/spokedu-master/activity',
+      sessionOrigin.sessionId ? buildActivitySessionHref(sessionOrigin.sessionId) : '/spokedu-lab/activity',
     )
     : null;
   const openSettings = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('entry', 'settings');
     params.delete('difficulty');
-    router.replace(`/spokedu-master/spomove/session?${params.toString()}`);
+    router.replace(`/spokedu-lab/spomove/session?${params.toString()}`);
   }, [router, searchParams]);
 
   useEffect(() => {
@@ -1304,7 +1304,7 @@ function SpomoveSessionContent() {
 
 export default function SpomoveSessionPage() {
   return (
-    <ErrorBoundary fallbackHref="/spokedu-master/spomove" fallbackLabel="SPOMOVE 목록">
+    <ErrorBoundary fallbackHref="/spokedu-lab/spomove" fallbackLabel="SPOMOVE 목록">
       <Suspense fallback={<div className="relative h-dvh overflow-hidden select-none bg-black text-white" />}>
         <SpomoveSessionContent />
       </Suspense>

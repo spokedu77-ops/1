@@ -4,7 +4,7 @@ const LAST_USED_APP_KEY = 'spokedu:last-used-app';
 
 export function inferLastUsedAppFromPath(pathname: string): LastUsedApp | null {
   if (pathname === '/admin' || pathname.startsWith('/admin/')) return 'admin';
-  if (pathname === '/spokedu-master' || pathname.startsWith('/spokedu-master/')) return 'master';
+  if (pathname === '/spokedu-master' || pathname.startsWith('/spokedu-master/') || pathname.startsWith('/spokedu-lab/')) return 'master';
   if (pathname === '/teacher' || pathname.startsWith('/teacher/')) return 'teacher';
   return null;
 }

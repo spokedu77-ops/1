@@ -58,11 +58,11 @@ describe('SPOMAT shop UI contract', () => {
     const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
 
     expect(tabBar).not.toContain('shop');
-    expect(dashboard).not.toContain('/spokedu-master/shop');
+    expect(dashboard).not.toContain('/spokedu-lab/shop');
     // profile secondary menu is the single entry point
-    expect(profile).toContain('/spokedu-master/shop');
+    expect(profile).toContain('/spokedu-lab/shop');
     // StatusBar nav array must not contain shop (main nav excluded)
-    expect(statusBar).not.toContain("href: '/spokedu-master/shop'");
+    expect(statusBar).not.toContain("href: '/spokedu-lab/shop'");
   });
 });
 
@@ -85,7 +85,7 @@ describe('SPOMAT purchase redirect route contract', () => {
     expect(route).not.toContain('SPOMAT_DEFAULT_PREMIUM_URL');
     expect(route).not.toContain('https://example.com/spomat');
     expect(route).not.toContain('https://example.com/spomat-premium');
-    expect(route).toContain("'/spokedu-master/shop'");
+    expect(route).toContain("'/spokedu-lab/shop'");
   });
 
   it('route does not check authentication or subscription plan', () => {
@@ -113,7 +113,7 @@ describe('SPOMAT purchase redirect route contract', () => {
   it('route sends users back to shop inquiry instead of a 503 purchase page', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
-    expect(route).toContain("'/spokedu-master/shop'");
+    expect(route).toContain("'/spokedu-lab/shop'");
     expect(route).toContain('NextResponse.redirect');
     expect(route).toContain('isSafePurchaseUrl(publicUrl)');
     expect(route).not.toMatch(/status: 503/);

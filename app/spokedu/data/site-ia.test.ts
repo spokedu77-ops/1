@@ -48,7 +48,7 @@ describe('spokedu site IA', () => {
     ]);
     expect(solutionGroup?.type === 'group' ? solutionGroup.children.map((child) => child.label) : []).toEqual([
       'SPOMOVE',
-      'SPOKEDU MASTER',
+      'SPOKEDU LAB',
     ]);
     expect(solutionGroup?.type === 'group' ? solutionGroup.children.map((child) => child.href) : []).toEqual([
       SPOKEDU_PATHS.spomove,
@@ -56,7 +56,7 @@ describe('spokedu site IA', () => {
     ]);
     expect(byLabel['현장 사례']).toBe(SPOKEDU_PATHS.records);
     expect(byLabel['소개']).toBe(SPOKEDU_PATHS.about);
-    expect(byLabel['SPOKEDU MASTER']).toBeUndefined();
+    expect(byLabel['SPOKEDU LAB']).toBeUndefined();
     expect(byLabel.SPOMOVE).toBeUndefined();
     expect(siteHeaderCta.label).toBe('상담하기');
     expect(siteHeaderCta.href).toBe(SPOKEDU_PATHS.contact);
@@ -102,7 +102,7 @@ describe('spokedu site IA', () => {
       'SPOMOVE',
       'SPOMOVE 카탈로그',
       'SPOMAT',
-      'SPOKEDU MASTER',
+      'SPOKEDU LAB',
       '현장 사례',
       '소개',
       '파트너·협업',
@@ -120,7 +120,7 @@ describe('spokedu site IA', () => {
   });
 
   it('keeps MASTER handoff path constants stable', () => {
-    expect(MASTER_HANDOFF.landing).toBe('/subscription');
+    expect(MASTER_HANDOFF.landing).toBe('/spokedu-lab');
     expect(MASTER_HANDOFF.onboardingLogin).toContain('/spokedu-master/onboarding');
     expect(MASTER_HANDOFF.dashboardLogin).toContain('/spokedu-master/dashboard');
     expect(MASTER_HANDOFF.payment).toBe('/spokedu-master/payment');
@@ -196,12 +196,12 @@ describe('spokedu site IA', () => {
     expect(homePage.hero.support).toMatch(/현장에서 필요한 프로그램과 시스템을 만듭니다/);
     expect(homePage.hero.primaryCta.href).toBe('#choice');
     expect(homePage.hero.primaryCta.label).toBe('수업 알아보기');
-    expect(homePage.hero.secondaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/subscription`);
+    expect(homePage.hero.secondaryCta.href).toBe('/spokedu-lab');
     expect(homePage.hero.secondaryCta.label).toBe('수업자료 둘러보기');
     expect('tertiaryCta' in homePage.hero).toBe(false);
     expect(homePage.choice.title).toBe('무엇을 찾고 계신가요?');
     expect(homePage.choice.education.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/education`);
-    expect(homePage.choice.subscription.primaryCta.href).toBe(`${SPOKEDU_BASE_PATH}/subscription`);
+    expect(homePage.choice.subscription.primaryCta.href).toBe('/spokedu-lab');
     expect(homePage.serviceChoices.map((item) => item.action)).toEqual([
       '수업 보기',
       '자세히 보기',

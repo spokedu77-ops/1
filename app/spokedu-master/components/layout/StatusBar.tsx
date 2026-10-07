@@ -27,12 +27,12 @@ const APP_LINKS = MASTER_NAV_ITEMS.map((item) => ({
 function isActivePath(pathname: string, href: string) {
   if (pathname === href || pathname.startsWith(`${href}/`)) return true;
   if (href.endsWith('/programs')) {
-    return pathname.startsWith('/spokedu-master/library') || pathname.startsWith('/spokedu-master/spomove');
+    return pathname.startsWith('/spokedu-lab/library') || pathname.startsWith('/spokedu-lab/spomove');
   }
   if (href.endsWith('/manage')) {
-    return pathname.startsWith('/spokedu-master/activity')
-      || pathname.startsWith('/spokedu-master/classes')
-      || pathname.startsWith('/spokedu-master/class-record');
+    return pathname.startsWith('/spokedu-lab/activity')
+      || pathname.startsWith('/spokedu-lab/classes')
+      || pathname.startsWith('/spokedu-lab/class-record');
   }
   return false;
 }
@@ -40,7 +40,7 @@ function isActivePath(pathname: string, href: string) {
 export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot | null }) {
   const pathname = usePathname();
   const operational = useOperationalStatus();
-  const isHome = pathname === '/spokedu-master/dashboard';
+  const isHome = pathname === '/spokedu-lab/dashboard';
 
   return (
     <header
@@ -49,21 +49,20 @@ export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot
     >
       <div className={`${isHome ? MV_HOME_FEATURE_WIDTH : 'mx-auto w-full max-w-[1376px]'} grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 min-[1200px]:grid-cols-[1fr_auto_1fr] min-[1200px]:gap-4`}>
         <Link
-          href="/spokedu-master/dashboard"
+          href="/spokedu-lab/dashboard"
           className="flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] min-[1200px]:justify-self-start"
-          aria-label="SPOKEDU MASTER 홈"
+          aria-label="SPOKEDU LAB 홈"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-slate-950 text-[11px] font-extrabold text-white">SM</span>
-          <span className="hidden items-baseline gap-1.5 min-[1200px]:flex">
+          <span className="flex items-baseline gap-1.5 whitespace-nowrap">
             <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-slate-500">SPOKEDU</span>
-            <span className="text-[15px] font-semibold text-slate-900">MASTER</span>
+            <span className="text-[15px] font-semibold text-slate-900">LAB</span>
           </span>
         </Link>
 
         <nav
           data-spm-tablet-nav="true"
           className="hidden min-w-0 max-w-full items-center justify-center gap-0.5 overflow-x-auto min-[768px]:flex min-[1200px]:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          aria-label="SPOKEDU MASTER 태블릿/컴팩트 메뉴"
+          aria-label="SPOKEDU LAB 태블릿/컴팩트 메뉴"
         >
           {APP_LINKS.map(({ href, label, Icon, capability }) => {
             const active = isActivePath(pathname, href);
@@ -88,7 +87,7 @@ export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot
         <nav
           data-spm-desktop-nav="true"
           className="hidden min-w-0 max-w-full items-center gap-1 overflow-x-auto min-[1200px]:flex min-[1200px]:justify-self-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          aria-label="SPOKEDU MASTER 데스크톱 메뉴"
+          aria-label="SPOKEDU LAB 데스크톱 메뉴"
         >
           {APP_LINKS.map(({ href, label, Icon, capability }) => {
             const active = isActivePath(pathname, href);
@@ -120,7 +119,7 @@ export function StatusBar({ snapshot = null }: { snapshot?: MasterAccessSnapshot
             인터넷 연결 없음
           </span> : null}
           <Link
-            href="/spokedu-master/profile"
+            href="/spokedu-lab/profile"
             className="grid h-11 w-11 place-items-center rounded-[12px] border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
             aria-label="계정 및 구독"
           >

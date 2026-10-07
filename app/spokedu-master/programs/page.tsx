@@ -85,7 +85,7 @@ export default function ProgramsPage() {
               tier="Lite"
               description="다양한 교구와 움직임으로 구성하는 현장 체육활동"
               action="놀이체육 둘러보기"
-              href="/spokedu-master/library"
+              href="/spokedu-lab/library"
               image={lessonHeroSrc}
             />
             <ProgramGatewayCard
@@ -93,7 +93,7 @@ export default function ProgramsPage() {
               tier="Premium"
               description="화면 자극과 움직임을 연결하는 시지각 움직임 프로그램"
               action="SPOMOVE 둘러보기"
-              href="/spokedu-master/spomove"
+              href="/spokedu-lab/spomove"
               image={spomoveHeroSrc}
             />
           </div>

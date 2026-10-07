@@ -76,7 +76,7 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
 
   it('keeps failure and cancel paths non-entitling, readable, and retryable', () => {
     expect(cancel).toContain('구독은 활성화되지 않았습니다.');
-    expect(cancel).toContain('/spokedu-master/payment?plan=${retryPlan}');
+    expect(cancel).toContain('/spokedu-lab/payment?plan=${retryPlan}');
     expect(cancel).toContain('MASTER_CUSTOMER_SERVICE_HREF');
     expect(cancel).toContain('카카오톡 고객센터');
     expect(success).toContain('완료 전에는 이용권이 활성화되지 않습니다.');
@@ -108,8 +108,8 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(read('app/spokedu-master/terms/page.tsx')).toContain('서버가 차액을 계산하고, 그 차액만 즉시 결제합니다');
     expect(read('app/spokedu-master/terms/page.tsx')).not.toContain('프리미엄 정가 28,900원이 새로 결제됩니다');
     expect(read('app/spokedu-master/terms/page.tsx')).not.toContain('기존 라이트 잔여기간에 대한 차액 계산이나 별도 환급은 없으며');
-    expect(subscription).toContain('/spokedu-master/payment');
-    expect(profile).not.toContain('/spokedu-master/payment?plan=');
+    expect(subscription).toContain('/spokedu-lab/payment');
+    expect(profile).not.toContain('/spokedu-lab/payment?plan=');
     for (const source of [payment, success, cancel, subscription, profile]) {
       expect(source).not.toContain('/api/spokedu-master/payment/create-checkout');
       expect(source).not.toContain('무료 체험 시작');
@@ -121,9 +121,9 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
   it('keeps success screen focused on home and subscription management only', () => {
     expect(success).toContain('홈으로');
     expect(success).toContain('구독 관리');
-    expect(success).toContain('/spokedu-master/dashboard');
-    expect(success).toContain('/spokedu-master/subscription');
-    expect(success).not.toContain('/spokedu-master/shop');
-    expect(success).not.toContain('/spokedu-master/spomove');
+    expect(success).toContain('/spokedu-lab/dashboard');
+    expect(success).toContain('/spokedu-lab/subscription');
+    expect(success).not.toContain('/spokedu-lab/shop');
+    expect(success).not.toContain('/spokedu-lab/spomove');
   });
 });

@@ -174,9 +174,9 @@ describe('recent program activity', () => {
 
   it('derives resume href from the action', () => {
     expect(buildProgramResumeHref('52', 'video_started'))
-      .toBe('/spokedu-master/library/52?section=video&autoplay=1');
+      .toBe('/spokedu-lab/library/52?section=video&autoplay=1');
     expect(buildProgramResumeHref('52', 'lesson_opened'))
-      .toBe('/spokedu-master/library/52');
+      .toBe('/spokedu-lab/library/52');
   });
 
   it('prefers a newer video activity over a class record', () => {
@@ -286,6 +286,6 @@ describe('SPOMOVE 활동 분리', () => {
 
   it('spomove href는 session?preset= 경로로 파생됨', () => {
     expect(buildProgramResumeHref('reaction-cognition-quad-color-01', 'spomove_started'))
-      .toBe('/spokedu-master/spomove/session?preset=reaction-cognition-quad-color-01');
+      .toBe('/spokedu-lab/spomove/session?preset=reaction-cognition-quad-color-01');
   });
 });

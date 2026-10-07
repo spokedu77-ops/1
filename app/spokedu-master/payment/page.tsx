@@ -80,7 +80,7 @@ function buildCustomerKey(userId: string) {
 }
 
 function productShortName(product: MasterProductCatalogItem) {
-  return product.displayName.replace('SPOKEDU MASTER ', '');
+  return product.displayName.replace('SPOKEDU LAB ', '');
 }
 
 function PlanCard({
@@ -257,7 +257,7 @@ function PaymentContent() {
         });
         const result = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null;
         if (!response.ok || result?.ok !== true) throw new Error(result?.error ?? '업그레이드 결제에 실패했습니다.');
-        window.location.assign('/spokedu-master/subscription?upgraded=1');
+        window.location.assign('/spokedu-lab/subscription?upgraded=1');
       } catch (upgradeError) {
         setError(upgradeError instanceof Error ? upgradeError.message : '업그레이드 결제에 실패했습니다.');
         setWorkingPlan(null);
@@ -272,10 +272,10 @@ function PaymentContent() {
       return;
     }
     const customerKey = buildCustomerKey(userId);
-    const successUrl = new URL('/spokedu-master/payment/success', window.location.origin);
+    const successUrl = new URL('/spokedu-lab/payment/success', window.location.origin);
     successUrl.searchParams.set('plan', plan);
     appendGateContext(successUrl.searchParams, gateContext);
-    const failUrl = new URL('/spokedu-master/payment/cancel', window.location.origin);
+    const failUrl = new URL('/spokedu-lab/payment/cancel', window.location.origin);
     failUrl.searchParams.set('plan', plan);
     appendGateContext(failUrl.searchParams, gateContext);
 
@@ -298,11 +298,11 @@ function PaymentContent() {
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
       <header className="mx-auto flex w-full max-w-[1080px] items-center gap-3 px-5 pb-4 pt-5 sm:px-8">
-        <Link href="/spokedu-master/subscription" className="grid h-11 w-11 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="이전 화면">
+        <Link href="/spokedu-lab/subscription" className="grid h-11 w-11 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="이전 화면">
           <ArrowLeft size={18} color="var(--spm-t2)" />
         </Link>
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU LAB</p>
           <h1 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
             {paymentPageMode === 'liteUpgrade'
               ? 'Premium으로 이어가기'
@@ -365,7 +365,7 @@ function PaymentContent() {
                   ? subscriptionDisplay.description
                   : '현재 이용권이 활성화되어 있습니다.'}
             </p>
-            <Link href="/spokedu-master/subscription" className="spm-btn-primary mx-auto mt-4 inline-flex h-11 max-w-[260px] items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none">
+            <Link href="/spokedu-lab/subscription" className="spm-btn-primary mx-auto mt-4 inline-flex h-11 max-w-[260px] items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none">
               {gateDisplay?.intent === 'start_spomove' ? '이용권 확인하기' : '구독 관리'}
             </Link>
           </section>
@@ -427,9 +427,9 @@ function PaymentContent() {
                 ))}
               </ul>
               <p className="mt-4 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                <Link href="/spokedu-master/terms" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>이용약관</Link>
+                <Link href="/spokedu-lab/terms" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>이용약관</Link>
                 <span className="mx-1">및</span>
-                <Link href="/spokedu-master/privacy" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>개인정보처리방침</Link>
+                <Link href="/spokedu-lab/privacy" className="inline-flex min-h-11 items-center" style={{ color: 'var(--spm-acc)' }}>개인정보처리방침</Link>
                 <span>을 확인해 주세요.</span>
               </p>
             </section>

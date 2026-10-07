@@ -10,7 +10,7 @@ export function isSafePurchaseUrl(url: string | undefined): url is string {
   return url.startsWith('http://') || url.startsWith('https://');
 }
 
-const SHOP_INQUIRY_PATH = '/spokedu-master/shop';
+const SHOP_INQUIRY_PATH = '/spokedu-lab/shop';
 
 export async function GET(request: Request) {
   const publicUrl = process.env.SPOMAT_PUBLIC_PURCHASE_URL;

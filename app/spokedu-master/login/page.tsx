@@ -64,6 +64,7 @@ function MasterLoginContent() {
   const startKakao = async () => {
     setOauthError(null);
     setOauthLoading(true);
+    // OAuth provider allowlists keep the established callback URL during the LAB route migration.
     const callback = new URL('/spokedu-master/auth/callback', window.location.origin);
     callback.searchParams.set('next', next);
     try {
@@ -121,7 +122,7 @@ function MasterLoginContent() {
         <Link href={SPOKEDU_PATHS.subscription} className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
           <ChevronLeft size={17} /> 소개로 돌아가기
         </Link>
-        <p className="mt-5 text-[11px] font-semibold" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
+        <p className="mt-5 text-[11px] font-semibold" style={{ color: 'var(--spm-acc)' }}>SPOKEDU LAB</p>
         <h1 className="mt-2 text-[30px] font-bold leading-tight">수업 준비를 이어가세요</h1>
         <p className="mt-3 text-[14px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
           비밀번호 없이 카카오 또는 이메일 인증으로 시작합니다.

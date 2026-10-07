@@ -51,7 +51,7 @@ export function TodaySessionsPanel({
       {!loading && !error && cards.length === 0 ? (
         <div className="mt-3 flex flex-col gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:flex-row sm:items-center">
           <p className="min-w-0 flex-1 text-sm font-bold text-slate-600">오늘 예정된 수업이 없습니다.</p>
-          <Link href={`/spokedu-master/activity?date=${seoulDay}&create=1`} className={SPM_PRIMARY_BTN}>
+          <Link href={`/spokedu-lab/activity?date=${seoulDay}&create=1`} className={SPM_PRIMARY_BTN}>
             <CalendarPlus size={16} aria-hidden="true" />수업 추가
           </Link>
         </div>
@@ -100,10 +100,10 @@ export function HomeFollowUpPanel({ sessions, classes, seoulDay }: {
   const pastDebt = useMemo(() => summarizePastOperationalDebt({ sessions, classes, now }), [sessions, classes, now]);
   if (pastDebt.count === 0) return null;
   const href = pastDebt.leadSessionId
-    ? `/spokedu-master/activity?session=${encodeURIComponent(pastDebt.leadSessionId)}`
+    ? `/spokedu-lab/activity?session=${encodeURIComponent(pastDebt.leadSessionId)}`
     : pastDebt.leadClassId
-      ? `/spokedu-master/classes/${encodeURIComponent(pastDebt.leadClassId)}`
-      : `/spokedu-master/activity?date=${encodeURIComponent(seoulDay)}`;
+      ? `/spokedu-lab/classes/${encodeURIComponent(pastDebt.leadClassId)}`
+      : `/spokedu-lab/activity?date=${encodeURIComponent(seoulDay)}`;
   return (
     <div data-dashboard-section="follow-up">
       <SystemDecisionBanner
@@ -128,7 +128,7 @@ export function UpcomingPreparationPanel({ sessions, classes }: { sessions: Mast
     .sort((a, b) => a.session.startAt.localeCompare(b.session.startAt)).slice(0, 3), [classMap, now, sessions]);
   if (!items.length) return null;
   return <section data-dashboard-section="upcoming-prep" className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4">
-    <div className="flex items-center justify-between"><h2 className="text-base font-semibold text-slate-950">다가오는 수업 준비</h2><Link href="/spokedu-master/activity" className="min-h-11 px-2 text-xs font-semibold text-slate-500">전체 일정</Link></div>
+    <div className="flex items-center justify-between"><h2 className="text-base font-semibold text-slate-950">다가오는 수업 준비</h2><Link href="/spokedu-lab/activity" className="min-h-11 px-2 text-xs font-semibold text-slate-500">전체 일정</Link></div>
     <div className="mt-2 grid gap-2">{items.map(({ session, state }) => <Link key={session.id} href={state.href} className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-slate-50 px-3"><span className="min-w-0"><strong className="block truncate text-sm text-slate-900">{session.className}</strong><small className="text-slate-500">{formatSeoulSessionDay(getSeoulSessionDay(session.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(session.startAt)}</small></span><span className="shrink-0 text-xs font-semibold text-blue-700">수업 준비</span></Link>)}</div>
   </section>;
 }
@@ -171,7 +171,7 @@ export function HomeContinuityPanel({ sessions, classes, loading, error, onRetry
           {item.programs.length > 0 ? ` · 활동 ${completed}/${item.programs.length}` : ''}
         </p>
       </div>
-      <Link href={`/spokedu-master/activity?session=${encodeURIComponent(item.id)}`} className={MV_REENTRY_SECONDARY}>
+      <Link href={`/spokedu-lab/activity?session=${encodeURIComponent(item.id)}`} className={MV_REENTRY_SECONDARY}>
         {action}<ArrowRight size={15} aria-hidden="true" />
       </Link>
     </section>
@@ -195,7 +195,7 @@ export function HomeNextSessionPanel({ sessions, classes }: { sessions: MasterSe
         <h2 className={`${MV_CONTENT_TITLE} mt-1 truncate`}>{next.className}</h2>
         <p className={`${MV_META} mt-1`}>{formatSeoulSessionDay(getSeoulSessionDay(next.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · {formatSeoulSessionTime(next.startAt)}</p>
       </div>
-      <Link href={`/spokedu-master/activity?session=${encodeURIComponent(next.id)}`} className={MV_QUIET_ACTION}>수업 준비<ArrowRight size={15} /></Link>
+      <Link href={`/spokedu-lab/activity?session=${encodeURIComponent(next.id)}`} className={MV_QUIET_ACTION}>수업 준비<ArrowRight size={15} /></Link>
     </section>
   );
 }

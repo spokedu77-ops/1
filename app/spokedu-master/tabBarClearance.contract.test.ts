@@ -7,9 +7,9 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('SPOKEDU MASTER TabBar clearance architecture', () => {
   it('does not render TabBar on login chrome-hidden routes', () => {
     const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
-    expect(shell).toContain('const isLogin = pathname === `${basePath}/login`');
+    expect(shell).toContain('const isLogin = pathname === `${activeBasePath}/login`');
     expect(shell).toContain('isProgramsEditor || isLogin');
-    expect(shell).toContain('{hideChrome ? null : <TabBar basePath={basePath} snapshot={accessGuard.snapshot} />}');
+    expect(shell).toContain('{hideChrome ? null : <TabBar basePath={activeBasePath} snapshot={accessGuard.snapshot} />}');
   });
 
   it('renders a fixed TabBar for authenticated mobile chrome', () => {

@@ -83,7 +83,7 @@ export function AssignProgramToSessionButton({ program, className, targetSession
         </div>
         {message ? <p role="status" className={`mt-3 rounded-xl p-3 text-xs font-bold ${message.tone === 'success' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-700'}`}>{message.text}</p> : null}
         {assignedSessionId && message?.tone === 'success' ? (
-          <Link href={`/spokedu-master/activity?session=${encodeURIComponent(assignedSessionId)}`} className={`mt-3 ${SPM_PRIMARY_BTN} w-full`}>
+          <Link href={`/spokedu-lab/activity?session=${encodeURIComponent(assignedSessionId)}`} className={`mt-3 ${SPM_PRIMARY_BTN} w-full`}>
             수업 열기
           </Link>
         ) : null}

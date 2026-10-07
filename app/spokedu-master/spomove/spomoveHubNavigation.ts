@@ -25,7 +25,7 @@ export function parseSpomoveHubView(value: string | null | undefined): SpomoveHu
 
 export function getSpomoveHubHref(view: SpomoveHubViewMode = 'all'): string {
   void view;
-  return '/spokedu-master/spomove';
+  return '/spokedu-lab/spomove';
 }
 
 export function parseSpomoveHubUrlState(
@@ -54,7 +54,7 @@ export function serializeSpomoveHubUrlState(state: SpomoveHubUrlState): string {
   if (state.movement !== 'all') params.set('movement', state.movement);
   if (state.q.trim()) params.set('q', state.q.trim());
   const query = params.toString();
-  return query ? `/spokedu-master/spomove?${query}` : '/spokedu-master/spomove';
+  return query ? `/spokedu-lab/spomove?${query}` : '/spokedu-lab/spomove';
 }
 
 export function getSpomoveHubReturnHref(hubView: string | null | undefined): string {
@@ -68,7 +68,10 @@ export function parseSpomoveHubReturnHref(
   if (value) {
     try {
       const decoded = decodeURIComponent(value);
-      if (decoded === '/spokedu-master/spomove' || decoded.startsWith('/spokedu-master/spomove?')) return decoded;
+    if (decoded === '/spokedu-lab/spomove' || decoded.startsWith('/spokedu-lab/spomove?')) return decoded;
+    if (decoded === '/spokedu-master/spomove' || decoded.startsWith('/spokedu-master/spomove?')) {
+      return decoded.replace('/spokedu-master', '/spokedu-lab');
+    }
     } catch {
       // Invalid external input falls back to the legacy view contract.
     }

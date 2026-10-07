@@ -124,7 +124,7 @@ export type OfficialSpomovePreset = {
   recommendedOperation?: import('./operations/operationTypes').ActivityOperationPatch;
   /** 예외적으로 Family Operation Profile 교체. 전면단일 theme seed에서는 미사용. */
   operationProfileId?: import('./operations/operationTypes').ActivityOperationProfileId;
-  /** active: SPOKEDU MASTER 노출, hold: Admin 보존·SPOKEDU MASTER 숨김 */
+  /** active: SPOKEDU LAB 노출, hold: Admin 보존·SPOKEDU LAB 숨김 */
   catalogStatus?: 'active' | 'hold';
   holdReason?: string;
   /** 일반 구독자 session URL 차단. 기존 HOLD 전역 정책과 별개 */
@@ -1674,7 +1674,7 @@ function withSpokeduMasterCatalogHoldouts(presets: OfficialSpomovePreset[]): Off
     return {
       ...preset,
       catalogStatus: 'hold' as const,
-      holdReason: 'SPOKEDU MASTER 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기',
+      holdReason: 'SPOKEDU LAB 카탈로그 제외: 3분할/랜덤분할/흰 공 찾기',
     };
   });
 }
@@ -1823,7 +1823,10 @@ export function officialPresetSessionHref(
     mode: options?.mode ?? 'projector',
   });
   if (options?.entry) params.set('entry', options.entry);
-  if (options?.hubReturn?.startsWith('/spokedu-master/spomove')) params.set('hubReturn', options.hubReturn);
+  if (options?.hubReturn?.startsWith('/spokedu-lab/spomove')) params.set('hubReturn', options.hubReturn);
+  else if (options?.hubReturn?.startsWith('/spokedu-master/spomove')) {
+    params.set('hubReturn', options.hubReturn.replace('/spokedu-master', '/spokedu-lab'));
+  }
   const returnTo = options?.returnTo;
   if (isMasterSessionSurfaceReturn(returnTo)) params.set('returnTo', returnTo);
   if (options?.session?.trim()) params.set('session', options.session.trim());
@@ -1856,7 +1859,7 @@ export function officialPresetSessionHref(
     };
     writeOperationQuery(mergeOperationConfig(base, options.operation), params);
   }
-  return `/spokedu-master/spomove/session?${params.toString()}`;
+  return `/spokedu-lab/spomove/session?${params.toString()}`;
 }
 
 /** Public 생성기 — autostart·runtime movement를 절대 붙이지 않음 */

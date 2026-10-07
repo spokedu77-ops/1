@@ -31,6 +31,13 @@ describe('SPOKEDU MASTER route access policy', () => {
     expect(isProtectedMasterRoute('/admin/spokedu-master/programs', '/admin')).toBe(false);
   });
 
+  it('applies the same protection and capability policy to the LAB alias', () => {
+    expect(isProtectedMasterRoute('/spokedu-lab/login', '/spokedu-lab')).toBe(false);
+    expect(isProtectedMasterRoute('/spokedu-lab/dashboard', '/spokedu-lab')).toBe(true);
+    expect(getMasterRouteRequirement('/spokedu-lab/library', '/spokedu-lab').capability).toBe('libraryBrowse');
+    expect(getSafeMasterReturnPath('/spokedu-lab/library?source=home')).toBe('/spokedu-lab/library?source=home');
+  });
+
   it.each([
     ['/spokedu-master/dashboard', 'authenticated'],
     ['/spokedu-master/profile', 'authenticated'],

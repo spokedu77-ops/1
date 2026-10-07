@@ -30,7 +30,7 @@ function LoginContent() {
 
   useEffect(() => {
     if (nextSafe?.startsWith('/spokedu-master')) {
-      router.replace(`/spokedu-master/login?next=${encodeURIComponent(nextSafe)}`);
+        router.replace(`/spokedu-lab/login?next=${encodeURIComponent(nextSafe.replace('/spokedu-master', '/spokedu-lab'))}`);
       return;
     }
     let cancelled = false;

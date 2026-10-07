@@ -38,7 +38,7 @@ export default function StudentDetailPage() {
     return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p role="alert" className="text-sm font-medium text-rose-700">학생 이력을 불러오지 못했습니다. <button type="button" onClick={() => void data.reload()} className="underline underline-offset-4">다시 시도</button></p></MasterPageShell></main>;
   }
   if (!student) {
-    return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p className="text-sm font-medium text-slate-700">학생을 찾을 수 없습니다.</p><Link href="/spokedu-master/students" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">학생 목록으로</Link></MasterPageShell></main>;
+    return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p className="text-sm font-medium text-slate-700">학생을 찾을 수 없습니다.</p><Link href="/spokedu-lab/students" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">학생 목록으로</Link></MasterPageShell></main>;
   }
 
   const profileMeta = [studentMetaToDisplay(student.meta), classes.map((item) => item.name).join(', ') || '수업반 미지정'].filter(Boolean).join(' · ');
@@ -46,7 +46,7 @@ export default function StudentDetailPage() {
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 md:pb-8">
       <MasterPageShell variant="operational" className="max-w-4xl">
-        <Link href="/spokedu-master/students" className="mb-5 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500"><ArrowLeft size={16} />학생 목록</Link>
+        <Link href="/spokedu-lab/students" className="mb-5 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500"><ArrowLeft size={16} />학생 목록</Link>
         <MasterPageHeader title={student.name} description={profileMeta} />
 
         <MasterSection title="지도 참고" className="mt-10">
@@ -59,7 +59,7 @@ export default function StudentDetailPage() {
           {history.length ? <div className="border-y border-slate-200">
             {history.map(({ session, attendance }) => (
               <MasterCollectionRow key={session.id} className="flex-wrap items-start py-4">
-                <Link href={`/spokedu-master/activity?session=${encodeURIComponent(session.id)}`} className="flex w-full min-w-0 items-start gap-3 sm:gap-4">
+                <Link href={`/spokedu-lab/activity?session=${encodeURIComponent(session.id)}`} className="flex w-full min-w-0 items-start gap-3 sm:gap-4">
                   <span className={`mt-0.5 rounded-full px-2.5 py-1 text-xs font-semibold ${attendance.status === 'present' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{attendanceLabel(attendance.status)}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-base font-semibold text-slate-900">{session.className}</span>

@@ -12,10 +12,10 @@ import {
 import { MASTER_VALUE_SUMMARY_INVALIDATED } from '../../lib/masterValueSummaryEvents';
 
 const ACTIVATION: Record<Exclude<MasterActivationNeed, 'none'>, { label: string; href: string; description: string }> = {
-  'create-class': { label: '첫 수업반 만들기', href: '/spokedu-master/classes', description: '수업반을 만들고 첫 일정을 연결해 보세요.' },
-  'create-session': { label: '첫 수업 만들기', href: '/spokedu-master/activity', description: '수업반에 첫 수업 일정을 만들어 보세요.' },
-  'prepare-session': { label: '수업 활동 추가', href: '/spokedu-master/activity', description: '예정된 수업에 오늘 진행할 활동을 담아 보세요.' },
-  'run-first-session': { label: '첫 수업 열기', href: '/spokedu-master/activity', description: '준비한 수업을 열고 운영을 시작해 보세요.' },
+  'create-class': { label: '첫 수업반 만들기', href: '/spokedu-lab/classes', description: '수업반을 만들고 첫 일정을 연결해 보세요.' },
+  'create-session': { label: '첫 수업 만들기', href: '/spokedu-lab/activity', description: '수업반에 첫 수업 일정을 만들어 보세요.' },
+  'prepare-session': { label: '수업 활동 추가', href: '/spokedu-lab/activity', description: '예정된 수업에 오늘 진행할 활동을 담아 보세요.' },
+  'run-first-session': { label: '첫 수업 열기', href: '/spokedu-lab/activity', description: '준비한 수업을 열고 운영을 시작해 보세요.' },
 };
 
 export type MasterValueEvidenceSurface = 'home' | 'subscription' | 'preserved';
@@ -79,7 +79,7 @@ export function MasterValueEvidencePanel({
         <p className="text-xs font-extrabold text-slate-400">이전 운영</p>
         <h2 className="mt-1 text-base font-extrabold text-slate-900">기존 운영 데이터가 그대로 있습니다</h2>
         <p className="mt-2 text-sm font-bold text-slate-600">수업반 {evidence.preserved.totalClasses}개 · 수업 {evidence.preserved.totalSessions}개</p>
-        <Link href="/spokedu-master/payment" className="mt-3 inline-flex min-h-11 items-center text-sm font-extrabold text-emerald-700">이전 운영 이어가기 →</Link>
+        <Link href="/spokedu-lab/payment" className="mt-3 inline-flex min-h-11 items-center text-sm font-extrabold text-emerald-700">이전 운영 이어가기 →</Link>
       </section>
     );
   }
@@ -110,7 +110,7 @@ export function MasterValueEvidencePanel({
           {primary.label} <span className="tabular-nums text-slate-900">{primary.value}</span>
           {secondary ? <span className="font-semibold text-slate-500"> · {secondary}</span> : null}
         </p>
-        <Link href="/spokedu-master/subscription" className="mt-1 inline-flex min-h-9 items-center text-[11px] font-bold text-slate-500 hover:text-slate-800">
+        <Link href="/spokedu-lab/subscription" className="mt-1 inline-flex min-h-9 items-center text-[11px] font-bold text-slate-500 hover:text-slate-800">
           구독에서 운영 환경 확인
         </Link>
       </section>

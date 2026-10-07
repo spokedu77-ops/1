@@ -141,7 +141,7 @@ async function requestJson<T>(
       response.status === 401
         ? '로그인이 필요합니다.'
         : response.status === 403
-          ? 'SPOKEDU MASTER 접근 권한이 없습니다.'
+          ? 'SPOKEDU LAB 접근 권한이 없습니다.'
           : null;
     return {
       data: null,

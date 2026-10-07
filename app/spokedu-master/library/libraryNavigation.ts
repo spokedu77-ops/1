@@ -3,7 +3,7 @@ export function getLibraryProgramDetailHref(
   sourceLibraryView?: string,
   sourceLibrarySearch?: string,
 ): string {
-  const baseHref = `/spokedu-master/library/${programId}`;
+  const baseHref = `/spokedu-lab/library/${programId}`;
   const params = new URLSearchParams();
   void sourceLibraryView;
   if (sourceLibrarySearch?.trim()) {
@@ -25,14 +25,14 @@ export function getLibraryReturnHref(libraryView: string | null, libraryReturn?:
     for (const key of ['q', 'filters', 'shelf', 'reason', 'filterGroup', 'filter', 'session', 'returnTo', 'source']) {
       for (const value of requested.getAll(key)) {
         if (!value.trim()) continue;
-        if (key === 'returnTo' && !(value === '/spokedu-master/activity' || value.startsWith('/spokedu-master/activity?'))) continue;
+    if (key === 'returnTo' && !(value === '/spokedu-lab/activity' || value.startsWith('/spokedu-lab/activity?'))) continue;
         if (key === 'source' && value !== 'session') continue;
         allowed.append(key, value);
       }
     }
     const query = allowed.toString();
-    if (query) return `/spokedu-master/library?${query}`;
+  if (query) return `/spokedu-lab/library?${query}`;
   }
   void libraryView;
-  return '/spokedu-master/library';
+  return '/spokedu-lab/library';
 }

@@ -42,7 +42,7 @@ describe('SPOKEDU MASTER Session workflow', () => {
 
   it('retires the standalone record creation route', () => {
     const legacy = read('app/spokedu-master/class-record/page.tsx');
-    expect(legacy).toContain("redirect('/spokedu-master/activity')");
+    expect(legacy).toContain("redirect('/spokedu-lab/activity')");
     expect(legacy).not.toContain('RecordEntryView');
   });
 });

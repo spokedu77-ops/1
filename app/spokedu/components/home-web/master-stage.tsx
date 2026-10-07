@@ -11,7 +11,7 @@ export function MasterStage() {
       <div className={styles.rail}>
         <div className={styles.masterHead}>
           <div className={styles.masterTitle}>
-            <p className={styles.eyebrow}>SPOKEDU MASTER</p>
+            <p className={styles.eyebrow}>SPOKEDU LAB</p>
             <h2 id="home-master-heading" className={styles.displaySection}>
               수업자료부터
               <br />
@@ -19,7 +19,7 @@ export function MasterStage() {
             </h2>
             <p className={styles.body}>
               현장에서 바로 활용할 수 있는 놀이체육 프로그램과 수업 가이드부터 수업반, 학생, 일정, 출석과 기록까지
-              SPOKEDU MASTER 하나에서 관리합니다.
+              SPOKEDU LAB 하나에서 관리합니다.
             </p>
           </div>
           <p className={styles.stat}>
@@ -28,7 +28,7 @@ export function MasterStage() {
           </p>
           <div className={`${styles.actions} ${styles.masterActions}`}>
             <Link href={SPOKEDU_PATHS.subscription} className={`${styles.btn} ${styles.btnSecondary}`}>
-              SPOKEDU MASTER 알아보기
+              SPOKEDU LAB 알아보기
             </Link>
           </div>
         </div>

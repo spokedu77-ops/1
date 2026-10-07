@@ -4,7 +4,7 @@ import { MASTER_SUPPORT_EMAIL } from '../lib/productCatalog';
 
 export const metadata: Metadata = {
   title: {
-    absolute: '개인정보처리방침 · SPOKEDU MASTER',
+    absolute: '개인정보처리방침 · SPOKEDU LAB',
   },
 };
 

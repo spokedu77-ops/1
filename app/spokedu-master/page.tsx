@@ -11,15 +11,15 @@ export default function SpokeduMasterPage() {
 
   useEffect(() => {
     if (onboardingDone == null) return;
-    router.replace(onboardingDone ? '/spokedu-master/dashboard' : '/spokedu-master/onboarding');
+    router.replace(onboardingDone ? '/spokedu-lab/dashboard' : '/spokedu-lab/onboarding');
   }, [onboardingDone, router]);
 
   return (
     <div className="grid min-h-dvh place-items-center px-6" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
       <div className="w-full max-w-[420px] text-center">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU LAB</p>
         <h1 className="mt-3 text-[30px] font-extrabold leading-tight" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
-          SPOKEDU MASTER로 이동하는 중입니다
+          SPOKEDU LAB으로 이동하는 중입니다
         </h1>
         <p className="mt-3 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           서버 권한을 확인하고 알맞은 시작 화면을 여는 중입니다.

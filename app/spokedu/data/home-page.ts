@@ -221,7 +221,7 @@ export const homePage = {
     ] as const,
     visual: {
       src: HOME_FIELD_EDITORIAL.masterUi,
-      alt: 'SPOKEDU MASTER 실제 화면 — 놀이체육 추천과 SPOMOVE 추천',
+      alt: 'SPOKEDU LAB 실제 화면 — 놀이체육 추천과 SPOMOVE 추천',
       caption: '실제 서비스 화면',
       explorerCrop: '50% 14%',
       libraryCrop: '50% 40%',

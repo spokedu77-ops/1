@@ -736,7 +736,7 @@ function SpomoveHubInner({
   const sessionId = searchParams.get('session')?.trim() || null;
   const sessionContext = sessionId ? operationalData.sessions.find((session) => session.id === sessionId && session.status === 'scheduled') : null;
   const sessionWorkState = sessionContext ? deriveMasterSessionWorkState(sessionContext, null, new Date()) : null;
-  const returnTo = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-master/activity');
+  const returnTo = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-lab/activity');
   const contentMode = resolveMasterContentMode({ requestedSessionId: sessionId, hasExactScheduledSession: Boolean(sessionContext) });
   const sessionBuildAction = getMasterContentPrimaryAction(contentMode);
   const [addingPresetId, setAddingPresetId] = useState<string | null>(null);
@@ -1079,7 +1079,7 @@ function SpomoveHubInner({
                   ? canReproduce
                     ? publicOfficialPresetSessionHref(preset, recentOptions ?? { entry: 'start' })
                     : publicOfficialPresetSessionHref(preset, { entry: 'start' })
-                  : `/spokedu-master/spomove/session?preset=${activity.programId}&mode=projector&sound=on&entry=start`;
+                  : `/spokedu-lab/spomove/session?preset=${activity.programId}&mode=projector&sound=on&entry=start`;
                 return (
                   <article key={`${activity.ownerId}-${activity.programId}-${activity.occurredAt}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="line-clamp-2 text-sm font-semibold text-slate-950">{title}</p>

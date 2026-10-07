@@ -32,7 +32,7 @@ describe('SPOKEDU MASTER craft + selection reasons', () => {
     expect(onboarding).toContain('spm-btn-primary');
     expect(onboarding).not.toMatch(/시작하기[\s\S]{0,120}background:\s*'var\(--spm-acc\)'/);
     expect(classTools).toContain('spm-btn-primary inline-flex h-11 items-center gap-2');
-    expect(classRecord).toContain("redirect('/spokedu-master/activity')");
+    expect(classRecord).toContain("redirect('/spokedu-lab/activity')");
     expect(errorBoundary).toContain('spm-btn-primary');
     expect(students).toContain('SPM_PRIMARY_BTN');
     expect(students).not.toContain('bg-emerald-600');

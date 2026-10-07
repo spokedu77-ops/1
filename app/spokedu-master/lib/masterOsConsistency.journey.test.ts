@@ -11,7 +11,7 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
 
 describe("MASTER OS consistency journeys", () => {
   it("PAYMENT-RETURN-01 preserves SPOMOVE Hub discovery through payment", () => {
-    expect(resolveMasterContextQueryKeys("/spokedu-master/spomove")).toEqual([
+    expect(resolveMasterContextQueryKeys("/spokedu-lab/spomove")).toEqual([
       "view",
       "group",
       "difficulty",
@@ -23,17 +23,17 @@ describe("MASTER OS consistency journeys", () => {
     ]);
     expect(
       getSafeMasterPostPaymentPath(
-        "/spokedu-master/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction",
+        "/spokedu-lab/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction",
       ),
     ).toBe(
-      "/spokedu-master/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction",
+      "/spokedu-lab/spomove?view=favorites&group=dive&difficulty=hard&movement=jump&q=reaction",
     );
     expect(
       getSafeMasterPostPaymentPath(
-        "/spokedu-master/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session",
+        "/spokedu-lab/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session",
       ),
     ).toBe(
-      "/spokedu-master/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session",
+      "/spokedu-lab/spomove?session=sess-1&returnTo=%2Fspokedu-master%2Factivity%3Fsession%3Dsess-1&source=session",
     );
   });
 
@@ -48,7 +48,7 @@ describe("MASTER OS consistency journeys", () => {
     expect(result).toContain("수업으로 돌아가기");
     expect(result).toContain("완료로 표시하고 수업으로");
     expect(
-      resolveMasterContextQueryKeys("/spokedu-master/spomove/session"),
+      resolveMasterContextQueryKeys("/spokedu-lab/spomove/session"),
     ).toEqual(
       expect.arrayContaining([
         "session",

@@ -16,6 +16,14 @@ const SPOKEDU_MASTER_PUBLIC_PREFIXES = [
   '/spokedu-master/manifest.webmanifest',
 ];
 
+function normalizeSpokeduLabPath(pathname: string): string {
+  if (pathname === '/spokedu-lab') return pathname;
+  if (pathname.startsWith('/spokedu-lab/')) {
+    return pathname.replace('/spokedu-lab', '/spokedu-master');
+  }
+  return pathname;
+}
+
 function createSupabaseProxyClient(request: NextRequest, response: NextResponse) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -36,11 +44,16 @@ function createSupabaseProxyClient(request: NextRequest, response: NextResponse)
 }
 
 function isSpokeduMasterPublicPath(pathname: string): boolean {
-  return SPOKEDU_MASTER_PUBLIC_PREFIXES.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const normalizedPathname = normalizeSpokeduLabPath(pathname);
+  return SPOKEDU_MASTER_PUBLIC_PREFIXES.some(
+    (path) => normalizedPathname === path || normalizedPathname.startsWith(`${path}/`),
+  );
 }
 
 function isSpokeduMasterProtectedPath(pathname: string): boolean {
-  return pathname === '/spokedu-master' || (pathname.startsWith('/spokedu-master/') && !isSpokeduMasterPublicPath(pathname));
+  const normalizedPathname = normalizeSpokeduLabPath(pathname);
+  return normalizedPathname === '/spokedu-master'
+    || (normalizedPathname.startsWith('/spokedu-master/') && !isSpokeduMasterPublicPath(pathname));
 }
 
 function isPhaseTokenPath(pathname: string): boolean {
@@ -126,7 +139,8 @@ export async function proxy(request: NextRequest) {
   if (isSpokeduMasterProtectedPath(pathname)) {
     const response = NextResponse.next();
     const supabase = createSupabaseProxyClient(request, response);
-    if (!supabase) return redirectWithNext(request, '/spokedu-master/login');
+    const loginPath = pathname.startsWith('/spokedu-lab/') ? '/spokedu-lab/login' : '/spokedu-master/login';
+    if (!supabase) return redirectWithNext(request, loginPath);
 
     const {
       data: { user },
@@ -135,7 +149,7 @@ export async function proxy(request: NextRequest) {
 
     if (!user) {
       if (userError) clearStaleSupabaseAuthCookies(request, response);
-      return redirectWithNext(request, '/spokedu-master/login', response);
+      return redirectWithNext(request, loginPath, response);
     }
 
     // MASTER entitlement is intentionally not evaluated in proxy.

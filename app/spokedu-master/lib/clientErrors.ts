@@ -15,7 +15,7 @@ export type MasterClientError = {
 const NETWORK_ERROR_MESSAGE = '인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
 const SERVER_ERROR_MESSAGE = '데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
 const UNAUTHORIZED_ERROR_MESSAGE = '로그인이 필요합니다.';
-const FORBIDDEN_ERROR_MESSAGE = 'SPOKEDU MASTER 이용 권한을 확인해 주세요.';
+const FORBIDDEN_ERROR_MESSAGE = 'SPOKEDU LAB 이용 권한을 확인해 주세요.';
 const VALIDATION_FALLBACK_MESSAGE = '입력 내용을 확인해 주세요.';
 const CONFLICT_ERROR_MESSAGE = '이미 처리되었거나 다시 사용할 수 없는 요청입니다.';
 

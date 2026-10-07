@@ -85,7 +85,7 @@ describe('Today Sessions operations model', () => {
       }),
     ], [classItem], '2026-08-23', nowOnDay);
     expect(card.ctaLabel).toBe(label);
-    expect(card.href).toBe('/spokedu-master/activity?session=target');
+    expect(card.href).toBe('/spokedu-lab/activity?session=target');
   });
 
   it('shows 수업 보기 when completed attendance already exists', () => {

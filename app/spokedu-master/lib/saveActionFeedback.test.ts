@@ -43,7 +43,7 @@ describe('saveActionFeedback', () => {
     const error = new MasterClientRequestError(toMasterClientError(403, 'expired'));
     const feedback = resolveSaveActionFeedback(error, expiredSnapshot);
     expect(feedback.retryable).toBe(false);
-    expect(feedback.upgradeHref).toBe('/spokedu-master/payment');
+    expect(feedback.upgradeHref).toBe('/spokedu-lab/payment');
     expect(feedback.upgradeLabel).toBe('구독 다시 선택');
   });
 

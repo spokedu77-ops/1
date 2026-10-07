@@ -163,7 +163,7 @@ export default function FavoritesView() {
           accessTitle: title,
           primaryMeta: model.theme || '체육 수업',
           secondaryMeta: buildHomeWeeklySupportMeta(program),
-          href: `/spokedu-master/library/${encodeURIComponent(program.id)}`,
+          href: `/spokedu-lab/library/${encodeURIComponent(program.id)}`,
           heroImageUrl: model.heroImageUrl ?? '',
           theme: model.theme,
           hasVideo: programHasPlayableVideo(program),
@@ -290,11 +290,11 @@ export default function FavoritesView() {
               <>
                 <p className="mt-2 text-[14px] text-slate-500">활동에서 하트를 눌러 자주 쓰는 콘텐츠를 모아보세요.</p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  <Link href="/spokedu-master/library" className="inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
+                  <Link href="/spokedu-lab/library" className="inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
                     놀이체육 둘러보기
                   </Link>
                   {isPremium ? (
-                    <Link href="/spokedu-master/spomove" className="inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
+                    <Link href="/spokedu-lab/spomove" className="inline-flex min-h-11 items-center rounded-[10px] border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2">
                       스포무브 둘러보기
                     </Link>
                   ) : null}
@@ -305,6 +305,6 @@ export default function FavoritesView() {
         )}
       </div>
     </MasterPageShell>
-    <SpomoveGuidelineSheet preset={previewPreset} guideVideoUrl={guideVideo.url} guideVideoState={guideVideo.state} contentOverride={previewPreset ? contentOverrides[previewPreset.id] : undefined} contentLoadState={contentLoadState} hubReturnHref="/spokedu-master/favorites" onClose={() => setPreviewPreset(null)} />
+    <SpomoveGuidelineSheet preset={previewPreset} guideVideoUrl={guideVideo.url} guideVideoState={guideVideo.state} contentOverride={previewPreset ? contentOverrides[previewPreset.id] : undefined} contentLoadState={contentLoadState} hubReturnHref="/spokedu-lab/favorites" onClose={() => setPreviewPreset(null)} />
   </main>;
 }

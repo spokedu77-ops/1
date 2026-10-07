@@ -8,15 +8,16 @@ const canonicalPage = read('app/(spokedu-public)/subscription/page.tsx');
 const commercialPage = read('app/spokedu-master/landing/CommercialLanding.tsx');
 const legacyPage = read('app/spokedu-master/landing/page.tsx');
 const sections = read('app/spokedu-master/landing/components/LandingSections.tsx');
+const faq = read('app/spokedu-master/lib/masterFaq.ts');
 const model = read('app/spokedu-master/landing/models/landingProduct.ts');
 const chrome = read('app/spokedu-master/landing/components/LandingChrome.tsx');
 const globalFooter = read('app/spokedu/components/site-chrome.tsx');
 
-describe('SPOKEDU MASTER canonical commercial landing', () => {
-  it('owns /subscription and permanently redirects the legacy landing', () => {
+describe('SPOKEDU LAB canonical commercial landing', () => {
+  it('owns /spokedu-lab and permanently redirects the legacy landing', () => {
     expect(canonicalPage).toContain('CommercialLanding');
-    expect(canonicalPage).toContain("`${SITE_URL}/subscription`");
-    expect(legacyPage).toContain("permanentRedirect('/subscription')");
+    expect(canonicalPage).toContain("`${SITE_URL}/spokedu-lab`");
+    expect(legacyPage).toContain("permanentRedirect('/spokedu-lab')");
     expect(commercialPage).toContain('<MasterLocalNav');
     expect(commercialPage).not.toContain('<LandingFooter');
   });
@@ -40,11 +41,11 @@ describe('SPOKEDU MASTER canonical commercial landing', () => {
     expect(sections).toContain('최초 결제');
     expect(sections).toContain('해지 예약');
     expect(sections).toContain('결제된 이용 기간 종료일까지');
-    expect(sections).toContain('Free로 돌아갑니다');
+    expect(faq).toContain('Free로 돌아갑니다');
   });
 
   it('keeps Free, paid subscriptions, and Center inquiry separate', () => {
-    expect(sections).toContain('Free는 기간이 정해진 무료체험이 아닙니다');
+    expect(faq).toContain('Free는 기간이 정해진 무료체험이 아닙니다');
     expect(sections).toContain('product.centerInquiry');
     expect(sections).toContain('개인 구독 플랜과 같은 직접 결제 상품이 아닙니다');
     expect(sections).not.toContain('가장 인기');

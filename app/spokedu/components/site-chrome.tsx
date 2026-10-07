@@ -510,10 +510,10 @@ export function SiteFooter() {
             {brandProfile.nameKo} · 대표 {brandProfile.representative} · 사업자등록번호 {brandProfile.businessRegistrationNumber} · 통신판매업 {brandProfile.mailOrderStatus} · {brandProfile.businessAddress}
           </p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px]">
-            <Link href="/spokedu-master/terms" data-track-label="footer-master-terms" className="text-white/55 underline-offset-2 hover:text-white hover:underline">
+            <Link href="/spokedu-lab/terms" data-track-label="footer-master-terms" className="text-white/55 underline-offset-2 hover:text-white hover:underline">
               MASTER 이용약관
             </Link>
-            <Link href="/spokedu-master/privacy" data-track-label="footer-master-privacy" className="text-white/55 underline-offset-2 hover:text-white hover:underline">
+            <Link href="/spokedu-lab/privacy" data-track-label="footer-master-privacy" className="text-white/55 underline-offset-2 hover:text-white hover:underline">
               개인정보처리방침
             </Link>
             <p className="text-white/40">

@@ -20,7 +20,7 @@ describe('student history after Session refactor', () => {
 
   it('routes Session history to the Session workspace', () => {
     const detail = read('app/spokedu-master/students/[studentId]/page.tsx');
-    expect(detail).toContain('/spokedu-master/activity?session=');
+    expect(detail).toContain('/spokedu-lab/activity?session=');
     expect(detail).not.toContain('RecordProgramPicker');
   });
 
@@ -34,7 +34,7 @@ describe('student history after Session refactor', () => {
   it('keeps guidance and reusable history ahead of profile editing', () => {
     const students = read('app/spokedu-master/students/page.tsx');
     const detail = read('app/spokedu-master/students/[studentId]/page.tsx');
-    expect(students).toContain('/spokedu-master/students/${student.id}');
+    expect(students).toContain('/spokedu-lab/students/${student.id}');
     expect(students).toContain('학생 정보 수정');
     expect(detail).toContain('title="지도 참고"');
     expect(detail).toContain('title="수업 이력"');

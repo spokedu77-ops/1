@@ -4,23 +4,24 @@ import {
   MASTER_CONTEXT_SIMPLE_VALUE_MAX,
   MASTER_CONTEXT_VALUE_MAX,
   isMasterNestedReturnKey,
+  normalizeMasterAppPath,
   resolveMasterContextQueryKeys,
 } from './masterNavigationContext';
 
-const DEFAULT_FALLBACK = '/spokedu-master/dashboard';
+const DEFAULT_FALLBACK = '/spokedu-lab/dashboard';
 const MAX_RETURN_VALUE_LENGTH = 1200;
 
 const BLOCKED_POST_PAYMENT_PATHS = new Set([
-  '/spokedu-master/payment',
-  '/spokedu-master/payment/success',
-  '/spokedu-master/payment/cancel',
+  '/spokedu-lab/payment',
+  '/spokedu-lab/payment/success',
+  '/spokedu-lab/payment/cancel',
 ]);
 
 export const MASTER_INTENT_FALLBACKS: Record<MasterGateIntentKind, string> = {
-  open_library: '/spokedu-master/library',
-  use_attendance: '/spokedu-master/activity',
-  start_spomove: '/spokedu-master/spomove',
-  continue_record: '/spokedu-master/class-record',
+  open_library: '/spokedu-lab/library',
+  use_attendance: '/spokedu-lab/activity',
+  start_spomove: '/spokedu-lab/spomove',
+  continue_record: '/spokedu-lab/class-record',
 };
 
 function isBlockedReturnPath(pathname: string) {
@@ -42,7 +43,9 @@ export function getSafeMasterPostPaymentPath(
   rawNext: string | null | undefined,
   fallback = DEFAULT_FALLBACK,
 ): string {
-  const safeFallback = fallback.startsWith('/spokedu-master') ? fallback : DEFAULT_FALLBACK;
+  const safeFallback = fallback.startsWith('/spokedu-master') || fallback.startsWith('/spokedu-lab')
+    ? normalizeMasterAppPath(fallback)
+    : DEFAULT_FALLBACK;
   const value = rawNext?.trim();
   if (!value || value.length > MAX_RETURN_VALUE_LENGTH) return safeFallback;
   if (/^\s*(https?:|javascript:|data:|\/\/)/i.test(value)) return safeFallback;
@@ -55,11 +58,12 @@ export function getSafeMasterPostPaymentPath(
   }
 
   if (parsed.origin !== MASTER_CONTEXT_ORIGIN) return safeFallback;
-  if (!parsed.pathname.startsWith('/spokedu-master')) return safeFallback;
-  if (parsed.pathname.startsWith('/spokedu-master/class-mode')) return safeFallback;
-  if (isBlockedReturnPath(parsed.pathname)) return safeFallback;
+  const canonicalPathname = normalizeMasterAppPath(parsed.pathname);
+  if (!canonicalPathname.startsWith('/spokedu-lab')) return safeFallback;
+  if (canonicalPathname.startsWith('/spokedu-lab/class-mode')) return safeFallback;
+  if (isBlockedReturnPath(canonicalPathname)) return safeFallback;
 
-  const allowedKeys = resolveMasterContextQueryKeys(parsed.pathname);
+  const allowedKeys = resolveMasterContextQueryKeys(canonicalPathname);
   const nextParams = new URLSearchParams();
   for (const key of allowedKeys) {
     for (const valueForKey of parsed.searchParams.getAll(key)) {
@@ -70,5 +74,5 @@ export function getSafeMasterPostPaymentPath(
 
   const query = nextParams.toString();
   const hash = sanitizeHash(parsed.hash);
-  return `${parsed.pathname}${query ? `?${query}` : ''}${hash}`;
+  return `${canonicalPathname}${query ? `?${query}` : ''}${hash}`;
 }

@@ -93,9 +93,9 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
         </div>
         <p className={styles.freeNote}>수업 도구 3종 · Library 탐색 · 이번 주 추천 프로그램 1개 전체 이용</p>
       </div>
-      <div className={styles.heroVisual} aria-label="SPOKEDU MASTER 실제 홈 화면">
+      <div className={styles.heroVisual} aria-label="SPOKEDU LAB 실제 홈 화면">
         <div className={styles.heroHalo} />
-        <ProductFrame src={ASSETS.home} alt="최근 활동, 이번 주 놀이체육 추천과 SPOMOVE가 보이는 SPOKEDU MASTER 홈" priority />
+        <ProductFrame src={ASSETS.home} alt="최근 활동, 이번 주 놀이체육 추천과 SPOMOVE가 보이는 SPOKEDU LAB 홈" priority />
         <div className={styles.heroCaption}>
           <span>실제 MASTER 화면</span>
           <strong>수업 준비와 현장 운영이 한 흐름에</strong>
@@ -327,7 +327,7 @@ export function FieldProofSection() {
       <SectionHeading
         eyebrow="SPOKEDU의 현장에서 시작했습니다"
         title="실제 수업 현장에서 필요한 흐름을 제품으로 만들었습니다."
-        body="SPOKEDU는 유아·초등·특수체육과 기관 수업을 직접 운영하며, 준비부터 현장 진행과 기록까지 반복해서 필요한 과정을 MASTER 안에 연결했습니다."
+        body="SPOKEDU는 유아·초등·특수체육과 기관 수업을 직접 운영하며, 준비부터 현장 진행과 기록까지 반복해서 필요한 과정을 LAB 안에 연결했습니다."
       />
       <div className={styles.fieldGrid}>
         <figure className={styles.fieldPhoto}>
@@ -350,7 +350,7 @@ export function AudienceSection() {
     <section id="audience" className={styles.audienceSection}>
       <SectionHeading eyebrow="현장에 맞는 활용" title="수업 방식은 달라도, 준비와 운영의 흐름은 이어집니다." body="개인 지도자부터 학교와 기관까지 실제 수업 환경에 맞춰 활용할 수 있습니다." />
       <div className={styles.audienceGrid}>{audiences.map(([title, body]) => <article key={title}><h3>{title}</h3><p>{body}</p></article>)}</div>
-      <p className={styles.disclaimer}>MASTER는 치료·진단 제품이 아니며 의학적 효과를 제공하지 않습니다.</p>
+      <p className={styles.disclaimer}>LAB은 치료·진단 제품이 아니며 의학적 효과를 제공하지 않습니다.</p>
     </section>
   );
 }

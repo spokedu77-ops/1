@@ -21,7 +21,7 @@ export function ProgramPreviewModal({
   autoplayVideo,
   isPremium = true,
   accessLocked,
-  lockHref = '/spokedu-master/payment?plan=lite',
+  lockHref = '/spokedu-lab/payment?plan=lite',
   lockLabel = 'Lite로 열기',
   favorite,
   onFavorite,

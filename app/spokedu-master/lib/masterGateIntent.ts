@@ -2,6 +2,7 @@ import { PROGRAMS } from './data';
 import { findOfficialSpomovePreset } from '../spomove/officialSpomovePresets';
 import type { MasterCapability } from '../components/layout/masterRouteAccess';
 import { getFallbackForMasterIntent, getSafeMasterPostPaymentPath } from './masterPaymentReturn';
+import { normalizeMasterAppPath } from './masterNavigationContext';
 
 export type MasterGateIntentKind = 'open_library' | 'use_attendance' | 'start_spomove' | 'continue_record';
 export type MasterGateSurface =
@@ -91,21 +92,22 @@ export function resolveMasterGateIntentFromRoute(
 }
 
 export function resolveMasterGateSurface(pathname: string): MasterGateSurface | undefined {
-  if (pathname.startsWith('/spokedu-master/library/')) return 'library_detail';
-  if (pathname === '/spokedu-master/library') return 'library';
-  if (pathname.startsWith('/spokedu-master/spomove/session')) return 'spomove_session';
-  if (pathname.startsWith('/spokedu-master/spomove')) return 'spomove_hub';
+  const path = normalizeMasterAppPath(pathname);
+  if (path.startsWith('/spokedu-lab/library/')) return 'library_detail';
+  if (path === '/spokedu-lab/library') return 'library';
+  if (path.startsWith('/spokedu-lab/spomove/session')) return 'spomove_session';
+  if (path.startsWith('/spokedu-lab/spomove')) return 'spomove_hub';
   if (
-    pathname.startsWith('/spokedu-master/activity') ||
-    pathname.startsWith('/spokedu-master/classes') ||
-    pathname === '/spokedu-master/students'
+    path.startsWith('/spokedu-lab/activity') ||
+    path.startsWith('/spokedu-lab/classes') ||
+    path === '/spokedu-lab/students'
   ) {
     return 'attendance';
   }
   if (
-    pathname.startsWith('/spokedu-master/class-record') ||
-    pathname.startsWith('/spokedu-master/report') ||
-    pathname.startsWith('/spokedu-master/students/')
+    path.startsWith('/spokedu-lab/class-record') ||
+    path.startsWith('/spokedu-lab/report') ||
+    path.startsWith('/spokedu-lab/students/')
   ) {
     return 'records';
   }
@@ -113,7 +115,7 @@ export function resolveMasterGateSurface(pathname: string): MasterGateSurface | 
 }
 
 function resolveProgramFromPath(pathname: string) {
-  const match = /^\/spokedu-master\/library\/([^/?#]+)/.exec(pathname);
+  const match = /^\/spokedu-lab\/library\/([^/?#]+)/.exec(normalizeMasterAppPath(pathname));
   const programId = match?.[1] ? decodeURIComponent(match[1]) : undefined;
   if (!programId) return null;
   return PROGRAMS.find((program) => program.id === programId) ?? { id: programId, title: '선택한 수업' };
@@ -168,7 +170,7 @@ export function buildMasterGateContext(args: {
 }
 
 export function buildProgramLessonGateHref(programId: string, currentPath?: string, journeyId = createJourneyId()) {
-  const fallback = `/spokedu-master/library/${encodeURIComponent(programId)}`;
+  const fallback = `/spokedu-lab/library/${encodeURIComponent(programId)}`;
   const next = currentPath ? getSafeMasterPostPaymentPath(currentPath, fallback) : fallback;
   return buildMasterPaymentHref({
     intent: 'open_library',
@@ -183,7 +185,7 @@ export function buildSpomoveActivityGateHref(next: string, journeyId = createJou
   return buildMasterPaymentHref({
     intent: 'start_spomove',
     minimumPlan: 'premium',
-    next: getSafeMasterPostPaymentPath(next, '/spokedu-master/spomove'),
+    next: getSafeMasterPostPaymentPath(next, '/spokedu-lab/spomove'),
     journeyId,
     gateSurface: 'spomove_session',
   });
@@ -191,7 +193,7 @@ export function buildSpomoveActivityGateHref(next: string, journeyId = createJou
 
 export function buildMasterPaymentHref(context: Pick<MasterGateContext, 'intent' | 'minimumPlan' | 'next' | 'journeyId' | 'gateSurface'>) {
   if (!context.intent) {
-    return `/spokedu-master/payment?plan=${context.minimumPlan}`;
+    return `/spokedu-lab/payment?plan=${context.minimumPlan}`;
   }
   const params = new URLSearchParams({
     plan: context.minimumPlan,
@@ -205,7 +207,7 @@ export function buildMasterPaymentHref(context: Pick<MasterGateContext, 'intent'
     const value = nextUrl.searchParams.get(key)?.trim();
     if (value) params.set(key, value);
   }
-  return `/spokedu-master/payment?${params.toString()}`;
+  return `/spokedu-lab/payment?${params.toString()}`;
 }
 
 export function buildMasterGateDisplayModel(context: MasterGateContext): MasterGateDisplayModel {
@@ -272,7 +274,7 @@ export function buildMasterGateDisplayModel(context: MasterGateContext): MasterG
   return {
     intent: context.intent,
     minimumPlan: context.minimumPlan,
-    eyebrow: 'SPOKEDU MASTER LITE',
+    eyebrow: 'SPOKEDU LAB LITE',
     title: '이 수업 자료는 Lite에서 확인할 수 있습니다.',
     description: 'Lite로 업그레이드하면 전체 수업 자료와 즐겨찾기를 이용할 수 있습니다. 선택한 수업으로 돌아와 바로 이어서 확인할 수 있습니다.',
     resourceTitle,
@@ -294,7 +296,7 @@ export function readMasterGateContextFromSearchParams(searchParams: URLSearchPar
       intent: null,
       minimumPlan: 'lite',
       allowedPlans: ['lite', 'premium'],
-      next: '/spokedu-master/dashboard',
+      next: '/spokedu-lab/dashboard',
       journeyId: searchParams.get('journeyId')?.trim() || createJourneyId(),
       resource: { kind: 'generic' },
     };

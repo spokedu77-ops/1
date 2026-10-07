@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { SPOKEDU_PATHS } from '@/app/spokedu/data/public-routes';
 
 export function PolicyHeader({ title, fromProfile }: { title: string; fromProfile: boolean }) {
-  const href = fromProfile ? '/spokedu-master/profile' : SPOKEDU_PATHS.subscription;
+  const href = fromProfile ? '/spokedu-lab/profile' : SPOKEDU_PATHS.subscription;
   const returnLabel = fromProfile ? '???? ????' : '??? ??? ????';
 
   return (
@@ -12,7 +12,7 @@ export function PolicyHeader({ title, fromProfile }: { title: string; fromProfil
         <ArrowLeft size={18} />
       </Link>
       <div>
-        <p className="text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
+        <p className="text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>SPOKEDU LAB</p>
         <h1 className="mt-0.5 text-[28px] font-semibold leading-tight" style={{ color: 'var(--spm-t)' }}>{title}</h1>
       </div>
     </header>

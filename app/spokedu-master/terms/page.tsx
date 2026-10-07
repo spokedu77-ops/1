@@ -9,7 +9,7 @@ import {
 
 export const metadata: Metadata = {
   title: {
-    absolute: '이용약관 · SPOKEDU MASTER',
+    absolute: '이용약관 · SPOKEDU LAB',
   },
 };
 
@@ -36,11 +36,11 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 10월 7일</p>
 
         <Section title="1. 목적">
-          <p>이 약관은 SPOKEDU가 제공하는 SPOKEDU MASTER 서비스의 이용 조건, 절차, 이용자와 회사의 권리 및 의무를 정합니다.</p>
+          <p>이 약관은 SPOKEDU가 제공하는 SPOKEDU LAB 서비스의 이용 조건, 절차, 이용자와 회사의 권리 및 의무를 정합니다.</p>
         </Section>
 
         <Section title="2. 제공 기능">
-          <p>SPOKEDU MASTER는 수업 전 수업 라이브러리, 수업 중 수업 도구 또는 SPOMOVE, 수업 후 수업 기록·안내문을 제공하는 교육 운영 보조 서비스입니다.</p>
+          <p>SPOKEDU LAB은 수업 전 수업 라이브러리, 수업 중 수업 도구 또는 SPOMOVE, 수업 후 수업 기록·안내문을 제공하는 교육 운영 보조 서비스입니다.</p>
           <p>학생 기록과 안내문은 교육 운영을 돕기 위한 자료이며 의료, 진단, 평가 자료가 아닙니다.</p>
         </Section>
 

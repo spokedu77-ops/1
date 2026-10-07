@@ -11,13 +11,13 @@ import { resolvePostLoginRedirect } from '@/app/lib/auth/postLoginRedirect';
 const services = [
   {
     id: 'master',
-    title: 'SPOKEDU MASTER',
+    title: 'SPOKEDU LAB',
     description: '수업 자료·SPOMOVE·수업 도구. 신규 가입은 이메일 인증으로 시작합니다.',
     icon: Sparkles,
     color: 'from-indigo-500 to-violet-600',
     bgColor: 'bg-indigo-50',
     cta: '시작하기',
-    href: '/login?next=/spokedu-master/onboarding',
+    href: '/login?next=/spokedu-lab/onboarding',
   },
   {
     id: 'teacher',

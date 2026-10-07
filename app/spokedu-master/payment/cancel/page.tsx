@@ -17,7 +17,7 @@ function CancelContent() {
   const retryPlan = normalizePlan(params.get('plan'));
   const supportHref = MASTER_CUSTOMER_SERVICE_HREF;
   const retryHref = useMemo(() => {
-    const directRetryHref = `/spokedu-master/payment?plan=${retryPlan}`;
+    const directRetryHref = `/spokedu-lab/payment?plan=${retryPlan}`;
     const retryParams = new URLSearchParams({
       plan: retryPlan,
     });
@@ -27,7 +27,7 @@ function CancelContent() {
       retryParams.set('journeyId', gateContext.journeyId);
       if (gateContext.gateSurface) retryParams.set('gateSurface', gateContext.gateSurface);
     }
-    return gateContext.mode === 'gated' ? `/spokedu-master/payment?${retryParams.toString()}` : directRetryHref;
+    return gateContext.mode === 'gated' ? `/spokedu-lab/payment?${retryParams.toString()}` : directRetryHref;
   }, [gateContext, retryPlan]);
 
   return (

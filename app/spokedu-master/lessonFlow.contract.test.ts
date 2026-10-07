@@ -16,7 +16,7 @@ describe('lesson discovery and execution flow contract', () => {
     // 카드 메타는 선택 이유 통제 어휘 → LessonCatalogCard 한 줄 메타로 압축한다.
     expect(library).toContain('formatProgramSelectionReasons');
     expect(library).toContain('LessonCatalogCard');
-    expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
+    expect(library).not.toContain('/spokedu-lab/class-record?program=${program.id}');
     const catalogCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
     expect(catalogCard).toContain('event.stopPropagation()');
     expect(catalogCard).toContain("primaryActionLabel = '활동 살펴보기'");
@@ -33,7 +33,7 @@ describe('lesson discovery and execution flow contract', () => {
 
   it('declares the full lesson material hierarchy and primary CTA routes', () => {
     expect(detail).toContain('AssignProgramToSessionButton');
-    expect(detail).toContain('/spokedu-master/activity');
+    expect(detail).toContain('/spokedu-lab/activity');
     expect(detail).not.toContain('getSpomoveSessionHref');
   });
 

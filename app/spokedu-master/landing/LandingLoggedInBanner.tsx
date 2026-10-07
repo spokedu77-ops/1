@@ -39,8 +39,8 @@ export function LandingLoggedInBanner() {
   if (state !== 'member') return null;
 
   const destination = profile?.onboardingDone
-    ? '/spokedu-master/dashboard'
-    : '/spokedu-master/onboarding';
+    ? '/spokedu-lab/dashboard'
+    : '/spokedu-lab/onboarding';
 
   return (
     <div
@@ -53,7 +53,7 @@ export function LandingLoggedInBanner() {
             이미 로그인되어 있습니다
           </p>
           <p className="mt-1 truncate text-[13px] font-semibold" style={{ color: 'var(--spm-t2)' }}>
-            {email || 'MASTER 계정'}으로 SPOKEDU MASTER를 계속할 수 있습니다.
+            {email || 'LAB 계정'}으로 SPOKEDU LAB을 계속할 수 있습니다.
           </p>
         </div>
         <Link

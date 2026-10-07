@@ -334,10 +334,10 @@ export const spomoveProgramPage = {
   master: {
     id: 'master',
     eyebrow: 'CONNECT',
-    titleLines: ['SPOMOVE 프로그램은', 'SPOKEDU MASTER에서 관리합니다.'] as const,
+    titleLines: ['SPOMOVE 프로그램은', 'SPOKEDU LAB에서 관리합니다.'] as const,
     body: '프로그램을 찾고 수업에 맞는 활동을 선택해 활용할 수 있습니다.',
     visualSrc: '/images/spokedu/home/field-editorial/home-master-ui.png',
-    visualAlt: 'SPOKEDU MASTER 실제 화면 — SPOMOVE 추천',
+    visualAlt: 'SPOKEDU LAB 실제 화면 — SPOMOVE 추천',
     objectPosition: '50% 74%',
     primaryCta: {
       label: 'SPOMOVE 프로그램 보기',

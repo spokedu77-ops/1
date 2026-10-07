@@ -1,5 +1,5 @@
 export const PROGRAM_GATEWAY_PACK_ID = 'spokedu_master_program_gateway_media';
-export const PROGRAM_GATEWAY_PACK_NAME = 'SPOKEDU MASTER Programs Gateway 대표 이미지';
+export const PROGRAM_GATEWAY_PACK_NAME = 'SPOKEDU LAB Programs Gateway 대표 이미지';
 
 export const PROGRAM_GATEWAY_FALLBACK = {
   lessonHero: '/spokedu/spokedu-promo-banner.png',

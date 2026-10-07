@@ -4,7 +4,7 @@ import styles from './home-web.module.css';
 
 const FINAL_LINKS = [
   { label: '기관·학교 체육수업', href: SPOKEDU_PATHS.education },
-  { label: 'SPOKEDU MASTER', href: SPOKEDU_PATHS.subscription },
+  { label: 'SPOKEDU LAB', href: SPOKEDU_PATHS.subscription },
   { label: '협업·파트너십', href: SPOKEDU_PATHS.contact },
 ] as const;
 

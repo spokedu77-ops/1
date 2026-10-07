@@ -754,7 +754,7 @@ function StudentModeNote({ usingSample }: { usingSample: boolean }) {
   return (
     <div className="mx-auto mb-4 flex max-w-[560px] flex-col items-center gap-3 rounded-[14px] px-4 py-3 text-center text-[12px] font-bold sm:flex-row sm:justify-between sm:text-left" style={{ background: 'var(--spm-amb-a12)', border: '1px solid var(--spm-amb-a24)', color: 'var(--spm-amb)' }}>
       <span>등록된 학생 명단이 없어 예시 명단으로 흐름을 보여줍니다.</span>
-      <Link href="/spokedu-master/students?add=1" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-extrabold" style={{ background: 'var(--spm-amb-a16)', border: '1px solid var(--spm-amb-a26)', color: 'var(--spm-amb)' }}>
+      <Link href="/spokedu-lab/students?add=1" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-extrabold" style={{ background: 'var(--spm-amb-a16)', border: '1px solid var(--spm-amb-a26)', color: 'var(--spm-amb)' }}>
         <UserPlus size={14} />
         학생 추가
       </Link>
@@ -766,7 +766,7 @@ function EmptyStudentsForTools() {
   return (
     <div className="mx-auto flex max-w-[520px] flex-wrap items-center justify-center gap-3 border-y border-slate-200 px-4 py-4 text-center">
       <p className="text-[14px] font-medium" style={{ color: 'var(--spm-t)' }}>이 반에 등록된 학생이 없습니다.</p>
-      <Link href="/spokedu-master/students?add=1" className="spm-btn-primary inline-flex h-11 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold focus-visible:outline-none">
+      <Link href="/spokedu-lab/students?add=1" className="spm-btn-primary inline-flex h-11 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold focus-visible:outline-none">
         <UserPlus size={14} />
         학생 명단 관리
       </Link>
@@ -1321,7 +1321,7 @@ export default function ClassToolsView() {
     searchParams.get('returnTo'),
     null,
     null,
-    requestedSessionId ? buildActivitySessionHref(requestedSessionId) : '/spokedu-master/activity',
+    requestedSessionId ? buildActivitySessionHref(requestedSessionId) : '/spokedu-lab/activity',
   );
   const hasSessionContext = Boolean(effectiveSessionId);
   const requestedSessionContext = Boolean(requestedSessionId);
@@ -1454,7 +1454,7 @@ export default function ClassToolsView() {
           <section className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-10 text-center" aria-labelledby="class-tool-lite-gate-title">
             <h2 id="class-tool-lite-gate-title" className="text-[22px] font-semibold text-slate-950">이 수업 도구는 Lite에서 사용할 수 있습니다.</h2>
             <p className="mt-3 max-w-md text-[14px] font-medium leading-6 text-slate-600">반과 학생 명단을 연결해 실제 수업에서 사용할 수 있습니다.</p>
-            <Link href="/spokedu-master/payment?plan=lite" className="spm-btn-primary mt-6 inline-flex min-h-11 items-center justify-center rounded-[11px] px-5 text-[14px] font-semibold">Lite 시작하기</Link>
+            <Link href="/spokedu-lab/payment?plan=lite" className="spm-btn-primary mt-6 inline-flex min-h-11 items-center justify-center rounded-[11px] px-5 text-[14px] font-semibold">Lite 시작하기</Link>
           </section>
         ) : null}
         {!rosterToolLocked && !usesClassRoster ? (
@@ -1513,7 +1513,7 @@ export default function ClassToolsView() {
       {!rosterToolLocked && usesClassRoster && selectedStudents.length > 0 ? (
         <div className="shrink-0 border-t border-slate-200 bg-white px-4 py-2.5 sm:px-5 [@media(max-height:500px)]:hidden">
           <Link
-            href="/spokedu-master/students"
+            href="/spokedu-lab/students"
             className="flex h-11 items-center justify-center gap-2 text-[12px] font-medium text-slate-500 transition hover:text-slate-800"
           >
             <UserPlus size={14} />학생 명단 관리

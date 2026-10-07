@@ -53,7 +53,7 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
   lite: {
     id: 'lite',
     key: 'lite',
-    displayName: 'SPOKEDU MASTER 라이트',
+    displayName: 'SPOKEDU LAB 라이트',
     monthlyPriceKrw: MASTER_LITE_PRICE_KRW,
     priceLabel: '월 9,900원',
     durationLabel: '월 자동결제',
@@ -73,7 +73,7 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
   premium: {
     id: 'premium',
     key: 'premium',
-    displayName: 'SPOKEDU MASTER 프리미엄',
+    displayName: 'SPOKEDU LAB 프리미엄',
     monthlyPriceKrw: MASTER_PREMIUM_PRICE_KRW,
     priceLabel: '월 28,900원',
     durationLabel: '월 자동결제',
@@ -94,7 +94,7 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
   center: {
     id: 'center',
     key: 'center',
-    displayName: 'SPOKEDU MASTER 센터·기관',
+    displayName: 'SPOKEDU LAB 센터·기관',
     monthlyPriceKrw: null,
     priceLabel: '별도 문의',
     durationLabel: '직접 결제 없음',
@@ -133,7 +133,7 @@ export function getMasterProductPriceWithDuration(product: MasterProductCatalogI
 }
 
 export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
-  if (product.purchasable) return `${product.displayName.replace('SPOKEDU MASTER ', '')} 시작하기`;
+  if (product.purchasable) return `${product.displayName.replace('SPOKEDU LAB ', '')} 시작하기`;
   if (product.contactRequired) return product.priceLabel;
   return product.billingCycleLabel;
 }

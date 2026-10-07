@@ -3,7 +3,7 @@
 import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 
 /**
- * /billing 은 /spokedu-master/subscription 으로 리다이렉트된다.
+ * /billing 은 /spokedu-lab/subscription 으로 리다이렉트된다.
  */
 export default function BillingLayout({ children }: { children: React.ReactNode }) {
   return (

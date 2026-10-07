@@ -146,13 +146,13 @@ const HOME_ENTRY_SETTLE_DEADLINE_MS = 4000;
 function getFirstStartPaths(canUseAttendance: boolean) {
   if (!canUseAttendance) {
     return [
-      { title: '무료 수업 보기', description: '지정된 놀이체육 1개를 상세부터 영상까지 체험하세요.', href: `/spokedu-master/library/${FREE_PREVIEW_PROGRAM_ID}` },
-      { title: '수업 도구 열기', description: '스탑워치, 타이머, 점수판을 바로 사용할 수 있습니다.', href: '/spokedu-master/class-tools' },
+      { title: '무료 수업 보기', description: '지정된 놀이체육 1개를 상세부터 영상까지 체험하세요.', href: `/spokedu-lab/library/${FREE_PREVIEW_PROGRAM_ID}` },
+      { title: '수업 도구 열기', description: '스탑워치, 타이머, 점수판을 바로 사용할 수 있습니다.', href: '/spokedu-lab/class-tools' },
     ] as const;
   }
   return [
-    { title: '좋은 활동부터 찾아보기', description: '수업에 맞는 프로그램을 둘러보세요.', href: '/spokedu-master/library' },
-    { title: '수업반 준비하기', description: '수업반과 이번 주 일정을 한 번에 준비하세요.', href: '/spokedu-master/manage' },
+    { title: '좋은 활동부터 찾아보기', description: '수업에 맞는 프로그램을 둘러보세요.', href: '/spokedu-lab/library' },
+    { title: '수업반 준비하기', description: '수업반과 이번 주 일정을 한 번에 준비하세요.', href: '/spokedu-lab/manage' },
   ] as const;
 }
 
@@ -381,7 +381,7 @@ function SpomoveCard({
       cueSeconds: preset.cueSeconds,
       mode: launchMode,
     }),
-    '/spokedu-master/dashboard',
+    '/spokedu-lab/dashboard',
     'home',
   );
   const cardHref = locked ? buildSpomoveActivityGateHref(startHref, `home_spomove_${preset.id}`) : startHref;
@@ -454,10 +454,10 @@ function RecentSpomoveReuseCard({
               mode: launchMode,
               cueSeconds: preset.cueSeconds,
             }),
-        '/spokedu-master/dashboard',
+        '/spokedu-lab/dashboard',
         'home',
       )
-    : `/spokedu-master/spomove/session?preset=${activity.programId}&mode=projector&sound=on&entry=start`;
+    : `/spokedu-lab/spomove/session?preset=${activity.programId}&mode=projector&sound=on&entry=start`;
 
   if (!preset) return null;
 
@@ -543,13 +543,13 @@ function ActivityPanel({
     action?: string;
   }> = compact
     ? [
-        { label: '안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText, action: '안내문 보기' },
-        { label: '수업 일정', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2, action: '수업 일정 보기' },
+        { label: '안내문', value: reportCount, href: '/spokedu-lab/report', Icon: FileText, action: '안내문 보기' },
+        { label: '수업 일정', value: recordCount, href: '/spokedu-lab/activity', Icon: CheckCircle2, action: '수업 일정 보기' },
       ]
     : [
-        { label: '안내문 보관', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
-        { label: '수업', value: recordCount, href: '/spokedu-master/activity', Icon: CheckCircle2 },
-        { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
+        { label: '안내문 보관', value: reportCount, href: '/spokedu-lab/report', Icon: FileText },
+        { label: '수업', value: recordCount, href: '/spokedu-lab/activity', Icon: CheckCircle2 },
+        { label: '학생 메모', value: studentMemoCount, href: '/spokedu-lab/students', Icon: UsersRound },
       ];
 
   if (compact) {
@@ -593,7 +593,7 @@ function ActivityPanel({
           <h2 id="activity-heading" className="text-[18px] font-semibold text-[color:var(--spm-t)]">수업 기록</h2>
           <p className="mt-1 text-[13px] font-semibold text-[color:var(--spm-t2)]">완료한 수업의 안내문과 학생 이력을 확인하세요.</p>
         </div>
-        <Link href="/spokedu-master/profile" className="inline-flex min-h-9 items-center rounded-full bg-[var(--spm-acc-glow)] px-3 text-[12px] font-semibold text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]">
+        <Link href="/spokedu-lab/profile" className="inline-flex min-h-9 items-center rounded-full bg-[var(--spm-acc-glow)] px-3 text-[12px] font-semibold text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]">
           {status}
         </Link>
       </div>
@@ -873,9 +873,9 @@ function EntitledDashboardView() {
           <h1 className={MV_SECTION_TITLE}>수업 라이브러리를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-[15px] font-normal leading-6 text-slate-600">{message}</p>
           {isUnauthorized ? (
-            <Link href="/spokedu-master/login?next=/spokedu-master/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold focus-visible:outline-none">로그인하기</Link>
+            <Link href="/spokedu-lab/login?next=/spokedu-lab/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold focus-visible:outline-none">로그인하기</Link>
           ) : isForbidden ? (
-            <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[14px] font-semibold focus-visible:outline-none">다시 구독하기</Link>
+            <Link href="/spokedu-lab/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[14px] font-semibold focus-visible:outline-none">다시 구독하기</Link>
           ) : (
             <button type="button" onClick={() => void reloadPrograms()} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[14px] font-semibold focus-visible:outline-none">다시 시도</button>
           )}
@@ -905,7 +905,7 @@ function EntitledDashboardView() {
         <div className={`${MV_EDITORIAL_WIDTH} flex w-full items-end px-4 pb-5 pt-7 min-[430px]:px-5 min-[768px]:px-6 min-[768px]:pb-8 min-[768px]:pt-10 min-[1200px]:px-6 min-[1200px]:pb-9 min-[1200px]:pt-14 min-[1216px]:px-0`}>
           <header className="max-w-[610px] text-white">
             <p className="text-[12px] font-semibold leading-5 text-white/70 sm:text-[13px]">
-              SPOKEDU MASTER · MOVEMENT BECOMES LEARNING
+              SPOKEDU LAB · MOVEMENT BECOMES LEARNING
             </p>
             <h1
               className={`mt-3 ${MV_HOME_DISPLAY}`}
@@ -917,15 +917,15 @@ function EntitledDashboardView() {
               놀이체육과 디지털 활동을 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
             </p>
             <div data-dashboard-hero-actions="true" className="mt-5 grid grid-cols-2 gap-2.5 min-[768px]:flex min-[768px]:flex-wrap">
-              <Link data-dashboard-primary-cta="true" href={`/spokedu-master/library/${FREE_PREVIEW_PROGRAM_ID}`} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
+              <Link data-dashboard-primary-cta="true" href={`/spokedu-lab/library/${FREE_PREVIEW_PROGRAM_ID}`} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
                 무료 수업 보기 <ArrowRight size={15} aria-hidden />
               </Link>
               {accessSnapshot.canUseAttendance ? (
-                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                <Link href="/spokedu-lab/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   수업 일정 보기
                 </Link>
               ) : null}
-              <Link href="/spokedu-master/class-tools" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+              <Link href="/spokedu-lab/class-tools" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                 수업 도구 열기
               </Link>
             </div>
@@ -948,7 +948,7 @@ function EntitledDashboardView() {
             <SectionHeader
               title="이어서 준비"
               titleId="continuity-heading"
-              href="/spokedu-master/activity"
+              href="/spokedu-lab/activity"
               action="전체 보기"
             />
             <div data-dashboard-grid="operational" className="grid grid-cols-1 items-stretch gap-3 min-[768px]:grid-cols-3 min-[768px]:gap-4">
@@ -968,7 +968,7 @@ function EntitledDashboardView() {
                     kicker="최근 활동"
                     title="최근 본 수업이 없습니다"
                     actionLabel="수업 찾아보기"
-                    href="/spokedu-master/library"
+                    href="/spokedu-lab/library"
                     media={<HomeEmptyRecentThumb />}
                   />
                 )}
@@ -978,7 +978,7 @@ function EntitledDashboardView() {
                     title={nextSession.className}
                     meta={`${formatSeoulSessionDay(getSeoulSessionDay(nextSession.startAt), { month: 'long', day: 'numeric', weekday: 'short' })} · ${formatSeoulSessionTime(nextSession.startAt)}`}
                     actionLabel="수업 준비"
-                    href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`}
+                    href={`/spokedu-lab/activity?session=${encodeURIComponent(nextSession.id)}`}
                     media={<HomeScheduleThumb startAt={nextSession.startAt} />}
                   />
                 ) : (
@@ -986,7 +986,7 @@ function EntitledDashboardView() {
                     kicker="내 다음 수업"
                     title="다음 일정 없음"
                     actionLabel="수업 일정 보기"
-                    href="/spokedu-master/activity"
+                    href="/spokedu-lab/activity"
                     media={<HomeEmptyScheduleThumb />}
                   />
                 )}
@@ -1017,7 +1017,7 @@ function EntitledDashboardView() {
           <SectionHeader
             title="이번 주 놀이체육 추천"
             titleId="weekly-heading"
-            href="/spokedu-master/library"
+            href="/spokedu-lab/library"
             action="놀이체육 더 보기"
           />
           {!programsLoaded ? (
@@ -1049,7 +1049,7 @@ function EntitledDashboardView() {
           ) : (
             <div>
               <p className="text-[15px] text-slate-600">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
-              <Link href="/spokedu-master/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[14px] font-semibold focus-visible:outline-none">
+              <Link href="/spokedu-lab/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[14px] font-semibold focus-visible:outline-none">
                 수업 라이브러리 열기
               </Link>
             </div>
@@ -1068,7 +1068,7 @@ function EntitledDashboardView() {
           title="SPOMOVE 추천"
           titleId="spomove-heading"
           description="놀이체육을 디지털 자극 활동으로 확장합니다."
-          href="/spokedu-master/spomove"
+          href="/spokedu-lab/spomove"
           action="SPOMOVE 더 보기"
         />
         <div data-dashboard-grid="spomove" className="grid grid-cols-2 items-stretch gap-3 min-[768px]:gap-5 min-[1200px]:grid-cols-4">
@@ -1124,7 +1124,7 @@ function EntitledDashboardView() {
         contentLoadState={spomoveContentLoadState}
         guideVideoUrl={guideVideo.url}
         guideVideoState={guideVideo.state}
-        hubReturnHref="/spokedu-master/dashboard"
+        hubReturnHref="/spokedu-lab/dashboard"
         onClose={() => setPreviewSpomove(null)}
       />
     </main>

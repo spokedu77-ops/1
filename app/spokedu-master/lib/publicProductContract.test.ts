@@ -18,7 +18,7 @@ describe('MASTER public product contract', () => {
     expect(contract.schemaVersion).toBe(PUBLIC_PRODUCT_CONTRACT_SCHEMA_VERSION);
     expect(contract.annualSold).toBe(false);
     expect(contract.freeStartSupported).toBe(true);
-    expect(contract.productDisplayName).toBe('SPOKEDU MASTER');
+    expect(contract.productDisplayName).toBe('SPOKEDU LAB');
 
     const lite = getPublicPlan('lite');
     const premium = getPublicPlan('premium');
@@ -76,7 +76,7 @@ describe('MASTER public product contract', () => {
     const { handoff } = getPublicProductContract();
     expect(handoff.freeStartHref).toBe('/spokedu-master/login?next=/spokedu-master/onboarding');
     expect(handoff.loginHref).toBe('/spokedu-master/login?next=/spokedu-master/dashboard');
-    expect(handoff.landingHref).toBe('/subscription');
+    expect(handoff.landingHref).toBe('/spokedu-lab');
     expect(handoff.paymentPlanHref('lite')).toBe('/spokedu-master/payment?plan=lite');
     expect(handoff.paymentPlanHref('premium')).toBe('/spokedu-master/payment?plan=premium');
     expect(handoff.shopHref).toBe('/spokedu-master/shop');

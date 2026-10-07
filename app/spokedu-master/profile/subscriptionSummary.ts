@@ -39,7 +39,7 @@ export type SubscriptionDisplaySummary = {
   planLabel: string;
   statusLabel: string;
   primaryLabel: '구독 관리' | '구독 선택' | null;
-  primaryHref: '/spokedu-master/subscription' | '/spokedu-master/payment' | null;
+  primaryHref: '/spokedu-lab/subscription' | '/spokedu-lab/payment' | null;
   dateLabel: '다음 결제일' | '이용 종료일' | null;
   dateText: string | null;
   amountText: string | null;
@@ -50,13 +50,13 @@ export type SubscriptionDisplaySummary = {
   isDirectBillingPlan: boolean;
   canCancel: boolean;
   canUpgradeToPremium: boolean;
-  upgradeHref: '/spokedu-master/payment?plan=premium' | null;
+  upgradeHref: '/spokedu-lab/payment?plan=premium' | null;
   upgradeLabel: string | null;
 };
 
 export type PaymentPageMode = 'choosePlan' | 'liteUpgrade' | 'blocked';
 
-const UPGRADE_PREMIUM_HREF = '/spokedu-master/payment?plan=premium' as const;
+const UPGRADE_PREMIUM_HREF = '/spokedu-lab/payment?plan=premium' as const;
 
 function inactiveUpgradeFields(): Pick<SubscriptionDisplaySummary, 'canUpgradeToPremium' | 'upgradeHref' | 'upgradeLabel'> {
   return {
@@ -164,7 +164,7 @@ export function formatSubscriptionEndDate(value: string | null) {
 export function getSubscriptionPrimaryHref(summary: SubscriptionSummaryData | null) {
   const display = getSubscriptionDisplaySummary(summary);
   if (display.primaryHref) return display.primaryHref;
-  return buildMasterSupportMailto('SPOKEDU MASTER 센터/기관 이용권 문의');
+  return buildMasterSupportMailto('SPOKEDU LAB 센터/기관 이용권 문의');
 }
 
 export function getSubscriptionPrimaryLabel(summary: SubscriptionSummaryData | null) {
@@ -232,7 +232,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       planLabel: `이벤트 ${promotionPlan === 'premium' ? 'Premium' : 'Lite'} 이용권`,
       statusLabel: '체험 이용 중',
       primaryLabel: '구독 관리',
-      primaryHref: '/spokedu-master/subscription',
+      primaryHref: '/spokedu-lab/subscription',
       dateLabel: '이용 종료일',
       dateText: formatSubscriptionEndDate(summary.promotionalEndsAt ?? null),
       amountText: null,
@@ -259,7 +259,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
         planLabel,
         statusLabel: '해지 예정',
         primaryLabel: '구독 관리',
-        primaryHref: '/spokedu-master/subscription',
+        primaryHref: '/spokedu-lab/subscription',
         dateLabel: '이용 종료일',
         dateText: endDate,
         amountText: getAmountText(summary.plan),
@@ -278,7 +278,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       planLabel,
       statusLabel: renewalWarning ? '결제 확인 필요' : '이용 중',
       primaryLabel: '구독 관리',
-      primaryHref: '/spokedu-master/subscription',
+      primaryHref: '/spokedu-lab/subscription',
       dateLabel: '다음 결제일',
       dateText: formatSubscriptionEndDate(summary.nextBillingAt),
       amountText: getAmountText(summary.plan),
@@ -299,7 +299,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       planLabel: planLabel === '없음' ? '이용권' : planLabel,
       statusLabel: '이용 종료',
       primaryLabel: '구독 선택',
-      primaryHref: '/spokedu-master/payment',
+      primaryHref: '/spokedu-lab/payment',
       dateLabel: '이용 종료일',
       dateText: formatSubscriptionEndDate(getPeriodEnd(summary)),
       amountText: getAmountText(summary.plan),
@@ -317,7 +317,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     planLabel: '없음',
     statusLabel: '이용권 없음',
     primaryLabel: '구독 선택',
-    primaryHref: '/spokedu-master/payment',
+    primaryHref: '/spokedu-lab/payment',
     dateLabel: null,
     dateText: null,
     amountText: null,

@@ -17,7 +17,7 @@ const GATEWAY_ROWS = [
   },
   {
     index: '03',
-    title: 'SPOKEDU MASTER',
+    title: 'SPOKEDU LAB',
     body: '수업자료와 운영을 연결하는 구독 시스템입니다.',
     href: SPOKEDU_PATHS.subscription,
   },

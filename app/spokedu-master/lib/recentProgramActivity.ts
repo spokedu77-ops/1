@@ -51,10 +51,10 @@ export function buildProgramResumeHref(
   programId: string,
   action: RecentProgramActivityAction | 'class_record',
 ) {
-  if (action === 'spomove_started') return `/spokedu-master/spomove/session?preset=${programId}`;
+  if (action === 'spomove_started') return `/spokedu-lab/spomove/session?preset=${programId}`;
   return action === 'video_started'
-    ? `/spokedu-master/library/${programId}?section=video&autoplay=1`
-    : `/spokedu-master/library/${programId}`;
+    ? `/spokedu-lab/library/${programId}?section=video&autoplay=1`
+    : `/spokedu-lab/library/${programId}`;
 }
 
 export function selectRecentSpomoveActivity(

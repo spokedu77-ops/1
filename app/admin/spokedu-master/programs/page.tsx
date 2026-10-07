@@ -3310,7 +3310,7 @@ function WeeklyRecommendationManager({
 
 export default function AdminSmProgramsPage() {
   const pathname = usePathname();
-  const isSpomoveAdmin = pathname.startsWith('/admin/spokedu-master/spomove');
+  const isSpomoveAdmin = pathname.startsWith('/admin/spokedu-lab/spomove') || pathname.startsWith('/admin/spokedu-master/spomove');
   const tabOptions = isSpomoveAdmin ? SPOMOVE_ADMIN_TAB_OPTIONS : LIBRARY_ADMIN_TAB_OPTIONS;
   const [items, setItems] = useState<ProgramItem[]>([]);
   const [loading, setLoading] = useState(true);

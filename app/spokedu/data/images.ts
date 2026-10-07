@@ -196,7 +196,7 @@ export const SPOKEDU_IMAGES = {
       'home',
       'home-master-ui',
       'field-editorial/home-master-ui.png',
-      'SPOKEDU MASTER 실제 화면 — 놀이체육 추천과 SPOMOVE 추천',
+      'SPOKEDU LAB 실제 화면 — 놀이체육 추천과 SPOMOVE 추천',
       { kind: 'screen', allowedPages: ['home', 'curriculum'] },
     ),
     fieldEditorialWhy: defineImage(

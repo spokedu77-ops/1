@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function AdminSpokeduMasterPage() {
-  redirect('/admin/spokedu-master/programs');
+  redirect('/admin/spokedu-lab/programs');
 }

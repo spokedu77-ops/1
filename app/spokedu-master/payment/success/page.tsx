@@ -115,7 +115,7 @@ function SuccessContent() {
       retryParams.set('journeyId', gateContext.journeyId);
       if (gateContext.gateSurface) retryParams.set('gateSurface', gateContext.gateSurface);
     }
-    return `/spokedu-master/payment?${retryParams.toString()}`;
+    return `/spokedu-lab/payment?${retryParams.toString()}`;
   }, [gateContext, params, safeNext]);
   const plan = params.get('plan');
   const authKey = params.get('authKey')?.trim() ?? '';
@@ -234,7 +234,7 @@ function SuccessContent() {
   useEffect(() => {
     if (status !== 'success' || resumed.current) return;
     resumed.current = true;
-    const id = window.setTimeout(() => router.replace(gateContext.mode === 'gated' ? safeNext : '/spokedu-master/dashboard'), 900);
+    const id = window.setTimeout(() => router.replace(gateContext.mode === 'gated' ? safeNext : '/spokedu-lab/dashboard'), 900);
     return () => window.clearTimeout(id);
   }, [gateContext.mode, router, safeNext, status]);
 
@@ -269,7 +269,7 @@ function SuccessContent() {
             결제가 완료되었습니다
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-            {product.displayName.replace('SPOKEDU MASTER ', '')} 이용권이 활성화되었습니다.
+            {product.displayName.replace('SPOKEDU LAB ', '')} 이용권이 활성화되었습니다.
           </p>
         </div>
         <dl className="grid gap-2 rounded-[18px] p-4 text-left" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -290,10 +290,10 @@ function SuccessContent() {
           <Link href={safeNext} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none">
             첫 수업 고르기
           </Link>
-          <Link href="/spokedu-master/subscription" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <Link href="/spokedu-lab/subscription" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             구독 관리
           </Link>
-          <Link href="/spokedu-master/dashboard" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <Link href="/spokedu-lab/dashboard" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             홈으로
           </Link>
         </div>
@@ -333,7 +333,7 @@ function SuccessContent() {
             네트워크 지연으로 결제 승인 여부를 확인하지 못했습니다. 중복 결제를 피하려면 잠시 후 구독 상태를 확인하거나 고객센터에 문의해 주세요.
           </p>
         </div>
-        <Link href="/spokedu-master/subscription" className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">구독 상태 확인</Link>
+        <Link href="/spokedu-lab/subscription" className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none">구독 상태 확인</Link>
         <PaymentSupportGuidance href={supportHref} />
       </PaymentStatusShell>
     );

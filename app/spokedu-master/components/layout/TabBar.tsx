@@ -59,7 +59,7 @@ export function TabBar({
           paddingBottom: 'max(8px, env(safe-area-inset-bottom, 0px))',
           backdropFilter: 'blur(20px)',
         }}
-        aria-label="SPOKEDU MASTER 주요 메뉴"
+        aria-label="SPOKEDU LAB 주요 메뉴"
       >
         <div
           className="mx-auto grid h-[62px] w-full max-w-[720px] grid-cols-5 rounded-[18px] border"

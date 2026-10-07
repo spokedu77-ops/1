@@ -78,7 +78,7 @@ export const HOME_MEDIA = {
   }),
   homeMasterUi: fromPhoto(SPOKEDU_IMAGES.home.fieldMasterUi, {
     id: 'home-master-ui',
-    label: 'SPOKEDU MASTER 화면',
+    label: 'SPOKEDU LAB 화면',
     fallbackGradient: 'from-slate-200 via-slate-100 to-white',
     tone: 'slate',
     objectPosition: '50% 50%',
@@ -237,8 +237,8 @@ export const HOME_MEDIA = {
   }),
   curriculumMaster: visualMedia({
     id: 'curriculum-master',
-    alt: 'SPOKEDU MASTER 화면 구조 카드 — 프로그램 라이브러리와 수업 운영 도구',
-    label: 'SPOKEDU MASTER',
+    alt: 'SPOKEDU LAB 화면 구조 카드 — 프로그램 라이브러리와 수업 운영 도구',
+    label: 'SPOKEDU LAB',
     fallbackGradient: 'from-violet-500 via-indigo-700 to-slate-950',
     tone: 'violet',
   }),
@@ -708,7 +708,7 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     description: '수업안, 매뉴얼, 교구 활용법, 강사교육 콘텐츠',
     tracks: ['Curriculum'],
     cta: '커리큘럼 문의',
-    href: '/subscription',
+    href: '/spokedu-lab',
     trackLabel: 'cta-home-program-curriculum',
     cardVariant: 'gradient',
   },

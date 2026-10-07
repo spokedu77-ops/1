@@ -6,7 +6,7 @@ export function MasterLocalNav({ product }: { product: ReturnTypeOfLandingModel 
   return (
     <nav
       className={styles.masterLocalNav}
-      aria-label="SPOKEDU MASTER 메뉴"
+      aria-label="SPOKEDU LAB 메뉴"
       data-spokedu-master-local-nav="true"
     >
       <div className={styles.masterLocalBrand}>

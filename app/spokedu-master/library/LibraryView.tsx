@@ -379,7 +379,7 @@ export default function LibraryView() {
   const sessionId = searchParams.get('session')?.trim() || null;
   const sessionContext = sessionId ? sessions.find((session) => session.id === sessionId && session.status === 'scheduled') : null;
   const sessionWorkState = sessionContext ? deriveMasterSessionWorkState(sessionContext, null, new Date()) : null;
-  const sessionReturnHref = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-master/activity');
+  const sessionReturnHref = parseMasterWorkReturnHref(searchParams.get('returnTo'), null, null, sessionId ? buildActivitySessionHref(sessionId) : '/spokedu-lab/activity');
   const contentMode = resolveMasterContentMode({ requestedSessionId: sessionId, hasExactScheduledSession: Boolean(sessionContext) });
   const primaryActionLabel = getMasterContentPrimaryAction(contentMode);
   const accessSnapshot = useMasterAccessSnapshot();
@@ -470,7 +470,7 @@ export default function LibraryView() {
   useEffect(() => {
     if (sessionId && operationalStatus !== 'ready') return;
     const next = sourceLibrarySearch;
-    const href = next ? `/spokedu-master/library?${next}` : '/spokedu-master/library';
+    const href = next ? `/spokedu-lab/library?${next}` : '/spokedu-lab/library';
     const current = `${window.location.pathname}${window.location.search}`;
     if (current === href) return;
     window.history.replaceState(window.history.state, '', href);
@@ -564,11 +564,11 @@ export default function LibraryView() {
           <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
           {programsError === 'unauthorized' ? (
-            <Link href={buildMasterLoginHref('/spokedu-master/library')} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
+            <Link href={buildMasterLoginHref('/spokedu-lab/library')} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
               로그인하기
             </Link>
           ) : programsError === 'forbidden' ? (
-            <Link href="/spokedu-master/payment" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
+            <Link href="/spokedu-lab/payment" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
               이용권 선택하기
             </Link>
           ) : (

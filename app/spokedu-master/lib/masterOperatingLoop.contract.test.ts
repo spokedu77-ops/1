@@ -11,10 +11,10 @@ import { readSessionDetailSource } from '../manage/session-detailTestSource';
 
 describe('MASTER whole-product operating loop', () => {
   it('keeps only an internal MASTER work return', () => {
-    expect(parseMasterWorkReturnHref('/spokedu-master/activity?session=s-1', null)).toBe('/spokedu-master/activity?session=s-1');
-    expect(parseMasterWorkReturnHref('https://evil.example', null, null, '/spokedu-master/activity')).toBe('/spokedu-master/activity');
-    expect(parseMasterWorkReturnHref('//evil.example', null, null, '/spokedu-master/activity')).toBe('/spokedu-master/activity');
-    expect(buildActivitySessionHref('수업 1')).toBe('/spokedu-master/activity?session=%EC%88%98%EC%97%85%201');
+    expect(parseMasterWorkReturnHref('/spokedu-lab/activity?session=s-1', null)).toBe('/spokedu-lab/activity?session=s-1');
+    expect(parseMasterWorkReturnHref('https://evil.example', null, null, '/spokedu-lab/activity')).toBe('/spokedu-lab/activity');
+    expect(parseMasterWorkReturnHref('//evil.example', null, null, '/spokedu-lab/activity')).toBe('/spokedu-lab/activity');
+    expect(buildActivitySessionHref('수업 1')).toBe('/spokedu-lab/activity?session=%EC%88%98%EC%97%85%201');
   });
 
   it('identifies the exact scheduled SPOMOVE origin', () => {
@@ -22,7 +22,7 @@ describe('MASTER whole-product operating loop', () => {
     expect(readSpomoveSessionOrigin(params)).toEqual({
       sessionId: 's-1',
       sessionProgramId: 'sp-2',
-      returnTo: '/spokedu-master/activity?session=s-1',
+      returnTo: '/spokedu-lab/activity?session=s-1',
       isSessionOrigin: true,
     });
   });

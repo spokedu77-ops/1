@@ -509,7 +509,7 @@ export default function AdminCurriculumPage() {
             }
           }
         } catch (metaErr) {
-          devLogger.error('Error fetching SPOKEDU MASTER meta:', metaErr);
+          devLogger.error('Error fetching SPOKEDU LAB meta:', metaErr);
         }
       }
       const formattedData = data.map((item: { id?: unknown; expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; [key: string]: unknown }) => {

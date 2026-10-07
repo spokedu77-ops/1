@@ -32,12 +32,12 @@ export const HOME_METHOD_VISUALS: readonly HomeVisual[] = [
   },
   {
     src: '/images/spokedu/subscription/prepare-lesson-plan.png',
-    alt: '교구 세팅과 사전 체크리스트가 담긴 SPOKEDU MASTER 수업 가이드 화면',
+    alt: '교구 세팅과 사전 체크리스트가 담긴 SPOKEDU LAB 수업 가이드 화면',
     objectPosition: '50% 0%',
   },
   {
     src: '/images/spokedu/home/field-editorial/home-master-ui.png',
-    alt: '이어서 준비할 수업과 추천 프로그램을 보여주는 SPOKEDU MASTER 홈 화면',
+    alt: '이어서 준비할 수업과 추천 프로그램을 보여주는 SPOKEDU LAB 홈 화면',
     objectPosition: '50% 0%',
   },
 ];
@@ -87,6 +87,6 @@ export const HOME_SPOMOVE_VISUAL: HomeVisual = {
 /** PRODUCT — real MASTER library UI, shown large enough to read. */
 export const HOME_MASTER_VISUAL: HomeVisual = {
   src: '/images/spokedu/subscription/library-program-cards.png',
-  alt: '대상·공간·기능 조건으로 놀이체육 프로그램을 찾는 SPOKEDU MASTER 수업자료 라이브러리',
+  alt: '대상·공간·기능 조건으로 놀이체육 프로그램을 찾는 SPOKEDU LAB 수업자료 라이브러리',
   objectPosition: '50% 0%',
 };

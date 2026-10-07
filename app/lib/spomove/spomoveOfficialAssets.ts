@@ -10,17 +10,17 @@ import {
 } from './spomoveGuideContract';
 
 export const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
-export const SPOMOVE_THUMBNAIL_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 프리셋 썸네일';
+export const SPOMOVE_THUMBNAIL_PACK_NAME = 'SPOKEDU LAB SPOMOVE 공식 프리셋 썸네일';
 export const SPOMOVE_GUIDE_VIDEO_PACK_ID = 'spokedu_master_official_spomove_guide_videos';
-export const SPOMOVE_GUIDE_VIDEO_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 가이드 영상';
+export const SPOMOVE_GUIDE_VIDEO_PACK_NAME = 'SPOKEDU LAB SPOMOVE 공식 가이드 영상';
 export const SPOMOVE_PREMIUM_MEDIA_BUCKET = 'spokedu-master-premium-media';
 export const SPOMOVE_CONTENT_PACK_ID = 'spokedu_master_official_spomove_content';
-export const SPOMOVE_CONTENT_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 설명';
+export const SPOMOVE_CONTENT_PACK_NAME = 'SPOKEDU LAB SPOMOVE 공식 설명';
 export const SPOMOVE_HOME_FEATURED_PACK_ID = 'spokedu_master_home_spomove_featured';
-export const SPOMOVE_HOME_FEATURED_PACK_NAME = 'SPOKEDU MASTER 홈 SPOMOVE 추천 슬롯';
+export const SPOMOVE_HOME_FEATURED_PACK_NAME = 'SPOKEDU LAB 홈 SPOMOVE 추천 슬롯';
 export const SPOMOVE_HOME_FEATURED_SLOT_COUNT = 4;
 export const SPOMOVE_HUB_FAMILY_FEATURED_PACK_ID = 'spokedu_master_hub_family_spomove_featured';
-export const SPOMOVE_HUB_FAMILY_FEATURED_PACK_NAME = 'SPOKEDU MASTER 허브 테마 SPOMOVE 대표 슬롯';
+export const SPOMOVE_HUB_FAMILY_FEATURED_PACK_NAME = 'SPOKEDU LAB 허브 테마 SPOMOVE 대표 슬롯';
 export const SPOMOVE_HUB_FAMILY_FEATURED_SLOT_COUNT = 4;
 
 export type SpomoveThumbnailAssetsJson = {

@@ -31,7 +31,7 @@ export default function ClassesPage() {
     if (searchParams.get('create') !== '1') return;
     setSessionReturnDate(parseSessionClassCreateReturnDate(searchParams.get('from'), searchParams.get('date')));
     setCreateOpen(true);
-    router.replace('/spokedu-master/classes', { scroll: false });
+    router.replace('/spokedu-lab/classes', { scroll: false });
   }, [router, searchParams]);
 
   const closeCreate = () => {
@@ -41,7 +41,7 @@ export default function ClassesPage() {
 
   return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 md:pb-8">
     <MasterPageShell variant="operational">
-      <Link href="/spokedu-master/manage" className="mb-4 inline-flex min-h-11 items-center px-4 text-[13px] font-medium text-slate-500 lg:px-5">← 수업 관리</Link>
+      <Link href="/spokedu-lab/manage" className="mb-4 inline-flex min-h-11 items-center px-4 text-[13px] font-medium text-slate-500 lg:px-5">← 수업 관리</Link>
       <MasterPageHeader className="px-4 lg:px-5" title="수업반" description="학생 명단과 수업 일정을 관리합니다." action={<button type="button" onClick={() => { setSessionReturnDate(null); setCreateOpen(true); }} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-slate-800"><Plus size={16} />{MASTER_ACTION_COPY.createClass}</button>} />
 
       {data.status === 'loading' || data.status === 'idle' ? <MasterStatePanel kind="loading" title="수업반을 불러오는 중입니다." className="mt-5" /> : null}
@@ -50,7 +50,7 @@ export default function ClassesPage() {
         {cards.map((card) => {
           const rosterLabel = card.rosterCount ? `학생 ${card.rosterCount}명` : '학생 없음';
           const scheduleLabel = card.nextSession ? nextSessionMeta(card.nextSession.startAt) : '다음 일정 없음';
-          return <MasterCollectionRow key={card.classItem.id} href={`/spokedu-master/classes/${card.classItem.id}`} className="min-h-[72px] px-4 py-3.5 lg:px-5">
+          return <MasterCollectionRow key={card.classItem.id} href={`/spokedu-lab/classes/${card.classItem.id}`} className="min-h-[72px] px-4 py-3.5 lg:px-5">
             <span className="min-w-0 flex-1"><strong className="block truncate text-[16px] font-semibold text-slate-950">{card.classItem.name}</strong><span className="mt-1.5 block text-[13px] font-medium text-slate-500">{rosterLabel} · {scheduleLabel}</span></span>
             <ChevronRight size={17} className="shrink-0 text-slate-400" />
           </MasterCollectionRow>;
@@ -65,7 +65,7 @@ export default function ClassesPage() {
         setCreateOpen(false);
         router.push(sessionReturnDate
           ? buildManageSessionCreateHref(created.id, sessionReturnDate)
-          : `/spokedu-master/classes/${created.id}`);
+          : `/spokedu-lab/classes/${created.id}`);
       }}
     /> : null}
   </main>;

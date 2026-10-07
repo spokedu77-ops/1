@@ -12,12 +12,34 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const pathname = usePathname();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [institutionCheckComplete, setInstitutionCheckComplete] = useState(false);
+  const [institutionCheckFailed, setInstitutionCheckFailed] = useState(false);
   const materialsAccess = useTeacherMaterialsAccess();
   const isMaterialsGatedRoute = isTeacherMaterialsGatedPath(pathname);
   const blockMaterialsRoute = isMaterialsGatedRoute && materialsAccess === 'denied';
   const isInactiveTeacher = materialsAccess === 'denied';
 
   const isActive = (path: string) => pathname === path;
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch('/api/institution/status', { credentials: 'include', cache: 'no-store' })
+      .then((response) => {
+        if (!cancelled && response.ok) {
+          router.replace('/spokedu-master/dashboard');
+          return;
+        }
+        if (!cancelled && response.status >= 500) {
+          setInstitutionCheckFailed(true);
+          return;
+        }
+        if (!cancelled) setInstitutionCheckComplete(true);
+      })
+      .catch(() => {
+        if (!cancelled) setInstitutionCheckFailed(true);
+      });
+    return () => { cancelled = true; };
+  }, [router]);
 
   useEffect(() => {
     if (!isMoreOpen) return;
@@ -39,6 +61,14 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     { id: '/teacher/inventory', label: '교구목록', icon: Package },
     { id: '/teacher/report', label: '정산 확인', icon: Receipt },
   ].filter((menu) => !isInactiveTeacher || menu.id === '/teacher/report');
+
+  if (institutionCheckFailed) {
+    return <div className="grid min-h-dvh place-items-center bg-white px-6 text-center text-sm font-semibold text-slate-500">접근 권한을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.</div>;
+  }
+
+  if (!institutionCheckComplete) {
+    return <div className="grid min-h-dvh place-items-center bg-white text-sm font-semibold text-slate-400">권한 확인 중...</div>;
+  }
 
   return (
     <div className="teacher-shell relative block min-h-screen w-full bg-[#F9FBFF]">

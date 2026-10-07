@@ -179,7 +179,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         </p>
         <div className="mt-6 grid w-full max-w-sm gap-2 sm:grid-cols-2">
           <Link href={programGateHref} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold focus-visible:outline-none">Lite로 열기</Link>
-          <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-semibold text-[color:var(--spm-t2)]">라이브러리로</Link>
+          <Link href="/spokedu-lab/library" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-semibold text-[color:var(--spm-t2)]">라이브러리로</Link>
         </div>
       </main>
     );
@@ -231,7 +231,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
               date={new Date(latestProgramMemory.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
               context={latestProgramMemory.className}
               preview={latestProgramMemory.nextSessionNote}
-              href={`/spokedu-master/activity?session=${encodeURIComponent(latestProgramMemory.sessionId)}&capture=1`}
+              href={`/spokedu-lab/activity?session=${encodeURIComponent(latestProgramMemory.sessionId)}&capture=1`}
               actionLabel="지난 수업 기록 열기"
             />
           ) : null}

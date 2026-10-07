@@ -121,7 +121,7 @@ describe('official SPOMOVE runtime contract', () => {
   it('does not link to a preset-less session from subscription', () => {
     const source = read('app/spokedu-master/subscription/page.tsx');
 
-    expect(source).not.toContain('href="/spokedu-master/spomove/session"');
+    expect(source).not.toContain('href="/spokedu-lab/spomove/session"');
   });
 
   it('removes the unused MASTER drills and remote preset runtime', () => {

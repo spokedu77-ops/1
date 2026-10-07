@@ -171,7 +171,7 @@ export function LessonCatalogCard({
   supportMeta,
   cornerLabel,
   locked = false,
-  lockHref = '/spokedu-master/payment?plan=lite',
+  lockHref = '/spokedu-lab/payment?plan=lite',
   lockLabel = 'Lite로 열기',
   used = false,
   favorite = false,

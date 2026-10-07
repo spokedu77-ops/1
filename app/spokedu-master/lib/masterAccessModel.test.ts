@@ -58,7 +58,7 @@ describe('masterAccessModel', () => {
   });
 
   it('routes free users to payment and lapsed users to re-purchase', () => {
-    expect(getEntitlementPaymentHref(freeSnapshot)).toBe('/spokedu-master/payment');
+    expect(getEntitlementPaymentHref(freeSnapshot)).toBe('/spokedu-lab/payment');
     expect(getEntitlementPrimaryCtaLabel(freeSnapshot)).toBe('구독 선택');
     expect(
       getEntitlementPaymentHref({
@@ -71,7 +71,7 @@ describe('masterAccessModel', () => {
         canUseAttendance: false,
         canUseRecords: false,
       }),
-    ).toBe('/spokedu-master/payment');
+    ).toBe('/spokedu-lab/payment');
   });
 
   it('derives record and upgrade rules from snapshot only', () => {
@@ -84,8 +84,8 @@ describe('masterAccessModel', () => {
       canUseAttendance: false,
       canUseRecords: false,
     }).allowed).toBe(false);
-    expect(getUpgradeHrefFromSnapshot(liteSnapshot)).toBe('/spokedu-master/subscription');
-    expect(getUpgradeHrefFromSnapshot(freeSnapshot)).toBe('/spokedu-master/payment');
+    expect(getUpgradeHrefFromSnapshot(liteSnapshot)).toBe('/spokedu-lab/subscription');
+    expect(getUpgradeHrefFromSnapshot(freeSnapshot)).toBe('/spokedu-lab/payment');
   });
 });
 
@@ -150,7 +150,7 @@ describe('commercial launch architecture contracts', () => {
     expect(dashboard).toContain('useMasterAccessSnapshot');
     expect(dashboard).toContain('isProgramLessonLocked');
     expect(dashboard).not.toContain('canUseSpomove(');
-    expect(classRecord).toContain("redirect('/spokedu-master/activity')");
+    expect(classRecord).toContain("redirect('/spokedu-lab/activity')");
     expect(shop).not.toContain('useMasterCanBuySpomat');
     expect(shop).not.toContain('회원가');
     expect(provider).toContain('useMasterCanUseSpomove');
@@ -162,9 +162,9 @@ describe('commercial launch architecture contracts', () => {
     const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
 
     expect(session).toContain('ErrorBoundary');
-    expect(session).toContain('fallbackHref="/spokedu-master/spomove"');
+    expect(session).toContain('fallbackHref="/spokedu-lab/spomove"');
     expect(dashboard).toContain('HomeContinueCard');
-    expect(dashboard).toContain('href={`/spokedu-master/activity?session=${encodeURIComponent(nextSession.id)}`}');
+    expect(dashboard).toContain('href={`/spokedu-lab/activity?session=${encodeURIComponent(nextSession.id)}`}');
     expect(dashboard).toContain('data-dashboard-section="featured-flow"');
     expect(dashboard).not.toContain('HomeOpsBoard');
   });

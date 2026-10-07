@@ -106,7 +106,7 @@ export default function OnboardingPage() {
           programTypes,
           onboardingDone: true,
         });
-        router.replace(searchParams.has('next') ? returnPath : '/spokedu-master/dashboard');
+        router.replace(searchParams.has('next') ? returnPath : '/spokedu-lab/dashboard');
       })
       .catch(() => {
         setSaveError('시작 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
@@ -121,7 +121,7 @@ export default function OnboardingPage() {
       <main className="mx-auto grid min-h-full w-full max-w-[1080px] gap-6 px-[22px] py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
         <div>
           <div className="mb-8">
-            <p className="text-[12px] font-extrabold uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
+            <p className="text-[12px] font-extrabold uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU LAB</p>
             <h1 className="mt-3 text-[34px] font-extrabold leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>Free로 수업을 먼저 경험하세요</h1>
             <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>놀이체육과 수업 도구를 먼저 써 보고, 수업 운영이 필요하면 Lite로 확장할 수 있습니다.</p>
           </div>

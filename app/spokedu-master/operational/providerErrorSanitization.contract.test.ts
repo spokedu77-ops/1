@@ -51,6 +51,6 @@ describe('SPOKEDU MASTER provider error sanitization contract', () => {
     expect(helper).toContain('인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
     expect(helper).toContain('데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
     expect(helper).toContain('로그인이 필요합니다.');
-    expect(helper).toContain('SPOKEDU MASTER 이용 권한을 확인해 주세요.');
+    expect(helper).toContain('SPOKEDU LAB 이용 권한을 확인해 주세요.');
   });
 });

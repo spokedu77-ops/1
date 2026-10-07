@@ -34,10 +34,10 @@ export type { BrandChannel };
 /** MASTER handoff — 마케팅 사이트 경로 상수 (가격·권한 SSOT 아님) */
 export const MASTER_HANDOFF = {
   landing: SPOKEDU_PATHS.subscription,
-  onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding',
-  dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard',
-  payment: '/spokedu-master/payment',
-  shop: '/spokedu-master/shop',
+  onboardingLogin: '/spokedu-lab/login?next=/spokedu-lab/onboarding',
+  dashboardLogin: '/spokedu-lab/login?next=/spokedu-lab/dashboard',
+  payment: '/spokedu-lab/payment',
+  shop: '/spokedu-lab/shop',
 } as const;
 
 export type SiteNavLink = {
@@ -96,7 +96,7 @@ export const siteNav: SiteNavEntry[] = [
     type: 'group',
     label: '솔루션',
     trackLabel: 'nav-solution-group',
-    activePathPrefixes: ['/spomove', '/subscription', '/spomat'],
+    activePathPrefixes: ['/spomove', '/spokedu-lab', '/subscription', '/spomat'],
     children: [
       {
         label: 'SPOMOVE',
@@ -106,11 +106,11 @@ export const siteNav: SiteNavEntry[] = [
         matchPrefix: '/spomove',
       },
       {
-        label: 'SPOKEDU MASTER',
+        label: 'SPOKEDU LAB',
         href: SPOKEDU_PATHS.subscription,
         trackLabel: 'nav-subscription',
         description: '수업 콘텐츠부터 운영과 기록까지 연결하는\n체육지도자 수업 시스템',
-        matchPrefix: '/subscription',
+        matchPrefix: '/spokedu-lab',
       },
     ],
   },
@@ -201,7 +201,7 @@ export const footerNavGroups: FooterNavGroup[] = [
         trackLabel: 'footer-spomat',
       },
       {
-        label: 'SPOKEDU MASTER',
+        label: 'SPOKEDU LAB',
         href: SPOKEDU_PATHS.subscription,
         trackLabel: 'footer-subscription',
       },

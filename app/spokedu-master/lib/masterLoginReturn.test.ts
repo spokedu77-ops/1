@@ -36,6 +36,14 @@ describe('SPOKEDU MASTER safe login return', () => {
       '/spokedu-master/payment/success?paymentKey=pk&orderId=order&authKey=auth&customerKey=customer&plan=premium&q=safe',
     )).toBe('/spokedu-master/payment/success?q=safe');
   });
+
+  it('preserves a LAB alias deep-link and uses the LAB login address', () => {
+    const path = '/spokedu-lab/library?source=home';
+    expect(getSafeMasterLoginReturnPath(path)).toBe(path);
+    expect(buildMasterLoginHref(path)).toBe(
+      '/spokedu-lab/login?next=%2Fspokedu-lab%2Flibrary%3Fsource%3Dhome',
+    );
+  });
 });
 
 describe('SPOKEDU MASTER server-validated entry destination', () => {
@@ -59,6 +67,13 @@ describe('SPOKEDU MASTER server-validated entry destination', () => {
       { authenticated: true, onboardingDone: false, isAdmin: false },
       '/spokedu-master/library?source=login',
     )).toBe('/spokedu-master/onboarding?next=%2Fspokedu-master%2Flibrary%3Fsource%3Dlogin');
+  });
+
+  it('keeps an incomplete LAB user inside the LAB alias during onboarding', () => {
+    expect(resolveMasterEntryDestination(
+      { authenticated: true, onboardingDone: false, isAdmin: false },
+      '/spokedu-lab/dashboard',
+    )).toBe('/spokedu-lab/onboarding?next=%2Fspokedu-lab%2Fdashboard');
   });
 
   it.each([

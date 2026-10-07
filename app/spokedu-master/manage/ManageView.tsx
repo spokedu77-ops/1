@@ -83,7 +83,7 @@ export default function ManageView() {
         <button type="button" role="tab" aria-selected={tab === 'schedule'} onClick={() => selectTab('schedule')} className={`relative h-11 px-3 text-[14px] font-semibold transition-colors ${tab === 'schedule' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}>일정{tab === 'schedule' ? <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[var(--spm-acc)]" aria-hidden /> : null}</button>
         <button type="button" role="tab" aria-selected={tab === 'attendance'} onClick={() => selectTab('attendance')} className={`relative h-11 px-3 text-[14px] font-semibold transition-colors ${tab === 'attendance' ? 'text-slate-950' : 'text-slate-500 hover:text-slate-800'}`}>출석부{tab === 'attendance' ? <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[var(--spm-acc)]" aria-hidden /> : null}</button>
       </div>
-      <Link href="/spokedu-master/classes" className={`${MV_QUIET_ACTION} px-1`}>수업반 관리 →</Link>
+      <Link href="/spokedu-lab/classes" className={`${MV_QUIET_ACTION} px-1`}>수업반 관리 →</Link>
       </div>
       </div>
       {data.status === 'loading' || data.status === 'idle' ? <MasterState kind="loading" title="수업 데이터를 불러오는 중입니다." className="mt-6" /> : null}

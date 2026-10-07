@@ -107,11 +107,11 @@ export function getPublicPlanComparison(): readonly PublicPlanComparisonRow[] {
 }
 
 const HANDOFF_PATHS = {
-  landing: '/subscription',
-  onboardingLogin: '/spokedu-master/login?next=/spokedu-master/onboarding',
-  dashboardLogin: '/spokedu-master/login?next=/spokedu-master/dashboard',
-  payment: '/spokedu-master/payment',
-  shop: '/spokedu-master/shop',
+  landing: '/spokedu-lab',
+  onboardingLogin: '/spokedu-lab/login?next=/spokedu-lab/onboarding',
+  dashboardLogin: '/spokedu-lab/login?next=/spokedu-lab/dashboard',
+  payment: '/spokedu-lab/payment',
+  shop: '/spokedu-lab/shop',
 } as const;
 
 function catalogSubscriptionToPublic(key: 'lite' | 'premium'): PublicProductPlan {
@@ -174,7 +174,7 @@ export function getPublicProductContract(): PublicProductContract {
 
   cached = {
     schemaVersion: PUBLIC_PRODUCT_CONTRACT_SCHEMA_VERSION,
-    productDisplayName: 'SPOKEDU MASTER',
+    productDisplayName: 'SPOKEDU LAB',
     annualSold: false,
     freeStartSupported: true,
     freeScopeNote:
@@ -184,7 +184,7 @@ export function getPublicProductContract(): PublicProductContract {
     spomat: {
       pricesPublished: false,
       shopHref: HANDOFF_PATHS.shop,
-      confirmLabel: 'SPOKEDU MASTER에서 확인',
+      confirmLabel: 'SPOKEDU LAB에서 확인',
       purchaseGuideLabel: '구매 안내 확인',
     },
     handoff,

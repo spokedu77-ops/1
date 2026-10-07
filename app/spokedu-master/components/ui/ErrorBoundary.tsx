@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   override render() {
     if (!this.state.hasError) return this.props.children;
-    const { fallbackHref = '/spokedu-master/dashboard', fallbackLabel = '홈으로' } = this.props;
+    const { fallbackHref = '/spokedu-lab/dashboard', fallbackLabel = '홈으로' } = this.props;
     return (
       <div
         className="flex h-full flex-col items-center justify-center px-8 py-12 text-center"

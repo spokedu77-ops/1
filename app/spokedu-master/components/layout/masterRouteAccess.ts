@@ -121,7 +121,7 @@ const BLOCKED_RETURN_QUERY_KEYS = new Set([
   'plan',
 ]);
 
-export function getSafeMasterReturnPath(value: string | null | undefined, fallback = '/spokedu-master/dashboard') {
+export function getSafeMasterReturnPath(value: string | null | undefined, fallback = '/spokedu-lab/dashboard') {
   if (!value) return fallback;
   if (/^\s*(https?:|javascript:|data:|\/\/)/i.test(value)) return fallback;
 
@@ -133,11 +133,14 @@ export function getSafeMasterReturnPath(value: string | null | undefined, fallba
   }
 
   if (parsed.origin !== 'https://spokedu.local') return fallback;
-  if (!parsed.pathname.startsWith('/spokedu-master')) return fallback;
-  if (parsed.pathname.startsWith('/spokedu-master/class-mode')) return fallback;
+  const normalizedPathname = parsed.pathname.startsWith('/spokedu-lab/')
+    ? parsed.pathname.replace('/spokedu-lab', '/spokedu-master')
+    : parsed.pathname;
+  if (!normalizedPathname.startsWith('/spokedu-master')) return fallback;
+  if (normalizedPathname.startsWith('/spokedu-master/class-mode')) return fallback;
   if (
-    !SAFE_MASTER_RETURN_EXACT.has(parsed.pathname) &&
-    !SAFE_MASTER_RETURN_PREFIXES.some((prefix) => parsed.pathname === prefix || parsed.pathname.startsWith(`${prefix}/`))
+    !SAFE_MASTER_RETURN_EXACT.has(normalizedPathname) &&
+    !SAFE_MASTER_RETURN_PREFIXES.some((prefix) => normalizedPathname === prefix || normalizedPathname.startsWith(`${prefix}/`))
   ) {
     return fallback;
   }

@@ -27,7 +27,7 @@ type MasterAccessGuard = {
 };
 
 function currentLoginRedirectHref() {
-  if (typeof window === 'undefined') return '/spokedu-master/login';
+  if (typeof window === 'undefined') return '/spokedu-lab/login';
   return buildMasterLoginHref(`${window.location.pathname}${window.location.search}`);
 }
 
@@ -74,7 +74,7 @@ function FloatingTimerPill() {
     >
       <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-slate-700 bg-slate-950/95 px-4 py-2.5 shadow-xl">
         <span className={`h-2 w-2 rounded-full ${running ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-        <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="min-h-11 font-mono text-[15px] font-extrabold tabular-nums text-white">
+        <button type="button" onClick={() => router.push('/spokedu-lab/class-tools')} className="min-h-11 font-mono text-[15px] font-extrabold tabular-nums text-white">
           {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
         </button>
         <span className="text-[11px] font-semibold text-slate-300">{running ? '실행 중' : '일시정지'}</span>
@@ -102,7 +102,7 @@ function MasterAccessCheckingState({ error = false, onRetry }: { error?: boolean
           {error ? '이용 권한을 확인하지 못했습니다.' : '로그인 상태를 확인하는 중입니다.'}
         </p>
         <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-500">
-          {error ? '잠시 후 다시 시도해 주세요.' : 'SPOKEDU MASTER 접근 권한을 확인하고 있습니다.'}
+          {error ? '잠시 후 다시 시도해 주세요.' : 'SPOKEDU LAB 접근 권한을 확인하고 있습니다.'}
         </p>
         {error ? (
           <button
@@ -124,10 +124,10 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
       <div className="mx-auto flex min-h-full w-full max-w-[520px] items-center">
         <section className="w-full rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
           <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--spm-acc)]">
-            SPOKEDU MASTER
+            SPOKEDU LAB
           </p>
           <h1 className="mt-3 text-2xl font-semibold leading-tight text-slate-950 sm:text-[32px]">
-            SPOKEDU MASTER 접근을 확인할 수 없습니다.
+            SPOKEDU LAB 접근을 확인할 수 없습니다.
           </h1>
           <p className="mt-3 text-[14px] font-semibold leading-6 text-slate-500">
             로그인 상태를 다시 확인한 뒤, Free로 놀이체육과 수업 도구부터 이용할 수 있습니다.
@@ -135,7 +135,7 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
 
           <div className="mt-6 grid gap-2">
             <Link
-              href="/spokedu-master/payment"
+              href="/spokedu-lab/payment"
               className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-xl px-4 text-[13px] font-semibold focus-visible:outline-none"
             >
               구독 선택
@@ -165,6 +165,7 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
 
 export function AppShell({ children, basePath = '/spokedu-master' }: { children: ReactNode; basePath?: string }) {
   const pathname = usePathname();
+  const activeBasePath = pathname.startsWith('/spokedu-lab/') ? '/spokedu-lab' : basePath;
   const router = useRouter();
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
@@ -184,22 +185,22 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const [accessRetryKey, setAccessRetryKey] = useState(0);
   const [currentPathWithQuery, setCurrentPathWithQuery] = useState(pathname);
 
-  const isAdmin = basePath.startsWith('/admin');
-  const isSession = pathname.startsWith(`${basePath}/spomove/session`);
-  const isOnboarding = pathname.startsWith(`${basePath}/onboarding`);
-  const isParentView = pathname.startsWith(`${basePath}/parent`);
-  const isPayment = pathname.startsWith(`${basePath}/payment`);
-  const isLanding = pathname.startsWith(`${basePath}/landing`);
-  const isLibraryDetail = pathname.startsWith(`${basePath}/library/`);
-  const isManage = pathname === `${basePath}/manage` || pathname === `${basePath}/activity`;
-  const isClassTools = pathname === `${basePath}/class-tools` || pathname.startsWith(`${basePath}/class-tools/`);
+  const isAdmin = activeBasePath.startsWith('/admin');
+  const isSession = pathname.startsWith(`${activeBasePath}/spomove/session`);
+  const isOnboarding = pathname.startsWith(`${activeBasePath}/onboarding`);
+  const isParentView = pathname.startsWith(`${activeBasePath}/parent`);
+  const isPayment = pathname.startsWith(`${activeBasePath}/payment`);
+  const isLanding = pathname.startsWith(`${activeBasePath}/landing`);
+  const isLibraryDetail = pathname.startsWith(`${activeBasePath}/library/`);
+  const isManage = pathname === `${activeBasePath}/manage` || pathname === `${activeBasePath}/activity`;
+  const isClassTools = pathname === `${activeBasePath}/class-tools` || pathname.startsWith(`${activeBasePath}/class-tools/`);
   const isViewportWorkspace = isManage || isClassTools;
-  const isPublicDocument = pathname === `${basePath}/terms` || pathname === `${basePath}/privacy`;
-  const isLogin = pathname === `${basePath}/login` || pathname.startsWith(`${basePath}/auth`);
+  const isPublicDocument = pathname === `${activeBasePath}/terms` || pathname === `${activeBasePath}/privacy`;
+  const isLogin = pathname === `${activeBasePath}/login` || pathname.startsWith(`${activeBasePath}/auth`);
   const isProgramsEditor = pathname.startsWith('/admin/spokedu-master/programs');
   const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument || isProgramsEditor || isLogin;
-  const isProtectedRoute = isProtectedMasterRoute(pathname, basePath);
-  const routeRequirement = getMasterRouteRequirement(pathname, basePath);
+  const isProtectedRoute = isProtectedMasterRoute(pathname, activeBasePath);
+  const routeRequirement = getMasterRouteRequirement(pathname, activeBasePath);
   const isAccessGuardPending =
     isProtectedRoute &&
     (accessGuard.pathname !== pathname ||
@@ -253,17 +254,17 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     if (isLanding || isPublicDocument) return;
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
     if (!canBrowseLibrary) return;
-    if (pathname === `${basePath}/dashboard`) void loadHomePrograms();
+    if (pathname === `${activeBasePath}/dashboard`) void loadHomePrograms();
     else void loadPrograms();
     if (canSyncFavorites) void syncFavoriteProgramsFromServer();
-  }, [accessGuard.status, basePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, pathname, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, loadHomePrograms, loadPrograms, pathname, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
       if (isLanding || isPublicDocument || document.visibilityState !== 'visible') return;
       if (isProtectedRoute && accessGuard.status !== 'allowed') return;
       if (!canBrowseLibrary) return;
-      if (pathname === `${basePath}/dashboard`) return;
+      if (pathname === `${activeBasePath}/dashboard`) return;
       void reloadPrograms();
       if (canSyncFavorites) void syncFavoriteProgramsFromServer();
     };
@@ -273,7 +274,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', refreshProgramsOnFocus);
       document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
     };
-  }, [accessGuard.status, basePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, pathname, reloadPrograms, syncFavoriteProgramsFromServer]);
+  }, [accessGuard.status, activeBasePath, canBrowseLibrary, canSyncFavorites, isLanding, isProtectedRoute, isPublicDocument, pathname, reloadPrograms, syncFavoriteProgramsFromServer]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
@@ -325,9 +326,9 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     if (accessGuard.pathname !== pathname || accessGuard.status !== 'allowed' || !accessGuard.snapshot) return;
     if (!isSession && !isOnboarding && !isParentView && !isPayment && !accessGuard.snapshot.onboardingDone) {
       const next = getSafeMasterReturnPath(currentPathWithQuery);
-      router.replace(`${basePath}/onboarding?next=${encodeURIComponent(next)}`);
+      router.replace(`${activeBasePath}/onboarding?next=${encodeURIComponent(next)}`);
     }
-  }, [accessGuard, basePath, currentPathWithQuery, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, pathname, router]);
+  }, [accessGuard, activeBasePath, currentPathWithQuery, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, pathname, router]);
 
   useEffect(() => {
     if (!isProtectedRoute) {
@@ -503,7 +504,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
             )}
           </main>
           {hideChrome ? null : <FloatingTimerPill />}
-          {hideChrome ? null : <TabBar basePath={basePath} snapshot={accessGuard.snapshot} />}
+          {hideChrome ? null : <TabBar basePath={activeBasePath} snapshot={accessGuard.snapshot} />}
         </div>
       </div>
     </div>

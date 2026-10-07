@@ -14,12 +14,15 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: [
           '/',
+          '/spokedu-lab/terms',
+          '/spokedu-lab/privacy',
           '/spokedu-master/terms',
           '/spokedu-master/privacy',
         ],
         disallow: [
           '/admin',
           '/api',
+          '/spokedu-lab',
           '/spokedu-master',
           '/login',
           '/portal',

@@ -197,7 +197,7 @@ export const SessionCapturePanel = forwardRef<
           수업 기록은 Lite부터 사용할 수 있습니다.
         </p>
         <Link
-          href={`/spokedu-master/payment?plan=lite&intent=continue_record&next=${encodeURIComponent(`/spokedu-master/activity?session=${session.id}&capture=1`)}&journeyId=${encodeURIComponent(`capture_${session.id}`)}`}
+          href={`/spokedu-lab/payment?plan=lite&intent=continue_record&next=${encodeURIComponent(`/spokedu-lab/activity?session=${session.id}&capture=1`)}&journeyId=${encodeURIComponent(`capture_${session.id}`)}`}
           className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-blue-700"
         >
           Lite로 기록 이어가기

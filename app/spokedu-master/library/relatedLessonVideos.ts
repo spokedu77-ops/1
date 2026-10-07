@@ -139,7 +139,7 @@ function toRelatedVideo(candidate: Program, reason: RelatedLessonVideoReason): R
     id: candidate.id,
     title: relatedVideoKoreanTitle(candidate.title) || candidate.title,
     thumbnailUrl: getVideoThumbnail(videoUrl) ?? getDedicatedRelatedThumbnail(candidate) ?? null,
-    href: `/spokedu-master/library/${candidate.id}`,
+      href: `/spokedu-lab/library/${candidate.id}`,
     reason,
   };
 }

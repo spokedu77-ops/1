@@ -12,7 +12,7 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
 
     expect(source).toContain('useOptionalMasterAccessContext');
     expect(source).toContain('access?.snapshot.onboardingDone');
-    expect(source).toContain("onboardingDone ? '/spokedu-master/dashboard' : '/spokedu-master/onboarding'");
+    expect(source).toContain("onboardingDone ? '/spokedu-lab/dashboard' : '/spokedu-lab/onboarding'");
     expect(source).not.toContain('profile?.onboardingDone');
     expect(source).not.toContain('plan=');
   });
@@ -20,11 +20,11 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
   it('keeps onboarding to account setup only', () => {
     const source = read('app/spokedu-master/onboarding/page.tsx');
 
-    expect(source).toContain("router.replace(searchParams.has('next') ? returnPath : '/spokedu-master/dashboard')");
+    expect(source).toContain("router.replace(searchParams.has('next') ? returnPath : '/spokedu-lab/dashboard')");
     expect(source).toContain('if (serverOnboardingDone)');
     expect(source).not.toContain('serverOnboardingDone || profile?.onboardingDone');
     expect(source).toContain('MASTER 시작하기');
-    expect(source).not.toContain("'/spokedu-master/classes?create=1'");
+    expect(source).not.toContain("'/spokedu-lab/classes?create=1'");
     expect(source).not.toContain('수업반 등록');
     expect(source).not.toContain('첫 수업 만들기');
     expect(source).toContain('/api/spokedu-master/profile');
@@ -46,8 +46,8 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
 
     expect(source).toContain('snapshot: MasterAccessSnapshot');
     expect(source).toContain('requirement: Exclude<MasterCapability');
-    expect(source).toContain("'/spokedu-master/subscription'");
-    expect(source).toContain("'/spokedu-master/payment'");
+    expect(source).toContain("'/spokedu-lab/subscription'");
+    expect(source).toContain("'/spokedu-lab/payment'");
     expect(source).not.toContain('MASTER_CENTER_INQUIRY_HREF');
     expect(source).not.toContain('isTrialExpired');
     expect(source).not.toContain('import { canUse');

@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
       // Legacy root MASTER manifest — admin/teacher PWA 누수 방지용으로 경로 이전
       {
         source: '/manifest.json',
-        destination: '/spokedu-master/manifest.webmanifest',
+        destination: '/spokedu-lab/manifest.webmanifest',
         permanent: true,
       },
       // --- Clean public URL migration: legacy /spokedu/** → clean ---
@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
       { source: "/spokedu/private", destination: "/private", permanent: true },
       { source: "/spokedu/programs/spomove/catalog", destination: "/spomove/catalog", permanent: true },
       { source: "/spokedu/programs/spomove", destination: "/spomove", permanent: true },
-      { source: "/spokedu/curriculum", destination: "/subscription", permanent: true },
+      { source: "/spokedu/curriculum", destination: "/spokedu-lab", permanent: true },
       { source: "/spokedu/records", destination: "/records", permanent: true },
       { source: "/spokedu/records/:slug", destination: "/records/:slug", permanent: true },
       { source: "/spokedu/contact", destination: "/contact", permanent: true },
@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
       { source: "/spokedu/partners", destination: "/partners", permanent: true },
 
       // --- Other legacy aliases → clean ---
-      { source: "/curriculum", destination: "/subscription", permanent: true },
+      { source: "/curriculum", destination: "/spokedu-lab", permanent: true },
       { source: "/programs/spomove/catalog", destination: "/spomove/catalog", permanent: true },
       { source: "/programs/spomove", destination: "/spomove", permanent: true },
       { source: "/programs", destination: "/spomove", permanent: true },
@@ -104,6 +104,17 @@ const nextConfig: NextConfig = {
       { source: "/teacher/chat", destination: "/teacher", permanent: true },
       { source: "/admin/chat", destination: "/admin", permanent: true },
     ];
+  },
+  async rewrites() {
+    return {
+      // LAB 앱 주소를 먼저 병행 운영한다. 기존 MASTER 라우트는 원본으로
+      // 유지해 인증·결제 콜백과 배포된 딥링크를 깨뜨리지 않는다.
+      fallback: [
+        { source: '/admin/spokedu-lab-admin', destination: '/admin/spokedu-master-admin' },
+        { source: '/admin/spokedu-lab/:path*', destination: '/admin/spokedu-master/:path*' },
+        { source: '/spokedu-lab/:path*', destination: '/spokedu-master/:path*' },
+      ],
+    };
   },
   // YouTube/Vimeo embed 허용. "www.youtube.com에서 연결을 거부했습니다" 방지 (CSP frame-src만 추가)
   async headers() {

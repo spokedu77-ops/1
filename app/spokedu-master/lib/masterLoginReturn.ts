@@ -1,4 +1,4 @@
-const MASTER_LOGIN_FALLBACK = '/spokedu-master/dashboard';
+const MASTER_LOGIN_FALLBACK = '/spokedu-lab/dashboard';
 
 const BLOCKED_LOGIN_RETURN_KEYS = new Set([
   'authKey',
@@ -35,6 +35,12 @@ const SAFE_MASTER_LOGIN_RETURN_PREFIXES = [
   '/spokedu-master/parent',
 ] as const;
 
+function normalizeLabReturnPath(pathname: string) {
+  return pathname.startsWith('/spokedu-lab/')
+    ? pathname.replace('/spokedu-lab', '/spokedu-master')
+    : pathname;
+}
+
 export function getSafeMasterLoginReturnPath(
   value: string | null | undefined,
   fallback = MASTER_LOGIN_FALLBACK,
@@ -49,17 +55,18 @@ export function getSafeMasterLoginReturnPath(
   }
 
   if (parsed.origin !== 'https://spokedu.local') return fallback;
+  const normalizedPathname = normalizeLabReturnPath(parsed.pathname);
   if (
-    !SAFE_MASTER_LOGIN_RETURN_EXACT.has(parsed.pathname)
+    !SAFE_MASTER_LOGIN_RETURN_EXACT.has(normalizedPathname)
     && !SAFE_MASTER_LOGIN_RETURN_PREFIXES.some(
-      (prefix) => parsed.pathname === prefix || parsed.pathname.startsWith(`${prefix}/`),
+      (prefix) => normalizedPathname === prefix || normalizedPathname.startsWith(`${prefix}/`),
     )
   ) {
     return fallback;
   }
   if (
-    parsed.pathname === '/spokedu-master/login'
-    || parsed.pathname.startsWith('/spokedu-master/auth/')
+    normalizedPathname === '/spokedu-master/login'
+    || normalizedPathname.startsWith('/spokedu-master/auth/')
   ) {
     return fallback;
   }
@@ -71,7 +78,8 @@ export function getSafeMasterLoginReturnPath(
 
 export function buildMasterLoginHref(value: string | null | undefined) {
   const next = getSafeMasterLoginReturnPath(value);
-  return `/spokedu-master/login?next=${encodeURIComponent(next)}`;
+  const loginPath = next.startsWith('/spokedu-lab/') ? '/spokedu-lab/login' : '/spokedu-master/login';
+  return `${loginPath}?next=${encodeURIComponent(next)}`;
 }
 
 export type MasterEntryAccess = {
@@ -90,9 +98,12 @@ export function resolveMasterEntryDestination(
   next: string,
 ) {
   const safeNext = getSafeMasterLoginReturnPath(next);
+  const onboardingPath = safeNext.startsWith('/spokedu-lab/')
+    ? '/spokedu-lab/onboarding'
+    : '/spokedu-master/onboarding';
   return access.onboardingDone
     ? safeNext
-    : `/spokedu-master/onboarding?next=${encodeURIComponent(safeNext)}`;
+    : `${onboardingPath}?next=${encodeURIComponent(safeNext)}`;
 }
 
 export function resolveMasterEntryAccess(

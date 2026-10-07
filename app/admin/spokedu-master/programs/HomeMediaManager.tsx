@@ -132,7 +132,7 @@ export function HomeMediaManager() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href="/spokedu-master/dashboard"
+            href="/spokedu-lab/dashboard"
             target="_blank"
             rel="noreferrer"
             className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700"

@@ -1,10 +1,10 @@
 export const SPOKEDU_MASTER_PLAN_CONFIG = {
   lite: {
-    name: 'SPOKEDU MASTER Lite',
+    name: 'SPOKEDU LAB Lite',
     amount: 9900,
   },
   premium: {
-    name: 'SPOKEDU MASTER Premium',
+    name: 'SPOKEDU LAB Premium',
     amount: 28900,
   },
 } as const;

@@ -56,6 +56,6 @@ export function getClassToolDefinition(id: ClassToolId): ClassToolDefinition {
 
 export function buildClassToolHref(id: ClassToolId) {
   return id === 'stopwatch'
-    ? '/spokedu-master/class-tools'
-    : `/spokedu-master/class-tools?tool=${encodeURIComponent(id)}`;
+    ? '/spokedu-lab/class-tools'
+    : `/spokedu-lab/class-tools?tool=${encodeURIComponent(id)}`;
 }

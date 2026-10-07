@@ -41,7 +41,7 @@ export default function SpokeduMasterError({ error, reset }: SpokeduMasterErrorP
   return (
     <main className="min-h-dvh px-4 py-10" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)' }}>
       <section className="mx-auto max-w-lg rounded-[24px] border p-6 shadow-sm" style={{ background: 'var(--spm-s1)', borderColor: 'var(--spm-br2)' }}>
-        <p className="text-sm font-bold text-[var(--spm-acc)]">SPOKEDU MASTER</p>
+        <p className="text-sm font-bold text-[var(--spm-acc)]">SPOKEDU LAB</p>
         <h1 className="mt-3 text-2xl font-extrabold" style={{ color: 'var(--spm-t)' }}>
           화면을 불러오지 못했습니다.
         </h1>

@@ -14,17 +14,23 @@
 
 export const MASTER_CONTEXT_ORIGIN = 'https://spokedu.local';
 
+export function normalizeMasterAppPath(pathname: string) {
+  return pathname === '/spokedu-master'
+    ? '/spokedu-lab'
+    : pathname.replace(/^\/spokedu-master(?=\/)/, '/spokedu-lab');
+}
+
 export const MASTER_POST_PAYMENT_QUERY_KEYS: Record<string, readonly string[]> = {
-  '/spokedu-master/library': ['from', 'session', 'sessionProgram', 'returnTo', 'source'],
-  '/spokedu-master/class-record': ['program', 'record'],
-  '/spokedu-master/report': ['session', 'program', 'record'],
-  '/spokedu-master/activity': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
-  '/spokedu-master/manage': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
-  '/spokedu-master/students': [],
-  '/spokedu-master/classes': ['create', 'from', 'date'],
-  '/spokedu-master/class-tools': ['session', 'returnTo', 'source', 'tool'],
-  '/spokedu-master/spomove': ['view', 'group', 'difficulty', 'movement', 'q', 'session', 'returnTo', 'source'],
-  '/spokedu-master/spomove/session': [
+  '/spokedu-lab/library': ['from', 'session', 'sessionProgram', 'returnTo', 'source'],
+  '/spokedu-lab/class-record': ['program', 'record'],
+  '/spokedu-lab/report': ['session', 'program', 'record'],
+  '/spokedu-lab/activity': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
+  '/spokedu-lab/manage': ['session', 'date', 'create', 'class', 'program', 'record', 'capture'],
+  '/spokedu-lab/students': [],
+  '/spokedu-lab/classes': ['create', 'from', 'date'],
+  '/spokedu-lab/class-tools': ['session', 'returnTo', 'source', 'tool'],
+  '/spokedu-lab/spomove': ['view', 'group', 'difficulty', 'movement', 'q', 'session', 'returnTo', 'source'],
+  '/spokedu-lab/spomove/session': [
     'preset',
     'rounds',
     'mode',
@@ -47,19 +53,20 @@ export const MASTER_CONTEXT_VALUE_MAX = 400;
 export const MASTER_CONTEXT_SIMPLE_VALUE_MAX = 180;
 
 export function resolveMasterContextQueryKeys(pathname: string): readonly string[] {
-  if (pathname.startsWith('/spokedu-master/library/')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/library'];
-  if (pathname.startsWith('/spokedu-master/spomove/session')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/spomove/session'];
-  if (pathname.startsWith('/spokedu-master/spomove')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/spomove'];
-  if (pathname.startsWith('/spokedu-master/class-record')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/class-record'];
-  if (pathname.startsWith('/spokedu-master/class-tools')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/class-tools'];
-  if (pathname.startsWith('/spokedu-master/report')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/report'];
-  if (pathname.startsWith('/spokedu-master/activity')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/activity'];
-  if (pathname.startsWith('/spokedu-master/manage')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/manage'];
-  if (pathname.startsWith('/spokedu-master/students/')) return [];
-  if (pathname.startsWith('/spokedu-master/students')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/students'];
-  if (pathname.startsWith('/spokedu-master/classes/')) return [];
-  if (pathname.startsWith('/spokedu-master/classes')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/classes'];
-  if (pathname === '/spokedu-master/library') return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-master/library'];
+  const path = normalizeMasterAppPath(pathname);
+  if (path.startsWith('/spokedu-lab/library/')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/library'];
+  if (path.startsWith('/spokedu-lab/spomove/session')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/spomove/session'];
+  if (path.startsWith('/spokedu-lab/spomove')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/spomove'];
+  if (path.startsWith('/spokedu-lab/class-record')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/class-record'];
+  if (path.startsWith('/spokedu-lab/class-tools')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/class-tools'];
+  if (path.startsWith('/spokedu-lab/report')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/report'];
+  if (path.startsWith('/spokedu-lab/activity')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/activity'];
+  if (path.startsWith('/spokedu-lab/manage')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/manage'];
+  if (path.startsWith('/spokedu-lab/students/')) return [];
+  if (path.startsWith('/spokedu-lab/students')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/students'];
+  if (path.startsWith('/spokedu-lab/classes/')) return [];
+  if (path.startsWith('/spokedu-lab/classes')) return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/classes'];
+  if (path === '/spokedu-lab/library') return MASTER_POST_PAYMENT_QUERY_KEYS['/spokedu-lab/library'];
   return [];
 }
 
@@ -68,26 +75,26 @@ export function isMasterNestedReturnKey(key: string) {
 }
 
 export function buildActivitySessionHref(sessionId: string) {
-  return `/spokedu-master/activity?session=${encodeURIComponent(sessionId)}`;
+  return `/spokedu-lab/activity?session=${encodeURIComponent(sessionId)}`;
 }
 
 export function buildManageSessionHref(sessionId: string) {
-  return `/spokedu-master/manage?session=${encodeURIComponent(sessionId)}`;
+  return `/spokedu-lab/manage?session=${encodeURIComponent(sessionId)}`;
 }
 
 export function isMasterSessionSurfaceReturn(href: string | null | undefined): href is string {
   return Boolean(
-    href === '/spokedu-master/activity'
-    || href?.startsWith('/spokedu-master/activity?')
-    || href === '/spokedu-master/manage'
-    || href?.startsWith('/spokedu-master/manage?'),
+    normalizeMasterAppPath(href ?? '') === '/spokedu-lab/activity'
+    || normalizeMasterAppPath(href ?? '').startsWith('/spokedu-lab/activity?')
+    || normalizeMasterAppPath(href ?? '') === '/spokedu-lab/manage'
+    || normalizeMasterAppPath(href ?? '').startsWith('/spokedu-lab/manage?'),
   );
 }
 
 export function buildClassCreateFromSessionHref(date: string) {
   const day = date.slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return '/spokedu-master/classes?create=1';
-  return `/spokedu-master/classes?create=1&from=session&date=${encodeURIComponent(day)}`;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return '/spokedu-lab/classes?create=1';
+  return `/spokedu-lab/classes?create=1&from=session&date=${encodeURIComponent(day)}`;
 }
 
 export function parseSessionClassCreateReturnDate(from: string | null, date: string | null) {
@@ -97,18 +104,18 @@ export function parseSessionClassCreateReturnDate(from: string | null, date: str
 }
 
 export function buildManageDateHref(date: string) {
-  return `/spokedu-master/manage?date=${encodeURIComponent(date)}`;
+  return `/spokedu-lab/manage?date=${encodeURIComponent(date)}`;
 }
 
 export function buildManageSessionCreateHref(classId: string, date: string) {
-  return `/spokedu-master/manage?date=${encodeURIComponent(date)}&create=1&class=${encodeURIComponent(classId)}`;
+  return `/spokedu-lab/manage?date=${encodeURIComponent(date)}&create=1&class=${encodeURIComponent(classId)}`;
 }
 
 export function parseMasterWorkReturnHref(
   returnTo: string | null | undefined,
   hubReturn: string | null | undefined,
   hubView?: string | null,
-  fallback = '/spokedu-master/spomove',
+  fallback = '/spokedu-lab/spomove',
 ): string {
   const candidates = [returnTo, hubReturn].filter(Boolean) as string[];
   for (const raw of candidates) {
@@ -118,23 +125,24 @@ export function parseMasterWorkReturnHref(
     } catch {
       decoded = raw;
     }
+    const canonical = normalizeMasterAppPath(decoded);
     if (
-      decoded === '/spokedu-master/activity'
-      || decoded.startsWith('/spokedu-master/activity?')
-      || decoded === '/spokedu-master/manage'
-      || decoded.startsWith('/spokedu-master/manage?')
-      || decoded === '/spokedu-master/spomove'
-      || decoded.startsWith('/spokedu-master/spomove?')
-      || decoded === '/spokedu-master/dashboard'
-      || decoded.startsWith('/spokedu-master/dashboard?')
-      || decoded === '/spokedu-master/favorites'
-      || decoded.startsWith('/spokedu-master/favorites?')
-      || decoded.startsWith('/spokedu-master/classes/')
-      || decoded.startsWith('/spokedu-master/library')
-      || decoded.startsWith('/spokedu-master/class-tools')
-      || decoded.startsWith('/spokedu-master/report')
+      canonical === '/spokedu-lab/activity'
+      || canonical.startsWith('/spokedu-lab/activity?')
+      || canonical === '/spokedu-lab/manage'
+      || canonical.startsWith('/spokedu-lab/manage?')
+      || canonical === '/spokedu-lab/spomove'
+      || canonical.startsWith('/spokedu-lab/spomove?')
+      || canonical === '/spokedu-lab/dashboard'
+      || canonical.startsWith('/spokedu-lab/dashboard?')
+      || canonical === '/spokedu-lab/favorites'
+      || canonical.startsWith('/spokedu-lab/favorites?')
+      || canonical.startsWith('/spokedu-lab/classes/')
+      || canonical.startsWith('/spokedu-lab/library')
+      || canonical.startsWith('/spokedu-lab/class-tools')
+      || canonical.startsWith('/spokedu-lab/report')
     ) {
-      return decoded;
+      return canonical;
     }
   }
   void hubView;

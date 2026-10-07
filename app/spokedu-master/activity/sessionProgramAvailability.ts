@@ -37,5 +37,5 @@ export function buildSessionProgramDetailHref(input: {
     returnTo: input.returnTo,
     source: 'session',
   });
-  return `/spokedu-master/library/${input.programId}?${params.toString()}`;
+  return `/spokedu-lab/library/${input.programId}?${params.toString()}`;
 }

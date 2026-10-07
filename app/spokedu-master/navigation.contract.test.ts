@@ -12,21 +12,21 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const mobile = read('app/spokedu-master/components/layout/TabBar.tsx');
     expect(desktop).toContain('MASTER_NAV_ITEMS');
     expect(mobile).toContain('MASTER_NAV_ITEMS');
-    expect(nav).toContain("href: '/spokedu-master/programs', label: '프로그램'");
-    expect(nav).toContain("href: '/spokedu-master/favorites', label: '즐겨찾기'");
-    expect(nav).toContain("href: '/spokedu-master/manage', label: '수업 관리'");
+    expect(nav).toContain("href: '/spokedu-lab/programs', label: '프로그램'");
+    expect(nav).toContain("href: '/spokedu-lab/favorites', label: '즐겨찾기'");
+    expect(nav).toContain("href: '/spokedu-lab/manage', label: '수업 관리'");
     expect(nav).toContain("key: 'programs'");
     expect(nav).toContain("key: 'favorites'");
     expect(nav).toContain("key: 'manage'");
-    expect(nav).not.toContain("href: '/spokedu-master/profile'");
-    expect(desktop).toContain('href="/spokedu-master/profile"');
-    expect(desktop).not.toContain('action="/spokedu-master/library"');
+    expect(nav).not.toContain("href: '/spokedu-lab/profile'");
+    expect(desktop).toContain('href="/spokedu-lab/profile"');
+    expect(desktop).not.toContain('action="/spokedu-lab/library"');
     expect(desktop).not.toContain('role="search"');
     expect(desktop).not.toContain('name="q"');
     expect(desktop).not.toContain('Search');
     expect(mobile).not.toContain('name="q"');
-    expect(nav).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
-    expect(nav).not.toContain("href: '/spokedu-master/plan'");
+    expect(nav).toContain("href: '/spokedu-lab/class-tools', label: '수업 도구'");
+    expect(nav).not.toContain("href: '/spokedu-lab/plan'");
     expect((nav.match(/href: '/g) ?? [])).toHaveLength(5);
   });
 
@@ -45,14 +45,14 @@ describe('SPOKEDU MASTER primary navigation', () => {
     expect(detail).toContain('수업 시작');
     expect(detail).toContain('resolveSessionWorkspacePresentation');
     expect(detail).toContain("legacyCapture ? 'emphasized'");
-    expect(activity).not.toContain('/spokedu-master/class-record');
+    expect(activity).not.toContain('/spokedu-lab/class-record');
     expect(manage).not.toContain('ClassManagerSheet');
-    expect(legacy).toContain("redirect('/spokedu-master/activity')");
+    expect(legacy).toContain("redirect('/spokedu-lab/activity')");
   });
 
   it('keeps profile commercial and data-management actions available', () => {
     const profile = read('app/spokedu-master/profile/page.tsx');
-    expect(profile).toContain('/spokedu-master/subscription');
+    expect(profile).toContain('display.primaryHref');
     expect(profile).toContain('MASTER_DATA_DELETE_CONFIRMATION');
     expect(profile).toContain('handleLogout');
     expect(profile).toContain('flex-col gap-3 py-4 sm:flex-row');
@@ -66,7 +66,7 @@ describe('SPOKEDU MASTER primary navigation', () => {
 
   it('hides app chrome on login and public documents', () => {
     const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
-    expect(shell).toContain('const isLogin = pathname === `${basePath}/login`');
+    expect(shell).toContain('const isLogin = pathname === `${activeBasePath}/login`');
     expect(shell).toContain('isProgramsEditor || isLogin');
   });
 
@@ -75,7 +75,7 @@ describe('SPOKEDU MASTER primary navigation', () => {
     const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
     const metrics = read('app/spokedu-master/components/layout/tabBarMetrics.ts');
     expect(mobile).toContain('min-[768px]:hidden');
-    expect(mobile).toContain("aria-label=\"SPOKEDU MASTER 주요 메뉴\"");
+    expect(mobile).toContain("aria-label=\"SPOKEDU LAB 주요 메뉴\"");
     expect(mobile).toContain('data-spm-tabbar="true"');
     expect(mobile).toContain('fixed inset-x-0 bottom-0');
     expect(mobile).toContain('env(safe-area-inset-bottom, 0px)');
@@ -87,12 +87,13 @@ describe('SPOKEDU MASTER primary navigation', () => {
 
   it('keeps authenticated MASTER paths out of robots allow rules', () => {
     const robots = read('app/robots.ts');
-    expect(robots).not.toContain("'/spokedu-master/landing'");
+    expect(robots).not.toContain("'/spokedu-lab/landing'");
     expect(read('app/sitemap.ts')).toContain('SPOKEDU_PATHS.subscription');
-    expect(robots).toContain("'/spokedu-master/terms'");
-    expect(robots).toContain("'/spokedu-master/privacy'");
+    expect(robots).toContain("'/spokedu-lab/terms'");
+    expect(robots).toContain("'/spokedu-lab/privacy'");
     expect(robots).toContain("'/spokedu-master'");
-    expect(robots).not.toContain("'/spokedu-master/dashboard'");
-    expect(robots).not.toContain("'/spokedu-master/library'");
+    expect(robots).toContain("'/spokedu-lab'");
+    expect(robots).not.toContain("'/spokedu-lab/dashboard'");
+    expect(robots).not.toContain("'/spokedu-lab/library'");
   });
 });

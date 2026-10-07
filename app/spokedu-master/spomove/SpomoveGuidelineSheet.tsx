@@ -320,7 +320,7 @@ export function SpomoveGuidelineSheet({
   contentOverride,
   contentLoadState = 'ready',
   hubView = 'all',
-  hubReturnHref = '/spokedu-master/spomove',
+  hubReturnHref = '/spokedu-lab/spomove',
   onClose,
 }: {
   preset: OfficialSpomovePreset | null;
@@ -356,9 +356,9 @@ export function SpomoveGuidelineSheet({
       : null;
   const recommendedCueSeconds = contentOverride?.recommendedCueSeconds ?? preset.cueSeconds;
   const cueSeconds = resolveSessionCueSeconds(preset, recommendedCueSeconds);
-  const source = hubReturnHref?.startsWith('/spokedu-master/favorites')
+  const source = hubReturnHref?.startsWith('/spokedu-lab/favorites')
     ? 'favorites'
-    : hubReturnHref?.startsWith('/spokedu-master/dashboard') ? 'home' : hubReturnHref?.includes('session=') ? 'session' : 'spomove';
+    : hubReturnHref?.startsWith('/spokedu-lab/dashboard') ? 'home' : hubReturnHref?.includes('session=') ? 'session' : 'spomove';
   const sessionHref = (entry: 'start' | 'settings') => {
     const baseHref = publicOfficialPresetSessionHref(preset, {
       mode: launchMode,
@@ -375,8 +375,8 @@ export function SpomoveGuidelineSheet({
   const startHref = sessionHref('start');
   const settingsHref = sessionHref('settings');
   const lockedSessionHref = (currentPath: string) => {
-    const gateContext = buildMasterGateContext({ capability: 'spomove', pathname: '/spokedu-master/spomove', currentPath });
-    return gateContext ? buildMasterPaymentHref(gateContext) : '/spokedu-master/subscription';
+    const gateContext = buildMasterGateContext({ capability: 'spomove', pathname: '/spokedu-lab/spomove', currentPath });
+    return gateContext ? buildMasterPaymentHref(gateContext) : '/spokedu-lab/subscription';
   };
   const lockedStartHref = lockedSessionHref(startHref);
   const lockedSettingsHref = lockedSessionHref(settingsHref);

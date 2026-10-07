@@ -95,7 +95,7 @@ export default function AssetRecommendations({ skill, level, direction }: Props)
               </div>
 
               <p className="mr-track-hint" style={{ marginTop: 6 }}>
-                {item.source_label || (item.source_type === 'master' ? 'SPOKEDU MASTER' : '개인 커리큘럼')}
+                {item.source_label || (item.source_type === 'master' ? 'SPOKEDU LAB' : '개인 커리큘럼')}
                 {' · '}L{item.level_min}–L{item.level_max}
               </p>
 

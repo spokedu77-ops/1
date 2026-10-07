@@ -55,15 +55,15 @@ export function hasActivePaidSubscription(snapshot: MasterAccessSnapshot | null 
 
 export function getEntitlementPaymentHref(snapshot: MasterAccessSnapshot | null | undefined): string {
   if (!snapshot || snapshot.subscriptionStatus === 'none') {
-    return '/spokedu-master/payment';
+    return '/spokedu-lab/payment';
   }
   if (snapshot.subscriptionStatus === 'expired' || snapshot.subscriptionStatus === 'cancelled') {
-    return '/spokedu-master/payment';
+    return '/spokedu-lab/payment';
   }
   if (snapshot.plan === 'lite' && snapshot.subscriptionStatus === 'active' && !snapshot.cancelAtPeriodEnd) {
-    return '/spokedu-master/payment?plan=premium';
+    return '/spokedu-lab/payment?plan=premium';
   }
-  return '/spokedu-master/subscription';
+  return '/spokedu-lab/subscription';
 }
 
 export function getEntitlementPrimaryCtaLabel(snapshot: MasterAccessSnapshot | null | undefined): string {
@@ -102,7 +102,7 @@ export function canCreateClassRecordFromSnapshot(snapshot: MasterAccessSnapshot 
 }
 
 export function getUpgradeHrefFromSnapshot(snapshot: MasterAccessSnapshot | null | undefined): string {
-  return hasMasterEntitlement(snapshot) ? '/spokedu-master/subscription' : getEntitlementPaymentHref(snapshot);
+  return hasMasterEntitlement(snapshot) ? '/spokedu-lab/subscription' : getEntitlementPaymentHref(snapshot);
 }
 
 export function getUpgradeLabelFromSnapshot(snapshot: MasterAccessSnapshot | null | undefined): string {

@@ -160,10 +160,10 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     {
       group: '구독 서비스',
       items: [
-        { name: '마스터 라이브러리', href: '/admin/spokedu-master/programs', icon: BookOpen },
-        { name: '마스터 스포무브', href: '/admin/spokedu-master/spomove', icon: Sparkles },
-        { name: 'SPOKEDU MASTER', href: '/spokedu-master/dashboard', icon: LayoutDashboard },
-        { name: 'MASTER ADMIN', href: '/admin/spokedu-master-admin', icon: Settings },
+        { name: 'LAB 라이브러리', href: '/admin/spokedu-lab/programs', icon: BookOpen },
+        { name: 'LAB 스포무브', href: '/admin/spokedu-lab/spomove', icon: Sparkles },
+        { name: 'SPOKEDU LAB', href: '/spokedu-lab/dashboard', icon: LayoutDashboard },
+        { name: 'LAB ADMIN', href: '/admin/spokedu-lab-admin', icon: Settings },
       ],
     },
     {
@@ -206,13 +206,13 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       : adminMenuItems;
 
   const isActiveItem = (href: string) => {
-    if (href === '/admin/spokedu-master/programs') {
-      return pathname === href || pathname.startsWith('/admin/spokedu-master/library');
+      if (href === '/admin/spokedu-lab/programs') {
+        return pathname === href || pathname.startsWith('/admin/spokedu-lab/library');
     }
-    if (href === '/admin/spokedu-master/spomove') {
-      return pathname.startsWith('/admin/spokedu-master/spomove');
+      if (href === '/admin/spokedu-lab/spomove') {
+        return pathname.startsWith('/admin/spokedu-lab/spomove');
     }
-    if (href === '/spokedu-master/dashboard') {
+      if (href === '/spokedu-lab/dashboard') {
       return pathname.startsWith('/spokedu-master');
     }
     if (href === '/admin/spokedu-master-admin') {

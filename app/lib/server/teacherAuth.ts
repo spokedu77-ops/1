@@ -6,7 +6,8 @@
  */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { isPlatformAdminUser } from '@/app/lib/server/adminAuth';
+import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
+import { getMasterAccountType } from '@/app/lib/server/institutionAccount';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
 export type TeacherMaterialsAuthOk = { ok: true; userId: string };
@@ -27,6 +28,18 @@ export async function canAccessTeacherMaterials(
 
   if (await isPlatformAdminUser(user, supabase)) {
     return true;
+  }
+
+  const { accountType, error: accountTypeError } = await getMasterAccountType(
+    getServiceSupabase(),
+    user.id,
+  );
+  if (accountTypeError) {
+    devLogger.error('[canAccessTeacherMaterials] account type lookup failed', accountTypeError);
+    return false;
+  }
+  if (accountType === 'institution') {
+    return false;
   }
 
   const { data, error } = await supabase

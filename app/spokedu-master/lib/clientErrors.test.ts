@@ -17,7 +17,7 @@ describe('SPOKEDU MASTER client error sanitization', () => {
     });
     expect(toMasterClientError(403, 'raw forbidden')).toEqual({
       kind: 'forbidden',
-      message: 'SPOKEDU MASTER 이용 권한을 확인해 주세요.',
+      message: 'SPOKEDU LAB 이용 권한을 확인해 주세요.',
       status: 403,
     });
   });

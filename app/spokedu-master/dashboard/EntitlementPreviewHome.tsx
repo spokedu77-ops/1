@@ -48,7 +48,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
     <main className="mx-auto flex h-full w-full max-w-[920px] flex-col gap-6 overflow-y-auto px-4 pb-28 pt-6 sm:px-6 lg:pb-12">
       <header className="rounded-[22px] border p-6" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)' }}>
         <p className="text-[11px] font-extrabold uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>
-          SPOKEDU MASTER
+          SPOKEDU LAB
         </p>
         <h1 className="mt-2 text-[28px] font-extrabold leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
           {isLapsed ? '이용 기간이 종료되었습니다' : 'Lite로 수업 운영을 이어갈 수 있습니다'}

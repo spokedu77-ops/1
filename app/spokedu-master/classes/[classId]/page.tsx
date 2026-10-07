@@ -29,7 +29,7 @@ export default function ClassDetailPage() {
 
   if (data.status === 'loading' || data.status === 'idle') return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p role="status" className="text-sm font-medium text-slate-500">수업반을 불러오는 중입니다.</p></MasterPageShell></main>;
   if (data.status === 'error') return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p role="alert" className="text-sm font-medium text-rose-700">수업반을 불러오지 못했습니다. <button type="button" onClick={() => void data.reload()} className="underline underline-offset-4">다시 시도</button></p></MasterPageShell></main>;
-  if (!classItem) return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p className="text-sm font-medium text-slate-700">수업반을 찾을 수 없습니다.</p><Link href="/spokedu-master/classes" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">수업반 목록으로</Link></MasterPageShell></main>;
+  if (!classItem) return <main className="h-full bg-[var(--spm-bg)]"><MasterPageShell><p className="text-sm font-medium text-slate-700">수업반을 찾을 수 없습니다.</p><Link href="/spokedu-lab/classes" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700">수업반 목록으로</Link></MasterPageShell></main>;
 
   const updateName = async () => {
     if (!editName.trim() || saving) return;
@@ -39,12 +39,12 @@ export default function ClassDetailPage() {
     finally { setSaving(false); }
   };
 
-  const createSessionHref = `/spokedu-master/activity?date=${getSeoulToday()}&create=1&class=${encodeURIComponent(classItem.id)}`;
+  const createSessionHref = `/spokedu-lab/activity?date=${getSeoulToday()}&create=1&class=${encodeURIComponent(classItem.id)}`;
   const monthLabel = `${Number(selectedAttendanceMonth.slice(5, 7))}월`;
 
   return <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 md:pb-8">
     <MasterPageShell variant="operational">
-      <Link href="/spokedu-master/classes" className="mb-5 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500"><ChevronLeft size={16} />수업반</Link>
+      <Link href="/spokedu-lab/classes" className="mb-5 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500"><ChevronLeft size={16} />수업반</Link>
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-[24px] font-bold leading-tight text-slate-950 sm:text-[26px]">{classItem.name}</h1>

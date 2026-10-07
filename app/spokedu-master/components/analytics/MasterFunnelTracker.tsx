@@ -5,30 +5,31 @@ import { usePathname } from 'next/navigation';
 import { trackMasterFunnelEvent } from '../../lib/funnelEvents';
 
 const CORE_PREFIXES = [
-  '/spokedu-master/dashboard',
-  '/spokedu-master/library',
-  '/spokedu-master/classes',
-  '/spokedu-master/manage',
-  '/spokedu-master/class-tools',
-  '/spokedu-master/spomove',
-  '/spokedu-master/class-record',
-  '/spokedu-master/report',
+  '/spokedu-lab/dashboard',
+  '/spokedu-lab/library',
+  '/spokedu-lab/classes',
+  '/spokedu-lab/manage',
+  '/spokedu-lab/class-tools',
+  '/spokedu-lab/spomove',
+  '/spokedu-lab/class-record',
+  '/spokedu-lab/report',
 ] as const;
 
 export function MasterFunnelTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (pathname === '/spokedu-master/landing') {
+    const canonicalPathname = pathname.replace(/^\/spokedu-master(?=\/|$)/, '/spokedu-lab');
+    if (canonicalPathname === '/spokedu-lab/landing') {
       trackMasterFunnelEvent('landing_visit', { surface: 'landing' });
       return;
     }
-    if (pathname === '/spokedu-master/payment') {
+    if (canonicalPathname === '/spokedu-lab/payment') {
       trackMasterFunnelEvent('upgrade_intent', { surface: 'payment' });
       return;
     }
-    if (CORE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-      trackMasterFunnelEvent('core_use_daily', { surface: pathname.split('/')[2] || 'master' });
+    if (CORE_PREFIXES.some((prefix) => canonicalPathname.startsWith(prefix))) {
+      trackMasterFunnelEvent('core_use_daily', { surface: canonicalPathname.split('/')[2] || 'lab' });
     }
   }, [pathname]);
 

@@ -7,34 +7,34 @@ import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
 
 export const metadata: Metadata = {
   title: {
-    default: 'SPOKEDU MASTER · 체육교육 수업 운영 서비스',
-    template: '%s · SPOKEDU MASTER',
+    default: 'SPOKEDU LAB · 체육교육 수업 운영 서비스',
+    template: '%s · SPOKEDU LAB',
   },
-  description: '체육 강사가 수업 전 자료 확인, 수업 중 진행, 수업 후 기록과 안내문 작성을 이어서 사용할 수 있는 SPOKEDU MASTER 서비스.',
+  description: '체육 강사가 수업 전 자료 확인, 수업 중 진행, 수업 후 기록과 안내문 작성을 이어서 사용할 수 있는 SPOKEDU LAB 서비스.',
   keywords: ['체육교육', '유아체육', 'SPOMOVE', '수업 라이브러리', '체육 강사', '스포츠 교육', '반응 훈련'],
   authors: [{ name: 'SPOKEDU' }],
   creator: 'SPOKEDU',
   metadataBase: new URL(getSpokeduSiteUrl()),
   /** admin/teacher 전역 누수 방지 — MASTER 경로에서만 PWA manifest 연결 */
-  manifest: '/spokedu-master/manifest.webmanifest',
-  applicationName: 'SPOKEDU MASTER',
+  manifest: '/spokedu-lab/manifest.webmanifest',
+  applicationName: 'SPOKEDU LAB',
   appleWebApp: {
-    title: 'SPOKEDU MASTER',
+    title: 'SPOKEDU LAB',
     capable: true,
     statusBarStyle: 'black-translucent',
   },
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
-    siteName: 'SPOKEDU MASTER',
-    title: 'SPOKEDU MASTER · 체육교육 수업 운영 서비스',
+    siteName: 'SPOKEDU LAB',
+    title: 'SPOKEDU LAB · 체육교육 수업 운영 서비스',
     description: '수업 라이브러리, SPOMOVE, 수업 기록과 안내문 흐름을 제공하는 체육교육 수업 운영 서비스입니다.',
-    images: [{ url: '/api/spokedu-master/og', width: 1200, height: 630, alt: 'SPOKEDU MASTER' }],
+    images: [{ url: '/api/spokedu-master/og', width: 1200, height: 630, alt: 'SPOKEDU LAB' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SPOKEDU MASTER',
-    description: '체육 수업 라이브러리와 SPOMOVE, 수업 기록과 안내문 흐름을 제공하는 SPOKEDU MASTER 서비스',
+    title: 'SPOKEDU LAB',
+    description: '체육 수업 라이브러리와 SPOMOVE, 수업 기록과 안내문 흐름을 제공하는 SPOKEDU LAB 서비스',
     images: ['/api/spokedu-master/og'],
   },
   robots: {

@@ -45,8 +45,8 @@ export default function ReportPage() {
     }
   };
   const backToSessionHref = selected
-    ? `/spokedu-master/activity?session=${encodeURIComponent(selected.id)}`
-    : '/spokedu-master/activity';
+    ? `/spokedu-lab/activity?session=${encodeURIComponent(selected.id)}`
+    : '/spokedu-lab/activity';
 
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">

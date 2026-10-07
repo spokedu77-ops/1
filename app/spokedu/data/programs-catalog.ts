@@ -221,7 +221,7 @@ export const trackUsageRows = [
   {
     track: '교육 콘텐츠',
     summary: '수업안·매뉴얼·강사 교육',
-    href: '/subscription',
+    href: '/spokedu-lab',
     programs: ['커리큘럼 콘텐츠', 'PAPS', 'SPOMOVE'],
   },
 ] as const;

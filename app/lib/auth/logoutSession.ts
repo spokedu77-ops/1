@@ -21,7 +21,7 @@ function redirectAfterForeignLogout(): void {
     window.location.replace('/login');
     return;
   }
-  if (path === '/login' || path.startsWith('/spokedu-master/login') || path === '/spokedu-master/landing') {
+  if (path === '/login' || path.startsWith('/spokedu-master/login') || path.startsWith('/spokedu-lab/login') || path === '/spokedu-master/landing' || path === '/spokedu-lab/landing') {
     window.location.reload();
     return;
   }

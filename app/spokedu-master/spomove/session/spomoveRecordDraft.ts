@@ -127,5 +127,5 @@ export function buildSpomoveRecordHref(programId: string, draft: string, storage
   const draftKey = storeSpomoveRecordDraft({ version: 1, programId, runId: runId ?? null, ownerId: ownerId?.trim() || null, draft }, storage ?? sessionStorage);
   const compactParams = new URLSearchParams({ program: programId, spomoveDraftKey: draftKey });
   if (runId) compactParams.set('spomoveRunId', runId);
-  return `/spokedu-master/activity?${compactParams.toString()}`;
+  return `/spokedu-lab/activity?${compactParams.toString()}`;
 }

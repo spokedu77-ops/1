@@ -33,7 +33,7 @@ function SubscriptionStatusCard({
   onCancel: () => void;
 }) {
   const billingSupportHref = buildMasterSupportMailto(
-    'SPOKEDU MASTER 자동결제 확인 요청',
+    'SPOKEDU LAB 자동결제 확인 요청',
     `로그인한 이메일:\n발생 시각:\n선택한 플랜: ${display.planLabel}\n화면의 오류 내용: ${display.warningText ?? '자동결제 상태 확인 필요'}\n\n※ 결제키, 카드번호, 비밀번호는 적지 마세요.`,
   );
   return (
@@ -99,9 +99,9 @@ function SubscriptionStatusCard({
         </Link>
       ) : null}
 
-      {display.primaryHref === '/spokedu-master/payment' && display.primaryLabel ? (
+      {display.primaryHref === '/spokedu-lab/payment' && display.primaryLabel ? (
         <Link
-          href="/spokedu-master/payment"
+          href="/spokedu-lab/payment"
           className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-extrabold focus-visible:outline-none"
         >
           {display.primaryLabel}
@@ -172,7 +172,7 @@ function SubscriptionPageContent() {
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
       <header className="mx-auto flex w-full max-w-[880px] items-center gap-3 px-5 pb-4 pt-5 sm:px-8">
         <Link
-          href="/spokedu-master/profile"
+          href="/spokedu-lab/profile"
           className="grid h-11 w-11 place-items-center rounded-[10px]"
           style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}
           aria-label="이전 화면"
@@ -180,7 +180,7 @@ function SubscriptionPageContent() {
           <ArrowLeft size={18} color="var(--spm-t2)" />
         </Link>
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU MASTER</p>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU LAB</p>
           <h1 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>구독 관리</h1>
         </div>
       </header>

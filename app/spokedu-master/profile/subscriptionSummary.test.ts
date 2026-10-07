@@ -64,7 +64,7 @@ describe('subscriptionSummary', () => {
     expect(getSubscriptionPlanLabel(value)).toBe('프리미엄');
     expect(getSubscriptionStatusLabel(value)).toBe('이용 중');
     expect(getSubscriptionPrimaryLabel(value)).toBe('구독 관리');
-    expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-master/subscription');
+    expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-lab/subscription');
     expect(getSubscriptionDisplaySummary(value)).toMatchObject({
       state: 'active',
       amountText: '월 28,900원',
@@ -101,14 +101,14 @@ describe('subscriptionSummary', () => {
     expect(getSubscriptionPlanLabel(value)).toBe('라이트');
     expect(getSubscriptionStatusLabel(value)).toBe('이용 중');
     expect(getSubscriptionPrimaryLabel(value)).toBe('구독 관리');
-    expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-master/subscription');
+    expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-lab/subscription');
     expect(getSubscriptionDisplaySummary(value)).toMatchObject({
       state: 'active',
       amountText: '월 9,900원',
       isDirectBillingPlan: true,
       canCancel: true,
       canUpgradeToPremium: true,
-      upgradeHref: '/spokedu-master/payment?plan=premium',
+      upgradeHref: '/spokedu-lab/payment?plan=premium',
       upgradeLabel: '프리미엄으로 업그레이드',
     });
   });
@@ -213,7 +213,7 @@ describe('subscriptionSummary', () => {
     expect(getSubscriptionPrimaryLabel(value)).toBe('구독 선택');
     expect(getSubscriptionDisplaySummary(value)).toMatchObject({
       state: 'ended',
-      primaryHref: '/spokedu-master/payment',
+      primaryHref: '/spokedu-lab/payment',
     });
   });
 
@@ -229,7 +229,7 @@ describe('subscriptionSummary', () => {
 
     expect(getSubscriptionPlanLabel(value)).toBe('없음');
     expect(getSubscriptionStatusLabel(value)).toBe('이용권 없음');
-    expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-master/payment');
+    expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-lab/payment');
     expect(getSubscriptionDisplaySummary(value)).toMatchObject({
       state: 'none',
       primaryLabel: '구독 선택',

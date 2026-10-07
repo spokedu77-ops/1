@@ -6,7 +6,7 @@ const read = (path: string) => readFileSync(path, 'utf8');
 describe('legacy class-record entry retirement', () => {
   it('redirects every legacy record URL to the Session calendar', () => {
     const route = read('app/spokedu-master/class-record/page.tsx');
-    expect(route).toContain("redirect('/spokedu-master/activity')");
+    expect(route).toContain("redirect('/spokedu-lab/activity')");
     expect(route).not.toContain('RecordEntryView');
     expect(route).not.toContain('recordDate');
     expect(route).not.toContain('studentMemos');

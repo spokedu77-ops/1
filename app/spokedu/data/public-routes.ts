@@ -13,7 +13,7 @@ export const SPOKEDU_PATHS = {
   spomove: '/spomove',
   spomoveCatalog: '/spomove/catalog',
   /** 공식 public route — 내부 모듈명은 curriculum 유지 가능 */
-  subscription: '/subscription',
+  subscription: '/spokedu-lab',
   records: '/records',
   contact: '/contact',
   spomat: '/spomat',
@@ -36,7 +36,7 @@ export function spokeduRecordPath(slug: string): string {
   return `${SPOKEDU_PATHS.records}/${slug}`;
 }
 
-/** 구독시스템 mode query — `/subscription?mode=` */
+/** 구독시스템 mode query — `/spokedu-lab?mode=` */
 export function spokeduSubscriptionHref(query?: {
   mode?: string;
   hash?: string;

@@ -54,7 +54,7 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
   const subscriptionBlockedFeature =
     (requirement === 'spomove' && hasBaseSubscriptionAccess && !snapshot.canUseSpomove) ||
     (requirement === 'records' && snapshot.subscriptionStatus === 'active' && !snapshot.canUseRecords);
-  const primaryHref = model?.paymentHref ?? (subscriptionBlockedFeature ? '/spokedu-master/subscription' : '/spokedu-master/payment');
+  const primaryHref = model?.paymentHref ?? (subscriptionBlockedFeature ? '/spokedu-lab/subscription' : '/spokedu-lab/payment');
   const primaryLabel = model?.ctaLabel ?? (subscriptionBlockedFeature ? '구독 관리' : '구독 선택');
 
   return (
@@ -102,7 +102,7 @@ export function SubscriptionGateWall({ requirement, snapshot, model }: Subscript
           </Link>
           {!subscriptionBlockedFeature ? (
             <Link
-              href="/spokedu-master/dashboard"
+              href="/spokedu-lab/dashboard"
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white text-[13px] font-extrabold text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
             >
               <ArrowLeft size={15} />

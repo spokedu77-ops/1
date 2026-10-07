@@ -25,7 +25,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [checkSlow, setCheckSlow] = useState(false);
   const isNoteRoute = pathname != null && pathname.startsWith('/admin/note');
   const isFullscreenRoute =
-    pathname != null && (pathname === '/admin/spokedu-master' || pathname.startsWith('/admin/spokedu-master/'));
+    pathname != null && (
+      pathname === '/admin/spokedu-master'
+      || pathname.startsWith('/admin/spokedu-master/')
+      || pathname === '/admin/spokedu-lab'
+      || pathname.startsWith('/admin/spokedu-lab/')
+    );
   // 실제 존재하는 플레이어 라우트만 유지해 유령 prefix 재유입을 막습니다.
   const GAME_ROUTE_PREFIXES = ['/admin/camera', '/admin/spomove/training/_player'] as const;
   const isGameRoute =
