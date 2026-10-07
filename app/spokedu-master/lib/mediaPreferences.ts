@@ -26,18 +26,23 @@ export function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-/** Hosts allowed by next.config.ts images.remotePatterns (keep in sync). */
+/**
+ * Remote hosts that may use Vercel /_next/image.
+ * Supabase MASTER assets are WebP at upload — serve the public URL directly.
+ * Keep in sync with next.config.ts images.remotePatterns (Supabase stays for next/image src allowlist only).
+ */
 export function canOptimizeRemoteImage(src: string): boolean {
   if (!/^https?:\/\//i.test(src)) return true;
   try {
     const host = new URL(src).hostname;
-    return (
-      host === 'img.youtube.com' ||
-      host === 'i.postimg.cc' ||
-      host === 'supabase.co' ||
-      host.endsWith('.supabase.co')
-    );
+    if (host === 'supabase.co' || host.endsWith('.supabase.co')) return false;
+    return host === 'img.youtube.com' || host === 'i.postimg.cc';
   } catch {
     return false;
   }
+}
+
+/** Pass as next/image `unoptimized` — bypasses Vercel Image Optimization for direct remote URLs. */
+export function nextImageUnoptimized(src: string): boolean {
+  return /^https?:\/\//i.test(src) && !canOptimizeRemoteImage(src);
 }

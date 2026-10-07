@@ -157,6 +157,17 @@ async function buildCandidates(supabase: ReturnType<typeof getServiceSupabase>) 
     const path = storagePathFromPublicUrl(String(row.sm_setup_image_url ?? ''));
     if (!path || !Number.isFinite(curriculumId)) continue;
     referenced.add(path);
+    if (!fileBytes.has(path)) {
+      candidates.push({
+        kind: 'setup',
+        curriculumId,
+        path,
+        bytes: 0,
+        action: 'skip',
+        reason: 'DB URL만 있고 Storage에 파일 없음',
+      });
+      continue;
+    }
     const bytes = fileBytes.get(path) ?? 0;
     if (shouldSkipRecompress(path, bytes, 'setup')) {
       candidates.push({
@@ -183,6 +194,17 @@ async function buildCandidates(supabase: ReturnType<typeof getServiceSupabase>) 
     const path = storagePathFromPublicUrl(rawPath) || rawPath.split('?')[0];
     if (!path) continue;
     referenced.add(path);
+    if (!fileBytes.has(path)) {
+      candidates.push({
+        kind: 'thumbnail',
+        presetId,
+        path,
+        bytes: 0,
+        action: 'skip',
+        reason: '팩 경로만 있고 Storage에 파일 없음',
+      });
+      continue;
+    }
     const bytes = fileBytes.get(path) ?? 0;
     if (shouldSkipRecompress(path, bytes, 'thumbnail')) {
       candidates.push({

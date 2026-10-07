@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 
+import { nextImageUnoptimized } from '../lib/mediaPreferences';
 import { SPOMOVE_IMAGE_THUMB_ASPECT_CLASS } from './spomoveMediaFit';
 
 function isSvgSrc(src: string) {
@@ -40,6 +41,7 @@ export function SpomoveLayeredThumb({
   const homeCoverFourThree = presentation === 'home-cover-4-3';
   const fullVisibleFourThree = presentation === 'full-visible-4-3';
   const favoritesCoverFourThree = presentation === 'favorites-cover-4-3';
+  const unoptimized = nextImageUnoptimized(src);
 
   return (
     <div
@@ -55,6 +57,7 @@ export function SpomoveLayeredThumb({
             sizes={sizes}
             quality={75}
             priority={priority}
+            unoptimized={unoptimized}
             className="h-full w-full object-cover object-center"
             onError={fail}
           />
@@ -66,6 +69,7 @@ export function SpomoveLayeredThumb({
             sizes={sizes}
             quality={75}
             priority={priority}
+            unoptimized={unoptimized}
             className="object-cover object-center"
             onError={fail}
           />
@@ -77,6 +81,7 @@ export function SpomoveLayeredThumb({
             sizes={sizes}
             quality={75}
             priority={priority}
+            unoptimized={unoptimized}
             className="object-contain object-center"
             onError={fail}
           />
@@ -88,6 +93,7 @@ export function SpomoveLayeredThumb({
             sizes={sizes}
             quality={75}
             priority={priority}
+            unoptimized={unoptimized}
             className="object-fill object-center"
             onLoad={(event) => {
               if (isSvgSrc(src) || event.currentTarget.naturalWidth / Math.max(event.currentTarget.naturalHeight, 1) > 3) {
@@ -105,6 +111,7 @@ export function SpomoveLayeredThumb({
               sizes={sizes}
               quality={40}
               priority={priority}
+              unoptimized={unoptimized}
               aria-hidden
               className="scale-110 object-cover object-center blur-xl opacity-55"
             />
@@ -116,6 +123,7 @@ export function SpomoveLayeredThumb({
               sizes={sizes}
               quality={75}
               priority={priority}
+              unoptimized={unoptimized}
               className="object-contain object-center"
               onLoad={() => {
                 if (isSvgSrc(src)) setStretchSrc(src);

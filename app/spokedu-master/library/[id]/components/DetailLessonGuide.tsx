@@ -7,11 +7,10 @@ import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 
 import { TrackedVideoIframe } from '../../../components/lesson/TrackedVideoIframe';
 import type { LessonDisplayModel } from '../../../lib/lessonDisplayModel';
-import { canOptimizeRemoteImage, preferLiteMedia } from '../../../lib/mediaPreferences';
+import { nextImageUnoptimized, preferLiteMedia } from '../../../lib/mediaPreferences';
 import {
   getVideoThumbnailCandidates,
   isInterimDedicatedHero,
-  isRemoteImage,
   isStockPlaceholderImage,
 } from '../../../lib/program-media';
 import type { RelatedLessonVideo } from '../../relatedLessonVideos';
@@ -64,10 +63,6 @@ export function splitLessonTitle(title: string): {
   return { koreanTitle, englishTitle };
 }
 
-function imageNeedsUnoptimized(src: string) {
-  return isRemoteImage(src) && !canOptimizeRemoteImage(src);
-}
-
 function SetupImage({ title, src }: { title: string; src: string }) {
   const [open, setOpen] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -90,7 +85,7 @@ function SetupImage({ title, src }: { title: string; src: string }) {
     };
   }, [open]);
 
-  const unoptimized = imageNeedsUnoptimized(src);
+  const unoptimized = nextImageUnoptimized(src);
   return (
     <>
       <button
@@ -436,7 +431,7 @@ function RelatedVideosSection({ videos }: { videos: RelatedLessonVideo[] }) {
                   fill
                   sizes="(min-width: 1220px) 370px, (min-width: 900px) 31vw, 100vw"
                   className="object-cover transition duration-200 ease-out group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
-                  unoptimized={video.thumbnailUrl.includes('img.youtube.com') || imageNeedsUnoptimized(video.thumbnailUrl)}
+                  unoptimized={video.thumbnailUrl.includes('img.youtube.com') || nextImageUnoptimized(video.thumbnailUrl)}
                 />
               ) : (
                 <Play className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 text-white/80" />

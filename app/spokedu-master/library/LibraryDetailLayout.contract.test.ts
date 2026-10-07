@@ -184,7 +184,7 @@ describe('SPOKEDU MASTER library detail final IA', () => {
     expect(related).toContain('Boolean(currentCategory) && Boolean(candidateCategory)');
     expect(related).toContain('getVideoThumbnail(videoUrl) ?? getDedicatedRelatedThumbnail(candidate)');
     expect(guide).not.toContain('<SetupImage title={model.title} src={model.setupImageUrl} /> : <div />');
-    expect(guide).toContain("video.thumbnailUrl.includes('img.youtube.com') || imageNeedsUnoptimized");
+    expect(guide).toContain("video.thumbnailUrl.includes('img.youtube.com') || nextImageUnoptimized");
     expect(view).not.toContain('RelatedSpomoveSection');
     expect(view).not.toContain('관련 콘텐츠');
     expect(view).not.toContain('recentEvidenceRecords');

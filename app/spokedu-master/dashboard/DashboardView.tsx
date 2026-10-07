@@ -22,6 +22,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
+import { nextImageUnoptimized } from '../lib/mediaPreferences';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
   normalizeSpomoveContentMap,
@@ -899,6 +900,7 @@ function EntitledDashboardView() {
           fill
           priority
           sizes="(min-width: 1216px) 1184px, 100vw"
+          unoptimized={nextImageUnoptimized(homeHeroSrc)}
           className="-z-20 object-cover object-[58%_40%] sm:object-[center_40%]"
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950 via-slate-950/75 to-slate-950/20" aria-hidden />

@@ -3,9 +3,9 @@
 import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 
+import { nextImageUnoptimized } from '../../lib/mediaPreferences';
 import {
   getImageFallbackSrc,
-  isRemoteImage,
   normalizeImageSrc,
 } from '../../lib/program-media';
 
@@ -37,7 +37,7 @@ export function InstructionalThumb({
   const imageSrc = normalizeImageSrc(src);
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(imageSrc) && !failed;
-  const unoptimized = isRemoteImage(imageSrc) && !imageSrc.includes('.supabase.co');
+  const unoptimized = nextImageUnoptimized(imageSrc);
   const svg = isSvgSrc(imageSrc);
   const cleanSquare = presentation === 'home-clean-square';
   const homeCoverFourThree = presentation === 'home-cover-4-3';

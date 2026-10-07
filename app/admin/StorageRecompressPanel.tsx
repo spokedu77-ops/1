@@ -26,6 +26,12 @@ type MediaSummary = {
   byScope?: Record<string, { recompress: number; orphan: number; bytes: number }>;
 };
 
+type ApplyItemResult = {
+  path: string;
+  status: string;
+  error?: string;
+};
+
 type ApplyResponse = {
   error?: string;
   processed?: number;
@@ -33,6 +39,7 @@ type ApplyResponse = {
   errorCount?: number;
   remaining?: number;
   savedMb?: number;
+  results?: ApplyItemResult[];
 };
 
 const MEDIA_SCOPES = ['notices', 'weekly_best', 'note-assets', 'curriculum', 'legacy'] as const;
@@ -164,11 +171,27 @@ export function StorageRecompressPanel() {
       const saved = json.savedMb ?? 0;
       setLastSavedMb(saved);
       setRemaining(json.remaining ?? 0);
-      toast.success(
+      const errorSamples = [
+        ...new Set(
+          (json.results ?? [])
+            .filter((row) => row.status === 'error' && row.error)
+            .map((row) => row.error as string),
+        ),
+      ].slice(0, 3);
+      const baseMessage =
         `이번 배치: ${json.okCount ?? 0}건 처리, 약 ${saved}MB 절감` +
-          (json.errorCount ? ` (실패 ${json.errorCount})` : '') +
-          (json.remaining ? ` · 남은 ${json.remaining}건` : '')
-      );
+        (json.errorCount ? ` (실패 ${json.errorCount})` : '') +
+        (json.remaining ? ` · 남은 ${json.remaining}건` : '');
+      if (json.errorCount && json.errorCount > 0) {
+        toast.error(
+          errorSamples.length
+            ? `${baseMessage}\n원인 예: ${errorSamples.join(' · ')}`
+            : baseMessage,
+          { duration: 12_000 },
+        );
+      } else {
+        toast.success(baseMessage);
+      }
       await loadPreview(mode);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '정리에 실패했습니다.');

@@ -8,6 +8,7 @@ import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/sto
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import { MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
+import { nextImageUnoptimized } from '../lib/mediaPreferences';
 import {
   normalizeProgramGatewayMedia,
   PROGRAM_GATEWAY_PACK_ID,
@@ -135,6 +136,7 @@ function ProgramGatewayCard({
             fill
             sizes="(min-width: 1024px) 40vw, 100vw"
             loading="eager"
+            unoptimized={nextImageUnoptimized(image)}
             className="object-cover"
             style={{ objectPosition: imagePosition }}
           />

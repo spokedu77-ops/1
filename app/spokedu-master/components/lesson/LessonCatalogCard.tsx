@@ -8,6 +8,7 @@ import { CategoryIcon } from '../ui/ProgramThumb';
 import { InstructionalThumb } from '../media/InstructionalThumb';
 import { MV_CONTENT_TITLE } from '../../lib/masterUiClasses';
 import { ContentCardMetaLine } from '../content/ContentCardMetaLine';
+import { canOptimizeRemoteImage } from '../../lib/mediaPreferences';
 import {
   getImageFallbackSrc,
   isRemoteImage,
@@ -55,19 +56,6 @@ function placeholderBackground(category: string) {
   return '#e2e8f0';
 }
 
-function isSupabasePublicStorageImage(src: string) {
-  try {
-    const url = new URL(src);
-    return (
-      url.protocol === 'https:' &&
-      url.hostname.endsWith('.supabase.co') &&
-      url.pathname.startsWith('/storage/v1/object/public/')
-    );
-  } catch {
-    return false;
-  }
-}
-
 function CoverImage({
   src,
   alt,
@@ -89,7 +77,7 @@ function CoverImage({
     if (shouldStretchToSquare(width, height, imageSrc)) setStretch(true);
   };
 
-  if (isRemoteImage(imageSrc) && !isSupabasePublicStorageImage(imageSrc)) {
+  if (isRemoteImage(imageSrc) && !canOptimizeRemoteImage(imageSrc)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- remote program heroes may sit outside next/image patterns
       <img
