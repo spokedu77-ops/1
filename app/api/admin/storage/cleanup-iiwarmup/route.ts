@@ -9,13 +9,12 @@
  *   scopes: 'notices' | 'weekly_best' | 'note-assets' | 'curriculum' | 'legacy'
  */
 import { NextRequest, NextResponse } from 'next/server';
-import sharp from 'sharp';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { BUCKET_NAME } from '@/app/lib/admin/constants/storage';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const MEDIA_MAX = 1600;
 const MEDIA_QUALITY = 85;
@@ -193,7 +192,21 @@ async function buildCandidates(
         const path = storagePathFromPublicUrl(url);
         if (!path.startsWith('notices/')) continue;
         referenced.add(path);
-        const bytes = (await objectBytes(supabase, path)) ?? 0;
+        const listedBytes = await objectBytes(supabase, path);
+        if (listedBytes == null) {
+          candidates.push({
+            kind: 'notice',
+            scope: 'notices',
+            path,
+            bytes: 0,
+            action: 'skip',
+            reason: 'DB URL만 있고 Storage에 파일 없음',
+            noticeId,
+            oldUrl: url,
+          });
+          continue;
+        }
+        const bytes = listedBytes;
         if (shouldSkip(path, bytes)) {
           candidates.push({
             kind: 'notice',
@@ -245,7 +258,21 @@ async function buildCandidates(
         const path = storagePathFromPublicUrl(url);
         if (!path.startsWith('weekly_best/')) continue;
         referenced.add(path);
-        const bytes = (await objectBytes(supabase, path)) ?? 0;
+        const listedBytes = await objectBytes(supabase, path);
+        if (listedBytes == null) {
+          candidates.push({
+            kind: 'weekly_best',
+            scope: 'weekly_best',
+            path,
+            bytes: 0,
+            action: 'skip',
+            reason: 'DB URL만 있고 Storage에 파일 없음',
+            weeklyBestId,
+            oldUrl: url.trim(),
+          });
+          continue;
+        }
+        const bytes = listedBytes;
         if (shouldSkip(path, bytes)) {
           candidates.push({
             kind: 'weekly_best',
@@ -335,7 +362,21 @@ async function buildCandidates(
       const path = storagePathFromPublicUrl(url);
       if (!path.startsWith('curriculum/')) continue;
       referenced.add(path);
-      const bytes = (await objectBytes(supabase, path)) ?? 0;
+      const listedBytes = await objectBytes(supabase, path);
+      if (listedBytes == null) {
+        candidates.push({
+          kind: 'curriculum',
+          scope: 'curriculum',
+          path,
+          bytes: 0,
+          action: 'skip',
+          reason: 'DB URL만 있고 Storage에 파일 없음',
+          equipmentId,
+          oldUrl: url,
+        });
+        continue;
+      }
+      const bytes = listedBytes;
       if (shouldSkip(path, bytes)) {
         candidates.push({
           kind: 'curriculum',
@@ -393,6 +434,7 @@ async function buildCandidates(
 }
 
 async function recompressBuffer(input: Buffer) {
+  const { default: sharp } = await import('sharp');
   return sharp(input)
     .rotate()
     .resize({
@@ -668,16 +710,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const errors = results.filter((r) => r.status === 'error' && r.error);
+    const errorSamples = [...new Set(errors.map((r) => r.error as string))].slice(0, 5);
+
     return NextResponse.json({
       dryRun: false,
       scopes,
       summary: summaryBefore,
       processed: results.length,
       okCount: results.filter((r) => r.status === 'ok').length,
-      errorCount: results.filter((r) => r.status === 'error').length,
+      errorCount: errors.length,
       remaining: Math.max(0, queue.length - batch.length),
       savedBytes,
       savedMb: Math.round((savedBytes / 1024 / 1024) * 10) / 10,
+      errorSamples,
       results,
     });
   } catch (error) {

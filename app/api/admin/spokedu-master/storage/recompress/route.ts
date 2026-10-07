@@ -52,16 +52,20 @@ type ApplyItemResult = {
   error?: string;
 };
 
+function normalizeStorageObjectPath(path: string): string {
+  return path.trim().replace(/^\/+/, '');
+}
+
 function storagePathFromPublicUrl(value: string): string {
   const text = value.trim();
   if (!text) return '';
-  if (!/^https?:\/\//i.test(text)) return text.split('?')[0] ?? '';
+  if (!/^https?:\/\//i.test(text)) return normalizeStorageObjectPath(text.split('?')[0] ?? '');
   try {
     const url = new URL(text);
     const marker = `/storage/v1/object/public/${BUCKET_NAME}/`;
     const markerIndex = url.pathname.indexOf(marker);
     if (markerIndex < 0) return '';
-    return decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
+    return normalizeStorageObjectPath(decodeURIComponent(url.pathname.slice(markerIndex + marker.length)));
   } catch {
     return '';
   }
@@ -500,6 +504,10 @@ export async function POST(request: NextRequest) {
     const errorCount = results.filter((r) => r.status === 'error').length;
     const remaining = Math.max(0, queue.length - batch.length);
 
+    const errorSamples = [
+      ...new Set(results.filter((r) => r.status === 'error' && r.error).map((r) => r.error as string)),
+    ].slice(0, 5);
+
     return NextResponse.json({
       dryRun: false,
       summary: summaryBefore,
@@ -509,6 +517,7 @@ export async function POST(request: NextRequest) {
       remaining,
       savedBytes,
       savedMb: Math.round((savedBytes / 1024 / 1024) * 10) / 10,
+      errorSamples,
       results,
     });
   } catch (error) {

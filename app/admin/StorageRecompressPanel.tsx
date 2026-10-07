@@ -39,6 +39,7 @@ type ApplyResponse = {
   errorCount?: number;
   remaining?: number;
   savedMb?: number;
+  errorSamples?: string[];
   results?: ApplyItemResult[];
 };
 
@@ -171,13 +172,15 @@ export function StorageRecompressPanel() {
       const saved = json.savedMb ?? 0;
       setLastSavedMb(saved);
       setRemaining(json.remaining ?? 0);
-      const errorSamples = [
-        ...new Set(
-          (json.results ?? [])
-            .filter((row) => row.status === 'error' && row.error)
-            .map((row) => row.error as string),
-        ),
-      ].slice(0, 3);
+      const errorSamples =
+        json.errorSamples ??
+        [
+          ...new Set(
+            (json.results ?? [])
+              .filter((row) => row.status === 'error' && row.error)
+              .map((row) => row.error as string),
+          ),
+        ].slice(0, 3);
       const baseMessage =
         `이번 배치: ${json.okCount ?? 0}건 처리, 약 ${saved}MB 절감` +
         (json.errorCount ? ` (실패 ${json.errorCount})` : '') +

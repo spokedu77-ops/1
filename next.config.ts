@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["sharp"],
   experimental: {
     // lucide 배럴 + Turbopack HMR 시 "module factory is not available" 완화 및 트리쉐이킹
     optimizePackageImports: [
