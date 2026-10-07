@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { INSTITUTION_LAB_DESTINATION, normalizeInstitutionLoginId } from './institutionAccount';
 
@@ -13,5 +15,8 @@ describe('normalizeInstitutionLoginId', () => {
 
   it('reuses the existing production LAB route', () => {
     expect(INSTITUTION_LAB_DESTINATION).toBe('/spokedu-lab');
+    const teacherLayout = readFileSync(join(process.cwd(), 'app/teacher/layout.tsx'), 'utf8');
+    expect(teacherLayout).toContain("router.replace('/spokedu-lab')");
+    expect(teacherLayout).not.toContain("router.replace('/spokedu-master/dashboard')");
   });
 });

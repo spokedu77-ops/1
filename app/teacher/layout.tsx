@@ -26,7 +26,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     void fetch('/api/institution/status', { credentials: 'include', cache: 'no-store' })
       .then((response) => {
         if (!cancelled && response.ok) {
-          router.replace('/spokedu-master/dashboard');
+          router.replace('/spokedu-lab');
           return;
         }
         if (!cancelled && response.status >= 500) {
