@@ -206,7 +206,7 @@ function StopwatchTab() {
               지우기
             </button>
           </div>
-          <ol className="grid min-h-0 flex-1 grid-cols-2 content-start gap-1.5 overflow-hidden" style={{ gridAutoRows: 'minmax(0, 2.25rem)' }}>
+          <ol className="grid min-h-0 flex-1 grid-cols-2 content-start gap-1.5 overflow-y-auto overscroll-contain pb-2 pr-1" style={{ gridAutoRows: 'minmax(0, 2.25rem)' }}>
             {laps.map((lap, index) => (
               <li key={`${lap}-${index}`} className="flex min-h-0 items-center justify-between overflow-hidden rounded-[12px] px-3" style={{ background: 'var(--spm-s3)' }}>
                 <span className="text-[12px] font-extrabold" style={{ color: 'var(--spm-t3)' }}>#{laps.length - index}</span>

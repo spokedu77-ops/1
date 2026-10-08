@@ -13,6 +13,7 @@ import {
 } from '../profile/subscriptionSummary';
 import { buildMasterSupportMailto } from '../lib/productCatalog';
 import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
+import { getSafeMasterPostPaymentPath } from '../lib/masterPaymentReturn';
 
 const NON_BILLING_CANCEL_MESSAGE = '자동결제 해지 대상이 아닙니다. 고객센터로 문의해 주세요.';
 
@@ -37,7 +38,8 @@ function SubscriptionStatusCard({
     `로그인한 이메일:\n발생 시각:\n선택한 플랜: ${display.planLabel}\n화면의 오류 내용: ${display.warningText ?? '자동결제 상태 확인 필요'}\n\n※ 결제키, 카드번호, 비밀번호는 적지 마세요.`,
   );
   return (
-    <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+    <section className="relative overflow-hidden rounded-[18px] bg-white p-5 sm:p-6" style={{ border: '1px solid var(--spm-br2)' }}>
+      <span className="absolute inset-y-0 left-0 w-1 bg-[var(--spm-acc)]" aria-hidden="true" />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>현재 이용권</p>
@@ -114,6 +116,7 @@ function SubscriptionStatusCard({
 function SubscriptionPageContent() {
   const searchParams = useSearchParams();
   const justUpgraded = searchParams.get('upgraded') === '1';
+  const returnHref = getSafeMasterPostPaymentPath(searchParams.get('next'), '/spokedu-lab/profile');
   const [data, setData] = useState<SubscriptionSummaryData | null>(null);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -170,9 +173,9 @@ function SubscriptionPageContent() {
 
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
-      <header className="mx-auto flex w-full max-w-[880px] items-center gap-3 px-5 pb-4 pt-5 sm:px-8">
+      <header className="mx-auto flex w-full max-w-[760px] items-center gap-3 px-5 pb-6 pt-5 sm:px-8 sm:pt-8">
         <Link
-          href="/spokedu-lab/profile"
+          href={returnHref}
           className="grid h-11 w-11 place-items-center rounded-[10px]"
           style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}
           aria-label="이전 화면"
@@ -185,7 +188,7 @@ function SubscriptionPageContent() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[880px] px-5 pb-16 sm:px-8">
+      <main className="mx-auto w-full max-w-[760px] px-5 pb-16 sm:px-8">
         {loadStatus === 'loading' ? (
           <section className="flex h-60 items-center justify-center rounded-[20px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <Loader2 size={22} className="animate-spin" color="var(--spm-t3)" />

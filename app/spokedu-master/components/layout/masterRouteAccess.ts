@@ -14,6 +14,7 @@ export function isProtectedMasterRoute(pathname: string, basePath: string) {
     `${basePath}/terms`,
     `${basePath}/privacy`,
     `${basePath}/parent`,
+    `${basePath}/promotions/redeem`,
     `${basePath}/login`,
     `${basePath}/auth`,
   ];
@@ -111,6 +112,7 @@ const SAFE_MASTER_RETURN_PREFIXES = [
   '/spokedu-master/terms',
   '/spokedu-master/privacy',
   '/spokedu-master/parent',
+  '/spokedu-master/promotions/redeem',
 ];
 
 const BLOCKED_RETURN_QUERY_KEYS = new Set([

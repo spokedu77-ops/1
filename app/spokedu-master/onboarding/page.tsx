@@ -12,7 +12,7 @@ const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등
 const PROGRAM_TYPES = ['놀이체육', '뉴스포츠', '협동·팀빌딩', '기초체력', 'SPOMOVE', '특수체육'];
 const STEP_LABELS = ['환경', '수업 환경', '시작'];
 const START_ITEMS = [
-  { icon: BookOpen, title: '무료 수업 1개 전체 체험', desc: '지정된 놀이체육을 상세 자료와 영상까지 바로 열어볼 수 있습니다.' },
+  { icon: BookOpen, title: '무료 수업 1개 미리보기', desc: '지정된 놀이체육의 핵심 준비와 진행 요약을 빠른 미리보기로 확인할 수 있습니다.' },
   { icon: UsersRound, title: 'Library 전체 둘러보기', desc: '검색·필터·추천으로 전체 놀이체육 목록을 탐색할 수 있습니다.' },
   { icon: Wrench, title: '수업 도구 바로 사용', desc: '스탑워치, 타이머, 점수판을 로그인 직후부터 사용할 수 있습니다.' },
 ] as const;
@@ -178,7 +178,7 @@ export default function OnboardingPage() {
                     <h2 className="mt-1 text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>MASTER 시작하기</h2>
                   </div>
                 </div>
-                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이번 주 첫 무료 수업 1개를 체험하고 Library와 스탑워치·타이머·점수판을 사용할 수 있습니다.</p>
+                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이번 주 첫 무료 수업 1개를 빠르게 미리보고 Library와 스탑워치·타이머·점수판을 사용할 수 있습니다.</p>
                 <div className="grid gap-2">
                   {START_ITEMS.map(({ icon: Icon, title, desc }) => (
                     <div key={title} className="flex items-start gap-3 rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>

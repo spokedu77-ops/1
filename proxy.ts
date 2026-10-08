@@ -12,6 +12,7 @@ const SPOKEDU_MASTER_PUBLIC_PREFIXES = [
   '/spokedu-master/privacy',
   '/spokedu-master/terms',
   '/spokedu-master/parent',
+  '/spokedu-master/promotions/redeem',
   '/spokedu-master/onboarding',
   '/spokedu-master/manifest.webmanifest',
 ];

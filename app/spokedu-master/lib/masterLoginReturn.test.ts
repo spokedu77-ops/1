@@ -17,6 +17,7 @@ describe('SPOKEDU MASTER safe login return', () => {
     '/spokedu-master/spomove', '/spokedu-master/profile',
     '/spokedu-master/subscription', '/spokedu-master/payment',
     '/spokedu-master/onboarding', '/spokedu-master/shop',
+    '/spokedu-master/promotions/redeem',
   ])('preserves an approved internal deep-link: %s', (path) => {
     expect(getSafeMasterLoginReturnPath(path)).toBe(path);
     expect(buildMasterLoginHref(path)).toContain(encodeURIComponent(path));
@@ -42,6 +43,14 @@ describe('SPOKEDU MASTER safe login return', () => {
     expect(getSafeMasterLoginReturnPath(path)).toBe(path);
     expect(buildMasterLoginHref(path)).toBe(
       '/spokedu-lab/login?next=%2Fspokedu-lab%2Flibrary%3Fsource%3Dhome',
+    );
+  });
+
+  it('returns to promotion redemption without carrying its one-time token through login', () => {
+    const path = '/spokedu-lab/promotions/redeem?token=one-time-secret';
+    expect(getSafeMasterLoginReturnPath(path)).toBe('/spokedu-lab/promotions/redeem');
+    expect(buildMasterLoginHref(path)).toBe(
+      '/spokedu-lab/login?next=%2Fspokedu-lab%2Fpromotions%2Fredeem',
     );
   });
 });

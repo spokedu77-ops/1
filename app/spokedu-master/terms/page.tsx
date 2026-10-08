@@ -45,7 +45,7 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         </Section>
 
         <Section title="3. 이용권과 결제">
-          <p>로그인 후 무료(Free) 이용자는 놀이체육 Library를 탐색하고, 이번 주 추천 첫 번째 프로그램을 전체 체험하며, 스탑워치·타이머·점수판을 사용할 수 있습니다. 기간제 유료 무료체험 상품은 제공하지 않습니다.</p>
+          <p>로그인 후 무료(Free) 이용자는 놀이체육 Library를 탐색하고, 이번 주 추천 첫 번째 프로그램을 빠른 미리보기로 확인하며, 스탑워치·타이머·점수판을 사용할 수 있습니다. 전체 상세 자료는 Lite부터 이용할 수 있으며, 기간제 유료 무료체험 상품은 제공하지 않습니다.</p>
           <p>{lite.displayName}는 {lite.priceLabel} {lite.billingCycleLabel} 상품이며 전체 놀이체육 Library와 일반 수업 운영, 기록 및 안내문 기능을 제공합니다.</p>
           <p>{premium.displayName}은 {premium.priceLabel} {premium.billingCycleLabel} 상품이며 라이트 전체 기능에 SPOMOVE를 추가로 제공합니다.</p>
           <p>{center.displayName}은 {center.priceLabel} 상품이며 직접 결제를 제공하지 않습니다. 기관 도입은 별도 문의로 안내합니다.</p>

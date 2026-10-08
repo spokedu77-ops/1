@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, Lock, Mail, Shield } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -38,6 +38,7 @@ declare global {
 type PaidPlanId = 'lite' | 'premium';
 
 type UpgradeQuote = { amountDueNow: number; nextBillingAt: string; nextBillingAmount: number };
+type TossSdkStatus = 'loading' | 'ready' | 'missing-config' | 'load-error';
 
 function formatBillingDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Seoul' }).format(new Date(value));
@@ -104,29 +105,29 @@ function PlanCard({
 
   return (
     <section
-      className="flex min-w-0 flex-col rounded-[18px] p-5"
+      className="relative flex min-w-0 flex-col overflow-hidden rounded-[16px] bg-white p-5 sm:p-6"
       style={{
-        background: selected ? 'var(--spm-acc-a13)' : 'var(--spm-s2)',
         border: selected ? '1.5px solid var(--spm-acc-a68)' : '1px solid var(--spm-br2)',
       }}
     >
+      <span className="absolute inset-x-0 top-0 h-1" style={{ background: selected ? 'var(--spm-acc)' : 'var(--spm-br2)' }} aria-hidden="true" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[24px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
+          <h2 className="text-[20px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
             {productShortName(product)}
           </h2>
-          <p className="mt-2 text-[26px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)' }}>
+          <p className="mt-2 text-[22px] font-extrabold leading-tight" style={{ color: 'var(--spm-t)' }}>
             {formatKrw(product.monthlyPriceKrw)}
           </p>
         </div>
         {selected ? <CheckCircle2 size={22} color="var(--spm-acc)" className="shrink-0" /> : null}
       </div>
 
-      <p className="mt-4 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+      <p className="mt-3 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
         {getMasterProductPaymentDescription(product)}
       </p>
 
-      <ul className="mt-4 space-y-2">
+      <ul className="mt-4 flex-1 space-y-2 border-t pt-4" style={{ borderColor: 'var(--spm-br2)' }}>
         {getMasterProductPaymentFeatureLabels(product).map((item) => (
           <li key={item} className="flex gap-2 text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
             <CheckCircle2 size={14} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
@@ -155,6 +156,7 @@ function PlanCard({
 }
 
 function PaymentContent() {
+  const router = useRouter();
   const params = useSearchParams();
   const gateContext = useMemo(() => readMasterGateContextFromSearchParams(params), [params]);
   const gateDisplay = useMemo(
@@ -171,6 +173,10 @@ function PaymentContent() {
   const [loading, setLoading] = useState(true);
   const [workingPlan, setWorkingPlan] = useState<PaidPlanId | null>(null);
   const [error, setError] = useState('');
+  const tossClientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
+  const reviewDeployment = process.env.NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED === 'true' ? 'preview' : undefined;
+  const tossClientKeyAllowed = isTossClientKeyAllowed(tossClientKey, process.env.NODE_ENV, reviewDeployment);
+  const [tossSdkStatus, setTossSdkStatus] = useState<TossSdkStatus>(tossClientKeyAllowed ? 'loading' : 'missing-config');
   const directProducts = useMemo(() => getDirectPurchaseMasterProducts(), []);
   const subscriptionDisplay = getSubscriptionDisplaySummary(subscription);
   const paymentPageMode = getPaymentPageMode(subscription);
@@ -183,13 +189,34 @@ function PaymentContent() {
   }, [paymentPageMode]);
 
   useEffect(() => {
+    if (!tossClientKeyAllowed) {
+      setTossSdkStatus('missing-config');
+      return;
+    }
+    if (window.TossPayments) {
+      setTossSdkStatus('ready');
+      return;
+    }
     const script = document.querySelector<HTMLScriptElement>('script[data-toss-payments="true"]');
-    if (script) return;
-    const nextScript = document.createElement('script');
-    nextScript.src = 'https://js.tosspayments.com/v1';
-    nextScript.dataset.tossPayments = 'true';
-    document.head.appendChild(nextScript);
-  }, []);
+    const nextScript = script ?? document.createElement('script');
+    const handleLoad = () => setTossSdkStatus(window.TossPayments ? 'ready' : 'load-error');
+    const handleError = () => setTossSdkStatus('load-error');
+    const timeoutId = window.setTimeout(() => {
+      setTossSdkStatus((current) => current === 'loading' ? 'load-error' : current);
+    }, 8000);
+    nextScript.addEventListener('load', handleLoad);
+    nextScript.addEventListener('error', handleError);
+    if (!script) {
+      nextScript.src = 'https://js.tosspayments.com/v1';
+      nextScript.dataset.tossPayments = 'true';
+      document.head.appendChild(nextScript);
+    }
+    return () => {
+      window.clearTimeout(timeoutId);
+      nextScript.removeEventListener('load', handleLoad);
+      nextScript.removeEventListener('error', handleError);
+    };
+  }, [tossClientKeyAllowed]);
 
   useEffect(() => {
     const load = async () => {
@@ -265,10 +292,16 @@ function PaymentContent() {
       return;
     }
 
-    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
-    const reviewDeployment = process.env.NEXT_PUBLIC_TOSS_REVIEW_LOGIN_ENABLED === 'true' ? 'preview' : undefined;
-    if (!isTossClientKeyAllowed(clientKey, process.env.NODE_ENV, reviewDeployment) || !window.TossPayments) {
-      setError('결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+    if (!tossClientKeyAllowed) {
+      setError('결제 설정이 완료되지 않았습니다. 운영자에게 문의해 주세요.');
+      return;
+    }
+    if (tossSdkStatus === 'load-error') {
+      setError('결제 모듈을 불러오지 못했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.');
+      return;
+    }
+    if (tossSdkStatus !== 'ready' || !window.TossPayments) {
+      setError('결제 모듈을 준비하고 있습니다. 잠시 후 다시 시도해 주세요.');
       return;
     }
     const customerKey = buildCustomerKey(userId);
@@ -282,7 +315,7 @@ function PaymentContent() {
     setWorkingPlan(plan);
     try {
       trackMasterFunnelEvent('checkout_started', { surface: 'payment', plan });
-      window.TossPayments(clientKey).requestBillingAuth('카드', {
+      window.TossPayments(tossClientKey).requestBillingAuth('카드', {
         customerKey,
         successUrl: successUrl.toString(),
         failUrl: failUrl.toString(),
@@ -298,9 +331,9 @@ function PaymentContent() {
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
       <header className="mx-auto flex w-full max-w-[1080px] items-center gap-3 px-5 pb-4 pt-5 sm:px-8">
-        <Link href="/spokedu-lab/subscription" className="grid h-11 w-11 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="이전 화면">
+        <button type="button" onClick={() => { if (window.history.length > 1) router.back(); else router.replace(gateContext.mode === 'gated' ? gateContext.next : '/spokedu-lab/subscription'); }} className="grid h-11 w-11 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="이전 화면">
           <ArrowLeft size={18} color="var(--spm-t2)" />
-        </Link>
+        </button>
         <div>
           <p className="text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>SPOKEDU LAB</p>
           <h1 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)' }}>
@@ -385,11 +418,23 @@ function PaymentContent() {
                 ) : null}
               </section>
             ) : null}
+            {paymentPageMode !== 'liteUpgrade' && tossSdkStatus !== 'ready' ? (
+              <section className="rounded-[14px] border px-4 py-3" style={{ background: tossSdkStatus === 'loading' ? 'var(--spm-acc-a10)' : 'rgba(239,68,68,0.08)', borderColor: tossSdkStatus === 'loading' ? 'var(--spm-acc-a28)' : 'rgba(239,68,68,0.22)' }}>
+                <p className="text-[13px] font-bold leading-6" style={{ color: tossSdkStatus === 'loading' ? 'var(--spm-t2)' : 'var(--spm-red)' }}>
+                  {tossSdkStatus === 'loading'
+                    ? '안전한 결제창을 준비하고 있습니다.'
+                    : tossSdkStatus === 'missing-config'
+                      ? '결제 설정이 완료되지 않아 지금은 결제를 시작할 수 없습니다.'
+                      : '결제 모듈을 불러오지 못했습니다. 네트워크 상태를 확인한 뒤 새로고침해 주세요.'}
+                </p>
+              </section>
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2">
               {directProducts.map((product) => {
                 const planId = product.serverPlanKey as PaidPlanId;
                 const planAllowedForIntent = gateContext.allowedPlans.includes(planId);
-                const canCheckout = planAllowedForIntent && canStartPaidPlanCheckout(subscription, planId);
+                const sdkReadyForPlan = paymentPageMode === 'liteUpgrade' || tossSdkStatus === 'ready';
+                const canCheckout = planAllowedForIntent && canStartPaidPlanCheckout(subscription, planId) && sdkReadyForPlan;
                 return (
                   <PlanCard
                     key={product.id}
@@ -405,6 +450,8 @@ function PaymentContent() {
                     disabledHint={
                       !planAllowedForIntent
                         ? '지금 이어가려던 작업은 프리미엄이 필요합니다.'
+                        : !sdkReadyForPlan
+                          ? tossSdkStatus === 'loading' ? '결제창을 준비하고 있습니다.' : '결제 설정을 확인해 주세요.'
                         : paymentPageMode === 'liteUpgrade' && planId === 'lite'
                           ? '현재 라이트 이용 중입니다.'
                           : undefined

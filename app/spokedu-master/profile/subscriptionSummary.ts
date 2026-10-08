@@ -314,14 +314,14 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
 
   return {
     state: 'none',
-    planLabel: '없음',
-    statusLabel: '이용권 없음',
+    planLabel: 'Free',
+    statusLabel: '무료 이용 중',
     primaryLabel: '구독 선택',
     primaryHref: '/spokedu-lab/payment',
     dateLabel: null,
     dateText: null,
     amountText: null,
-    description: '현재 이용 중인 이용권이 없습니다.',
+    description: 'Library 둘러보기, 무료 수업 1개 미리보기와 기본 수업 도구 3종을 이용할 수 있습니다.',
     valueWorkflow: [],
     warningText: null,
     isDirectBillingPlan: false,

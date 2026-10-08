@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSafeMasterLoginReturnPath } from '@/app/spokedu-master/lib/masterLoginReturn';
 
 type MasterEmailOtpUser = {
   id: string;
@@ -44,9 +45,17 @@ export function useMasterEmailOtp() {
     setMessage(null);
     try {
       const supabase = getSupabaseBrowserClient();
+      const requestedNext = new URLSearchParams(window.location.search).get('next');
+      const callback = new URL('/spokedu-master/auth/callback', window.location.origin);
+      callback.searchParams.set('next', getSafeMasterLoginReturnPath(requestedNext));
       const { error: authError } = await supabase.auth.signInWithOtp({
         email: normalized,
-        options: { shouldCreateUser: true },
+        options: {
+          shouldCreateUser: true,
+          // OTP templates use .Token. This callback keeps the login usable if
+          // Supabase temporarily falls back to a confirmation-link template.
+          emailRedirectTo: callback.toString(),
+        },
       });
       if (authError) {
         const msg = getMasterOtpSendErrorMessage(authError);
@@ -55,7 +64,7 @@ export function useMasterEmailOtp() {
       }
       setEmail(normalized);
       setOtpSent(true);
-      setMessage(`${normalized}로 6자리 인증 코드를 보냈습니다.`);
+      setMessage(`${normalized}로 인증 메일을 보냈습니다. 6자리 코드를 입력하거나 메일의 확인 링크를 눌러주세요.`);
       return { ok: true, kind: 'sent' };
     } finally {
       setLoading(false);

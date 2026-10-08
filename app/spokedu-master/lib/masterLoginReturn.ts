@@ -33,6 +33,7 @@ const SAFE_MASTER_LOGIN_RETURN_PREFIXES = [
   '/spokedu-master/terms',
   '/spokedu-master/privacy',
   '/spokedu-master/parent',
+  '/spokedu-master/promotions/redeem',
 ] as const;
 
 function normalizeLabReturnPath(pathname: string) {

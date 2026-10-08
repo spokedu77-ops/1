@@ -711,6 +711,7 @@ export default function LibraryView() {
           program={selected.program}
           autoplayVideo={selected.autoplayVideo}
           accessLocked={isProgramLocked(selected.program)}
+          detailLocked={!accessSnapshot.canUseLibrary}
           lockHref={buildProgramLessonGateHref(selected.program.id)}
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
           onFavorite={favoriteEnabled ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}

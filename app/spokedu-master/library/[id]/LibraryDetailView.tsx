@@ -17,7 +17,7 @@ import {
 } from '../../lib/program-media';
 import { useIsPremium, useMasterStore } from '../../store';
 import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
-import { isProgramLessonLocked } from '../../lib/commercialProgramAccess';
+import { isProgramFullDetailLocked } from '../../lib/commercialProgramAccess';
 import { buildProgramLessonGateHref } from '../../lib/masterGateIntent';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { AssignProgramToSessionButton } from '../../components/session/AssignProgramToSessionButton';
@@ -62,8 +62,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const copyFeedbackTimerRef = useRef<number | null>(null);
 
   const program = useMemo(() => programs.find((item) => String(item.id) === id), [id, programs]);
-  const programLocked = program ? isProgramLessonLocked({
-    programId: program.id,
+  const programLocked = program ? isProgramFullDetailLocked({
     canUseLibrary: accessSnapshot.canUseLibrary,
   }) : true;
   const relatedVideos = useMemo(

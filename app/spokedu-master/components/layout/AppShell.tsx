@@ -189,6 +189,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isSession = pathname.startsWith(`${activeBasePath}/spomove/session`);
   const isOnboarding = pathname.startsWith(`${activeBasePath}/onboarding`);
   const isParentView = pathname.startsWith(`${activeBasePath}/parent`);
+  const isPromotionRedeem = pathname === `${activeBasePath}/promotions/redeem`;
   const isPayment = pathname.startsWith(`${activeBasePath}/payment`);
   const isLanding = pathname.startsWith(`${activeBasePath}/landing`);
   const isLibraryDetail = pathname.startsWith(`${activeBasePath}/library/`);
@@ -198,7 +199,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isPublicDocument = pathname === `${activeBasePath}/terms` || pathname === `${activeBasePath}/privacy`;
   const isLogin = pathname === `${activeBasePath}/login` || pathname.startsWith(`${activeBasePath}/auth`);
   const isProgramsEditor = pathname.startsWith('/admin/spokedu-master/programs');
-  const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument || isProgramsEditor || isLogin;
+  const hideChrome = isOnboarding || isParentView || isPromotionRedeem || isPayment || isLanding || isPublicDocument || isProgramsEditor || isLogin;
   const isProtectedRoute = isProtectedMasterRoute(pathname, activeBasePath);
   const routeRequirement = getMasterRouteRequirement(pathname, activeBasePath);
   const isAccessGuardPending =
@@ -503,7 +504,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
               </ErrorBoundary>
             )}
           </main>
-          {hideChrome ? null : <FloatingTimerPill />}
+          {hideChrome || isClassTools ? null : <FloatingTimerPill />}
           {hideChrome ? null : <TabBar basePath={activeBasePath} snapshot={accessGuard.snapshot} />}
         </div>
       </div>

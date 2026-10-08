@@ -18,7 +18,7 @@ const FEATURE_COPY = {
   library: {
     icon: BookOpen,
     title: '즐겨찾기와 전체 수업 자료는 Lite에서 이용할 수 있습니다.',
-    desc: 'Free에서도 놀이체육 목록을 둘러보고 지정된 무료 수업 1개를 체험할 수 있습니다. 즐겨찾기와 전체 상세 자료는 Lite부터입니다.',
+    desc: 'Free에서도 놀이체육 목록을 둘러보고 지정된 무료 수업 1개를 빠르게 미리볼 수 있습니다. 상세 준비와 즐겨찾기는 Lite부터입니다.',
     access: '전체 놀이체육 상세 및 즐겨찾기',
   },
   classTools: {

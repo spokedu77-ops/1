@@ -10,6 +10,7 @@ describe('SPOKEDU MASTER route access policy', () => {
     '/spokedu-master/terms',
     '/spokedu-master/privacy',
     '/spokedu-master/parent/shared-token',
+    '/spokedu-master/promotions/redeem',
     '/spokedu-master/login',
   ])('keeps %s public', (pathname) => {
     expect(isProtectedMasterRoute(pathname, basePath)).toBe(false);
@@ -71,6 +72,7 @@ describe('SPOKEDU MASTER route access policy', () => {
     ['/spokedu-master/spomove?authKey=x&mode=mobile', '/spokedu-master/spomove?mode=mobile'],
     ['/spokedu-master/programs?source=home', '/spokedu-master/programs?source=home'],
     ['/spokedu-master/shop', '/spokedu-master/shop'],
+    ['/spokedu-master/promotions/redeem', '/spokedu-master/promotions/redeem'],
   ])('keeps safe internal return path %s as %s', (input, expected) => {
     expect(getSafeMasterReturnPath(input)).toBe(expected);
   });

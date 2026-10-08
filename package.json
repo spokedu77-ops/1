@@ -54,7 +54,8 @@
     "qa:spokedu-master:craft-capture": "node scripts/spokedu-master-craft-capture-qa.mjs",
     "qa:spokedu-master:release-automated": "node scripts/spokedu-master-release-automated.mjs",
     "qa:spokedu-master:logged": "node scripts/spokedu-master-home-logged-qa.mjs",
-    "qa:spokedu-master:auth-capture": "node scripts/spokedu-master-auth-state-capture.mjs"
+    "qa:spokedu-master:auth-capture": "node scripts/spokedu-master-auth-state-capture.mjs",
+    "configure:spokedu-master:email-otp": "node --env-file=.env.local scripts/configure-spokedu-master-email-otp.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

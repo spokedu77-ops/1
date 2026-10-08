@@ -147,7 +147,7 @@ const HOME_ENTRY_SETTLE_DEADLINE_MS = 4000;
 function getFirstStartPaths(canUseAttendance: boolean) {
   if (!canUseAttendance) {
     return [
-      { title: '무료 수업 보기', description: '지정된 놀이체육 1개를 상세부터 영상까지 체험하세요.', href: `/spokedu-lab/library/${FREE_PREVIEW_PROGRAM_ID}` },
+      { title: '무료 수업 미리보기', description: '지정된 놀이체육 1개의 핵심 준비와 진행 요약을 확인하세요.', href: `/spokedu-lab/library/${FREE_PREVIEW_PROGRAM_ID}` },
       { title: '수업 도구 열기', description: '스탑워치, 타이머, 점수판을 바로 사용할 수 있습니다.', href: '/spokedu-lab/class-tools' },
     ] as const;
   }
@@ -316,7 +316,7 @@ function WeeklyProgramCard({
   );
 }
 
-function FirstStartGuide({ canUseAttendance }: { canUseAttendance: boolean }) {
+function FirstStartGuide({ canUseAttendance, onFreePreview }: { canUseAttendance: boolean; onFreePreview: () => void }) {
   const firstStartPaths = getFirstStartPaths(canUseAttendance);
   return (
     <section
@@ -329,23 +329,26 @@ function FirstStartGuide({ canUseAttendance }: { canUseAttendance: boolean }) {
       <p className="mt-2 max-w-xl text-[15px] font-normal leading-6 text-slate-600">
         {canUseAttendance
           ? '콘텐츠부터 찾아도, 수업반부터 준비해도 같은 준비 흐름으로 이어집니다.'
-          : '이번 주 첫 무료 수업 1개를 체험하고, Library를 둘러보고, 스탑워치·타이머·점수판을 사용할 수 있습니다.'}
+          : '이번 주 첫 무료 수업 1개를 빠르게 미리보고, Library를 둘러보고, 스탑워치·타이머·점수판을 사용할 수 있습니다.'}
       </p>
       <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
-        {firstStartPaths.map(({ title, description, href }) => (
-          <Link
-            key={href}
-            href={href}
-            className="min-h-11 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
-          >
+        {firstStartPaths.map(({ title, description, href }) => {
+          const isFreePreview = !canUseAttendance && href.endsWith(`/library/${FREE_PREVIEW_PROGRAM_ID}`);
+          const content = <>
             <span className={`${MV_CONTENT_TITLE} block`}>{title}</span>
             <span className={`${MV_META} mt-1.5 block`}>{description}</span>
             <span className={`${MV_QUIET_ACTION} mt-3`}>
               시작하기
               <ArrowRight size={15} aria-hidden="true" />
             </span>
-          </Link>
-        ))}
+          </>;
+          const className = "min-h-11 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]";
+          return isFreePreview ? (
+            <button key={href} type="button" onClick={onFreePreview} className={className}>{content}</button>
+          ) : (
+            <Link key={href} href={href} className={className}>{content}</Link>
+          );
+        })}
       </div>
     </section>
   );
@@ -827,6 +830,7 @@ function EntitledDashboardView() {
 
   const programPool = programs;
   const weeklyPrograms = useMemo(() => selectWeeklyProgramsById(programs), [programs]);
+  const freePreviewProgram = weeklyPrograms.find((program) => program.id === FREE_PREVIEW_PROGRAM_ID) ?? null;
   const featuredSpomove = useMemo(
     () => resolveHomeFeaturedSpomove(featuredSpomoveSlotIds),
     [featuredSpomoveSlotIds],
@@ -918,9 +922,9 @@ function EntitledDashboardView() {
               놀이체육과 SPOMOVE를 한 흐름으로 살펴보고 오늘 수업을 준비하세요.
             </p>
             <div data-dashboard-hero-actions="true" className="mt-5 grid grid-cols-2 gap-2.5 min-[768px]:flex min-[768px]:flex-wrap">
-              <Link data-dashboard-primary-cta="true" href={`/spokedu-lab/library/${FREE_PREVIEW_PROGRAM_ID}`} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none">
+              <button data-dashboard-primary-cta="true" type="button" disabled={!freePreviewProgram} onClick={() => { if (freePreviewProgram) openPreview(freePreviewProgram); }} className="spm-btn-primary col-span-2 inline-flex w-full min-[768px]:w-auto min-h-11 items-center justify-center gap-1.5 rounded-[11px] px-5 text-[14px] font-bold tracking-[-0.01em] focus-visible:outline-none disabled:opacity-50">
                 무료 수업 보기 <ArrowRight size={15} aria-hidden />
-              </Link>
+              </button>
               {accessSnapshot.canUseAttendance ? (
                 <Link href="/spokedu-lab/activity" className="inline-flex min-h-11 min-w-0 items-center justify-center rounded-[11px] border border-white/30 bg-white/10 px-3 text-center text-[14px] min-[430px]:px-5 font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                   수업 일정 보기
@@ -938,7 +942,7 @@ function EntitledDashboardView() {
       {isFirstUser ? (
         <div data-dashboard-chapter="first-start" className="px-4 pb-0 pt-6 min-[768px]:px-6 min-[768px]:pt-8">
           <div className={MV_EDITORIAL_WIDTH}>
-            <FirstStartGuide canUseAttendance={accessSnapshot.canUseAttendance} />
+            <FirstStartGuide canUseAttendance={accessSnapshot.canUseAttendance} onFreePreview={() => { if (freePreviewProgram) openPreview(freePreviewProgram); }} />
           </div>
         </div>
       ) : null}
@@ -1101,6 +1105,7 @@ function EntitledDashboardView() {
           autoplayVideo={previewAutoplay}
           isPremium={isPremium}
           accessLocked={isProgramLocked(selectedProgram)}
+          detailLocked={!accessSnapshot.canUseLibrary}
           lockHref={buildProgramLessonGateHref(selectedProgram.id)}
           favorite={isFavoriteProgram(favoritesOwnerId, selectedProgram.id)}
           onFavorite={favoriteEnabled ? () => toggleFavoriteProgram(favoritesOwnerId, selectedProgram.id) : undefined}

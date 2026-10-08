@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import {
+  canAccessProgramFullDetail,
   canAccessProgramLessonContent,
   FREE_PREVIEW_PROGRAM_ID,
   WEEKLY_PROGRAM_IDS,
@@ -32,6 +33,16 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     expect(canAccessProgramLessonContent({ programId: WEEKLY_PROGRAM_IDS[1], canUseLibrary: true })).toBe(true);
   });
 
+  it('blocks every full-detail route for Free while retaining one quick preview', () => {
+    expect(canAccessProgramLessonContent({ programId: FREE_PREVIEW_PROGRAM_ID, canUseLibrary: false })).toBe(true);
+    expect(canAccessProgramFullDetail({ canUseLibrary: false })).toBe(false);
+    const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
+    expect(detail).toContain('isProgramFullDetailLocked');
+    const preview = read('app/spokedu-master/components/lesson/ProgramPreviewModal.tsx');
+    expect(preview).toContain('detailLocked');
+    expect(preview).toContain('Lite에서 상세 열기');
+  });
+
   it('does not treat isPro as a Premium content lock in the library UI', () => {
     const source = read('app/spokedu-master/library/LibraryView.tsx');
     expect(source).toContain('isProgramLessonLocked');
@@ -41,7 +52,7 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
 
   it('blocks non-preview lesson detail with a Lite gate', () => {
     const source = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
-    expect(source).toContain('isProgramLessonLocked');
+    expect(source).toContain('isProgramFullDetailLocked');
     expect(source).toContain('buildProgramLessonGateHref');
     expect(source).toContain('Lite로 열기');
     expect(source).not.toContain('program.isPro && !isPremium');

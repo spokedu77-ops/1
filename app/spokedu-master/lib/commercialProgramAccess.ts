@@ -2,7 +2,8 @@
  * Commercial catalog contract. The order is product truth and must not be
  * derived from DB display order, creation time, popularity, or user profile.
  *
- * Program lesson-content access is plan + FREE_PREVIEW_PROGRAM_ID only.
+ * Quick-preview content access is plan + FREE_PREVIEW_PROGRAM_ID only.
+ * Full lesson-detail routes require Library access for every program.
  * `program.isPro` / `sm_is_pro` must not be used for runtime entitlement.
  */
 export const WEEKLY_PROGRAM_IDS = ['68', '201', '204', '61'] as const;
@@ -21,6 +22,14 @@ export function canAccessProgramLessonContent(args: {
 }) {
   if (args.canUseLibrary) return true;
   return isFreePreviewProgramId(args.programId);
+}
+
+export function canAccessProgramFullDetail(args: { canUseLibrary: boolean }) {
+  return args.canUseLibrary;
+}
+
+export function isProgramFullDetailLocked(args: { canUseLibrary: boolean }) {
+  return !canAccessProgramFullDetail(args);
 }
 
 export function isProgramLessonLocked(args: {
