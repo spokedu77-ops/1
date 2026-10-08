@@ -20,7 +20,7 @@ import {
 import { MasterValueEvidencePanel } from '../components/value/MasterValueEvidencePanel';
 
 const LITE_FEATURES = [
-  'Library · 수업반 · 학생 · 일정 · 출석',
+  '놀이체육 · 수업반 · 학생 · 일정 · 출석',
   '수업 메모 · 학생 관찰 · 다음 수업 기록',
   '지난 기록 활용 · 안내문 작성·복사',
 ] as const;
@@ -83,7 +83,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
           이런 수업을 찾을 수 있어요
         </h2>
         <p className="mt-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-          대표 수업 유형입니다. 이용권 시작 후 전체 라이브러리를 탐색할 수 있습니다.
+          대표 수업 유형입니다. 이용권 시작 후 전체 놀이체육을 탐색할 수 있습니다.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {LIBRARY_PREVIEW_CATEGORIES.map(({ label, desc }) => (
@@ -141,7 +141,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         <h2 className="text-[16px] font-extrabold" style={{ color: 'var(--spm-t)' }}>이용권으로 이어지는 수업 루프</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
-            { icon: BookOpen, label: '수업 전', desc: '라이브러리에서 오늘 수업 고르기' },
+            { icon: BookOpen, label: '수업 전', desc: '놀이체육에서 오늘 수업 고르기' },
             { icon: Timer, label: '수업 중', desc: '기본 도구 3종은 Free, 명단 도구는 Lite, SPOMOVE는 Premium' },
             { icon: ClipboardList, label: '수업 후', desc: '관찰 남기고 같은 기록 보강하기' },
             { icon: FileText, label: '안내문', desc: '학부모·기관용 안내문 작성·복사' },

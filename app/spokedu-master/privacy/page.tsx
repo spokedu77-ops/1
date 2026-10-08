@@ -43,7 +43,7 @@ export default async function PrivacyPage({ searchParams }: { searchParams: Prom
         </Section>
 
         <Section title="2. 처리 목적">
-          <p>인증 계정 관리, MASTER 이용권 확인, 결제 주문 처리, 수업 운영 데이터 저장, 안내문 작성·복사, 서비스 오류 대응과 보안 관리를 위해 개인정보를 처리합니다.</p>
+          <p>인증 계정 관리, SPOKEDU LAB 이용권 확인, 결제 주문 처리, 수업 운영 데이터 저장, 안내문 작성·복사, 서비스 오류 대응과 보안 관리를 위해 개인정보를 처리합니다.</p>
         </Section>
 
         <Section title="3. 처리 위탁">
@@ -68,7 +68,7 @@ export default async function PrivacyPage({ searchParams }: { searchParams: Prom
 
         <Section title="6. 이용자의 권리">
           <p>이용자는 개인정보 조회, 수정, 삭제, 처리정지를 요청할 수 있습니다. 요청은 본인 확인 후 처리합니다.</p>
-          <p>MASTER 데이터 삭제는 프로필 화면에서 직접 요청할 수 있으며, 회원 탈퇴나 계정 삭제 요청은 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 문의해 주세요.</p>
+          <p>SPOKEDU LAB 데이터 삭제는 프로필 화면에서 직접 요청할 수 있으며, 회원 탈퇴나 계정 삭제 요청은 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 문의해 주세요.</p>
         </Section>
 
         <Section title="7. 보호 조치">
@@ -76,7 +76,7 @@ export default async function PrivacyPage({ searchParams }: { searchParams: Prom
         </Section>
 
         <Section title="8. 문의">
-          <p>개인정보 요청, 회원 탈퇴, 결제·환불, Center·School 도입, 기능 오류 문의는 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 연락해 주세요.</p>
+          <p>개인정보 요청, 회원 탈퇴, 결제·환불, 센터·기관 도입, 기능 오류 문의는 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 연락해 주세요.</p>
         </Section>
       </main>
     </div>

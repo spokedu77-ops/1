@@ -50,6 +50,24 @@ describe('MASTER ADMIN contract', () => {
     expect(client).not.toContain('grid max-h-44 gap-2 overflow-y-auto sm:grid-cols-2');
     expect(client).toContain("body: JSON.stringify({ userId: selected.id, plan, durationDays: duration, reason, campaignId: campaign, preview: true })");
   });
+  it('defaults seminar grants and invites to Lite and confirms the exact member and period', () => {
+    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    expect(client).toContain("useState<'lite' | 'premium'>('lite')");
+    expect(client).toContain("plan: 'lite', durationDays: 30");
+    for (const label of ['대상 회원', '이메일', '지급 요금제', '시작일', '종료일']) expect(client).toContain(label);
+    expect(client).toContain('기존 자동결제는 변경되거나 취소되지 않습니다.');
+    expect(client).toContain('활성 프로모션이 있습니다.');
+  });
+  it('supports exact email search and pagination beyond the first 20 members', () => {
+    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
+    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    expect(dashboard).toContain("(user.email ?? '').toLowerCase().includes(query)");
+    expect(dashboard).toContain('const PAGE_SIZE = 20');
+    expect(dashboard).toContain('members: filtered.slice(start, start + PAGE_SIZE)');
+    expect(client).toContain('&page=${page}');
+    expect(client).toContain('setMembersTotal(data.total)');
+    expect(client).toContain('MemberPagination');
+  });
   it('keeps promotional mutations isolated from billing and Toss', () => {
     const sources = [read('app/api/admin/spokedu-master/entitlement-grants/route.ts'), read('app/api/admin/spokedu-master/entitlement-grants/[grantId]/route.ts')].join('\n');
     expect(sources).not.toContain("from('spokedu_master_subscriptions').update");

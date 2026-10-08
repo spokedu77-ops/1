@@ -194,7 +194,7 @@ function ProgramCard({
       supportMeta={supportMeta}
       locked={locked}
       lockHref={lockHref}
-      lockLabel="Lite로 열기"
+      lockLabel="라이트로 이용하기"
       favorite={favorite}
       favoriteEnabled={favoriteEnabled}
       favoriteHint={favoriteHint}
@@ -553,15 +553,15 @@ export default function LibraryView() {
     if (!programsLoaded) return <LibrarySkeleton />;
     const message =
       programsError === 'unauthorized'
-        ? '로그인 후 수업 라이브러리를 확인할 수 있습니다.'
+        ? '로그인 후 놀이체육을 확인할 수 있습니다.'
         : programsError === 'forbidden'
-          ? '이용 기간이 종료되어 수업 라이브러리를 불러올 수 없습니다. 구독을 시작하면 전체 수업을 이용할 수 있습니다.'
-          : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+          ? '이용 기간이 종료되어 놀이체육을 불러올 수 없습니다. 구독을 시작하면 전체 수업을 이용할 수 있습니다.'
+          : '놀이체육을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className="mx-auto flex h-full w-full max-w-[1120px] items-center justify-center overflow-y-auto px-4 py-16 sm:px-6" style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-6 text-center shadow-sm">
           <Lock className="mx-auto h-6 w-6 text-[color:var(--spm-t3)]" />
-          <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">수업 라이브러리를 불러올 수 없습니다.</h1>
+          <h1 className="mt-3 text-xl font-semibold text-[color:var(--spm-t)]">놀이체육을 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
           {programsError === 'unauthorized' ? (
             <Link href={buildMasterLoginHref('/spokedu-lab/library')} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">

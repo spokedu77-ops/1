@@ -12,9 +12,9 @@ export type LandingPlan = PublicProductPlan & {
 };
 
 const LANDING_COPY_MAP: Readonly<Record<string, string>> = {
-  'Library 탐색': '수업 자료실 둘러보기',
-  '전체 Library': '수업 자료실 전체 이용',
-  '놀이체육 Library 전체 이용': '전체 놀이체육 수업 자료 이용',
+  '놀이체육 탐색': '놀이체육 둘러보기',
+  '전체 놀이체육': '전체 놀이체육 이용',
+  '놀이체육 전체 이용': '전체 놀이체육 수업 자료 이용',
   'Lite의 모든 기능': '라이트의 모든 기능',
 };
 
@@ -27,13 +27,13 @@ const PLAN_MESSAGES = {
   free: {
     displayName: '무료',
     eyebrow: '먼저 직접 확인해 보세요',
-    value: '수업 자료실을 둘러보고 이번 주 추천 프로그램 1개 전체와 수업 도구 3종을 이용합니다.',
+    value: '놀이체육을 둘러보고 지정된 놀이체육 프로그램 1개를 미리보며 스탑워치·타이머·점수판을 이용합니다.',
     ctaLabel: '무료로 시작하기',
   },
   lite: {
     displayName: '라이트',
     eyebrow: '수업관리 전체',
-    value: '수업 자료실과 반·학생·일정·출석, 기록과 안내문까지 일반 수업관리 흐름을 모두 제공합니다.',
+    value: '놀이체육과 반·학생·일정·출석, 기록과 안내문까지 일반 수업관리 흐름을 모두 제공합니다.',
     ctaLabel: '라이트 시작하기',
   },
   premium: {

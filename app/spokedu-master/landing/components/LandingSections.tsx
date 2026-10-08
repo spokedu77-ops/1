@@ -22,8 +22,8 @@ import styles from '../landing.module.css';
 
 const ASSETS = {
   home: '/images/spokedu/home/field-editorial/home-master-ui.png',
-  library: '/images/spokedu/subscription/library-program-cards.png',
-  lesson: '/images/spokedu/subscription/prepare-lesson-plan.png',
+  library: '/images/spokedu/subscription/library-program-cards-20261008-final.png',
+  lesson: '/images/spokedu/subscription/prepare-lesson-plan-20261008-final.png',
   tools: '/images/spokedu/subscription/prepare-class-tools.png',
   build: '/images/spokedu-master/landing/build-session.png',
   session: '/images/spokedu-master/landing/run-session.png',
@@ -90,7 +90,7 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
             요금 보기 <ArrowDown size={17} aria-hidden />
           </a>
         </div>
-        <p className={styles.freeNote}>수업 도구 3종 · 수업 자료실 둘러보기 · 이번 주 추천 프로그램 1개 전체 이용</p>
+        <p className={styles.freeNote}>놀이체육 둘러보기 · 지정된 놀이체육 프로그램 1개 미리보기 · 스탑워치·타이머·점수판 이용</p>
       </div>
       <div className={styles.heroVisual} aria-label="SPOKEDU LAB 실제 홈 화면">
         <div className={styles.heroHalo} />
@@ -136,7 +136,7 @@ export function CoreProductStory() {
           <ul><li>수업 대상과 공간에 맞는 프로그램 검색</li><li>추천 프로그램과 다양한 놀이체육 활동 탐색</li><li>준비물과 교구 배치 및 진행 방법 확인</li><li>필요한 활동을 실제 수업 준비에 활용</li></ul>
         </div>
         <div className={styles.mediaStack}>
-          <ProductFrame src={ASSETS.library} alt="검색과 6가지 세부 필터 및 프로그램 카드가 보이는 SPOKEDU LAB 수업 자료실" />
+          <ProductFrame src={ASSETS.library} alt="검색과 6가지 세부 필터 및 프로그램 카드가 보이는 SPOKEDU LAB 놀이체육" />
           <div className={styles.insetFrame}><ProductFrame src={ASSETS.lesson} alt="교구 배치와 수업 스크립트가 보이는 프로그램 상세 화면" ratio="portrait" position="50% 18%" /></div>
         </div>
       </section>
@@ -234,7 +234,7 @@ export function ClassToolsSection() {
 }
 
 const BEFORE_AFTER = [
-  ['여러 채널에서 활동 검색', '수업 자료실에서 탐색'],
+  ['여러 채널에서 활동 검색', '놀이체육에서 탐색'],
   ['준비물·규칙·세팅을 별도로 정리', '상세에서 한 번에 확인'],
   ['타이머·점수·팀 편성을 다른 도구로 실행', '수업 도구에서 바로 실행'],
   ['수업 후 기억에 의존', '수업 기록으로 남김'],
@@ -378,7 +378,7 @@ export function PlansSection({ product }: { product: ReturnTypeOfLandingModel })
       <SectionHeading
         eyebrow="무료로 확인하고, 필요한 만큼 이어가세요"
         title="무료로 시작하고, 필요한 기능만 더하세요."
-        body="무료로 수업 자료실과 기본 수업 도구를 확인하세요. 일반 수업관리와 기록·안내문은 라이트, SPOMOVE까지 이용하려면 프리미엄을 선택할 수 있습니다."
+        body="무료로 놀이체육과 기본 수업 도구를 확인하세요. 일반 수업관리와 기록·안내문은 라이트, SPOMOVE까지 이용하려면 프리미엄을 선택할 수 있습니다."
       />
       <div className={styles.planGrid}>{product.plans.map((plan) => <PlanCard key={plan.code} plan={plan} />)}</div>
       <div className={styles.comparisonWrap}>
@@ -422,7 +422,7 @@ export function FaqAndFinalCta({ product }: { product: ReturnTypeOfLandingModel 
       <section id="final-cta" className={styles.finalCta}>
         <p className={styles.eyebrow}>다음 수업 하나부터</p>
         <h2>무료로 직접 확인해 보세요.</h2>
-        <p>수업 도구를 열고, 수업 자료실을 둘러보고, 이번 주 추천 프로그램 1개를 끝까지 이용할 수 있습니다.</p>
+        <p>놀이체육을 둘러보고, 지정된 놀이체육 프로그램 1개를 미리보며, 스탑워치·타이머·점수판을 이용할 수 있습니다. 전체 프로그램 상세 자료는 라이트 이상에서 제공됩니다.</p>
         <div className={styles.finalActions}>
           <LandingConversionActions loginHref={product.handoff.loginHref} freeStartHref={product.handoff.freeStartHref} placement="final" />
         </div>

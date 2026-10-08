@@ -155,9 +155,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[var(--spm-bg)] px-6 text-center">
         <BookOpenFallback />
         <h1 className="mt-5 text-xl font-semibold text-[color:var(--spm-t)]">수업을 찾을 수 없습니다.</h1>
-        <p className="mt-2 text-sm text-[color:var(--spm-t3)]">라이브러리에서 다른 수업을 선택해 주세요.</p>
+        <p className="mt-2 text-sm text-[color:var(--spm-t3)]">놀이체육에서 다른 수업을 선택해 주세요.</p>
         <Link href={libraryReturnHref} className="spm-btn-primary mt-6 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-semibold focus-visible:outline-none">
-          라이브러리로 돌아가기
+          놀이체육으로 돌아가기
         </Link>
       </main>
     );
@@ -177,8 +177,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
           이 수업의 전체 지도안, 코칭 스크립트, 영상 자료는 Lite에서 열람할 수 있습니다.
         </p>
         <div className="mt-6 grid w-full max-w-sm gap-2 sm:grid-cols-2">
-          <Link href={programGateHref} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold focus-visible:outline-none">Lite로 열기</Link>
-          <Link href="/spokedu-lab/library" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-semibold text-[color:var(--spm-t2)]">라이브러리로</Link>
+          <Link href={programGateHref} className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold focus-visible:outline-none">라이트로 이용하기</Link>
+          <Link href="/spokedu-lab/library" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-semibold text-[color:var(--spm-t2)]">놀이체육으로</Link>
         </div>
       </main>
     );
@@ -205,9 +205,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
   return (
     <main className="min-h-dvh bg-[var(--spm-bg)] pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-[color:var(--spm-t)] lg:pb-14">
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200/70 bg-[color-mix(in_srgb,var(--spm-s1)_91%,transparent)] px-3 shadow-[0_6px_24px_rgba(15,23,42,0.035)] backdrop-blur-2xl sm:gap-3 sm:px-6 lg:px-8">
-        <Link href={fromSession ? workReturnHref : libraryReturnHref} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-[11px] px-1 text-sm font-semibold text-[color:var(--spm-t2)] transition-colors duration-200 hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transition-none sm:justify-start sm:px-2" aria-label={fromSession ? '수업으로 돌아가기' : '라이브러리로 돌아가기'}>
+        <Link href={fromSession ? workReturnHref : libraryReturnHref} className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-[11px] px-1 text-sm font-semibold text-[color:var(--spm-t2)] transition-colors duration-200 hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] motion-reduce:transition-none sm:justify-start sm:px-2" aria-label={fromSession ? '수업으로 돌아가기' : '놀이체육으로 돌아가기'}>
           <ArrowLeft className="h-4 w-4 shrink-0" />
-          <span className="hidden sm:inline">{fromSession ? '수업으로' : '라이브러리로'}</span>
+          <span className="hidden sm:inline">{fromSession ? '수업으로' : '놀이체육으로'}</span>
         </Link>
         <p data-detail-sticky-title aria-hidden={isHeroTitleVisible} className={`min-w-0 truncate text-center text-[13px] font-semibold text-[color:var(--spm-t)] transition-opacity duration-150 motion-reduce:transition-none sm:text-[14px] ${isHeroTitleVisible ? 'invisible opacity-0' : 'visible opacity-100'}`}>
           {model.title}

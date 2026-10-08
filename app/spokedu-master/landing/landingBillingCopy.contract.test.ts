@@ -56,7 +56,7 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
   });
 
   it('uses actual product and field assets with no unsupported claims', () => {
-    for (const asset of ['home-master-ui.png', 'library-program-cards.png', 'prepare-class-tools.png', 'prepare-lesson-plan.png', 'build-session.png', 'run-session.png', 'run-attendance.png', 'remember-report.png', 'remember-report-detail.png', 'yangcheon-paps.jpg']) {
+    for (const asset of ['home-master-ui.png', 'library-program-cards-20261008-final.png', 'prepare-class-tools.png', 'prepare-lesson-plan-20261008-final.png', 'build-session.png', 'run-session.png', 'run-attendance.png', 'remember-report.png', 'remember-report-detail.png', 'yangcheon-paps.jpg']) {
       expect(sections).toContain(asset);
     }
     expect(sections).not.toMatch(/AI가|자동 추천|회원가|Best seller/);

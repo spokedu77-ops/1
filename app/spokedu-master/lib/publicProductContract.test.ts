@@ -35,9 +35,9 @@ describe('MASTER public product contract', () => {
     const contract = getPublicProductContract();
     expect(free?.purchasable).toBe(false);
     expect(free?.priceLabel).toBeNull();
-    expect(free?.featureSummary).toEqual(['Library 탐색', '이번 주 추천 프로그램 1개 전체 이용', '수업 도구 3종']);
-    expect(contract.freeScopeNote).toContain('Library 탐색');
-    expect(contract.freeScopeNote).toContain('이번 주 추천 프로그램 1개 전체 이용');
+    expect(free?.featureSummary).toEqual(['놀이체육 탐색', '지정 프로그램 1개 미리보기', '수업 도구 3종']);
+    expect(contract.freeScopeNote).toContain('놀이체육 탐색');
+    expect(contract.freeScopeNote).toContain('지정된 놀이체육 프로그램 1개 빠른 미리보기');
     expect(contract.freeScopeNote).toContain('스탑워치·타이머·점수판');
     expect(contract.freeScopeNote).not.toContain('체험');
     expect(contract.plans.map((p) => p.code)).toEqual(['free', 'lite', 'premium']);

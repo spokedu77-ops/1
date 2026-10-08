@@ -329,7 +329,7 @@ function FirstStartGuide({ canUseAttendance, onFreePreview }: { canUseAttendance
       <p className="mt-2 max-w-xl text-[15px] font-normal leading-6 text-slate-600">
         {canUseAttendance
           ? '콘텐츠부터 찾아도, 수업반부터 준비해도 같은 준비 흐름으로 이어집니다.'
-          : '이번 주 첫 무료 수업 1개를 빠르게 미리보고, Library를 둘러보고, 스탑워치·타이머·점수판을 사용할 수 있습니다.'}
+          : '이번 주 첫 무료 수업 1개를 빠르게 미리보고, 놀이체육을 둘러보고, 스탑워치·타이머·점수판을 사용할 수 있습니다.'}
       </p>
       <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-10">
         {firstStartPaths.map(({ title, description, href }) => {
@@ -865,16 +865,16 @@ function EntitledDashboardView() {
     const isUnauthorized = programsError === 'unauthorized';
     const isForbidden = programsError === 'forbidden';
     const message = isUnauthorized
-      ? '로그인 후 수업 라이브러리를 불러올 수 있습니다.'
+      ? '로그인 후 놀이체육을 불러올 수 있습니다.'
       : isForbidden
-        ? '이용 기간이 종료되어 수업 라이브러리를 불러올 수 없습니다.'
+        ? '이용 기간이 종료되어 놀이체육을 불러올 수 없습니다.'
         : programsError === 'network'
-          ? '네트워크 문제로 수업 라이브러리를 불러오지 못했습니다. 연결 상태를 확인해 주세요.'
-          : '수업 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+          ? '네트워크 문제로 놀이체육을 불러오지 못했습니다. 연결 상태를 확인해 주세요.'
+          : '놀이체육을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className={`${MV_EDITORIAL_WIDTH} flex h-full items-center justify-center overflow-y-auto px-4 py-16`} style={{ background: 'var(--spm-bg)' }}>
         <section className="w-full max-w-xl text-center">
-          <h1 className={MV_SECTION_TITLE}>수업 라이브러리를 불러올 수 없습니다.</h1>
+          <h1 className={MV_SECTION_TITLE}>놀이체육을 불러올 수 없습니다.</h1>
           <p className="mt-3 text-[15px] font-normal leading-6 text-slate-600">{message}</p>
           {isUnauthorized ? (
             <Link href="/spokedu-lab/login?next=/spokedu-lab/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold focus-visible:outline-none">로그인하기</Link>
@@ -1053,9 +1053,9 @@ function EntitledDashboardView() {
             </div>
           ) : (
             <div>
-              <p className="text-[15px] text-slate-600">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
+              <p className="text-[15px] text-slate-600">오늘 쓸 수업을 놀이체육에서 골라 보세요.</p>
               <Link href="/spokedu-lab/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[14px] font-semibold focus-visible:outline-none">
-                수업 라이브러리 열기
+                놀이체육 열기
               </Link>
             </div>
           )}

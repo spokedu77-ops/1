@@ -23,7 +23,7 @@ export function ProgramPreviewModal({
   accessLocked,
   detailLocked,
   lockHref = '/spokedu-lab/payment?plan=lite',
-  lockLabel = 'Lite로 열기',
+  lockLabel = '라이트로 이용하기',
   favorite,
   onFavorite,
   isTodayLesson = false,
@@ -119,7 +119,7 @@ export function ProgramPreviewModal({
             ) : null}
             {!locked && fullDetailLocked ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-[13px] font-semibold leading-[18px] tracking-normal text-blue-700">
-                Free 미리보기
+                무료 미리보기
               </span>
             ) : null}
             {!locked && hasSpomoveLink(program) ? (
@@ -152,7 +152,7 @@ export function ProgramPreviewModal({
                 className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-bold tracking-normal focus-visible:outline-none sm:h-10 sm:w-[168px]"
               >
                 <Lock className="h-4 w-4" />
-                Lite에서 상세 열기
+                라이트에서 상세 보기
               </Link>
             ) : (
               <Link

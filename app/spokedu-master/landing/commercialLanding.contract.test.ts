@@ -30,7 +30,7 @@ describe('official MASTER commercial landing IA', () => {
   });
 
   it('uses the approved free, notice, and premium commercial language', () => {
-    expect(sections).toContain('이번 주 추천 프로그램 1개 전체 이용');
+    expect(sections).toContain('지정된 놀이체육 프로그램 1개 미리보기');
     expect(sections).toContain('수업 안내문 저장·복사');
     expect(sections).not.toContain('보호자 안내문');
     expect(sections).not.toContain('무료 프로그램 체험');

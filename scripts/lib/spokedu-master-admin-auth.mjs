@@ -7,9 +7,31 @@ function requiredEnv(name) {
   return value;
 }
 
+function parseAllowlist(name) {
+  return new Set(requiredEnv(name).split(',').map((value) => value.trim().toLowerCase()).filter(Boolean));
+}
+
+export function assertQaAuthAllowed(baseUrl, email) {
+  if (process.env.ALLOW_SPOKEDU_MASTER_QA_ADMIN_AUTH !== '1') {
+    throw new Error('Refusing MASTER QA admin auth without ALLOW_SPOKEDU_MASTER_QA_ADMIN_AUTH=1');
+  }
+
+  const target = new URL(baseUrl);
+  const allowedHosts = parseAllowlist('SPOKEDU_MASTER_QA_ADMIN_HOST_ALLOWLIST');
+  if (!allowedHosts.has(target.host.toLowerCase())) {
+    throw new Error(`MASTER QA admin auth host is not allowlisted: ${target.host}`);
+  }
+
+  const allowedEmails = parseAllowlist('SPOKEDU_MASTER_QA_ADMIN_EMAIL_ALLOWLIST');
+  if (!allowedEmails.has(email)) {
+    throw new Error('MASTER QA admin auth email is not allowlisted');
+  }
+}
+
 export async function applyMasterAdminSession(context, baseUrl, email) {
   const normalizedEmail = email?.trim().toLowerCase();
   if (!normalizedEmail) throw new Error('MASTER QA email is required');
+  assertQaAuthAllowed(baseUrl, normalizedEmail);
 
   const supabaseUrl = requiredEnv('NEXT_PUBLIC_SUPABASE_URL');
   const anonKey = requiredEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
@@ -17,8 +39,10 @@ export async function applyMasterAdminSession(context, baseUrl, email) {
   const service = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
   const { data: usersData, error: usersError } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (usersError) throw new Error(`Could not look up MASTER QA user: ${usersError.message}`);
-  if (!usersData.users.some((user) => user.email?.trim().toLowerCase() === normalizedEmail)) {
-    throw new Error(`MASTER QA user does not exist: ${normalizedEmail}`);
+  const qaUser = usersData.users.find((user) => user.email?.trim().toLowerCase() === normalizedEmail);
+  if (!qaUser) throw new Error('MASTER QA user does not exist');
+  if (qaUser.app_metadata?.spokedu_master_qa !== true) {
+    throw new Error('Refusing MASTER QA admin auth for a non-QA account');
   }
 
   const { data, error } = await service.auth.admin.generateLink({

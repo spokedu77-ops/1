@@ -160,7 +160,7 @@ export function LessonCatalogCard({
   cornerLabel,
   locked = false,
   lockHref = '/spokedu-lab/payment?plan=lite',
-  lockLabel = 'Lite로 열기',
+  lockLabel = '라이트로 이용하기',
   used = false,
   favorite = false,
   favoriteEnabled = false,

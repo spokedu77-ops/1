@@ -40,7 +40,7 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     expect(detail).toContain('isProgramFullDetailLocked');
     const preview = read('app/spokedu-master/components/lesson/ProgramPreviewModal.tsx');
     expect(preview).toContain('detailLocked');
-    expect(preview).toContain('Lite에서 상세 열기');
+    expect(preview).toContain('라이트에서 상세 보기');
   });
 
   it('does not treat isPro as a Premium content lock in the library UI', () => {
@@ -54,7 +54,7 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     const source = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
     expect(source).toContain('isProgramFullDetailLocked');
     expect(source).toContain('buildProgramLessonGateHref');
-    expect(source).toContain('Lite로 열기');
+    expect(source).toContain('라이트로 이용하기');
     expect(source).not.toContain('program.isPro && !isPremium');
     expect(source).not.toContain('/spokedu-master/payment?plan=premium');
   });
@@ -66,14 +66,14 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     const weeklyCard = read('app/spokedu-master/components/lesson/WeeklyEditorialCard.tsx');
     const library = read('app/spokedu-master/library/LibraryView.tsx');
     expect(previewModal).toContain('lockHref');
-    expect(previewModal).toContain('Lite로 열기');
+    expect(previewModal).toContain('라이트로 이용하기');
     expect(previewModal).not.toContain('/spokedu-master/payment?plan=premium');
     expect(previewContent).toContain('locked?: boolean');
     expect(previewContent.indexOf('if (locked)')).toBeLessThan(previewContent.indexOf('<LessonPreviewMedia'));
     expect(previewContent).toContain('data-preview-locked=""');
     expect(previewContent).toContain('Lite에서 전체 수업 자료를 이용할 수 있습니다');
     expect(previewContent).not.toContain('프리미엄 전용');
-    expect(catalogCard).toContain("lockLabel = 'Lite로 열기'");
+    expect(catalogCard).toContain("lockLabel = '라이트로 이용하기'");
     expect(catalogCard).toContain('const previewEnabled = !locked && Boolean(onPreview)');
     expect(catalogCard).toContain('data-preview-disabled=""');
     expect(weeklyCard).toContain('const previewEnabled = !locked && Boolean(onPreview)');

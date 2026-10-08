@@ -12,8 +12,8 @@ const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등
 const PROGRAM_TYPES = ['놀이체육', '뉴스포츠', '협동·팀빌딩', '기초체력', 'SPOMOVE', '특수체육'];
 const STEP_LABELS = ['이용 환경', '수업 정보', '시작'];
 const START_ITEMS = [
-  { icon: BookOpen, title: '무료 수업 1개 미리보기', desc: '지정된 놀이체육 활동 1개의 준비물과 진행 방법을 간단히 확인할 수 있습니다.' },
-  { icon: UsersRound, title: '수업 자료실 둘러보기', desc: '검색과 필터를 이용해 전체 놀이체육 활동을 살펴볼 수 있습니다.' },
+  { icon: BookOpen, title: '지정 프로그램 1개 미리보기', desc: '지정된 놀이체육 프로그램 1개의 준비물과 진행 방법을 빠른 미리보기로 확인할 수 있습니다. 전체 상세 자료는 라이트 이상에서 제공됩니다.' },
+  { icon: UsersRound, title: '놀이체육 둘러보기', desc: '검색과 필터를 이용해 전체 놀이체육 활동을 살펴볼 수 있습니다.' },
   { icon: Wrench, title: '수업 도구 사용하기', desc: '로그인하면 스탑워치, 타이머, 점수판을 바로 사용할 수 있습니다.' },
 ] as const;
 
@@ -52,7 +52,7 @@ export default function OnboardingPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [role, setRole] = useState<UserRole>(profile?.role ?? 'teacher');
-  const [name, setName] = useState(profile?.name ?? '선생님');
+  const [name, setName] = useState(profile?.name ?? '');
   const [school, setSchool] = useState(profile?.school ?? '');
   const [ageGroups, setAgeGroups] = useState<string[]>(profile?.ageGroups ?? []);
   const [programTypes, setProgramTypes] = useState<string[]>(profile?.programTypes ?? []);
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
   const finish = () => {
     if (saving) return;
     const payload = {
-      name: name.trim() || '선생님',
+      name: name.trim(),
       school: school.trim(),
       role,
       ageGroups,
@@ -149,7 +149,7 @@ export default function OnboardingPage() {
                 <h2 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 환경</h2>
                 <label className="block">
                   <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름</span>
-                  <input value={name} onChange={(event) => setName(event.target.value.slice(0, 20))} className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+                  <input value={name} onChange={(event) => setName(event.target.value.slice(0, 20))} placeholder="실제 이름을 입력해 주세요" required className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
                 </label>
                 <label className="block">
                   <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>소속</span>
@@ -178,7 +178,7 @@ export default function OnboardingPage() {
                     <h2 className="mt-1 text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>LAB 시작하기</h2>
                   </div>
                 </div>
-                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이번 주 무료 수업 1개를 미리 보고, 수업 자료실을 둘러보거나 스탑워치·타이머·점수판을 사용할 수 있습니다.</p>
+                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>지정된 놀이체육 프로그램 1개를 미리 보고, 놀이체육을 둘러보거나 스탑워치·타이머·점수판을 사용할 수 있습니다. 전체 상세 자료는 라이트 이상에서 제공됩니다.</p>
                 <div className="grid gap-2">
                   {START_ITEMS.map(({ icon: Icon, title, desc }) => (
                     <div key={title} className="flex items-start gap-3 rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
             ))}
           </div>
           <p className="mt-4 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-            시작하면 홈의 이번 주 추천에서 무료 수업 1개를 먼저 확인할 수 있습니다.
+            시작하면 홈의 이번 주 추천에서 지정된 놀이체육 프로그램 1개를 빠른 미리보기로 확인할 수 있습니다.
           </p>
         </aside>
       </main>
