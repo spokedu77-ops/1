@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { TrackedLink } from '@/app/spokedu/components/home/tracked-link';
 import { CLASS_TOOLS, FREE_CLASS_TOOL_IDS } from '../../lib/classTools';
-import { MASTER_FAQS } from '../../lib/masterFaq';
+import { LANDING_FAQS } from '../landingFaq';
 import { localizeLandingCopy, type LandingPlan } from '../models/landingProduct';
 import type { ReturnTypeOfLandingModel } from './types';
 import { LandingConversionActions } from './LandingAuthControls';
@@ -411,10 +411,10 @@ export function FaqAndFinalCta({ product }: { product: ReturnTypeOfLandingModel 
       <section id="faq" className={styles.faqSection}>
         <SectionHeading eyebrow="시작하기 전에" title="자주 묻는 질문" body="무료 이용부터 자동결제와 현장 사용까지, 실제 제품 기준으로 답했습니다." />
         <div className={styles.faqList}>
-          {MASTER_FAQS.map(([question, answer]) => (
+          {LANDING_FAQS.map(([question, answer]) => (
             <details key={question}>
-              <summary>{localizeLandingCopy(question)}<ChevronDown size={18} aria-hidden /></summary>
-              <p>{localizeLandingCopy(answer)}</p>
+              <summary>{question}<ChevronDown size={18} aria-hidden /></summary>
+              <p>{answer}</p>
             </details>
           ))}
         </div>
