@@ -11,19 +11,16 @@ export type LandingPlan = PublicProductPlan & {
   ctaHref: string;
 };
 
-export function localizeLandingCopy(value: string) {
-  return value
-    .replaceAll('SPOKEDU LAB', '__SPOKEDU_LAB__')
-    .replaceAll('Library', '수업 자료실')
-    .replaceAll('Class Tools', '수업 도구')
-    .replaceAll('Session', '수업 기록')
-    .replaceAll('Premium', '프리미엄')
-    .replaceAll('Lite', '라이트')
-    .replaceAll('Free', '무료')
-    .replaceAll('PC', '컴퓨터')
-    .replaceAll('TV', '텔레비전')
-    .replaceAll('LAB', 'SPOKEDU LAB')
-    .replaceAll('__SPOKEDU_LAB__', 'SPOKEDU LAB');
+const LANDING_COPY_MAP: Readonly<Record<string, string>> = {
+  'Library 탐색': '수업 자료실 둘러보기',
+  '전체 Library': '수업 자료실 전체 이용',
+  '놀이체육 Library 전체 이용': '전체 놀이체육 수업 자료 이용',
+  'Lite의 모든 기능': '라이트의 모든 기능',
+};
+
+/** 확정된 문구에만 한글 표기를 적용하고 브랜드명·조사를 부분 치환하지 않는다. */
+export function localizeLandingCopy(value: string): string {
+  return LANDING_COPY_MAP[value] ?? value;
 }
 
 const PLAN_MESSAGES = {
