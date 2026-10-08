@@ -19,7 +19,7 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
   it('owns /spokedu-lab and permanently redirects the legacy landing', () => {
     expect(canonicalPage).toContain('CommercialLanding');
     expect(canonicalPage).toContain("`${SITE_URL}/spokedu-lab`");
-    expect(legacyPage).toContain("permanentRedirect('/spokedu-lab')");
+    expect(legacyPage).toContain("permanentRedirect('/spokedu-lab?view=landing')");
     expect(nextConfig).toContain('{ source: "/subscription", destination: "/spokedu-lab", permanent: true }');
     expect(commercialPage).toContain('<MasterLocalNav');
     expect(commercialPage).toContain('<LandingFooter');
@@ -45,7 +45,7 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
     expect(sections).toContain('최초 결제');
     expect(sections).toContain('해지 예약');
     expect(sections).toContain('결제된 이용 기간 종료일까지');
-    expect(faq).toContain('Free로 돌아갑니다');
+    expect(faq).toContain('무료 이용 상태로 돌아가더라도 기존 데이터는 보존됩니다');
   });
 
   it('keeps Free, paid subscriptions, and Center inquiry separate', () => {
