@@ -15,7 +15,7 @@ import {
 import { TrackedLink } from '@/app/spokedu/components/home/tracked-link';
 import { CLASS_TOOLS, FREE_CLASS_TOOL_IDS } from '../../lib/classTools';
 import { LANDING_FAQS } from '../landingFaq';
-import { localizeLandingCopy, type LandingPlan } from '../models/landingProduct';
+import type { LandingPlan } from '../models/landingProduct';
 import type { ReturnTypeOfLandingModel } from './types';
 import { LandingConversionActions } from './LandingAuthControls';
 import styles from '../landing.module.css';

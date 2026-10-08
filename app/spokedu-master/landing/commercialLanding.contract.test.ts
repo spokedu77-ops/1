@@ -26,7 +26,7 @@ describe('official MASTER commercial landing IA', () => {
     expect(sections).toContain('프리미엄은 라이트의 모든 기능에 SPOMOVE를 더한 요금제입니다');
     expect(sections).toContain('LANDING_FAQS.map');
     expect(faqSource).toContain('기록이 사라지나요?');
-    expect((faqSource.match(/^  \["/gm) ?? []).toHaveLength(11);
+    expect((faqSource.match(/^  \["/gm) ?? [])).toHaveLength(11);
   });
 
   it('uses the approved free, notice, and premium commercial language', () => {
