@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('LAB authenticated landing session UI', () => {
-  const nav = read('app/spokedu-master/landing/components/LandingChrome.tsx');
+  const nav = read('app/spokedu-master/landing/components/LandingNavigation.tsx');
   const authControls = read('app/spokedu-master/landing/components/LandingAuthControls.tsx');
   const banner = read('app/spokedu-master/landing/LandingLoggedInBanner.tsx');
   const status = read('app/api/institution/status/route.ts');
@@ -16,8 +16,8 @@ describe('LAB authenticated landing session UI', () => {
     expect(nav).toContain('<LandingAuthControls');
     expect(authControls).toContain("session.status === 'member'");
     expect(authControls).toContain('대시보드');
-    expect(authControls).toContain('logoutCurrentSession');
-    expect(authControls).toContain('Free로 시작하기');
+    expect(authControls).not.toContain('logoutCurrentSession');
+    expect(authControls).toContain('무료로 시작하기');
   });
 
   it('uses LAB branding and never renders the internal institution auth email', () => {

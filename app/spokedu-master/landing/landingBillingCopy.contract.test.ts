@@ -11,7 +11,8 @@ const sections = read('app/spokedu-master/landing/components/LandingSections.tsx
 const faq = read('app/spokedu-master/lib/masterFaq.ts');
 const model = read('app/spokedu-master/landing/models/landingProduct.ts');
 const chrome = read('app/spokedu-master/landing/components/LandingChrome.tsx');
-const globalFooter = read('app/spokedu/components/site-chrome.tsx');
+const navigation = read('app/spokedu-master/landing/components/LandingNavigation.tsx');
+const publicShell = read('app/spokedu/components/spokedu-site-shell.tsx');
 const nextConfig = read('next.config.ts');
 
 describe('SPOKEDU LAB canonical commercial landing', () => {
@@ -21,7 +22,8 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
     expect(legacyPage).toContain("permanentRedirect('/spokedu-lab')");
     expect(nextConfig).toContain('{ source: "/subscription", destination: "/spokedu-lab", permanent: true }');
     expect(commercialPage).toContain('<MasterLocalNav');
-    expect(commercialPage).not.toContain('<LandingFooter');
+    expect(commercialPage).toContain('<LandingFooter');
+    expect(publicShell).toContain("pathname === '/spokedu-lab'");
   });
 
   it('derives plans, comparison and handoffs from the public contract', () => {
@@ -61,10 +63,11 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
   });
 
   it('publishes the required product navigation and legal footer', () => {
-    for (const anchor of ['#workflow', '#library', '#spomove', '#plans', '#faq']) expect(chrome).toContain(anchor);
+    for (const anchor of ['#workflow', '#library', '#spomove', '#plans', '#faq']) expect(navigation).toContain(anchor);
     expect(chrome).toContain('product.handoff.loginHref');
     expect(chrome).toContain('product.handoff.freeStartHref');
-    expect(globalFooter).toContain('/spokedu-lab/terms');
-    expect(globalFooter).toContain('/spokedu-lab/privacy');
+    expect(chrome).toContain('id="footer"');
+    expect(chrome).toContain('/spokedu-lab/terms');
+    expect(chrome).toContain('/spokedu-lab/privacy');
   });
 });

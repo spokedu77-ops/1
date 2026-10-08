@@ -17,6 +17,7 @@ import { CLASS_TOOLS, FREE_CLASS_TOOL_IDS } from '../../lib/classTools';
 import { MASTER_FAQS } from '../../lib/masterFaq';
 import type { LandingPlan } from '../models/landingProduct';
 import type { ReturnTypeOfLandingModel } from './types';
+import { LandingConversionActions } from './LandingAuthControls';
 import styles from '../landing.module.css';
 
 const ASSETS = {
@@ -84,9 +85,7 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
           매번 &apos;오늘 뭐 하지?&apos;부터 다시 시작하지 않아도 됩니다.
         </p>
         <div className={styles.heroActions}>
-          <TrackedLink href={product.handoff.freeStartHref} trackLabel="master-commercial-hero-free" commercialRoute="curriculum" ctaIntentId="free_start" className="spm-btn-primary">
-            Free로 시작하기 <ArrowRight size={17} aria-hidden />
-          </TrackedLink>
+          <LandingConversionActions loginHref={product.handoff.loginHref} freeStartHref={product.handoff.freeStartHref} placement="hero" />
           <a href="#plans" className={styles.secondaryButton}>
             요금 보기 <ArrowDown size={17} aria-hidden />
           </a>
@@ -97,7 +96,7 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
         <div className={styles.heroHalo} />
         <ProductFrame src={ASSETS.home} alt="최근 활동, 이번 주 놀이체육 추천과 SPOMOVE가 보이는 SPOKEDU LAB 홈" priority />
         <div className={styles.heroCaption}>
-          <span>실제 MASTER 화면</span>
+          <span>실제 SPOKEDU LAB 화면</span>
           <strong>수업 준비와 현장 운영이 한 흐름에</strong>
         </div>
       </div>
@@ -111,7 +110,7 @@ export function ProductOverview() {
       <SectionHeading
         eyebrow="자료를 보는 데서 끝나지 않습니다"
         title="오늘의 수업이 다음 준비로 이어지는 방식"
-        body="찾기부터 다음 준비까지, MASTER가 연결하는 수업의 전체 흐름입니다."
+        body="찾기부터 다음 준비까지, SPOKEDU LAB이 연결하는 수업의 전체 흐름입니다."
       />
       <ol className={styles.workflowList}>
         {WORKFLOW.map(([number, title, body], index) => (
@@ -137,7 +136,7 @@ export function CoreProductStory() {
           <ul><li>조건별 Library 탐색</li><li>실제 수업 이미지와 준비 정보</li><li>수업에 담기 전 상세 확인</li></ul>
         </div>
         <div className={styles.mediaStack}>
-          <ProductFrame src={ASSETS.library} alt="조건별 필터와 실제 프로그램 카드가 보이는 MASTER Library" />
+          <ProductFrame src={ASSETS.library} alt="조건별 필터와 실제 프로그램 카드가 보이는 LAB 라이브러리" />
           <div className={styles.insetFrame}><ProductFrame src={ASSETS.lesson} alt="교구 배치와 수업 스크립트가 보이는 프로그램 상세 화면" ratio="portrait" position="50% 18%" /></div>
         </div>
       </section>
@@ -154,7 +153,7 @@ export function CoreProductStory() {
           </div>
         </div>
         <div className={styles.buildComposition}>
-          <ProductFrame src={ASSETS.build} alt="예정 수업에 활동 순서와 준비 메모를 구성한 실제 MASTER 수업 상세 화면" position="76% 50%" />
+          <ProductFrame src={ASSETS.build} alt="예정 수업에 활동 순서와 준비 메모를 구성한 실제 SPOKEDU LAB 수업 상세 화면" position="76% 50%" />
           <div className={styles.buildNote}>
             <span>준비의 기준</span>
             <strong>누구와 · 언제 · 무엇을</strong>
@@ -177,12 +176,12 @@ export function CoreProductStory() {
         </div>
         <div className={styles.runComposition}>
           <div className={styles.runPrimary}>
-            <ProductFrame src={ASSETS.session} alt="진행 중인 수업의 활동 순서, 출석과 메모가 보이는 실제 MASTER 수업 상세 화면" position="76% 50%" />
+            <ProductFrame src={ASSETS.session} alt="진행 중인 수업의 활동 순서, 출석과 메모가 보이는 실제 SPOKEDU LAB 수업 상세 화면" position="76% 50%" />
             <div className={styles.runProofLabel}><span>수업 운영의 중심</span><strong>오늘 수업 · 활동 순서 · 진행 상태</strong></div>
           </div>
           <div className={styles.runSupport}>
             <div className={styles.runAttendance}>
-              <ProductFrame src={ASSETS.attendance} alt="수업반과 날짜별 출석 상태가 보이는 실제 MASTER 출석 화면" position="50% 54%" />
+              <ProductFrame src={ASSETS.attendance} alt="수업반과 날짜별 출석 상태가 보이는 실제 SPOKEDU LAB 출석 화면" position="50% 54%" />
               <p><strong>수업반 출석과 참여 상태</strong><span>날짜별 출석을 실제 수업 흐름에 연결</span></p>
             </div>
             <div className={styles.runUtility}>
@@ -203,7 +202,7 @@ export function CoreProductStory() {
           <ul><li>수업 메모와 학생별 관찰</li><li>이전 수업의 활동과 다음 수업 노트</li><li>수업 안내문 저장·복사</li></ul>
         </div>
         <div className={styles.memoryVisual}>
-          <ProductFrame src={ASSETS.record} alt="완료한 수업의 활동과 메모를 다음 수업 안내로 이어 쓰는 실제 MASTER 안내문 화면" ratio="portrait" position="50% 12%" />
+          <ProductFrame src={ASSETS.record} alt="완료한 수업의 활동과 메모를 다음 수업 안내로 이어 쓰는 실제 SPOKEDU LAB 안내문 화면" ratio="portrait" position="50% 12%" />
           <div className={styles.memoryContextCrop} aria-hidden="true">
             <Image src={ASSETS.recordDetail} alt="" fill sizes="280px" />
           </div>
@@ -229,7 +228,7 @@ export function ClassToolsSection() {
           ))}
         </ul>
       </div>
-      <ProductFrame src={ASSETS.tools} alt="스탑워치, 타이머, 점수판과 명단형 도구가 보이는 실제 MASTER 수업 도구 화면" />
+      <ProductFrame src={ASSETS.tools} alt="스탑워치, 타이머, 점수판과 명단형 도구가 보이는 실제 LAB 수업 도구 화면" />
     </section>
   );
 }
@@ -247,7 +246,7 @@ export function WhyMasterSection() {
     <section id="why-master" className={styles.whySection}>
       <SectionHeading eyebrow="반복 업무를 줄이는 방식" title="자료를 더 많이 보는 것이 아니라, 준비의 반복을 줄입니다." body="찾고 정리하고 다시 떠올리던 일을 하나의 수업 흐름으로 연결합니다." />
       <div className={styles.beforeAfter}>
-        {BEFORE_AFTER.map(([before, after]) => <div key={before}><p><span>기존</span>{before}</p><ArrowRight size={18} aria-hidden /><p><span>MASTER</span><strong>{after}</strong></p></div>)}
+        {BEFORE_AFTER.map(([before, after]) => <div key={before}><p><span>기존</span>{before}</p><ArrowRight size={18} aria-hidden /><p><span>SPOKEDU LAB</span><strong>{after}</strong></p></div>)}
       </div>
     </section>
   );
@@ -264,7 +263,7 @@ export function ProductDetailSection() {
     <section id="product-detail" className={styles.detailSection}>
       <SectionHeading eyebrow="프로그램 상세" title="프로그램 하나에 실제 수업에 필요한 정보가 들어 있습니다." body="활동명만 모은 아이디어 목록이 아니라, 무엇을 준비하고 어떻게 세팅하고 설명하며 진행하는지까지 확인합니다." />
       <div className={styles.detailLayout}>
-        <ProductFrame src={ASSETS.lesson} alt="준비물, 교구 세팅, 실제 영상과 진행 방법을 보여주는 MASTER 프로그램 상세" ratio="portrait" position="50% 18%" />
+        <ProductFrame src={ASSETS.lesson} alt="준비물, 교구 세팅, 실제 영상과 진행 방법을 보여주는 LAB 수업 상세" ratio="portrait" position="50% 18%" />
         <div className={styles.detailGroups}>{groups.map(([title, items]) => <div key={title}><h3>{title}</h3><ul>{items.map((item) => <li key={item}><Check size={15} aria-hidden />{item}</li>)}</ul></div>)}</div>
       </div>
     </section>
@@ -308,7 +307,7 @@ export function InclusiveAndFieldProof() {
         <SectionHeading
           eyebrow="SPOKEDU의 현장에서 시작했습니다"
           title="실제 수업 현장에서 필요한 흐름을 제품으로 만들었습니다."
-          body="SPOKEDU는 유아·초등·특수체육 수업을 직접 운영하며, 준비부터 현장 진행과 기록까지 반복해서 필요한 과정을 MASTER 안에 연결했습니다."
+          body="SPOKEDU는 유아·초등·특수체육 수업을 직접 운영하며, 준비부터 현장 진행과 기록까지 반복해서 필요한 과정을 SPOKEDU LAB 안에 연결했습니다."
         />
         <div className={styles.fieldGrid}>
           <figure className={styles.fieldPhoto}>
@@ -425,9 +424,7 @@ export function FaqAndFinalCta({ product }: { product: ReturnTypeOfLandingModel 
         <h2>Free로 직접 확인해 보세요.</h2>
         <p>수업 도구를 열고, Library를 둘러보고, 이번 주 추천 프로그램 1개를 끝까지 이용할 수 있습니다.</p>
         <div className={styles.finalActions}>
-          <TrackedLink href={product.handoff.freeStartHref} trackLabel="master-commercial-final-free" commercialRoute="curriculum" ctaIntentId="free_start" className="spm-btn-primary">Free로 시작하기 <ArrowRight size={17} aria-hidden /></TrackedLink>
-          <TrackedLink href={product.handoff.loginHref} trackLabel="master-commercial-final-login" commercialRoute="curriculum" ctaIntentId="login" className={styles.secondaryButton}>로그인</TrackedLink>
-          <TrackedLink href={product.centerInquiryHref} trackLabel="master-commercial-final-center" commercialRoute="curriculum" ctaIntentId="center_inquiry" className={styles.textLink}>센터·기관 문의</TrackedLink>
+          <LandingConversionActions loginHref={product.handoff.loginHref} freeStartHref={product.handoff.freeStartHref} placement="final" />
         </div>
       </section>
     </>
