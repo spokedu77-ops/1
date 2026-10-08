@@ -94,6 +94,7 @@
 .storyCopy li { display: flex; align-items: center; gap: 10px; color: var(--spm-t2); font-size: 14px; font-weight: 650; }
 .storyCopy li::before { width: 6px; height: 6px; border-radius: 50%; background: var(--spm-grn); content: ''; }
 .mediaStack { position: relative; padding: 0 0 82px 64px; }
+.librarySection .productFrame img { object-fit: contain; }
 .mediaStack > .productFrame:first-child { z-index: 1; }
 .insetFrame { position: absolute; bottom: 0; left: 0; z-index: 2; width: 44%; }
 .insetFrame .productFrame { box-shadow: 0 20px 55px rgba(15,23,42,.18); }
