@@ -25,7 +25,7 @@ const headers = {
 const subject = 'SPOKEDU LAB 인증 코드: {{ .Token }}';
 const content = [
   '<h2>SPOKEDU LAB 이메일 인증</h2>',
-  '<p>아래 6자리 인증 코드를 로그인 화면에 입력해주세요.</p>',
+  '<p>아래 8자리 인증 코드를 로그인 화면에 입력해주세요.</p>',
   '<p style="font-size:32px;font-weight:700;letter-spacing:8px;">{{ .Token }}</p>',
   '<p>요청하지 않았다면 이 메일을 무시해주세요.</p>',
 ].join('');
@@ -69,4 +69,4 @@ if (!verified) {
   throw new Error('Supabase accepted the update, but the OTP templates could not be verified.');
 }
 
-console.log(`Verified 6-digit email OTP templates for Supabase project ${projectRef}.`);
+console.log(`Verified 8-digit email OTP templates for Supabase project ${projectRef}.`);

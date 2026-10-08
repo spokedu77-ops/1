@@ -70,10 +70,10 @@ export function MasterEmailOtpForm({
           <>
             <input
               value={otp}
-              onChange={(event) => onOtpChange(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(event) => onOtpChange(event.target.value.replace(/\D/g, '').slice(0, 8))}
               inputMode="numeric"
-              maxLength={6}
-              placeholder="인증 코드 6자리"
+              maxLength={8}
+              placeholder="인증 코드 8자리"
               onKeyDown={(event) => {
                 if (event.key === 'Enter') onSubmit();
               }}
@@ -122,10 +122,10 @@ export function MasterEmailOtpForm({
       {otpSent ? (
         <input
           inputMode="numeric"
-          maxLength={6}
-          placeholder="6자리 인증 코드"
+          maxLength={8}
+          placeholder="8자리 인증 코드"
           value={otp}
-          onChange={(event) => onOtpChange(event.target.value.replace(/\D/g, '').slice(0, 6))}
+          onChange={(event) => onOtpChange(event.target.value.replace(/\D/g, '').slice(0, 8))}
           onKeyDown={(event) => {
             if (event.key === 'Enter') onSubmit();
           }}

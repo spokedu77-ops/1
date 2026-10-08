@@ -151,7 +151,7 @@ function MasterLoginContent() {
           otpSent={otp.otpSent}
           loading={otp.loading || checking}
           message={otp.message}
-          description="이메일로 받은 6자리 인증 코드를 입력하면 가입과 로그인이 함께 처리됩니다."
+          description="이메일로 받은 8자리 인증 코드를 입력하면 가입과 로그인이 함께 처리됩니다."
           onEmailChange={otp.setEmail}
           onOtpChange={otp.setOtp}
           onSubmit={() => void submitEmail()}

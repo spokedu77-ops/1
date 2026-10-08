@@ -64,7 +64,7 @@ export function useMasterEmailOtp() {
       }
       setEmail(normalized);
       setOtpSent(true);
-      setMessage(`${normalized}로 인증 메일을 보냈습니다. 6자리 코드를 입력하거나 메일의 확인 링크를 눌러주세요.`);
+      setMessage(`${normalized}로 인증 메일을 보냈습니다. 8자리 코드를 입력하거나 메일의 확인 링크를 눌러주세요.`);
       return { ok: true, kind: 'sent' };
     } finally {
       setLoading(false);
@@ -73,8 +73,9 @@ export function useMasterEmailOtp() {
 
   const verify = async (): Promise<SubmitResult> => {
     const normalized = email.trim().toLowerCase();
-    if (!normalized.includes('@') || otp.trim().length < 6) {
-      const msg = '이메일로 받은 6자리 인증 코드를 입력해 주세요.';
+    const normalizedOtp = otp.trim();
+    if (!normalized.includes('@') || !/^\d{8}$/.test(normalizedOtp)) {
+      const msg = '이메일로 받은 8자리 인증 코드를 입력해 주세요.';
       setError(msg);
       return { ok: false, message: msg };
     }
@@ -84,7 +85,7 @@ export function useMasterEmailOtp() {
       const supabase = getSupabaseBrowserClient();
       const { data, error: authError } = await supabase.auth.verifyOtp({
         email: normalized,
-        token: otp.trim(),
+        token: normalizedOtp,
         type: 'email',
       });
       if (authError) {
