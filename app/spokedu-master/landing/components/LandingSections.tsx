@@ -128,7 +128,7 @@ export function ProductOverview() {
 export function CoreProductStory() {
   return (
     <div className={styles.storyFlow}>
-      <section id="library" className={styles.storySection}>
+      <section id="library" className={`${styles.storySection} ${styles.librarySection}`}>
         <div className={styles.storyCopy}>
           <p className={styles.stepLabel}>찾기 · 준비하기</p>
           <h2>오늘 수업에 필요한 프로그램을 더 빠르게 찾으세요.</h2>
