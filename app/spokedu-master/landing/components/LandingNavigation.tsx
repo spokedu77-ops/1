@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { LandingAuthControls } from './LandingAuthControls';
+import { spokeduLabIntroductionHref } from '@/app/spokedu/data/public-routes';
 import { useLandingSession } from '../useLandingSession';
 import styles from '../landing.module.css';
 
 const LANDING_NAV = [
   ['서비스', '#workflow'],
-  ['사용 방법', '#library'],
+  ['수업 자료실', '#library'],
   ['SPOMOVE', '#spomove'],
-  ['요금', '#plans'],
-  ['FAQ', '#faq'],
+  ['요금제', '#plans'],
+  ['자주 묻는 질문', '#faq'],
 ] as const;
 
 export function LandingNavigation({ loginHref, freeStartHref }: { loginHref: string; freeStartHref: string }) {
@@ -62,7 +63,7 @@ export function LandingNavigation({ loginHref, freeStartHref }: { loginHref: str
     <>
       <header className={styles.masterLocalNav} data-spokedu-master-local-nav="true">
         <div className={styles.masterLocalNavInner}>
-          <Link href="/spokedu-lab" className={styles.masterLocalBrand} aria-label="SPOKEDU LAB 홈" onClick={closeMenu}>
+          <Link href={spokeduLabIntroductionHref()} className={styles.masterLocalBrand} aria-label="SPOKEDU LAB 홈" onClick={closeMenu}>
             <span>SPOKEDU</span>
             <strong>LAB</strong>
           </Link>

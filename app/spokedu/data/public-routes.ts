@@ -49,6 +49,20 @@ export function spokeduSubscriptionHref(query?: {
   return `${SPOKEDU_PATHS.subscription}${qs ? `?${qs}` : ''}${hash}`;
 }
 
+export const SPOKEDU_LAB_INTRO_VIEW = 'landing';
+
+export function isSpokeduLabIntroductionView(value: string | string[] | undefined): boolean {
+  return value === SPOKEDU_LAB_INTRO_VIEW;
+}
+
+/** 로그인 상태에서도 서비스 소개와 요금제를 명시적으로 열 수 있는 공개 진입 경로. */
+export function spokeduLabIntroductionHref(hash?: string): string {
+  return spokeduSubscriptionHref({
+    extra: { view: SPOKEDU_LAB_INTRO_VIEW },
+    hash,
+  });
+}
+
 export function isSpokeduHomePath(pathname: string): boolean {
   return pathname === '/' || pathname === '';
 }

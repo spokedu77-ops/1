@@ -34,6 +34,7 @@ function SubscriptionInquiryFormWithMode() {
       leadMode={mode}
       formDefaults={formDefaults}
       onLeadModeChange={handleLeadModeChange}
+      labLandingCopy
     />
   );
 }

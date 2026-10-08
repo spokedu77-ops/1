@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronRight, LogOut, Pencil, ShieldAlert } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { logoutCurrentSession } from '@/app/lib/auth/logoutSession';
+import { spokeduLabIntroductionHref } from '@/app/spokedu/data/public-routes';
 import { useSpomatShopAvailable } from '../access/MasterAccessProvider';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
@@ -214,7 +215,7 @@ function SpokeduMasterProfileContent() {
             </div>
           </SettingsSection>
           <section><h2 className="mb-2 text-[18px] font-semibold text-slate-900">이용권</h2><SubscriptionSummaryCard display={display} loadStatus={subscriptionSummaryStatus} onRetry={() => void loadSubscriptionSummary()} /></section>
-          <SettingsSection title="서비스">{spomatShopAvailable ? <SettingsRow label="SPOMAT 스토어" caption="구매 상품 확인" href="/spokedu-lab/shop" /> : null}<SettingsRow label="고객센터" caption="스포키듀 카카오 채널에서 문의하기" href={MASTER_CUSTOMER_SERVICE_HREF} /></SettingsSection>
+          <SettingsSection title="서비스"><SettingsRow label="서비스 소개와 요금제" caption="SPOKEDU LAB 기능과 요금제 확인" href={spokeduLabIntroductionHref()} />{spomatShopAvailable ? <SettingsRow label="SPOMAT 스토어" caption="구매 상품 확인" href="/spokedu-lab/shop" /> : null}<SettingsRow label="고객센터" caption="스포키듀 카카오 채널에서 문의하기" href={MASTER_CUSTOMER_SERVICE_HREF} /></SettingsSection>
           <ProfileFaqSection />
           <SettingsSection title="정보 및 정책"><SettingsRow label="이용약관" href="/spokedu-lab/terms?from=profile" /><SettingsRow label="개인정보처리방침" href="/spokedu-lab/privacy?from=profile" /></SettingsSection>
           <SettingsSection title="계정"><SettingsRow label={loggingOut ? '로그아웃 중...' : '로그아웃'} onClick={() => void handleLogout()} trailing={<LogOut size={17} className="text-slate-400" />} /></SettingsSection>

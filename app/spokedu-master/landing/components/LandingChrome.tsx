@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { spokeduLabIntroductionHref } from '@/app/spokedu/data/public-routes';
 import type { ReturnTypeOfLandingModel } from './types';
 import { LandingNavigation } from './LandingNavigation';
 import styles from '../landing.module.css';
@@ -17,13 +18,13 @@ export function LandingFooter({ product }: { product: ReturnTypeOfLandingModel }
     <footer id="footer" className={styles.footer} data-spokedu-lab-footer="true">
       <div className={styles.footerInner}>
         <div className={styles.footerLead}>
-          <Link href="/spokedu-lab" className={styles.footerBrand}>
+          <Link href={spokeduLabIntroductionHref()} className={styles.footerBrand}>
             <strong>SPOKEDU LAB</strong>
-            <span>by SPOKEDU</span>
+            <span>SPOKEDU 제공</span>
           </Link>
           <div className={styles.footerLinks}>
             <Link href="/">SPOKEDU 홈페이지</Link>
-            <Link href="/spokedu-lab/terms">MASTER 이용약관</Link>
+            <Link href="/spokedu-lab/terms">SPOKEDU LAB 이용약관</Link>
             <Link href="/spokedu-lab/privacy">개인정보처리방침</Link>
           </div>
         </div>
@@ -40,7 +41,7 @@ export function LandingFooter({ product }: { product: ReturnTypeOfLandingModel }
         </div>
       </div>
       <div className={styles.footerBottom}>
-        <p>© {new Date().getFullYear()} SPOKEDU. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SPOKEDU. 모든 권리를 보유합니다.</p>
       </div>
     </footer>
   );

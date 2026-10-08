@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import {
+  getInstitutionAccountByUserId,
+  INSTITUTION_LAB_DESTINATION,
+} from '@/app/lib/server/institutionAccount';
+import { getSpokeduMasterAccessSnapshot } from '@/app/lib/server/spokeduMasterAccess';
 import { CommercialLanding } from '@/app/spokedu-master/landing/CommercialLanding';
 import { getPublicProductContract } from '@/app/spokedu-master/lib/publicProductContract';
+import { isSpokeduLabIntroductionView } from '@/app/spokedu/data/public-routes';
 import { getSpokeduSiteUrl } from '@/app/spokedu/lib/site-url';
 
 const SITE_URL = getSpokeduSiteUrl();
@@ -21,7 +29,38 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION, images: [`${SITE_URL}/api/spokedu-master/og`] },
 };
 
-export default function SubscriptionPage() {
+type LandingSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+async function redirectAuthenticatedVisitor() {
+  const access = await getSpokeduMasterAccessSnapshot();
+  if (!access.ok) return;
+
+  const institution = await getInstitutionAccountByUserId(
+    getServiceSupabase(),
+    access.userId,
+  );
+  if (institution.error) return;
+
+  if (institution.row) redirect(INSTITUTION_LAB_DESTINATION);
+  redirect(access.snapshot.onboardingDone
+    ? '/spokedu-lab/dashboard'
+    : '/spokedu-lab/onboarding');
+}
+
+export async function SpokeduLabLandingPage({
+  autoBypassAuthenticatedVisitors = false,
+  searchParams,
+}: {
+  autoBypassAuthenticatedVisitors?: boolean;
+  searchParams?: LandingSearchParams;
+}) {
+  const query = searchParams ? await searchParams : {};
+  const introductionView = isSpokeduLabIntroductionView(query.view)
+    || typeof query.mode === 'string';
+  if (autoBypassAuthenticatedVisitors && !introductionView) {
+    await redirectAuthenticatedVisitor();
+  }
+
   const product = getPublicProductContract();
   const paidPlans = product.plans.filter((plan) => plan.monthlyPriceKrw != null);
   const structuredData = {
@@ -41,4 +80,8 @@ export default function SubscriptionPage() {
       <CommercialLanding />
     </>
   );
+}
+
+export default function SubscriptionPage() {
+  return <SpokeduLabLandingPage />;
 }

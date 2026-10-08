@@ -71,10 +71,11 @@ type Props = {
   leadMode: CurriculumCommercialMode;
   formDefaults?: CurriculumFormDefaults;
   onLeadModeChange?: (mode: CurriculumCommercialMode) => void;
+  labLandingCopy?: boolean;
 };
 
 /** 커리큘럼·지도자 교육 온페이지 문의 — /api/curriculum/leads */
-export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange }: Props) {
+export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange, labLandingCopy = false }: Props) {
   const searchParams = useSearchParams();
   const [nameOrOrg, setNameOrOrg] = useState('');
   const [phone, setPhone] = useState('');
@@ -258,7 +259,9 @@ export function CurriculumInquiryForm({ leadMode, formDefaults, onLeadModeChange
           ) : null}
           {leadMode === 'master' ? (
             <p className={`mt-3 text-xs leading-relaxed text-teal-900/80 ${koreanLineBreak}`}>
-              개인 지도자 구독은 Primary로 MASTER 제품 페이지를 이용하세요. 이 폼은 기관·단체 이용 문의용입니다.
+              {labLandingCopy
+                ? '개인 지도자는 위의 무료 시작 또는 요금제 선택을 이용해 주세요. 이 양식은 학교·센터·기관 이용 문의용입니다.'
+                : '개인 지도자 구독은 SPOKEDU LAB 제품 페이지를 이용해 주세요. 이 양식은 기관·단체 이용 문의용입니다.'}
             </p>
           ) : null}
         </div>

@@ -15,7 +15,7 @@ import {
 import { TrackedLink } from '@/app/spokedu/components/home/tracked-link';
 import { CLASS_TOOLS, FREE_CLASS_TOOL_IDS } from '../../lib/classTools';
 import { MASTER_FAQS } from '../../lib/masterFaq';
-import type { LandingPlan } from '../models/landingProduct';
+import { localizeLandingCopy, type LandingPlan } from '../models/landingProduct';
 import type { ReturnTypeOfLandingModel } from './types';
 import { LandingConversionActions } from './LandingAuthControls';
 import styles from '../landing.module.css';
@@ -90,7 +90,7 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
             요금 보기 <ArrowDown size={17} aria-hidden />
           </a>
         </div>
-        <p className={styles.freeNote}>수업 도구 3종 · Library 탐색 · 이번 주 추천 프로그램 1개 전체 이용</p>
+        <p className={styles.freeNote}>수업 도구 3종 · 수업 자료실 둘러보기 · 이번 주 추천 프로그램 1개 전체 이용</p>
       </div>
       <div className={styles.heroVisual} aria-label="SPOKEDU LAB 실제 홈 화면">
         <div className={styles.heroHalo} />
@@ -131,12 +131,12 @@ export function CoreProductStory() {
       <section id="library" className={styles.storySection}>
         <div className={styles.storyCopy}>
           <p className={styles.stepLabel}>찾기 · 준비하기</p>
-          <h2>오늘 수업에 맞는 활동을 빠르게 찾습니다.</h2>
-          <p>연령, 공간, 참여 형태와 활동 특성을 살펴보고 수업을 고릅니다. 상세 화면에서 준비물과 교구 배치, 진행 방법을 확인해 현장에 맞게 준비합니다.</p>
-          <ul><li>조건별 Library 탐색</li><li>실제 수업 이미지와 준비 정보</li><li>수업에 담기 전 상세 확인</li></ul>
+          <h2>오늘 수업에 필요한 프로그램을 더 빠르게 찾으세요.</h2>
+          <p>교실에서 진행하기 좋은 활동과 미취학 아동에게 추천하는 프로그램을 살펴보세요. 검색과 6가지 세부 필터를 이용하면 수업 대상과 환경에 맞는 활동을 더욱 편리하게 찾을 수 있습니다.</p>
+          <ul><li>수업 대상과 공간에 맞는 프로그램 검색</li><li>추천 프로그램과 다양한 놀이체육 활동 탐색</li><li>준비물과 교구 배치 및 진행 방법 확인</li><li>필요한 활동을 실제 수업 준비에 활용</li></ul>
         </div>
         <div className={styles.mediaStack}>
-          <ProductFrame src={ASSETS.library} alt="조건별 필터와 실제 프로그램 카드가 보이는 LAB 라이브러리" />
+          <ProductFrame src={ASSETS.library} alt="검색과 6가지 세부 필터 및 프로그램 카드가 보이는 SPOKEDU LAB 수업 자료실" />
           <div className={styles.insetFrame}><ProductFrame src={ASSETS.lesson} alt="교구 배치와 수업 스크립트가 보이는 프로그램 상세 화면" ratio="portrait" position="50% 18%" /></div>
         </div>
       </section>
@@ -196,7 +196,7 @@ export function CoreProductStory() {
 
       <section id="records" className={`${styles.storySection} ${styles.memorySection}`}>
         <div className={styles.storyCopy}>
-          <p className={styles.stepLabel}>기억하고 이어가기 · Lite</p>
+          <p className={styles.stepLabel}>기억하고 이어가기 · 라이트</p>
           <h2>지난 수업이 다음 준비의 출발점이 됩니다.</h2>
           <p>수업 메모와 학생 관찰, 다음 수업 노트, 수업 안내문을 남겨 필요한 순간 다시 확인합니다. 기록은 자동으로 수업을 만들지 않습니다. 교사가 남긴 실제 맥락을 다음 준비에 활용합니다.</p>
           <ul><li>수업 메모와 학생별 관찰</li><li>이전 수업의 활동과 다음 수업 노트</li><li>수업 안내문 저장·복사</li></ul>
@@ -220,11 +220,11 @@ export function ClassToolsSection() {
         <SectionHeading
           eyebrow="수업 도구 8종"
           title="수업 중 필요한 도구도 같은 화면에서 바로 씁니다."
-          body="Free에서는 스탑워치·타이머·점수판을, Lite와 Premium에서는 명단을 활용하는 다섯 도구까지 모두 사용합니다."
+          body="무료 이용자는 스탑워치·타이머·점수판을, 라이트와 프리미엄 이용자는 명단을 활용하는 다섯 도구까지 모두 사용할 수 있습니다."
         />
         <ul className={styles.toolStrip}>
           {CLASS_TOOLS.map((tool) => (
-            <li key={tool.id}><span>{tool.label}</span><small>{FREE_CLASS_TOOL_IDS.includes(tool.id as (typeof FREE_CLASS_TOOL_IDS)[number]) ? 'Free' : 'Lite'}</small></li>
+            <li key={tool.id}><span>{tool.label}</span><small>{FREE_CLASS_TOOL_IDS.includes(tool.id as (typeof FREE_CLASS_TOOL_IDS)[number]) ? '무료' : '라이트'}</small></li>
           ))}
         </ul>
       </div>
@@ -234,10 +234,10 @@ export function ClassToolsSection() {
 }
 
 const BEFORE_AFTER = [
-  ['여러 채널에서 활동 검색', 'Library에서 탐색'],
+  ['여러 채널에서 활동 검색', '수업 자료실에서 탐색'],
   ['준비물·규칙·세팅을 별도로 정리', '상세에서 한 번에 확인'],
-  ['타이머·점수·팀 편성을 다른 도구로 실행', 'Class Tools에서 바로 실행'],
-  ['수업 후 기억에 의존', 'Session 기록으로 남김'],
+  ['타이머·점수·팀 편성을 다른 도구로 실행', '수업 도구에서 바로 실행'],
+  ['수업 후 기억에 의존', '수업 기록으로 남김'],
   ['다음 수업을 다시 처음부터 준비', '이전 기록을 다음 준비에서 확인'],
 ] as const;
 
@@ -274,10 +274,10 @@ export function SpomoveSection() {
   return (
     <section id="spomove" className={styles.spomoveSection}>
       <div className={styles.spomoveCopy}>
-        <p className={styles.spomoveEyebrow}>SPOMOVE · Premium</p>
+        <p className={styles.spomoveEyebrow}>SPOMOVE · 프리미엄</p>
         <h2>수업을 화면과 움직임으로 확장합니다.</h2>
         <p>색상·방향·숫자 같은 시각 신호를 보고 몸으로 반응하는 디지털 움직임 활동입니다. 활동을 고른 뒤 시작 화면에서 설정을 확인하고 교사가 직접 실행합니다.</p>
-        <p><strong>Premium은 Lite의 모든 기능에 SPOMOVE를 더한 플랜입니다.</strong></p>
+        <p><strong>프리미엄은 라이트의 모든 기능에 SPOMOVE를 더한 요금제입니다.</strong></p>
         <div className={styles.spomoveSteps}><span>활동 찾기</span><ArrowRight size={16} /><span>시작 확인</span><ArrowRight size={16} /><span>현장 실행</span></div>
       </div>
       <div className={styles.spomoveVisual}>
@@ -376,21 +376,21 @@ export function PlansSection({ product }: { product: ReturnTypeOfLandingModel })
   return (
     <section id="plans" className={styles.plansSection}>
       <SectionHeading
-        eyebrow="Free에서 확인하고, 필요한 만큼 이어가세요"
+        eyebrow="무료로 확인하고, 필요한 만큼 이어가세요"
         title="무료로 시작하고, 필요한 기능만 더하세요."
-        body="Free로 Library와 기본 수업 도구를 확인하세요. 일반 수업관리와 기록·안내문은 Lite, SPOMOVE까지 이용하려면 Premium을 선택할 수 있습니다."
+        body="무료로 수업 자료실과 기본 수업 도구를 확인하세요. 일반 수업관리와 기록·안내문은 라이트, SPOMOVE까지 이용하려면 프리미엄을 선택할 수 있습니다."
       />
       <div className={styles.planGrid}>{product.plans.map((plan) => <PlanCard key={plan.code} plan={plan} />)}</div>
       <div className={styles.comparisonWrap}>
         <table className={styles.comparisonTable}>
-          <caption>Free, Lite, Premium 기능 비교</caption>
-          <thead><tr><th scope="col">기능</th><th scope="col">Free</th><th scope="col">Lite</th><th scope="col">Premium</th></tr></thead>
+          <caption>무료, 라이트, 프리미엄 기능 비교</caption>
+          <thead><tr><th scope="col">기능</th><th scope="col">무료</th><th scope="col">라이트</th><th scope="col">프리미엄</th></tr></thead>
           <tbody>{product.comparison.map((row) => <tr key={row.label}><th scope="row">{row.label}</th>{(['free', 'lite', 'premium'] as const).map((plan) => <td key={plan} aria-label={row[plan] ? '포함' : '미포함'}>{row[plan] ? <Check size={17} aria-hidden /> : <span aria-hidden>—</span>}</td>)}</tr>)}</tbody>
         </table>
       </div>
       <div className={styles.billingNotice}>
         <Sparkles size={18} aria-hidden />
-        <p><strong>결제 안내</strong> Lite와 프리미엄은 선택 즉시 최초 결제되며 이후 매월 최초 결제일에 자동결제됩니다. 언제든 해지 예약이 가능하고, 해지 후에도 결제된 이용 기간 종료일까지 사용할 수 있습니다.</p>
+        <p><strong>결제 안내</strong> 라이트와 프리미엄은 선택 즉시 최초 결제되며 이후 매월 최초 결제일에 자동결제됩니다. 언제든 해지 예약이 가능하고, 해지 후에도 결제된 이용 기간 종료일까지 사용할 수 있습니다.</p>
       </div>
     </section>
   );
@@ -399,7 +399,7 @@ export function PlansSection({ product }: { product: ReturnTypeOfLandingModel })
 export function CenterSection({ product }: { product: ReturnTypeOfLandingModel }) {
   return (
     <section id="center" className={styles.centerSection}>
-      <div><p className={styles.eyebrow}>CENTER · INSTITUTION</p><h2>학교·센터·기관에서 함께 사용하시나요?</h2><p>이용 인원, 운영 방식, 교육과 도입 범위에 맞춰 별도로 안내합니다. Center는 개인 구독 플랜과 같은 직접 결제 상품이 아닙니다.</p></div>
+      <div><p className={styles.eyebrow}>학교·센터·기관 이용</p><h2>학교·센터·기관에서 함께 사용하시나요?</h2><p>이용 인원, 운영 방식, 교육과 도입 범위에 맞춰 별도로 안내합니다. 기관 이용은 개인 구독 요금제처럼 직접 결제하는 상품이 아닙니다.</p></div>
       <TrackedLink href={product.centerInquiryHref} trackLabel="master-commercial-center" commercialRoute="curriculum" ctaIntentId="center_inquiry" className={styles.secondaryButton}>{product.centerInquiry.ctaLabel}<ArrowRight size={16} aria-hidden /></TrackedLink>
     </section>
   );
@@ -413,16 +413,16 @@ export function FaqAndFinalCta({ product }: { product: ReturnTypeOfLandingModel 
         <div className={styles.faqList}>
           {MASTER_FAQS.map(([question, answer]) => (
             <details key={question}>
-              <summary>{question}<ChevronDown size={18} aria-hidden /></summary>
-              <p>{answer}</p>
+              <summary>{localizeLandingCopy(question)}<ChevronDown size={18} aria-hidden /></summary>
+              <p>{localizeLandingCopy(answer)}</p>
             </details>
           ))}
         </div>
       </section>
       <section id="final-cta" className={styles.finalCta}>
         <p className={styles.eyebrow}>다음 수업 하나부터</p>
-        <h2>Free로 직접 확인해 보세요.</h2>
-        <p>수업 도구를 열고, Library를 둘러보고, 이번 주 추천 프로그램 1개를 끝까지 이용할 수 있습니다.</p>
+        <h2>무료로 직접 확인해 보세요.</h2>
+        <p>수업 도구를 열고, 수업 자료실을 둘러보고, 이번 주 추천 프로그램 1개를 끝까지 이용할 수 있습니다.</p>
         <div className={styles.finalActions}>
           <LandingConversionActions loginHref={product.handoff.loginHref} freeStartHref={product.handoff.freeStartHref} placement="final" />
         </div>

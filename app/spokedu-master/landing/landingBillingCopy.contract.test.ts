@@ -51,7 +51,7 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
   it('keeps Free, paid subscriptions, and Center inquiry separate', () => {
     expect(faq).toContain('Free는 기간이 정해진 무료체험이 아닙니다');
     expect(sections).toContain('product.centerInquiry');
-    expect(sections).toContain('개인 구독 플랜과 같은 직접 결제 상품이 아닙니다');
+    expect(sections).toContain('개인 구독 요금제처럼 직접 결제하는 상품이 아닙니다');
     expect(sections).not.toContain('가장 인기');
   });
 

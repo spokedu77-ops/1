@@ -10,11 +10,11 @@ import { getSafeMasterLoginReturnPath } from '../lib/masterLoginReturn';
 
 const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등', '고등', '성인', '시니어', '특수체육', '기타'];
 const PROGRAM_TYPES = ['놀이체육', '뉴스포츠', '협동·팀빌딩', '기초체력', 'SPOMOVE', '특수체육'];
-const STEP_LABELS = ['환경', '수업 환경', '시작'];
+const STEP_LABELS = ['이용 환경', '수업 정보', '시작'];
 const START_ITEMS = [
-  { icon: BookOpen, title: '무료 수업 1개 미리보기', desc: '지정된 놀이체육의 핵심 준비와 진행 요약을 빠른 미리보기로 확인할 수 있습니다.' },
-  { icon: UsersRound, title: 'Library 전체 둘러보기', desc: '검색·필터·추천으로 전체 놀이체육 목록을 탐색할 수 있습니다.' },
-  { icon: Wrench, title: '수업 도구 바로 사용', desc: '스탑워치, 타이머, 점수판을 로그인 직후부터 사용할 수 있습니다.' },
+  { icon: BookOpen, title: '무료 수업 1개 미리보기', desc: '지정된 놀이체육 활동 1개의 준비물과 진행 방법을 간단히 확인할 수 있습니다.' },
+  { icon: UsersRound, title: '수업 자료실 둘러보기', desc: '검색과 필터를 이용해 전체 놀이체육 활동을 살펴볼 수 있습니다.' },
+  { icon: Wrench, title: '수업 도구 사용하기', desc: '로그인하면 스탑워치, 타이머, 점수판을 바로 사용할 수 있습니다.' },
 ] as const;
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
@@ -122,8 +122,8 @@ export default function OnboardingPage() {
         <div>
           <div className="mb-8">
             <p className="text-[12px] font-extrabold uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU LAB</p>
-            <h1 className="mt-3 text-[34px] font-extrabold leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>Free로 수업을 먼저 경험하세요</h1>
-            <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>놀이체육과 수업 도구를 먼저 써 보고, 수업 운영이 필요하면 Lite로 확장할 수 있습니다.</p>
+            <h1 className="mt-3 text-[34px] font-extrabold leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>무료로 수업을 먼저 경험해 보세요</h1>
+            <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>놀이체육 활동과 수업 도구를 먼저 사용해 보세요. 수업 운영 기능이 더 필요하면 라이트 요금제를 선택할 수 있습니다.</p>
           </div>
 
           <div className="mb-6 grid grid-cols-3 gap-2">
@@ -139,8 +139,8 @@ export default function OnboardingPage() {
             {step === 0 ? (
               <div className="space-y-3">
                 <h2 className="text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>사용 환경</h2>
-                <ChoiceCard title="개인 강사·교사" desc="내 계정으로 수업을 준비합니다. 이용권은 Free로 시작합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
-                <ChoiceCard title="센터·기관 운영" desc="여러 수업을 운영하는 환경입니다. 센터를 선택해도 별도 이용권으로 전환되지 않습니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
+                <ChoiceCard title="개인 강사·교사" desc="개인 계정으로 수업을 준비하고 운영합니다. 무료 이용권으로 시작합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
+                <ChoiceCard title="센터·기관 운영" desc="센터나 기관에서 여러 수업을 운영하는 경우 선택해 주세요. 선택만으로 이용권이 변경되지는 않습니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
               </div>
             ) : null}
 
@@ -175,10 +175,10 @@ export default function OnboardingPage() {
                   <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'var(--spm-grn-a14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
                   <div>
                     <p className="text-[11px] font-extrabold uppercase tracking-[0.12em]" style={{ color: 'var(--spm-grn)' }}>준비 완료</p>
-                    <h2 className="mt-1 text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>MASTER 시작하기</h2>
+                    <h2 className="mt-1 text-[22px] font-extrabold" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>LAB 시작하기</h2>
                   </div>
                 </div>
-                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이번 주 첫 무료 수업 1개를 빠르게 미리보고 Library와 스탑워치·타이머·점수판을 사용할 수 있습니다.</p>
+                <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이번 주 무료 수업 1개를 미리 보고, 수업 자료실을 둘러보거나 스탑워치·타이머·점수판을 사용할 수 있습니다.</p>
                 <div className="grid gap-2">
                   {START_ITEMS.map(({ icon: Icon, title, desc }) => (
                     <div key={title} className="flex items-start gap-3 rounded-[13px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -196,7 +196,7 @@ export default function OnboardingPage() {
                   </p>
                 ) : null}
                 <button type="button" onClick={finish} disabled={saving} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-extrabold focus-visible:outline-none disabled:opacity-50">
-                  {saving ? '저장 중...' : 'MASTER 시작하기'}
+                  {saving ? '시작하는 중...' : 'LAB 시작하기'}
                 </button>
               </div>
             ) : null}
@@ -218,8 +218,8 @@ export default function OnboardingPage() {
         </div>
 
         <aside className="rounded-[22px] p-5" style={{ background: 'linear-gradient(180deg, var(--spm-acc-a16), var(--spm-grn-a08))', border: '1px solid var(--spm-br2)' }}>
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>시작하기</p>
-          <h2 className="mt-2 text-[24px] font-extrabold leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>Free에서 바로 시작할 수 있습니다</h2>
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>무료 이용 안내</p>
+          <h2 className="mt-2 text-[24px] font-extrabold leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>무료로 바로 시작할 수 있어요</h2>
           <div className="mt-5 space-y-3">
             {START_ITEMS.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="flex items-center gap-3 rounded-[15px] p-3" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -234,7 +234,7 @@ export default function OnboardingPage() {
             ))}
           </div>
           <p className="mt-4 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-            홈의 이번 주 추천에서 지정된 무료 수업부터 이어집니다.
+            시작하면 홈의 이번 주 추천에서 무료 수업 1개를 먼저 확인할 수 있습니다.
           </p>
         </aside>
       </main>

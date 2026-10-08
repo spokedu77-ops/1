@@ -11,7 +11,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { MASTER_PRODUCT_CATALOG } from '../lib/productCatalog';
-import { SPOKEDU_PATHS } from '@/app/spokedu/data/public-routes';
+import { spokeduLabIntroductionHref } from '@/app/spokedu/data/public-routes';
 import {
   getEntitlementPaymentHref,
   getEntitlementPrimaryCtaLabel,
@@ -67,7 +67,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
             {primaryLabel}
           </Link>
           <Link
-            href={`${SPOKEDU_PATHS.subscription}#plans`}
+            href={spokeduLabIntroductionHref('plans')}
             className="inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-extrabold"
             style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
           >

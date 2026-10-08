@@ -1,5 +1,5 @@
 import { permanentRedirect } from 'next/navigation';
 
 export default function LegacyMasterLandingPage() {
-  permanentRedirect('/spokedu-lab');
+  permanentRedirect('/spokedu-lab?view=landing');
 }
