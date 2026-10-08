@@ -1,5 +1,6 @@
 import nextEnv from '@next/env';
-import { applyMasterStorageState, assertMasterQaAccess, getMasterStorageStatePath, requireMasterStorageState } from './lib/spokedu-master-auth-state.mjs';
+import { applyMasterStorageState, assertMasterQaAccess, getMasterStorageStatePath } from './lib/spokedu-master-auth-state.mjs';
+import { applyMasterAdminSession } from './lib/spokedu-master-admin-auth.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -320,7 +321,10 @@ function assertRequiredEnv() {
   console.log(`QA auth mode: ${useMockAuth ? 'mock' : 'real'}`);
   if (!useMockAuth) console.log(`MASTER storage state: ${getMasterStorageStatePath()}`);
   const missing = [
-    ...(useMockAuth && !idLoaded ? ['SPOKEDU_MASTER_QA_ID or SPM_QA_ID'] : []),
+    ...(!idLoaded ? ['SPOKEDU_MASTER_QA_ID or SPM_QA_ID'] : []),
+    ...(!useMockAuth && !process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ? ['NEXT_PUBLIC_SUPABASE_URL'] : []),
+    ...(!useMockAuth && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ? ['NEXT_PUBLIC_SUPABASE_ANON_KEY'] : []),
+    ...(!useMockAuth && !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
     ...(useMockAuth && !qaBypassEnabled ? ['SPOKEDU_MASTER_QA_BYPASS_AUTH=1'] : []),
   ];
   if (useMockAuth && process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH !== '1') {
@@ -344,7 +348,11 @@ async function assertDevServerReachable() {
 }
 
 async function authenticateMasterQa(context) {
-  await applyMasterStorageState(context);
+  try {
+    await applyMasterStorageState(context);
+  } catch {
+    await applyMasterAdminSession(context, BASE, QA_ID);
+  }
   await assertMasterQaAccess(context, BASE);
 }
 
@@ -1694,7 +1702,7 @@ async function runLibraryNavigationSmoke(browser) {
   await page.getByRole('button', { name: /QA Balance Program.*미리보기/ }).click();
   const detailLink = page.getByRole('link', { name: /상세 준비 열기/ });
   const detailHref = await detailLink.getAttribute('href');
-  assert(detailHref?.startsWith('/spokedu-master/library/53'), `preview detail href mismatch (${detailHref})`);
+  assert(detailHref?.startsWith('/spokedu-lab/library/53'), `preview detail href mismatch (${detailHref})`);
   const detailUrl = new URL(detailHref, BASE);
   assert(detailUrl.searchParams.get('libraryReturn') === 'q=line+tape', `preview detail href lost library search context (${detailHref})`);
   await page.keyboard.press('Escape');
@@ -1904,7 +1912,6 @@ async function main() {
   await withTimeout('commercial smoke suite', TOTAL_TIMEOUT_MS, async () => {
     logStep('[setup] checking required environment');
     assertRequiredEnv();
-    if (!useMockAuth) await requireMasterStorageState();
     if (ENV_PREFLIGHT_ONLY) {
       logStep('[setup] env preflight passed');
       return;

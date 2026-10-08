@@ -12,7 +12,7 @@ const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? '';
 const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
 
 const PLACEHOLDER_PATTERN = /확인 필요|활동 공간 확인|미정|undefined|null|NaN/i;
-const ADMIN_EMAILS = ['spm.qa.admin@spokedu.test', 'choijihoon@spokedu.com'];
+const ADMIN_EMAILS = ['choijihoon@spokedu.com', 'spm.qa.admin@spokedu.test'];
 
 function fail(message) {
   console.error(`[library-content] FAIL: ${message}`);
@@ -153,6 +153,11 @@ async function main() {
 
   try {
     const { context, adminEmail } = await createAdminContext(browser);
+    const accessResponse = await context.request.get(BASE + '/api/spokedu-master/access');
+    const access = await accessResponse.json().catch(() => null);
+    if (accessResponse.status() !== 200 || access?.isAdmin !== true) {
+      fail(`content readiness requires an admin session (status=${accessResponse.status()})`);
+    }
     const response = await context.request.get(`${BASE}/api/spokedu-master/programs`, {
       headers: { accept: 'application/json' },
     });
