@@ -20,11 +20,11 @@ describe('official MASTER commercial landing IA', () => {
   });
 
   it('publishes PD-011 plan truth and eleven purchase FAQs', () => {
-    const faqSource = read('app/spokedu-master/lib/masterFaq.ts');
+    const faqSource = read('app/spokedu-master/landing/landingFaq.ts');
     expect(sections).toContain('수업 도구 8종');
     expect(sections).toContain('FREE_CLASS_TOOL_IDS');
     expect(sections).toContain('프리미엄은 라이트의 모든 기능에 SPOMOVE를 더한 요금제입니다');
-    expect(sections).toContain('MASTER_FAQS.map');
+    expect(sections).toContain('LANDING_FAQS.map');
     expect(faqSource).toContain('기록이 사라지나요?');
     expect((faqSource.match(/^  \['/gm) ?? [])).toHaveLength(11);
   });
