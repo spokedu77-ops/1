@@ -1,0 +1,317 @@
+{
+  "schema": "spokedu-nav-blog-edit-plan/v1",
+  "purpose": "Cursor scripts/naver-blog-p0/manifest.json posts[] 데이터 보완용. 런타임 manifest 형식 그대로라고 가정하지 말 것",
+  "createdOn": "2026-10-09",
+  "source": "spokedu77_FULL_TEXT_20261009.json",
+  "requiresExistingScriptSchemaMapping": true,
+  "globalGuards": {
+    "publishAutomatically": false,
+    "doNotOpenNextPostWhileUnsavedEditExists": true,
+    "useUIForEditing": true,
+    "doNotUsePrivateEditorApis": true,
+    "doNotBulkReplaceHtml": true,
+    "beforeStateRequired": true,
+    "afterStateVerificationRequired": true,
+    "sourceReviewBeforePapsNumericChanges": true,
+    "haltOnMissingOrAmbiguousAnchor": true,
+    "haltOnUnexpectedMediaOrComponentLoss": true,
+    "noSilentReloadIfUnsaved": true
+  },
+  "executeOrder": [
+    "224418128066",
+    "224282789801",
+    "224399173654",
+    "224252759409",
+    "224252753364",
+    "221707459149"
+  ],
+  "posts": [
+    {
+      "logNo": "224418128066",
+      "title": "키움센터 체육 프로그램｜초등 돌봄 현장에 맞춘 놀이체육 수업 설계",
+      "url": "https://blog.naver.com/spokedu77/224418128066",
+      "phase": "P0-A-ready",
+      "source": {
+        "publishedAtKST": "2026-09-21 10:00:00",
+        "extractedTitle": "키움센터 체육 프로그램｜초등 돌봄 현장에 맞춘 놀이체육 수업 설계"
+      },
+      "actions": [
+        {
+          "kind": "insert_before",
+          "anchor": "MOVEMENT BECOMES LEARNING",
+          "mustMatch": 1,
+          "blocks": [
+            {
+              "text": "실제 키움센터 정규수업 사례"
+            },
+            {
+              "text": "동작거점형 우리동네키움센터에서 화면의 신호를 확인하고 몸으로 반응하는 SPOMOVE 수업을 운영했습니다. 이는 다양한 기관 체육 프로그램 가운데 한 사례로 모든 키움센터 수업에 SPOMOVE가 포함되는 것은 아닙니다."
+            },
+            {
+              "text": "키움센터 정규수업 사례 확인",
+              "href": "https://spokedu.kr/records/dongjak-spomove"
+            }
+          ]
+        },
+        {
+          "kind": "replace_text_and_link",
+          "anchor": "https://spokedu.kr/info/dispatch",
+          "mustMatch": 1,
+          "originalText": "https://spokedu.kr/info/dispatch",
+          "newText": "https://spokedu.kr/contact?type=dispatch",
+          "conditions": [
+            "문의 제목과 다른 링크를 변경하지 말 것",
+            "텍스트 표시와 실제 링크 목적지를 모두 변경"
+          ]
+        }
+      ],
+      "notes": "기존 구형 문의 URL 1곳만 갱신. 기존 링크가 실제 동작하면 리디렉션 확인 후 진행.",
+      "preserve": [
+        "existing_title",
+        "published_date",
+        "all_existing_text_except_explicit_target",
+        "existing_media",
+        "existing_hashtags",
+        "existing_links_except_explicit_target"
+      ],
+      "publish": false
+    },
+    {
+      "logNo": "224282789801",
+      "title": "어린이날 체육부스 운영 후기 서대문구 독립문공원 SPOMOVE 체험부스",
+      "url": "https://blog.naver.com/spokedu77/224282789801",
+      "phase": "P0-A-ready",
+      "source": {
+        "publishedAtKST": "2026-05-15 10:00:00",
+        "extractedTitle": "어린이날 체육부스 운영 후기 서대문구 독립문공원 SPOMOVE 체험부스"
+      },
+      "actions": [
+        {
+          "kind": "insert_before",
+          "anchor": "문의\n스포키듀 대표:",
+          "mustMatch": 1,
+          "blocks": [
+            {
+              "text": "축제·체험부스 운영을 준비하고 계신가요?"
+            },
+            {
+              "text": "학교·지자체·청소년기관 등 행사 현장에 맞춰 참가 연령과 공간, 운영 시간, 교구 구성을 함께 검토합니다. 실제 운영 사례를 확인한 뒤 기관 행사 상담을 신청할 수 있습니다."
+            },
+            {
+              "text": "서대문 어린이날 체험부스 사례 보기",
+              "href": "https://spokedu.kr/records/seodaemun-event-booth"
+            },
+            {
+              "text": "기관 행사 상담하기",
+              "href": "https://spokedu.kr/contact?type=dispatch"
+            }
+          ]
+        }
+      ],
+      "notes": "원문 도입부에 행사·운영시간·운영 프로그램이 이미 있어 개요를 중복 삽입하지 않음. 이벤트 실적 수치 창작 금지.",
+      "preserve": [
+        "existing_title",
+        "published_date",
+        "all_existing_text_except_explicit_target",
+        "existing_media",
+        "existing_hashtags",
+        "existing_links_except_explicit_target"
+      ],
+      "publish": false
+    },
+    {
+      "logNo": "224399173654",
+      "title": "초등 실내 체육놀이 5가지｜비 오는 날 바로 쓰는 체육수업 게임",
+      "url": "https://blog.naver.com/spokedu77/224399173654",
+      "phase": "P0-A-verify-only",
+      "source": {
+        "publishedAtKST": "2026-09-04 10:00:00",
+        "extractedTitle": "초등 실내 체육놀이 5가지｜비 오는 날 바로 쓰는 체육수업 게임"
+      },
+      "actions": [
+        {
+          "kind": "verify_only",
+          "anchor": "https://spokedu.kr/education",
+          "mustMatch": 1,
+          "conditions": [
+            "URL 및 실제 클릭 목적지 확인",
+            "본문 유지"
+          ]
+        },
+        {
+          "kind": "verify_only",
+          "anchor": "https://spokedu.kr/records",
+          "mustMatch": 1,
+          "conditions": [
+            "URL 및 실제 클릭 목적지 확인",
+            "본문 유지"
+          ]
+        }
+      ],
+      "notes": "이미 기관 수업과 현장 사례 링크가 존재하므로 수정·발행 불필요. 오류가 확인되면 별도 보고.",
+      "preserve": [
+        "existing_title",
+        "published_date",
+        "all_existing_text_except_explicit_target",
+        "existing_media",
+        "existing_hashtags",
+        "existing_links_except_explicit_target"
+      ],
+      "publish": false
+    },
+    {
+      "logNo": "224252759409",
+      "title": "PAPS 등급 기준표 총정리 : 초등, 중등, 고등 한 눈에 보기 (교육부 학생정보건강센터 자료 첨부)",
+      "url": "https://blog.naver.com/spokedu77/224252759409",
+      "phase": "P0-B-source-review",
+      "source": {
+        "publishedAtKST": "2026-04-16 10:00:00",
+        "extractedTitle": "PAPS 등급 기준표 총정리 : 초등, 중등, 고등 한 눈에 보기 (교육부 학생정보건강센터 자료 첨부)"
+      },
+      "actions": [
+        {
+          "kind": "insert_before",
+          "anchor": "0. PAPS 결과표, 가장 먼저 무엇을 봐야 할까요?",
+          "mustMatch": 1,
+          "blocks": [
+            {
+              "text": "자료 확인 안내"
+            },
+            {
+              "text": "이 글은 PAPS 등급표를 이해하기 위한 참고 자료입니다. 실제 평가에 적용되는 측정 종목과 기준은 학교에서 안내한 해당 학년도 자료를 우선 확인해 주세요. 본문 수치의 공식 출처와 적용 시점을 점검하고 있습니다."
+            }
+          ],
+          "conditions": [
+            "공식 등급표 적용 연도 확인 전 숫자 변경 금지"
+          ]
+        },
+        {
+          "kind": "insert_before",
+          "anchor": "#PAPS #팝스기준표",
+          "mustMatch": 1,
+          "blocks": [
+            {
+              "text": "등급표를 확인한 다음에는"
+            },
+            {
+              "text": "같은 등급이라도 학생마다 어려워하는 움직임과 운동 경험은 다릅니다. 숫자 자체를 높이는 것만을 목표로 하기보다 현재 수행 수준에 맞는 연습을 선택하는 것이 중요합니다."
+            },
+            {
+              "text": "실제 PAPS 대비 수업 이야기",
+              "href": "https://blog.naver.com/spokedu77/224238468151"
+            },
+            {
+              "text": "개인·소그룹 수업 안내",
+              "href": "https://spokedu.kr/private"
+            }
+          ]
+        }
+      ],
+      "notes": "학교급별 등급 숫자와 BMI 구간은 공식 출처·기준연도 검증 전 보류. 자동 공개발행 금지.",
+      "preserve": [
+        "existing_title",
+        "published_date",
+        "all_existing_text_except_explicit_target",
+        "existing_media",
+        "existing_hashtags",
+        "existing_links_except_explicit_target"
+      ],
+      "publish": false
+    },
+    {
+      "logNo": "224252753364",
+      "title": "[PAPS 완벽 분석] 중학생 우리 아이, 학업의 기본은 '체력'입니다. (등급별 기준표 총정리)",
+      "url": "https://blog.naver.com/spokedu77/224252753364",
+      "phase": "P0-B-source-review",
+      "source": {
+        "publishedAtKST": "2026-04-15 10:00:00",
+        "extractedTitle": "[PAPS 완벽 분석] 중학생 우리 아이, 학업의 기본은 '체력'입니다. (등급별 기준표 총정리)"
+      },
+      "actions": [
+        {
+          "kind": "insert_before",
+          "anchor": "스포키듀가 우리 아이들의 단단한 성장을 함께하겠습니다.",
+          "mustMatch": 1,
+          "blocks": [
+            {
+              "text": "PAPS 결과 다음에는 어떤 운동을 해야 할까요?"
+            },
+            {
+              "text": "PAPS 결과는 아이의 운동 능력 전체를 단정하는 자료가 아닙니다. 어려워하는 움직임을 살펴보고 이후 활동을 계획할 때 참고할 수 있습니다."
+            },
+            {
+              "text": "스포키듀는 청소년의 현재 운동 경험과 수행 수준을 확인한 뒤 달리기와 기초체력부터 스포츠 움직임까지 개인·소그룹 수업을 구성합니다."
+            },
+            {
+              "text": "PAPS 등급을 더 자세히 확인하기",
+              "href": "https://blog.naver.com/spokedu77/224252759409"
+            },
+            {
+              "text": "개인·소그룹 체육수업 알아보기",
+              "href": "https://spokedu.kr/private"
+            }
+          ]
+        }
+      ],
+      "notes": "수업효과·집중력·척추측만·우울감 예방 등 건강 및 학업 인과 단정 문구는 별도 검토. 중학생 등급 수치 출처 검증 전 수정 금지.",
+      "preserve": [
+        "existing_title",
+        "published_date",
+        "all_existing_text_except_explicit_target",
+        "existing_media",
+        "existing_hashtags",
+        "existing_links_except_explicit_target"
+      ],
+      "publish": false
+    },
+    {
+      "logNo": "221707459149",
+      "title": "팝스측정종목 및 기준표(왕복오래달리기, 앉아윗몸앞으로굽히기,윗몸말아올리기,50m달리기평가기준표)",
+      "url": "https://blog.naver.com/spokedu77/221707459149",
+      "phase": "P0-B-archive-note",
+      "source": {
+        "publishedAtKST": "2019-11-14 12:25:53",
+        "extractedTitle": "팝스측정종목 및 기준표(왕복오래달리기, 앉아윗몸앞으로굽히기,윗몸말아올리기,50m달리기평가기준표)"
+      },
+      "actions": [
+        {
+          "kind": "insert_before",
+          "anchor": "1. PAPS 측정 종목",
+          "mustMatch": 1,
+          "blocks": [
+            {
+              "text": "과거 작성 자료 안내 (2019년 11월)"
+            },
+            {
+              "text": "아래 내용은 2019년 작성 당시의 PAPS 측정 종목과 기준을 소개한 자료입니다. 현재 학교 평가에 그대로 적용하기 전에는 해당 학년도 학교 및 공식 안내를 확인해 주세요."
+            }
+          ]
+        },
+        {
+          "kind": "conditional_insert_after",
+          "anchor": "2019년 작성 당시의 PAPS 측정 종목과 기준을 소개한 자료입니다.",
+          "mustMatch": 1,
+          "blocks": [
+            {
+              "text": "최근에 정리한 PAPS 등급표 참고하기",
+              "href": "https://blog.naver.com/spokedu77/224252759409"
+            }
+          ],
+          "conditions": [
+            "2026 PAPS 등급표 글의 공식 수치·적용 시점 검증을 마친 경우에만 링크 추가"
+          ]
+        }
+      ],
+      "notes": "2019 원문 제목·표 이미지 11개와 게시물 URL 절대 보존.",
+      "preserve": [
+        "existing_title",
+        "published_date",
+        "all_existing_text_except_explicit_target",
+        "existing_media",
+        "existing_hashtags",
+        "existing_links_except_explicit_target"
+      ],
+      "publish": false
+    }
+  ]
+}
