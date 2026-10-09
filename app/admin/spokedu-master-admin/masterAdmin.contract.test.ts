@@ -88,7 +88,9 @@ describe('MASTER ADMIN contract', () => {
     expect(grantRoute).not.toContain("from('spokedu_master_subscriptions').update");
     expect(client).toContain('기간 연장');
     expect(client).toContain("action: 'extend'");
-    expect(client).toContain('await loadGrants()');
+    expect(client).toContain('setAuditVersion((value) => value + 1)');
+    expect(client).toContain('setDetailVersion((value) => value + 1)');
+    expect(client).not.toContain('await loadGrants()');
   });
   it('never exposes token hashes or payment secrets from admin read APIs', () => {
     const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
@@ -98,26 +100,24 @@ describe('MASTER ADMIN contract', () => {
     expect(dashboard).not.toContain('paymentKey: payment.payment_key');
   });
   it('returns read-only payment incident evidence without hiding non-active orders', () => {
-    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
-    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    const dashboard = read('app/api/admin/spokedu-master-admin/billing/route.ts');
+    const client = read('app/admin/spokedu-master-admin/BillingOperationsPanel.tsx');
     expect(dashboard).toContain('last_error_code');
-    expect(dashboard).toContain('paymentApproved: Boolean(payment.payment_key)');
+    expect(dashboard).toContain('paymentApproved: Boolean(payment_key)');
     expect(dashboard).not.toContain(".eq('status', 'active')");
-    expect(dashboard).toContain('deriveMasterAdminBillingIncident');
-    expect(client).toContain('결제 승인 / 이용권 반영 실패');
-    expect(client).toContain('조회 전용');
+    expect(dashboard).toContain('classifyBillingIssue');
+    expect(client).toContain('summary?.applyFailed');
+    expect(client).toContain('BillingOperationsPanel');
   });
-  it('loads billing members independently from member-management scope and search state', () => {
-    const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
-    const client = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
-    expect(dashboard).toContain("if (view === 'billing')");
-    expect(dashboard).toContain("row.accountClass === 'production'");
-    expect(dashboard).toContain('!isSpokeduStaffEmail(row.email)');
-    expect(dashboard).toContain('Boolean(row.subscription || row.latestOrder)');
-    expect(client).toContain("readJson('/api/admin/spokedu-master-admin?view=billing')");
-    expect(client).toContain('setBillingMembers(data.members)');
-    expect(client).toContain('{billingMembers.map(m=>');
-    expect(client).not.toContain('members.filter(m=>m.subscription||m.latestOrder)');
+  it('loads billing operations independently from member-management scope and search state', () => {
+    const dashboard = read('app/api/admin/spokedu-master-admin/billing/route.ts');
+    const client = read('app/admin/spokedu-master-admin/BillingOperationsPanel.tsx');
+    const parent = read('app/admin/spokedu-master-admin/MasterAdminClient.tsx');
+    expect(dashboard).toContain('spokedu_master_payment_orders');
+    expect(dashboard).toContain('paginateBillingRows(rows, page)');
+    expect(client).toContain('/api/admin/spokedu-master-admin/billing?page=');
+    expect(parent).toContain('<BillingOperationsPanel');
+    expect(parent).not.toContain('setBillingMembers');
   });
   it('keeps Auth search separate from the production MASTER population', () => {
     const dashboard = read('app/api/admin/spokedu-master-admin/route.ts');
