@@ -1,0 +1,27 @@
+{
+  "id": "p0-REPLACE-me",
+  "logNo": "000000000000",
+  "title": "제목 (preserve.titleExact 와 동일)",
+  "status": "pending",
+  "baselineFile": null,
+  "edits": [
+    {
+      "id": "mod-a",
+      "anchorText": "앵커 문장",
+      "anchorMatch": "exact",
+      "insertPosition": "afterAnchorComponent",
+      "blocks": [
+        {
+          "type": "text",
+          "paragraphs": [{ "text": "링크 문구", "link": "https://example.com" }]
+        }
+      ]
+    }
+  ],
+  "preserve": {
+    "titleExact": "제목",
+    "imageComponentCount": 0,
+    "hashtags": [],
+    "mustKeepTextSnippets": []
+  }
+}

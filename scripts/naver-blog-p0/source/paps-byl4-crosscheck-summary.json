@@ -1,0 +1,86 @@
+{
+  "schema": "paps-byl4-crosscheck-summary/v2",
+  "basisFiles": [
+    "source/PAPS_법령별표4_실제대조_20261009.md",
+    "source/PAPS_공식별표4_390칸_검증갱신_20261009.md"
+  ],
+  "gitCommits": ["a6b8be7e", "2e4f9dec"],
+  "officialSource": {
+    "name": "학교건강검사규칙 별표4 신체능력검사(필수평가) 기준표",
+    "revisionNote": "2025-03-10 개정",
+    "lawGoKrPdf": "https://www.law.go.kr/LSW/flDownload.do?bylClsCd=110201&flSeq=149708821&gubun="
+  },
+  "shuttleRunOnly": {
+    "224252759409": { "cells": 100, "match": 100, "status": "pass" },
+    "224252753364": { "cells": 30, "match": 30, "status": "pass" },
+    "total": { "cells": 130, "match": 130, "status": "pass" },
+    "note": "2026-10-09 1차 대조(130칸). 390칸 갱신과 병기."
+  },
+  "cell390Verification": {
+    "scopeEvents": ["왕복오래달리기", "BMI", "앉아윗몸앞으로굽히기"],
+    "total": { "checked": 390, "match": 386, "mismatch": 4 },
+    "224252759409": {
+      "checked": 300,
+      "match": 296,
+      "byEvent": {
+        "왕복오래달리기": "100/100",
+        "BMI": "96/100",
+        "앉아윗몸앞으로굽히기": "100/100"
+      }
+    },
+    "224252753364": {
+      "checked": 90,
+      "match": 90,
+      "byEvent": {
+        "왕복오래달리기": "30/30",
+        "BMI": "30/30",
+        "앉아윗몸앞으로굽히기": "30/30"
+      }
+    },
+    "disclaimer": "전 종목 합격 판정 아님"
+  },
+  "posts": {
+    "224252759409": {
+      "numericOverall": "partial-296-of-300",
+      "verified": [
+        "왕복오래달리기 100/100",
+        "앉아윗몸앞으로굽히기 100/100",
+        "BMI 96/100 (남 고2·고3 4칸 불일치)"
+      ],
+      "hold": [
+        "오래달리기-걷기",
+        "스텝(PEI) 수치",
+        "팔굽/무릎대고팔굽혀펴기",
+        "윗몸말아올리기",
+        "악력",
+        "50m",
+        "제자리멀리뛰기"
+      ],
+      "correctionCandidates": [
+        { "id": "A", "topic": "종합유연성 적용학년 설명" },
+        { "id": "B", "topic": "스텝검사 PEI 누락" },
+        { "id": "C", "topic": "남 고2·고3 BMI 4칸", "mismatchCells": 4 }
+      ]
+    },
+    "224252753364": {
+      "numericOverall": "partial-90-of-90-verified-scope",
+      "verified": ["검증 범위 90/90 (왕복·BMI·앉아윗몸)"],
+      "hold": [
+        "오래달리기-걷기",
+        "스텝",
+        "팔굽/무릎대고팔굽혀펴기",
+        "윗몸말아올리기",
+        "악력",
+        "50m",
+        "제자리멀리뛰기"
+      ],
+      "review": ["건강·의학적 인과 표현"]
+    },
+    "221707459149": {
+      "numericOverall": "archive-2019-preserve",
+      "verified": ["2019 역사자료 vs 현행 별표4 적용학년 차이"],
+      "hold": ["본문·표 이미지 수정", "224252759409 링크(미검증 종목·교정 확정 전)"],
+      "ready": ["최신 적용학년 안내문 초안"]
+    }
+  }
+}

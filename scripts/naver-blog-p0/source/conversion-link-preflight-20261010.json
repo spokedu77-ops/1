@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-10",
+  "method": "HTTP HEAD/GET status",
+  "contactDispatch": { "url": "https://spokedu.kr/contact?type=dispatch", "status": 200 },
+  "private": { "url": "https://spokedu.kr/private", "status": 200 },
+  "blogCaseLinks": [
+    { "url": "https://blog.naver.com/spokedu77/224224418043", "status": 200 },
+    { "url": "https://blog.naver.com/spokedu77/224252909846", "status": 200 },
+    { "url": "https://blog.naver.com/spokedu77/224381522801", "status": 200 }
+  ],
+  "insertDuplicateCheck": "pass-no-dup-within-post",
+  "publicAnchorHtmlCheck": "inconclusive-naver-shell; editor DOM verify required before UI edit"
+}
