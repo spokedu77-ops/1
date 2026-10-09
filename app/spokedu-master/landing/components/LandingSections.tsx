@@ -24,12 +24,13 @@ const ASSETS = {
   home: '/images/spokedu/home/field-editorial/home-master-ui.png',
   library: '/images/spokedu/subscription/library-program-cards-20261008-final.png',
   lesson: '/images/spokedu/subscription/prepare-lesson-plan-20261008-final.png',
+  tools: '/images/spokedu/subscription/prepare-class-tools.png',
   build: '/images/spokedu-master/landing/build-session.png',
   session: '/images/spokedu-master/landing/run-session.png',
   attendance: '/images/spokedu-master/landing/run-attendance.png',
   gear: '/images/spokedu/subscription/prepare-gear-setting.webp',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
-  field: '/images/spokedu/records/yangcheon-paps.jpg',
+  field: '/images/spokedu/home/home-hero-spomove-class.JPG',
 } as const;
 
 const WORKFLOW = [
@@ -204,6 +205,7 @@ export function ClassToolsSection() {
           ))}
         </ul>
       </div>
+      <ProductFrame src={ASSETS.tools} alt="스탑워치, 타이머, 점수판과 명단형 도구가 보이는 실제 LAB 수업 도구 화면" />
     </section>
   );
 }

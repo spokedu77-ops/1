@@ -60,21 +60,20 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
       '/images/spokedu/home/field-editorial/home-master-ui.png',
       '/images/spokedu/subscription/library-program-cards-20261008-final.png',
       '/images/spokedu/subscription/prepare-lesson-plan-20261008-final.png',
+      '/images/spokedu/subscription/prepare-class-tools.png',
       '/images/spokedu-master/landing/build-session.png',
       '/images/spokedu-master/landing/run-session.png',
       '/images/spokedu-master/landing/run-attendance.png',
       '/images/spokedu/home/field-editorial/home-spomove-field.webp',
-      '/images/spokedu/records/yangcheon-paps.jpg',
+      '/images/spokedu/home/home-hero-spomove-class.JPG',
     ] as const;
 
     for (const asset of renderedAssets) {
       expect(sections).toContain(asset);
       expect(existsSync(join(process.cwd(), 'public', asset.slice(1))), asset).toBe(true);
     }
-    expect(sections).not.toContain('prepare-class-tools.png');
     expect(sections).not.toContain('remember-report.png');
     expect(sections).not.toContain('remember-report-detail.png');
-    expect(sections).not.toContain('ASSETS.tools');
     expect(sections).not.toContain('ASSETS.record');
     expect(sections).not.toContain('ASSETS.recordDetail');
     expect(sections).not.toMatch(/AI가|자동 추천|회원가|Best seller/);

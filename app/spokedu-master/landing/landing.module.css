@@ -51,7 +51,7 @@
 .workflowList svg { position: absolute; top: 20px; right: 20px; color: var(--spm-t3); }
 .landingContent [id], .page [id] { scroll-margin-top: 88px; }
 .toolsSection, .whySection, .detailSection, .audienceSection, .centerSection { max-width: 1120px; margin: 0 auto; padding: 110px 40px; }
-.toolsSection { border-top: 1px solid var(--spm-br2); }
+.toolsSection { display: grid; grid-template-columns: minmax(320px,.82fr) minmax(0,1.18fr); gap: 64px; align-items: center; border-top: 1px solid var(--spm-br2); }
 .toolsCopy { width: 100%; }
 .toolStrip { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; margin: 34px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--spm-br2); }
 .toolStrip li { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--spm-br2); color: var(--spm-t2); font-size: 14px; font-weight: 700; }
