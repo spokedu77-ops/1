@@ -1,10 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ClipboardCopy, CreditCard, Gift, Loader2, Search, Settings, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { MemberDetailPanel } from './MemberDetailPanel';
+import { MemberListPanel } from './MemberListPanel';
+import { GrantHistoryPanel } from './GrantHistoryPanel';
+import { OverviewPanel } from './OverviewPanel';
+import { AuditPanel } from './AuditPanel';
 
-type Tab = 'overview' | 'members' | 'entitlements' | 'billing';
+type Tab = 'overview' | 'members' | 'entitlements' | 'billing' | 'audit';
 type EntitlementTab = 'grant' | 'invite' | 'history';
 type MemberScope = 'production' | 'qa_test' | 'internal';
 type Member = {
@@ -65,6 +70,9 @@ export default function MasterAdminClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [summary, setSummary] = useState<any>(null);
+  const [activities, setActivities] = useState<Record<string, any[]> | null>(null);
+  const [auditVersion, setAuditVersion] = useState(0);
+  const [detailVersion, setDetailVersion] = useState(0);
   const [members, setMembers] = useState<Member[]>([]);
   const [membersPage, setMembersPage] = useState(1);
   const [membersTotal, setMembersTotal] = useState(0);
@@ -73,6 +81,10 @@ export default function MasterAdminClient() {
   const [query, setQuery] = useState('');
   const [memberScope, setMemberScope] = useState<MemberScope>('production');
   const [selected, setSelected] = useState<Member | null>(null);
+  const [memberDetail, setMemberDetail] = useState<any>(null);
+  const [memberDetailLoading, setMemberDetailLoading] = useState(false);
+  const [memberDetailError, setMemberDetailError] = useState('');
+  const detailRequest = useRef<AbortController | null>(null);
   const [grants, setGrants] = useState<any[]>([]);
   const [invites, setInvites] = useState<any[]>([]);
   const [plan, setPlan] = useState<'lite' | 'premium'>('lite');
@@ -88,17 +100,49 @@ export default function MasterAdminClient() {
   const [inviteForm, setInviteForm] = useState({ email: '', plan: 'lite', durationDays: 30, expiresInDays: 30, campaignId: '' });
   const [createdInvite, setCreatedInvite] = useState<any>(null);
 
-  const loadOverview = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master-admin?view=overview'); setSummary(data.summary); }, []);
+  const loadOverview = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master-admin?view=overview'); setSummary(data.summary); setActivities(data.activities ?? null); }, []);
   const loadMembers = useCallback(async (q = '', scope: MemberScope = 'production', page = 1) => { const data = await readJson(`/api/admin/spokedu-master-admin?view=members&scope=${encodeURIComponent(scope)}&q=${encodeURIComponent(q)}&page=${page}`); setMembers(data.members); setMembersPage(data.page); setMembersTotal(data.total); setMembersPageSize(data.pageSize); setSelected((current) => current ? data.members.find((m: Member) => m.id === current.id) ?? null : null); }, []);
   const loadBillingMembers = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master-admin?view=billing'); setBillingMembers(data.members); }, []);
   const loadGrants = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master/entitlement-grants'); setGrants(data.grants); }, []);
   const loadInvites = useCallback(async () => { const data = await readJson('/api/admin/spokedu-master/promotion-invites'); setInvites(data.invites); }, []);
-  const refresh = useCallback(async () => { await Promise.all([loadOverview(), loadMembers(query, memberScope, membersPage), loadBillingMembers(), loadGrants(), loadInvites()]); }, [loadBillingMembers, loadGrants, loadInvites, loadMembers, loadOverview, memberScope, membersPage, query]);
+  const refresh = useCallback(async () => {
+    const tasks: Promise<unknown>[] = [loadOverview()];
+    if (tab === 'members' || (tab === 'entitlements' && entTab === 'grant')) tasks.push(loadMembers(query, memberScope, membersPage));
+    if (tab === 'billing') tasks.push(loadBillingMembers());
+    if (tab === 'entitlements' && entTab === 'history') tasks.push(loadGrants());
+    if (tab === 'entitlements' && entTab === 'invite') tasks.push(loadInvites());
+    await Promise.all(tasks);
+    setAuditVersion((value) => value + 1);
+    setDetailVersion((value) => value + 1);
+  }, [entTab, loadBillingMembers, loadGrants, loadInvites, loadMembers, loadOverview, memberScope, membersPage, query, tab]);
 
-  useEffect(() => { setLoading(true); setError(''); Promise.all([loadOverview(), loadMembers(), loadBillingMembers(), loadGrants(), loadInvites()]).catch((e) => setError(e.message)).finally(() => setLoading(false)); }, [loadBillingMembers, loadGrants, loadInvites, loadMembers, loadOverview]);
-  useEffect(() => { const timer = window.setTimeout(() => void loadMembers(query, memberScope, membersPage).catch((e) => setError(e.message)), 300); return () => window.clearTimeout(timer); }, [query, memberScope, membersPage, loadMembers]);
+  useEffect(() => { setLoading(true); setError(''); loadOverview().catch((e) => setError(e.message)).finally(() => setLoading(false)); }, [loadOverview]);
+  useEffect(() => {
+    if (tab !== 'members' && !(tab === 'entitlements' && entTab === 'grant')) return;
+    const timer = window.setTimeout(() => void loadMembers(query, memberScope, membersPage).catch((e) => setError(e.message)), 300);
+    return () => window.clearTimeout(timer);
+  }, [query, memberScope, membersPage, loadMembers, tab, entTab]);
+  useEffect(() => { if (tab === 'billing') void loadBillingMembers().catch((e) => setError(e.message)); }, [tab, loadBillingMembers]);
+  useEffect(() => { if (tab === 'entitlements' && entTab === 'history') void loadGrants().catch((e) => setError(e.message)); }, [tab, entTab, loadGrants]);
+  useEffect(() => { if (tab === 'entitlements' && entTab === 'invite') void loadInvites().catch((e) => setError(e.message)); }, [tab, entTab, loadInvites]);
 
   const changeMemberSearch = (value: string) => { setQuery(value); setMembersPage(1); };
+  useEffect(() => {
+    detailRequest.current?.abort();
+    if (!selected) { setMemberDetail(null); setMemberDetailError(''); return; }
+    const controller = new AbortController();
+    detailRequest.current = controller;
+    setMemberDetailLoading(true);
+    setMemberDetailError('');
+    void readJson(`/api/admin/spokedu-master-admin/members/${selected.id}`, { signal: controller.signal })
+      .then((data) => { if (!controller.signal.aborted) setMemberDetail(data); })
+      .catch((error) => { if (!controller.signal.aborted) setMemberDetailError(error instanceof Error ? error.message : 'Member detail lookup failed'); })
+      .finally(() => { if (!controller.signal.aborted) setMemberDetailLoading(false); });
+    return () => controller.abort();
+  }, [selected, detailVersion]);
+
+  const closeMemberDetail = () => { detailRequest.current?.abort(); setSelected(null); setMemberDetail(null); setMemberDetailError(''); };
+
   const changeMemberScope = (scope: MemberScope) => { setMemberScope(scope); setMembersPage(1); setSelected(null); };
   const memberPageCount = Math.max(1, Math.ceil(membersTotal / membersPageSize));
 
@@ -154,11 +198,11 @@ export default function MasterAdminClient() {
   return <div className="min-h-screen bg-slate-50">
     <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
       <header className="mb-6"><div className="flex items-center gap-3"><span className="rounded-xl bg-blue-600 p-2 text-white"><Settings size={20}/></span><h1 className="text-2xl font-black tracking-tight text-slate-950">LAB ADMIN</h1></div><p className="mt-2 text-sm text-slate-500">SPOKEDU LAB 회원, 이용권, 구독 및 결제 상태를 관리합니다.</p></header>
-      <nav className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1" aria-label="LAB ADMIN 탭">{([['overview','운영 현황'],['members','회원 관리'],['entitlements','이용권 관리'],['billing','결제·구독']] as const).map(([id,label]) => <button key={id} onClick={() => setTab(id)} className={`min-h-11 shrink-0 rounded-lg px-4 text-sm font-bold transition ${tab === id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}>{label}</button>)}</nav>
+      <nav className="mb-6 flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1" aria-label="LAB ADMIN 탭">{([['overview','운영 현황'],['members','회원 관리'],['entitlements','이용권 관리'],['billing','결제·구독'],['audit','?? ??']] as const).map(([id,label]) => <button key={id} onClick={() => setTab(id)} className={`min-h-11 shrink-0 rounded-lg px-4 text-sm font-bold transition ${tab === id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}>{label}</button>)}</nav>
       {error && <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}
       {loading ? <Spinner/> : <>
-        {tab === 'overview' && <section className="space-y-6"><div className="grid grid-cols-2 gap-3 lg:grid-cols-6">{[['SPOKEDU LAB 가입 회원',summary?.total],['현재 Free',summary?.free],['현재 Lite',summary?.lite],['현재 Premium',summary?.premium],['프로모션 활성',summary?.promotions],['갱신 실패',summary?.renewalFailed]].map(([label,value]) => <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs font-bold text-slate-500">{label}</p><p className="mt-2 text-2xl font-black text-slate-950">{value ?? 0}</p></div>)}</div><FunnelSummary funnel={summary?.funnel}/><div className="grid gap-4 lg:grid-cols-3">{['최근 결제','최근 프로모션 지급','자동결제 오류/갱신 실패'].map((label) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5"><h2 className="font-black text-slate-900">{label}</h2><p className="mt-6 text-sm text-slate-400">{label === '자동결제 오류/갱신 실패' && summary?.renewalFailed ? `${summary.renewalFailed}건을 결제·구독 탭에서 확인하세요.` : '표시할 최근 항목이 없습니다.'}</p></div>)}</div></section>}
-        {tab === 'members' && <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]"><div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex flex-wrap gap-2" role="tablist" aria-label="회원 구분">{([['production','가입 회원'],['qa_test','테스트 계정'],['internal','운영진']] as const).map(([scope,label])=><button key={scope} type="button" role="tab" aria-selected={memberScope===scope} onClick={()=>changeMemberScope(scope)} className={`min-h-11 rounded-lg border px-4 text-sm font-bold transition ${memberScope===scope?'border-blue-600 bg-blue-50 text-blue-700':'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>{label}</button>)}</div><label className="relative mt-3 block"><Search className="absolute left-3 top-3 text-slate-400" size={18}/><input value={query} onChange={(e) => changeMemberSearch(e.target.value)} placeholder="현재 탭에서 이름 또는 이메일 검색" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm outline-none focus:border-blue-500"/></label><p className="mt-2 text-xs text-slate-400">SPOKEDU LAB 가입 과정에서 프로필이 생성된 회원만 표시합니다. 강사 관리에서 생성한 계정은 포함되지 않습니다.</p><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="text-xs text-slate-500"><tr>{['이름','이메일','현재 이용권','유료 구독','프로모션'].map((h)=><th key={h} className="border-b p-3">{h}</th>)}</tr></thead><tbody>{members.map((m)=><tr key={m.id} onClick={()=>setSelected(m)} className={`cursor-pointer border-b border-slate-100 hover:bg-blue-50 ${selected?.id===m.id?'bg-blue-50':''}`}><td className="p-3 font-bold">{m.name}</td><td className="p-3 text-slate-500">{m.email ?? '-'}</td><td className="p-3"><MemberAccessBadge member={m}/></td><td className="p-3">{m.accountRole==='admin'||m.paidPlan==='free'?'없음':planName(m.paidPlan)}</td><td className="p-3">{m.accountRole==='admin'?'없음':m.promoPlan?planName(m.promoPlan):'없음'}</td></tr>)}</tbody></table>{members.length===0&&<Empty>검색 결과가 없습니다.</Empty>}</div></div><MemberDetail member={selected} rows={selectedAccess}/></section>}
+        {tab === 'overview' && <OverviewPanel summary={summary} activities={activities} refresh={()=>void loadOverview()} onSelect={(userId)=>{setTab('members');setSelected({id:userId} as Member);}}/>}
+        {tab === 'members' && <MemberListPanel onSelect={(member) => setSelected(member as unknown as Member)} />}
         {tab === 'entitlements' && <section className="space-y-5"><div className="flex flex-wrap gap-2">{([['grant','회원 이용권 지급'],['invite','초대 이용권'],['history','지급 내역']] as const).map(([id,label])=><button key={id} onClick={()=>setEntTab(id)} className={`rounded-lg border px-4 py-2 text-sm font-bold ${entTab===id?'border-blue-600 bg-blue-50 text-blue-700':'border-slate-200 bg-white text-slate-500'}`}>{label}</button>)}</div>
           {entTab==='grant'&&<div className="grid items-start gap-5 lg:grid-cols-[minmax(280px,2fr)_minmax(0,3fr)]">
             <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5" aria-label="이용권 지급 회원 선택">
@@ -173,17 +217,20 @@ export default function MasterAdminClient() {
               {!selected||selected.accountRole==='admin'?<p className="rounded-xl bg-slate-50 px-4 py-5 text-sm text-slate-500">왼쪽에서 이용권을 지급할 회원을 선택해 주세요.</p>:<div className="space-y-5">
                 <div className="flex items-start gap-3 border-b border-slate-100 pb-5"><span className="rounded-xl bg-blue-50 p-2 text-blue-600"><Users size={20}/></span><div className="min-w-0"><h2 className="font-bold text-slate-900">{selected.name}</h2><p className="break-all text-sm text-slate-500">{selected.email ?? '-'}</p></div></div>
                 <dl className="grid gap-2 rounded-xl bg-slate-50 p-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-slate-500">계정 역할</dt><dd className="text-right font-bold text-slate-900">{accountRoleName(selected.accountRole)}</dd></div><div className="flex justify-between gap-4"><dt className="text-slate-500">현재 이용권</dt><dd className="text-right font-bold text-slate-900">{planName(selected.effectivePlan)}</dd></div></dl>
+
                 <div className="grid gap-4 sm:grid-cols-2"><Field label="플랜"><select value={plan} onChange={(e)=>setPlan(e.target.value as any)} className="input"><option value="premium">Premium</option><option value="lite">Lite</option></select></Field><Field label="기간 (1~366일, 30/60/90 권장)"><input type="number" min={1} max={366} value={duration} onChange={(e)=>setDuration(Number(e.target.value))} className="input"/></Field><Field label="지급 사유 (필수)"><input value={reason} onChange={(e)=>setReason(e.target.value)} className="input" placeholder="예: 2026 교사 세미나"/></Field><Field label="캠페인 / Source"><input value={campaign} onChange={(e)=>setCampaign(e.target.value)} className="input" placeholder="선택 입력"/></Field></div>
                 <button disabled={pending||!reason.trim()} onClick={requestPreview} className="min-h-11 w-full rounded-xl bg-blue-600 font-bold text-white disabled:opacity-50">{pending?'확인 중...':'이용권 지급'}</button>
               </div>}
             </section>
           </div>}
-          {entTab==='invite'&&<div className="space-y-5"><InvitePanel form={inviteForm} setForm={setInviteForm} create={createInvite} pending={pending} result={createdInvite}/><InviteTable invites={invites}/></div>} {entTab==='history'&&<GrantTable grants={grants} revoke={revoke} extend={openExtension} pending={pending}/>}</section>}
+          {entTab==='invite'&&<div className="space-y-5"><InvitePanel form={inviteForm} setForm={setInviteForm} create={createInvite} pending={pending} result={createdInvite}/><InviteTable invites={invites}/></div>} {entTab==='history'&&<GrantHistoryPanel version={auditVersion} onSelect={(userId)=>setSelected({id:userId} as Member)} revoke={revoke} extend={openExtension} pending={pending}/>}</section>}
+        {tab === 'audit' && <AuditPanel version={auditVersion} onSelect={(userId)=>{setTab('members');setSelected({id:userId} as Member);}}/>}
         {tab === 'billing' && <section className="rounded-2xl border border-slate-200 bg-white p-4"><div className="mb-4 flex items-center gap-2"><CreditCard className="text-blue-600" size={20}/><h2 className="font-black">결제·구독 상태</h2><span className="ml-auto rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">조회 전용</span></div><p className="mb-4 text-sm text-slate-500">상태 배지는 구독·최근 주문·갱신 오류에서 파생한 운영 판단입니다. 결제나 이용권을 변경하지 않습니다.</p><div className="overflow-x-auto"><table className="w-full min-w-[1580px] text-left text-sm"><thead className="text-xs text-slate-500"><tr>{['회원','운영 판단','현재/유료','프로모션','구독 상태','자동결제','이용 종료일','다음 갱신일','최근 주문','주문 상태','승인/반영','주문 오류','재시도','최근 갱신 오류','다음 재시도'].map(h=><th className="border-b p-3" key={h}>{h}</th>)}</tr></thead><tbody>{billingMembers.map(m=><tr key={m.id} className="border-b border-slate-100 align-top"><td className="p-3"><b>{m.name}</b><small className="block text-slate-400">{m.email ?? '-'}</small></td><td className="p-3"><IncidentBadge incident={m.billingIncident}/></td><td className="p-3"><b>{planName(m.effectivePlan)}</b><small className="block text-slate-400">Paid {m.paidPlan==='free'?'없음':planName(m.paidPlan)}</small></td><td className="p-3">{m.promoPlan?planName(m.promoPlan):'-'}</td><td className="p-3">{m.subscription?.status??'-'}</td><td className="p-3">{m.subscription?m.subscription.cancelAtPeriodEnd?'해지 예정':'활성':'-'}</td><td className="p-3">{date(m.subscription?.currentPeriodEnd)}</td><td className="p-3">{date(m.subscription?.nextBillingAt)}</td><td className="p-3">{m.latestOrder?<><b>{planName(m.latestOrder.plan)} · {m.latestOrder.amount?.toLocaleString()??'-'}원</b><small className="block text-slate-400">{date(m.latestOrder.updatedAt,true)}</small></>:'-'}</td><td className="p-3">{m.latestOrder?.status??'-'}</td><td className="p-3">{m.latestOrder?.paymentApproved?'승인 근거 있음':'승인 근거 없음'}<small className="block text-slate-400">반영 {date(m.latestOrder?.appliedAt,true)}</small></td><td className="p-3 text-rose-600">{m.latestOrder?.lastErrorCode??'-'}</td><td className="p-3">{m.subscription?.renewalRetryCount??0}</td><td className="p-3 text-rose-600">{m.subscription?.lastBillingError||'-'}</td><td className="p-3">{date(m.subscription?.nextRetryAt,true)}</td></tr>)}</tbody></table>{billingMembers.length===0&&<Empty>결제·구독 내역이 없습니다.</Empty>}</div></section>}
       </>}
     </div>
     {preview&&<ConfirmDialog member={selected!} preview={preview} plan={plan} duration={duration} reason={reason} pending={pending} cancel={()=>setPreview(null)} confirm={createGrant}/>} {success&&<SuccessDialog preview={success} plan={plan} close={()=>setSuccess(null)}/>} 
     {extensionTarget&&<ExtensionDialog grant={extensionTarget} days={extensionDays} reason={extensionReason} pending={pending} setDays={setExtensionDays} setReason={setExtensionReason} cancel={()=>setExtensionTarget(null)} confirm={extendGrant}/>}
+    <MemberDetailPanel detail={memberDetail} loading={memberDetailLoading} error={memberDetailError} onClose={closeMemberDetail}/>
     <style jsx global>{`.input{height:44px;width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:0 12px;font-size:14px;background:#fff}.input:focus{outline:2px solid #bfdbfe;border-color:#3b82f6}`}</style>
   </div>;
 }

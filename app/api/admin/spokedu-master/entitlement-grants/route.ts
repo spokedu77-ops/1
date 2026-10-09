@@ -4,6 +4,7 @@ import { withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { buildMasterAdminAccess, grantStatus } from '@/app/lib/server/spokeduMasterAdmin';
 import { ensureSpokeduMasterEntitlement, evaluateSpokeduMasterEffectiveEntitlement, getActiveSpokeduMasterEntitlementGrant } from '@/app/lib/server/spokeduMasterAccess';
 import { isPlatformAdminIdentity } from '@/app/lib/auth/platformAdminIdentity';
+import { paginateMasterAdminGrantSearchRows, readAllMasterAdminIdRows, readAllMasterAdminPages } from '@/app/lib/server/spokeduMasterAdminRead';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SOURCES = new Set(['promo', 'partner', 'event', 'support', 'admin']);
@@ -16,30 +17,45 @@ export async function GET(request: Request) {
   const page = Math.max(1, Number(url.searchParams.get('page') ?? 1) || 1);
   const status = url.searchParams.get('status') ?? 'all';
   const plan = url.searchParams.get('plan') ?? 'all';
-  const from = (page - 1) * 20;
-  let query = getServiceSupabase()
-    .from('spokedu_master_entitlement_grants')
-    .select('id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at,granted_by,created_at,revoked_at,metadata', { count: 'exact' })
-    .order('created_at', { ascending: false });
-  if (userId) {
-    if (!UUID_PATTERN.test(userId)) return NextResponse.json({ error: 'Valid userId is required' }, { status: 400 });
-    query = query.eq('user_id', userId);
-  }
-  if (plan === 'lite' || plan === 'premium') query = query.eq('plan', plan);
-  if (status === 'revoked') query = query.not('revoked_at', 'is', null);
-  if (status === 'active') query = query.is('revoked_at', null).lte('starts_at', new Date().toISOString()).gt('ends_at', new Date().toISOString());
-  if (status === 'expired') query = query.is('revoked_at', null).lte('ends_at', new Date().toISOString());
-  const { data, error, count } = await query.range(from, from + 19);
-  if (error) return NextResponse.json({ error: 'Grant lookup failed' }, { status: 500 });
+  const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
+  if (userId && !UUID_PATTERN.test(userId)) return NextResponse.json({ error: 'Valid userId is required' }, { status: 400 });
   const service = getServiceSupabase();
-  const userIds = [...new Set((data ?? []).map((row) => row.user_id))];
-  const [{ data: profiles }, { data: users }] = await Promise.all([
-    userIds.length ? service.from('spokedu_master_profiles').select('user_id,name').in('user_id', userIds) : Promise.resolve({ data: [] }),
-    userIds.length ? service.from('users').select('id,name,email').in('id', userIds) : Promise.resolve({ data: [] }),
-  ]);
-  const profileMap = new Map((profiles ?? []).map((row: any) => [row.user_id, row]));
-  const userMap = new Map((users ?? []).map((row: any) => [row.id, row]));
-  return NextResponse.json({ grants: (data ?? []).map((row) => ({ ...row, status: grantStatus(row), memberName: profileMap.get(row.user_id)?.name || userMap.get(row.user_id)?.name || '이름 없음', email: userMap.get(row.user_id)?.email ?? null })), total: count ?? 0, page });
+  try {
+    let data: any[] = [];
+    let total = 0;
+    if (q) {
+      const [authUsers, profiles] = await Promise.all([
+        readAllMasterAdminPages<any>({ fetchPage: async (authPage, pageSize) => { const result = await service.auth.admin.listUsers({ page: authPage, perPage: pageSize }); if (result.error) throw result.error; return result.data.users; } }),
+        readAllMasterAdminPages<any>({ fetchPage: async (profilePage, pageSize) => { const from = (profilePage - 1) * pageSize; const result = await service.from('spokedu_master_profiles').select('user_id,name').range(from, from + pageSize - 1); if (result.error) throw result.error; return result.data ?? []; } }),
+      ]);
+      const ids = new Set<string>();
+      for (const profile of profiles) if (String(profile.name ?? '').toLowerCase().includes(q)) ids.add(profile.user_id);
+      for (const user of authUsers) if (String(user.email ?? '').toLowerCase().includes(q)) ids.add(user.id);
+      if (userId) { if (!ids.has(userId)) return withPrivateNoStore(NextResponse.json({ grants: [], total: 0, page, pageSize: 20 })); ids.clear(); ids.add(userId); }
+      if (!ids.size) return withPrivateNoStore(NextResponse.json({ grants: [], total: 0, page, pageSize: 20 }));
+      const all = await readAllMasterAdminIdRows<any>({ ids: [...ids], fetchPage: async (batch, from, to) => { const result = await service.from('spokedu_master_entitlement_grants').select('id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at,granted_by,created_at,revoked_at,metadata').in('user_id', batch).range(from, to); if (result.error) throw result.error; return result.data ?? []; } });
+      const paged = paginateMasterAdminGrantSearchRows({ rows: all, plan, status, statusOf: grantStatus, page }); data = paged.rows; total = paged.total;
+    } else {
+      const from = (page - 1) * 20;
+      let query = service.from('spokedu_master_entitlement_grants').select('id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at,granted_by,created_at,revoked_at,metadata', { count: 'exact' }).order('created_at', { ascending: false }).order('id', { ascending: false });
+      if (userId) query = query.eq('user_id', userId);
+      if (plan === 'lite' || plan === 'premium') query = query.eq('plan', plan);
+      const now = new Date().toISOString();
+      if (status === 'revoked') query = query.not('revoked_at', 'is', null);
+      if (status === 'active') query = query.is('revoked_at', null).lte('starts_at', now).gt('ends_at', now);
+      if (status === 'expired') query = query.is('revoked_at', null).lte('ends_at', now);
+      if (status === 'scheduled') query = query.is('revoked_at', null).gt('starts_at', now);
+      const result = await query.range(from, from + 19); if (result.error) throw result.error; data = result.data ?? []; total = result.count ?? 0;
+    }
+    const userIds = [...new Set(data.map((row) => row.user_id))];
+    const [profiles, authUsers] = await Promise.all([
+      userIds.length ? service.from('spokedu_master_profiles').select('user_id,name').in('user_id', userIds).then((result: any) => { if (result.error) throw result.error; return result.data ?? []; }) : [],
+      Promise.all(userIds.map(async (id) => { const result = await service.auth.admin.getUserById(id); if (result.error) throw result.error; return result.data.user; })),
+    ]);
+    const profileMap = new Map(profiles.map((row: any) => [row.user_id, row]));
+    const userMap = new Map(authUsers.filter(Boolean).map((row: any) => [row.id, row]));
+    return withPrivateNoStore(NextResponse.json({ grants: data.map((row) => ({ ...row, status: grantStatus(row), memberName: (profileMap.get(row.user_id) as any)?.name || userMap.get(row.user_id)?.user_metadata?.name || '이름 없음', email: userMap.get(row.user_id)?.email ?? null })), total, page, pageSize: 20 }));
+  } catch { return withPrivateNoStore(NextResponse.json({ error: q ? 'Grant search failed' : 'Grant lookup failed' }, { status: 500 })); }
 }
 
 export async function POST(request: Request) {

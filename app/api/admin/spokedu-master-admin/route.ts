@@ -6,22 +6,16 @@ import { classifyMasterAccount, hasRenewalProblem, type MasterAccountClass } fro
 import { isPlatformAdminIdentity } from '@/app/lib/auth/platformAdminIdentity';
 import type { SpokeduMasterEntitlementGrantRow, SpokeduMasterSubscriptionRow } from '@/app/lib/server/spokeduMasterAccess';
 import { buildMasterFunnelWindow, type MasterFunnelEventRow, type MasterFunnelPayment } from '@/app/lib/server/spokeduMasterFunnel';
+import {
+  paginateMasterAdminRows,
+  readAllMasterAdminIdRows,
+  readAllMasterAdminPages,
+  selectActiveMasterAdminGrants,
+  selectLatestMasterAdminOrders,
+} from '@/app/lib/server/spokeduMasterAdminRead';
 
 export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 20;
-const OPERATION_TABLES = [
-  'spokedu_master_classes',
-  'spokedu_master_class_students',
-  'spokedu_master_sessions',
-  'spokedu_master_session_programs',
-  'spokedu_master_session_attendance',
-  'spokedu_master_students',
-  'spokedu_master_class_records',
-  'spokedu_master_class_record_students',
-  'spokedu_master_class_schedule_rules',
-  'spokedu_master_program_favorites',
-  'spokedu_master_explanations',
-] as const;
 
 type UserIdentity = {
   id: string;
@@ -33,76 +27,55 @@ type UserIdentity = {
   user_metadata?: Record<string, unknown> & { name?: string; full_name?: string };
 };
 
-type Evidence = { profile: boolean; subscription: boolean; grant: boolean; operations: boolean };
-
-function emptyEvidence(): Evidence {
-  return { profile: false, subscription: false, grant: false, operations: false };
-}
-
-function markEvidence(map: Map<string, Evidence>, id: unknown, key: keyof Evidence) {
-  if (typeof id !== 'string') return;
-  const value = map.get(id) ?? emptyEvidence();
-  value[key] = true;
-  map.set(id, value);
+async function readRowsByIds(table: string, columns: string, idColumn: string, ids: string[]) {
+  const service = getServiceSupabase();
+  return readAllMasterAdminIdRows<any>({ ids, fetchPage: async (batch, from, to) => {
+    const result = await service.from(table).select(columns).in(idColumn, batch).range(from, to);
+    if (result.error) throw result.error;
+    return result.data ?? [];
+  } });
 }
 
 async function populationEvidence() {
   const service = getServiceSupabase();
-  const [profilesResult, subscriptionsResult, grantsResult, ...operationResults] = await Promise.all([
-    service.from('spokedu_master_profiles').select('user_id,name,school,onboarding_done,created_at,account_type'),
-    service.from('spokedu_master_subscriptions').select('user_id'),
-    service.from('spokedu_master_entitlement_grants').select('user_id'),
-    ...OPERATION_TABLES.map((table) => service.from(table).select('owner_id')),
-  ]);
-  const error = [profilesResult, subscriptionsResult, grantsResult, ...operationResults].find((result) => result.error)?.error;
-  if (error) throw error;
-
-  const evidence = new Map<string, Evidence>();
-  for (const row of profilesResult.data ?? []) markEvidence(evidence, (row as any).user_id, 'profile');
-  for (const row of subscriptionsResult.data ?? []) markEvidence(evidence, (row as any).user_id, 'subscription');
-  for (const row of grantsResult.data ?? []) markEvidence(evidence, (row as any).user_id, 'grant');
-  for (const result of operationResults) {
-    for (const row of result.data ?? []) markEvidence(evidence, (row as any).owner_id, 'operations');
-  }
-  const profiles = new Map((profilesResult.data ?? []).map((row: any) => [row.user_id, row]));
-  return { evidence, profiles };
+  const rows = await readAllMasterAdminPages<any>({ fetchPage: async (page, pageSize) => {
+    const from = (page - 1) * pageSize;
+    const result = await service.from('spokedu_master_profiles')
+      .select('user_id,name,school,onboarding_done,created_at,account_type')
+      .order('created_at', { ascending: false }).range(from, from + pageSize - 1);
+    if (result.error) throw result.error;
+    return result.data ?? [];
+  } });
+  return new Map(rows.map((row: any) => [row.user_id, row]));
 }
 
 async function identities() {
   const service = getServiceSupabase();
-  const { data, error } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (error) throw error;
-  const users = data.users as UserIdentity[];
+  const users = await readAllMasterAdminPages<UserIdentity>({ fetchPage: async (page, pageSize) => {
+    const { data, error } = await service.auth.admin.listUsers({ page, perPage: pageSize });
+    if (error) throw error;
+    return data.users as UserIdentity[];
+  } });
   const ids = users.map((user) => user.id);
-  const [{ data: appUsers, error: appUsersError }, { data: authProfiles, error: authProfilesError }] = ids.length
-    ? await Promise.all([
-        service.from('users').select('id,name,email,role,is_admin,is_active,status').in('id', ids),
-        service.from('profiles').select('id,role').in('id', ids),
-      ])
-    : [{ data: [], error: null }, { data: [], error: null }];
-  if (appUsersError || authProfilesError) throw appUsersError ?? authProfilesError;
-  return {
-    users,
-    appUsers: new Map((appUsers ?? []).map((row: any) => [row.id, row])),
-    authProfiles: new Map((authProfiles ?? []).map((row: any) => [row.id, row])),
-  };
+  const [appUsers, authProfiles] = await Promise.all([
+    readRowsByIds('users', 'id,name,email,role,is_admin,is_active,status', 'id', ids),
+    readRowsByIds('profiles', 'id,role', 'id', ids),
+  ]);
+  return { users, appUsers: new Map(appUsers.map((row: any) => [row.id, row])), authProfiles: new Map(authProfiles.map((row: any) => [row.id, row])) };
 }
 
 async function accessMaps(userIds: string[]) {
-  const service = getServiceSupabase();
   const now = new Date().toISOString();
-  const [{ data: subscriptions, error: subError }, { data: grants, error: grantError }, { data: payments, error: paymentError }] = await Promise.all([
-    userIds.length ? service.from('spokedu_master_subscriptions').select('user_id,plan,status,pg_provider,toss_order_id,provider_customer_key,created_at,period_end,cancel_at_period_end,next_billing_at,current_period_end,renewal_retry_count,last_billing_error,next_retry_at,last_payment_at').in('user_id', userIds) : Promise.resolve({ data: [], error: null }),
-    userIds.length ? service.from('spokedu_master_entitlement_grants').select('id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at').in('user_id', userIds).is('revoked_at', null).lte('starts_at', now).gt('ends_at', now).order('plan', { ascending: false }).order('ends_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
-    userIds.length ? service.from('spokedu_master_payment_orders').select('user_id,plan,amount,status,payment_key,updated_at,applied_at,last_error_code').in('user_id', userIds).order('updated_at', { ascending: false }) : Promise.resolve({ data: [], error: null }),
+  const [subscriptions, grantRows, payments] = await Promise.all([
+    readRowsByIds('spokedu_master_subscriptions', 'user_id,plan,status,pg_provider,toss_order_id,provider_customer_key,created_at,period_end,cancel_at_period_end,next_billing_at,current_period_end,renewal_retry_count,last_billing_error,next_retry_at,last_payment_at', 'user_id', userIds),
+    readRowsByIds('spokedu_master_entitlement_grants', 'id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at,revoked_at,created_at,granted_by,metadata', 'user_id', userIds),
+    readRowsByIds('spokedu_master_payment_orders', 'id,user_id,plan,amount,status,payment_key,updated_at,applied_at,last_error_code', 'user_id', userIds),
   ]);
-  if (subError || grantError || paymentError) throw subError ?? grantError ?? paymentError;
-  const subscriptionMap = new Map((subscriptions ?? []).map((row: any) => [row.user_id, row]));
-  const grantMap = new Map<string, any>();
-  for (const row of grants ?? []) if (!grantMap.has((row as any).user_id)) grantMap.set((row as any).user_id, row);
-  const paymentMap = new Map<string, any>();
-  for (const row of payments ?? []) if (!paymentMap.has((row as any).user_id)) paymentMap.set((row as any).user_id, row);
-  return { subscriptionMap, grantMap, paymentMap };
+  return {
+    subscriptionMap: new Map(subscriptions.map((row: any) => [row.user_id, row])),
+    grantMap: selectActiveMasterAdminGrants(grantRows, now),
+    paymentMap: selectLatestMasterAdminOrders(payments),
+  };
 }
 
 async function funnelEvidence(members: Array<{
@@ -151,14 +124,16 @@ export async function GET(request: Request) {
     const page = Math.max(1, Number(url.searchParams.get('page') ?? 1) || 1);
     const query = (url.searchParams.get('q') ?? '').trim().toLowerCase().slice(0, 120);
     const scope = url.searchParams.get('scope') ?? 'production';
-    const [{ evidence, profiles }, { users, appUsers, authProfiles }] = await Promise.all([populationEvidence(), identities()]);
-    const { subscriptionMap, grantMap, paymentMap } = await accessMaps([...evidence.keys()]);
+    const planFilter = url.searchParams.get('plan') ?? 'all';
+    const sourceFilter = url.searchParams.get('source') ?? 'all';
+    const onboardingFilter = url.searchParams.get('onboarding') ?? 'all';
+    const [profiles, { users, appUsers, authProfiles }] = await Promise.all([populationEvidence(), identities()]);
+    const { subscriptionMap, grantMap, paymentMap } = await accessMaps([...profiles.keys()]);
 
-    const rows = users.map((user) => {
+    const rows = users.filter((user) => profiles.has(user.id)).map((user) => {
       const profile = profiles.get(user.id) ?? null;
       const appUser = appUsers.get(user.id) ?? null;
       const authProfile = authProfiles.get(user.id) ?? null;
-      const membershipEvidence = evidence.get(user.id) ?? emptyEvidence();
       const subscription = (subscriptionMap.get(user.id) ?? null) as (SpokeduMasterSubscriptionRow & Record<string, any>) | null;
       const grant = (grantMap.get(user.id) ?? null) as SpokeduMasterEntitlementGrantRow | null;
       const payment = paymentMap.get(user.id) ?? null;
@@ -172,7 +147,7 @@ export async function GET(request: Request) {
         paymentApproved: Boolean(payment.payment_key),
       } : null;
       const accountClass = classifyMasterAccount({
-        hasMasterProfile: membershipEvidence.profile,
+        hasMasterProfile: true,
         identity: { appMetadata: user.app_metadata, userMetadata: user.user_metadata, bannedUntil: user.banned_until, deletedAt: user.deleted_at },
         profile,
         appUser,
@@ -192,10 +167,15 @@ export async function GET(request: Request) {
         email: user.email ?? appUser?.email ?? null,
         name: profile?.name || appUser?.name || user.user_metadata?.name || user.user_metadata?.full_name || '이름 없음',
         createdAt: profile?.created_at ?? user.created_at ?? null,
+        onboardingDone: Boolean(profile?.onboarding_done),
+        accountType: profile?.account_type ?? 'personal',
         accountClass,
         accountRole,
         ...buildMasterAdminAccess({ subscription, grant }),
         latestOrder,
+        recentGrant: grant ? { id: grant.id, plan: grant.plan, createdAt: (grant as any).created_at ?? null, endsAt: grant.ends_at, grantedBy: (grant as any).granted_by ?? null, reason: (grant as any).metadata?.reason ?? null } : null,
+        entitlementEndsAt: grant && buildMasterAdminAccess({ subscription, grant }).effectiveSource === 'promotion' ? grant.ends_at : subscription?.current_period_end ?? subscription?.period_end ?? null,
+        statusLabel: profile?.onboarding_done ? 'normal' : 'onboarding_required',
         billingIncident: deriveMasterAdminBillingIncident({
           subscription: subscription ? {
             status: subscription.status,
@@ -210,6 +190,7 @@ export async function GET(request: Request) {
         subscription: subscription ? {
           plan: subscription.plan,
           status: subscription.status,
+          pgProvider: subscription.pg_provider ?? null,
           cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
           nextBillingAt: subscription.next_billing_at ?? null,
           currentPeriodEnd: subscription.current_period_end ?? subscription.period_end ?? null,
@@ -232,12 +213,16 @@ export async function GET(request: Request) {
         premium: 0,
         promotions: 0,
         renewalFailed: 0,
+        paid: 0,
+        expiringSoon: 0,
       };
       for (const row of production) {
         if (row.effectivePlan === 'premium' || row.effectivePlan === 'team') summary.premium += 1;
         else if (row.effectivePlan === 'lite') summary.lite += 1;
         else summary.free += 1;
         if (row.promoPlan) summary.promotions += 1;
+        if (row.subscription && row.subscription.pgProvider !== 'manual_qa' && row.latestOrder?.paymentApproved && row.latestOrder.appliedAt) summary.paid += 1;
+        if (row.entitlementEndsAt) { const remaining = Date.parse(row.entitlementEndsAt) - Date.now(); if (remaining >= 0 && remaining <= 7 * 86_400_000) summary.expiringSoon += 1; }
         if (hasRenewalProblem(row.subscription ? {
           status: row.subscription.status,
           renewal_retry_count: row.subscription.renewalRetryCount,
@@ -246,7 +231,15 @@ export async function GET(request: Request) {
         } : null)) summary.renewalFailed += 1;
       }
       const funnel = await funnelEvidence(production);
-      return withPrivateNoStore(NextResponse.json({ summary: { ...summary, funnel } }));
+      const newest = <T extends { at: string | null }>(items: T[]) => items.filter((item) => item.at).sort((a, b) => Date.parse(b.at!) - Date.parse(a.at!)).slice(0, 8);
+      const activities = {
+        newMembers: newest(production.map((row) => ({ userId: row.id, name: row.name, email: row.email, at: row.createdAt }))),
+        recentGrants: newest(production.filter((row) => row.recentGrant?.createdAt).map((row) => ({ userId: row.id, name: row.name, email: row.email, plan: row.recentGrant!.plan, at: row.recentGrant!.createdAt }))),
+        expiring: newest(production.filter((row) => row.entitlementEndsAt && Date.parse(row.entitlementEndsAt) >= Date.now() && Date.parse(row.entitlementEndsAt) <= Date.now() + 7 * 86_400_000).map((row) => ({ userId: row.id, name: row.name, email: row.email, plan: row.effectivePlan, at: row.entitlementEndsAt }))),
+        payments: newest(production.filter((row) => row.latestOrder?.updatedAt).map((row) => ({ userId: row.id, name: row.name, email: row.email, status: row.latestOrder!.status, approved: row.latestOrder!.paymentApproved, at: row.latestOrder!.updatedAt }))),
+        paymentErrors: newest(production.filter((row) => row.billingIncident.tone !== 'ok').map((row) => ({ userId: row.id, name: row.name, email: row.email, label: row.billingIncident.label, at: row.latestOrder?.updatedAt ?? row.subscription?.nextRetryAt ?? row.createdAt }))),
+      };
+      return withPrivateNoStore(NextResponse.json({ summary: { ...summary, funnel }, activities }));
     }
 
     if (view === 'billing') {
@@ -255,20 +248,23 @@ export async function GET(request: Request) {
         && !isSpokeduStaffEmail(row.email)
         && Boolean(row.subscription || row.latestOrder),
       );
-      const start = (page - 1) * PAGE_SIZE;
+      const paged = paginateMasterAdminRows(billingRows, page, PAGE_SIZE);
       return withPrivateNoStore(NextResponse.json({
-        members: billingRows.slice(start, start + PAGE_SIZE),
-        total: billingRows.length,
-        page,
-        pageSize: PAGE_SIZE,
+        members: paged.rows,
+        total: paged.total,
+        page: paged.page,
+        pageSize: paged.pageSize,
       }));
     }
 
     const filtered = rows.filter((user) => matchesScope(user.accountClass, scope))
       .filter((user) => scope !== 'production' || !isSpokeduStaffEmail(user.email))
-      .filter((user) => !query || user.name.toLowerCase().includes(query) || (user.email ?? '').toLowerCase().includes(query));
-    const start = (page - 1) * PAGE_SIZE;
-    return withPrivateNoStore(NextResponse.json({ members: filtered.slice(start, start + PAGE_SIZE), total: filtered.length, page, pageSize: PAGE_SIZE, scope }));
+      .filter((user) => !query || user.name.toLowerCase().includes(query) || (user.email ?? '').toLowerCase().includes(query))
+      .filter((user) => planFilter === 'all' || user.effectivePlan === planFilter || (planFilter === 'premium' && user.effectivePlan === 'team'))
+      .filter((user) => sourceFilter === 'all' || (sourceFilter === 'base' ? user.effectiveSource === 'none' : user.effectiveSource === sourceFilter))
+      .filter((user) => onboardingFilter === 'all' || user.onboardingDone === (onboardingFilter === 'complete'));
+    const paged = paginateMasterAdminRows(filtered, page, PAGE_SIZE);
+    return withPrivateNoStore(NextResponse.json({ members: paged.rows, total: paged.total, page: paged.page, pageSize: paged.pageSize, scope }));
   } catch {
     return withPrivateNoStore(NextResponse.json({ error: 'MASTER 운영 데이터를 불러오지 못했습니다.' }, { status: 500 }));
   }
