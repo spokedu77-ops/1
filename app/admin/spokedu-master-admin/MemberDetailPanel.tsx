@@ -5,9 +5,10 @@ import { AlertTriangle, Loader2, X } from 'lucide-react';
 type Detail = {
   member: { id: string; email: string | null; name: string | null; created_at: string | null; account_type: string | null; onboarding_done: boolean | null };
   access: { effectivePlan: string; effectiveSource: string; promoStartsAt: string | null; promoEndsAt: string | null; fallbackPlan: string };
-  grants: Array<{ id: string; plan: string; source: string; campaign_id: string | null; starts_at: string; ends_at: string; created_at: string; revoked_at: string | null; status: string; metadata?: { reason?: string; extension_history?: unknown[] } }>;
+  grants: Array<{ id: string; plan: string; source: string; campaign_id: string | null; starts_at: string; ends_at: string; created_at: string; granted_by?: string | null; revoked_at: string | null; status: string; metadata?: { reason?: string; revoked_by?: string; revoke_reason?: string; extension_history?: Array<{ old_ends_at?: string; new_ends_at?: string; extended_at?: string; extended_by?: string; reason?: string }> } }>;
+  latestOrder: { order_id: string; plan: string | null; amount: number | null; status: string | null; updated_at: string | null; applied_at: string | null; last_error_code: string | null; paymentApproved: boolean } | null;
   subscription: Record<string, unknown> | null;
-  orders: Array<{ id: string; plan: string | null; amount: number | null; status: string | null; updated_at: string | null; applied_at: string | null; payment_key?: string | null; last_error_code: string | null }>;
+  orders: Array<{ order_id: string; plan: string | null; amount: number | null; status: string | null; updated_at: string | null; applied_at: string | null; last_error_code: string | null; paymentApproved: boolean }>;
   billingIncident: { label: string; tone: string };
 };
 
@@ -42,13 +43,24 @@ export function MemberDetailPanel({ detail, loading, error, onClose }: { detail:
         <Section title="증정 이용권"><div className="space-y-3">{detail.grants.length ? detail.grants.map((grant) => <article key={grant.id} className="rounded-xl border border-slate-200 p-4 text-sm"><div className="flex justify-between gap-3"><b>{planName(grant.plan)}</b><span>{statusName(grant.status)}</span></div><p className="mt-2 text-slate-500">{formatDate(grant.starts_at)} → {formatDate(grant.ends_at)}</p><p className="mt-1 break-words text-slate-500">사유: {grant.metadata?.reason || '기록 없음'} · 캠페인: {grant.campaign_id || '-'}</p></article>) : <Empty/>}</div></Section>
         <Section title="결제 구독"><Facts rows={[
           ['구독', detail.subscription ? String(detail.subscription.status ?? '확인 필요') : '없음'],
-          ['결제 상태', detail.billingIncident.label], ['최근 주문', detail.orders[0]?.status || '없음'],
-          ['승인 근거', detail.orders[0]?.payment_key ? '있음' : '없음'], ['최근 주문 시각', formatDate(detail.orders[0]?.updated_at)],
+          ['결제 상태', detail.billingIncident.label], ['최근 주문', detail.latestOrder?.status || '없음'],
+          ['승인 근거', detail.latestOrder?.paymentApproved ? (detail.latestOrder.applied_at ? '승인 및 반영 확인' : '승인 확인 · 반영 미확인') : '없음'], ['최근 주문 시각', formatDate(detail.latestOrder?.updated_at)],
         ]}/></Section>
-        <Section title="이용권 작업 이력"><div className="space-y-2">{detail.grants.length ? detail.grants.map((grant) => <div key={'history-'+grant.id} className="border-b border-slate-100 py-3 text-sm"><b>{formatDate(grant.created_at)} · {planName(grant.plan)} 지급</b><p className="mt-1 text-slate-500">{grant.revoked_at ? `회수 ${formatDate(grant.revoked_at)}` : statusName(grant.status)} · {grant.metadata?.reason || '사유 기록 없음'}</p></div>) : <Empty/>}</div></Section>
+        <Section title="이용권 작업 이력"><div className="space-y-2">{detail.grants.length ? detail.grants.flatMap((grant) => grantEvents(grant)).sort((a, b) => Date.parse(b.at) - Date.parse(a.at) || b.id.localeCompare(a.id)).map((event) => <div key={event.id} className="border-b border-slate-100 py-3 text-sm"><b>{formatDate(event.at)} · {planName(event.plan)} {event.label}</b><p className="mt-1 break-words text-slate-500">{event.change} · 작업자 {event.actor || '기록 없음'} · 사유 {event.reason || '기록 없음'}</p></div>) : <Empty/>}</div></Section>
       </div>}
     </div>
   </aside>;
+}
+
+type Grant = Detail['grants'][number];
+function grantEvents(grant: Grant) {
+  const events = [{ id: grant.id + ':grant', at: grant.created_at, plan: grant.plan, label: '지급', change: formatDate(grant.starts_at) + ' → ' + formatDate(grant.ends_at), actor: grant.granted_by ?? null, reason: grant.metadata?.reason ?? null }];
+  for (const [index, extension] of (grant.metadata?.extension_history ?? []).entries()) {
+    if (!extension.extended_at) continue;
+    events.push({ id: grant.id + ':extend:' + index, at: extension.extended_at, plan: grant.plan, label: '연장', change: formatDate(extension.old_ends_at) + ' → ' + formatDate(extension.new_ends_at), actor: extension.extended_by ?? null, reason: extension.reason ?? null });
+  }
+  if (grant.revoked_at) events.push({ id: grant.id + ':revoke', at: grant.revoked_at, plan: grant.plan, label: '회수', change: '이용권 회수', actor: grant.metadata?.revoked_by ?? null, reason: grant.metadata?.revoke_reason ?? null });
+  return events;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) { return <section><h3 className="mb-3 text-base font-bold text-slate-950">{title}</h3>{children}</section>; }

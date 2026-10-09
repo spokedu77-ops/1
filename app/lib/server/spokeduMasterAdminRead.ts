@@ -59,13 +59,13 @@ export function selectActiveMasterAdminGrants<T extends GrantCandidate>(rows: T[
   return selected;
 }
 
-type OrderCandidate = { id: string; user_id: string; updated_at: string | null };
+type OrderCandidate = { id?: string; order_id?: string; user_id: string; updated_at: string | null };
 
 export function selectLatestMasterAdminOrders<T extends OrderCandidate>(rows: T[]) {
   const selected = new Map<string, T>();
   for (const row of [...rows].sort((left, right) =>
     Date.parse(right.updated_at ?? '') - Date.parse(left.updated_at ?? '')
-      || right.id.localeCompare(left.id))) {
+      || (right.id ?? right.order_id ?? '').localeCompare(left.id ?? left.order_id ?? ''))) {
     if (!selected.has(row.user_id)) selected.set(row.user_id, row);
   }
   return selected;

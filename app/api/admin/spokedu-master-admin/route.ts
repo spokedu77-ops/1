@@ -13,6 +13,7 @@ import {
   selectActiveMasterAdminGrants,
   selectLatestMasterAdminOrders,
 } from '@/app/lib/server/spokeduMasterAdminRead';
+import { buildBillingIncidents, type BillingRun, type BillingWebhook } from '@/app/lib/server/spokeduMasterBillingIncidents';
 
 export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 20;
@@ -67,15 +68,32 @@ async function identities() {
 async function accessMaps(userIds: string[]) {
   const now = new Date().toISOString();
   const [subscriptions, grantRows, payments] = await Promise.all([
-    readRowsByIds('spokedu_master_subscriptions', 'user_id,plan,status,pg_provider,toss_order_id,provider_customer_key,created_at,period_end,cancel_at_period_end,next_billing_at,current_period_end,renewal_retry_count,last_billing_error,next_retry_at,last_payment_at', 'user_id', userIds),
+    readRowsByIds('spokedu_master_subscriptions', 'id,user_id,plan,status,pg_provider,toss_order_id,provider_customer_key,created_at,period_end,cancel_at_period_end,next_billing_at,current_period_end,renewal_retry_count,last_billing_error,next_retry_at,last_payment_at', 'user_id', userIds),
     readRowsByIds('spokedu_master_entitlement_grants', 'id,user_id,plan,source,campaign_id,starts_at,ends_at,activated_at,revoked_at,created_at,granted_by,metadata', 'user_id', userIds),
-    readRowsByIds('spokedu_master_payment_orders', 'id,user_id,plan,amount,status,payment_key,updated_at,applied_at,last_error_code', 'user_id', userIds),
+    readRowsByIds('spokedu_master_payment_orders', 'order_id,user_id,plan,amount,status,payment_key,created_at,updated_at,applied_at,last_processed_at,last_error_code', 'user_id', userIds),
   ]);
   return {
     subscriptionMap: new Map(subscriptions.map((row: any) => [row.user_id, row])),
     grantMap: selectActiveMasterAdminGrants(grantRows, now),
     paymentMap: selectLatestMasterAdminOrders(payments),
+    subscriptionRows: subscriptions,
+    paymentRows: payments,
   };
+}
+
+async function recentOperationalRows(table: string, columns: string, timeColumn: string, allowedUserIds: Set<string>, limit = 8, tieColumn = 'id') {
+  const service = getServiceSupabase();
+  const rows: any[] = [];
+  const pageSize = 100;
+  for (let from = 0; rows.length < limit; from += pageSize) {
+    const result = await service.from(table).select(columns)
+      .order(timeColumn, { ascending: false }).order(tieColumn, { ascending: false }).range(from, from + pageSize - 1);
+    if (result.error) throw result.error;
+    const pageRows = result.data ?? [];
+    rows.push(...pageRows.filter((row: any) => allowedUserIds.has(row.user_id)));
+    if (pageRows.length < pageSize) break;
+  }
+  return rows.sort((left, right) => Date.parse(right[timeColumn] ?? '') - Date.parse(left[timeColumn] ?? '') || String(right[tieColumn] ?? '').localeCompare(String(left[tieColumn] ?? ''))).slice(0, limit);
 }
 
 async function funnelEvidence(members: Array<{
@@ -128,7 +146,7 @@ export async function GET(request: Request) {
     const sourceFilter = url.searchParams.get('source') ?? 'all';
     const onboardingFilter = url.searchParams.get('onboarding') ?? 'all';
     const [profiles, { users, appUsers, authProfiles }] = await Promise.all([populationEvidence(), identities()]);
-    const { subscriptionMap, grantMap, paymentMap } = await accessMaps([...profiles.keys()]);
+    const { subscriptionMap, grantMap, paymentMap, subscriptionRows, paymentRows } = await accessMaps([...profiles.keys()]);
 
     const rows = users.filter((user) => profiles.has(user.id)).map((user) => {
       const profile = profiles.get(user.id) ?? null;
@@ -173,7 +191,6 @@ export async function GET(request: Request) {
         accountRole,
         ...buildMasterAdminAccess({ subscription, grant }),
         latestOrder,
-        recentGrant: grant ? { id: grant.id, plan: grant.plan, createdAt: (grant as any).created_at ?? null, endsAt: grant.ends_at, grantedBy: (grant as any).granted_by ?? null, reason: (grant as any).metadata?.reason ?? null } : null,
         entitlementEndsAt: grant && buildMasterAdminAccess({ subscription, grant }).effectiveSource === 'promotion' ? grant.ends_at : subscription?.current_period_end ?? subscription?.period_end ?? null,
         statusLabel: profile?.onboarding_done ? 'normal' : 'onboarding_required',
         billingIncident: deriveMasterAdminBillingIncident({
@@ -215,6 +232,8 @@ export async function GET(request: Request) {
         renewalFailed: 0,
         paid: 0,
         expiringSoon: 0,
+        billingCustomerIncidents: 0,
+        billingSystemIncidents: 0,
       };
       for (const row of production) {
         if (row.effectivePlan === 'premium' || row.effectivePlan === 'team') summary.premium += 1;
@@ -230,13 +249,25 @@ export async function GET(request: Request) {
           next_retry_at: row.subscription.nextRetryAt,
         } : null)) summary.renewalFailed += 1;
       }
-      const funnel = await funnelEvidence(production);
+      const productionIds = new Set(production.map((row) => row.id));
+      const productionById = new Map(production.map((row) => [row.id, row]));
+      const [recentGrantEvents, recentPaymentEvents, funnel, webhookRows, billingRuns] = await Promise.all([
+        recentOperationalRows('spokedu_master_entitlement_grants', 'id,user_id,plan,created_at', 'created_at', productionIds),
+        recentOperationalRows('spokedu_master_payment_orders', 'order_id,user_id,status,payment_key,updated_at,applied_at', 'updated_at', productionIds, 8, 'order_id'),
+        funnelEvidence(production),
+        readAllMasterAdminPages<any>({ fetchPage: async (page, pageSize) => { const from = (page - 1) * pageSize; const result = await getServiceSupabase().from('spokedu_master_payment_webhook_events').select('event_key,event_type,order_id,status,created_at').order('created_at', { ascending: false }).range(from, from + pageSize - 1); if (result.error) throw result.error; return result.data ?? []; } }),
+        readAllMasterAdminPages<any>({ fetchPage: async (page, pageSize) => { const from = (page - 1) * pageSize; const result = await getServiceSupabase().from('spokedu_master_billing_runs').select('id,started_at,completed_at,status,attempted,succeeded,failed,skipped,error_code').order('started_at', { ascending: false }).range(from, from + pageSize - 1); if (result.error) throw result.error; return result.data ?? []; } }),
+      ]);
+      const billingIncidents = buildBillingIncidents({ orders: paymentRows.filter((row: any) => productionIds.has(row.user_id)).map(({ payment_key, ...row }: any) => ({ ...row, paymentApproved: Boolean(payment_key) })), subscriptions: subscriptionRows.filter((row: any) => productionIds.has(row.user_id)), webhooks: webhookRows as BillingWebhook[], runs: billingRuns as BillingRun[] });
+      summary.billingCustomerIncidents = billingIncidents.filter((incident) => incident.scope === 'customer').length;
+      summary.billingSystemIncidents = billingIncidents.filter((incident) => incident.scope === 'system').length;
       const newest = <T extends { at: string | null }>(items: T[]) => items.filter((item) => item.at).sort((a, b) => Date.parse(b.at!) - Date.parse(a.at!)).slice(0, 8);
       const activities = {
         newMembers: newest(production.map((row) => ({ userId: row.id, name: row.name, email: row.email, at: row.createdAt }))),
-        recentGrants: newest(production.filter((row) => row.recentGrant?.createdAt).map((row) => ({ userId: row.id, name: row.name, email: row.email, plan: row.recentGrant!.plan, at: row.recentGrant!.createdAt }))),
+        recentGrants: recentGrantEvents.map((event) => { const member = productionById.get(event.user_id)!; return { userId: event.user_id, name: member.name, email: member.email, plan: event.plan, at: event.created_at }; }),
         expiring: newest(production.filter((row) => row.entitlementEndsAt && Date.parse(row.entitlementEndsAt) >= Date.now() && Date.parse(row.entitlementEndsAt) <= Date.now() + 7 * 86_400_000).map((row) => ({ userId: row.id, name: row.name, email: row.email, plan: row.effectivePlan, at: row.entitlementEndsAt }))),
-        payments: newest(production.filter((row) => row.latestOrder?.updatedAt).map((row) => ({ userId: row.id, name: row.name, email: row.email, status: row.latestOrder!.status, approved: row.latestOrder!.paymentApproved, at: row.latestOrder!.updatedAt }))),
+        payments: recentPaymentEvents.map((event) => { const member = productionById.get(event.user_id)!; return { userId: event.user_id, name: member.name, email: member.email, status: event.status, approved: Boolean(event.payment_key && event.applied_at), at: event.updated_at }; }),
+        billingIncidents: billingIncidents.slice(0, 8).map((incident) => { const member = incident.userId ? productionById.get(incident.userId) : null; return { userId: incident.userId, name: member?.name ?? 'System scheduler', email: member?.email ?? null, at: incident.lastOccurredAt, label: incident.type, status: incident.errorCode, scope: incident.scope }; }),
         paymentErrors: newest(production.filter((row) => row.billingIncident.tone !== 'ok').map((row) => ({ userId: row.id, name: row.name, email: row.email, label: row.billingIncident.label, at: row.latestOrder?.updatedAt ?? row.subscription?.nextRetryAt ?? row.createdAt }))),
       };
       return withPrivateNoStore(NextResponse.json({ summary: { ...summary, funnel }, activities }));
