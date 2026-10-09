@@ -65,7 +65,7 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
       '/images/spokedu-master/landing/run-session.png',
       '/images/spokedu-master/landing/run-attendance.png',
       '/images/spokedu/home/field-editorial/home-spomove-field.webp',
-      '/images/spokedu/home/home-hero-spomove-class.JPG',
+      '/images/spokedu/home/field-editorial/home-spomove-dive-field.webp',
     ] as const;
 
     for (const asset of renderedAssets) {

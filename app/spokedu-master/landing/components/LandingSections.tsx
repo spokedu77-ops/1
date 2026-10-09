@@ -30,7 +30,7 @@ const ASSETS = {
   attendance: '/images/spokedu-master/landing/run-attendance.png',
   gear: '/images/spokedu/subscription/prepare-gear-setting.webp',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
-  field: '/images/spokedu/home/home-hero-spomove-class.JPG',
+  field: '/images/spokedu/home/field-editorial/home-spomove-dive-field.webp',
 } as const;
 
 const WORKFLOW = [
