@@ -100,9 +100,9 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
 
 export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
   home: {
-    title: '스포키듀 | 아동체육 · SPOMOVE · 구독시스템',
+    title: '스포키듀 SPOKEDU | 아동·청소년·특수체육 교육',
     description:
-      '현장에서 운영한 아동·청소년 체육교육, 화면과 움직임을 잇는 SPOMOVE, 지도자의 준비·진행·기록을 돕는 구독시스템.',
+      '학교·기관·키움센터 맞춤 아동·청소년·특수체육 수업, 화면과 움직임을 잇는 SPOMOVE, 현장 기록 SPOKEDU LAB, 지도자 준비·진행·기록을 돕는 구독시스템.',
   },
   about: {
     title: '스포키듀 소개 | 현장 체육교육 · SPOMOVE · 구독시스템',

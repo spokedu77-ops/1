@@ -37,16 +37,16 @@ export const brandChannels: BrandChannel[] = [
   {
     key: 'instagram',
     label: '인스타그램',
-    href: '',
+    href: 'https://www.instagram.com/spokedu_kids/',
     description: '현장 사진과 짧은 운영 소식',
-    isPending: true,
+    isPending: false,
   },
   {
     key: 'youtube',
     label: '유튜브 · 쇼츠',
-    href: '',
+    href: 'https://www.youtube.com/channel/UCCckdu5nqsVAoWY2_n8-LCw',
     description: '수업 영상 아카이브 확장 채널',
-    isPending: true,
+    isPending: false,
   },
   {
     key: 'kakao-channel',
@@ -66,4 +66,9 @@ export function isExternalChannelHrefReady(href: string | undefined | null): boo
 
 export function isChannelLive(channel: BrandChannel): boolean {
   return !channel.isPending && isExternalChannelHrefReady(channel.href);
+}
+
+/** Organization JSON-LD sameAs — 공식 채널 단일 원천 */
+export function getOrganizationSameAsUrls(): readonly string[] {
+  return brandChannels.filter(isChannelLive).map((channel) => channel.href);
 }
