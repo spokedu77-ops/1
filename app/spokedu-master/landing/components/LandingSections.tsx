@@ -24,23 +24,19 @@ const ASSETS = {
   home: '/images/spokedu/home/field-editorial/home-master-ui.png',
   library: '/images/spokedu/subscription/library-program-cards-20261008-final.png',
   lesson: '/images/spokedu/subscription/prepare-lesson-plan-20261008-final.png',
-  tools: '/images/spokedu/subscription/prepare-class-tools.png',
   build: '/images/spokedu-master/landing/build-session.png',
   session: '/images/spokedu-master/landing/run-session.png',
   attendance: '/images/spokedu-master/landing/run-attendance.png',
-  record: '/images/spokedu-master/landing/remember-report.png',
-  recordDetail: '/images/spokedu-master/landing/remember-report-detail.png',
   gear: '/images/spokedu/subscription/prepare-gear-setting.webp',
   spomove: '/images/spokedu/home/field-editorial/home-spomove-field.webp',
   field: '/images/spokedu/records/yangcheon-paps.jpg',
 } as const;
 
 const WORKFLOW = [
-  ['01', '수업 찾기', '오늘 수업에 맞는 활동을 고릅니다.'],
-  ['02', '수업 준비', '준비물과 진행 방법을 확인합니다.'],
-  ['03', '반과 일정에 연결', '활동을 수업반과 날짜에 담습니다.'],
-  ['04', '현장에서 운영', '출석과 활동 순서를 이어서 씁니다.'],
-  ['05', '기록하고 이어가기', '남긴 맥락을 다음 준비에 활용합니다.'],
+  ['01', '수업 찾기', '오늘 수업에 맞는 놀이체육을 찾습니다.'],
+  ['02', '수업 준비', '영상, 준비물, 진행 방법을 확인합니다.'],
+  ['03', '수업 구성', '수업반과 일정에 프로그램을 추가합니다.'],
+  ['04', '현장 운영', '출석과 활동 순서를 확인하며 수업을 진행합니다.'],
 ] as const;
 
 function SectionHeading({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
@@ -79,10 +75,9 @@ export function LandingHero({ product }: { product: ReturnTypeOfLandingModel }) 
     <section className={styles.hero}>
       <div className={styles.heroCopy}>
         <p className={styles.eyebrow}>유아·초등 체육 교사와 강사를 위한 수업 운영</p>
-        <h1>체육수업을 찾고,<br />운영하고,<br />다음 수업까지 이어갑니다.</h1>
+        <h1>놀이체육을 찾고,<br />수업을 구성하고,<br />현장에서 운영합니다.</h1>
         <p className={styles.heroBody}>
-          놀이체육 활동을 찾고, 수업반과 일정에 담고, 현장에서 운영한 출석과 기록까지 다음 수업으로 이어갑니다.
-          매번 &apos;오늘 뭐 하지?&apos;부터 다시 시작하지 않아도 됩니다.
+          필요한 놀이체육 프로그램을 찾아 수업반과 일정에 담으세요. 수업 당일에는 출석과 활동 순서를 한 화면에서 확인하며 운영할 수 있습니다.
         </p>
         <div className={styles.heroActions}>
           <LandingConversionActions loginHref={product.handoff.loginHref} freeStartHref={product.handoff.freeStartHref} placement="hero" />
@@ -166,7 +161,7 @@ export function CoreProductStory() {
           <SectionHeading
             eyebrow="현장에서 운영하기"
             title="현장에서는 출석과 활동을 한 흐름에서 운영합니다."
-            body="오늘 수업의 출석 상태와 활동 순서를 먼저 확인하고, 진행에 필요한 도구는 바로 곁에서 꺼내 씁니다."
+            body="수업반과 일정을 등록하고 필요한 놀이체육 프로그램을 추가하세요. 수업 당일에는 출석 상태와 활동 순서를 한 화면에서 확인하며 수업을 운영할 수 있습니다."
           />
           <div className={styles.runFacts}>
             <span><ClipboardCheck size={18} aria-hidden /> 출석과 참여 범위</span>
@@ -184,31 +179,12 @@ export function CoreProductStory() {
               <ProductFrame src={ASSETS.attendance} alt="수업반과 날짜별 출석 상태가 보이는 실제 SPOKEDU LAB 출석 화면" position="50% 54%" />
               <p><strong>수업반 출석과 참여 상태</strong><span>날짜별 출석을 실제 수업 흐름에 연결</span></p>
             </div>
-            <div className={styles.runUtility}>
-              <ProductFrame src={ASSETS.tools} alt="스탑워치, 타이머, 점수판, 팀 나누기가 보이는 실제 수업 도구 화면" position="50% 20%" />
-              <p><strong>필요할 때 바로 쓰는 보조 도구</strong><span>타이머 · 점수판 · 팀 나누기 · 순서 정하기</span></p>
-            </div>
           </div>
         </div>
       </section>
 
       <ClassToolsSection />
 
-      <section id="records" className={`${styles.storySection} ${styles.memorySection}`}>
-        <div className={styles.storyCopy}>
-          <p className={styles.stepLabel}>기억하고 이어가기 · 라이트</p>
-          <h2>지난 수업이 다음 준비의 출발점이 됩니다.</h2>
-          <p>수업 메모와 학생 관찰, 다음 수업 노트, 수업 안내문을 남겨 필요한 순간 다시 확인합니다. 기록은 자동으로 수업을 만들지 않습니다. 교사가 남긴 실제 맥락을 다음 준비에 활용합니다.</p>
-          <ul><li>수업 메모와 학생별 관찰</li><li>이전 수업의 활동과 다음 수업 노트</li><li>수업 안내문 저장·복사</li></ul>
-        </div>
-        <div className={styles.memoryVisual}>
-          <ProductFrame src={ASSETS.record} alt="완료한 수업의 활동과 메모를 다음 수업 안내로 이어 쓰는 실제 SPOKEDU LAB 안내문 화면" ratio="portrait" position="50% 12%" />
-          <div className={styles.memoryContextCrop} aria-hidden="true">
-            <Image src={ASSETS.recordDetail} alt="" fill sizes="280px" />
-          </div>
-          <div className={styles.memoryCaption}><span>수업 후</span><strong>남긴 기록을 다음 준비에서 다시 확인</strong></div>
-        </div>
-      </section>
     </div>
   );
 }
@@ -228,17 +204,14 @@ export function ClassToolsSection() {
           ))}
         </ul>
       </div>
-      <ProductFrame src={ASSETS.tools} alt="스탑워치, 타이머, 점수판과 명단형 도구가 보이는 실제 LAB 수업 도구 화면" />
     </section>
   );
 }
 
 const BEFORE_AFTER = [
-  ['여러 채널에서 활동 검색', '놀이체육에서 탐색'],
-  ['준비물·규칙·세팅을 별도로 정리', '상세에서 한 번에 확인'],
-  ['타이머·점수·팀 편성을 다른 도구로 실행', '수업 도구에서 바로 실행'],
-  ['수업 후 기억에 의존', '수업 기록으로 남김'],
-  ['다음 수업을 다시 처음부터 준비', '이전 기록을 다음 준비에서 확인'],
+  ['여러 곳에서 프로그램 검색', '놀이체육에서 바로 찾기'],
+  ['수업반·일정·활동을 따로 관리', '한 수업에 프로그램 연결'],
+  ['출석과 활동 순서를 따로 확인', '한 화면에서 운영'],
 ] as const;
 
 export function WhyMasterSection() {
@@ -326,7 +299,7 @@ export function FieldProofSection() {
       <SectionHeading
         eyebrow="SPOKEDU의 현장에서 시작했습니다"
         title="실제 수업 현장에서 필요한 흐름을 제품으로 만들었습니다."
-        body="SPOKEDU는 유아·초등·특수체육과 기관 수업을 직접 운영하며, 준비부터 현장 진행과 기록까지 반복해서 필요한 과정을 LAB 안에 연결했습니다."
+        body="SPOKEDU는 유아·초등·특수체육 수업을 직접 운영하며 현장에서 반복적으로 필요한 프로그램 탐색, 수업 구성, 출석과 활동 관리를 SPOKEDU LAB에 연결했습니다."
       />
       <div className={styles.fieldGrid}>
         <figure className={styles.fieldPhoto}>

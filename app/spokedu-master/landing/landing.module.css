@@ -32,9 +32,9 @@
 .productFrame.square { aspect-ratio: 1; }
 .productFrame img { object-fit: cover; }
 .heroVisual .productFrame { transform: rotate(1.4deg); }
-.heroCaption, .memoryCaption { position: absolute; right: -20px; bottom: -32px; display: grid; gap: 3px; max-width: 260px; padding: 15px 18px; border: 1px solid rgba(255,255,255,.75); border-radius: 14px; background: rgba(255,255,255,.92); box-shadow: 0 18px 45px rgba(15,23,42,.12); backdrop-filter: blur(14px); }
-.heroCaption span, .memoryCaption span { color: var(--spm-cta); font-size: 10px; font-weight: 800; }
-.heroCaption strong, .memoryCaption strong { font-size: 13px; line-height: 1.5; }
+.heroCaption { position: absolute; right: -20px; bottom: -32px; display: grid; gap: 3px; max-width: 260px; padding: 15px 18px; border: 1px solid rgba(255,255,255,.75); border-radius: 14px; background: rgba(255,255,255,.92); box-shadow: 0 18px 45px rgba(15,23,42,.12); backdrop-filter: blur(14px); }
+.heroCaption span { color: var(--spm-cta); font-size: 10px; font-weight: 800; }
+.heroCaption strong { font-size: 13px; line-height: 1.5; }
 .overview, .plansSection, .faqSection, .fieldProof { max-width: 1120px; margin: 0 auto; padding: 110px 40px; }
 .overview { padding-top: 72px; padding-bottom: 74px; border-top: 1px solid var(--spm-br2); }
 .overview .sectionHeading { display: grid; max-width: none; grid-template-columns: 1fr 1.2fr; column-gap: 54px; }
@@ -43,7 +43,7 @@
 .sectionHeading { max-width: 720px; }
 .sectionHeading h2, .storyCopy h2, .spomoveCopy h2, .finalCta h2 { margin: 0; font-family: var(--spm-font-display); font-size: clamp(32px, 4vw, 50px); font-weight: 680; line-height: 1.18; letter-spacing: -.035em; word-break: keep-all; }
 .sectionHeading > p:last-child, .storyCopy > p, .spomoveCopy > p, .finalCta > p { margin: 20px 0 0; color: var(--spm-t2); font-size: 16px; line-height: 1.8; word-break: keep-all; }
-.workflowList { display: grid; grid-template-columns: repeat(5, 1fr); margin: 34px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--spm-br3); }
+.workflowList { display: grid; grid-template-columns: repeat(4, 1fr); margin: 34px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--spm-br3); }
 .workflowList li { position: relative; min-width: 0; padding: 18px 24px 0 0; }
 .workflowList li > span { color: var(--spm-cta); font-size: 11px; font-weight: 800; }
 .workflowList h3 { margin: 24px 0 0; font-size: 17px; font-weight: 720; }
@@ -51,7 +51,8 @@
 .workflowList svg { position: absolute; top: 20px; right: 20px; color: var(--spm-t3); }
 .landingContent [id], .page [id] { scroll-margin-top: 88px; }
 .toolsSection, .whySection, .detailSection, .audienceSection, .centerSection { max-width: 1120px; margin: 0 auto; padding: 110px 40px; }
-.toolsSection { display: grid; grid-template-columns: minmax(320px,.82fr) minmax(0,1.18fr); gap: 64px; align-items: center; border-top: 1px solid var(--spm-br2); }
+.toolsSection { border-top: 1px solid var(--spm-br2); }
+.toolsCopy { width: 100%; }
 .toolStrip { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; margin: 34px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--spm-br2); }
 .toolStrip li { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--spm-br2); color: var(--spm-t2); font-size: 14px; font-weight: 700; }
 .toolStrip small { color: var(--spm-cta); font-size: 11px; }
@@ -115,20 +116,11 @@
 .runProofLabel span { color: var(--spm-cta); font-size: 10px; font-weight: 800; }
 .runProofLabel strong { font-size: 13px; }
 .runSupport { display: grid; gap: 12px; min-width: 0; }
-.runAttendance, .runUtility { min-width: 0; padding: 14px; border: 1px solid var(--spm-br2); border-radius: 18px; background: var(--spm-s1); }
+.runAttendance { min-width: 0; padding: 14px; border: 1px solid var(--spm-br2); border-radius: 18px; background: var(--spm-s1); }
 .runAttendance .productFrame { aspect-ratio: 1.9; border-radius: 12px; box-shadow: none; }
-.runAttendance p, .runUtility p { display: grid; gap: 4px; margin: 11px 2px 0; }
-.runAttendance strong, .runUtility strong { font-size: 13px; }
-.runAttendance span, .runUtility span { color: var(--spm-t3); font-size: 11px; line-height: 1.5; }
-.runUtility { padding: 14px; }
-.runUtility .productFrame { aspect-ratio: 2.25; border-radius: 12px; box-shadow: none; }
-.runUtility .productFrame img { object-position: 50% 15% !important; }
-.memorySection { grid-template-columns: .82fr 1.18fr; }
-.memoryVisual { position: relative; min-width: 0; padding-right: 34px; }
-.memoryVisual .productFrame { max-height: 610px; }
-.memoryContextCrop { position: absolute; top: 26px; left: -34px; z-index: 2; overflow: hidden; width: 42%; aspect-ratio: 1.08; border: 1px solid var(--spm-br2); border-radius: 14px; background: white; box-shadow: 0 18px 42px rgba(15,23,42,.14); }
-.memoryContextCrop img { object-fit: cover; object-position: 50% 25%; transform: scale(1.08); }
-.memoryCaption { right: 0; bottom: 24px; }
+.runAttendance p { display: grid; gap: 4px; margin: 11px 2px 0; }
+.runAttendance strong { font-size: 13px; }
+.runAttendance span { color: var(--spm-t3); font-size: 11px; line-height: 1.5; }
 .spomoveSection { display: grid; grid-template-columns: .9fr 1.1fr; gap: 54px; align-items: center; max-width: 1140px; margin: 0 auto; padding: 74px 54px; border-radius: 28px; background: var(--spm-spomove-surface); color: var(--spm-spomove-surface-fg); }
 .spomoveEyebrow { margin: 0 0 18px !important; color: #6ee7b7 !important; font-size: 12px !important; font-weight: 800; }
 .spomoveCopy > p { color: var(--spm-spomove-surface-muted); }
@@ -200,7 +192,7 @@
 @media (max-width: 1024px) {
   .hero { grid-template-columns: 1fr 1.08fr; gap: 34px; min-height: 660px; padding: 72px 34px 90px; }
   .hero h1 { font-size: clamp(43px, 5.8vw, 60px); }
-  .workflowList { grid-template-columns: repeat(3, 1fr); row-gap: 32px; }
+  .workflowList { grid-template-columns: repeat(2, 1fr); row-gap: 32px; }
   .storySection, .inclusiveSection { gap: 44px; padding-right: 34px; padding-left: 34px; }
   .spomoveSection { margin-right: 24px; margin-left: 24px; padding: 64px 40px; }
   .planCard { padding: 24px; }
@@ -238,11 +230,9 @@
   .runFacts { grid-template-columns: repeat(3, 1fr); }
   .runFacts span { min-height: 58px; }
   .runComposition { grid-template-columns: 1fr; }
-  .runSupport { grid-template-columns: 1fr 1fr; }
+  .runSupport { grid-template-columns: 1fr; }
   .runAttendance { display: grid; grid-template-columns: minmax(0, .8fr) 1fr; gap: 18px; align-items: center; }
   .runAttendance p { margin: 0; }
-  .runUtility { display: grid; grid-template-columns: minmax(0, .8fr) 1fr; gap: 18px; align-items: center; }
-  .runUtility p { margin: 0; }
   .spomoveSection { grid-template-columns: 1fr; }
   .inclusiveMedia { max-width: 560px; }
   .planGrid { grid-template-columns: 1fr; }
@@ -303,12 +293,6 @@
   .runAttendance { display: grid; grid-template-columns: 1fr; padding: 12px; }
   .runAttendance .productFrame { aspect-ratio: 2.15; }
   .runAttendance p { padding: 2px 4px 4px; }
-  .runUtility { display: grid; grid-template-columns: 1fr; padding: 12px; }
-  .runUtility .productFrame { aspect-ratio: 2.15; }
-  .runUtility p { padding: 2px 4px 4px; }
-  .memoryVisual { padding-right: 0; padding-bottom: 62px; }
-  .memoryContextCrop { top: 18px; left: -5px; width: 45%; }
-  .memoryCaption { right: 8px; bottom: 8px; }
   .spomoveSection { gap: 32px; margin: 0 12px; padding: 46px 20px; border-radius: 22px; }
   .spomoveVisual { aspect-ratio: 1.1; }
   .spomoveVisual img { object-position: 56% center; }

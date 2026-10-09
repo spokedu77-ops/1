@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { getPublicProductContract } from '../lib/publicProductContract';
@@ -55,11 +55,38 @@ describe('SPOKEDU LAB canonical commercial landing', () => {
     expect(sections).not.toContain('가장 인기');
   });
 
-  it('uses actual product and field assets with no unsupported claims', () => {
-    for (const asset of ['home-master-ui.png', 'library-program-cards-20261008-final.png', 'prepare-class-tools.png', 'prepare-lesson-plan-20261008-final.png', 'build-session.png', 'run-session.png', 'run-attendance.png', 'remember-report.png', 'remember-report-detail.png', 'yangcheon-paps.jpg']) {
+  it('uses existing static assets on every rendered landing image path', () => {
+    const renderedAssets = [
+      '/images/spokedu/home/field-editorial/home-master-ui.png',
+      '/images/spokedu/subscription/library-program-cards-20261008-final.png',
+      '/images/spokedu/subscription/prepare-lesson-plan-20261008-final.png',
+      '/images/spokedu-master/landing/build-session.png',
+      '/images/spokedu-master/landing/run-session.png',
+      '/images/spokedu-master/landing/run-attendance.png',
+      '/images/spokedu/home/field-editorial/home-spomove-field.webp',
+      '/images/spokedu/records/yangcheon-paps.jpg',
+    ] as const;
+
+    for (const asset of renderedAssets) {
       expect(sections).toContain(asset);
+      expect(existsSync(join(process.cwd(), 'public', asset.slice(1))), asset).toBe(true);
     }
+    expect(sections).not.toContain('prepare-class-tools.png');
+    expect(sections).not.toContain('remember-report.png');
+    expect(sections).not.toContain('remember-report-detail.png');
+    expect(sections).not.toContain('ASSETS.tools');
+    expect(sections).not.toContain('ASSETS.record');
+    expect(sections).not.toContain('ASSETS.recordDetail');
     expect(sections).not.toMatch(/AI가|자동 추천|회원가|Best seller/);
+  });
+
+  it('keeps the approved four-step workflow and operational landing emphasis', () => {
+    const workflowBlock = sections.slice(sections.indexOf('const WORKFLOW'), sections.indexOf('] as const;', sections.indexOf('const WORKFLOW')));
+    expect(workflowBlock.match(/\['0[1-4]'/g)).toHaveLength(4);
+    expect(workflowBlock).not.toContain("['05'");
+    expect(sections).not.toContain('id="records"');
+    expect(sections).toContain('현장에서는 출석과 활동을 한 흐름에서 운영합니다.');
+    expect(faq).toContain('수업 기록과 학생 관찰, 다음 수업 메모, 수업 안내문 작성 기능');
   });
 
   it('publishes the required product navigation and legal footer', () => {
