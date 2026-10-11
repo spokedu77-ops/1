@@ -10,6 +10,7 @@ const library = read('app/spokedu-master/library/LibraryView.tsx');
 const preview = read('app/spokedu-master/components/lesson/LessonPreviewContent.tsx');
 const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
+const dashboardPrimaryAction = read('app/spokedu-master/dashboard/dashboardPrimaryAction.ts');
 
 describe('lesson discovery and execution flow contract', () => {
   it('shows decision metadata and non-conflicting card actions in the library', () => {
@@ -87,7 +88,7 @@ describe('lesson discovery and execution flow contract', () => {
   it('offers content-first and Session-first entry as peer paths', () => {
     expect(dashboard).toContain('좋은 활동부터 찾아보기');
     expect(dashboard).toContain('수업반 준비하기');
-    expect(dashboard).toContain('무료 수업 보기');
+    expect(dashboardPrimaryAction).toContain("label: '무료 수업 보기'");
     expect(dashboard).toContain('수업 도구 열기');
     expect(dashboard).not.toContain('수업부터 만들기');
     expect(dashboard).not.toContain('콘텐츠부터 찾아도, 수업부터 만들어도');
