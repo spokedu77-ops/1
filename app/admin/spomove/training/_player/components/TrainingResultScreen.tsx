@@ -16,6 +16,7 @@ import {
   type ColorStimulusCounts,
   type TrainingResultConfig,
 } from '../lib/trainingResultSummary';
+import type { SpomoveCompletionReason } from '@/app/spokedu-master/spomove/session/sessionResultModel';
 
 type StudentBadge = { name: string; color: string };
 
@@ -28,6 +29,8 @@ export type TrainingResultSessionSettings = {
 
 type Props = {
   cfg: TrainingResultConfig;
+  /** MASTER only. Admin callers omit this and retain the existing result copy. */
+  completionReason?: SpomoveCompletionReason;
   elapsedMs: number;
   colorCounts: ColorStimulusCounts | null;
   levelLabel: string;
@@ -156,6 +159,7 @@ const RESULT_CSS = `
 
 export function TrainingResultScreen({
   cfg,
+  completionReason,
   elapsedMs,
   colorCounts,
   levelLabel,
@@ -179,13 +183,13 @@ export function TrainingResultScreen({
     && (cfg.level === 5 || (programTitle?.includes('화살표') ?? false));
   const resultColorCounts = cfg.mode === 'simon' || cfg.mode === 'spatial' || flankerDirectionOnly ? null : colorCounts;
   const rich = useMemo(
-    () => resolveTrainingResultRichContent(cfg, elapsedMs, resultColorCounts, { programTitle, volumeLabel }),
-    [cfg, elapsedMs, resultColorCounts, programTitle, volumeLabel],
+    () => resolveTrainingResultRichContent(cfg, elapsedMs, resultColorCounts, { programTitle, volumeLabel, completionReason }),
+    [cfg, elapsedMs, resultColorCounts, programTitle, volumeLabel, completionReason],
   );
 
   const dive = useMemo(
-    () => (diveActionMove ? buildDiveActionMoveReport(diveActionMove, elapsedMs) : null),
-    [diveActionMove, elapsedMs],
+    () => (diveActionMove ? buildDiveActionMoveReport(diveActionMove, elapsedMs, completionReason) : null),
+    [diveActionMove, elapsedMs, completionReason],
   );
   const colorTotal = resultColorCounts ? totalColorStimulusCount(resultColorCounts) : 0;
   const showColorBreakdown = !dive && resultColorCounts != null && colorTotal > 0;
@@ -368,7 +372,7 @@ export function TrainingResultScreen({
                   <span style={{ fontSize: 'var(--tr-label)', fontWeight: 700, color: student.color }}>{student.name}</span>
                 </div>
               ) : null}
-              <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 800, lineHeight: 1.15 }}>{dive ? dive.title : title}</div>
+              <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 800, lineHeight: 1.15 }}>{completionReason ? title : dive ? dive.title : title}</div>
               <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: 0, fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, lineHeight: 1.4 }}>
                 {dive ? dive.subtitle : rich.praiseSub}
               </p>
@@ -395,7 +399,7 @@ export function TrainingResultScreen({
                   </>
                 ) : rich.sessionHighlight}
               </p>
-              {(dive ? dive.statusBadge : statusBadge) ? (
+              {(completionReason ? statusBadge : dive ? dive.statusBadge : statusBadge) ? (
                 <span
                   style={{
                     display: 'inline-flex',
@@ -408,7 +412,7 @@ export function TrainingResultScreen({
                     border: `1px solid ${accent}44`,
                   }}
                 >
-                  {dive ? dive.statusBadge : statusBadge}
+                  {completionReason ? statusBadge : dive ? dive.statusBadge : statusBadge}
                 </span>
               ) : null}
             </div>
@@ -427,7 +431,7 @@ export function TrainingResultScreen({
                   ? { label: '활동 시간', value: dive.activityTimeValue, nowrap: true }
                   : { label: '진행 시간', value: rich.elapsedLabel, nowrap: false },
                 dive
-                  ? { label: '스테이지 시간', value: dive.stageTimeValue, nowrap: true }
+                  ? { label: completionReason ? '설정 스테이지 시간' : '스테이지 시간', value: dive.stageTimeValue, nowrap: true }
                   : { label: '설정 분량', value: volumeLabel ?? rich.volumeLabel, nowrap: false },
               ].map((stat) => {
                 const bonusVolume = stat.value.match(/^(.*?)\s*\+\s*(보너스\s+\d+초)$/);
@@ -482,7 +486,7 @@ export function TrainingResultScreen({
                     fontWeight: 800,
                   }}
                 >
-                  {dive ? '세션 상태' : '오늘 느낌'}
+                  {dive || completionReason ? '종료 상태' : '오늘 느낌'}
                 </span>
                 <span
                   className={dive ? 'tr-dive-nowrap' : undefined}
@@ -514,7 +518,7 @@ export function TrainingResultScreen({
               }}
             >
               <div>
-                <h2 style={sectionTitle}>{dive ? '오늘의 움직임' : '오늘의 포인트'}</h2>
+                <h2 style={sectionTitle}>{completionReason ? '활동 내용' : dive ? '오늘의 움직임' : '오늘의 포인트'}</h2>
                 <p
                   className={dive ? 'tr-dive-copy' : undefined}
                   style={{
@@ -636,8 +640,12 @@ export function TrainingResultScreen({
                   <h2 style={sectionTitle}>{dive ? '오늘의 DIVE' : '활동 요약'}</h2>
                   <p className={dive ? 'tr-dive-copy' : undefined} style={{ margin: '0.2rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, wordBreak: 'keep-all' }}>
                     {dive
-                      ? '이번 세션에서 진행한 액션과 활동 구성을 정리합니다.'
-                      : '이번 활동에서 진행한 과제와 시간을 정리합니다.'}
+                      ? completionReason
+                        ? '설정된 액션 구성과 실제 진행 시간을 구분해 정리합니다.'
+                        : '이번 세션에서 진행한 액션과 활동 구성을 정리합니다.'
+                      : completionReason
+                        ? '설정된 과제와 실제 진행 시간을 구분해 정리합니다.'
+                        : '이번 활동에서 진행한 과제와 시간을 정리합니다.'}
                   </p>
                 </div>
 
@@ -682,8 +690,12 @@ export function TrainingResultScreen({
                   }}
                 >
                   {dive
-                    ? '화면의 신호에 맞춰 방향을 바꾸고 점프하고 숙이며 연속적인 움직임을 경험하는 활동입니다.'
-                    : '표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.'}
+                    ? completionReason
+                      ? '진행 시간은 측정값이며 액션 구성과 스테이지 시간은 실행 설정입니다.'
+                      : '화면의 신호에 맞춰 방향을 바꾸고 점프하고 숙이며 연속적인 움직임을 경험하는 활동입니다.'
+                    : completionReason
+                      ? '진행 시간과 색상 제시 횟수는 측정값이며 설정 분량은 실행 설정입니다.'
+                      : '표시된 내용은 자동 점수가 아니라 이번 활동의 실제 진행 기록입니다.'}
                 </p>
               </>
             )}
@@ -777,7 +789,7 @@ export function TrainingResultScreen({
             ) : null}
 
             <div style={{ flex: '1 1 auto', minHeight: 'min-content', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <h2 style={{ ...sectionTitle, flexShrink: 0 }}>스스로 점검</h2>
+              <h2 style={{ ...sectionTitle, flexShrink: 0 }}>{completionReason ? '결과 안내' : '스스로 점검'}</h2>
               <div className="tr-fill-stack" style={{ gap: '0.4rem' }}>
                 {(dive ? dive.selfChecks : rich.selfCheckItems).map((item, index) => (
                   <div

@@ -79,6 +79,7 @@ describe("SPOMOVE session lifecycle UX", () => {
     expect(result).not.toContain("스스로 점검");
     expect(result).not.toContain("실행 ID");
     expect(result).not.toContain("runId");
+    expect(result).toContain("completionReason={completionReason}");
     expect(page).not.toContain("runId={sessionResult.runId}");
   });
 
@@ -88,6 +89,8 @@ describe("SPOMOVE session lifecycle UX", () => {
     const finishBody = page.slice(finishStart, finishEnd);
     expect(finishBody).not.toContain("isCompleted");
     expect(page).toContain("markCompleteAndReturn");
+    expect(result).toContain("markCompleteStatus === 'error'");
+    expect(result).toContain("완료 기록을 저장하지 못했습니다.");
   });
 
   it("preserves retry settings and Session/Hub return context", () => {
