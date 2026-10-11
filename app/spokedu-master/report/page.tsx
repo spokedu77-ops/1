@@ -1,9 +1,8 @@
 'use client';
 
 import { ClipboardCopy, Save } from 'lucide-react';
-import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { SPM_PRIMARY_BTN, SPM_SECONDARY_BTN } from '../lib/masterActionGrammar';
 import { formatSeoulSessionDay, formatSeoulSessionTime, getSeoulSessionDay } from '../lib/sessionDateTime';
@@ -11,9 +10,18 @@ import { resolveReportSession } from '../lib/sessionContext';
 import { resolveParentNotice } from './parentNoticeModel';
 import { MasterDocumentSurface, MasterPageHeader, MasterPageShell } from '../components/ui/MasterPrimitives';
 import { MasterStatePanel } from '../components/ui/MasterStatePanel';
+import {
+  confirmParentNoticeSaved,
+  isParentNoticeDirty,
+  PARENT_NOTICE_DISCARD_PROMPT,
+  reconcileParentNoticeEditor,
+  selectParentNoticeSession,
+  type ParentNoticeEditorState,
+} from './parentNoticeEditorState';
 
 export default function ReportPage() {
   const data = useOperationalData();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sessions = useMemo(() => [...data.sessions]
     .filter((session) => session.status === 'completed')
@@ -21,22 +29,90 @@ export default function ReportPage() {
   const requestedSessionId = searchParams.get('session');
   const [selectedId, setSelectedId] = useState('');
   const selected = resolveReportSession(sessions, requestedSessionId, selectedId);
-  const [notice, setNotice] = useState('');
+  const [editor, setEditor] = useState<ParentNoticeEditorState | null>(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const invalidRequestedSession = Boolean(requestedSessionId) && data.status === 'ready' && !selected;
   const persistedNotice = selected ? resolveParentNotice(selected) : '';
+  const notice = editor && selected && editor.sessionId === selected.id ? editor.draft : '';
+  const noticeDirty = Boolean(editor && selected && editor.sessionId === selected.id && isParentNoticeDirty(editor));
+  const noticeDirtyRef = useRef(noticeDirty);
+  noticeDirtyRef.current = noticeDirty;
+
   useEffect(() => {
-    setNotice(persistedNotice);
+    if (!requestedSessionId && !selectedId && selected) setSelectedId(selected.id);
+  }, [requestedSessionId, selected, selectedId]);
+
+  useEffect(() => {
+    if (!selected) return;
+    setEditor((current) => reconcileParentNoticeEditor(current, selected.id, persistedNotice));
+  }, [persistedNotice, selected]);
+
+  useEffect(() => {
     setFeedback(null);
-  }, [persistedNotice, selected?.id]);
-  const noticeDirty = Boolean(selected) && notice.trim() !== persistedNotice.trim();
+  }, [selected?.id]);
+
+  useEffect(() => {
+    if (!noticeDirty) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    const guardClientNavigation = (event: MouseEvent) => {
+      if (!noticeDirtyRef.current || !(event.target instanceof Element)) return;
+      const anchor = event.target.closest<HTMLAnchorElement>('a[href]');
+      const tabButton = event.target.closest<HTMLButtonElement>('[data-spm-tabbar] button');
+      if (!anchor && !tabButton) return;
+      if (anchor) {
+        if (anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+        const destination = new URL(anchor.href, window.location.href);
+        if (destination.origin !== window.location.origin) return;
+        if (`${destination.pathname}${destination.search}${destination.hash}` === `${window.location.pathname}${window.location.search}${window.location.hash}`) return;
+      }
+      if (window.confirm(PARENT_NOTICE_DISCARD_PROMPT)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    document.addEventListener('click', guardClientNavigation, true);
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnload);
+      document.removeEventListener('click', guardClientNavigation, true);
+    };
+  }, [noticeDirty]);
+
+  const serverChangedWhileEditing = Boolean(
+    editor
+    && selected
+    && editor.sessionId === selected.id
+    && noticeDirty
+    && editor.baseline.trim() !== persistedNotice.trim(),
+  );
+
+  const changeSession = (nextSessionId: string) => {
+    if (!selected || nextSessionId === selected.id) return;
+    const nextSession = sessions.find((session) => session.id === nextSessionId);
+    if (!nextSession) return;
+    const discardApproved = !noticeDirty || window.confirm(PARENT_NOTICE_DISCARD_PROMPT);
+    const nextEditor = selectParentNoticeSession(editor, nextSession.id, resolveParentNotice(nextSession), discardApproved);
+    if (nextEditor.sessionId !== nextSession.id) return;
+    setEditor(nextEditor);
+    setSelectedId(nextSession.id);
+    setFeedback(null);
+  };
+
   const saveNotice = async () => {
-    if (!selected || !noticeDirty || saving) return;
+    if (!selected || !editor || !noticeDirty || saving) return;
+    const sessionId = selected.id;
+    const draftToSave = editor.draft;
     setSaving(true);
     setFeedback(null);
     try {
-      await data.saveParentNotice(selected.id, notice);
+      await data.saveParentNotice(sessionId, draftToSave);
+      setEditor((current) => current?.sessionId === sessionId
+        ? confirmParentNoticeSaved(current, draftToSave)
+        : current);
       setFeedback('안내문을 저장했습니다.');
     } catch {
       setFeedback('안내문을 저장하지 못했습니다. 다시 시도해 주세요.');
@@ -47,18 +123,22 @@ export default function ReportPage() {
   const backToSessionHref = selected
     ? `/spokedu-lab/activity?session=${encodeURIComponent(selected.id)}`
     : '/spokedu-lab/activity';
+  const returnToSession = () => {
+    if (noticeDirty && !window.confirm(PARENT_NOTICE_DISCARD_PROMPT)) return;
+    router.push(backToSessionHref);
+  };
 
   return (
     <main className="h-full overflow-y-auto bg-[var(--spm-bg)] pb-28 lg:pb-8">
       <MasterPageShell variant="document">
-        <MasterPageHeader title="수업 안내문" description="완료된 수업의 출석, 진행 프로그램, 수업 메모를 바탕으로 간단한 안내문을 확인합니다." />
+        <MasterPageHeader title="수업 안내문" description="완료된 수업의 날짜, 수업반, 완료 활동을 바탕으로 간단한 안내문을 확인합니다." />
         <MasterDocumentSurface className="mt-8">
           {!requestedSessionId ? (
             <label className="text-[13px] font-medium text-slate-600">
               완료된 수업
               <select
                 value={selected?.id ?? ''}
-                onChange={(event) => setSelectedId(event.target.value)}
+                onChange={(event) => changeSession(event.target.value)}
                 className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium"
               >
                 {sessions.map((session) => (
@@ -74,9 +154,9 @@ export default function ReportPage() {
             <>
               <label className="mt-5 block text-[13px] font-medium text-slate-600">
                 안내문 내용
-                <textarea value={notice} onChange={(event) => { setNotice(event.target.value); setFeedback(null); }} maxLength={4000} className="mt-2 min-h-72 w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-[15px] font-normal leading-7 text-slate-700 outline-none focus:border-blue-500" />
+                <textarea value={notice} onChange={(event) => { setEditor((current) => current?.sessionId === selected.id ? { ...current, draft: event.target.value } : current); setFeedback(null); }} maxLength={4000} className="mt-2 min-h-72 w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-[15px] font-normal leading-7 text-slate-700 outline-none focus:border-blue-500" />
               </label>
-              <div className="mt-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500"><span>{feedback ?? (noticeDirty ? '저장하지 않은 변경사항이 있습니다.' : '저장됨')}</span><span>{notice.length.toLocaleString()} / 4,000자</span></div>
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500"><span>{serverChangedWhileEditing ? '서버의 안내문도 변경되었습니다. 작성 중인 내용은 유지됩니다.' : feedback ?? (noticeDirty ? '저장하지 않은 변경사항이 있습니다.' : '저장됨')}</span><span>{notice.length.toLocaleString()} / 4,000자</span></div>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <button type="button" disabled={!noticeDirty || saving} onClick={() => void saveNotice()} className={SPM_PRIMARY_BTN}><Save size={15} />{saving ? '저장 중' : '안내문 저장'}</button>
                 <button
@@ -87,9 +167,9 @@ export default function ReportPage() {
                   <ClipboardCopy size={15} />
                   안내문 복사
                 </button>
-                <Link href={backToSessionHref} className={`${SPM_SECONDARY_BTN} sm:col-span-2`}>
+                <button type="button" onClick={returnToSession} className={`${SPM_SECONDARY_BTN} sm:col-span-2`}>
                   수업으로 돌아가기
-                </Link>
+                </button>
               </div>
             </>
           ) : invalidRequestedSession ? (
